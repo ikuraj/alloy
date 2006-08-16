@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 /**
  * Immutable; represents a unary expression of the form (OP subexpression).
  * @author Felix Chang

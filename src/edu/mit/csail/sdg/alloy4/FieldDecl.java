@@ -3,7 +3,6 @@ package edu.mit.csail.sdg.alloy4;
 import java.util.List;
 import java.util.ArrayList;
 
-
 /**
  * Immutable; represents a field declaration of the form (a,b,c: X)
  * @author Felix Chang

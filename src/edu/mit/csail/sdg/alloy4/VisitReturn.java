@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 public interface VisitReturn {
   public abstract Object accept(ExprBinary x);
   public abstract Object accept(ExprITE x);

@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 /**
  * Immutable; represents a toplevel paragraph in the model.
  * @author Felix Chang

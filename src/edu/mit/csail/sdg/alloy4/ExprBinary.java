@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 /**
  * Immutable; represents an expression of the form (x OP y)
  * @author Felix Chang

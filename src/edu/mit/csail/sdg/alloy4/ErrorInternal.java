@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 /**
  * Immutable;
  * represents an internal error that should be reported to the developers.

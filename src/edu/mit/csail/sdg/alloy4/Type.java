@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.Collections;

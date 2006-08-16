@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 /**
  * Mutable; represents a "fact".
  * @author Felix Chang

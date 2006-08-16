@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -8,7 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
-
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
 import kodkod.ast.IntConstant;

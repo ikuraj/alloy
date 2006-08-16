@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
-
 /**
  * Immutable; represents a list of formulas joined by the AND operator.
  * @author Felix Chang

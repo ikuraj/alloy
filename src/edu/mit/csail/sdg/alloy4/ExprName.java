@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 /**
  * Immutable; represents an identifier in the AST.
  * @author Felix Chang

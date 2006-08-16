@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 public abstract class VisitQuery implements VisitReturn {
 
   public boolean query(Expr x) { return x.accept(this)!=null; }

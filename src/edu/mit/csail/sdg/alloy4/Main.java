@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.io.File;
 
-
 public final class Main {
 
   public static Type zzz=null;

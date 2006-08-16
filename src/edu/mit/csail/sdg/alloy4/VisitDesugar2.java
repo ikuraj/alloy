@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 public interface VisitDesugar2 {
   public Expr accept(ExprBinary x,Type t);
   public Expr accept(ExprCall x,Type t);

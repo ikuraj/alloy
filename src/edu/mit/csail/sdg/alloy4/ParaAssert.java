@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-
 /**
  * Mutable; represents an "assertion".
  * @author Felix Chang
