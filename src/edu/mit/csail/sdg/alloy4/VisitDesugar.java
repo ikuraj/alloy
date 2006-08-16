@@ -6,6 +6,7 @@ import java.util.ArrayList;
 public abstract class VisitDesugar {
 
   public final Unit unit;
+
   public VisitDesugar() { unit=null; }
   public VisitDesugar(Unit u) { unit=u; }
 
