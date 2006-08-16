@@ -25,6 +25,7 @@ public final class VarDecl {
 	 *
 	 * @throws ErrorInternal if x==null or y==null
 	 * @throws ErrorInternal if x.size()==0
+	 * @throws ErrorInternal if any of the name is null
 	 * @throws ErrorInternal if any of the name contains '/' or '@'
 	 * @throws ErrorInternal if any of the name is equal to "", "none", "iden", "univ", or "Int"
 	 */
