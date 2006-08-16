@@ -6,16 +6,16 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class Pos {
-	
+
 	/** The filename (it can be an empty string if unknown) */
 	public final String filename;
-	
+
 	/** The column position (from 1..) */
 	public final int x;
-	
+
 	/** The row position (from 1..) */
 	public final int y;
-	
+
 	/**
 	 * Constructs a new Pos object.
 	 * @param filename - the filename (it can be an empty string if unknown)

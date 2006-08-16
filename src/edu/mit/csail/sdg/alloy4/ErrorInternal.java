@@ -7,19 +7,19 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class ErrorInternal extends RuntimeException {
-	
+
 	/** This silences the javac warning about serialVersionUID not defined. */
 	private static final long serialVersionUID=0;
-	
+
 	/** This stores the filename/line/row information (null if unknown) */
 	public final Pos pos;
-	
+
 	/** The actual error message. */
 	public final String msg;
-	
+
 	/** The object that triggered the error (null if unknown) */
 	public final Object obj;
-	
+
 	/**
 	 * Constructs a new exception object.
 	 * @param pos - the filename/line/row information (null if unknown)
@@ -31,7 +31,7 @@ public final class ErrorInternal extends RuntimeException {
 		this.obj=obj;
 		this.msg=msg;
 	}
-	
+
 	/** Returns a human-readable description of the error */
 	@Override public String toString() {
 		if (pos==null) return "Internal error: "+msg;
