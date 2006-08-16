@@ -11,73 +11,84 @@ import java.util.ArrayList;
 
 public final class VarDecl {
 
-	/** The unmodifiable list of names */
+	/** The unmodifiable list of names. */
 	public final List<String> names;
 
-	/** The expression that these names are quantified over */
+	/** The expression that these names are quantified over. */
 	public final Expr value;
 
 	/**
-	 * Constructs a new VarDecl object with <b>a</b> as the list of names.
-	 * @param a - the list of names
-	 * @param b - the expression that the names are quantified over
+	 * Constructs a new VarDecl object with x as the list of names.
+	 *
+	 * @param x - the list of names
+	 * @param y - the expression that the names are quantified over
+	 *
+	 * @throws ErrorInternal if x==null or y==null
+	 * @throws ErrorInternal if x.size()==0
+	 * @throws ErrorInternal if any of the name contains '/' or '@'
+	 * @throws ErrorInternal if any of the name is equal to "", "none", "iden", "univ", or "Int"
 	 */
-	public VarDecl(List<String> a, Expr b) {
-		if (a==null || b==null)
+	public VarDecl (List<String> x, Expr y) {
+		if (x==null || y==null)
 			throw new ErrorInternal(null,null,"NullPointerException");
-		names=Collections.unmodifiableList(new ArrayList<String>(a));
+		names=Collections.unmodifiableList(new ArrayList<String>(x));
 		if (names.size()==0)
-			throw b.syntaxError("The list of declarations cannot be empty!");
-		for(String j:names) {
-			if (j==null)
-				throw b.internalError("NullPointerException");
-			if (j.length()==0)
-				throw b.syntaxError("The name of a variable cannot be empty!");
-			if (j.indexOf('/')>=0)
-				throw b.syntaxError("The name of a variable cannot contain \'/\'");
-			if (j.indexOf('@')>=0)
-				throw b.syntaxError("The name of a variable cannot contain \'@\'");
-			if (j.equals("none") ||
-				j.equals("iden") ||
-				j.equals("univ") ||
-				j.equals("Int"))
-				throw b.syntaxError("The name of a variable cannot be \""+j+"\"");
+			throw y.syntaxError("The list of declarations cannot be empty!");
+		for(String n:names) {
+			if (n==null)
+				throw y.internalError("NullPointerException");
+			if (n.length()==0)
+				throw y.syntaxError("The name of a variable cannot be empty!");
+			if (n.indexOf('/')>=0)
+				throw y.syntaxError("The name of a variable cannot contain \'/\'");
+			if (n.indexOf('@')>=0)
+				throw y.syntaxError("The name of a variable cannot contain \'@\'");
+			if (n.equals("none") ||
+				n.equals("iden") ||
+				n.equals("univ") ||
+				n.equals("Int"))
+				throw y.syntaxError("The name of a variable cannot be \""+n+"\"");
 		}
 		// See ExprUnary.java for why we have to call makeMult() here.
-		if (b instanceof ExprUnary) b=((ExprUnary)b).makeMult();
-		value=b;
+		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
+		value=y;
 	}
 
 	/**
-	 * Constructs a new VarDecl object with <b>a</b> as the only name.
-	 * @param a - the only name
-	 * @param b - the expression that the name is quantified over
+	 * Constructs a new VarDecl object with x as the only name.
+	 *
+	 * @param x - the only name
+	 * @param y - the expression that the name is quantified over
+	 *
+	 * @throws ErrorInternal if x==null or y==null
+	 * @throws ErrorInternal if x contains '/' or '@'
+	 * @throws ErrorInternal if x is equal to "", "none", "iden", "univ", or "Int"
 	 */
-	public VarDecl(String a, Expr b) {
-		if (a==null || b==null)
+	public VarDecl (String x, Expr y) {
+		if (x==null || y==null)
 			throw new ErrorInternal(null,null,"NullPointerException");
 		List<String> list=new ArrayList<String>(1);
-		list.add(a);
+		list.add(x);
 		names=Collections.unmodifiableList(list);
-		if (a.length()==0)
-			throw b.syntaxError("The name of a variable must not be empty!");
-		if (a.indexOf('/')>=0)
-			throw b.syntaxError("The name of a variable cannot contain \'/\'");
-		if (a.indexOf('@')>=0)
-			throw b.syntaxError("The name of a variable cannot contain \'@\'");
-		if (a.equals("none") ||
-			a.equals("iden") ||
-			a.equals("univ") ||
-			a.equals("Int"))
-			throw b.syntaxError("The name of a variable cannot be \""+a+"\"");
+		if (x.length()==0)
+			throw y.syntaxError("The name of a variable must not be empty!");
+		if (x.indexOf('/')>=0)
+			throw y.syntaxError("The name of a variable cannot contain \'/\'");
+		if (x.indexOf('@')>=0)
+			throw y.syntaxError("The name of a variable cannot contain \'@\'");
+		if (x.equals("none") ||
+			x.equals("iden") ||
+			x.equals("univ") ||
+			x.equals("Int"))
+			throw y.syntaxError("The name of a variable cannot be \""+x+"\"");
 		// See ExprUnary.java for why we have to call makeMult() here.
-		if (b instanceof ExprUnary) b=((ExprUnary)b).makeMult();
-		value=b;
+		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
+		value=y;
 	}
 
 	/**
-	 * Returns the number of names in a List of VarDecl.
-	 * @return the number of names in a List of VarDecl.
+	 * Convenience method that returns the number of names in a list of VarDecl.
+	 * @return the number of names in the list
 	 */
 	public static int nameCount (List<VarDecl> list) {
 		int c=0;
@@ -86,8 +97,8 @@ public final class VarDecl {
 	}
 
 	/**
-	 * Checks whether the name <b>n</b> appears in a list of VarDecl.
-	 * @return true if and only if the name appears in the list.
+	 * Convenience method that checks whether the name n appears in a list of VarDecl.
+	 * @return true if and only if the name n appears in the list
 	 */
 	public static boolean hasName (List<VarDecl> list, String n) {
 		for(int i=list.size()-1; i>=0; i--)
@@ -97,9 +108,8 @@ public final class VarDecl {
 	}
 
 	/**
-	 * Checks whether the same name appears more than once in a List of VarDecl.
-	 * @return the duplicate name (if duplicates exist),
-	 * and returns null otherwise
+	 * Convenience method that checks whether there are duplicate names in a list of VarDecl.
+	 * @return one of the duplicate name (if duplicates exist), and returns null otherwise
 	 */
 	public static String hasDuplicateName (List<VarDecl> list) {
 		for(int i=0; i<list.size(); i++) {
