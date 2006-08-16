@@ -322,7 +322,7 @@ Now we perform the final desugarings...
       @Override public Expr accept(ExprQuant x) {
         List<VarDecl> list=new ArrayList<VarDecl>();
         for(VarDecl d:x.list) {
-           list.add(new VarDecl(d.names, addOne(d.value.accept(this))));
+           list.add(new VarDecl(d, addOne(d.value.accept(this))));
         }
         Expr sub=x.sub.accept(this);
         Expr ans=x.op.make(x.pos, list, sub, x.type); return ans;
@@ -333,7 +333,7 @@ Now we perform the final desugarings...
     	ParaFun x=e.getValue().get(xi);
         List<VarDecl> newdecls=new ArrayList<VarDecl>();
         for(VarDecl d:x.decls) {
-          newdecls.add(new VarDecl(d.names, addOne(d.value.accept(desugar2))));
+          newdecls.add(new VarDecl(d, addOne(d.value.accept(desugar2))));
         }
         Expr type = (x.type==null) ? null : addOne(x.type.accept(desugar2));
         Expr value = x.value.accept(desugar2);

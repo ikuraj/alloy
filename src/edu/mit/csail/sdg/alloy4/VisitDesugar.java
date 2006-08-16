@@ -56,7 +56,7 @@ public abstract class VisitDesugar {
     for(int i=0; i<x.list.size(); i++) {
       VarDecl d=x.list.get(i);
       Expr newvalue=d.value.accept(this);
-      list.add(new VarDecl(d.names, newvalue));
+      list.add(new VarDecl(d, newvalue));
     }
     Expr sub=x.sub.accept(this);
     return x.op.make(x.pos, list, sub, x.type);

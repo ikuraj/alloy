@@ -29,27 +29,30 @@ public final class VarDecl {
 	 * @throws ErrorInternal if any of the name contains '/' or '@'
 	 * @throws ErrorInternal if any of the name is equal to "", "none", "iden", "univ", or "Int"
 	 */
-	public VarDecl (List<String> x, Expr y) {
+	public VarDecl (List<ExprName> x, Expr y) {
 		if (x==null || y==null)
 			throw new ErrorInternal(null,null,"NullPointerException");
-		names=Collections.unmodifiableList(new ArrayList<String>(x));
-		if (names.size()==0)
+		List<String> newlist=new ArrayList<String>();
+		if (x.size()==0)
 			throw y.syntaxError("The list of declarations cannot be empty!");
-		for(String n:names) {
-			if (n==null)
-				throw y.internalError("NullPointerException");
+		for(int i=0; i<x.size(); i++) {
+			ExprName e=x.get(i);
+			if (e==null) throw y.internalError("NullPointerException");
+			String n=e.name;
 			if (n.length()==0)
-				throw y.syntaxError("The name of a variable cannot be empty!");
+				throw e.syntaxError("The name of a variable cannot be empty!");
 			if (n.indexOf('/')>=0)
-				throw y.syntaxError("The name of a variable cannot contain \'/\'");
+				throw e.syntaxError("The name of a variable cannot contain \'/\'");
 			if (n.indexOf('@')>=0)
-				throw y.syntaxError("The name of a variable cannot contain \'@\'");
+				throw e.syntaxError("The name of a variable cannot contain \'@\'");
 			if (n.equals("none") ||
 				n.equals("iden") ||
 				n.equals("univ") ||
 				n.equals("Int"))
-				throw y.syntaxError("The name of a variable cannot be \""+n+"\"");
+				throw e.syntaxError("The name of a variable cannot be \""+n+"\"");
+			newlist.add(n);
 		}
+		names=Collections.unmodifiableList(newlist);
 		// See ExprUnary.java for why we have to call makeMult() here.
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;
@@ -82,6 +85,23 @@ public final class VarDecl {
 			x.equals("univ") ||
 			x.equals("Int"))
 			throw y.syntaxError("The name of a variable cannot be \""+x+"\"");
+		// See ExprUnary.java for why we have to call makeMult() here.
+		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
+		value=y;
+	}
+
+	/**
+	 * Constructs a new VarDecl object with the same names as x.
+	 *
+	 * @param x - an existing VarDecl object
+	 * @param y - the expression that the name is quantified over
+	 *
+	 * @throws ErrorInternal if x==null or y==null
+	 */
+	public VarDecl (VarDecl x, Expr y) {
+		if (x==null || y==null)
+			throw new ErrorInternal(null,null,"NullPointerException");
+		names=x.names;
 		// See ExprUnary.java for why we have to call makeMult() here.
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;

@@ -195,7 +195,7 @@ nonterminal ExprLet                 Let;
 nonterminal                         Module;
 nonterminal ExprName                Name;
 nonterminal ExprName                NameHelper;
-nonterminal List<String>            Names;
+nonterminal List<ExprName>          Names;
 nonterminal Expr                    NegExpr;
 nonterminal Expr                    NumUnopExpr;
 nonterminal                         Open;
@@ -225,8 +225,8 @@ nonterminal Expr                    UnopExpr;
 
 Specification ::= Module Opens Paragraphs ;
 
-Module ::= MODULE:o Name:a                           {: parser.alloyunit.makeModule(o, a.name, new ArrayList<String>()); :};
-Module ::= MODULE:o Name:a LBRACKET Names:b RBRACKET {: parser.alloyunit.makeModule(o, a.name, b);                       :};
+Module ::= MODULE:o Name:a                           {: parser.alloyunit.makeModule(o, a.name, new ArrayList<ExprName>()); :};
+Module ::= MODULE:o Name:a LBRACKET Names:b RBRACKET {: parser.alloyunit.makeModule(o, a.name, b);                         :};
 
 Open ::= OPEN:o Name:a                                        {: parser.alloyunit.makeOpen(o,a.name,null,""    ); :};
 Open ::= OPEN:o Name:a                             AS Name:c  {: parser.alloyunit.makeOpen(o,a.name,null,c.name); :};
@@ -307,13 +307,14 @@ Predicate ::= SigRef:f DOT Name:n                           ExprPara:v   {: pars
 
 Sig ::= SigQuals:a SIG:o Names:b SigIn:c LBRACE Decls:d RBRACE ExprParaOpt:e
  {:
-   for(String bb:b) {
+   for(ExprName bbb:b) {
+     String bb=bbb.name;
      if (c==null)
-       parser.alloyunit.makeSig(o, bb, (a&1)!=0,(a&2)!=0,(a&4)!=0,(a&8)!=0,null,null,d,e);
+       parser.alloyunit.makeSig(bbb.pos, bb, (a&1)!=0,(a&2)!=0,(a&4)!=0,(a&8)!=0,null,null,d,e);
      else if (c.get(0)==null)
-       parser.alloyunit.makeSig(o, bb, (a&1)!=0,(a&2)!=0,(a&4)!=0,(a&8)!=0,null,(ExprName)(c.get(1)),d,e);
+       parser.alloyunit.makeSig(bbb.pos, bb, (a&1)!=0,(a&2)!=0,(a&4)!=0,(a&8)!=0,null,(ExprName)(c.get(1)),d,e);
      else
-       parser.alloyunit.makeSig(o, bb, (a&1)!=0,(a&2)!=0,(a&4)!=0,(a&8)!=0,c,null,d,e);
+       parser.alloyunit.makeSig(bbb.pos, bb, (a&1)!=0,(a&2)!=0,(a&4)!=0,(a&8)!=0,c,null,d,e);
    }
  :};
 
@@ -345,8 +346,8 @@ Name ::= THIS:a SLASH NameHelper:b {: RESULT=new ExprName(a, "this/"+b.name); :}
 NameHelper ::= ID:x                     {: RESULT=x;                                      :};
 NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=new ExprName(a.pos, a.name+"/"+b.name); :};
 
-Names ::= Name:x                   {: RESULT=new ArrayList<String>(); RESULT.add(x.name);  :};
-Names ::= Names:a COMMA Name:b     {: a.add(b.name); RESULT=a;                             :};
+Names ::= Name:x                   {: RESULT=new ArrayList<ExprName>(); RESULT.add(x);  :};
+Names ::= Names:a COMMA Name:b     {: a.add(b); RESULT=a;                               :};
 
 Declp ::= Declp   COMMA PART:k Names   COLON   Expr    {: ExprName.hint(k,"part");                                       :};
 Declp ::= Declp   COMMA DISJ:k Names   COLON   Expr    {: ExprName.hint(k,"disj");                                       :};
