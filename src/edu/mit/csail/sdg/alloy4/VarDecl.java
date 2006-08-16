@@ -10,26 +10,25 @@ import java.util.ArrayList;
  */
 
 public final class VarDecl {
-	
+
 	/** The unmodifiable list of names */
 	public final List<String> names;
-	
+
 	/** The expression that these names are quantified over */
 	public final Expr value;
-	
+
 	/**
 	 * Constructs a new VarDecl object with <b>a</b> as the list of names.
 	 * @param a - the list of names
 	 * @param b - the expression that the names are quantified over
 	 */
-	public VarDecl(List<ExprName> a, Expr b) {
+	public VarDecl(List<String> a, Expr b) {
 		if (a==null || b==null)
 			throw new ErrorInternal(null,null,"NullPointerException");
-		if (a.size()==0)
+		names=Collections.unmodifiableList(new ArrayList<String>(a));
+		if (names.size()==0)
 			throw b.syntaxError("The list of declarations cannot be empty!");
-		List<String> list=new ArrayList<String>(a.size());
-		for(int i=0;i<a.size();i++) {
-			String j=a.get(i).name;
+		for(String j:names) {
 			if (j==null)
 				throw b.internalError("NullPointerException");
 			if (j.length()==0)
@@ -39,18 +38,16 @@ public final class VarDecl {
 			if (j.indexOf('@')>=0)
 				throw b.syntaxError("The name of a variable cannot contain \'@\'");
 			if (j.equals("none") ||
-					j.equals("iden") ||
-					j.equals("univ") ||
-					j.equals("Int"))
+				j.equals("iden") ||
+				j.equals("univ") ||
+				j.equals("Int"))
 				throw b.syntaxError("The name of a variable cannot be \""+j+"\"");
-			list.add(j);
 		}
-		names=Collections.unmodifiableList(list);
 		// See ExprUnary.java for why we have to call makeMult() here.
 		if (b instanceof ExprUnary) b=((ExprUnary)b).makeMult();
 		value=b;
 	}
-	
+
 	/**
 	 * Constructs a new VarDecl object with <b>a</b> as the only name.
 	 * @param a - the only name
@@ -69,24 +66,10 @@ public final class VarDecl {
 		if (a.indexOf('@')>=0)
 			throw b.syntaxError("The name of a variable cannot contain \'@\'");
 		if (a.equals("none") ||
-				a.equals("iden") ||
-				a.equals("univ") ||
-				a.equals("Int"))
+			a.equals("iden") ||
+			a.equals("univ") ||
+			a.equals("Int"))
 			throw b.syntaxError("The name of a variable cannot be \""+a+"\"");
-		// See ExprUnary.java for why we have to call makeMult() here.
-		if (b instanceof ExprUnary) b=((ExprUnary)b).makeMult();
-		value=b;
-	}
-	
-	/**
-	 * Constructs a new VarDecl object with <b>a.names</b> as the list of names.
-	 * @param a - the new VarDecl object will have the same names as <b>a</b>
-	 * @param b - the expression that the names are quantified over
-	 */
-	public VarDecl(VarDecl a,Expr b) {
-		if (a==null || b==null)
-			throw new ErrorInternal(null,null,"NullPointerException");
-		names=a.names;
 		// See ExprUnary.java for why we have to call makeMult() here.
 		if (b instanceof ExprUnary) b=((ExprUnary)b).makeMult();
 		value=b;
@@ -101,7 +84,7 @@ public final class VarDecl {
 		for(int i=list.size()-1; i>=0; i--) c=c+list.get(i).names.size();
 		return c;
 	}
-	
+
 	/**
 	 * Checks whether the name <b>n</b> appears in a list of VarDecl.
 	 * @return true if and only if the name appears in the list.
@@ -112,7 +95,7 @@ public final class VarDecl {
 				return true;
 		return false;
 	}
-	
+
 	/**
 	 * Checks whether the same name appears more than once in a List of VarDecl.
 	 * @return the duplicate name (if duplicates exist),

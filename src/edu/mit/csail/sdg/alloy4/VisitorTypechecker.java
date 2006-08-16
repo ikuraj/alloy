@@ -481,7 +481,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		Type comp=null; // Stores the Union Type for a Set Comprehension expression
 		for(int i=0;i<x.list.size();i++) {
 			VarDecl d=x.list.get(i);
-			VarDecl dd=new VarDecl(d, resolve(d.value));
+			VarDecl dd=new VarDecl(d.names, resolve(d.value));
 			Expr v=dd.value;
 			if (v.type.size()==0) cset(v);
 			if (v.type.hasNoTuple()) throw v.typeError("This expression must not be an empty set!");
@@ -843,7 +843,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 				this.env.put(n, value.type);
 				if (verbose) System.out.printf("Unit [%s], Pred/Fun %s, Param %s: %s%n", u.aliases.get(0), fun.name, n, value.type.toString());
 			}
-			newdecls.add(new VarDecl(d,value));
+			newdecls.add(new VarDecl(d.names, value));
 		}
 		Expr type=fun.type;
 		if (type!=null) {

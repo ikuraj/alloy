@@ -22,11 +22,10 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // This must be a LinkedHashMap because we depend on the iterator returning them in the original order
   public final Map<String,ParaSig> params=new LinkedHashMap<String,ParaSig>();
 
-  public void makeModule(Pos p,String n,List<ExprName> l) {
+  public void makeModule(Pos p,String n,List<String> l) {
 	pos=p;
 	name=n;
-    for(ExprName x:l) {
-      String y=x.name;
+    for(String y:l) {
       if (params.containsKey(y)) throw new ErrorSyntax(p,"You cannot use the same name for more than 1 instantiating parameter!");
       if (sigs.containsKey(y)) throw new ErrorSyntax(p,"Within the same file, a signature and a polymorphic parameter cannot have the same name!");
       if (!aliases.contains("")) params.put(y, null);
