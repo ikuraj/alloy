@@ -305,7 +305,7 @@ Predicate ::= SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   ExprPara:v   {: pars
 Predicate ::= SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET ExprPara:v   {: parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,null,v); :};
 Predicate ::= SigRef:f DOT Name:n                           ExprPara:v   {: parser.alloyunit.makeFun(n.pos,n.name,f   ,new ArrayList<VarDecl>(),null,v); :};
 
-Sig ::= SigQuals:a SIG:o Names:b SigIn:c LBRACE Decls:d RBRACE ExprParaOpt:e
+Sig ::= SigQuals:a SIG Names:b SigIn:c LBRACE Decls:d RBRACE ExprParaOpt:e
  {:
    for(ExprName bbb:b) {
      String bb=bbb.name;
@@ -349,20 +349,20 @@ NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=new ExprName(a.pos, a.name+"/"
 Names ::= Name:x                   {: RESULT=new ArrayList<ExprName>(); RESULT.add(x);  :};
 Names ::= Names:a COMMA Name:b     {: a.add(b); RESULT=a;                               :};
 
-Declp ::= Declp   COMMA PART:k Names   COLON   Expr    {: ExprName.hint(k,"part");                                       :};
-Declp ::= Declp   COMMA DISJ:k Names   COLON   Expr    {: ExprName.hint(k,"disj");                                       :};
-Declp ::= Declp   COMMA EXH:k  Names   COLON   Expr    {: ExprName.hint(k,"exh");                                        :};
-Declp ::= Declp:x COMMA        Names:a COLON:o Expr:b  {: RESULT=x; RESULT.add(new VarDecl(a,b));                        :};
-Declp ::=               PART:k Names   COLON   Expr    {: ExprName.hint(k,"part");                                       :};
-Declp ::=               DISJ:k Names   COLON   Expr    {: ExprName.hint(k,"disj");                                       :};
-Declp ::=               EXH:k  Names   COLON   Expr    {: ExprName.hint(k,"exh");                                        :};
-Declp ::=                      Names:a COLON:o Expr:b  {: RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(a,b)); :};
+Declp ::= Declp   COMMA PART:k Names   COLON Expr    {: ExprName.hint(k,"part");                                       :};
+Declp ::= Declp   COMMA DISJ:k Names   COLON Expr    {: ExprName.hint(k,"disj");                                       :};
+Declp ::= Declp   COMMA EXH:k  Names   COLON Expr    {: ExprName.hint(k,"exh");                                        :};
+Declp ::= Declp:x COMMA        Names:a COLON Expr:b  {: RESULT=x; RESULT.add(new VarDecl(a,b));                        :};
+Declp ::=               PART:k Names   COLON Expr    {: ExprName.hint(k,"part");                                       :};
+Declp ::=               DISJ:k Names   COLON Expr    {: ExprName.hint(k,"disj");                                       :};
+Declp ::=               EXH:k  Names   COLON Expr    {: ExprName.hint(k,"exh");                                        :};
+Declp ::=                      Names:a COLON Expr:b  {: RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(a,b)); :};
 
 Decls ::=          {: RESULT=new ArrayList<VarDecl>(); :};
 Decls ::= Declp:x  {: RESULT=x;                        :};
 
-Let ::= Name:a EQUALS:o Expr:b ExprParaOrBar:x  {: RESULT=new ExprLet(a.pos,a.name,b,x); :};
-Let ::= Name:a EQUALS:o Expr:b COMMA Let:x      {: RESULT=new ExprLet(a.pos,a.name,b,x); :};
+Let ::= Name:a EQUALS Expr:b ExprParaOrBar:x  {: RESULT=new ExprLet(a.pos,a.name,b,x); :};
+Let ::= Name:a EQUALS Expr:b COMMA Let:x      {: RESULT=new ExprLet(a.pos,a.name,b,x); :};
 
 ExprParaOpt ::=                                {: RESULT=null;                   :};
 ExprParaOpt ::= ExprPara:x                     {: RESULT=x;                      :};
@@ -381,7 +381,7 @@ Exprp ::= Exprp:a COMMA Expr:b  {: a.add(b); RESULT=a;                          
 //=============================================================================
 
 Expr ::= OrExpr:x                         {: RESULT=x;                                  :};
-Expr ::= LET:o   Let:x                    {: RESULT=x;                                  :};
+Expr ::= LET     Let:x                    {: RESULT=x;                                  :};
 Expr ::= ALL2:o  Declp:a ExprParaOrBar:b  {: RESULT=ExprQuant.Op.ALL .make(o,a,b,null); :};
 Expr ::= NO2:o   Declp:a ExprParaOrBar:b  {: RESULT=ExprQuant.Op.NO  .make(o,a,b,null); :};
 Expr ::= SOME2:o Declp:a ExprParaOrBar:b  {: RESULT=ExprQuant.Op.SOME.make(o,a,b,null); :};
@@ -468,9 +468,9 @@ DomainExpr ::= DomainExpr:a DOMAIN:o RangeExpr:b          {: RESULT=ExprBinary.O
 RangeExpr ::=                     BracketExpr:b           {: RESULT=b;                                   :};
 RangeExpr ::= RangeExpr:a RANGE:o BracketExpr:b           {: RESULT=ExprBinary.Op.RANGE.make(o,a,b);     :};
 
-BracketExpr ::= DotExpr:b                                 {: RESULT=b;                                                                                  :};
-BracketExpr ::= BracketExpr:a LBRACKET:o Exprs:b RBRACKET {: Expr aa=a;                      for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; :};
-BracketExpr ::= DISJ:a        LBRACKET:o Exprs:b RBRACKET {: Expr aa=new ExprName(a,"disj"); for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; :};
+BracketExpr ::= DotExpr:b                               {: RESULT=b;                                                                                  :};
+BracketExpr ::= BracketExpr:a LBRACKET Exprs:b RBRACKET {: Expr aa=a;                      for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; :};
+BracketExpr ::= DISJ:a        LBRACKET Exprs:b RBRACKET {: Expr aa=new ExprName(a,"disj"); for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; :};
 
 DotExpr ::=                     UnopExpr:b      {: RESULT=b;                                        :};
 DotExpr ::= BracketExpr:a DOT:o UnopExpr:b      {: RESULT=new ExprJoin(o,a,b                     ); :};

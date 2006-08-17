@@ -61,7 +61,7 @@ public final class ExprBinary extends Expr {
 	 * @param right - the right-hand-side expression
 	 * @param type - the type (null if this expression has not been typechecked)
 	 *
-	 * @throws ErrorInternal if left.mult==1 || right.mult==1
+	 * @throws ErrorInternal if op==Op.ARROW && (left.mult==1 || right.mult==1)
 	 * @throws ErrorInternal if op!=Op.ARROW && left.mult!=0
 	 * @throws ErrorInternal if op!=Op.ARROW && op!=Op.IN && right.mult!=0
 	 */
@@ -73,15 +73,17 @@ public final class ExprBinary extends Expr {
 		this.op=op;
 		this.left=nonnull(left);
 		this.right=nonnull(right);
-		if (left.mult==1)
-			throw left.syntaxError("Set-multiplicity expression not allowed here");
-		if (right.mult==1)
-			throw right.syntaxError("Set-multiplicity expression not allowed here");
-		if (op.isArrow()) return;
-		if (left.mult!=0)
-			throw left.syntaxError("A multiplicity expression is not allowed here");
-		if (op!=Op.IN && right.mult!=0)
-			throw right.syntaxError("A multiplicity expression is not allowed here");
+		if (op.isArrow()) {
+			if (left.mult==1)
+				throw left.syntaxError("Set-multiplicity expression not allowed here");
+			if (right.mult==1)
+				throw right.syntaxError("Set-multiplicity expression not allowed here");
+		} else {
+			if (left.mult!=0)
+				throw left.syntaxError("A multiplicity expression is not allowed here");
+			if (op!=Op.IN && right.mult!=0)
+				throw right.syntaxError("A multiplicity expression is not allowed here");
+		}
 	}
 	
 	/**
