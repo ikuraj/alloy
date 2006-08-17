@@ -206,8 +206,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     int ii=0;
     int ni=(-1); if (n.charAt(0)=='@') n=n.substring(1);
     int mi=(-1); if (me.charAt(0)=='@') me=me.substring(1);
-    for(FieldDecl d:s.decls) for(int i=0; i<d.size(); i++) {
-      String str=d.get(i);
+    for(VarDecl d:s.decls) for(String str:d.names) {
       if (str.equals(n)) ni=ii;
       if (str.equals(me)) mi=ii;
       ii++;

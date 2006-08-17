@@ -571,9 +571,8 @@ Code generation
       }
       // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
       int fi=0;
-      for(FieldDecl fd:s.decls) {
-        for(int fj=0; fj<fd.size(); fj++) {
-           String fn=fd.get(fj);
+      for(VarDecl fd:s.decls) {
+        for(String fn:fd.names) {
            ParaSig.Field f=s.fields.get(fi); fi++;
            int a=fd.value.type.arity()+1;
            rel(f.full, Relation.nary(s.fullname+"."+fn, a)); // fulltype
@@ -759,9 +758,8 @@ Code generation
       }
       // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
       int fi=0;
-      for(FieldDecl fd:s.decls) {
-        for(int fj=0; fj<fd.size(); fj++) {
-          String fn=fd.get(fj);
+      for(VarDecl fd:s.decls) {
+        for(String fn:fd.names) {
           ParaSig.Field f=s.fields.get(fi); fi++;
           TupleSet ts=comp(s.type.product_of_anyEmptyness(fd.value.type), factory); // fulltype
           bounds.bound((Relation)(rel(f.full)),ts);

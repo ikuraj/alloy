@@ -31,7 +31,7 @@ public final class ParaSig extends Para {
   public List<String> aliases() { return Collections.unmodifiableList(aliases); }
 
   // The list of field declarations (in 2 data structures)
-  public List<FieldDecl> decls;
+  public List<VarDecl> decls;
   // The list of field objects. fields.size() must equal FieldDecl.count(decls).
   public List<Field> fields;
   // If non-null, it is an "appended facts" paragraph
@@ -83,16 +83,15 @@ public final class ParaSig extends Para {
     } else ext=null;
 
     fields=new ArrayList<Field>();
-    decls=new ArrayList<FieldDecl>();
-    for(VarDecl dd:d) {
+    decls=new ArrayList<VarDecl>(d);
+    for(VarDecl dd:decls) {
       List<String> names=new ArrayList<String>();
       for(String dn:dd.names) {
          fields.add(new Field(dd.value.pos, (path.length()==0?"/"+name:"/"+path+"/"+name), dn, null, null));
          names.add(dn);
       }
-      decls.add(new FieldDecl(names, dd.value));
     }
-    String dup=FieldDecl.hasDuplicateName(decls);
+    String dup=VarDecl.hasDuplicateName(decls);
     if (dup!=null) throw this.syntaxError("This signature cannot have two fields with the same name: \""+dup+"\"");
     appendedFacts=f;
     sup=null;
@@ -119,7 +118,7 @@ public final class ParaSig extends Para {
      fullname="/"+al+"/"+n;
      aliases.add(al);
      abs=false; lone=false; one=false; some=false; in=null; ext=null;
-     decls=new ArrayList<FieldDecl>(0);
+     decls=new ArrayList<VarDecl>(0);
      appendedFacts=null;
      type=Type.make(this);
      fields=new ArrayList<Field>(0);
@@ -129,16 +128,6 @@ public final class ParaSig extends Para {
 
   public boolean isEmpty() { return this==NONE; }
   public boolean isNonEmpty() { return this!=NONE; }
-
-  public String getname(int i) {
-    for(FieldDecl d:decls) {
-      int n=d.size();
-      if (i>=n) { i=i-n; continue; }
-      return d.get(i);
-    }
-    throw internalError("The sig "+fullname+" does not have "+i+"-th field");
-  }
-
   
 public final class Field {
   public final Pos pos;

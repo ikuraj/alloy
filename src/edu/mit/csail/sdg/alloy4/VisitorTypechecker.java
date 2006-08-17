@@ -801,13 +801,12 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		// * For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
 		//   then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
 		int fi=0;
-		List<FieldDecl> newdecl=new ArrayList<FieldDecl>();
-		List<FieldDecl> olddecl=x.decls;
+		List<VarDecl> newdecl=new ArrayList<VarDecl>();
+		List<VarDecl> olddecl=x.decls;
 		x.decls=newdecl;
-		for(FieldDecl d:olddecl) {
+		for(VarDecl d:olddecl) {
 			Expr value=d.value;
-			for(int ni=0; ni<d.size(); ni++) {
-				//String n=d.get(ni);
+			for(int ni=0; ni<d.names.size(); ni++) {
 				ParaSig.Field f=x.fields.get(fi);
 				if (ni==0) {
 					this.root=f; this.rootunit=u; value=this.resolve(value);
@@ -821,7 +820,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 				if (verbose) System.out.printf("Unit [%s], Sig %s, Field %s:",u.aliases.get(0),x.name,f.name);
 				if (verbose) System.out.printf(" %s%n",f.full.fulltype.toString());
 			}
-			newdecl.add(new FieldDecl(d, value, x.type));
+			newdecl.add(new VarDecl(d, value));
 		}
 		return x; // zzz SHOULD ACTUALLY MAKE A NEW SIG
 	}

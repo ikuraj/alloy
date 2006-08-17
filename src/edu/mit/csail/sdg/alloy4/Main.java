@@ -311,8 +311,8 @@ Now we perform the final desugarings...
       }
     };
     for(ParaSig s:sigs) {
-      List<FieldDecl> newdecl=new ArrayList<FieldDecl>();
-      for(FieldDecl d:s.decls) newdecl.add(new FieldDecl(d, d.value.accept(desugar1), s.type));
+      List<VarDecl> newdecl=new ArrayList<VarDecl>();
+      for(VarDecl d:s.decls) newdecl.add(new VarDecl(d, d.value.accept(desugar1)));
       s.decls=newdecl;
       if (s.appendedFacts!=null) s.appendedFacts=s.appendedFacts.accept(desugar1);
     }
@@ -341,8 +341,8 @@ Now we perform the final desugarings...
       }
       for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
         ParaSig x=e.getValue();
-        List<FieldDecl> newdecls=new ArrayList<FieldDecl>();
-        for(FieldDecl d:x.decls) newdecls.add(new FieldDecl(d, addOne(d.value.accept(desugar2)), x.type));
+        List<VarDecl> newdecls=new ArrayList<VarDecl>();
+        for(VarDecl d:x.decls) newdecls.add(new VarDecl(d, addOne(d.value.accept(desugar2))));
         x.decls=newdecls;
         if (x.appendedFacts!=null) x.appendedFacts=x.appendedFacts.accept(desugar2);
       }
@@ -367,9 +367,9 @@ Now we perform the final desugarings...
       // zzz ALLOY3 compatiblity hack above
       Expr temp=s.appendedFacts; s.appendedFacts=null;
       int f=0;
-      for(FieldDecl d:s.decls) {
+      for(VarDecl d:s.decls) {
         boolean noThis=!hasThis.query(d.value);
-        for(int n=0; n<d.size(); n++) {
+        for(int n=0; n<d.names.size(); n++) {
           ParaSig.Field x00=s.fields.get(f); f++;
           Expr x22=new ExprName(d.value.pos, x00.full.fullname, x00.full, x00.full.fulltype);
           Expr x5=new ExprName(s.pos, s.fullname, s, s.type);

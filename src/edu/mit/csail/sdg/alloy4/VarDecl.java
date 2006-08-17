@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Immutable; represents a variable/parameter declaration such as "a,b,c: X"
+ * Immutable; represents a field/variable/parameter declaration such as "a,b,c: X"
  * @author Felix Chang
  */
 
