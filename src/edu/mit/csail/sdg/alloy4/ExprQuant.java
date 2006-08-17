@@ -74,8 +74,8 @@ public final class ExprQuant extends Expr {
      * 
      * @throws ErrorInternal if p==null, l==null, l.size()==0, s==null, or s.mult!=0
      * @throws ErrorInternal if one of the VarDecl is null
-     * @throws ErrorInternal if (o==Op.NO || o==Op.ONE) since they will be desugared by ExprQuant.Op.make()
-     * @throws ErrorInternal if (o!=Op.COMPREHENSION && l.size()!=1) since they will be desugared by ExprQuant.Op.make()
+     * @throws ErrorInternal if (o==Op.NO || o==Op.ONE) since ExprQuant.Op.make() desugars them
+     * @throws ErrorInternal if (o!=Op.COMPREHENSION && l.size()!=1) since ExprQuant.Op.make() desguars them
      */
     private ExprQuant(Pos p, Op o, List<VarDecl> l, Expr s, Type t) {
         super(p,t,0);
@@ -120,8 +120,6 @@ public final class ExprQuant extends Expr {
          *
          * @throws ErrorInternal if p==null, l==null, l.size()==0, s==null, or s.mult!=0
          * @throws ErrorInternal if one of the VarDecl is null
-         * @throws ErrorInternal if (o==Op.NO || o==Op.ONE) since they will be desugared by ExprQuant.Op.make()
-         * @throws ErrorInternal if (o!=Op.COMPREHENSION && l.size()!=1) since they will be desugared by ExprQuant.Op.make()
          */
         public final Expr make(Pos p, List<VarDecl> l, Expr s, Type t) {
             // Desugarings of ALL/NO/LONE/ONE/SOME/SUM:

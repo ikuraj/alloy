@@ -73,7 +73,7 @@ public abstract class VisitDesugar {
       list.add(newvalue);
     }
     if (!chg) return x;
-    return new ExprSequence(x.pos, list, x.type);
+    return new ExprSequence(x.pos, list);
   }
 
   public Expr accept(ExprUnary x) {

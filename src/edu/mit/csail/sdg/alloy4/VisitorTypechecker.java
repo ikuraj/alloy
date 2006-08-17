@@ -55,7 +55,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 	private void cint(Expr x) { if (!x.type.isInt) throw x.typeError("This must be an integer expression! Instead, it has the following possible type(s): "+x.type); }
 	
 	private Type cset(Expr x) { if (x.type.size()==0) throw x.typeError("This must be a set or relation! Instead, it has the following possible type(s): "+x.type); return x.type; }
-	
+
+	private void cform(Type p,Expr x) { if (!p.isBool) throw x.typeError("This must be a formula expression! Instead, it has the following possible type(s): "+p); }
+
 	private void cset(Type p,Expr x) { if (p.size()==0) throw x.typeError("This must be a set or relation! Instead, it has the following possible type(s): "+p); }
 	
 	private boolean isbad(Type x) { return !x.isBool && !x.isInt && x.size()==0; }
@@ -529,20 +531,20 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			cform(newvalue);
 			list.add(newvalue);
 		}
-		return new ExprSequence(x.pos, list, Type.FORMULA);
+		return new ExprSequence(x.pos, list);
 	}
 	
 //	################################################################################################
 	
-	public Expr accept(ExprSequence x, Type p) {
+	public Expr accept(ExprSequence x, Type t) {
 		List<Expr> list=new ArrayList<Expr>();
-		resolved(p,x);
+		cform(t,x);
 		for(int i=0; i<x.list.size(); i++) {
 			Expr sub=x.list.get(i);
 			if (sub==null) break;
 			list.add(sub.accept(this, sub.type));
 		}
-		return new ExprSequence(x.pos, list, p);
+		return new ExprSequence(x.pos, list);
 	}
 	
 //	################################################################################################

@@ -39,23 +39,19 @@ public final class ExprSequence extends Expr {
     public final List<Expr> list;
 
     /**
-     * Constructs a typechecked ExprSequence object.
+     * Constructs an ExprSequence object.
+     * 
      * @param p - the original position in the file.
      * @param s - the list of formulas (this can be an empty list).
-     * @param t - the type.
+     * 
+     * @throws ErrorInternal if p==null, s==null, or one of the formula is null
+     * @throws ErrorSyntax if one of the formula is a multiplicity constraint
      */
-    public ExprSequence(Pos p, List<Expr> s, Type t) {
-        super(p,t,0);
+    public ExprSequence(Pos p, List<Expr> s) {
+        super(p, Type.FORMULA, 0);
         list=Collections.unmodifiableList(new ArrayList<Expr>(nonnull(s)));
         for(int i=list.size()-1; i>=0; i--)
             if (nonnull(list.get(i)).mult>0)
                 throw list.get(i).syntaxError("Multiplicity expression not allowed here");
     }
-
-    /**
-     * Constructs an untypechecked ExprSequence object.
-     * @param p - the original position in the file.
-     * @param s - the list of formulas (this can be an empty list).
-     */
-    public ExprSequence(Pos p, List<Expr> s) { this(p,s,null); }
 }
