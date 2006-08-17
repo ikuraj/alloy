@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 public final class ParaOpen extends Para {
 
-	/** The unmodifiable list of instantiating arguments */
+	/** The unmodifiable list of instantiating arguments. */
 	public final List<String> list;
 
 	/** The filename for the imported module (always a non-empty string) */
