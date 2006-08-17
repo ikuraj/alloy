@@ -109,9 +109,9 @@ We throw an exception if there is a cycle in the IMPORT graph
     for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
        // Here, we recursively open the included files (to fill out the "Unit.opens" field)
        ParaOpen y=opens.getValue();
-       Unit uu=readall_helper(y.name, prefix.length()==0 ? y.as : prefix+"/"+y.as, units, thispath);
+       Unit uu=readall_helper(y.filename, prefix.length()==0 ? y.name : prefix+"/"+y.name, units, thispath);
        if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
-       u.opens.put(y.as, uu);
+       u.opens.put(y.name, uu);
     }
     thispath.remove(thispath.size()-1); // Remove this file from the CYCLE DETECTION LIST.
     return u;

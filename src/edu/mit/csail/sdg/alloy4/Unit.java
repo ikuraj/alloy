@@ -101,9 +101,9 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   public final Map<String,Unit> opens=new LinkedHashMap<String,Unit>();
   public final Map<String,ParaOpen> opencmds=new LinkedHashMap<String,ParaOpen>();
   public void makeOpen(Pos p, String n, List<ExprName> l, String a) {
-    ParaOpen x=new ParaOpen(p,aliases.get(0),n,l,a);
-    if (opencmds.containsKey(x.as)) throw x.syntaxError("You cannot import more than 1 module using the same alias!");
-    opencmds.put(x.as, x);
+    ParaOpen x=new ParaOpen(p,aliases.get(0),a,l,n);
+    if (opencmds.containsKey(x.name)) throw x.syntaxError("You cannot import more than 1 module using the same alias!");
+    opencmds.put(x.name, x);
   }
 
   // This stores the list of RUN/CHECK commands, in the order they appear in the file.

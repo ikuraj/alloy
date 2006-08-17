@@ -15,16 +15,37 @@ public final class ParaOpen extends Para {
 	public final List<String> list;
 	
 	/** The alias for the imported module (always a non-empty string) */
-	public final String as;
-	
+	public final String filename;
+
+	private static String computeAlias(Pos p, String f, String a, boolean parametric) {
+		if (a.length()>0) {
+			if (a.indexOf('@')>=0) throw new ErrorSyntax(p, "Alias \""+a+"\" must not contain \'@\'");
+			if (a.indexOf('/')>=0) throw new ErrorSyntax(p, "Alias \""+a+"\" must not contain \'/\'");
+			if (a.equals("none") ||
+				a.equals("iden") ||
+				a.equals("univ") ||
+				a.equals("Int")) throw new ErrorSyntax(p, "Alias cannot be \""+a+"\"");
+			return a;
+		}
+		if (parametric) throw new ErrorSyntax(p, "This open statement has parametric arguments, so you must supply the ALIAS via the AS command.");
+		if (f.indexOf('/')>=0) throw new ErrorSyntax(p, "This open statement has \'/\' in the pathname, so you must supply the ALIAS via the AS command.");
+		if (f.indexOf('@')>=0) throw new ErrorSyntax(p, "The filename \""+f+"\" must not contain \'@\'");
+		if (f.length()==0 ||
+			f.equals("none") ||
+			f.equals("iden") ||
+			f.equals("univ") ||
+			f.equals("Int")) throw new ErrorSyntax(p, "The filename cannot be \""+f+"\"");
+		return f;
+	}
+
 	/**
 	 * Constructs a new ParaOpen object.
 	 * 
 	 * @param pos - the original position in the file (null if unknown)
 	 * @param path - a valid path to the Unit containing the paragraph
-	 * @param n - the name of the module being imported
-	 * @param l - the list of instantiating arguments
 	 * @param a - the alias for the imported module
+	 * @param l - the list of instantiating arguments
+	 * @param n - the name of the module being imported
 	 * 
 	 * @throws ErrorSyntax - if n contains '@'
 	 * @throws ErrorSyntax - if n is equal to "", "none", "iden", "univ", or "Int"
@@ -32,28 +53,11 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax - if a is equal to "" and yet (l.size()>0 or n.contains('/')) 
 	 * @throws ErrorInternal - if path==null, n==null, or a==null
 	 */
-	public ParaOpen(Pos pos, String path, String n, List<ExprName> l, String a) {
-		super(pos,path,n);
+	public ParaOpen(Pos pos, String path, String a, List<ExprName> l, String n) {
+		super(pos, path, computeAlias(pos,n,a,l!=null && l.size()>0));
 		nonnull(n);
-		if (n.length()==0) throw this.syntaxError("The \"open\" statement must give the name of the module to include.");
-		if (n.indexOf('@')>=0) throw this.syntaxError("Name \""+n+"\" must not contain \'@\' in it.");
-		if (n.equals("none") ||
-			n.equals("iden") ||
-			n.equals("univ") ||
-			n.equals("Int")) throw this.syntaxError("Name cannot be \""+n+"\"");
 		nonnull(a);
-		if (a.length()==0) {
-			if (l!=null && l.size()!=0) throw this.syntaxError("This open statement has parametric arguments, so you must supply the ALIAS via the AS command.");
-			if (n.indexOf('/')>=0) throw this.syntaxError("This open statement has \'/\' in the pathname, so you must supply the ALIAS via the AS command.");
-			as=n;
-		} else as=a;
-		nonnull(as);
-		if (as.indexOf('/')>=0) throw this.syntaxError("Name \""+as+"\" must not contain \'/\' in it.");
-		if (as.indexOf('@')>=0) throw this.syntaxError("Name \""+as+"\" must not contain \'@\' in it.");
-		if (as.equals("none") ||
-			as.equals("iden") ||
-			as.equals("univ") ||
-			as.equals("Int")) throw this.syntaxError("Name cannot be \""+as+"\"");
+		filename=n;
 		List<String> newlist=new ArrayList<String>(l==null ? 0 : l.size());
 		if (l!=null) for(int i=0; i<l.size(); i++) {
 			String x=nonnull(l.get(i)).name;
