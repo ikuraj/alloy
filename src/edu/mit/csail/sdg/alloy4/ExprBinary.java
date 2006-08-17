@@ -61,11 +61,12 @@ public final class ExprBinary extends Expr {
 	 * @param right - the right-hand-side expression
 	 * @param type - the type (null if this expression has not been typechecked)
 	 *
-	 * @throws ErrorInternal if op==Op.ARROW && (left.mult==1 || right.mult==1)
-	 * @throws ErrorInternal if op!=Op.ARROW && left.mult!=0
-	 * @throws ErrorInternal if op!=Op.ARROW && op!=Op.IN && right.mult!=0
+	 * @throws ErrorInternal if left==null || right==null
+	 * @throws ErrorInternal if op is one of the 16 arrow operators && (left.mult==1 || right.mult==1)
+	 * @throws ErrorInternal if op isn't one of the 16 arrow operators && left.mult!=0
+	 * @throws ErrorInternal if op isn't one of the 16 arrow operators && op!=Op.IN && right.mult!=0
 	 */
-	private ExprBinary(Pos pos,Op op,Expr left,Expr right,Type type) {
+	private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type) {
 		super(pos, type, isMult(op,left,right)?2:0);
 		// See ExprUnary.java for why we have to call makeMult() here.
 		if (op==Op.IN && (right instanceof ExprUnary))
@@ -87,17 +88,15 @@ public final class ExprBinary extends Expr {
 	}
 	
 	/**
-	 * Generate a new type error exception with <b>msg</b> as the message,
-	 * and include the left-hand-type <b>lefttype</b>
-	 * and right-hand-type <b>righttype</b> in the message.
+	 * Generate a new type error exception with "msg" as the message,
+	 * and include the left-hand-type "lefttype"
+	 * and right-hand-type "righttype" in the message.
 	 */
 	public final ErrorType typeError(String msg,Type leftType,Type rightType) {
 		return typeError(msg+" LeftType="+leftType+" RightType="+rightType);
 	}
 	
-	/**
-	 * This class contains all possible binary operators.
-	 */
+	/** This class contains all possible binary operators. */
 	public enum Op {
 		/** -&gt;           */ ARROW("->"),
 		/** -&gt;some       */ ANY_ARROW_SOME("->some"),
@@ -148,7 +147,7 @@ public final class ExprBinary extends Expr {
 		
 		/**
 		 * Constructs an untypechecked ExprBinary expression
-		 * with <b>this</b> as the operator.
+		 * with "this" as the operator.
 		 * @param pos - the original position in the file
 		 * @param left - the left-hand-side expression
 		 * @param right - the right-hand-side expression
@@ -159,7 +158,7 @@ public final class ExprBinary extends Expr {
 		
 		/**
 		 * Constructs a typechecked ExprBinary expression
-		 * with <b>this</b> as the operator, and <b>type</b>
+		 * with "this" as the operator, and "type"
 		 * as the type.
 		 * @param pos - the original position in the file
 		 * @param left - the left-hand-side expression

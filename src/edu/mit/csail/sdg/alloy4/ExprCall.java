@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Immutable; represents a procedure call.
+ * Immutable; represents a function/predicate call.
  * @author Felix Chang
  */
 
@@ -51,11 +51,15 @@ public final class ExprCall extends Expr {
 
     /**
      * Constructs an ExprCall expression.
+     * 
      * @param pos - the original position in the file
      * @param name - the name of the procedure
      * @param fun - the procedure (null if this expression has not been typechecked)
      * @param args - the list of arguments
      * @param type - the type (null if this expression has not been typechecked)
+     * 
+     * @throws ErrorInternal if name==null || args==null || at least one argument is null
+     * @throws ErrorSyntax if at least one of the argument is a multiplicity constraint
      */
     public ExprCall(Pos pos, String name, ParaFun fun, List<Expr> args, Type type) {
         super(pos,type,0);
