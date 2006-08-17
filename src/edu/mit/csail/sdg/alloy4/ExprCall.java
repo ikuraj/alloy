@@ -58,7 +58,7 @@ public final class ExprCall extends Expr {
      * @param args - the list of arguments
      * @param type - the type (null if this expression has not been typechecked)
      * 
-     * @throws ErrorInternal if name==null || args==null || at least one argument is null
+     * @throws ErrorInternal if pos==null, name==null, args==null, or at least one argument is null
      * @throws ErrorSyntax if at least one of the argument is a multiplicity constraint
      */
     public ExprCall(Pos pos, String name, ParaFun fun, List<Expr> args, Type type) {
@@ -68,7 +68,6 @@ public final class ExprCall extends Expr {
         this.args=Collections.unmodifiableList(new ArrayList<Expr>(nonnull(args)));
         for(int i=args.size()-1; i>=0; i--)
             if (nonnull(args.get(i)).mult>0)
-                throw args.get(i).syntaxError(
-                "Multiplicity expression not allowed here");
+                throw args.get(i).syntaxError("Multiplicity expression not allowed here");
     }
 }

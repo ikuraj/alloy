@@ -31,34 +31,33 @@ public final class ExprName extends Expr {
         return visitor.accept(this,type);
     }
 
-    /** The name of the procedure being called. */
+    /** The name of the object that this name refers to. */
     public final String name;
     
     /**
      *  The object that this name refers to (null if this node hasn't been typechecked).
      *  
-     *  Note: After typechecking, there are the following possibilities:
-     *  (1) Type (which means the name is a quantification/let/functioncall parameter)
-     *  (2) ParaSig
-     *  (3) ParaFun
-     *  (4) Field
-     *  (5) Full
+     *  <p/> Note: After typechecking, this field can have the following possibilities:
+     *  <br/> (1) null (meaning it's a quantification/let/function_call_parameter or it's univ/iden/none/Int)
+     *  <br/> (2) ParaSig
+     *  <br/> (3) ParaSig.Field
+     *  <br/> (4) ParaSig.Field.Full
+     *  <br/> (5) parameter-less ParaFun
      */
     public final Object object;
 
     /**
-     * Constructs an untypechecked ExprName expression.
-     * @param pos - the original position in the file
-     * @param name - the identifier
-     */
-    public ExprName(Pos pos, String name) { this(pos, name, null, null); }
-
-    /**
      * Constructs a typechecked ExprName expression.
+     * 
      * @param pos - the original position in the file
      * @param name - the identifier
      * @param object - the object being referred to
      * @param type - the type
+     * 
+     * @throws ErrorInternal if pos==null or name==null
+     * @throws ErrorInternal if name is equal to "" or "@"
+     * @throws ErrorInternal if name.lastIndexOf('@')>0
+     * @throws ErrorInternal if object is not one of {null, ParaSig, ParaSig.Field, ParaSig.Field.Full, ParaFun}
      */
     public ExprName(Pos pos, String name, Object object, Type type) {
         super(pos, type, 0);
@@ -69,19 +68,38 @@ public final class ExprName extends Expr {
         if (name.length()==1 && name.charAt(0)=='@')
             throw syntaxError("The name of a variable must not be \"@\"");
         if (name.lastIndexOf('@')>0)
-            throw syntaxError("If a variable name contains @,"
-            +" it must be the first character!");
+            throw syntaxError("If a variable name contains @, it must be the first character!");
+        if (object!=null
+           	&& !(object instanceof ParaSig)
+        	&& !(object instanceof ParaSig.Field)
+        	&& !(object instanceof ParaSig.Field.Full)
+        	&& !(object instanceof ParaFun))
+        	throw internalError("ExprName object must be Sig, Sig.Field, Sig.Field.Full, Fun, or null!");
     }
 
     /**
-     * Throw a syntax error exception indicating the name "n" cannot be found.
-     * (In particular, if the name is an old Alloy3 keyword, then
+     * Constructs an untypechecked ExprName expression.
+     * 
+     * @param pos - the original position in the file
+     * @param name - the identifier
+     * 
+     * @throws ErrorInternal if pos==null or name==null
+     * @throws ErrorInternal if name is equal to "" or "@"
+     * @throws ErrorInternal if name.lastIndexOf('@')>0
+     * @throws ErrorInternal if object is not one of {null, ParaSig, ParaSig.Field, ParaSig.Field.Full, ParaFun}
+     */
+    public ExprName(Pos pos, String name) { this(pos, name, null, null); }
+
+    /**
+     * Convenience method that throws a syntax error exception saying the name "n" can't be found.
+     * (In particular, if n is an old Alloy3 keyword, then
      * the message will tell the user to consult the documentation
      * on how to migrate old models to the new syntax.)
-     * @param p - the original position in the file
+     * 
+     * @param p - the original position in the file that triggered the error
      * @param n - the identifier
      */
-    public static void hint(Pos p, String n) {
+    public static void hint (Pos p, String n) {
         String msg="The name \""+n+"\" cannot be found.";
         if ("disj".equals(n) || "disjoint".equals(n) ||
             "exh".equals(n) || "exhaustive".equals(n) ||

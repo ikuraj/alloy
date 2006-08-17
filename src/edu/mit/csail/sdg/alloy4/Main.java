@@ -302,7 +302,7 @@ Now we perform the final desugarings...
         if (re instanceof ParaSig.Field) {
            ParaSig.Field f = (ParaSig.Field)re;
            ParaSig rts=f.parent();
-           ExprName l=new ExprName(x.pos, "this", rts.type, rts.type);
+           ExprName l=new ExprName(x.pos, "this", null, rts.type);
            ExprName r=new ExprName(x.pos, f.full.fullname, f.full, f.full.fulltype);
            ExprJoin y=new ExprJoin(x.pos,l,r,x.type);
            return y;
@@ -379,7 +379,7 @@ Now we perform the final desugarings...
              { u.makeFact(d.value.pos, "", x22.in(x5.product(d.value.getUnarySub()))); continue; }
           for(int i=x22.type.arity(); i>1; i--) x5=x5.product(Expr.univ(x5.pos));
           u.makeFact(d.value.pos, "", x22.in(x5));
-          ExprName x11=new ExprName(d.value.pos, "this", s.type, s.type);
+          ExprName x11=new ExprName(d.value.pos, "this", null, s.type);
           Expr x33=x11.join(x22);
           Expr x44=x33.in(d.value);
           if (temp==null) temp=x44; else temp=temp.and(x44);

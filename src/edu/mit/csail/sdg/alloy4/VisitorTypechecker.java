@@ -381,7 +381,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		List<Type> types=new ArrayList<Type>();
 		if (x.name.equals("iden")) {
 			Type ans=Type.make(ParaSig.UNIV, ParaSig.UNIV);
-			return new ExprName(x.pos, x.name, ans, ans);
+			return new ExprName(x.pos, x.name, null, ans);
 		}
 		if (x.name.equals("none")) return new ExprName(x.pos, x.name, ParaSig.NONE, ParaSig.NONE.type);
 		if (x.name.equals("univ")) return new ExprName(x.pos, x.name, ParaSig.UNIV, ParaSig.UNIV.type);
@@ -460,7 +460,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			return new ExprName(x.pos, ((ParaSig.Field.Full)match).fullname, match, t);
 		if (match instanceof ParaFun)
 			return new ExprName(x.pos, x.name, match, t);
-		return new ExprName(x.pos, x.name, t, t);
+		return new ExprName(x.pos, x.name, null, t);
 	}
 	
 //	################################################################################################
@@ -766,7 +766,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			ParaSig.Field.Full s=(ParaSig.Field.Full)match;
 			ans=new ExprName(x.pos, s.fullname, match, s.fulltype);
 		} else if (match instanceof Type) {
-			ans=new ExprName(x.pos, x.name, match, (Type)match);
+			ans=new ExprName(x.pos, x.name, null, (Type)match);
 		} else throw x.internalError("ExprCall resolved to an unknown object type: "+match);
 		for(;r<x.args.size();r++) {
 			Expr ans3=x.args.get(r);

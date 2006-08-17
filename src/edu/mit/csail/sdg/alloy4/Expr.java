@@ -147,8 +147,8 @@ public abstract class Expr {
 	 * @throws ErrorInternal if this node and y are not both fully typechecked
 	 */
 	public final Expr in(Expr y) {
-		if (this.type==null || y.type==null)
-			throw internalError("The node is not yet typechecked");
+		if (this.type==null) throw this.internalError("The node is not yet typechecked");
+		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		return ExprBinary.Op.IN.make(this.pos, this, y, Type.FORMULA);
 	}
 
@@ -172,8 +172,8 @@ public abstract class Expr {
 	 * @throws ErrorInternal if this node and y are not both fully typechecked
 	 */
 	public final Expr and(Expr y) {
-		if (this.type==null || y.type==null)
-			throw internalError("The node is not yet typechecked");
+		if (this.type==null) throw this.internalError("The node is not yet typechecked");
+		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		return ExprBinary.Op.AND.make(this.pos, this, y, Type.FORMULA);
 	}
 
@@ -185,8 +185,8 @@ public abstract class Expr {
 	 * @throws ErrorInternal if this node and y are not both fully typechecked
 	 */
 	public final Expr or(Expr y) {
-		if (this.type==null || y.type==null)
-			throw internalError("The node is not yet typechecked");
+		if (this.type==null) throw this.internalError("The node is not yet typechecked");
+		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		return ExprBinary.Op.OR.make(this.pos, this, y, Type.FORMULA);
 	}
 
@@ -198,8 +198,8 @@ public abstract class Expr {
 	 * @throws ErrorInternal if this node and y are not both fully typechecked
 	 */
 	public final Expr implies(Expr y) {
-		if (this.type==null || y.type==null)
-			throw internalError("The node is not yet typechecked");
+		if (this.type==null) throw this.internalError("The node is not yet typechecked");
+		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		return ExprBinary.Op.IMPLIES.make(this.pos, this, y, Type.FORMULA);
 	}
 
@@ -212,10 +212,10 @@ public abstract class Expr {
 	 * @throws ErrorInternal if this node and y are not compatible
 	 */
 	public final Expr join(Expr y) {
-		if (this.type==null || y.type==null)
-			throw internalError("The node is not yet typechecked");
+		if (this.type==null) throw this.internalError("The node is not yet typechecked");
+		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		Type ans=this.type.join(y.type);
-		if (ans.arity()<1) throw internalError("Cannot perform Expr.join(x)");
+		if (ans.arity()<1) throw internalError("Cannot perform Expr.join()");
 		return new ExprJoin(this.pos, this, y, ans);
 	}
 
@@ -228,10 +228,10 @@ public abstract class Expr {
 	 * @throws ErrorInternal if this node and y are not compatible
 	 */
 	public final Expr product(Expr y) {
-		if (this.type==null || y.type==null)
-			throw internalError("The node is not yet typechecked");
+		if (this.type==null) throw this.internalError("The node is not yet typechecked");
+		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		Type ans=this.type.product_of_anyEmptyness(y.type);
-		if (ans.arity()<1) throw internalError("Cannot perform Expr.product(x)");
+		if (ans.arity()<1) throw internalError("Cannot perform Expr.product()");
 		return ExprBinary.Op.ARROW.make(this.pos, this, y, ans);
 	}
 
@@ -244,8 +244,9 @@ public abstract class Expr {
 	 * @throws ErrorInternal if x and y are not compatible.
 	 */
 	public final Expr ite(Expr x, Expr y) {
-		if (this.type==null || x.type==null || y.type==null)
-			throw internalError("The node is not yet typechecked");
+		if (this.type==null) throw this.internalError("The node is not yet typechecked");
+		if (x.type==null) throw x.internalError("The node is not yet typechecked");
+		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		Type ans;
 		if (x.type.isInt && y.type.isInt)
 			ans=Type.INT;
@@ -266,6 +267,6 @@ public abstract class Expr {
 	 * @param p - the position in the file where the univ relation is used
 	 */
 	public static final Expr univ(Pos p) {
-		return new ExprName(p, "/$builtin/$univ", ParaSig.UNIV, ParaSig.UNIV.type);
+		return new ExprName(p, "univ", ParaSig.UNIV, ParaSig.UNIV.type);
 	}
 }

@@ -61,7 +61,7 @@ public final class ExprBinary extends Expr {
 	 * @param right - the right-hand-side expression
 	 * @param type - the type (null if this expression has not been typechecked)
 	 *
-	 * @throws ErrorInternal if left==null || right==null
+	 * @throws ErrorInternal if pos==null || left==null || right==null
 	 * @throws ErrorInternal if op is one of the 16 arrow operators && (left.mult==1 || right.mult==1)
 	 * @throws ErrorInternal if op isn't one of the 16 arrow operators && left.mult!=0
 	 * @throws ErrorInternal if op isn't one of the 16 arrow operators && op!=Op.IN && right.mult!=0
@@ -81,9 +81,9 @@ public final class ExprBinary extends Expr {
 				throw right.syntaxError("Set-multiplicity expression not allowed here");
 		} else {
 			if (left.mult!=0)
-				throw left.syntaxError("A multiplicity expression is not allowed here");
+				throw left.syntaxError("Multiplicity expression is not allowed here");
 			if (op!=Op.IN && right.mult!=0)
-				throw right.syntaxError("A multiplicity expression is not allowed here");
+				throw right.syntaxError("Multiplicity expression is not allowed here");
 		}
 	}
 	
@@ -148,9 +148,15 @@ public final class ExprBinary extends Expr {
 		/**
 		 * Constructs an untypechecked ExprBinary expression
 		 * with "this" as the operator.
+		 * 
 		 * @param pos - the original position in the file
 		 * @param left - the left-hand-side expression
 		 * @param right - the right-hand-side expression
+		 * 
+		 * @throws ErrorInternal if pos==null || left==null || right==null
+		 * @throws ErrorInternal if op is one of the 16 arrow operators && (left.mult==1 || right.mult==1)
+		 * @throws ErrorInternal if op isn't one of the 16 arrow operators && left.mult!=0
+		 * @throws ErrorInternal if op isn't one of the 16 arrow operators && op!=Op.IN && right.mult!=0
 		 */
 		public final ExprBinary make(Pos pos, Expr left, Expr right) {
 			return new ExprBinary(pos, this, left, right, null);
@@ -160,10 +166,16 @@ public final class ExprBinary extends Expr {
 		 * Constructs a typechecked ExprBinary expression
 		 * with "this" as the operator, and "type"
 		 * as the type.
+		 * 
 		 * @param pos - the original position in the file
 		 * @param left - the left-hand-side expression
 		 * @param right - the right-hand-side expression
 		 * @param type - the type for the expression
+		 * 
+		 * @throws ErrorInternal if pos==null || left==null || right==null
+		 * @throws ErrorInternal if op is one of the 16 arrow operators && (left.mult==1 || right.mult==1)
+		 * @throws ErrorInternal if op isn't one of the 16 arrow operators && left.mult!=0
+		 * @throws ErrorInternal if op isn't one of the 16 arrow operators && op!=Op.IN && right.mult!=0
 		 */
 		public final ExprBinary make(Pos pos, Expr left, Expr right, Type type) {
 			return new ExprBinary(pos, this, left, right, type);

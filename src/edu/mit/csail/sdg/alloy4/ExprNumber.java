@@ -31,14 +31,17 @@ public final class ExprNumber extends Expr {
         return visitor.accept(this,type);
     }
 
-    /** The number */
+    /** The number. */
     public final int num;
 
     /**
      * Constructs an ExprNumber expression.
+     * 
      * @param pos - the original position in the file
      * @param num - the number
-     * @throws ErrorSyntax if the number cannot be parsed into a Java integer
+     * 
+     * @throws ErrorInternal if pos==null or num==null
+     * @throws ErrorSyntax if num cannot be parsed into a Java integer (eg. it's too large)
      */
     public ExprNumber(Pos pos, String num) {
         super(pos, Type.INT, 0);
@@ -46,7 +49,7 @@ public final class ExprNumber extends Expr {
             this.num=Integer.parseInt(nonnull(num));
         } catch(NumberFormatException e) {
             throw syntaxError("The number "+num
-                    +"is too small or too large to be stored in a Java integer!");
+                  +"is too small or too large to be stored in a Java integer!");
         }
     }
 }
