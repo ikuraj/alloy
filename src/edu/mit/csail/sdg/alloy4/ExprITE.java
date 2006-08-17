@@ -39,7 +39,7 @@ public final class ExprITE extends Expr {
 	
 	/** The else-clause. */
 	public final Expr right;
-
+	
 	/**
 	 * Constructs a typechecked ExprITE expression.
 	 * 
@@ -54,17 +54,14 @@ public final class ExprITE extends Expr {
 	 */
 	public ExprITE(Pos pos, Expr cond, Expr left, Expr right, Type type) {
 		super(pos, type, 0);
-		if (cond.mult != 0)
-			throw cond.syntaxError("Multiplicity expression not allowed here");
-		if (left.mult != 0)
-			throw left.syntaxError("Multiplicity expression not allowed here");
-		if (right.mult != 0)
-			throw right.syntaxError("Multiplicity expression not allowed here");
+		if (cond.mult != 0) throw cond.syntaxError("Multiplicity expression not allowed here");
+		if (left.mult != 0) throw left.syntaxError("Multiplicity expression not allowed here");
+		if (right.mult != 0) throw right.syntaxError("Multiplicity expression not allowed here");
 		this.cond=nonnull(cond);
 		this.left=nonnull(left);
 		this.right=nonnull(right);
 	}
-
+	
 	/**
 	 * Constructs an untypechecked ExprITE expression.
 	 *

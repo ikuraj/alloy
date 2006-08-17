@@ -69,8 +69,7 @@ public final class ExprBinary extends Expr {
 	private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type) {
 		super(pos, type, isMult(op,left,right)?2:0);
 		// See ExprUnary.java for why we have to call makeMult() here.
-		if (op==Op.IN && (right instanceof ExprUnary))
-			right=((ExprUnary)right).makeMult();
+		if (op==Op.IN && (right instanceof ExprUnary)) right=((ExprUnary)right).makeMult();
 		this.op=op;
 		this.left=nonnull(left);
 		this.right=nonnull(right);

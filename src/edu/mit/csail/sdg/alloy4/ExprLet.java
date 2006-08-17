@@ -59,16 +59,11 @@ public final class ExprLet extends Expr {
 		this.left=nonnull(left);
 		this.right=nonnull(right);
 		this.sub=nonnull(sub);
-		if (right.mult != 0)
-			throw right.syntaxError("Multiplicity expression not allowed here");
-		if (sub.mult != 0)
-			throw sub.syntaxError("Multiplicity expression not allowed here");
-		if (left.length()==0)
-			throw syntaxError("The LET variable must not be empty!");
-		if (left.indexOf('/')>=0)
-			throw syntaxError("The LET variable cannot contain \'/\'");
-		if (left.indexOf('@')>=0)
-			throw syntaxError("The LET variable cannot contain \'@\'");
+		if (right.mult != 0) throw right.syntaxError("Multiplicity expression not allowed here");
+		if (sub.mult != 0) throw sub.syntaxError("Multiplicity expression not allowed here");
+		if (left.length()==0) throw syntaxError("The LET variable must not be empty!");
+		if (left.indexOf('/')>=0) throw syntaxError("The LET variable cannot contain \'/\'");
+		if (left.indexOf('@')>=0) throw syntaxError("The LET variable cannot contain \'@\'");
 		if (left.equals("none") ||
 			left.equals("iden") ||
 			left.equals("univ") ||

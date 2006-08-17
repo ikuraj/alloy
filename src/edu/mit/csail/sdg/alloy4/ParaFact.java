@@ -18,9 +18,10 @@ public final class ParaFact extends Para {
 	 * @param name - the name of the assertion (can be "")
 	 * @param value - the fact
 	 *
-	 * @throws ErrorSyntax - if the name contains '@' or '/'
-	 * @throws ErrorSyntax - if the name is equal to "none", "iden", "univ", or "Int"
-	 * @throws ErrorInternal - if pos==null, path==null, name==null, or value==null
+	 * @throws ErrorSyntax if the path contains '@'
+	 * @throws ErrorSyntax if the name contains '@' or '/'
+	 * @throws ErrorSyntax if the name is equal to "none", "iden", "univ", or "Int"
+	 * @throws ErrorInternal if pos==null, path==null, name==null, or value==null
 	 */
 	public ParaFact(Pos pos, String path, String name, Expr value) {
 		super(pos, path, name);

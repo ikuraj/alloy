@@ -11,12 +11,23 @@ import java.util.ArrayList;
 
 public final class ParaOpen extends Para {
 	
-	/** The immutable list of instantiating arguments */
+	/** The unmodifiable list of instantiating arguments */
 	public final List<String> list;
 	
 	/** The alias for the imported module (always a non-empty string) */
 	public final String filename;
-
+	
+	/**
+	 * Convenience method that computes 
+	 *
+	 * @param p - the original position in the file (null if unknown)
+	 * @param f - a valid path to the Unit containing the paragraph
+	 * @param a - the alias for the imported module
+	 * @param l - the list of instantiating arguments
+	 * @param n - the name of the module being imported
+	 *
+	 * @return
+	 */
 	private static String computeAlias(Pos p, String f, String a, boolean parametric) {
 		if (a.length()>0) {
 			if (a.indexOf('@')>=0) throw new ErrorSyntax(p, "Alias \""+a+"\" must not contain \'@\'");
@@ -37,7 +48,7 @@ public final class ParaOpen extends Para {
 			f.equals("Int")) throw new ErrorSyntax(p, "The filename cannot be \""+f+"\"");
 		return f;
 	}
-
+	
 	/**
 	 * Constructs a new ParaOpen object.
 	 * 
@@ -47,11 +58,12 @@ public final class ParaOpen extends Para {
 	 * @param l - the list of instantiating arguments
 	 * @param n - the name of the module being imported
 	 * 
-	 * @throws ErrorSyntax - if n contains '@'
-	 * @throws ErrorSyntax - if n is equal to "", "none", "iden", "univ", or "Int"
-	 * @throws ErrorSyntax - if d contains duplicate names
-	 * @throws ErrorSyntax - if a is equal to "" and yet (l.size()>0 or n.contains('/')) 
-	 * @throws ErrorInternal - if pos==null, path==null, a==null, or n==null
+	 * @throws ErrorSyntax if the path contains '@'
+	 * @throws ErrorSyntax if n contains '@'
+	 * @throws ErrorSyntax if n is equal to "", "none", "iden", "univ", or "Int"
+	 * @throws ErrorSyntax if d contains duplicate names
+	 * @throws ErrorSyntax if a is equal to "" and yet (l.size()>0 or n.contains('/')) 
+	 * @throws ErrorInternal if pos==null, path==null, a==null, or n==null
 	 */
 	public ParaOpen(Pos pos, String path, String a, List<ExprName> l, String n) {
 		super(pos, path, computeAlias(pos,n,a,l!=null && l.size()>0));

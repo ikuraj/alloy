@@ -45,19 +45,16 @@ public abstract class Para {
 	 *
 	 * @throws ErrorSyntax if the path contains '@'
 	 * @throws ErrorSyntax if the name contains '@' or '/'
-	 * @throws ErrorSyntax if the name is "none", "iden", "univ", or "Int"
+	 * @throws ErrorSyntax if the name is equal to "none", "iden", "univ", or "Int"
 	 * @throws ErrorInternal if pos==null, path==null, or name==null
 	 */
 	public Para(Pos pos, String path, String name) {
 		this.pos=nonnull(pos);
 		this.path=nonnull(path);
 		this.name=nonnull(name);
-		if (path.indexOf('@')>=0)
-			throw syntaxError("Path \""+path+"\" must not contain \'@\'");
-		if (name.indexOf('@')>=0)
-			throw syntaxError("Name \""+name+"\" must not contain \'@\'");
-		if (name.indexOf('/')>=0)
-			throw syntaxError("Name \""+name+"\" must not contain \'/\'");
+		if (path.indexOf('@')>=0) throw syntaxError("Path \""+path+"\" must not contain \'@\'");
+		if (name.indexOf('@')>=0) throw syntaxError("Name \""+name+"\" must not contain \'@\'");
+		if (name.indexOf('/')>=0) throw syntaxError("Name \""+name+"\" must not contain \'/\'");
 		if (name.equals("none") ||
 			name.equals("iden") ||
 			name.equals("univ") ||

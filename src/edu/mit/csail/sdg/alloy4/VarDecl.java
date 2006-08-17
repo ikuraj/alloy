@@ -10,13 +10,13 @@ import java.util.ArrayList;
  */
 
 public final class VarDecl {
-
+	
 	/** The unmodifiable list of names. */
 	public final List<String> names;
-
+	
 	/** The expression that these names are quantified over. */
 	public final Expr value;
-
+	
 	/**
 	 * Constructs a new VarDecl object with x as the list of names.
 	 *
@@ -30,8 +30,7 @@ public final class VarDecl {
 	 * @throws ErrorInternal if any of the name is equal to "", "none", "iden", "univ", or "Int"
 	 */
 	public VarDecl (List<ExprName> x, Expr y) {
-		if (x==null || y==null)
-			throw new ErrorInternal(null,null,"NullPointerException");
+		if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
 		List<String> newlist=new ArrayList<String>();
 		if (x.size()==0)
 			throw y.syntaxError("The list of declarations cannot be empty!");
@@ -39,12 +38,9 @@ public final class VarDecl {
 			ExprName e=x.get(i);
 			if (e==null) throw y.internalError("NullPointerException");
 			String n=e.name;
-			if (n.length()==0)
-				throw e.syntaxError("The name of a variable cannot be empty!");
-			if (n.indexOf('/')>=0)
-				throw e.syntaxError("The name of a variable cannot contain \'/\'");
-			if (n.indexOf('@')>=0)
-				throw e.syntaxError("The name of a variable cannot contain \'@\'");
+			if (n.length()==0) throw e.syntaxError("Variable name cannot be empty!");
+			if (n.indexOf('/')>=0) throw e.syntaxError("Variable name cannot contain \'/\'");
+			if (n.indexOf('@')>=0) throw e.syntaxError("Variable name cannot contain \'@\'");
 			if (n.equals("none") ||
 				n.equals("iden") ||
 				n.equals("univ") ||
@@ -57,7 +53,7 @@ public final class VarDecl {
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;
 	}
-
+	
 	/**
 	 * Constructs a new VarDecl object with x as the only name.
 	 *
@@ -69,17 +65,13 @@ public final class VarDecl {
 	 * @throws ErrorInternal if x is equal to "", "none", "iden", "univ", or "Int"
 	 */
 	public VarDecl (String x, Expr y) {
-		if (x==null || y==null)
-			throw new ErrorInternal(null,null,"NullPointerException");
+		if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
 		List<String> list=new ArrayList<String>(1);
 		list.add(x);
 		names=Collections.unmodifiableList(list);
-		if (x.length()==0)
-			throw y.syntaxError("The name of a variable must not be empty!");
-		if (x.indexOf('/')>=0)
-			throw y.syntaxError("The name of a variable cannot contain \'/\'");
-		if (x.indexOf('@')>=0)
-			throw y.syntaxError("The name of a variable cannot contain \'@\'");
+		if (x.length()==0) throw y.syntaxError("Variable name must not be empty!");
+		if (x.indexOf('/')>=0) throw y.syntaxError("Variable name cannot contain \'/\'");
+		if (x.indexOf('@')>=0) throw y.syntaxError("Variable name cannot contain \'@\'");
 		if (x.equals("none") ||
 			x.equals("iden") ||
 			x.equals("univ") ||
@@ -89,7 +81,7 @@ public final class VarDecl {
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;
 	}
-
+	
 	/**
 	 * Constructs a new VarDecl object with the same names as x.
 	 *
@@ -99,14 +91,13 @@ public final class VarDecl {
 	 * @throws ErrorInternal if x==null or y==null
 	 */
 	public VarDecl (VarDecl x, Expr y) {
-		if (x==null || y==null)
-			throw new ErrorInternal(null,null,"NullPointerException");
+		if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
 		names=x.names;
 		// See ExprUnary.java for why we have to call makeMult() here.
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;
 	}
-
+	
 	/**
 	 * Convenience method that returns the number of names in a list of VarDecl.
 	 * @return the number of names in the list
@@ -116,7 +107,7 @@ public final class VarDecl {
 		for(int i=list.size()-1; i>=0; i--) c=c+list.get(i).names.size();
 		return c;
 	}
-
+	
 	/**
 	 * Convenience method that checks whether the name n appears in a list of VarDecl.
 	 * @return true if and only if the name n appears in the list
@@ -127,7 +118,7 @@ public final class VarDecl {
 				return true;
 		return false;
 	}
-
+	
 	/**
 	 * Convenience method that checks whether there are duplicate names in a list of VarDecl.
 	 * @return one of the duplicate name (if duplicates exist), and returns null otherwise
