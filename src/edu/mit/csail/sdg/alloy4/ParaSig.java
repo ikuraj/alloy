@@ -114,7 +114,7 @@ public final class ParaSig extends Para {
   }
 
   private ParaSig(String n, String al) {
-     super(null,al,n);
+     super(new Pos("$builtin library$",1,1), al, n);
      fullname="/"+al+"/"+n;
      aliases.add(al);
      abs=false; lone=false; one=false; some=false; in=null; ext=null;

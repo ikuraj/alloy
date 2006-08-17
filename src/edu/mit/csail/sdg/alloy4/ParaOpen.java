@@ -51,7 +51,7 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax - if n is equal to "", "none", "iden", "univ", or "Int"
 	 * @throws ErrorSyntax - if d contains duplicate names
 	 * @throws ErrorSyntax - if a is equal to "" and yet (l.size()>0 or n.contains('/')) 
-	 * @throws ErrorInternal - if path==null, n==null, or a==null
+	 * @throws ErrorInternal - if pos==null, path==null, a==null, or n==null
 	 */
 	public ParaOpen(Pos pos, String path, String a, List<ExprName> l, String n) {
 		super(pos, path, computeAlias(pos,n,a,l!=null && l.size()>0));
