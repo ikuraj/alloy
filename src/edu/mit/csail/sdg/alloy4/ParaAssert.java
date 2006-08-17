@@ -6,10 +6,10 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class ParaAssert extends Para {
-	
+
 	/** The formula being asserted. */
 	public Expr value;
-	
+
 	/**
 	 * Constructs a new ParaAssert object.
 	 *

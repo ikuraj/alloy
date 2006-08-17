@@ -6,7 +6,7 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class ExprJoin extends Expr {
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
@@ -14,7 +14,7 @@ public final class ExprJoin extends Expr {
 	@Override public Object accept(VisitReturn visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
@@ -22,7 +22,7 @@ public final class ExprJoin extends Expr {
 	@Override public Expr accept(VisitDesugar visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
@@ -30,21 +30,21 @@ public final class ExprJoin extends Expr {
 	@Override public Expr accept(VisitDesugar2 visitor, Type type) {
 		return visitor.accept(this,type);
 	}
-	
+
 	/** The left-hand-side expression. */
 	public final Expr left;
-	
+
 	/** The right-hand-side expression. */
 	public final Expr right;
-	
+
 	/**
 	 * Constructs a typechecked ExprJoin expression.
-	 * 
+	 *
 	 * @param pos - the original position in the file
 	 * @param left - the left-hand-side expression
 	 * @param right - the right-hand-side expression
 	 * @param type - the type
-	 * 
+	 *
 	 * @throws ErrorInternal if pos==null, left==null, or right==null
 	 * @throws ErrorSyntax if left.mult!=0 or right.mult!=0
 	 */
@@ -55,7 +55,7 @@ public final class ExprJoin extends Expr {
 		this.left=nonnull(left);
 		this.right=nonnull(right);
 	}
-	
+
 	/**
 	 * Constructs an untypechecked ExprJoin expression.
 	 *

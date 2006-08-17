@@ -10,7 +10,7 @@ import java.util.ArrayList;
  */
 
 public final class ExprCall extends Expr {
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
@@ -18,7 +18,7 @@ public final class ExprCall extends Expr {
 	@Override public Object accept(VisitReturn visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
@@ -26,7 +26,7 @@ public final class ExprCall extends Expr {
 	@Override public Expr accept(VisitDesugar visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
@@ -34,13 +34,13 @@ public final class ExprCall extends Expr {
 	@Override public Expr accept(VisitDesugar2 visitor, Type type) {
 		return visitor.accept(this,type);
 	}
-	
+
 	/** The name of the procedure being called. */
 	public final String name;
-	
+
 	/** The procedure being called (null if we haven't typechecked this node yet). */
 	public final ParaFun fun;
-	
+
 	/**
 	 * The unmodifiable list of arguments.
 	 *
@@ -48,16 +48,16 @@ public final class ExprCall extends Expr {
 	 * then the arguments are guaranteed to match the procedure being called.
 	 */
 	public final List<Expr> args;
-	
+
 	/**
 	 * Constructs an ExprCall expression.
-	 * 
+	 *
 	 * @param pos - the original position in the file
 	 * @param name - the name of the procedure
 	 * @param fun - the procedure (null if this expression has not been typechecked)
 	 * @param args - the list of arguments
 	 * @param type - the type (null if this expression has not been typechecked)
-	 * 
+	 *
 	 * @throws ErrorInternal if pos==null, name==null, args==null, or at least one argument is null
 	 * @throws ErrorSyntax if at least one of the argument is a multiplicity constraint
 	 */

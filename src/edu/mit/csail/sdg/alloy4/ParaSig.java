@@ -10,35 +10,35 @@ import java.util.Collections;
  */
 
 public final class ParaSig extends Para {
-	
+
 	public static final ParaSig UNIV=new ParaSig("$univ", "$builtin");
 	public static final ParaSig NONE=new ParaSig("$none", "$builtin");
 	public static final ParaSig SIGINT=new ParaSig("$Int", "$builtin");
-	
+
 	// Abstract or not. Note, if a sig is abstract, it cannot be a subset sig (ie. "in" field must be null)
 	public final boolean abs;
-	
+
 	// At most 1 can be true
 	public final boolean lone,one,some;
-	
+
 	// At most 1 can be non-null
 	public List<String> in=null; // If nonnull, size must be >= 1. This means this sig "in THEM"
 	public List<String> in() { if (in==null) return null; return Collections.unmodifiableList(in); }
 	public final boolean subset;
 	public String ext;      // If nonnull, length must be >= 1. This means this sig "extends IT"
-	
+
 	public List<String> aliases=new ArrayList<String>();
 	public List<String> aliases() { return Collections.unmodifiableList(aliases); }
-	
+
 	// The list of field declarations (in 2 data structures)
 	public List<VarDecl> decls;
 	// The list of field objects. fields.size() must equal FieldDecl.count(decls).
 	public List<Field> fields;
 	// If non-null, it is an "appended facts" paragraph
 	public Expr appendedFacts;
-	
+
 	public final String fullname;
-	
+
 	// The following 4 fields are initially empty until we properly initialize them
 	public Type type;
 	public ParaSig sup;                        // If I'm a SUBSIG, this is the parent. ELSE null.
@@ -47,9 +47,9 @@ public final class ParaSig extends Para {
 	public List<ParaSig> sups() { return Collections.unmodifiableList(sups); }
 	public List<ParaSig> subs=new ArrayList<ParaSig>(); // If I'm a TOPSIG/SUBSIG/"Int", sigs who EXTEND me.
 	public List<ParaSig> subs() { return Collections.unmodifiableList(subs); }
-	
+
 	@Override public String toString() { return "$"+name; }
-	
+
 	public ParaSig(Pos p, String al, String n, boolean fa, boolean fl, boolean fo, boolean fs,
 			List<ExprName> i, ExprName e, List<VarDecl> d, Expr f) {
 		super(p, al, n);
@@ -60,7 +60,7 @@ public final class ParaSig extends Para {
 		if (n.length()==0) throw this.syntaxError("A signature must have a name!");
 		if (n.indexOf('/')>=0) throw this.syntaxError("Signature name must not contain \'/\'.");
 		if ((lone && one) || (lone && some) || (one && some)) throw this.syntaxError("A signature definition can only include at most one of the three keywords: ONE, LONE, and SOME.");
-		
+
 		if (i!=null) {
 			if (abs) throw this.syntaxError("A subset signature cannot be abstract!");
 			if (e!=null) throw this.syntaxError("A signature cannot both be a subset signature and a subsignature!");
@@ -75,13 +75,13 @@ public final class ParaSig extends Para {
 			}
 			subset=true;
 		} else subset=false;
-		
+
 		if (e!=null) {
 			ext=e.name;
 			if (ext.length()==0) throw this.syntaxError("To extend another signature, you must give its name!");
 			if (ext.indexOf('@')>=0) throw this.syntaxError("The parent signature name must not contain \'@\'.");
 		} else ext=null;
-		
+
 		fields=new ArrayList<Field>();
 		decls=new ArrayList<VarDecl>(d);
 		for(VarDecl dd:decls) {
@@ -97,7 +97,7 @@ public final class ParaSig extends Para {
 		sup=null;
 		type=null;
 	}
-	
+
 	public boolean isSubtypeOf(ParaSig other) {
 		if (in!=null || other.in!=null) return false; // Since this method is undefined for SUBSETSIG
 		if (this==NONE || this==other || other==UNIV) return true;
@@ -105,14 +105,14 @@ public final class ParaSig extends Para {
 		for(ParaSig me=this; me!=null; me=me.sup) if (me==other) return true;
 		return false;
 	}
-	
+
 	public ParaSig intersect(ParaSig other) {
 		if (in!=null || other.in!=null) return NONE; // Since this method is undefined for SUBSETSIG
 		if (this.isSubtypeOf(other)) return this;
 		if (other.isSubtypeOf(this)) return other;
 		return NONE;
 	}
-	
+
 	private ParaSig(String n, String al) {
 		super(new Pos("$builtin library$",1,1), al, n);
 		fullname="/"+al+"/"+n;
@@ -125,10 +125,10 @@ public final class ParaSig extends Para {
 		sup=null;
 		subset=false;
 	}
-	
+
 	public boolean isEmpty() { return this==NONE; }
 	public boolean isNonEmpty() { return this!=NONE; }
-	
+
 	public final class Field {
 		public final Pos pos;
 		public final String name;
@@ -156,5 +156,5 @@ public final class ParaSig extends Para {
 			}
 		}
 	}
-	
+
 }

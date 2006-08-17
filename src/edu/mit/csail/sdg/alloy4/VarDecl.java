@@ -10,13 +10,13 @@ import java.util.ArrayList;
  */
 
 public final class VarDecl {
-	
+
 	/** The unmodifiable list of names. */
 	public final List<String> names;
-	
+
 	/** The expression that these names are quantified over. */
 	public final Expr value;
-	
+
 	/**
 	 * Constructs a new VarDecl object with x as the list of names.
 	 *
@@ -53,7 +53,7 @@ public final class VarDecl {
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;
 	}
-	
+
 	/**
 	 * Constructs a new VarDecl object with x as the only name.
 	 *
@@ -81,7 +81,7 @@ public final class VarDecl {
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;
 	}
-	
+
 	/**
 	 * Constructs a new VarDecl object with the same names as x.
 	 *
@@ -97,7 +97,7 @@ public final class VarDecl {
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;
 	}
-	
+
 	/**
 	 * Convenience method that returns the number of names in a list of VarDecl.
 	 * @return the number of names in the list
@@ -107,7 +107,7 @@ public final class VarDecl {
 		for(int i=list.size()-1; i>=0; i--) c=c+list.get(i).names.size();
 		return c;
 	}
-	
+
 	/**
 	 * Convenience method that checks whether the name n appears in a list of VarDecl.
 	 * @return true if and only if the name n appears in the list
@@ -118,7 +118,7 @@ public final class VarDecl {
 				return true;
 		return false;
 	}
-	
+
 	/**
 	 * Convenience method that checks whether there are duplicate names in a list of VarDecl.
 	 * @return one of the duplicate name (if duplicates exist), and returns null otherwise

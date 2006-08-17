@@ -6,7 +6,7 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class ExprName extends Expr {
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
@@ -14,7 +14,7 @@ public final class ExprName extends Expr {
 	@Override public Object accept(VisitReturn visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
@@ -22,7 +22,7 @@ public final class ExprName extends Expr {
 	@Override public Expr accept(VisitDesugar visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
@@ -30,13 +30,13 @@ public final class ExprName extends Expr {
 	@Override public Expr accept(VisitDesugar2 visitor, Type type) {
 		return visitor.accept(this,type);
 	}
-	
+
 	/** The name of the object that this name refers to. */
 	public final String name;
-	
+
 	/**
 	 *  The object that this name refers to (null if this node hasn't been typechecked).
-	 *  
+	 *
 	 *  <p/> Note: After typechecking, this field can have the following possibilities:
 	 *  <br/> (1) null (meaning it's a quantification/let/function_call_parameter or it's univ/iden/none/Int)
 	 *  <br/> (2) ParaSig
@@ -45,15 +45,15 @@ public final class ExprName extends Expr {
 	 *  <br/> (5) parameter-less ParaFun
 	 */
 	public final Object object;
-	
+
 	/**
 	 * Constructs a typechecked ExprName expression.
-	 * 
+	 *
 	 * @param pos - the original position in the file
 	 * @param name - the identifier
 	 * @param object - the object being referred to
 	 * @param type - the type
-	 * 
+	 *
 	 * @throws ErrorInternal if pos==null or name==null
 	 * @throws ErrorInternal if name is equal to "" or "@"
 	 * @throws ErrorInternal if name.lastIndexOf('@')>0
@@ -76,26 +76,26 @@ public final class ExprName extends Expr {
 			&& !(object instanceof ParaFun))
 			throw internalError("ExprName object must be Sig, Sig.Field, Sig.Field.Full, Fun, or null!");
 	}
-	
+
 	/**
 	 * Constructs an untypechecked ExprName expression.
-	 * 
+	 *
 	 * @param pos - the original position in the file
 	 * @param name - the identifier
-	 * 
+	 *
 	 * @throws ErrorInternal if pos==null or name==null
 	 * @throws ErrorInternal if name is equal to "" or "@"
 	 * @throws ErrorInternal if name.lastIndexOf('@')>0
 	 * @throws ErrorInternal if object is not one of {null, ParaSig, ParaSig.Field, ParaSig.Field.Full, ParaFun}
 	 */
 	public ExprName(Pos pos, String name) { this(pos, name, null, null); }
-	
+
 	/**
 	 * Convenience method that throws a syntax error exception saying the name "n" can't be found.
 	 * (In particular, if n is an old Alloy3 keyword, then
 	 * the message will tell the user to consult the documentation
 	 * on how to migrate old models to the new syntax.)
-	 * 
+	 *
 	 * @param p - the original position in the file that triggered the error
 	 * @param n - the identifier
 	 */

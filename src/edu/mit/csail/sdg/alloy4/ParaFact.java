@@ -6,10 +6,10 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class ParaFact extends Para {
-	
+
 	/** The fact. */
 	public Expr value;
-	
+
 	/**
 	 * Constructs a new ParaFact object.
 	 *

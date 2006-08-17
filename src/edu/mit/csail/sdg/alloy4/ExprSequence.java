@@ -10,7 +10,7 @@ import java.util.ArrayList;
  */
 
 public final class ExprSequence extends Expr {
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
@@ -18,7 +18,7 @@ public final class ExprSequence extends Expr {
 	@Override public Object accept(VisitReturn visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
@@ -26,7 +26,7 @@ public final class ExprSequence extends Expr {
 	@Override public Expr accept(VisitDesugar visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
@@ -34,16 +34,16 @@ public final class ExprSequence extends Expr {
 	@Override public Expr accept(VisitDesugar2 visitor, Type type) {
 		return visitor.accept(this,type);
 	}
-	
+
 	/** The unmodifiable list of formulas (The list can be empty) */
 	public final List<Expr> list;
-	
+
 	/**
 	 * Constructs an ExprSequence object.
-	 * 
+	 *
 	 * @param p - the original position in the file.
 	 * @param s - the list of formulas (this can be an empty list).
-	 * 
+	 *
 	 * @throws ErrorInternal if p==null, s==null, or one of the formula is null
 	 * @throws ErrorSyntax if one of the formula is a multiplicity constraint
 	 */

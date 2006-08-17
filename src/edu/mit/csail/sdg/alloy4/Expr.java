@@ -7,19 +7,19 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public abstract class Expr {
-	
+
 	/**
 	 * This field records the filename, line, and column position
 	 * in the original Alloy model file (cannot be null).
 	 */
 	public final Pos pos;
-	
+
 	/**
 	 * This field records the type of this node
 	 * (null if this node has not been typechecked).
 	 */
 	public final Type type;
-	
+
 	/**
 	 * This field records whether the node is a multiplicity constraint.
 	 *
@@ -29,25 +29,25 @@ public abstract class Expr {
 	 * <br>If it's 0, that means it does not have either form.
 	 */
 	public final int mult;
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
 	 */
 	public abstract Object accept(VisitReturn visitor);
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
 	 */
 	public abstract Expr accept(VisitDesugar visitor);
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
 	 */
 	public abstract Expr accept(VisitDesugar2 visitor,Type obj);
-	
+
 	/**
 	 * Constructs a new expression node
 	 *
@@ -68,22 +68,22 @@ public abstract class Expr {
 		this.type=type;
 		this.mult=mult;
 	}
-	
+
 	/** Convenience method that constructs a syntax error exception */
 	public final ErrorSyntax syntaxError (String s) {
 		return new ErrorSyntax(pos, s);
 	}
-	
+
 	/** Convenience method that constructs a type error exception */
 	public final ErrorType typeError (String s) {
 		return new ErrorType(pos, this, s);
 	}
-	
+
 	/** Convenience method that constructs an internal error exception  */
 	public final ErrorInternal internalError (String s) {
 		return new ErrorInternal(pos, this, s);
 	}
-	
+
 	/**
 	 * Convenience method that checks if x is null or not;
 	 * (it returns x if nonnull, and throws an exception if null).
@@ -94,11 +94,11 @@ public abstract class Expr {
 	public final<T> T nonnull (T x) {
 		if (x==null) throw internalError("NullPointerException"); else return x;
 	}
-	
+
 	/**
 	 * Convenience method that returns true if and only if "this" has the form (:set X)
 	 * and X's arity is 1.
-	 * 
+	 *
 	 * @throws ErrorInternal if this node is not fully typechecked
 	 */
 	public final boolean isSetOf1ary() {
@@ -108,11 +108,11 @@ public abstract class Expr {
 		if (((ExprUnary)this).op!=ExprUnary.Op.SETMULT) return false;
 		return this.type.arity()==1;
 	}
-	
+
 	/**
 	 * Convenience method that returns true if and only if "this" has the form (:one X)
 	 * and X's arity is 1.
-	 * 
+	 *
 	 * @throws ErrorInternal if this node is not fully typechecked
 	 */
 	public final boolean isOneOf1ary() {
@@ -122,13 +122,13 @@ public abstract class Expr {
 		if (((ExprUnary)this).op!=ExprUnary.Op.ONEMULT) return false;
 		return this.type.arity()==1;
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns the subexpression of an ExprUnary expression.
-	 * 
+	 *
 	 * @return ((ExprUnary)this).sub if this node is an ExprUnary expression
-	 * 
+	 *
 	 * @throws ErrorInternal if this node is not an ExprUnary expression
 	 */
 	public final Expr getUnarySub() {
@@ -136,12 +136,12 @@ public abstract class Expr {
 			throw internalError("getUnarySub() called on a non-unary object!");
 		return ((ExprUnary)this).sub;
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing ("this in y")
 	 * <br>Note: this node and y must both be fully typechecked.
-	 * 
+	 *
 	 * @throws ErrorInternal if this node and y are not both fully typechecked
 	 */
 	public final Expr in(Expr y) {
@@ -149,19 +149,19 @@ public abstract class Expr {
 		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		return ExprBinary.Op.IN.make(this.pos, this, y, Type.FORMULA);
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing ("! this")
 	 * <br>Note: this node must be fully typechecked.
-	 * 
+	 *
 	 * @throws ErrorInternal if this node is not fully typechecked
 	 */
 	public final Expr not() {
 		if (this.type==null) throw internalError("The node is not yet typechecked");
 		return ExprUnary.Op.NOT.make(this.pos, this, Type.FORMULA);
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing (this &amp;&amp; y)
@@ -174,7 +174,7 @@ public abstract class Expr {
 		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		return ExprBinary.Op.AND.make(this.pos, this, y, Type.FORMULA);
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing (this || y)
@@ -187,7 +187,7 @@ public abstract class Expr {
 		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		return ExprBinary.Op.OR.make(this.pos, this, y, Type.FORMULA);
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing (this =&gt; y)
@@ -200,7 +200,7 @@ public abstract class Expr {
 		if (y.type==null) throw y.internalError("The node is not yet typechecked");
 		return ExprBinary.Op.IMPLIES.make(this.pos, this, y, Type.FORMULA);
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing (this.y)
@@ -216,7 +216,7 @@ public abstract class Expr {
 		if (ans.arity()<1) throw internalError("Cannot perform Expr.join()");
 		return new ExprJoin(this.pos, this, y, ans);
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing (this -&gt; y)
@@ -232,7 +232,7 @@ public abstract class Expr {
 		if (ans.arity()<1) throw internalError("Cannot perform Expr.product()");
 		return ExprBinary.Op.ARROW.make(this.pos, this, y, ans);
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing (this =&gt; x else y)
@@ -256,7 +256,7 @@ public abstract class Expr {
 		}
 		return new ExprITE(this.pos, this, x, y, ans);
 	}
-	
+
 	/**
 	 * Convenience method that
 	 * returns a typechecked node representing the univ relation.

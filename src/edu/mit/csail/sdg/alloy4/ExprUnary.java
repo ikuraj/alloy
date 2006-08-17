@@ -6,7 +6,7 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class ExprUnary extends Expr {
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
@@ -14,7 +14,7 @@ public final class ExprUnary extends Expr {
 	@Override public Object accept(VisitReturn visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
@@ -22,7 +22,7 @@ public final class ExprUnary extends Expr {
 	@Override public Expr accept(VisitDesugar visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
@@ -30,35 +30,35 @@ public final class ExprUnary extends Expr {
 	@Override public Expr accept(VisitDesugar2 visitor, Type type) {
 		return visitor.accept(this,type);
 	}
-	
+
 	/** The unary operator. */
 	public final Op op;
-	
+
 	/** The subexpression. */
 	public final Expr sub;
-	
+
 	/**
 	 * This function is needed to handle a difficult parsing ambiguity.
-	 * 
+	 *
 	 * <p/>
 	 * "some EXPR", "one EXPR", and "lone EXPR"
 	 * can be either formulas (saying the EXPR has at least 1, exactly 1, or at most 1 tuple),
 	 * or multiplicity constraints (saying something else has this multiplicity).
-	 * 
+	 *
 	 * <p/>
 	 * So we let the parser generate the former by default.
 	 * And whenever we construct a VarDecl(x,y) object,
 	 * or an ExprBinary.Op.IN(x,y) object, we call this method
 	 * on y to convert it into a multiplicity constraint.
-	 * 
+	 *
 	 * <p/>
 	 * This is safe, because in both cases, a formula would be illegal.
 	 * So the first form is always wrong.
-	 * 
+	 *
 	 * <p/>
 	 * And this is sufficient, because those are the only two places
 	 * where a mulitplicity constraint is allowed to appear.
-	 * 
+	 *
 	 * @return a newly formed multiplciity constraint (if this.op==SOME or LONE or ONE),
 	 * otherwise it just returns the original node.
 	 */
@@ -68,15 +68,15 @@ public final class ExprUnary extends Expr {
 		if (op==Op.ONE) return Op.ONEMULT.make(pos, sub);
 		return this;
 	}
-	
+
 	/**
 	 * Constructs a new unary expression.
-	 * 
+	 *
 	 * @param p - the original position in the file
 	 * @param o - the operator
 	 * @param s - the subexpression
 	 * @param t - the type (null if this expression has not been typechecked)
-	 * 
+	 *
 	 * @throws ErrorInternal if p==null or s==null
 	 * @throws ErrorSyntax if o==Op.ALL (since this is no longer supported)
 	 * @throws ErrorSyntax if s.mult!=0
@@ -90,7 +90,7 @@ public final class ExprUnary extends Expr {
 				+"rewriting it as \"x == set_of_all_possible_values\".");
 		if (s.mult != 0) throw s.syntaxError("Multiplicity expression not allowed here");
 	}
-	
+
 	/** This class contains all possible unary operators */
 	public enum Op {
 		/** :some x (where x is a set or relation) */  SOMEMULT(":some"),
@@ -109,16 +109,16 @@ public final class ExprUnary extends Expr {
 		/** cardinality                            */  CARDINALITY("#"),
 		/** intAtom-to-integer                     */  SUM("sum"),
 		/** integer-to-intAtom                     */  INTTOATOM("$");
-		
+
 		/** The constructor */
 		Op(String l) {label=l;}
-		
+
 		/** The human readable label for this operator */
 		private final String label;
-		
+
 		/** Returns the human readable label for this operator */
 		@Override public final String toString() { return label; }
-		
+
 		/**
 		 * Constructs an untypechecked ExprUnary expression with "this" as the operator.
 		 *
@@ -130,11 +130,11 @@ public final class ExprUnary extends Expr {
 		 * @throws ErrorSyntax if s.mult!=0
 		 */
 		public final Expr make(Pos p, Expr s) { return new ExprUnary(p,this,s,null); }
-		
+
 		/**
 		 * Constructs a typechecked ExprUnary expression
 		 * with "this" as the operator, and "type" as the type.
-		 * 
+		 *
 		 * @param p - the original position in the file
 		 * @param s - the subexpression
 		 * @param t - the type

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * Immutable;
  * represents a quantified expression with one of the following forms:
- * 
+ *
  * <br>&nbsp; &nbsp; &nbsp; (all &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
  * <br>&nbsp; &nbsp; &nbsp; (no &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
  * <br>&nbsp; &nbsp; &nbsp; (lone &nbsp; a,b:t, c,d:v &nbsp; | formula)
@@ -16,12 +16,12 @@ import java.util.ArrayList;
  * <br>&nbsp; &nbsp; &nbsp; (sum &nbsp; a,b:t, c,d:v &nbsp; | expression)
  * <br>&nbsp; &nbsp; &nbsp; {a,b:t, &nbsp; c,d:v &nbsp; | &nbsp; formula}
  * <br>&nbsp; &nbsp; &nbsp; {a,b:t, &nbsp; c,d:v}
- * 
+ *
  * @author Felix Chang
  */
 
 public final class ExprQuant extends Expr {
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
@@ -29,7 +29,7 @@ public final class ExprQuant extends Expr {
 	@Override public Object accept(VisitReturn visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
@@ -37,7 +37,7 @@ public final class ExprQuant extends Expr {
 	@Override public Expr accept(VisitDesugar visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
@@ -45,13 +45,13 @@ public final class ExprQuant extends Expr {
 	@Override public Expr accept(VisitDesugar2 visitor, Type type) {
 		return visitor.accept(this,type);
 	}
-	
+
 	/** The operator (ALL, NO, LONE, ONE, SOME, SUM, or COMPREHENSION) */
 	public final Op op;
-	
+
 	/** The unmodifiable list of variable declarations. */
 	public final List<VarDecl> list;
-	
+
 	/**
 	 * The number of variables.
 	 *
@@ -59,19 +59,19 @@ public final class ExprQuant extends Expr {
 	 * since each variable declaration contains one or more variables.
 	 */
 	public final int count;
-	
+
 	/** The body of the quantified expression. */
 	public final Expr sub;
-	
+
 	/**
 	 * Constructs a new quantified expression.
-	 * 
+	 *
 	 * @param p - the original position in the file
 	 * @param o - the operator
 	 * @param l - the list of variable declarations
 	 * @param s - the body of the quantified expression
 	 * @param t - the type (null if this expression has not been typechecked)
-	 * 
+	 *
 	 * @throws ErrorInternal if p==null, l==null, l.size()==0, s==null, or s.mult!=0
 	 * @throws ErrorInternal if one of the VarDecl is null
 	 * @throws ErrorInternal if (o==Op.NO || o==Op.ONE) since ExprQuant.Op.make() desugars them
@@ -93,7 +93,7 @@ public final class ExprQuant extends Expr {
 		if (o!=Op.COMPREHENSION && list.size()!=1)
 			throw internalError("The list should have been desugared to 1!");
 	}
-	
+
 	/** This class contains all possible quantification operators. */
 	public enum Op {
 		/** all  a,b:x, c,d:y | formula       */  ALL("all"),
@@ -103,13 +103,13 @@ public final class ExprQuant extends Expr {
 		/** some a,b:x, c,d:y | formula       */  SOME("some"),
 		/** sum  a,b:x, c,d:y | intExpression */  SUM("sum"),
 		/** { a,b:x,    c,d:y | formula }     */  COMPREHENSION("{comprehension}");
-		
+
 		/** The constructor */
 		Op(String l) {label=l;}
-		
+
 		/** The human readable label for this operator */
 		private final String label;
-		
+
 		/**
 		 * Constructs an ExprQuant expression with "this" as the operator.
 		 *
@@ -174,7 +174,7 @@ public final class ExprQuant extends Expr {
 			}
 			return new ExprQuant(p,this,l,s,t);
 		}
-		
+
 		/** Returns the human readable label for this operator */
 		@Override public final String toString() { return label; }
 	}

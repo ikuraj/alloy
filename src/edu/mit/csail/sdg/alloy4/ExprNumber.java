@@ -6,7 +6,7 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class ExprNumber extends Expr {
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
@@ -14,7 +14,7 @@ public final class ExprNumber extends Expr {
 	@Override public Object accept(VisitReturn visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
@@ -22,7 +22,7 @@ public final class ExprNumber extends Expr {
 	@Override public Expr accept(VisitDesugar visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
@@ -30,16 +30,16 @@ public final class ExprNumber extends Expr {
 	@Override public Expr accept(VisitDesugar2 visitor, Type type) {
 		return visitor.accept(this,type);
 	}
-	
+
 	/** The number. */
 	public final int num;
-	
+
 	/**
 	 * Constructs an ExprNumber expression.
-	 * 
+	 *
 	 * @param pos - the original position in the file
 	 * @param num - the number
-	 * 
+	 *
 	 * @throws ErrorInternal if pos==null or num==null
 	 * @throws ErrorSyntax if num cannot be parsed into a Java integer (eg. it's too large)
 	 */

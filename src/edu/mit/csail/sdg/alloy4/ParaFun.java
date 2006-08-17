@@ -9,29 +9,29 @@ import java.util.ArrayList;
  */
 
 public final class ParaFun extends Para {
-	
+
 	/** The mutable list of parameters (its number of names must match this.argCount) */
 	public List<VarDecl> decls;
-	
+
 	/** The number of parameters (it must match the number of names in this.decls) */
 	public int argCount;
-	
+
 	/** The return type (null if this is a "predicate" rather than a "function") */
 	public Expr type;
-	
+
 	/** The body of the predicate/function */
 	public Expr value;
-	
+
 	/**
 	 * Constructs a new ParaFun object.
-	 * 
+	 *
 	 * @param pos - the original position in the file
 	 * @param path - a valid path to the Unit containing this paragraph (can be "" if it's the main unit)
 	 * @param name - the name of the paragraph (it cannot be "")
 	 * @param decls - the list of parameters
 	 * @param type - the return type (null if this is a predicate rather than a function)
 	 * @param value - the body of the predicate/function
-	 * 
+	 *
 	 * @throws ErrorSyntax if the path contains '@'
 	 * @throws ErrorSyntax if the name contains '@' or '/'
 	 * @throws ErrorSyntax if the name is equal to "", "none", "iden", "univ", or "Int"

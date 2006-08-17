@@ -6,7 +6,7 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 public final class ExprBinary extends Expr {
-	
+
 	/**
 	 * Accepts the return visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitReturn
@@ -14,7 +14,7 @@ public final class ExprBinary extends Expr {
 	@Override public Object accept(VisitReturn visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar
@@ -22,7 +22,7 @@ public final class ExprBinary extends Expr {
 	@Override public Expr accept(VisitDesugar visitor) {
 		return visitor.accept(this);
 	}
-	
+
 	/**
 	 * Accepts the desugar2 visitor.
 	 * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
@@ -30,16 +30,16 @@ public final class ExprBinary extends Expr {
 	@Override public Expr accept(VisitDesugar2 visitor, Type type) {
 		return visitor.accept(this,type);
 	}
-	
+
 	/** The binary operator. */
 	public final Op op;
-	
+
 	/** The left-hand-side expression. */
 	public final Expr left;
-	
+
 	/** The right-hand-side expression. */
 	public final Expr right;
-	
+
 	/**
 	 * Determines whether the expression (left op right)
 	 * is an arrow multiplicity constraint.
@@ -51,7 +51,7 @@ public final class ExprBinary extends Expr {
 		if (!op.isArrow()) return false;
 		return left.mult>0 || right.mult>0 || op!=Op.ARROW;
 	}
-	
+
 	/**
 	 * Constructs an ExprBinary expression.
 	 *
@@ -85,7 +85,7 @@ public final class ExprBinary extends Expr {
 				throw right.syntaxError("Multiplicity expression is not allowed here");
 		}
 	}
-	
+
 	/**
 	 * Generate a new type error exception with "msg" as the message,
 	 * and include the left-hand-type "lefttype"
@@ -94,7 +94,7 @@ public final class ExprBinary extends Expr {
 	public final ErrorType typeError(String msg,Type leftType,Type rightType) {
 		return typeError(msg+" LeftType="+leftType+" RightType="+rightType);
 	}
-	
+
 	/** This class contains all possible binary operators. */
 	public enum Op {
 		/** -&gt;           */ ARROW("->"),
@@ -129,10 +129,10 @@ public final class ExprBinary extends Expr {
 		/** ||              */ OR("||"),
 		/** &lt;=&gt;       */ IFF("<=>"),
 		/** =&gt;           */ IMPLIES("=>");
-		
+
 		/** The constructor. */
 		Op(String l) {label=l;}
-		
+
 		/**
 		 * Returns true if and only if this operator is the Cartesian
 		 * product "-&gt;", or is a multiplicity arrow of the form "?-&gt;?".
@@ -140,18 +140,18 @@ public final class ExprBinary extends Expr {
 		public boolean isArrow() {
 			return this.compareTo(ARROW)>=0 && this.compareTo(LONE_ARROW_LONE)<=0;
 		}
-		
+
 		/** The human readable label for this operator. */
 		private final String label;
-		
+
 		/**
 		 * Constructs an untypechecked ExprBinary expression
 		 * with "this" as the operator.
-		 * 
+		 *
 		 * @param pos - the original position in the file
 		 * @param left - the left-hand-side expression
 		 * @param right - the right-hand-side expression
-		 * 
+		 *
 		 * @throws ErrorInternal if pos==null || left==null || right==null
 		 * @throws ErrorInternal if op is one of the 16 arrow operators && (left.mult==1 || right.mult==1)
 		 * @throws ErrorInternal if op isn't one of the 16 arrow operators && left.mult!=0
@@ -160,17 +160,17 @@ public final class ExprBinary extends Expr {
 		public final ExprBinary make(Pos pos, Expr left, Expr right) {
 			return new ExprBinary(pos, this, left, right, null);
 		}
-		
+
 		/**
 		 * Constructs a typechecked ExprBinary expression
 		 * with "this" as the operator, and "type"
 		 * as the type.
-		 * 
+		 *
 		 * @param pos - the original position in the file
 		 * @param left - the left-hand-side expression
 		 * @param right - the right-hand-side expression
 		 * @param type - the type for the expression
-		 * 
+		 *
 		 * @throws ErrorInternal if pos==null || left==null || right==null
 		 * @throws ErrorInternal if op is one of the 16 arrow operators && (left.mult==1 || right.mult==1)
 		 * @throws ErrorInternal if op isn't one of the 16 arrow operators && left.mult!=0
@@ -179,7 +179,7 @@ public final class ExprBinary extends Expr {
 		public final ExprBinary make(Pos pos, Expr left, Expr right, Type type) {
 			return new ExprBinary(pos, this, left, right, type);
 		}
-		
+
 		/** Returns the human readable label for this operator. */
 		@Override public final String toString() { return label; }
 	}

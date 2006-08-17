@@ -15,7 +15,7 @@ import salvo.jesus.graph.Vertex;
 
 /**
  * This class computes both the bounding type and the relevant types.
- * 
+ *
  * This typechecker is first used as a Return Visitor during the first pass,
  * computing the "bounding type" of parent expressions
  * based on the bounding types of its children.
@@ -38,71 +38,71 @@ import salvo.jesus.graph.Vertex;
  */
 
 public final class VisitorTypechecker extends VisitDesugar implements VisitDesugar2 {
-	
+
 //	################################################################################################
-	
+
 	private static boolean verbose=true;
-	
+
 	public Env env=new Env();
-	
+
 	private Map<Expr,List<Object>> objChoices = new LinkedHashMap<Expr,List<Object>>();
 	private Map<Expr,List<Type>> typeChoices = new LinkedHashMap<Expr,List<Type>>();
-	
+
 //	Helper functions
-	
+
 	private void cform(Expr x) { if (!x.type.isBool) throw x.typeError("This must be a formula expression! Instead, it has the following possible type(s): "+x.type); }
-	
+
 	private void cint(Expr x) { if (!x.type.isInt) throw x.typeError("This must be an integer expression! Instead, it has the following possible type(s): "+x.type); }
-	
+
 	private Type cset(Expr x) { if (x.type.size()==0) throw x.typeError("This must be a set or relation! Instead, it has the following possible type(s): "+x.type); return x.type; }
 
 	private void cform(Type p,Expr x) { if (!p.isBool) throw x.typeError("This must be a formula expression! Instead, it has the following possible type(s): "+p); }
 
 	private void cset(Type p,Expr x) { if (p.size()==0) throw x.typeError("This must be a set or relation! Instead, it has the following possible type(s): "+p); }
-	
+
 	private boolean isbad(Type x) { return !x.isBool && !x.isInt && x.size()==0; }
-	
+
 	private void resolved(Type p,Expr x) {
 		if (!p.isBool && !p.isInt && p.size()==0) throw x.typeError("This expression failed to be typechecked, because it has no possible type!");
 		if (p.isBool && p.isInt) throw x.typeError("This expression is ambiguous! It has the following possible types: "+p);
 		if ((p.isBool || p.isInt) && p.size()>0) throw x.typeError("This expression is ambiguous! It has the following possible types: "+p);
 		if (p.size()>0 && p.arity()<=0) throw x.typeError("This expression is ambiguous! It has the following possible types: "+p);
 	}
-	
+
 	private void resolved(Expr x) {
 		if (!x.type.isBool && !x.type.isInt && x.type.size()==0) throw x.typeError("This expression failed to be typechecked, because it has no possible type!");
 		if (x.type.isBool && x.type.isInt) throw x.typeError("This expression is ambiguous! It has the following possible types: "+x.type);
 		if ((x.type.isBool || x.type.isInt) && x.type.size()>0) throw x.typeError("This expression is ambiguous! It has the following possible types: "+x.type);
 		if (x.type.size()>0 && x.type.arity()<=0) throw x.typeError("This expression is ambiguous! It has the following possible types: "+x.type);
 	}
-	
+
 //	################################################################################################
-	
+
 	/*
 	 // 1. ExprCall will always be calls to a Predicate or Function with 1 or more arguments.
 	  // 2. ExprCall will not contain excess arguments. (Those will be converted into ExprJoin expressions)
 	   // 3. ExprName may still resolve to calls to a Predicate or Function with 0 arguments.
 	    */
-	
+
 	public Expr resolve(Expr x) { // If this method succeeds, x will have a fully-resolved unique-arity Type
 		x=x.accept(this);
 		x=x.accept(this, x.type);
 		resolved(x);
 		return x;
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprBinary x) {
 		Expr left=x.left.accept(this);
 		Expr right=x.right.accept(this);
 		Type a,b,c=null;
 		bigbreak: switch(x.op) {
-		
+
 		case LT: case LTE: case GT: case GTE: cint(left); cint(right); c=Type.FORMULA; break;
-		
+
 		case AND: case OR: case IFF: case IMPLIES: cform(left); cform(right); c=Type.FORMULA; break;
-		
+
 		case PLUSPLUS:
 			a=cset(left); b=cset(right);
 			// RESULT TYPE = LEFT+RIGHT, if exists a in left, b in right, such that "a.arity==b.arity" && "dom(a)&dom(b) is non-empty"
@@ -112,14 +112,14 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 						if (aa.arity()==bb.arity() && aa.basicTypes.get(0).intersect(bb.basicTypes.get(0)).isNonEmpty())
 						{ c=a.union(b); break bigbreak; }
 			throw x.typeError("The ++ operator failed because its right hand side cannot override the left hand side!",a,b);
-			
+
 		case PLUS:
 			// RESULT TYPE = LEFT+RIGHT, if exists a in left, b in right, such that a.arity==b.arity
 			a=left.type; b=right.type;
 			if (a.hasCommonArity(b)) { c=a.union(b); if (a.isInt && b.isInt) c=Type.makeInt(c); break; }
 			if (a.isInt && b.isInt) { c=Type.INT; break; } // left.type=right.type=c=Type.INT; break; }
 			throw x.typeError("The + operator can only be used between 2 sets and relations of the same arity, or between 2 integer expressions!",a,b);
-			
+
 		case MINUS:
 			// RESULT TYPE = LEFT TYPE, if { a&b | a in leftType, b in rightType, a.arity==b.arity } is nonempty()
 			a=left.type; b=right.type;
@@ -129,12 +129,12 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			}
 			if (a.isInt && b.isInt) { c=Type.INT; break; } // left.type=right.type=c=Type.INT; break; }
 			throw x.typeError("The - operator can only be used between 2 sets and relations of the same arity, or between 2 integer expressions!",a,b);
-			
+
 		case INTERSECT:
 			// RESULT TYPE = { a&b | a in leftType, b in rightType, a.arity==b.arity } if it's nonempty()
 			a=cset(left); b=cset(right); c=a.intersect(b); if (c.hasTuple()) break;
 			throw x.typeError("The & operator failed because there is an arity mismatch, or the 2 expressions are disjoint!",a,b);
-			
+
 		case ARROW: case ANY_ARROW_SOME: case ANY_ARROW_ONE: case ANY_ARROW_LONE:
 		case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE:
 		case ONE_ARROW_ANY: case ONE_ARROW_SOME: case ONE_ARROW_ONE: case ONE_ARROW_LONE:
@@ -142,17 +142,17 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			// RESULT TYPE = { a->b  |  a in leftType,  b in rightType, a.isEmpty()==b.isEmpty() } if its size()>0
 			a=cset(left); b=cset(right); c=a.product_of_sameEmptyness(b);  if (c.size()>0) break;
 			throw x.typeError("The -> operator cannot combine empty and non-empty types!",a,b);
-			
+
 		case DOMAIN:
 			// RESULT TYPE = { (B1&A)->B2->B3 | exists unary A in left, exists B1->B2->B3 in right } if nonempty()
 			a=cset(left); b=cset(right); c=b.domainRestrict(a);  if (c.hasTuple()) break;
 			throw x.typeError("The <: operator failed, because the left and domain(right) are disjoint!",a,b);
-			
+
 		case RANGE:
 			// RESULT TYPE = { A1->A2->(A3&B) | exists unary B in right, exists A1->A2->A3 in left } if nonempty()
 			a=cset(left); b=cset(right); c=a.rangeRestrict(b); if (c.hasTuple()) break;
 			throw x.typeError("The :> operator failed, because range(left) and right are disjoint!",a,b);
-			
+
 		case IN:
 			// SUCCESS if exists a in left, and b in right, such that (a.arity==b.arity && a&b!=NONE)
 			a=cset(left); b=cset(right); c=a.intersect(b);
@@ -160,7 +160,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			if (a.hasNoTuple()) throw x.typeError("Redundant constraint: left type is empty",a,b);
 			c=Type.FORMULA;
 			break;
-			
+
 		case EQUALS:
 			// SUCCESS if exists a in left, and b in right, such that (a.arity==b.arity && a&b!=NONE)
 			a=left.type; b=right.type; c=a.intersect(b);
@@ -171,25 +171,25 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		if (c==null) throw x.internalError("Unexpected operator ("+x.op+") encountered in ExprBinary typechecker");
 		return x.op.make(x.pos, left, right, c);
 	}
-	
+
 //	################################################################################################
-	
+
 	public final Expr accept(ExprBinary x, Type p) {
 		Type a=x.left.type, b=x.right.type;
 		switch(x.op) {
-		
+
 		case IN: b=a.intersect(b);
 		// Intentional fall-through to the "case EQUALS" case.
 		case AND: case OR: case IFF: case IMPLIES: case LT: case LTE: case GT: case GTE: case EQUALS:
 			if (!p.isBool) throw x.typeError("This must be a set or relation!");
 			break;
-			
+
 		case INTERSECT:
 			// leftType'=parentType & leftType.  rightType'=parentType & rightType.
 			if (p.size()==0) throw x.typeError("This must be a set or relation!");
 			a=p.intersect(a); b=p.intersect(b);
 			break;
-			
+
 		case MINUS:
 			if (p.isInt && p.size()>0) throw x.typeError("This expression is ambiguous! Possible type(s) include: "+p);
 			if (p.isInt) { a=Type.INT; b=Type.INT; break; }
@@ -198,7 +198,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			a=p;  b=p.intersect(b);
 			if (b.hasNoTuple()) throw x.typeError("Inessential difference (right expression is redundant)",a,b);
 			break;
-			
+
 		case PLUS:
 			if (p.isInt && p.size()>0) throw x.typeError("This expression is ambiguous! Possible type(s) include: "+p);
 			if (p.isInt) { a=Type.INT; b=Type.INT; break; }
@@ -213,7 +213,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			b=p.intersect(b); if (b.hasNoTuple()) throw x.typeError("Inessential union: the right expression is redundant",a,b);
 			if (x.op==ExprBinary.Op.PLUSPLUS && !b.canOverride(a)) throw x.typeError("Relevant types incompatible for relational override",a,b);
 			break;
-			
+
 		case ARROW: case ANY_ARROW_SOME: case ANY_ARROW_ONE: case ANY_ARROW_LONE:
 		case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE:
 		case ONE_ARROW_ANY: case ONE_ARROW_SOME: case ONE_ARROW_ONE: case ONE_ARROW_LONE:
@@ -234,7 +234,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 						}
 					}
 			a=leftType; b=rightType; break;}
-		
+
 		case DOMAIN:{
 			// leftType' = {r1 | r1 in leftType and there exists r2 in rightType such that r1<:r2 in parentType}
 			// rightType' = {r2 | r2 in rightType and there exists r1 in leftType such that r1<:r2 in parentType}
@@ -252,7 +252,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 					}
 				}
 			a=leftType; b=rightType; break;}
-		
+
 		case RANGE:{
 			// leftType' = {r1 | r1 in leftType and there exists r2 in rightType such that r1:>r2 in parentType}
 			// rightType' = {r2 | r2 in rightType and there exists r1 in leftType such that r1:>r2 in parentType}
@@ -275,9 +275,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		Expr right=x.right.accept(this,b);
 		return x.op.make(x.pos, left, right, p);
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprITE x) {
 		Expr cond=x.cond.accept(this); cform(cond);
 		Expr left=x.left.accept(this);
@@ -290,9 +290,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		if (c==null || isbad(c)) throw x.typeError("The THEN-clause and the ELSE-clause must match! Its THEN-clause has type "+a+" and the ELSE clause has type "+b);
 		return new ExprITE(x.pos, cond, left, right, c);
 	}
-	
+
 //	################################################################################################
-	
+
 	public final Expr accept(ExprITE x, Type p) {
 		Type a=x.left.type, b=x.right.type;
 		resolved(p,x);
@@ -313,9 +313,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		Expr right=x.right.accept(this, b);
 		return new ExprITE(x.pos, cond, left, right, p);
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprLet x) {
 		Expr right=resolve(x.right);
 		env.put(x.left, right.type);
@@ -324,9 +324,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		if (isbad(sub.type)) throw sub.typeError("The body of a LET expression must be a set, an integer, or a formula!");
 		return new ExprLet(x.pos, x.left, right, sub, sub.type);
 	}
-	
+
 //	################################################################################################
-	
+
 	public Expr accept(ExprLet x, Type p) {
 		resolved(p,x);
 		env.put(x.left, x.right.type);
@@ -334,12 +334,12 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		env.remove(x.left);
 		return new ExprLet(x.pos, x.left, x.right, sub, p);
 	}
-	
+
 //	################################################################################################
-	
+
 	public Object root=null;
 	public Unit rootunit=null;
-	
+
 	private Set<Object> populate(String x1) {
 		Set<Object> y;
 		String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
@@ -375,9 +375,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		// and would have been found by the "lookup_sigORparam()" method call above.
 		return y;
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprName x) {
 		List<Object> objects=new ArrayList<Object>();
 		List<Type> types=new ArrayList<Type>();
@@ -409,36 +409,36 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		typeChoices.put(ans, types);
 		return ans;
 	}
-	
+
 //	################################################################################################
-	
+
 	public Expr accept(ExprName x, Type t) {
 		List<Object> objects=objChoices.get(x);
 		objChoices.remove(x);
 		List<Type> types=typeChoices.get(x);
 		typeChoices.remove(x);
-		
+
 		if (x.name.equals("iden")) {
 			Type ans=Type.make(ParaSig.UNIV, ParaSig.UNIV);
 			objects=new ArrayList<Object>(1); objects.add(ans);
 			types=new ArrayList<Type>(1); types.add(ans);
 		}
-		
+
 		if (x.name.equals("none")) {
 			objects=new ArrayList<Object>(1); objects.add(ParaSig.NONE);
 			types=new ArrayList<Type>(1); types.add(ParaSig.NONE.type);
-		}			
-		
+		}
+
 		if (x.name.equals("univ")) {
 			objects=new ArrayList<Object>(1); objects.add(ParaSig.UNIV);
 			types=new ArrayList<Type>(1); types.add(ParaSig.UNIV.type);
-		}			
-		
+		}
+
 		if (x.name.equals("Int")) {
 			objects=new ArrayList<Object>(1); objects.add(ParaSig.SIGINT);
 			types=new ArrayList<Type>(1); types.add(ParaSig.SIGINT.type);
-		}			
-		
+		}
+
 		Object match=null;
 		for(int i=0; i<objects.size(); i++) {
 			Object z=objects.get(i);
@@ -452,7 +452,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 				match=z;
 			}
 		}
-		
+
 		if (match==null) throw x.typeError("The name \""+x.name+"\" failed to be typechecked here due to no match!");
 		if (match instanceof ParaSig)
 			return new ExprName(x.pos, ((ParaSig)match).fullname, match, t);
@@ -464,20 +464,20 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			return new ExprName(x.pos, x.name, match, t);
 		return new ExprName(x.pos, x.name, null, t);
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprNumber x) { return x; }
-	
+
 //	################################################################################################
-	
+
 	public Expr accept(ExprNumber x, Type p) {
 		if (!p.isInt) throw x.typeError("This must be an integer expression");
 		return x;
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprQuant x) {
 		List<VarDecl> list=new ArrayList<VarDecl>();
 		Type comp=null; // Stores the Union Type for a Set Comprehension expression
@@ -507,9 +507,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		else { cform(sub); comp=Type.FORMULA; }
 		return x.op.make(x.pos, list, sub, comp);
 	}
-	
+
 //	################################################################################################
-	
+
 	public Expr accept(ExprQuant x, Type p) {
 		resolved(p,x);
 		for(VarDecl d:x.list) {
@@ -521,9 +521,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return x.op.make(x.pos, x.list, sub, p);
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprSequence x) {
 		List<Expr> list=new ArrayList<Expr>();
 		for(int i=0; i<x.list.size(); i++) {
@@ -533,9 +533,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return new ExprSequence(x.pos, list);
 	}
-	
+
 //	################################################################################################
-	
+
 	public Expr accept(ExprSequence x, Type t) {
 		List<Expr> list=new ArrayList<Expr>();
 		cform(t,x);
@@ -546,26 +546,26 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return new ExprSequence(x.pos, list);
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprUnary x) {
 		Type ans=null;
 		Expr sub=x.sub.accept(this);
 		switch(x.op) {
-		
+
 		case NOT:
 			cform(sub); ans=Type.FORMULA; break;
-			
+
 		case SOMEMULT: case LONEMULT: case ONEMULT: case SETMULT:
 			cset(sub); ans=sub.type; break;
-			
+
 		case SOME: case LONE: case ONE: case NO:
 			cset(sub); ans=Type.FORMULA; break;
-			
+
 		case TRANSPOSE:
 			cset(sub); ans=sub.type.transpose(); break;
-			
+
 		case RCLOSURE: case CLOSURE:
 			// TYPE(^X) = ^TYPE(X)
 			// TYPE(^X) = ^TYPE(X) + UNIV->UNIV
@@ -576,13 +576,13 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			if (ans.join(ans).size()==0) throw x.typeError("redundant closure operation (domain and range are disjoint)");
 			if (x.op==ExprUnary.Op.RCLOSURE) ans=ans.union(Type.make(ParaSig.UNIV,ParaSig.UNIV));
 			break;
-			
+
 		case CARDINALITY:
 			cset(sub); ans=Type.INT; break;
-			
+
 		case INTTOATOM:
 			cint(sub); ans=ParaSig.SIGINT.type; break;
-			
+
 		case SUM:
 			// Report an error if TYPE(Subexpression) has empty intersection with SIGINT
 			cset(sub); if (sub.type.intersect(ParaSig.SIGINT.type).hasTuple()) {ans=Type.INT; break;}
@@ -590,9 +590,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return x.op.make(x.pos, sub, ans);
 	}
-	
+
 //	################################################################################################
-	
+
 	public final Expr accept(ExprUnary x, Type p) {
 		Type subtype=x.sub.type;
 		resolved(p,x);
@@ -618,9 +618,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		Expr sub=x.sub.accept(this, subtype);
 		return x.op.make(x.pos, sub, p);
 	}
-	
+
 //	################################################################################################
-	
+
 	private boolean applicable(ParaFun f,List<Expr> args) {
 		int argi=0;
 		for(VarDecl d:f.decls) {
@@ -636,14 +636,14 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return true;
 	}
-	
+
 	private boolean containsApplicable(Set<Object> x) {
 		for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount>0) return true;
 		return false;
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprJoin x) {
 		// This is not optimal. eg. given b.a.(func[x,y,z]), "a" and "b" will be forced to be locally-unambiguous.
 		// Another inefficiency: we don't jump forward, so sublists are re-Desugared again and again until the end of list.
@@ -699,7 +699,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		if (newx.type.hasNoTuple()) throw newx.typeError("The join operation here always yields an empty set! LeftType="+left.type+" RightType="+right.type);
 		return newx;
 	}
-	
+
 	public Expr accept(ExprJoin x, Type p) {
 		// leftType' = {r1 | r1 in leftType and there exists r2 in rightType such that r1.r2 in parentType}
 		// rightType' = {r2 | r2 in rightType and there exists r1 in leftType such that r1.r2 in parentType}
@@ -722,11 +722,11 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		Expr right=x.right.accept(this,rightType);
 		return new ExprJoin(x.pos, left, right, p);
 	}
-	
+
 //	################################################################################################
-	
+
 	@Override public Expr accept(ExprCall x) { throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!"); }
-	
+
 	public Expr accept(ExprCall x, Type t) {
 		resolved(t,x);
 		List<Object> objects=objChoices.get(x);
@@ -778,21 +778,21 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return ans;
 	}
-	
+
 //	################################################################################################
-	
+
 	public void accept(ParaAssert x, Unit u) {
 		x.value=resolve(x.value);
 	}
-	
+
 //	################################################################################################
-	
+
 	public void accept(ParaFact x, Unit u) {
 		x.value=resolve(x.value);
 	}
-	
+
 //	################################################################################################
-	
+
 	public ParaSig accept(ParaSig x, Unit u) {
 		// When typechecking the fields:
 		// * each field is allowed to refer to earlier fields in the same SIG,
@@ -824,9 +824,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return x; // zzz SHOULD ACTUALLY MAKE A NEW SIG
 	}
-	
+
 //	################################################################################################
-	
+
 	public ParaFun accept(ParaFun fun, Unit u) {
 		// Now, typecheck all function/predicate PARAMETERS and RETURNTYPE
 		// Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
@@ -857,9 +857,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		//fun=new ParaFun(fun.pos, fun.path, fun.aliasnum, fun.name, null, newdecls, type, fun.value);
 		return fun; // zzz SHOULD ACTUALLY MAKE A NEW PARAFUN
 	}
-	
+
 //	################################################################################################
-	
+
 	public Unit accept(Unit u) {
 		// Now, typecheck (1) function/predicate BODIES. (2) Signature facts. (3) Standalone facts (4) Assertions.
 		// These can refer to any SIG/FIELD/FUN/PRED visible from here.
@@ -903,9 +903,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return u;
 	}
-	
+
 //	################################################################################################
-	
+
 //	If basic2Vertex contains key bt, then the Vertex associated with bt is returned.
 //	Otherwise, a new Vertex vnew containing bt is created, a mapping from bt to vnew is
 //	added to basic2Vertex, and vnew returned.
@@ -914,7 +914,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		if (v==null) { v=new Vertex(bt); basic2Vertex.put(bt,v); }
 		return v;
 	}
-	
+
 //	EFFECTS: After the method returns, the supplied graph will
 //	contain an edge from vertex v1 to vertex v2 iff there exists an r1 in ut such
 //	that r1 = v1->v2 OR (v1 != v2 AND v1 & v2 is non-empty).
@@ -936,7 +936,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			}
 		}
 	}
-	
+
 //	PRECONDITION:  (1) basic2vertex contains mappings from BasicTypes to nodes in graph;
 //	(2) there exist bt1' such that bt1' is mapped by basic2vertex and bt1'&bt1 is non-empty.
 //	EFFECTS: After the method returns, the supplied graph will be augmented with an edge
@@ -959,7 +959,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			basic2vertex.put(bt, btVertex);
 		}
 	}
-	
+
 //	PRECONDITION:  (1) basic2vertex contains mappings from BasicTypes to nodes in graph;
 //	(2) for each bt1->bt2 in ut, there exist bt1' and bt2' such that bt1' and bt2' are mapped by
 //	basic2vertex and bt1'&bt1 and bt2'&bt2 are non-empty.
@@ -974,7 +974,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 			_expandClosureGraph(rt.basicTypes.get(1), graph, basic2vertex);
 		}
 	}
-	
+
 //	childType' := {r1 | r1 in childType AND there exist basic types
 //	b1 and b2 such that b1->b2 in parentType AND r1 is on a path from b1 to b2}
 	private static Type closureResolveChild(Type parentType, Type childType) {
@@ -999,6 +999,6 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		}
 		return resolvedType;
 	}
-	
+
 //	################################################################################################
 }

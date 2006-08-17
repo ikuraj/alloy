@@ -228,10 +228,10 @@ Specification ::= Module Opens Paragraphs ;
 Module ::= MODULE:o Name:a                           {: parser.alloyunit.makeModule(o, a.name, new ArrayList<ExprName>()); :};
 Module ::= MODULE:o Name:a LBRACKET Names:b RBRACKET {: parser.alloyunit.makeModule(o, a.name, b);                         :};
 
-Open ::= OPEN:o Name:a                                        {: parser.alloyunit.makeOpen(o,a.name,null,""    ); :};
-Open ::= OPEN:o Name:a                             AS Name:c  {: parser.alloyunit.makeOpen(o,a.name,null,c.name); :};
-Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET            {: parser.alloyunit.makeOpen(o,a.name,   b,""    ); :};
-Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET AS Name:c  {: parser.alloyunit.makeOpen(o,a.name,   b,c.name); :};
+Open ::= OPEN:o Name:a                                        {: parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), "");     :};
+Open ::= OPEN:o Name:a                             AS Name:c  {: parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), c.name); :};
+Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET            {: parser.alloyunit.makeOpen(o, a.name, b, "");                             :};
+Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET AS Name:c  {: parser.alloyunit.makeOpen(o, a.name, b, c.name);                         :};
 
 Opens ::=            ;
 Opens ::= Opens Open ;
