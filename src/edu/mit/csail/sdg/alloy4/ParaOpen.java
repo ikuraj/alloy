@@ -14,7 +14,7 @@ public final class ParaOpen extends Para {
 	/** The unmodifiable list of instantiating arguments */
 	public final List<String> list;
 
-	/** The alias for the imported module (always a non-empty string) */
+	/** The filename for the imported module (always a non-empty string) */
 	public final String filename;
 
 	/**
@@ -60,17 +60,19 @@ public final class ParaOpen extends Para {
 	 *
 	 * @param pos - the original position in the file (null if unknown)
 	 * @param path - a valid path to the Unit containing the paragraph
-	 * @param alias - the alias for the imported module
+	 * @param alias - the alias for the imported module ("" if the user intends to use the filename as the alias)
 	 * @param list - the list of instantiating arguments
 	 * @param filename - the name of the module being imported
 	 *
 	 * @throws ErrorSyntax if the path contains '@'
-	 * @throws ErrorSyntax if the name contains '@'
-	 * @throws ErrorSyntax if the name is equal to "", "none", "iden", "univ", or "Int"
+	 * @throws ErrorSyntax if the filename contains '@'
+	 * @throws ErrorSyntax if the filename is equal to "", "none", "iden", "univ", or "Int"
 	 * @throws ErrorSyntax if the alias contains '@' or '/'
 	 * @throws ErrorSyntax if the alias is equal to "none", "iden", "univ", or "Int"
 	 * @throws ErrorSyntax if the alias is equal to "" and yet (list.size()>0 or name.contains('/'))
 	 * @throws ErrorSyntax if the list contains duplicate names
+	 * @throws ErrorSyntax if at least one argument is "", "none", or "iden"
+	 * @throws ErrorSyntax if at least one argument contains '@'
 	 * @throws ErrorInternal if pos==null, path==null, alias==null, list==null, or filename==null
 	 */
 	public ParaOpen(Pos pos, String path, String alias, List<ExprName> list, String filename) {

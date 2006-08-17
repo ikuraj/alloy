@@ -246,6 +246,8 @@ Paragraphs ::= Paragraphs FUN Function    ;
 Paragraphs ::= Paragraphs PRED Predicate  ;
 Paragraphs ::=                            ;
 
+// Paragraphs ::= Paragraphs SOLVE:o  Expr:e  Scope:s  ;
+
 Paragraphs ::= Paragraphs CHECK:o  Name:n  Scope:s  {:
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
