@@ -54,11 +54,16 @@ public final class ExprBinary extends Expr {
 	
 	/**
 	 * Constructs an ExprBinary expression.
+	 *
 	 * @param pos - the original position in the file
 	 * @param op - the operator
 	 * @param left - the left-hand-side expression
 	 * @param right - the right-hand-side expression
 	 * @param type - the type (null if this expression has not been typechecked)
+	 *
+	 * @throws ErrorInternal if left.mult==1 || right.mult==1
+	 * @throws ErrorInternal if op!=Op.ARROW && left.mult!=0
+	 * @throws ErrorInternal if op!=Op.ARROW && op!=Op.IN && right.mult!=0
 	 */
 	private ExprBinary(Pos pos,Op op,Expr left,Expr right,Type type) {
 		super(pos, type, isMult(op,left,right)?2:0);
@@ -73,9 +78,9 @@ public final class ExprBinary extends Expr {
 		if (right.mult==1)
 			throw right.syntaxError("Set-multiplicity expression not allowed here");
 		if (op.isArrow()) return;
-		if (left.mult>0)
+		if (left.mult!=0)
 			throw left.syntaxError("A multiplicity expression is not allowed here");
-		if (op!=Op.IN && right.mult>0)
+		if (op!=Op.IN && right.mult!=0)
 			throw right.syntaxError("A multiplicity expression is not allowed here");
 	}
 	

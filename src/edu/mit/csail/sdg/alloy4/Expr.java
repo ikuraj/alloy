@@ -61,7 +61,7 @@ public abstract class Expr {
 	 * <br>If it's 1, that means it is a multiplicity constraint of the form (? X)
 	 * <br>If it's 0, that means it does not have either form.
 	 *
-	 * @throws ErrorInternal if position==null
+	 * @throws ErrorInternal if pos==null
 	 */
 	public Expr (Pos pos, Type type, int mult) {
 		this.pos=nonnull(pos);
