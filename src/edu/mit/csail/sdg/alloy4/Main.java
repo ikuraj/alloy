@@ -207,6 +207,8 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
            if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to extend \""+s.ext+"\", but the name \""+s.ext+"\" is ambiguous.");
            if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to extend a non-existent signature \""+s.ext+"\"");
            ParaSig parent=(ParaSig)(ans.iterator().next());
+           if (parent==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot extend the builtin \"none\" signature");
+           if (parent==ParaSig.UNIV) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" already implicitly extend the builtin \"univ\" signature");
            if (parent.subset) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot extend a subset signature \""+parent.fullname+"\"! A signature can only extend a toplevel signature or a subsignature.");
            s.ext=parent.fullname;
            s.sup=parent;
@@ -219,6 +221,8 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
              if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of \""+i+"\", but the name \""+i+"\" is ambiguous.");
              if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of a non-existent signature \""+i+"\"");
              ParaSig parent=(ParaSig)(ans.iterator().next());
+             if (parent==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot be a subset of the builtin \"none\" signature");
+             if (parent==ParaSig.UNIV) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" is already implicitly a subset of the builtin \"univ\" signature");
              s.sups.add(parent);
              newin.add(parent.fullname);
            }
