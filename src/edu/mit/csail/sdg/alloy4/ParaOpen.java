@@ -12,7 +12,7 @@ import java.util.ArrayList;
  * <br/> Invariant: list!=null
  * <br/> Invariant: all x:list | x!=null
  * <br/> Invariant: all x:list | x does not contain '@'
- * <br/> Invariant: all x:list | x is not "", "none", or "iden"
+ * <br/> Invariant: all x:list | x is not ""
  *
  * @author Felix Chang
  */
@@ -82,8 +82,7 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax if "alias" contains '@' or '/'
 	 * @throws ErrorSyntax if "alias" is "" and list.size()!=0
 	 * @throws ErrorSyntax if "alias" is "" and "file" is not a legal alias (eg. it contains '/')
-	 * @throws ErrorSyntax if at least one argument is "", "none", or "iden"
-	 * @throws ErrorSyntax if at least one argument contains '@'
+	 * @throws ErrorSyntax if at least one argument is "" or contains '@'
 	 * @throws ErrorInternal if pos==null, path==null, alias==null, list==null, or file==null
 	 */
 	public ParaOpen(Pos pos, String path, String alias, List<ExprName> list, String file) {
@@ -94,8 +93,6 @@ public final class ParaOpen extends Para {
 			String x=nonnull(list.get(i)).name;
 			if (x.length()==0) throw this.syntaxError("The import argument must not be empty.");
 			if (x.indexOf('@')>=0) throw this.syntaxError("The import argument must not contain \'@\'.");
-			if (x.equals("none")) throw this.syntaxError("The import argument cannot be \"none\"");
-			if (x.equals("iden")) throw this.syntaxError("The import argument cannot be \"iden\"");
 			newlist.add(x);
 		}
 		this.list=Collections.unmodifiableList(newlist);

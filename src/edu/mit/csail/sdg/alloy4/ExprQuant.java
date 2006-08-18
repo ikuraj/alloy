@@ -21,8 +21,11 @@ import java.util.ArrayList;
  * <br/>
  * <br/> Invariant: op!=null
  * <br/> Invariant: op!=Op.NO
+ *       <i> (since ExprQuant.Op.make() would desugar this) </i>
  * <br/> Invariant: op!=Op.ONE
+ *       <i> (since ExprQuant.Op.make() would desugar this) </i>
  * <br/> Invariant: op!=Op.COMPREHENSION => list.size()==1
+ *       <i> (since ExprQuant.Op.make() would desugar this) </i>
  * <br/> Invariant: op==Op.COMPREHENSION => list.size()>=1
  * <br/> Invariant: all x:list | x!=null
  * <br/> Invariant: count = (sum x:list | x.names.size())

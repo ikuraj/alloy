@@ -8,10 +8,10 @@ package edu.mit.csail.sdg.alloy4;
  * <br/> Invariant: name does not equal "" nor "@"
  * <br/> Invariant: if name contains '@', then '@' must only occur as the first character
  * <br/> Invariant: (object==null)
- *			|| (object instanceof ParaSig)
- *			|| (object instanceof ParaSig.Field)
- *			|| (object instanceof ParaSig.Field.Full)
- *			|| (object instanceof ParaFun)
+ * <br/>   &nbsp; &nbsp; || (object instanceof ParaSig)
+ * <br/>   &nbsp; &nbsp; || (object instanceof ParaSig.Field)
+ * <br/>   &nbsp; &nbsp; || (object instanceof ParaSig.Field.Full)
+ * <br/>   &nbsp; &nbsp; || (object instanceof ParaFun, and the function has 0 parameters)
  *
  * @author Felix Chang
  */
@@ -69,6 +69,7 @@ public final class ExprName extends Expr {
 	 * @throws ErrorInternal if name is equal to "" or "@"
 	 * @throws ErrorInternal if name.lastIndexOf('@')>0
 	 * @throws ErrorInternal if object is not one of {null, ParaSig, ParaSig.Field, ParaSig.Field.Full, ParaFun}
+	 * @throws ErrorInternal if object is a ParaFun with more than one parameter
 	 */
 	public ExprName(Pos pos, String name, Object object, Type type) {
 		super(pos, type, 0);
@@ -86,6 +87,8 @@ public final class ExprName extends Expr {
 			&& !(object instanceof ParaSig.Field.Full)
 			&& !(object instanceof ParaFun))
 			throw internalError("ExprName object must be Sig, Sig.Field, Sig.Field.Full, Fun, or null!");
+		if (object instanceof ParaFun && ((ParaFun)object).argCount>0)
+			throw internalError("If ExprName object is a function, it must have exactly 0 parameters!");
 	}
 
 	/**
@@ -98,6 +101,7 @@ public final class ExprName extends Expr {
 	 * @throws ErrorInternal if name is equal to "" or "@"
 	 * @throws ErrorInternal if name.lastIndexOf('@')>0
 	 * @throws ErrorInternal if object is not one of {null, ParaSig, ParaSig.Field, ParaSig.Field.Full, ParaFun}
+	 * @throws ErrorInternal if object is a ParaFun with more than one parameter
 	 */
 	public ExprName(Pos pos, String name) { this(pos, name, null, null); }
 

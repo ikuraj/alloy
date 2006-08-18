@@ -65,6 +65,7 @@ We throw an exception if there is a cycle in the IMPORT graph
                ParaSig vv=(ParaSig)(v.iterator().next());
                if (old==vv) continue;
                if (old!=null) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because it is being imported more than once, with different arguments!");
+               if (vv==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument!");
                chg=true;
                uu.params.put(kn,vv);
                if (!code) debug("  RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname);
