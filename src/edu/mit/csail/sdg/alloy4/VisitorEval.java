@@ -184,7 +184,7 @@ public Object accept(ExprNumber x) {return IntConstant.constant(x.num);} // zzz 
 
 //################################################################################################
 
-public Object accept(ExprNamedConstant x) {
+public Object accept(ExprConstant x) {
   switch(x.op) {
     case NONE: return Expression.NONE;
     case IDEN: return Expression.IDEN;

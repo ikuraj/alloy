@@ -375,12 +375,12 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 
 //	################################################################################################
 
-	@Override public Expr accept(ExprNamedConstant x) { return x; }
+	@Override public Expr accept(ExprConstant x) { return x; }
 
 //	################################################################################################
 
-	public Expr accept(ExprNamedConstant x, Type p) {
-		if (x.op==ExprNamedConstant.Op.IDEN) {
+	public Expr accept(ExprConstant x, Type p) {
+		if (x.op==ExprConstant.Op.IDEN) {
 			if (p.arity()!=2) throw x.typeError("This must be a binary relation.");
 		} else {
 			if (p.arity()!=1) throw x.typeError("This must be a set.");

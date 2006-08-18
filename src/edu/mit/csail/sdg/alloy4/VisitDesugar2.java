@@ -7,7 +7,7 @@ public interface VisitDesugar2 {
   public Expr accept(ExprJoin x,Type t);
   public Expr accept(ExprLet x,Type t);
   public Expr accept(ExprName x,Type t);
-  public Expr accept(ExprNamedConstant x,Type t);
+  public Expr accept(ExprConstant x,Type t);
   public Expr accept(ExprNumber x,Type t);
   public Expr accept(ExprQuant x,Type t);
   public Expr accept(ExprSequence x,Type t);

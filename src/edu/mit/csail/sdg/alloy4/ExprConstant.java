@@ -9,7 +9,7 @@ package edu.mit.csail.sdg.alloy4;
  * @author Felix Chang
  */
 
-public final class ExprNamedConstant extends Expr {
+public final class ExprConstant extends Expr {
 
 	/**
 	 * Accepts the return visitor.
@@ -47,7 +47,7 @@ public final class ExprNamedConstant extends Expr {
 	 *
 	 * @throws ErrorInternal if pos==null
 	 */
-	public ExprNamedConstant(Pos pos, Op op, Type type) {
+	public ExprConstant(Pos pos, Op op, Type type) {
 		super(pos, type, 0);
 		this.op=op;
 	}
@@ -72,11 +72,11 @@ public final class ExprNamedConstant extends Expr {
 		 * @param pos - the original position in the file
 		 * @throws ErrorInternal if pos==null
 		 */
-		public final ExprNamedConstant make(Pos pos) {
-			if (this==UNIV) return new ExprNamedConstant(pos, this, ParaSig.UNIV.type);
-			if (this==NONE) return new ExprNamedConstant(pos, this, ParaSig.NONE.type);
-			if (this==SIGINT) return new ExprNamedConstant(pos, this, ParaSig.SIGINT.type);
-			return new ExprNamedConstant(pos, this, ParaSig.UNIV.type.product_of_anyEmptyness(ParaSig.UNIV.type));
+		public final ExprConstant make(Pos pos) {
+			if (this==UNIV) return new ExprConstant(pos, this, ParaSig.UNIV.type);
+			if (this==NONE) return new ExprConstant(pos, this, ParaSig.NONE.type);
+			if (this==SIGINT) return new ExprConstant(pos, this, ParaSig.SIGINT.type);
+			return new ExprConstant(pos, this, ParaSig.UNIV.type.product_of_anyEmptyness(ParaSig.UNIV.type));
 		}
 
 		/** Returns the human readable label for this operator. */
