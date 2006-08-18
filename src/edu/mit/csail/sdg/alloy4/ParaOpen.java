@@ -14,76 +14,87 @@ public final class ParaOpen extends Para {
 	/** The unmodifiable list of instantiating arguments. */
 	public final List<String> list;
 
-	/** The filename for the imported module (always a non-empty string) */
-	public final String filename;
+	/**
+	 * The relative filename for the file being imported, without ".als"
+	 * (this field is always a non-empty string).
+	 *  
+	 * <br/> eg. "util/ordering"
+	 * <br/> eg. "myexample"
+	 */
+	public final String file;
 
 	/**
-	 * Convenience method that computes what the alias should be.
+	 * Convenience method that computes what the actual alias should be.
 	 *
-	 * @param pos - the original position in the file (null if unknown)
-	 * @param filename - the filename of the file being opened
+	 * @param pos - the original position in the file
+	 * @param file - the relative filename of the file being imported (without the ".als" part)
 	 * @param alias - the alias that the user specified for the file (could be "")
-	 * @param hasArg - true if and only if the user specified instantiating arguments
+	 * @param list - the list of instantiating arguments
 	 *
-	 * @return if alias!="", then it is returned. Otherwise, if the filename
-	 * does not contain any '/' and there are no arguments, then the filename is returned.
-	 * Failing both, then it will throw an ErrorSyntax exception.
+	 * @return If "alias" is a legal alias, then it's returned.
+	 * <br/> Otherwise, if "file" is a legal alias, and there are no arguments, then it's returned.
+	 * <br/> Failing both, this method throws an ErrorSyntax exception.
 	 *
-	 * @throws ErrorSyntax if alias contains '@' or '/'
-	 * @throws ErrorSyntax if alias is equal to "none", "iden", "univ", or "Int"
-	 * @throws ErrorSyntax if filename contains '@'
-	 * @throws ErrorSyntax if filename contains '/' and alias is equal to ""
-	 * @throws ErrorSyntax if filename is equal to "", "none", "iden", "univ", or "Int"
-	 * @throws ErrorSyntax if hasArg==true and alias is equal to ""
+	 * @throws ErrorSyntax if "file" is ""
+	 * @throws ErrorSyntax if "alias" contains '@' or '/'
+	 * @throws ErrorSyntax if "alias" is "none", "iden", "univ", or "Int"
+	 * @throws ErrorSyntax if "alias" is "", and list.size()!=0
+	 * @throws ErrorSyntax if "alias" is "", and "file" is not a legal alias (eg. it contains '/')
+	 * @throws ErrorInternal if pos==null, file==null, alias==null, or list==null
 	 */
-	private static String computeAlias(Pos pos, String filename, String alias, boolean hasArg) {
+	private static String computeAlias(Pos pos, String file, String alias, List<ExprName> list) {
+		if (pos==null || file==null || alias==null || list==null)
+			throw new ErrorInternal(pos,null,"NullPointerException");
+		if (file.length()==0) throw new ErrorSyntax(pos, "The filename cannot be \"\"");
 		if (alias.indexOf('@')>=0) throw new ErrorSyntax(pos, "Alias \""+alias+"\" must not contain \'@\'");
 		if (alias.indexOf('/')>=0) throw new ErrorSyntax(pos, "Alias \""+alias+"\" must not contain \'/\'");
 		if (alias.equals("none") ||
 			alias.equals("iden") ||
 			alias.equals("univ") ||
 			alias.equals("Int")) throw new ErrorSyntax(pos, "Alias cannot be \""+alias+"\"");
-		if (filename.indexOf('@')>=0) throw new ErrorSyntax(pos, "The filename \""+filename+"\" must not contain \'@\'");
-		if (filename.length()==0 ||
-			filename.equals("none") ||
-			filename.equals("iden") ||
-			filename.equals("univ") ||
-			filename.equals("Int")) throw new ErrorSyntax(pos, "The filename cannot be \""+filename+"\"");
 		if (alias.length()>0) return alias;
-		if (filename.indexOf('/')>=0) throw new ErrorSyntax(pos, "This open statement has \'/\' in the pathname, so you must supply the ALIAS via the AS command.");
-		if (hasArg) throw new ErrorSyntax(pos, "This open statement has parametric arguments, so you must supply the ALIAS via the AS command.");
-		return filename;
+		if (file.equals("none") ||
+			file.equals("iden") ||
+			file.equals("univ") ||
+			file.equals("Int")) throw new ErrorSyntax(pos, "The filename \""+file+"\" cannot be a legal alias, so you must supply an alias via the AS command.");
+		for(int i=0; i<file.length(); i++) {
+			char c=file.charAt(i);
+			if ((c>='a' && c<='z') || (c>='A' && c<='Z')) continue;
+			if (i==0)
+				throw new ErrorSyntax(pos, "This filename does not start with a-z or A-Z, so you must supply an alias via the AS command.");
+			if (!(c>='0' && c<='9') && c!='_' && c!='\'' && c!='\"')
+				throw new ErrorSyntax(pos, "This filename contains \'"+c+"\' which is not legal in an alias, so you must supply an alias via the AS command.");
+		}
+		if (list.size()!=0) throw new ErrorSyntax(pos, "The module being imported has parameters, so you must supply an alias via the AS command.");
+		return file;
 	}
 
 	/**
 	 * Constructs a new ParaOpen object.
 	 *
-	 * @param pos - the original position in the file (null if unknown)
+	 * @param pos - the original position in the file
 	 * @param path - a valid path to the Unit containing the paragraph
 	 * @param alias - the alias for the imported module ("" if the user intends to use the filename as the alias)
 	 * @param list - the list of instantiating arguments
-	 * @param filename - the name of the module being imported
+	 * @param file - the relative filename of the file being imported (without the ".als" part)
 	 *
-	 * @throws ErrorSyntax if the path contains '@'
-	 * @throws ErrorSyntax if the filename contains '@'
-	 * @throws ErrorSyntax if the filename is equal to "", "none", "iden", "univ", or "Int"
-	 * @throws ErrorSyntax if the alias contains '@' or '/'
-	 * @throws ErrorSyntax if the alias is equal to "none", "iden", "univ", or "Int"
-	 * @throws ErrorSyntax if the alias is equal to "" and yet (list.size()>0 or name.contains('/'))
-	 * @throws ErrorSyntax if the list contains duplicate names
+	 * @throws ErrorSyntax if "path" contains '@'
+	 * @throws ErrorSyntax if "file" is ""
+	 * @throws ErrorSyntax if "alias" contains '@' or '/'
+	 * @throws ErrorSyntax if "alias" is "none", "iden", "univ", or "Int"
+	 * @throws ErrorSyntax if "alias" is "" and list.size()!=0
+	 * @throws ErrorSyntax if "alias" is "" and "file" is not a legal alias (eg. it contains '/')
+	 * @throws ErrorSyntax if "list" contains duplicate names
 	 * @throws ErrorSyntax if at least one argument is "", "none", or "iden"
 	 * @throws ErrorSyntax if at least one argument contains '@'
-	 * @throws ErrorInternal if pos==null, path==null, alias==null, list==null, or filename==null
+	 * @throws ErrorInternal if pos==null, path==null, alias==null, list==null, or file==null
 	 */
-	public ParaOpen(Pos pos, String path, String alias, List<ExprName> list, String filename) {
-		super(pos, path, computeAlias(pos,filename,alias,list.size()>0));
-		nonnull(filename);
-		nonnull(alias);
-		this.filename=filename;
+	public ParaOpen(Pos pos, String path, String alias, List<ExprName> list, String file) {
+		super(pos, path, computeAlias(pos,file,alias,list));
+		this.file=file;
 		List<String> newlist=new ArrayList<String>(list.size());
 		for(int i=0; i<list.size(); i++) {
 			String x=nonnull(list.get(i)).name;
-			nonnull(x);
 			if (x.length()==0) throw this.syntaxError("The import argument must not be empty.");
 			if (x.indexOf('@')>=0) throw this.syntaxError("The import argument must not contain \'@\'.");
 			if (x.equals("none")) throw this.syntaxError("The import argument cannot be \"none\"");
