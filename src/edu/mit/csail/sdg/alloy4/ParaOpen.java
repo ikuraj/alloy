@@ -67,7 +67,7 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax if the path contains '@'
 	 * @throws ErrorSyntax if the filename contains '@'
 	 * @throws ErrorSyntax if the filename is equal to "", "none", "iden", "univ", or "Int"
-	 * @throws    ErrorSyntax if the alias contains '@' or '/'
+	 * @throws ErrorSyntax if the alias contains '@' or '/'
 	 * @throws ErrorSyntax if the alias is equal to "none", "iden", "univ", or "Int"
 	 * @throws ErrorSyntax if the alias is equal to "" and yet (list.size()>0 or name.contains('/'))
 	 * @throws ErrorSyntax if the list contains duplicate names
