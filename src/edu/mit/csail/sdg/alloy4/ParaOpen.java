@@ -6,6 +6,14 @@ import java.util.ArrayList;
 
 /**
  * Immutable; reresents an "open" declaration.
+ *
+ * <br/>
+ * <br/> Invariant: file!=null
+ * <br/> Invariant: list!=null
+ * <br/> Invariant: all x:list | x!=null
+ * <br/> Invariant: all x:list | x does not contain '@'
+ * <br/> Invariant: all x:list | x is not "", "none", or "iden"
+ *
  * @author Felix Chang
  */
 
@@ -37,7 +45,6 @@ public final class ParaOpen extends Para {
 	 *
 	 * @throws ErrorSyntax if "file" is ""
 	 * @throws ErrorSyntax if "alias" contains '@' or '/'
-	 * @throws ErrorSyntax if "alias" is "none", "iden", "univ", or "Int"
 	 * @throws ErrorSyntax if "alias" is "", and list.size()!=0
 	 * @throws ErrorSyntax if "alias" is "", and "file" is not a legal alias (eg. it contains '/')
 	 * @throws ErrorInternal if pos==null, file==null, alias==null, or list==null
@@ -48,15 +55,7 @@ public final class ParaOpen extends Para {
 		if (file.length()==0) throw new ErrorSyntax(pos, "The filename cannot be \"\"");
 		if (alias.indexOf('@')>=0) throw new ErrorSyntax(pos, "Alias \""+alias+"\" must not contain \'@\'");
 		if (alias.indexOf('/')>=0) throw new ErrorSyntax(pos, "Alias \""+alias+"\" must not contain \'/\'");
-		if (alias.equals("none") ||
-			alias.equals("iden") ||
-			alias.equals("univ") ||
-			alias.equals("Int")) throw new ErrorSyntax(pos, "Alias cannot be \""+alias+"\"");
 		if (alias.length()>0) return alias;
-		if (file.equals("none") ||
-			file.equals("iden") ||
-			file.equals("univ") ||
-			file.equals("Int")) throw new ErrorSyntax(pos, "The filename \""+file+"\" cannot be a legal alias, so you must supply an alias via the AS command.");
 		for(int i=0; i<file.length(); i++) {
 			char c=file.charAt(i);
 			if ((c>='a' && c<='z') || (c>='A' && c<='Z')) continue;
@@ -81,10 +80,8 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax if "path" contains '@'
 	 * @throws ErrorSyntax if "file" is ""
 	 * @throws ErrorSyntax if "alias" contains '@' or '/'
-	 * @throws ErrorSyntax if "alias" is "none", "iden", "univ", or "Int"
 	 * @throws ErrorSyntax if "alias" is "" and list.size()!=0
 	 * @throws ErrorSyntax if "alias" is "" and "file" is not a legal alias (eg. it contains '/')
-	 * @throws ErrorSyntax if "list" contains duplicate names
 	 * @throws ErrorSyntax if at least one argument is "", "none", or "iden"
 	 * @throws ErrorSyntax if at least one argument contains '@'
 	 * @throws ErrorInternal if pos==null, path==null, alias==null, list==null, or file==null

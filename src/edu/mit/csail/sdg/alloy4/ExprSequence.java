@@ -6,6 +6,11 @@ import java.util.ArrayList;
 
 /**
  * Immutable; represents a list of formulas joined by the AND operator.
+ *
+ * <br/>
+ * <br/> Invariant: list!=null
+ * <br/> Invariant: all x:list | (x!=null && x.mult==0)
+ *
  * @author Felix Chang
  */
 
@@ -35,14 +40,14 @@ public final class ExprSequence extends Expr {
 		return visitor.accept(this,type);
 	}
 
-	/** The unmodifiable list of formulas (The list can be empty) */
+	/** The unmodifiable list of formulas (The list can be empty, meaning TRUE) */
 	public final List<Expr> list;
 
 	/**
 	 * Constructs an ExprSequence object.
 	 *
 	 * @param p - the original position in the file.
-	 * @param s - the list of formulas (this can be an empty list).
+	 * @param s - the list of formulas (this can be an empty list, meaning TRUE).
 	 *
 	 * @throws ErrorInternal if p==null, s==null, or one of the formula is null
 	 * @throws ErrorSyntax if one of the formula is a multiplicity constraint

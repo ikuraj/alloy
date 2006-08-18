@@ -2,6 +2,12 @@ package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; represents an if-then-else expression.
+ *
+ * <br/>
+ * <br/> Invariant: cond!=null && cond.mult==0
+ * <br/> Invariant: left!=null && left.mult==0
+ * <br/> Invariant: right!=null && right.mult==0
+ *
  * @author Felix Chang
  */
 

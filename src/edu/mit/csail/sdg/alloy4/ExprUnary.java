@@ -2,6 +2,10 @@ package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; represents a unary expression of the form (OP subexpression).
+ *
+ * <br/>
+ * <br/> Invariant: op!=null && sub!=null && sub.mult==0
+ *
  * @author Felix Chang
  */
 
@@ -91,7 +95,7 @@ public final class ExprUnary extends Expr {
 		if (s.mult != 0) throw s.syntaxError("Multiplicity expression not allowed here");
 	}
 
-	/** This class contains all possible unary operators */
+	/** This class contains all possible unary operators. */
 	public enum Op {
 		/** :some x (where x is a set or relation) */  SOMEMULT(":some"),
 		/** :lone x (where x is a set or relation) */  LONEMULT(":lone"),

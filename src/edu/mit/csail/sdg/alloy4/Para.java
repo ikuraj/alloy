@@ -2,6 +2,12 @@ package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; represents a toplevel paragraph in the model.
+ *
+ * <br/>
+ * <br/> Invariant: pos!=null && path!=null && name!=null
+ * <br/> Invariant: path does not contain '@'
+ * <br/> Invariant: name does not contain '@', nor does it contain '/'
+ *
  * @author Felix Chang
  */
 
@@ -45,7 +51,6 @@ public abstract class Para {
 	 *
 	 * @throws ErrorSyntax if the path contains '@'
 	 * @throws ErrorSyntax if the name contains '@' or '/'
-	 * @throws ErrorSyntax if the name is equal to "none", "iden", "univ", or "Int"
 	 * @throws ErrorInternal if pos==null, path==null, or name==null
 	 */
 	public Para(Pos pos, String path, String name) {
@@ -55,10 +60,6 @@ public abstract class Para {
 		if (path.indexOf('@')>=0) throw syntaxError("Path \""+path+"\" must not contain \'@\'");
 		if (name.indexOf('@')>=0) throw syntaxError("Name \""+name+"\" must not contain \'@\'");
 		if (name.indexOf('/')>=0) throw syntaxError("Name \""+name+"\" must not contain \'/\'");
-		if (name.equals("none") ||
-			name.equals("iden") ||
-			name.equals("univ") ||
-			name.equals("Int")) throw syntaxError("Name cannot be \""+name+"\"");
 	}
 
 	/** Convenience method that constructs a syntax error exception. */

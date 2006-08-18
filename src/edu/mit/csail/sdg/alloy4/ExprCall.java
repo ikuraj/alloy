@@ -6,6 +6,12 @@ import java.util.ArrayList;
 
 /**
  * Immutable; represents a function/predicate call.
+ *
+ * <br/>
+ * <br/> Invariant: name!=null
+ * <br/> Invariant: args!=null
+ * <br/> Invariant: all x:args | (x!=null && x.mult==0)
+ *
  * @author Felix Chang
  */
 

@@ -4,7 +4,14 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Mutable; represents a "predicate" or "function"
+ * Mutable; represents a "predicate" or "function".
+ *
+ * <br/>
+ * <br/> Invariant: decls!=null and there are no duplicate names in the list
+ * <br/> Invariant: all x:decls | x!=null
+ * <br/> Invariant: argCount == (sum x:decls | x.names.size())
+ * <br/> Invariant: value!=null
+ *
  * @author Felix Chang
  */
 
@@ -34,7 +41,7 @@ public final class ParaFun extends Para {
 	 *
 	 * @throws ErrorSyntax if the path contains '@'
 	 * @throws ErrorSyntax if the name contains '@' or '/'
-	 * @throws ErrorSyntax if the name is equal to "", "none", "iden", "univ", or "Int"
+	 * @throws ErrorSyntax if the name is equal to ""
 	 * @throws ErrorSyntax if decls contains duplicate names
 	 * @throws ErrorInternal if pos==null, path==null, name==null, decls==null, or value==null
 	 */

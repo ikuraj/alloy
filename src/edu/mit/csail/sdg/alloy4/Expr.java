@@ -3,6 +3,11 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * Immutable; represents a formula or expression;
  * subclasses must also be immutable.
+ *
+ * <br/>
+ * <br/> Invariant: pos!=null
+ * <br/> Invariant: mult==0 || mult==1 || mult==2
+ *
  * @author Felix Chang
  */
 

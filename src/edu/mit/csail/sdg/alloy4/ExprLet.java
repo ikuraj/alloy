@@ -1,7 +1,13 @@
 package edu.mit.csail.sdg.alloy4;
 
 /**
- * Immutable; represents an expression of the form (let a=b | x)
+ * Immutable; represents an expression of the form (let a=b | x).
+ *
+ * <br/>
+ * <br/> Invariant: left!=null  &&  left is not ""  &&  left does not contain '/' nor '@'
+ * <br/> Invariant: right!=null &&  right.mult==0
+ * <br/> Invariant: sub!=null   &&  sub.mult==0
+ *
  * @author Felix Chang
  */
 
@@ -52,7 +58,7 @@ public final class ExprLet extends Expr {
 	 * @throws ErrorInternal if pos==null, left==null, right==null, or sub==null
 	 * @throws ErrorSyntax if right.mult!=0 or sub.mult!=0
 	 * @throws ErrorSyntax if left contains '/' or '@'
-	 * @throws ErrorSyntax if left is equal to "", "univ", "none", "iden", or "Int"
+	 * @throws ErrorSyntax if left is equal to ""
 	 */
 	public ExprLet(Pos pos, String left, Expr right, Expr sub, Type type) {
 		super(pos, type, 0);
@@ -64,10 +70,6 @@ public final class ExprLet extends Expr {
 		if (left.length()==0) throw syntaxError("The LET variable must not be empty!");
 		if (left.indexOf('/')>=0) throw syntaxError("The LET variable cannot contain \'/\'");
 		if (left.indexOf('@')>=0) throw syntaxError("The LET variable cannot contain \'@\'");
-		if (left.equals("none") ||
-			left.equals("iden") ||
-			left.equals("univ") ||
-			left.equals("Int")) throw syntaxError("The LET variable cannot be \""+left+"\"");
 	}
 
 	/**
@@ -81,7 +83,7 @@ public final class ExprLet extends Expr {
 	 * @throws ErrorInternal if pos==null, left==null, right==null, or sub==null
 	 * @throws ErrorSyntax if right.mult!=0 or sub.mult!=0
 	 * @throws ErrorSyntax if left contains '/' or '@'
-	 * @throws ErrorSyntax if left is equal to "", "univ", "none", "iden", or "Int"
+	 * @throws ErrorSyntax if left is equal to ""
 	 */
 	public ExprLet(Pos pos, String left, Expr right, Expr sub) {
 		this(pos, left, right, sub, null);

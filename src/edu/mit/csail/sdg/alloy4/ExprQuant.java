@@ -5,17 +5,28 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Immutable;
- * represents a quantified expression with one of the following forms:
+ * Immutable; represents a quantified expression.
  *
- * <br>&nbsp; &nbsp; &nbsp; (all &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br>&nbsp; &nbsp; &nbsp; (no &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br>&nbsp; &nbsp; &nbsp; (lone &nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br>&nbsp; &nbsp; &nbsp; (one &nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br>&nbsp; &nbsp; &nbsp; (some &nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br>&nbsp; &nbsp; &nbsp; (sum &nbsp; a,b:t, c,d:v &nbsp; | expression)
- * <br>&nbsp; &nbsp; &nbsp; {a,b:t, &nbsp; c,d:v &nbsp; | &nbsp; formula}
- * <br>&nbsp; &nbsp; &nbsp; {a,b:t, &nbsp; c,d:v}
+ * It can have one of the following forms:
+ *
+ * <br/> &nbsp; &nbsp; &nbsp; (all    &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
+ * <br/> &nbsp; &nbsp; &nbsp; (no     &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
+ * <br/> &nbsp; &nbsp; &nbsp; (lone   &nbsp;       a,b:t, c,d:v &nbsp; | formula)
+ * <br/> &nbsp; &nbsp; &nbsp; (one    &nbsp;       a,b:t, c,d:v &nbsp; | formula)
+ * <br/> &nbsp; &nbsp; &nbsp; (some   &nbsp;       a,b:t, c,d:v &nbsp; | formula)
+ * <br/> &nbsp; &nbsp; &nbsp; (sum    &nbsp;       a,b:t, c,d:v &nbsp; | expression)
+ * <br/> &nbsp; &nbsp; &nbsp; {a,b:t, &nbsp; c,d:v &nbsp; | &nbsp; formula}
+ * <br/> &nbsp; &nbsp; &nbsp; {a,b:t, &nbsp; c,d:v}
+ *
+ * <br/>
+ * <br/> Invariant: op!=null
+ * <br/> Invariant: op!=Op.NO
+ * <br/> Invariant: op!=Op.ONE
+ * <br/> Invariant: op!=Op.COMPREHENSION => list.size()==1
+ * <br/> Invariant: op==Op.COMPREHENSION => list.size()>=1
+ * <br/> Invariant: all x:list | x!=null
+ * <br/> Invariant: count = (sum x:list | x.names.size())
+ * <br/> Invariant: sub.mult == 0
  *
  * @author Felix Chang
  */

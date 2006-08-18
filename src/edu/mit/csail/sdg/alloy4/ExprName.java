@@ -2,6 +2,17 @@ package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; represents an identifier in the AST.
+ *
+ * <br/>
+ * <br/> Invariant: name!=null
+ * <br/> Invariant: name does not equal "" nor "@"
+ * <br/> Invariant: if name contains '@', then '@' must only occur as the first character
+ * <br/> Invariant: (object==null)
+ *			|| (object instanceof ParaSig)
+ *			|| (object instanceof ParaSig.Field)
+ *			|| (object instanceof ParaSig.Field.Full)
+ *			|| (object instanceof ParaFun)
+ *
  * @author Felix Chang
  */
 

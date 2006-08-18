@@ -2,6 +2,10 @@ package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; stores the filename and line/column position.
+ *
+ * <br/>
+ * <br/> Invariant: filename!=null && x>0 && y>0
+ *
  * @author Felix Chang
  */
 

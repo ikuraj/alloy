@@ -2,6 +2,11 @@ package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; represents a relational join expression.
+ *
+ * <br/>
+ * <br/> Invariant: left!=null && left.mult==0
+ * <br/> Invariant: right!=null && right.mult==0
+ *
  * @author Felix Chang
  */
 

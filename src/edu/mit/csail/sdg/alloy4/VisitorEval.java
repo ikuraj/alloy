@@ -443,7 +443,7 @@ public Object accept(ExprCall x) {
     if (cmd.names.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
     if (cmd.names.size()>0) {
        for(String n:cmd.names) {
-          if (n.equals("int")) { if (bitwidth<0) {bitwidth=cmd.scope(n);continue;} throw cmd.syntaxError("The bound on \"int\" is already specified"); }
+          if (n.equals("int")) { if (bitwidth<0) {bitwidth=cmd.getScope(n);continue;} throw cmd.syntaxError("The bound on \"int\" is already specified"); }
           Set<Object> set=root.lookup_sigORparam(n);
           Iterator<Object> it=set.iterator();
           if (set.size()>1) {
@@ -456,7 +456,7 @@ public Object accept(ExprCall x) {
           if (cmd.isExact(n)) exact(s,true);
           if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+n+"\"");
           if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
-          bound("#6: ",cmd, s, cmd.scope(n));
+          bound("#6: ",cmd, s, cmd.getScope(n));
        }
     }
     // Ensure "int" and "Int" are consistent
@@ -796,9 +796,9 @@ Code generation
         }
       } catch(HigherOrderDeclException ex) { System.out.printf("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.%n");
       } catch(TimeoutException ex) { ex.printStackTrace(System.out);
-      } catch(ErrorInternal ex) { ex.printStackTrace(System.out);
-      } catch(ErrorType ex) { ex.printStackTrace(System.out);
-      } catch(ErrorSyntax ex) { ex.printStackTrace(System.out); }
+      } catch(ErrorInternal ex) { System.out.println(ex.msg);
+      } catch(ErrorType ex) { System.out.println(ex.msg);
+      } catch(ErrorSyntax ex) { System.out.println(ex.msg); }
     }
     else {
       List<ParaFun> ee=root.funs.get(cmd.name);
@@ -836,9 +836,9 @@ Code generation
         }
       } catch(HigherOrderDeclException ex) { System.out.printf("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.%n");
       } catch(TimeoutException ex) { ex.printStackTrace(System.out);
-      } catch(ErrorInternal ex) { ex.printStackTrace(System.out);
-      } catch(ErrorType ex) { ex.printStackTrace(System.out);
-      } catch(ErrorSyntax ex) { ex.printStackTrace(System.out); }
+      } catch(ErrorInternal ex) { System.out.println(ex.msg);
+      } catch(ErrorType ex) { System.out.println(ex.msg);
+      } catch(ErrorSyntax ex) { System.out.println(ex.msg); }
     }
     System.out.flush();
   }

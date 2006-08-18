@@ -5,7 +5,14 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Immutable; represents a field/variable/parameter declaration such as "a,b,c: X"
+ * Immutable; represents a field/variable/parameter declaration such as "a,b,c: X".
+ *
+ * <br/>
+ * <br/> Invariant: names!=null
+ * <br/> Invariant: names.size()>0
+ * <br/> Invariant: all x:names | x!=null, x is not "", and does not contain '/' or '@'
+ * <br/> Invariant: value!=null
+ *
  * @author Felix Chang
  */
 
@@ -25,9 +32,8 @@ public final class VarDecl {
 	 *
 	 * @throws ErrorInternal if x==null or y==null
 	 * @throws ErrorInternal if x.size()==0
-	 * @throws ErrorInternal if any of the name is null
+	 * @throws ErrorInternal if any of the name is null or ""
 	 * @throws ErrorInternal if any of the name contains '/' or '@'
-	 * @throws ErrorInternal if any of the name is equal to "", "none", "iden", "univ", or "Int"
 	 */
 	public VarDecl (List<ExprName> x, Expr y) {
 		if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
@@ -41,11 +47,6 @@ public final class VarDecl {
 			if (n.length()==0) throw e.syntaxError("Variable name cannot be empty!");
 			if (n.indexOf('/')>=0) throw e.syntaxError("Variable name cannot contain \'/\'");
 			if (n.indexOf('@')>=0) throw e.syntaxError("Variable name cannot contain \'@\'");
-			if (n.equals("none") ||
-				n.equals("iden") ||
-				n.equals("univ") ||
-				n.equals("Int"))
-				throw e.syntaxError("The name of a variable cannot be \""+n+"\"");
 			newlist.add(n);
 		}
 		names=Collections.unmodifiableList(newlist);
@@ -62,7 +63,7 @@ public final class VarDecl {
 	 *
 	 * @throws ErrorInternal if x==null or y==null
 	 * @throws ErrorInternal if x contains '/' or '@'
-	 * @throws ErrorInternal if x is equal to "", "none", "iden", "univ", or "Int"
+	 * @throws ErrorInternal if x is equal to ""
 	 */
 	public VarDecl (String x, Expr y) {
 		if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
@@ -72,11 +73,6 @@ public final class VarDecl {
 		if (x.length()==0) throw y.syntaxError("Variable name must not be empty!");
 		if (x.indexOf('/')>=0) throw y.syntaxError("Variable name cannot contain \'/\'");
 		if (x.indexOf('@')>=0) throw y.syntaxError("Variable name cannot contain \'@\'");
-		if (x.equals("none") ||
-			x.equals("iden") ||
-			x.equals("univ") ||
-			x.equals("Int"))
-			throw y.syntaxError("The name of a variable cannot be \""+x+"\"");
 		// See ExprUnary.java for why we have to call makeMult() here.
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;

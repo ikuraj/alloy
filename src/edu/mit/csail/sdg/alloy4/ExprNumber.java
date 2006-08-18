@@ -2,6 +2,10 @@ package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; represents an integer constant in the AST.
+ *
+ * <br/>
+ * <br/> Invariant: none
+ *
  * @author Felix Chang
  */
 
