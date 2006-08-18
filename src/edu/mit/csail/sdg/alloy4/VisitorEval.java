@@ -184,6 +184,18 @@ public Object accept(ExprNumber x) {return IntConstant.constant(x.num);} // zzz 
 
 //################################################################################################
 
+public Object accept(ExprNamedConstant x) {
+  switch(x.op) {
+    case NONE: return Expression.NONE;
+    case IDEN: return Expression.IDEN;
+    case UNIV: return Expression.UNIV;
+    case SIGINT: return Expression.INTS;
+  }
+  throw x.internalError("Unsupported operator ("+x.op+") encountered during ExprNamedConstant.accept()");
+}
+
+//################################################################################################
+
 private Expr stripSetMult(Expr x) {
   if (!(x instanceof ExprUnary)) return x;
   ExprUnary y=(ExprUnary)x;
@@ -320,12 +332,7 @@ public Object accept(ExprUnary x) {
 //################################################################################################
 
 public Object accept(ExprName x) {
-  if (x.name.equals("none")) return Expression.NONE;
-  if (x.name.equals("iden")) return Expression.IDEN;
-  if (x.name.equals("univ")) return Expression.UNIV;
-  if (x.name.equals("Int")) return Expression.INTS;
   Object r = x.object;
-             //x.name.indexOf("/")>=0 ? cache.get(x.name) : null;
   if (r instanceof ParaSig.Field.Full) {
      ParaSig.Field.Full y=(ParaSig.Field.Full)r;
      return rel(y);
@@ -402,8 +409,12 @@ public Object accept(ExprCall x) {
   private static void debug2(String s) { /*System.out.println(s); System.out.flush();*/ }
 
   private void bound(String debug, ParaRuncheck c, ParaSig s, int b) {
-    if (b<0) throw c.syntaxError("Cannot set a negative bound for signature \""+s.fullname+"\"");
-    if (sig2bound(s)>=0) throw c.syntaxError("The signature \""+s.fullname+"\" already has a bound of "+sig2bound(s)+", so we cannot set it to "+b);
+    if (b<0)
+       throw c.syntaxError("Cannot set a negative bound for signature \""+s.fullname+"\"");
+    if (sig2bound(s)>=0)
+       throw c.syntaxError("The signature \""+s.fullname+"\" already has a bound of "+sig2bound(s)+", so we cannot set it to "+b);
+    if (b>=0 && (s==ParaSig.UNIV || s==ParaSig.NONE))
+       throw c.syntaxError("You cannot specify a scope for the builtin signature \""+s.name+"\"");
     sig2bound(s,b);
     System.out.println(debug+"Sig \""+s.fullname+"\" bound to be <= "+b); System.out.flush();
   }

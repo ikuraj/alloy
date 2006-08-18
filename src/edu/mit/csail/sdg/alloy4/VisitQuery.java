@@ -20,6 +20,8 @@ public abstract class VisitQuery implements VisitReturn {
     return x.sub.accept(this);
   }
 
+  public Object accept(ExprNamedConstant x) { return Boolean.FALSE; }
+
   public Object accept(ExprNumber x) { return Boolean.FALSE; }
 
   public Object accept(ExprQuant x) {

@@ -2205,7 +2205,7 @@ class CUP$AlloyParser$actions {
             {
               Expr RESULT =null;
 		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=new ExprName(x,"Int");                       
+		 RESULT=ExprNamedConstant.Op.SIGINT.make(x);         
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -2215,7 +2215,7 @@ class CUP$AlloyParser$actions {
             {
               Expr RESULT =null;
 		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=new ExprName(x,"univ");                      
+		 RESULT=ExprNamedConstant.Op.UNIV.make(x);           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -2225,7 +2225,7 @@ class CUP$AlloyParser$actions {
             {
               Expr RESULT =null;
 		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=new ExprName(x,"iden");                      
+		 RESULT=ExprNamedConstant.Op.IDEN.make(x);           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -2235,7 +2235,7 @@ class CUP$AlloyParser$actions {
             {
               Expr RESULT =null;
 		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=new ExprName(x,"none");                      
+		 RESULT=ExprNamedConstant.Op.NONE.make(x);           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;

@@ -7,6 +7,7 @@ public interface VisitReturn {
   public abstract Object accept(ExprCall x);
   public abstract Object accept(ExprLet x);
   public abstract Object accept(ExprName x);
+  public abstract Object accept(ExprNamedConstant x);
   public abstract Object accept(ExprNumber x);
   public abstract Object accept(ExprQuant x);
   public abstract Object accept(ExprSequence x);

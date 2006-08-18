@@ -49,6 +49,8 @@ public abstract class VisitDesugar {
 
   public Expr accept(ExprName x) { return x; }
 
+  public Expr accept(ExprNamedConstant x) { return x; }
+
   public Expr accept(ExprNumber x) { return x; }
 
   public Expr accept(ExprQuant x) {

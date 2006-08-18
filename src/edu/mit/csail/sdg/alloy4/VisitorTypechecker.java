@@ -370,10 +370,22 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		else {
 			y=new LinkedHashSet<Object>();
 		}
-		if (x2.equals("iden")) y.add(Type.make(ParaSig.UNIV, ParaSig.UNIV));
-		// No need to include "none/univ/Int" here, since they are signatures,
-		// and would have been found by the "lookup_sigORparam()" method call above.
 		return y;
+	}
+
+//	################################################################################################
+
+	@Override public Expr accept(ExprNamedConstant x) { return x; }
+
+//	################################################################################################
+
+	public Expr accept(ExprNamedConstant x, Type p) {
+		if (x.op==ExprNamedConstant.Op.IDEN) {
+			if (p.arity()!=2) throw x.typeError("This must be a binary relation.");
+		} else {
+			if (p.arity()!=1) throw x.typeError("This must be a set.");
+		}
+		return x;
 	}
 
 //	################################################################################################
@@ -381,13 +393,6 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 	@Override public Expr accept(ExprName x) {
 		List<Object> objects=new ArrayList<Object>();
 		List<Type> types=new ArrayList<Type>();
-		if (x.name.equals("iden")) {
-			Type ans=Type.make(ParaSig.UNIV, ParaSig.UNIV);
-			return new ExprName(x.pos, x.name, null, ans);
-		}
-		if (x.name.equals("none")) return new ExprName(x.pos, x.name, ParaSig.NONE, ParaSig.NONE.type);
-		if (x.name.equals("univ")) return new ExprName(x.pos, x.name, ParaSig.UNIV, ParaSig.UNIV.type);
-		if (x.name.equals("Int")) return new ExprName(x.pos, x.name, ParaSig.SIGINT, ParaSig.SIGINT.type);
 		Set<Object> y=populate(x.name); if (y.size()==0) ExprName.hint(x.pos, x.name);
 		Type t=null,tt;
 		for(Object z:y) {
@@ -417,28 +422,6 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		objChoices.remove(x);
 		List<Type> types=typeChoices.get(x);
 		typeChoices.remove(x);
-
-		if (x.name.equals("iden")) {
-			Type ans=Type.make(ParaSig.UNIV, ParaSig.UNIV);
-			objects=new ArrayList<Object>(1); objects.add(ans);
-			types=new ArrayList<Type>(1); types.add(ans);
-		}
-
-		if (x.name.equals("none")) {
-			objects=new ArrayList<Object>(1); objects.add(ParaSig.NONE);
-			types=new ArrayList<Type>(1); types.add(ParaSig.NONE.type);
-		}
-
-		if (x.name.equals("univ")) {
-			objects=new ArrayList<Object>(1); objects.add(ParaSig.UNIV);
-			types=new ArrayList<Type>(1); types.add(ParaSig.UNIV.type);
-		}
-
-		if (x.name.equals("Int")) {
-			objects=new ArrayList<Object>(1); objects.add(ParaSig.SIGINT);
-			types=new ArrayList<Type>(1); types.add(ParaSig.SIGINT.type);
-		}
-
 		Object match=null;
 		for(int i=0; i<objects.size(); i++) {
 			Object z=objects.get(i);
@@ -452,7 +435,6 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 				match=z;
 			}
 		}
-
 		if (match==null) throw x.typeError("The name \""+x.name+"\" failed to be typechecked here due to no match!");
 		if (match instanceof ParaSig)
 			return new ExprName(x.pos, ((ParaSig)match).fullname, match, t);

@@ -486,10 +486,10 @@ UnopExpr ::= CARET:o  UnopExpr:b      {: RESULT=ExprUnary.Op.CLOSURE    .make(o,
 //=============================================================================
 
 BaseExpr ::= NUMBER:x                                 {: RESULT=x;                                           :};
-BaseExpr ::= NONE:x                                   {: RESULT=new ExprName(x,"none");                      :};
-BaseExpr ::= IDEN:x                                   {: RESULT=new ExprName(x,"iden");                      :};
-BaseExpr ::= UNIV:x                                   {: RESULT=new ExprName(x,"univ");                      :};
-BaseExpr ::= SIGINT:x                                 {: RESULT=new ExprName(x,"Int");                       :};
+BaseExpr ::= NONE:x                                   {: RESULT=ExprNamedConstant.Op.NONE.make(x);           :};
+BaseExpr ::= IDEN:x                                   {: RESULT=ExprNamedConstant.Op.IDEN.make(x);           :};
+BaseExpr ::= UNIV:x                                   {: RESULT=ExprNamedConstant.Op.UNIV.make(x);           :};
+BaseExpr ::= SIGINT:x                                 {: RESULT=ExprNamedConstant.Op.SIGINT.make(x);         :};
 BaseExpr ::= THIS:o                                   {: RESULT=new ExprName(o,"this");                      :};
 BaseExpr ::= LPAREN Expr:x RPAREN                     {: RESULT=x;                                           :};
 BaseExpr ::= AT:o Name:x                              {: RESULT=new ExprName(o,"@"+x.name);                  :};

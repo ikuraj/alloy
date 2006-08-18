@@ -88,7 +88,7 @@ public final class ParaRuncheck extends Para {
 	 *
 	 * @throws ErrorSyntax if the path contains '@'
 	 * @throws ErrorSyntax if the name is equal to ""
-	 * @throws ErrorSyntax if at least one of the signature name is "", "none", "iden", or "univ"
+	 * @throws ErrorSyntax if at least one of the signature name is ""
 	 * @throws ErrorSyntax if at least one of the value in "scope" is negative
 	 * @throws ErrorSyntax if at least one signature name is in "exact" but not in "scope"
 	 * @throws ErrorInternal if pos==null, path==null, name==null, scope==null, or exact==null
@@ -108,8 +108,7 @@ public final class ParaRuncheck extends Para {
 		for(Map.Entry<String,Integer> e:this.scope.entrySet()) {
 			String a=e.getKey();
 			int b=e.getValue();
-			if (a.length()==0 || a.equals("none") || a.equals("iden") || a.equals("univ"))
-				throw syntaxError("\""+a+"\" cannot be given a scope");
+			if (a.length()==0) throw syntaxError("\"\" is not a valid signature name!");
 			if (b<0) throw syntaxError("sig \""+a+"\" cannot have a negative scope!");
 			newlist.add(a);
 		}

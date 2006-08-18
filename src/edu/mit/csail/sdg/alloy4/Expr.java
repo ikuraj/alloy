@@ -269,6 +269,6 @@ public abstract class Expr {
 	 * @param p - the position in the file where the univ relation is used
 	 */
 	public static final Expr univ(Pos p) {
-		return new ExprName(p, "univ", ParaSig.UNIV, ParaSig.UNIV.type);
+		return ExprNamedConstant.Op.UNIV.make(p);
 	}
 }

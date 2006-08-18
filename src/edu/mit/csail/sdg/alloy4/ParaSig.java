@@ -40,6 +40,7 @@ public final class ParaSig extends Para {
 	public final String fullname;
 
 	// The following 4 fields are initially empty until we properly initialize them
+	// (Though "type" will be set already, for ParaSig.UNIV/NONE/SIGINT)
 	public Type type;
 	public ParaSig sup;                        // If I'm a SUBSIG, this is the parent. ELSE null.
 	public ParaSig sup() { return sup; }
