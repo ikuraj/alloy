@@ -1,7 +1,7 @@
 package edu.mit.csail.sdg.alloy4;
 
 /**
- * Immutable; represents a named constant in the AST.
+ * Immutable; represents a set/relation constant in the AST.
  *
  * <br/>
  * <br/> Invariant: op!=null
@@ -39,7 +39,7 @@ public final class ExprConstant extends Expr {
 	public final Op op;
 
 	/**
-	 * Constructs an ExprNamedConstant expression.
+	 * Constructs an ExprConstant expression.
 	 *
 	 * @param pos - the original position in the file
 	 * @param op - the choice of which constant it is
@@ -52,7 +52,7 @@ public final class ExprConstant extends Expr {
 		this.op=op;
 	}
 
-	/** This class contains all possible named constants. */
+	/** This class contains all possible set/relation constants. */
 	public enum Op {
 		/** iden */ IDEN("iden"),
 		/** univ */ UNIV("univ"),
@@ -66,7 +66,7 @@ public final class ExprConstant extends Expr {
 		private final String label;
 
 		/**
-		 * Constructs a new ExprNamedConstant expression
+		 * Constructs a new ExprConstant expression
 		 * with "this" as the operator.
 		 *
 		 * @param pos - the original position in the file
