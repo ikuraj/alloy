@@ -102,7 +102,7 @@ public final class ParaSig extends Para {
 	public boolean isSubtypeOf(ParaSig other) {
 		if (in!=null || other.in!=null) return false; // Since this method is undefined for SUBSETSIG
 		if (this==NONE || this==other || other==UNIV) return true;
-		if (other==NONE /*|| other.subs.isEmpty()*/ ) return false;
+		if (other==NONE) return false;
 		for(ParaSig me=this; me!=null; me=me.sup) if (me==other) return true;
 		return false;
 	}
