@@ -180,16 +180,13 @@ public Object accept(ExprLet x) {
 
 //################################################################################################
 
-public Object accept(ExprNumber x) {return IntConstant.constant(x.num);} // zzz SHOULD WARN AGAINST SILENT TRUNCATION
-
-//################################################################################################
-
 public Object accept(ExprConstant x) {
   switch(x.op) {
     case NONE: return Expression.NONE;
     case IDEN: return Expression.IDEN;
     case UNIV: return Expression.UNIV;
     case SIGINT: return Expression.INTS;
+    case NUMBER: return IntConstant.constant(x.num()); // zzz SHOULD WARN AGAINST SILENT TRUNCATION
   }
   throw x.internalError("Unsupported operator ("+x.op+") encountered during ExprNamedConstant.accept()");
 }

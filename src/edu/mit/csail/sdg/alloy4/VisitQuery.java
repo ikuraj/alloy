@@ -22,8 +22,6 @@ public abstract class VisitQuery implements VisitReturn {
 
   public Object accept(ExprConstant x) { return Boolean.FALSE; }
 
-  public Object accept(ExprNumber x) { return Boolean.FALSE; }
-
   public Object accept(ExprQuant x) {
     for(int i=0; i<x.list.size(); i++)
     	if (x.list.get(i).value.accept(this)!=null)

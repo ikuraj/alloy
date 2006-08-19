@@ -38,6 +38,13 @@ public final class ExprConstant extends Expr {
 	/** The constant. */
 	public final Op op;
 
+	private final int num;
+
+	public int num() {
+		if (op!=Op.NUMBER) throw internalError("This node is not a number constant");
+		return num;
+	}
+
 	/**
 	 * Constructs an ExprConstant expression.
 	 *
@@ -47,17 +54,30 @@ public final class ExprConstant extends Expr {
 	 *
 	 * @throws ErrorInternal if pos==null
 	 */
-	public ExprConstant(Pos pos, Op op, Type type) {
+	private ExprConstant(Pos pos, Op op, Type type) {
 		super(pos, type, 0);
 		this.op=op;
+		this.num=0;
+	}
+
+	private ExprConstant(Pos pos, String num) {
+		super(pos, Type.INT, 0);
+		this.op=Op.NUMBER;
+		try {
+			this.num=Integer.parseInt(nonnull(num));
+		} catch(NumberFormatException e) {
+			throw syntaxError("The number "+num
+					+"is too small or too large to be stored in a Java integer!");
+		}
 	}
 
 	/** This class contains all possible set/relation constants. */
 	public enum Op {
-		/** iden */ IDEN("iden"),
-		/** univ */ UNIV("univ"),
-		/** none */ NONE("none"),
-		/** Int  */ SIGINT("Int");
+		/** the builtin "iden" relation */  IDEN("iden"),
+		/** the builtin "univ" sig      */  UNIV("univ"),
+		/** the builtin "none" sig      */  NONE("none"),
+		/** the builtin "Int"  sig      */  SIGINT("Int"),
+		/** an integer constant         */  NUMBER("NUMBER");
 
 		/** The constructor. */
 		Op(String l) {label=l;}
@@ -76,7 +96,20 @@ public final class ExprConstant extends Expr {
 			if (this==UNIV) return new ExprConstant(pos, this, ParaSig.UNIV.type);
 			if (this==NONE) return new ExprConstant(pos, this, ParaSig.NONE.type);
 			if (this==SIGINT) return new ExprConstant(pos, this, ParaSig.SIGINT.type);
-			return new ExprConstant(pos, this, ParaSig.UNIV.type.product_of_anyEmptyness(ParaSig.UNIV.type));
+			if (this==IDEN) return new ExprConstant(pos, this, ParaSig.UNIV.type.product_of_anyEmptyness(ParaSig.UNIV.type));
+			throw new ErrorInternal(pos, null, "Illegal operator "+this+" encountered in ExprConstant.Op.make(pos)");
+		}
+
+		/**
+		 * Constructs a new ExprConstant expression
+		 * with "this" as the operator.
+		 *
+		 * @param pos - the original position in the file
+		 * @throws ErrorInternal if pos==null
+		 */
+		public final ExprConstant make(Pos pos, String num) {
+			if (this==NUMBER) return new ExprConstant(pos, num);
+			throw new ErrorInternal(pos, null, "Illegal operator "+this+" encountered in ExprConstant.Op.make(pos,num)");
 		}
 
 		/** Returns the human readable label for this operator. */

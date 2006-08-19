@@ -320,7 +320,7 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
  private final Pos alloy_here()               { return new Pos(alloy_filename,yycolumn+1,yyline+1); }
  private final Symbol alloy_sym(int type)     { return new Symbol(type, yycolumn+1, yyline+1, alloy_here()); }
  private final Symbol alloy_id(String value)  { return new Symbol(AlloySym.ID, yycolumn+1, yyline+1, new ExprName(alloy_here(),value)); }
- private final Symbol alloy_num(String value) { return new Symbol(AlloySym.NUMBER, yycolumn+1, yyline+1, new ExprNumber(alloy_here(),value)); }
+ private final Symbol alloy_num(String value) { return new Symbol(AlloySym.NUMBER, yycolumn+1, yyline+1, ExprConstant.Op.NUMBER.make(alloy_here(),value)); }
  //private final Symbol alloy_str(String value) {
  //  value=value.substring(1, value.length()-1);
  //  return new Symbol(AlloySym.STRING, yycolumn+1, yyline+1, value);

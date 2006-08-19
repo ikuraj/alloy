@@ -272,22 +272,22 @@ Paragraphs ::= Paragraphs RUN:o  Name:n  Scope:s  {:
   parser.alloyunit.makeRuncheck(o, n.name, false, overall,expects,scope,exact);
 :};
 
-Expects    ::=                 {: RESULT="";                     :};
-Expects    ::= EXPECT NUMBER:a {: RESULT=""+((ExprNumber)a).num; :};
+Expects    ::=                 {: RESULT="";                         :};
+Expects    ::= EXPECT NUMBER:a {: RESULT=""+((ExprConstant)a).num(); :};
 
-Scope      ::= FOR NUMBER:a                  Expects:c {: RESULT=new ArrayList<String>(); RESULT.add(""+((ExprNumber)a).num); RESULT.add(c);                   :};
-Scope      ::= FOR NUMBER:a BUT Typescopes:b Expects:c {: RESULT=new ArrayList<String>(); RESULT.add(""+((ExprNumber)a).num); RESULT.add(c); RESULT.addAll(b); :};
-Scope      ::= FOR              Typescopes:b Expects:c {: RESULT=new ArrayList<String>(); RESULT.add("");                     RESULT.add(c); RESULT.addAll(b); :};
-Scope      ::=                               Expects:c {: RESULT=new ArrayList<String>(); RESULT.add("");                     RESULT.add(c);                   :};
+Scope      ::= FOR NUMBER:a                  Expects:c {: RESULT=new ArrayList<String>(); RESULT.add(""+((ExprConstant)a).num()); RESULT.add(c);                   :};
+Scope      ::= FOR NUMBER:a BUT Typescopes:b Expects:c {: RESULT=new ArrayList<String>(); RESULT.add(""+((ExprConstant)a).num()); RESULT.add(c); RESULT.addAll(b); :};
+Scope      ::= FOR              Typescopes:b Expects:c {: RESULT=new ArrayList<String>(); RESULT.add("");                         RESULT.add(c); RESULT.addAll(b); :};
+Scope      ::=                               Expects:c {: RESULT=new ArrayList<String>(); RESULT.add("");                         RESULT.add(c);                   :};
 
 Typescopes ::= Typescope:a                    {: RESULT=a;               :};
 Typescopes ::= Typescopes:a COMMA Typescope:b {: RESULT=a; a.addAll(b);  :};
-Typescope  ::= EXACTLY NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprNumber)a).num); RESULT.add(b.name); :};
-Typescope  ::=         NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprNumber)a).num); RESULT.add(b.name); :};
-Typescope  ::= EXACTLY NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprNumber)a).num); RESULT.add("int");  :};
-Typescope  ::=         NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprNumber)a).num); RESULT.add("int");  :};
-Typescope  ::= EXACTLY NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprNumber)a).num); RESULT.add("Int");  :};
-Typescope  ::=         NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprNumber)a).num); RESULT.add("Int");  :};
+Typescope  ::= EXACTLY NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(b.name); :};
+Typescope  ::=         NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(b.name); :};
+Typescope  ::= EXACTLY NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add("int");  :};
+Typescope  ::=         NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add("int");  :};
+Typescope  ::= EXACTLY NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add("Int");  :};
+Typescope  ::=         NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add("Int");  :};
 
 Function ::=              Name:n LPAREN   Decls:d RPAREN   COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,t,v); :};
 Function ::=              Name:n LBRACKET Decls:d RBRACKET COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,t,v); :};

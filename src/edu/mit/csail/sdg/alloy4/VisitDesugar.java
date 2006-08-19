@@ -51,8 +51,6 @@ public abstract class VisitDesugar {
 
   public Expr accept(ExprConstant x) { return x; }
 
-  public Expr accept(ExprNumber x) { return x; }
-
   public Expr accept(ExprQuant x) {
     List<VarDecl> list=new ArrayList<VarDecl>();
     for(int i=0; i<x.list.size(); i++) {

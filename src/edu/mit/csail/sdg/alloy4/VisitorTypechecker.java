@@ -380,7 +380,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 //  ################################################################################################
 
     public Expr accept(ExprConstant x, Type p) {
-        if (x.op==ExprConstant.Op.IDEN) {
+        if (x.op==ExprConstant.Op.NUMBER) {
+            if (!p.isInt) throw x.typeError("This must be an integer expression");
+        } else if (x.op==ExprConstant.Op.IDEN) {
             if (p.arity()!=2) throw x.typeError("This must be a binary relation.");
         } else {
             if (p.arity()!=1) throw x.typeError("This must be a set.");
@@ -445,17 +447,6 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         if (match instanceof ParaFun)
             return new ExprName(x.pos, x.name, match, t);
         return new ExprName(x.pos, x.name, null, t);
-    }
-
-//  ################################################################################################
-
-    @Override public Expr accept(ExprNumber x) { return x; }
-
-//  ################################################################################################
-
-    public Expr accept(ExprNumber x, Type p) {
-        if (!p.isInt) throw x.typeError("This must be an integer expression");
-        return x;
     }
 
 //  ################################################################################################
