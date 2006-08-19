@@ -8,10 +8,8 @@ import java.util.ArrayList;
  *
  * <br/>
  * <br/> Invariant: name is not ""
- * <br/>
  * <br/> Invariant: file!=null and file is not ""
  * <br/> Invariant: list!=null
- * <br/> Invariant: ??? all x:list | (x!=null, x is not "", and x does not contain '@')
  *
  * @author Felix Chang
  */
@@ -19,7 +17,7 @@ import java.util.ArrayList;
 public final class ParaOpen extends Para {
 
 	/** The list of instantiating arguments. */
-	public List<ParaSig> list;
+	public final List<ParaSig> list;
 
 	/**
 	 * The relative filename for the file being imported, without ".als"

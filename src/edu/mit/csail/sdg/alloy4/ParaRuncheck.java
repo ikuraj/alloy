@@ -8,11 +8,8 @@ import java.util.LinkedHashMap;
  * Mutable; reresents a "run" or "check" command.
  * 
  * <br/>
- * <br/> Invariant: all X:String | exact.contains(X) => scope.containsKey(X)
- * <br/> Invariant: all X:String | scope.containsKey(X) => (names.contains(X) && scope.get(X)>=0)
- * <br/> Invariant: all X:names  | (x is not "", and x does not contain '@')
- * <br/> Invariant: the "names" array does not contain any duplicate entries
  * <br/> Invariant: overall >= -1
+ * <br/> Invariant: bitwidth >= -1
  * <br/> Invariant: expects == -1, 0, or 1
  * 
  * @author Felix Chang
@@ -82,14 +79,13 @@ public final class ParaRuncheck extends Para {
 	 * @param check - true if this is a "check"; false if this is a "run".
 	 * @param overall - the overall scope (-1 if no overall scope was specified)
 	 * @param expects - the expected value (0 or 1) (-1 if no expectation was specified)
-	 * @param scope - String-to-Integer map that maps signature names to nonnegative integer scopes
-	 * @param exact - a set of String indicating which signatures have exact scope
+	 * @param bitwidth - the bitwidth (-1 if no bitwidth was specified)
+	 * @param scope - ParaSig-to-Pair(Integer,Boolean) map
+	 * that maps signatures to their nonnegative integer scopes,
+	 * and a boolean flag indicating whether the scope is exact or not.
 	 *
 	 * @throws ErrorSyntax if the path contains '@'
 	 * @throws ErrorSyntax if the name is equal to ""
-	 * @throws ErrorSyntax if at least one of the signature name is ""
-	 * @throws ErrorSyntax if at least one of the value in "scope" is negative
-	 * @throws ErrorSyntax if at least one signature name is in "exact" but not in "scope"
 	 * @throws ErrorInternal if pos==null, path==null, name==null, scope==null, or exact==null
 	 */
 	public ParaRuncheck(Pos pos, String path, String name,
@@ -99,9 +95,9 @@ public final class ParaRuncheck extends Para {
 		this.check=check;
 		if (name.length()==0)
 			throw this.syntaxError("The \"run\" and \"check\" statement must give the name of the predicate or assertion you want to check.");
-		this.bitwidth=bitwidth;
-		this.overall=overall;
-		this.expects=expects;
+		this.bitwidth=(bitwidth<0 ? -1 : bitwidth);
+		this.overall=(overall<0 ? -1 : overall);
+		this.expects=(expects<0 ? -1 : (overall>0?1:0));
 		this.scope=Collections.unmodifiableMap(new LinkedHashMap<ParaSig,Pair<Integer,Boolean>>(nonnull(scope)));
 	}
 }
