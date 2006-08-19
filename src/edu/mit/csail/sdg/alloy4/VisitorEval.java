@@ -445,26 +445,27 @@ public Object accept(ExprCall x) {
 
   public int compute(Unit root, List<ParaSig> sigs, ParaRuncheck cmd) {
     final int overall;
-    int bitwidth=(-1); // The bound on "int".
+    int bitwidth=cmd.bitwidth; // The bound on "int".
     for(ParaSig s:sigs) sig2bound(s,-1);
-    if (cmd.names.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
-    if (cmd.names.size()>0) {
-       for(String n:cmd.names) {
-          if (n.equals("int")) { if (bitwidth<0) {bitwidth=cmd.getScope(n);continue;} throw cmd.syntaxError("The bound on \"int\" is already specified"); }
-          Set<Object> set=root.lookup_sigORparam(n);
-          Iterator<Object> it=set.iterator();
-          if (set.size()>1) {
-            ParaSig choice1=(ParaSig)(it.next());
-            ParaSig choice2=(ParaSig)(it.next());
-            throw cmd.syntaxError("The name \""+n+"\" is ambiguous: it could be "+choice1.fullname+" or "+choice2.fullname);
-          }
-          if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
-          ParaSig s=(ParaSig)(it.next());
-          if (cmd.isExact(n)) exact(s,true);
-          if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+n+"\"");
-          if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
-          bound("#6: ",cmd, s, cmd.getScope(n));
+    if (cmd.scope.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
+    for(Map.Entry<ParaSig,Pair<Integer,Boolean>> nn:cmd.scope.entrySet()) {
+       ParaSig s=nn.getKey();
+       if (s.placeholder!=null) {
+           String n=s.placeholder;
+    	   Set<Object> set=root.lookup_sigORparam(n);
+    	   Iterator<Object> it=set.iterator();
+    	   if (set.size()>1) {
+    		   ParaSig choice1=(ParaSig)(it.next());
+    		   ParaSig choice2=(ParaSig)(it.next());
+    		   throw cmd.syntaxError("The name \""+n+"\" is ambiguous: it could be "+choice1.fullname+" or "+choice2.fullname);
+    	   }
+    	   if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
+    	   s=(ParaSig)(it.next());
        }
+       if (nn.getValue().b==true) exact(s,true);
+       if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+s.fullname+"\"");
+       if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
+       bound("#6: ",cmd, s, nn.getValue().a);
     }
     // Ensure "int" and "Int" are consistent
     if (bitwidth<0) bitwidth=4;

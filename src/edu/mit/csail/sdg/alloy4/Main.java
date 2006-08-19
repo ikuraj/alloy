@@ -56,13 +56,16 @@ We throw an exception if there is a cycle in the IMPORT graph
             int i=0;
             for(Map.Entry<String,ParaSig> pp:uu.params.entrySet()) {
                String kn=pp.getKey();
-               String vn=f.getValue().list.get(i);
-               i++;
                ParaSig old=pp.getValue();
-               Set<Object> v=u.lookup_sigORparam(vn);
-               if (v.size()<1) {if (old==null) missing=f.getValue(); continue;}
-               if (v.size()>1) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because the signature named \""+vn+"\" is ambiguous");
-               ParaSig vv=(ParaSig)(v.iterator().next());
+               ParaSig vv=f.getValue().list.get(i); i++;
+               String vn=vv.placeholder;
+               if (vn!=null) {
+                  Set<Object> v=u.lookup_sigORparam(vn);
+                  if (v.size()<1) {if (old==null) missing=f.getValue(); continue;}
+                  if (v.size()>1) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because the signature named \""+vn+"\" is ambiguous");
+                  vv=(ParaSig)(v.iterator().next());
+                  f.getValue().list.set(i-1,vv);
+               }
                if (old==vv) continue;
                if (old!=null) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because it is being imported more than once, with different arguments!");
                if (vv==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument!");
@@ -145,7 +148,8 @@ We throw an exception if there is a cycle in the IMPORT graph
       for(int j=i+1; j<units.size(); j++) {
         Unit b=units.get(j);
         if (a.pos.filename.equals(b.pos.filename) && a.params.equals(b.params)) {
-           if (!code) System.out.println("MATCH FOUND ON "+a.pos.filename);
+           //if (!code)
+           System.out.println("MATCH FOUND ON "+a.pos.filename);
            a.aliases.addAll(b.aliases);
            Collections.sort(a.aliases, aliasComparator);
            Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);
@@ -154,9 +158,16 @@ We throw an exception if there is a cycle in the IMPORT graph
         	 p.getValue().aliases=new ArrayList<String>(a.aliases);
         	}
            for(Unit c:units) if (c!=b) {
+             for(Map.Entry<String,ParaOpen> p:c.opencmds.entrySet()) {
+            	 List<ParaSig> cc=p.getValue().list;
+            	 for(int ci=0; ci<cc.size(); ci++) {
+                   if (isin(cc.get(ci), asigs)) cc.set(ci, a.sigs.get(cc.get(ci).name));
+                   if (isin(cc.get(ci), b.sigs)) cc.set(ci, a.sigs.get(cc.get(ci).name));
+            	 }
+             }
              for(Map.Entry<String,ParaSig> p:c.params.entrySet()) {
-               if (isin(p.getValue(),asigs)) p.setValue(a.sigs.get(p.getValue().name));
-               if (isin(p.getValue(),b.sigs)) p.setValue(a.sigs.get(p.getValue().name));
+                 if (isin(p.getValue(),asigs)) p.setValue(a.sigs.get(p.getValue().name));
+                 if (isin(p.getValue(),b.sigs)) p.setValue(a.sigs.get(p.getValue().name));
              }
              for(Map.Entry<String,Unit> p:c.opens.entrySet()) {
                if (p.getValue()==b) p.setValue(a);
@@ -202,31 +213,28 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
       for(Map.Entry<String,ParaSig> si:u.sigs.entrySet()) {
         ParaSig s=si.getValue();
         sigs.add(s);
-        if (s.ext!=null) {
-           Set<Object> ans=u.lookup_sigORparam(s.ext);
-           if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to extend \""+s.ext+"\", but the name \""+s.ext+"\" is ambiguous.");
-           if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to extend a non-existent signature \""+s.ext+"\"");
+        if (s.sup!=null && s.sup.placeholder!=null) {
+           Set<Object> ans=u.lookup_sigORparam(s.sup.placeholder);
+           if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to extend \""+s.sup.placeholder+"\", but that name is ambiguous.");
+           if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to extend a non-existent signature \""+s.sup.placeholder+"\"");
            ParaSig parent=(ParaSig)(ans.iterator().next());
            if (parent==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot extend the builtin \"none\" signature");
            if (parent==ParaSig.UNIV) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" already implicitly extend the builtin \"univ\" signature");
            if (parent.subset) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot extend a subset signature \""+parent.fullname+"\"! A signature can only extend a toplevel signature or a subsignature.");
-           s.ext=parent.fullname;
            s.sup=parent;
-           parent.subs.add(s);
         }
         if (s.subset) {
-           List<String> newin=new ArrayList<String>();
-           for(String i:s.in) {
-             Set<Object> ans=u.lookup_sigORparam(i);
-             if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of \""+i+"\", but the name \""+i+"\" is ambiguous.");
-             if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of a non-existent signature \""+i+"\"");
+           for(int i=0; i<s.sups.size(); i++) {
+        	 String n=s.sups.get(i).placeholder;
+        	 if (n==null) continue;
+             Set<Object> ans=u.lookup_sigORparam(n);
+             if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of \""+n+"\", but the name \""+n+"\" is ambiguous.");
+             if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of a non-existent signature \""+n+"\"");
              ParaSig parent=(ParaSig)(ans.iterator().next());
              if (parent==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot be a subset of the builtin \"none\" signature");
              if (parent==ParaSig.UNIV) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" is already implicitly a subset of the builtin \"univ\" signature");
-             s.sups.add(parent);
-             newin.add(parent.fullname);
+             s.sups.set(i,parent);
            }
-           s.in=newin;
         }
       }
     }
@@ -237,6 +245,7 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
        Boolean v=status.get(y);
        if (v==null) tsort(y,status,list); else if (v==Boolean.FALSE) throw new ErrorSyntax(null,"Circular extension detected, involving the signature named \""+y.fullname+"\"");
     }
+    for(ParaSig y:list) if (y.sup!=null) y.sup.subs.add(y);
     for(int i=0; i<list.size(); i++) {
        ParaSig y=list.get(i);
        Type t=null;

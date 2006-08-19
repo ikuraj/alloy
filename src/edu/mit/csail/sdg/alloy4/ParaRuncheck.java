@@ -1,15 +1,11 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.Set;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 
 /**
- * Immutable; reresents a "run" or "check" command.
+ * Mutable; reresents a "run" or "check" command.
  * 
  * <br/>
  * <br/> Invariant: all X:String | exact.contains(X) => scope.containsKey(X)
@@ -27,20 +23,17 @@ public final class ParaRuncheck extends Para {
 	/** true if this is a "check"; false if this is a "run". */
 	public final boolean check;
 
+	/** The integer bitwidth (-1 if there is no bitwidth specified. */
+	public final int bitwidth;
+
 	/** The overall scope (-1 if there is no overall scope). */
 	public final int overall;
 
 	/** The expected answer (either 0 or 1) (-1 if there is no expected answer) */
 	public final int expects;
 
-	/** An unmodifiable list of signatures listed in the "run" or "check" command line. */
-	public final List<String> names;
-
 	/** This maps each signature to its specified scope. */
-	private final Map<String,Integer> scope;
-
-	/** If a sig is in this set, then its scope is exact (else its scope is just an upperbound) */
-	private final Set<String> exact;
+	public final Map<ParaSig,Pair<Integer,Boolean>> scope;
 
 	/**
 	 * Given the name of a signature, this method returns its specified scope (-1 if no scope was specified)
@@ -48,7 +41,7 @@ public final class ParaRuncheck extends Para {
 	 * @param n - the name of a signature
 	 * @return a nonnegative integer if the sig has a specified scope; -1 if no scope was specified.
 	 */
-	public int getScope(String n) { Integer i=scope.get(n); if (i!=null) return i; else return -1; }
+	public int getScope(String n) { Pair p=scope.get(n); if (p!=null) return (Integer)(p.a); else return -1; }
 
 	/**
 	 * Given the name of a signature, this method returns whether its scope is exact or not.
@@ -56,7 +49,7 @@ public final class ParaRuncheck extends Para {
 	 * @param n - the name of a signature
 	 * @return true if and only if the sig has an exact scope
 	 */
-	public boolean isExact(String n) { return exact.contains(n); }
+	public boolean isExact(String n) { Pair p=scope.get(n); if (p!=null) return (Boolean)(p.b); else return false; }
 
 	/** Returns a human-readable string representing this Run or Check command. */
 	@Override public final String toString() {
@@ -65,12 +58,17 @@ public final class ParaRuncheck extends Para {
 		else if (overall>=0) a=a+" for "+overall;
 		else if (scope.size()>0) a=a+" for";
 		boolean f=false;
-		for(Map.Entry<String,Integer> e:scope.entrySet()) {
-			a=a+(f?", ":" ");
-			if (exact.contains(e.getKey())) a=a+"exactly ";
-			a=a+e.getValue()+" "+e.getKey();
+		for(Map.Entry<ParaSig,Pair<Integer,Boolean>> e:scope.entrySet()) {
+			Pair<Integer,Boolean> ee=e.getValue();
+			String n;
+			if (e.getKey()==ParaSig.UNIV) n="univ";
+				else if (e.getKey()==ParaSig.SIGINT) n="Int";
+				else if (e.getKey()==ParaSig.NONE) n="none";
+				else n=e.getKey().placeholder;
+			a=a+(f?", ":" ")+(ee.b==true?"exactly ":"")+ee.a+" "+n;
 			f=true;
 		}
+		if (bitwidth>=0) a=a+(f?", ":" ")+bitwidth+" int";
 		if (expects>0) a=a+" expects "+expects;
 		return a;
 	}
@@ -95,28 +93,15 @@ public final class ParaRuncheck extends Para {
 	 * @throws ErrorInternal if pos==null, path==null, name==null, scope==null, or exact==null
 	 */
 	public ParaRuncheck(Pos pos, String path, String name,
-			boolean check, int overall, int expects,
-			Map<String,Integer> scope, Set<String> exact) {
+			boolean check, int overall, int expects, int bitwidth,
+			Map<ParaSig,Pair<Integer,Boolean>> scope) {
 		super(pos,path,name);
 		this.check=check;
 		if (name.length()==0)
 			throw this.syntaxError("The \"run\" and \"check\" statement must give the name of the predicate or assertion you want to check.");
+		this.bitwidth=bitwidth;
 		this.overall=overall;
 		this.expects=expects;
-		this.scope=Collections.unmodifiableMap(new LinkedHashMap<String,Integer>(nonnull(scope)));
-		this.exact=Collections.unmodifiableSet(new LinkedHashSet<String>(nonnull(exact)));
-		List<String> newlist=new ArrayList<String>();
-		for(Map.Entry<String,Integer> e:this.scope.entrySet()) {
-			String a=e.getKey();
-			int b=e.getValue();
-			if (a.length()==0) throw syntaxError("\"\" is not a valid signature name!");
-			if (a.indexOf('@')>=0) throw syntaxError("Signature name \""+a+"\" cannot contain '@'");
-			if (b<0) throw syntaxError("sig \""+a+"\" cannot have a negative scope!");
-			newlist.add(a);
-		}
-		for(String e:this.exact) {
-			if (!scope.containsKey(e)) throw syntaxError("sig \""+e+"\" cannot be exact without a specified scope!");
-		}
-		names=Collections.unmodifiableList(newlist);
+		this.scope=Collections.unmodifiableMap(new LinkedHashMap<ParaSig,Pair<Integer,Boolean>>(nonnull(scope)));
 	}
 }

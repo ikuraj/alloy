@@ -37,7 +37,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // This lists all the SIGS defined inside this file.
   // The NAME must not contain any "/" or "@"
   public final Map<String,ParaSig> sigs=new LinkedHashMap<String,ParaSig>();
-  public void makeSig(Pos p,String n,boolean fa,boolean fl,boolean fo,boolean fs,List<ExprName> i,ExprName e,List<VarDecl> d,Expr f) {
+  public void makeSig(Pos p,String n,boolean fa,boolean fl,boolean fo,boolean fs,List<ParaSig> i,ParaSig e,List<VarDecl> d,Expr f) {
     ParaSig x=new ParaSig(p,aliases.get(0),n,fa,fl,fo,fs,i,e,d,f);
     if (asserts.containsKey(x.name)) throw x.syntaxError("Within the same file, a signature cannot have the same name as another assertion!");
     if (facts.containsKey(x.name)) throw x.syntaxError("Within the same file, a signature cannot have the same name as another fact!");
@@ -80,12 +80,19 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // This lists all the FUNCTIONS defined inside this file.
   // The NAME must not contain any "/" or "@"
   public final Map<String,List<ParaFun>> funs=new LinkedHashMap<String,List<ParaFun>>();
-  public void makeFun(Pos p,String n,Expr f,List<VarDecl> d,Expr t,Expr v) {
+  public void makeFun(Pos p,String n,ParaSig f,List<VarDecl> d,Expr t,Expr v) {
     List<ParaFun> list=funs.get(n);
     if (list==null) list=new ArrayList<ParaFun>();
     //
     d=new ArrayList<VarDecl>(d);
-    if (f!=null) d.add(0,new VarDecl("this",ExprUnary.Op.ONEMULT.make(p,f)));
+    if (f!=null) {
+    	Expr ff;
+    	if (f==ParaSig.NONE) ff=ExprConstant.Op.NONE.make(f.pos);
+    	else if (f==ParaSig.UNIV) ff=ExprConstant.Op.UNIV.make(f.pos);
+    	else if (f==ParaSig.SIGINT) ff=ExprConstant.Op.SIGINT.make(f.pos);
+    	else ff=new ExprName(f.pos, f.placeholder);
+    	d.add(0,new VarDecl("this",ExprUnary.Op.ONEMULT.make(p,ff)));
+    }
     //
     ParaFun x=new ParaFun(p, aliases.get(0), n, d, t, v);
     if (asserts.containsKey(x.name)) throw x.syntaxError("Within the same file, a function/predicate cannot have the same name as another assertion!");
@@ -100,7 +107,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // The ALIAS must not contain any "/" or "@"
   public final Map<String,Unit> opens=new LinkedHashMap<String,Unit>();
   public final Map<String,ParaOpen> opencmds=new LinkedHashMap<String,ParaOpen>();
-  public void makeOpen(Pos p, String n, List<ExprName> l, String a) {
+  public void makeOpen(Pos p, String n, List<ParaSig> l, String a) {
     ParaOpen x=new ParaOpen(p,aliases.get(0),a,l,n);
     if (opencmds.containsKey(x.name)) throw x.syntaxError("You cannot import more than 1 module using the same alias!");
     opencmds.put(x.name, x);
@@ -108,9 +115,9 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
   // This stores the list of RUN/CHECK commands, in the order they appear in the file.
   public final List<ParaRuncheck> runchecks=new ArrayList<ParaRuncheck>();
-  public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
+  public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,int b,Map<ParaSig,Pair<Integer,Boolean>> s) {
     if (!aliases.contains("")) return;
-    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, exa));
+    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, b, s));
   }
 
   private void lookupNQsig_noparam(String name,Set<Object> ans) { // It ignores "params"
@@ -135,10 +142,6 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     Para s;
     Set<Object> ans=new LinkedHashSet<Object>();
     if (name.indexOf('/')<0) {
-      if (name.equals("Int")) { ans.add(ParaSig.SIGINT); return ans; }
-      if (name.equals("univ")) { ans.add(ParaSig.UNIV); return ans; }
-      if (name.equals("none")) { ans.add(ParaSig.NONE); return ans; }
-      if (name.equals("iden")) return ans;
       lookupNQsig_noparam(name,ans); s=params.get(name); if (s!=null) ans.add(s);
       return ans;
     }

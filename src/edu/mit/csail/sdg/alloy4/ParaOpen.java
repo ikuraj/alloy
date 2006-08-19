@@ -1,26 +1,25 @@
 package edu.mit.csail.sdg.alloy4;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Immutable; reresents an "open" declaration.
+ * Mutable; reresents an "open" declaration.
  *
  * <br/>
  * <br/> Invariant: name is not ""
  * <br/>
  * <br/> Invariant: file!=null and file is not ""
  * <br/> Invariant: list!=null
- * <br/> Invariant: all x:list | (x!=null, x is not "", and x does not contain '@')
+ * <br/> Invariant: ??? all x:list | (x!=null, x is not "", and x does not contain '@')
  *
  * @author Felix Chang
  */
 
 public final class ParaOpen extends Para {
 
-	/** The unmodifiable list of instantiating arguments. */
-	public final List<String> list;
+	/** The list of instantiating arguments. */
+	public List<ParaSig> list;
 
 	/**
 	 * The relative filename for the file being imported, without ".als"
@@ -49,7 +48,7 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax if "alias" is "", and "file" is not a legal alias (eg. it contains '/')
 	 * @throws ErrorInternal if pos==null, file==null, alias==null, or list==null
 	 */
-	private static String computeAlias(Pos pos, String file, String alias, List<ExprName> list) {
+	private static String computeAlias(Pos pos, String file, String alias, List<ParaSig> list) {
 		if (pos==null || file==null || alias==null || list==null)
 			throw new ErrorInternal(pos,null,"NullPointerException");
 		if (file.length()==0) throw new ErrorSyntax(pos, "The filename cannot be \"\"");
@@ -85,16 +84,9 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax if at least one argument is "" or contains '@'
 	 * @throws ErrorInternal if pos==null, path==null, alias==null, list==null, or file==null
 	 */
-	public ParaOpen(Pos pos, String path, String alias, List<ExprName> list, String file) {
+	public ParaOpen(Pos pos, String path, String alias, List<ParaSig> list, String file) {
 		super(pos, path, computeAlias(pos,file,alias,list));
 		this.file=file;
-		List<String> newlist=new ArrayList<String>(list.size());
-		for(int i=0; i<list.size(); i++) {
-			String x=nonnull(list.get(i)).name;
-			if (x.length()==0) throw this.syntaxError("The import argument must not be empty.");
-			if (x.indexOf('@')>=0) throw this.syntaxError("The import argument must not contain \'@\'.");
-			newlist.add(x);
-		}
-		this.list=Collections.unmodifiableList(newlist);
+		this.list=new ArrayList<ParaSig>(list);
 	}
 }

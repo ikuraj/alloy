@@ -20,11 +20,6 @@ public final class ParaSig extends Para {
 	// At most 1 can be true
 	public final boolean lone,one,some;
 
-	// At most 1 can be non-null
-	public List<String> in=null; // If nonnull, size must be >= 1. This means this sig "in THEM"
-	public final boolean subset;
-	public String ext;      // If nonnull, length must be >= 1. This means this sig "extends IT"
-
 	public List<String> aliases=new ArrayList<String>();
 
 	// The list of field declarations (in 2 data structures)
@@ -42,11 +37,22 @@ public final class ParaSig extends Para {
 	public ParaSig sup;                        // If I'm a SUBSIG, this is the parent. ELSE null.
 	public List<ParaSig> sups=new ArrayList<ParaSig>(); // If I'm a SUBSETSIG, this is the list of parent(s).
 	public List<ParaSig> subs=new ArrayList<ParaSig>(); // If I'm a TOPSIG/SUBSIG/"Int", sigs who EXTEND me.
+	public final boolean subset;
+	public String placeholder=null;
 
-	@Override public String toString() { return "$"+name; }
+	public ParaSig(Pos p, String n) {
+		super(p, "?", (n.lastIndexOf('/')>=0 ? n.substring(n.lastIndexOf('/')+1) : n));
+		placeholder=n;
+		one=false;
+		lone=false;
+		some=false;
+		abs=false;
+		fullname="?";
+		subset=false;
+	}
 
 	public ParaSig(Pos p, String al, String n, boolean fa, boolean fl, boolean fo, boolean fs,
-			List<ExprName> i, ExprName e, List<VarDecl> d, Expr f) {
+			List<ParaSig> i, ParaSig e, List<VarDecl> d, Expr f) {
 		super(p, al, n);
 		if (al.length()==0) fullname="/"+n; else fullname="/"+al+"/"+n;
 		aliases.add(al);
@@ -60,22 +66,16 @@ public final class ParaSig extends Para {
 			if (abs) throw this.syntaxError("A subset signature cannot be abstract!");
 			if (e!=null) throw this.syntaxError("A signature cannot both be a subset signature and a subsignature!");
 			if (i.size()==0) throw this.syntaxError("To declare a subset signature, you must give the names of its parent signatures!");
-			in=new ArrayList<String>();
 			for(int j=0;j<i.size();j++) {
-				String k=i.get(j).name;
-				if (k==null || k.length()==0) throw this.syntaxError("To declare a subset signature, you must give the names of its parent signatures!");
-				if (k.indexOf('@')>=0) throw this.syntaxError("The parent signature name must not contain \'@\'.");
-				if (in.contains(k)) throw this.syntaxError("The parent signature \""+k+"\" appears more than once in this subset declaration");
-				in.add(k);
+				String k=i.get(j).placeholder;
+				if (k==null) sups.add(i.get(j)); else sups.add(new ParaSig(i.get(j).pos, k));
 			}
 			subset=true;
 		} else subset=false;
 
 		if (e!=null) {
-			ext=e.name;
-			if (ext.length()==0) throw this.syntaxError("To extend another signature, you must give its name!");
-			if (ext.indexOf('@')>=0) throw this.syntaxError("The parent signature name must not contain \'@\'.");
-		} else ext=null;
+			if (e.placeholder!=null) sup=new ParaSig(e.pos, e.placeholder); else sup=e;
+		} else sup=null;
 
 		fields=new ArrayList<Field>();
 		decls=new ArrayList<VarDecl>(d);
@@ -89,12 +89,11 @@ public final class ParaSig extends Para {
 		String dup=VarDecl.hasDuplicateName(decls);
 		if (dup!=null) throw this.syntaxError("This signature cannot have two fields with the same name: \""+dup+"\"");
 		appendedFacts=f;
-		sup=null;
 		type=null;
 	}
 
 	public boolean isSubtypeOf(ParaSig other) {
-		if (in!=null || other.in!=null) return false; // Since this method is undefined for SUBSETSIG
+		if (subset || other.subset) return false; // Since this method is undefined for SUBSETSIG
 		if (this==NONE || this==other || other==UNIV) return true;
 		if (other==NONE) return false;
 		for(ParaSig me=this; me!=null; me=me.sup) if (me==other) return true;
@@ -102,7 +101,7 @@ public final class ParaSig extends Para {
 	}
 
 	public ParaSig intersect(ParaSig other) {
-		if (in!=null || other.in!=null) return NONE; // Since this method is undefined for SUBSETSIG
+		if (subset || other.subset) return NONE; // Since this method is undefined for SUBSETSIG
 		if (this.isSubtypeOf(other)) return this;
 		if (other.isSubtypeOf(this)) return other;
 		return NONE;
@@ -112,7 +111,7 @@ public final class ParaSig extends Para {
 		super(new Pos("$builtin library$",1,1), al, n);
 		fullname="/"+al+"/"+n;
 		aliases.add(al);
-		abs=false; lone=false; one=false; some=false; in=null; ext=null;
+		abs=false; lone=false; one=false; some=false; //in=null; // ext=null;
 		decls=new ArrayList<VarDecl>(0);
 		appendedFacts=null;
 		type=Type.make(this);
