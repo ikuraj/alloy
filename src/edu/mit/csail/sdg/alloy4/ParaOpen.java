@@ -8,11 +8,11 @@ import java.util.ArrayList;
  * Immutable; reresents an "open" declaration.
  *
  * <br/>
- * <br/> Invariant: file!=null
+ * <br/> Invariant: name is not ""
+ * <br/>
+ * <br/> Invariant: file!=null and file is not ""
  * <br/> Invariant: list!=null
- * <br/> Invariant: all x:list | x!=null
- * <br/> Invariant: all x:list | x does not contain '@'
- * <br/> Invariant: all x:list | x is not ""
+ * <br/> Invariant: all x:list | (x!=null, x is not "", and x does not contain '@')
  *
  * @author Felix Chang
  */

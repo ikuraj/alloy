@@ -183,8 +183,8 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
   private ParaSig.Field lookup_Field_helper(ParaSig origin,ParaSig s,String n) {
     ParaSig.Field ans=null;
-    if (canSee(origin.aliases(), s.aliases())) for(ParaSig.Field f:s.fields) if (f.name.equals(n)) ans=f;
-    for(ParaSig p:s.sups()) {
+    if (canSee(origin.aliases, s.aliases)) for(ParaSig.Field f:s.fields) if (f.name.equals(n)) ans=f;
+    for(ParaSig p:s.sups) {
       ParaSig.Field ans2=lookup_Field_helper(origin,p,n);
       if (ans==null) ans=ans2; else if (ans2!=null) throw s.syntaxError("This signature's \""+n+"\" field conflicts with a parent signature's field with the same name!");
     }
@@ -196,7 +196,6 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   }
 
   public ParaSig.Field lookup_Field(ParaSig s,String n) { // Looks up "n" from this SIG or any visible ancestor SIG
-    if (n.charAt(0)=='@') n=n.substring(1);
     return lookup_Field_helper(s,s,n);
   }
 
@@ -204,8 +203,8 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     // Looks up "n" from this SIG or any visible ancestor SIG.
     // But will return null if ((n and me are both fields in s) && (n==me, or n comes after me))
     int ii=0;
-    int ni=(-1); if (n.charAt(0)=='@') n=n.substring(1);
-    int mi=(-1); if (me.charAt(0)=='@') me=me.substring(1);
+    int ni=(-1);
+    int mi=(-1);
     for(VarDecl d:s.decls) for(String str:d.names) {
       if (str.equals(n)) ni=ii;
       if (str.equals(me)) mi=ii;
@@ -223,7 +222,6 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
   public Set<Object> lookup_Field(String n) { // Looks up "n" from any visible SIG
     Set<Object> ans=new LinkedHashSet<Object>();
-    if (n.charAt(0)=='@') n=n.substring(1);
     lookup_Field_helper(n,ans);
     return ans;
   }

@@ -9,6 +9,8 @@ import java.util.ArrayList;
  *
  * <br/>
  * <br/> Invariant: name!=null
+ * <br/> Invariant: name does not equal "" nor "@"
+ * <br/> Invariant: if name contains '@', then '@' must only occur as the first character
  * <br/> Invariant: args!=null
  * <br/> Invariant: all x:args | (x!=null && x.mult==0)
  *
@@ -65,6 +67,8 @@ public final class ExprCall extends Expr {
 	 * @param type - the type (null if this expression has not been typechecked)
 	 *
 	 * @throws ErrorInternal if pos==null, name==null, args==null, or at least one argument is null
+	 * @throws ErrorInternal if name is equal to "" or "@"
+	 * @throws ErrorInternal if name.lastIndexOf('@')>0
 	 * @throws ErrorSyntax if at least one of the argument is a multiplicity constraint
 	 */
 	public ExprCall(Pos pos, String name, ParaFun fun, List<Expr> args, Type type) {
@@ -75,5 +79,11 @@ public final class ExprCall extends Expr {
 		for(int i=args.size()-1; i>=0; i--)
 			if (nonnull(args.get(i)).mult>0)
 				throw args.get(i).syntaxError("Multiplicity expression not allowed here");
+		if (name.length()==0)
+			throw syntaxError("The name must not be empty!");
+		if (name.length()==1 && name.charAt(0)=='@')
+			throw syntaxError("The name must not be \"@\"");
+		if (name.lastIndexOf('@')>0)
+			throw syntaxError("If a variable name contains @, it must be the first character!");
 	}
 }

@@ -2,7 +2,6 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 
 /**
  * Mutable; reresents a "signature".
@@ -11,9 +10,9 @@ import java.util.Collections;
 
 public final class ParaSig extends Para {
 
-	public static final ParaSig UNIV=new ParaSig("$univ", "$builtin");
-	public static final ParaSig NONE=new ParaSig("$none", "$builtin");
-	public static final ParaSig SIGINT=new ParaSig("$Int", "$builtin");
+	public static final ParaSig UNIV=new ParaSig("univ","");
+	public static final ParaSig NONE=new ParaSig("none","");
+	public static final ParaSig SIGINT=new ParaSig("Int","");
 
 	// Abstract or not. Note, if a sig is abstract, it cannot be a subset sig (ie. "in" field must be null)
 	public final boolean abs;
@@ -23,12 +22,10 @@ public final class ParaSig extends Para {
 
 	// At most 1 can be non-null
 	public List<String> in=null; // If nonnull, size must be >= 1. This means this sig "in THEM"
-	public List<String> in() { if (in==null) return null; return Collections.unmodifiableList(in); }
 	public final boolean subset;
 	public String ext;      // If nonnull, length must be >= 1. This means this sig "extends IT"
 
 	public List<String> aliases=new ArrayList<String>();
-	public List<String> aliases() { return Collections.unmodifiableList(aliases); }
 
 	// The list of field declarations (in 2 data structures)
 	public List<VarDecl> decls;
@@ -43,11 +40,8 @@ public final class ParaSig extends Para {
 	// (Though "type" will be set already, for ParaSig.UNIV/NONE/SIGINT)
 	public Type type;
 	public ParaSig sup;                        // If I'm a SUBSIG, this is the parent. ELSE null.
-	public ParaSig sup() { return sup; }
 	public List<ParaSig> sups=new ArrayList<ParaSig>(); // If I'm a SUBSETSIG, this is the list of parent(s).
-	public List<ParaSig> sups() { return Collections.unmodifiableList(sups); }
 	public List<ParaSig> subs=new ArrayList<ParaSig>(); // If I'm a TOPSIG/SUBSIG/"Int", sigs who EXTEND me.
-	public List<ParaSig> subs() { return Collections.unmodifiableList(subs); }
 
 	@Override public String toString() { return "$"+name; }
 

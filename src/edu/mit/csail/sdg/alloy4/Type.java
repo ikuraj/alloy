@@ -153,7 +153,7 @@ public final class Type implements Iterable<Type.Rel> {
   //
   private static Rel fold(Set<Rel> entries, Set<Integer> arities, Rel a, int i) {
     ParaSig parent = a.basicTypes.get(i).sup;
-    List<ParaSig> subs = new ArrayList<ParaSig>(parent.subs());
+    List<ParaSig> subs = new ArrayList<ParaSig>(parent.subs);
     List<Rel> ret = new ArrayList<Rel>();
     for (Rel b:entries)
       if (b.arity() == a.arity())

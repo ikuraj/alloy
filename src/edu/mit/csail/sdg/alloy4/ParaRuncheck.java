@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
  * <br/>
  * <br/> Invariant: all X:String | exact.contains(X) => scope.containsKey(X)
  * <br/> Invariant: all X:String | scope.containsKey(X) => (names.contains(X) && scope.get(X)>=0)
+ * <br/> Invariant: all X:names  | (x is not "", and x does not contain '@')
  * <br/> Invariant: the "names" array does not contain any duplicate entries
  * <br/> Invariant: overall >= -1
  * <br/> Invariant: expects == -1, 0, or 1
@@ -109,6 +110,7 @@ public final class ParaRuncheck extends Para {
 			String a=e.getKey();
 			int b=e.getValue();
 			if (a.length()==0) throw syntaxError("\"\" is not a valid signature name!");
+			if (a.indexOf('@')>=0) throw syntaxError("Signature name \""+a+"\" cannot contain '@'");
 			if (b<0) throw syntaxError("sig \""+a+"\" cannot have a negative scope!");
 			newlist.add(a);
 		}

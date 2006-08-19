@@ -7,6 +7,8 @@ import java.util.ArrayList;
  * Mutable; represents a "predicate" or "function".
  *
  * <br/>
+ * <br/> Invariant: name is not ""
+ * <br/>
  * <br/> Invariant: decls!=null and there are no duplicate names in the list
  * <br/> Invariant: all x:decls | x!=null
  * <br/> Invariant: argCount == (sum x:decls | x.names.size())

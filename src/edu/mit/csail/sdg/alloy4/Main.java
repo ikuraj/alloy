@@ -216,7 +216,7 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
         }
         if (s.subset) {
            List<String> newin=new ArrayList<String>();
-           for(String i:s.in()) {
+           for(String i:s.in) {
              Set<Object> ans=u.lookup_sigORparam(i);
              if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of \""+i+"\", but the name \""+i+"\" is ambiguous.");
              if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of a non-existent signature \""+i+"\"");

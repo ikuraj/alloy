@@ -421,15 +421,14 @@ public Object accept(ExprCall x) {
 
   private boolean derive(ParaRuncheck cmd, List<ParaSig> sigs) {
     for(ParaSig s:sigs) {
-      List<ParaSig> subs=s.subs();
-      if (s.abs && sig2bound(s)<0 && subs.size()>0) {
+      if (s.abs && sig2bound(s)<0 && s.subs.size()>0) {
          int sum=0;
-         for(ParaSig c:subs) {if (sig2bound(c)<0) {sum=(-1);break;} sum=sum+sig2bound(c);}
+         for(ParaSig c:s.subs) {if (sig2bound(c)<0) {sum=(-1);break;} sum=sum+sig2bound(c);}
          if (sum>=0) {bound("#1: ",cmd,s,sum);return true;}
       }
-      if (s.abs && sig2bound(s)>=0 && subs.size()>0) {
+      if (s.abs && sig2bound(s)>=0 && s.subs.size()>0) {
          int sum=0; ParaSig cc=null;
-         for(ParaSig c:subs) {if (sig2bound(c)>=0) sum=sum+sig2bound(c); else if (cc==null) cc=c; else {cc=null;break;}}
+         for(ParaSig c:s.subs) {if (sig2bound(c)>=0) sum=sum+sig2bound(c); else if (cc==null) cc=c; else {cc=null;break;}}
          if (cc!=null) {bound("#2: ",cmd,cc,(sig2bound(s)<sum)?0:sig2bound(s)-sum); return true;}
       }
       if (sig2bound(s)!=1 && !s.subset && s.one) {bound("#3: ",cmd,s,1); return true;}
@@ -440,8 +439,8 @@ public Object accept(ExprCall x) {
 
   private boolean derive2(ParaRuncheck cmd, List<ParaSig> sigs) {
     boolean chg=false;
-    for(ParaSig s:sigs) if (s.sup()!=null && sig2bound(s)<0 && sig2bound(s.sup())>=0) {
-      bound("#5: ", cmd, s, sig2bound(s.sup()));
+    for(ParaSig s:sigs) if (s.sup!=null && sig2bound(s)<0 && sig2bound(s.sup)>=0) {
+      bound("#5: ", cmd, s, sig2bound(s.sup));
       chg=true;
     }
     return chg;
@@ -483,7 +482,7 @@ public Object accept(ExprCall x) {
     again: while(true) {
       while(derive(cmd,sigs)) {}
       // TopLevel sigs must have bounds!
-      for(ParaSig s:sigs) if (!s.subset && s.sup()==null && sig2bound(s)<0) {
+      for(ParaSig s:sigs) if (!s.subset && s.sup==null && sig2bound(s)<0) {
         if (overall<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" needs a specific scope!");
         if (s.lone || s.one) bound("#7: ",cmd, s, 1); else bound("#8: ",cmd, s, overall);
         continue again;
@@ -593,17 +592,17 @@ Code generation
     }
     // Add the constraints among SIGs
     for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
-      if (s.abs && s.subs().size()>0) {
-    	 List<ParaSig> subs=s.subs();
+      if (s.abs && s.subs.size()>0) {
+    	 List<ParaSig> subs=s.subs;
          Expression x1=rel(subs.get(0));
          for(int x2=1; x2<subs.size(); x2++) x1=x1.union(rel(subs.get(x2)));
          kfact=x1.eq(rel(s)).and(kfact);
       }
-      if (s.sup()!=null && s.sup()!=ParaSig.UNIV && !s.sup().abs)
-         kfact=rel(s).in(rel(s.sup())).and(kfact);
-      if (s.sups().size()>0) {
-         Expression x1=rel(s.sups().get(0));
-         for(int x2=1; x2<s.sups().size(); x2++) x1=x1.union(rel(s.sups().get(x2)));
+      if (s.sup!=null && s.sup!=ParaSig.UNIV && !s.sup.abs)
+         kfact=rel(s).in(rel(s.sup)).and(kfact);
+      if (s.sups.size()>0) {
+         Expression x1=rel(s.sups.get(0));
+         for(int x2=1; x2<s.sups.size(); x2++) x1=x1.union(rel(s.sups.get(x2)));
          kfact=rel(s).in(x1).and(kfact);
       }
       if (s.lone) kfact=rel(s).lone().and(kfact);
@@ -639,7 +638,7 @@ Code generation
 
   private int childrenSum(ParaRuncheck cmd, ParaSig s) {
     int n=0;
-    for(ParaSig c:s.subs()) {
+    for(ParaSig c:s.subs) {
       if (sig2bound(c)<0) throw cmd.syntaxError("The signature \""+c.fullname+"\" must have a bound!");
       n=n+sig2bound(c);
     }
@@ -684,15 +683,15 @@ Code generation
       int sc=sig2bound(s);
       if (sc<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" must have a bound!");
       if (sc==0) continue;
-      if (s.sup()!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup())<=sig2bound(s.sup())) {
+      if (s.sup!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup)<=sig2bound(s.sup)) {
         int k=0;
-        for(ParaSig child:s.sup().subs()) { if (child==s) break; k=k+sig2bound(child); }
+        for(ParaSig child:s.sup.subs) { if (child==s) break; k=k+sig2bound(child); }
         List<String> sa=sig2atoms(s);
-        List<String> sua=sig2atoms(s.sup());
+        List<String> sua=sig2atoms(s.sup);
         while(sa.size()<sc) { sa.add(sua.get(k)); k++; }
-      } else if (s.sup()!=null) {
-        if (sig2bound(s.sup())<sc) throw cmd.syntaxError("The parent sig \""+s.sup().fullname+"\" cannot have fewer elements than the subsig \""+s.fullname+"\"");
-        sig2atoms(s).addAll(sig2atoms(s.sup()));
+      } else if (s.sup!=null) {
+        if (sig2bound(s.sup)<sc) throw cmd.syntaxError("The parent sig \""+s.sup.fullname+"\" cannot have fewer elements than the subsig \""+s.fullname+"\"");
+        sig2atoms(s).addAll(sig2atoms(s.sup));
       } else {
         List<String> sa=sig2atoms(s);
         while(sa.size()<sc) {String a=makeAtom(s.name); atoms.add(a); sa.add(a);}
@@ -717,7 +716,7 @@ Code generation
       TupleSet ts;
       if (at.size()==0) ts=factory.noneOf(1);
       else ts=factory.range(factory.tuple(at.get(0)), factory.tuple(at.get(at.size()-1)));
-      for(ParaSig sub:s.subs()) for(Tuple temp:sig2ts(sub)) ts.add(temp);
+      for(ParaSig sub:s.subs) for(Tuple temp:sig2ts(sub)) ts.add(temp);
       sig2ts(s,ts);
       if (exact(s) && ts.size()==sig2bound(s)) {
         debug("SIG "+s.fullname+" BOUNDEXACTLY=<"+ts.toString()+">");
@@ -747,7 +746,7 @@ Code generation
       ParaSig s=sigs.get(si);
       if (!s.subset) continue;
       TupleSet ts=factory.noneOf(1);
-      for(ParaSig sup:s.sups()) for(Tuple temp:sig2ts(sup)) ts.add(temp);
+      for(ParaSig sup:s.sups) for(Tuple temp:sig2ts(sup)) ts.add(temp);
       debug("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">");
       bounds.bound((Relation)(rel(s)),ts); sig2ts(s,ts);
     }
