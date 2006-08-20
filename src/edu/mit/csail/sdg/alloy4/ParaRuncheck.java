@@ -3,10 +3,10 @@ package edu.mit.csail.sdg.alloy4;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Set;
-import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 
 /**
  * Immutable; reresents a "run" or "check" command.
