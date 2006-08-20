@@ -38,7 +38,7 @@ public final class ParaRuncheck extends Para {
 	 * @param n - the name of a signature
 	 * @return a nonnegative integer if the sig has a specified scope; -1 if no scope was specified.
 	 */
-	public int getScope(String n) { Pair p=scope.get(n); if (p!=null) return (Integer)(p.a); else return -1; }
+	public int getScope(String n) { Pair p=scope.get(n); if (p!=null) return (Integer)(p.x); else return -1; }
 
 	/**
 	 * Given the name of a signature, this method returns whether its scope is exact or not.
@@ -46,7 +46,7 @@ public final class ParaRuncheck extends Para {
 	 * @param n - the name of a signature
 	 * @return true if and only if the sig has an exact scope
 	 */
-	public boolean isExact(String n) { Pair p=scope.get(n); if (p!=null) return (Boolean)(p.b); else return false; }
+	public boolean isExact(String n) { Pair p=scope.get(n); if (p!=null) return (Boolean)(p.y); else return false; }
 
 	/** Returns a human-readable string representing this Run or Check command. */
 	@Override public final String toString() {
@@ -62,11 +62,11 @@ public final class ParaRuncheck extends Para {
 				else if (e.getKey()==ParaSig.SIGINT) n="Int";
 				else if (e.getKey()==ParaSig.NONE) n="none";
 				else n=e.getKey().placeholder;
-			a=a+(f?", ":" ")+(ee.b==true?"exactly ":"")+ee.a+" "+n;
+			a=a+(f?", ":" ")+(ee.y==true?"exactly ":"")+ee.x+" "+n;
 			f=true;
 		}
 		if (bitwidth>=0) a=a+(f?", ":" ")+bitwidth+" int";
-		if (expects>0) a=a+" expects "+expects;
+		if (expects>=0) a=a+" expects "+expects;
 		return a;
 	}
 
@@ -97,7 +97,7 @@ public final class ParaRuncheck extends Para {
 			throw this.syntaxError("The \"run\" and \"check\" statement must give the name of the predicate or assertion you want to check.");
 		this.bitwidth=(bitwidth<0 ? -1 : bitwidth);
 		this.overall=(overall<0 ? -1 : overall);
-		this.expects=(expects<0 ? -1 : (overall>0?1:0));
+		this.expects=(expects<0 ? -1 : (expects>0?1:0));
 		this.scope=Collections.unmodifiableMap(new LinkedHashMap<ParaSig,Pair<Integer,Boolean>>(nonnull(scope)));
 	}
 }

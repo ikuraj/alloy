@@ -17,7 +17,7 @@ import java.util.ArrayList;
 public final class ParaOpen extends Para {
 
 	/** The list of instantiating arguments. */
-	public final List<ParaSig> list;
+	public final List<String> list;
 
 	/**
 	 * The relative filename for the file being imported, without ".als"
@@ -46,7 +46,7 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax if "alias" is "", and "file" is not a legal alias (eg. it contains '/')
 	 * @throws ErrorInternal if pos==null, file==null, alias==null, or list==null
 	 */
-	private static String computeAlias(Pos pos, String file, String alias, List<ParaSig> list) {
+	private static String computeAlias(Pos pos, String file, String alias, List<ExprName> list) {
 		if (pos==null || file==null || alias==null || list==null)
 			throw new ErrorInternal(pos,null,"NullPointerException");
 		if (file.length()==0) throw new ErrorSyntax(pos, "The filename cannot be \"\"");
@@ -82,9 +82,13 @@ public final class ParaOpen extends Para {
 	 * @throws ErrorSyntax if at least one argument is "" or contains '@'
 	 * @throws ErrorInternal if pos==null, path==null, alias==null, list==null, or file==null
 	 */
-	public ParaOpen(Pos pos, String path, String alias, List<ParaSig> list, String file) {
+	public ParaOpen(Pos pos, String path, String alias, List<ExprName> list, String file) {
 		super(pos, path, computeAlias(pos,file,alias,list));
 		this.file=file;
-		this.list=new ArrayList<ParaSig>(list);
+		this.list=new ArrayList<String>();
+		for(int i=0; i<list.size(); i++) {
+			ExprName x=nonnull(list.get(i));
+			this.list.add(x.name);
+		}
 	}
 }

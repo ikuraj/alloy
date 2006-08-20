@@ -57,15 +57,11 @@ We throw an exception if there is a cycle in the IMPORT graph
             for(Map.Entry<String,ParaSig> pp:uu.params.entrySet()) {
                String kn=pp.getKey();
                ParaSig old=pp.getValue();
-               ParaSig vv=f.getValue().list.get(i); i++;
-               String vn=vv.placeholder;
-               if (vn!=null) {
-                  Set<Object> v=u.lookup_sigORparam(vn);
-                  if (v.size()<1) {if (old==null) missing=f.getValue(); continue;}
-                  if (v.size()>1) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because the signature named \""+vn+"\" is ambiguous");
-                  vv=(ParaSig)(v.iterator().next());
-                  f.getValue().list.set(i-1,vv);
-               }
+               String vn=f.getValue().list.get(i); i++;
+               Set<Object> v=u.lookup_sigORparam(vn);
+               if (v.size()<1) {if (old==null) missing=f.getValue(); continue;}
+               if (v.size()>1) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because the signature named \""+vn+"\" is ambiguous");
+               ParaSig vv=(ParaSig)(v.iterator().next());
                if (old==vv) continue;
                if (old!=null) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because it is being imported more than once, with different arguments!");
                if (vv==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument!");
@@ -158,13 +154,6 @@ We throw an exception if there is a cycle in the IMPORT graph
         	 p.getValue().aliases=new ArrayList<String>(a.aliases);
         	}
            for(Unit c:units) if (c!=b) {
-             for(Map.Entry<String,ParaOpen> p:c.opencmds.entrySet()) {
-            	 List<ParaSig> cc=p.getValue().list;
-            	 for(int ci=0; ci<cc.size(); ci++) {
-                   if (isin(cc.get(ci), asigs)) cc.set(ci, a.sigs.get(cc.get(ci).name));
-                   if (isin(cc.get(ci), b.sigs)) cc.set(ci, a.sigs.get(cc.get(ci).name));
-            	 }
-             }
              for(Map.Entry<String,ParaSig> p:c.params.entrySet()) {
                  if (isin(p.getValue(),asigs)) p.setValue(a.sigs.get(p.getValue().name));
                  if (isin(p.getValue(),b.sigs)) p.setValue(a.sigs.get(p.getValue().name));

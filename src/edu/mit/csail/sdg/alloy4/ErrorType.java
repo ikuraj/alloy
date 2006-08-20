@@ -33,7 +33,7 @@ public final class ErrorType extends RuntimeException {
 	public ErrorType(Pos pos, Object obj, String msg) {
 		this.pos=pos;
 		this.obj=obj;
-		this.msg=msg;
+		this.msg=(msg==null?"":msg);
 	}
 
 	/** Returns a human-readable description of the error */

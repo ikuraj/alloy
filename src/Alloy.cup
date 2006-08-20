@@ -205,9 +205,9 @@ nonterminal                            Sig;
 nonterminal List<ParaSig>              SigIn;
 nonterminal Integer                    SigQual;
 nonterminal Integer                    SigQuals;
-nonterminal ParaSig                    SigRef;
-nonterminal List<ParaSig>              SigRefp;
-nonterminal List<ParaSig>              SigRefs;
+nonterminal ExprName                   SigRef;
+nonterminal List<ExprName>             SigRefp;
+nonterminal List<ExprName>             SigRefs;
 nonterminal List<ParaSig>              SigRefu;
 nonterminal                            Specification;
 nonterminal List<Pair<String,ParaSig>> Typescopes;
@@ -222,10 +222,10 @@ Specification ::= Module Opens Paragraphs ;
 Module ::= MODULE:o Name:a                           {: parser.alloyunit.makeModule(o, a.name, new ArrayList<ExprName>()); :};
 Module ::= MODULE:o Name:a LBRACKET Names:b RBRACKET {: parser.alloyunit.makeModule(o, a.name, b);                         :};
 
-Open ::= OPEN:o Name:a                                        {: parser.alloyunit.makeOpen(o, a.name, new ArrayList<ParaSig>(), "");     :};
-Open ::= OPEN:o Name:a                             AS Name:c  {: parser.alloyunit.makeOpen(o, a.name, new ArrayList<ParaSig>(), c.name); :};
-Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET            {: parser.alloyunit.makeOpen(o, a.name, b, "");                            :};
-Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET AS Name:c  {: parser.alloyunit.makeOpen(o, a.name, b, c.name);                        :};
+Open ::= OPEN:o Name:a                                        {: parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), "");     :};
+Open ::= OPEN:o Name:a                             AS Name:c  {: parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), c.name); :};
+Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET            {: parser.alloyunit.makeOpen(o, a.name, b, "");                             :};
+Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET AS Name:c  {: parser.alloyunit.makeOpen(o, a.name, b, c.name);                         :};
 
 Opens ::=            ;
 Opens ::= Opens Open ;
@@ -249,8 +249,8 @@ Paragraphs ::= Paragraphs CHECK:o  Name:n  Scope:s  {:
   Map<ParaSig,Pair<Integer,Boolean>> scope=new LinkedHashMap<ParaSig,Pair<Integer,Boolean>>();
   for(int i=2; i<s.size(); i=i+1) {
     boolean exact=false;
-    String a=((Pair<String,ParaSig>)(s.get(i))).a;
-    ParaSig b=((Pair<String,ParaSig>)(s.get(i))).b;
+    String a=((Pair<String,ParaSig>)(s.get(i))).x;
+    ParaSig b=((Pair<String,ParaSig>)(s.get(i))).y;
     if (a.charAt(0)=='e') { exact=true; a=a.substring(1); }
     if (b==null) {
        if (exact) throw new ErrorSyntax(o,"integer bitwidth does not need to be prepended with the \"exact\" keyword");
@@ -269,8 +269,8 @@ Paragraphs ::= Paragraphs RUN:o  Name:n  Scope:s  {:
   Map<ParaSig,Pair<Integer,Boolean>> scope=new LinkedHashMap<ParaSig,Pair<Integer,Boolean>>();
   for(int i=2; i<s.size(); i=i+1) {
     boolean exact=false;
-    String a=((Pair<String,ParaSig>)(s.get(i))).a;
-    ParaSig b=((Pair<String,ParaSig>)(s.get(i))).b;
+    String a=((Pair<String,ParaSig>)(s.get(i))).x;
+    ParaSig b=((Pair<String,ParaSig>)(s.get(i))).y;
     if (a.charAt(0)=='e') { exact=true; a=a.substring(1); }
     if (b==null) {
        if (exact) throw new ErrorSyntax(o,"integer bitwidth does not need to be prepended with the \"exact\" keyword");
@@ -336,12 +336,12 @@ SigIn    ::= EXTENDS Name:a           {: RESULT=new ArrayList<ParaSig>(); RESULT
 SigIn    ::= EXTENDS SIGINT           {: RESULT=new ArrayList<ParaSig>(); RESULT.add(null); RESULT.add(ParaSig.SIGINT);            :};
 SigIn    ::= IN SigRefu:b             {: RESULT=b;                                                                                 :};
 SigIn    ::=                          {: RESULT=null;                                                                              :};
-SigRef   ::= Name:x                   {: RESULT=new ParaSig(x.pos, x.name);                                                        :};
-SigRef   ::= UNIV                     {: RESULT=ParaSig.UNIV;                                                                      :};
-SigRef   ::= SIGINT                   {: RESULT=ParaSig.SIGINT;                                                                    :};
-SigRefs  ::=                          {: RESULT=new ArrayList<ParaSig>();                                                          :};
+SigRef   ::= Name:x                   {: RESULT=x;                                                                                 :};
+SigRef   ::= UNIV:x                   {: RESULT=new ExprName(x, ParaSig.UNIV_NAME);                                                :};
+SigRef   ::= SIGINT:x                 {: RESULT=new ExprName(x, ParaSig.SIGINT_NAME);                                              :};
+SigRefs  ::=                          {: RESULT=new ArrayList<ExprName>();                                                         :};
 SigRefs  ::= SigRefp:x                {: RESULT=x;                                                                                 :};
-SigRefp  ::= SigRef:x                 {: RESULT=new ArrayList<ParaSig>(); RESULT.add(x);                                           :};
+SigRefp  ::= SigRef:x                 {: RESULT=new ArrayList<ExprName>(); RESULT.add(x);                                          :};
 SigRefp  ::= SigRefp:a COMMA SigRef:b {: a.add(b); RESULT=a;                                                                       :};
 SigRefu  ::= Name:x                   {: RESULT=new ArrayList<ParaSig>(1); RESULT.add(new ParaSig(x.pos, x.name));                 :};
 SigRefu  ::= SIGINT                   {: RESULT=new ArrayList<ParaSig>(1); RESULT.add(ParaSig.SIGINT);                             :};

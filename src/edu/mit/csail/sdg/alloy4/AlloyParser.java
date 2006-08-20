@@ -3550,9 +3550,9 @@ class CUP$AlloyParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 63: // SigRefp ::= SigRefp COMMA SigRef 
             {
-              List<ParaSig> RESULT =null;
-		List<ParaSig> a = (List<ParaSig>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-		ParaSig b = (ParaSig)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+              List<ExprName> RESULT =null;
+		List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
 		 a.add(b); RESULT=a;                                                                       
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefp",43, RESULT);
             }
@@ -3561,9 +3561,9 @@ class CUP$AlloyParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 62: // SigRefp ::= SigRef 
             {
-              List<ParaSig> RESULT =null;
-		ParaSig x = (ParaSig)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=new ArrayList<ParaSig>(); RESULT.add(x);                                           
+              List<ExprName> RESULT =null;
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<ExprName>(); RESULT.add(x);                                          
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefp",43, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3571,8 +3571,8 @@ class CUP$AlloyParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 61: // SigRefs ::= SigRefp 
             {
-              List<ParaSig> RESULT =null;
-		List<ParaSig> x = (List<ParaSig>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+              List<ExprName> RESULT =null;
+		List<ExprName> x = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
 		 RESULT=x;                                                                                 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefs",44, RESULT);
             }
@@ -3581,8 +3581,8 @@ class CUP$AlloyParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 60: // SigRefs ::= 
             {
-              List<ParaSig> RESULT =null;
-		 RESULT=new ArrayList<ParaSig>();                                                          
+              List<ExprName> RESULT =null;
+		 RESULT=new ArrayList<ExprName>();                                                         
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefs",44, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3590,8 +3590,9 @@ class CUP$AlloyParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 59: // SigRef ::= SIGINT 
             {
-              ParaSig RESULT =null;
-		 RESULT=ParaSig.SIGINT;                                                                    
+              ExprName RESULT =null;
+		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprName(x, ParaSig.SIGINT_NAME);                                              
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRef",42, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3599,8 +3600,9 @@ class CUP$AlloyParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 58: // SigRef ::= UNIV 
             {
-              ParaSig RESULT =null;
-		 RESULT=ParaSig.UNIV;                                                                      
+              ExprName RESULT =null;
+		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprName(x, ParaSig.UNIV_NAME);                                                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRef",42, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3608,9 +3610,9 @@ class CUP$AlloyParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 57: // SigRef ::= Name 
             {
-              ParaSig RESULT =null;
+              ExprName RESULT =null;
 		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=new ParaSig(x.pos, x.name);                                                        
+		 RESULT=x;                                                                                 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRef",42, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3737,7 +3739,7 @@ class CUP$AlloyParser$actions {
           case 45: // Predicate ::= SigRef DOT Name ExprPara 
             {
               Object RESULT =null;
-		ParaSig f = (ParaSig)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
 		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
 		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
 		 parser.alloyunit.makeFun(n.pos,n.name,f   ,new ArrayList<VarDecl>(),null,v); 
@@ -3749,7 +3751,7 @@ class CUP$AlloyParser$actions {
           case 44: // Predicate ::= SigRef DOT Name LBRACKET Decls RBRACKET ExprPara 
             {
               Object RESULT =null;
-		ParaSig f = (ParaSig)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
 		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
 		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
 		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
@@ -3762,7 +3764,7 @@ class CUP$AlloyParser$actions {
           case 43: // Predicate ::= SigRef DOT Name LPAREN Decls RPAREN ExprPara 
             {
               Object RESULT =null;
-		ParaSig f = (ParaSig)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
 		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
 		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
 		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
@@ -3810,7 +3812,7 @@ class CUP$AlloyParser$actions {
           case 39: // Function ::= SigRef DOT Name COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-		ParaSig f = (ParaSig)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-7)).value;
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-7)).value;
 		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
 		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
 		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
@@ -3823,7 +3825,7 @@ class CUP$AlloyParser$actions {
           case 38: // Function ::= SigRef DOT Name LBRACKET Decls RBRACKET COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-		ParaSig f = (ParaSig)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-10)).value;
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-10)).value;
 		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
 		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
 		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
@@ -3837,7 +3839,7 @@ class CUP$AlloyParser$actions {
           case 37: // Function ::= SigRef DOT Name LPAREN Decls RPAREN COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-		ParaSig f = (ParaSig)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-10)).value;
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-10)).value;
 		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
 		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
 		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
@@ -4045,8 +4047,8 @@ class CUP$AlloyParser$actions {
   Map<ParaSig,Pair<Integer,Boolean>> scope=new LinkedHashMap<ParaSig,Pair<Integer,Boolean>>();
   for(int i=2; i<s.size(); i=i+1) {
     boolean exact=false;
-    String a=((Pair<String,ParaSig>)(s.get(i))).a;
-    ParaSig b=((Pair<String,ParaSig>)(s.get(i))).b;
+    String a=((Pair<String,ParaSig>)(s.get(i))).x;
+    ParaSig b=((Pair<String,ParaSig>)(s.get(i))).y;
     if (a.charAt(0)=='e') { exact=true; a=a.substring(1); }
     if (b==null) {
        if (exact) throw new ErrorSyntax(o,"integer bitwidth does not need to be prepended with the \"exact\" keyword");
@@ -4075,8 +4077,8 @@ class CUP$AlloyParser$actions {
   Map<ParaSig,Pair<Integer,Boolean>> scope=new LinkedHashMap<ParaSig,Pair<Integer,Boolean>>();
   for(int i=2; i<s.size(); i=i+1) {
     boolean exact=false;
-    String a=((Pair<String,ParaSig>)(s.get(i))).a;
-    ParaSig b=((Pair<String,ParaSig>)(s.get(i))).b;
+    String a=((Pair<String,ParaSig>)(s.get(i))).x;
+    ParaSig b=((Pair<String,ParaSig>)(s.get(i))).y;
     if (a.charAt(0)=='e') { exact=true; a=a.substring(1); }
     if (b==null) {
        if (exact) throw new ErrorSyntax(o,"integer bitwidth does not need to be prepended with the \"exact\" keyword");
@@ -4197,9 +4199,9 @@ class CUP$AlloyParser$actions {
               Object RESULT =null;
 		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
 		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
-		List<ParaSig> b = (List<ParaSig>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
 		ExprName c = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 parser.alloyunit.makeOpen(o, a.name, b, c.name);                        
+		 parser.alloyunit.makeOpen(o, a.name, b, c.name);                         
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Open",29, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -4210,8 +4212,8 @@ class CUP$AlloyParser$actions {
               Object RESULT =null;
 		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
 		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-		List<ParaSig> b = (List<ParaSig>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-		 parser.alloyunit.makeOpen(o, a.name, b, "");                            
+		List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeOpen(o, a.name, b, "");                             
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Open",29, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -4223,7 +4225,7 @@ class CUP$AlloyParser$actions {
 		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
 		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
 		ExprName c = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 parser.alloyunit.makeOpen(o, a.name, new ArrayList<ParaSig>(), c.name); 
+		 parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), c.name); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Open",29, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -4234,7 +4236,7 @@ class CUP$AlloyParser$actions {
               Object RESULT =null;
 		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
 		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 parser.alloyunit.makeOpen(o, a.name, new ArrayList<ParaSig>(), "");     
+		 parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), "");     
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Open",29, RESULT);
             }
           return CUP$AlloyParser$result;

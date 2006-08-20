@@ -14,14 +14,14 @@ package edu.mit.csail.sdg.alloy4;
 public abstract class Expr {
 
 	/**
-	 * This field records the filename, line, and column position
+	 * The filename, line, and column position
 	 * in the original Alloy model file (cannot be null).
 	 */
 	public final Pos pos;
 
 	/**
-	 * This field records the type of this node
-	 * (null if this node has not been typechecked).
+	 * This field records the type for this node
+	 * (null if this node has not been typechecked)
 	 */
 	public final Type type;
 

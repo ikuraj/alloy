@@ -80,19 +80,12 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // This lists all the FUNCTIONS defined inside this file.
   // The NAME must not contain any "/" or "@"
   public final Map<String,List<ParaFun>> funs=new LinkedHashMap<String,List<ParaFun>>();
-  public void makeFun(Pos p,String n,ParaSig f,List<VarDecl> d,Expr t,Expr v) {
+  public void makeFun(Pos p,String n,ExprName f,List<VarDecl> d,Expr t,Expr v) {
     List<ParaFun> list=funs.get(n);
     if (list==null) list=new ArrayList<ParaFun>();
     //
     d=new ArrayList<VarDecl>(d);
-    if (f!=null) {
-    	Expr ff;
-    	if (f==ParaSig.NONE) ff=ExprConstant.Op.NONE.make(f.pos);
-    	else if (f==ParaSig.UNIV) ff=ExprConstant.Op.UNIV.make(f.pos);
-    	else if (f==ParaSig.SIGINT) ff=ExprConstant.Op.SIGINT.make(f.pos);
-    	else ff=new ExprName(f.pos, f.placeholder);
-    	d.add(0,new VarDecl("this",ExprUnary.Op.ONEMULT.make(p,ff)));
-    }
+    if (f!=null) d.add(0,new VarDecl("this",ExprUnary.Op.ONEMULT.make(p,f)));
     //
     ParaFun x=new ParaFun(p, aliases.get(0), n, d, t, v);
     if (asserts.containsKey(x.name)) throw x.syntaxError("Within the same file, a function/predicate cannot have the same name as another assertion!");
@@ -107,7 +100,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // The ALIAS must not contain any "/" or "@"
   public final Map<String,Unit> opens=new LinkedHashMap<String,Unit>();
   public final Map<String,ParaOpen> opencmds=new LinkedHashMap<String,ParaOpen>();
-  public void makeOpen(Pos p, String n, List<ParaSig> l, String a) {
+  public void makeOpen(Pos p, String n, List<ExprName> l, String a) {
     ParaOpen x=new ParaOpen(p,aliases.get(0),a,l,n);
     if (opencmds.containsKey(x.name)) throw x.syntaxError("You cannot import more than 1 module using the same alias!");
     opencmds.put(x.name, x);

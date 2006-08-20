@@ -12,7 +12,7 @@ package edu.mit.csail.sdg.alloy4;
 
 public final class ErrorSyntax extends RuntimeException {
 
-	/** This silences the javac warning about serialVersionUID not defined. */
+	/** This silences the javac warning about serialVersionUID not defined */
 	private static final long serialVersionUID=0;
 
 	/** This stores the filename/line/row information (null if unknown) */
@@ -28,7 +28,7 @@ public final class ErrorSyntax extends RuntimeException {
 	 */
 	public ErrorSyntax(Pos pos, String msg) {
 		this.pos=pos;
-		this.msg=msg;
+		this.msg=(msg==null?"":msg);
 	}
 
 	/** Returns a human-readable description of the error */

@@ -42,7 +42,7 @@ public final class VarDecl {
 			throw y.syntaxError("The list of declarations cannot be empty!");
 		for(int i=0; i<x.size(); i++) {
 			ExprName e=x.get(i);
-			if (e==null) throw y.internalError("NullPointerException");
+			if (e==null || e.name==null) throw y.internalError("NullPointerException");
 			String n=e.name;
 			if (n.length()==0) throw e.syntaxError("Variable name cannot be empty!");
 			if (n.indexOf('/')>=0) throw e.syntaxError("Variable name cannot contain \'/\'");
@@ -67,12 +67,12 @@ public final class VarDecl {
 	 */
 	public VarDecl (String x, Expr y) {
 		if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
-		List<String> list=new ArrayList<String>(1);
-		list.add(x);
-		names=Collections.unmodifiableList(list);
 		if (x.length()==0) throw y.syntaxError("Variable name must not be empty!");
 		if (x.indexOf('/')>=0) throw y.syntaxError("Variable name cannot contain \'/\'");
 		if (x.indexOf('@')>=0) throw y.syntaxError("Variable name cannot contain \'@\'");
+		List<String> list=new ArrayList<String>(1);
+		list.add(x);
+		names=Collections.unmodifiableList(list);
 		// See ExprUnary.java for why we have to call makeMult() here.
 		if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
 		value=y;

@@ -462,10 +462,10 @@ public Object accept(ExprCall x) {
     	   if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
     	   s=(ParaSig)(it.next());
        }
-       if (nn.getValue().b==true) exact(s,true);
+       if (nn.getValue().y==true) exact(s,true);
        if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+s.fullname+"\"");
        if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
-       bound("#6: ",cmd, s, nn.getValue().a);
+       bound("#6: ",cmd, s, nn.getValue().x);
     }
     // Ensure "int" and "Int" are consistent
     if (bitwidth<0) bitwidth=4;
