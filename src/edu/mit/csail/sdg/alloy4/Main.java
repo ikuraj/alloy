@@ -181,16 +181,14 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
   private static void tsort(ParaSig x, LinkedHashMap<ParaSig,Boolean> status, ArrayList<ParaSig> list) {
     // Performs a topological sort
     status.put(x, Boolean.FALSE);
-    ParaSig y=x.sup;
-    List<ParaSig> yy=x.sups;
+    ParaSig y=x.sup();
     if (y!=null) {
        Boolean v=status.get(y);
        if (v==null) tsort(y,status,list); else if (v==Boolean.FALSE) throw new ErrorSyntax(null,"Circular extension detected, involving the signature named \""+y.fullname+"\"");
     }
-    if (yy!=null) for(ParaSig yyy:yy) {
-       y=yyy;
-       Boolean v=status.get(y);
-       if (v==null) tsort(y,status,list); else if (v==Boolean.FALSE) throw new ErrorSyntax(null,"Circular extension detected, involving the signature named \""+y.fullname+"\"");
+    for(ParaSig yy:x.sups()) {
+       Boolean v=status.get(yy);
+       if (v==null) tsort(yy,status,list); else if (v==Boolean.FALSE) throw new ErrorSyntax(null,"Circular extension detected, involving the signature named \""+yy.fullname+"\"");
     }
     status.put(x, Boolean.TRUE);
     list.add(x);
@@ -202,29 +200,8 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
       for(Map.Entry<String,ParaSig> si:u.sigs.entrySet()) {
         ParaSig s=si.getValue();
         sigs.add(s);
-        if (s.sup!=null && s.sup.placeholder!=null) {
-           Set<Object> ans=u.lookup_sigORparam(s.sup.placeholder);
-           if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to extend \""+s.sup.placeholder+"\", but that name is ambiguous.");
-           if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to extend a non-existent signature \""+s.sup.placeholder+"\"");
-           ParaSig parent=(ParaSig)(ans.iterator().next());
-           if (parent==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot extend the builtin \"none\" signature");
-           if (parent==ParaSig.UNIV) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" already implicitly extend the builtin \"univ\" signature");
-           if (parent.subset) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot extend a subset signature \""+parent.fullname+"\"! A signature can only extend a toplevel signature or a subsignature.");
-           s.sup=parent;
-        }
-        if (s.subset) {
-           for(int i=0; i<s.sups.size(); i++) {
-        	 String n=s.sups.get(i).placeholder;
-        	 if (n==null) continue;
-             Set<Object> ans=u.lookup_sigORparam(n);
-             if (ans.size()>1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of \""+n+"\", but the name \""+n+"\" is ambiguous.");
-             if (ans.size()<1) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" tries to be a subset of a non-existent signature \""+n+"\"");
-             ParaSig parent=(ParaSig)(ans.iterator().next());
-             if (parent==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" cannot be a subset of the builtin \"none\" signature");
-             if (parent==ParaSig.UNIV) throw new ErrorSyntax(u.pos, "Sig \""+s.fullname+"\" is already implicitly a subset of the builtin \"univ\" signature");
-             s.sups.set(i,parent);
-           }
-        }
+        s.resolveSup(u);
+        s.resolveSups(u);
       }
     }
     // Now we perform a topological sort on the sigs
@@ -234,11 +211,11 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
        Boolean v=status.get(y);
        if (v==null) tsort(y,status,list); else if (v==Boolean.FALSE) throw new ErrorSyntax(null,"Circular extension detected, involving the signature named \""+y.fullname+"\"");
     }
-    for(ParaSig y:list) if (y.sup!=null) y.sup.subs.add(y);
+    for(ParaSig y:list) if (y.sup()!=null) y.sup().subs.add(y);
     for(int i=0; i<list.size(); i++) {
        ParaSig y=list.get(i);
        Type t=null;
-       if (y.subset) for(ParaSig z:y.sups) {
+       if (y.subset) for(ParaSig z:y.sups()) {
          if (t==null) t=z.type; else t=t.union(z.type);
        }
        if (t==null) t=Type.make(y);

@@ -1,7 +1,10 @@
 package edu.mit.csail.sdg.alloy4;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * Mutable; reresents a "signature".
@@ -17,6 +20,7 @@ public final class ParaSig extends Para {
 	public static final String UNIV_NAME = "$univ";
 	public static final String NONE_NAME = "$none";
 	public static final String SIGINT_NAME = "$Int";
+    public static final String BITWIDTH_NAME = "$int";
 
 	// Abstract or not. Note, if a sig is abstract, it cannot be a subset sig (ie. "in" field must be null)
 	public final boolean abs;
@@ -38,25 +42,61 @@ public final class ParaSig extends Para {
 	// The following 4 fields are initially empty until we properly initialize them
 	// (Though "type" will be set already, for ParaSig.UNIV/NONE/SIGINT)
 	public Type type;
-	public ParaSig sup;                        // If I'm a SUBSIG, this is the parent. ELSE null.
-	public List<ParaSig> sups=new ArrayList<ParaSig>(); // If I'm a SUBSETSIG, this is the list of parent(s).
+
+	private Object sup;                        // If I'm a SUBSIG, this is the parent. ELSE null.
+	public ParaSig sup() {
+	   if (sup==null) return null;
+	   if (sup instanceof ParaSig) return ((ParaSig)sup);
+	   throw new ErrorInternal(pos, this, "Sig \""+fullname+"\" should have resolved its sup field!");
+	}
+	public void resolveSup(Unit u) {
+	   if (!(sup instanceof String)) return;
+       Set<Object> ans=u.lookup_sigORparam((String)sup);
+       if (ans.size()>1) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" tries to extend \""+((String)sup)+"\", but that name is ambiguous.");
+       if (ans.size()<1) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" tries to extend a non-existent signature \""+((String)sup)+"\"");
+       ParaSig parent=(ParaSig)(ans.iterator().next());
+       if (parent==ParaSig.NONE) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" cannot extend the builtin \"none\" signature");
+       if (parent==ParaSig.UNIV) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" already implicitly extend the builtin \"univ\" signature");
+       if (parent.subset) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" cannot extend a subset signature \""+parent.fullname+"\"! A signature can only extend a toplevel signature or a subsignature.");
+       sup=parent;
+    }
+
+    private class supsIterator implements Iterator<ParaSig> {
+       private int i=0;
+	   public boolean hasNext() { return i<sups.size(); }
+	   public ParaSig next() { if (i>=sups.size()) throw new NoSuchElementException("There are no more elements in this list."); i++; return (ParaSig)(sups.get(i-1)); }
+	   public void remove() { throw new UnsupportedOperationException("This list is unmodifiable"); }
+    }
+
+	private List<Object> sups=new ArrayList<Object>();
+	public Iterable<ParaSig> sups() {
+	   if (sups.size()>0 && !(sups.get(0) instanceof ParaSig))
+		   throw new ErrorInternal(pos, this, "Sig \""+fullname+"\" should have resolved its sups field!");
+	   return new Iterable<ParaSig>() {
+		   public Iterator<ParaSig> iterator() {
+			   return new supsIterator();
+		   }
+	   };
+	}
+    public void resolveSups(Unit u) {
+ 	  if (sups.size()==0 || (sups.get(0) instanceof ParaSig)) return;
+      for(int i=0; i<sups.size(); i++) {
+     	String n=(String)(sups.get(i));
+        Set<Object> ans=u.lookup_sigORparam(n);
+        if (ans.size()>1) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" tries to be a subset of \""+n+"\", but the name \""+n+"\" is ambiguous.");
+        if (ans.size()<1) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" tries to be a subset of a non-existent signature \""+n+"\"");
+        ParaSig parent=(ParaSig)(ans.iterator().next());
+        if (parent==ParaSig.NONE) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" cannot be a subset of the builtin \"none\" signature");
+        if (parent==ParaSig.UNIV) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" is already implicitly a subset of the builtin \"univ\" signature");
+        sups.set(i,parent);
+      }
+    }
+	
 	public List<ParaSig> subs=new ArrayList<ParaSig>(); // If I'm a TOPSIG/SUBSIG/"Int", sigs who EXTEND me.
 	public final boolean subset;
-	public String placeholder=null;
-
-	public ParaSig(Pos p, String n) {
-		super(p, "?", (n.lastIndexOf('/')>=0 ? n.substring(n.lastIndexOf('/')+1) : n));
-		placeholder=n;
-		one=false;
-		lone=false;
-		some=false;
-		abs=false;
-		fullname="?";
-		subset=false;
-	}
 
 	public ParaSig(Pos p, String al, String n, boolean fa, boolean fl, boolean fo, boolean fs,
-			List<ParaSig> i, ParaSig e, List<VarDecl> d, Expr f) {
+			List<String> i, String e, List<VarDecl> d, Expr f) {
 		super(p, al, n);
 		if (al.length()==0) fullname="/"+n; else fullname="/"+al+"/"+n;
 		aliases.add(al);
@@ -70,16 +110,11 @@ public final class ParaSig extends Para {
 			if (abs) throw this.syntaxError("A subset signature cannot be abstract!");
 			if (e!=null) throw this.syntaxError("A signature cannot both be a subset signature and a subsignature!");
 			if (i.size()==0) throw this.syntaxError("To declare a subset signature, you must give the names of its parent signatures!");
-			for(int j=0;j<i.size();j++) {
-				String k=i.get(j).placeholder;
-				if (k==null) sups.add(i.get(j)); else sups.add(new ParaSig(i.get(j).pos, k));
-			}
+			for(String ii:i) sups.add(ii);
 			subset=true;
 		} else subset=false;
 
-		if (e!=null) {
-			if (e.placeholder!=null) sup=new ParaSig(e.pos, e.placeholder); else sup=e;
-		} else sup=null;
+		sup=e;
 
 		fields=new ArrayList<Field>();
 		decls=new ArrayList<VarDecl>(d);
@@ -100,7 +135,7 @@ public final class ParaSig extends Para {
 		if (subset || other.subset) return false; // Since this method is undefined for SUBSETSIG
 		if (this==NONE || this==other || other==UNIV) return true;
 		if (other==NONE) return false;
-		for(ParaSig me=this; me!=null; me=me.sup) if (me==other) return true;
+		for(ParaSig me=this; me!=null; me=me.sup()) if (me==other) return true;
 		return false;
 	}
 

@@ -37,7 +37,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // This lists all the SIGS defined inside this file.
   // The NAME must not contain any "/" or "@"
   public final Map<String,ParaSig> sigs=new LinkedHashMap<String,ParaSig>();
-  public void makeSig(Pos p,String n,boolean fa,boolean fl,boolean fo,boolean fs,List<ParaSig> i,ParaSig e,List<VarDecl> d,Expr f) {
+  public void makeSig(Pos p,String n,boolean fa,boolean fl,boolean fo,boolean fs,List<String> i,String e,List<VarDecl> d,Expr f) {
     ParaSig x=new ParaSig(p,aliases.get(0),n,fa,fl,fo,fs,i,e,d,f);
     if (asserts.containsKey(x.name)) throw x.syntaxError("Within the same file, a signature cannot have the same name as another assertion!");
     if (facts.containsKey(x.name)) throw x.syntaxError("Within the same file, a signature cannot have the same name as another fact!");
@@ -108,9 +108,9 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
   // This stores the list of RUN/CHECK commands, in the order they appear in the file.
   public final List<ParaRuncheck> runchecks=new ArrayList<ParaRuncheck>();
-  public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,int b,Map<ParaSig,Pair<Integer,Boolean>> s) {
+  public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
     if (!aliases.contains("")) return;
-    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, b, s));
+    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, exa));
   }
 
   private void lookupNQsig_noparam(String name,Set<Object> ans) { // It ignores "params"
@@ -135,6 +135,9 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     Para s;
     Set<Object> ans=new LinkedHashSet<Object>();
     if (name.indexOf('/')<0) {
+      if (name.equals(ParaSig.SIGINT_NAME)) { ans.add(ParaSig.SIGINT); return ans; }
+      if (name.equals(ParaSig.UNIV_NAME)) { ans.add(ParaSig.UNIV); return ans; }
+      if (name.equals(ParaSig.NONE_NAME)) { ans.add(ParaSig.NONE); return ans; }
       lookupNQsig_noparam(name,ans); s=params.get(name); if (s!=null) ans.add(s);
       return ans;
     }
@@ -180,12 +183,12 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   private ParaSig.Field lookup_Field_helper(ParaSig origin,ParaSig s,String n) {
     ParaSig.Field ans=null;
     if (canSee(origin.aliases, s.aliases)) for(ParaSig.Field f:s.fields) if (f.name.equals(n)) ans=f;
-    for(ParaSig p:s.sups) {
+    for(ParaSig p:s.sups()) {
       ParaSig.Field ans2=lookup_Field_helper(origin,p,n);
       if (ans==null) ans=ans2; else if (ans2!=null) throw s.syntaxError("This signature's \""+n+"\" field conflicts with a parent signature's field with the same name!");
     }
-    if (s.sup!=null) {
-      ParaSig.Field ans2=lookup_Field_helper(origin,s.sup,n);
+    if (s.sup()!=null) {
+      ParaSig.Field ans2=lookup_Field_helper(origin,s.sup(),n);
       if (ans==null) ans=ans2; else if (ans2!=null) throw s.syntaxError("This signature's \""+n+"\" field conflicts with a parent signature's field with the same name!");
     }
     return ans;

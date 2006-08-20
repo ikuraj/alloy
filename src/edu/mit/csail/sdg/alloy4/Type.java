@@ -131,7 +131,7 @@ public final class Type implements Iterable<Type.Rel> {
       changed=false;
       for (int i = 0; i < rt.arity(); i++) {
         ParaSig bt=rt.basicTypes.get(i);
-        if (bt.sup!=null && bt.sup.abs) {
+        if (bt.sup()!=null && bt.sup().abs) {
            Rel folded=fold(entries,arities,rt,i);
            if (folded!=null) {rt=folded; changed=true; i--;}
         }
@@ -152,7 +152,7 @@ public final class Type implements Iterable<Type.Rel> {
   //    we return null
   //
   private static Rel fold(Set<Rel> entries, Set<Integer> arities, Rel a, int i) {
-    ParaSig parent = a.basicTypes.get(i).sup;
+    ParaSig parent = a.basicTypes.get(i).sup();
     List<ParaSig> subs = new ArrayList<ParaSig>(parent.subs);
     List<Rel> ret = new ArrayList<Rel>();
     for (Rel b:entries)
@@ -161,7 +161,7 @@ public final class Type implements Iterable<Type.Rel> {
           if (j>=b.basicTypes.size()) {ret.add(b); subs.remove(b.basicTypes.get(i)); break;}
           ParaSig bt1 = a.basicTypes.get(j);
           ParaSig bt2 = b.basicTypes.get(j);
-          if (i==j && bt2.sup!=parent) break;
+          if (i==j && bt2.sup()!=parent) break;
           if (i!=j && bt2!=bt1) break;
         }
     subs.remove(a.basicTypes.get(i));

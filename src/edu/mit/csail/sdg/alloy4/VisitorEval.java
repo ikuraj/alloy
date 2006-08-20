@@ -436,8 +436,8 @@ public Object accept(ExprCall x) {
 
   private boolean derive2(ParaRuncheck cmd, List<ParaSig> sigs) {
     boolean chg=false;
-    for(ParaSig s:sigs) if (s.sup!=null && sig2bound(s)<0 && sig2bound(s.sup)>=0) {
-      bound("#5: ", cmd, s, sig2bound(s.sup));
+    for(ParaSig s:sigs) if (s.sup()!=null && sig2bound(s)<0 && sig2bound(s.sup())>=0) {
+      bound("#5: ", cmd, s, sig2bound(s.sup()));
       chg=true;
     }
     return chg;
@@ -445,27 +445,24 @@ public Object accept(ExprCall x) {
 
   public int compute(Unit root, List<ParaSig> sigs, ParaRuncheck cmd) {
     final int overall;
-    int bitwidth=cmd.bitwidth; // The bound on "int".
+    int bitwidth=(-1); // The bound on "int".
     for(ParaSig s:sigs) sig2bound(s,-1);
-    if (cmd.scope.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
-    for(Map.Entry<ParaSig,Pair<Integer,Boolean>> nn:cmd.scope.entrySet()) {
-       ParaSig s=nn.getKey();
-       if (s.placeholder!=null) {
-           String n=s.placeholder;
-    	   Set<Object> set=root.lookup_sigORparam(n);
-    	   Iterator<Object> it=set.iterator();
-    	   if (set.size()>1) {
-    		   ParaSig choice1=(ParaSig)(it.next());
-    		   ParaSig choice2=(ParaSig)(it.next());
-    		   throw cmd.syntaxError("The name \""+n+"\" is ambiguous: it could be "+choice1.fullname+" or "+choice2.fullname);
-    	   }
-    	   if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
-    	   s=(ParaSig)(it.next());
-       }
-       if (nn.getValue().y==true) exact(s,true);
+    if (cmd.names.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
+    for(String n:cmd.names) {
+       if (n.equals(ParaSig.BITWIDTH_NAME)) { bitwidth=cmd.getScope(n); continue; }
+  	   Set<Object> set=root.lookup_sigORparam(n);
+   	   Iterator<Object> it=set.iterator();
+   	   if (set.size()>1) {
+   		   ParaSig choice1=(ParaSig)(it.next());
+   		   ParaSig choice2=(ParaSig)(it.next());
+   		   throw cmd.syntaxError("The name \""+n+"\" is ambiguous: it could be "+choice1.fullname+" or "+choice2.fullname);
+   	   }
+   	   if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
+   	   ParaSig s=(ParaSig)(it.next());
+       if (cmd.isExact(n)==true) exact(s,true);
        if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+s.fullname+"\"");
        if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
-       bound("#6: ",cmd, s, nn.getValue().x);
+       bound("#6: ",cmd, s, cmd.getScope(n));
     }
     // Ensure "int" and "Int" are consistent
     if (bitwidth<0) bitwidth=4;
@@ -480,7 +477,7 @@ public Object accept(ExprCall x) {
     again: while(true) {
       while(derive(cmd,sigs)) {}
       // TopLevel sigs must have bounds!
-      for(ParaSig s:sigs) if (!s.subset && s.sup==null && sig2bound(s)<0) {
+      for(ParaSig s:sigs) if (!s.subset && s.sup()==null && sig2bound(s)<0) {
         if (overall<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" needs a specific scope!");
         if (s.lone || s.one) bound("#7: ",cmd, s, 1); else bound("#8: ",cmd, s, overall);
         continue again;
@@ -596,11 +593,13 @@ Code generation
          for(int x2=1; x2<subs.size(); x2++) x1=x1.union(rel(subs.get(x2)));
          kfact=x1.eq(rel(s)).and(kfact);
       }
-      if (s.sup!=null && s.sup!=ParaSig.UNIV && !s.sup.abs)
-         kfact=rel(s).in(rel(s.sup)).and(kfact);
-      if (s.sups.size()>0) {
-         Expression x1=rel(s.sups.get(0));
-         for(int x2=1; x2<s.sups.size(); x2++) x1=x1.union(rel(s.sups.get(x2)));
+      if (s.sup()!=null && s.sup()!=ParaSig.UNIV && !s.sup().abs)
+         kfact=rel(s).in(rel(s.sup())).and(kfact);
+      if (s.sups().iterator().hasNext()) {
+    	 Expression x1=null;
+    	 for(ParaSig x2:s.sups()) {
+    		if (x1==null) x1=rel(x2); else x1=x1.union(rel(x2));
+    	 }
          kfact=rel(s).in(x1).and(kfact);
       }
       if (s.lone) kfact=rel(s).lone().and(kfact);
@@ -681,15 +680,15 @@ Code generation
       int sc=sig2bound(s);
       if (sc<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" must have a bound!");
       if (sc==0) continue;
-      if (s.sup!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup)<=sig2bound(s.sup)) {
+      if (s.sup()!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup())<=sig2bound(s.sup())) {
         int k=0;
-        for(ParaSig child:s.sup.subs) { if (child==s) break; k=k+sig2bound(child); }
+        for(ParaSig child:s.sup().subs) { if (child==s) break; k=k+sig2bound(child); }
         List<String> sa=sig2atoms(s);
-        List<String> sua=sig2atoms(s.sup);
+        List<String> sua=sig2atoms(s.sup());
         while(sa.size()<sc) { sa.add(sua.get(k)); k++; }
-      } else if (s.sup!=null) {
-        if (sig2bound(s.sup)<sc) throw cmd.syntaxError("The parent sig \""+s.sup.fullname+"\" cannot have fewer elements than the subsig \""+s.fullname+"\"");
-        sig2atoms(s).addAll(sig2atoms(s.sup));
+      } else if (s.sup()!=null) {
+        if (sig2bound(s.sup())<sc) throw cmd.syntaxError("The parent sig \""+s.sup().fullname+"\" cannot have fewer elements than the subsig \""+s.fullname+"\"");
+        sig2atoms(s).addAll(sig2atoms(s.sup()));
       } else {
         List<String> sa=sig2atoms(s);
         while(sa.size()<sc) {String a=makeAtom(s.name); atoms.add(a); sa.add(a);}
@@ -744,7 +743,7 @@ Code generation
       ParaSig s=sigs.get(si);
       if (!s.subset) continue;
       TupleSet ts=factory.noneOf(1);
-      for(ParaSig sup:s.sups) for(Tuple temp:sig2ts(sup)) ts.add(temp);
+      for(ParaSig sup:s.sups()) for(Tuple temp:sig2ts(sup)) ts.add(temp);
       debug("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">");
       bounds.bound((Relation)(rel(s)),ts); sig2ts(s,ts);
     }
