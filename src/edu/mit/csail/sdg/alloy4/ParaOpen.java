@@ -22,7 +22,7 @@ public final class ParaOpen extends Para {
 	/**
 	 * The relative filename for the file being imported, without ".als"
 	 * (this field is always a non-empty string).
-	 *  
+	 *
 	 * <br/> eg. "util/ordering"
 	 * <br/> eg. "myexample"
 	 */

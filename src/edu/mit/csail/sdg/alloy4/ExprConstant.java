@@ -1,7 +1,7 @@
 package edu.mit.csail.sdg.alloy4;
 
 /**
- * Immutable; represents a set/relation constant in the AST.
+ * Immutable; represents a constant in the AST.
  *
  * <br/>
  * <br/> Invariant: op!=null
@@ -71,7 +71,7 @@ public final class ExprConstant extends Expr {
 		}
 	}
 
-	/** This class contains all possible set/relation constants. */
+	/** This class contains all possible constants. */
 	public enum Op {
 		/** the builtin "iden" relation */  IDEN("iden"),
 		/** the builtin "univ" sig      */  UNIV("univ"),
