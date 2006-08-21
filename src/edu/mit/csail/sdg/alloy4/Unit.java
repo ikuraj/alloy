@@ -23,8 +23,8 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   public final Map<String,ParaSig> params=new LinkedHashMap<String,ParaSig>();
 
   public void makeModule(Pos p, String n, List<ExprName> l) {
-	pos=p;
-	name=n;
+    pos=p;
+    name=n;
     for(ExprName x:l) {
       String y=x.name;
       if (params.containsKey(y)) throw new ErrorSyntax(p,"You cannot use the same name for more than 1 instantiating parameter!");

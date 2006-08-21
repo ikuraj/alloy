@@ -347,7 +347,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         if (root instanceof ParaSig.Field) {
             ParaSig.Field rt=(ParaSig.Field)root;
             ParaSig rts=rt.parent();
-            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts); return y; }
+            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts.type); return y; }
             y=rootunit.lookup_sigORparam(x2);
             ParaSig.Field y2=rootunit.lookup_Field(rts, x2, rt.name);
             if (y2!=null) { y.add(y2); if (y2.halftype==null) throw new ErrorInternal(y2.pos, y2, "This field is being referenced before it is typechecked!"); }
@@ -357,7 +357,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
             for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
         }
         else if (root instanceof ParaSig) {
-            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add((ParaSig)root); return y; }
+            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add( ((ParaSig)root).type ); return y; }
             y=rootunit.lookup_SigParamFunPred(x2);
             ParaSig.Field y22=rootunit.lookup_Field((ParaSig)root,x2);
             for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field)

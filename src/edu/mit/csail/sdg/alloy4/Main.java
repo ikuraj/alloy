@@ -15,14 +15,13 @@ public final class Main {
 
   // For debuging/error-reporting purposes
   public static void debug(String s) { System.out.println(s); System.out.flush(); }
-  public static void debug2(String s) { /*System.out.println(s); System.out.flush();*/ }
   public static RuntimeException syntaxError(String s) { return new ErrorSyntax(null,s); }
   public static RuntimeException typeError(String s) { return new ErrorType(null,null,s); }
   public static RuntimeException internalError(String s) { return new ErrorInternal(null,null,s); }
 
   public static boolean code=true;
   public static void main(String[] args) {
-	if (args.length==0) {
+    if (args.length==0) {
       System.out.print("% "); System.out.flush();
       readall("");
     }
@@ -150,9 +149,9 @@ We throw an exception if there is a cycle in the IMPORT graph
            Collections.sort(a.aliases, aliasComparator);
            Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);
            for(Map.Entry<String,ParaSig> p:a.sigs.entrySet())
-        	{
-        	 p.getValue().aliases=new ArrayList<String>(a.aliases);
-        	}
+            {
+             p.getValue().aliases=new ArrayList<String>(a.aliases);
+            }
            for(Unit c:units) if (c!=b) {
              for(Map.Entry<String,ParaSig> p:c.params.entrySet()) {
                  if (isin(p.getValue(),asigs)) p.setValue(a.sigs.get(p.getValue().name));
@@ -310,7 +309,7 @@ Now we perform the final desugarings...
     };
     for(Unit u:units) {
       for(Map.Entry<String,List<ParaFun>> e:u.funs.entrySet()) for(int xi=0; xi<e.getValue().size(); xi++) {
-    	ParaFun x=e.getValue().get(xi);
+        ParaFun x=e.getValue().get(xi);
         List<VarDecl> newdecls=new ArrayList<VarDecl>();
         for(VarDecl d:x.decls) {
           newdecls.add(new VarDecl(d, addOne(d.value.accept(desugar2))));

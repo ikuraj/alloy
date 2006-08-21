@@ -358,7 +358,7 @@ public Object accept(ExprCall x) {
   int r=0;
   for(VarDecl d:y.decls) {
     for(String n:d.names) {
-    	newenv.put(n,cset(x.args.get(r).accept(this))); r++;
+        newenv.put(n,cset(x.args.get(r).accept(this))); r++;
     }
   }
   Env oldenv=this.env; this.env=newenv; Object ans=y.value.accept(this); this.env=oldenv; return ans;
@@ -450,15 +450,15 @@ public Object accept(ExprCall x) {
     if (cmd.names.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
     for(String n:cmd.names) {
        if (n.equals(ParaSig.BITWIDTH_NAME)) { bitwidth=cmd.getScope(n); continue; }
-  	   Set<Object> set=root.lookup_sigORparam(n);
-   	   Iterator<Object> it=set.iterator();
-   	   if (set.size()>1) {
-   		   ParaSig choice1=(ParaSig)(it.next());
-   		   ParaSig choice2=(ParaSig)(it.next());
-   		   throw cmd.syntaxError("The name \""+n+"\" is ambiguous: it could be "+choice1.fullname+" or "+choice2.fullname);
-   	   }
-   	   if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
-   	   ParaSig s=(ParaSig)(it.next());
+       Set<Object> set=root.lookup_sigORparam(n);
+       Iterator<Object> it=set.iterator();
+       if (set.size()>1) {
+           ParaSig choice1=(ParaSig)(it.next());
+           ParaSig choice2=(ParaSig)(it.next());
+           throw cmd.syntaxError("The name \""+n+"\" is ambiguous: it could be "+choice1.fullname+" or "+choice2.fullname);
+       }
+       if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
+       ParaSig s=(ParaSig)(it.next());
        if (cmd.isExact(n)==true) exact(s,true);
        if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+s.fullname+"\"");
        if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
@@ -587,24 +587,37 @@ Code generation
     }
     // Add the constraints among SIGs
     for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
+      if (s.subs.size()>1) {
+        // If X and Y both extends P, then X and Y are disjoint
+        for(int x1=0; x1<s.subs.size(); x1++)
+         for(int x2=x1+1; x2<s.subs.size(); x2++) {
+           Expression x11=rel(s.subs.get(x1));
+           Expression x22=rel(s.subs.get(x2));
+           kfact=x11.intersection(x22).no().and(kfact);
+         }
+      }
       if (s.abs && s.subs.size()>0) {
-    	 List<ParaSig> subs=s.subs;
+         // abstract sig with children == union of all children
+         List<ParaSig> subs=s.subs;
          Expression x1=rel(subs.get(0));
          for(int x2=1; x2<subs.size(); x2++) x1=x1.union(rel(subs.get(x2)));
          kfact=x1.eq(rel(s)).and(kfact);
       }
-      if (s.sup()!=null && s.sup()!=ParaSig.UNIV && !s.sup().abs)
+      if (s.sup()!=null && s.sup()!=ParaSig.UNIV && !s.sup().abs) {
+         // If X extends Y, then X in Y
          kfact=rel(s).in(rel(s.sup())).and(kfact);
+      }
       if (s.sups().iterator().hasNext()) {
-    	 Expression x1=null;
-    	 for(ParaSig x2:s.sups()) {
-    		if (x1==null) x1=rel(x2); else x1=x1.union(rel(x2));
-    	 }
+         // If X in Y1+..+Yn, then X in Y1+..+Yn
+         Expression x1=null;
+         for(ParaSig x2:s.sups()) {
+            if (x1==null) x1=rel(x2); else x1=x1.union(rel(x2));
+         }
          kfact=rel(s).in(x1).and(kfact);
       }
-      if (s.lone) kfact=rel(s).lone().and(kfact);
-      if (s.one) kfact=rel(s).one().and(kfact);
-      if (s.some) kfact=rel(s).some().and(kfact);
+      if (s.lone) kfact=rel(s).lone().and(kfact); // "lone"
+      if (s.one) kfact=rel(s).one().and(kfact);   // "one"
+      if (s.some) kfact=rel(s).some().and(kfact); // "some"
     }
     // Add the regular facts
     for(Unit u:units) for(Map.Entry<String,ParaFact> e:u.facts.entrySet()) {
@@ -662,7 +675,6 @@ Code generation
     int min = 0-(1<<(bitwidth-1));
     int max = (0-min)-1;
     if (i<min || i>max) throw new ErrorSyntax(null,"The scope of "+i+" is too small to fit in a 2's complement integer with bitwidth=="+bitwidth);
-    //System.out.println("BITWIDTH="+bitwidth+" MIN="+min+" MAX="+max+" I="+i);
     return IntConstant.constant(i);
   }
 
@@ -671,7 +683,6 @@ Code generation
     unique.clear();
     if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
     List<String> atoms=new ArrayList<String>();
-    //ParaSig.SIGINT.katoms.clear();
     for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
       String ii=new String(""+i);
       atoms.add(ii); sig2atoms(ParaSig.SIGINT).add(ii);
@@ -680,13 +691,13 @@ Code generation
       int sc=sig2bound(s);
       if (sc<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" must have a bound!");
       if (sc==0) continue;
-      if (s.sup()!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup())<=sig2bound(s.sup())) {
+      /*if (s.sup()!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup())<=sig2bound(s.sup())) {
         int k=0;
         for(ParaSig child:s.sup().subs) { if (child==s) break; k=k+sig2bound(child); }
         List<String> sa=sig2atoms(s);
         List<String> sua=sig2atoms(s.sup());
         while(sa.size()<sc) { sa.add(sua.get(k)); k++; }
-      } else if (s.sup()!=null) {
+      } else*/ if (s.sup()!=null) {
         if (sig2bound(s.sup())<sc) throw cmd.syntaxError("The parent sig \""+s.sup().fullname+"\" cannot have fewer elements than the subsig \""+s.fullname+"\"");
         sig2atoms(s).addAll(sig2atoms(s.sup()));
       } else {
@@ -809,14 +820,16 @@ Code generation
     }
     else {
       List<ParaFun> ee=root.funs.get(cmd.name);
-      ParaFun e=null;
-      for(ParaFun x:ee) if (x.type==null) {
-        if (e!=null) throw cmd.syntaxError("There are more than 1 predicate with the same name \""+cmd.name+"\"!");
-        e=x;
-      }
-      if (e==null) throw cmd.syntaxError("The predicate \""+cmd.name+"\" cannot be found.");
+      if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate with the same name \""+cmd.name+"\"!");
+      if (ee.size()<1) throw cmd.syntaxError("The predicate \""+cmd.name+"\" cannot be found.");
+      ParaFun e=ee.get(0);
       Expr v=e.value;
-      if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, e.value, Type.FORMULA);
+      if (e.type!=null) {
+         Expr vv=e.type;
+         if (vv instanceof ExprUnary) vv=((ExprUnary)vv).makeMult();
+         v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
+      }
+      if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
       try {
         Formula f=((Formula)(v.accept(this))).and(kfact);
         Solver solver = new Solver();
