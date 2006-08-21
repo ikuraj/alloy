@@ -45,6 +45,9 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 
     public Env env=new Env();
 
+    private final Log log;
+    public VisitorTypechecker(Log log) { this.log=log; }
+
     private Map<Expr,List<Object>> objChoices = new LinkedHashMap<Expr,List<Object>>();
     private Map<Expr,List<Type>> typeChoices = new LinkedHashMap<Expr,List<Type>>();
 
@@ -790,7 +793,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
                 //f=new Field(f.pos, f.sig, f.name, value.type, x.type.product_of_anyEmptyness(value.type));
                 //x.fields.set(fi,f);
                 fi++;
-                if (verbose) Log.log("Unit ["+u.aliases.get(0)+"], Sig "+x.name+", Field "+f.name+": "+f.full.fulltype);
+                if (verbose) log.log("Unit ["+u.aliases.get(0)+"], Sig "+x.name+", Field "+f.name+": "+f.full.fulltype);
             }
             newdecl.add(new VarDecl(d, value));
         }
@@ -814,7 +817,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
                 if (ni==0) value=this.resolve(value);
                 if (value.type.arity()<1) throw value.typeError("Function parameter must be a set or relation, but its type is "+value.type);
                 this.env.put(n, value.type);
-                if (verbose) Log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", Param "+n+": "+value.type);
+                if (verbose) log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", Param "+n+": "+value.type);
             }
             newdecls.add(new VarDecl(d, value));
         }
@@ -822,7 +825,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         if (type!=null) {
             type=this.resolve(type);
             if (type.type.arity()<1) throw type.typeError("Function return type must be a set or relation, but its type is "+type.type);
-            if (verbose) Log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", RETURN: "+type.type);
+            if (verbose) log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", RETURN: "+type.type);
         }
         this.env.clear();
         fun.decls=newdecls; fun.type=type;
@@ -841,7 +844,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
             this.env.clear(); this.root=null; this.rootunit=u;
             for(VarDecl d:x.decls) for(String n:d.names) this.env.put(n, d.value.type);
             Expr value=this.resolve(x.value);
-            if (verbose) Log.log("Unit ["+uu+"], Pred/Fun "+x.name+", BODY:"+value.type);
+            if (verbose) log.log("Unit ["+uu+"], Pred/Fun "+x.name+", BODY:"+value.type);
             if (x.type==null) {
                 if (!value.type.isBool) throw x.typeError("Predicate body must be a formula, but it has type "+value.type);
             } else {
@@ -857,18 +860,18 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
             if (x.appendedFacts==null) continue;
             this.root=x; this.rootunit=u; x.appendedFacts=this.resolve(x.appendedFacts);
             if (!x.appendedFacts.type.isBool) throw x.typeError("Appended facts must be a formula, but it has type "+x.appendedFacts.type);
-            if (verbose) Log.log("Unit ["+uu+"], Sig "+x.name+", Appended: "+x.appendedFacts.type);
+            if (verbose) log.log("Unit ["+uu+"], Sig "+x.name+", Appended: "+x.appendedFacts.type);
         }
         for(Map.Entry<String,ParaFact> xi:u.facts.entrySet()) {
             ParaFact x=xi.getValue();
             this.root=null; this.rootunit=u; this.accept(x,u);
-            if (verbose) Log.log("Unit ["+uu+"], Fact ["+x.name+"]: "+x.value.type);
+            if (verbose) log.log("Unit ["+uu+"], Fact ["+x.name+"]: "+x.value.type);
             if (!x.value.type.isBool) throw x.typeError("Fact must be a formula, but it has type "+x.value.type);
         }
         for(Map.Entry<String,ParaAssert> xi:u.asserts.entrySet()) {
             ParaAssert x=xi.getValue();
             this.root=null; this.rootunit=u; this.accept(x,u);
-            if (verbose) Log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type);
+            if (verbose) log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type);
             if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
         }
         return u;

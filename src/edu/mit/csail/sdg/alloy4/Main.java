@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.io.File;
+import java.io.FileNotFoundException;
 
 public final class Main {
 
@@ -16,17 +17,25 @@ public final class Main {
   public static RuntimeException typeError(String s) { return new ErrorType(null,null,s); }
   public static RuntimeException internalError(String s) { return new ErrorInternal(null,null,s); }
 
-  public static boolean code=true;
-  public static void main(String[] args) {
+  public boolean code=true;
+  private final Log log;
+
+  public Main() throws FileNotFoundException {
+    log=new Log();
+  }
+
+  public static void main(String[] args) throws FileNotFoundException {
+    Main m=new Main();
     if (args.length==0) {
       System.out.print("% "); System.out.flush();
-      readall("");
+      m.readall("");
     }
     else for(String a:args) {
-      if (args.length>1) code=false;
-      Log.log("\n===================================================================\nROOT="+a);
-      readall(a);
+      if (args.length>1) m.code=false;
+      m.log.log("\n===================================================================\nROOT="+a);
+      m.readall(a);
     }
+    m.log.close();
   }
 
 /************************************************************************************************************
@@ -35,7 +44,7 @@ The FIRST Unit object must be the primary unit.
 We throw an exception if there is a cycle in the IMPORT graph
 ************************************************************************************************************/
 
-  public static void readall(String name) {
+  public void readall(String name) {
     // First, read all the Unit objects
     ArrayList<Unit> units=new ArrayList<Unit>();
     ArrayList<String> thispath=new ArrayList<String>();
@@ -63,7 +72,7 @@ We throw an exception if there is a cycle in the IMPORT graph
                if (vv==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument!");
                chg=true;
                uu.params.put(kn,vv);
-               if (!code) Log.log("  RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname);
+               if (!code) log.log("  RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname);
             }
          }
       }
@@ -77,7 +86,7 @@ We throw an exception if there is a cycle in the IMPORT graph
     fillSig(units);
   }
 
-  public static Unit readall_helper(String name,String prefix,ArrayList<Unit> units,ArrayList<String> thispath) {
+  public Unit readall_helper(String name,String prefix,ArrayList<Unit> units,ArrayList<String> thispath) {
     // Figure out the exact filename
     File f=new File(name);
     if (name.length()>0) {
@@ -113,12 +122,12 @@ We throw an exception if there is a cycle in the IMPORT graph
     return u;
   }
 
-  private static<V> boolean isin(V x,Map<String,V> y) {
+  private<V> boolean isin(V x,Map<String,V> y) {
     for(Map.Entry<String,V> e:y.entrySet()) if (e.getValue()==x) return true;
     return false;
   }
 
-  private static final Comparator<String> aliasComparator = new Comparator<String>() {
+  private final Comparator<String> aliasComparator = new Comparator<String>() {
     public final int compare(String a,String b) {
       int alen=a.length();
       int blen=b.length();
@@ -128,7 +137,7 @@ We throw an exception if there is a cycle in the IMPORT graph
     }
   };
 
-  private static boolean mergeunits(ArrayList<Unit> units) {
+  private boolean mergeunits(ArrayList<Unit> units) {
     // Before merging, the only pointers that go between Unit objects are
     // (1) a unit's "params" may point to a sig in another unit
     // (2) a unit's "opens" may point to another unit
@@ -140,7 +149,7 @@ We throw an exception if there is a cycle in the IMPORT graph
       for(int j=i+1; j<units.size(); j++) {
         Unit b=units.get(j);
         if (a.pos.filename.equals(b.pos.filename) && a.params.equals(b.params)) {
-           Log.log("MATCH FOUND ON "+a.pos.filename);
+           log.log("MATCH FOUND ON "+a.pos.filename);
            a.aliases.addAll(b.aliases);
            Collections.sort(a.aliases, aliasComparator);
            Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);
@@ -173,7 +182,7 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
 => We also complain if there is a cycle in SIG relationship.
 ************************************************************************************************************/
 
-  private static void tsort(ParaSig x, LinkedHashMap<ParaSig,Boolean> status, ArrayList<ParaSig> list) {
+  private void tsort(ParaSig x, LinkedHashMap<ParaSig,Boolean> status, ArrayList<ParaSig> list) {
     // Performs a topological sort
     status.put(x, Boolean.FALSE);
     ParaSig y=x.sup();
@@ -189,7 +198,7 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
     list.add(x);
   }
 
-  public static void fillSig(ArrayList<Unit> units) {
+  public void fillSig(ArrayList<Unit> units) {
     ArrayList<ParaSig> sigs=new ArrayList<ParaSig>();
     for(Unit u:units) {
       for(Map.Entry<String,ParaSig> si:u.sigs.entrySet()) {
@@ -225,8 +234,8 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
 /************************************************************************************************************
 ************************************************************************************************************/
 
-  public static void typecheck(ArrayList<Unit> units, List<ParaSig> sigs) {
-    VisitorTypechecker tc=new VisitorTypechecker();
+  public void typecheck(ArrayList<Unit> units, List<ParaSig> sigs) {
+    VisitorTypechecker tc=new VisitorTypechecker(log);
     for(int i=0; i<sigs.size(); i++) {
       ParaSig s=sigs.get(i);
       Unit u=units.get(0).lookupPath(s.path); // s.parent();
@@ -236,13 +245,13 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
       for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet()) {
         List<ParaFun> funs=funi.getValue();
         for(int i=0; i<funs.size(); i++) {
-          tc=new VisitorTypechecker();
+          tc=new VisitorTypechecker(log);
           ParaFun f=funs.get(i);
           funs.set(i, tc.accept(f,u));
         }
       }
     }
-    tc=new VisitorTypechecker();
+    tc=new VisitorTypechecker(log);
     for(int ui=0; ui<units.size(); ui++) {
       Unit u=units.get(ui);
       u=tc.accept(u);
@@ -259,7 +268,7 @@ After the earlier TYPECHECK PHASE, we know
 Now we perform the final desugarings...
 ************************************************************************************************************/
 
-  private static Expr addOne(Expr x) {
+  private Expr addOne(Expr x) {
     if (x instanceof ExprUnary) {
        ExprUnary y=(ExprUnary)x;
        if (y.op==ExprUnary.Op.SETMULT || y.op==ExprUnary.Op.ONEMULT || y.op==ExprUnary.Op.LONEMULT || y.op==ExprUnary.Op.SOMEMULT) return x;
@@ -268,7 +277,7 @@ Now we perform the final desugarings...
     Expr xx=ExprUnary.Op.ONEMULT.make(x.pos,x,x.type); return xx;
   }
 
-  private static void finalDesugar(ArrayList<Unit> units, List<ParaSig> sigs)  {
+  private void finalDesugar(ArrayList<Unit> units, List<ParaSig> sigs)  {
     // 1. Turn "UnitSigField" into "this . UnitSigFieldFull".
     //    The only places this could have been is in field declarations and signature appended facts.
     final VisitDesugar desugar1=new VisitDesugar(units.get(0)) {
@@ -369,7 +378,7 @@ Now we perform the final desugarings...
          u.makeFact(x5.pos, "", x5);
       }
     }
-    if (code) { VisitorEval c=new VisitorEval(units); c.codegen(sigs); }
+    if (code) { VisitorEval c=new VisitorEval(log,units); c.codegen(sigs); }
   }
 
 
