@@ -11,10 +11,7 @@ import java.io.File;
 
 public final class Main {
 
-  public static Type zzz=null;
-
   // For debuging/error-reporting purposes
-  public static void debug(String s) { System.out.println(s); System.out.flush(); }
   public static RuntimeException syntaxError(String s) { return new ErrorSyntax(null,s); }
   public static RuntimeException typeError(String s) { return new ErrorType(null,null,s); }
   public static RuntimeException internalError(String s) { return new ErrorInternal(null,null,s); }
@@ -27,7 +24,7 @@ public final class Main {
     }
     else for(String a:args) {
       if (args.length>1) code=false;
-      System.out.printf("%n===================================================================%nROOT=%s%n",a);
+      Log.log("\n===================================================================\nROOT="+a);
       readall(a);
     }
   }
@@ -66,7 +63,7 @@ We throw an exception if there is a cycle in the IMPORT graph
                if (vv==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument!");
                chg=true;
                uu.params.put(kn,vv);
-               if (!code) debug("  RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname);
+               if (!code) Log.log("  RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname);
             }
          }
       }
@@ -143,8 +140,7 @@ We throw an exception if there is a cycle in the IMPORT graph
       for(int j=i+1; j<units.size(); j++) {
         Unit b=units.get(j);
         if (a.pos.filename.equals(b.pos.filename) && a.params.equals(b.params)) {
-           //if (!code)
-           System.out.println("MATCH FOUND ON "+a.pos.filename);
+           Log.log("MATCH FOUND ON "+a.pos.filename);
            a.aliases.addAll(b.aliases);
            Collections.sort(a.aliases, aliasComparator);
            Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);

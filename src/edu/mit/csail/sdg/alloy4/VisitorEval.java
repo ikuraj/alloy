@@ -401,10 +401,6 @@ public Object accept(ExprCall x) {
     return ans;
   }
 
-  // For debuging/error-reporting purposes
-  private static void debug(String s) { System.out.println(s); System.out.flush(); }
-  private static void debug2(String s) { /*System.out.println(s); System.out.flush();*/ }
-
   private void bound(String debug, ParaRuncheck c, ParaSig s, int b) {
     if (b<0)
        throw c.syntaxError("Cannot set a negative bound for signature \""+s.fullname+"\"");
@@ -413,7 +409,7 @@ public Object accept(ExprCall x) {
     if (b>=0 && (s==ParaSig.UNIV || s==ParaSig.NONE))
        throw c.syntaxError("You cannot specify a scope for the builtin signature \""+s.name+"\"");
     sig2bound(s,b);
-    System.out.println(debug+"Sig \""+s.fullname+"\" bound to be <= "+b); System.out.flush();
+    Log.log(debug+"Sig \""+s.fullname+"\" bound to be <= "+b);
   }
 
   private boolean derive(ParaRuncheck cmd, List<ParaSig> sigs) {
@@ -553,7 +549,6 @@ Code generation
     // Generate the relations for the SIGS.
     for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
       rel(s, Relation.unary(s.fullname));
-      debug2("Sig "+s.fullname+" = Relation.unary(\""+s.name+"\");");
     }
     // Generate the relations for the FIELDS
     for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -580,8 +575,7 @@ Code generation
         for(String fn:fd.names) {
            ParaSig.Field f=s.fields.get(fi); fi++;
            int a=fd.value.type.arity()+1;
-           rel(f.full, Relation.nary(s.fullname+"."+fn, a)); // fulltype
-           debug2("Field "+s.fullname+"."+fn+" = Relation.nary(\""+fn+"\", "+a+");");
+           rel(f.full, Relation.nary(s.fullname+"."+fn, a));
         }
       }
     }
@@ -625,9 +619,9 @@ Code generation
     }
     // Go thru the commands
     for(ParaRuncheck x:units.get(0).runchecks) {
-      System.out.flush();
-      System.out.printf("%n\u001b[31mComputing the bounds for the command \"%s\"...\u001b[0m%n", x.toString());
-      System.out.flush();
+      Log.flush();
+      Log.log("\n\u001b[31mComputing the bounds for the command \""+x+"\"...\u001b[0m");
+      Log.flush();
       sig2bound.clear();
       sig2ts.clear();
       sig2exact.clear();
@@ -637,7 +631,7 @@ Code generation
       for(ParaSig s:sigs) if (s!=ParaSig.SIGINT && s.pos.filename.endsWith("util/ordering.als") && s.name.equals("Ord")) {
         ParaSig s2=units.get(0).lookupPath(s.path).params.get("elem");
         if (sig2bound(s2)<=0) throw x.syntaxError("The signature "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
-        System.out.println("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2));
+        Log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2));
         if (s2!=null) exact(s2,true);
       }
       // zzz ALLOY3 compatiblity hack above
@@ -646,6 +640,7 @@ Code generation
     }
   }
 
+  /*
   private int childrenSum(ParaRuncheck cmd, ParaSig s) {
     int n=0;
     for(ParaSig c:s.subs) {
@@ -654,6 +649,7 @@ Code generation
     }
     return n;
   }
+  */
 
   private final Map<String,Integer> unique=new LinkedHashMap<String,Integer>();
 
@@ -727,25 +723,25 @@ Code generation
       for(ParaSig sub:s.subs) for(Tuple temp:sig2ts(sub)) ts.add(temp);
       sig2ts(s,ts);
       if (exact(s) && ts.size()==sig2bound(s)) {
-        debug("SIG "+s.fullname+" BOUNDEXACTLY=<"+ts.toString()+">");
+        Log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+ts.toString()+">");
         bounds.boundExactly((Relation)(rel(s)),ts);
       }
       else if (exact(s)) {
-        debug("SIG "+s.fullname+" BOUND=<"+ts.toString()+"> and #=="+sig2bound(s));
+        Log.log("SIG "+s.fullname+" BOUND=<"+ts.toString()+"> and #=="+sig2bound(s));
         bounds.bound((Relation)(rel(s)),ts);
         if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
         else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
         else kfact=rel(s).count().eq(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
       }
       else if (ts.size()>sig2bound(s)) {
-        debug("SIG "+s.fullname+" BOUND=<"+ts.toString()+"> and #<="+sig2bound(s));
+        Log.log("SIG "+s.fullname+" BOUND=<"+ts.toString()+"> and #<="+sig2bound(s));
         bounds.bound((Relation)(rel(s)),ts);
         if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
         else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
         else kfact=rel(s).count().lte(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
       }
       else {
-        debug("SIG "+s.fullname+" BOUND=<"+ts.toString()+">");
+        Log.log("SIG "+s.fullname+" BOUND=<"+ts.toString()+">");
         bounds.bound((Relation)(rel(s)),ts);
       }
     }
@@ -755,7 +751,7 @@ Code generation
       if (!s.subset) continue;
       TupleSet ts=factory.noneOf(1);
       for(ParaSig sup:s.sups()) for(Tuple temp:sig2ts(sup)) ts.add(temp);
-      debug("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">");
+      Log.log("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">");
       bounds.bound((Relation)(rel(s)),ts); sig2ts(s,ts);
     }
     // Bound the FIELDS
@@ -769,19 +765,18 @@ Code generation
            if (f.name.equals("last_")) { last=right(rel(f.full)); }
            if (f.name.equals("next_")) { next=right(rel(f.full)); ts2=comp(f.halftype, factory); }
          }
-         bounds.bound(first,ts1); debug2("REL<first_> BOUND=<"+ts1.toString()+">");
-         bounds.bound(last,ts1); debug2("REL<last_> BOUND=<"+ts1.toString()+">");
-         bounds.bound(next,ts2); debug2("REL<next_> BOUND=<"+ts2.toString()+">");
+         bounds.bound(first,ts1);
+         bounds.bound(last,ts1);
+         bounds.bound(next,ts2);
          continue;
       }
       // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
       int fi=0;
       for(VarDecl fd:s.decls) {
-        for(String fn:fd.names) {
+        for(int fn=fd.names.size(); fn>0; fn--) {
           ParaSig.Field f=s.fields.get(fi); fi++;
           TupleSet ts=comp(s.type.product_of_anyEmptyness(fd.value.type), factory); // fulltype
           bounds.bound((Relation)(rel(f.full)),ts);
-          debug2("REL<"+fn+"> BOUND=<"+ts.toString()+">");
         }
       }
     }
@@ -796,27 +791,28 @@ Code generation
         //solver.options().setSolver(SATFactory.ZChaffBasic);
         solver.options().setBitwidth(bitwidth);
         solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-        System.out.printf("Bitwidth=%d Checking \"%s\"...\t ",bitwidth, e.name); System.out.flush();
+        Log.log0("Bitwidth="+bitwidth+" Checking \""+e.name+"\"...\t ");
+        Log.flush();
         //new MakeJava(f,bitwidth,bounds);
         Solution sol = solver.solve(f,bounds);
         long t1=sol.stats().translationTime();
         long t2=sol.stats().solvingTime();
         switch(sol.outcome()) {
-          case TRIVIALLY_SATISFIABLE: System.out.printf("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY VIOLATED (SAT)%n");
+          case TRIVIALLY_SATISFIABLE: Log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY VIOLATED (SAT)");
             break;
-          case TRIVIALLY_UNSATISFIABLE: System.out.printf("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY OK (UNSAT)%n");
+          case TRIVIALLY_UNSATISFIABLE: Log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY OK (UNSAT)");
             break;
-          case SATISFIABLE: System.out.printf("TIME="+t1+"+"+t2+"="+(t1+t2)+" VIOLATED (SAT) TotalVar=%d. Clauses=%d. PrimaryVar=%d.%n",sol.stats().variables(),sol.stats().clauses(),sol.stats().primaryVariables());
-            if (cmd.expects==0) for(Relation r:sol.instance().relations()) System.out.println("REL "+r+" = "+sol.instance().tuples(r));
+          case SATISFIABLE: Log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" VIOLATED (SAT) TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
+            if (cmd.expects==0) for(Relation r:sol.instance().relations()) Log.log("REL "+r+" = "+sol.instance().tuples(r));
             break;
-          case UNSATISFIABLE: System.out.printf("TIME="+t1+"+"+t2+"="+(t1+t2)+" OK (UNSAT) TotalVar=%d. Clauses=%d. PrimaryVar=%d.%n",sol.stats().variables(),sol.stats().clauses(),sol.stats().primaryVariables());
+          case UNSATISFIABLE: Log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" OK (UNSAT) TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
             break;
         }
-      } catch(HigherOrderDeclException ex) { System.out.printf("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.%n");
-      } catch(TimeoutException ex) { ex.printStackTrace(System.out);
-      } catch(ErrorInternal ex) { System.out.println(ex.msg);
-      } catch(ErrorType ex) { System.out.println(ex.msg);
-      } catch(ErrorSyntax ex) { System.out.println(ex.msg); }
+      } catch(HigherOrderDeclException ex) { Log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.");
+      } catch(TimeoutException ex) { Log.log("Timeout");
+      } catch(ErrorInternal ex) { Log.log(ex.msg);
+      } catch(ErrorType ex) { Log.log(ex.msg);
+      } catch(ErrorSyntax ex) { Log.log(ex.msg); }
     }
     else {
       List<ParaFun> ee=root.funs.get(cmd.name);
@@ -838,29 +834,30 @@ Code generation
         //solver.options().setSolver(SATFactory.ZChaffBasic);
         solver.options().setBitwidth(bitwidth);
         solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-        System.out.printf("Bitwidth=%d Running \"%s\"...\t ",bitwidth,e.name); System.out.flush();
+        Log.log0("Bitwidth="+bitwidth+" Running \""+e.name+"\"...\t ");
+        Log.flush();
         //new MakeJava(f,bitwidth,bounds);
         Solution sol = solver.solve(f,bounds);
         long t1=sol.stats().translationTime();
         long t2=sol.stats().solvingTime();
         switch(sol.outcome()) {
-          case TRIVIALLY_SATISFIABLE: System.out.printf("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY SAT");
+          case TRIVIALLY_SATISFIABLE: Log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY SAT");
             break;
-          case TRIVIALLY_UNSATISFIABLE: System.out.printf("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY UNSAT");
+          case TRIVIALLY_UNSATISFIABLE: Log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY UNSAT");
             break;
-          case SATISFIABLE: System.out.printf("TIME="+t1+"+"+t2+"="+(t1+t2)+" SAT TotalVar=%d. Clauses=%d. PrimaryVar=%d.%n",sol.stats().variables(),sol.stats().clauses(),sol.stats().primaryVariables());
-            if (cmd.expects==0) for(Relation r:sol.instance().relations()) System.out.println("REL "+r+" = "+sol.instance().tuples(r));
+          case SATISFIABLE: Log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" SAT TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
+            if (cmd.expects==0) for(Relation r:sol.instance().relations()) Log.log("REL "+r+" = "+sol.instance().tuples(r));
             break;
-          case UNSATISFIABLE: System.out.printf("TIME="+t1+"+"+t2+"="+(t1+t2)+" UNSAT TotalVar=%d. Clauses=%d. PrimaryVar=%d.%n",sol.stats().variables(),sol.stats().clauses(),sol.stats().primaryVariables());
+          case UNSATISFIABLE: Log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" UNSAT TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
             break;
         }
-      } catch(HigherOrderDeclException ex) { System.out.printf("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.%n");
-      } catch(TimeoutException ex) { ex.printStackTrace(System.out);
-      } catch(ErrorInternal ex) { System.out.println(ex.msg);
-      } catch(ErrorType ex) { System.out.println(ex.msg);
-      } catch(ErrorSyntax ex) { System.out.println(ex.msg); }
+      } catch(HigherOrderDeclException ex) { Log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.");
+      } catch(TimeoutException ex) { Log.log("Timeout");
+      } catch(ErrorInternal ex) { Log.log(ex.msg);
+      } catch(ErrorType ex) { Log.log(ex.msg);
+      } catch(ErrorSyntax ex) { Log.log(ex.msg); }
     }
-    System.out.flush();
+    Log.flush();
   }
 
 }
