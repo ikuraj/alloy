@@ -21,6 +21,7 @@ import kodkod.ast.IfIntExpression;
 import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntToExprCast;
+import kodkod.ast.ProjectExpression;
 import kodkod.ast.MultiplicityFormula;
 import kodkod.ast.NotFormula;
 import kodkod.ast.QuantifiedFormula;
@@ -177,6 +178,10 @@ public final class MakeJava implements VoidVisitor {
       case SUBSET: file.printf("Formula %s=%s.in(%s);%n", newname, left, right); break;
       default: throw new ErrorInternal(null,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
     }
+  }
+
+  public void visit(ProjectExpression x) {
+    throw new ErrorInternal(null,x,"ProjectExpression should not have been encountered");
   }
 
   public void visit(IntComparisonFormula x) {
