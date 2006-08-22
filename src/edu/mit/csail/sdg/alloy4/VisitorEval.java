@@ -675,6 +675,18 @@ Code generation
     return IntConstant.constant(i);
   }
 
+/* Setting upper/lower bound:
+
+For each toplevel sig X, do a depth-first-walk on X.
+
+
+
+
+
+
+
+*/
+
   public void runcheck(ParaRuncheck cmd, Unit root, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
     // Make the universe
     unique.clear();
