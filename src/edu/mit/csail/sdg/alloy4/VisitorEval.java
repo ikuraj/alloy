@@ -1,5 +1,6 @@
 package edu.mit.csail.sdg.alloy4;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -395,11 +396,32 @@ public Object accept(ExprCall x) {
   private boolean exact(ParaSig x) { return sig2exact.contains(x); }
   private void exact(ParaSig x,boolean y) { if (y) sig2exact.add(x); else sig2exact.remove(x); }
 
-  private Map<ParaSig,List<String>> sig2atoms = new LinkedHashMap<ParaSig,List<String>>();
-  private List<String> sig2atoms(ParaSig x) {
-    List<String> ans=sig2atoms.get(x);
-    if (ans==null) { ans=new ArrayList<String>(); sig2atoms.put(x,ans); }
+  private Set<ParaSig> sig2done = new LinkedHashSet<ParaSig>();
+  private boolean sig2done(ParaSig x) { return sig2done.contains(x); }
+  private void sig2done(ParaSig x,boolean y) { if (y) sig2done.add(x); else sig2done.remove(x); }
+
+  private Map<ParaSig,List<String>> sig2lowerbound = new LinkedHashMap<ParaSig,List<String>>();
+  private List<String> sig2lowerbound(ParaSig x) {
+	    List<String> ans=sig2lowerbound.get(x);
+	    if (ans==null) { ans=new ArrayList<String>(); sig2lowerbound.put(x,ans); }
+	    return ans;
+	  }
+  private void sig2lowerbound(ParaSig x, Collection<String> y) {
+	  List<String> ans=sig2lowerbound(x);
+	  ans.clear();
+	  ans.addAll(y);
+  }
+
+  private Map<ParaSig,List<String>> sig2upperbound = new LinkedHashMap<ParaSig,List<String>>();
+  private List<String> sig2upperbound(ParaSig x) {
+    List<String> ans=sig2upperbound.get(x);
+    if (ans==null) { ans=new ArrayList<String>(); sig2upperbound.put(x,ans); }
     return ans;
+  }
+  private void sig2upperbound(ParaSig x, Collection<String> y) {
+	  List<String> ans=sig2upperbound(x);
+	  ans.clear();
+	  ans.addAll(y);
   }
 
   private void bound(String debug, ParaRuncheck c, ParaSig s, int b) {
@@ -443,7 +465,7 @@ public Object accept(ExprCall x) {
   public int compute(Unit root, List<ParaSig> sigs, ParaRuncheck cmd) {
     final int overall;
     int bitwidth=(-1); // The bound on "int".
-    for(ParaSig s:sigs) sig2bound(s,-1);
+    for(ParaSig s:sigs) { sig2bound(s,-1); if (s.one && !s.subset) exact(s,true); }
     if (cmd.names.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
     for(String n:cmd.names) {
        if (n.equals(ParaSig.BITWIDTH_NAME)) { bitwidth=cmd.getScope(n); continue; }
@@ -456,10 +478,12 @@ public Object accept(ExprCall x) {
        }
        if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
        ParaSig s=(ParaSig)(it.next());
-       if (cmd.isExact(n)==true) exact(s,true);
        if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+s.fullname+"\"");
+       int sc=cmd.getScope(n);
+       //if (s.one) {exact(s,true); if (sc!=1) throw cmd.syntaxError("The signature \""+s.fullname+"\" was declared to be one, so its scope cannot be "+sc); }
+       if (cmd.isExact(n)==true) exact(s,true);
        if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
-       bound("#6: ",cmd, s, cmd.getScope(n));
+       bound("#6: ",cmd, s, sc);
     }
     // Ensure "int" and "Int" are consistent
     if (bitwidth<0) bitwidth=4;
@@ -626,7 +650,9 @@ Code generation
       sig2bound.clear();
       sig2ts.clear();
       sig2exact.clear();
-      sig2atoms.clear();
+      sig2lowerbound.clear();
+      sig2upperbound.clear();
+      sig2done.clear();
       int bitwidth=compute(units.get(0), sigs, x);
       // zzz ALLOY3 compatiblity hack below
       for(ParaSig s:sigs) if (s!=ParaSig.SIGINT && s.pos.filename.endsWith("util/ordering.als") && s.name.equals("Ord")) {
@@ -675,45 +701,93 @@ Code generation
     return IntConstant.constant(i);
   }
 
-/* Setting upper/lower bound:
+  private void computeLowerBound(ParaSig s) {
+	  int n=sig2bound(s);
+	  Set<String> x=new LinkedHashSet<String>();
+	  for(ParaSig c:s.subs) {
+		  computeLowerBound(c);
+		  x.addAll(sig2lowerbound(c));
+	  }
+	  if (n<x.size()) throw new ErrorInternal(null,null,"Scope for sig "+s.fullname+" was miscalculated");
+	  //log.log("{Sig "+s.fullname+" is "+x+".."+exact(s));
+	  if (n>x.size() && exact(s)) {
+		  for(n=n-x.size(); n>0; n--) x.add(makeAtom(s.name));
+	  }
+	  //log.log(".Sig "+s.fullname+" is "+x+"}");
+	  sig2lowerbound(s,x);
+	  sig2upperbound(s,x);
+  }
 
-For each toplevel sig X, do a depth-first-walk on X.
+  private void computeUpperBound(ParaSig s) {
+	  if (s.sup()==null) {
+		  int n=sig2bound(s);
+		  int nn=sig2upperbound(s).size();
+		  while(n>nn) { sig2upperbound(s).add(makeAtom(s.name)); nn++; }
+	  }
+	  Set<String> x=new LinkedHashSet<String>(sig2upperbound(s));
+	  for(ParaSig c:s.subs) {
+		  x.removeAll(sig2lowerbound(c));
+	  }
+	  for(ParaSig c:s.subs) {
+		  if (sig2bound(c) > sig2lowerbound(c).size()) {
+			  sig2upperbound(c, sig2lowerbound(c));
+			  sig2upperbound(c).addAll(x);
+			  computeUpperBound(c);
+		  }
+	  }
+  }
 
-
-
-
-
-
-
-*/
+  private void computeSubsetSig(ParaSig s) {
+	  if (sig2done(s)) return;
+	  Set<String> x=new LinkedHashSet<String>();
+	  for(ParaSig p:s.sups()) {
+		  if (p.subset) computeSubsetSig(p);
+		  x.addAll(sig2upperbound(p));
+	  }
+	  sig2lowerbound(s).clear();
+	  sig2upperbound(s,x);
+	  sig2done(s,true);
+  }
 
   public void runcheck(ParaRuncheck cmd, Unit root, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
     // Make the universe
     unique.clear();
+
+    Set<String> atoms=new LinkedHashSet<String>();
     if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
-    List<String> atoms=new ArrayList<String>();
+    if (ParaSig.SIGINT.subs.size()>0) throw new ErrorInternal(null,null,"SIGINT can no longer be extended!");
     for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
-      String ii=new String(""+i);
-      atoms.add(ii); sig2atoms(ParaSig.SIGINT).add(ii);
-    }
+        String ii=new String(""+i);
+        atoms.add(ii);
+        sig2lowerbound(ParaSig.SIGINT).add(ii);
+        sig2upperbound(ParaSig.SIGINT).add(ii);
+      }
+    for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeLowerBound(s); }
+    for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeUpperBound(s); atoms.addAll(sig2upperbound(s)); }
+    //for(ParaSig s:sigs) if (s.subset) { computeSubsetSig(s); }
+
+/*
+    List<String> atoms=new ArrayList<String>();
     for(ParaSig s:sigs) if (s!=ParaSig.SIGINT && !s.subset) {
       int sc=sig2bound(s);
       if (sc<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" must have a bound!");
       if (sc==0) continue;
-      /*if (s.sup()!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup())<=sig2bound(s.sup())) {
+      **if (s.sup()!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup())<=sig2bound(s.sup())) {
         int k=0;
         for(ParaSig child:s.sup().subs) { if (child==s) break; k=k+sig2bound(child); }
         List<String> sa=sig2atoms(s);
         List<String> sua=sig2atoms(s.sup());
         while(sa.size()<sc) { sa.add(sua.get(k)); k++; }
-      } else*/ if (s.sup()!=null) {
+      } else** if (s.sup()!=null) {
         if (sig2bound(s.sup())<sc) throw cmd.syntaxError("The parent sig \""+s.sup().fullname+"\" cannot have fewer elements than the subsig \""+s.fullname+"\"");
-        sig2atoms(s).addAll(sig2atoms(s.sup()));
+        sig2upperbound(s).addAll(sig2upperbound(s.sup()));
       } else {
-        List<String> sa=sig2atoms(s);
+        List<String> sa=sig2upperbound(s);
         while(sa.size()<sc) {String a=makeAtom(s.name); atoms.add(a); sa.add(a);}
       }
     }
+*/
+    
     final Universe universe = new Universe(atoms);
     final TupleFactory factory = universe.factory();
     final Bounds bounds = new Bounds(universe);
@@ -721,15 +795,46 @@ For each toplevel sig X, do a depth-first-walk on X.
     sig2ts(ParaSig.NONE, factory.noneOf(1));
     sig2ts(ParaSig.SIGINT, factory.noneOf(1));
     for(int j=0,i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++,j++) {
-      Tuple ii=factory.tuple(sig2atoms(ParaSig.SIGINT).get(j));
+      Tuple ii=factory.tuple(sig2upperbound(ParaSig.SIGINT).get(j));
       bounds.boundExactly(i,factory.range(ii,ii));
       sig2ts(ParaSig.SIGINT).add(ii);
     }
-    // Bound the TOPSIGS and SUBSIGS
+
+    for(int si=sigs.size()-1; si>=0; si--) {
+    	ParaSig s=sigs.get(si);
+    	if (s.subset) continue;
+      	TupleSet upper=factory.noneOf(1);
+      	TupleSet lower=factory.noneOf(1);
+      	for(String a:sig2upperbound(s)) upper.add(factory.tuple(a));
+      	for(String a:sig2lowerbound(s)) lower.add(factory.tuple(a));
+    	sig2ts(s,upper);
+    	bounds.bound((Relation)(rel(s)),lower,upper);
+    	if (s.subset) continue;
+    	if (exact(s) && upper.size()==sig2bound(s)) {
+    		log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+upper.toString()+">");
+    	}
+    	else if (exact(s)) {
+    		log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s));
+    		if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
+    		else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
+    		else kfact=rel(s).count().eq(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
+    	}
+    	else if (upper.size()>sig2bound(s)) {
+    		log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s));
+    		if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
+    		else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
+    		else kfact=rel(s).count().lte(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
+    	}
+    	else {
+    		log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">");
+    	}
+    }
+
+/*  // Bound the TOPSIGS and SUBSIGS
     for(int si=sigs.size()-1; si>=0; si--) {
       ParaSig s=sigs.get(si);
       if (s.subset || s==ParaSig.SIGINT) continue;
-      List<String> at=sig2atoms(s);
+      List<String> at=sig2upperbound(s);
       TupleSet ts;
       if (at.size()==0) ts=factory.noneOf(1);
       else ts=factory.range(factory.tuple(at.get(0)), factory.tuple(at.get(at.size()-1)));
@@ -758,6 +863,7 @@ For each toplevel sig X, do a depth-first-walk on X.
         bounds.bound((Relation)(rel(s)),ts);
       }
     }
+*/
     // Bound the SUBSETSIGS
     for(int si=0; si<sigs.size(); si++) {
       ParaSig s=sigs.get(si);
