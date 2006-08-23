@@ -41,8 +41,12 @@ public final class MakeJava implements VoidVisitor {
 
   private final PrintWriter file;
 
-  public MakeJava(Formula x, int bitwidth, Bounds bounds) throws FileNotFoundException {
-    file=new PrintWriter(".alloy.tmpjava");
+  public MakeJava(Formula x, int bitwidth, Bounds bounds) {
+    try {
+      file=new PrintWriter(".alloy.tmpjava");
+    } catch(FileNotFoundException e) {
+      throw new ErrorInternal(null,null,"Cannot open the file .alloy.tmpjava");
+    }
     file.println("import kodkod.ast.IntExpression;");
     file.println("import kodkod.ast.Expression;");
     file.println("import kodkod.ast.BinaryExpression;");
@@ -111,7 +115,7 @@ public final class MakeJava implements VoidVisitor {
        }
        else {
           printTupleset(n+"_lower", lower);
-          file.printf("bounds.bound(%s, x%s_lower, %s_upper);%n%n",n,n,n);
+          file.printf("bounds.bound(%s, %s_lower, %s_upper);%n%n",n,n,n);
        }
     }
     for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {

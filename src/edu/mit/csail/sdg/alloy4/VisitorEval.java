@@ -396,10 +396,6 @@ public Object accept(ExprCall x) {
   private boolean exact(ParaSig x) { return sig2exact.contains(x); }
   private void exact(ParaSig x,boolean y) { if (y) sig2exact.add(x); else sig2exact.remove(x); }
 
-  private Set<ParaSig> sig2done = new LinkedHashSet<ParaSig>();
-  private boolean sig2done(ParaSig x) { return sig2done.contains(x); }
-  private void sig2done(ParaSig x,boolean y) { if (y) sig2done.add(x); else sig2done.remove(x); }
-
   private Map<ParaSig,List<String>> sig2lowerbound = new LinkedHashMap<ParaSig,List<String>>();
   private List<String> sig2lowerbound(ParaSig x) {
 	    List<String> ans=sig2lowerbound.get(x);
@@ -652,7 +648,6 @@ Code generation
       sig2exact.clear();
       sig2lowerbound.clear();
       sig2upperbound.clear();
-      sig2done.clear();
       int bitwidth=compute(units.get(0), sigs, x);
       // zzz ALLOY3 compatiblity hack below
       for(ParaSig s:sigs) if (s!=ParaSig.SIGINT && s.pos.filename.endsWith("util/ordering.als") && s.name.equals("Ord")) {
@@ -666,17 +661,6 @@ Code generation
       runcheck(x, units.get(0), bitwidth, sigs, kfact);
     }
   }
-
-  /*
-  private int childrenSum(ParaRuncheck cmd, ParaSig s) {
-    int n=0;
-    for(ParaSig c:s.subs) {
-      if (sig2bound(c)<0) throw cmd.syntaxError("The signature \""+c.fullname+"\" must have a bound!");
-      n=n+sig2bound(c);
-    }
-    return n;
-  }
-  */
 
   private final Map<String,Integer> unique=new LinkedHashMap<String,Integer>();
 
@@ -709,11 +693,9 @@ Code generation
 		  x.addAll(sig2lowerbound(c));
 	  }
 	  if (n<x.size()) throw new ErrorInternal(null,null,"Scope for sig "+s.fullname+" was miscalculated");
-	  //log.log("{Sig "+s.fullname+" is "+x+".."+exact(s));
 	  if (n>x.size() && exact(s)) {
 		  for(n=n-x.size(); n>0; n--) x.add(makeAtom(s.name));
 	  }
-	  //log.log(".Sig "+s.fullname+" is "+x+"}");
 	  sig2lowerbound(s,x);
 	  sig2upperbound(s,x);
   }
@@ -737,22 +719,8 @@ Code generation
 	  }
   }
 
-  private void computeSubsetSig(ParaSig s) {
-	  if (sig2done(s)) return;
-	  Set<String> x=new LinkedHashSet<String>();
-	  for(ParaSig p:s.sups()) {
-		  if (p.subset) computeSubsetSig(p);
-		  x.addAll(sig2upperbound(p));
-	  }
-	  sig2lowerbound(s).clear();
-	  sig2upperbound(s,x);
-	  sig2done(s,true);
-  }
-
   public void runcheck(ParaRuncheck cmd, Unit root, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
-    // Make the universe
     unique.clear();
-
     Set<String> atoms=new LinkedHashSet<String>();
     if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
     if (ParaSig.SIGINT.subs.size()>0) throw new ErrorInternal(null,null,"SIGINT can no longer be extended!");
@@ -764,30 +732,6 @@ Code generation
       }
     for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeLowerBound(s); }
     for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeUpperBound(s); atoms.addAll(sig2upperbound(s)); }
-    //for(ParaSig s:sigs) if (s.subset) { computeSubsetSig(s); }
-
-/*
-    List<String> atoms=new ArrayList<String>();
-    for(ParaSig s:sigs) if (s!=ParaSig.SIGINT && !s.subset) {
-      int sc=sig2bound(s);
-      if (sc<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" must have a bound!");
-      if (sc==0) continue;
-      **if (s.sup()!=null && !s.isSubtypeOf(ParaSig.SIGINT) && childrenSum(cmd, s.sup())<=sig2bound(s.sup())) {
-        int k=0;
-        for(ParaSig child:s.sup().subs) { if (child==s) break; k=k+sig2bound(child); }
-        List<String> sa=sig2atoms(s);
-        List<String> sua=sig2atoms(s.sup());
-        while(sa.size()<sc) { sa.add(sua.get(k)); k++; }
-      } else** if (s.sup()!=null) {
-        if (sig2bound(s.sup())<sc) throw cmd.syntaxError("The parent sig \""+s.sup().fullname+"\" cannot have fewer elements than the subsig \""+s.fullname+"\"");
-        sig2upperbound(s).addAll(sig2upperbound(s.sup()));
-      } else {
-        List<String> sa=sig2upperbound(s);
-        while(sa.size()<sc) {String a=makeAtom(s.name); atoms.add(a); sa.add(a);}
-      }
-    }
-*/
-    
     final Universe universe = new Universe(atoms);
     final TupleFactory factory = universe.factory();
     final Bounds bounds = new Bounds(universe);
@@ -799,7 +743,6 @@ Code generation
       bounds.boundExactly(i,factory.range(ii,ii));
       sig2ts(ParaSig.SIGINT).add(ii);
     }
-
     for(int si=sigs.size()-1; si>=0; si--) {
     	ParaSig s=sigs.get(si);
     	if (s.subset) continue;
