@@ -1,10 +1,11 @@
 package edu.mit.csail.sdg.alloy4;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Mutable; reresents an "open" declaration.
+ * Immutable; reresents an "open" declaration.
  *
  * <br/>
  * <br/> Invariant: name is not ""
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 
 public final class ParaOpen extends Para {
 
-    /** The list of instantiating arguments. */
+    /** The unmodifiable list of instantiating arguments. */
     public final List<String> list;
 
     /**
@@ -85,10 +86,9 @@ public final class ParaOpen extends Para {
     public ParaOpen(Pos pos, String path, String alias, List<ExprName> list, String file) {
         super(pos, path, computeAlias(pos,file,alias,list));
         this.file=file;
-        this.list=new ArrayList<String>();
-        for(int i=0; i<list.size(); i++) {
-            ExprName x=nonnull(list.get(i));
-            this.list.add(x.name);
-        }
+        List<String> newlist=new ArrayList<String>();
+        for(int i=0; i<list.size(); i++)
+            newlist.add(nonnull(list.get(i)).name);
+        this.list=Collections.unmodifiableList(newlist);
     }
 }

@@ -108,7 +108,7 @@ public abstract class Expr {
      */
     public final boolean isSetOf1ary() {
         if (this.type==null)
-            throw internalError("isSetOf1ary() cannot be called until typechecking has finished");
+            throw internalError("isSetOf1ary() cannot be called until typechecking is done");
         if (!(this instanceof ExprUnary)) return false;
         if (((ExprUnary)this).op!=ExprUnary.Op.SETMULT) return false;
         return this.type.arity()==1;
@@ -122,7 +122,7 @@ public abstract class Expr {
      */
     public final boolean isOneOf1ary() {
         if (this.type==null)
-            throw internalError("isOneOf1ary() cannot be called until typechecking has finished");
+            throw internalError("isOneOf1ary() cannot be called until typechecking is done");
         if (!(this instanceof ExprUnary)) return false;
         if (((ExprUnary)this).op!=ExprUnary.Op.ONEMULT) return false;
         return this.type.arity()==1;
@@ -257,7 +257,8 @@ public abstract class Expr {
             ans=Type.FORMULA;
         else {
             ans=x.type.union(y.type);
-            if (ans.arity()<1) throw internalError("Cannot perform ITE on incompatible expressions!");
+            if (ans.arity()<1)
+            	throw internalError("Cannot perform ITE on incompatible expressions!");
         }
         return new ExprITE(this.pos, this, x, y, ans);
     }

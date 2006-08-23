@@ -10,10 +10,8 @@ package edu.mit.csail.sdg.alloy4;
  * @author Felix Chang
  */
 
+@SuppressWarnings("serial")
 public final class ErrorInternal extends RuntimeException {
-
-    /** This silences the javac warning about serialVersionUID not defined */
-    private static final long serialVersionUID=0;
 
     /** This stores the filename/line/row information (null if unknown) */
     public final Pos pos;

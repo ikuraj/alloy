@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * <br/>
  * <br/> Invariant: names!=null
  * <br/> Invariant: names.size()>0
- * <br/> Invariant: all x:names | x!=null, x is not "", and does not contain '/' or '@'
+ * <br/> Invariant: all x:names | x!=null, x is not "", and doesn't contain '/' or '@'
  * <br/> Invariant: value!=null
  *
  * @author Felix Chang
@@ -36,17 +36,22 @@ public final class VarDecl {
      * @throws ErrorInternal if any of the name contains '/' or '@'
      */
     public VarDecl (List<ExprName> x, Expr y) {
-        if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
+        if (x==null || y==null)
+        	throw new ErrorInternal(null,null,"NullPointerException");
         List<String> newlist=new ArrayList<String>();
         if (x.size()==0)
             throw y.syntaxError("The list of declarations cannot be empty!");
         for(int i=0; i<x.size(); i++) {
             ExprName e=x.get(i);
-            if (e==null || e.name==null) throw y.internalError("NullPointerException");
+            if (e==null || e.name==null)
+            	throw y.internalError("NullPointerException");
             String n=e.name;
-            if (n.length()==0) throw e.syntaxError("Variable name cannot be empty!");
-            if (n.indexOf('/')>=0) throw e.syntaxError("Variable name cannot contain \'/\'");
-            if (n.indexOf('@')>=0) throw e.syntaxError("Variable name cannot contain \'@\'");
+            if (n.length()==0)
+            	throw e.syntaxError("Variable name cannot be empty!");
+            if (n.indexOf('/')>=0)
+            	throw e.syntaxError("Variable name cannot contain \'/\'");
+            if (n.indexOf('@')>=0)
+            	throw e.syntaxError("Variable name cannot contain \'@\'");
             newlist.add(n);
         }
         names=Collections.unmodifiableList(newlist);
@@ -66,10 +71,14 @@ public final class VarDecl {
      * @throws ErrorInternal if x is equal to ""
      */
     public VarDecl (String x, Expr y) {
-        if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
-        if (x.length()==0) throw y.syntaxError("Variable name must not be empty!");
-        if (x.indexOf('/')>=0) throw y.syntaxError("Variable name cannot contain \'/\'");
-        if (x.indexOf('@')>=0) throw y.syntaxError("Variable name cannot contain \'@\'");
+        if (x==null || y==null)
+        	throw new ErrorInternal(null,null,"NullPointerException");
+        if (x.length()==0)
+        	throw y.syntaxError("Variable name must not be empty!");
+        if (x.indexOf('/')>=0)
+        	throw y.syntaxError("Variable name cannot contain \'/\'");
+        if (x.indexOf('@')>=0)
+        	throw y.syntaxError("Variable name cannot contain \'@\'");
         List<String> list=new ArrayList<String>(1);
         list.add(x);
         names=Collections.unmodifiableList(list);
@@ -87,7 +96,8 @@ public final class VarDecl {
      * @throws ErrorInternal if x==null or y==null
      */
     public VarDecl (VarDecl x, Expr y) {
-        if (x==null || y==null) throw new ErrorInternal(null,null,"NullPointerException");
+        if (x==null || y==null)
+        	throw new ErrorInternal(null,null,"NullPointerException");
         names=x.names;
         // See ExprUnary.java for why we have to call makeMult() here.
         if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
@@ -105,7 +115,7 @@ public final class VarDecl {
     }
 
     /**
-     * Convenience method that checks whether the name n appears in a list of VarDecl.
+     * Convenience method that checks if the name n appears in a list of VarDecl.
      * @return true if and only if the name n appears in the list
      */
     public static boolean hasName (List<VarDecl> list, String n) {
@@ -116,8 +126,9 @@ public final class VarDecl {
     }
 
     /**
-     * Convenience method that checks whether there are duplicate names in a list of VarDecl.
-     * @return one of the duplicate name (if duplicates exist), and returns null otherwise
+     * Convenience method that checks if there are duplicate names in a VarDecl list.
+     * @return one of the duplicate name (if duplicates exist),
+     *         and returns null otherwise
      */
     public static String hasDuplicateName (List<VarDecl> list) {
         for(int i=0; i<list.size(); i++) {

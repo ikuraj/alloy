@@ -12,30 +12,33 @@ import java.io.FileNotFoundException;
 
 public final class Main {
 
-  // For debuging/error-reporting purposes
-  public static RuntimeException syntaxError(String s) { return new ErrorSyntax(null,s); }
-  public static RuntimeException typeError(String s) { return new ErrorType(null,null,s); }
-  public static RuntimeException internalError(String s) { return new ErrorInternal(null,null,s); }
+  private static RuntimeException syntaxError(String s) { return new ErrorSyntax(null,s); }
 
-  public boolean code=true;
+  private final boolean code;
   private final Log log;
 
-  public Main() throws FileNotFoundException {
-    log=new Log();
+  public Main(boolean code, String[] args, Log log) throws FileNotFoundException {
+	this.code=code;
+    this.log=log;
+    if (args==null) {
+        System.out.print("% ");
+        System.out.flush();
+        readall("");
+        return;
+    }
+    for(String a:args) {
+       this.log.log("\n===================================================================\nROOT="+a);
+       readall(a);
+    }
   }
 
   public static void main(String[] args) throws FileNotFoundException {
-    Main m=new Main();
-    if (args.length==0) {
-      System.out.print("% "); System.out.flush();
-      m.readall("");
-    }
-    else for(String a:args) {
-      if (args.length>1) m.code=false;
-      m.log.log("\n===================================================================\nROOT="+a);
-      m.readall(a);
-    }
-    m.log.close();
+	Log log=new Log();
+    if (args.length==0) new Main(true,null,log);
+    else if (args.length==1) new Main(true,args,log);
+    else new Main(false,args,log);
+    log.flush();
+    log.close();
   }
 
 /************************************************************************************************************
