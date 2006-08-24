@@ -2069,9 +2069,9 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
 
   public void syntax_error(Symbol x) {
     if (x.value instanceof Pos)
-       throw new ErrorSyntax((Pos)(x.value), "Parser cannot continue.");
-    Pos p=new Pos(alloyfile, x.left+1, x.right+1);
-    throw new ErrorSyntax(p, "Parser cannot continue.");
+       throw new ErrorSyntax((Pos)(x.value), "Parser cannot continue");
+    //Pos p=new Pos(alloyfile, x.left, x.right);
+    throw new ErrorSyntax(null, "Fatal syntax error in \""+alloyfile+"\". Parser cannot continue.");
   }
 
   public static Unit alloy_parseFile(String name,String prefix) {
