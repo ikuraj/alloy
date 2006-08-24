@@ -370,7 +370,8 @@ public Object accept(ExprCall x) {
   private final List<Unit> units;
   private Env env=new Env();
   private final Log log;
-  public VisitorEval(Log log, List<Unit> units) { this.log=log; this.units=units; }
+  private final int codeindex;
+  public VisitorEval(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
 
   private Map<ParaSig,Expression> sig2rel = new LinkedHashMap<ParaSig,Expression>();
   private Expression rel(ParaSig x) {
@@ -639,7 +640,9 @@ Code generation
       kfact=((Formula)(e.getValue().value.accept(this))).and(kfact);
     }
     // Go thru the commands
-    for(ParaRuncheck x:units.get(0).runchecks) {
+    for(int xi=0; xi<units.get(0).runchecks.size(); xi++)
+     if (codeindex==(-1) || codeindex==xi) {
+      ParaRuncheck x=units.get(0).runchecks.get(xi);
       log.flush();
       log.log("\n\u001b[31mComputing the bounds for the command \""+x+"\"...\u001b[0m");
       log.flush();
@@ -772,41 +775,6 @@ Code generation
     		log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">");
     	}
     }
-
-/*  // Bound the TOPSIGS and SUBSIGS
-    for(int si=sigs.size()-1; si>=0; si--) {
-      ParaSig s=sigs.get(si);
-      if (s.subset || s==ParaSig.SIGINT) continue;
-      List<String> at=sig2upperbound(s);
-      TupleSet ts;
-      if (at.size()==0) ts=factory.noneOf(1);
-      else ts=factory.range(factory.tuple(at.get(0)), factory.tuple(at.get(at.size()-1)));
-      for(ParaSig sub:s.subs) for(Tuple temp:sig2ts(sub)) ts.add(temp);
-      sig2ts(s,ts);
-      if (exact(s) && ts.size()==sig2bound(s)) {
-        log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+ts.toString()+">");
-        bounds.boundExactly((Relation)(rel(s)),ts);
-      }
-      else if (exact(s)) {
-        log.log("SIG "+s.fullname+" BOUND=<"+ts.toString()+"> and #=="+sig2bound(s));
-        bounds.bound((Relation)(rel(s)),ts);
-        if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
-        else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
-        else kfact=rel(s).count().eq(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
-      }
-      else if (ts.size()>sig2bound(s)) {
-        log.log("SIG "+s.fullname+" BOUND=<"+ts.toString()+"> and #<="+sig2bound(s));
-        bounds.bound((Relation)(rel(s)),ts);
-        if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
-        else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
-        else kfact=rel(s).count().lte(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
-      }
-      else {
-        log.log("SIG "+s.fullname+" BOUND=<"+ts.toString()+">");
-        bounds.bound((Relation)(rel(s)),ts);
-      }
-    }
-*/
     // Bound the SUBSETSIGS
     for(int si=0; si<sigs.size(); si++) {
       ParaSig s=sigs.get(si);

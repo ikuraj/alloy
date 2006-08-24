@@ -14,10 +14,10 @@ public final class Main {
 
   private static RuntimeException syntaxError(String s) { return new ErrorSyntax(null,s); }
 
-  private final boolean code;
+  private final int code; // -1=ALL -2=NONE
   private final Log log;
 
-  public Main(boolean code, String[] args, Log log) throws FileNotFoundException {
+  public Main(int code, String[] args, Log log) throws FileNotFoundException {
 	this.code=code;
     this.log=log;
     if (args==null) {
@@ -34,9 +34,9 @@ public final class Main {
 
   public static void main(String[] args) throws FileNotFoundException {
 	Log log=new Log();
-    if (args.length==0) new Main(true,null,log);
-    else if (args.length==1) new Main(true,args,log);
-    else new Main(false,args,log);
+    if (args.length==0) new Main(-1,null,log);
+    else if (args.length==1) new Main(-1,args,log);
+    else new Main(-2,args,log);
     log.flush();
     log.close();
   }
@@ -75,7 +75,7 @@ We throw an exception if there is a cycle in the IMPORT graph
                if (vv==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument!");
                chg=true;
                uu.params.put(kn,vv);
-               if (!code) log.log("  RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname);
+               log.log("  RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname);
             }
          }
       }
@@ -381,7 +381,7 @@ Now we perform the final desugarings...
          u.makeFact(x5.pos, "", x5);
       }
     }
-    if (code) { VisitorEval c=new VisitorEval(log,units); c.codegen(sigs); }
+    if (code>=(-1)) { VisitorEval c=new VisitorEval(code,log,units); c.codegen(sigs); }
   }
 
 

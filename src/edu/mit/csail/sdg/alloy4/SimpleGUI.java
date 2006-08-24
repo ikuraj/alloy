@@ -35,8 +35,10 @@ import javax.swing.filechooser.FileFilter;
 public final class SimpleGUI {
 
     private static final class Runner implements Runnable {
+    	private final int index;
         private final JTextArea status;
-        public Runner(String text, JTextArea status) {
+        public Runner(int index, String text, JTextArea status) {
+            this.index=index;
             this.status=status;
         }
         private void addlog(String x) {
@@ -46,7 +48,7 @@ public final class SimpleGUI {
         public void run() {
             String[] args={".alloy"};
             Log log=new Log(status);
-            try { new Main(true,args,log); }
+            try { new Main(index,args,log); }
             catch(FileNotFoundException e) { addlog("FileNotFoundException! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
             catch(ErrorInternal e) { addlog("An internal error has occurred! Please report this to the Alloy developers. "+e.toString()); }
@@ -95,7 +97,7 @@ public final class SimpleGUI {
     	public RunListener(int i,String la) {index=i; label=la;}
 		public void actionPerformed(ActionEvent e) {
 	    	status.setText("Running "+label);
-	        Runner r=new Runner(text.getText(), status);
+	        Runner r=new Runner(index, text.getText(), status);
 	        Thread t=new Thread(r);
 	        t.start();
 		}
@@ -114,6 +116,14 @@ public final class SimpleGUI {
 		try { u=AlloyParser.alloy_parseFile(".alloy",""); }
 		catch(Exception e) { status.setText("Cannot parse the model! "+e.toString()); return; }
    		runmenu.removeAll();
+   		if (u.runchecks.size()==0) {
+   			y=new JMenuItem("There are no commands in this model!");
+   	 		runmenu.add(y);
+   	 		return;
+   		}
+   		y=new JMenuItem("Run every command");
+		y.addActionListener(new RunListener(-1,"Run every commmand"));
+ 		runmenu.add(y);
 		for(int i=0; i<u.runchecks.size(); i++) {
 			String label=u.runchecks.get(i).toString();
     		y=new JMenuItem(label);
