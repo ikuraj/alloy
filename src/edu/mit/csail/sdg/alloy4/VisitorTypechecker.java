@@ -77,31 +77,48 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 		this.log=log;
 	}
 
-	/** Helper method that throws a type error if x cannot possibly have integer type. */
+	/**
+	 * Helper method that throws a type error if x cannot possibly have integer type
+	 *
+	 * @throws ErrorType if x cannot possibly have integer type
+	 */
 	private void cint(Expr x) {
-		if (!x.type.isInt) throw x.typeError("This must be an integer expression! Instead, it has the following possible type(s): "+x.type);
+		if (!x.type.isInt)
+			throw x.typeError("This must be an integer expression! Instead, it has the following possible type(s): "+x.type);
 	}
 
-	/** Helper method that throws a type error if x cannot possibly have set/relation type. */
+	/**
+	 * Helper method that throws a type error if x cannot possibly have set/relation type.
+	 *
+	 * @throws ErrorType if x cannot possibly have set/relation type
+	 * @return x.type if x can possibly have set/relation type
+	 */
 	private Type cset(Expr x) {
-		if (x.type.size()==0) throw x.typeError("This must be a set or relation! Instead, it has the following possible type(s): "+x.type);
+		if (x.type.size()==0)
+			throw x.typeError("This must be a set or relation! Instead, it has the following possible type(s): "+x.type);
 		return x.type;
 	}
 
 	/**
 	 * Helper method that throws a type error if t cannot possibly have set/relation type.
 	 * (And if so, the type error will say that x cannot be allowed to have type t)
+     *
+	 * @throws ErrorType if t cannot possibly have set/relation type
 	 */
 	private void cset(Type t,Expr x) {
-		if (t.size()==0) throw x.typeError("This must be a set or relation! Instead, it has the following possible type(s): "+t);
+		if (t.size()==0)
+			throw x.typeError("This must be a set or relation! Instead, it has the following possible type(s): "+t);
 	}
 	
 	/**
 	 * Helper method that throws a type error if t cannot possibly have formula type.
 	 * (And if so, the type error will say that x cannot be allowed to have type t)
+	 *
+	 * @throws ErrorType if t cannot possibly have formula type
 	 */
-	private void cform(Type t,Expr x) {
-		if (!t.isBool) throw x.typeError("This must be a formula expression! Instead, it has the following possible type(s): "+t);
+	private void cform(Type t, Expr x) {
+		if (!t.isBool)
+			throw x.typeError("This must be a formula expression! Instead, it has the following possible type(s): "+t);
 	}
 
 	/** Helper method that returns true iff (x is null, or x does not have any valid type) */ 
@@ -113,7 +130,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 	 * Helper method that throws a type error if t is ambiguous.
 	 * (And if so, the type error will say that x cannot be allowed to have type t)
 	 */
-	private void resolved(Type t,Expr x) {
+	private void resolved(Type t, Expr x) {
 		if (!t.isBool && !t.isInt && t.size()==0)
 			throw x.typeError("This expression failed to be typechecked, because it has no possible type!");
 		if (t.isBool && t.isInt)
@@ -125,10 +142,10 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 	}
 	
 	/**
-	 * Helper method that invokes the typechecker bottom-up then top-down on the same node X,
+	 * Helper method that invokes the typechecker bottom-up and then top-down on the same node X,
 	 * in order to fully resolve it.
 	 * 
-	 * @return a deepcopy of X that is identical to X, except that the returned value has type information filled in
+	 * @return a deep copy of X that is identical to X, except that the returned value has type information filled in
 	 * @throws ErrorType if the node cannot be fully resolved to an unambiguous type
 	 */
 	public Expr resolve(Expr x) {
@@ -158,7 +175,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 				c=Type.FORMULA;
 				break;
 			case PLUSPLUS:
-				// RESULT TYPE = LEFT+RIGHT, if exists a in left, b in right, such that "a.arity==b.arity" && "dom(a)&dom(b) is non-empty"
+				// RESULT=LEFT+RIGHT, if exists a in left, b in right, such that "a.arity==b.arity" && "some dom(a)&dom(b)"
 				a=cset(left);
 				b=cset(right);
 				for (Type.Rel bb:b)
@@ -168,14 +185,14 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
 					    { c=a.union(b); break bigbreak; }
 				throw x.typeError("++ is irrelevant because its right hand side can never override the left hand side!",a,b);
 			case PLUS:
-				// RESULT TYPE = LEFT+RIGHT, if exists a in left, b in right, such that a.arity==b.arity
+				// RESULT=LEFT+RIGHT, if exists a in left, b in right, such that a.arity==b.arity
 				a=left.type;
 				b=right.type;
 				if (a.hasCommonArity(b)) { c=a.union(b); if (a.isInt && b.isInt) c=Type.makeInt(c); break; }
 				if (a.isInt && b.isInt) { c=Type.INT; break; }
 				throw x.typeError("+ can be used only between 2 sets and relations of the same arity, or between 2 integer expressions!",a,b);
 			case MINUS:
-				// RESULT TYPE = LEFT TYPE, if { a&b | a in leftType, b in rightType, a.arity==b.arity } is nonempty()
+				// RESULT=LEFT, if exists a in left, b in right, such that a.arity==b.arity and (a&b is nonempty)
 				a=left.type;
 				b=right.type;
 				if (a.size()>0 || b.size()>0) {
