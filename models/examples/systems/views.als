@@ -179,15 +179,15 @@ assert zippishOK {
   {
     precondition [s0, ks, vs, m]
     no s0.dirty
-    ks::iterator [s0, s1, ki]
-    vs::iterator [s1, s2, vi]
-    ki::hasNext [s2]
-    vi::hasNext [s2]
-    ki::this/next [s2, s3, k]
-    vi::this/next [s3, s4, v]
-    m::put [s4, s5, k, v]
-    ki::remove [s5, s6]
-    vi::remove [s6, s7]
+    ks.iterator [s0, s1, ki]
+    vs.iterator [s1, s2, vi]
+    ki.hasNext [s2]
+    vi.hasNext [s2]
+    ki.next [s2, s3, k]
+    vi.next [s3, s4, v]
+    m.put [s4, s5, k, v]
+    ki.remove [s5, s6]
+    vi.remove [s6, s7]
   }
   => no State.dirty
   }
@@ -205,7 +205,7 @@ pred precondition (pre: State, ks, vs, m: Ref) {
 --  no Ref->(ks+vs) & ViewType.pre::views
   }
 
-// check zippishOK for 6 but 8 State, 3 ViewType
+-- check zippishOK for 6 but 8 State, 3 ViewType
 
 -- experiment with controlling heap size
 fact {all s: State | #s.obj < 5}
