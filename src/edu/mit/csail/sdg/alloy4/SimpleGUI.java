@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,25 +37,48 @@ import javax.swing.filechooser.FileFilter;
 @SuppressWarnings("serial")
 public final class SimpleGUI {
 
+	/**
+	 * This Runnable is used to execute a SAT query.
+	 * By having a separate runnable, we allow the main GUI to remain responsive.
+	 */
     private static final class Runner implements Runnable {
+    	
+    	/** The command that this runner will run (0..) (-1 means all of them) */
     	private final int index;
+    	
+    	/** The JTextArea that will display the progress */
         private final JTextArea status;
+        
+        /**
+         * Constructor for this runner.
+         * 
+         * @param index - the command that this runner will run
+         * @param text - the textual summary of the command that this runner will run
+         * @param status - the JTextArea that will display the progress
+         */
         public Runner(int index, String text, JTextArea status) {
             this.index=index;
             this.status=status;
         }
+        
+        /**
+         * Helper method that appends an error message to the bottom of the JTextArea.
+         * 
+         * @param x - the error message
+         */
         private void addlog(String x) {
             status.append("Cannot run the command! "+x);
             status.setCaretPosition(status.getDocument().getLength());
         }
+        
+        /**
+         * The run() method to start this runner
+         */
         public void run() {
             String[] args={".alloy"};
             Log log=new Log(status);
-            try {
-            	new Main(index,args,log);
-            	//KodVizGUIFactory.main(new String[]{});
-            }
-            catch(FileNotFoundException e) { addlog("FileNotFoundException! "+e.toString()); }
+            try { new Main(index,args,log); /* KodVizGUIFactory.main(new String[]{}); */ }
+            catch(FileNotFoundException e) { addlog("One of the required source file cannot be found! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
             catch(ErrorInternal e) { addlog("An internal error has occurred! Please report this to the Alloy developers. "+e.toString()); }
             catch(ErrorType e) { addlog("Type Error! "+e.toString()); }
@@ -62,6 +86,13 @@ public final class SimpleGUI {
         }
     }
 
+    /**
+     * Synchronized helper method that writes the content of the editor
+     * into a temporary file in the current directory named ".alloy".
+     * (If this method fails, it will output an error message to the JTextArea that displays messages)
+     *
+     * @return true if the method succeeds; false if the method fails.
+     */
 	private synchronized boolean writetemp() {
         try {
             FileWriter fw=new FileWriter(".alloy");
@@ -79,28 +110,54 @@ public final class SimpleGUI {
         }
 	}
 
+	/** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
     private boolean compiled=false;
+    
+    /** Synchronized helper method that sets or clears the "compiled" flag. */
     private synchronized void compiled(boolean x) { compiled=x; }
+    
+    /** Synchronized helper method that returns true if and only if the "compiled" flag is true */
     private synchronized boolean compiled() { return compiled; }
 
+    /** The current directory. */
     private String currentDirectory=".";
+    
+    /** The JFrame for the main window. */
     private JFrame frame;
+    
+    /** The JTextArea containing the editor buffer. */
     private JTextArea text;
+    
+    /** The JTextArea containing the error messages and success messages. */
     private JTextArea status;
+    
+    /** The JMenu that contains the list of RUN and CHECK commands in the current file. */
     private JMenu runmenu;
 
+    /** Main method that launches the program. */
     public static final void main (String[] unused) {
         new SimpleGUI();
     }
 
+    /**
+     * The constructor. To ensure thread safety, we move all initialization
+     * code into a synchronized helper method named "my_setup".
+     */
     private SimpleGUI() {
         my_setup();
     }
 
+    /**
+     * An ActionListener that is called when the user indicates a particular command to execute.
+     */
     private class RunListener implements ActionListener {
+    	/** The index number of the command that the user wishes to execute (0..) (-1 means ALL of them). */
     	private final int index;
+    	/** The human-readable summary of the command that the user wishes to execute. */
     	private final String label;
+    	/** The constructor. */
     	public RunListener(int i,String la) {index=i; label=la;}
+    	/** The event handler that gets called when the user clicked on one of the menu item. */
 		public void actionPerformed(ActionEvent e) {
 	    	status.setText("Running "+label);
 	        Runner r=new Runner(index, text.getText(), status);
@@ -109,6 +166,16 @@ public final class SimpleGUI {
 		}
     }
     
+    /**
+     * Synchronized helper method that gets called whenever the user tries to expand the RUN menu.
+     * 
+     * <p/> When this happens, we first check if the current text buffer has been changed
+     * since the last compilation. If it has, we write it to a temporary file named ".alloy"
+     * in the current directory, and then parse it minimally (without doing typechecking or CNF generation).
+     *
+     * <p/>We then set the "compiled" flag to true. And populate the RUN menu with the list of commands
+     * that are defined in the model.
+     */
     private synchronized void my_run() {
     	if (compiled()) return;
    		compiled(true);
@@ -139,6 +206,13 @@ public final class SimpleGUI {
 		}
     }
 
+    /**
+     * Synchronized helper method that creates a "File Open" dialog box, and open a new file if the user chooses one.
+     * 
+     * <p/> If it's successful, it will load the file into the text buffer, then clear the "compiled" flag.
+     * 
+     * <p/> If it's unsuccessful, it will report an error message. 
+     */
     private synchronized final void my_open() {
         FileFilter filter=new FileFilter() {
             @Override public boolean accept(File f) {
@@ -176,6 +250,12 @@ public final class SimpleGUI {
         }
     }
 
+    /**
+     * Synchronized helper method that actually initializes everything.
+     * 
+     * <p/> This method is called by the SimpleGUI's constructor to actually initialize everything.
+     * It will create a GUI window, and populate it with two JTextArea and one JMenuBar.
+     */
     private synchronized final void my_setup() {
         int width=1000, height=600;
         Font font=new Font("Monospaced",0,12);
