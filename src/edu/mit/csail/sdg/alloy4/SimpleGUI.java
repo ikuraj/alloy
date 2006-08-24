@@ -31,7 +31,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 
-import kodviz.gui.KodVizGUIFactory;
+//import kodviz.gui.KodVizGUIFactory;
 
 @SuppressWarnings("serial")
 public final class SimpleGUI {
@@ -52,7 +52,7 @@ public final class SimpleGUI {
             Log log=new Log(status);
             try {
             	new Main(index,args,log);
-            	KodVizGUIFactory.main(new String[]{});
+            	//KodVizGUIFactory.main(new String[]{});
             }
             catch(FileNotFoundException e) { addlog("FileNotFoundException! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
