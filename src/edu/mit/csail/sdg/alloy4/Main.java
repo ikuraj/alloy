@@ -93,8 +93,9 @@ We throw an exception if there is a cycle in the IMPORT graph
     // Figure out the exact filename
     File f=new File(name);
     if (name.length()>0) {
-      if (!f.exists()) f=new File("/zweb/zweb/work/alloy/models.new/"+name+".als");
-      if (!f.exists()) f=new File("/zweb/zweb/work/alloy4/"+name+".als");
+      if (!f.exists()) f=new File("models/"+name+".als");
+      //if (!f.exists()) f=new File("/zweb/zweb/work/alloy/models.new/"+name+".als");
+      //if (!f.exists()) f=new File("/zweb/zweb/work/alloy4/"+name+".als");
       if (!f.exists()) throw syntaxError("The module \""+name+"\" cannot be found!");
     }
     // Add the filename into a ArrayList, so that we can detect cycles in the module import graph

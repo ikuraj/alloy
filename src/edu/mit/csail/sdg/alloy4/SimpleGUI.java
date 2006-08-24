@@ -31,6 +31,8 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 
+import kodviz.gui.KodVizGUIFactory;
+
 @SuppressWarnings("serial")
 public final class SimpleGUI {
 
@@ -48,7 +50,10 @@ public final class SimpleGUI {
         public void run() {
             String[] args={".alloy"};
             Log log=new Log(status);
-            try { new Main(index,args,log); }
+            try {
+            	new Main(index,args,log);
+            	KodVizGUIFactory.main(new String[]{});
+            }
             catch(FileNotFoundException e) { addlog("FileNotFoundException! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
             catch(ErrorInternal e) { addlog("An internal error has occurred! Please report this to the Alloy developers. "+e.toString()); }
@@ -78,6 +83,7 @@ public final class SimpleGUI {
     private synchronized void compiled(boolean x) { compiled=x; }
     private synchronized boolean compiled() { return compiled; }
 
+    private String currentDirectory=".";
     private JFrame frame;
     private JTextArea text;
     private JTextArea status;
@@ -104,7 +110,6 @@ public final class SimpleGUI {
     }
     
     private synchronized void my_run() {
-   		//for(int i=0; i<100000000; i++) for(int j=0; j<8;j++) {}
     	if (compiled()) return;
    		compiled(true);
    		status.setText("");
@@ -121,9 +126,11 @@ public final class SimpleGUI {
    	 		runmenu.add(y);
    	 		return;
    		}
-   		y=new JMenuItem("Run every command");
-		y.addActionListener(new RunListener(-1,"Run every commmand"));
- 		runmenu.add(y);
+   		if (u.runchecks.size()>1) {
+   			y=new JMenuItem("Run every command");
+   			y.addActionListener(new RunListener(-1,"Run every commmand"));
+   			runmenu.add(y);
+   		}
 		for(int i=0; i<u.runchecks.size(); i++) {
 			String label=u.runchecks.get(i).toString();
     		y=new JMenuItem(label);
@@ -142,7 +149,7 @@ public final class SimpleGUI {
                 return ".als files";
             }
         };
-        JFileChooser open=new JFileChooser();
+        JFileChooser open=new JFileChooser(currentDirectory);
         open.setFileFilter(filter);
         int ans=open.showOpenDialog(frame);
         if (ans!=JFileChooser.APPROVE_OPTION) return;
@@ -157,8 +164,12 @@ public final class SimpleGUI {
                 sb.append(s);
                 sb.append('\n');
             }
+            br.close();
+            fr.close();
+            currentDirectory=open.getSelectedFile().getParent();
             compiled(false);
             text.setText(sb.toString());
+      	    text.setCaretPosition(0);
             status.setText("File \""+f+"\" successfully loaded.");
         } catch(FileNotFoundException e) { status.setText("Cannot open the file! "+e.toString());
         } catch(IOException e) { status.setText("Cannot open the file! "+e.toString());
