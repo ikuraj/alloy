@@ -821,9 +821,9 @@ Code generation
       try {
         Formula f=((Formula)(e.value.accept(this))).not().and(kfact);
         Solver solver = new Solver();
-        solver.options().setSolver(SATFactory.DefaultSAT4J);
+        //solver.options().setSolver(SATFactory.DefaultSAT4J);
         //solver.options().setSolver(SATFactory.MiniSat);
-        //solver.options().setSolver(SATFactory.ZChaffBasic);
+        solver.options().setSolver(SATFactory.ZChaffBasic);
         solver.options().setBitwidth(bitwidth);
         solver.options().setIntEncoding(Options.IntEncoding.BINARY);
         log.log0("Bitwidth="+bitwidth+" Checking \""+e.name+"\"...\t ");
@@ -865,9 +865,9 @@ Code generation
       try {
         Formula f=((Formula)(v.accept(this))).and(kfact);
         Solver solver = new Solver();
-        solver.options().setSolver(SATFactory.DefaultSAT4J);
+        //solver.options().setSolver(SATFactory.DefaultSAT4J);
         //solver.options().setSolver(SATFactory.MiniSat);
-        //solver.options().setSolver(SATFactory.ZChaffBasic);
+        solver.options().setSolver(SATFactory.ZChaffBasic);
         solver.options().setBitwidth(bitwidth);
         solver.options().setIntEncoding(Options.IntEncoding.BINARY);
         log.log0("Bitwidth="+bitwidth+" Running \""+e.name+"\"...\t ");
