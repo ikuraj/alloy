@@ -1,5 +1,7 @@
 package edu.mit.csail.sdg.alloy4;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Set;
 import java.util.LinkedHashSet;
@@ -21,8 +23,10 @@ import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.Options;
+import kodkod.engine.Solution.Outcome;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.instance.Bounds;
+import kodkod.instance.Instance;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Tuple;
@@ -661,7 +665,7 @@ Code generation
       }
       // zzz ALLOY3 compatiblity hack above
       this.env.clear();
-      runcheck(x, units.get(0), bitwidth, sigs, kfact);
+      runcheck(x, units, bitwidth, sigs, kfact);
     }
   }
 
@@ -722,7 +726,8 @@ Code generation
 	  }
   }
 
-  public void runcheck(ParaRuncheck cmd, Unit root, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
+  public void runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
+	Unit root=units.get(0);
     unique.clear();
     Set<String> atoms=new LinkedHashSet<String>();
     if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
@@ -816,8 +821,8 @@ Code generation
       try {
         Formula f=((Formula)(e.value.accept(this))).not().and(kfact);
         Solver solver = new Solver();
-        //solver.options().setSolver(SATFactory.DefaultSAT4J);
-        solver.options().setSolver(SATFactory.MiniSat);
+        solver.options().setSolver(SATFactory.DefaultSAT4J);
+        //solver.options().setSolver(SATFactory.MiniSat);
         //solver.options().setSolver(SATFactory.ZChaffBasic);
         solver.options().setBitwidth(bitwidth);
         solver.options().setIntEncoding(Options.IntEncoding.BINARY);
@@ -833,6 +838,7 @@ Code generation
           case TRIVIALLY_UNSATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY OK (UNSAT)");
             break;
           case SATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" VIOLATED (SAT) TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
+          	writeXML(sol, units, sigs);
             if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r));
             break;
           case UNSATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" OK (UNSAT) TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
@@ -859,8 +865,8 @@ Code generation
       try {
         Formula f=((Formula)(v.accept(this))).and(kfact);
         Solver solver = new Solver();
-        //solver.options().setSolver(SATFactory.DefaultSAT4J);
-        solver.options().setSolver(SATFactory.MiniSat);
+        solver.options().setSolver(SATFactory.DefaultSAT4J);
+        //solver.options().setSolver(SATFactory.MiniSat);
         //solver.options().setSolver(SATFactory.ZChaffBasic);
         solver.options().setBitwidth(bitwidth);
         solver.options().setIntEncoding(Options.IntEncoding.BINARY);
@@ -876,6 +882,7 @@ Code generation
           case TRIVIALLY_UNSATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY UNSAT");
             break;
           case SATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" SAT TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
+            writeXML(sol, units, sigs);
             if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r));
             break;
           case UNSATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" UNSAT TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
@@ -889,5 +896,18 @@ Code generation
     }
     log.flush();
   }
+
+  
+public void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
+  PrintStream out=System.out;
+  if (sol.outcome()!=Outcome.SATISFIABLE) return;
+  Instance inst=sol.instance();
+  for(ParaSig s:sigs) {
+	  Relation r=(Relation)(rel(s));
+	  out.println(inst.tuples(r));
+  }
+  for(Relation r:inst.relations()) {
+  }
+}
 
 }
