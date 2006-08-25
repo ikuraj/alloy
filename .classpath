@@ -7,10 +7,7 @@
 	<classpathentry kind="lib" path="src/salvo.jar"/>
 	<classpathentry kind="lib" path="src/kodkod.jar"/>
 	<classpathentry kind="lib" path="src/java-cup-11a-runtime.jar"/>
-	<classpathentry kind="lib" path="src/commons-collections-3.1.jar"/>
-	<classpathentry kind="lib" path="src/ext.jar"/>
-	<classpathentry kind="lib" path="src/jhall.jar"/>
-	<classpathentry kind="lib" path="src/junit-4.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/kodviz"/>
+	<classpathentry kind="lib" path="/kodviz/binary"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
