@@ -27,7 +27,7 @@ public final class Main {
         return;
     }
     for(String a:args) {
-       this.log.log("\n===================================================================\nROOT="+a);
+       this.log.log("Main file = "+a);
        readall(a);
     }
   }

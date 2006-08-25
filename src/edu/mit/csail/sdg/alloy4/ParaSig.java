@@ -38,6 +38,7 @@ public final class ParaSig extends Para {
     public Expr appendedFacts;
 
     public final String fullname;
+    public final String fullvname;
 
     // The following 4 fields are initially empty until we properly initialize them
     // (Though "type" will be set already, for ParaSig.UNIV/NONE/SIGINT)
@@ -99,6 +100,7 @@ public final class ParaSig extends Para {
             List<String> i, String e, List<VarDecl> d, Expr f) {
         super(p, al, n);
         if (al.length()==0) fullname="/"+n; else fullname="/"+al+"/"+n;
+        if (al.length()==0) fullvname=n; else fullvname=al+"/"+n;
         aliases.add(al);
         abs=fa; lone=fl; one=fo; some=fs;
         if (n==null || d==null) throw this.internalError("NullPointerException in Sig constructor!");
@@ -149,6 +151,7 @@ public final class ParaSig extends Para {
     private ParaSig(String n, String al) {
         super(new Pos("$builtin library$",1,1), al, n);
         fullname="/"+al+"/"+n;
+        fullvname=al+"/"+n;
         aliases.add(al);
         abs=false; lone=false; one=false; some=false; //in=null; // ext=null;
         decls=new ArrayList<VarDecl>(0);

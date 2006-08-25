@@ -1,6 +1,8 @@
 package edu.mit.csail.sdg.alloy4;
 
-import java.io.PrintStream;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Set;
@@ -647,8 +649,7 @@ Code generation
     for(int xi=0; xi<units.get(0).runchecks.size(); xi++)
      if (codeindex==(-1) || codeindex==xi) {
       ParaRuncheck x=units.get(0).runchecks.get(xi);
-      log.flush();
-      log.log("\n\u001b[31mComputing the bounds for the command \""+x+"\"...\u001b[0m");
+      log.log("\nComputing the bounds for the command \""+x+"\"...");
       log.flush();
       sig2bound.clear();
       sig2ts.clear();
@@ -671,12 +672,12 @@ Code generation
 
   private final Map<String,Integer> unique=new LinkedHashMap<String,Integer>();
 
-  private String makeAtom(String n) {
+  private String makeAtom(ParaSig s, String n) {
     int i=0;
     if (unique.containsKey(n)) i=unique.get(n);
-    String ans=new String(n+"."+i);
+    String ans = (i==0) ? s.fullvname : s.fullvname+"_"+i;
     unique.put(n,i+1);
-    return ans;
+    return new String(ans);
   }
 
   public Relation right(Expression x) { return (Relation) (((BinaryExpression)x).right()); }
@@ -701,7 +702,7 @@ Code generation
 	  }
 	  if (n<x.size()) throw new ErrorInternal(null,null,"Scope for sig "+s.fullname+" was miscalculated");
 	  if (n>x.size() && exact(s)) {
-		  for(n=n-x.size(); n>0; n--) x.add(makeAtom(s.name));
+		  for(n=n-x.size(); n>0; n--) x.add(makeAtom(s,s.name));
 	  }
 	  sig2lowerbound(s,x);
 	  sig2upperbound(s,x);
@@ -711,7 +712,7 @@ Code generation
 	  if (s.sup()==null) {
 		  int n=sig2bound(s);
 		  int nn=sig2upperbound(s).size();
-		  while(n>nn) { sig2upperbound(s).add(makeAtom(s.name)); nn++; }
+		  while(n>nn) { sig2upperbound(s).add(makeAtom(s,s.name)); nn++; }
 	  }
 	  Set<String> x=new LinkedHashSet<String>(sig2upperbound(s));
 	  for(ParaSig c:s.subs) {
@@ -897,17 +898,100 @@ Code generation
     log.flush();
   }
 
-  
-public void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
-  PrintStream out=System.out;
+private void writeXML_tuple(PrintWriter out, String firstatom, Tuple tp) {
+    out.printf("    <tuple>");
+    if (firstatom!=null) out.printf("  <atom name=\"%s\"/>", firstatom);
+	for(int i=0; i<tp.arity(); i++) out.printf(" <atom name=\"%s\"/>", (String)(tp.atom(i)));
+	out.printf(" </tuple>%n");
+}
+
+private void writeXML_tupleset(PrintWriter out, String firstatom, TupleSet tps) {
+	for(Tuple tp:tps) writeXML_tuple(out, firstatom, tp);
+}
+
+private void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
+  FileWriter fw=null;
+  BufferedWriter bw=null;
+  PrintWriter out=null;
+  try {  
+    fw=new FileWriter(".alloy.xml");
+    bw=new BufferedWriter(fw);
+    out=new PrintWriter(bw);
+  } catch(IOException ex) {
+	if (out!=null) { out.close(); out=null; }
+	if (bw!=null) { try {bw.close();} catch(IOException exx) {} bw=null; }
+	if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
+	throw new ErrorInternal(null,null,"writeXML failed: "+ex.toString());
+  }
   if (sol.outcome()!=Outcome.SATISFIABLE) return;
   Instance inst=sol.instance();
-  for(ParaSig s:sigs) {
-	  Relation r=(Relation)(rel(s));
-	  out.println(inst.tuples(r));
+  out.printf("<solution name=\"%s\">%n", "this");
+  Set<Relation> rels=new LinkedHashSet<Relation>(inst.relations());
+  for(Unit u:units) {
+	  String n=u.aliases.get(0);
+	  out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
+	  for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
+		  String lastatom="";
+		  ParaSig s=e.getValue();
+		  Relation r=(Relation)(rel(s));
+		  rels.remove(r);
+		  out.printf("<sig name=\"%s\">%n", s.fullvname);
+		  for(Tuple t:inst.tuples(r)) {
+			  lastatom=(String)(t.atom(0));
+			  out.printf("  <atom name=\"%s\"/>%n", lastatom);
+		  }
+		  if (s.pos!=null && s.pos.filename!=null && s.pos.filename.endsWith("util/ordering.als")
+			 && s.name.equals("Ord") && u.params.get("elem")!=null) {
+			 // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 below
+	     	 Relation rfirst = right(rel(s.fields.get(0).full));
+		     Relation rlast = right(rel(s.fields.get(1).full));
+		     Relation rnext = right(rel(s.fields.get(2).full));
+		     rels.remove(rfirst);
+		     rels.remove(rlast);
+		     rels.remove(rnext);
+		     out.printf("  <field name=\"first\" arity=\"2\">%n");
+		     out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
+		     writeXML_tupleset(out, lastatom, inst.tuples(rfirst));
+		     out.printf("  </field>");
+		     out.printf("  <field name=\"last\" arity=\"2\">%n");
+		     out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
+		     writeXML_tupleset(out, lastatom, inst.tuples(rlast));
+		     out.printf("  </field>");
+		     out.printf("  <field name=\"next\" arity=\"3\">%n");
+		     out.printf("    <type> ( %s ) -> ( %s ) </type>%n", u.params.get("elem").fullvname, u.params.get("elem").fullvname);
+		     writeXML_tupleset(out, lastatom, inst.tuples(rnext));
+		     out.printf("  </field>%n");
+		     // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
+		  } else {
+		     int fi=0;
+		     for(VarDecl fd:s.decls) for(String fn:fd.names) {
+		        ParaSig.Field f=s.fields.get(fi); fi++;
+		        Relation rf=(Relation)(rel(f.full));
+		        rels.remove(rf);
+                out.printf("  <field name=\"%s\" arity=\"%d\">%n", fn, rf.arity());
+                Type type=f.full.fulltype;
+                for(Type.Rel t:type) {
+                	out.printf("    <type>");
+                	for(int ti=1; ti<t.basicTypes.size(); ti++) {
+                	   if (ti>1) out.printf(" -> ");
+                       out.printf(" (%s) ", t.basicTypes.get(ti).fullvname);
+                	}
+                	out.printf("</type>%n");
+                	writeXML_tupleset(out, null, inst.tuples(rf));
+                }
+                out.printf("  </field>%n");
+		     }
+		  }
+		  out.printf("</sig>%n");
+	  }
+	  out.printf("</module>%n");
   }
-  for(Relation r:inst.relations()) {
-  }
+  //for(Relation r:rels) { }
+  out.printf("%n</solution>%n");
+  out.flush();
+  out.close();
+  try {bw.close();} catch(IOException ex) {throw new ErrorInternal(null,null,"writeXML failed: "+ex.toString());}
+  try {fw.close();} catch(IOException ex) {throw new ErrorInternal(null,null,"writeXML failed: "+ex.toString());}
 }
 
 }

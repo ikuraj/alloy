@@ -77,7 +77,9 @@ public final class SimpleGUI {
         public void run() {
             String[] args={".alloy"};
             Log log=new Log(status);
-            try { new Main(index,args,log); }
+            try {
+              new Main(index,args,log);
+            }
             catch(FileNotFoundException e) { addlog("One of the required source file cannot be found! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
             catch(ErrorInternal e) { addlog("An internal error has occurred! Please report this to the Alloy developers. "+e.toString()); }
