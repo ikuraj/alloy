@@ -32,7 +32,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 
-//import kodviz.gui.KodVizGUIFactory;
+import kodviz.gui.KodVizGUIFactory;
 
 @SuppressWarnings("serial")
 public final class SimpleGUI {
@@ -77,7 +77,7 @@ public final class SimpleGUI {
         public void run() {
             String[] args={".alloy"};
             Log log=new Log(status);
-            try { new Main(index,args,log); /* KodVizGUIFactory.main(new String[]{}); */ }
+            try { new Main(index,args,log); }
             catch(FileNotFoundException e) { addlog("One of the required source file cannot be found! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
             catch(ErrorInternal e) { addlog("An internal error has occurred! Please report this to the Alloy developers. "+e.toString()); }
@@ -137,6 +137,7 @@ public final class SimpleGUI {
     /** Main method that launches the program. */
     public static final void main (String[] unused) {
         new SimpleGUI();
+        KodVizGUIFactory.main(new String[]{});
     }
 
     /**

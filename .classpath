@@ -11,5 +11,6 @@
 	<classpathentry kind="lib" path="src/ext.jar"/>
 	<classpathentry kind="lib" path="src/jhall.jar"/>
 	<classpathentry kind="lib" path="src/junit-4.1.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/kodviz"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
