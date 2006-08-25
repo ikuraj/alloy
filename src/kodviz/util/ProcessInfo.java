@@ -95,36 +95,50 @@ public class ProcessInfo {
     final String exeName = processIsScript_ ? processName_ : FileUtil.getExeName(processName_);
 	_processName = exeName;
 
-    final File extractedProcessFileHandle; 
-    if (binDir != null && binDir.trim().length() > 0) {
-        // the binDir is set ... but is it sensible?
-        final File f = new File(FileUtil.addSlash(binDir) + exeName);
-        if (f.exists()) {
-            // it's sensible
-            extractedProcessFileHandle = f;
-        } else {
-            // nonsense, ignore it 
-            extractedProcessFileHandle = ResourceManager.getExecutableResource(exeName);
-        }
-    } else {
-        // the binDir is not set
-        extractedProcessFileHandle = ResourceManager.getExecutableResource(exeName);
+    final File extractedProcessFileHandle;
+    while(true) {
+       String os=System.getProperty("os.name");
+       String arch=System.getProperty("os.arch");
+       String version=System.getProperty("os.version");
+       File f;
+       if (binDir != null && binDir.trim().length() > 0) {
+          f=new File(FileUtil.addSlash(binDir) + exeName);
+          if (f.exists()) { extractedProcessFileHandle=f; break; }
+       }
+       f=new File(exeName);
+       if (f.exists()) { extractedProcessFileHandle=f; break; }
+       if (os.compareToIgnoreCase("Darwin")==0 && arch.compareToIgnoreCase("powerpc")==0) {
+    	   f=new File("binary/powerpc-darwin/"+exeName);
+    	   if (f.exists()) { extractedProcessFileHandle=f; break; }
+       }
+       if (os.compareToIgnoreCase("FreeBSD")==0 && arch.compareToIgnoreCase("i386")==0) {
+    	   f=new File("binary/i386-FreeBSD/"+exeName);
+    	   if (f.exists()) { extractedProcessFileHandle=f; break; }
+       }
+       if (os.compareToIgnoreCase("NetBSD")==0 && arch.compareToIgnoreCase("i386")==0) {
+    	   f=new File("binary/i386-NetBSD/"+exeName);
+    	   if (f.exists()) { extractedProcessFileHandle=f; break; }
+       }
+       if (os.compareToIgnoreCase("Linux")==0 && arch.compareToIgnoreCase("i386")==0) {
+    	   f=new File("binary/i386-linux/"+exeName);
+    	   if (f.exists()) { extractedProcessFileHandle=f; break; }
+       }
+       if (os.compareToIgnoreCase("Solaris")==0 && arch.compareToIgnoreCase("sparc")==0) {
+    	   f=new File("binary/sparc-solaris/"+exeName);
+    	   if (f.exists()) { extractedProcessFileHandle=f; break; }
+       }
+       System.err.println("OS="+os+" ARCH="+arch+" VERSION="+version);
+       System.err.flush();
+       extractedProcessFileHandle = ResourceManager.getExecutableResource(exeName);
+       break;
     }
-
+    
     // the whole point of this ArrayList is to eventually remove empty
     // elements, which can cause the invocation to crash on some
     // platforms
     final ArrayList a = new ArrayList(processArgs_.length+1);
 
-    if (dir.equals(extractedProcessFileHandle.getParentFile())) {
-        // the executable is in the dir, just use the short name
-        // this doesn't actually work ... so actually use the long name
-        //cmdArray[0] = extractedProcessFileHandle.getName();
-        a.add(extractedProcessFileHandle.getAbsolutePath());
-    } else {
-        // the executable is not in the dir, use the long name
-        a.add(extractedProcessFileHandle.getAbsolutePath());
-    }
+    a.add(extractedProcessFileHandle.getAbsolutePath());
     for (int i = 0; i < processArgs_.length; ++i) {
         if (!processArgs_[i].equals("")) a.add(processArgs_[i]);
     }

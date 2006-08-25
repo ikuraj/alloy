@@ -52,18 +52,14 @@ public class Params {
     public static Params glob;
 
     static {
+
     try { glob = load(ResourceManager.getResourceAsStream("alloy.cfg")); }
-    catch (IOException ioe_) {
-        Dbg.fatal("Could not load config file", ioe_);
-    } catch (ParamFormatException pfe_) {
-        Dbg.fatal("Could not load config file", pfe_);
+    catch (IOException x) {
+    	Dbg.fatal("Could not load config file", x);
+    } catch (ParamFormatException x) {
+        Dbg.fatal("Could not load config file", x);
     }
 
-    //
-    // For debugging purposes, print out the params we have read.
-    //
-    //System.out.println("READ THE FOLLOWING PARAMS:");
-    //System.out.println(glob);
     }
 
     /**

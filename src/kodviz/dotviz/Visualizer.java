@@ -44,16 +44,17 @@ public class Visualizer {
         // no graph name currently?
 
         // creates the layout file
+        {
 		layoutFile.delete();
-		try {
-			final String[] cmdArgs = {dotFile.getName(), "-o", layoutFile.getName()};
-			ProcessInfo procInfo = new ProcessInfo("dotbin", cmdArgs, TmpFiles.getTmpDir());
-			procInfo.waitForTermination();
-		}
-		catch (Exception ie) {
-			ie.printStackTrace();
-			Dbg.fatal("Could not create layout file: ", ie);
-		}
+		final String[] cmdArgs = {dotFile.getName(), "-o", layoutFile.getName()};
+		ProcessInfo procInfo=null;
+		Exception ex=null;
+		if (procInfo==null) {
+		  try {procInfo = new ProcessInfo("dotbin", cmdArgs, TmpFiles.getTmpDir());} catch (Exception x) { ex=x; }
+	    }
+		if (procInfo==null) { ex.printStackTrace(); Dbg.fatal("Could not create layout file: ", ex); }
+		procInfo.waitForTermination();
+        }
 
         //****************************************************
         // gives it to grappa (code recycled form VizData.java)
