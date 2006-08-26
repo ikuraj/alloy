@@ -20,6 +20,7 @@ import kodkod.ast.Relation;
 import kodkod.ast.Formula;
 import kodkod.ast.Expression;
 import kodkod.ast.BinaryExpression;
+import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.TimeoutException;
@@ -672,11 +673,11 @@ Code generation
 
   private final Map<String,Integer> unique=new LinkedHashMap<String,Integer>();
 
-  private String makeAtom(ParaSig s, String n) {
+  private String makeAtom(ParaSig s) {
     int i=0;
-    if (unique.containsKey(n)) i=unique.get(n);
+    if (unique.containsKey(s.fullvname)) i=unique.get(s.fullvname);
     String ans = (i==0) ? s.fullvname : s.fullvname+"_"+i;
-    unique.put(n,i+1);
+    unique.put(s.fullvname, i+1);
     return new String(ans);
   }
 
@@ -702,7 +703,7 @@ Code generation
 	  }
 	  if (n<x.size()) throw new ErrorInternal(null,null,"Scope for sig "+s.fullname+" was miscalculated");
 	  if (n>x.size() && exact(s)) {
-		  for(n=n-x.size(); n>0; n--) x.add(makeAtom(s,s.name));
+		  for(n=n-x.size(); n>0; n--) x.add(makeAtom(s));
 	  }
 	  sig2lowerbound(s,x);
 	  sig2upperbound(s,x);
@@ -712,7 +713,7 @@ Code generation
 	  if (s.sup()==null) {
 		  int n=sig2bound(s);
 		  int nn=sig2upperbound(s).size();
-		  while(n>nn) { sig2upperbound(s).add(makeAtom(s,s.name)); nn++; }
+		  while(n>nn) { sig2upperbound(s).add(makeAtom(s)); nn++; }
 	  }
 	  Set<String> x=new LinkedHashSet<String>(sig2upperbound(s));
 	  for(ParaSig c:s.subs) {
@@ -734,7 +735,7 @@ Code generation
     if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
     if (ParaSig.SIGINT.subs.size()>0) throw new ErrorInternal(null,null,"SIGINT can no longer be extended!");
     for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
-        String ii=new String(""+i);
+        String ii=new String("Int_"+i);
         atoms.add(ii);
         sig2lowerbound(ParaSig.SIGINT).add(ii);
         sig2upperbound(ParaSig.SIGINT).add(ii);
@@ -910,6 +911,8 @@ private void writeXML_tupleset(PrintWriter out, String firstatom, TupleSet tps) 
 }
 
 private void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
+  System.out.println("=============\n"+sol+"============\n");
+  System.out.flush();
   FileWriter fw=null;
   BufferedWriter bw=null;
   PrintWriter out=null;
@@ -925,17 +928,37 @@ private void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
   }
   if (sol.outcome()!=Outcome.SATISFIABLE) return;
   Instance inst=sol.instance();
+  Evaluator eval=new Evaluator(inst);
   out.printf("<solution name=\"%s\">%n", "this");
   Set<Relation> rels=new LinkedHashSet<Relation>(inst.relations());
   for(Unit u:units) {
 	  String n=u.aliases.get(0);
 	  out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
+	  if (u==units.get(0)) {
+		  out.printf("<sig name=\"univ\">%n");
+		  for(Tuple t:eval.evaluate(Relation.UNIV)) {
+		      String atom=(String)(t.atom(0));
+		      out.printf("  <atom name=\"%s\"/>%n", atom);
+		  }
+		  out.printf("</sig>%n");
+		  out.printf("<sig name=\"Int\" extends=\"univ\">%n");
+		  for(Tuple t:eval.evaluate(Relation.INTS)) {
+			  String atom=(String)(t.atom(0));
+			  out.printf("  <atom name=\"%s\"/>%n", atom);
+		  }
+		  out.printf("</sig>%n");
+	  }
 	  for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
 		  String lastatom="";
 		  ParaSig s=e.getValue();
 		  Relation r=(Relation)(rel(s));
 		  rels.remove(r);
-		  out.printf("<sig name=\"%s\">%n", s.fullvname);
+		  if (s.sup()!=null)
+			  out.printf("<sig name=\"%s\" extends=\"%s\">%n", s.fullvname, s.sup().fullvname);
+		  else if (!s.subset)
+			  out.printf("<sig name=\"%s\" extends=\"univ\">%n", s.fullvname);
+		  else
+			  out.printf("<sig name=\"%s\" extends=\"zzz\">%n", s.fullvname);
 		  for(Tuple t:inst.tuples(r)) {
 			  lastatom=(String)(t.atom(0));
 			  out.printf("  <atom name=\"%s\"/>%n", lastatom);
