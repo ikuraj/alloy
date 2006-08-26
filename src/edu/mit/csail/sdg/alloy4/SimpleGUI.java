@@ -81,10 +81,10 @@ public final class SimpleGUI {
             Log log=new Log(status);
             try {
               new Main(index,args,log);
-              //status.append("Visualizing...\n");
-              //status.setCaretPosition(status.getDocument().getLength());
-          	  //KodVizGUIFactory factory=new KodVizGUIFactory(false);
-          	  //factory.create(new File(".alloy.xml"));
+              status.append("Visualizing...\n");
+              status.setCaretPosition(status.getDocument().getLength());
+          	  KodVizGUIFactory factory=new KodVizGUIFactory(false);
+          	  factory.create(null);//new File(".alloy.xml"));
             }
             catch(FileNotFoundException e) { addlog("One of the required source file cannot be found! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }

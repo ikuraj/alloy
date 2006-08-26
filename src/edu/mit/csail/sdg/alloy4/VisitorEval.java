@@ -847,29 +847,29 @@ Code generation
         }
       }
     }
-    Formula f;
-    String fname;
-    if (cmd.check) {
-      ParaAssert e=root.asserts.get(cmd.name);
-      if (e==null) throw cmd.syntaxError("The assertion \""+cmd.name+"\" cannot be found.");
-      f=((Formula)(e.value.accept(this))).not().and(kfact);
-      fname="Checking \""+e.name+"\"";
-    } else {
-      List<ParaFun> ee=root.funs.get(cmd.name);
-      if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate with the same name \""+cmd.name+"\"!");
-      if (ee.size()<1) throw cmd.syntaxError("The predicate \""+cmd.name+"\" cannot be found.");
-      ParaFun e=ee.get(0);
-      Expr v=e.value;
-      if (e.type!=null) {
-         Expr vv=e.type;
-         if (vv instanceof ExprUnary) vv=((ExprUnary)vv).makeMult();
-         v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
-      }
-      if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
-      f=((Formula)(v.accept(this))).and(kfact);
-      fname="Running \""+e.name+"\"";
-    }
     try {
+      Formula f;
+      String fname;
+      if (cmd.check) {
+        ParaAssert e=root.asserts.get(cmd.name);
+        if (e==null) throw cmd.syntaxError("The assertion \""+cmd.name+"\" cannot be found.");
+        f=((Formula)(e.value.accept(this))).not().and(kfact);
+        fname="Checking \""+e.name+"\"";
+      } else {
+        List<ParaFun> ee=root.funs.get(cmd.name);
+        if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate with the same name \""+cmd.name+"\"!");
+        if (ee.size()<1) throw cmd.syntaxError("The predicate \""+cmd.name+"\" cannot be found.");
+        ParaFun e=ee.get(0);
+        Expr v=e.value;
+        if (e.type!=null) {
+           Expr vv=e.type;
+           if (vv instanceof ExprUnary) vv=((ExprUnary)vv).makeMult();
+           v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
+        }
+        if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
+        f=((Formula)(v.accept(this))).and(kfact);
+        fname="Running \""+e.name+"\"";
+      }
       Solver solver = new Solver();
       //solver.options().setSolver(SATFactory.DefaultSAT4J);
       //solver.options().setSolver(SATFactory.MiniSat);
@@ -925,8 +925,8 @@ private void writeXML_tupleset(PrintWriter out, String firstatom, TupleSet tps) 
 }
 
 private void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
-  System.out.println("=============\n"+sol+"============\n");
-  System.out.flush();
+  //System.out.println("=============\n"+sol+"============\n");
+  //System.out.flush();
   FileWriter fw=null;
   BufferedWriter bw=null;
   PrintWriter out=null;
