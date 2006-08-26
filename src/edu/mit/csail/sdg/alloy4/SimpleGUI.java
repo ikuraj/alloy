@@ -45,6 +45,9 @@ public final class SimpleGUI {
 	 */
     private static final class Runner implements Runnable {
     	
+    	/** The current directory */
+    	private final String cwd;
+
     	/** The command that this runner will run (0..) (-1 means all of them) */
     	private final int index;
     	
@@ -58,7 +61,8 @@ public final class SimpleGUI {
          * @param text - the textual summary of the command that this runner will run
          * @param status - the JTextArea that will display the progress
          */
-        public Runner(int index, String text, JTextArea status) {
+        public Runner(String cwd, int index, String text, JTextArea status) {
+        	this.cwd=cwd;
             this.index=index;
             this.status=status;
         }
@@ -77,14 +81,17 @@ public final class SimpleGUI {
          * The run() method to start this runner
          */
         public void run() {
-            String[] args={".alloy"};
+            String ps=System.getProperty("file.separator");
+            String[] args={cwd+ps+".alloy"};
             Log log=new Log(status);
             try {
               new Main(index,args,log);
               status.append("Visualizing...\n");
               status.setCaretPosition(status.getDocument().getLength());
+              String newcwd = new File(cwd+ps+".."+ps+"kodviz").getAbsolutePath();
+              System.setProperty("kodviz.dir",newcwd);
           	  KodVizGUIFactory factory=new KodVizGUIFactory(false);
-          	  factory.create(null);//new File(".alloy.xml"));
+          	  factory.create(new File(cwd+ps+".alloy.xml"));
             }
             catch(FileNotFoundException e) { addlog("One of the required source file cannot be found! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
@@ -103,7 +110,8 @@ public final class SimpleGUI {
      */
 	private synchronized boolean writetemp() {
         try {
-            FileWriter fw=new FileWriter(".alloy");
+            String ps=System.getProperty("file.separator");
+            FileWriter fw=new FileWriter(cwd+ps+".alloy");
             BufferedWriter bw=new BufferedWriter(fw);
             PrintWriter out=new PrintWriter(bw);
             out.println(text.getText());
@@ -118,6 +126,9 @@ public final class SimpleGUI {
         }
 	}
 
+	/** The current directory */
+	private final String cwd = new File(".").getAbsolutePath();
+
 	/** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
     private boolean compiled=false;
     
@@ -127,8 +138,8 @@ public final class SimpleGUI {
     /** Synchronized helper method that returns true if and only if the "compiled" flag is true */
     private synchronized boolean compiled() { return compiled; }
 
-    /** The current directory. */
-    private String currentDirectory=".";
+    /** The latest FileOpen directory. */
+    private String currentDirectory = new File("models").getAbsolutePath();
     
     /** The JFrame for the main window. */
     private JFrame frame;
@@ -159,16 +170,18 @@ public final class SimpleGUI {
      * An ActionListener that is called when the user indicates a particular command to execute.
      */
     private class RunListener implements ActionListener {
+    	/** The current working directory */
+    	private final String cwd;
     	/** The index number of the command that the user wishes to execute (0..) (-1 means ALL of them). */
     	private final int index;
     	/** The human-readable summary of the command that the user wishes to execute. */
     	private final String label;
     	/** The constructor. */
-    	public RunListener(int i,String la) {index=i; label=la;}
+    	public RunListener(String cwd,int i,String la) {this.cwd=cwd; index=i; label=la;}
     	/** The event handler that gets called when the user clicked on one of the menu item. */
 		public void actionPerformed(ActionEvent e) {
 	    	status.setText("Running "+label);
-	        Runner r=new Runner(index, text.getText(), status);
+	        Runner r=new Runner(cwd, index, text.getText(), status);
 	        Thread t=new Thread(r);
 	        t.start();
 		}
@@ -185,6 +198,7 @@ public final class SimpleGUI {
      * that are defined in the model.
      */
     private synchronized void my_run() {
+        String ps=System.getProperty("file.separator");
     	if (compiled()) return;
    		compiled(true);
    		status.setText("");
@@ -193,7 +207,7 @@ public final class SimpleGUI {
  		runmenu.add(y);
    		if (!writetemp()) return;
    		Unit u;
-		try { u=AlloyParser.alloy_parseFile(".alloy",""); }
+		try { u=AlloyParser.alloy_parseFile(cwd+ps+".alloy",""); }
 		catch(Exception e) { status.setText("Cannot parse the model! "+e.toString()); return; }
    		runmenu.removeAll();
    		if (u.runchecks.size()==0) {
@@ -203,14 +217,14 @@ public final class SimpleGUI {
    		}
    		if (u.runchecks.size()>1) {
    			y=new JMenuItem("All");
-   			y.addActionListener(new RunListener(-1,"All"));
+   			y.addActionListener(new RunListener(cwd,-1,"All"));
    			runmenu.add(y);
    	 		runmenu.add(new JSeparator());
    		}
 		for(int i=0; i<u.runchecks.size(); i++) {
 			String label=u.runchecks.get(i).toString();
     		y=new JMenuItem(label);
-    		y.addActionListener(new RunListener(i,label));
+    		y.addActionListener(new RunListener(cwd,i,label));
     		runmenu.add(y);
 		}
     }
