@@ -4,7 +4,8 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="src/sat4j-1.6.jar"/>
 	<classpathentry kind="lib" path="src/salvo.jar"/>
-	<classpathentry kind="lib" path="src/kodkod.jar"/>
 	<classpathentry kind="lib" path="src/java-cup-11a-runtime.jar"/>
+	<classpathentry kind="lib" path="src/kodkod.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/kodviz"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

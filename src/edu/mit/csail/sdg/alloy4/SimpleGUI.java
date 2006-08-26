@@ -34,6 +34,8 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 
+import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
+
 @SuppressWarnings("serial")
 public final class SimpleGUI {
 
@@ -79,6 +81,10 @@ public final class SimpleGUI {
             Log log=new Log(status);
             try {
               new Main(index,args,log);
+              //status.append("Visualizing...\n");
+              //status.setCaretPosition(status.getDocument().getLength());
+          	  //KodVizGUIFactory factory=new KodVizGUIFactory(false);
+          	  //factory.create(new File(".alloy.xml"));
             }
             catch(FileNotFoundException e) { addlog("One of the required source file cannot be found! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
@@ -140,14 +146,13 @@ public final class SimpleGUI {
     public static final void main (String[] unused) {
         new SimpleGUI();
     }
-
+    
     /**
      * The constructor. To ensure thread safety, we move all initialization
      * code into a synchronized helper method named "my_setup".
      */
     public SimpleGUI() {
         my_setup();
-        //KodVizGUIFactory.main(new String[]{});
     }
 
     /**
@@ -208,6 +213,15 @@ public final class SimpleGUI {
     		y.addActionListener(new RunListener(i,label));
     		runmenu.add(y);
 		}
+    }
+
+    /**
+     * Synchronized helper method that clears the text editor.
+     */
+    private synchronized final void my_new() {
+    	text.setText("");
+    	status.setText("");
+    	compiled(false);
     }
 
     /**
@@ -302,6 +316,12 @@ public final class SimpleGUI {
         JMenu filemenu=new JMenu("File",true);
 		filemenu.setMnemonic(KeyEvent.VK_F);
 		
+		JMenuItem filenew=new JMenuItem("New", KeyEvent.VK_N);
+		filenew.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) { my_new(); }
+		});
+		filemenu.add(filenew);
+
 		JMenuItem fileopen=new JMenuItem("Open", KeyEvent.VK_O);
 		fileopen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) { my_open(); }

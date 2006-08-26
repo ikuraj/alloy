@@ -1,6 +1,7 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -36,6 +37,35 @@ import kodkod.instance.Tuple;
 import kodkod.instance.Universe;
 
 public final class VisitorEval implements VisitReturn {
+
+    static {
+    	File currentdir = new File(".");
+    	String path = currentdir.getAbsolutePath();
+        String os=System.getProperty("os.name");
+        String arch=System.getProperty("os.arch");
+        if (os.compareToIgnoreCase("Darwin")==0 && arch.compareToIgnoreCase("powerpc")==0) {
+     	   path=path+"/jni/powerpc-darwin/";
+        }
+        else if (os.compareToIgnoreCase("FreeBSD")==0 && arch.compareToIgnoreCase("i386")==0) {
+     	   path=path+"/jni/i386-FreeBSD/";
+     	}
+        else if (os.compareToIgnoreCase("NetBSD")==0 && arch.compareToIgnoreCase("i386")==0) {
+     	   path=path+"/jni/i386-NetBSD/";
+        }
+        else if (os.compareToIgnoreCase("Linux")==0 && arch.compareToIgnoreCase("i386")==0) {
+     	   path=path+"/jni/i386-linux/";
+     	}
+        else if (os.compareToIgnoreCase("Solaris")==0 && arch.compareToIgnoreCase("sparc")==0) {
+     	   path=path+"/jni/sparc-solaris/";
+        }
+        else {
+           path=path+"/jni/";
+        }
+        try { System.load(path+"libzchaff_basic.so"); }
+        catch(UnsatisfiedLinkError ex) { System.loadLibrary("zchaff_basic"); }
+        try { System.load(path+"libminisat.so"); }
+        catch(UnsatisfiedLinkError ex) { System.loadLibrary("minisat"); }
+    }
 
 //################################################################################################
 
@@ -817,42 +847,14 @@ Code generation
         }
       }
     }
+    Formula f;
+    String fname;
     if (cmd.check) {
       ParaAssert e=root.asserts.get(cmd.name);
       if (e==null) throw cmd.syntaxError("The assertion \""+cmd.name+"\" cannot be found.");
-      try {
-        Formula f=((Formula)(e.value.accept(this))).not().and(kfact);
-        Solver solver = new Solver();
-        solver.options().setSolver(SATFactory.DefaultSAT4J);
-        //solver.options().setSolver(SATFactory.MiniSat);
-        //solver.options().setSolver(SATFactory.ZChaffBasic);
-        solver.options().setBitwidth(bitwidth);
-        solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-        log.log0("Bitwidth="+bitwidth+" Checking \""+e.name+"\"...\t ");
-        log.flush();
-        //new MakeJava(f,bitwidth,bounds);
-        Solution sol = solver.solve(f,bounds);
-        long t1=sol.stats().translationTime();
-        long t2=sol.stats().solvingTime();
-        switch(sol.outcome()) {
-          case TRIVIALLY_SATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY VIOLATED (SAT)");
-            break;
-          case TRIVIALLY_UNSATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY OK (UNSAT)");
-            break;
-          case SATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" VIOLATED (SAT) TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
-          	writeXML(sol, units, sigs);
-            if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r));
-            break;
-          case UNSATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" OK (UNSAT) TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
-            break;
-        }
-      } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.");
-      } catch(TimeoutException ex) { log.log("Timeout");
-      } catch(ErrorInternal ex) { log.log(ex.msg);
-      } catch(ErrorType ex) { log.log(ex.msg);
-      } catch(ErrorSyntax ex) { log.log(ex.msg); }
-    }
-    else {
+      f=((Formula)(e.value.accept(this))).not().and(kfact);
+      fname="Checking \""+e.name+"\"";
+    } else {
       List<ParaFun> ee=root.funs.get(cmd.name);
       if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate with the same name \""+cmd.name+"\"!");
       if (ee.size()<1) throw cmd.syntaxError("The predicate \""+cmd.name+"\" cannot be found.");
@@ -864,37 +866,49 @@ Code generation
          v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
       }
       if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
-      try {
-        Formula f=((Formula)(v.accept(this))).and(kfact);
-        Solver solver = new Solver();
-        solver.options().setSolver(SATFactory.DefaultSAT4J);
-        //solver.options().setSolver(SATFactory.MiniSat);
-        //solver.options().setSolver(SATFactory.ZChaffBasic);
-        solver.options().setBitwidth(bitwidth);
-        solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-        log.log0("Bitwidth="+bitwidth+" Running \""+e.name+"\"...\t ");
-        log.flush();
-        //new MakeJava(f,bitwidth,bounds);
-        Solution sol = solver.solve(f,bounds);
-        long t1=sol.stats().translationTime();
-        long t2=sol.stats().solvingTime();
-        switch(sol.outcome()) {
-          case TRIVIALLY_SATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY SAT");
-            break;
-          case TRIVIALLY_UNSATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" TRIVIALLY UNSAT");
-            break;
-          case SATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" SAT TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
-            writeXML(sol, units, sigs);
-            if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r));
-            break;
-          case UNSATISFIABLE: log.log("TIME="+t1+"+"+t2+"="+(t1+t2)+" UNSAT TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
-            break;
-        }
-      } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.");
-      } catch(TimeoutException ex) { log.log("Timeout");
-      } catch(ErrorInternal ex) { log.log(ex.msg);
-      } catch(ErrorType ex) { log.log(ex.msg);
-      } catch(ErrorSyntax ex) { log.log(ex.msg); }
+      f=((Formula)(v.accept(this))).and(kfact);
+      fname="Running \""+e.name+"\"";
+    }
+    try {
+      Solver solver = new Solver();
+      //solver.options().setSolver(SATFactory.DefaultSAT4J);
+      //solver.options().setSolver(SATFactory.MiniSat);
+      solver.options().setSolver(SATFactory.ZChaffBasic);
+      solver.options().setBitwidth(bitwidth);
+      solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+      log.log0("Bitwidth="+bitwidth+" "+fname+"...\t ");
+      log.flush();
+      //new MakeJava(f,bitwidth,bounds);
+      Solution sol = solver.solve(f,bounds);
+      long t1=sol.stats().translationTime();
+      long t2=sol.stats().solvingTime();
+      switch(sol.outcome()) {
+        case TRIVIALLY_SATISFIABLE:
+          log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
+          if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)"); else log.log(" TRIVIALLY SAT");
+          break;
+        case TRIVIALLY_UNSATISFIABLE:
+          log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
+          if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)"); else log.log(" TRIVIALLY UNSAT");
+          break;
+        case SATISFIABLE:
+          log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
+          if (cmd.check) log.log0(" VIOLATED (SAT)"); else log.log0(" SAT");
+          log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
+      	  writeXML(sol, units, sigs);
+          if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r));
+          break;
+        case UNSATISFIABLE:
+          log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
+          if (cmd.check) log.log0(" OK (UNSAT)"); else log.log0(" UNSAT");
+          log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
+          break;
+      }
+    } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.");
+    } catch(TimeoutException ex) { log.log("Timeout");
+    } catch(ErrorInternal ex) { log.log(ex.msg);
+    } catch(ErrorType ex) { log.log(ex.msg);
+    } catch(ErrorSyntax ex) { log.log(ex.msg);
     }
     log.flush();
   }
