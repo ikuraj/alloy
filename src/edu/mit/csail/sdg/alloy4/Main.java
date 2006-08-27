@@ -249,7 +249,7 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
 ************************************************************************************************************/
 
   public void typecheck(ArrayList<Unit> units, List<ParaSig> sigs) {
-    VisitorTypechecker tc=new VisitorTypechecker(log);
+    VisitTypechecker tc=new VisitTypechecker(log);
     for(ParaSig s:sigs) {
       Unit u=units.get(0).lookupPath(s.path);
       tc.accept(s,u);
@@ -257,12 +257,12 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
     for(Unit u:units) {
       for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet()) {
         for(ParaFun f:funi.getValue()) {
-          tc=new VisitorTypechecker(log);
+          tc=new VisitTypechecker(log);
           tc.accept(f,u);
         }
       }
     }
-    tc=new VisitorTypechecker(log);
+    tc=new VisitTypechecker(log);
     for(Unit u:units) tc.accept(u);
     finalDesugar(units,sigs);
   }
@@ -315,7 +315,7 @@ Now we perform the final desugarings...
          u.makeFact(x5.pos, "", x5);
       }
     }
-    if (code>=(-1)) { VisitorEval c=new VisitorEval(code,log,units); c.codegen(sigs); }
+    if (code>=(-1)) { VisitEval c=new VisitEval(code,log,units); c.codegen(sigs); }
   }
 
 

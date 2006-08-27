@@ -28,18 +28,18 @@ public final class ExprCall extends Expr {
     }
 
     /**
-     * Accepts the desugar visitor.
-     * @see edu.mit.csail.sdg.alloy4.VisitDesugar
+     * Accepts the typecheck visitor bottom-up.
+     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
      */
-    @Override public Expr accept(VisitDesugar visitor) {
+    @Override public Expr accept(VisitTypechecker visitor) {
         return visitor.accept(this);
     }
 
     /**
-     * Accepts the desugar2 visitor.
-     * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
+     * Accepts the typecheck visitor top-down.
+     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
      */
-    @Override public Expr accept(VisitDesugar2 visitor, Type type) {
+    @Override public Expr accept(VisitTypechecker visitor, Type type) {
         return visitor.accept(this,type);
     }
 

@@ -42,16 +42,16 @@ public abstract class Expr {
     public abstract Object accept(VisitReturn visitor);
 
     /**
-     * Accepts the desugar visitor.
-     * @see edu.mit.csail.sdg.alloy4.VisitDesugar
+     * Accepts the typecheck visitor bottom-up.
+     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
      */
-    public abstract Expr accept(VisitDesugar visitor);
+    public abstract Expr accept(VisitTypechecker visitor);
 
     /**
-     * Accepts the desugar2 visitor.
-     * @see edu.mit.csail.sdg.alloy4.VisitDesugar2
+     * Accepts the typecheck visitor top-down.
+     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
      */
-    public abstract Expr accept(VisitDesugar2 visitor,Type obj);
+    public abstract Expr accept(VisitTypechecker visitor, Type obj);
 
     /**
      * Constructs a new expression node
