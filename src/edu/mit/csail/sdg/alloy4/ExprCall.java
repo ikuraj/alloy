@@ -5,9 +5,15 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Immutable; represents a function/predicate call.
+ * Immutable; represents a function/predicate call
+ * (note: parser must not create ExprCall nodes, only ExprJoin nodes).
  *
- * <br/>
+ * <p/>
+ * During parsing, it's not easy to tell if a[b] is a Join or Call.
+ * So instead, the parser should always generate ExprJoin nodes.
+ * The typechecker will convert it to an appropriate ExprCall node if it's a call.
+ *
+ * <p/>
  * <br/> Invariant: name!=null
  * <br/> Invariant: name does not equal "" nor "@"
  * <br/> Invariant: if name contains '@', then '@' must only occur as the first character
@@ -19,26 +25,17 @@ import java.util.ArrayList;
 
 public final class ExprCall extends Expr {
 
-    /**
-     * Accepts the return visitor.
-     * @see edu.mit.csail.sdg.alloy4.VisitReturn
-     */
+    /** Accepts the return visitor. */
     @Override public Object accept(VisitReturn visitor) {
         return visitor.accept(this);
     }
 
-    /**
-     * Accepts the typecheck visitor bottom-up.
-     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
-     */
+    /** Accepts the typecheck visitor bottom-up. */
     @Override public Expr accept(VisitTypechecker visitor) {
         return visitor.accept(this);
     }
 
-    /**
-     * Accepts the typecheck visitor top-down.
-     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
-     */
+    /** Accepts the typecheck visitor top-down. */
     @Override public Expr accept(VisitTypechecker visitor, Type type) {
         return visitor.accept(this,type);
     }

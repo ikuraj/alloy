@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.Reader;
 import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
@@ -2084,7 +2085,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     while(true) {
       if (name.length()==0) {
         BufferedReader z=new BufferedReader(new InputStreamReader(System.in));
-        s=new AlloyFilter("???.als",z);
+        s=new AlloyFilter("",z);
       }
       else {
         try { fis=new FileInputStream(name); } catch(FileNotFoundException x) { break; }
@@ -2109,14 +2110,14 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     return u;
   }
 
-  public static Unit alloy_parseStream(InputStreamReader isr) {
+  public static Unit alloy_parseStream(Reader isr) {
     String prefix="";
     Unit u=new Unit(prefix);
     AlloyFilter s=null;
     while(true) {
-      s=new AlloyFilter("???.als",isr);
+      s=new AlloyFilter("",isr);
       AlloyParser p=new AlloyParser(s);
-      p.alloyunit=u; p.alloyfile="???.als";
+      p.alloyunit=u; p.alloyfile="";
       try {p.parse(); s.close();}
         catch(ErrorInternal e) {throw e;}
         catch(ErrorSyntax e) {throw e;}
@@ -2128,7 +2129,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     // so we really need to make best effort to close all the input streams.
     try { if (s!=null) s.close(); } catch(IOException x) {u=null;}
     try { if (isr!=null) isr.close(); } catch(IOException x) {u=null;}
-    if (u==null) throw new ErrorInternal(null,null,"Failed to parse the file \"???.als\"");
+    if (u==null) throw new ErrorInternal(null,null,"Parser failed to parse this input!");
     return u;
   }
 

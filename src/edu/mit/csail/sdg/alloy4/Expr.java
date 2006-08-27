@@ -13,6 +13,15 @@ package edu.mit.csail.sdg.alloy4;
 
 public abstract class Expr {
 
+	/** Accepts the return visitor. */
+    public abstract Object accept(VisitReturn visitor);
+
+    /** Accepts the typecheck visitor bottom-up. */
+    public abstract Expr accept(VisitTypechecker visitor);
+
+    /** Accepts the typecheck visitor top-down. */
+    public abstract Expr accept(VisitTypechecker visitor, Type obj);
+
     /**
      * The filename, line, and column position
      * in the original Alloy model file (cannot be null).
@@ -34,24 +43,6 @@ public abstract class Expr {
      * <br>If it's 0, that means it does not have either form.
      */
     public final int mult;
-
-    /**
-     * Accepts the return visitor.
-     * @see edu.mit.csail.sdg.alloy4.VisitReturn
-     */
-    public abstract Object accept(VisitReturn visitor);
-
-    /**
-     * Accepts the typecheck visitor bottom-up.
-     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
-     */
-    public abstract Expr accept(VisitTypechecker visitor);
-
-    /**
-     * Accepts the typecheck visitor top-down.
-     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
-     */
-    public abstract Expr accept(VisitTypechecker visitor, Type obj);
 
     /**
      * Constructs a new expression node

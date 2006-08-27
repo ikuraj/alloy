@@ -909,7 +909,7 @@ public final class VisitTypechecker {
     
 //  ################################################################################################
     
-    public void accept(ParaSig x, Unit u) {
+    private void check(ParaSig x, Unit u) {
         // When typechecking the fields:
         // * each field is allowed to refer to earlier fields in the same SIG,
         //   as well as fields declared in any ancestor sig (as long as those ancestor sigs are visible from here)
@@ -939,7 +939,7 @@ public final class VisitTypechecker {
     
 //  ################################################################################################
     
-    public void accept(ParaFun fun, Unit u) {
+    private void check(ParaFun fun, Unit u) {
         // Now, typecheck all function/predicate PARAMETERS and RETURNTYPE
         // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
         // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
@@ -970,7 +970,7 @@ public final class VisitTypechecker {
     
 //  ################################################################################################
     
-    public void accept(Unit u) {
+    private void check(Unit u) {
         // Now, typecheck (1) function/predicate BODIES. (2) Signature facts. (3) Standalone facts (4) Assertions.
         // These can refer to any SIG/FIELD/FUN/PRED visible from here.
         String uu=u.aliases.iterator().next();
@@ -1009,6 +1009,23 @@ public final class VisitTypechecker {
             log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type);
             if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
         }
+    }
+    
+//  ################################################################################################
+
+    public void check(ArrayList<Unit> units, List<ParaSig> sigs) {
+		objChoices.clear(); typeChoices.clear(); env.clear();
+    	for(ParaSig s:sigs) {
+    		Unit u=units.get(0).lookupPath(s.path);
+    		check(s,u);
+    	}
+    	for(Unit u:units)
+    	  for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet())
+    	     for(ParaFun f:funi.getValue())
+    		   { objChoices.clear(); typeChoices.clear(); env.clear(); check(f,u); }
+		objChoices.clear(); typeChoices.clear(); env.clear();
+    	for(Unit u:units) check(u);
+		objChoices.clear(); typeChoices.clear(); env.clear();
     }
     
 //  ################################################################################################

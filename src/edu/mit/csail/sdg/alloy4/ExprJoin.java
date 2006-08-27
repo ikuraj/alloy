@@ -12,26 +12,17 @@ package edu.mit.csail.sdg.alloy4;
 
 public final class ExprJoin extends Expr {
 
-    /**
-     * Accepts the return visitor.
-     * @see edu.mit.csail.sdg.alloy4.VisitReturn
-     */
+    /** Accepts the return visitor. */
     @Override public Object accept(VisitReturn visitor) {
         return visitor.accept(this);
     }
 
-    /**
-     * Accepts the typecheck visitor bottom-up.
-     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
-     */
+    /** Accepts the typecheck visitor bottom-up. */
     @Override public Expr accept(VisitTypechecker visitor) {
         return visitor.accept(this);
     }
 
-    /**
-     * Accepts the typecheck visitor top-down.
-     * @see edu.mit.csail.sdg.alloy4.VisitTypechecker
-     */
+    /** Accepts the typecheck visitor top-down. */
     @Override public Expr accept(VisitTypechecker visitor, Type type) {
         return visitor.accept(this,type);
     }
