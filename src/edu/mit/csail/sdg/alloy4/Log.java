@@ -20,16 +20,16 @@ public final class Log {
     public void log(String x) {
       if (file!=null) file.println(x);
       if (textarea!=null) {
-    	  textarea.append(x+"\n");
-    	  textarea.setCaretPosition(textarea.getDocument().getLength());
+          textarea.append(x+"\n");
+          textarea.setCaretPosition(textarea.getDocument().getLength());
       }
     }
     
     public void log0(String x) {
       if (file!=null) file.print(x);
       if (textarea!=null) {
-    	  textarea.append(x);
-    	  textarea.setCaretPosition(textarea.getDocument().getLength());
+          textarea.append(x);
+          textarea.setCaretPosition(textarea.getDocument().getLength());
       }
     }
     

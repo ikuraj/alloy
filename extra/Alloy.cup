@@ -17,7 +17,7 @@ import java.io.IOException;
 parser code {:
 
   public Unit alloyunit=null;
-  private String alloyfile="";
+  public String alloyfile="";
 
   public void syntax_error(Symbol x) {
     if (x.value instanceof Pos)
@@ -56,6 +56,29 @@ parser code {:
     try { if (isr!=null) isr.close(); } catch(IOException x) {u=null;}
     try { if (fis!=null) fis.close(); } catch(IOException x) {u=null;}
     if (u==null) throw new ErrorInternal(null,null,"Failed to parse the file \""+name+"\"");
+    return u;
+  }
+
+  public static Unit alloy_parseStream(InputStreamReader isr) {
+    String prefix="";
+    Unit u=new Unit(prefix);
+    AlloyFilter s=null;
+    while(true) {
+      s=new AlloyFilter("???.als",isr);
+      AlloyParser p=new AlloyParser(s);
+      p.alloyunit=u; p.alloyfile="???.als";
+      try {p.parse(); s.close();}
+        catch(ErrorInternal e) {throw e;}
+        catch(ErrorSyntax e) {throw e;}
+        catch(ErrorType e) {throw e;}
+        catch(Exception e) {u=null;}
+      break;
+    }
+    // The number of files we can open concurrently is a very scarse OS resource,
+    // so we really need to make best effort to close all the input streams.
+    try { if (s!=null) s.close(); } catch(IOException x) {u=null;}
+    try { if (isr!=null) isr.close(); } catch(IOException x) {u=null;}
+    if (u==null) throw new ErrorInternal(null,null,"Failed to parse the file \"???.als\"");
     return u;
   }
 :};
@@ -221,8 +244,9 @@ nonterminal Expr                       UnopExpr;
 
 Specification ::= Module Opens Paragraphs ;
 
-Module ::= MODULE:o Name:a                           {: parser.alloyunit.makeModule(o, a.name, new ArrayList<ExprName>()); :};
-Module ::= MODULE:o Name:a LBRACKET Names:b RBRACKET {: parser.alloyunit.makeModule(o, a.name, b);                         :};
+Module ::= MODULE:o Name                           {: parser.alloyunit.makeModule(o                            , new ArrayList<ExprName>()); :};
+Module ::= MODULE:o Name LBRACKET Names:b RBRACKET {: parser.alloyunit.makeModule(o                            , b                        ); :};
+Module ::=                                         {: parser.alloyunit.makeModule(new Pos(parser.alloyfile,1,1), new ArrayList<ExprName>()); :};
 
 Open ::= OPEN:o Name:a                                        {: parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), "");     :};
 Open ::= OPEN:o Name:a                             AS Name:c  {: parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), c.name); :};

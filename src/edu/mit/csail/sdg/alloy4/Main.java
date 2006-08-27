@@ -17,10 +17,19 @@ public final class Main {
   private final int code; // -1=ALL -2=NONE
   private final Log log;
 
+  /*
+  public Main(int code, InputStreamReader isr, Log log) {
+      this.code=code;
+      this.log=log;
+      this.log.log("\n\nMain file = the current model");
+      readall(isr);
+  }
+  */
+
   public Main(int code, String[] args, Log log) throws FileNotFoundException {
-	this.code=code;
+    this.code=code;
     this.log=log;
-    if (args==null) {
+    if (args.length==0) {
         System.out.print("% ");
         System.out.flush();
         readall("");
@@ -33,8 +42,8 @@ public final class Main {
   }
 
   public static void main(String[] args) throws FileNotFoundException {
-	Log log=new Log();
-    if (args.length==0) new Main(-1,null,log);
+    Log log=new Log();
+    if (args.length==0) new Main(-1,args,log);
     else if (args.length==1) new Main(-1,args,log);
     else new Main(-2,args,log);
     log.flush();

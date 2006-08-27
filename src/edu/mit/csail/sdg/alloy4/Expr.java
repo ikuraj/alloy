@@ -258,7 +258,7 @@ public abstract class Expr {
         else {
             ans=x.type.union(y.type);
             if (ans.arity()<1)
-            	throw internalError("Cannot perform ITE on incompatible expressions!");
+                throw internalError("Cannot perform ITE on incompatible expressions!");
         }
         return new ExprITE(this.pos, this, x, y, ans);
     }

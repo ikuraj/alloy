@@ -37,21 +37,21 @@ public final class VarDecl {
      */
     public VarDecl (List<ExprName> x, Expr y) {
         if (x==null || y==null)
-        	throw new ErrorInternal(null,null,"NullPointerException");
+            throw new ErrorInternal(null,null,"NullPointerException");
         List<String> newlist=new ArrayList<String>();
         if (x.size()==0)
             throw y.syntaxError("The list of declarations cannot be empty!");
         for(int i=0; i<x.size(); i++) {
             ExprName e=x.get(i);
             if (e==null || e.name==null)
-            	throw y.internalError("NullPointerException");
+                throw y.internalError("NullPointerException");
             String n=e.name;
             if (n.length()==0)
-            	throw e.syntaxError("Variable name cannot be empty!");
+                throw e.syntaxError("Variable name cannot be empty!");
             if (n.indexOf('/')>=0)
-            	throw e.syntaxError("Variable name cannot contain \'/\'");
+                throw e.syntaxError("Variable name cannot contain \'/\'");
             if (n.indexOf('@')>=0)
-            	throw e.syntaxError("Variable name cannot contain \'@\'");
+                throw e.syntaxError("Variable name cannot contain \'@\'");
             newlist.add(n);
         }
         names=Collections.unmodifiableList(newlist);
@@ -72,13 +72,13 @@ public final class VarDecl {
      */
     public VarDecl (String x, Expr y) {
         if (x==null || y==null)
-        	throw new ErrorInternal(null,null,"NullPointerException");
+            throw new ErrorInternal(null,null,"NullPointerException");
         if (x.length()==0)
-        	throw y.syntaxError("Variable name must not be empty!");
+            throw y.syntaxError("Variable name must not be empty!");
         if (x.indexOf('/')>=0)
-        	throw y.syntaxError("Variable name cannot contain \'/\'");
+            throw y.syntaxError("Variable name cannot contain \'/\'");
         if (x.indexOf('@')>=0)
-        	throw y.syntaxError("Variable name cannot contain \'@\'");
+            throw y.syntaxError("Variable name cannot contain \'@\'");
         List<String> list=new ArrayList<String>(1);
         list.add(x);
         names=Collections.unmodifiableList(list);
@@ -97,7 +97,7 @@ public final class VarDecl {
      */
     public VarDecl (VarDecl x, Expr y) {
         if (x==null || y==null)
-        	throw new ErrorInternal(null,null,"NullPointerException");
+            throw new ErrorInternal(null,null,"NullPointerException");
         names=x.names;
         // See ExprUnary.java for why we have to call makeMult() here.
         if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();

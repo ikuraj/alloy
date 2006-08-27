@@ -39,24 +39,24 @@ import kodkod.instance.Universe;
 public final class VisitorEval implements VisitReturn {
 
     static {
-    	File currentdir = new File(".");
-    	String path = currentdir.getAbsolutePath();
+        File currentdir = new File(".");
+        String path = currentdir.getAbsolutePath();
         String os=System.getProperty("os.name");
         String arch=System.getProperty("os.arch");
         if (os.compareToIgnoreCase("Darwin")==0 && arch.compareToIgnoreCase("powerpc")==0) {
-     	   path=path+"/jni/powerpc-darwin/";
+           path=path+"/jni/powerpc-darwin/";
         }
         else if (os.compareToIgnoreCase("FreeBSD")==0 && arch.compareToIgnoreCase("i386")==0) {
-     	   path=path+"/jni/i386-FreeBSD/";
-     	}
+           path=path+"/jni/i386-FreeBSD/";
+        }
         else if (os.compareToIgnoreCase("NetBSD")==0 && arch.compareToIgnoreCase("i386")==0) {
-     	   path=path+"/jni/i386-NetBSD/";
+           path=path+"/jni/i386-NetBSD/";
         }
         else if (os.compareToIgnoreCase("Linux")==0 && arch.compareToIgnoreCase("i386")==0) {
-     	   path=path+"/jni/i386-linux/";
-     	}
+           path=path+"/jni/i386-linux/";
+        }
         else if (os.compareToIgnoreCase("Solaris")==0 && arch.compareToIgnoreCase("sparc")==0) {
-     	   path=path+"/jni/sparc-solaris/";
+           path=path+"/jni/sparc-solaris/";
         }
         else {
            path=path+"/jni/";
@@ -436,14 +436,14 @@ public Object accept(ExprCall x) {
 
   private Map<ParaSig,List<String>> sig2lowerbound = new LinkedHashMap<ParaSig,List<String>>();
   private List<String> sig2lowerbound(ParaSig x) {
-	    List<String> ans=sig2lowerbound.get(x);
-	    if (ans==null) { ans=new ArrayList<String>(); sig2lowerbound.put(x,ans); }
-	    return ans;
-	  }
+        List<String> ans=sig2lowerbound.get(x);
+        if (ans==null) { ans=new ArrayList<String>(); sig2lowerbound.put(x,ans); }
+        return ans;
+      }
   private void sig2lowerbound(ParaSig x, Collection<String> y) {
-	  List<String> ans=sig2lowerbound(x);
-	  ans.clear();
-	  ans.addAll(y);
+      List<String> ans=sig2lowerbound(x);
+      ans.clear();
+      ans.addAll(y);
   }
 
   private Map<ParaSig,List<String>> sig2upperbound = new LinkedHashMap<ParaSig,List<String>>();
@@ -453,9 +453,9 @@ public Object accept(ExprCall x) {
     return ans;
   }
   private void sig2upperbound(ParaSig x, Collection<String> y) {
-	  List<String> ans=sig2upperbound(x);
-	  ans.clear();
-	  ans.addAll(y);
+      List<String> ans=sig2upperbound(x);
+      ans.clear();
+      ans.addAll(y);
   }
 
   private void bound(String debug, ParaRuncheck c, ParaSig s, int b) {
@@ -725,41 +725,41 @@ Code generation
   }
 
   private void computeLowerBound(ParaSig s) {
-	  int n=sig2bound(s);
-	  Set<String> x=new LinkedHashSet<String>();
-	  for(ParaSig c:s.subs) {
-		  computeLowerBound(c);
-		  x.addAll(sig2lowerbound(c));
-	  }
-	  if (n<x.size()) throw new ErrorInternal(null,null,"Scope for sig "+s.fullname+" was miscalculated");
-	  if (n>x.size() && exact(s)) {
-		  for(n=n-x.size(); n>0; n--) x.add(makeAtom(s));
-	  }
-	  sig2lowerbound(s,x);
-	  sig2upperbound(s,x);
+      int n=sig2bound(s);
+      Set<String> x=new LinkedHashSet<String>();
+      for(ParaSig c:s.subs) {
+          computeLowerBound(c);
+          x.addAll(sig2lowerbound(c));
+      }
+      if (n<x.size()) throw new ErrorInternal(null,null,"Scope for sig "+s.fullname+" was miscalculated");
+      if (n>x.size() && exact(s)) {
+          for(n=n-x.size(); n>0; n--) x.add(makeAtom(s));
+      }
+      sig2lowerbound(s,x);
+      sig2upperbound(s,x);
   }
 
   private void computeUpperBound(ParaSig s) {
-	  if (s.sup()==null) {
-		  int n=sig2bound(s);
-		  int nn=sig2upperbound(s).size();
-		  while(n>nn) { sig2upperbound(s).add(makeAtom(s)); nn++; }
-	  }
-	  Set<String> x=new LinkedHashSet<String>(sig2upperbound(s));
-	  for(ParaSig c:s.subs) {
-		  x.removeAll(sig2lowerbound(c));
-	  }
-	  for(ParaSig c:s.subs) {
-		  if (sig2bound(c) > sig2lowerbound(c).size()) {
-			  sig2upperbound(c, sig2lowerbound(c));
-			  sig2upperbound(c).addAll(x);
-			  computeUpperBound(c);
-		  }
-	  }
+      if (s.sup()==null) {
+          int n=sig2bound(s);
+          int nn=sig2upperbound(s).size();
+          while(n>nn) { sig2upperbound(s).add(makeAtom(s)); nn++; }
+      }
+      Set<String> x=new LinkedHashSet<String>(sig2upperbound(s));
+      for(ParaSig c:s.subs) {
+          x.removeAll(sig2lowerbound(c));
+      }
+      for(ParaSig c:s.subs) {
+          if (sig2bound(c) > sig2lowerbound(c).size()) {
+              sig2upperbound(c, sig2lowerbound(c));
+              sig2upperbound(c).addAll(x);
+              computeUpperBound(c);
+          }
+      }
   }
 
   public void runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
-	Unit root=units.get(0);
+    Unit root=units.get(0);
     unique.clear();
     Set<String> atoms=new LinkedHashSet<String>();
     if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
@@ -784,33 +784,33 @@ Code generation
       sig2ts(ParaSig.SIGINT).add(ii);
     }
     for(int si=sigs.size()-1; si>=0; si--) {
-    	ParaSig s=sigs.get(si);
-    	if (s.subset) continue;
-      	TupleSet upper=factory.noneOf(1);
-      	TupleSet lower=factory.noneOf(1);
-      	for(String a:sig2upperbound(s)) upper.add(factory.tuple(a));
-      	for(String a:sig2lowerbound(s)) lower.add(factory.tuple(a));
-    	sig2ts(s,upper);
-    	bounds.bound((Relation)(rel(s)),lower,upper);
-    	if (s.subset) continue;
-    	if (exact(s) && upper.size()==sig2bound(s)) {
-    		log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+upper.toString()+">");
-    	}
-    	else if (exact(s)) {
-    		log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s));
-    		if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
-    		else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
-    		else kfact=rel(s).count().eq(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
-    	}
-    	else if (upper.size()>sig2bound(s)) {
-    		log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s));
-    		if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
-    		else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
-    		else kfact=rel(s).count().lte(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
-    	}
-    	else {
-    		log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">");
-    	}
+        ParaSig s=sigs.get(si);
+        if (s.subset) continue;
+        TupleSet upper=factory.noneOf(1);
+        TupleSet lower=factory.noneOf(1);
+        for(String a:sig2upperbound(s)) upper.add(factory.tuple(a));
+        for(String a:sig2lowerbound(s)) lower.add(factory.tuple(a));
+        sig2ts(s,upper);
+        bounds.bound((Relation)(rel(s)),lower,upper);
+        if (s.subset) continue;
+        if (exact(s) && upper.size()==sig2bound(s)) {
+            log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+upper.toString()+">");
+        }
+        else if (exact(s)) {
+            log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s));
+            if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
+            else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
+            else kfact=rel(s).count().eq(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
+        }
+        else if (upper.size()>sig2bound(s)) {
+            log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s));
+            if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
+            else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
+            else kfact=rel(s).count().lte(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
+        }
+        else {
+            log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">");
+        }
     }
     // Bound the SUBSETSIGS
     for(int si=0; si<sigs.size(); si++) {
@@ -895,7 +895,7 @@ Code generation
           log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
           if (cmd.check) log.log0(" VIOLATED (SAT)"); else log.log0(" SAT");
           log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
-      	  writeXML(sol, units, sigs);
+          writeXML(sol, units, sigs);
           if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r));
           break;
         case UNSATISFIABLE:
@@ -916,12 +916,12 @@ Code generation
 private void writeXML_tuple(PrintWriter out, String firstatom, Tuple tp) {
     out.printf("    <tuple>");
     if (firstatom!=null) out.printf("  <atom name=\"%s\"/>", firstatom);
-	for(int i=0; i<tp.arity(); i++) out.printf(" <atom name=\"%s\"/>", (String)(tp.atom(i)));
-	out.printf(" </tuple>%n");
+    for(int i=0; i<tp.arity(); i++) out.printf(" <atom name=\"%s\"/>", (String)(tp.atom(i)));
+    out.printf(" </tuple>%n");
 }
 
 private void writeXML_tupleset(PrintWriter out, String firstatom, TupleSet tps) {
-	for(Tuple tp:tps) writeXML_tuple(out, firstatom, tp);
+    for(Tuple tp:tps) writeXML_tuple(out, firstatom, tp);
 }
 
 private void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
@@ -935,10 +935,10 @@ private void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
     bw=new BufferedWriter(fw);
     out=new PrintWriter(bw);
   } catch(IOException ex) {
-	if (out!=null) { out.close(); out=null; }
-	if (bw!=null) { try {bw.close();} catch(IOException exx) {} bw=null; }
-	if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
-	throw new ErrorInternal(null,null,"writeXML failed: "+ex.toString());
+    if (out!=null) { out.close(); out=null; }
+    if (bw!=null) { try {bw.close();} catch(IOException exx) {} bw=null; }
+    if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
+    throw new ErrorInternal(null,null,"writeXML failed: "+ex.toString());
   }
   if (sol.outcome()!=Outcome.SATISFIABLE) return;
   Instance inst=sol.instance();
@@ -946,82 +946,82 @@ private void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
   out.printf("<solution name=\"%s\">%n", "this");
   Set<Relation> rels=new LinkedHashSet<Relation>(inst.relations());
   for(Unit u:units) {
-	  String n=u.aliases.get(0);
-	  out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
-	  if (u==units.get(0)) {
-		  out.printf("<sig name=\"univ\">%n");
-		  for(Tuple t:eval.evaluate(Relation.UNIV)) {
-		      String atom=(String)(t.atom(0));
-		      out.printf("  <atom name=\"%s\"/>%n", atom);
-		  }
-		  out.printf("</sig>%n");
-		  out.printf("<sig name=\"Int\" extends=\"univ\">%n");
-		  for(Tuple t:eval.evaluate(Relation.INTS)) {
-			  String atom=(String)(t.atom(0));
-			  out.printf("  <atom name=\"%s\"/>%n", atom);
-		  }
-		  out.printf("</sig>%n");
-	  }
-	  for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
-		  String lastatom="";
-		  ParaSig s=e.getValue();
-		  Relation r=(Relation)(rel(s));
-		  rels.remove(r);
-		  if (s.sup()!=null)
-			  out.printf("<sig name=\"%s\" extends=\"%s\">%n", s.fullvname, s.sup().fullvname);
-		  else if (!s.subset)
-			  out.printf("<sig name=\"%s\" extends=\"univ\">%n", s.fullvname);
-		  else
-			  out.printf("<sig name=\"%s\" extends=\"zzz\">%n", s.fullvname);
-		  for(Tuple t:inst.tuples(r)) {
-			  lastatom=(String)(t.atom(0));
-			  out.printf("  <atom name=\"%s\"/>%n", lastatom);
-		  }
-		  if (s.pos!=null && s.pos.filename!=null && s.pos.filename.endsWith("util/ordering.als")
-			 && s.name.equals("Ord") && u.params.get("elem")!=null) {
-			 // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 below
-	     	 Relation rfirst = right(rel(s.fields.get(0).full));
-		     Relation rlast = right(rel(s.fields.get(1).full));
-		     Relation rnext = right(rel(s.fields.get(2).full));
-		     rels.remove(rfirst);
-		     rels.remove(rlast);
-		     rels.remove(rnext);
-		     out.printf("  <field name=\"first\" arity=\"2\">%n");
-		     out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
-		     writeXML_tupleset(out, lastatom, inst.tuples(rfirst));
-		     out.printf("  </field>");
-		     out.printf("  <field name=\"last\" arity=\"2\">%n");
-		     out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
-		     writeXML_tupleset(out, lastatom, inst.tuples(rlast));
-		     out.printf("  </field>");
-		     out.printf("  <field name=\"next\" arity=\"3\">%n");
-		     out.printf("    <type> ( %s ) -> ( %s ) </type>%n", u.params.get("elem").fullvname, u.params.get("elem").fullvname);
-		     writeXML_tupleset(out, lastatom, inst.tuples(rnext));
-		     out.printf("  </field>%n");
-		     // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
-		  } else {
-		     int fi=0;
-		     for(VarDecl fd:s.decls) for(String fn:fd.names) {
-		        ParaSig.Field f=s.fields.get(fi); fi++;
-		        Relation rf=(Relation)(rel(f.full));
-		        rels.remove(rf);
+      String n=u.aliases.get(0);
+      out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
+      if (u==units.get(0)) {
+          out.printf("<sig name=\"univ\">%n");
+          for(Tuple t:eval.evaluate(Relation.UNIV)) {
+              String atom=(String)(t.atom(0));
+              out.printf("  <atom name=\"%s\"/>%n", atom);
+          }
+          out.printf("</sig>%n");
+          out.printf("<sig name=\"Int\" extends=\"univ\">%n");
+          for(Tuple t:eval.evaluate(Relation.INTS)) {
+              String atom=(String)(t.atom(0));
+              out.printf("  <atom name=\"%s\"/>%n", atom);
+          }
+          out.printf("</sig>%n");
+      }
+      for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
+          String lastatom="";
+          ParaSig s=e.getValue();
+          Relation r=(Relation)(rel(s));
+          rels.remove(r);
+          if (s.sup()!=null)
+              out.printf("<sig name=\"%s\" extends=\"%s\">%n", s.fullvname, s.sup().fullvname);
+          else if (!s.subset)
+              out.printf("<sig name=\"%s\" extends=\"univ\">%n", s.fullvname);
+          else
+              out.printf("<sig name=\"%s\" extends=\"zzz\">%n", s.fullvname);
+          for(Tuple t:inst.tuples(r)) {
+              lastatom=(String)(t.atom(0));
+              out.printf("  <atom name=\"%s\"/>%n", lastatom);
+          }
+          if (s.pos!=null && s.pos.filename!=null && s.pos.filename.endsWith("util/ordering.als")
+             && s.name.equals("Ord") && u.params.get("elem")!=null) {
+             // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 below
+             Relation rfirst = right(rel(s.fields.get(0).full));
+             Relation rlast = right(rel(s.fields.get(1).full));
+             Relation rnext = right(rel(s.fields.get(2).full));
+             rels.remove(rfirst);
+             rels.remove(rlast);
+             rels.remove(rnext);
+             out.printf("  <field name=\"first\" arity=\"2\">%n");
+             out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
+             writeXML_tupleset(out, lastatom, inst.tuples(rfirst));
+             out.printf("  </field>");
+             out.printf("  <field name=\"last\" arity=\"2\">%n");
+             out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
+             writeXML_tupleset(out, lastatom, inst.tuples(rlast));
+             out.printf("  </field>");
+             out.printf("  <field name=\"next\" arity=\"3\">%n");
+             out.printf("    <type> ( %s ) -> ( %s ) </type>%n", u.params.get("elem").fullvname, u.params.get("elem").fullvname);
+             writeXML_tupleset(out, lastatom, inst.tuples(rnext));
+             out.printf("  </field>%n");
+             // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
+          } else {
+             int fi=0;
+             for(VarDecl fd:s.decls) for(String fn:fd.names) {
+                ParaSig.Field f=s.fields.get(fi); fi++;
+                Relation rf=(Relation)(rel(f.full));
+                rels.remove(rf);
                 out.printf("  <field name=\"%s\" arity=\"%d\">%n", fn, rf.arity());
                 Type type=f.full.fulltype;
                 for(Type.Rel t:type) {
-                	out.printf("    <type>");
-                	for(int ti=1; ti<t.basicTypes.size(); ti++) {
-                	   if (ti>1) out.printf(" -> ");
+                    out.printf("    <type>");
+                    for(int ti=1; ti<t.basicTypes.size(); ti++) {
+                       if (ti>1) out.printf(" -> ");
                        out.printf(" (%s) ", t.basicTypes.get(ti).fullvname);
-                	}
-                	out.printf("</type>%n");
-                	writeXML_tupleset(out, null, inst.tuples(rf));
+                    }
+                    out.printf("</type>%n");
+                    writeXML_tupleset(out, null, inst.tuples(rf));
                 }
                 out.printf("  </field>%n");
-		     }
-		  }
-		  out.printf("</sig>%n");
-	  }
-	  out.printf("</module>%n");
+             }
+          }
+          out.printf("</sig>%n");
+      }
+      out.printf("</module>%n");
   }
   //for(Relation r:rels) { }
   out.printf("%n</solution>%n");

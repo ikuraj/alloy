@@ -1,13 +1,5 @@
 package edu.mit.csail.sdg.alloy4;
 
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,7 +8,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -33,36 +31,36 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
-
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 
 @SuppressWarnings("serial")
 public final class SimpleGUI {
 
-	/**
-	 * This Runnable is used to execute a SAT query.
-	 * By having a separate runnable, we allow the main GUI to remain responsive.
-	 */
+    /**
+     * This Runnable is used to execute a SAT query.
+     * By having a separate runnable, we allow the main GUI to remain responsive.
+     */
     private static final class Runner implements Runnable {
-    	
-    	/** The current directory */
-    	private final String cwd;
+        
+        /** The current directory (with a trailing FILE SEPARATOR) */
+        private final String cwd;
 
-    	/** The command that this runner will run (0..) (-1 means all of them) */
-    	private final int index;
-    	
-    	/** The JTextArea that will display the progress */
+        /** The command that this runner should run (0..) (-1 means all of them) */
+        private final int index;
+        
+        /** The JTextArea that will display the progress */
         private final JTextArea status;
         
         /**
          * Constructor for this runner.
-         * 
+         *
+         * @param cwd - the current directory (with a trailing FILE SERPATOR)
          * @param index - the command that this runner will run
          * @param text - the textual summary of the command that this runner will run
          * @param status - the JTextArea that will display the progress
          */
         public Runner(String cwd, int index, String text, JTextArea status) {
-        	this.cwd=cwd;
+            this.cwd=cwd;
             this.index=index;
             this.status=status;
         }
@@ -82,22 +80,22 @@ public final class SimpleGUI {
          */
         public void run() {
             String ps=System.getProperty("file.separator");
-            String[] args={cwd+ps+".alloy"};
+            String[] args={cwd+".alloy"};
             Log log=new Log(status);
             try {
               new Main(index,args,log);
               status.append("Visualizing...\n");
               status.setCaretPosition(status.getDocument().getLength());
-              String newcwd = new File(cwd+ps+".."+ps+"kodviz").getAbsolutePath();
+              String newcwd = new File(cwd+".."+ps+"kodviz").getAbsolutePath();
               System.setProperty("kodviz.dir",newcwd);
-          	  KodVizGUIFactory factory=new KodVizGUIFactory(false);
-          	  factory.create(new File(cwd+ps+".alloy.xml"));
+              KodVizGUIFactory factory=new KodVizGUIFactory(false);
+              factory.create(new File(cwd+".alloy.xml"));
             }
             catch(FileNotFoundException e) { addlog("One of the required source file cannot be found! "+e.toString()); }
             catch(UnsatisfiedLinkError e) { addlog("The required JNI library cannot be found! "+e.toString()); }
-            catch(ErrorInternal e) { addlog("An internal error has occurred! Please report this to the Alloy developers. "+e.toString()); }
-            catch(ErrorType e) { addlog("Type Error! "+e.toString()); }
-            catch(ErrorSyntax e) { addlog("Syntax Error! "+e.toString()); }
+            catch(ErrorInternal e) { addlog(e.toString()); }
+            catch(ErrorType e) { addlog(e.toString()); }
+            catch(ErrorSyntax e) { addlog(e.toString()); }
         }
     }
 
@@ -108,10 +106,9 @@ public final class SimpleGUI {
      *
      * @return true if the method succeeds; false if the method fails.
      */
-	private synchronized boolean writetemp() {
+    private synchronized boolean writetemp() {
         try {
-            String ps=System.getProperty("file.separator");
-            FileWriter fw=new FileWriter(cwd+ps+".alloy");
+            FileWriter fw=new FileWriter(cwd+".alloy");
             BufferedWriter bw=new BufferedWriter(fw);
             PrintWriter out=new PrintWriter(bw);
             out.println(text.getText());
@@ -121,15 +118,15 @@ public final class SimpleGUI {
             fw.close();
             return true;
         } catch(IOException e) {
-        	status.setText("Cannot write the temporary file \".alloy\"! "+e.toString());
-        	return false;
+            status.setText("Cannot write the temporary file \".alloy\"! "+e.toString());
+            return false;
         }
-	}
+    }
 
-	/** The current directory */
-	private final String cwd = new File(".").getAbsolutePath();
+    /** The current directory (plus a trailing FILE SEPARATOR) */
+    private final String cwd = new File(".").getAbsolutePath() + System.getProperty("file.separator");
 
-	/** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
+    /** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
     private boolean compiled=false;
     
     /** Synchronized helper method that sets or clears the "compiled" flag. */
@@ -139,7 +136,7 @@ public final class SimpleGUI {
     private synchronized boolean compiled() { return compiled; }
 
     /** The latest FileOpen directory. */
-    private String currentDirectory = new File("models").getAbsolutePath();
+    private String fileOpenDirectory = new File("models").getAbsolutePath();
     
     /** The JFrame for the main window. */
     private JFrame frame;
@@ -170,21 +167,21 @@ public final class SimpleGUI {
      * An ActionListener that is called when the user indicates a particular command to execute.
      */
     private class RunListener implements ActionListener {
-    	/** The current working directory */
-    	private final String cwd;
-    	/** The index number of the command that the user wishes to execute (0..) (-1 means ALL of them). */
-    	private final int index;
-    	/** The human-readable summary of the command that the user wishes to execute. */
-    	private final String label;
-    	/** The constructor. */
-    	public RunListener(String cwd,int i,String la) {this.cwd=cwd; index=i; label=la;}
-    	/** The event handler that gets called when the user clicked on one of the menu item. */
-		public void actionPerformed(ActionEvent e) {
-	    	status.setText("Running "+label);
-	        Runner r=new Runner(cwd, index, text.getText(), status);
-	        Thread t=new Thread(r);
-	        t.start();
-		}
+        /** The current working directory (plus a trailing FILE SEPARATOR) */
+        private final String cwd;
+        /** The index number of the command that the user wishes to execute (0..) (-1 means ALL of them). */
+        private final int index;
+        /** The human-readable summary of the command that the user wishes to execute. */
+        private final String label;
+        /** The constructor. */
+        public RunListener(String c,int i,String la) {cwd=c; index=i; label=la;}
+        /** The event handler that gets called when the user clicked on one of the menu item. */
+        public void actionPerformed(ActionEvent e) {
+            status.setText("Running "+label);
+            Runner r=new Runner(cwd, index, text.getText(), status);
+            Thread t=new Thread(r);
+            t.start();
+        }
     }
     
     /**
@@ -198,44 +195,43 @@ public final class SimpleGUI {
      * that are defined in the model.
      */
     private synchronized void my_run() {
-        String ps=System.getProperty("file.separator");
-    	if (compiled()) return;
-   		compiled(true);
-   		status.setText("");
-   		runmenu.removeAll();
-		JMenuItem y=new JMenuItem("Cannot run any commands! See the error box below for details!");
- 		runmenu.add(y);
-   		if (!writetemp()) return;
-   		Unit u;
-		try { u=AlloyParser.alloy_parseFile(cwd+ps+".alloy",""); }
-		catch(Exception e) { status.setText("Cannot parse the model! "+e.toString()); return; }
-   		runmenu.removeAll();
-   		if (u.runchecks.size()==0) {
-   			y=new JMenuItem("There are no commands in this model!");
-   	 		runmenu.add(y);
-   	 		return;
-   		}
-   		if (u.runchecks.size()>1) {
-   			y=new JMenuItem("All");
-   			y.addActionListener(new RunListener(cwd,-1,"All"));
-   			runmenu.add(y);
-   	 		runmenu.add(new JSeparator());
-   		}
-		for(int i=0; i<u.runchecks.size(); i++) {
-			String label=u.runchecks.get(i).toString();
-    		y=new JMenuItem(label);
-    		y.addActionListener(new RunListener(cwd,i,label));
-    		runmenu.add(y);
-		}
+        if (compiled()) return;
+        compiled(true);
+        status.setText("");
+        runmenu.removeAll();
+        JMenuItem y=new JMenuItem("Cannot run any commands! See the error box below for details!");
+        runmenu.add(y);
+        if (!writetemp()) return;
+        Unit u;
+        try { u=AlloyParser.alloy_parseFile(cwd+".alloy",""); }
+        catch(Exception e) { status.setText("Cannot parse the model! "+e.toString()); return; }
+        runmenu.removeAll();
+        if (u.runchecks.size()==0) {
+            y=new JMenuItem("There are no commands in this model!");
+            runmenu.add(y);
+            return;
+        }
+        if (u.runchecks.size()>1) {
+            y=new JMenuItem("All");
+            y.addActionListener(new RunListener(cwd,-1,"All"));
+            runmenu.add(y);
+            runmenu.add(new JSeparator());
+        }
+        for(int i=0; i<u.runchecks.size(); i++) {
+            String label=u.runchecks.get(i).toString();
+            y=new JMenuItem(label);
+            y.addActionListener(new RunListener(cwd,i,label));
+            runmenu.add(y);
+        }
     }
 
     /**
      * Synchronized helper method that clears the text editor.
      */
     private synchronized final void my_new() {
-    	text.setText("");
-    	status.setText("");
-    	compiled(false);
+        text.setText("");
+        status.setText("");
+        compiled(false);
     }
 
     /**
@@ -255,10 +251,9 @@ public final class SimpleGUI {
                 return ".als files";
             }
         };
-        JFileChooser open=new JFileChooser(currentDirectory);
+        JFileChooser open=new JFileChooser(fileOpenDirectory);
         open.setFileFilter(filter);
-        int ans=open.showOpenDialog(frame);
-        if (ans!=JFileChooser.APPROVE_OPTION) return;
+        if (open.showOpenDialog(frame)!=JFileChooser.APPROVE_OPTION) return;
         try {
             String f=open.getSelectedFile().getPath();
             FileReader fr=new FileReader(f);
@@ -272,10 +267,10 @@ public final class SimpleGUI {
             }
             br.close();
             fr.close();
-            currentDirectory=open.getSelectedFile().getParent();
+            fileOpenDirectory=open.getSelectedFile().getParent();
             compiled(false);
             text.setText(sb.toString());
-      	    text.setCaretPosition(0);
+            text.setCaretPosition(0);
             status.setText("File \""+f+"\" successfully loaded.");
         } catch(FileNotFoundException e) { status.setText("Cannot open the file! "+e.toString());
         } catch(IOException e) { status.setText("Cannot open the file! "+e.toString());
@@ -303,9 +298,9 @@ public final class SimpleGUI {
         text.setEditable(true);
         text.setFont(font);
         text.getDocument().addDocumentListener(new DocumentListener(){
-			public void insertUpdate(DocumentEvent e) {compiled(false);}
-			public void removeUpdate(DocumentEvent e) {compiled(false);}
-			public void changedUpdate(DocumentEvent e) {compiled(false);}
+            public void insertUpdate(DocumentEvent e) {compiled(false);}
+            public void removeUpdate(DocumentEvent e) {compiled(false);}
+            public void changedUpdate(DocumentEvent e) {compiled(false);}
         });
         JScrollPane textPane=new JScrollPane(text,
             ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
@@ -313,7 +308,7 @@ public final class SimpleGUI {
         textPane.setMinimumSize(new Dimension(50, 50));
 
         status=new JTextArea();
-        status.setBackground(Color.getHSBColor(0f,0f,0.9f));
+        status.setBackground(Color.getHSBColor(0f,0f,0.95f));
         status.setLineWrap(true);
         status.setEditable(false);
         status.setFont(font);
@@ -324,44 +319,43 @@ public final class SimpleGUI {
         
         JSplitPane split=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane);
         split.setDividerLocation(500);
-        split.setOneTouchExpandable(true);
+        split.setOneTouchExpandable(false);
         all.add(split);
 
         JMenu filemenu=new JMenu("File",true);
-		filemenu.setMnemonic(KeyEvent.VK_F);
-		
-		JMenuItem filenew=new JMenuItem("New", KeyEvent.VK_N);
-		filenew.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) { my_new(); }
-		});
-		filemenu.add(filenew);
+        filemenu.setMnemonic(KeyEvent.VK_F);
+        
+        JMenuItem filenew=new JMenuItem("New", KeyEvent.VK_N);
+        filenew.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { my_new(); }
+        });
+        filemenu.add(filenew);
 
-		JMenuItem fileopen=new JMenuItem("Open", KeyEvent.VK_O);
-		fileopen.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) { my_open(); }
-		});
-		filemenu.add(fileopen);
-		
-		JMenuItem fileexit=new JMenuItem("Exit", KeyEvent.VK_X);
-		fileexit.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) { System.exit(0); }
-		});
-		filemenu.add(fileexit);
+        JMenuItem fileopen=new JMenuItem("Open", KeyEvent.VK_O);
+        fileopen.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { my_open(); }
+        });
+        filemenu.add(fileopen);
+        
+        JMenuItem fileexit=new JMenuItem("Exit", KeyEvent.VK_X);
+        fileexit.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { System.exit(0); }
+        });
+        filemenu.add(fileexit);
 
-    	runmenu=new JMenu("Run",true);
-		runmenu.setMnemonic(KeyEvent.VK_R);
-		runmenu.addMenuListener(new MenuListener() {
-			public void menuSelected(MenuEvent e) { my_run(); }
-			public void menuDeselected(MenuEvent e) { }
-			public void menuCanceled(MenuEvent e) { }
-		});
+        runmenu=new JMenu("Run",true);
+        runmenu.setMnemonic(KeyEvent.VK_R);
+        runmenu.addMenuListener(new MenuListener() {
+            public void menuSelected(MenuEvent e) { my_run(); }
+            public void menuDeselected(MenuEvent e) { }
+            public void menuCanceled(MenuEvent e) { }
+        });
 
-		JMenuBar bar=new JMenuBar();
-		bar.add(filemenu);
-		bar.add(runmenu);
-		bar.setVisible(true);
-
-		frame.setJMenuBar(bar);
+        JMenuBar bar=new JMenuBar();
+        bar.add(filemenu);
+        bar.add(runmenu);
+        bar.setVisible(true);
+        frame.setJMenuBar(bar);
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setVisible(true);
