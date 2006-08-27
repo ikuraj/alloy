@@ -69,6 +69,8 @@ public final class VisitorEval implements VisitReturn {
 
 //################################################################################################
 
+private boolean demul=false;
+
 private final Formula cform(Object x) { if (x instanceof Formula) return ((Formula)x); throw new ErrorInternal(null,null,"This should have been a formula! Instead it is "+x); }
 private final IntExpression cint(Object x) { if (x instanceof IntExpression) return ((IntExpression)x); throw new ErrorInternal(null,null,"This should have been an integer expression! Instead it is "+x); }
 private final Expression cset(Object x) { if (x instanceof Expression) return ((Expression)x); throw new ErrorInternal(null,null,"This should have been a set or a relation! Instead it is "+x); }
@@ -140,10 +142,13 @@ private Formula isInNB(Expression r, ExprBinary op, Expression a, Expression b) 
 }
 
 private Formula isInBinary(Expression r, ExprBinary ab) {
-  Expression y0=cset(ab.accept(VisitorDemul.instance).accept(this));
-  if (!ab.op.isArrow() || ab.mult==0) return r.in(y0);
-  Expr a=ab.left;  Expression aa=cset(a.accept(VisitorDemul.instance).accept(this));
-  Expr b=ab.right; Expression bb=cset(b.accept(VisitorDemul.instance).accept(this));
+  boolean old=demul;
+  demul=true;
+  Expression y0=cset(ab.accept(this));
+  if (!ab.op.isArrow() || ab.mult==0) { demul=old; return r.in(y0); }
+  Expr a=ab.left;  Expression aa=cset(a.accept(this));
+  Expr b=ab.right; Expression bb=cset(b.accept(this));
+  demul=old;
   //if (a.type.arity()>1) throw a.internalError("Only unary and binary multiplicity are currently supported."/*zzz*/);
   //if (b.type.arity()>1) throw b.internalError("Only unary and binary multiplicity are currently supported."/*zzz*/);
   Formula pa=isInAM(r,ab,aa,bb);
@@ -173,13 +178,14 @@ public Object accept(ExprBinary x) {
       if (x.left.type.isInt) return cint(a).minus(cint(b)); return cset(a).difference(cset(b));
     case INTERSECT:
       return cset(a).intersection(cset(b));
-    case ARROW:
-      return cset(a).product(cset(b));
     case ANY_ARROW_SOME: case ANY_ARROW_ONE: case ANY_ARROW_LONE:
     case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE:
     case ONE_ARROW_ANY: case ONE_ARROW_SOME: case ONE_ARROW_ONE: case ONE_ARROW_LONE:
     case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE:
-      throw x.right.typeError("Multiplicity symbols are not allowed here");
+      if (!demul) throw x.right.typeError("Multiplicity symbols are not allowed here");
+      // intentional fall-through to the ARROW case
+    case ARROW:
+      return cset(a).product(cset(b));
     case DOMAIN:
       aa=cset(a);
       bb=cset(b);
@@ -248,7 +254,10 @@ private Formula quantN(ExprQuant x, VarDecl d, Expr dex) {
   Decls dd=null;
   //int ri=0; List<Expression> exprs=new ArrayList<Expression>();
   List<Variable> vars=new ArrayList<Variable>();
-  Expression dv=cset(dex.accept(VisitorDemul.instance).accept(this));
+  boolean old=demul;
+  demul=true;
+  Expression dv=cset(dex.accept(this));
+  demul=old;
   for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
   Formula ans1=cform(x.sub.accept(this));
   for(String n:d.names) { env.remove(n); }
@@ -348,7 +357,7 @@ public Object accept(ExprUnary x) {
   Object y=x.sub.accept(this);
   switch(x.op) {
     case SOMEMULT: case LONEMULT: case ONEMULT: case SETMULT:
-      throw x.sub.typeError("Multiplicity symbols are not allowed here");
+    	if (demul) return y; else throw x.sub.typeError("Multiplicity symbols are not allowed here");
     case NOT: return cform(y).not();
     case SOME: return cset(y).some();
     case LONE: return cset(y).lone();
