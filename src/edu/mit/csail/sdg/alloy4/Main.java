@@ -250,27 +250,20 @@ And we return a sorted list of all sigs (where if A extends or is subset of B, t
 
   public void typecheck(ArrayList<Unit> units, List<ParaSig> sigs) {
     VisitorTypechecker tc=new VisitorTypechecker(log);
-    for(int i=0; i<sigs.size(); i++) {
-      ParaSig s=sigs.get(i);
-      Unit u=units.get(0).lookupPath(s.path); // s.parent();
-      sigs.set(i, tc.accept(s,u));
+    for(ParaSig s:sigs) {
+      Unit u=units.get(0).lookupPath(s.path);
+      tc.accept(s,u);
     }
     for(Unit u:units) {
       for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet()) {
-        List<ParaFun> funs=funi.getValue();
-        for(int i=0; i<funs.size(); i++) {
+        for(ParaFun f:funi.getValue()) {
           tc=new VisitorTypechecker(log);
-          ParaFun f=funs.get(i);
-          funs.set(i, tc.accept(f,u));
+          tc.accept(f,u);
         }
       }
     }
     tc=new VisitorTypechecker(log);
-    for(int ui=0; ui<units.size(); ui++) {
-      Unit u=units.get(ui);
-      u=tc.accept(u);
-      units.set(ui, u);
-    }
+    for(Unit u:units) tc.accept(u);
     finalDesugar(units,sigs);
   }
 
@@ -282,77 +275,7 @@ After the earlier TYPECHECK PHASE, we know
 Now we perform the final desugarings...
 ************************************************************************************************************/
 
-  private Expr addOne(Expr x) {
-    if (x instanceof ExprUnary) {
-       ExprUnary y=(ExprUnary)x;
-       if (y.op==ExprUnary.Op.SETMULT || y.op==ExprUnary.Op.ONEMULT || y.op==ExprUnary.Op.LONEMULT || y.op==ExprUnary.Op.SOMEMULT) return x;
-    }
-    if (x.type.isInt || x.type.isBool || x.type.arity()!=1) return x;
-    Expr xx=ExprUnary.Op.ONEMULT.make(x.pos,x,x.type); return xx;
-  }
-
-  private void finalDesugar(ArrayList<Unit> units, List<ParaSig> sigs)  {
-    // 1. Turn "UnitSigField" into "this . UnitSigFieldFull".
-    //    The only places this could have been is in field declarations and signature appended facts.
-    final VisitDesugar desugar1=new VisitDesugar(units.get(0)) {
-      @Override public Expr accept(ExprName x) {
-        Object re = x.object;
-        if (re instanceof ParaSig.Field) {
-           ParaSig.Field f = (ParaSig.Field)re;
-           ParaSig rts=f.parent();
-           ExprName l=new ExprName(x.pos, "this", null, rts.type);
-           ExprName r=new ExprName(x.pos, f.full.fullname, f.full, f.full.fulltype);
-           ExprJoin y=new ExprJoin(x.pos,l,r,x.type);
-           return y;
-        }
-        return x;
-      }
-    };
-    for(ParaSig s:sigs) {
-      List<VarDecl> newdecl=new ArrayList<VarDecl>();
-      for(VarDecl d:s.decls) newdecl.add(new VarDecl(d, d.value.accept(desugar1)));
-      s.decls=newdecl;
-      if (s.appendedFacts!=null) s.appendedFacts=s.appendedFacts.accept(desugar1);
-    }
-    // 2. Turn "a: b" (where b is unary and has no multiplicity marking) into "a: one b"
-    // After this, we can uniformly treat "a:b" as "a:set b".
-    final VisitDesugar desugar2=new VisitDesugar() {
-      @Override public Expr accept(ExprQuant x) {
-        List<VarDecl> list=new ArrayList<VarDecl>();
-        for(VarDecl d:x.list) {
-           list.add(new VarDecl(d, addOne(d.value.accept(this))));
-        }
-        Expr sub=x.sub.accept(this);
-        Expr ans=x.op.make(x.pos, list, sub, x.type); return ans;
-      }
-    };
-    for(Unit u:units) {
-      for(Map.Entry<String,List<ParaFun>> e:u.funs.entrySet()) for(int xi=0; xi<e.getValue().size(); xi++) {
-        ParaFun x=e.getValue().get(xi);
-        List<VarDecl> newdecls=new ArrayList<VarDecl>();
-        for(VarDecl d:x.decls) {
-          newdecls.add(new VarDecl(d, addOne(d.value.accept(desugar2))));
-        }
-        Expr type = (x.type==null) ? null : addOne(x.type.accept(desugar2));
-        Expr value = x.value.accept(desugar2);
-        x.decls=newdecls; x.type=type; x.value=value;
-      }
-      for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
-        ParaSig x=e.getValue();
-        List<VarDecl> newdecls=new ArrayList<VarDecl>();
-        for(VarDecl d:x.decls) newdecls.add(new VarDecl(d, addOne(d.value.accept(desugar2))));
-        x.decls=newdecls;
-        if (x.appendedFacts!=null) x.appendedFacts=x.appendedFacts.accept(desugar2);
-      }
-      for(Map.Entry<String,ParaAssert> e:u.asserts.entrySet()) {
-        ParaAssert x=e.getValue();
-        x.value=x.value.accept(desugar2);
-      }
-      for(Map.Entry<String,ParaFact> e:u.facts.entrySet()) {
-        ParaFact x=e.getValue();
-        x.value=x.value.accept(desugar2);
-      }
-    }
+  private void finalDesugar(ArrayList<Unit> units, List<ParaSig> sigs) {
     // 3. Turn SIG APPENDED FACTS into standalone facts (and set Sig.appendedfacts:=null)
     //    Turn FIELD DECLS CONSTRAINTS into standalone facts (and remove every entry in Sig.decls)
     VisitQuery hasThis=new VisitQuery() {

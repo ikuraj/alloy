@@ -77,6 +77,15 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         this.log=log;
     }
 
+    private Expr addOne(Expr x) {
+    	if (x instanceof ExprUnary) {
+    		ExprUnary y=(ExprUnary)x;
+    		if (y.op==ExprUnary.Op.SETMULT || y.op==ExprUnary.Op.ONEMULT || y.op==ExprUnary.Op.LONEMULT || y.op==ExprUnary.Op.SOMEMULT) return x;
+    	}
+    	if (x.type.isInt || x.type.isBool || x.type.arity()!=1) return x;
+    	return ExprUnary.Op.ONEMULT.make(x.pos, x, x.type);
+    }
+
     /**
      * Helper method that throws a type error if x cannot possibly have integer type.
      *
@@ -441,44 +450,6 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         return new ExprLet(x.pos, x.left, x.right, sub, p);
     }
     
-//  ################################################################################################
-    
-    public Object root=null;
-    public Unit rootunit=null;
-    
-    private Set<Object> populate(String x1) {
-        Set<Object> y;
-        String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
-        Object y3=env.get(x2); if (y3!=null) { y=new LinkedHashSet<Object>(); y.add(y3); return y; }
-        if (root instanceof ParaSig.Field) {
-            ParaSig.Field rt=(ParaSig.Field)root;
-            ParaSig rts=rt.parent();
-            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts.type); return y; }
-            y=rootunit.lookup_sigORparam(x2);
-            ParaSig.Field y2=rootunit.lookup_Field(rts, x2, rt.name);
-            if (y2!=null) { y.add(y2); if (y2.halftype==null) throw new ErrorInternal(y2.pos, y2, "This field is being referenced before it is typechecked!"); }
-        }
-        else if (root instanceof ParaFun) {
-            y=rootunit.lookup_sigORparam(x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
-        }
-        else if (root instanceof ParaSig) {
-            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add( ((ParaSig)root).type ); return y; }
-            y=rootunit.lookup_SigParamFunPred(x2);
-            ParaSig.Field y22=rootunit.lookup_Field((ParaSig)root,x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field)
-            {if (y2==y22) y.add(y2); else if (y22==null) y.add(((ParaSig.Field)y2).full); }
-        }
-        else if (root==null) {
-            y=rootunit.lookup_SigParamFunPred(x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
-        }
-        else {
-            y=new LinkedHashSet<Object>();
-        }
-        return y;
-    }
-    
     //=============================================================//
     /** Method that typechecks an ExprConstant object. First pass. */
     //=============================================================//
@@ -500,69 +471,6 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         return x;
     }
     
-    //=========================================================//
-    /** Method that typechecks an ExprName object. First pass. */
-    //=========================================================//
-    
-    @Override public Expr accept(ExprName x) {
-        List<Object> objects=new ArrayList<Object>();
-        List<Type> types=new ArrayList<Type>();
-        Set<Object> y=populate(x.name); if (y.size()==0) ExprName.hint(x.pos, x.name);
-        Type t=null,tt;
-        for(Object z:y) {
-            Object obj=z;
-            if (z instanceof Type) tt=(Type)z;
-            else if (z instanceof ParaSig) tt=((ParaSig)z).type;
-            else if (z instanceof ParaSig.Field) {if (x.name.charAt(0)!='@') tt=((ParaSig.Field)z).halftype; else {obj=((ParaSig.Field)z).full; tt=((ParaSig.Field)z).full.fulltype;}}
-            else if (z instanceof ParaSig.Field.Full) tt=((ParaSig.Field.Full)z).fulltype;
-            else if (z instanceof ParaFun && ((ParaFun)z).argCount==0 && ((ParaFun)z).type!=null) tt=((ParaFun)z).type.type;
-            else if (z instanceof ParaFun && ((ParaFun)z).argCount==0 && ((ParaFun)z).type==null) tt=Type.FORMULA;
-            else continue;
-            if (t==null) t=tt; else t=t.merge(tt);
-            objects.add(obj);
-            types.add(tt);
-        }
-        if (t==null || isbad(t)) throw x.typeError("The name \""+x.name+"\" failed to be typechecked here!");
-        ExprName ans=new ExprName(x.pos, x.name, null, t);
-        objChoices.put(ans, objects);
-        typeChoices.put(ans, types);
-        return ans;
-    }
-    
-    //==========================================================//
-    /** Method that typechecks an ExprName object. Second pass. */
-    //==========================================================//
-    
-    public Expr accept(ExprName x, Type t) {
-        List<Object> objects=objChoices.get(x);
-        objChoices.remove(x);
-        List<Type> types=typeChoices.get(x);
-        typeChoices.remove(x);
-        Object match=null;
-        for(int i=0; i<objects.size(); i++) {
-            Object z=objects.get(i);
-            Type tt=types.get(i);
-            if (t==tt
-                    ||(!t.isInt && !t.isBool && t.hasNoTuple())
-                    ||(t.isInt && tt.isInt)
-                    ||(t.isBool && tt.isBool)
-                    ||t.intersect(tt).hasTuple()) {
-                if (match!=null) throw x.typeError("The name \""+x.name+"\" is ambiguous here due to multiple match: "+match+" and "+z);
-                match=z;
-            }
-        }
-        if (match==null) throw x.typeError("The name \""+x.name+"\" failed to be typechecked here due to no match!");
-        if (match instanceof ParaSig)
-            return new ExprName(x.pos, ((ParaSig)match).fullname, match, t);
-        if (match instanceof ParaSig.Field)
-            return new ExprName(x.pos, ((ParaSig.Field)match).fullname, match, t);
-        if (match instanceof ParaSig.Field.Full)
-            return new ExprName(x.pos, ((ParaSig.Field.Full)match).fullname, match, t);
-        if (match instanceof ParaFun)
-            return new ExprName(x.pos, x.name, match, t);
-        return new ExprName(x.pos, x.name, null, t);
-    }
-    
     //==========================================================//
     /** Method that typechecks an ExprQuant object. First pass. */
     //==========================================================//
@@ -572,7 +480,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         Type comp=null; // Stores the Union Type for a Set Comprehension expression
         for(int i=0;i<x.list.size();i++) {
             VarDecl d=x.list.get(i);
-            VarDecl dd=new VarDecl(d, resolve(d.value));
+            VarDecl dd=new VarDecl(d, addOne(resolve(d.value)));
             Expr v=dd.value;
             if (v.type.size()==0) cset(v);
             if (v.type.hasNoTuple()) throw v.typeError("This expression must not be an empty set!");
@@ -717,7 +625,113 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         Expr sub=x.sub.accept(this, subtype);
         return x.op.make(x.pos, sub, p);
     }
+        
+//  ################################################################################################
     
+    public Object root=null;
+    public Unit rootunit=null;
+    
+    private Set<Object> populate(String x1) {
+        Set<Object> y;
+        String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
+        Object y3=env.get(x2); if (y3!=null) { y=new LinkedHashSet<Object>(); y.add(y3); return y; }
+        if (root instanceof ParaSig.Field) {
+            ParaSig.Field rt=(ParaSig.Field)root;
+            ParaSig rts=rt.parent();
+            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts.type); return y; }
+            y=rootunit.lookup_sigORparam(x2);
+            ParaSig.Field y2=rootunit.lookup_Field(rts, x2, rt.name);
+            if (y2!=null) { y.add(y2); if (y2.halftype==null) throw new ErrorInternal(y2.pos, y2, "This field is being referenced before it is typechecked!"); }
+        }
+        else if (root instanceof ParaSig) {
+            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add( ((ParaSig)root).type ); return y; }
+            y=rootunit.lookup_SigParamFunPred(x2);
+            ParaSig.Field y22=rootunit.lookup_Field((ParaSig)root,x2);
+            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field)
+            {if (y2==y22) y.add(y2); else if (y22==null) y.add(((ParaSig.Field)y2).full); }
+        }
+        else if (root instanceof ParaFun) {
+            y=rootunit.lookup_sigORparam(x2);
+            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
+        }
+        else if (root==null) {
+            y=rootunit.lookup_SigParamFunPred(x2);
+            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
+        }
+        else {
+            y=new LinkedHashSet<Object>();
+        }
+        return y;
+    }
+    
+    //=========================================================//
+    /** Method that typechecks an ExprName object. First pass. */
+    //=========================================================//
+    
+    @Override public Expr accept(ExprName x) {
+        List<Object> objects=new ArrayList<Object>();
+        List<Type> types=new ArrayList<Type>();
+        Set<Object> y=populate(x.name); if (y.size()==0) ExprName.hint(x.pos, x.name);
+        Type t=null,tt;
+        for(Object z:y) {
+            Object obj=z;
+            if (z instanceof Type) tt=(Type)z;
+            else if (z instanceof ParaSig) tt=((ParaSig)z).type;
+            else if (z instanceof ParaSig.Field) {if (x.name.charAt(0)!='@') tt=((ParaSig.Field)z).halftype; else {obj=((ParaSig.Field)z).full; tt=((ParaSig.Field)z).full.fulltype;}}
+            else if (z instanceof ParaSig.Field.Full) tt=((ParaSig.Field.Full)z).fulltype;
+            else if (z instanceof ParaFun && ((ParaFun)z).argCount==0 && ((ParaFun)z).type!=null) tt=((ParaFun)z).type.type;
+            else if (z instanceof ParaFun && ((ParaFun)z).argCount==0 && ((ParaFun)z).type==null) tt=Type.FORMULA;
+            else continue;
+            if (t==null) t=tt; else t=t.merge(tt);
+            objects.add(obj);
+            types.add(tt);
+        }
+        if (t==null || isbad(t)) throw x.typeError("The name \""+x.name+"\" failed to be typechecked here!");
+        ExprName ans=new ExprName(x.pos, x.name, null, t);
+        objChoices.put(ans, objects);
+        typeChoices.put(ans, types);
+        return ans;
+    }
+    
+    //==========================================================//
+    /** Method that typechecks an ExprName object. Second pass. */
+    //==========================================================//
+    
+    public Expr accept(ExprName x, Type t) {
+        List<Object> objects=objChoices.get(x);
+        objChoices.remove(x);
+        List<Type> types=typeChoices.get(x);
+        typeChoices.remove(x);
+        Object match=null;
+        for(int i=0; i<objects.size(); i++) {
+            Object z=objects.get(i);
+            Type tt=types.get(i);
+            if (t==tt
+                    ||(!t.isInt && !t.isBool && t.hasNoTuple())
+                    ||(t.isInt && tt.isInt)
+                    ||(t.isBool && tt.isBool)
+                    ||t.intersect(tt).hasTuple()) {
+                if (match!=null) throw x.typeError("The name \""+x.name+"\" is ambiguous here due to multiple match: "+match+" and "+z);
+                match=z;
+            }
+        }
+        if (match==null) throw x.typeError("The name \""+x.name+"\" failed to be typechecked here due to no match!");
+        if (match instanceof ParaSig)
+            return new ExprName(x.pos, ((ParaSig)match).fullname, match, t);
+        if (match instanceof ParaSig.Field) {
+            ParaSig.Field f = (ParaSig.Field)match;
+            ParaSig rts=f.parent();
+            ExprName l=new ExprName(x.pos, "this", null, rts.type);
+            ExprName r=new ExprName(x.pos, f.full.fullname, f.full, f.full.fulltype);
+            return new ExprJoin(x.pos,l,r,x.type);
+        }
+        if (match instanceof ParaSig.Field.Full)
+            return new ExprName(x.pos, ((ParaSig.Field.Full)match).fullname, match, t);
+        if (match instanceof ParaFun)
+            return new ExprName(x.pos, x.name, match, t);
+        return new ExprName(x.pos, x.name, null, t);
+    }
+        
 //  ################################################################################################
     
     private boolean applicable(ParaFun f,List<Expr> args) {
@@ -873,8 +887,11 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
             ParaSig s=(ParaSig)match;
             ans=new ExprName(x.pos, s.fullname, match, s.type);
         } else if (match instanceof ParaSig.Field) {
-            ParaSig.Field s=(ParaSig.Field)match;
-            ans=new ExprName(x.pos, s.fullname, match, s.halftype);
+            ParaSig.Field f=(ParaSig.Field)match;
+            ParaSig rts=f.parent();
+            ExprName l=new ExprName(x.pos, "this", null, rts.type);
+            ExprName rr=new ExprName(x.pos, f.full.fullname, f.full, f.full.fulltype);
+            ans=new ExprJoin(x.pos,l,rr,x.type);
         } else if (match instanceof ParaSig.Field.Full) {
             ParaSig.Field.Full s=(ParaSig.Field.Full)match;
             ans=new ExprName(x.pos, s.fullname, match, s.fulltype);
@@ -892,7 +909,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
     
 //  ################################################################################################
     
-    public ParaSig accept(ParaSig x, Unit u) {
+    public void accept(ParaSig x, Unit u) {
         // When typechecking the fields:
         // * each field is allowed to refer to earlier fields in the same SIG,
         //   as well as fields declared in any ancestor sig (as long as those ancestor sigs are visible from here)
@@ -908,24 +925,21 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
             for(int ni=0; ni<d.names.size(); ni++) {
                 ParaSig.Field f=x.fields.get(fi);
                 if (ni==0) {
-                    this.root=f; this.rootunit=u; value=this.resolve(value);
+                    this.root=f; this.rootunit=u; value=addOne(this.resolve(value));
                     if (value.type.arity()<1) throw x.typeError("Field declaration must be a set or relation, but its type is "+value.type);
                 }
                 f.halftype = value.type;
                 f.full.fulltype = x.type.product_of_anyEmptyness(value.type);
-                //f=new Field(f.pos, f.sig, f.name, value.type, x.type.product_of_anyEmptyness(value.type));
-                //x.fields.set(fi,f);
                 fi++;
                 log.log("Unit ["+u.aliases.get(0)+"], Sig "+x.name+", Field "+f.name+": "+f.full.fulltype);
             }
             newdecl.add(new VarDecl(d, value));
         }
-        return x; // zzz SHOULD ACTUALLY MAKE A NEW SIG
     }
     
 //  ################################################################################################
     
-    public ParaFun accept(ParaFun fun, Unit u) {
+    public void accept(ParaFun fun, Unit u) {
         // Now, typecheck all function/predicate PARAMETERS and RETURNTYPE
         // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
         // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
@@ -937,7 +951,7 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
             Expr value=d.value;
             for(int ni=0; ni<d.names.size(); ni++) {
                 String n=d.names.get(ni);
-                if (ni==0) value=this.resolve(value);
+                if (ni==0) value=addOne(this.resolve(value));
                 if (value.type.arity()<1) throw value.typeError("Function parameter must be a set or relation, but its type is "+value.type);
                 this.env.put(n, value.type);
                 log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", Param "+n+": "+value.type);
@@ -946,19 +960,17 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
         }
         Expr type=fun.type;
         if (type!=null) {
-            type=this.resolve(type);
+            type=addOne(this.resolve(type));
             if (type.type.arity()<1) throw type.typeError("Function return type must be a set or relation, but its type is "+type.type);
             log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", RETURN: "+type.type);
         }
         this.env.clear();
         fun.decls=newdecls; fun.type=type;
-        //fun=new ParaFun(fun.pos, fun.path, fun.aliasnum, fun.name, null, newdecls, type, fun.value);
-        return fun; // zzz SHOULD ACTUALLY MAKE A NEW PARAFUN
     }
     
 //  ################################################################################################
     
-    public Unit accept(Unit u) {
+    public void accept(Unit u) {
         // Now, typecheck (1) function/predicate BODIES. (2) Signature facts. (3) Standalone facts (4) Assertions.
         // These can refer to any SIG/FIELD/FUN/PRED visible from here.
         String uu=u.aliases.iterator().next();
@@ -997,7 +1009,6 @@ public final class VisitorTypechecker extends VisitDesugar implements VisitDesug
             log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type);
             if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
         }
-        return u;
     }
     
 //  ################################################################################################
