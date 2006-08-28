@@ -94,10 +94,12 @@ public final class SimpleGUI {
             	  System.setProperty("kodviz.dir",newcwd);
             	  KodVizGUIFactory factory=new KodVizGUIFactory(false);
             	  factory.create(new File(cwd+".alloy.xml"));
+            	  log("Visualizer loaded.");
               }
             }
             catch(UnsatisfiedLinkError e) { log("Cannot run the command! The required JNI library cannot be found! "+e.toString()); }
             catch(ErrorWithPos e) { log("Cannot run the command! "+e.toString()); }
+            thread_reportTermination();
         }
     }
 
@@ -192,6 +194,10 @@ public final class SimpleGUI {
     /** Synchronized helper method that returns true if and only if the "modified" flag is true */
     private synchronized boolean modified() { return modified; }
 
+    private Thread current_thread=null;
+    private synchronized void thread_reportTermination() { current_thread=null; }
+    private synchronized boolean thread_stillRunning() { return current_thread!=null; }
+
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */
     private String latestName = "";
 
@@ -236,10 +242,15 @@ public final class SimpleGUI {
         public RunListener(String c,int i) {cwd=c; index=i;}
         /** The event handler that gets called when the user clicked on one of the menu item. */
         public void actionPerformed(ActionEvent e) {
+        	if (thread_stillRunning()) {
+        		log("...The previous analysis is still running...");
+        		return;
+        	}
             log("\nCompiling...");
             Runner r=new Runner(new StringReader(text.getText()), cwd, index);
             Thread t=new Thread(r);
             t.start();
+            current_thread=t;
         }
     }
     
@@ -254,6 +265,12 @@ public final class SimpleGUI {
      * that are defined in the model.
      */
     private synchronized void my_run() {
+    	if (thread_stillRunning()) {
+    		compiled(false);
+            runmenu.removeAll();
+            runmenu.add(new JMenuItem("The current analysis is still running..."));
+            return;
+    	}
         if (compiled()) return;
         compiled(true);
         runmenu.removeAll();
@@ -500,9 +517,22 @@ public final class SimpleGUI {
             public void menuCanceled(MenuEvent e) { }
         });
 
+        /*JMenu stopmenu=new JMenu("Stop",true);
+        stopmenu.setMnemonic(KeyEvent.VK_S);
+        JMenuItem stopitem=new JMenuItem("Stop the current command", KeyEvent.VK_S);
+        stopitem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				current_thread.interrupt();
+				current_thread.stop();
+				current_thread=null;
+			}
+        });
+        stopmenu.add(stopitem);*/
+        
         JMenuBar bar=new JMenuBar();
         bar.add(filemenu);
         bar.add(runmenu);
+        //bar.add(stopmenu);
         bar.setVisible(true);
         frame.setJMenuBar(bar);
         frame.pack();
