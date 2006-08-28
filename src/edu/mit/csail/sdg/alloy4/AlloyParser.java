@@ -2072,10 +2072,10 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
   public String alloyfile="";
 
   public Pos alloypos(Symbol x) {
-	  if (x==null) return null;
-	  if (x.value instanceof Pos) return (Pos)(x.value);
-	  if (x.value instanceof Expr) return ((Expr)(x.value)).pos;
-	  return null;
+    if (x==null) return null;
+    if (x.value instanceof Pos) return (Pos)(x.value);
+    if (x.value instanceof Expr) return ((Expr)(x.value)).pos;
+    return null;
   }
 
   public void syntax_error(Symbol x) {
@@ -2169,9 +2169,9 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     String ans="";
     for(String e:list) { if (ans.length()!=0) ans+=" "; ans+=e; }
     if (ans.length()!=0)
-       throw new ErrorSyntax(p, "Syntax error. There are "+list.size()+" (potentially) legal tokens that can appear here: "+ans);
+       throw new ErrorSyntax(p, "There are "+list.size()+" (potentially) legal tokens that can appear here: "+ans);
     else
-       throw new ErrorSyntax(p, "Syntax error.");
+       throw new ErrorSyntax(p, "");
   }
 
   public static Unit alloy_parseFile(String name,String prefix) {

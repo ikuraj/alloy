@@ -976,7 +976,8 @@ yyline=yycolumn=0;
           if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
             zzAtEOF = true;
             zzDoEOF();
-              { return new java_cup.runtime.Symbol(AlloySym.EOF); }
+              {   return new Symbol(AlloySym.EOF, yycolumn+1, yyline+1, alloy_here());
+ }
           } 
           else {
             zzScanError(ZZ_NO_MATCH);

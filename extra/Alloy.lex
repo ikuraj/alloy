@@ -30,6 +30,9 @@ import java_cup.runtime.*;
 %class AlloyLexer // The ordering of these directives is important
 %cupsym AlloySym
 %cup
+%eofval{
+  return new Symbol(AlloySym.EOF, yycolumn+1, yyline+1, alloy_here());
+%eofval}
 %public
 %final
 %unicode
