@@ -667,7 +667,7 @@ public final class VisitEval implements VisitReturn {
 	/**                                                                         */
 	/*==========================================================================*/
 	
-	private Expression kuniv=Relation.UNIV;//INTS;
+	private Expression kuniv=Relation.INTS;
 	
 	// zzz: Should make sure we don't load Int unless we need to
 
@@ -677,7 +677,7 @@ public final class VisitEval implements VisitReturn {
 		for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
 			Relation r=Relation.unary(s.fullname);
 			rel(s,r);
-			//kuniv=kuniv.union(r);
+			kuniv=kuniv.union(r);
 		}
 		// Generate the relations for the FIELDS
 		for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -1061,15 +1061,18 @@ public final class VisitEval implements VisitReturn {
 				out.printf("<sig name=\"univ\">%n");
 				for(Tuple t:eval.evaluate(kuniv)) {
 					String atom=(String)(t.atom(0));
+					if (atom.startsWith("Int_")) continue;
 					out.printf("  <atom name=\"%s\"/>%n", atom);
 				}
 				out.printf("</sig>%n");
+				/*
 				out.printf("<sig name=\"Int\" extends=\"univ\">%n");
 				for(Tuple t:eval.evaluate(Relation.INTS)) {
 					String atom=(String)(t.atom(0));
 					out.printf("  <atom name=\"%s\"/>%n", atom);
 				}
 				out.printf("</sig>%n");
+				*/
 			}
 			for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
 				String lastatom="";
