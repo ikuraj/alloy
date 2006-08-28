@@ -21,6 +21,13 @@ parser code {:
   public Unit alloyunit=null;
   public String alloyfile="";
 
+  public Pos alloypos(Symbol x) {
+	  if (x==null) return null;
+	  if (x.value instanceof Pos) return (Pos)(x.value);
+	  if (x.value instanceof Expr) return ((Expr)(x.value)).pos;
+	  return null;
+  }
+
   public void syntax_error(Symbol x) {
     Map<Integer,String> ch=new LinkedHashMap<Integer,String>();
     ch.put(AlloySym.ABSTRACT         ,"abstract");
@@ -104,8 +111,9 @@ parser code {:
     ch.put(AlloySym.TILDE            ,"\'~\'");
     ch.put(AlloySym.UNIV             ,"univ");
     TreeSet<String> list=new TreeSet<String>();
-    Pos p=new Pos(alloyfile,x.left,x.right);
-    if (x.value instanceof Pos) p=(Pos)(x.value);
+    Pos p=alloypos(x);
+    //if (p==null) p=alloypos(((AlloyFilter)getScanner()).latest_token());
+    //if (p==null) p=new Pos(alloyfile,x.left,x.right);
     for(Map.Entry<Integer,String> e:ch.entrySet()) {
         int act=get_action(((Symbol)stack.peek()).parse_state, (int)(e.getKey()) );
         if (act!=0) list.add(e.getValue());

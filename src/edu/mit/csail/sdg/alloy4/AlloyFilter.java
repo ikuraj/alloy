@@ -45,6 +45,7 @@ public final class AlloyFilter implements Scanner {
 
   private final Symbol change(Symbol a,int b) { a.sym=b; return a; }
   private Symbol last=null;
+  //public final Symbol latest_token() { return last; }
   public final Symbol next_token() throws IOException {
     Symbol a=myread(),b;
     if (a.sym==AlloySym.ID)
