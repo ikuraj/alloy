@@ -23,7 +23,7 @@ public final class Main {
 		ArrayList<Unit> units=readall(i);
 		fillParams(units,log);
 		ArrayList<ParaSig> sigs=fillSig(units);
-		new VisitTypechecker(log).check(units,sigs);
+		new VisitTypechecker(new Log(null)).check(units,sigs);
 		if (code>=(-1)) { VisitEval c=new VisitEval(code,log,units); return c.codegen(sigs); }
 		return new ArrayList<Boolean>();
 	}

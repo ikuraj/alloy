@@ -6,6 +6,7 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java_cup.runtime.*;
+import java.util.Stack;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
@@ -2163,15 +2164,31 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     TreeSet<String> list=new TreeSet<String>();
     Pos p=alloypos(x);
     for(Map.Entry<Integer,String> e:ch.entrySet()) {
-        int act=get_action(((Symbol)stack.peek()).parse_state, (int)(e.getKey()) );
-        if (act!=0) list.add(e.getValue());
+        int key=e.getKey(), act=get_action(((Symbol)stack.peek()).parse_state, key);
+        if (act==0) continue;
+        if (act>0 || alloy_confirm(key)) list.add(e.getValue());
     }
     String ans="";
     for(String e:list) { if (ans.length()!=0) ans+=" "; ans+=e; }
     if (ans.length()!=0)
-       throw new ErrorSyntax(p, "There are "+list.size()+" (potentially) legal tokens that can appear here: "+ans);
+       throw new ErrorSyntax(p, "There are "+list.size()+" possible tokens that can appear here: "+ans);
     else
        throw new ErrorSyntax(p, "");
+  }
+  
+  private boolean alloy_confirm(int key) {
+	  int state = ((Symbol)stack.peek()).parse_state;
+	  Stack<Object> newstack=new Stack<Object>(); for(Object x:stack) newstack.push(x);
+	  while(true) {
+		  int act = get_action(state, key);
+		  if (act>0) return true;
+		  if (act==0) return false;
+		  int lhs_sym_num = production_tab[(-act)-1][0];
+		  int handle_size = production_tab[(-act)-1][1];
+		  for (int i = 0; i < handle_size; i++) { if (newstack.empty()) return false; newstack.pop(); }
+		  state = get_reduce(((Symbol)newstack.peek()).parse_state, lhs_sym_num);
+		  newstack.push(null);
+	  }
   }
 
   public static Unit alloy_parseFile(String name,String prefix) {

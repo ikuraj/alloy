@@ -74,7 +74,7 @@ public final class VisitTypechecker {
      * @param log - the logger that will receive verbose debugging output during typechecking
      */
     public VisitTypechecker(Log log) {
-        this.log=new Log(null);//zzz log;
+        this.log=log;
     }
 
     private Expr addOne(Expr x) {
