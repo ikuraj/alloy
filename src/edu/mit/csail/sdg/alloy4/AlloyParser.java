@@ -2192,9 +2192,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       AlloyParser p=new AlloyParser(s);
       p.alloyunit=u; p.alloyfile=name;
       try {p.parse(); s.close();}
-        catch(ErrorInternal e) {throw e;}
-        catch(ErrorSyntax e) {throw e;}
-        catch(ErrorType e) {throw e;}
+        catch(ErrorWithPos e) {throw e;}
         catch(Exception e) {u=null;}
       break;
     }
@@ -2216,9 +2214,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       AlloyParser p=new AlloyParser(s);
       p.alloyunit=u; p.alloyfile="";
       try {p.parse(); s.close();}
-        catch(ErrorInternal e) {throw e;}
-        catch(ErrorSyntax e) {throw e;}
-        catch(ErrorType e) {throw e;}
+        catch(ErrorWithPos e) {throw e;}
         catch(Exception e) {u=null;}
       break;
     }
