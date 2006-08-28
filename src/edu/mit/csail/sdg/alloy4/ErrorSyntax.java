@@ -11,23 +11,14 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 @SuppressWarnings("serial")
-public final class ErrorSyntax extends RuntimeException {
-
-    /** This stores the filename/line/row information (null if unknown) */
-    public final Pos pos;
-
-    /** The actual error message. */
-    public final String msg;
+public final class ErrorSyntax extends ErrorWithPos {
 
     /**
      * Constructs a new exception object.
      * @param pos - the filename/line/row information (null if unknown)
      * @param msg - the actual error message.
      */
-    public ErrorSyntax(Pos pos, String msg) {
-        this.pos=pos;
-        this.msg=(msg==null?"":msg);
-    }
+    public ErrorSyntax(Pos pos, String msg) { super(pos,null,msg); }
 
     /** Returns a human-readable description of the error */
     @Override public String toString() {

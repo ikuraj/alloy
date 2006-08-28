@@ -43,6 +43,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.text.BadLocationException;
 
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 
@@ -96,9 +97,7 @@ public final class SimpleGUI {
               }
             }
             catch(UnsatisfiedLinkError e) { log("Cannot run the command! The required JNI library cannot be found! "+e.toString()); }
-            catch(ErrorInternal e) { log("Cannot run the command! "+e.toString()); }
-            catch(ErrorType e) { log("Cannot run the command! "+e.toString()); }
-            catch(ErrorSyntax e) { log("Cannot run the command! "+e.toString()); }
+            catch(ErrorWithPos e) { log("Cannot run the command! "+e.toString()); }
         }
     }
 
@@ -265,6 +264,15 @@ public final class SimpleGUI {
             Reader isr=new StringReader(text.getText());
             u=AlloyParser.alloy_parseStream(isr);
         }
+        catch(ErrorWithPos e) {
+            if (e.pos!=null && e.pos.y>0 && e.pos.x>0) try {
+               int c=text.getLineStartOffset(e.pos.y-1)+e.pos.x-1;
+               text.setSelectionStart(c);
+               text.setSelectionEnd(c+1);
+            } catch(BadLocationException ex) {}
+            log("\nCannot parse the model! "+e.toString());
+            return;
+        }
         catch(Exception e) {
             log("\nCannot parse the model! "+e.toString());
             return;
@@ -379,16 +387,14 @@ public final class SimpleGUI {
     }
 
     private synchronized final void my_caret() {
-    	int c=text.getCaretPosition();
-    	String s=text.getText();
-    	int len=s.length(),x=1,y=1;
-    	for(int i=0; i<c && i<len; i++) {
-    		char ch=s.charAt(i);
-    		if (ch=='\n') { y++; x=1; if (i+1<len && s.charAt(i+1)=='\r') i++; continue; }
-    		if (ch=='\r') { y++; x=1; if (i+1<len && s.charAt(i+1)=='\n') i++; continue; }
-    		x++;
+    	try {
+          int c=text.getCaretPosition();
+    	  int y=text.getLineOfOffset(c)+1;
+    	  int x=c-text.getLineStartOffset(y-1)+1;
+      	  status.setText("<html>&nbsp; Line "+y+", Column "+x+(modified()?" <b style=\"color:red;\">[modified]</b></html>":"</html>"));
+    	} catch(BadLocationException ex) {
+      	  status.setText("<html>&nbsp; Line ?, Column ?"+(modified()?" <b style=\"color:red;\">[modified]</b></html>":"</html>"));
     	}
-    	status.setText(" Line "+y+", Column "+x+(modified()?" [modified]":""));
     }
 
     /**
@@ -413,6 +419,7 @@ public final class SimpleGUI {
         text=new JTextArea();
         text.setLineWrap(false);
         text.setEditable(true);
+        text.setTabSize(3);
         text.setFont(font);
         text.addCaretListener(new CaretListener() {
 			public void caretUpdate(CaretEvent e) { my_caret(); }
@@ -430,6 +437,7 @@ public final class SimpleGUI {
         log=new JTextArea();
         log.setBackground(Color.getHSBColor(0f,0f,0.95f));
         log.setLineWrap(true);
+        log.setWrapStyleWord(true);
         log.setEditable(false);
         log.setFont(font);
         JScrollPane statusPane=new JScrollPane(log,

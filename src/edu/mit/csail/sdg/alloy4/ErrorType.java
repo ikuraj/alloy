@@ -11,16 +11,7 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 @SuppressWarnings("serial")
-public final class ErrorType extends RuntimeException {
-
-    /** This stores the filename/line/row information (null if unknown) */
-    public final Pos pos;
-
-    /** The actual error message. */
-    public final String msg;
-
-    /** The object that triggered the error (null if unknown) */
-    public final Object obj;
+public final class ErrorType extends ErrorWithPos {
 
     /**
      * Constructs a new exception object.
@@ -28,11 +19,7 @@ public final class ErrorType extends RuntimeException {
      * @param obj - the object that triggered the error (null if unknown)
      * @param msg - the actual error message.
      */
-    public ErrorType(Pos pos, Object obj, String msg) {
-        this.pos=pos;
-        this.obj=obj;
-        this.msg=(msg==null?"":msg);
-    }
+    public ErrorType(Pos pos, Object obj, String msg) { super(pos,obj,msg); }
 
     /** Returns a human-readable description of the error */
     @Override public String toString() {
