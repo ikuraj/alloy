@@ -677,7 +677,7 @@ public final class VisitEval implements VisitReturn {
 		for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
 			Relation r=Relation.unary(s.fullname);
 			rel(s,r);
-			//if (kuniv==null) kuniv=r; else kuniv=kuniv.union(r);
+			//kuniv=kuniv.union(r);
 		}
 		// Generate the relations for the FIELDS
 		for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
