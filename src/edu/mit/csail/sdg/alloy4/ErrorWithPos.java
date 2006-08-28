@@ -1,7 +1,8 @@
 package edu.mit.csail.sdg.alloy4;
 
 /**
- * Immutable.
+ * Immutable;
+ * this is the abstract super class of the other possible errors.
  *
  * <br/>
  * <br/> Invariant: msg!=null

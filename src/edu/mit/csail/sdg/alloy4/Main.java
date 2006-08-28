@@ -15,10 +15,7 @@ public final class Main {
 	
 	public static void main(String[] args) throws FileNotFoundException {
 		Log log=new Log();
-		if (args.length==0) run(-1,args,log);
-		else if (args.length==1) run(-1,args,log);
-		else run(-2,args,log);
-		log.flush();
+		if (args.length<=1) run(-1,args,log); else run(-2,args,log);
 		log.close();
 	}
 
