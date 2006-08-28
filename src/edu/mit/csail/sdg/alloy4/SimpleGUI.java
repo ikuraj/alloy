@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.List;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -18,8 +19,12 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -28,19 +33,24 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.WindowConstants;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
+
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 
 @SuppressWarnings("serial")
 public final class SimpleGUI {
 	
 	private synchronized void log(String x) {
+		if (log.getDocument().getLength()==0) x=x.trim();
 		log.append(x+"\n");
 		log.setCaretPosition(log.getDocument().getLength());
 	}
@@ -111,7 +121,7 @@ public final class SimpleGUI {
         		  null,
         		  new Object[]{"Overwrite",cancel},
         		  cancel);
-        		if (ans!=0) return false;
+        		if (ans!=JOptionPane.YES_OPTION) return false;
         	}
     	}
         try {
@@ -179,7 +189,7 @@ public final class SimpleGUI {
     /** This field is true iff the text in the text buffer hasn't been modified */
     private boolean modified=false;
     /** Synchronized helper method that sets or clears the "modified" flag. */
-    private synchronized void modified(boolean x) { modified=x; }
+    private synchronized void modified(boolean x) { if (modified!=x) {modified=x; my_caret();} }
     /** Synchronized helper method that returns true if and only if the "modified" flag is true */
     private synchronized boolean modified() { return modified; }
 
@@ -201,6 +211,9 @@ public final class SimpleGUI {
     /** The JMenu that contains the list of RUN and CHECK commands in the current file. */
     private JMenu runmenu;
 
+    /** The JLabel that displays the current line/column position, etc. */
+    private JLabel status;
+    
     /** Main method that launches the program. */
     public static final void main (String[] unused) {
         new SimpleGUI();
@@ -256,6 +269,7 @@ public final class SimpleGUI {
             log("\nCannot parse the model! "+e.toString());
             return;
         }
+        log("\nParser succeeded: there are "+u.runchecks.size()+" command(s) in this model.");
         runmenu.removeAll();
         if (u.runchecks.size()==0) {
             y=new JMenuItem("There are no commands in this model!");
@@ -276,8 +290,8 @@ public final class SimpleGUI {
         }
     }
 
-    
     private synchronized final boolean my_confirm() {
+    	if (!modified()) return true;
 		String cancel="Cancel"; // This ensures that the same object is used, regardless of the compiler interning.
 		int ans=JOptionPane.showOptionDialog(frame,
 		  "The text in the text editor has not been saved yet! Do you wish to save it, discard it, or cancel?",
@@ -287,8 +301,8 @@ public final class SimpleGUI {
 		  null,
 		  new Object[]{"Save","Discard",cancel},
 		  cancel);
-		if (ans==0) { if (!my_save()) return false; }
-		if (ans==2) return false;
+		if (ans==JOptionPane.YES_OPTION) { if (!my_save()) return false; }
+		if (ans!=JOptionPane.NO_OPTION) return false;
 		return true;
     }
 
@@ -296,7 +310,7 @@ public final class SimpleGUI {
      * Synchronized helper method that clears the text editor.
      */
     private synchronized final void my_new() {
-    	if (modified()) if (!my_confirm()) return;
+    	if (!my_confirm()) return;
     	latestName="";
         text.setText("");
         log.setText("");
@@ -314,7 +328,7 @@ public final class SimpleGUI {
      * <p/> If it's unsuccessful, it will report an error message. 
      */
     private synchronized final void my_open() {
-    	if (modified()) if (!my_confirm()) return;
+    	if (!my_confirm()) return;
         FileFilter filter=new FileFilter() {
             @Override public boolean accept(File f) {
                 if (f.isFile() && !f.getPath().endsWith(".als")) return false;
@@ -364,6 +378,19 @@ public final class SimpleGUI {
         }
     }
 
+    private synchronized final void my_caret() {
+    	int c=text.getCaretPosition();
+    	String s=text.getText();
+    	int len=s.length(),x=1,y=1;
+    	for(int i=0; i<c && i<len; i++) {
+    		char ch=s.charAt(i);
+    		if (ch=='\n') { y++; x=1; if (i+1<len && s.charAt(i+1)=='\r') i++; continue; }
+    		if (ch=='\r') { y++; x=1; if (i+1<len && s.charAt(i+1)=='\n') i++; continue; }
+    		x++;
+    	}
+    	status.setText(" Line "+y+", Column "+x+(modified()?" [modified]":""));
+    }
+
     /**
      * Synchronized helper method that actually initializes everything.
      * 
@@ -375,15 +402,21 @@ public final class SimpleGUI {
         Font font=new Font("Monospaced",0,12);
 
         frame=new JFrame(title);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setBackground(Color.lightGray);
-
-        Container all=frame.getContentPane();
+		frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+		frame.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) { if (my_confirm()) System.exit(0); }
+		});
+		
+		Container all=frame.getContentPane();
 
         text=new JTextArea();
         text.setLineWrap(false);
         text.setEditable(true);
         text.setFont(font);
+        text.addCaretListener(new CaretListener() {
+			public void caretUpdate(CaretEvent e) { my_caret(); }
+        });
         text.getDocument().addDocumentListener(new DocumentListener(){
             public void insertUpdate(DocumentEvent e) {compiled(false); modified(true);}
             public void removeUpdate(DocumentEvent e) {compiled(false); modified(true);}
@@ -404,27 +437,36 @@ public final class SimpleGUI {
             ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         statusPane.setMinimumSize(new Dimension(50, 50));
         
+        all.setLayout(new BorderLayout());
+        
         JSplitPane split=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane);
         split.setDividerLocation(500);
         split.setOneTouchExpandable(false);
-        all.add(split);
-
+        all.add(split, BorderLayout.CENTER);
+        
+        status=new JLabel(" ");
+        status.setFont(font);
+        all.add(status, BorderLayout.SOUTH);
+        
         JMenu filemenu=new JMenu("File",true);
         filemenu.setMnemonic(KeyEvent.VK_F);
         
         JMenuItem filenew=new JMenuItem("New", KeyEvent.VK_N);
+        filenew.setAccelerator(KeyStroke.getKeyStroke("ctrl N"));
         filenew.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_new(); }
         });
         filemenu.add(filenew);
 
         JMenuItem fileopen=new JMenuItem("Open", KeyEvent.VK_O);
+        fileopen.setAccelerator(KeyStroke.getKeyStroke("ctrl O"));
         fileopen.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_open(); }
         });
         filemenu.add(fileopen);
 
         JMenuItem filesave=new JMenuItem("Save", KeyEvent.VK_S);
+        filesave.setAccelerator(KeyStroke.getKeyStroke("ctrl S"));
         filesave.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_save(); }
         });
@@ -438,7 +480,7 @@ public final class SimpleGUI {
 
         JMenuItem fileexit=new JMenuItem("Exit", KeyEvent.VK_X);
         fileexit.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { System.exit(0); }
+            public void actionPerformed(ActionEvent e) { if (my_confirm()) System.exit(0); }
         });
         filemenu.add(fileexit);
 

@@ -2,6 +2,7 @@ import java_cup.runtime.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -21,10 +22,100 @@ parser code {:
   public String alloyfile="";
 
   public void syntax_error(Symbol x) {
-    if (x.value instanceof Pos)
-       throw new ErrorSyntax((Pos)(x.value), "Parser cannot continue");
-    //Pos p=new Pos(alloyfile, x.left, x.right);
-    throw new ErrorSyntax(null, "Fatal syntax error in \""+alloyfile+"\". Parser cannot continue.");
+    Map<Integer,String> ch=new LinkedHashMap<Integer,String>();
+    ch.put(AlloySym.ABSTRACT         ,"abstract");
+    ch.put(AlloySym.ALL              ,"all");
+    ch.put(AlloySym.ALL2             ,"all");
+    ch.put(AlloySym.AMPERSAND        ,"\'&\'");
+    ch.put(AlloySym.AND              ,"\'&&\'");
+    ch.put(AlloySym.ARROW            ,"\'->\'");
+    ch.put(AlloySym.AS               ,"as");
+    ch.put(AlloySym.ASSERT           ,"assert");
+    ch.put(AlloySym.AT               ,"\'@\'");
+    ch.put(AlloySym.BAR              ,"\'|\'");
+    ch.put(AlloySym.BUT              ,"but");
+    ch.put(AlloySym.CARET            ,"\'^\'");
+    ch.put(AlloySym.CHECK            ,"check");
+    ch.put(AlloySym.COLON            ,"\':\'");
+    ch.put(AlloySym.COMMA            ,"\',\'");
+    ch.put(AlloySym.DOLLAR           ,"\'$\'");
+    ch.put(AlloySym.DOMAIN           ,"\'<:\'");
+    ch.put(AlloySym.DOT              ,"\'.\'");
+    ch.put(AlloySym.ELSE             ,"else");
+    ch.put(AlloySym.EQUALS           ,"\'=\'");
+    ch.put(AlloySym.EXACTLY          ,"exactly");
+    ch.put(AlloySym.EXPECT           ,"expect");
+    ch.put(AlloySym.EXTENDS          ,"extends");
+    ch.put(AlloySym.FACT             ,"fact");
+    ch.put(AlloySym.FOR              ,"for");
+    ch.put(AlloySym.FUN              ,"fun");
+    ch.put(AlloySym.GT               ,"\'>\'");
+    ch.put(AlloySym.GTE              ,"\'>=\'");
+    ch.put(AlloySym.HASH             ,"\'#\'");
+    ch.put(AlloySym.ID               ,"IDENTIFIER");
+    ch.put(AlloySym.IDEN             ,"iden");
+    ch.put(AlloySym.IFF              ,"\'<=>\'");
+    ch.put(AlloySym.IMPLIES          ,"\'=>\'");
+    ch.put(AlloySym.IN               ,"in");
+    ch.put(AlloySym.INT              ,"int");
+    ch.put(AlloySym.LBRACE           ,"\'{\'");
+    ch.put(AlloySym.LBRACKET         ,"\'[\'");
+    ch.put(AlloySym.LET              ,"let");
+    ch.put(AlloySym.LONE             ,"lone");
+    ch.put(AlloySym.LONE2            ,"lone");
+    ch.put(AlloySym.LPAREN           ,"\'(\'");
+    ch.put(AlloySym.LT               ,"\'<\'");
+    ch.put(AlloySym.LTE              ,"\'=<\'");
+    ch.put(AlloySym.MINUS            ,"\'-\'");
+    ch.put(AlloySym.MODULE           ,"module");
+    ch.put(AlloySym.NO               ,"no");
+    ch.put(AlloySym.NO2              ,"no");
+    ch.put(AlloySym.NONE             ,"none");
+    ch.put(AlloySym.NOT              ,"\'!\'");
+    ch.put(AlloySym.NOTEQUALS        ,"\'!=\'");
+    ch.put(AlloySym.NOTGT            ,"\'!>\'");
+    ch.put(AlloySym.NOTGTE           ,"\'!>=\'");
+    ch.put(AlloySym.NOTIN            ,"\'!in\'");
+    ch.put(AlloySym.NOTLT            ,"\'!<\'");
+    ch.put(AlloySym.NOTLTE           ,"\'!=<\'");
+    ch.put(AlloySym.NUMBER           ,"NUMBER");
+    ch.put(AlloySym.ONE              ,"one");
+    ch.put(AlloySym.ONE2             ,"one");
+    ch.put(AlloySym.OPEN             ,"open");
+    ch.put(AlloySym.OR               ,"\'||\'");
+    ch.put(AlloySym.PLUS             ,"\'+\'");
+    ch.put(AlloySym.PLUSPLUS         ,"\'++\'");
+    ch.put(AlloySym.PRED             ,"pred");
+    ch.put(AlloySym.RANGE            ,"\':>\'");
+    ch.put(AlloySym.RBRACE           ,"\'}\'");
+    ch.put(AlloySym.RBRACKET         ,"\']\'");
+    ch.put(AlloySym.RPAREN           ,"\')\'");
+    ch.put(AlloySym.RUN              ,"run");
+    ch.put(AlloySym.SET              ,"set");
+    ch.put(AlloySym.SIG              ,"sig");
+    ch.put(AlloySym.SIGINT           ,"Int");
+    ch.put(AlloySym.SLASH            ,"\'/\'");
+    ch.put(AlloySym.SOME             ,"some");
+    ch.put(AlloySym.SOME2            ,"some");
+    ch.put(AlloySym.STAR             ,"\'*\'");
+    ch.put(AlloySym.SUM              ,"sum");
+    ch.put(AlloySym.SUM2             ,"sum");
+    ch.put(AlloySym.THIS             ,"this");
+    ch.put(AlloySym.TILDE            ,"\'~\'");
+    ch.put(AlloySym.UNIV             ,"univ");
+    TreeSet<String> list=new TreeSet<String>();
+    Pos p=new Pos(alloyfile,x.left,x.right);
+    if (x.value instanceof Pos) p=(Pos)(x.value);
+    for(Map.Entry<Integer,String> e:ch.entrySet()) {
+        int act=get_action(((Symbol)stack.peek()).parse_state, (int)(e.getKey()) );
+        if (act!=0) list.add(e.getValue());
+    }
+    String ans="";
+    for(String e:list) { if (ans.length()!=0) ans+=" "; ans+=e; }
+    if (ans.length()!=0)
+       throw new ErrorSyntax(p, "Syntax error. There are "+list.size()+" possible choices: "+ans);
+    else
+       throw new ErrorSyntax(p, "Syntax error.");
   }
 
   public static Unit alloy_parseFile(String name,String prefix) {
