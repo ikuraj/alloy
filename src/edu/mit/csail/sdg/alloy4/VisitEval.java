@@ -266,7 +266,7 @@ public final class VisitEval implements VisitReturn {
 		switch(x.op) {
 		case NONE: return Expression.NONE;
 		case IDEN: return Expression.IDEN;
-		case UNIV: return Expression.UNIV;
+		case UNIV: return kuniv;
 		case SIGINT: return Expression.INTS;
 		case NUMBER: return IntConstant.constant(x.num()); // zzz SHOULD WARN AGAINST SILENT TRUNCATION
 		}
@@ -472,7 +472,7 @@ public final class VisitEval implements VisitReturn {
 	
 	private Map<ParaSig,Expression> sig2rel = new LinkedHashMap<ParaSig,Expression>();
 	private Expression rel(ParaSig x) {
-		if (x==ParaSig.UNIV) return Expression.UNIV;
+		if (x==ParaSig.UNIV) return kuniv;
 		if (x==ParaSig.NONE) return Expression.NONE;
 		if (x==ParaSig.SIGINT) return Expression.INTS;
 		return sig2rel.get(x); }
@@ -667,11 +667,17 @@ public final class VisitEval implements VisitReturn {
 	/**                                                                         */
 	/*==========================================================================*/
 	
+	private Expression kuniv=Relation.UNIV;//INTS;
+	
+	// zzz: Should make sure we don't load Int unless we need to
+
 	public List<Boolean> codegen(List<ParaSig> sigs)  {
 		Formula kfact=Formula.TRUE;
 		// Generate the relations for the SIGS.
 		for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
-			rel(s, Relation.unary(s.fullname));
+			Relation r=Relation.unary(s.fullname);
+			rel(s,r);
+			//if (kuniv==null) kuniv=r; else kuniv=kuniv.union(r);
 		}
 		// Generate the relations for the FIELDS
 		for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -1053,7 +1059,7 @@ public final class VisitEval implements VisitReturn {
 			out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
 			if (u==units.get(0)) {
 				out.printf("<sig name=\"univ\">%n");
-				for(Tuple t:eval.evaluate(Relation.UNIV)) {
+				for(Tuple t:eval.evaluate(kuniv)) {
 					String atom=(String)(t.atom(0));
 					out.printf("  <atom name=\"%s\"/>%n", atom);
 				}
