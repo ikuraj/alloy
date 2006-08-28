@@ -2162,8 +2162,6 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     ch.put(AlloySym.UNIV             ,"univ");
     TreeSet<String> list=new TreeSet<String>();
     Pos p=alloypos(x);
-    //if (p==null) p=alloypos(((AlloyFilter)getScanner()).latest_token());
-    //if (p==null) p=new Pos(alloyfile,x.left,x.right);
     for(Map.Entry<Integer,String> e:ch.entrySet()) {
         int act=get_action(((Symbol)stack.peek()).parse_state, (int)(e.getKey()) );
         if (act!=0) list.add(e.getValue());
@@ -2171,7 +2169,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     String ans="";
     for(String e:list) { if (ans.length()!=0) ans+=" "; ans+=e; }
     if (ans.length()!=0)
-       throw new ErrorSyntax(p, "Syntax error. There are "+list.size()+" possible choices: "+ans);
+       throw new ErrorSyntax(p, "Syntax error. There are "+list.size()+" (potentially) legal tokens that can appear here: "+ans);
     else
        throw new ErrorSyntax(p, "Syntax error.");
   }
