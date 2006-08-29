@@ -667,7 +667,7 @@ public final class VisitEval implements VisitReturn {
 	/**                                                                         */
 	/*==========================================================================*/
 	
-	private Expression kuniv=Relation.INTS;
+	private Expression kuniv=Relation.UNIV;//INTS;
 	
 	// zzz: Should make sure we don't load Int unless we need to
 
@@ -677,7 +677,7 @@ public final class VisitEval implements VisitReturn {
 		for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
 			Relation r=Relation.unary(s.fullname);
 			rel(s,r);
-			kuniv=kuniv.union(r);
+			if (kuniv!=Relation.UNIV) kuniv=kuniv.union(r);
 		}
 		// Generate the relations for the FIELDS
 		for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
