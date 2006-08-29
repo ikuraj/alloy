@@ -545,18 +545,6 @@ public final class SimpleGUI {
         status=new JLabel(" ");
         status.setFont(font);
         all.add(status, BorderLayout.SOUTH);
-        /*JMenu stopmenu=new JMenu("Stop",true);
-        stopmenu.setMnemonic(KeyEvent.VK_S);
-        JMenuItem stopitem=new JMenuItem("Stop the current command", KeyEvent.VK_S);
-        stopitem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				current_thread.interrupt();
-				current_thread.stop();
-				current_thread=null;
-			}
-        });
-        stopmenu.add(stopitem);*/
-        //bar.add(stopmenu);
         frame.setJMenuBar(bar);
         frame.pack();
         frame.setSize(new Dimension(width,height));
