@@ -16,9 +16,11 @@ public final class ErrorSyntax extends ErrorWithPos {
     /**
      * Constructs a new exception object.
      * @param pos - the filename/line/row information (null if unknown)
-     * @param msg - the actual error message.
+     * @param msg - the actual error message
      */
-    public ErrorSyntax(Pos pos, String msg) { super(pos,null,msg); }
+    public ErrorSyntax(Pos pos, String msg) {
+    	super(pos,null,msg);
+    }
 
     /** Returns a human-readable description of the error */
     @Override public String toString() {

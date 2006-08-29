@@ -2136,59 +2136,56 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     ch.put(AlloySym.SUM2            , "sum");
     ch.put(AlloySym.THIS            , "this");
     ch.put(AlloySym.UNIV            , "univ");
-    ch.put(AlloySym.AMPERSAND       , "\'&\'");
-    ch.put(AlloySym.AND             , "\'&&\'");
-    ch.put(AlloySym.ARROW           , "\'->\'");
-    ch.put(AlloySym.AT              , "\'@\'");
-    ch.put(AlloySym.BAR             , "\'|\'");
-    ch.put(AlloySym.CARET           , "\'^\'");
-    ch.put(AlloySym.COLON           , "\':\'");
-    ch.put(AlloySym.COMMA           , "\',\'");
-    ch.put(AlloySym.DOLLAR          , "\'$\'");
-    ch.put(AlloySym.DOMAIN          , "\'<:\'");
-    ch.put(AlloySym.DOT             , "\'.\'");
-    ch.put(AlloySym.EQUALS          , "\'=\'");
-    ch.put(AlloySym.GT              , "\'>\'");
-    ch.put(AlloySym.GTE             , "\'>=\'");
-    ch.put(AlloySym.HASH            , "\'#\'");
-    ch.put(AlloySym.IFF             , "\'<=>\'");
-    ch.put(AlloySym.IMPLIES         , "\'->\'");
-    ch.put(AlloySym.LBRACE          , "\'{\'");
-    ch.put(AlloySym.LBRACKET        , "\'[\'");
-    ch.put(AlloySym.LPAREN          , "\'(\'");
-    ch.put(AlloySym.LT              , "\'<\'");
-    ch.put(AlloySym.LTE             , "\'=<\'");
-    ch.put(AlloySym.MINUS           , "\'-\'");
-    ch.put(AlloySym.NOT             , "\'!\'");
-    ch.put(AlloySym.NOTEQUALS       , "\'!\'");
-    ch.put(AlloySym.NOTGT           , "\'!\'");
-    ch.put(AlloySym.NOTGTE          , "\'!\'");
-    ch.put(AlloySym.NOTIN           , "\'!\'");
-    ch.put(AlloySym.NOTLT           , "\'!\'");
-    ch.put(AlloySym.NOTLTE          , "\'!\'");
-    ch.put(AlloySym.OR              , "\'||\'");
-    ch.put(AlloySym.PLUS            , "\'+\'");
-    ch.put(AlloySym.PLUSPLUS        , "\'++\'");
-    ch.put(AlloySym.RANGE           , "\':>\'");
-    ch.put(AlloySym.RBRACE          , "\'}\'");
-    ch.put(AlloySym.RBRACKET        , "\']\'");
-    ch.put(AlloySym.RPAREN          , "\')\'");
-    ch.put(AlloySym.SLASH           , "\'/\'");
-    ch.put(AlloySym.STAR            , "\'*\'");
-    ch.put(AlloySym.TILDE           , "\'~\'");
+    ch.put(AlloySym.AMPERSAND       , "&");
+    ch.put(AlloySym.AND             , "&&");
+    ch.put(AlloySym.ARROW           , "->");
+    ch.put(AlloySym.AT              , "@");
+    ch.put(AlloySym.BAR             , "|");
+    ch.put(AlloySym.CARET           , "^");
+    ch.put(AlloySym.COLON           , ":");
+    ch.put(AlloySym.COMMA           , ",");
+    ch.put(AlloySym.DOLLAR          , "$");
+    ch.put(AlloySym.DOMAIN          , "<:");
+    ch.put(AlloySym.DOT             , ".");
+    ch.put(AlloySym.EQUALS          , "=");
+    ch.put(AlloySym.GT              , ">");
+    ch.put(AlloySym.GTE             , ">=");
+    ch.put(AlloySym.HASH            , "#");
+    ch.put(AlloySym.IFF             , "<=>");
+    ch.put(AlloySym.IMPLIES         , "->");
+    ch.put(AlloySym.LBRACE          , "{");
+    ch.put(AlloySym.LBRACKET        , "[");
+    ch.put(AlloySym.LPAREN          , "(");
+    ch.put(AlloySym.LT              , "<");
+    ch.put(AlloySym.LTE             , "=<");
+    ch.put(AlloySym.MINUS           , "-");
+    ch.put(AlloySym.NOT             , "!");
+    ch.put(AlloySym.NOTEQUALS       , "!");
+    ch.put(AlloySym.NOTGT           , "!");
+    ch.put(AlloySym.NOTGTE          , "!");
+    ch.put(AlloySym.NOTIN           , "!");
+    ch.put(AlloySym.NOTLT           , "!");
+    ch.put(AlloySym.NOTLTE          , "!");
+    ch.put(AlloySym.OR              , "||");
+    ch.put(AlloySym.PLUS            , "+");
+    ch.put(AlloySym.PLUSPLUS        , "++");
+    ch.put(AlloySym.RANGE           , ":>");
+    ch.put(AlloySym.RBRACE          , "}");
+    ch.put(AlloySym.RBRACKET        , "]");
+    ch.put(AlloySym.RPAREN          , ")");
+    ch.put(AlloySym.SLASH           , "/");
+    ch.put(AlloySym.STAR            , "*");
+    ch.put(AlloySym.TILDE           , "~");
     TreeSet<String> list=new TreeSet<String>();
     Pos p=alloypos(x);
-    for(Map.Entry<Integer,String> e:ch.entrySet()) {
+    if (!stack.empty()) for(Map.Entry<Integer,String> e:ch.entrySet()) {
         int key=e.getKey(), act=get_action(((Symbol)stack.peek()).parse_state, key);
         if (act==0) continue;
         if (act>0 || alloy_confirm(key)) list.add(e.getValue());
     }
-    String ans="";
-    for(String e:list) { if (ans.length()!=0) ans+=" "; ans+=e; }
-    if (ans.length()!=0)
-       throw new ErrorSyntax(p, "There are "+list.size()+" possible tokens that can appear here: "+ans);
-    else
-       throw new ErrorSyntax(p, "");
+    String result="There are "+list.size()+" possible tokens that can appear here:";
+    for(String item:list) result=result+" "+item;
+    throw new ErrorSyntax(p, (list.size()!=0)?result:"");
   }
 
   private boolean alloy_confirm(int key) {
@@ -2201,7 +2198,9 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       int lhs_sym_num = production_tab[(-act)-1][0];
       int handle_size = production_tab[(-act)-1][1];
       for (int i = 0; i < handle_size; i++) { if (newstack.empty()) return false; newstack.pop(); }
-      state = get_reduce(((Symbol)newstack.peek()).parse_state, lhs_sym_num);
+      if (newstack.empty()) return false;
+      if (newstack.peek() instanceof Symbol) state=((Symbol)newstack.peek()).parse_state;
+      state=get_reduce(state, lhs_sym_num);
       newstack.push(null);
     }
   }

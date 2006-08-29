@@ -19,13 +19,16 @@ public final class Main {
 		log.close();
 	}
 
-	public static List<Boolean> run(int code, Reader i, Log log) {
+	public enum Result { SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
+
+	public static List<Result> run(int code, Reader i, Log log) {
+		Log blank=new Log(null,null,null);
 		ArrayList<Unit> units=readall(i);
-		fillParams(units,log);
+		fillParams(units,blank);
 		ArrayList<ParaSig> sigs=fillSig(units);
-		new VisitTypechecker(new Log(null)).check(units,sigs);
+		new VisitTypechecker(blank).check(units,sigs);
 		if (code>=(-1)) { VisitEval c=new VisitEval(code,log,units); return c.codegen(sigs); }
-		return new ArrayList<Boolean>();
+		return new ArrayList<Result>();
 	}
 
 	public static void run(int code, String[] args, Log log) throws FileNotFoundException {
