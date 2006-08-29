@@ -105,7 +105,7 @@ public final class SimpleGUI {
               String ps=System.getProperty("file.separator");
               List<Main.Result> result=Main.run(index,source,new Log(log,styleRegular,styleGreen));
               if (result.size()==1 && result.get(0)==Main.Result.SAT) {
-            	  log("Visualizing...", styleRegular);
+            	  log("Visualizer loading... please wait...", styleRegular);
             	  String newcwd = new File(cwd+".."+ps+"kodviz").getAbsolutePath();
             	  System.setProperty("kodviz.dir",newcwd);
             	  KodVizGUIFactory factory=new KodVizGUIFactory(false);

@@ -1,7 +1,6 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -44,36 +43,6 @@ import kodkod.instance.Universe;
  */
 
 public final class VisitEval implements VisitReturn {
-	
-	// Uses os.name and os.arch to load the appropriate JNI libraries.
-	static {
-		File currentdir = new File(".");
-		String path = currentdir.getAbsolutePath();
-		String os=System.getProperty("os.name");
-		String arch=System.getProperty("os.arch");
-		if (os.compareToIgnoreCase("Darwin")==0 && arch.compareToIgnoreCase("powerpc")==0) {
-			path=path+"/jni/powerpc-darwin/";
-		}
-		else if (os.compareToIgnoreCase("FreeBSD")==0 && arch.compareToIgnoreCase("i386")==0) {
-			path=path+"/jni/i386-FreeBSD/";
-		}
-		else if (os.compareToIgnoreCase("NetBSD")==0 && arch.compareToIgnoreCase("i386")==0) {
-			path=path+"/jni/i386-NetBSD/";
-		}
-		else if (os.compareToIgnoreCase("Linux")==0 && arch.compareToIgnoreCase("i386")==0) {
-			path=path+"/jni/i386-linux/";
-		}
-		else if (os.compareToIgnoreCase("Solaris")==0 && arch.compareToIgnoreCase("sparc")==0) {
-			path=path+"/jni/sparc-solaris/";
-		}
-		else {
-			path=path+"/jni/";
-		}
-		try { System.load(path+"libzchaff_basic.so"); }
-		catch(UnsatisfiedLinkError ex) { System.loadLibrary("zchaff_basic"); }
-		try { System.load(path+"libminisat.so"); }
-		catch(UnsatisfiedLinkError ex) { System.loadLibrary("minisat"); }
-	}
 	
 	/**
 	 * Convenience method that casts x to be a Kodkod Formula.
@@ -983,12 +952,12 @@ public final class VisitEval implements VisitReturn {
 				fname="Running \""+e.name+"\"";
 			}
 			Solver solver = new Solver();
+			solver.options().setSolver(SATFactory.MiniSat);
+			//solver.options().setSolver(SATFactory.ZChaffBasic);
 			//solver.options().setSolver(SATFactory.DefaultSAT4J);
-			//solver.options().setSolver(SATFactory.MiniSat);
-			solver.options().setSolver(SATFactory.ZChaffBasic);
 			solver.options().setBitwidth(bitwidth);
 			solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-			log.log0("Bitwidth="+bitwidth+" "+fname+"...\t ");
+			log.log0("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+" "+fname+"...\t ");
 			log.flush();
 			//new MakeJava(f,bitwidth,bounds);
 			Solution sol = solver.solve(f,bounds);
