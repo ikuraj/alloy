@@ -23,7 +23,6 @@ import kodkod.ast.BinaryExpression;
 import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.TimeoutException;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.Options;
 import kodkod.engine.Solution.Outcome;
@@ -990,7 +989,6 @@ public final class VisitEval implements VisitReturn {
 				break;
 			}
 		} catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.");
-		} catch(TimeoutException ex) { log.log("Timeout");
 		} catch(ErrorWithPos ex) { log.log(ex.msg);
 		}
 		log.flush();
