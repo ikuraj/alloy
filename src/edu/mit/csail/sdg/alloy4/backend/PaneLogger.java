@@ -18,19 +18,15 @@ public final class PaneLogger extends Logger {
 		this.boldStyle=boldStyle;
 	}
 	
-	public void logBold(String x) {
-		StyledDocument doc=textarea.getStyledDocument();
-		try { doc.insertString(doc.getLength(), x, boldStyle); } catch (BadLocationException e) { }
-		textarea.setCaretPosition(doc.getLength());
-	}
-	
 	public void log(String x) {
 		StyledDocument doc=textarea.getStyledDocument();
 		try { doc.insertString(doc.getLength(), x, defaultStyle); } catch (BadLocationException e) { }
 		textarea.setCaretPosition(doc.getLength());
 	}
-	
-	public void flush() { }
 
-	public void close() { }
+    public void logBold(String x) {
+		StyledDocument doc=textarea.getStyledDocument();
+		try { doc.insertString(doc.getLength(), x, boldStyle); } catch (BadLocationException e) { }
+		textarea.setCaretPosition(doc.getLength());
+	}
 }

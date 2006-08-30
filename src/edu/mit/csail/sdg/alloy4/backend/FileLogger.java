@@ -6,7 +6,7 @@ import edu.mit.csail.sdg.alloy4.core.Logger;
 
 public final class FileLogger extends Logger {
 	
-	private PrintWriter file=null;
+	private PrintWriter file;
 	
 	public FileLogger(String filename) throws FileNotFoundException {
 		file=new PrintWriter(filename);
