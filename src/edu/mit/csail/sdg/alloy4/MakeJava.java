@@ -32,10 +32,10 @@ import kodkod.ast.SumExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.visitor.VoidVisitor;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Tuple;
-import kodkod.ast.visitor.VoidVisitor;
 
 public final class MakeJava implements VoidVisitor {
 

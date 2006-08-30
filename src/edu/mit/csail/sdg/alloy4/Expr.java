@@ -65,17 +65,17 @@ public abstract class Expr {
         this.mult=mult;
     }
 
-    /** Convenience method that constructs a syntax error exception */
+    /** Convenience method that constructs a syntax error exception. */
     public final ErrorSyntax syntaxError (String s) {
         return new ErrorSyntax(pos, s);
     }
 
-    /** Convenience method that constructs a type error exception */
+    /** Convenience method that constructs a type error exception. */
     public final ErrorType typeError (String s) {
         return new ErrorType(pos, this, s);
     }
 
-    /** Convenience method that constructs an internal error exception  */
+    /** Convenience method that constructs an internal error exception. */
     public final ErrorInternal internalError (String s) {
         return new ErrorInternal(pos, this, s);
     }
