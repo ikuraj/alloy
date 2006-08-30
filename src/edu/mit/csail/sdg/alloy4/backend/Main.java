@@ -53,7 +53,7 @@ public final class Main {
             if (code>=(-1)) { VisitEval c=new VisitEval(code,log,units); c.codegen(sigs); }
         }
         else for(String a:args) {
-            log.log("\n\nMain file = "+a);
+            log.log("\n\nMain file = "+a+"\n");
             units=readall(a);
             fillParams(units,log);
             sigs=fillSig(units);
@@ -94,7 +94,7 @@ public final class Main {
                         if (vv==ParaSig.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument!");
                         chg=true;
                         uu.params.put(kn,vv);
-                        log.log("RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname);
+                        log.log("RESOLVE: "+f.getKey()+"/"+kn+" := "+vv.fullname+"\n");
                     }
                 }
             }
@@ -193,7 +193,7 @@ public final class Main {
             for(int j=i+1; j<units.size(); j++) {
                 Unit b=units.get(j);
                 if (a.pos.filename.equals(b.pos.filename) && a.params.equals(b.params)) {
-                    log.log("MATCH FOUND ON "+a.pos.filename);
+                    log.log("MATCH FOUND ON "+a.pos.filename+"\n");
                     a.aliases.addAll(b.aliases);
                     Collections.sort(a.aliases, aliasComparator);
                     Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);

@@ -521,7 +521,7 @@ public final class VisitEval implements VisitReturn {
         if (b>=0 && (s==ParaSig.UNIV || s==ParaSig.NONE))
             throw c.syntaxError("You cannot specify a scope for the builtin signature \""+s.name+"\"");
         sig2bound(s,b);
-        log.log(debug+"Sig \""+s.fullname+"\" bound to be <= "+b);
+        log.log(debug+"Sig \""+s.fullname+"\" bound to be <= "+b+"\n");
     }
 
     private boolean derive(ParaRuncheck cmd, List<ParaSig> sigs) {
@@ -784,7 +784,7 @@ public final class VisitEval implements VisitReturn {
         for(int xi=0; xi<units.get(0).runchecks.size(); xi++)
             if (codeindex==(-1) || codeindex==xi) {
                 ParaRuncheck x=units.get(0).runchecks.get(xi);
-                log.log0Green("\nComputing the bounds for the command \""+x+"\"...\n");
+                log.logBold("\nComputing the bounds for the command \""+x+"\"...\n");
                 log.flush();
                 sig2bound.clear();
                 sig2ts.clear();
@@ -796,7 +796,7 @@ public final class VisitEval implements VisitReturn {
                 for(ParaSig s:sigs) if (s!=ParaSig.SIGINT && s.pos.filename.endsWith("util/ordering.als") && s.name.equals("Ord")) {
                     ParaSig s2=units.get(0).lookupPath(s.path).params.get("elem");
                     if (sig2bound(s2)<=0) throw x.syntaxError("The signature "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
-                    log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2));
+                    log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2)+"\n");
                     if (s2!=null) exact(s2,true);
                 }
                 // zzz ALLOY3 compatiblity hack above
@@ -901,22 +901,22 @@ public final class VisitEval implements VisitReturn {
             bounds.bound((Relation)(rel(s)),lower,upper);
             if (s.subset) continue;
             if (exact(s) && upper.size()==sig2bound(s)) {
-                log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+upper.toString()+">");
+                log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+upper.toString()+">\n");
             }
             else if (exact(s)) {
-                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s));
+                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
                 else kfact=rel(s).count().eq(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
             }
             else if (upper.size()>sig2bound(s)) {
-                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s));
+                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
                 else kfact=rel(s).count().lte(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
             }
             else {
-                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">");
+                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">\n");
             }
         }
         // Bound the SUBSETSIGS
@@ -925,7 +925,7 @@ public final class VisitEval implements VisitReturn {
             if (!s.subset) continue;
             TupleSet ts=factory.noneOf(1);
             for(ParaSig sup:s.sups()) for(Tuple temp:sig2ts(sup)) ts.add(temp);
-            log.log("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">");
+            log.log("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">\n");
             bounds.bound((Relation)(rel(s)),ts); sig2ts(s,ts);
         }
         // Bound the FIELDS
@@ -983,7 +983,7 @@ public final class VisitEval implements VisitReturn {
             //solver.options().setSolver(SATFactory.DefaultSAT4J);
             solver.options().setBitwidth(bitwidth);
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-            log.log0("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+" "+fname+"...\t ");
+            log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+" "+fname+"...\t ");
             log.flush();
             //new MakeJava(f,bitwidth,bounds);
             Solution sol = solver.solve(f,bounds);
@@ -992,31 +992,31 @@ public final class VisitEval implements VisitReturn {
             switch(sol.outcome()) {
             case TRIVIALLY_SATISFIABLE:
                 mainResult=Main.Result.TRIVIALLY_SAT;
-                log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)"); else log.log(" TRIVIALLY SAT");
+                log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
+                if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)\n"); else log.log(" TRIVIALLY SAT\n");
                 break;
             case TRIVIALLY_UNSATISFIABLE:
                 mainResult=Main.Result.TRIVIALLY_UNSAT;
-                log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)"); else log.log(" TRIVIALLY UNSAT");
+                log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
+                if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)\n"); else log.log(" TRIVIALLY UNSAT\n");
                 break;
             case SATISFIABLE:
                 mainResult=Main.Result.SAT;
-                log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (cmd.check) log.log0(" VIOLATED (SAT)"); else log.log0(" SAT");
-                log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
+                log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
+                if (cmd.check) log.log(" VIOLATED (SAT)"); else log.log(" SAT");
+                log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
                 writeXML(sol, units, sigs);
-                if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r));
+                if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
                 break;
             case UNSATISFIABLE:
                 mainResult=Main.Result.UNSAT;
-                log.log0("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (cmd.check) log.log0(" OK (UNSAT)"); else log.log0(" UNSAT");
-                log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".");
+                log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
+                if (cmd.check) log.log(" OK (UNSAT)"); else log.log(" UNSAT");
+                log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
                 break;
             }
-        } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.");
-        } catch(Err ex) { log.log(ex.msg);
+        } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n");
+        } catch(Err ex) { log.log(ex.msg+"\n");
         }
         log.flush();
         return mainResult;

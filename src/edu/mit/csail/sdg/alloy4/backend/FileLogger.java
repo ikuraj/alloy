@@ -13,17 +13,13 @@ public final class FileLogger implements Log {
 	}
 	
 	public void log(String x) {
-		if (file!=null) file.println(x);
-	}
-	
-	public void log0(String x) {
 		if (file!=null) file.print(x);
 	}
 	
-	public void log0Green(String x) {
+	public void logBold(String x) {
 		if (file!=null) file.print(x);
 	}
-	
+
 	public void flush() {
 		if (file!=null) file.flush();
 	}
