@@ -7,8 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
 
-
-
 public final class Unit { // Represents 1 instantiation of an ALS file
 
   public Unit(String prefix) { aliases.add(prefix); }

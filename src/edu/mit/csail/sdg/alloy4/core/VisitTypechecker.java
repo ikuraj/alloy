@@ -9,7 +9,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-
 import salvo.jesus.graph.DirectedGraph;
 import salvo.jesus.graph.DirectedGraphImpl;
 import salvo.jesus.graph.Vertex;

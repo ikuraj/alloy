@@ -8,8 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-
-
 /**
  * This represents the type of an expression.
  *

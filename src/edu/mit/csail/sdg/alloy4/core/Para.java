@@ -1,7 +1,5 @@
 package edu.mit.csail.sdg.alloy4.core;
 
-
-
 /**
  * Immutable; represents a toplevel paragraph in the model.
  *

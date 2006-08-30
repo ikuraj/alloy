@@ -3,8 +3,6 @@ package edu.mit.csail.sdg.alloy4.core;
 import java.util.List;
 import java.util.ArrayList;
 
-
-
 /**
  * Mutable; represents a "predicate" or "function".
  *

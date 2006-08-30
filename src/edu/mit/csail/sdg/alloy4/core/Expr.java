@@ -1,7 +1,5 @@
 package edu.mit.csail.sdg.alloy4.core;
 
-
-
 /**
  * Immutable; represents a formula or expression;
  * subclasses must also be immutable.

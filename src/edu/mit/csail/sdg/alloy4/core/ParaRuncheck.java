@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 
-
-
 /**
  * Immutable; reresents a "run" or "check" command.
  *

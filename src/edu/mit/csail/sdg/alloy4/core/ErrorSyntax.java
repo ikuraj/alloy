@@ -1,7 +1,5 @@
 package edu.mit.csail.sdg.alloy4.core;
 
-
-
 /**
  * Immutable;
  * represents a syntax error that should be reported to the user.

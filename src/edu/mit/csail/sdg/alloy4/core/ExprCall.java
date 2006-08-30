@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
-
-
 /**
  * Immutable; represents a function/predicate call
  * (note: parser must not create ExprCall nodes, only ExprJoin nodes).

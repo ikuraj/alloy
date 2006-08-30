@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
-
-
 /**
  * Immutable; represents a quantified expression.
  *

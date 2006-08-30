@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-
-
 /**
  * Mutable; reresents a "signature".
  * @author Felix Chang
