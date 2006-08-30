@@ -23,7 +23,7 @@ import edu.mit.csail.sdg.alloy4.frontend.AlloyParser;
 public final class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
-        FileLogger log=new FileLogger(".alloy.tmp");
+        LoggerToFile log=new LoggerToFile(".alloy.tmp");
         if (args.length<=1) run(-1,args,log); else run(-2,args,log);
         log.close();
     }

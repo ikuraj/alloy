@@ -4,11 +4,11 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import edu.mit.csail.sdg.alloy4.core.Logger;
 
-public final class FileLogger extends Logger {
+public final class LoggerToFile extends Logger {
 	
 	private PrintWriter file;
 	
-	public FileLogger(String filename) throws FileNotFoundException {
+	public LoggerToFile(String filename) throws FileNotFoundException {
 		file=new PrintWriter(filename);
 	}
 	

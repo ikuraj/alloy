@@ -7,12 +7,12 @@ import javax.swing.text.StyledDocument;
 
 import edu.mit.csail.sdg.alloy4.core.Logger;
 
-public final class PaneLogger extends Logger {
+public final class LoggerToTextPane extends Logger {
 	
 	private JTextPane textarea=null;
 	private Style defaultStyle=null, boldStyle=null;
 	
-	public PaneLogger(JTextPane textarea, Style defaultStyle, Style boldStyle) {
+	public LoggerToTextPane(JTextPane textarea, Style defaultStyle, Style boldStyle) {
 		this.textarea=textarea;
 		this.defaultStyle=defaultStyle;
 		this.boldStyle=boldStyle;
