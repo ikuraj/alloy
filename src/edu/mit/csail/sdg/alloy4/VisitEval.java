@@ -937,8 +937,8 @@ public final class VisitEval implements VisitReturn {
                 fname="Checking \""+e.name+"\"";
             } else {
                 List<ParaFun> ee=root.funs.get(cmd.name);
-                if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate with the same name \""+cmd.name+"\"!");
-                if (ee.size()<1) throw cmd.syntaxError("The predicate \""+cmd.name+"\" cannot be found.");
+                if (ee==null || ee.size()<1) throw cmd.syntaxError("The predicate/function \""+cmd.name+"\" cannot be found.");
+                if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate/function with the name \""+cmd.name+"\"!");
                 ParaFun e=ee.get(0);
                 Expr v=e.value;
                 if (e.type!=null) {
