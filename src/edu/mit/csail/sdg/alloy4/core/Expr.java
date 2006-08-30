@@ -232,7 +232,7 @@ public abstract class Expr {
     /**
      * Convenience method that
      * returns a typechecked node representing (this =&gt; x else y)
-     * <br>Note: this node, x, and y must all be fully typechecked.
+     * <br/> Note: this node, x, and y must all be fully typechecked.
      *
      * @throws ErrorInternal if this node, x, and y are not all fully typechecked
      * @throws ErrorInternal if x and y are not compatible.

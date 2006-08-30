@@ -14,13 +14,13 @@ package edu.mit.csail.sdg.alloy4.core;
 public final class ErrorSyntax extends Err {
 
     /**
-     * Constructs a new exception object.
+     * Constructs a new syntax error.
      * @param pos - the filename/line/row information (null if unknown)
      * @param msg - the actual error message
      */
     public ErrorSyntax(Pos pos, String msg) { super(pos,null,msg); }
 
-    /** Returns a human-readable description of the error */
+    /** Returns a human-readable description of the error. */
     @Override public String toString() {
         if (pos==null) return "Syntax error: "+msg;
         if (pos.filename.length()>0)

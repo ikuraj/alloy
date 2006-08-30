@@ -13,7 +13,8 @@ import java.util.LinkedList;
  * <br/> get(X) returns the last element in that list
  * <br/> remove(X) removes the last element in that list
  * 
- * <p/> This is very useful for representing lexical scoping: when a local variable
+ * <p/>
+ * This is very useful for representing lexical scoping: when a local variable
  * is introduced, it "hides" the existing binding; and when that variable falls
  * out of scope, the previous binding is once again "revealed".
  * 
@@ -32,10 +33,10 @@ public final class Env {
   public Env() { }
 
   /**
-   * Returns true iff the key k is mapped to one or more object.
+   * Returns true if the key k is mapped to one or more object.
    *
    * @param k - the key (which must not be null)
-   * @return true iff the key is mapped to one or more object
+   * @return true if the key is mapped to one or more object
    */
   public boolean has(String k) {
 	  return map1.containsKey(k) || map2.containsKey(k);
@@ -78,7 +79,7 @@ public final class Env {
   }
 
   /**
-   * Removes the latest binding for k (and if k had previous bindings, they become visible.)
+   * Removes the latest binding for k (and if k had previous bindings, they become visible).
    *
    * If there are no mappings, then this method does nothing.
    *
