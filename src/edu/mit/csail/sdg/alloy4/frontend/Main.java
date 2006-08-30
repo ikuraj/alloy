@@ -30,11 +30,15 @@ public final class Main {
     public enum Result { SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
     public static List<Result> run(int code, Reader i, Log log) {
-        Log blank=new Log();
+        Log blanklog=new Log() {
+			public void log(String x) {}
+			public void logBold(String x) {}
+			public void flush() {}
+		};
         ArrayList<Unit> units=readall(i);
-        fillParams(units,blank);
+        fillParams(units,blanklog);
         ArrayList<ParaSig> sigs=fillSig(units);
-        new VisitTypechecker(blank).check(units,sigs);
+        new VisitTypechecker(blanklog).check(units,sigs);
         if (code>=(-1)) { VisitEval c=new VisitEval(code,log,units); return c.codegen(sigs); }
         return new ArrayList<Result>();
     }

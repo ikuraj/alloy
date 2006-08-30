@@ -739,7 +739,7 @@ public final class VisitEval implements VisitReturn {
         }
         // Add the sig declaration facts, and sig appended facts
         VisitQuery hasThis=new VisitQuery() {
-          @Override public Object accept(ExprName x) { if (x.name.equals("this")) return x; return null; }
+          @Override public Object accept(ExprName x) { if (x.name.equals("this")) return this; return null; }
         };
         for(Unit u:units) for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
           ParaSig s=e.getValue();

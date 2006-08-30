@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.FileNotFoundException;
 
 import edu.mit.csail.sdg.alloy4.core.ErrorInternal;
+
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
