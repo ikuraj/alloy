@@ -989,7 +989,7 @@ public final class VisitEval implements VisitReturn {
 				break;
 			}
 		} catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.");
-		} catch(ErrorWithPos ex) { log.log(ex.msg);
+		} catch(Err ex) { log.log(ex.msg);
 		}
 		log.flush();
 		return mainResult;

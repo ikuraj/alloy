@@ -28,7 +28,7 @@ public final class Pos {
      */
     public Pos(String filename, int x, int y) {
         this.filename=(filename==null?"":filename);
-        this.x=x;
-        this.y=y;
+        this.x=(x>0?x:1);
+        this.y=(y>0?y:1);
     }
 }

@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -120,7 +119,7 @@ public final class SimpleGUI {
               }
             }
             catch(UnsatisfiedLinkError e) { log("\nCannot run the command! The required JNI library cannot be found! "+e.toString(), styleRed); }
-            catch(ErrorWithPos e) { log("\nCannot run the command! "+e.toString(), styleRed); }
+            catch(Err e) { log("\nCannot run the command! "+e.toString(), styleRed); }
             thread_reportTermination();
         }
     }
@@ -303,7 +302,7 @@ public final class SimpleGUI {
             Reader isr=new StringReader(text.getText());
             u=AlloyParser.alloy_parseStream(isr);
         }
-        catch(ErrorWithPos e) {
+        catch(Err e) {
             if (e.pos!=null && e.pos.y>0 && e.pos.x>0) try {
                int c=text.getLineStartOffset(e.pos.y-1)+e.pos.x-1;
                text.setSelectionStart(c);

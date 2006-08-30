@@ -11,7 +11,7 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 @SuppressWarnings("serial")
-public abstract class ErrorWithPos extends RuntimeException {
+public abstract class Err extends RuntimeException {
 	
 	/** This stores the filename/line/row information (null if unknown) */
 	public final Pos pos;
@@ -28,7 +28,7 @@ public abstract class ErrorWithPos extends RuntimeException {
 	 * @param obj - the object that triggered the error (null if unknown)
 	 * @param msg - the actual error message.
 	 */
-	public ErrorWithPos(Pos pos, Object obj, String msg) {
+	public Err(Pos pos, Object obj, String msg) {
 		this.pos=pos;
 		this.obj=obj;
 		this.msg=(msg==null?"":msg);

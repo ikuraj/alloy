@@ -11,7 +11,7 @@ package edu.mit.csail.sdg.alloy4;
  */
 
 @SuppressWarnings("serial")
-public final class ErrorSyntax extends ErrorWithPos {
+public final class ErrorSyntax extends Err {
 
     /**
      * Constructs a new exception object.
