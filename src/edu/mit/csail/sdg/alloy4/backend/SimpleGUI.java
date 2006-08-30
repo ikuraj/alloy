@@ -44,14 +44,12 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.JTextComponent;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
 import edu.mit.csail.sdg.alloy4.core.Err;
-import edu.mit.csail.sdg.alloy4.core.Log;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.frontend.AlloyParser;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
