@@ -12,7 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.Reader;
 
 import edu.mit.csail.sdg.alloy4.core.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.core.Log;
+import edu.mit.csail.sdg.alloy4.core.Logger;
 import edu.mit.csail.sdg.alloy4.core.ParaOpen;
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Type;
@@ -23,15 +23,15 @@ import edu.mit.csail.sdg.alloy4.frontend.AlloyParser;
 public final class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
-        Log log=new FileLogger(".alloy.tmp");
+        Logger log=new FileLogger(".alloy.tmp");
         if (args.length<=1) run(-1,args,log); else run(-2,args,log);
         log.close();
     }
 
     public enum Result { SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
-    public static List<Result> run(int code, Reader i, Log log) {
-        Log blank=new BlankLogger();
+    public static List<Result> run(int code, Reader i, Logger log) {
+        Logger blank=new Logger();
         ArrayList<Unit> units=readall(i);
         fillParams(units,blank);
         ArrayList<ParaSig> sigs=fillSig(units);
@@ -40,7 +40,7 @@ public final class Main {
         return new ArrayList<Result>();
     }
 
-    public static void run(int code, String[] args, Log log) throws FileNotFoundException {
+    public static void run(int code, String[] args, Logger log) throws FileNotFoundException {
         ArrayList<Unit> units;
         ArrayList<ParaSig> sigs;
         if (args.length==0) {
@@ -70,7 +70,7 @@ public final class Main {
      We throw an exception if there is a cycle in the IMPORT graph
      ************************************************************************************************************/
 
-    private static void fillParams(ArrayList<Unit> units, Log log) {
+    private static void fillParams(ArrayList<Unit> units, Logger log) {
         // Here we fill in the "params" field in each Unit object.
         while(true) {
             boolean chg=false;
@@ -181,7 +181,7 @@ public final class Main {
         }
     };
 
-    private static boolean mergeunits(ArrayList<Unit> units, Log log) {
+    private static boolean mergeunits(ArrayList<Unit> units, Logger log) {
         // Before merging, the only pointers that go between Unit objects are
         // (1) a unit's "params" may point to a sig in another unit
         // (2) a unit's "opens" may point to another unit

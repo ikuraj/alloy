@@ -2,9 +2,9 @@ package edu.mit.csail.sdg.alloy4.backend;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import edu.mit.csail.sdg.alloy4.core.Log;
+import edu.mit.csail.sdg.alloy4.core.Logger;
 
-public final class FileLogger implements Log {
+public final class FileLogger extends Logger {
 	
 	private PrintWriter file=null;
 	

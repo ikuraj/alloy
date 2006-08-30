@@ -5,9 +5,9 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyledDocument;
 
-import edu.mit.csail.sdg.alloy4.core.Log;
+import edu.mit.csail.sdg.alloy4.core.Logger;
 
-public final class PaneLogger implements Log {
+public final class PaneLogger extends Logger {
 	
 	private JTextPane textarea=null;
 	private Style defaultStyle=null, boldStyle=null;

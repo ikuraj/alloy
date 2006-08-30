@@ -28,7 +28,7 @@ import edu.mit.csail.sdg.alloy4.core.ExprName;
 import edu.mit.csail.sdg.alloy4.core.ExprQuant;
 import edu.mit.csail.sdg.alloy4.core.ExprSequence;
 import edu.mit.csail.sdg.alloy4.core.ExprUnary;
-import edu.mit.csail.sdg.alloy4.core.Log;
+import edu.mit.csail.sdg.alloy4.core.Logger;
 import edu.mit.csail.sdg.alloy4.core.ParaAssert;
 import edu.mit.csail.sdg.alloy4.core.ParaFact;
 import edu.mit.csail.sdg.alloy4.core.ParaFun;
@@ -461,9 +461,9 @@ public final class VisitEval implements VisitReturn {
     private boolean demul=false;
     private final List<Unit> units;
     private Env env=new Env();
-    private final Log log;
+    private final Logger log;
     private final int codeindex;
-    public VisitEval(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
+    public VisitEval(int i, Logger log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
 
     private Map<ParaSig,Expression> sig2rel = new LinkedHashMap<ParaSig,Expression>();
     private Expression rel(ParaSig x) {
