@@ -18,9 +18,7 @@ public final class ErrorSyntax extends Err {
      * @param pos - the filename/line/row information (null if unknown)
      * @param msg - the actual error message
      */
-    public ErrorSyntax(Pos pos, String msg) {
-    	super(pos,null,msg);
-    }
+    public ErrorSyntax(Pos pos, String msg) { super(pos,null,msg); }
 
     /** Returns a human-readable description of the error */
     @Override public String toString() {

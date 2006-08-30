@@ -12,7 +12,7 @@ import java.util.Set;
  * This represents the type of an expression.
  *
  * <p/> In Alloy, each expression can be a set/relation, or a formula, or a primitive integer.
- * 
+ *
  * @author Felix Chang
  */
 

@@ -17,10 +17,10 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
   /** lexical states */
   public static final int YYINITIAL = 0;
 
-  /** 
+  /**
    * Translates characters to character classes
    */
-  private static final String ZZ_CMAP_PACKED = 
+  private static final String ZZ_CMAP_PACKED =
     "\11\0\1\65\1\64\1\0\1\65\1\64\13\0\1\62\3\0\1\62"+
     "\2\0\1\65\1\1\1\62\1\2\1\3\1\0\1\4\1\62\1\5"+
     "\1\6\1\7\1\10\1\11\1\12\1\14\1\15\12\61\1\16\1\0"+
@@ -30,12 +30,12 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
     "\1\63\1\35\1\33\1\34\1\43\1\53\1\63\1\51\1\52\1\63"+
     "\1\25\1\26\1\27\1\30\uff81\0";
 
-  /** 
+  /**
    * Translates characters to character classes
    */
   private static final char [] ZZ_CMAP = zzUnpackCMap(ZZ_CMAP_PACKED);
 
-  /** 
+  /**
    * Translates DFA states to action switch labels.
    */
   private static final int [] ZZ_ACTION = zzUnpackAction();
@@ -77,7 +77,7 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
   }
 
 
-  /** 
+  /**
    * Translates a state to a row index in the transition table
    */
   private static final int [] ZZ_ROWMAP = zzUnpackRowMap();
@@ -126,7 +126,7 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
     return j;
   }
 
-  /** 
+  /**
    * The transition table of the DFA
    */
   private static final int [] ZZ_TRANS = zzUnpackTrans();
@@ -300,12 +300,12 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
   /** the number of characters up to the start of the matched text */
 
   /**
-   * the number of characters from the last newline up to the start of the 
+   * the number of characters from the last newline up to the start of the
    * matched text
    */
   private int yycolumn;
 
-  /** 
+  /**
    * zzAtBOL == true <=> the scanner is currently at the beginning of a line
    */
 
@@ -347,7 +347,7 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
     this(new java.io.InputStreamReader(in));
   }
 
-  /** 
+  /**
    * Unpacks the compressed character translation table.
    *
    * @param packed   the packed character translation table
@@ -370,7 +370,7 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
    * Refills the input buffer.
    *
    * @return      <code>false</code>, iff there was new input.
-   * 
+   *
    * @exception   java.io.IOException  if any I/O-Error occurs
    */
   private boolean zzRefill() throws java.io.IOException {
@@ -410,7 +410,7 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
     }
   }
 
-    
+
   /**
    * Closes the input stream.
    */
@@ -427,11 +427,11 @@ public final class AlloyLexer implements java_cup.runtime.Scanner {
    * Resets the scanner to read from a new input stream.
    * Does not close the old reader.
    *
-   * All internal variables are reset, the old input stream 
+   * All internal variables are reset, the old input stream
    * <b>cannot</b> be reused (internal buffer is discarded and lost).
    * Lexical state is set to <tt>ZZ_INITIAL</tt>.
    *
-   * @param reader   the new input stream 
+   * @param reader   the new input stream
    */
   public final void yyreset(java.io.Reader reader) {
     zzReader = reader;
@@ -470,12 +470,12 @@ yyline=yycolumn=0;
 
 
   /**
-   * Returns the character at position <tt>pos</tt> from the 
-   * matched text. 
-   * 
+   * Returns the character at position <tt>pos</tt> from the
+   * matched text.
+   *
    * It is equivalent to yytext().charAt(pos), but faster
    *
-   * @param pos the position of the character to fetch. 
+   * @param pos the position of the character to fetch.
    *            A value from 0 to yylength()-1.
    *
    * @return the character at position pos
@@ -496,8 +496,8 @@ yyline=yycolumn=0;
   /**
    * Reports an error that occured while scanning.
    *
-   * In a wellformed scanner (no or only correct usage of 
-   * yypushback(int) and a match-all fallback rule) this method 
+   * In a wellformed scanner (no or only correct usage of
+   * yypushback(int) and a match-all fallback rule) this method
    * will only be called with things that "Can't Possibly Happen".
    * If this method is called, something is seriously wrong
    * (e.g. a JFlex bug producing a faulty scanner etc.).
@@ -517,7 +517,7 @@ yyline=yycolumn=0;
     }
 
     throw new Error(message);
-  } 
+  }
 
 
   /**
@@ -617,9 +617,9 @@ yyline=yycolumn=0;
           zzEndReadL = zzEndRead;
           zzMarkedPosL = zzMarkedPos;
           zzBufferL = zzBuffer;
-          if (eof) 
+          if (eof)
             zzPeek = false;
-          else 
+          else
             zzPeek = zzBufferL[zzMarkedPosL] == '\n';
         }
         if (zzPeek) yyline--;
@@ -627,13 +627,13 @@ yyline=yycolumn=0;
       zzAction = -1;
 
       zzCurrentPosL = zzCurrentPos = zzStartRead = zzMarkedPosL;
-  
+
       zzState = zzLexicalState;
 
 
       zzForAction: {
         while (true) {
-    
+
           if (zzCurrentPosL < zzEndReadL)
             zzInput = zzBufferL[zzCurrentPosL++];
           else if (zzAtEOF) {
@@ -676,309 +676,309 @@ yyline=yycolumn=0;
       zzMarkedPos = zzMarkedPosL;
 
       switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
-        case 58: 
+        case 58:
           { return alloy_sym(AlloySym.LONE        );
           }
         case 75: break;
-        case 39: 
+        case 39:
           { return alloy_sym(AlloySym.NO          );
           }
         case 76: break;
-        case 10: 
+        case 10:
           { return alloy_sym(AlloySym.COMMA       );
           }
         case 77: break;
-        case 38: 
+        case 38:
           { return alloy_sym(AlloySym.AS          );
           }
         case 78: break;
-        case 57: 
+        case 57:
           { return alloy_sym(AlloySym.THIS        );
           }
         case 79: break;
-        case 14: 
+        case 14:
           { return alloy_sym(AlloySym.SLASH       );
           }
         case 80: break;
-        case 44: 
+        case 44:
           { return alloy_sym(AlloySym.BUT         );
           }
         case 81: break;
-        case 60: 
+        case 60:
           { return alloy_sym(AlloySym.DISJ        );
           }
         case 82: break;
-        case 37: 
+        case 37:
           { return alloy_sym(AlloySym.OR          );
           }
         case 83: break;
-        case 31: 
+        case 31:
           { return alloy_sym(AlloySym.ARROW       );
           }
         case 84: break;
-        case 32: 
+        case 32:
           { return alloy_sym(AlloySym.GTE         );
           }
         case 85: break;
-        case 21: 
+        case 21:
           { return alloy_sym(AlloySym.CARET       );
           }
         case 86: break;
-        case 42: 
+        case 42:
           { return alloy_sym(AlloySym.IFF         );
           }
         case 87: break;
-        case 61: 
+        case 61:
           { return alloy_sym(AlloySym.ELSE        );
           }
         case 88: break;
-        case 3: 
+        case 3:
           { return alloy_sym(AlloySym.HASH        );
           }
         case 89: break;
-        case 13: 
+        case 13:
           { return alloy_sym(AlloySym.DOT         );
           }
         case 90: break;
-        case 23: 
+        case 23:
           { return alloy_sym(AlloySym.BAR         );
           }
         case 91: break;
-        case 70: 
+        case 70:
           { return alloy_sym(AlloySym.EXPECT      );
           }
         case 92: break;
-        case 9: 
+        case 9:
           { return alloy_sym(AlloySym.PLUS        );
           }
         case 93: break;
-        case 36: 
+        case 36:
           { return alloy_sym(AlloySym.LTE         );
           }
         case 94: break;
-        case 52: 
+        case 52:
           { return alloy_sym(AlloySym.ONE         );
           }
         case 95: break;
-        case 64: 
+        case 64:
           { return alloy_sym(AlloySym.OPEN        );
           }
         case 96: break;
-        case 26: 
+        case 26:
           { return alloy_id  (yytext());
           }
         case 97: break;
-        case 12: 
+        case 12:
           { return alloy_sym(AlloySym.GT          );
           }
         case 98: break;
-        case 71: 
+        case 71:
           { return alloy_sym(AlloySym.MODULE      );
           }
         case 99: break;
-        case 15: 
+        case 15:
           { return alloy_sym(AlloySym.COLON       );
           }
         case 100: break;
-        case 46: 
+        case 46:
           { return alloy_sym(AlloySym.SUM         );
           }
         case 101: break;
-        case 65: 
+        case 65:
           { return alloy_sym(AlloySym.PART        );
           }
         case 102: break;
-        case 17: 
+        case 17:
           { return alloy_sym(AlloySym.EQUALS      );
           }
         case 103: break;
-        case 73: 
+        case 73:
           { return alloy_sym(AlloySym.EXTENDS     );
           }
         case 104: break;
-        case 54: 
+        case 54:
           { return alloy_sym(AlloySym.FOR         );
           }
         case 105: break;
-        case 63: 
+        case 63:
           { return alloy_sym(AlloySym.IDEN        );
           }
         case 106: break;
-        case 16: 
+        case 16:
           { return alloy_sym(AlloySym.LT          );
           }
         case 107: break;
-        case 18: 
+        case 18:
           { return alloy_sym(AlloySym.AT          );
           }
         case 108: break;
-        case 33: 
+        case 33:
           { return alloy_sym(AlloySym.RANGE       );
           }
         case 109: break;
-        case 62: 
+        case 62:
           { return alloy_sym(AlloySym.UNIV        );
           }
         case 110: break;
-        case 2: 
+        case 2:
           { return alloy_sym(AlloySym.NOT         );
           }
         case 111: break;
-        case 45: 
+        case 45:
           { return alloy_sym(AlloySym.SET         );
           }
         case 112: break;
-        case 7: 
+        case 7:
           { return alloy_sym(AlloySym.RPAREN      );
           }
         case 113: break;
-        case 40: 
+        case 40:
           { return alloy_sym(AlloySym.IN          );
           }
         case 114: break;
-        case 68: 
+        case 68:
           { return alloy_sym(AlloySym.CHECK       );
           }
         case 115: break;
-        case 29: 
+        case 29:
           { return alloy_sym(AlloySym.AND         );
           }
         case 116: break;
-        case 56: 
+        case 56:
           { return alloy_sym(AlloySym.SOME        );
           }
         case 117: break;
-        case 4: 
+        case 4:
           { return alloy_sym(AlloySym.DOLLAR      );
           }
         case 118: break;
-        case 6: 
+        case 6:
           { return alloy_sym(AlloySym.LPAREN      );
           }
         case 119: break;
-        case 67: 
+        case 67:
           { return alloy_sym(AlloySym.FACT        );
           }
         case 120: break;
-        case 11: 
+        case 11:
           { return alloy_sym(AlloySym.MINUS       );
           }
         case 121: break;
-        case 59: 
+        case 59:
           { return alloy_sym(AlloySym.NONE        );
           }
         case 122: break;
-        case 19: 
+        case 19:
           { return alloy_sym(AlloySym.LBRACKET    );
           }
         case 123: break;
-        case 20: 
+        case 20:
           { return alloy_sym(AlloySym.RBRACKET    );
           }
         case 124: break;
-        case 43: 
+        case 43:
           { return alloy_sym(AlloySym.ALL         );
           }
         case 125: break;
-        case 74: 
+        case 74:
           { return alloy_sym(AlloySym.ABSTRACT    );
           }
         case 126: break;
-        case 69: 
+        case 69:
           { return alloy_sym(AlloySym.ASSERT      );
           }
         case 127: break;
-        case 49: 
+        case 49:
           { return alloy_sym(AlloySym.LET         );
           }
         case 128: break;
-        case 1: 
+        case 1:
           { throw new ErrorSyntax(alloy_here(),"The character \'"+yytext()+"\' cannot start a lexical token!");
           }
         case 129: break;
-        case 27: 
+        case 27:
           { return alloy_num (yytext());
           }
         case 130: break;
-        case 5: 
+        case 5:
           { return alloy_sym(AlloySym.AMPERSAND   );
           }
         case 131: break;
-        case 35: 
+        case 35:
           { return alloy_sym(AlloySym.IMPLIES     );
           }
         case 132: break;
-        case 24: 
+        case 24:
           { return alloy_sym(AlloySym.RBRACE      );
           }
         case 133: break;
-        case 72: 
+        case 72:
           { return alloy_sym(AlloySym.EXACTLY     );
           }
         case 134: break;
-        case 48: 
+        case 48:
           { return alloy_sym(AlloySym.RUN         );
           }
         case 135: break;
-        case 34: 
+        case 34:
           { return alloy_sym(AlloySym.DOMAIN      );
           }
         case 136: break;
-        case 55: 
+        case 55:
           { return alloy_sym(AlloySym.SIGINT      );
           }
         case 137: break;
-        case 25: 
+        case 25:
           { return alloy_sym(AlloySym.TILDE       );
           }
         case 138: break;
-        case 22: 
+        case 22:
           { return alloy_sym(AlloySym.LBRACE      );
           }
         case 139: break;
-        case 8: 
+        case 8:
           { return alloy_sym(AlloySym.STAR        );
           }
         case 140: break;
-        case 30: 
+        case 30:
           { return alloy_sym(AlloySym.PLUSPLUS    );
           }
         case 141: break;
-        case 53: 
+        case 53:
           { return alloy_sym(AlloySym.FUN         );
           }
         case 142: break;
-        case 41: 
+        case 41:
           { throw new ErrorSyntax(alloy_here(),"An identifier cannot start with a digit!");
           }
         case 143: break;
-        case 50: 
+        case 50:
           { return alloy_sym(AlloySym.EXH         );
           }
         case 144: break;
-        case 51: 
+        case 51:
           { return alloy_sym(AlloySym.INT         );
           }
         case 145: break;
-        case 47: 
+        case 47:
           { return alloy_sym(AlloySym.SIG         );
           }
         case 146: break;
-        case 66: 
+        case 66:
           { return alloy_sym(AlloySym.PRED        );
           }
         case 147: break;
-        case 28: 
-          { 
+        case 28:
+          {
           }
         case 148: break;
-        default: 
+        default:
           if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
             zzAtEOF = true;
             zzDoEOF();
               {   return new Symbol(AlloySym.EOF, yycolumn+1, yyline+1, alloy_here());
  }
-          } 
+          }
           else {
             zzScanError(ZZ_NO_MATCH);
           }

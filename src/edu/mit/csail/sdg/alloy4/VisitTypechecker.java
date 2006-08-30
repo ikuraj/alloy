@@ -42,17 +42,17 @@ import salvo.jesus.graph.Vertex;
  */
 
 public final class VisitTypechecker {
-    
+
     /**
      * This maps each ambiguous ExprCall and ExprName node
      * to a list of possible nodes that it could refer to.
      */
     private final Map<Expr,List<Object>> objChoices=new LinkedHashMap<Expr,List<Object>>();
-    
+
     /**
      * This maps each ambiguous ExprCall and ExprName node
      * to a list of possible types that it could have.
-     * 
+     *
      * <p/> More precisely, for each ambiguous node X, the following are true:
      * <br/> 1. objChoices.containsKey(X) iff typeChoices.containsKey(X)
      * <br/> 2. objChoices.containsKey(X) => (objChoices.get(X).size() == typeChoices.get(X).size())
@@ -65,7 +65,7 @@ public final class VisitTypechecker {
      * to the object that it refers to.
      */
     private final Env env=new Env();
-    
+
     /** This is a logger that will receive verbose debugging output during typechecking. */
     private final Log log;
 
@@ -78,12 +78,12 @@ public final class VisitTypechecker {
     }
 
     private Expr addOne(Expr x) {
-    	if (x instanceof ExprUnary) {
-    		ExprUnary y=(ExprUnary)x;
-    		if (y.op==ExprUnary.Op.SETMULT || y.op==ExprUnary.Op.ONEMULT || y.op==ExprUnary.Op.LONEMULT || y.op==ExprUnary.Op.SOMEMULT) return x;
-    	}
-    	if (x.type.isInt || x.type.isBool || x.type.arity()!=1) return x;
-    	return ExprUnary.Op.ONEMULT.make(x.pos, x, x.type);
+        if (x instanceof ExprUnary) {
+            ExprUnary y=(ExprUnary)x;
+            if (y.op==ExprUnary.Op.SETMULT || y.op==ExprUnary.Op.ONEMULT || y.op==ExprUnary.Op.LONEMULT || y.op==ExprUnary.Op.SOMEMULT) return x;
+        }
+        if (x.type.isInt || x.type.isBool || x.type.arity()!=1) return x;
+        return ExprUnary.Op.ONEMULT.make(x.pos, x, x.type);
     }
 
     /**
@@ -141,11 +141,11 @@ public final class VisitTypechecker {
             throw x.typeError("This must be a formula expression! Instead, it has the following possible type(s): "+t);
     }
 
-    /** Helper method that returns true iff (x is null, or x does not have any valid type) */ 
+    /** Helper method that returns true iff (x is null, or x does not have any valid type) */
     private boolean isbad(Type x) {
         return x==null || (!x.isBool && !x.isInt && x.size()==0);
     }
-    
+
     /**
      * Helper method that throws a type error if t is ambiguous.
      * (And if so, the type error will say that x cannot be allowed to have type t)
@@ -160,11 +160,11 @@ public final class VisitTypechecker {
         if (t.size()>0 && t.arity()<=0)
             throw x.typeError("This expression is ambiguous! It has the following possible types: "+t);
     }
-    
+
     /**
      * Typecheck a node bottom-up and then top-down in order to fully resolve it
      * (this is the main method that users should use to typecheck a node)
-     * 
+     *
      * @return a deep copy of X that is identical to X, except that all the type information are filled in
      * @throws ErrorType if the node (and all its subnodes) cannot be fully resolved unambiguously
      */
@@ -174,7 +174,7 @@ public final class VisitTypechecker {
         resolved(x.type, x); // double check that the type info is unambiguous (complain if it's not)
         return x;
     }
-    
+
     //===========================================================//
     /** Method that typechecks an ExprBinary object. First pass. */
     //===========================================================//
@@ -275,14 +275,14 @@ public final class VisitTypechecker {
         if (c==null) throw x.internalError("Unexpected operator ("+x.op+") encountered in ExprBinary typechecker!");
         return x.op.make(x.pos, left, right, c);
     }
-    
+
     //============================================================//
     /** Method that typechecks an ExprBinary object. Second pass. */
     //============================================================//
 
     public final Expr accept(ExprBinary x, Type p) {
         Type a=x.left.type, b=x.right.type;
-        switch(x.op) {  
+        switch(x.op) {
             case IN: {
                 b=a.intersect(b);
                 // Intentional fall-through to the "case EQUALS" case.
@@ -382,11 +382,11 @@ public final class VisitTypechecker {
         Expr right=x.right.accept(this,b);
         return x.op.make(x.pos, left, right, p);
     }
-    
+
     //========================================================//
     /** Method that typechecks an ExprITE object. First pass. */
     //========================================================//
-    
+
     public Expr accept(ExprITE x) {
         Expr right=x.right.accept(this);
         Expr left=x.left.accept(this);
@@ -399,11 +399,11 @@ public final class VisitTypechecker {
         if (c==null || isbad(c)) throw x.typeError("The THEN-clause and the ELSE-clause must match! Its THEN-clause has type "+a+" and the ELSE clause has type "+b);
         return new ExprITE(x.pos, cond, left, right, c);
     }
-    
+
     //=========================================================//
     /** Method that typechecks an ExprITE object. Second pass. */
     //=========================================================//
-    
+
     public final Expr accept(ExprITE x, Type p) {
         Type a=x.left.type, b=x.right.type;
         resolved(p,x);
@@ -424,11 +424,11 @@ public final class VisitTypechecker {
         Expr right=x.right.accept(this, b);
         return new ExprITE(x.pos, cond, left, right, p);
     }
-    
+
     //========================================================//
     /** Method that typechecks an ExprLet object. First pass. */
     //========================================================//
-    
+
     public Expr accept(ExprLet x) {
         Expr right=resolve(x.right);
         env.put(x.left, right.type);
@@ -437,11 +437,11 @@ public final class VisitTypechecker {
         if (isbad(sub.type)) throw sub.typeError("The body of a LET expression must be a set, an integer, or a formula!");
         return new ExprLet(x.pos, x.left, right, sub, sub.type);
     }
-    
+
     //=========================================================//
     /** Method that typechecks an ExprITE object. Second pass. */
     //=========================================================//
-    
+
     public Expr accept(ExprLet x, Type p) {
         resolved(p,x);
         env.put(x.left, x.right.type);
@@ -449,17 +449,17 @@ public final class VisitTypechecker {
         env.remove(x.left);
         return new ExprLet(x.pos, x.left, x.right, sub, p);
     }
-    
+
     //=============================================================//
     /** Method that typechecks an ExprConstant object. First pass. */
     //=============================================================//
-    
+
     public Expr accept(ExprConstant x) { return x; }
-    
+
     //==============================================================//
     /** Method that typechecks an ExprConstant object. Second pass. */
     //==============================================================//
-    
+
     public Expr accept(ExprConstant x, Type p) {
         if (x.op==ExprConstant.Op.NUMBER) {
             if (!p.isInt) throw x.typeError("This must be an integer expression");
@@ -470,11 +470,11 @@ public final class VisitTypechecker {
         }
         return x;
     }
-    
+
     //==========================================================//
     /** Method that typechecks an ExprQuant object. First pass. */
     //==========================================================//
-    
+
     public Expr accept(ExprQuant x) {
         List<VarDecl> list=new ArrayList<VarDecl>();
         Type comp=null; // Stores the Union Type for a Set Comprehension expression
@@ -504,11 +504,11 @@ public final class VisitTypechecker {
         else { cform(sub.type, sub); comp=Type.FORMULA; }
         return x.op.make(x.pos, list, sub, comp);
     }
-    
+
     //===========================================================//
     /** Method that typechecks an ExprQuant object. Second pass. */
     //===========================================================//
-    
+
     public Expr accept(ExprQuant x, Type p) {
         resolved(p,x);
         for(VarDecl d:x.list) {
@@ -520,11 +520,11 @@ public final class VisitTypechecker {
         }
         return x.op.make(x.pos, x.list, sub, p);
     }
-    
+
     //=============================================================//
     /** Method that typechecks an ExprSequence object. First pass. */
     //=============================================================//
-    
+
     public Expr accept(ExprSequence x) {
         List<Expr> list=new ArrayList<Expr>();
         for(int i=0; i<x.list.size(); i++) {
@@ -534,11 +534,11 @@ public final class VisitTypechecker {
         }
         return new ExprSequence(x.pos, list);
     }
-    
+
     //==============================================================//
     /** Method that typechecks an ExprSequence object. Second pass. */
     //==============================================================//
-    
+
     public Expr accept(ExprSequence x, Type t) {
         List<Expr> list=new ArrayList<Expr>();
         cform(t,x);
@@ -549,28 +549,28 @@ public final class VisitTypechecker {
         }
         return new ExprSequence(x.pos, list);
     }
-    
+
     //==========================================================//
     /** Method that typechecks an ExprUnary object. First pass. */
     //==========================================================//
-    
+
     public Expr accept(ExprUnary x) {
         Type ans=null;
         Expr sub=x.sub.accept(this);
         switch(x.op) {
-        
+
         case NOT:
             cform(sub.type, sub); ans=Type.FORMULA; break;
-            
+
         case SOMEMULT: case LONEMULT: case ONEMULT: case SETMULT:
             cset(sub); ans=sub.type; break;
-            
+
         case SOME: case LONE: case ONE: case NO:
             cset(sub); ans=Type.FORMULA; break;
-            
+
         case TRANSPOSE:
             cset(sub); ans=sub.type.transpose(); break;
-            
+
         case RCLOSURE: case CLOSURE:
             // TYPE(^X) = ^TYPE(X)
             // TYPE(^X) = ^TYPE(X) + UNIV->UNIV
@@ -581,13 +581,13 @@ public final class VisitTypechecker {
             if (ans.join(ans).size()==0) throw x.typeError("redundant closure operation (domain and range are disjoint)");
             if (x.op==ExprUnary.Op.RCLOSURE) ans=ans.union(Type.make(ParaSig.UNIV,ParaSig.UNIV));
             break;
-            
+
         case CARDINALITY:
             cset(sub); ans=Type.INT; break;
-            
+
         case INTTOATOM:
             cint(sub); ans=ParaSig.SIGINT.type; break;
-            
+
         case SUM:
             // Report an error if TYPE(Subexpression) has empty intersection with SIGINT
             cset(sub); if (sub.type.intersect(ParaSig.SIGINT.type).hasTuple()) {ans=Type.INT; break;}
@@ -595,11 +595,11 @@ public final class VisitTypechecker {
         }
         return x.op.make(x.pos, sub, ans);
     }
-    
+
     //===========================================================//
     /** Method that typechecks an ExprUnary object. Second pass. */
     //===========================================================//
-    
+
     public final Expr accept(ExprUnary x, Type p) {
         Type subtype=x.sub.type;
         resolved(p,x);
@@ -625,12 +625,12 @@ public final class VisitTypechecker {
         Expr sub=x.sub.accept(this, subtype);
         return x.op.make(x.pos, sub, p);
     }
-        
+
 //  ################################################################################################
-    
+
     public Object root=null;
     public Unit rootunit=null;
-    
+
     private Set<Object> populate(String x1) {
         Set<Object> y;
         String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
@@ -663,11 +663,11 @@ public final class VisitTypechecker {
         }
         return y;
     }
-    
+
     //=========================================================//
     /** Method that typechecks an ExprName object. First pass. */
     //=========================================================//
-    
+
     public Expr accept(ExprName x) {
         List<Object> objects=new ArrayList<Object>();
         List<Type> types=new ArrayList<Type>();
@@ -692,11 +692,11 @@ public final class VisitTypechecker {
         typeChoices.put(ans, types);
         return ans;
     }
-    
+
     //==========================================================//
     /** Method that typechecks an ExprName object. Second pass. */
     //==========================================================//
-    
+
     public Expr accept(ExprName x, Type t) {
         List<Object> objects=objChoices.get(x);
         objChoices.remove(x);
@@ -731,9 +731,9 @@ public final class VisitTypechecker {
             return new ExprName(x.pos, x.name, match, t);
         return new ExprName(x.pos, x.name, null, t);
     }
-        
+
 //  ################################################################################################
-    
+
     private boolean applicable(ParaFun f,List<Expr> args) {
         int argi=0;
         for(VarDecl d:f.decls) {
@@ -749,16 +749,16 @@ public final class VisitTypechecker {
         }
         return true;
     }
-    
+
     private boolean containsApplicable(Set<Object> x) {
         for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount>0) return true;
         return false;
     }
-    
+
     //=========================================================//
     /** Method that typechecks an ExprJoin object. First pass. */
     //=========================================================//
-    
+
     public Expr accept(ExprJoin x) {
         // This is not optimal. eg. given b.a.(func[x,y,z]), "a" and "b" will be forced to be locally-unambiguous.
         // Another inefficiency: we don't jump forward, so sublists are re-Desugared again and again until the end of list.
@@ -841,13 +841,13 @@ public final class VisitTypechecker {
         Expr right=x.right.accept(this,rightType);
         return new ExprJoin(x.pos, left, right, p);
     }
-    
+
     //=========================================================//
     /** Method that typechecks an ExprCall object. First pass. */
     //=========================================================//
-    
+
     public Expr accept(ExprCall x) { throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!"); }
-    
+
     //==========================================================//
     /** Method that typechecks an ExprCall object. Second pass. */
     //==========================================================//
@@ -906,9 +906,9 @@ public final class VisitTypechecker {
         }
         return ans;
     }
-    
+
 //  ################################################################################################
-    
+
     private void check(ParaSig x, Unit u) {
         // When typechecking the fields:
         // * each field is allowed to refer to earlier fields in the same SIG,
@@ -936,9 +936,9 @@ public final class VisitTypechecker {
             newdecl.add(new VarDecl(d, value));
         }
     }
-    
+
 //  ################################################################################################
-    
+
     private void check(ParaFun fun, Unit u) {
         // Now, typecheck all function/predicate PARAMETERS and RETURNTYPE
         // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
@@ -967,9 +967,9 @@ public final class VisitTypechecker {
         this.env.clear();
         fun.decls=newdecls; fun.type=type;
     }
-    
+
 //  ################################################################################################
-    
+
     private void check(Unit u) {
         // Now, typecheck (1) function/predicate BODIES. (2) Signature facts. (3) Standalone facts (4) Assertions.
         // These can refer to any SIG/FIELD/FUN/PRED visible from here.
@@ -1010,26 +1010,26 @@ public final class VisitTypechecker {
             if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
         }
     }
-    
+
 //  ################################################################################################
 
     public void check(ArrayList<Unit> units, List<ParaSig> sigs) {
-		objChoices.clear(); typeChoices.clear(); env.clear();
-    	for(ParaSig s:sigs) {
-    		Unit u=units.get(0).lookupPath(s.path);
-    		check(s,u);
-    	}
-    	for(Unit u:units)
-    	  for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet())
-    	     for(ParaFun f:funi.getValue())
-    		   { objChoices.clear(); typeChoices.clear(); env.clear(); check(f,u); }
-		objChoices.clear(); typeChoices.clear(); env.clear();
-    	for(Unit u:units) check(u);
-		objChoices.clear(); typeChoices.clear(); env.clear();
+        objChoices.clear(); typeChoices.clear(); env.clear();
+        for(ParaSig s:sigs) {
+            Unit u=units.get(0).lookupPath(s.path);
+            check(s,u);
+        }
+        for(Unit u:units)
+          for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet())
+             for(ParaFun f:funi.getValue())
+               { objChoices.clear(); typeChoices.clear(); env.clear(); check(f,u); }
+        objChoices.clear(); typeChoices.clear(); env.clear();
+        for(Unit u:units) check(u);
+        objChoices.clear(); typeChoices.clear(); env.clear();
     }
-    
+
 //  ################################################################################################
-    
+
 //  If basic2Vertex contains key bt, then the Vertex associated with bt is returned.
 //  Otherwise, a new Vertex vnew containing bt is created, a mapping from bt to vnew is
 //  added to basic2Vertex, and vnew returned.
@@ -1038,7 +1038,7 @@ public final class VisitTypechecker {
         if (v==null) { v=new Vertex(bt); basic2Vertex.put(bt,v); }
         return v;
     }
-    
+
 //  EFFECTS: After the method returns, the supplied graph will
 //  contain an edge from vertex v1 to vertex v2 iff there exists an r1 in ut such
 //  that r1 = v1->v2 OR (v1 != v2 AND v1 & v2 is non-empty).
@@ -1060,7 +1060,7 @@ public final class VisitTypechecker {
             }
         }
     }
-    
+
 //  PRECONDITION:  (1) basic2vertex contains mappings from BasicTypes to nodes in graph;
 //  (2) there exist bt1' such that bt1' is mapped by basic2vertex and bt1'&bt1 is non-empty.
 //  EFFECTS: After the method returns, the supplied graph will be augmented with an edge
@@ -1083,7 +1083,7 @@ public final class VisitTypechecker {
             basic2vertex.put(bt, btVertex);
         }
     }
-    
+
 //  PRECONDITION:  (1) basic2vertex contains mappings from BasicTypes to nodes in graph;
 //  (2) for each bt1->bt2 in ut, there exist bt1' and bt2' such that bt1' and bt2' are mapped by
 //  basic2vertex and bt1'&bt1 and bt2'&bt2 are non-empty.
@@ -1098,7 +1098,7 @@ public final class VisitTypechecker {
             _expandClosureGraph(rt.basicTypes.get(1), graph, basic2vertex);
         }
     }
-    
+
 //  childType' := {r1 | r1 in childType AND there exist basic types
 //  b1 and b2 such that b1->b2 in parentType AND r1 is on a path from b1 to b2}
     private static Type closureResolveChild(Type parentType, Type childType) {
@@ -1123,6 +1123,6 @@ public final class VisitTypechecker {
         }
         return resolvedType;
     }
-    
+
 //  ################################################################################################
 }

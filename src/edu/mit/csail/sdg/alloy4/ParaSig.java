@@ -92,7 +92,7 @@ public final class ParaSig extends Para {
         sups.set(i,parent);
       }
     }
-    
+
     public List<ParaSig> subs=new ArrayList<ParaSig>(); // If I'm a TOPSIG/SUBSIG/"Int", sigs who EXTEND me.
     public final boolean subset;
 

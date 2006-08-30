@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
 
 /**
  * Immutable; reresents a "run" or "check" command.
- * 
+ *
  * <br/>
  * <br/> Invariant: all X:String | exact.contains(X) => scope.containsKey(X)
  * <br/> Invariant: all X:String | scope.containsKey(X) => (names.contains(X) && scope.get(X)>=0)
@@ -18,7 +18,7 @@ import java.util.LinkedHashMap;
  * <br/> Invariant: the "names" array does not contain any duplicate entries
  * <br/> Invariant: expects == -1, 0, or 1
  * <br/> Invariant: overall >= -1
- * 
+ *
  * @author Felix Chang
  */
 

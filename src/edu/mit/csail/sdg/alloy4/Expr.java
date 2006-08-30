@@ -13,7 +13,7 @@ package edu.mit.csail.sdg.alloy4;
 
 public abstract class Expr {
 
-	/** Accepts the return visitor. */
+    /** Accepts the return visitor. */
     public abstract Object accept(VisitReturn visitor);
 
     /** Accepts the typecheck visitor bottom-up. */
