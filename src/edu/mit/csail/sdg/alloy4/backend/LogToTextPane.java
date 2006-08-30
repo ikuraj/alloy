@@ -18,12 +18,14 @@ public final class LogToTextPane extends Log {
 		this.boldStyle=boldStyle;
 	}
 	
+	@Override
 	public void log(String x) {
 		StyledDocument doc=textarea.getStyledDocument();
 		try { doc.insertString(doc.getLength(), x, defaultStyle); } catch (BadLocationException e) { }
 		textarea.setCaretPosition(doc.getLength());
 	}
 
+	@Override
     public void logBold(String x) {
 		StyledDocument doc=textarea.getStyledDocument();
 		try { doc.insertString(doc.getLength(), x, boldStyle); } catch (BadLocationException e) { }

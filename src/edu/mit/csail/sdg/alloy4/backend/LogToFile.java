@@ -12,14 +12,17 @@ public final class LogToFile extends Log {
 		file=new PrintWriter(filename);
 	}
 	
+	@Override
 	public void log(String x) {
 		if (file!=null) file.print(x);
 	}
 	
+	@Override
 	public void logBold(String x) {
 		if (file!=null) file.print(x);
 	}
 
+	@Override
 	public void flush() {
 		if (file!=null) file.flush();
 	}
