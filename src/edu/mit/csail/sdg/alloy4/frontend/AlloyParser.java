@@ -5,7 +5,6 @@
 
 package edu.mit.csail.sdg.alloy4.frontend;
 
-import java_cup.runtime.*;
 import java.util.Stack;
 import java.util.List;
 import java.util.ArrayList;
@@ -21,7 +20,7 @@ import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.io.IOException;
-
+import java_cup.runtime.*;
 import edu.mit.csail.sdg.alloy4.core.Err;
 import edu.mit.csail.sdg.alloy4.core.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.core.ErrorSyntax;
