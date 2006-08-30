@@ -105,7 +105,7 @@ public final class SimpleGUI {
         public void run() {
             try {
               String ps=System.getProperty("file.separator");
-              List<Main.Result> result=Main.run(index,source,new LoggerToTextPane(log,styleRegular,styleGreen));
+              List<Main.Result> result=Main.run(index,source,new LogToTextPane(log,styleRegular,styleGreen));
               if (result.size()==1 && result.get(0)==Main.Result.SAT) {
                   log("Visualizer loading... please wait...", styleRegular);
                   String newcwd = new File(cwd+".."+ps+"kodviz").getAbsolutePath();

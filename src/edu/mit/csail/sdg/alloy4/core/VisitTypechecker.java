@@ -67,13 +67,13 @@ public final class VisitTypechecker {
     private final Env env=new Env();
 
     /** This is a logger that will receive verbose debugging output during typechecking. */
-    private final Logger log;
+    private final Log log;
 
     /**
      * Constructor for a VisitTypechecker object.
      * @param log - the logger that will receive verbose debugging output during typechecking
      */
-    public VisitTypechecker(Logger log) {
+    public VisitTypechecker(Log log) {
         this.log=log;
     }
 

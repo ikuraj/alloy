@@ -11,7 +11,7 @@ package edu.mit.csail.sdg.alloy4.core;
  * @author Felix Chang
  */
 
-public class Logger {
+public class Log {
 	
 	/** Adds x into the log. */
     public void log(String x) {}
