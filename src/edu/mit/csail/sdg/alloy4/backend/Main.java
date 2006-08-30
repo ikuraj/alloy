@@ -23,7 +23,7 @@ import edu.mit.csail.sdg.alloy4.frontend.AlloyParser;
 public final class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
-        Log log=new Log();
+        Log log=new FileLogger(".alloy.tmp");
         if (args.length<=1) run(-1,args,log); else run(-2,args,log);
         log.close();
     }
@@ -31,7 +31,7 @@ public final class Main {
     public enum Result { SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
     public static List<Result> run(int code, Reader i, Log log) {
-        Log blank=new Log(null,null,null);
+        Log blank=new BlankLogger();
         ArrayList<Unit> units=readall(i);
         fillParams(units,blank);
         ArrayList<ParaSig> sigs=fillSig(units);

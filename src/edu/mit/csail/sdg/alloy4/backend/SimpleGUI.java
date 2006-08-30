@@ -44,6 +44,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -74,7 +75,7 @@ public final class SimpleGUI {
         } catch (BadLocationException e) { }
         log.setCaretPosition(doc.getLength());
     }
-
+    
     /**
      * This Runnable is used to execute a SAT query.
      * By having a separate runnable, we allow the main GUI to remain responsive.
@@ -106,7 +107,7 @@ public final class SimpleGUI {
         public void run() {
             try {
               String ps=System.getProperty("file.separator");
-              List<Main.Result> result=Main.run(index,source,new Log(log,styleRegular,styleGreen));
+              List<Main.Result> result=Main.run(index,source,new PaneLogger(log,styleRegular,styleGreen));
               if (result.size()==1 && result.get(0)==Main.Result.SAT) {
                   log("Visualizer loading... please wait...", styleRegular);
                   String newcwd = new File(cwd+".."+ps+"kodviz").getAbsolutePath();
