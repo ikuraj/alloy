@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.backend;
+package edu.mit.csail.sdg.alloy4.frontend;
 
 import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;

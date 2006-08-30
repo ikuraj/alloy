@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.backend;
+package edu.mit.csail.sdg.alloy4.frontend;
 
 import java.util.Set;
 import java.util.Map;
@@ -18,7 +18,6 @@ import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Type;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
-import edu.mit.csail.sdg.alloy4.frontend.AlloyParser;
 
 public final class Main {
 

@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.backend;
+package edu.mit.csail.sdg.alloy4.frontend;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -51,7 +51,6 @@ import javax.swing.text.StyledDocument;
 
 import edu.mit.csail.sdg.alloy4.core.Err;
 import edu.mit.csail.sdg.alloy4.core.Unit;
-import edu.mit.csail.sdg.alloy4.frontend.AlloyParser;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 
 @SuppressWarnings("serial")

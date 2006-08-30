@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.backend;
+package edu.mit.csail.sdg.alloy4.frontend;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
