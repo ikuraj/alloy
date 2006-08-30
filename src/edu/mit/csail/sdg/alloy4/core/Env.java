@@ -22,15 +22,14 @@ import java.util.LinkedList;
 
 public final class Env {
 
-  /**
-   * If a key is bound to one or more objects, this field stores the first object.
-   */
+  /** If a key is bound to one or more objects, this stores the first object. */
   private final Map<String,Object> map1=new LinkedHashMap<String,Object>();
 
-  /**
-   * If a key is bound to more than one objects, this field stores every object except the first.
-   */
+  /** If a key is bound to more than one objects, this stores every object except the first. */
   private final Map<String,LinkedList<Object>> map2=new LinkedHashMap<String,LinkedList<Object>>();
+
+  /** Constructor that builds an empty environement. */
+  public Env() { }
 
   /**
    * Returns true iff the key k is mapped to one or more object.
@@ -38,15 +37,16 @@ public final class Env {
    * @param k - the key (which must not be null)
    * @return true iff the key is mapped to one or more object
    */
-  public boolean isin(String k) {
+  public boolean has(String k) {
 	  return map1.containsKey(k) || map2.containsKey(k);
   }
 
   /**
    * Returns the latest object associated with key k (and returns null if none).
    * 
-   * <p/> Since null is a possible value, if you get null as the answer,
-   * you need to call isin() to determine whether the key really has a binding or not.  
+   * <p/>
+   * Since null is a possible value, if you get null as the answer,
+   * you need to call has() to determine whether the key really has a binding or not.  
    * 
    * @param k - the key (which must not be null)
    * @return the latest object associated with key k (and returns null if none).
@@ -80,7 +80,7 @@ public final class Env {
   /**
    * Removes the latest binding for k (and if k had previous bindings, they become visible.)
    *
-   * <p/> If there are no mappings, then this method does nothing.
+   * If there are no mappings, then this method does nothing.
    *
    * @param k - the key (which must not be null)
    */
@@ -94,7 +94,7 @@ public final class Env {
     map1.remove(k);
   }
 
-  /** Remove all bindings. */
+  /** Removes all bindings. */
   public void clear() {
     map1.clear();
     map2.clear();
