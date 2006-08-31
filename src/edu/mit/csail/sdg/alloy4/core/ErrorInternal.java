@@ -1,11 +1,9 @@
 package edu.mit.csail.sdg.alloy4.core;
 
 /**
- * Immutable;
- * represents an internal error that should be reported to the developers.
+ * Immutable; represents an internal error that should be reported to the developers.
  *
- * <br/>
- * <br/> Invariant: msg!=null
+ * <p/> <b>Invariant:</b> msg!=null
  *
  * @author Felix Chang
  */

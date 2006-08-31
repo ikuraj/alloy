@@ -1,11 +1,9 @@
 package edu.mit.csail.sdg.alloy4.core;
 
 /**
- * Immutable;
- * represents a syntax error that should be reported to the user.
+ * Immutable; represents a syntax error that should be reported to the user.
  *
- * <br/>
- * <br/> Invariant: msg!=null
+ * <p/> <b>Invariant:</b> msg!=null
  *
  * @author Felix Chang
  */

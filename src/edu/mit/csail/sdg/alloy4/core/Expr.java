@@ -1,12 +1,11 @@
 package edu.mit.csail.sdg.alloy4.core;
 
 /**
- * Immutable; represents a formula or expression;
- * subclasses must also be immutable.
+ * Immutable; represents a formula or expression; subclasses must also be immutable.
  *
- * <br/>
- * <br/> Invariant: pos!=null
- * <br/> Invariant: mult==0 || mult==1 || mult==2
+ * <p/> <b>Invariant:</b>  pos!=null
+ *
+ * <p/> <b>Invariant:</b>  mult==0 || mult==1 || mult==2
  *
  * @author Felix Chang
  */
@@ -37,10 +36,12 @@ public abstract class Expr {
     /**
      * This field records whether the node is a multiplicity constraint.
      *
-     * <br>If it's 2, that means it is a multiplicity constraint (X ?-&gt;? X),
-     * or has the form (A -&gt; B) where A and/or B is a multiplicity constraint.
-     * <br>If it's 1, that means it is a multiplicity constraint of the form (? X)
-     * <br>If it's 0, that means it does not have either form.
+     * <br> If it's 2, that means it is a multiplicity constraint (X ?->? X),
+     *      or has the form (A -> B) where A and/or B is a multiplicity constraint.
+     *
+     * <br> If it's 1, that means it is a multiplicity constraint of the form (? X)
+     *
+     * <br> If it's 0, that means it does not have either form.
      */
     public final int mult;
 
@@ -52,8 +53,8 @@ public abstract class Expr {
      * @param type - the type (null if this expression has not been typechecked)
      *
      * @param mult - the multiplicity
-     * <br>If it's 2, that means it is a multiplicity constraint (X ?-&gt;? X),
-     * or has the form (A -&gt; B) where A and/or B is a multiplicity constraint.
+     * <br>If it's 2, that means it is a multiplicity constraint (X ?->? X),
+     *     or has the form (A -> B) where A and/or B is a multiplicity constraint.
      * <br>If it's 1, that means it is a multiplicity constraint of the form (? X)
      * <br>If it's 0, that means it does not have either form.
      *
@@ -102,20 +103,6 @@ public abstract class Expr {
             throw internalError("isSetOf1ary() cannot be called until typechecking is done");
         if (!(this instanceof ExprUnary)) return false;
         if (((ExprUnary)this).op!=ExprUnary.Op.SETMULT) return false;
-        return this.type.arity()==1;
-    }
-
-    /**
-     * Convenience method that returns true if and only if "this" has the form (:one X)
-     * and X's arity is 1.
-     *
-     * @throws ErrorInternal if this node is not fully typechecked
-     */
-    public final boolean isOneOf1ary() {
-        if (this.type==null)
-            throw internalError("isOneOf1ary() cannot be called until typechecking is done");
-        if (!(this instanceof ExprUnary)) return false;
-        if (((ExprUnary)this).op!=ExprUnary.Op.ONEMULT) return false;
         return this.type.arity()==1;
     }
 
@@ -249,16 +236,16 @@ public abstract class Expr {
         else {
             ans=x.type.union(y.type);
             if (ans.arity()<1)
-                throw internalError("Cannot perform ITE on incompatible expressions!");
+            	throw internalError("Cannot perform ITE on incompatible expressions!");
         }
         return new ExprITE(this.pos, this, x, y, ans);
     }
 
     /**
      * Convenience method that
-     * returns a typechecked node representing the univ relation.
+     * returns a typechecked node representing the universal set.
      *
-     * @param p - the position in the file where the univ relation is used
+     * @param p - the position in the file where the universal set is used
      */
     public static final Expr univ(Pos p) {
         return ExprConstant.Op.UNIV.make(p);

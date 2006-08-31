@@ -1,11 +1,9 @@
 package edu.mit.csail.sdg.alloy4.core;
 
 /**
- * Immutable;
- * this is the abstract super class of the various possible errors.
+ * Immutable; this is the abstract super class of the various possible errors.
  *
- * <br/>
- * <br/> Invariant: msg!=null
+ * <p/> <b>Invariant</b>: msg!=null
  *
  * @author Felix Chang
  */
@@ -23,7 +21,7 @@ public abstract class Err extends RuntimeException {
     public final Object obj;
 
     /**
-     * Constructs a new exception object.
+     * Constructs a new error.
      * @param pos - the filename/line/row information (null if unknown)
      * @param obj - the object that triggered the error (null if unknown)
      * @param msg - the actual error message

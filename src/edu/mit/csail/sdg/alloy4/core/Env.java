@@ -5,13 +5,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
 /**
- * Mutable;
- * this helper class implements an undoable mapping from nonnull String to nullable Object.
+ * Mutable; this implements an undoable mapping from nonnull String to nullable Object.
  *
- * <p/> To be more precise, every key is internally mapped to a list of Object.
- * <br/> put(X,Y) appeneds Y to that list
- * <br/> get(X) returns the last element in that list
- * <br/> remove(X) removes the last element in that list
+ * <p/>  To be more precise, every key is internally mapped to a list of Object.
+ * <br/> The put(X,Y)  method appeneds Y to that list.
+ * <br/> The get(X)    method returns the last element in that list.
+ * <br/> The remove(X) method removes the last element in that list.
  * 
  * <p/>
  * This is very useful for representing lexical scoping: when a local variable
@@ -44,14 +43,14 @@ public final class Env {
   }
 
   /**
-   * Returns the latest object associated with key k (and returns null if none).
+   * Returns the latest value associated with the key k (and returns null if none).
    * 
    * <p/>
    * Since null is a possible value, if you get null as the answer,
-   * you need to call has() to determine whether the key really has a binding or not.  
+   * you need to call has(k) to determine whether the key really has a binding or not.  
    * 
    * @param k - the key (which must not be null)
-   * @return the latest object associated with key k (and returns null if none).
+   * @return the latest value associated with key k (and returns null if none).
    */
   public Object get(String k) {
 	  LinkedList<Object> list=map2.get(k);
@@ -82,7 +81,7 @@ public final class Env {
   /**
    * Removes the latest binding for k (and if k had previous bindings, they become visible).
    *
-   * If there are no mappings, then this method does nothing.
+   * If there are no mappings for k, then this method does nothing.
    *
    * @param k - the key (which must not be null)
    */

@@ -3,14 +3,13 @@ package edu.mit.csail.sdg.alloy4.core;
 /**
  * Immutable; represents an expression of the form (x OP y).
  *
- * <br/>
- * <br/> Invariant: op!=null && left!=null && right!=null
- * <br/> Invariant: this.mult!=1
- * <br/> Invariant: this.mult==2 => op is one of the 16 arrow operators
- * <br/> Invariant: left.mult!=1
- * <br/> Invariant: left.mult==2 => op is one of the 16 arrow operators
- * <br/> Invariant: right.mult==1 => op==Op.IN
- * <br/> Invariant: right.mult==2 => (op==Op.IN || op is one of the 16 arrow operators)
+ * <p/> <b>Invariant:</b> op!=null && left!=null && right!=null
+ * <p/> <b>Invariant:</b> this.mult!=1
+ * <p/> <b>Invariant:</b> this.mult==2 => op is one of the 16 arrow operators
+ * <p/> <b>Invariant:</b> left.mult!=1
+ * <p/> <b>Invariant:</b> left.mult==2 => op is one of the 16 arrow operators
+ * <p/> <b>Invariant:</b> right.mult==1 => op==Op.IN
+ * <p/> <b>Invariant:</b> right.mult==2 => (op==Op.IN || op is one of the 16 arrow operators)
  *
  * @author Felix Chang
  */
@@ -45,7 +44,7 @@ public final class ExprBinary extends Expr {
      * Determines whether the expression (left op right)
      * is an arrow multiplicity constraint.
      * <br>
-     * That means it is of the form (A ?-&gt;? B), or it is (A-&gt;B)
+     * That means it is of the form (A ?->? B), or it is (A->B)
      * where A and/or B is an arrow multiplicity constraint.
      */
     private static boolean isMult(Op op, Expr left, Expr right) {
@@ -92,7 +91,7 @@ public final class ExprBinary extends Expr {
      * and include the left-hand-type "lefttype"
      * and right-hand-type "righttype" in the message.
      */
-    public final ErrorType typeError(String msg,Type leftType,Type rightType) {
+    public final ErrorType typeError(String msg, Type leftType, Type rightType) {
         return typeError(msg+" LeftType="+leftType+" RightType="+rightType);
     }
 
