@@ -28,13 +28,13 @@ public final class ExprLet extends Expr {
         return visitor.accept(this,type);
     }
 
-    /** The name of the LET variable */
+    /** The name of the LET variable. */
     public final String left;
 
-    /** The value for the LET variable */
+    /** The value for the LET variable. */
     public final Expr right;
 
-    /** The body of the LET expression */
+    /** The body of the LET expression. */
     public final Expr sub;
 
     /**

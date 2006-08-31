@@ -5,11 +5,11 @@ package edu.mit.csail.sdg.alloy4.core;
  *
  * <p/> <b>Invariant:</b> op!=null && left!=null && right!=null
  * <p/> <b>Invariant:</b> this.mult!=1
- * <p/> <b>Invariant:</b> this.mult==2 => op is one of the 16 arrow operators
+ * <p/> <b>Invariant:</b> this.mult==2 => this.op is one of the 16 arrow operators
  * <p/> <b>Invariant:</b> left.mult!=1
- * <p/> <b>Invariant:</b> left.mult==2 => op is one of the 16 arrow operators
- * <p/> <b>Invariant:</b> right.mult==1 => op==Op.IN
- * <p/> <b>Invariant:</b> right.mult==2 => (op==Op.IN || op is one of the 16 arrow operators)
+ * <p/> <b>Invariant:</b> left.mult==2 => this.op is one of the 16 arrow operators
+ * <p/> <b>Invariant:</b> right.mult==1 => this.op==IN
+ * <p/> <b>Invariant:</b> right.mult==2 => (this.op==IN || this.op is one of the 16 arrow operators)
  *
  * @author Felix Chang
  */

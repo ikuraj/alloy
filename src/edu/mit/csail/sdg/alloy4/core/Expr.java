@@ -29,7 +29,7 @@ public abstract class Expr {
 
     /**
      * This field records the type for this node
-     * (null if this node has not been typechecked)
+     * (null if this node has not been typechecked).
      */
     public final Type type;
 
@@ -58,12 +58,13 @@ public abstract class Expr {
      * <br>If it's 1, that means it is a multiplicity constraint of the form (? X)
      * <br>If it's 0, that means it does not have either form.
      *
-     * @throws ErrorInternal if pos==null
+     * @throws ErrorInternal if pos==null, or mult is not one of {0,1,2}
      */
     public Expr (Pos pos, Type type, int mult) {
         this.pos=nonnull(pos);
         this.type=type;
         this.mult=mult;
+        if (mult<0 || mult>2) throw internalError("Expr node's multiplicity must be 0, 1, or 2.");
     }
 
     /** Convenience method that constructs a syntax error exception. */
@@ -115,79 +116,61 @@ public abstract class Expr {
      * @throws ErrorInternal if this node is not an ExprUnary expression
      */
     public final Expr getUnarySub() {
-        if (!(this instanceof ExprUnary))
-            throw internalError("getUnarySub() called on a non-unary object!");
-        return ((ExprUnary)this).sub;
+        if (this instanceof ExprUnary) return ((ExprUnary)this).sub;
+        throw internalError("getUnarySub() can be used only on an ExprUnary object!");
     }
 
     /**
      * Convenience method that
      * returns a typechecked node representing ("this in y")
-     * <br>Note: this node and y must both be fully typechecked.
+     * <br/> Note: this node and y must both be fully typechecked.
      *
      * @throws ErrorInternal if this node and y are not both fully typechecked
+     * @throws ErrorInternal if this node and y are not compatible
      */
     public final Expr in(Expr y) {
         if (this.type==null) throw this.internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        return ExprBinary.Op.IN.make(this.pos, this, y, Type.FORMULA);
+        int thisArity=this.type.arity();
+        if (thisArity>0 && thisArity==y.type.arity())
+        	return ExprBinary.Op.IN.make(this.pos, this, y, Type.FORMULA);
+        throw internalError("Cannot perform Expr.in()");
     }
 
     /**
      * Convenience method that
      * returns a typechecked node representing ("! this")
-     * <br>Note: this node must be fully typechecked.
+     * <br/> Note: this node must be fully typechecked.
      *
      * @throws ErrorInternal if this node is not fully typechecked
+     * @throws ErrorInternal if this node is not a formula
      */
     public final Expr not() {
         if (this.type==null) throw internalError("The node is not yet typechecked");
-        return ExprUnary.Op.NOT.make(this.pos, this, Type.FORMULA);
+        if (this.type.isBool) return ExprUnary.Op.NOT.make(this.pos, this, Type.FORMULA);
+        throw internalError("Cannot perform Expr.not()");
     }
 
     /**
      * Convenience method that
      * returns a typechecked node representing (this &amp;&amp; y)
-     * <br>Note: this node and y must both be fully typechecked.
+     * <br/> Note: this node and y must both be fully typechecked.
      *
      * @throws ErrorInternal if this node and y are not both fully typechecked
+     * @throws ErrorInternal if this node and y are not compatible
      */
     public final Expr and(Expr y) {
         if (this.type==null) throw this.internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        return ExprBinary.Op.AND.make(this.pos, this, y, Type.FORMULA);
-    }
-
-    /**
-     * Convenience method that
-     * returns a typechecked node representing (this || y)
-     * <br>Note: this node and y must both be fully typechecked.
-     *
-     * @throws ErrorInternal if this node and y are not both fully typechecked
-     */
-    public final Expr or(Expr y) {
-        if (this.type==null) throw this.internalError("The node is not yet typechecked");
-        if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        return ExprBinary.Op.OR.make(this.pos, this, y, Type.FORMULA);
-    }
-
-    /**
-     * Convenience method that
-     * returns a typechecked node representing (this =&gt; y)
-     * <br>Note: this node and y must both be fully typechecked.
-     *
-     * @throws ErrorInternal if this node and y are not both fully typechecked
-     */
-    public final Expr implies(Expr y) {
-        if (this.type==null) throw this.internalError("The node is not yet typechecked");
-        if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        return ExprBinary.Op.IMPLIES.make(this.pos, this, y, Type.FORMULA);
+        if (this.type.isBool && y.type.isBool)
+        	return ExprBinary.Op.AND.make(this.pos, this, y, Type.FORMULA);
+        throw internalError("Cannot perform Expr.and()");
     }
 
     /**
      * Convenience method that
      * returns a typechecked node representing (this.y)
-     * <br>Note: this node and y must both be fully typechecked.
+     * <br/> Note: this node and y must both be fully typechecked.
      *
      * @throws ErrorInternal if this node and y are not both fully typechecked
      * @throws ErrorInternal if this node and y are not compatible
@@ -202,8 +185,8 @@ public abstract class Expr {
 
     /**
      * Convenience method that
-     * returns a typechecked node representing (this -&gt; y)
-     * <br>Note: this node and y must both be fully typechecked.
+     * returns a typechecked node representing (this -> y)
+     * <br/> Note: this node and y must both be fully typechecked.
      *
      * @throws ErrorInternal if this node and y are not both fully typechecked
      * @throws ErrorInternal if this node and y are not compatible
@@ -214,31 +197,6 @@ public abstract class Expr {
         Type ans=this.type.product_of_anyEmptyness(y.type);
         if (ans.arity()<1) throw internalError("Cannot perform Expr.product()");
         return ExprBinary.Op.ARROW.make(this.pos, this, y, ans);
-    }
-
-    /**
-     * Convenience method that
-     * returns a typechecked node representing (this =&gt; x else y)
-     * <br/> Note: this node, x, and y must all be fully typechecked.
-     *
-     * @throws ErrorInternal if this node, x, and y are not all fully typechecked
-     * @throws ErrorInternal if x and y are not compatible.
-     */
-    public final Expr ite(Expr x, Expr y) {
-        if (this.type==null) throw this.internalError("The node is not yet typechecked");
-        if (x.type==null) throw x.internalError("The node is not yet typechecked");
-        if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        Type ans;
-        if (x.type.isInt && y.type.isInt)
-            ans=Type.INT;
-        else if (x.type.isBool && y.type.isBool)
-            ans=Type.FORMULA;
-        else {
-            ans=x.type.union(y.type);
-            if (ans.arity()<1)
-            	throw internalError("Cannot perform ITE on incompatible expressions!");
-        }
-        return new ExprITE(this.pos, this, x, y, ans);
     }
 
     /**
