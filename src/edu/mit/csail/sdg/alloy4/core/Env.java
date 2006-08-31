@@ -15,8 +15,9 @@ import java.util.LinkedList;
  * 
  * <p/>
  * This is very useful for representing lexical scoping: when a local variable
- * is introduced, it "hides" the existing binding; and when that variable falls
- * out of scope, the previous binding is once again "revealed".
+ * is introduced with the same name as an existing variable, the new one "hides"
+ * the old binding; and when the new variable falls out of scope,
+ * the previous binding is once again "revealed".
  * 
  * @author Felix Chang
  */
