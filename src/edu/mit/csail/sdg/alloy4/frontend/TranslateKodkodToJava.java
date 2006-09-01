@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.FileNotFoundException;
 
 import edu.mit.csail.sdg.alloy4.core.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.core.Pos;
 
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
@@ -43,12 +44,18 @@ import kodkod.instance.Tuple;
 public final class TranslateKodkodToJava implements VoidVisitor {
 
   private final PrintWriter file;
+  private final Pos pos;
 
-  public TranslateKodkodToJava(Formula x, int bitwidth, Bounds bounds) {
+  public static void convert(Pos pos, Formula x, int bitwidth, Bounds bounds) {
+      new TranslateKodkodToJava(pos, x, bitwidth, bounds);
+  }
+
+  private TranslateKodkodToJava(Pos pos, Formula x, int bitwidth, Bounds bounds) {
+    this.pos=pos;
     try {
       file=new PrintWriter(".alloy.tmpjava");
     } catch(FileNotFoundException e) {
-      throw new ErrorInternal(null,null,"Cannot open the file .alloy.tmpjava");
+      throw new ErrorInternal(pos,null,"Cannot open the file \".alloy.tmpjava\"");
     }
     file.println("import kodkod.ast.IntExpression;");
     file.println("import kodkod.ast.Expression;");
@@ -172,7 +179,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
       case OVERRIDE: file.printf("Expression %s=%s.override(%s);%n", newname, left, right); break;
       case PRODUCT: file.printf("Expression %s=%s.product(%s);%n", newname, left, right); break;
       case UNION: file.printf("Expression %s=%s.union(%s);%n", newname, left, right); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
     }
   }
 
@@ -183,12 +190,12 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     switch(x.op()) {
       case EQUALS: file.printf("Formula %s=%s.eq(%s);%n", newname, left, right); break;
       case SUBSET: file.printf("Formula %s=%s.in(%s);%n", newname, left, right); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
     }
   }
 
   public void visit(ProjectExpression x) {
-    throw new ErrorInternal(null,x,"ProjectExpression should not have been encountered");
+    throw new ErrorInternal(pos,x,"ProjectExpression should not have been encountered");
   }
 
   public void visit(IntComparisonFormula x) {
@@ -201,7 +208,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
       case GTE: file.printf("Formula %s=%s.gte(%s);%n", newname, left, right); break;
       case LT: file.printf("Formula %s=%s.lt(%s);%n", newname, left, right); break;
       case LTE: file.printf("Formula %s=%s.lte(%s);%n", newname, left, right); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
     }
   }
 
@@ -214,7 +221,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
       case OR: file.printf("Formula %s=%s.or(%s);%n", newname, left, right); break;
       case IMPLIES: file.printf("Formula %s=%s.implies(%s);%n", newname, left, right); break;
       case IFF: file.printf("Formula %s=%s.iff(%s);%n", newname, left, right); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
     }
   }
 
@@ -227,7 +234,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
       case MINUS: file.printf("IntExpression %s=%s.minus(%s);%n", newname, left, right); break;
       case MULTIPLY: file.printf("IntExpression %s=%s.multiply(%s);%n", newname, left, right); break;
       case DIVIDE: file.printf("IntExpression %s=%s.divide(%s);%n", newname, left, right); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
     }
   }
 
@@ -238,7 +245,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
       case CLOSURE: file.printf("Expression %s=%s.closure();%n", newname, sub); break;
       case REFLEXIVE_CLOSURE: file.printf("Expression %s=%s.reflexiveClosure();%n", newname, sub); break;
       case TRANSPOSE: file.printf("Expression %s=%s.transpose();%n", newname, sub); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
     }
   }
 
@@ -276,7 +283,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     switch(x.op()) {
       case CARDINALITY: file.printf("IntExpression %s=%s.count();%n", newname, sub); break;
       case SUM: file.printf("IntExpression %s=%s.sum();%n", newname, sub); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod operator \""+x.op()+"\" encountered");
     }
   }
 
@@ -298,7 +305,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     else if (x==Expression.UNIV) newname="Expression.UNIV";
     else if (x==Expression.IDEN) newname="Expression.IDEN";
     else if (x==Expression.INTS) newname="Expression.INTS";
-    else throw new ErrorInternal(null,x,"Unknown kodkod ConstantExpression \""+x+"\" encountered");
+    else throw new ErrorInternal(pos,x,"Unknown kodkod ConstantExpression \""+x+"\" encountered");
     jk_map.put(x,newname);
   }
 
@@ -321,7 +328,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     switch(x.quantifier()) {
       case ALL: file.printf("Formula %s=%s.forAll(%s);%n",newname,f,d); break;
       case SOME: file.printf("Formula %s=%s.forSome(%s);%n",newname,f,d); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod quantifier \""+x.quantifier()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod quantifier \""+x.quantifier()+"\" encountered");
     }
   }
 
@@ -340,7 +347,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
       case ONE: file.printf("Formula %s=%s.one();%n",newname,sub); break;
       case SOME: file.printf("Formula %s=%s.some();%n",newname,sub); break;
       case NO: file.printf("Formula %s=%s.no();%n",newname,sub); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod multiplicity \""+x.multiplicity()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod multiplicity \""+x.multiplicity()+"\" encountered");
     }
   }
 
@@ -353,7 +360,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
       case ONE: file.printf("Decls %s=%s.oneOf(%s);%n",newname,v,e); break;
       case SOME: file.printf("Decls %s=%s.someOf(%s);%n",newname,v,e); break;
       case SET: file.printf("Decls %s=%s.setOf(%s);%n",newname,v,e); break;
-      default: throw new ErrorInternal(null,x,"Unknown kodkod multiplicity \""+x.multiplicity()+"\" encountered");
+      default: throw new ErrorInternal(pos,x,"Unknown kodkod multiplicity \""+x.multiplicity()+"\" encountered");
     }
   }
 
@@ -380,6 +387,6 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("Formula %s=%s.totalOrder(%s,%s,%s);%n",newname,r,o,f,l);
         return;
     }
-    throw new ErrorInternal(null,x,"Unknown RelationPredicate \""+x+"\" encountered");
+    throw new ErrorInternal(pos,x,"Unknown RelationPredicate \""+x+"\" encountered");
   }
 }

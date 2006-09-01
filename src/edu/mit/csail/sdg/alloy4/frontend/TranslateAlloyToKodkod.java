@@ -34,6 +34,7 @@ import edu.mit.csail.sdg.alloy4.core.ParaFact;
 import edu.mit.csail.sdg.alloy4.core.ParaFun;
 import edu.mit.csail.sdg.alloy4.core.ParaRuncheck;
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
+import edu.mit.csail.sdg.alloy4.core.Pos;
 import edu.mit.csail.sdg.alloy4.core.Type;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VarDecl;
@@ -73,33 +74,36 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     public enum Result { SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
     /**
-     * Convenience method that casts x to be a Kodkod Formula.
-     * @return (Formula)x - if x is of type Formula
-     * @throws ErrorInternal - if x is not of type Formula
+     * Convenience method that evalutes x and cast the result to be a Kodkod Formula.
+     * @return the formula - if x evaluates to a Formula
+     * @throws ErrorInternal - if x does not evaluate to a Formula
      */
-    private final Formula cform(Object x) {
-        if (x instanceof Formula) return (Formula)x;
-        throw new ErrorInternal(null,null,"This should have been a formula! Instead it is "+x);
+    private final Formula cform(Expr x) {
+        Object y=x.accept(this);
+        if (y instanceof Formula) return (Formula)y;
+        throw x.internalError("This should have been a formula! Instead it is "+y);
     }
 
     /**
-     * Convenience method that casts x to be a Kodkod IntExpression.
-     * @return (IntExpression)x - if x is of type IntExpression
-     * @throws ErrorInternal - if x is not of type IntExpression
+     * Convenience method that evalutes x and cast the result to be a Kodkod IntExpression.
+     * @return the integer expression - if x evaluates to an IntExpression
+     * @throws ErrorInternal - if x does not evaluate to an IntExpression
      */
-    private final IntExpression cint(Object x) {
-        if (x instanceof IntExpression) return (IntExpression)x;
-        throw new ErrorInternal(null,null,"This should have been an integer expression! Instead it is "+x);
+    private final IntExpression cint(Expr x) {
+        Object y=x.accept(this);
+        if (y instanceof IntExpression) return (IntExpression)y;
+        throw x.internalError("This should have been an integer expression! Instead it is "+y);
     }
 
     /**
-     * Convenience method that casts x to be a Kodkod Expression.
-     * @return (Expression)x - if x is of type Expression
-     * @throws ErrorInternal - if x is not of type Expression
+     * Convenience method that evalutes x and cast the result to be a Kodkod Expression.
+     * @return the expression - if x evaluates to an Expression
+     * @throws ErrorInternal - if x does not evaluate to an Expression
      */
-    private final Expression cset(Object x) {
-        if (x instanceof Expression) return (Expression)x;
-        throw new ErrorInternal(null,null,"This should have been a set or a relation! Instead it is "+x);
+    private final Expression cset(Expr x) {
+        Object y=x.accept(this);
+        if (y instanceof Expression) return (Expression)y;
+        throw x.internalError("This should have been a set or a relation! Instead it is "+y);
     }
 
     /*==============================*/
@@ -107,8 +111,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /*==============================*/
 
     public Object accept(ExprJoin x) {
-        Expression a=cset(x.left.accept(this));
-        Expression b=cset(x.right.accept(this));
+        Expression a=cset(x.left);
+        Expression b=cset(x.right);
         return a.join(b);
     }
 
@@ -117,44 +121,42 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /*================================*/
 
     public Object accept(ExprBinary x) {
-        if (x.op==ExprBinary.Op.IN) return isIn(cset(x.left.accept(this)), x.right);
-        Expression aa,bb;
-        Object a=x.left.accept(this), b=x.right.accept(this);
+        if (x.op==ExprBinary.Op.IN) return isIn(cset(x.left), x.right);
+        Expr a=x.left, b=x.right;
+        Expression s; IntExpression i; Formula f;
         switch(x.op) {
-        case LT: return cint(a).lt(cint(b));
-        case LTE: return cint(a).lte(cint(b));
-        case GT: return cint(a).gt(cint(b));
-        case GTE: return cint(a).gte(cint(b));
-        case AND: return cform(a).and(cform(b));
-        case OR: return cform(a).or(cform(b));
-        case IFF: return cform(a).iff(cform(b));
-        case IMPLIES: return cform(a).implies(cform(b));
-        case PLUSPLUS: return cset(a).override(cset(b));
-        case PLUS:
-            if (x.left.type.isInt) return cint(a).plus(cint(b)); return cset(a).union(cset(b));
-        case MINUS:
-            if (x.left.type.isInt) return cint(a).minus(cint(b)); return cset(a).difference(cset(b));
-        case INTERSECT:
-            return cset(a).intersection(cset(b));
-        case ANY_ARROW_SOME: case ANY_ARROW_ONE: case ANY_ARROW_LONE:
-        case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE:
-        case ONE_ARROW_ANY: case ONE_ARROW_SOME: case ONE_ARROW_ONE: case ONE_ARROW_LONE:
-        case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE:
-            if (!demul) throw x.right.typeError("Multiplicity symbols are not allowed here");
-            // intentional fall-through to the ARROW case
-        case ARROW:
-            return cset(a).product(cset(b));
-        case DOMAIN:
-            aa=cset(a);
-            bb=cset(b);
-            for(int i=1; i<bb.arity(); i++) aa=aa.product(Expression.UNIV);
-            return aa.intersection(bb);
-        case RANGE:
-            aa=cset(a);
-            bb=cset(b);
-            for(int i=1; i<aa.arity(); i++) bb=Expression.UNIV.product(bb);
-            return aa.intersection(bb);
-        case EQUALS: if (x.left.type.isInt) return cint(a).eq(cint(b)); return cset(a).eq(cset(b));
+            case LT: i=cint(a); return i.lt(cint(b));
+            case LTE: i=cint(a); return i.lte(cint(b));
+            case GT: i=cint(a); return i.gt(cint(b));
+            case GTE: i=cint(a); return i.gte(cint(b));
+            case AND: f=cform(a); return f.and(cform(b));
+            case OR: f=cform(a); return f.or(cform(b));
+            case IFF: f=cform(a); return f.iff(cform(b));
+            case IMPLIES: f=cform(a); return f.implies(cform(b));
+            case PLUSPLUS: s=cset(a); return s.override(cset(b));
+            case PLUS:
+                if (x.left.type.isInt) {i=cint(a); return i.plus(cint(b));} s=cset(a); return s.union(cset(b));
+            case MINUS:
+                if (x.left.type.isInt) {i=cint(a); return i.minus(cint(b));} s=cset(a); return s.difference(cset(b));
+            case INTERSECT:
+                s=cset(a); return s.intersection(cset(b));
+            case ANY_ARROW_SOME: case ANY_ARROW_ONE: case ANY_ARROW_LONE:
+            case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE:
+            case ONE_ARROW_ANY: case ONE_ARROW_SOME: case ONE_ARROW_ONE: case ONE_ARROW_LONE:
+            case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE:
+                if (!demul) throw x.right.typeError("Multiplicity symbols are not allowed here");
+                // intentional fall-through to the ARROW case
+            case ARROW:
+                s=cset(a); return s.product(cset(b));
+            case DOMAIN:
+                s=cset(a);
+                for(int j=b.type.arity(); j>1; j--) s=s.product(Expression.UNIV);
+                return s.intersection(cset(b));
+            case RANGE:
+                s=cset(b);
+                for(int j=a.type.arity(); j>1; j--) s=Expression.UNIV.product(s);
+                return cset(a).intersection(s);
+            case EQUALS: if (x.left.type.isInt) {i=cint(a); return i.eq(cint(b));} s=cset(a); return s.eq(cset(b));
         }
         throw x.internalError("Unsupported operator ("+x.op+") encountered during ExprBinary.accept()");
     }
@@ -163,13 +165,13 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         Expression b;
         if (right instanceof ExprUnary) {
             ExprUnary y=(ExprUnary)(right);
-            if (y.op==ExprUnary.Op.ONEMULT) { b=cset(y.sub.accept(this)); return a.one().and(a.in(b)); }
-            if (y.op==ExprUnary.Op.SETMULT) { b=cset(y.sub.accept(this)); return a.in(b); }
-            if (y.op==ExprUnary.Op.LONEMULT) { b=cset(y.sub.accept(this)); return a.lone().and(a.in(b)); }
-            if (y.op==ExprUnary.Op.SOMEMULT) { b=cset(y.sub.accept(this)); return a.some().and(a.in(b)); }
+            if (y.op==ExprUnary.Op.ONEMULT) { b=cset(y.sub); return a.one().and(a.in(b)); }
+            if (y.op==ExprUnary.Op.SETMULT) { b=cset(y.sub); return a.in(b); }
+            if (y.op==ExprUnary.Op.LONEMULT) { b=cset(y.sub); return a.lone().and(a.in(b)); }
+            if (y.op==ExprUnary.Op.SOMEMULT) { b=cset(y.sub); return a.some().and(a.in(b)); }
         }
         if (right instanceof ExprBinary) return isInBinary(a, (ExprBinary)right);
-        return a.in(cset(right.accept(this)));
+        return a.in(cset(right));
     }
 
     private Formula isInAM(Expression r, ExprBinary op, Expression a, Expression b) {
@@ -218,10 +220,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private Formula isInBinary(Expression r, ExprBinary ab) {
         boolean old=demul;
         demul=true;
-        Expression y0=cset(ab.accept(this));
+        Expression y0=cset(ab);
         if (!ab.op.isArrow || ab.mult==0) { demul=old; return r.in(y0); }
-        Expr a=ab.left;  Expression aa=cset(a.accept(this));
-        Expr b=ab.right; Expression bb=cset(b.accept(this));
+        Expr a=ab.left;  Expression aa=cset(a);
+        Expr b=ab.right; Expression bb=cset(b);
         demul=old;
         //if (a.type.arity()>1) throw a.internalError("Only unary and binary multiplicity are currently supported."/*zzz*/);
         //if (b.type.arity()>1) throw b.internalError("Only unary and binary multiplicity are currently supported."/*zzz*/);
@@ -235,12 +237,13 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /*=============================*/
 
     public Object accept(ExprITE x) {
-        Formula c=cform(x.cond.accept(this));
+        Formula c=cform(x.cond);
         Object l=x.left.accept(this);
-        Object r=x.right.accept(this);
-        if (l instanceof Formula) return c.implies(cform(l)).and(c.not().implies(cform(r)));
-        if (l instanceof Expression) return c.thenElse(cset(l),cset(r));
-        return c.thenElse(cint(l),cint(r));
+        if (l instanceof Formula)
+            return c.implies((Formula)l).and(c.not().implies(cform(x.right)));
+        if (l instanceof Expression)
+            return c.thenElse((Expression)l,cset(x.right));
+        return c.thenElse((IntExpression)l,cint(x.right));
     }
 
     /*=============================*/
@@ -292,11 +295,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 if (((ExprUnary)dex).op==ExprUnary.Op.LONEMULT) throw x.typeError("Each variable in set comprehension cannot use multiplicity symbols");
                 if (((ExprUnary)dex).op==ExprUnary.Op.SOMEMULT) throw x.typeError("Each variable in set comprehension cannot use multiplicity symbols");
             }
-            Expression dv=cset(stripSetMult(d.value).accept(this));
+            Expression dv=cset(stripSetMult(d.value));
             exprs.add(dv);
             for(String n:d.names) { Variable var=Variable.nary("VAR<"+n+">",dv.arity()); vars.add(var); env.put(n,var); }
         }
-        Formula ans=cform(x.sub.accept(this));
+        Formula ans=cform(x.sub);
         for(VarDecl d:x.list) {
             Expression r=exprs.get(ri); ri++;
             for(String n:d.names) {
@@ -327,14 +330,14 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         List<Variable> vars=new ArrayList<Variable>();
         boolean old=demul;
         demul=true;
-        Expression dv=cset(dex.accept(this));
+        Expression dv=cset(dex);
         demul=old;
         for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
-        Formula ans1=cform(x.sub.accept(this));
+        Formula ans1=cform(x.sub);
         for(String n:d.names) { env.remove(n); }
         if (x.op==ExprQuant.Op.LONE) {
             for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
-            Formula ans2=cform(x.sub.accept(this));
+            Formula ans2=cform(x.sub);
             for(String n:d.names) { env.remove(n); }
             Formula ans3=Formula.TRUE;
             for(int n=d.names.size(),i=0; i<n; i++) ans3=vars.get(i).eq(vars.get(i+n)).and(ans3);
@@ -356,13 +359,13 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             else if (((ExprUnary)dex).op==ExprUnary.Op.SOMEMULT) op=ExprUnary.Op.SOMEMULT;
             else if (((ExprUnary)dex).op==ExprUnary.Op.LONEMULT) op=ExprUnary.Op.LONEMULT;
         }
-        Expression dv=cset(stripSetMult(dex).accept(this));
+        Expression dv=cset(stripSetMult(dex));
         for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
-        Formula ans1=cform(x.sub.accept(this));
+        Formula ans1=cform(x.sub);
         for(String n:d.names) { env.remove(n); }
         if (x.op==ExprQuant.Op.LONE) {
             for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
-            Formula ans2=cform(x.sub.accept(this));
+            Formula ans2=cform(x.sub);
             for(String n:d.names) { env.remove(n); }
             Formula ans3=Formula.TRUE;
             for(int n=d.names.size(),i=0; i<n; i++) ans3=vars.get(i).eq(vars.get(i+n)).and(ans3);
@@ -385,7 +388,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         Formula ans=Formula.TRUE;
         for(int i=0; i<x.list.size(); i++) {
             Expr sub=x.list.get(i);
-            ans=ans.and(cform(sub.accept(this)));
+            ans=ans.and(cform(sub));
         }
         return ans;
     }
@@ -395,22 +398,21 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /*===============================*/
 
     public Object accept(ExprUnary x) {
-        Object y=x.sub.accept(this);
         switch(x.op) {
             case SOMEMULT: case LONEMULT: case ONEMULT: case SETMULT:
-                if (demul) return y;
+                if (demul) return cset(x.sub);
                 throw x.sub.typeError("Multiplicity symbols are not allowed here");
-            case NOT: return cform(y).not();
-            case SOME: return cset(y).some();
-            case LONE: return cset(y).lone();
-            case ONE: return cset(y).one();
-            case NO: return cset(y).no();
-            case TRANSPOSE: return cset(y).transpose();
-            case RCLOSURE: return cset(y).reflexiveClosure();
-            case CLOSURE: return cset(y).closure();
-            case CARDINALITY: return cset(y).count();
-            case SUM: return cset(y).sum();
-            case INTTOATOM: return cint(y).toExpression();
+            case NOT: return cform(x.sub).not();
+            case SOME: return cset(x.sub).some();
+            case LONE: return cset(x.sub).lone();
+            case ONE: return cset(x.sub).one();
+            case NO: return cset(x.sub).no();
+            case TRANSPOSE: return cset(x.sub).transpose();
+            case RCLOSURE: return cset(x.sub).reflexiveClosure();
+            case CLOSURE: return cset(x.sub).closure();
+            case CARDINALITY: return cset(x.sub).count();
+            case SUM: return cset(x.sub).sum();
+            case INTTOATOM: return cint(x.sub).toExpression();
         }
         throw x.internalError("Unsupported operator ("+x.op+") encountered during ExprUnary.accept()");
     }
@@ -452,7 +454,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         int r=0;
         for(VarDecl d:y.decls) {
             for(String n:d.names) {
-                newenv.put(n,cset(x.args.get(r).accept(this))); r++;
+                newenv.put(n,cset(x.args.get(r))); r++;
             }
         }
         Env oldenv=this.env; this.env=newenv; Object ans=y.value.accept(this); this.env=oldenv; return ans;
@@ -647,8 +649,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Code Generation                                                         */
     /*==========================================================================*/
 
-    private TupleSet comp(Type t, TupleFactory factory) {
-        int a=t.arity(); if (a<1) throw new ErrorInternal(null,null,"Attempting to create a 0-arity TupleSet!");
+    private TupleSet comp(Pos pos, Type t, TupleFactory factory) {
+        int a=t.arity(); if (a<1) throw new ErrorInternal(pos, t, "Attempting to create a 0-arity TupleSet!");
         TupleSet ans=factory.noneOf(a);
         for(Type.Rel r:t) {
             TupleSet temp1=null,temp2;
@@ -824,14 +826,14 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     private Relation right(Expression x) { return (Relation) (((BinaryExpression)x).right()); }
 
-    private IntConstant makeIntConstant(int bitwidth,int i) {
+    private IntConstant makeIntConstant(Pos pos, int bitwidth, int i) {
         // We know 1 <= bitwidth <= 30
         // bitwidth==1 ==> MIN==-1 MAX==0
         // bitwidth==2 ==> MIN==-2 MAX==1
         // bitwidth==3 ==> MIN==-4 MAX==3
         int min = 0-(1<<(bitwidth-1));
         int max = (0-min)-1;
-        if (i<min || i>max) throw new ErrorSyntax(null,"The scope of "+i+" is too small to fit in a 2's complement integer with bitwidth=="+bitwidth);
+        if (i<min || i>max) throw new ErrorSyntax(pos, "The scope of "+i+" is too small to fit in a 2's complement integer with bitwidth=="+bitwidth);
         return IntConstant.constant(i);
     }
 
@@ -842,7 +844,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             computeLowerBound(c);
             x.addAll(sig2lowerbound(c));
         }
-        if (n<x.size()) throw new ErrorInternal(null,null,"Scope for sig "+s.fullname+" was miscalculated");
+        if (n<x.size()) throw s.internalError("Scope for sig "+s.fullname+" was miscalculated");
         if (n>x.size() && exact(s)) {
             for(n=n-x.size(); n>0; n--) x.add(makeAtom(s));
         }
@@ -876,7 +878,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         unique.clear();
         Set<String> atoms=new LinkedHashSet<String>();
         if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
-        if (ParaSig.SIGINT.subs.size()>0) throw new ErrorInternal(null,null,"SIGINT can no longer be extended!");
+        if (ParaSig.SIGINT.subs.size()>0) throw ParaSig.SIGINT.subs.get(0).internalError("SIGINT can no longer be extended!");
         for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
             String ii=new String("Int_"+i);
             atoms.add(ii);
@@ -913,13 +915,13 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
-                else kfact=rel(s).count().eq(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
+                else kfact=rel(s).count().eq(makeIntConstant(cmd.pos, bitwidth, sig2bound(s))).and(kfact);
             }
             else if (upper.size()>sig2bound(s)) {
                 log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
-                else kfact=rel(s).count().lte(makeIntConstant(bitwidth, sig2bound(s))).and(kfact);
+                else kfact=rel(s).count().lte(makeIntConstant(cmd.pos, bitwidth, sig2bound(s))).and(kfact);
             }
             else {
                 log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">\n");
@@ -941,9 +943,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 Relation first=null, last=null, next=null;
                 TupleSet ts1=null, ts2=null;
                 for(ParaSig.Field f:s.fields) {
-                    if (f.name.equals("first_")) { first=right(rel(f.full)); ts1=comp(f.halftype, factory); }
+                    if (f.name.equals("first_")) { first=right(rel(f.full)); ts1=comp(f.pos, f.halftype, factory); }
                     if (f.name.equals("last_")) { last=right(rel(f.full)); }
-                    if (f.name.equals("next_")) { next=right(rel(f.full)); ts2=comp(f.halftype, factory); }
+                    if (f.name.equals("next_")) { next=right(rel(f.full)); ts2=comp(f.pos, f.halftype, factory); }
                 }
                 bounds.bound(first,ts1);
                 bounds.bound(last,ts1);
@@ -955,7 +957,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             for(VarDecl fd:s.decls) {
                 for(int fn=fd.names.size(); fn>0; fn--) {
                     ParaSig.Field f=s.fields.get(fi); fi++;
-                    TupleSet ts=comp(s.type.product_of_anyEmptyness(fd.value.type), factory); // fulltype
+                    TupleSet ts=comp(f.pos, s.type.product_of_anyEmptyness(fd.value.type), factory);
                     bounds.bound((Relation)(rel(f.full)),ts);
                 }
             }
@@ -990,7 +992,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
             log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+" "+fname+"...\t ");
             log.flush();
-            //new MakeJava(f,bitwidth,bounds);
+            //TranslateKodkodToJava.convert(cmd.pos, f, bitwidth, bounds);
             Solution sol = solver.solve(f,bounds);
             long t1=sol.stats().translationTime();
             long t2=sol.stats().solvingTime();
@@ -1010,7 +1012,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
                 if (cmd.check) log.log(" VIOLATED (SAT)"); else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
-                writeXML(sol, units, sigs);
+                writeXML(cmd.pos, sol, units, sigs);
                 if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
                 break;
             case UNSATISFIABLE:
@@ -1038,7 +1040,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         for(Tuple tp:tps) writeXML_tuple(out, firstatom, tp);
     }
 
-    private void writeXML(Solution sol, List<Unit> units, List<ParaSig> sigs) {
+    private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs) {
         FileWriter fw=null;
         BufferedWriter bw=null;
         PrintWriter out=null;
@@ -1050,7 +1052,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (out!=null) { out.close(); out=null; }
             if (bw!=null) { try {bw.close();} catch(IOException exx) {} bw=null; }
             if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
-            throw new ErrorInternal(null,null,"writeXML failed: "+ex.toString());
+            throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());
         }
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
         Instance inst=sol.instance();
@@ -1142,8 +1144,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         out.printf("%n</solution>%n");
         out.flush();
         out.close();
-        try {bw.close();} catch(IOException ex) {throw new ErrorInternal(null,null,"writeXML failed: "+ex.toString());}
-        try {fw.close();} catch(IOException ex) {throw new ErrorInternal(null,null,"writeXML failed: "+ex.toString());}
+        try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
+        try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
     }
 
 }
