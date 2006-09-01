@@ -3,8 +3,7 @@ package edu.mit.csail.sdg.alloy4.core;
 /**
  * Mutable; represents an "assertion".
  *
- * <br/>
- * <br/> Invariant: value!=null
+ * <p/> <b>Invariant:</b> value!=null
  *
  * @author Felix Chang
  */

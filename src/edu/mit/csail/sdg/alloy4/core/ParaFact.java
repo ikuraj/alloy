@@ -3,8 +3,7 @@ package edu.mit.csail.sdg.alloy4.core;
 /**
  * Mutable; represents a "fact".
  *
- * <br/>
- * <br/> Invariant: value!=null
+ * <p/> <b>Invariant:</b> value!=null
  *
  * @author Felix Chang
  */
@@ -19,7 +18,7 @@ public final class ParaFact extends Para {
      *
      * @param pos - the original position in the file
      * @param path - a valid path to the Unit containing this paragraph (can be "" if it's the main unit)
-     * @param name - the name of the assertion (can be "")
+     * @param name - the name of the fact (can be "")
      * @param value - the fact
      *
      * @throws ErrorSyntax if the path contains '@'

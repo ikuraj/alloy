@@ -3,10 +3,9 @@ package edu.mit.csail.sdg.alloy4.core;
 /**
  * Immutable; represents a toplevel paragraph in the model.
  *
- * <br/>
- * <br/> Invariant: pos!=null && path!=null && name!=null
- * <br/> Invariant: path does not contain '@'
- * <br/> Invariant: name does not contain '@', nor does it contain '/'
+ * <p/> <b>Invariant:</b>  pos!=null && path!=null && name!=null
+ * <p/> <b>Invariant:</b>  path does not contain '@'
+ * <p/> <b>Invariant:</b>  name does not contain '@', nor does it contain '/'
  *
  * @author Felix Chang
  */
@@ -35,7 +34,13 @@ public abstract class Para {
      * For example, if a unit is opened from many places,
      * but the user has indicated that these places should all import a common shared copy,
      * then there will be many paths that refer to that same unit.
-     * (Hence the wording above: the Para.path field only has to be ONE of the valid paths.)
+     * 
+     * <p/>
+     * (Hence the wording above: the Para.path field only has to be ONE of the valid paths.
+     * In fact, if the main unit is accessible from other paths also,
+     * then the main unit would be accessible via "" as well as some other string.
+     * And a paragraph in the main unit does not have to have its path=="".
+     * For any paragraph, its path field just has to be ONE of the valid paths.)
      */
     public final String path;
 

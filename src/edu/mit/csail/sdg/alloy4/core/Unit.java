@@ -108,7 +108,11 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   public final List<ParaRuncheck> runchecks=new ArrayList<ParaRuncheck>();
   public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
     if (!aliases.contains("")) return;
-    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, exa));
+    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, null, c, o, exp, s, exa));
+  }
+  public void makeRuncheck(Pos p,Expr e,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
+	if (!aliases.contains("")) return;
+	runchecks.add(new ParaRuncheck(p, aliases.get(0), "", e, c, o, exp, s, exa));
   }
 
   private void lookupNQsig_noparam(String name,Set<Object> ans) { // It ignores "params"

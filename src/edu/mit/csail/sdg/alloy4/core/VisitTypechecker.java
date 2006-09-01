@@ -1170,6 +1170,15 @@ public final class VisitTypechecker {
             log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type+"\n");
             if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
         }
+        for(int xi=0; xi<u.runchecks.size(); xi++) {
+        	Expr x=u.runchecks.get(xi).checkexpr;
+        	if (x==null) continue;
+            this.root=null; this.rootunit=u; x=resolve(x);
+            log.log("Unit ["+uu+"], Check: "+x.type+"\n");
+            if (!x.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.type);
+            ParaRuncheck newentry = new ParaRuncheck(u.runchecks.get(xi), x);
+            u.runchecks.set(xi, newentry);
+        }
     }
 
 //  ################################################################################################

@@ -964,12 +964,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         try {
             Formula f;
-            String fname;
-            if (cmd.check) {
+            if (cmd.checkexpr!=null) {
+            	f=((Formula)(cmd.checkexpr.accept(this))).not().and(kfact);
+            } else if (cmd.check) {
                 ParaAssert e=root.asserts.get(cmd.name);
                 if (e==null) throw cmd.syntaxError("The assertion \""+cmd.name+"\" cannot be found.");
                 f=((Formula)(e.value.accept(this))).not().and(kfact);
-                fname="Checking \""+e.name+"\"";
             } else {
                 List<ParaFun> ee=root.funs.get(cmd.name);
                 if (ee==null || ee.size()<1) throw cmd.syntaxError("The predicate/function \""+cmd.name+"\" cannot be found.");
@@ -982,7 +982,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 }
                 if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
                 f=((Formula)(v.accept(this))).and(kfact);
-                fname="Running \""+e.name+"\"";
             }
             Solver solver = new Solver();
             solver.options().setSolver(SATFactory.MiniSat);
@@ -990,7 +989,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             //solver.options().setSolver(SATFactory.DefaultSAT4J);
             solver.options().setBitwidth(bitwidth);
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-            log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+" "+fname+"...\t ");
+            log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, f, bitwidth, bounds);
             Solution sol = solver.solve(f,bounds);

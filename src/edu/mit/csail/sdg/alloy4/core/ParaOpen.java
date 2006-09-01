@@ -7,10 +7,9 @@ import java.util.ArrayList;
 /**
  * Immutable; reresents an "open" declaration.
  *
- * <br/>
- * <br/> Invariant: name is not ""
- * <br/> Invariant: file!=null and file is not ""
- * <br/> Invariant: list!=null
+ * <p/> <b>Invariant:</b>  name!=null and name is not ""
+ * <p/> <b>Invariant:</b>  file!=null and file is not ""
+ * <p/> <b>Invariant:</b>  list!=null and (all x:list | x is not null nor "")
  *
  * @author Felix Chang
  */
@@ -58,11 +57,15 @@ public final class ParaOpen extends Para {
             char c=file.charAt(i);
             if ((c>='a' && c<='z') || (c>='A' && c<='Z')) continue;
             if (i==0)
-                throw new ErrorSyntax(pos, "This filename does not start with a-z or A-Z, so you must supply an alias via the AS command.");
+                throw new ErrorSyntax(pos,
+                    "This filename does not start with a-z or A-Z, so you must supply an alias via the AS command.");
             if (!(c>='0' && c<='9') && c!='_' && c!='\'' && c!='\"')
-                throw new ErrorSyntax(pos, "This filename contains \'"+c+"\' which is not legal in an alias, so you must supply an alias via the AS command.");
+                throw new ErrorSyntax(pos,
+                    "This filename contains \'"+c+"\' which is not legal in an alias, so you must supply an alias.");
         }
-        if (list.size()!=0) throw new ErrorSyntax(pos, "The module being imported has parameters, so you must supply an alias via the AS command.");
+        if (list.size()!=0)
+        	throw new ErrorSyntax(pos,
+        		"The module being imported has parameters, so you must supply an alias via the AS command.");
         return file;
     }
 
@@ -87,8 +90,10 @@ public final class ParaOpen extends Para {
         super(pos, path, computeAlias(pos,file,alias,list));
         this.file=file;
         List<String> newlist=new ArrayList<String>();
-        for(int i=0; i<list.size(); i++)
-            newlist.add(nonnull(list.get(i)).name);
+        for(int i=0; i<list.size(); i++) {
+        	String arg=nonnull(list.get(i)).name;
+            newlist.add(arg); // Based on ExprName's invariants, we know arg will not be "", null, nor contains '@'.
+        }
         this.list=Collections.unmodifiableList(newlist);
     }
 }
