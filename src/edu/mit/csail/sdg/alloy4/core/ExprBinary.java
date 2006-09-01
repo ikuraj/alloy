@@ -47,7 +47,7 @@ public final class ExprBinary extends Expr {
      * That means it is of the form (A ?->? B), or it is (A->B)
      * where A and/or B is an arrow multiplicity constraint.
      */
-    private static boolean isMult(Op op, Expr left, Expr right) {
+    private static boolean isArrowMult(Op op, Expr left, Expr right) {
         if (!op.isArrow) return false;
         return left.mult==2 || right.mult==2 || op!=Op.ARROW;
     }
@@ -67,7 +67,7 @@ public final class ExprBinary extends Expr {
      * @throws ErrorInternal if op isn't one of the 16 arrow operators && op!=Op.IN && right.mult!=0
      */
     private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type) {
-        super(pos, type, isMult(op,left,right)?2:0);
+        super(pos, type, isArrowMult(op,left,right)?2:0);
         // See ExprUnary.java for why we have to call makeMult() here.
         if (op==Op.IN && (right instanceof ExprUnary)) right=((ExprUnary)right).makeMult();
         this.op=op;

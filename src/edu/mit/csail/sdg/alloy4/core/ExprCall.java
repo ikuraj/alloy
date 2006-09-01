@@ -9,16 +9,16 @@ import java.util.ArrayList;
  * (note: parser must not create ExprCall nodes, only ExprJoin nodes).
  *
  * <p/>
- * During parsing, it's not easy to tell if a[b] is a Join or Call.
+ * During parsing, it's not easy to tell if expressions
+ * like "a[b]" or "b.a" are joins or calls.
  * So instead, the parser should always generate ExprJoin nodes.
  * The typechecker will convert it to an appropriate ExprCall node if it's a call.
  *
- * <p/>
- * <br/> Invariant: name!=null
- * <br/> Invariant: name does not equal "" nor "@"
- * <br/> Invariant: if name contains '@', then '@' must only occur as the first character
- * <br/> Invariant: args!=null
- * <br/> Invariant: all x:args | (x!=null && x.mult==0)
+ * <p/> <b>Invariant:</b>  name!=null.
+ * <p/> <b>Invariant:</b>  name does not equal "" nor "@"
+ * <p/> <b>Invariant:</b>  if name contains '@', then '@' must only occur as the first character
+ * <p/> <b>Invariant:</b>  args!=null
+ * <p/> <b>Invariant:</b>  all x:args | (x!=null && x.mult==0)
  *
  * @author Felix Chang
  */
@@ -49,8 +49,8 @@ public final class ExprCall extends Expr {
     /**
      * The unmodifiable list of arguments.
      *
-     * <br>If this node has been typechecked,
-     * then the arguments are guaranteed to match the procedure being called.
+     * <br/> If this node has been typechecked,
+     * then the arguments will match the procedure being called.
      */
     public final List<Expr> args;
 
@@ -74,7 +74,7 @@ public final class ExprCall extends Expr {
         this.fun=fun;
         this.args=Collections.unmodifiableList(new ArrayList<Expr>(nonnull(args)));
         for(int i=args.size()-1; i>=0; i--)
-            if (nonnull(args.get(i)).mult>0)
+            if (nonnull(args.get(i)).mult!=0)
                 throw args.get(i).syntaxError("Multiplicity expression not allowed here");
         if (name.length()==0)
             throw syntaxError("The name must not be empty!");
