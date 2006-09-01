@@ -3021,7 +3021,7 @@ class CUP$AlloyParser$actions {
             {
               Expr RESULT =null;
 		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-		 throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); 
+		 if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;

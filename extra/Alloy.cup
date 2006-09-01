@@ -689,7 +689,7 @@ CompareExpr ::= SOME:o UnionDiffExpr:b                       {: RESULT=ExprUnary
 CompareExpr ::= LONE:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.LONE     .make(o,b);                               :};
 CompareExpr ::= ONE:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.ONE      .make(o,b);                               :};
 CompareExpr ::= SET:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SETMULT  .make(o,b);                               :};
-CompareExpr ::= ALL:o  UnionDiffExpr                         {: throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
+CompareExpr ::= ALL:o  UnionDiffExpr                         {: if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
 CompareExpr ::=        UnionDiffExpr:b                       {: RESULT=b;                                                               :};
 
 UnionDiffExpr ::=                         NumUnopExpr:b     {: RESULT=b;                                   :};

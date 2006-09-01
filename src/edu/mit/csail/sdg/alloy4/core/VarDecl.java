@@ -7,10 +7,9 @@ import java.util.ArrayList;
 /**
  * Immutable; represents a field/variable/parameter declaration such as "a,b,c: X".
  *
- * <p/> <b>Invariant:</b>  names!=null
+ * <p/> <b>Invariant:</b>  pos!=null, names!=null, and value!=null
  * <p/> <b>Invariant:</b>  names.size()>0
  * <p/> <b>Invariant:</b>  all x:names | x!=null, x is not "", and doesn't contain '/' or '@'
- * <p/> <b>Invariant:</b>  value!=null
  *
  * @author Felix Chang
  */
