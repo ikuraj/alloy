@@ -4,7 +4,6 @@ package edu.mit.csail.sdg.alloy4.core;
  * Immutable; represents a formula or expression; subclasses must also be immutable.
  *
  * <p/> <b>Invariant:</b>  pos!=null
- *
  * <p/> <b>Invariant:</b>  mult==0 || mult==1 || mult==2
  *
  * @author Felix Chang
@@ -68,18 +67,18 @@ public abstract class Expr {
     }
 
     /** Convenience method that constructs a syntax error exception. */
-    public final ErrorSyntax syntaxError (String s) {
-        return new ErrorSyntax(pos, s);
+    public final ErrorSyntax syntaxError (String msg) {
+        return new ErrorSyntax(pos, msg);
     }
 
     /** Convenience method that constructs a type error exception. */
-    public final ErrorType typeError (String s) {
-        return new ErrorType(pos, this, s);
+    public final ErrorType typeError (String msg) {
+        return new ErrorType(pos, this, msg);
     }
 
     /** Convenience method that constructs an internal error exception. */
-    public final ErrorInternal internalError (String s) {
-        return new ErrorInternal(pos, this, s);
+    public final ErrorInternal internalError (String msg) {
+        return new ErrorInternal(pos, this, msg);
     }
 
     /**
@@ -183,27 +182,27 @@ public abstract class Expr {
         return new ExprJoin(this.pos, this, y, ans);
     }
 
-    /**
+    /*
      * Convenience method that casts this node from "int" to "Int" if necessary.
      * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
      * @throws ErrorInternal if this node is not fully typechecked
-     */
+     *
     public final Expr int2Int() {
         if (type==null) throw this.internalError("The node is not yet typechecked");
         if (!type.isInt) return this;
         return ExprUnary.Op.INTTOATOM.make(pos, this, ParaSig.SIGINT.type);
-    }
+    }*/
 
-    /**
+    /*
      * Convenience method that casts this node from "Int" to "int" if necessary.
      * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
      * @throws ErrorInternal if this node is not fully typechecked
-     */
+     *
     public final Expr Int2int() {
         if (type==null) throw this.internalError("The node is not yet typechecked");
         if (type.isInt) return this;
         return ExprUnary.Op.SUM.make(pos, this, Type.INT);
-    }
+    }*/
 
     /**
      * Convenience method that
@@ -228,9 +227,9 @@ public abstract class Expr {
      * Convenience method that
      * returns a typechecked node representing the universal set.
      *
-     * @param p - the position in the file where the universal set is used
+     * @param pos - the position in the file where the universal set is used
      */
-    public static final Expr univ(Pos p) {
-        return ExprConstant.Op.UNIV.make(p);
+    public static final Expr univ(Pos pos) {
+        return ExprConstant.Op.UNIV.make(pos);
     }
 }

@@ -7,9 +7,8 @@ import java.util.ArrayList;
 /**
  * Immutable; represents a list of formulas joined by the AND operator.
  *
- * <br/>
- * <br/> Invariant: list!=null
- * <br/> Invariant: all x:list | (x!=null && x.mult==0)
+ * <p/> <b>Invariant:</b>  list!=null
+ * <p/> <b>Invariant:</b>  all x:list | (x!=null && x.mult==0)
  *
  * @author Felix Chang
  */
@@ -31,7 +30,7 @@ public final class ExprSequence extends Expr {
         return visitor.accept(this,type);
     }
 
-    /** The unmodifiable list of formulas (The list can be empty, meaning TRUE) */
+    /** The unmodifiable list of formulas (If empty, then this ExprSequence node simply means TRUE) */
     public final List<Expr> list;
 
     /**

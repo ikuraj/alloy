@@ -9,27 +9,32 @@ import java.util.ArrayList;
  *
  * It can have one of the following forms:
  *
- * <br/> &nbsp; &nbsp; &nbsp; (all    &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br/> &nbsp; &nbsp; &nbsp; (no     &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br/> &nbsp; &nbsp; &nbsp; (lone   &nbsp;       a,b:t, c,d:v &nbsp; | formula)
- * <br/> &nbsp; &nbsp; &nbsp; (one    &nbsp;       a,b:t, c,d:v &nbsp; | formula)
- * <br/> &nbsp; &nbsp; &nbsp; (some   &nbsp;       a,b:t, c,d:v &nbsp; | formula)
- * <br/> &nbsp; &nbsp; &nbsp; (sum    &nbsp;       a,b:t, c,d:v &nbsp; | expression)
- * <br/> &nbsp; &nbsp; &nbsp; {a,b:t, &nbsp; c,d:v &nbsp; | &nbsp; formula}
- * <br/> &nbsp; &nbsp; &nbsp; {a,b:t, &nbsp; c,d:v}
- *
  * <br/>
- * <br/> Invariant: op!=null
- * <br/> Invariant: op!=Op.NO
- *       <i> (since ExprQuant.Op.make() would desugar this) </i>
- * <br/> Invariant: op!=Op.ONE
- *       <i> (since ExprQuant.Op.make() would desugar this) </i>
- * <br/> Invariant: op!=Op.COMPREHENSION => list.size()==1
- *       <i> (since ExprQuant.Op.make() would desugar this) </i>
- * <br/> Invariant: op==Op.COMPREHENSION => list.size()>=1
- * <br/> Invariant: all x:list | x!=null
- * <br/> Invariant: count = (sum x:list | x.names.size())
- * <br/> Invariant: sub.mult == 0
+ * <br/>  (all    &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
+ * <br/>  (no     &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
+ * <br/>  (lone   &nbsp;       a,b:t, c,d:v &nbsp; | formula)
+ * <br/>  (one    &nbsp;       a,b:t, c,d:v &nbsp; | formula)
+ * <br/>  (some   &nbsp;       a,b:t, c,d:v &nbsp; | formula)
+ * <br/>  (sum    &nbsp;       a,b:t, c,d:v &nbsp; | expression)
+ * <br/>  {a,b:t, &nbsp; c,d:v &nbsp; | &nbsp; formula}
+ * <br/>  {a,b:t, &nbsp; c,d:v}
+ * <br/>
+ *
+ * <br/> <b>Invariant:</b> op!=null
+ *
+ * <br/> <b>Invariant:</b>
+ *       op!=Op.NO  <i> (since ExprQuant.Op.make() would desugar this) </i>
+ *
+ * <br/> <b>Invariant:</b>
+ *       op!=Op.ONE <i> (since ExprQuant.Op.make() would desugar this) </i>
+ *
+ * <br/> <b>Invariant:</b>
+ *       op!=Op.COMPREHENSION => list.size()==1  <i> (since ExprQuant.Op.make() would desugar this) </i>
+ *
+ * <br/> <b>Invariant:</b>  op==Op.COMPREHENSION => list.size()>=1
+ * <br/> <b>Invariant:</b>  all x:list | x!=null
+ * <br/> <b>Invariant:</b>  count = (sum x:list | x.names.size())
+ * <br/> <b>Invariant:</b>  sub.mult == 0
  *
  * @author Felix Chang
  */
@@ -57,45 +62,36 @@ public final class ExprQuant extends Expr {
     /** The unmodifiable list of variable declarations. */
     public final List<VarDecl> list;
 
-    /**
-     * The number of variables.
-     *
-     * Note that this may be larger than the number of variable declarations,
-     * since each variable declaration contains one or more variables.
-     */
-    public final int count;
-
     /** The body of the quantified expression. */
     public final Expr sub;
 
     /**
      * Constructs a new quantified expression.
      *
-     * @param p - the original position in the file
-     * @param o - the operator
-     * @param l - the list of variable declarations
-     * @param s - the body of the quantified expression
-     * @param t - the type (null if this expression has not been typechecked)
+     * @param pos - the original position in the file
+     * @param op - the operator
+     * @param list - the list of variable declarations
+     * @param sub - the body of the quantified expression
+     * @param type - the type (null if this expression has not been typechecked)
      *
-     * @throws ErrorInternal if p==null, l==null, l.size()==0, s==null, or s.mult!=0
+     * @throws ErrorInternal if pos==null, list==null, list.size()==0, sub==null, or sub.mult!=0
      * @throws ErrorInternal if one of the VarDecl is null
-     * @throws ErrorInternal if (o==Op.NO || o==Op.ONE) since ExprQuant.Op.make() desugars them
-     * @throws ErrorInternal if (o!=Op.COMPREHENSION && l.size()!=1) since ExprQuant.Op.make() desguars them
+     * @throws ErrorInternal if (op==Op.NO || op==Op.ONE) since ExprQuant.Op.make() desugars them
+     * @throws ErrorInternal if (op!=Op.COMPREHENSION && list.size()!=1) since ExprQuant.Op.make() desugars them
      */
-    private ExprQuant(Pos p, Op o, List<VarDecl> l, Expr s, Type t) {
-        super(p,t,0);
-        op=o;
-        list=Collections.unmodifiableList(new ArrayList<VarDecl>(nonnull(l)));
-        for(int i=0; i<list.size(); i++) nonnull(list.get(i));
-        sub=nonnull(s);
-        count=VarDecl.nameCount(list);
-        if (list.size()==0)
+    private ExprQuant(Pos pos, Op op, List<VarDecl> list, Expr sub, Type type) {
+        super(pos,type,0);
+        this.op=op;
+        this.list=Collections.unmodifiableList(new ArrayList<VarDecl>(nonnull(list)));
+        for(int i=0; i<this.list.size(); i++) nonnull(this.list.get(i));
+        this.sub=nonnull(sub);
+        if (this.list.size()==0)
             throw internalError("The list of declarations cannot be empty!");
         if (sub.mult!=0)
             throw sub.syntaxError("Multiplicity expression not allowed here");
-        if (o==Op.NO || o==Op.ONE)
-            throw internalError("The "+o+" operator should have been desugared!");
-        if (o!=Op.COMPREHENSION && list.size()!=1)
+        if (op==Op.NO || op==Op.ONE)
+            throw internalError("The "+op+" operator should have been desugared!");
+        if (op!=Op.COMPREHENSION && this.list.size()!=1)
             throw internalError("The list should have been desugared to 1!");
     }
 
@@ -109,24 +105,24 @@ public final class ExprQuant extends Expr {
         /** sum  a,b:x, c,d:y | intExpression */  SUM("sum"),
         /** { a,b:x,    c,d:y | formula }     */  COMPREHENSION("{comprehension}");
 
-        /** The constructor */
-        Op(String l) {label=l;}
+        /** The constructor. */
+        Op(String label) {this.label=label;}
 
-        /** The human readable label for this operator */
+        /** The human readable label for this operator. */
         private final String label;
 
         /**
          * Constructs an ExprQuant expression with "this" as the operator.
          *
-         * @param p - the original position in the file
-         * @param l - the list of variable declarations
-         * @param s - the body of the expression
-         * @param t - the type (null if this expression has not been typechecked)
+         * @param pos - the original position in the file
+         * @param list - the list of variable declarations
+         * @param sub - the body of the expression
+         * @param type - the type (null if this expression has not been typechecked)
          *
-         * @throws ErrorInternal if p==null, l==null, l.size()==0, s==null, or s.mult!=0
+         * @throws ErrorInternal if pos==null, list==null, list.size()==0, sub==null, or sub.mult!=0
          * @throws ErrorInternal if one of the VarDecl is null
          */
-        public final Expr make(Pos p, List<VarDecl> l, Expr s, Type t) {
+        public final Expr make(Pos pos, List<VarDecl> list, Expr sub, Type type) {
             // Desugarings of ALL/NO/LONE/ONE/SOME/SUM:
             // ========================================
             //
@@ -146,38 +142,40 @@ public final class ExprQuant extends Expr {
             //                       and (all a,b,c:X | "lone MORE|F")
             //
             // So in the end, we only allow quantification over a single expression,
-            // and we ony allow ALL, SOME, LONE, and SUM.
+            // and we only allow ALL, SOME, LONE, and SUM.
             //
-            if (this!=Op.COMPREHENSION && this!=Op.SUM) t=Type.FORMULA;
-            ArrayList<VarDecl> l2=new ArrayList<VarDecl>(1);
-            if (l==null) throw new ErrorInternal(p,null,"NullPointerException");
-            l=new ArrayList<VarDecl>(l);
-            if (l.size()==0) throw new ErrorInternal(p,null,"The list cannot be empty");
-            for(int i=0; i<l.size(); i++)
-                if (l.get(i)==null) throw new ErrorInternal(p,null,"NullPointerException");
+            if (this!=Op.COMPREHENSION && this!=Op.SUM)
+            	type=Type.FORMULA;
+            if (list==null) throw new ErrorInternal(pos,null,"NullPointerException");
+            list=new ArrayList<VarDecl>(list);
+            ArrayList<VarDecl> list2=new ArrayList<VarDecl>();
+            if (list.size()==0) throw new ErrorInternal(pos,null,"The list cannot be empty");
+            for(int i=0; i<list.size(); i++)
+                if (list.get(i)==null) throw new ErrorInternal(pos,null,"NullPointerException");
             if (this==NO) {
-                if (l.size()==1) return new ExprQuant(p,ALL,l,ExprUnary.Op.NOT.make(s.pos,s,t),t);
-                l2.add(l.get(0));
-                l.remove(0);
-                return new ExprQuant(p,ALL,l2,NO.make(p,l,s,t),t);
+                if (list.size()==1) return new ExprQuant(pos,ALL,list,ExprUnary.Op.NOT.make(sub.pos,sub,type),type);
+                list2.add(list.get(0));
+                list.remove(0);
+                return new ExprQuant(pos, ALL, list2, NO.make(pos,list,sub,type), type);
             }
             if (this==ONE) {
-                Expr a=LONE.make(p,l,s,t), b=SOME.make(p,l,s,t);
-                return ExprBinary.Op.AND.make(p,a,b,t);
+                Expr a=LONE.make(pos,list,sub,type);
+                Expr b=SOME.make(pos,list,sub,type);
+                return ExprBinary.Op.AND.make(pos,a,b,type);
             }
-            if ((this==ALL || this==SOME || this==SUM) && l.size()>1) {
-                l2.add(l.get(0));
-                l.remove(0);
-                return new ExprQuant(p,this,l2,this.make(p,l,s,t),t);
+            if ((this==ALL || this==SOME || this==SUM) && list.size()>1) {
+                list2.add(list.get(0));
+                list.remove(0);
+                return new ExprQuant(pos, this, list2, this.make(pos,list,sub,type), type);
             }
-            if (this==LONE && l.size()>1) {
-                l2.add(l.get(0));
-                l.remove(0);
-                Expr a=new ExprQuant(p,LONE,l2,SOME.make(p,l,s,t),t);
-                Expr b=new ExprQuant(p,ALL,l2,LONE.make(p,l,s,t),t);
-                return ExprBinary.Op.AND.make(p,a,b,t);
+            if (this==LONE && list.size()>1) {
+                list2.add(list.get(0));
+                list.remove(0);
+                Expr a=new ExprQuant(pos, LONE, list2, SOME.make(pos,list,sub,type), type);
+                Expr b=new ExprQuant(pos, ALL, list2, LONE.make(pos,list,sub,type), type);
+                return ExprBinary.Op.AND.make(pos,a,b,type);
             }
-            return new ExprQuant(p,this,l,s,t);
+            return new ExprQuant(pos, this, list, sub, type);
         }
 
         /** Returns the human readable label for this operator */

@@ -3,10 +3,9 @@ package edu.mit.csail.sdg.alloy4.core;
 /**
  * Immutable; represents an expression of the form (let a=b | x).
  *
- * <br/>
- * <br/> Invariant: left!=null  &&  left is not ""  &&  left does not contain '/' nor '@'
- * <br/> Invariant: right!=null &&  right.mult==0
- * <br/> Invariant: sub!=null   &&  sub.mult==0
+ * <p/> <b>Invariant:</b>  left!=null  &&  left is not ""  &&  left does not contain '/' nor '@'
+ * <p/> <b>Invariant:</b>  right!=null &&  right.mult==0
+ * <p/> <b>Invariant:</b>  sub!=null   &&  sub.mult==0
  *
  * @author Felix Chang
  */
