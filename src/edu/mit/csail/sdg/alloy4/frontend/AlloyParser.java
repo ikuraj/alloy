@@ -2224,7 +2224,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     }
   }
 
-  public static Unit alloy_parseFile(String name,String prefix) {
+  public static Unit alloy_parseFile(String name, String prefix) {
     Unit u=new Unit(prefix);
     FileInputStream fis=null;
     InputStreamReader isr=null;
@@ -2251,7 +2251,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     try { if (s!=null) s.close(); } catch(IOException x) {u=null;}
     try { if (isr!=null) isr.close(); } catch(IOException x) {u=null;}
     try { if (fis!=null) fis.close(); } catch(IOException x) {u=null;}
-    if (u==null) throw new ErrorInternal(null,null,"Failed to parse the file \""+name+"\"");
+    if (u==null) throw new ErrorInternal(new Pos(name,1,1),null,"Failed to parse the file \""+name+"\"");
     return u;
   }
 
@@ -2272,14 +2272,14 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     // so we really need to make best effort to close all the input streams.
     try { if (s!=null) s.close(); } catch(IOException x) {u=null;}
     try { if (isr!=null) isr.close(); } catch(IOException x) {u=null;}
-    if (u==null) throw new ErrorInternal(null,null,"Parser failed to parse this input!");
+    if (u==null) throw new ErrorInternal(new Pos("",1,1),null,"Parser failed to parse this input!");
     return u;
   }
 
   public static ArrayList<Unit> alloy_totalparseFile (String name) {
       ArrayList<Unit> units=new ArrayList<Unit>();
       ArrayList<String> thispath=new ArrayList<String>();
-      alloy_totalparseHelper(name,"",units,thispath);
+      alloy_totalparseHelper(new Pos(name,1,1), name, "", units, thispath);
       return units;
   }
 
@@ -2291,18 +2291,18 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
           // Here, we recursively open the included files (to fill out the "Unit.opens" field)
           ParaOpen y=opens.getValue();
-          Unit uu=alloy_totalparseHelper(y.file, y.name, units, thispath);
+          Unit uu=alloy_totalparseHelper(y.pos, y.file, y.name, units, thispath);
           if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
           u.opens.put(y.name, uu);
       }
       return units;
   }
 
-  private static Unit alloy_totalparseHelper(String name,String prefix,ArrayList<Unit> units,ArrayList<String> thispath) {
+  private static Unit alloy_totalparseHelper(Pos pos,String name,String prefix,ArrayList<Unit> units,ArrayList<String> thispath) {
       // Figure out the exact filename
       File f=new File(name);
       if (!f.exists()) f=new File("models/"+name+".als");
-      if (!f.exists()) throw new ErrorSyntax(null, "The module \""+name+"\" cannot be found!");
+      if (!f.exists()) throw new ErrorSyntax(pos, "The module \""+name+"\" cannot be found!");
       // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
       // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
       // => As you descend down the chain via OPEN, if you see the same FILE twice, then
@@ -2311,7 +2311,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       // <= If there is an infinite loop, that means there is at least 1 infinite chain of OPEN (from root).
       //    Since the number of files is finite, at least 1 filename will be repeated.
       String absolutePath=f.getAbsolutePath();
-      if (thispath.contains(absolutePath)) throw new ErrorSyntax(null,"Circular dependency in module import! The file \""+absolutePath+"\" is imported infinitely often!");
+      if (thispath.contains(absolutePath)) throw new ErrorSyntax(pos,"Circular dependency in module import! The file \""+absolutePath+"\" is imported infinitely often!");
       thispath.add(absolutePath);
       // No cycle detected so far. So now we parse the file.
       Unit u=AlloyParser.alloy_parseFile(absolutePath,prefix);
@@ -2324,7 +2324,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
           // Here, we recursively open the included files (to fill out the "Unit.opens" field)
           ParaOpen y=opens.getValue();
-          Unit uu=alloy_totalparseHelper(y.file, prefix.length()==0 ? y.name : prefix+"/"+y.name, units, thispath);
+          Unit uu=alloy_totalparseHelper(y.pos, y.file, prefix.length()==0 ? y.name : prefix+"/"+y.name, units, thispath);
           if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
           u.opens.put(y.name, uu);
       }
