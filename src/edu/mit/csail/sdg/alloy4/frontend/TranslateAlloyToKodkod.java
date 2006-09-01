@@ -976,7 +976,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 Expr v=e.value;
                 if (e.type!=null) {
                     Expr vv=e.type;
-                    if (vv instanceof ExprUnary) vv=((ExprUnary)vv).makeMult();
                     v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
                 }
                 if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);

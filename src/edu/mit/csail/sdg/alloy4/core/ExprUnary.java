@@ -3,8 +3,7 @@ package edu.mit.csail.sdg.alloy4.core;
 /**
  * Immutable; represents a unary expression of the form (OP subexpression).
  *
- * <br/>
- * <br/> Invariant: op!=null && sub!=null && sub.mult==0
+ * <p/> <b>Invariant:</b>  op!=null && sub!=null && sub.mult==0
  *
  * @author Felix Chang
  */
@@ -31,38 +30,6 @@ public final class ExprUnary extends Expr {
 
     /** The subexpression. */
     public final Expr sub;
-
-    /**
-     * This function is needed to handle a difficult parsing ambiguity.
-     *
-     * <p/>
-     * "some EXPR", "one EXPR", and "lone EXPR"
-     * can be either formulas (saying the EXPR has at least 1, exactly 1, or at most 1 tuple),
-     * or multiplicity constraints (saying something else has this multiplicity).
-     *
-     * <p/>
-     * So we let the parser generate the former by default.
-     * And whenever we construct a VarDecl(x,y) object,
-     * or an ExprBinary.Op.IN(x,y) object, we call this method
-     * on y to convert it into a multiplicity constraint.
-     *
-     * <p/>
-     * This is safe, because in both cases, a formula would be illegal.
-     * So the first form is always wrong.
-     *
-     * <p/>
-     * And this is sufficient, because those are the only two places
-     * where a mulitplicity constraint is allowed to appear.
-     *
-     * @return a newly formed multiplciity constraint (if this.op==SOME or LONE or ONE),
-     * otherwise it just returns the original node.
-     */
-    public Expr makeMult() {
-        if (op==Op.SOME) return Op.SOMEMULT.make(pos, sub);
-        if (op==Op.LONE) return Op.LONEMULT.make(pos, sub);
-        if (op==Op.ONE) return Op.ONEMULT.make(pos, sub);
-        return this;
-    }
 
     /**
      * Constructs a new unary expression.

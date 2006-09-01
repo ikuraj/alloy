@@ -55,8 +55,6 @@ public final class VarDecl {
             newlist.add(n);
         }
         names=Collections.unmodifiableList(newlist);
-        // See ExprUnary.java for why we have to call makeMult() here.
-        if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
         value=y;
     }
 
@@ -82,8 +80,6 @@ public final class VarDecl {
         List<String> list=new ArrayList<String>(1);
         list.add(x);
         names=Collections.unmodifiableList(list);
-        // See ExprUnary.java for why we have to call makeMult() here.
-        if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
         value=y;
     }
 
@@ -99,8 +95,6 @@ public final class VarDecl {
         if (x==null || y==null)
             throw new ErrorInternal(null,null,"NullPointerException");
         names=x.names;
-        // See ExprUnary.java for why we have to call makeMult() here.
-        if (y instanceof ExprUnary) y=((ExprUnary)y).makeMult();
         value=y;
     }
 

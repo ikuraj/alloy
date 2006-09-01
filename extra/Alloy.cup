@@ -286,6 +286,43 @@ parser code {:
 
 :};
 
+action code {:
+    /**
+     * This function is needed to handle a difficult parsing ambiguity.
+     *
+     * <p/>
+     * "some EXPR", "one EXPR", and "lone EXPR"
+     * can be either formulas (saying the EXPR has at least 1, exactly 1, or at most 1 tuple),
+     * or multiplicity constraints (saying something else has this multiplicity).
+     *
+     * <p/>
+     * So we let the parser generate the former by default.
+     * And whenever we construct a VarDecl(x,y) object,
+     * or an ExprBinary.Op.IN(x,y) object, or a function return type,
+     * we call this method on y to convert it into a multiplicity constraint.
+     *
+     * <p/>
+     * This is safe, because in all 3 cases, a formula would be illegal.
+     * So the first form is always wrong.
+     *
+     * <p/>
+     * And this is sufficient, because those are the only 3 places
+     * where a mulitplicity constraint is allowed to appear.
+     *
+     * @return a newly formed multiplciity constraint (if this.op==SOME or LONE or ONE),
+     * otherwise it just returns the original node.
+     */
+    private Expr mult(Expr x) {
+        if (x instanceof ExprUnary) {
+           ExprUnary y=(ExprUnary)x;
+           if (y.op==ExprUnary.Op.SOME) return ExprUnary.Op.SOMEMULT.make(y.pos, y.sub);
+           if (y.op==ExprUnary.Op.LONE) return ExprUnary.Op.LONEMULT.make(y.pos, y.sub);
+           if (y.op==ExprUnary.Op.ONE) return ExprUnary.Op.ONEMULT.make(y.pos, y.sub);
+        }
+        return x;
+    }
+:};
+
 //===========================================================================//
 
 terminal Pos ANY_ARROW_SOME;   //  ->some    // The filter allows whitespace/comment in these 15 "*->*" tokens
@@ -518,12 +555,12 @@ Typescope  ::=         NUMBER:a INT           {: RESULT=new ArrayList<String>();
 Typescope  ::= EXACTLY NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(ParaSig.SIGINT_NAME);    :};
 Typescope  ::=         NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(ParaSig.SIGINT_NAME);    :};
 
-Function ::=              Name:n LPAREN   Decls:d RPAREN   COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,t,v); :};
-Function ::=              Name:n LBRACKET Decls:d RBRACKET COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,t,v); :};
-Function ::=              Name:n                           COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,new ArrayList<VarDecl>(),t,v); :};
-Function ::= SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,t,v); :};
-Function ::= SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,t,v); :};
-Function ::= SigRef:f DOT Name:n                           COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,f   ,new ArrayList<VarDecl>(),t,v); :};
+Function ::=              Name:n LPAREN   Decls:d RPAREN   COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,mult(t),v); :};
+Function ::=              Name:n LBRACKET Decls:d RBRACKET COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,mult(t),v); :};
+Function ::=              Name:n                           COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,new ArrayList<VarDecl>(),mult(t),v); :};
+Function ::= SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,mult(t),v); :};
+Function ::= SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,mult(t),v); :};
+Function ::= SigRef:f DOT Name:n                           COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,f   ,new ArrayList<VarDecl>(),mult(t),v); :};
 
 Predicate ::=              Name:n LPAREN   Decls:d RPAREN   ExprPara:v   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,null,v); :};
 Predicate ::=              Name:n LBRACKET Decls:d RBRACKET ExprPara:v   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,null,v); :};
@@ -576,14 +613,14 @@ NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=new ExprName(a.pos, a.name+"/"
 Names ::= Name:x                   {: RESULT=new ArrayList<ExprName>(); RESULT.add(x);  :};
 Names ::= Names:a COMMA Name:b     {: a.add(b); RESULT=a;                               :};
 
-Declp ::= Declp   COMMA PART:k Names   COLON Expr    {: ExprName.hint(k,"part");                                       :};
-Declp ::= Declp   COMMA DISJ:k Names   COLON Expr    {: ExprName.hint(k,"disj");                                       :};
-Declp ::= Declp   COMMA EXH:k  Names   COLON Expr    {: ExprName.hint(k,"exh");                                        :};
-Declp ::= Declp:x COMMA        Names:a COLON Expr:b  {: RESULT=x; RESULT.add(new VarDecl(a,b));                        :};
-Declp ::=               PART:k Names   COLON Expr    {: ExprName.hint(k,"part");                                       :};
-Declp ::=               DISJ:k Names   COLON Expr    {: ExprName.hint(k,"disj");                                       :};
-Declp ::=               EXH:k  Names   COLON Expr    {: ExprName.hint(k,"exh");                                        :};
-Declp ::=                      Names:a COLON Expr:b  {: RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(a,b)); :};
+Declp ::= Declp   COMMA PART:k Names   COLON Expr    {: ExprName.hint(k,"part");                                             :};
+Declp ::= Declp   COMMA DISJ:k Names   COLON Expr    {: ExprName.hint(k,"disj");                                             :};
+Declp ::= Declp   COMMA EXH:k  Names   COLON Expr    {: ExprName.hint(k,"exh");                                              :};
+Declp ::= Declp:x COMMA        Names:a COLON Expr:b  {: RESULT=x; RESULT.add(new VarDecl(a,mult(b)));                        :};
+Declp ::=               PART:k Names   COLON Expr    {: ExprName.hint(k,"part");                                             :};
+Declp ::=               DISJ:k Names   COLON Expr    {: ExprName.hint(k,"disj");                                             :};
+Declp ::=               EXH:k  Names   COLON Expr    {: ExprName.hint(k,"exh");                                              :};
+Declp ::=                      Names:a COLON Expr:b  {: RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(a,mult(b))); :};
 
 Decls ::=          {: RESULT=new ArrayList<VarDecl>(); :};
 Decls ::= Declp:x  {: RESULT=x;                        :};
@@ -635,25 +672,25 @@ AndExpr ::= AndExpr:a AND:o NegExpr:b                    {: RESULT=ExprBinary.Op
 NegExpr ::= CompareExpr:b      {: RESULT=b;                          :};
 NegExpr ::= NOT:o NegExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,b); :};
 
-CompareExpr ::=        UnionDiffExpr:b                       {: RESULT=b;                                                         :};
-CompareExpr ::= ALL:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.ALL      .make(o,b);                         :};
-CompareExpr ::= NO:o   UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.NO       .make(o,b);                         :};
-CompareExpr ::= SOME:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SOME     .make(o,b);                         :};
-CompareExpr ::= LONE:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.LONE     .make(o,b);                         :};
-CompareExpr ::= ONE:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.ONE      .make(o,b);                         :};
-CompareExpr ::= SET:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SETMULT  .make(o,b);                         :};
-CompareExpr ::= CompareExpr:a EQUALS:o    UnionDiffExpr:b    {: RESULT=ExprBinary.Op.EQUALS   .make(o,a,b);                       :};
-CompareExpr ::= CompareExpr:a IN:o        UnionDiffExpr:b    {: RESULT=ExprBinary.Op.IN       .make(o,a,b);                       :};
-CompareExpr ::= CompareExpr:a LT:o        UnionDiffExpr:b    {: RESULT=ExprBinary.Op.LT       .make(o,a,b);                       :};
-CompareExpr ::= CompareExpr:a GT:o        UnionDiffExpr:b    {: RESULT=ExprBinary.Op.GT       .make(o,a,b);                       :};
-CompareExpr ::= CompareExpr:a LTE:o       UnionDiffExpr:b    {: RESULT=ExprBinary.Op.LTE      .make(o,a,b);                       :};
-CompareExpr ::= CompareExpr:a GTE:o       UnionDiffExpr:b    {: RESULT=ExprBinary.Op.GTE      .make(o,a,b);                       :};
-CompareExpr ::= CompareExpr:a NOTEQUALS:o UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.EQUALS.make(o,a,b)); :};
-CompareExpr ::= CompareExpr:a NOTIN:o     UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.IN    .make(o,a,b)); :};
-CompareExpr ::= CompareExpr:a NOTLT:o     UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LT    .make(o,a,b)); :};
-CompareExpr ::= CompareExpr:a NOTGT:o     UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GT    .make(o,a,b)); :};
-CompareExpr ::= CompareExpr:a NOTLTE:o    UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LTE   .make(o,a,b)); :};
-CompareExpr ::= CompareExpr:a NOTGTE:o    UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GTE   .make(o,a,b)); :};
+CompareExpr ::=        UnionDiffExpr:b                       {: RESULT=b;                                                               :};
+CompareExpr ::= ALL:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.ALL      .make(o,b);                               :};
+CompareExpr ::= NO:o   UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.NO       .make(o,b);                               :};
+CompareExpr ::= SOME:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SOME     .make(o,b);                               :};
+CompareExpr ::= LONE:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.LONE     .make(o,b);                               :};
+CompareExpr ::= ONE:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.ONE      .make(o,b);                               :};
+CompareExpr ::= SET:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SETMULT  .make(o,b);                               :};
+CompareExpr ::= CompareExpr:a EQUALS:o    UnionDiffExpr:b    {: RESULT=ExprBinary.Op.EQUALS   .make(o,a,b);                             :};
+CompareExpr ::= CompareExpr:a IN:o        UnionDiffExpr:b    {: RESULT=ExprBinary.Op.IN       .make(o,a,mult(b));                       :};
+CompareExpr ::= CompareExpr:a LT:o        UnionDiffExpr:b    {: RESULT=ExprBinary.Op.LT       .make(o,a,b);                             :};
+CompareExpr ::= CompareExpr:a GT:o        UnionDiffExpr:b    {: RESULT=ExprBinary.Op.GT       .make(o,a,b);                             :};
+CompareExpr ::= CompareExpr:a LTE:o       UnionDiffExpr:b    {: RESULT=ExprBinary.Op.LTE      .make(o,a,b);                             :};
+CompareExpr ::= CompareExpr:a GTE:o       UnionDiffExpr:b    {: RESULT=ExprBinary.Op.GTE      .make(o,a,b);                             :};
+CompareExpr ::= CompareExpr:a NOTEQUALS:o UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.EQUALS.make(o,a,b      )); :};
+CompareExpr ::= CompareExpr:a NOTIN:o     UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.IN    .make(o,a,mult(b))); :};
+CompareExpr ::= CompareExpr:a NOTLT:o     UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LT    .make(o,a,b      )); :};
+CompareExpr ::= CompareExpr:a NOTGT:o     UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GT    .make(o,a,b      )); :};
+CompareExpr ::= CompareExpr:a NOTLTE:o    UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LTE   .make(o,a,b      )); :};
+CompareExpr ::= CompareExpr:a NOTGTE:o    UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GTE   .make(o,a,b      )); :};
 
 UnionDiffExpr ::=                         NumUnopExpr:b     {: RESULT=b;                                   :};
 UnionDiffExpr ::= UnionDiffExpr:a PLUS:o  NumUnopExpr:b     {: RESULT=ExprBinary.Op.PLUS.make(o,a,b);      :};

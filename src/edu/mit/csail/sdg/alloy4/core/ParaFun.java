@@ -55,7 +55,6 @@ public final class ParaFun extends Para {
         if (dup!=null) throw this.syntaxError("The parameter name \""+dup+"\" appears more than once in this predicate/function declaration.");
         argCount=VarDecl.nameCount(this.decls);
         // See ExprUnary.java for why we have to call makeMult() here.
-        if (type instanceof ExprUnary) type=((ExprUnary)type).makeMult();
         this.type=type;
         this.value=nonnull(value);
     }
