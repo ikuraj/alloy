@@ -83,7 +83,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     if (list==null) list=new ArrayList<ParaFun>();
     //
     d=new ArrayList<VarDecl>(d);
-    if (f!=null) d.add(0,new VarDecl("this",ExprUnary.Op.ONEMULT.make(p,f)));
+    if (f!=null) d.add(0, new VarDecl(p, "this", ExprUnary.Op.ONEMULT.make(p,f)));
     //
     ParaFun x=new ParaFun(p, aliases.get(0), n, d, t, v);
     if (asserts.containsKey(x.name)) throw x.syntaxError("Within the same file, a function/predicate cannot have the same name as another assertion!");

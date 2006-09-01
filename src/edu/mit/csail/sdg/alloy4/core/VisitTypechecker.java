@@ -190,11 +190,13 @@ public final class VisitTypechecker {
        ParaSig y=x.sup();
        if (y!=null) {
            Boolean v=status.get(y);
-           if (v==null) tsort(y,status,list); else if (v==Boolean.FALSE) throw new ErrorSyntax(null,"Circular extension detected, involving the signature named \""+y.fullname+"\"");
+           if (v==null) tsort(y,status,list);
+           else if (v==Boolean.FALSE) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
        }
        for(ParaSig yy:x.sups()) {
            Boolean v=status.get(yy);
-           if (v==null) tsort(yy,status,list); else if (v==Boolean.FALSE) throw new ErrorSyntax(null,"Circular extension detected, involving the signature named \""+yy.fullname+"\"");
+           if (v==null) tsort(yy,status,list);
+           else if (v==Boolean.FALSE) throw yy.syntaxError("Circular extension detected, involving the signature named \""+yy.fullname+"\"");
        }
        status.put(x, Boolean.TRUE);
        list.add(x);
@@ -215,7 +217,8 @@ public final class VisitTypechecker {
        ArrayList<ParaSig> list=new ArrayList<ParaSig>();
        for(ParaSig y:sigs) {
            Boolean v=status.get(y);
-           if (v==null) tsort(y,status,list); else if (v==Boolean.FALSE) throw new ErrorSyntax(null,"Circular extension detected, involving the signature named \""+y.fullname+"\"");
+           if (v==null) tsort(y,status,list);
+           else if (v==Boolean.FALSE) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
        }
        for(ParaSig y:list) if (y.sup()!=null) y.sup().subs.add(y);
        // Now we fill in the Type field of all the ParaSig objects.
@@ -638,7 +641,7 @@ public final class VisitTypechecker {
         Type comp=null; // Stores the Union Type for a Set Comprehension expression
         for(int i=0;i<x.list.size();i++) {
             VarDecl d=x.list.get(i);
-            VarDecl dd=new VarDecl(d, addOne(resolve(d.value)));
+            VarDecl dd=new VarDecl(d.pos, d, addOne(resolve(d.value)));
             Expr v=dd.value;
             if (v.type.size()==0) cset(v);
             if (v.type.hasNoTuple()) throw v.typeError("This expression must not be an empty set!");
@@ -1088,7 +1091,7 @@ public final class VisitTypechecker {
                 fi++;
                 log.log("Unit ["+u.aliases.get(0)+"], Sig "+x.name+", Field "+f.name+": "+f.full.fulltype+"\n");
             }
-            newdecl.add(new VarDecl(d, value));
+            newdecl.add(new VarDecl(d.pos, d, value));
         }
     }
 
@@ -1111,7 +1114,7 @@ public final class VisitTypechecker {
                 this.env.put(n, value.type);
                 log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", Param "+n+": "+value.type+"\n");
             }
-            newdecls.add(new VarDecl(d, value));
+            newdecls.add(new VarDecl(d.pos, d, value));
         }
         Expr type=fun.type;
         if (type!=null) {

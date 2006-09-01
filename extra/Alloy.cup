@@ -613,14 +613,14 @@ NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=new ExprName(a.pos, a.name+"/"
 Names ::= Name:x                   {: RESULT=new ArrayList<ExprName>(); RESULT.add(x);  :};
 Names ::= Names:a COMMA Name:b     {: a.add(b); RESULT=a;                               :};
 
-Declp ::= Declp   COMMA PART:k Names   COLON Expr    {: ExprName.hint(k,"part");                                             :};
-Declp ::= Declp   COMMA DISJ:k Names   COLON Expr    {: ExprName.hint(k,"disj");                                             :};
-Declp ::= Declp   COMMA EXH:k  Names   COLON Expr    {: ExprName.hint(k,"exh");                                              :};
-Declp ::= Declp:x COMMA        Names:a COLON Expr:b  {: RESULT=x; RESULT.add(new VarDecl(a,mult(b)));                        :};
-Declp ::=               PART:k Names   COLON Expr    {: ExprName.hint(k,"part");                                             :};
-Declp ::=               DISJ:k Names   COLON Expr    {: ExprName.hint(k,"disj");                                             :};
-Declp ::=               EXH:k  Names   COLON Expr    {: ExprName.hint(k,"exh");                                              :};
-Declp ::=                      Names:a COLON Expr:b  {: RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(a,mult(b))); :};
+Declp ::= Declp   COMMA PART:k Names   COLON   Expr    {: ExprName.hint(k,"part");                                               :};
+Declp ::= Declp   COMMA DISJ:k Names   COLON   Expr    {: ExprName.hint(k,"disj");                                               :};
+Declp ::= Declp   COMMA EXH:k  Names   COLON   Expr    {: ExprName.hint(k,"exh");                                                :};
+Declp ::= Declp:x COMMA        Names:a COLON:o Expr:b  {: RESULT=x; RESULT.add(new VarDecl(o,a,mult(b)));                        :};
+Declp ::=               PART:k Names   COLON   Expr    {: ExprName.hint(k,"part");                                               :};
+Declp ::=               DISJ:k Names   COLON   Expr    {: ExprName.hint(k,"disj");                                               :};
+Declp ::=               EXH:k  Names   COLON   Expr    {: ExprName.hint(k,"exh");                                                :};
+Declp ::=                      Names:a COLON:o Expr:b  {: RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(o,a,mult(b))); :};
 
 Decls ::=          {: RESULT=new ArrayList<VarDecl>(); :};
 Decls ::= Declp:x  {: RESULT=x;                        :};

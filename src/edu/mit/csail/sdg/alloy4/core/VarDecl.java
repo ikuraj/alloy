@@ -7,16 +7,21 @@ import java.util.ArrayList;
 /**
  * Immutable; represents a field/variable/parameter declaration such as "a,b,c: X".
  *
- * <br/>
- * <br/> Invariant: names!=null
- * <br/> Invariant: names.size()>0
- * <br/> Invariant: all x:names | x!=null, x is not "", and doesn't contain '/' or '@'
- * <br/> Invariant: value!=null
+ * <p/> <b>Invariant:</b>  names!=null
+ * <p/> <b>Invariant:</b>  names.size()>0
+ * <p/> <b>Invariant:</b>  all x:names | x!=null, x is not "", and doesn't contain '/' or '@'
+ * <p/> <b>Invariant:</b>  value!=null
  *
  * @author Felix Chang
  */
 
 public final class VarDecl {
+
+    /**
+     * The filename, line, and column position
+     * in the original Alloy model file (cannot be null).
+     */
+    public final Pos pos;
 
     /** The unmodifiable list of names. */
     public final List<String> names;
@@ -35,9 +40,10 @@ public final class VarDecl {
      * @throws ErrorInternal if any of the name is null or ""
      * @throws ErrorInternal if any of the name contains '/' or '@'
      */
-    public VarDecl (List<ExprName> x, Expr y) {
-        if (x==null || y==null)
-            throw new ErrorInternal(null,null,"NullPointerException");
+    public VarDecl (Pos pos, List<ExprName> x, Expr y) {
+    	this.pos=pos;
+        if (pos==null || x==null || y==null)
+            throw new ErrorInternal(pos,null,"NullPointerException");
         List<String> newlist=new ArrayList<String>();
         if (x.size()==0)
             throw y.syntaxError("The list of declarations cannot be empty!");
@@ -68,9 +74,10 @@ public final class VarDecl {
      * @throws ErrorInternal if x contains '/' or '@'
      * @throws ErrorInternal if x is equal to ""
      */
-    public VarDecl (String x, Expr y) {
-        if (x==null || y==null)
-            throw new ErrorInternal(null,null,"NullPointerException");
+    public VarDecl (Pos pos, String x, Expr y) {
+    	this.pos=pos;
+        if (pos==null || x==null || y==null)
+            throw new ErrorInternal(pos,null,"NullPointerException");
         if (x.length()==0)
             throw y.syntaxError("Variable name must not be empty!");
         if (x.indexOf('/')>=0)
@@ -91,9 +98,10 @@ public final class VarDecl {
      *
      * @throws ErrorInternal if x==null or y==null
      */
-    public VarDecl (VarDecl x, Expr y) {
+    public VarDecl (Pos pos, VarDecl x, Expr y) {
+    	this.pos=pos;
         if (x==null || y==null)
-            throw new ErrorInternal(null,null,"NullPointerException");
+            throw new ErrorInternal(pos,null,"NullPointerException");
         names=x.names;
         value=y;
     }

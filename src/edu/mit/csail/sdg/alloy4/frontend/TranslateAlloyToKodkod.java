@@ -775,7 +775,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
           if (temp!=null) {
              Expr x1=new ExprName(s.pos, s.fullname, s, s.type);
              Expr x2=ExprUnary.Op.ONEMULT.make(s.pos, x1, s.type);
-             VarDecl x3=new VarDecl("this",x2);
+             VarDecl x3=new VarDecl(s.pos, "this", x2);
              List<VarDecl> x4=new ArrayList<VarDecl>(1); x4.add(x3);
              Expr x5=ExprQuant.Op.ALL.make(s.pos,x4,temp,Type.FORMULA);
              kfact=kfact.and((Formula)(x5.accept(this)));

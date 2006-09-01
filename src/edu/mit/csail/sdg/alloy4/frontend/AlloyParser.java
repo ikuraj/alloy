@@ -3631,8 +3631,9 @@ class CUP$AlloyParser$actions {
             {
               List<VarDecl> RESULT =null;
 		List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
 		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(a,mult(b))); 
+		 RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(o,a,mult(b))); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3642,7 +3643,7 @@ class CUP$AlloyParser$actions {
             {
               List<VarDecl> RESULT =null;
 		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-		 ExprName.hint(k,"exh");                                              
+		 ExprName.hint(k,"exh");                                                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3652,7 +3653,7 @@ class CUP$AlloyParser$actions {
             {
               List<VarDecl> RESULT =null;
 		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-		 ExprName.hint(k,"disj");                                             
+		 ExprName.hint(k,"disj");                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3662,7 +3663,7 @@ class CUP$AlloyParser$actions {
             {
               List<VarDecl> RESULT =null;
 		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-		 ExprName.hint(k,"part");                                             
+		 ExprName.hint(k,"part");                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3673,8 +3674,9 @@ class CUP$AlloyParser$actions {
               List<VarDecl> RESULT =null;
 		List<VarDecl> x = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
 		List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
 		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=x; RESULT.add(new VarDecl(a,mult(b)));                        
+		 RESULT=x; RESULT.add(new VarDecl(o,a,mult(b)));                        
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3684,7 +3686,7 @@ class CUP$AlloyParser$actions {
             {
               List<VarDecl> RESULT =null;
 		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-		 ExprName.hint(k,"exh");                                              
+		 ExprName.hint(k,"exh");                                                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3694,7 +3696,7 @@ class CUP$AlloyParser$actions {
             {
               List<VarDecl> RESULT =null;
 		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-		 ExprName.hint(k,"disj");                                             
+		 ExprName.hint(k,"disj");                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
@@ -3704,7 +3706,7 @@ class CUP$AlloyParser$actions {
             {
               List<VarDecl> RESULT =null;
 		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-		 ExprName.hint(k,"part");                                             
+		 ExprName.hint(k,"part");                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
