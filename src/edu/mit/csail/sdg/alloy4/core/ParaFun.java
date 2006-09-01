@@ -59,4 +59,8 @@ public final class ParaFun extends Para {
         this.type=type;
         this.value=nonnull(value);
     }
+
+    @Override public String toString() {
+    	return (type==null?"(pred ":"(fun ") + (path.length()==0?"this/":path+"/") + name +")";
+    }
 }

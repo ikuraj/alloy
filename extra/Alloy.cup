@@ -7,6 +7,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.Reader;
 import java.io.InputStreamReader;
@@ -30,6 +31,7 @@ import edu.mit.csail.sdg.alloy4.core.ExprQuant;
 import edu.mit.csail.sdg.alloy4.core.ExprSequence;
 import edu.mit.csail.sdg.alloy4.core.ExprUnary;
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
+import edu.mit.csail.sdg.alloy4.core.ParaOpen;
 import edu.mit.csail.sdg.alloy4.core.Pos;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VarDecl;
@@ -41,7 +43,7 @@ parser code {:
   public Unit alloyunit=null;
   public String alloyfile="";
 
-  public Pos alloypos(Symbol x) {
+  private Pos alloypos(Symbol x) {
     if (x==null) return null;
     if (x.value instanceof Pos) return (Pos)(x.value);
     if (x.value instanceof Expr) return ((Expr)(x.value)).pos;
@@ -225,6 +227,63 @@ parser code {:
     if (u==null) throw new ErrorInternal(null,null,"Parser failed to parse this input!");
     return u;
   }
+
+  public static ArrayList<Unit> alloy_totalparseFile (String name) {
+      ArrayList<Unit> units=new ArrayList<Unit>();
+      ArrayList<String> thispath=new ArrayList<String>();
+      alloy_totalparseHelper(name,"",units,thispath);
+      return units;
+  }
+
+  public static ArrayList<Unit> alloy_totalparseStream (Reader i) {
+      ArrayList<Unit> units=new ArrayList<Unit>();
+      ArrayList<String> thispath=new ArrayList<String>();
+      Unit u=AlloyParser.alloy_parseStream(i);
+      units.add(u);
+      for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
+          // Here, we recursively open the included files (to fill out the "Unit.opens" field)
+          ParaOpen y=opens.getValue();
+          Unit uu=alloy_totalparseHelper(y.file, y.name, units, thispath);
+          if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
+          u.opens.put(y.name, uu);
+      }
+      return units;
+  }
+
+  private static Unit alloy_totalparseHelper(String name,String prefix,ArrayList<Unit> units,ArrayList<String> thispath) {
+      // Figure out the exact filename
+      File f=new File(name);
+      if (!f.exists()) f=new File("models/"+name+".als");
+      if (!f.exists()) throw new ErrorSyntax(null, "The module \""+name+"\" cannot be found!");
+      // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
+      // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
+      // => As you descend down the chain via OPEN, if you see the same FILE twice, then
+      //    you will go into an infinite loop (since, regardless of the instantiating parameter,
+      //    that file will attempt to OPEN the exact same set of files. leading back to itself, etc. etc.)
+      // <= If there is an infinite loop, that means there is at least 1 infinite chain of OPEN (from root).
+      //    Since the number of files is finite, at least 1 filename will be repeated.
+      String absolutePath=f.getAbsolutePath();
+      if (thispath.contains(absolutePath)) throw new ErrorSyntax(null,"Circular dependency in module import! The file \""+absolutePath+"\" is imported infinitely often!");
+      thispath.add(absolutePath);
+      // No cycle detected so far. So now we parse the file.
+      Unit u=AlloyParser.alloy_parseFile(absolutePath,prefix);
+      units.add(u);
+      // The returned Unit object is fully-filled-in except
+      // * Unit.{opens,params}
+      // * Sig.{type,sup,sups,subs}
+      // * Field.halftype, Field.Full.fulltype, Expr*.type, and ExprName.resolved
+      // Also, there will not be any ExprCall. Only ExprJoin.
+      for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
+          // Here, we recursively open the included files (to fill out the "Unit.opens" field)
+          ParaOpen y=opens.getValue();
+          Unit uu=alloy_totalparseHelper(y.file, prefix.length()==0 ? y.name : prefix+"/"+y.name, units, thispath);
+          if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
+          u.opens.put(y.name, uu);
+      }
+      thispath.remove(thispath.size()-1); // Remove this file from the CYCLE DETECTION LIST.
+      return u;
+  }
+
 :};
 
 //===========================================================================//

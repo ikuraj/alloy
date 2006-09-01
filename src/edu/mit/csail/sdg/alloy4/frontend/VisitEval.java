@@ -70,6 +70,8 @@ import kodkod.instance.Universe;
 
 public final class VisitEval implements VisitReturn {
 
+    public enum Result { SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
+
     /**
      * Convenience method that casts x to be a Kodkod Formula.
      * @return (Formula)x - if x is of type Formula
@@ -666,7 +668,7 @@ public final class VisitEval implements VisitReturn {
 
     // zzz: Should make sure we don't load Int unless we need to
 
-    public List<Main.Result> codegen(List<ParaSig> sigs)  {
+    public List<Result> codegen(List<ParaSig> sigs)  {
         Formula kfact=Formula.TRUE;
         // Generate the relations for the SIGS.
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -780,7 +782,7 @@ public final class VisitEval implements VisitReturn {
             kfact=((Formula)(e.getValue().value.accept(this))).and(kfact);
         }
         // Go thru the commands
-        List<Main.Result> result=new ArrayList<Main.Result>();
+        List<Result> result=new ArrayList<Result>();
         for(int xi=0; xi<units.get(0).runchecks.size(); xi++)
             if (codeindex==(-1) || codeindex==xi) {
                 ParaRuncheck x=units.get(0).runchecks.get(xi);
@@ -864,8 +866,8 @@ public final class VisitEval implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Main.Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
-        Main.Result mainResult=null;
+    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
+        Result mainResult=null;
         Unit root=units.get(0);
         unique.clear();
         Set<String> atoms=new LinkedHashSet<String>();
@@ -991,17 +993,17 @@ public final class VisitEval implements VisitReturn {
             long t2=sol.stats().solvingTime();
             switch(sol.outcome()) {
             case TRIVIALLY_SATISFIABLE:
-                mainResult=Main.Result.TRIVIALLY_SAT;
+                mainResult=Result.TRIVIALLY_SAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
                 if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)\n"); else log.log(" TRIVIALLY SAT\n");
                 break;
             case TRIVIALLY_UNSATISFIABLE:
-                mainResult=Main.Result.TRIVIALLY_UNSAT;
+                mainResult=Result.TRIVIALLY_UNSAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
                 if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)\n"); else log.log(" TRIVIALLY UNSAT\n");
                 break;
             case SATISFIABLE:
-                mainResult=Main.Result.SAT;
+                mainResult=Result.SAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
                 if (cmd.check) log.log(" VIOLATED (SAT)"); else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
@@ -1009,7 +1011,7 @@ public final class VisitEval implements VisitReturn {
                 if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
                 break;
             case UNSATISFIABLE:
-                mainResult=Main.Result.UNSAT;
+                mainResult=Result.UNSAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
                 if (cmd.check) log.log(" OK (UNSAT)"); else log.log(" UNSAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
