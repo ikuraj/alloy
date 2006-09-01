@@ -11,9 +11,9 @@ public interface Log {
     /** Writes msg into the log. */
     public void log(String msg);
 
-    /** Writes msg into the log in a bold style (if possible) */
+    /** Writes msg into the log in a bold style (if possible). */
     public void logBold(String msg);
 
-    /** Commits all outstanding writes (if the logger is buffered) */
+    /** Commits all outstanding writes (if the logger is buffered). */
     public void flush();
 }
