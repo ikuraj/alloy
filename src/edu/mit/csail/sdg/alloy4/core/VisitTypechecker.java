@@ -81,17 +81,17 @@ public final class VisitTypechecker {
     private VisitTypechecker(Log log) {
         this.log=log;
     }
-    
+
     //-------------------------------------------------------------------------------------
-    
+
     public static ArrayList<ParaSig> check(Log log, ArrayList<Unit> units) {
-    	VisitTypechecker tc=new VisitTypechecker(log);
-    	fillParams(units,log);
+        VisitTypechecker tc=new VisitTypechecker(log);
+        fillParams(units,log);
         ArrayList<ParaSig> sigs=fillSig(units);
-    	tc.check(units,sigs);
-    	return sigs;
+        tc.check(units,sigs);
+        return sigs;
     }
-    
+
     private static void fillParams(ArrayList<Unit> units, Log log) {
         // Here we fill in the "params" field in each Unit object.
         while(true) {
@@ -127,7 +127,7 @@ public final class VisitTypechecker {
         }
         while(mergeunits(units,log)) {}
     }
-    
+
     private static<V> boolean isin(V x,Map<String,V> y) {
         for(Map.Entry<String,V> e:y.entrySet()) if (e.getValue()==x) return true;
         return false;

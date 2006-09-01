@@ -97,7 +97,7 @@ public final class ParaSig extends Para {
     public final boolean subset;
 
     @Override public String toString() { return "(sig this"+fullname+")"; }
-    
+
     public ParaSig(Pos p, String al, String n, boolean fa, boolean fl, boolean fo, boolean fs,
             List<String> i, String e, List<VarDecl> d, Expr f) {
         super(p, al, n);

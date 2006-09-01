@@ -133,7 +133,7 @@ public abstract class Expr {
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
         int thisArity=this.type.arity();
         if (thisArity>0 && thisArity==y.type.arity())
-        	return ExprBinary.Op.IN.make(this.pos, this, y, Type.FORMULA);
+            return ExprBinary.Op.IN.make(this.pos, this, y, Type.FORMULA);
         throw internalError("Cannot perform Expr.in()");
     }
 
@@ -163,7 +163,7 @@ public abstract class Expr {
         if (this.type==null) throw this.internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
         if (this.type.isBool && y.type.isBool)
-        	return ExprBinary.Op.AND.make(this.pos, this, y, Type.FORMULA);
+            return ExprBinary.Op.AND.make(this.pos, this, y, Type.FORMULA);
         throw internalError("Cannot perform Expr.and()");
     }
 
@@ -189,9 +189,9 @@ public abstract class Expr {
      * @throws ErrorInternal if this node is not fully typechecked
      */
     public final Expr int2Int() {
-    	if (type==null) throw this.internalError("The node is not yet typechecked");
-    	if (!type.isInt) return this;
-    	return ExprUnary.Op.INTTOATOM.make(pos, this, ParaSig.SIGINT.type);
+        if (type==null) throw this.internalError("The node is not yet typechecked");
+        if (!type.isInt) return this;
+        return ExprUnary.Op.INTTOATOM.make(pos, this, ParaSig.SIGINT.type);
     }
 
     /**
@@ -200,9 +200,9 @@ public abstract class Expr {
      * @throws ErrorInternal if this node is not fully typechecked
      */
     public final Expr Int2int() {
-    	if (type==null) throw this.internalError("The node is not yet typechecked");
-    	if (type.isInt) return this;
-    	return ExprUnary.Op.SUM.make(pos, this, Type.INT);
+        if (type==null) throw this.internalError("The node is not yet typechecked");
+        if (type.isInt) return this;
+        return ExprUnary.Op.SUM.make(pos, this, Type.INT);
     }
 
     /**
@@ -214,7 +214,7 @@ public abstract class Expr {
      * @throws ErrorInternal if this node and y are not compatible
      */
     public final Expr product(Expr y) {
-    	Expr me=this;
+        Expr me=this;
         if (me.type==null) throw me.internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
         if (me.type.isInt) me=ExprUnary.Op.INTTOATOM.make(me.pos, me, ParaSig.SIGINT.type);

@@ -61,6 +61,6 @@ public final class ParaFun extends Para {
     }
 
     @Override public String toString() {
-    	return (type==null?"(pred ":"(fun ") + (path.length()==0?"this/":path+"/") + name +")";
+        return (type==null?"(pred ":"(fun ") + (path.length()==0?"this/":path+"/") + name +")";
     }
 }

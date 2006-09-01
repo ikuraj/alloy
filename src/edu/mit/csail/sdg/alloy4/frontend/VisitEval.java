@@ -465,7 +465,11 @@ public final class VisitEval implements VisitReturn {
     private Env env=new Env();
     private final Log log;
     private final int codeindex;
-    public VisitEval(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
+    private VisitEval(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
+    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs) {
+        VisitEval ve=new VisitEval(i,log,units);
+        return ve.codegen(sigs);
+    }
 
     private Map<ParaSig,Expression> sig2rel = new LinkedHashMap<ParaSig,Expression>();
     private Expression rel(ParaSig x) {

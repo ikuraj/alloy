@@ -18,13 +18,13 @@ public final class Main {
             System.out.flush();
             units=AlloyParser.alloy_totalparseFile("");
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) { VisitEval c=new VisitEval(code,log,units); c.codegen(sigs); }
+            if (code>=(-1)) VisitEval.codegen(code,log,units,sigs);
         }
         else for(String a:args) {
             log.log("\n\nMain file = "+a+"\n");
             units=AlloyParser.alloy_totalparseFile(a);
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) { VisitEval c=new VisitEval(code,log,units); c.codegen(sigs); }
+            if (code>=(-1)) VisitEval.codegen(code,log,units,sigs);
         }
     }
 

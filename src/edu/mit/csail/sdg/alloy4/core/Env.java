@@ -11,13 +11,13 @@ import java.util.LinkedList;
  * <br/> The put(X,Y)  method appeneds Y to that list.
  * <br/> The get(X)    method returns the last element in that list.
  * <br/> The remove(X) method removes the last element in that list.
- * 
+ *
  * <p/>
  * This is very useful for representing lexical scoping: when a local variable
  * is introduced with the same name as an existing variable, the new one "hides"
  * the old binding; and when the new variable falls out of scope,
  * the previous binding is once again "revealed".
- * 
+ *
  * @author Felix Chang
  */
 
@@ -39,22 +39,22 @@ public final class Env {
    * @return true if the key is mapped to one or more object
    */
   public boolean has(String k) {
-	  return map1.containsKey(k) || map2.containsKey(k);
+      return map1.containsKey(k) || map2.containsKey(k);
   }
 
   /**
    * Returns the latest value associated with the key k (and returns null if none).
-   * 
+   *
    * <p/>
    * Since null is a possible value, if you get null as the answer,
-   * you need to call has(k) to determine whether the key really has a binding or not.  
-   * 
+   * you need to call has(k) to determine whether the key really has a binding or not.
+   *
    * @param k - the key (which must not be null)
    * @return the latest value associated with key k (and returns null if none).
    */
   public Object get(String k) {
-	  LinkedList<Object> list=map2.get(k);
-	  if (list!=null) return list.getLast(); else return map1.get(k);
+      LinkedList<Object> list=map2.get(k);
+      if (list!=null) return list.getLast(); else return map1.get(k);
   }
 
   /**
@@ -66,12 +66,12 @@ public final class Env {
   public void put(String k,Object v) {
     LinkedList<Object> list=map2.get(k);
     if (list!=null) {
-    	list.add(v);
-    	return;
+        list.add(v);
+        return;
     }
     if (!map1.containsKey(k)) {
-    	map1.put(k,v);
-    	return;
+        map1.put(k,v);
+        return;
     }
     list=new LinkedList<Object>();
     list.add(v);
@@ -88,9 +88,9 @@ public final class Env {
   public void remove(String k) {
     LinkedList<Object> list=map2.get(k);
     if (list!=null) {
-    	list.removeLast();
-    	if (list.size()==0) map2.remove(k);
-    	return;
+        list.removeLast();
+        if (list.size()==0) map2.remove(k);
+        return;
     }
     map1.remove(k);
   }

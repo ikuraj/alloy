@@ -136,8 +136,8 @@ public final class ExprBinary extends Expr {
          * @param isArrow - true if this operator is one of the 16 arrow operators
          */
         Op(String label, boolean isArrow) {
-        	this.label=label;
-        	this.isArrow=isArrow;
+            this.label=label;
+            this.isArrow=isArrow;
         }
 
         /** The human readable label for this operator. */
