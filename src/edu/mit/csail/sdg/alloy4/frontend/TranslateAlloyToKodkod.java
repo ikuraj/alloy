@@ -68,7 +68,7 @@ import kodkod.instance.Universe;
  * @author Felix Chang
  */
 
-public final class VisitEval implements VisitReturn {
+public final class TranslateAlloyToKodkod implements VisitReturn {
 
     public enum Result { SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
@@ -465,9 +465,9 @@ public final class VisitEval implements VisitReturn {
     private Env env=new Env();
     private final Log log;
     private final int codeindex;
-    private VisitEval(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
+    private TranslateAlloyToKodkod(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
     public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs) {
-        VisitEval ve=new VisitEval(i,log,units);
+        TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,units);
         return ve.codegen(sigs);
     }
 

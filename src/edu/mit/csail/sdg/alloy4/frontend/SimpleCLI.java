@@ -8,7 +8,7 @@ import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
 
-public final class Main {
+public final class SimpleCLI {
 
     private static void run(int code, String[] args, Log log) throws FileNotFoundException {
         ArrayList<Unit> units;
@@ -18,13 +18,13 @@ public final class Main {
             System.out.flush();
             units=AlloyParser.alloy_totalparseFile("");
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) VisitEval.codegen(code,log,units,sigs);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs);
         }
         else for(String a:args) {
             log.log("\n\nMain file = "+a+"\n");
             units=AlloyParser.alloy_totalparseFile(a);
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) VisitEval.codegen(code,log,units,sigs);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs);
         }
     }
 

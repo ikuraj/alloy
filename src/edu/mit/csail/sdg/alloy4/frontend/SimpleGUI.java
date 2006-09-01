@@ -115,8 +115,8 @@ public final class SimpleGUI {
                 Log reallog=new LogToTextPane(log,styleRegular,styleGreen);
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
-                List<VisitEval.Result> result=VisitEval.codegen(index,reallog,units,sigs);
-                if (result.size()==1 && result.get(0)==VisitEval.Result.SAT) {
+                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs);
+                if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     log("Visualizer loading... please wait...", styleRegular);
                     String ps=System.getProperty("file.separator");
                     String newcwd = new File(cwd+".."+ps+"kodviz").getAbsolutePath();
@@ -128,7 +128,7 @@ public final class SimpleGUI {
                 if (result.size()>1) {
                     log("\n" + result.size() + " command" + (result.size()>1?"s were":" was") + " completed", styleGreen);
                     String summary = "The result" + (result.size()>1?"s are":" is");
-                    for(VisitEval.Result b:result) summary += ((b==VisitEval.Result.TRIVIALLY_SAT||b==VisitEval.Result.SAT)?" SAT":" UNSAT");
+                    for(TranslateAlloyToKodkod.Result b:result) summary += ((b==TranslateAlloyToKodkod.Result.TRIVIALLY_SAT||b==TranslateAlloyToKodkod.Result.SAT)?" SAT":" UNSAT");
                     log(summary+".", styleRegular);
                 }
             }

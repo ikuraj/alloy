@@ -40,11 +40,11 @@ import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Tuple;
 
-public final class MakeJava implements VoidVisitor {
+public final class TranslateKodkodToJava implements VoidVisitor {
 
   private final PrintWriter file;
 
-  public MakeJava(Formula x, int bitwidth, Bounds bounds) {
+  public TranslateKodkodToJava(Formula x, int bitwidth, Bounds bounds) {
     try {
       file=new PrintWriter(".alloy.tmpjava");
     } catch(FileNotFoundException e) {
