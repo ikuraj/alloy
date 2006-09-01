@@ -31,6 +31,7 @@ public final class VarDecl {
     /**
      * Constructs a new VarDecl object with x as the list of names.
      *
+     * @param pos - the original position in the file
      * @param x - the list of names
      * @param y - the expression that the names are quantified over
      *
@@ -66,6 +67,7 @@ public final class VarDecl {
     /**
      * Constructs a new VarDecl object with x as the only name.
      *
+     * @param pos - the original position in the file
      * @param x - the only name
      * @param y - the expression that the name is quantified over
      *
@@ -92,6 +94,7 @@ public final class VarDecl {
     /**
      * Constructs a new VarDecl object with the same names as x.
      *
+     * @param pos - the original position in the file
      * @param x - an existing VarDecl object
      * @param y - the expression that the name is quantified over
      *
