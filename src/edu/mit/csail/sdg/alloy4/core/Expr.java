@@ -187,22 +187,22 @@ public abstract class Expr {
      * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
      * @throws ErrorInternal if this node is not fully typechecked
      *
-    public final Expr int2Int() {
-        if (type==null) throw this.internalError("The node is not yet typechecked");
-        if (!type.isInt) return this;
-        return ExprUnary.Op.INTTOATOM.make(pos, this, ParaSig.SIGINT.type);
-    }*/
+     public final Expr int2Int() {
+     if (type==null) throw this.internalError("The node is not yet typechecked");
+     if (!type.isInt) return this;
+     return ExprUnary.Op.INTTOATOM.make(pos, this, ParaSig.SIGINT.type);
+     }*/
 
     /*
      * Convenience method that casts this node from "Int" to "int" if necessary.
      * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
      * @throws ErrorInternal if this node is not fully typechecked
      *
-    public final Expr Int2int() {
-        if (type==null) throw this.internalError("The node is not yet typechecked");
-        if (type.isInt) return this;
-        return ExprUnary.Op.SUM.make(pos, this, Type.INT);
-    }*/
+     public final Expr Int2int() {
+     if (type==null) throw this.internalError("The node is not yet typechecked");
+     if (type.isInt) return this;
+     return ExprUnary.Op.SUM.make(pos, this, Type.INT);
+     }*/
 
     /**
      * Convenience method that

@@ -105,12 +105,12 @@ public final class ExprName extends Expr {
      */
     public static void hint (Pos pos, String name) {
         String msg="The name \""+name+"\" cannot be found.";
-        if ("disj".equals(name) || "disjoint".equals(name) ||
-            "exh".equals(name) || "exhaustive".equals(name) ||
-            "part".equals(name) || "partition".equals(name) )
+        if ("disj".equals(name) || "disjoint".equals(name)
+            || "exh".equals(name) || "exhaustive".equals(name)
+            || "part".equals(name) || "partition".equals(name))
             msg=msg+" If you are migrating from Alloy 3, please see the "
-                +"online documentation on how to translate models that use the \""
-                +name+"\" keyword.";
+            +"online documentation on how to translate models that use the \""
+            +name+"\" keyword.";
         throw new ErrorSyntax(pos, msg);
     }
 }

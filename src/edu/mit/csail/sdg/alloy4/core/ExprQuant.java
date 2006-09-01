@@ -145,7 +145,7 @@ public final class ExprQuant extends Expr {
             // and we only allow ALL, SOME, LONE, and SUM.
             //
             if (this!=Op.COMPREHENSION && this!=Op.SUM)
-            	type=Type.FORMULA;
+                type=Type.FORMULA;
             if (list==null) throw new ErrorInternal(pos,null,"NullPointerException");
             list=new ArrayList<VarDecl>(list);
             ArrayList<VarDecl> list2=new ArrayList<VarDecl>();

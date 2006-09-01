@@ -81,13 +81,13 @@ public final class ExprConstant extends Expr {
          */
         public final ExprConstant make(Pos pos) {
             if (this==UNIV)
-            	return new ExprConstant(pos, this, ParaSig.UNIV.type, 0);
+                return new ExprConstant(pos, this, ParaSig.UNIV.type, 0);
             if (this==NONE)
-            	return new ExprConstant(pos, this, ParaSig.NONE.type, 0);
+                return new ExprConstant(pos, this, ParaSig.NONE.type, 0);
             if (this==SIGINT)
-            	return new ExprConstant(pos, this, ParaSig.SIGINT.type, 0);
+                return new ExprConstant(pos, this, ParaSig.SIGINT.type, 0);
             if (this==IDEN)
-            	return new ExprConstant(pos, this, ParaSig.UNIV.type.product_of_anyEmptyness(ParaSig.UNIV.type), 0);
+                return new ExprConstant(pos, this, ParaSig.UNIV.type.product_of_anyEmptyness(ParaSig.UNIV.type), 0);
             throw new ErrorInternal(pos, this, "Illegal operator "+this+" in ExprConstant.Op.make(pos)");
         }
 
@@ -107,10 +107,10 @@ public final class ExprConstant extends Expr {
                 throw new ErrorInternal(pos, this, "NullPointerException");
             try {
                 int n=Integer.parseInt(num);
-            	return new ExprConstant(pos, this, Type.INT, n);
+                return new ExprConstant(pos, this, Type.INT, n);
             } catch(NumberFormatException e) {
                 throw new ErrorSyntax(pos, "The number "+num
-                +" is too small or too large to be stored in a Java integer!");
+                        +" is too small or too large to be stored in a Java integer!");
             }
         }
 

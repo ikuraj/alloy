@@ -94,12 +94,12 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     "\000\002\024\003\000\002\024\003\000\002\025\003\000" +
     "\002\025\007\000\002\026\007\000\002\026\005\000\002" +
     "\002\003\000\002\002\005\000\002\035\003\000\002\035" +
-    "\004\000\002\005\003\000\002\005\004\000\002\005\004" +
-    "\000\002\005\004\000\002\005\004\000\002\005\004\000" +
-    "\002\005\004\000\002\005\005\000\002\005\005\000\002" +
-    "\005\005\000\002\005\005\000\002\005\005\000\002\005" +
-    "\005\000\002\005\005\000\002\005\005\000\002\005\005" +
+    "\004\000\002\005\005\000\002\005\005\000\002\005\005" +
     "\000\002\005\005\000\002\005\005\000\002\005\005\000" +
+    "\002\005\005\000\002\005\005\000\002\005\005\000\002" +
+    "\005\005\000\002\005\005\000\002\005\005\000\002\005" +
+    "\004\000\002\005\004\000\002\005\004\000\002\005\004" +
+    "\000\002\005\004\000\002\005\004\000\002\005\003\000" +
     "\002\063\003\000\002\063\005\000\002\063\005\000\002" +
     "\036\003\000\002\036\004\000\002\036\004\000\002\036" +
     "\004\000\002\036\004\000\002\042\003\000\002\042\005" +
@@ -422,22 +422,22 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     "\uff4b\116\uff4b\120\uff4b\121\uff4b\123\uff4b\124\uff4b\125\uff4b" +
     "\126\uff4b\130\uff4b\132\uff4b\134\uff4b\135\uff4b\136\uff4b\137" +
     "\uff4b\140\uff4b\141\uff4b\142\uff4b\143\uff4b\144\uff4b\145\uff4b" +
-    "\001\002\000\004\070\326\001\002\000\162\024\uff89\025" +
-    "\uff89\027\uff89\033\uff89\034\uff89\036\uff89\041\uff89\042\uff89" +
-    "\043\uff89\046\uff89\047\uff89\057\uff89\060\uff89\061\uff89\062" +
-    "\uff89\063\uff89\064\uff89\065\uff89\066\uff89\067\uff89\071\uff89" +
-    "\072\uff89\073\uff89\074\uff89\075\uff89\076\uff89\077\170\101" +
-    "\uff89\102\uff89\103\uff89\104\uff89\105\uff89\106\uff89\107\uff89" +
-    "\110\uff89\111\uff89\112\uff89\113\uff89\114\uff89\116\uff89\120" +
-    "\167\124\uff89\125\uff89\126\uff89\130\uff89\132\uff89\134\uff89" +
-    "\135\uff89\136\uff89\137\uff89\140\uff89\141\uff89\142\uff89\143" +
-    "\uff89\144\uff89\145\uff89\001\002\000\156\024\uff8b\025\uff8b" +
+    "\001\002\000\004\070\326\001\002\000\162\024\uff77\025" +
+    "\uff77\027\uff77\033\uff77\034\uff77\036\uff77\041\uff77\042\uff77" +
+    "\043\uff77\046\uff77\047\uff77\057\uff77\060\uff77\061\uff77\062" +
+    "\uff77\063\uff77\064\uff77\065\uff77\066\uff77\067\uff77\071\uff77" +
+    "\072\uff77\073\uff77\074\uff77\075\uff77\076\uff77\077\170\101" +
+    "\uff77\102\uff77\103\uff77\104\uff77\105\uff77\106\uff77\107\uff77" +
+    "\110\uff77\111\uff77\112\uff77\113\uff77\114\uff77\116\uff77\120" +
+    "\167\124\uff77\125\uff77\126\uff77\130\uff77\132\uff77\134\uff77" +
+    "\135\uff77\136\uff77\137\uff77\140\uff77\141\uff77\142\uff77\143" +
+    "\uff77\144\uff77\145\uff77\001\002\000\156\024\uff8b\025\uff8b" +
     "\027\uff8b\033\uff8b\034\uff8b\036\uff8b\041\uff8b\042\uff8b\043" +
-    "\uff8b\046\uff8b\047\350\057\346\060\340\061\uff8b\062\uff8b" +
-    "\063\uff8b\064\uff8b\065\341\066\uff8b\067\uff8b\071\uff8b\072" +
+    "\uff8b\046\uff8b\047\350\057\346\060\341\061\uff8b\062\uff8b" +
+    "\063\uff8b\064\uff8b\065\337\066\uff8b\067\uff8b\071\uff8b\072" +
     "\uff8b\073\uff8b\074\uff8b\075\351\076\342\101\uff8b\102\uff8b" +
-    "\103\uff8b\104\uff8b\105\337\106\344\107\343\110\336\111" +
-    "\347\112\345\113\uff8b\114\uff8b\116\uff8b\124\uff8b\125\uff8b" +
+    "\103\uff8b\104\uff8b\105\340\106\345\107\343\110\336\111" +
+    "\347\112\344\113\uff8b\114\uff8b\116\uff8b\124\uff8b\125\uff8b" +
     "\126\uff8b\130\uff8b\132\uff8b\134\uff8b\135\uff8b\136\uff8b\137" +
     "\uff8b\140\uff8b\141\uff8b\142\uff8b\143\uff8b\144\uff8b\145\uff8b" +
     "\001\002\000\014\042\257\051\261\117\260\141\013\144" +
@@ -645,15 +645,15 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     "\104\105\113\107\114\124\130\150\132\074\134\132\135" +
     "\065\136\103\137\116\140\141\141\112\142\101\143\067" +
     "\144\011\145\117\001\002\000\006\041\uffa0\125\uffa0\001" +
-    "\002\000\162\024\uff83\025\uff83\027\uff83\033\uff83\034\uff83" +
-    "\036\uff83\041\uff83\042\uff83\043\uff83\046\uff83\047\uff83\057" +
-    "\uff83\060\uff83\061\uff83\062\uff83\063\uff83\064\uff83\065\uff83" +
-    "\066\uff83\067\uff83\071\uff83\072\uff83\073\uff83\074\uff83\075" +
-    "\uff83\076\uff83\077\170\101\uff83\102\uff83\103\uff83\104\uff83" +
-    "\105\uff83\106\uff83\107\uff83\110\uff83\111\uff83\112\uff83\113" +
-    "\uff83\114\uff83\116\uff83\120\167\124\uff83\125\uff83\126\uff83" +
-    "\130\uff83\132\uff83\134\uff83\135\uff83\136\uff83\137\uff83\140" +
-    "\uff83\141\uff83\142\uff83\143\uff83\144\uff83\145\uff83\001\002" +
+    "\002\000\162\024\uff79\025\uff79\027\uff79\033\uff79\034\uff79" +
+    "\036\uff79\041\uff79\042\uff79\043\uff79\046\uff79\047\uff79\057" +
+    "\uff79\060\uff79\061\uff79\062\uff79\063\uff79\064\uff79\065\uff79" +
+    "\066\uff79\067\uff79\071\uff79\072\uff79\073\uff79\074\uff79\075" +
+    "\uff79\076\uff79\077\170\101\uff79\102\uff79\103\uff79\104\uff79" +
+    "\105\uff79\106\uff79\107\uff79\110\uff79\111\uff79\112\uff79\113" +
+    "\uff79\114\uff79\116\uff79\120\167\124\uff79\125\uff79\126\uff79" +
+    "\130\uff79\132\uff79\134\uff79\135\uff79\136\uff79\137\uff79\140" +
+    "\uff79\141\uff79\142\uff79\143\uff79\144\uff79\145\uff79\001\002" +
     "\000\046\033\145\036\111\042\120\043\134\061\072\062" +
     "\133\066\073\067\131\074\071\103\126\132\074\136\103" +
     "\140\141\141\112\142\101\143\067\144\011\145\117\001" +
@@ -903,25 +903,25 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     "\112\uff44\113\uff44\114\uff44\116\uff44\120\uff44\121\uff44\123" +
     "\uff44\124\uff44\125\uff44\126\uff44\130\uff44\132\uff44\134\uff44" +
     "\135\uff44\136\uff44\137\uff44\140\uff44\141\uff44\142\uff44\143" +
-    "\uff44\144\uff44\145\uff44\001\002\000\162\024\uff85\025\uff85" +
-    "\027\uff85\033\uff85\034\uff85\036\uff85\041\uff85\042\uff85\043" +
-    "\uff85\046\uff85\047\uff85\057\uff85\060\uff85\061\uff85\062\uff85" +
-    "\063\uff85\064\uff85\065\uff85\066\uff85\067\uff85\071\uff85\072" +
-    "\uff85\073\uff85\074\uff85\075\uff85\076\uff85\077\170\101\uff85" +
-    "\102\uff85\103\uff85\104\uff85\105\uff85\106\uff85\107\uff85\110" +
-    "\uff85\111\uff85\112\uff85\113\uff85\114\uff85\116\uff85\120\167" +
-    "\124\uff85\125\uff85\126\uff85\130\uff85\132\uff85\134\uff85\135" +
-    "\uff85\136\uff85\137\uff85\140\uff85\141\uff85\142\uff85\143\uff85" +
-    "\144\uff85\145\uff85\001\002\000\162\024\uff88\025\uff88\027" +
-    "\uff88\033\uff88\034\uff88\036\uff88\041\uff88\042\uff88\043\uff88" +
-    "\046\uff88\047\uff88\057\uff88\060\uff88\061\uff88\062\uff88\063" +
-    "\uff88\064\uff88\065\uff88\066\uff88\067\uff88\071\uff88\072\uff88" +
-    "\073\uff88\074\uff88\075\uff88\076\uff88\077\170\101\uff88\102" +
-    "\uff88\103\uff88\104\uff88\105\uff88\106\uff88\107\uff88\110\uff88" +
-    "\111\uff88\112\uff88\113\uff88\114\uff88\116\uff88\120\167\124" +
-    "\uff88\125\uff88\126\uff88\130\uff88\132\uff88\134\uff88\135\uff88" +
-    "\136\uff88\137\uff88\140\uff88\141\uff88\142\uff88\143\uff88\144" +
-    "\uff88\145\uff88\001\002\000\162\024\uff71\025\uff71\027\uff71" +
+    "\uff44\144\uff44\145\uff44\001\002\000\162\024\uff7b\025\uff7b" +
+    "\027\uff7b\033\uff7b\034\uff7b\036\uff7b\041\uff7b\042\uff7b\043" +
+    "\uff7b\046\uff7b\047\uff7b\057\uff7b\060\uff7b\061\uff7b\062\uff7b" +
+    "\063\uff7b\064\uff7b\065\uff7b\066\uff7b\067\uff7b\071\uff7b\072" +
+    "\uff7b\073\uff7b\074\uff7b\075\uff7b\076\uff7b\077\170\101\uff7b" +
+    "\102\uff7b\103\uff7b\104\uff7b\105\uff7b\106\uff7b\107\uff7b\110" +
+    "\uff7b\111\uff7b\112\uff7b\113\uff7b\114\uff7b\116\uff7b\120\167" +
+    "\124\uff7b\125\uff7b\126\uff7b\130\uff7b\132\uff7b\134\uff7b\135" +
+    "\uff7b\136\uff7b\137\uff7b\140\uff7b\141\uff7b\142\uff7b\143\uff7b" +
+    "\144\uff7b\145\uff7b\001\002\000\162\024\uff78\025\uff78\027" +
+    "\uff78\033\uff78\034\uff78\036\uff78\041\uff78\042\uff78\043\uff78" +
+    "\046\uff78\047\uff78\057\uff78\060\uff78\061\uff78\062\uff78\063" +
+    "\uff78\064\uff78\065\uff78\066\uff78\067\uff78\071\uff78\072\uff78" +
+    "\073\uff78\074\uff78\075\uff78\076\uff78\077\170\101\uff78\102" +
+    "\uff78\103\uff78\104\uff78\105\uff78\106\uff78\107\uff78\110\uff78" +
+    "\111\uff78\112\uff78\113\uff78\114\uff78\116\uff78\120\167\124" +
+    "\uff78\125\uff78\126\uff78\130\uff78\132\uff78\134\uff78\135\uff78" +
+    "\136\uff78\137\uff78\140\uff78\141\uff78\142\uff78\143\uff78\144" +
+    "\uff78\145\uff78\001\002\000\162\024\uff71\025\uff71\027\uff71" +
     "\033\uff71\034\uff71\036\uff71\041\uff71\042\uff71\043\uff71\046" +
     "\uff71\047\uff71\057\uff71\060\uff71\061\uff71\062\uff71\063\uff71" +
     "\064\uff71\065\uff71\066\uff71\067\uff71\071\uff71\072\uff71\073" +
@@ -1120,25 +1120,25 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     "\uff53\116\uff53\120\uff53\121\uff53\123\uff53\124\uff53\125\uff53" +
     "\126\uff53\130\uff53\132\uff53\134\uff53\135\uff53\136\uff53\137" +
     "\uff53\140\uff53\141\uff53\142\uff53\143\uff53\144\uff53\145\uff53" +
-    "\001\002\000\162\024\uff87\025\uff87\027\uff87\033\uff87\034" +
-    "\uff87\036\uff87\041\uff87\042\uff87\043\uff87\046\uff87\047\uff87" +
-    "\057\uff87\060\uff87\061\uff87\062\uff87\063\uff87\064\uff87\065" +
-    "\uff87\066\uff87\067\uff87\071\uff87\072\uff87\073\uff87\074\uff87" +
-    "\075\uff87\076\uff87\077\170\101\uff87\102\uff87\103\uff87\104" +
-    "\uff87\105\uff87\106\uff87\107\uff87\110\uff87\111\uff87\112\uff87" +
-    "\113\uff87\114\uff87\116\uff87\120\167\124\uff87\125\uff87\126" +
-    "\uff87\130\uff87\132\uff87\134\uff87\135\uff87\136\uff87\137\uff87" +
-    "\140\uff87\141\uff87\142\uff87\143\uff87\144\uff87\145\uff87\001" +
-    "\002\000\004\124\uffa6\001\002\000\162\024\uff84\025\uff84" +
-    "\027\uff84\033\uff84\034\uff84\036\uff84\041\uff84\042\uff84\043" +
-    "\uff84\046\uff84\047\uff84\057\uff84\060\uff84\061\uff84\062\uff84" +
-    "\063\uff84\064\uff84\065\uff84\066\uff84\067\uff84\071\uff84\072" +
-    "\uff84\073\uff84\074\uff84\075\uff84\076\uff84\077\170\101\uff84" +
-    "\102\uff84\103\uff84\104\uff84\105\uff84\106\uff84\107\uff84\110" +
-    "\uff84\111\uff84\112\uff84\113\uff84\114\uff84\116\uff84\120\167" +
-    "\124\uff84\125\uff84\126\uff84\130\uff84\132\uff84\134\uff84\135" +
-    "\uff84\136\uff84\137\uff84\140\uff84\141\uff84\142\uff84\143\uff84" +
-    "\144\uff84\145\uff84\001\002\000\010\034\251\041\265\067" +
+    "\001\002\000\162\024\uff7d\025\uff7d\027\uff7d\033\uff7d\034" +
+    "\uff7d\036\uff7d\041\uff7d\042\uff7d\043\uff7d\046\uff7d\047\uff7d" +
+    "\057\uff7d\060\uff7d\061\uff7d\062\uff7d\063\uff7d\064\uff7d\065" +
+    "\uff7d\066\uff7d\067\uff7d\071\uff7d\072\uff7d\073\uff7d\074\uff7d" +
+    "\075\uff7d\076\uff7d\077\170\101\uff7d\102\uff7d\103\uff7d\104" +
+    "\uff7d\105\uff7d\106\uff7d\107\uff7d\110\uff7d\111\uff7d\112\uff7d" +
+    "\113\uff7d\114\uff7d\116\uff7d\120\167\124\uff7d\125\uff7d\126" +
+    "\uff7d\130\uff7d\132\uff7d\134\uff7d\135\uff7d\136\uff7d\137\uff7d" +
+    "\140\uff7d\141\uff7d\142\uff7d\143\uff7d\144\uff7d\145\uff7d\001" +
+    "\002\000\004\124\uffa6\001\002\000\162\024\uff7a\025\uff7a" +
+    "\027\uff7a\033\uff7a\034\uff7a\036\uff7a\041\uff7a\042\uff7a\043" +
+    "\uff7a\046\uff7a\047\uff7a\057\uff7a\060\uff7a\061\uff7a\062\uff7a" +
+    "\063\uff7a\064\uff7a\065\uff7a\066\uff7a\067\uff7a\071\uff7a\072" +
+    "\uff7a\073\uff7a\074\uff7a\075\uff7a\076\uff7a\077\170\101\uff7a" +
+    "\102\uff7a\103\uff7a\104\uff7a\105\uff7a\106\uff7a\107\uff7a\110" +
+    "\uff7a\111\uff7a\112\uff7a\113\uff7a\114\uff7a\116\uff7a\120\167" +
+    "\124\uff7a\125\uff7a\126\uff7a\130\uff7a\132\uff7a\134\uff7a\135" +
+    "\uff7a\136\uff7a\137\uff7a\140\uff7a\141\uff7a\142\uff7a\143\uff7a" +
+    "\144\uff7a\145\uff7a\001\002\000\010\034\251\041\265\067" +
     "\062\001\002\000\114\024\uff9c\025\uff9c\033\uff9c\034\uff9c" +
     "\036\uff9c\041\uff9c\042\uff9c\043\uff9c\061\uff9c\062\uff9c\066" +
     "\uff9c\067\uff9c\071\uff9c\072\uff9c\073\uff9c\074\uff9c\101\uff9c" +
@@ -1182,114 +1182,114 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     "\002\000\046\033\145\036\111\042\120\043\134\061\072" +
     "\062\133\066\073\067\131\074\071\103\126\132\074\136" +
     "\103\140\141\141\112\142\101\143\067\144\011\145\117" +
-    "\001\002\000\162\024\uff80\025\uff80\027\uff80\033\uff80\034" +
-    "\uff80\036\uff80\041\uff80\042\uff80\043\uff80\046\uff80\047\uff80" +
-    "\057\uff80\060\uff80\061\uff80\062\uff80\063\uff80\064\uff80\065" +
-    "\uff80\066\uff80\067\uff80\071\uff80\072\uff80\073\uff80\074\uff80" +
-    "\075\uff80\076\uff80\077\170\101\uff80\102\uff80\103\uff80\104" +
-    "\uff80\105\uff80\106\uff80\107\uff80\110\uff80\111\uff80\112\uff80" +
-    "\113\uff80\114\uff80\116\uff80\120\167\124\uff80\125\uff80\126" +
-    "\uff80\130\uff80\132\uff80\134\uff80\135\uff80\136\uff80\137\uff80" +
-    "\140\uff80\141\uff80\142\uff80\143\uff80\144\uff80\145\uff80\001" +
-    "\002\000\162\024\uff82\025\uff82\027\uff82\033\uff82\034\uff82" +
-    "\036\uff82\041\uff82\042\uff82\043\uff82\046\uff82\047\uff82\057" +
-    "\uff82\060\uff82\061\uff82\062\uff82\063\uff82\064\uff82\065\uff82" +
-    "\066\uff82\067\uff82\071\uff82\072\uff82\073\uff82\074\uff82\075" +
-    "\uff82\076\uff82\077\170\101\uff82\102\uff82\103\uff82\104\uff82" +
-    "\105\uff82\106\uff82\107\uff82\110\uff82\111\uff82\112\uff82\113" +
-    "\uff82\114\uff82\116\uff82\120\167\124\uff82\125\uff82\126\uff82" +
-    "\130\uff82\132\uff82\134\uff82\135\uff82\136\uff82\137\uff82\140" +
-    "\uff82\141\uff82\142\uff82\143\uff82\144\uff82\145\uff82\001\002" +
-    "\000\162\024\uff7a\025\uff7a\027\uff7a\033\uff7a\034\uff7a\036" +
-    "\uff7a\041\uff7a\042\uff7a\043\uff7a\046\uff7a\047\uff7a\057\uff7a" +
-    "\060\uff7a\061\uff7a\062\uff7a\063\uff7a\064\uff7a\065\uff7a\066" +
-    "\uff7a\067\uff7a\071\uff7a\072\uff7a\073\uff7a\074\uff7a\075\uff7a" +
-    "\076\uff7a\077\170\101\uff7a\102\uff7a\103\uff7a\104\uff7a\105" +
-    "\uff7a\106\uff7a\107\uff7a\110\uff7a\111\uff7a\112\uff7a\113\uff7a" +
-    "\114\uff7a\116\uff7a\120\167\124\uff7a\125\uff7a\126\uff7a\130" +
-    "\uff7a\132\uff7a\134\uff7a\135\uff7a\136\uff7a\137\uff7a\140\uff7a" +
-    "\141\uff7a\142\uff7a\143\uff7a\144\uff7a\145\uff7a\001\002\000" +
-    "\162\024\uff7f\025\uff7f\027\uff7f\033\uff7f\034\uff7f\036\uff7f" +
-    "\041\uff7f\042\uff7f\043\uff7f\046\uff7f\047\uff7f\057\uff7f\060" +
-    "\uff7f\061\uff7f\062\uff7f\063\uff7f\064\uff7f\065\uff7f\066\uff7f" +
-    "\067\uff7f\071\uff7f\072\uff7f\073\uff7f\074\uff7f\075\uff7f\076" +
-    "\uff7f\077\170\101\uff7f\102\uff7f\103\uff7f\104\uff7f\105\uff7f" +
-    "\106\uff7f\107\uff7f\110\uff7f\111\uff7f\112\uff7f\113\uff7f\114" +
-    "\uff7f\116\uff7f\120\167\124\uff7f\125\uff7f\126\uff7f\130\uff7f" +
-    "\132\uff7f\134\uff7f\135\uff7f\136\uff7f\137\uff7f\140\uff7f\141" +
-    "\uff7f\142\uff7f\143\uff7f\144\uff7f\145\uff7f\001\002\000\162" +
-    "\024\uff78\025\uff78\027\uff78\033\uff78\034\uff78\036\uff78\041" +
-    "\uff78\042\uff78\043\uff78\046\uff78\047\uff78\057\uff78\060\uff78" +
-    "\061\uff78\062\uff78\063\uff78\064\uff78\065\uff78\066\uff78\067" +
-    "\uff78\071\uff78\072\uff78\073\uff78\074\uff78\075\uff78\076\uff78" +
-    "\077\170\101\uff78\102\uff78\103\uff78\104\uff78\105\uff78\106" +
-    "\uff78\107\uff78\110\uff78\111\uff78\112\uff78\113\uff78\114\uff78" +
-    "\116\uff78\120\167\124\uff78\125\uff78\126\uff78\130\uff78\132" +
-    "\uff78\134\uff78\135\uff78\136\uff78\137\uff78\140\uff78\141\uff78" +
-    "\142\uff78\143\uff78\144\uff78\145\uff78\001\002\000\162\024" +
-    "\uff79\025\uff79\027\uff79\033\uff79\034\uff79\036\uff79\041\uff79" +
-    "\042\uff79\043\uff79\046\uff79\047\uff79\057\uff79\060\uff79\061" +
-    "\uff79\062\uff79\063\uff79\064\uff79\065\uff79\066\uff79\067\uff79" +
-    "\071\uff79\072\uff79\073\uff79\074\uff79\075\uff79\076\uff79\077" +
-    "\170\101\uff79\102\uff79\103\uff79\104\uff79\105\uff79\106\uff79" +
-    "\107\uff79\110\uff79\111\uff79\112\uff79\113\uff79\114\uff79\116" +
-    "\uff79\120\167\124\uff79\125\uff79\126\uff79\130\uff79\132\uff79" +
-    "\134\uff79\135\uff79\136\uff79\137\uff79\140\uff79\141\uff79\142" +
-    "\uff79\143\uff79\144\uff79\145\uff79\001\002\000\162\024\uff77" +
-    "\025\uff77\027\uff77\033\uff77\034\uff77\036\uff77\041\uff77\042" +
-    "\uff77\043\uff77\046\uff77\047\uff77\057\uff77\060\uff77\061\uff77" +
-    "\062\uff77\063\uff77\064\uff77\065\uff77\066\uff77\067\uff77\071" +
-    "\uff77\072\uff77\073\uff77\074\uff77\075\uff77\076\uff77\077\170" +
-    "\101\uff77\102\uff77\103\uff77\104\uff77\105\uff77\106\uff77\107" +
-    "\uff77\110\uff77\111\uff77\112\uff77\113\uff77\114\uff77\116\uff77" +
-    "\120\167\124\uff77\125\uff77\126\uff77\130\uff77\132\uff77\134" +
-    "\uff77\135\uff77\136\uff77\137\uff77\140\uff77\141\uff77\142\uff77" +
-    "\143\uff77\144\uff77\145\uff77\001\002\000\162\024\uff7e\025" +
-    "\uff7e\027\uff7e\033\uff7e\034\uff7e\036\uff7e\041\uff7e\042\uff7e" +
-    "\043\uff7e\046\uff7e\047\uff7e\057\uff7e\060\uff7e\061\uff7e\062" +
-    "\uff7e\063\uff7e\064\uff7e\065\uff7e\066\uff7e\067\uff7e\071\uff7e" +
-    "\072\uff7e\073\uff7e\074\uff7e\075\uff7e\076\uff7e\077\170\101" +
-    "\uff7e\102\uff7e\103\uff7e\104\uff7e\105\uff7e\106\uff7e\107\uff7e" +
-    "\110\uff7e\111\uff7e\112\uff7e\113\uff7e\114\uff7e\116\uff7e\120" +
-    "\167\124\uff7e\125\uff7e\126\uff7e\130\uff7e\132\uff7e\134\uff7e" +
-    "\135\uff7e\136\uff7e\137\uff7e\140\uff7e\141\uff7e\142\uff7e\143" +
-    "\uff7e\144\uff7e\145\uff7e\001\002\000\162\024\uff81\025\uff81" +
-    "\027\uff81\033\uff81\034\uff81\036\uff81\041\uff81\042\uff81\043" +
-    "\uff81\046\uff81\047\uff81\057\uff81\060\uff81\061\uff81\062\uff81" +
-    "\063\uff81\064\uff81\065\uff81\066\uff81\067\uff81\071\uff81\072" +
-    "\uff81\073\uff81\074\uff81\075\uff81\076\uff81\077\170\101\uff81" +
-    "\102\uff81\103\uff81\104\uff81\105\uff81\106\uff81\107\uff81\110" +
-    "\uff81\111\uff81\112\uff81\113\uff81\114\uff81\116\uff81\120\167" +
-    "\124\uff81\125\uff81\126\uff81\130\uff81\132\uff81\134\uff81\135" +
-    "\uff81\136\uff81\137\uff81\140\uff81\141\uff81\142\uff81\143\uff81" +
-    "\144\uff81\145\uff81\001\002\000\162\024\uff7d\025\uff7d\027" +
-    "\uff7d\033\uff7d\034\uff7d\036\uff7d\041\uff7d\042\uff7d\043\uff7d" +
-    "\046\uff7d\047\uff7d\057\uff7d\060\uff7d\061\uff7d\062\uff7d\063" +
-    "\uff7d\064\uff7d\065\uff7d\066\uff7d\067\uff7d\071\uff7d\072\uff7d" +
-    "\073\uff7d\074\uff7d\075\uff7d\076\uff7d\077\170\101\uff7d\102" +
-    "\uff7d\103\uff7d\104\uff7d\105\uff7d\106\uff7d\107\uff7d\110\uff7d" +
-    "\111\uff7d\112\uff7d\113\uff7d\114\uff7d\116\uff7d\120\167\124" +
-    "\uff7d\125\uff7d\126\uff7d\130\uff7d\132\uff7d\134\uff7d\135\uff7d" +
-    "\136\uff7d\137\uff7d\140\uff7d\141\uff7d\142\uff7d\143\uff7d\144" +
-    "\uff7d\145\uff7d\001\002\000\162\024\uff7c\025\uff7c\027\uff7c" +
-    "\033\uff7c\034\uff7c\036\uff7c\041\uff7c\042\uff7c\043\uff7c\046" +
-    "\uff7c\047\uff7c\057\uff7c\060\uff7c\061\uff7c\062\uff7c\063\uff7c" +
-    "\064\uff7c\065\uff7c\066\uff7c\067\uff7c\071\uff7c\072\uff7c\073" +
-    "\uff7c\074\uff7c\075\uff7c\076\uff7c\077\170\101\uff7c\102\uff7c" +
-    "\103\uff7c\104\uff7c\105\uff7c\106\uff7c\107\uff7c\110\uff7c\111" +
-    "\uff7c\112\uff7c\113\uff7c\114\uff7c\116\uff7c\120\167\124\uff7c" +
-    "\125\uff7c\126\uff7c\130\uff7c\132\uff7c\134\uff7c\135\uff7c\136" +
-    "\uff7c\137\uff7c\140\uff7c\141\uff7c\142\uff7c\143\uff7c\144\uff7c" +
-    "\145\uff7c\001\002\000\162\024\uff7b\025\uff7b\027\uff7b\033" +
-    "\uff7b\034\uff7b\036\uff7b\041\uff7b\042\uff7b\043\uff7b\046\uff7b" +
-    "\047\uff7b\057\uff7b\060\uff7b\061\uff7b\062\uff7b\063\uff7b\064" +
-    "\uff7b\065\uff7b\066\uff7b\067\uff7b\071\uff7b\072\uff7b\073\uff7b" +
-    "\074\uff7b\075\uff7b\076\uff7b\077\170\101\uff7b\102\uff7b\103" +
-    "\uff7b\104\uff7b\105\uff7b\106\uff7b\107\uff7b\110\uff7b\111\uff7b" +
-    "\112\uff7b\113\uff7b\114\uff7b\116\uff7b\120\167\124\uff7b\125" +
-    "\uff7b\126\uff7b\130\uff7b\132\uff7b\134\uff7b\135\uff7b\136\uff7b" +
-    "\137\uff7b\140\uff7b\141\uff7b\142\uff7b\143\uff7b\144\uff7b\145" +
-    "\uff7b\001\002\000\010\034\251\041\265\067\062\001\002" +
+    "\001\002\000\162\024\uff87\025\uff87\027\uff87\033\uff87\034" +
+    "\uff87\036\uff87\041\uff87\042\uff87\043\uff87\046\uff87\047\uff87" +
+    "\057\uff87\060\uff87\061\uff87\062\uff87\063\uff87\064\uff87\065" +
+    "\uff87\066\uff87\067\uff87\071\uff87\072\uff87\073\uff87\074\uff87" +
+    "\075\uff87\076\uff87\077\170\101\uff87\102\uff87\103\uff87\104" +
+    "\uff87\105\uff87\106\uff87\107\uff87\110\uff87\111\uff87\112\uff87" +
+    "\113\uff87\114\uff87\116\uff87\120\167\124\uff87\125\uff87\126" +
+    "\uff87\130\uff87\132\uff87\134\uff87\135\uff87\136\uff87\137\uff87" +
+    "\140\uff87\141\uff87\142\uff87\143\uff87\144\uff87\145\uff87\001" +
+    "\002\000\162\024\uff89\025\uff89\027\uff89\033\uff89\034\uff89" +
+    "\036\uff89\041\uff89\042\uff89\043\uff89\046\uff89\047\uff89\057" +
+    "\uff89\060\uff89\061\uff89\062\uff89\063\uff89\064\uff89\065\uff89" +
+    "\066\uff89\067\uff89\071\uff89\072\uff89\073\uff89\074\uff89\075" +
+    "\uff89\076\uff89\077\170\101\uff89\102\uff89\103\uff89\104\uff89" +
+    "\105\uff89\106\uff89\107\uff89\110\uff89\111\uff89\112\uff89\113" +
+    "\uff89\114\uff89\116\uff89\120\167\124\uff89\125\uff89\126\uff89" +
+    "\130\uff89\132\uff89\134\uff89\135\uff89\136\uff89\137\uff89\140" +
+    "\uff89\141\uff89\142\uff89\143\uff89\144\uff89\145\uff89\001\002" +
+    "\000\162\024\uff81\025\uff81\027\uff81\033\uff81\034\uff81\036" +
+    "\uff81\041\uff81\042\uff81\043\uff81\046\uff81\047\uff81\057\uff81" +
+    "\060\uff81\061\uff81\062\uff81\063\uff81\064\uff81\065\uff81\066" +
+    "\uff81\067\uff81\071\uff81\072\uff81\073\uff81\074\uff81\075\uff81" +
+    "\076\uff81\077\170\101\uff81\102\uff81\103\uff81\104\uff81\105" +
+    "\uff81\106\uff81\107\uff81\110\uff81\111\uff81\112\uff81\113\uff81" +
+    "\114\uff81\116\uff81\120\167\124\uff81\125\uff81\126\uff81\130" +
+    "\uff81\132\uff81\134\uff81\135\uff81\136\uff81\137\uff81\140\uff81" +
+    "\141\uff81\142\uff81\143\uff81\144\uff81\145\uff81\001\002\000" +
+    "\162\024\uff86\025\uff86\027\uff86\033\uff86\034\uff86\036\uff86" +
+    "\041\uff86\042\uff86\043\uff86\046\uff86\047\uff86\057\uff86\060" +
+    "\uff86\061\uff86\062\uff86\063\uff86\064\uff86\065\uff86\066\uff86" +
+    "\067\uff86\071\uff86\072\uff86\073\uff86\074\uff86\075\uff86\076" +
+    "\uff86\077\170\101\uff86\102\uff86\103\uff86\104\uff86\105\uff86" +
+    "\106\uff86\107\uff86\110\uff86\111\uff86\112\uff86\113\uff86\114" +
+    "\uff86\116\uff86\120\167\124\uff86\125\uff86\126\uff86\130\uff86" +
+    "\132\uff86\134\uff86\135\uff86\136\uff86\137\uff86\140\uff86\141" +
+    "\uff86\142\uff86\143\uff86\144\uff86\145\uff86\001\002\000\162" +
+    "\024\uff80\025\uff80\027\uff80\033\uff80\034\uff80\036\uff80\041" +
+    "\uff80\042\uff80\043\uff80\046\uff80\047\uff80\057\uff80\060\uff80" +
+    "\061\uff80\062\uff80\063\uff80\064\uff80\065\uff80\066\uff80\067" +
+    "\uff80\071\uff80\072\uff80\073\uff80\074\uff80\075\uff80\076\uff80" +
+    "\077\170\101\uff80\102\uff80\103\uff80\104\uff80\105\uff80\106" +
+    "\uff80\107\uff80\110\uff80\111\uff80\112\uff80\113\uff80\114\uff80" +
+    "\116\uff80\120\167\124\uff80\125\uff80\126\uff80\130\uff80\132" +
+    "\uff80\134\uff80\135\uff80\136\uff80\137\uff80\140\uff80\141\uff80" +
+    "\142\uff80\143\uff80\144\uff80\145\uff80\001\002\000\162\024" +
+    "\uff7f\025\uff7f\027\uff7f\033\uff7f\034\uff7f\036\uff7f\041\uff7f" +
+    "\042\uff7f\043\uff7f\046\uff7f\047\uff7f\057\uff7f\060\uff7f\061" +
+    "\uff7f\062\uff7f\063\uff7f\064\uff7f\065\uff7f\066\uff7f\067\uff7f" +
+    "\071\uff7f\072\uff7f\073\uff7f\074\uff7f\075\uff7f\076\uff7f\077" +
+    "\170\101\uff7f\102\uff7f\103\uff7f\104\uff7f\105\uff7f\106\uff7f" +
+    "\107\uff7f\110\uff7f\111\uff7f\112\uff7f\113\uff7f\114\uff7f\116" +
+    "\uff7f\120\167\124\uff7f\125\uff7f\126\uff7f\130\uff7f\132\uff7f" +
+    "\134\uff7f\135\uff7f\136\uff7f\137\uff7f\140\uff7f\141\uff7f\142" +
+    "\uff7f\143\uff7f\144\uff7f\145\uff7f\001\002\000\162\024\uff7e" +
+    "\025\uff7e\027\uff7e\033\uff7e\034\uff7e\036\uff7e\041\uff7e\042" +
+    "\uff7e\043\uff7e\046\uff7e\047\uff7e\057\uff7e\060\uff7e\061\uff7e" +
+    "\062\uff7e\063\uff7e\064\uff7e\065\uff7e\066\uff7e\067\uff7e\071" +
+    "\uff7e\072\uff7e\073\uff7e\074\uff7e\075\uff7e\076\uff7e\077\170" +
+    "\101\uff7e\102\uff7e\103\uff7e\104\uff7e\105\uff7e\106\uff7e\107" +
+    "\uff7e\110\uff7e\111\uff7e\112\uff7e\113\uff7e\114\uff7e\116\uff7e" +
+    "\120\167\124\uff7e\125\uff7e\126\uff7e\130\uff7e\132\uff7e\134" +
+    "\uff7e\135\uff7e\136\uff7e\137\uff7e\140\uff7e\141\uff7e\142\uff7e" +
+    "\143\uff7e\144\uff7e\145\uff7e\001\002\000\162\024\uff85\025" +
+    "\uff85\027\uff85\033\uff85\034\uff85\036\uff85\041\uff85\042\uff85" +
+    "\043\uff85\046\uff85\047\uff85\057\uff85\060\uff85\061\uff85\062" +
+    "\uff85\063\uff85\064\uff85\065\uff85\066\uff85\067\uff85\071\uff85" +
+    "\072\uff85\073\uff85\074\uff85\075\uff85\076\uff85\077\170\101" +
+    "\uff85\102\uff85\103\uff85\104\uff85\105\uff85\106\uff85\107\uff85" +
+    "\110\uff85\111\uff85\112\uff85\113\uff85\114\uff85\116\uff85\120" +
+    "\167\124\uff85\125\uff85\126\uff85\130\uff85\132\uff85\134\uff85" +
+    "\135\uff85\136\uff85\137\uff85\140\uff85\141\uff85\142\uff85\143" +
+    "\uff85\144\uff85\145\uff85\001\002\000\162\024\uff84\025\uff84" +
+    "\027\uff84\033\uff84\034\uff84\036\uff84\041\uff84\042\uff84\043" +
+    "\uff84\046\uff84\047\uff84\057\uff84\060\uff84\061\uff84\062\uff84" +
+    "\063\uff84\064\uff84\065\uff84\066\uff84\067\uff84\071\uff84\072" +
+    "\uff84\073\uff84\074\uff84\075\uff84\076\uff84\077\170\101\uff84" +
+    "\102\uff84\103\uff84\104\uff84\105\uff84\106\uff84\107\uff84\110" +
+    "\uff84\111\uff84\112\uff84\113\uff84\114\uff84\116\uff84\120\167" +
+    "\124\uff84\125\uff84\126\uff84\130\uff84\132\uff84\134\uff84\135" +
+    "\uff84\136\uff84\137\uff84\140\uff84\141\uff84\142\uff84\143\uff84" +
+    "\144\uff84\145\uff84\001\002\000\162\024\uff83\025\uff83\027" +
+    "\uff83\033\uff83\034\uff83\036\uff83\041\uff83\042\uff83\043\uff83" +
+    "\046\uff83\047\uff83\057\uff83\060\uff83\061\uff83\062\uff83\063" +
+    "\uff83\064\uff83\065\uff83\066\uff83\067\uff83\071\uff83\072\uff83" +
+    "\073\uff83\074\uff83\075\uff83\076\uff83\077\170\101\uff83\102" +
+    "\uff83\103\uff83\104\uff83\105\uff83\106\uff83\107\uff83\110\uff83" +
+    "\111\uff83\112\uff83\113\uff83\114\uff83\116\uff83\120\167\124" +
+    "\uff83\125\uff83\126\uff83\130\uff83\132\uff83\134\uff83\135\uff83" +
+    "\136\uff83\137\uff83\140\uff83\141\uff83\142\uff83\143\uff83\144" +
+    "\uff83\145\uff83\001\002\000\162\024\uff88\025\uff88\027\uff88" +
+    "\033\uff88\034\uff88\036\uff88\041\uff88\042\uff88\043\uff88\046" +
+    "\uff88\047\uff88\057\uff88\060\uff88\061\uff88\062\uff88\063\uff88" +
+    "\064\uff88\065\uff88\066\uff88\067\uff88\071\uff88\072\uff88\073" +
+    "\uff88\074\uff88\075\uff88\076\uff88\077\170\101\uff88\102\uff88" +
+    "\103\uff88\104\uff88\105\uff88\106\uff88\107\uff88\110\uff88\111" +
+    "\uff88\112\uff88\113\uff88\114\uff88\116\uff88\120\167\124\uff88" +
+    "\125\uff88\126\uff88\130\uff88\132\uff88\134\uff88\135\uff88\136" +
+    "\uff88\137\uff88\140\uff88\141\uff88\142\uff88\143\uff88\144\uff88" +
+    "\145\uff88\001\002\000\162\024\uff82\025\uff82\027\uff82\033" +
+    "\uff82\034\uff82\036\uff82\041\uff82\042\uff82\043\uff82\046\uff82" +
+    "\047\uff82\057\uff82\060\uff82\061\uff82\062\uff82\063\uff82\064" +
+    "\uff82\065\uff82\066\uff82\067\uff82\071\uff82\072\uff82\073\uff82" +
+    "\074\uff82\075\uff82\076\uff82\077\170\101\uff82\102\uff82\103" +
+    "\uff82\104\uff82\105\uff82\106\uff82\107\uff82\110\uff82\111\uff82" +
+    "\112\uff82\113\uff82\114\uff82\116\uff82\120\167\124\uff82\125" +
+    "\uff82\126\uff82\130\uff82\132\uff82\134\uff82\135\uff82\136\uff82" +
+    "\137\uff82\140\uff82\141\uff82\142\uff82\143\uff82\144\uff82\145" +
+    "\uff82\001\002\000\010\034\251\041\265\067\062\001\002" +
     "\000\114\024\uff98\025\uff98\033\uff98\034\uff98\036\uff98\041" +
     "\uff98\042\uff98\043\uff98\061\uff98\062\uff98\066\uff98\067\uff98" +
     "\071\uff98\072\uff98\073\uff98\074\uff98\101\uff98\102\uff98\103" +
@@ -1468,15 +1468,15 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     "\uff45\120\uff45\121\uff45\123\uff45\124\uff45\125\uff45\126\uff45" +
     "\130\uff45\132\uff45\134\uff45\135\uff45\136\uff45\137\uff45\140" +
     "\uff45\141\uff45\142\uff45\143\uff45\144\uff45\145\uff45\001\002" +
-    "\000\162\024\uff86\025\uff86\027\uff86\033\uff86\034\uff86\036" +
-    "\uff86\041\uff86\042\uff86\043\uff86\046\uff86\047\uff86\057\uff86" +
-    "\060\uff86\061\uff86\062\uff86\063\uff86\064\uff86\065\uff86\066" +
-    "\uff86\067\uff86\071\uff86\072\uff86\073\uff86\074\uff86\075\uff86" +
-    "\076\uff86\077\170\101\uff86\102\uff86\103\uff86\104\uff86\105" +
-    "\uff86\106\uff86\107\uff86\110\uff86\111\uff86\112\uff86\113\uff86" +
-    "\114\uff86\116\uff86\120\167\124\uff86\125\uff86\126\uff86\130" +
-    "\uff86\132\uff86\134\uff86\135\uff86\136\uff86\137\uff86\140\uff86" +
-    "\141\uff86\142\uff86\143\uff86\144\uff86\145\uff86\001\002\000" +
+    "\000\162\024\uff7c\025\uff7c\027\uff7c\033\uff7c\034\uff7c\036" +
+    "\uff7c\041\uff7c\042\uff7c\043\uff7c\046\uff7c\047\uff7c\057\uff7c" +
+    "\060\uff7c\061\uff7c\062\uff7c\063\uff7c\064\uff7c\065\uff7c\066" +
+    "\uff7c\067\uff7c\071\uff7c\072\uff7c\073\uff7c\074\uff7c\075\uff7c" +
+    "\076\uff7c\077\170\101\uff7c\102\uff7c\103\uff7c\104\uff7c\105" +
+    "\uff7c\106\uff7c\107\uff7c\110\uff7c\111\uff7c\112\uff7c\113\uff7c" +
+    "\114\uff7c\116\uff7c\120\167\124\uff7c\125\uff7c\126\uff7c\130" +
+    "\uff7c\132\uff7c\134\uff7c\135\uff7c\136\uff7c\137\uff7c\140\uff7c" +
+    "\141\uff7c\142\uff7c\143\uff7c\144\uff7c\145\uff7c\001\002\000" +
     "\032\002\ufff3\023\ufff3\032\ufff3\037\ufff3\054\ufff3\056\ufff3" +
     "\073\ufff3\114\ufff3\122\ufff3\127\ufff3\131\ufff3\135\ufff3\001" +
     "\002\000\012\040\u0131\045\uffc7\070\u0133\074\u0132\001\002" +
@@ -3007,7 +3007,82 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 138: // CompareExpr ::= CompareExpr NOTGTE UnionDiffExpr 
+          case 138: // CompareExpr ::= UnionDiffExpr 
+            {
+              Expr RESULT =null;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                                               
+              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
+            }
+          return CUP$AlloyParser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 137: // CompareExpr ::= ALL UnionDiffExpr 
+            {
+              Expr RESULT =null;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); 
+              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
+            }
+          return CUP$AlloyParser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 136: // CompareExpr ::= SET UnionDiffExpr 
+            {
+              Expr RESULT =null;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.SETMULT  .make(o,b);                               
+              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
+            }
+          return CUP$AlloyParser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 135: // CompareExpr ::= ONE UnionDiffExpr 
+            {
+              Expr RESULT =null;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.ONE      .make(o,b);                               
+              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
+            }
+          return CUP$AlloyParser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 134: // CompareExpr ::= LONE UnionDiffExpr 
+            {
+              Expr RESULT =null;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.LONE     .make(o,b);                               
+              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
+            }
+          return CUP$AlloyParser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 133: // CompareExpr ::= SOME UnionDiffExpr 
+            {
+              Expr RESULT =null;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.SOME     .make(o,b);                               
+              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
+            }
+          return CUP$AlloyParser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 132: // CompareExpr ::= NO UnionDiffExpr 
+            {
+              Expr RESULT =null;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.NO       .make(o,b);                               
+              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
+            }
+          return CUP$AlloyParser$result;
+
+          /*. . . . . . . . . . . . . . . . . . . .*/
+          case 131: // CompareExpr ::= CompareExpr NOTGTE UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3019,7 +3094,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 137: // CompareExpr ::= CompareExpr NOTLTE UnionDiffExpr 
+          case 130: // CompareExpr ::= CompareExpr NOTLTE UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3031,7 +3106,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 136: // CompareExpr ::= CompareExpr NOTGT UnionDiffExpr 
+          case 129: // CompareExpr ::= CompareExpr NOTGT UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3043,7 +3118,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 135: // CompareExpr ::= CompareExpr NOTLT UnionDiffExpr 
+          case 128: // CompareExpr ::= CompareExpr NOTLT UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3055,7 +3130,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 134: // CompareExpr ::= CompareExpr NOTIN UnionDiffExpr 
+          case 127: // CompareExpr ::= CompareExpr NOTIN UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3067,7 +3142,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 133: // CompareExpr ::= CompareExpr NOTEQUALS UnionDiffExpr 
+          case 126: // CompareExpr ::= CompareExpr NOTEQUALS UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3079,7 +3154,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 132: // CompareExpr ::= CompareExpr GTE UnionDiffExpr 
+          case 125: // CompareExpr ::= CompareExpr GTE UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3091,7 +3166,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 131: // CompareExpr ::= CompareExpr LTE UnionDiffExpr 
+          case 124: // CompareExpr ::= CompareExpr LTE UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3103,7 +3178,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 130: // CompareExpr ::= CompareExpr GT UnionDiffExpr 
+          case 123: // CompareExpr ::= CompareExpr GT UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3115,7 +3190,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 129: // CompareExpr ::= CompareExpr LT UnionDiffExpr 
+          case 122: // CompareExpr ::= CompareExpr LT UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3127,7 +3202,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 128: // CompareExpr ::= CompareExpr IN UnionDiffExpr 
+          case 121: // CompareExpr ::= CompareExpr IN UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
@@ -3139,89 +3214,13 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 127: // CompareExpr ::= CompareExpr EQUALS UnionDiffExpr 
+          case 120: // CompareExpr ::= CompareExpr EQUALS UnionDiffExpr 
             {
               Expr RESULT =null;
 		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
 		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
 		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
 		 RESULT=ExprBinary.Op.EQUALS   .make(o,a,b);                             
-              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
-            }
-          return CUP$AlloyParser$result;
-
-          /*. . . . . . . . . . . . . . . . . . . .*/
-          case 126: // CompareExpr ::= SET UnionDiffExpr 
-            {
-              Expr RESULT =null;
-		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=ExprUnary .Op.SETMULT  .make(o,b);                               
-              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
-            }
-          return CUP$AlloyParser$result;
-
-          /*. . . . . . . . . . . . . . . . . . . .*/
-          case 125: // CompareExpr ::= ONE UnionDiffExpr 
-            {
-              Expr RESULT =null;
-		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=ExprUnary .Op.ONE      .make(o,b);                               
-              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
-            }
-          return CUP$AlloyParser$result;
-
-          /*. . . . . . . . . . . . . . . . . . . .*/
-          case 124: // CompareExpr ::= LONE UnionDiffExpr 
-            {
-              Expr RESULT =null;
-		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=ExprUnary .Op.LONE     .make(o,b);                               
-              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
-            }
-          return CUP$AlloyParser$result;
-
-          /*. . . . . . . . . . . . . . . . . . . .*/
-          case 123: // CompareExpr ::= SOME UnionDiffExpr 
-            {
-              Expr RESULT =null;
-		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=ExprUnary .Op.SOME     .make(o,b);                               
-              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
-            }
-          return CUP$AlloyParser$result;
-
-          /*. . . . . . . . . . . . . . . . . . . .*/
-          case 122: // CompareExpr ::= NO UnionDiffExpr 
-            {
-              Expr RESULT =null;
-		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=ExprUnary .Op.NO       .make(o,b);                               
-              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
-            }
-          return CUP$AlloyParser$result;
-
-          /*. . . . . . . . . . . . . . . . . . . .*/
-          case 121: // CompareExpr ::= ALL UnionDiffExpr 
-            {
-              Expr RESULT =null;
-		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=ExprUnary .Op.ALL      .make(o,b);                               
-              CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
-            }
-          return CUP$AlloyParser$result;
-
-          /*. . . . . . . . . . . . . . . . . . . .*/
-          case 120: // CompareExpr ::= UnionDiffExpr 
-            {
-              Expr RESULT =null;
-		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-		 RESULT=b;                                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;

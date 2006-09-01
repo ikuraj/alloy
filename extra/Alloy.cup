@@ -672,13 +672,6 @@ AndExpr ::= AndExpr:a AND:o NegExpr:b                    {: RESULT=ExprBinary.Op
 NegExpr ::= CompareExpr:b      {: RESULT=b;                          :};
 NegExpr ::= NOT:o NegExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,b); :};
 
-CompareExpr ::=        UnionDiffExpr:b                       {: RESULT=b;                                                               :};
-CompareExpr ::= ALL:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.ALL      .make(o,b);                               :};
-CompareExpr ::= NO:o   UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.NO       .make(o,b);                               :};
-CompareExpr ::= SOME:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SOME     .make(o,b);                               :};
-CompareExpr ::= LONE:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.LONE     .make(o,b);                               :};
-CompareExpr ::= ONE:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.ONE      .make(o,b);                               :};
-CompareExpr ::= SET:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SETMULT  .make(o,b);                               :};
 CompareExpr ::= CompareExpr:a EQUALS:o    UnionDiffExpr:b    {: RESULT=ExprBinary.Op.EQUALS   .make(o,a,b);                             :};
 CompareExpr ::= CompareExpr:a IN:o        UnionDiffExpr:b    {: RESULT=ExprBinary.Op.IN       .make(o,a,mult(b));                       :};
 CompareExpr ::= CompareExpr:a LT:o        UnionDiffExpr:b    {: RESULT=ExprBinary.Op.LT       .make(o,a,b);                             :};
@@ -691,6 +684,13 @@ CompareExpr ::= CompareExpr:a NOTLT:o     UnionDiffExpr:b    {: RESULT=ExprUnary
 CompareExpr ::= CompareExpr:a NOTGT:o     UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GT    .make(o,a,b      )); :};
 CompareExpr ::= CompareExpr:a NOTLTE:o    UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LTE   .make(o,a,b      )); :};
 CompareExpr ::= CompareExpr:a NOTGTE:o    UnionDiffExpr:b    {: RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GTE   .make(o,a,b      )); :};
+CompareExpr ::= NO:o   UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.NO       .make(o,b);                               :};
+CompareExpr ::= SOME:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SOME     .make(o,b);                               :};
+CompareExpr ::= LONE:o UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.LONE     .make(o,b);                               :};
+CompareExpr ::= ONE:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.ONE      .make(o,b);                               :};
+CompareExpr ::= SET:o  UnionDiffExpr:b                       {: RESULT=ExprUnary .Op.SETMULT  .make(o,b);                               :};
+CompareExpr ::= ALL:o  UnionDiffExpr                         {: throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
+CompareExpr ::=        UnionDiffExpr:b                       {: RESULT=b;                                                               :};
 
 UnionDiffExpr ::=                         NumUnopExpr:b     {: RESULT=b;                                   :};
 UnionDiffExpr ::= UnionDiffExpr:a PLUS:o  NumUnopExpr:b     {: RESULT=ExprBinary.Op.PLUS.make(o,a,b);      :};

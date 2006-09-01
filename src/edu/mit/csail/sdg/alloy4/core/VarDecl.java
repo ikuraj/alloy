@@ -35,22 +35,22 @@ public final class VarDecl {
      * @param x - the list of names
      * @param y - the expression that the names are quantified over
      *
-     * @throws ErrorInternal if x==null or y==null
+     * @throws ErrorInternal if pos==null or x==null or y==null
      * @throws ErrorInternal if x.size()==0
      * @throws ErrorInternal if any of the name is null or ""
      * @throws ErrorInternal if any of the name contains '/' or '@'
      */
     public VarDecl (Pos pos, List<ExprName> x, Expr y) {
-    	this.pos=pos;
+        this.pos=pos;
         if (pos==null || x==null || y==null)
             throw new ErrorInternal(pos,null,"NullPointerException");
         List<String> newlist=new ArrayList<String>();
         if (x.size()==0)
-            throw y.syntaxError("The list of declarations cannot be empty!");
+            throw new ErrorSyntax(pos,"The list of declarations cannot be empty!");
         for(int i=0; i<x.size(); i++) {
             ExprName e=x.get(i);
             if (e==null || e.name==null)
-                throw y.internalError("NullPointerException");
+                throw new ErrorInternal(pos, e, "NullPointerException");
             String n=e.name;
             if (n.length()==0)
                 throw e.syntaxError("Variable name cannot be empty!");
@@ -70,12 +70,12 @@ public final class VarDecl {
      * @param x - the only name
      * @param y - the expression that the name is quantified over
      *
-     * @throws ErrorInternal if x==null or y==null
+     * @throws ErrorInternal if pos==null or x==null or y==null
      * @throws ErrorInternal if x contains '/' or '@'
      * @throws ErrorInternal if x is equal to ""
      */
     public VarDecl (Pos pos, String x, Expr y) {
-    	this.pos=pos;
+        this.pos=pos;
         if (pos==null || x==null || y==null)
             throw new ErrorInternal(pos,null,"NullPointerException");
         if (x.length()==0)
@@ -96,11 +96,11 @@ public final class VarDecl {
      * @param x - an existing VarDecl object
      * @param y - the expression that the name is quantified over
      *
-     * @throws ErrorInternal if x==null or y==null
+     * @throws ErrorInternal if pos==null or x==null or y==null
      */
     public VarDecl (Pos pos, VarDecl x, Expr y) {
-    	this.pos=pos;
-        if (x==null || y==null)
+        this.pos=pos;
+        if (pos==null || x==null || y==null)
             throw new ErrorInternal(pos,null,"NullPointerException");
         names=x.names;
         value=y;
@@ -114,17 +114,6 @@ public final class VarDecl {
         int c=0;
         for(int i=list.size()-1; i>=0; i--) c=c+list.get(i).names.size();
         return c;
-    }
-
-    /**
-     * Convenience method that checks if the name n appears in a list of VarDecl.
-     * @return true if and only if the name n appears in the list
-     */
-    public static boolean hasName (List<VarDecl> list, String n) {
-        for(int i=list.size()-1; i>=0; i--)
-            if (list.get(i).names.contains(n))
-                return true;
-        return false;
     }
 
     /**

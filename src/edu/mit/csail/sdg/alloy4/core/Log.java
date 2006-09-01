@@ -8,11 +8,11 @@ package edu.mit.csail.sdg.alloy4.core;
 
 public interface Log {
 
-    /** Writes x into the log. */
-    public void log(String x);
+    /** Writes msg into the log. */
+    public void log(String msg);
 
-    /** Writes x into the log in a bold style (if possible) */
-    public void logBold(String x);
+    /** Writes msg into the log in a bold style (if possible) */
+    public void logBold(String msg);
 
     /** Commits all outstanding writes (if the logger is buffered) */
     public void flush();

@@ -40,16 +40,12 @@ public final class ExprUnary extends Expr {
      * @param type - the type (null if this expression has not been typechecked)
      *
      * @throws ErrorInternal if pos==null or sub==null
-     * @throws ErrorSyntax if op==Op.ALL (since this is no longer supported)
      * @throws ErrorSyntax if sub.mult!=0
      */
     private ExprUnary(Pos pos, Op op, Expr sub, Type type) {
         super(pos, type, (op==Op.SOMEMULT || op==Op.LONEMULT || op==Op.ONEMULT || op==Op.SETMULT)?1:0);
         this.op=op;
         this.sub=nonnull(sub);
-        if (op==Op.ALL) throw syntaxError("The \"all x\" construct is no longer "
-                +"supported. If you know the range of possible values of x, consider "
-                +"rewriting it as \"x == set_of_all_possible_values\".");
         if (sub.mult != 0) throw sub.syntaxError("Multiplicity expression not allowed here");
     }
 
@@ -60,7 +56,6 @@ public final class ExprUnary extends Expr {
         /** :one  x (where x is a set or relation) */  ONEMULT(":one"),
         /** :set  x (where x is a set or relation) */  SETMULT(":set"),
         /** not   f (where f is a formula)         */  NOT("not"),
-        /** all   x (where x is a set or relation) */  ALL("all"),
         /** no    x (where x is a set or relation) */  NO("no"),
         /** some  x (where x is a set or relation) */  SOME("some"),
         /** lone  x (where x is a set or relation) */  LONE("lone"),
