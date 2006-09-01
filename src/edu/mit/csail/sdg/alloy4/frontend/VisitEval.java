@@ -217,7 +217,7 @@ public final class VisitEval implements VisitReturn {
         boolean old=demul;
         demul=true;
         Expression y0=cset(ab.accept(this));
-        if (!ab.op.isArrow() || ab.mult==0) { demul=old; return r.in(y0); }
+        if (!ab.op.isArrow || ab.mult==0) { demul=old; return r.in(y0); }
         Expr a=ab.left;  Expression aa=cset(a.accept(this));
         Expr b=ab.right; Expression bb=cset(b.accept(this));
         demul=old;

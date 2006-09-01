@@ -184,6 +184,28 @@ public abstract class Expr {
     }
 
     /**
+     * Convenience method that casts this node from "int" to "Int" if necessary.
+     * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
+     * @throws ErrorInternal if this node is not fully typechecked
+     */
+    public final Expr int2Int() {
+    	if (type==null) throw this.internalError("The node is not yet typechecked");
+    	if (!type.isInt) return this;
+    	return ExprUnary.Op.INTTOATOM.make(pos, this, ParaSig.SIGINT.type);
+    }
+
+    /**
+     * Convenience method that casts this node from "Int" to "int" if necessary.
+     * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
+     * @throws ErrorInternal if this node is not fully typechecked
+     */
+    public final Expr Int2int() {
+    	if (type==null) throw this.internalError("The node is not yet typechecked");
+    	if (type.isInt) return this;
+    	return ExprUnary.Op.SUM.make(pos, this, Type.INT);
+    }
+
+    /**
      * Convenience method that
      * returns a typechecked node representing (this -> y)
      * <br/> Note: this node and y must both be fully typechecked.
@@ -192,8 +214,11 @@ public abstract class Expr {
      * @throws ErrorInternal if this node and y are not compatible
      */
     public final Expr product(Expr y) {
-        if (this.type==null) throw this.internalError("The node is not yet typechecked");
+    	Expr me=this;
+        if (me.type==null) throw me.internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
+        if (me.type.isInt) me=ExprUnary.Op.INTTOATOM.make(me.pos, me, ParaSig.SIGINT.type);
+        if (me.type.isInt) me=ExprUnary.Op.INTTOATOM.make(me.pos, me, ParaSig.SIGINT.type);
         Type ans=this.type.product_of_anyEmptyness(y.type);
         if (ans.arity()<1) throw internalError("Cannot perform Expr.product()");
         return ExprBinary.Op.ARROW.make(this.pos, this, y, ans);

@@ -48,8 +48,8 @@ public final class ExprBinary extends Expr {
      * where A and/or B is an arrow multiplicity constraint.
      */
     private static boolean isMult(Op op, Expr left, Expr right) {
-        if (!op.isArrow()) return false;
-        return left.mult>0 || right.mult>0 || op!=Op.ARROW;
+        if (!op.isArrow) return false;
+        return left.mult==2 || right.mult==2 || op!=Op.ARROW;
     }
 
     /**
@@ -73,7 +73,7 @@ public final class ExprBinary extends Expr {
         this.op=op;
         this.left=nonnull(left);
         this.right=nonnull(right);
-        if (op.isArrow()) {
+        if (op.isArrow) {
             if (left.mult==1)
                 throw left.syntaxError("Set-multiplicity expression not allowed here");
             if (right.mult==1)
@@ -92,57 +92,62 @@ public final class ExprBinary extends Expr {
      * and right-hand-type "righttype" in the message.
      */
     public final ErrorType typeError(String msg, Type leftType, Type rightType) {
-        return typeError(msg+" LeftType="+leftType+" RightType="+rightType);
+        return typeError(msg+" Left type = "+leftType+" Right type = "+rightType);
     }
 
     /** This class contains all possible binary operators. */
     public enum Op {
-        /** -&gt;           */  ARROW("->"),
-        /** -&gt;some       */  ANY_ARROW_SOME("->some"),
-        /** -&gt;one        */  ANY_ARROW_ONE("->one"),
-        /** -&gt;lone       */  ANY_ARROW_LONE("->lone"),
-        /** some-&gt;       */  SOME_ARROW_ANY("some->"),
-        /** some-&gt;some   */  SOME_ARROW_SOME("some->some"),
-        /** some-&gt;one    */  SOME_ARROW_ONE("some->one"),
-        /** some-&gt;lone   */  SOME_ARROW_LONE("some->lone"),
-        /** one-&gt;        */  ONE_ARROW_ANY("one->"),
-        /** one-&gt;some    */  ONE_ARROW_SOME("one->some"),
-        /** one-&gt;one     */  ONE_ARROW_ONE("one->one"),
-        /** one-&gt;lone    */  ONE_ARROW_LONE("one->lone"),
-        /** lone-&gt;       */  LONE_ARROW_ANY("lone->"),
-        /** lone-&gt;some   */  LONE_ARROW_SOME("lone->some"),
-        /** lone-&gt;one    */  LONE_ARROW_ONE("lone->one"),
-        /** lone-&gt;lone   */  LONE_ARROW_LONE("lone->lone"),
-        /** &lt;:           */  DOMAIN("<:"),
-        /** :&gt;           */  RANGE(":>"),
-        /** &amp;           */  INTERSECT("&"),
-        /** ++              */  PLUSPLUS("++"),
-        /** +               */  PLUS("+"),
-        /** -               */  MINUS("-"),
-        /** =               */  EQUALS("="),
-        /** &lt;            */  LT("<"),
-        /** =&lt;           */  LTE("=<"),
-        /** &gt;            */  GT(">"),
-        /** &gt;=           */  GTE(">="),
-        /** in              */  IN("in"),
-        /** &amp;&amp;      */  AND("&&"),
-        /** ||              */  OR("||"),
-        /** &lt;=&gt;       */  IFF("<=>"),
-        /** =&gt;           */  IMPLIES("=>");
-
-        /** The constructor. */
-        Op(String l) {label=l;}
+        /** -&gt;           */  ARROW("->",true),
+        /** -&gt;some       */  ANY_ARROW_SOME("->some",true),
+        /** -&gt;one        */  ANY_ARROW_ONE("->one",true),
+        /** -&gt;lone       */  ANY_ARROW_LONE("->lone",true),
+        /** some-&gt;       */  SOME_ARROW_ANY("some->",true),
+        /** some-&gt;some   */  SOME_ARROW_SOME("some->some",true),
+        /** some-&gt;one    */  SOME_ARROW_ONE("some->one",true),
+        /** some-&gt;lone   */  SOME_ARROW_LONE("some->lone",true),
+        /** one-&gt;        */  ONE_ARROW_ANY("one->",true),
+        /** one-&gt;some    */  ONE_ARROW_SOME("one->some",true),
+        /** one-&gt;one     */  ONE_ARROW_ONE("one->one",true),
+        /** one-&gt;lone    */  ONE_ARROW_LONE("one->lone",true),
+        /** lone-&gt;       */  LONE_ARROW_ANY("lone->",true),
+        /** lone-&gt;some   */  LONE_ARROW_SOME("lone->some",true),
+        /** lone-&gt;one    */  LONE_ARROW_ONE("lone->one",true),
+        /** lone-&gt;lone   */  LONE_ARROW_LONE("lone->lone",true),
+        /** &lt;:           */  DOMAIN("<:",false),
+        /** :&gt;           */  RANGE(":>",false),
+        /** &amp;           */  INTERSECT("&",false),
+        /** ++              */  PLUSPLUS("++",false),
+        /** +               */  PLUS("+",false),
+        /** -               */  MINUS("-",false),
+        /** =               */  EQUALS("=",false),
+        /** &lt;            */  LT("<",false),
+        /** =&lt;           */  LTE("=<",false),
+        /** &gt;            */  GT(">",false),
+        /** &gt;=           */  GTE(">=",false),
+        /** in              */  IN("in",false),
+        /** &amp;&amp;      */  AND("&&",false),
+        /** ||              */  OR("||",false),
+        /** &lt;=&gt;       */  IFF("<=>",false),
+        /** =&gt;           */  IMPLIES("=>",false);
 
         /**
-         * Returns true if and only if this operator is the Cartesian
-         * product "-&gt;", or is a multiplicity arrow of the form "?-&gt;?".
+         * The constructor.
+         * @param label - the label (for printing debugging messages)
+         * @param isArrow - true if this operator is one of the 16 arrow operators
          */
-        public boolean isArrow() {
-            return this.compareTo(ARROW)>=0 && this.compareTo(LONE_ARROW_LONE)<=0;
+        Op(String label, boolean isArrow) {
+        	this.label=label;
+        	this.isArrow=isArrow;
         }
 
         /** The human readable label for this operator. */
         private final String label;
+
+        /**
+         * True if and only if this operator is the Cartesian
+         * product "->", or is a multiplicity arrow of the form "?->?".
+         */
+        public final boolean isArrow;
 
         /**
          * Constructs an untypechecked ExprBinary expression
