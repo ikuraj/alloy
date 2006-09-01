@@ -766,7 +766,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                  { kfact=kfact.and((Formula)(x22.in(x5.product(d.value)).accept(this))); continue; }
               if (noThis && d.value.isSetOf1ary())
                  { kfact=kfact.and((Formula)(x22.in(x5.product(d.value.getUnarySub())).accept(this))); continue; }
-              for(int i=x22.type.arity(); i>1; i--) x5=x5.product(Expr.univ(x5.pos));
+              for(int i=x22.type.arity(); i>1; i--) x5=x5.product(ExprConstant.Op.UNIV.make(x5.pos));
               kfact=kfact.and((Formula) (x22.in(x5).accept(this)));
               ExprName x11=new ExprName(d.value.pos, "this", null, s.type);
               Expr x33=x11.join(x22);

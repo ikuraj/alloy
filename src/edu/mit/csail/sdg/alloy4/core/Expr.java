@@ -19,7 +19,7 @@ public abstract class Expr {
 
     /** Accepts the typecheck visitor top-down. */
     public abstract Expr accept(VisitTypechecker visitor, Type obj);
-
+    
     /**
      * The filename, line, and column position
      * in the original Alloy model file (cannot be null).
@@ -120,6 +120,28 @@ public abstract class Expr {
     }
 
     /**
+     * Convenience method that casts this node from "int" to "Int" if it is an int.
+     * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
+     * @throws ErrorInternal if this node is not fully typechecked
+     */
+    public final Expr int2Int() {
+		if (type==null) throw this.internalError("The node is not yet typechecked");
+    	if (type.isInt) return ExprUnary.Op.INTTOATOM.make(pos, this, ParaSig.SIGINT.type);
+    	return this;
+    }
+    
+    /**
+     * Convenience method that casts this node into "int" if it is not "int".
+     * @return SUM(this) if this is not a primitive integer expression; returns this otherwise.
+     * @throws ErrorInternal if this node is not fully typechecked
+     */
+    public final Expr Int2int() {
+		if (type==null) throw this.internalError("The node is not yet typechecked");
+    	if (!type.isInt) return ExprUnary.Op.SUM.make(pos, this, Type.INT);
+    	return this;
+    }
+
+    /**
      * Convenience method that
      * returns a typechecked node representing ("this in y")
      * <br/> Note: this node and y must both be fully typechecked.
@@ -128,11 +150,13 @@ public abstract class Expr {
      * @throws ErrorInternal if this node and y are not compatible
      */
     public final Expr in(Expr y) {
-        if (this.type==null) throw this.internalError("The node is not yet typechecked");
+        if (type==null) throw internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        int thisArity=this.type.arity();
-        if (thisArity>0 && thisArity==y.type.arity())
-            return ExprBinary.Op.IN.make(this.pos, this, y, Type.FORMULA);
+    	Expr me=(VisitTypechecker.autoIntCast ? this.int2Int() : this);
+    	y=(VisitTypechecker.autoIntCast ? y.int2Int() : y);
+        int myArity=me.type.arity();
+        if (myArity>0 && myArity==y.type.arity())
+            return ExprBinary.Op.IN.make(pos, me, y, Type.FORMULA);
         throw internalError("Cannot perform Expr.in()");
     }
 
@@ -145,8 +169,8 @@ public abstract class Expr {
      * @throws ErrorInternal if this node is not a formula
      */
     public final Expr not() {
-        if (this.type==null) throw internalError("The node is not yet typechecked");
-        if (this.type.isBool) return ExprUnary.Op.NOT.make(this.pos, this, Type.FORMULA);
+        if (type==null) throw internalError("The node is not yet typechecked");
+        if (type.isBool) return ExprUnary.Op.NOT.make(pos, this, Type.FORMULA);
         throw internalError("Cannot perform Expr.not()");
     }
 
@@ -159,10 +183,10 @@ public abstract class Expr {
      * @throws ErrorInternal if this node and y are not compatible
      */
     public final Expr and(Expr y) {
-        if (this.type==null) throw this.internalError("The node is not yet typechecked");
+        if (type==null) throw internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        if (this.type.isBool && y.type.isBool)
-            return ExprBinary.Op.AND.make(this.pos, this, y, Type.FORMULA);
+        if (type.isBool && y.type.isBool)
+            return ExprBinary.Op.AND.make(pos, this, y, Type.FORMULA);
         throw internalError("Cannot perform Expr.and()");
     }
 
@@ -175,34 +199,14 @@ public abstract class Expr {
      * @throws ErrorInternal if this node and y are not compatible
      */
     public final Expr join(Expr y) {
-        if (this.type==null) throw this.internalError("The node is not yet typechecked");
+        if (type==null) throw internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        Type ans=this.type.join(y.type);
+    	Expr me=(VisitTypechecker.autoIntCast ? this.int2Int() : this);
+    	y=(VisitTypechecker.autoIntCast ? y.int2Int() : y);
+        Type ans=me.type.join(y.type);
         if (ans.arity()<1) throw internalError("Cannot perform Expr.join()");
-        return new ExprJoin(this.pos, this, y, ans);
+        return new ExprJoin(this.pos, me, y, ans);
     }
-
-    /*
-     * Convenience method that casts this node from "int" to "Int" if necessary.
-     * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
-     * @throws ErrorInternal if this node is not fully typechecked
-     *
-     public final Expr int2Int() {
-     if (type==null) throw this.internalError("The node is not yet typechecked");
-     if (!type.isInt) return this;
-     return ExprUnary.Op.INTTOATOM.make(pos, this, ParaSig.SIGINT.type);
-     }*/
-
-    /*
-     * Convenience method that casts this node from "Int" to "int" if necessary.
-     * @return INTTOATOM(this) if this is a primitive integer expression; returns this otherwise.
-     * @throws ErrorInternal if this node is not fully typechecked
-     *
-     public final Expr Int2int() {
-     if (type==null) throw this.internalError("The node is not yet typechecked");
-     if (type.isInt) return this;
-     return ExprUnary.Op.SUM.make(pos, this, Type.INT);
-     }*/
 
     /**
      * Convenience method that
@@ -213,23 +217,12 @@ public abstract class Expr {
      * @throws ErrorInternal if this node and y are not compatible
      */
     public final Expr product(Expr y) {
-        Expr me=this;
-        if (me.type==null) throw me.internalError("The node is not yet typechecked");
+        if (type==null) throw internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
-        if (me.type.isInt) me=ExprUnary.Op.INTTOATOM.make(me.pos, me, ParaSig.SIGINT.type);
-        if (me.type.isInt) me=ExprUnary.Op.INTTOATOM.make(me.pos, me, ParaSig.SIGINT.type);
-        Type ans=this.type.product_of_anyEmptyness(y.type);
+    	Expr me=(VisitTypechecker.autoIntCast ? this.int2Int() : this);
+    	y=(VisitTypechecker.autoIntCast ? y.int2Int() : y);
+        Type ans=me.type.product_of_anyEmptyness(y.type);
         if (ans.arity()<1) throw internalError("Cannot perform Expr.product()");
-        return ExprBinary.Op.ARROW.make(this.pos, this, y, ans);
-    }
-
-    /**
-     * Convenience method that
-     * returns a typechecked node representing the universal set.
-     *
-     * @param pos - the position in the file where the universal set is used
-     */
-    public static final Expr univ(Pos pos) {
-        return ExprConstant.Op.UNIV.make(pos);
+        return ExprBinary.Op.ARROW.make(this.pos, me, y, ans);
     }
 }

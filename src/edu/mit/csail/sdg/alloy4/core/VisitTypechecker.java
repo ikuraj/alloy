@@ -45,6 +45,9 @@ import salvo.jesus.graph.Vertex;
 
 public final class VisitTypechecker {
 
+	/** True if we want to automatically cast between int and Int. */
+	public static final boolean autoIntCast=false;
+
     /**
      * This maps each ambiguous ExprCall and ExprName node
      * to a list of possible nodes that it could refer to.
