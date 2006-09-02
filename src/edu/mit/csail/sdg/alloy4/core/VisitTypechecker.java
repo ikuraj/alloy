@@ -908,6 +908,55 @@ public final class VisitTypechecker {
         return x.op.make(x.pos, sub, p);
     }
 
+    /**
+     * childType := { c1->c2 | c1->c2 in childType, AND exists p1->p2 in parentType
+     *                 where p1..c1..c2..p2 is a path in closure graph }
+     */
+    private static Type closureResolveChild (Type parent, Type child) {
+    	Type answer=Type.make();
+    	if (parent.size()==0) return answer;
+    	DirectedGraph<ParaSig> graph=new DirectedGraph<ParaSig>();
+    	// For each (v1->v2) in childType, add (v1->v2) into the graph.
+    	for (Type.Rel c:child) if (c.arity()==2) graph.addEdge(c.basicTypes.get(0), c.basicTypes.get(1));
+    	// For each distinct v1 and v2 in the graph where v1&v2!=empty, add the edges v1->v2 and v2->v1.
+    	List<ParaSig> nodes=graph.getNodes();
+    	for (ParaSig a:nodes)
+    	  for (ParaSig b:nodes)
+    		if (a!=b && a.intersect(b).isNonEmpty()) graph.addEdge(a,b);
+    	// For each ParaSig x in ParentType, if x has subtypes/supertypes in the graph, then connect them.
+    	for (Type.Rel p:parent) {
+    		ParaSig a=p.basicTypes.get(0);
+    		ParaSig b=p.basicTypes.get(1);
+			// Add edges between a and all its subtypes and supertypes
+    		if (!graph.hasNode(a)) {
+    			graph.addNode(a);
+    			for (ParaSig other: graph.getNodes())
+    			  if (a!=other && !a.intersect(other).isEmpty())
+    				 { graph.addEdge(a,other); graph.addEdge(other,a); }
+    		}
+			// Add edges between b and all its subtypes and supertypes
+    		if (!graph.hasNode(b)) {
+    			graph.addNode(b);
+    			for (ParaSig other: graph.getNodes())
+    		      if (b!=other && !b.intersect(other).isEmpty())
+    				 { graph.addEdge(b,other); graph.addEdge(other,b); }
+    		}
+    	}
+    	// For each c1->c2 in childType, add c1->c2 into the finalType
+    	// if there exists p1->p2 in parentType such that p1->..->c1->c2->..->p2 is a path in the graph.
+    	for (Type.Rel c:child) {
+    		ParaSig c1=c.basicTypes.get(0);
+    		ParaSig c2=c.basicTypes.get(1);
+    		for (Type.Rel p:parent) {
+    			ParaSig p1=p.basicTypes.get(0);
+    			ParaSig p2=p.basicTypes.get(1);
+    			if (graph.hasPath(p1,c1) && graph.hasPath(c2,p2))
+    			   { answer=answer.union(Type.make(c)); break; }
+    		}
+    	}
+    	return answer;
+    }
+
     //=========================================================//
     /** Method that typechecks an ExprName object. First pass. */
     //=========================================================//
@@ -1150,8 +1199,7 @@ public final class VisitTypechecker {
         if (match instanceof ParaFun) {
             ParaFun y=(ParaFun)match;
             if (y.argCount==0) ans=new ExprName(x.pos, y.name, y, (y.type==null?Type.FORMULA:y.type.type));
-            else
-            {
+            else {
                 List<Expr> newlist=new ArrayList<Expr>();
                 for(int newlen=0; newlen<y.argCount; newlen++) {newlist.add(x.args.get(r)); r++;}
                 ans=new ExprCall(x.pos, y.name, y, newlist, (y.type==null?Type.FORMULA:y.type.type));
@@ -1182,93 +1230,7 @@ public final class VisitTypechecker {
         return ans;
     }
 
-//  ################################################################################################
-
-/*
-//  If basic2Vertex contains key bt, then the Vertex associated with bt is returned.
-//  Otherwise, a new Vertex vnew containing bt is created, a mapping from bt to vnew is
-//  added to basic2Vertex, and vnew returned.
-    private static Vertex _getVertex(ParaSig bt, Map<ParaSig,Vertex> basic2Vertex) {
-        Vertex v = basic2Vertex.get(bt);
-        if (v==null) { v=new Vertex(bt); basic2Vertex.put(bt,v); }
-        return v;
-    }
-*/
-
-//  EFFECTS: After the method returns, the supplied graph will
-//  contain an edge from vertex v1 to vertex v2 iff there exists an r1 in ut such
-//  that r1 = v1->v2 OR (v1 != v2 AND v1 & v2 is non-empty).
-//  EFFECTS:  the supplied map will contain the mapping from all basic types used
-//  in ut to their corresponding vertices in the supplied graph.
-    private static void _getClosureGraph(Type ut, DirectedGraph<ParaSig> graph) {
-        // add edges between all basic types v1 and v2 for which r1 = v1->v2 and r1 in ut
-        for (Type.Rel rt:ut)
-          if (rt.arity()==2)
-            graph.addEdge(rt.basicTypes.get(0), rt.basicTypes.get(1));
-        // add edges between all basic types v1 and v2 for which (v1 != v2) && (v1 & v2 is non-empty)
-        for (ParaSig b1: graph.getNodes())
-          for (ParaSig b2: graph.getNodes())
-            if (b1!=b2 && b1.intersect(b2).isNonEmpty()) graph.addEdge(b1,b2);
-    }
-
-//  PRECONDITION:  (1) basic2vertex contains mappings from BasicTypes to nodes in graph;
-//  (2) there exist bt1' such that bt1' is mapped by basic2vertex and bt1'&bt1 is non-empty.
-//  EFFECTS: After the method returns, the supplied graph will be augmented with an edge
-//  from bt to its subtypes or supertypes that are already in the graph (and vice versa),
-//  unless bt itself is in the graph, in which case nothing happens
-//  EFFECTS:  the supplied map will be augmented with a mapping from bt to its corresponding
-//  corresponding vertices in the supplied graph, unless bt is already mapped, in which case
-//  nothing happens
-    private static void _expandClosureGraph1(ParaSig bt, DirectedGraph<ParaSig> graph) {
-        if (!graph.getNodes().contains(bt)) {
-            graph.addNode(bt);
-            // add edges between b1 and all of its subtypes and supertypes
-            for (ParaSig other: graph.getNodes()) {
-                if (bt!=other && !bt.intersect(other).isEmpty())
-                  { graph.addEdge(bt,other); graph.addEdge(other,bt); }
-            }
-        }
-    }
-
-//  PRECONDITION:  (1) basic2vertex contains mappings from BasicTypes to nodes in graph;
-//  (2) for each bt1->bt2 in ut, there exist bt1' and bt2' such that bt1' and bt2' are mapped by
-//  basic2vertex and bt1'&bt1 and bt2'&bt2 are non-empty.
-//  EFFECTS: After the method returns, the supplied graph will be augmented with edges
-//  from BasicTypes in ut to their subtypes or supertypes that are already in the graph
-//  (and vice versa)
-//  EFFECTS:  the supplied map will be augmented with mappings from all basic types used
-//  in ut to their corresponding vertices in the supplied graph.
-    private static void _expandClosureGraph(Type ut, DirectedGraph<ParaSig> graph) {
-        for (Type.Rel rt:ut) {
-            _expandClosureGraph1(rt.basicTypes.get(0), graph);
-            _expandClosureGraph1(rt.basicTypes.get(1), graph);
-        }
-    }
-
-//  childType' := {r1 | r1 in childType AND there exist basic types
-//  b1 and b2 such that b1->b2 in parentType AND r1 is on a path from b1 to b2}
-    private static Type closureResolveChild(Type parentType, Type childType) {
-        // We assume parentType.arity()==childType.arity()==2
-        Type resolvedType = Type.make();
-        if (parentType.size() > 0) {
-            DirectedGraph<ParaSig> closure = new DirectedGraph<ParaSig>();
-            _getClosureGraph(childType, closure);
-            _expandClosureGraph(parentType, closure);
-            // For each bt1->bt2 in childType, add it to resolvedType if there is a bt1'->bt2' in
-            // parentType such that closure contains a path from bt1' to bt1 and a path from bt2 to bt2'
-            for (Type.Rel rtChild: childType) {
-                ParaSig cVertex0 = rtChild.basicTypes.get(0);
-                ParaSig cVertex1 = rtChild.basicTypes.get(1);
-                for (Type.Rel rtParent: parentType) {
-                    ParaSig pVertex0 = rtParent.basicTypes.get(0);
-                    ParaSig pVertex1 = rtParent.basicTypes.get(1);
-                    if (closure.hasPath(pVertex0,cVertex0) && closure.hasPath(cVertex1,pVertex1))
-                       { resolvedType=resolvedType.union(Type.make(rtChild)); break; }
-                }
-            }
-        }
-        return resolvedType;
-    }
-
-//  ################################################################################################
+    //==========================================================//
+    // ---                  The End                             //
+    //==========================================================//
 }

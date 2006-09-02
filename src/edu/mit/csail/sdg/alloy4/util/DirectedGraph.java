@@ -33,6 +33,9 @@ public final class DirectedGraph<N> {
     /** This returns a copy of the set of nodes in the graph. */
     public List<N> getNodes() { return new ArrayList<N>(nodes); }
 
+    /** Returns true if the node is in the graph currently. */
+    public boolean hasNode(N node) { return nodes.contains(node); }
+
     /** This adds a node to the graph if it is not in the graph already. */
     public void addNode(N newnode){
         if (!nodes.contains(newnode)) {
