@@ -10,7 +10,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
  * This class computes both the bounding type and the relevant type.
  *
@@ -1195,7 +1194,7 @@ public final class VisitTypechecker {
 //  that r1 = v1->v2 OR (v1 != v2 AND v1 & v2 is non-empty).
 //  EFFECTS:  the supplied map will contain the mapping from all basic types used
 //  in ut to their corresponding vertices in the supplied graph.
-    private static void _getClosureGraph(Type ut, SimpleGraph<ParaSig> graph) {
+    private static void _getClosureGraph(Type ut, DirectedGraph<ParaSig> graph) {
         // add edges between all basic types v1 and v2 for which r1 = v1->v2 and r1 in ut
         for (Type.Rel rt:ut)
           if (rt.arity()==2)
@@ -1214,7 +1213,7 @@ public final class VisitTypechecker {
 //  EFFECTS:  the supplied map will be augmented with a mapping from bt to its corresponding
 //  corresponding vertices in the supplied graph, unless bt is already mapped, in which case
 //  nothing happens
-    private static void _expandClosureGraph1(ParaSig bt, SimpleGraph<ParaSig> graph) {
+    private static void _expandClosureGraph1(ParaSig bt, DirectedGraph<ParaSig> graph) {
         if (!graph.getNodes().contains(bt)) {
             graph.addNode(bt);
             // add edges between b1 and all of its subtypes and supertypes
@@ -1233,7 +1232,7 @@ public final class VisitTypechecker {
 //  (and vice versa)
 //  EFFECTS:  the supplied map will be augmented with mappings from all basic types used
 //  in ut to their corresponding vertices in the supplied graph.
-    private static void _expandClosureGraph(Type ut, SimpleGraph<ParaSig> graph) {
+    private static void _expandClosureGraph(Type ut, DirectedGraph<ParaSig> graph) {
         for (Type.Rel rt:ut) {
             _expandClosureGraph1(rt.basicTypes.get(0), graph);
             _expandClosureGraph1(rt.basicTypes.get(1), graph);
@@ -1246,7 +1245,7 @@ public final class VisitTypechecker {
         // We assume parentType.arity()==childType.arity()==2
         Type resolvedType = Type.make();
         if (parentType.size() > 0) {
-            SimpleGraph<ParaSig> closure = new SimpleGraph<ParaSig>();
+            DirectedGraph<ParaSig> closure = new DirectedGraph<ParaSig>();
             _getClosureGraph(childType, closure);
             _expandClosureGraph(parentType, closure);
             // For each bt1->bt2 in childType, add it to resolvedType if there is a bt1'->bt2' in

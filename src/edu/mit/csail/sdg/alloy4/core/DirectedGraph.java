@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
  *
  * @param <N> - the node type
  */
-public class SimpleGraph<N> {
+public class DirectedGraph<N> {
 
     /**
      * This field maps each node in the directed graph to its "directed" neighbors.
