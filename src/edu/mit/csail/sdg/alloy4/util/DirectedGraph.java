@@ -10,18 +10,19 @@ import java.util.LinkedHashMap;
 /**
  * Mutable; this class implements a graph with nodes and directed edges.
  *
- * <br/> Note: it uses N.equals() for node equality.
+ * <p/> Note: it uses N.equals() for node equality.
  *
  * <p/> <b>Invariant:</b>  nodes.contains(x) iff nodeToTargets.containsKey(x)
- * 
- * @author Felix Chang
  *
  * @param <N> - the node type
+ *
+ * @author Felix Chang
  */
+
 public final class DirectedGraph<N> {
 
-	/** This field stores the set of nodes in the graph. */
-	private final Set<N> nodes = new LinkedHashSet<N>();
+    /** This field stores the set of nodes in the graph. */
+    private final Set<N> nodes = new LinkedHashSet<N>();
 
     /** This field maps each node in the directed graph to its "directed" neighbors. */
     private final Map<N,List<N>> nodeToTargets = new LinkedHashMap<N,List<N>>();
