@@ -1,9 +1,9 @@
 package edu.mit.csail.sdg.alloy4.util;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
  *
  * <p/> Note: it uses N.equals() for node equality.
  *
- * <p/> <b>Invariant:</b>  nodes.contains(x) iff nodeToTargets.containsKey(x)
+ * <p/> <b>Invariant:</b>  (nodes.contains(x)) iff (nodeToTargets.containsKey(x))
  *
  * @param <N> - the node type
  *
