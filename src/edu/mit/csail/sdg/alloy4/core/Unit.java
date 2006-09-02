@@ -64,7 +64,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // This lists all the ASSERTS defined inside this file.
   // The NAME must not contain any "/" or "@"
   public final Map<String,ParaAssert> asserts=new LinkedHashMap<String,ParaAssert>();
-  public void makeAssert(Pos p,String n,Expr v) {
+  public String makeAssert(Pos p,String n,Expr v) {
     if (n==null || n.length()==0) n="*"+(++anonymous_factassert_id)+"*";
     ParaAssert x=new ParaAssert(p,aliases.get(0),n,v);
     if (asserts.containsKey(n)) throw x.syntaxError("Within the same file, an assertion cannot have the same name as another assertion!");
@@ -73,6 +73,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     if (sigs.containsKey(n)) throw x.syntaxError("Within the same file, an assertion cannot have the same name as another signature!");
     if (params.containsKey(n)) throw x.syntaxError("Within the same file, an assertion cannot have the same name as a polymorphic type!");
     asserts.put(n,x);
+    return n;
   }
 
   // This lists all the FUNCTIONS defined inside this file.
@@ -108,11 +109,12 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   public final List<ParaRuncheck> runchecks=new ArrayList<ParaRuncheck>();
   public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
     if (!aliases.contains("")) return;
-    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, null, c, o, exp, s, exa));
+    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, exa));
   }
   public void makeRuncheck(Pos p,Expr e,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
-	if (!aliases.contains("")) return;
-	runchecks.add(new ParaRuncheck(p, aliases.get(0), "", e, c, o, exp, s, exa));
+    if (!aliases.contains("")) return;
+    String n=makeAssert(p,"",e);
+    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, true, o, exp, s, exa));
   }
 
   private void lookupNQsig_noparam(String name,Set<Object> ans) { // It ignores "params"

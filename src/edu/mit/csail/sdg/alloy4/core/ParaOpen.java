@@ -64,8 +64,8 @@ public final class ParaOpen extends Para {
                     "This filename contains \'"+c+"\' which is not legal in an alias, so you must supply an alias.");
         }
         if (list.size()!=0)
-        	throw new ErrorSyntax(pos,
-        		"The module being imported has parameters, so you must supply an alias via the AS command.");
+            throw new ErrorSyntax(pos,
+                "The module being imported has parameters, so you must supply an alias via the AS command.");
         return file;
     }
 
@@ -91,7 +91,7 @@ public final class ParaOpen extends Para {
         this.file=file;
         List<String> newlist=new ArrayList<String>();
         for(int i=0; i<list.size(); i++) {
-        	String arg=nonnull(list.get(i)).name;
+            String arg=nonnull(list.get(i)).name;
             newlist.add(arg); // Based on ExprName's invariants, we know arg will not be "", null, nor contains '@'.
         }
         this.list=Collections.unmodifiableList(newlist);

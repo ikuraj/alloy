@@ -964,9 +964,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         try {
             Formula f;
-            if (cmd.checkexpr!=null) {
-            	f=((Formula)(cmd.checkexpr.accept(this))).not().and(kfact);
-            } else if (cmd.check) {
+            if (cmd.check) {
                 ParaAssert e=root.asserts.get(cmd.name);
                 if (e==null) throw cmd.syntaxError("The assertion \""+cmd.name+"\" cannot be found.");
                 f=((Formula)(e.value.accept(this))).not().and(kfact);

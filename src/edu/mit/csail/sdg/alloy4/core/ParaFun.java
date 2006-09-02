@@ -48,12 +48,12 @@ public final class ParaFun extends Para {
     public ParaFun(Pos pos, String path, String name, List<VarDecl> decls, Expr type, Expr value) {
         super(pos, path, name);
         if (name.length()==0)
-        	throw syntaxError("Name of a predicate/function cannot be \"\"");
+            throw syntaxError("Name of a predicate/function cannot be \"\"");
         this.decls=new ArrayList<VarDecl>(nonnull(decls));
         String dup=VarDecl.hasDuplicateName(this.decls);
         if (dup!=null)
-        	throw syntaxError("The parameter name \""
-        	+dup+"\" appears more than once in this predicate/function declaration.");
+            throw syntaxError("The parameter name \""
+            +dup+"\" appears more than once in this predicate/function declaration.");
         argCount=VarDecl.nameCount(this.decls);
         this.type=type;
         this.value=nonnull(value);

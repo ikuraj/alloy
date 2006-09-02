@@ -34,7 +34,7 @@ public abstract class Para {
      * For example, if a unit is opened from many places,
      * but the user has indicated that these places should all import a common shared copy,
      * then there will be many paths that refer to that same unit.
-     * 
+     *
      * <p/>
      * (Hence the wording above: the Para.path field only has to be ONE of the valid paths.
      * In fact, if the main unit is accessible from other paths also,

@@ -43,8 +43,8 @@ import java.util.Set;
 
 public final class VisitTypechecker {
 
-	/** True if we want to automatically cast between int and Int. */
-	public static final boolean autoIntCast=false;
+    /** True if we want to automatically cast between int and Int. */
+    public static final boolean autoIntCast=false;
 
     /**
      * This maps each ambiguous ExprCall and ExprName node
@@ -126,39 +126,39 @@ public final class VisitTypechecker {
 
     /** This is step 2: merging modules that have same filename and same instantiating arguments. */
     private static void mergeunits(ArrayList<Unit> units, Log log) {
-    	while(true) {
-    		// Before merging, the only pointers that go between Unit objects are
-    		// (1) a unit's "params" may point to a sig in another unit
-    		// (2) a unit's "opens" may point to another unit
-    		// So when we find that two units A and B should be merged,
-    		// we iterate through every unit (except B), and replace
-    		// pointers into B with pointers into A.
-    		boolean chg=false;
-    		for(int i=0; i<units.size(); i++) {
-    			Unit a=units.get(i);
-    			for(int j=i+1; j<units.size(); j++) {
-    				Unit b=units.get(j);
-    				if (a.pos.filename.equals(b.pos.filename) && a.params.equals(b.params)) {
-    					log.log("MATCH FOUND ON "+a.pos.filename+"\n");
-    					a.aliases.addAll(b.aliases);
-    					Collections.sort(a.aliases, aliasComparator);
-    					Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);
-    					for(Map.Entry<String,ParaSig> p:a.sigs.entrySet())
-    						p.getValue().aliases=new ArrayList<String>(a.aliases);
-    					for(Unit c:units) if (c!=b) {
-    						for(Map.Entry<String,ParaSig> p:c.params.entrySet()) {
-    							if (isin(p.getValue(),asigs)) p.setValue(a.sigs.get(p.getValue().name));
-    							if (isin(p.getValue(),b.sigs)) p.setValue(a.sigs.get(p.getValue().name));
-    						}
-    						for(Map.Entry<String,Unit> p:c.opens.entrySet()) if (p.getValue()==b) p.setValue(a);
-    					}
-    					units.remove(j);
-    					chg=true;
-    				}
-    			}
-    		}
-    		if (!chg) return;
-    	}
+        while(true) {
+            // Before merging, the only pointers that go between Unit objects are
+            // (1) a unit's "params" may point to a sig in another unit
+            // (2) a unit's "opens" may point to another unit
+            // So when we find that two units A and B should be merged,
+            // we iterate through every unit (except B), and replace
+            // pointers into B with pointers into A.
+            boolean chg=false;
+            for(int i=0; i<units.size(); i++) {
+                Unit a=units.get(i);
+                for(int j=i+1; j<units.size(); j++) {
+                    Unit b=units.get(j);
+                    if (a.pos.filename.equals(b.pos.filename) && a.params.equals(b.params)) {
+                        log.log("MATCH FOUND ON "+a.pos.filename+"\n");
+                        a.aliases.addAll(b.aliases);
+                        Collections.sort(a.aliases, aliasComparator);
+                        Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);
+                        for(Map.Entry<String,ParaSig> p:a.sigs.entrySet())
+                            p.getValue().aliases=new ArrayList<String>(a.aliases);
+                        for(Unit c:units) if (c!=b) {
+                            for(Map.Entry<String,ParaSig> p:c.params.entrySet()) {
+                                if (isin(p.getValue(),asigs)) p.setValue(a.sigs.get(p.getValue().name));
+                                if (isin(p.getValue(),b.sigs)) p.setValue(a.sigs.get(p.getValue().name));
+                            }
+                            for(Map.Entry<String,Unit> p:c.opens.entrySet()) if (p.getValue()==b) p.setValue(a);
+                        }
+                        units.remove(j);
+                        chg=true;
+                    }
+                }
+            }
+            if (!chg) return;
+        }
     }
 
     private static<V> boolean isin(V x,Map<String,V> y) {
@@ -251,7 +251,7 @@ public final class VisitTypechecker {
        for(Unit u:units) check(u);
        objChoices.clear(); typeChoices.clear(); env.clear();
    }
-   
+
    /** This is step 4A: typechecking every field. */
    private void check(ParaSig x, Unit u) {
        // When typechecking the fields:
@@ -349,15 +349,6 @@ public final class VisitTypechecker {
            this.root=null; this.rootunit=u; x.value=resolve(x.value);
            log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type+"\n");
            if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
-       }
-       for(int xi=0; xi<u.runchecks.size(); xi++) {
-       	Expr x=u.runchecks.get(xi).checkexpr;
-       	if (x==null) continue;
-           this.root=null; this.rootunit=u; x=resolve(x);
-           log.log("Unit ["+uu+"], Check: "+x.type+"\n");
-           if (!x.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.type);
-           ParaRuncheck newentry = new ParaRuncheck(u.runchecks.get(xi), x);
-           u.runchecks.set(xi, newentry);
        }
    }
 
@@ -942,36 +933,36 @@ public final class VisitTypechecker {
     }
 
     private Set<Object> populate(String x1) {
-    	Set<Object> y;
-    	String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
-    	Object y3=env.get(x2); if (y3!=null) { y=new LinkedHashSet<Object>(); y.add(y3); return y; }
-    	if (root instanceof ParaSig.Field) {
-    		ParaSig.Field rt=(ParaSig.Field)root;
-    		ParaSig rts=rt.parent();
-    		if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts.type); return y; }
-    		y=rootunit.lookup_sigORparam(x2);
-    		ParaSig.Field y2=rootunit.lookup_Field(rts, x2, rt.name);
-    		if (y2!=null) { y.add(y2); if (y2.halftype==null) throw new ErrorInternal(y2.pos, y2, "This field is being referenced before it is typechecked!"); }
-    	}
-    	else if (root instanceof ParaSig) {
-    		if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add( ((ParaSig)root).type ); return y; }
-    		y=rootunit.lookup_SigParamFunPred(x2);
-    		ParaSig.Field y22=rootunit.lookup_Field((ParaSig)root,x2);
-    		for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field)
-    		{if (y2==y22) y.add(y2); else if (y22==null) y.add(((ParaSig.Field)y2).full); }
-    	}
-    	else if (root instanceof ParaFun) {
-    		y=rootunit.lookup_sigORparam(x2);
-    		for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
-    	}
-    	else if (root==null) {
-    		y=rootunit.lookup_SigParamFunPred(x2);
-    		for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
-    	}
-    	else {
-    		y=new LinkedHashSet<Object>();
-    	}
-    	return y;
+        Set<Object> y;
+        String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
+        Object y3=env.get(x2); if (y3!=null) { y=new LinkedHashSet<Object>(); y.add(y3); return y; }
+        if (root instanceof ParaSig.Field) {
+            ParaSig.Field rt=(ParaSig.Field)root;
+            ParaSig rts=rt.parent();
+            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts.type); return y; }
+            y=rootunit.lookup_sigORparam(x2);
+            ParaSig.Field y2=rootunit.lookup_Field(rts, x2, rt.name);
+            if (y2!=null) { y.add(y2); if (y2.halftype==null) throw new ErrorInternal(y2.pos, y2, "This field is being referenced before it is typechecked!"); }
+        }
+        else if (root instanceof ParaSig) {
+            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add( ((ParaSig)root).type ); return y; }
+            y=rootunit.lookup_SigParamFunPred(x2);
+            ParaSig.Field y22=rootunit.lookup_Field((ParaSig)root,x2);
+            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field)
+            {if (y2==y22) y.add(y2); else if (y22==null) y.add(((ParaSig.Field)y2).full); }
+        }
+        else if (root instanceof ParaFun) {
+            y=rootunit.lookup_sigORparam(x2);
+            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
+        }
+        else if (root==null) {
+            y=rootunit.lookup_SigParamFunPred(x2);
+            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
+        }
+        else {
+            y=new LinkedHashSet<Object>();
+        }
+        return y;
     }
 
     //==========================================================//
@@ -1074,24 +1065,24 @@ public final class VisitTypechecker {
     }
 
     private boolean applicable(ParaFun f,List<Expr> args) {
-    	int argi=0;
-    	for(VarDecl d:f.decls) {
-    		for(int j=0; j<d.names.size(); j++) {
-    			Type arg=args.get(argi).type;
-    			argi++;
-    			if (arg.size()==0) continue;
-    			if (d.value.type.size()==0) continue; // This should not happen, though.
-    			if (arg.hasNoTuple() || d.value.type.hasNoTuple()) if (arg.arity()==d.value.type.arity()) continue;
-    			if (arg.intersect(d.value.type).hasTuple()) continue;
-    			return false;
-    		}
-    	}
-    	return true;
+        int argi=0;
+        for(VarDecl d:f.decls) {
+            for(int j=0; j<d.names.size(); j++) {
+                Type arg=args.get(argi).type;
+                argi++;
+                if (arg.size()==0) continue;
+                if (d.value.type.size()==0) continue; // This should not happen, though.
+                if (arg.hasNoTuple() || d.value.type.hasNoTuple()) if (arg.arity()==d.value.type.arity()) continue;
+                if (arg.intersect(d.value.type).hasTuple()) continue;
+                return false;
+            }
+        }
+        return true;
     }
-    
+
     private boolean containsApplicable(Set<Object> x) {
-    	for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount>0) return true;
-    	return false;
+        for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount>0) return true;
+        return false;
     }
 
     //==========================================================//
@@ -1252,7 +1243,7 @@ public final class VisitTypechecker {
 //  childType' := {r1 | r1 in childType AND there exist basic types
 //  b1 and b2 such that b1->b2 in parentType AND r1 is on a path from b1 to b2}
     private static Type closureResolveChild(Type parentType, Type childType) {
-    	// We assume parentType.arity()==childType.arity()==2
+        // We assume parentType.arity()==childType.arity()==2
         Type resolvedType = Type.make();
         if (parentType.size() > 0) {
             SimpleGraph<ParaSig> closure = new SimpleGraph<ParaSig>();
