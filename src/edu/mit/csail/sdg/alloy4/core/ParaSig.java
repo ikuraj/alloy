@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.util.Pos;
+
 /**
  * Mutable; reresents a "signature".
  * @author Felix Chang

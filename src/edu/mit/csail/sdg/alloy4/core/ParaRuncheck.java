@@ -8,6 +8,10 @@ import java.util.Map;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 
+import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.util.Pos;
+
 /**
  * Immutable; reresents a "run" or "check" command.
  *

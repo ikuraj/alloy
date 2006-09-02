@@ -4,6 +4,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
+import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.util.Pos;
+
 /**
  * Immutable; reresents an "open" declaration.
  *

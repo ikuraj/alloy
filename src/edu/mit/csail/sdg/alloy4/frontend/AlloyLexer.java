@@ -1,10 +1,10 @@
 
 package edu.mit.csail.sdg.alloy4.frontend;
 
-import edu.mit.csail.sdg.alloy4.core.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.core.ExprConstant;
 import edu.mit.csail.sdg.alloy4.core.ExprName;
-import edu.mit.csail.sdg.alloy4.core.Pos;
+import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.util.Pos;
 
 import java_cup.runtime.*;
 

@@ -12,6 +12,9 @@ import java.util.Set;
 
 import edu.mit.csail.sdg.alloy4.util.DirectedGraph;
 import edu.mit.csail.sdg.alloy4.util.Env;
+import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.util.ErrorType;
 
 /**
  * This class computes both the bounding type and the relevant type.

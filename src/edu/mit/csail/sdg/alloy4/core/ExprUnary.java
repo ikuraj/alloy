@@ -1,5 +1,9 @@
 package edu.mit.csail.sdg.alloy4.core;
 
+import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.util.Pos;
+
 /**
  * Immutable; represents a unary expression of the form (OP subexpression).
  *
