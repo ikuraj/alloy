@@ -37,6 +37,8 @@ import java.util.Set;
  * <br/> (2) let x=a... (here we will always fully resolve a)
  * <br/> (3) quantifer x:a|b (here we first fully resolve a, and then fully resolve b)
  * <br/> etc.
+ *
+ * @author Felix Chang with some code adapted from Alloy 3
  */
 
 public final class VisitTypechecker {
@@ -1223,7 +1225,7 @@ public final class VisitTypechecker {
 //  nothing happens
     private static void _expandClosureGraph1(ParaSig bt, SimpleGraph<ParaSig> graph) {
         if (!graph.getNodes().contains(bt)) {
-            graph.add(bt);
+            graph.addNode(bt);
             // add edges between b1 and all of its subtypes and supertypes
             for (ParaSig other: graph.getNodes()) {
                 if (bt!=other && !bt.intersect(other).isEmpty())

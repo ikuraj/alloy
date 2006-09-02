@@ -13,7 +13,7 @@ import java.util.Set;
  *
  * <p/> In Alloy, each expression can be a set/relation, or a formula, or a primitive integer.
  *
- * @author Felix Chang
+ * @author Felix Chang with some code adapted from Alloy 3
  */
 
 //===========================================================================================================
