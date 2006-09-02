@@ -11,7 +11,7 @@ package edu.mit.csail.sdg.alloy4.util;
 public final class ErrorSyntax extends Err {
 
     /** This silences the javac warning about missing serialVersionUID. */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new syntax error.

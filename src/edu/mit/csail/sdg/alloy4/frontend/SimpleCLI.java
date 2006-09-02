@@ -2,7 +2,6 @@ package edu.mit.csail.sdg.alloy4.frontend;
 
 import java.util.ArrayList;
 import java.io.FileNotFoundException;
-
 import edu.mit.csail.sdg.alloy4.core.Log;
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;

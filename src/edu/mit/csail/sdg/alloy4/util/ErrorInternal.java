@@ -11,9 +11,9 @@ package edu.mit.csail.sdg.alloy4.util;
 public final class ErrorInternal extends Err {
 
     /** This silences the javac warning about missing serialVersionUID. */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	/**
+    /**
      * Constructs a new internal error.
      * @param pos - the filename/line/row information (null if unknown)
      * @param obj - the object that triggered the error (null if unknown)

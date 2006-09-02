@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
 import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
 
 /**

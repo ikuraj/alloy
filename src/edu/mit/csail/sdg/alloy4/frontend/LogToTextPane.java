@@ -4,7 +4,6 @@ import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyledDocument;
-
 import edu.mit.csail.sdg.alloy4.core.Log;
 
 public final class LogToTextPane implements Log {

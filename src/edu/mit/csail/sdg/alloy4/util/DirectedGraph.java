@@ -46,7 +46,7 @@ public final class DirectedGraph<N> {
 
     /**
      * This adds a directed edge from node1 to node2 if there wasn't such an edge already.
-     * If node1 and node2 don't exist in the graph yet, they will be added. 
+     * If node1 and node2 don't exist in the graph yet, they will be added.
      */
     public void addEdge(N node1, N node2) {
         addNode(node1);
