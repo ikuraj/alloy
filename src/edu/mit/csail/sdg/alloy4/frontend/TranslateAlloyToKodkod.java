@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import edu.mit.csail.sdg.alloy4.core.Env;
 import edu.mit.csail.sdg.alloy4.core.Err;
 import edu.mit.csail.sdg.alloy4.core.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.core.ErrorSyntax;
@@ -40,6 +39,7 @@ import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VarDecl;
 import edu.mit.csail.sdg.alloy4.core.VisitQuery;
 import edu.mit.csail.sdg.alloy4.core.VisitReturn;
+import edu.mit.csail.sdg.alloy4.util.Env;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
 import kodkod.ast.IntConstant;

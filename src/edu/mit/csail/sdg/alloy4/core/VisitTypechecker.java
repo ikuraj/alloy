@@ -10,6 +10,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import edu.mit.csail.sdg.alloy4.util.DirectedGraph;
+import edu.mit.csail.sdg.alloy4.util.Env;
+
 /**
  * This class computes both the bounding type and the relevant type.
  *
