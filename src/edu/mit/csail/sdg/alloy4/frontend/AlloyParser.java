@@ -2298,7 +2298,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
           // Here, we recursively open the included files (to fill out the "Unit.opens" field)
           ParaOpen y=opens.getValue();
-          Unit uu=alloy_totalparseHelper(y.pos, y.file, y.name, units, thispath);
+          Unit uu=alloy_totalparseHelper(y.pos, y.filename, y.name, units, thispath);
           if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
           u.opens.put(y.name, uu);
       }
@@ -2331,7 +2331,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
           // Here, we recursively open the included files (to fill out the "Unit.opens" field)
           ParaOpen y=opens.getValue();
-          Unit uu=alloy_totalparseHelper(y.pos, y.file, prefix.length()==0 ? y.name : prefix+"/"+y.name, units, thispath);
+          Unit uu=alloy_totalparseHelper(y.pos, y.filename, prefix.length()==0 ? y.name : prefix+"/"+y.name, units, thispath);
           if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
           u.opens.put(y.name, uu);
       }

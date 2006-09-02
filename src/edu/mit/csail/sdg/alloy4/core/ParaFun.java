@@ -2,7 +2,6 @@ package edu.mit.csail.sdg.alloy4.core;
 
 import java.util.List;
 import java.util.ArrayList;
-
 import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.Pos;
@@ -24,7 +23,7 @@ public final class ParaFun extends Para {
     /** The mutable list of parameters (its number of names must match this.argCount) */
     public List<VarDecl> decls;
 
-    /** The number of parameters (it must match the number of names in this.decls) */
+    /** The number of parameters (it must equal the number of names in this.decls) */
     public int argCount;
 
     /** The return type (null if this is a "predicate" rather than a "function") */
@@ -37,7 +36,7 @@ public final class ParaFun extends Para {
      * Constructs a new ParaFun object.
      *
      * @param pos - the original position in the file
-     * @param path - a valid path to the Unit containing this predicate/function (can be "" if it's the main unit)
+     * @param path - a valid path to the Unit containing this predicate/function
      * @param name - the name of the predicate/function (it cannot be "")
      * @param decls - the list of parameters
      * @param type - the return type (null if this is a predicate rather than a function)
