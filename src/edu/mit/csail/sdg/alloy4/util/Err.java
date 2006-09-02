@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4.util;
 
-
 /**
  * Immutable; this is the abstract super class of the various possible errors.
  *
@@ -9,7 +8,6 @@ package edu.mit.csail.sdg.alloy4.util;
  * @author Felix Chang
  */
 
-@SuppressWarnings("serial")
 public abstract class Err extends RuntimeException {
 
     /** This stores the filename/line/row information (null if unknown). */

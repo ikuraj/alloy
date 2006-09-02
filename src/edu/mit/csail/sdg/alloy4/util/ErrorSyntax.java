@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4.util;
 
-
 /**
  * Immutable; represents a syntax error that should be reported to the user.
  *
@@ -9,8 +8,10 @@ package edu.mit.csail.sdg.alloy4.util;
  * @author Felix Chang
  */
 
-@SuppressWarnings("serial")
 public final class ErrorSyntax extends Err {
+
+    /** This silences the javac warning about missing serialVersionUID. */
+	private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new syntax error.

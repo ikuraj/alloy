@@ -8,7 +8,7 @@ import java.util.LinkedList;
  * Mutable; this implements an undoable mapping from nonnull String to nullable Object.
  *
  * <p/>  To be more precise, every key is internally mapped to a list of Object.
- * <br/> The put(X,Y)  method appeneds Y to that list.
+ * <br/> The put(X,Y)  method appends Y to that list.
  * <br/> The get(X)    method returns the last element in that list.
  * <br/> The remove(X) method removes the last element in that list.
  *
@@ -58,7 +58,7 @@ public final class Env {
     }
 
     /**
-     * Associate the key k with the value v.
+     * Associates the key k with the value v.
      *
      * @param k - the key (which must not be null)
      * @param v - the value (which can be null)

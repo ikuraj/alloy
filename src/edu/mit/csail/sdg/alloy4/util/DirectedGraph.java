@@ -33,7 +33,7 @@ public final class DirectedGraph<N> {
     /** This returns a copy of the set of nodes in the graph. */
     public List<N> getNodes() { return new ArrayList<N>(nodes); }
 
-    /** Returns true if the node is in the graph currently. */
+    /** Returns true if the node is in the graph. */
     public boolean hasNode(N node) { return nodes.contains(node); }
 
     /** This adds a node to the graph if it is not in the graph already. */
@@ -44,12 +44,15 @@ public final class DirectedGraph<N> {
         }
     }
 
-    /** This adds a directed edge from v1 to v2 if there wasn't an edge already. */
-    public void addEdge(N v1, N v2) {
-        addNode(v1);
-        addNode(v2);
-        List<N> targets=nodeToTargets.get(v1);
-        if (!targets.contains(v2)) targets.add(v2);
+    /**
+     * This adds a directed edge from node1 to node2 if there wasn't such an edge already.
+     * If node1 and node2 don't exist in the graph yet, they will be added. 
+     */
+    public void addEdge(N node1, N node2) {
+        addNode(node1);
+        addNode(node2);
+        List<N> targets=nodeToTargets.get(node1);
+        if (!targets.contains(node2)) targets.add(node2);
     }
 
     /** Returns true if and only if there is a directed path from start node to end node. */
