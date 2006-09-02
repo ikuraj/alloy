@@ -56,7 +56,7 @@ public abstract class Para {
      * Constructs a new paragraph node.
      *
      * @param pos - the original position in the file
-     * @param path - a valid path to the Unit containing this paragraph (can be "" if it's the main unit)
+     * @param path - a valid path to the Unit containing this paragraph
      * @param name - the name of the paragraph (can be "")
      *
      * @throws ErrorSyntax if the path contains '@'
@@ -73,18 +73,18 @@ public abstract class Para {
     }
 
     /** Convenience method that constructs a syntax error exception. */
-    public final ErrorSyntax syntaxError(String s) {
-        return new ErrorSyntax(pos, s);
+    public final ErrorSyntax syntaxError(String msg) {
+        return new ErrorSyntax(pos, msg);
     }
 
     /** Convenience method that constructs a type error exception. */
-    public final ErrorType typeError(String s) {
-        return new ErrorType(pos, this, s);
+    public final ErrorType typeError(String msg) {
+        return new ErrorType(pos, this, msg);
     }
 
     /** Convenience method that constructs an internal error exception. */
-    public final ErrorInternal internalError(String s) {
-        return new ErrorInternal(pos, this, s);
+    public final ErrorInternal internalError(String msg) {
+        return new ErrorInternal(pos, this, msg);
     }
 
     /**

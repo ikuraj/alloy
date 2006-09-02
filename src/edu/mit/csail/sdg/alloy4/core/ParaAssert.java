@@ -7,7 +7,7 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 /**
  * Mutable; represents an "assertion".
  *
- * <p/> <b>Invariant:</b> value!=null
+ * <p/> <b>Invariant:</b>  value!=null
  *
  * @author Felix Chang
  */
@@ -21,7 +21,7 @@ public final class ParaAssert extends Para {
      * Constructs a new ParaAssert object.
      *
      * @param pos - the original position in the file
-     * @param path - a valid path to the Unit containing this paragraph (can be "" if it's the main unit)
+     * @param path - a valid path to the Unit containing this paragraph
      * @param name - the name of the assertion (can be "")
      * @param value - the formula being asserted
      *
