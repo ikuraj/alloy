@@ -6,14 +6,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-import salvo.jesus.graph.DirectedGraph;
-import salvo.jesus.graph.DirectedGraphImpl;
-import salvo.jesus.graph.Vertex;
 
 /**
  * This class computes both the bounding type and the relevant type.
@@ -72,31 +68,27 @@ public final class VisitTypechecker {
     private final Env env=new Env();
 
     /** This is a logger that will receive verbose debugging output during typechecking. */
-    private final Log log;
+    private Log log;
 
-    public Object root=null;
-    public Unit rootunit=null;
+    private Object root=null;
+    private Unit rootunit=null;
 
-    /**
-     * Constructor for a VisitTypechecker object.
-     * @param log - the logger that will receive verbose debugging output during typechecking
-     */
-    private VisitTypechecker(Log log) {
-        this.log=log;
-    }
+    /** Private constructor (to ensure the only way to access the typechecker is via the check() method. */
+    private VisitTypechecker() { }
 
-    //-------------------------------------------------------------------------------------
-
+    /** This is the main method to call to do typechecking. */
     public static ArrayList<ParaSig> check(Log log, ArrayList<Unit> units) {
-        VisitTypechecker tc=new VisitTypechecker(log);
+        VisitTypechecker tc=new VisitTypechecker();
+        tc.log=log;
         fillParams(units,log);
+        mergeunits(units,log);
         ArrayList<ParaSig> sigs=fillSig(units);
         tc.check(units,sigs);
         return sigs;
     }
 
+    /** This is step 1: figure out the instantiating parameters of each module. */
     private static void fillParams(ArrayList<Unit> units, Log log) {
-        // Here we fill in the "params" field in each Unit object.
         while(true) {
             boolean chg=false;
             ParaOpen missing=null;
@@ -124,11 +116,47 @@ public final class VisitTypechecker {
                 }
             }
             if (chg==false) {
-                if (missing!=null) throw missing.syntaxError("Failed to import the module, because one of the instantiating signature cannot be found");
-                break;
+                if (missing==null) break;
+                throw missing.syntaxError("Failed to import the module, because one of the instantiating signature cannot be found");
             }
         }
-        while(mergeunits(units,log)) {}
+    }
+
+    /** This is step 2: merging modules that have same filename and same instantiating arguments. */
+    private static void mergeunits(ArrayList<Unit> units, Log log) {
+    	while(true) {
+    		// Before merging, the only pointers that go between Unit objects are
+    		// (1) a unit's "params" may point to a sig in another unit
+    		// (2) a unit's "opens" may point to another unit
+    		// So when we find that two units A and B should be merged,
+    		// we iterate through every unit (except B), and replace
+    		// pointers into B with pointers into A.
+    		boolean chg=false;
+    		for(int i=0; i<units.size(); i++) {
+    			Unit a=units.get(i);
+    			for(int j=i+1; j<units.size(); j++) {
+    				Unit b=units.get(j);
+    				if (a.pos.filename.equals(b.pos.filename) && a.params.equals(b.params)) {
+    					log.log("MATCH FOUND ON "+a.pos.filename+"\n");
+    					a.aliases.addAll(b.aliases);
+    					Collections.sort(a.aliases, aliasComparator);
+    					Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);
+    					for(Map.Entry<String,ParaSig> p:a.sigs.entrySet())
+    						p.getValue().aliases=new ArrayList<String>(a.aliases);
+    					for(Unit c:units) if (c!=b) {
+    						for(Map.Entry<String,ParaSig> p:c.params.entrySet()) {
+    							if (isin(p.getValue(),asigs)) p.setValue(a.sigs.get(p.getValue().name));
+    							if (isin(p.getValue(),b.sigs)) p.setValue(a.sigs.get(p.getValue().name));
+    						}
+    						for(Map.Entry<String,Unit> p:c.opens.entrySet()) if (p.getValue()==b) p.setValue(a);
+    					}
+    					units.remove(j);
+    					chg=true;
+    				}
+    			}
+    		}
+    		if (!chg) return;
+    	}
     }
 
     private static<V> boolean isin(V x,Map<String,V> y) {
@@ -146,65 +174,14 @@ public final class VisitTypechecker {
         }
     };
 
-    private static boolean mergeunits(ArrayList<Unit> units, Log log) {
-        // Before merging, the only pointers that go between Unit objects are
-        // (1) a unit's "params" may point to a sig in another unit
-        // (2) a unit's "opens" may point to another unit
-        // So when we find that two units A and B should be merged,
-        // we iterate through every unit (except B), and replace
-        // pointers into B with pointers into A.
-        for(int i=0; i<units.size(); i++) {
-            Unit a=units.get(i);
-            for(int j=i+1; j<units.size(); j++) {
-                Unit b=units.get(j);
-                if (a.pos.filename.equals(b.pos.filename) && a.params.equals(b.params)) {
-                    log.log("MATCH FOUND ON "+a.pos.filename+"\n");
-                    a.aliases.addAll(b.aliases);
-                    Collections.sort(a.aliases, aliasComparator);
-                    Map<String,ParaSig> asigs=new LinkedHashMap<String,ParaSig>(a.sigs);
-                    for(Map.Entry<String,ParaSig> p:a.sigs.entrySet())
-                        p.getValue().aliases=new ArrayList<String>(a.aliases);
-                    for(Unit c:units) if (c!=b) {
-                        for(Map.Entry<String,ParaSig> p:c.params.entrySet()) {
-                            if (isin(p.getValue(),asigs)) p.setValue(a.sigs.get(p.getValue().name));
-                            if (isin(p.getValue(),b.sigs)) p.setValue(a.sigs.get(p.getValue().name));
-                        }
-                        for(Map.Entry<String,Unit> p:c.opens.entrySet()) if (p.getValue()==b) p.setValue(a);
-                    }
-                    units.remove(j);
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /************************************************************************************************************
-    For each toplevelsig and subsig: fill in the "sup", "subs", and "type" fields.
-    For each subsetsig: fill in its "sups" and "type" fields.
-    And we return a sorted list of all sigs (where if A extends or is subset of B, then B will preceed A)
-    => We complain if a SIG tries to extend a SUBSETSIG.
-    => We also complain if there is a cycle in SIG relationship.
-    ************************************************************************************************************/
-
-   private static void tsort(ParaSig x, LinkedHashMap<ParaSig,Boolean> status, ArrayList<ParaSig> list) {
-       // Performs a topological sort
-       status.put(x, Boolean.FALSE);
-       ParaSig y=x.sup();
-       if (y!=null) {
-           Boolean v=status.get(y);
-           if (v==null) tsort(y,status,list);
-           else if (v==Boolean.FALSE) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
-       }
-       for(ParaSig yy:x.sups()) {
-           Boolean v=status.get(yy);
-           if (v==null) tsort(yy,status,list);
-           else if (v==Boolean.FALSE) throw yy.syntaxError("Circular extension detected, involving the signature named \""+yy.fullname+"\"");
-       }
-       status.put(x, Boolean.TRUE);
-       list.add(x);
-   }
-
+    /**
+     * This is step 3: fill in the "sup", "sups", "subs", and "type" field of every ParaSig,
+     * then return the list of all ParaSig (topologically sorted).
+     * (meaning: if A extends or is subset of B, then B will preceed A in the list)
+     *
+     * <p/> We complain if a SIG tries to extend a SUBSETSIG.
+     * <p/> We also complain if there is a cycle in SIG relationship.
+     */
    private static ArrayList<ParaSig> fillSig(ArrayList<Unit> units) {
        ArrayList<ParaSig> sigs=new ArrayList<ParaSig>();
        for(Unit u:units) {
@@ -237,6 +214,149 @@ public final class VisitTypechecker {
            y.type=t;
        }
        return list;
+   }
+
+   private static void tsort(ParaSig x, LinkedHashMap<ParaSig,Boolean> status, ArrayList<ParaSig> list) {
+       // Performs a topological sort
+       status.put(x, Boolean.FALSE);
+       ParaSig y=x.sup();
+       if (y!=null) {
+           Boolean v=status.get(y);
+           if (v==null) tsort(y,status,list);
+           else if (v==Boolean.FALSE) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
+       }
+       for(ParaSig yy:x.sups()) {
+           Boolean v=status.get(yy);
+           if (v==null) tsort(yy,status,list);
+           else if (v==Boolean.FALSE) throw yy.syntaxError("Circular extension detected, involving the signature named \""+yy.fullname+"\"");
+       }
+       status.put(x, Boolean.TRUE);
+       list.add(x);
+   }
+
+   /** This is step 4: typecheck everything. */
+   private void check(ArrayList<Unit> units, List<ParaSig> sigs) {
+       objChoices.clear(); typeChoices.clear(); env.clear();
+       for(ParaSig s:sigs) {
+           Unit u=units.get(0).lookupPath(s.path);
+           check(s,u);
+       }
+       for(Unit u:units)
+         for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet())
+            for(ParaFun f:funi.getValue())
+              { objChoices.clear(); typeChoices.clear(); env.clear(); check(f,u); }
+       objChoices.clear(); typeChoices.clear(); env.clear();
+       for(Unit u:units) check(u);
+       objChoices.clear(); typeChoices.clear(); env.clear();
+   }
+   
+   /** This is step 4A: typechecking every field. */
+   private void check(ParaSig x, Unit u) {
+       // When typechecking the fields:
+       // * each field is allowed to refer to earlier fields in the same SIG,
+       //   as well as fields declared in any ancestor sig (as long as those ancestor sigs are visible from here)
+       //   as well as any visible SIG.
+       // * For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
+       //   then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
+       int fi=0;
+       List<VarDecl> newdecl=new ArrayList<VarDecl>();
+       List<VarDecl> olddecl=x.decls;
+       x.decls=newdecl;
+       for(VarDecl d:olddecl) {
+           Expr value=d.value;
+           for(int ni=0; ni<d.names.size(); ni++) {
+               ParaSig.Field f=x.fields.get(fi);
+               if (ni==0) {
+                   this.root=f; this.rootunit=u; value=addOne(this.resolve(value));
+                   if (value.type.arity()<1) throw x.typeError("Field declaration must be a set or relation, but its type is "+value.type);
+               }
+               f.halftype = value.type;
+               f.full.fulltype = x.type.product_of_anyEmptyness(value.type);
+               fi++;
+               log.log("Unit ["+u.aliases.get(0)+"], Sig "+x.name+", Field "+f.name+": "+f.full.fulltype+"\n");
+           }
+           newdecl.add(new VarDecl(d.pos, d, value));
+       }
+   }
+
+   /** This is step 4B: typechecking every the parameters and return types of every predicate/function. */
+   private void check(ParaFun fun, Unit u) {
+       // Now, typecheck all function/predicate PARAMETERS and RETURNTYPE
+       // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
+       // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
+       this.env.clear();
+       this.root=fun;
+       this.rootunit=u;
+       List<VarDecl> newdecls=new ArrayList<VarDecl>();
+       for(VarDecl d:fun.decls) {
+           Expr value=d.value;
+           for(int ni=0; ni<d.names.size(); ni++) {
+               String n=d.names.get(ni);
+               if (ni==0) value=addOne(this.resolve(value));
+               if (value.type.arity()<1) throw value.typeError("Function parameter must be a set or relation, but its type is "+value.type);
+               this.env.put(n, value.type);
+               log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", Param "+n+": "+value.type+"\n");
+           }
+           newdecls.add(new VarDecl(d.pos, d, value));
+       }
+       Expr type=fun.type;
+       if (type!=null) {
+           type=addOne(this.resolve(type));
+           if (type.type.arity()<1) throw type.typeError("Function return type must be a set or relation, but its type is "+type.type);
+           log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", RETURN: "+type.type+"\n");
+       }
+       this.env.clear();
+       fun.decls=newdecls; fun.type=type;
+   }
+
+   /** This is step 4C: typecheck (1) pred/fun bodies, (2) sig facts, (3) standalone facts, (4) assertions. */
+   private void check(Unit u) {
+       // These can refer to any SIG/FIELD/FUN/PRED visible from here.
+       String uu=u.aliases.iterator().next();
+       for(Map.Entry<String,List<ParaFun>> xi:u.funs.entrySet()) for(int xii=0; xii<xi.getValue().size(); xii++) {
+           ParaFun x=xi.getValue().get(xii);
+           this.env.clear(); this.root=null; this.rootunit=u;
+           for(VarDecl d:x.decls) for(String n:d.names) this.env.put(n, d.value.type);
+           Expr value=this.resolve(x.value);
+           log.log("Unit ["+uu+"], Pred/Fun "+x.name+", BODY:"+value.type+"\n");
+           if (x.type==null) {
+               if (!value.type.isBool) throw x.typeError("Predicate body must be a formula, but it has type "+value.type);
+           } else {
+               if (value.type.arity()<1) throw x.typeError("Function body must be a set or relation, but its type is "+value.type);
+               if (value.type.arity()!=x.type.type.arity()) throw x.typeError("Function body has type "+value.type+" but the return type must be "+x.type.type);
+               if (value.type.intersect(x.type.type).hasNoTuple()) throw x.typeError("Function return value is disjoint from its return type! Function body has type "+value.type+" but the return type must be "+x.type.type);
+           }
+           x.value=value;
+       }
+       this.env.clear();
+       for(Map.Entry<String,ParaSig> xi:u.sigs.entrySet()) {
+           ParaSig x=xi.getValue();
+           if (x.appendedFacts==null) continue;
+           this.root=x; this.rootunit=u; x.appendedFacts=this.resolve(x.appendedFacts);
+           if (!x.appendedFacts.type.isBool) throw x.typeError("Appended facts must be a formula, but it has type "+x.appendedFacts.type);
+           log.log("Unit ["+uu+"], Sig "+x.name+", Appended: "+x.appendedFacts.type+"\n");
+       }
+       for(Map.Entry<String,ParaFact> xi:u.facts.entrySet()) {
+           ParaFact x=xi.getValue();
+           this.root=null; this.rootunit=u; x.value=resolve(x.value);
+           log.log("Unit ["+uu+"], Fact ["+x.name+"]: "+x.value.type+"\n");
+           if (!x.value.type.isBool) throw x.typeError("Fact must be a formula, but it has type "+x.value.type);
+       }
+       for(Map.Entry<String,ParaAssert> xi:u.asserts.entrySet()) {
+           ParaAssert x=xi.getValue();
+           this.root=null; this.rootunit=u; x.value=resolve(x.value);
+           log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type+"\n");
+           if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
+       }
+       for(int xi=0; xi<u.runchecks.size(); xi++) {
+       	Expr x=u.runchecks.get(xi).checkexpr;
+       	if (x==null) continue;
+           this.root=null; this.rootunit=u; x=resolve(x);
+           log.log("Unit ["+uu+"], Check: "+x.type+"\n");
+           if (!x.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.type);
+           ParaRuncheck newentry = new ParaRuncheck(u.runchecks.get(xi), x);
+           u.runchecks.set(xi, newentry);
+       }
    }
 
     //---------------------------------------------------------------------------------
@@ -790,41 +910,6 @@ public final class VisitTypechecker {
         return x.op.make(x.pos, sub, p);
     }
 
-//  ################################################################################################
-
-    private Set<Object> populate(String x1) {
-        Set<Object> y;
-        String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
-        Object y3=env.get(x2); if (y3!=null) { y=new LinkedHashSet<Object>(); y.add(y3); return y; }
-        if (root instanceof ParaSig.Field) {
-            ParaSig.Field rt=(ParaSig.Field)root;
-            ParaSig rts=rt.parent();
-            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts.type); return y; }
-            y=rootunit.lookup_sigORparam(x2);
-            ParaSig.Field y2=rootunit.lookup_Field(rts, x2, rt.name);
-            if (y2!=null) { y.add(y2); if (y2.halftype==null) throw new ErrorInternal(y2.pos, y2, "This field is being referenced before it is typechecked!"); }
-        }
-        else if (root instanceof ParaSig) {
-            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add( ((ParaSig)root).type ); return y; }
-            y=rootunit.lookup_SigParamFunPred(x2);
-            ParaSig.Field y22=rootunit.lookup_Field((ParaSig)root,x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field)
-            {if (y2==y22) y.add(y2); else if (y22==null) y.add(((ParaSig.Field)y2).full); }
-        }
-        else if (root instanceof ParaFun) {
-            y=rootunit.lookup_sigORparam(x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
-        }
-        else if (root==null) {
-            y=rootunit.lookup_SigParamFunPred(x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
-        }
-        else {
-            y=new LinkedHashSet<Object>();
-        }
-        return y;
-    }
-
     //=========================================================//
     /** Method that typechecks an ExprName object. First pass. */
     //=========================================================//
@@ -854,6 +939,39 @@ public final class VisitTypechecker {
         return ans;
     }
 
+    private Set<Object> populate(String x1) {
+    	Set<Object> y;
+    	String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
+    	Object y3=env.get(x2); if (y3!=null) { y=new LinkedHashSet<Object>(); y.add(y3); return y; }
+    	if (root instanceof ParaSig.Field) {
+    		ParaSig.Field rt=(ParaSig.Field)root;
+    		ParaSig rts=rt.parent();
+    		if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts.type); return y; }
+    		y=rootunit.lookup_sigORparam(x2);
+    		ParaSig.Field y2=rootunit.lookup_Field(rts, x2, rt.name);
+    		if (y2!=null) { y.add(y2); if (y2.halftype==null) throw new ErrorInternal(y2.pos, y2, "This field is being referenced before it is typechecked!"); }
+    	}
+    	else if (root instanceof ParaSig) {
+    		if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add( ((ParaSig)root).type ); return y; }
+    		y=rootunit.lookup_SigParamFunPred(x2);
+    		ParaSig.Field y22=rootunit.lookup_Field((ParaSig)root,x2);
+    		for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field)
+    		{if (y2==y22) y.add(y2); else if (y22==null) y.add(((ParaSig.Field)y2).full); }
+    	}
+    	else if (root instanceof ParaFun) {
+    		y=rootunit.lookup_sigORparam(x2);
+    		for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
+    	}
+    	else if (root==null) {
+    		y=rootunit.lookup_SigParamFunPred(x2);
+    		for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
+    	}
+    	else {
+    		y=new LinkedHashSet<Object>();
+    	}
+    	return y;
+    }
+
     //==========================================================//
     /** Method that typechecks an ExprName object. Second pass. */
     //==========================================================//
@@ -868,10 +986,10 @@ public final class VisitTypechecker {
             Object z=objects.get(i);
             Type tt=types.get(i);
             if (t==tt
-                    ||(!t.isInt && !t.isBool && t.hasNoTuple())
-                    ||(t.isInt && tt.isInt)
-                    ||(t.isBool && tt.isBool)
-                    ||t.intersect(tt).hasTuple()) {
+                ||(!t.isInt && !t.isBool && t.hasNoTuple())
+                ||(t.isInt && tt.isInt)
+                ||(t.isBool && tt.isBool)
+                ||t.intersect(tt).hasTuple()) {
                 if (match!=null) throw x.typeError("The name \""+x.name+"\" is ambiguous here due to multiple match: "+match+" and "+z);
                 match=z;
             }
@@ -891,29 +1009,6 @@ public final class VisitTypechecker {
         if (match instanceof ParaFun)
             return new ExprName(x.pos, x.name, match, t);
         return new ExprName(x.pos, x.name, null, t);
-    }
-
-//  ################################################################################################
-
-    private boolean applicable(ParaFun f,List<Expr> args) {
-        int argi=0;
-        for(VarDecl d:f.decls) {
-            for(int j=0; j<d.names.size(); j++) {
-                Type arg=args.get(argi).type;
-                argi++;
-                if (arg.size()==0) continue;
-                if (d.value.type.size()==0) continue; // This should not happen, though.
-                if (arg.hasNoTuple() || d.value.type.hasNoTuple()) if (arg.arity()==d.value.type.arity()) continue;
-                if (arg.intersect(d.value.type).hasTuple()) continue;
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean containsApplicable(Set<Object> x) {
-        for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount>0) return true;
-        return false;
     }
 
     //=========================================================//
@@ -974,6 +1069,27 @@ public final class VisitTypechecker {
         Expr newx=new ExprJoin(x.pos, left, right, left.type.join(right.type));
         if (newx.type.hasNoTuple()) throw newx.typeError("The join operation here always yields an empty set! LeftType="+left.type+" RightType="+right.type);
         return newx;
+    }
+
+    private boolean applicable(ParaFun f,List<Expr> args) {
+    	int argi=0;
+    	for(VarDecl d:f.decls) {
+    		for(int j=0; j<d.names.size(); j++) {
+    			Type arg=args.get(argi).type;
+    			argi++;
+    			if (arg.size()==0) continue;
+    			if (d.value.type.size()==0) continue; // This should not happen, though.
+    			if (arg.hasNoTuple() || d.value.type.hasNoTuple()) if (arg.arity()==d.value.type.arity()) continue;
+    			if (arg.intersect(d.value.type).hasTuple()) continue;
+    			return false;
+    		}
+    	}
+    	return true;
+    }
+    
+    private boolean containsApplicable(Set<Object> x) {
+    	for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount>0) return true;
+    	return false;
     }
 
     //==========================================================//
@@ -1070,136 +1186,7 @@ public final class VisitTypechecker {
 
 //  ################################################################################################
 
-    private void check(ParaSig x, Unit u) {
-        // When typechecking the fields:
-        // * each field is allowed to refer to earlier fields in the same SIG,
-        //   as well as fields declared in any ancestor sig (as long as those ancestor sigs are visible from here)
-        //   as well as any visible SIG.
-        // * For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
-        //   then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
-        int fi=0;
-        List<VarDecl> newdecl=new ArrayList<VarDecl>();
-        List<VarDecl> olddecl=x.decls;
-        x.decls=newdecl;
-        for(VarDecl d:olddecl) {
-            Expr value=d.value;
-            for(int ni=0; ni<d.names.size(); ni++) {
-                ParaSig.Field f=x.fields.get(fi);
-                if (ni==0) {
-                    this.root=f; this.rootunit=u; value=addOne(this.resolve(value));
-                    if (value.type.arity()<1) throw x.typeError("Field declaration must be a set or relation, but its type is "+value.type);
-                }
-                f.halftype = value.type;
-                f.full.fulltype = x.type.product_of_anyEmptyness(value.type);
-                fi++;
-                log.log("Unit ["+u.aliases.get(0)+"], Sig "+x.name+", Field "+f.name+": "+f.full.fulltype+"\n");
-            }
-            newdecl.add(new VarDecl(d.pos, d, value));
-        }
-    }
-
-//  ################################################################################################
-
-    private void check(ParaFun fun, Unit u) {
-        // Now, typecheck all function/predicate PARAMETERS and RETURNTYPE
-        // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
-        // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
-        this.env.clear();
-        this.root=fun;
-        this.rootunit=u;
-        List<VarDecl> newdecls=new ArrayList<VarDecl>();
-        for(VarDecl d:fun.decls) {
-            Expr value=d.value;
-            for(int ni=0; ni<d.names.size(); ni++) {
-                String n=d.names.get(ni);
-                if (ni==0) value=addOne(this.resolve(value));
-                if (value.type.arity()<1) throw value.typeError("Function parameter must be a set or relation, but its type is "+value.type);
-                this.env.put(n, value.type);
-                log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", Param "+n+": "+value.type+"\n");
-            }
-            newdecls.add(new VarDecl(d.pos, d, value));
-        }
-        Expr type=fun.type;
-        if (type!=null) {
-            type=addOne(this.resolve(type));
-            if (type.type.arity()<1) throw type.typeError("Function return type must be a set or relation, but its type is "+type.type);
-            log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", RETURN: "+type.type+"\n");
-        }
-        this.env.clear();
-        fun.decls=newdecls; fun.type=type;
-    }
-
-//  ################################################################################################
-
-    private void check(Unit u) {
-        // Now, typecheck (1) function/predicate BODIES. (2) Signature facts. (3) Standalone facts (4) Assertions.
-        // These can refer to any SIG/FIELD/FUN/PRED visible from here.
-        String uu=u.aliases.iterator().next();
-        for(Map.Entry<String,List<ParaFun>> xi:u.funs.entrySet()) for(int xii=0; xii<xi.getValue().size(); xii++) {
-            ParaFun x=xi.getValue().get(xii);
-            this.env.clear(); this.root=null; this.rootunit=u;
-            for(VarDecl d:x.decls) for(String n:d.names) this.env.put(n, d.value.type);
-            Expr value=this.resolve(x.value);
-            log.log("Unit ["+uu+"], Pred/Fun "+x.name+", BODY:"+value.type+"\n");
-            if (x.type==null) {
-                if (!value.type.isBool) throw x.typeError("Predicate body must be a formula, but it has type "+value.type);
-            } else {
-                if (value.type.arity()<1) throw x.typeError("Function body must be a set or relation, but its type is "+value.type);
-                if (value.type.arity()!=x.type.type.arity()) throw x.typeError("Function body has type "+value.type+" but the return type must be "+x.type.type);
-                if (value.type.intersect(x.type.type).hasNoTuple()) throw x.typeError("Function return value is disjoint from its return type! Function body has type "+value.type+" but the return type must be "+x.type.type);
-            }
-            x.value=value;
-        }
-        this.env.clear();
-        for(Map.Entry<String,ParaSig> xi:u.sigs.entrySet()) {
-            ParaSig x=xi.getValue();
-            if (x.appendedFacts==null) continue;
-            this.root=x; this.rootunit=u; x.appendedFacts=this.resolve(x.appendedFacts);
-            if (!x.appendedFacts.type.isBool) throw x.typeError("Appended facts must be a formula, but it has type "+x.appendedFacts.type);
-            log.log("Unit ["+uu+"], Sig "+x.name+", Appended: "+x.appendedFacts.type+"\n");
-        }
-        for(Map.Entry<String,ParaFact> xi:u.facts.entrySet()) {
-            ParaFact x=xi.getValue();
-            this.root=null; this.rootunit=u; x.value=resolve(x.value);
-            log.log("Unit ["+uu+"], Fact ["+x.name+"]: "+x.value.type+"\n");
-            if (!x.value.type.isBool) throw x.typeError("Fact must be a formula, but it has type "+x.value.type);
-        }
-        for(Map.Entry<String,ParaAssert> xi:u.asserts.entrySet()) {
-            ParaAssert x=xi.getValue();
-            this.root=null; this.rootunit=u; x.value=resolve(x.value);
-            log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type+"\n");
-            if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
-        }
-        for(int xi=0; xi<u.runchecks.size(); xi++) {
-        	Expr x=u.runchecks.get(xi).checkexpr;
-        	if (x==null) continue;
-            this.root=null; this.rootunit=u; x=resolve(x);
-            log.log("Unit ["+uu+"], Check: "+x.type+"\n");
-            if (!x.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.type);
-            ParaRuncheck newentry = new ParaRuncheck(u.runchecks.get(xi), x);
-            u.runchecks.set(xi, newentry);
-        }
-    }
-
-//  ################################################################################################
-
-    public void check(ArrayList<Unit> units, List<ParaSig> sigs) {
-        objChoices.clear(); typeChoices.clear(); env.clear();
-        for(ParaSig s:sigs) {
-            Unit u=units.get(0).lookupPath(s.path);
-            check(s,u);
-        }
-        for(Unit u:units)
-          for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet())
-             for(ParaFun f:funi.getValue())
-               { objChoices.clear(); typeChoices.clear(); env.clear(); check(f,u); }
-        objChoices.clear(); typeChoices.clear(); env.clear();
-        for(Unit u:units) check(u);
-        objChoices.clear(); typeChoices.clear(); env.clear();
-    }
-
-//  ################################################################################################
-
+/*
 //  If basic2Vertex contains key bt, then the Vertex associated with bt is returned.
 //  Otherwise, a new Vertex vnew containing bt is created, a mapping from bt to vnew is
 //  added to basic2Vertex, and vnew returned.
@@ -1208,27 +1195,22 @@ public final class VisitTypechecker {
         if (v==null) { v=new Vertex(bt); basic2Vertex.put(bt,v); }
         return v;
     }
+*/
 
 //  EFFECTS: After the method returns, the supplied graph will
 //  contain an edge from vertex v1 to vertex v2 iff there exists an r1 in ut such
 //  that r1 = v1->v2 OR (v1 != v2 AND v1 & v2 is non-empty).
 //  EFFECTS:  the supplied map will contain the mapping from all basic types used
 //  in ut to their corresponding vertices in the supplied graph.
-    private static void _getClosureGraph(Type ut, DirectedGraph graph, Map<ParaSig,Vertex> basic2vertex) {
+    private static void _getClosureGraph(Type ut, SimpleGraph<ParaSig> graph) {
         // add edges between all basic types v1 and v2 for which r1 = v1->v2 and r1 in ut
         for (Type.Rel rt:ut)
-            if (rt.arity()==2)
-                graph.addEdge(graph.createEdge(_getVertex(rt.basicTypes.get(0), basic2vertex),
-                        _getVertex(rt.basicTypes.get(1), basic2vertex)));
+          if (rt.arity()==2)
+            graph.addEdge(rt.basicTypes.get(0), rt.basicTypes.get(1));
         // add edges between all basic types v1 and v2 for which (v1 != v2) && (v1 & v2 is non-empty)
-        for (Iterator iter1 = basic2vertex.values().iterator(); iter1.hasNext(); ) {
-            Vertex v1 = (Vertex) iter1.next();
-            ParaSig b1 = (ParaSig) v1.getObject();
-            for (Iterator iter2 = basic2vertex.values().iterator(); iter2.hasNext(); ) {
-                Vertex v2 = (Vertex) iter2.next();
-                if (v1!=v2 && b1.intersect((ParaSig)v2.getObject()).isNonEmpty()) graph.addEdge(v1, v2);
-            }
-        }
+        for (ParaSig b1: graph.getNodes())
+          for (ParaSig b2: graph.getNodes())
+            if (b1!=b2 && b1.intersect(b2).isNonEmpty()) graph.addEdge(b1,b2);
     }
 
 //  PRECONDITION:  (1) basic2vertex contains mappings from BasicTypes to nodes in graph;
@@ -1239,18 +1221,14 @@ public final class VisitTypechecker {
 //  EFFECTS:  the supplied map will be augmented with a mapping from bt to its corresponding
 //  corresponding vertices in the supplied graph, unless bt is already mapped, in which case
 //  nothing happens
-    private static void _expandClosureGraph(ParaSig bt, DirectedGraph graph, Map<ParaSig,Vertex> basic2vertex) {
-        if (!basic2vertex.containsKey(bt)) {
-            Vertex btVertex = new Vertex(bt);
-            graph.add(btVertex);
+    private static void _expandClosureGraph1(ParaSig bt, SimpleGraph<ParaSig> graph) {
+        if (!graph.getNodes().contains(bt)) {
+            graph.add(bt);
             // add edges between b1 and all of its subtypes and supertypes
-            for (Iterator bIter = basic2vertex.values().iterator(); bIter.hasNext(); ) {
-                Vertex vertex = (Vertex) bIter.next();
-                ParaSig other = (ParaSig) vertex.getObject();
-                if (!bt.intersect(other).isEmpty())
-                { graph.addEdge(btVertex,vertex); graph.addEdge(vertex,btVertex); }
+            for (ParaSig other: graph.getNodes()) {
+                if (bt!=other && !bt.intersect(other).isEmpty())
+                  { graph.addEdge(bt,other); graph.addEdge(other,bt); }
             }
-            basic2vertex.put(bt, btVertex);
         }
     }
 
@@ -1262,32 +1240,32 @@ public final class VisitTypechecker {
 //  (and vice versa)
 //  EFFECTS:  the supplied map will be augmented with mappings from all basic types used
 //  in ut to their corresponding vertices in the supplied graph.
-    private static void _expandClosureGraph(Type ut, DirectedGraph graph, Map<ParaSig,Vertex> basic2vertex) {
+    private static void _expandClosureGraph(Type ut, SimpleGraph<ParaSig> graph) {
         for (Type.Rel rt:ut) {
-            _expandClosureGraph(rt.basicTypes.get(0), graph, basic2vertex);
-            _expandClosureGraph(rt.basicTypes.get(1), graph, basic2vertex);
+            _expandClosureGraph1(rt.basicTypes.get(0), graph);
+            _expandClosureGraph1(rt.basicTypes.get(1), graph);
         }
     }
 
 //  childType' := {r1 | r1 in childType AND there exist basic types
 //  b1 and b2 such that b1->b2 in parentType AND r1 is on a path from b1 to b2}
     private static Type closureResolveChild(Type parentType, Type childType) {
+    	// We assume parentType.arity()==childType.arity()==2
         Type resolvedType = Type.make();
         if (parentType.size() > 0) {
-            Map<ParaSig,Vertex> basic2vertex = new LinkedHashMap<ParaSig,Vertex>();
-            DirectedGraph closure = new DirectedGraphImpl();
-            _getClosureGraph(childType, closure, basic2vertex);
-            _expandClosureGraph(parentType, closure, basic2vertex);
+            SimpleGraph<ParaSig> closure = new SimpleGraph<ParaSig>();
+            _getClosureGraph(childType, closure);
+            _expandClosureGraph(parentType, closure);
             // For each bt1->bt2 in childType, add it to resolvedType if there is a bt1'->bt2' in
             // parentType such that closure contains a path from bt1' to bt1 and a path from bt2 to bt2'
             for (Type.Rel rtChild: childType) {
-                Vertex cVertex0 = (Vertex) basic2vertex.get(rtChild.basicTypes.get(0));
-                Vertex cVertex1 = (Vertex) basic2vertex.get(rtChild.basicTypes.get(1));
+                ParaSig cVertex0 = rtChild.basicTypes.get(0);
+                ParaSig cVertex1 = rtChild.basicTypes.get(1);
                 for (Type.Rel rtParent: parentType) {
-                    Vertex pVertex0 = (Vertex) basic2vertex.get(rtParent.basicTypes.get(0));
-                    Vertex pVertex1 = (Vertex) basic2vertex.get(rtParent.basicTypes.get(1));
-                    if (closure.getPath(pVertex0,cVertex0)!=null && closure.getPath(cVertex1,pVertex1)!=null)
-                    { resolvedType=resolvedType.union(Type.make(rtChild)); break; }
+                    ParaSig pVertex0 = rtParent.basicTypes.get(0);
+                    ParaSig pVertex1 = rtParent.basicTypes.get(1);
+                    if (closure.hasPath(pVertex0,cVertex0) && closure.hasPath(cVertex1,pVertex1))
+                       { resolvedType=resolvedType.union(Type.make(rtChild)); break; }
                 }
             }
         }
