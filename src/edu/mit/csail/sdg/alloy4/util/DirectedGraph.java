@@ -57,8 +57,8 @@ public final class DirectedGraph<N> {
             if (start.equals(end)) return true;
             visited.add(start);
             for (N next: nodeToTargets.get(start))
-               if (!visited.contains(next))
-                  todo.add(next);
+                if (!visited.contains(next))
+                   todo.add(next);
             if (todo.size()==0) return false;
             start = todo.iterator().next();
             todo.remove(start);
