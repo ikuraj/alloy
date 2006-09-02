@@ -562,24 +562,27 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         final int overall;
         int bitwidth=(-1); // The bound on "int".
         for(ParaSig s:sigs) { sig2bound(s,-1); if (s.one && !s.subset) exact(s,true); }
-        if (cmd.names.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
-        for(String n:cmd.names) {
-            if (n.equals(ParaSig.BITWIDTH_NAME)) { bitwidth=cmd.getScope(n); continue; }
-            Set<Object> set=root.lookup_sigORparam(n);
+        if (cmd.map.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
+        for(Map.Entry<String,Integer> entry:cmd.map.entrySet()) {
+        	String name=entry.getKey();
+        	int scope=entry.getValue();
+        	boolean exact=(scope<0);
+        	if (scope<0) scope=0-(scope+1);
+            if (name.equals(ParaSig.BITWIDTH_NAME)) { bitwidth=scope; continue; }
+            Set<Object> set=root.lookup_sigORparam(name);
             Iterator<Object> it=set.iterator();
             if (set.size()>1) {
                 ParaSig choice1=(ParaSig)(it.next());
                 ParaSig choice2=(ParaSig)(it.next());
-                throw cmd.syntaxError("The name \""+n+"\" is ambiguous: it could be "+choice1.fullname+" or "+choice2.fullname);
+                throw cmd.syntaxError("The name \""+name+"\" is ambiguous: it could be "
+                		              +choice1.fullvname+" or "+choice2.fullvname);
             }
-            if (set.size()<1) throw cmd.syntaxError("The name \""+n+"\" cannot be found");
+            if (set.size()<1) throw cmd.syntaxError("The name \""+name+"\" cannot be found");
             ParaSig s=(ParaSig)(it.next());
             if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+s.fullname+"\"");
-            int sc=cmd.getScope(n);
-            //if (s.one) {exact(s,true); if (sc!=1) throw cmd.syntaxError("The signature \""+s.fullname+"\" was declared to be one, so its scope cannot be "+sc); }
-            if (cmd.isExact(n)==true) exact(s,true);
+            if (exact) exact(s,true);
             if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
-            bound("#6: ",cmd, s, sc);
+            bound("#6: ",cmd, s, scope);
         }
         // Ensure "int" and "Int" are consistent
         if (bitwidth<0) bitwidth=4;
@@ -673,6 +676,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     // zzz: Should make sure we don't load Int unless we need to
 
+    private boolean alloy3(ParaSig s, Unit u) {
+    	ParaSig elem=u.params.get("elem");
+        return (elem!=null
+        		&& elem!=ParaSig.NONE && elem!=ParaSig.SIGINT && elem!=ParaSig.UNIV
+        		&& s.pos!=null && s.pos.filename!=null
+        		&& s.pos.filename.endsWith("util/ordering.als")
+        		&& s.name.equals("Ord"));
+    }
+
     public List<Result> codegen(List<ParaSig> sigs)  {
         Formula kfact=Formula.TRUE;
         // Generate the relations for the SIGS.
@@ -684,11 +696,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         // Generate the relations for the FIELDS
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
             Unit u=units.get(0).lookupPath(s.path);
-            // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 below
-            if (s.pos!=null && s.pos.filename!=null
-                    && s.pos.filename.endsWith("util/ordering.als") && s.name.equals("Ord")
-                    && u.params.get("elem")!=null
-            ) {
+            if (alloy3(s,u)) {
                 Relation first=Relation.unary("first_");
                 Relation last=Relation.unary("last_");
                 Relation next=Relation.binary("next_");
@@ -700,7 +708,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 kfact=next.totalOrder((Relation)(rel(s2)), first, last).and(kfact);
                 continue;
             }
-            // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
             int fi=0;
             for(VarDecl fd:s.decls) {
                 for(String fn:fd.names) {
@@ -750,9 +757,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         };
         for(Unit u:units) for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
           ParaSig s=e.getValue();
-          // zzz ALLOY3 compatiblity hack below
-          if (s.pos!=null && s.pos.filename!=null && s.pos.filename.endsWith("util/ordering.als") && s.name.equals("Ord")) continue;
-          // zzz ALLOY3 compatiblity hack above
+          if (alloy3(s,u)) continue;
           Expr temp=s.appendedFacts;
           int f=0;
           for(VarDecl d:s.decls) {
@@ -799,14 +804,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 sig2lowerbound.clear();
                 sig2upperbound.clear();
                 int bitwidth=compute(units.get(0), sigs, x);
-                // zzz ALLOY3 compatiblity hack below
-                for(ParaSig s:sigs) if (s!=ParaSig.SIGINT && s.pos.filename.endsWith("util/ordering.als") && s.name.equals("Ord")) {
-                    ParaSig s2=units.get(0).lookupPath(s.path).params.get("elem");
-                    if (sig2bound(s2)<=0) throw x.syntaxError("The signature "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
-                    log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2)+"\n");
-                    if (s2!=null) exact(s2,true);
+                for(ParaSig s:sigs) {
+                	Unit u=units.get(0).lookupPath(s.path);
+                	if (alloy3(s,u)) {
+                		ParaSig s2=u.params.get("elem");
+                		if (sig2bound(s2)<=0) throw x.syntaxError("The signature "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
+                		log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2)+"\n");
+                		if (s2!=null) exact(s2,true);
+                	}
                 }
-                // zzz ALLOY3 compatiblity hack above
                 this.env.clear();
                 result.add(runcheck(x, units, bitwidth, sigs, kfact));
             }
@@ -936,9 +942,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             bounds.bound((Relation)(rel(s)),ts); sig2ts(s,ts);
         }
         // Bound the FIELDS
-        for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
-            // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 below
-            if (s.pos.filename.endsWith("util/ordering.als") && s.name.equals("Ord")) {
+        for(Unit u:units) for(Map.Entry<String,ParaSig> entry:u.sigs.entrySet()) {
+        	ParaSig s=entry.getValue();
+            if (s==ParaSig.SIGINT) continue;
+            if (alloy3(s,u)) {
                 Relation first=null, last=null, next=null;
                 TupleSet ts1=null, ts2=null;
                 for(ParaSig.Field f:s.fields) {
@@ -951,7 +958,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 bounds.bound(next,ts2);
                 continue;
             }
-            // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
             int fi=0;
             for(VarDecl fd:s.decls) {
                 for(int fn=fd.names.size(); fn>0; fn--) {
@@ -1052,8 +1058,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
         Instance inst=sol.instance();
+        log.log(inst.toString());
         Evaluator eval=new Evaluator(inst);
-        out.printf("<solution name=\"%s\">%n", "this");
+        out.printf("<ssolution name=\"%s\">%n", "this");
         Set<Relation> rels=new LinkedHashSet<Relation>(inst.relations());
         for(Unit u:units) {
             String n=u.aliases.get(0);
@@ -1062,18 +1069,16 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 out.printf("<sig name=\"univ\">%n");
                 for(Tuple t:eval.evaluate(kuniv)) {
                     String atom=(String)(t.atom(0));
-                    if (atom.startsWith("Int_")) continue;
+                    //if (atom.startsWith("Int_")) continue;
                     out.printf("  <atom name=\"%s\"/>%n", atom);
                 }
                 out.printf("</sig>%n");
-                /*
                 out.printf("<sig name=\"Int\" extends=\"univ\">%n");
                 for(Tuple t:eval.evaluate(Relation.INTS)) {
                     String atom=(String)(t.atom(0));
                     out.printf("  <atom name=\"%s\"/>%n", atom);
                 }
                 out.printf("</sig>%n");
-                */
             }
             for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
                 String lastatom="";
@@ -1090,9 +1095,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     lastatom=(String)(t.atom(0));
                     out.printf("  <atom name=\"%s\"/>%n", lastatom);
                 }
-                if (s.pos!=null && s.pos.filename!=null && s.pos.filename.endsWith("util/ordering.als")
-                        && s.name.equals("Ord") && u.params.get("elem")!=null) {
-                    // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 below
+                if (alloy3(s,u)) {
                     Relation rfirst = right(rel(s.fields.get(0).full));
                     Relation rlast = right(rel(s.fields.get(1).full));
                     Relation rnext = right(rel(s.fields.get(2).full));
@@ -1111,7 +1114,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     out.printf("    <type> ( %s ) -> ( %s ) </type>%n", u.params.get("elem").fullvname, u.params.get("elem").fullvname);
                     writeXML_tupleset(out, lastatom, inst.tuples(rnext));
                     out.printf("  </field>%n");
-                    // zzz SPECIAL COMPATIBILITY HACK WITH ALLOY3 above
                 } else {
                     int fi=0;
                     for(VarDecl fd:s.decls) for(String fn:fd.names) {

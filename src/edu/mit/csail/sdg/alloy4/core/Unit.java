@@ -47,13 +47,13 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     sigs.put(x.name, x);
   }
 
-  private int anonymous_factassert_id=0;
+  private int anonymous_id=0;
 
   // This lists all the FACTS defined inside this file.
   // The NAME must not contain any "/" or "@"
   public final Map<String,ParaFact> facts=new LinkedHashMap<String,ParaFact>();
   public void makeFact(Pos p,String n,Expr v) {
-    if (n==null || n.length()==0) n="*"+(++anonymous_factassert_id)+"*";
+    if (n==null || n.length()==0) n="*"+(++anonymous_id)+"*";
     ParaFact x=new ParaFact(p,aliases.get(0),n,v);
     if (asserts.containsKey(n)) throw x.syntaxError("Within the same file, a fact cannot have the same name as another assertion!");
     if (facts.containsKey(n)) throw x.syntaxError("Within the same file, a fact cannot have the same name as another fact!");
@@ -67,7 +67,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   // The NAME must not contain any "/" or "@"
   public final Map<String,ParaAssert> asserts=new LinkedHashMap<String,ParaAssert>();
   public String makeAssert(Pos p,String n,Expr v) {
-    if (n==null || n.length()==0) n="*"+(++anonymous_factassert_id)+"*";
+    if (n==null || n.length()==0) n="*"+(++anonymous_id)+"*";
     ParaAssert x=new ParaAssert(p,aliases.get(0),n,v);
     if (asserts.containsKey(n)) throw x.syntaxError("Within the same file, an assertion cannot have the same name as another assertion!");
     if (facts.containsKey(n)) throw x.syntaxError("Within the same file, an assertion cannot have the same name as another fact!");
@@ -115,8 +115,9 @@ public final class Unit { // Represents 1 instantiation of an ALS file
   }
   public void makeRuncheck(Pos p,Expr e,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
     if (!aliases.contains("")) return;
-    String n=makeAssert(p,"",e);
-    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, true, o, exp, s, exa));
+    String n;
+    if (c) n=makeAssert(p,"",e); else { n="*"+(++anonymous_id)+"*"; makeFun(p,n,null,new ArrayList<VarDecl>(),null,e); }
+    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, exa));
   }
 
   private void lookupNQsig_noparam(String name,Set<Object> ans) { // It ignores "params"

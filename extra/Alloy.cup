@@ -549,6 +549,21 @@ Paragraphs ::= Paragraphs RUN:o  Name:n  Scope:s  {:
   parser.alloyunit.makeRuncheck(o, n.name, false, overall,expects,scope,exact);
 :};
 
+Paragraphs ::= Paragraphs RUN:o  ExprPara:e  Scope:s  {:
+  int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
+  int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
+  Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
+  Set<String> exact=new LinkedHashSet<String>();
+  for(int i=2; i<s.size()-1; i=i+2) {
+    String a=s.get(i);
+    String b=s.get(i+1);
+    if (a.charAt(0)=='e') { exact.add(b); a=a.substring(1); }
+    if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
+    scope.put(b, Integer.parseInt(a));
+  }
+  parser.alloyunit.makeRuncheck(o, e, false, overall,expects,scope,exact);
+:};
+
 Expects    ::=                 {: RESULT="";                         :};
 Expects    ::= EXPECT NUMBER:a {: RESULT=""+((ExprConstant)a).num(); :};
 

@@ -79,7 +79,7 @@ public final class ParaOpen extends Para {
      * @param path - a valid path to the Unit containing the paragraph
      * @param alias - the alias for the imported module ("" if the user intends to use the filename as the alias)
      * @param list - the list of instantiating arguments
-     * @param file - the relative filename of the file being imported (without the ".als" part)
+     * @param filename - the relative filename of the file being imported (without the ".als" part)
      *
      * @throws ErrorSyntax if path contains '@'
      * @throws ErrorSyntax if filename is ""

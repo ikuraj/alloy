@@ -16,14 +16,14 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 
 public final class ParaSig extends Para {
 
-    public static final ParaSig UNIV=new ParaSig("$univ","");
-    public static final ParaSig NONE=new ParaSig("$none","");
-    public static final ParaSig SIGINT=new ParaSig("$Int","");
+    public static final ParaSig UNIV=new ParaSig("univ","");
+    public static final ParaSig NONE=new ParaSig("none","");
+    public static final ParaSig SIGINT=new ParaSig("Int","");
 
-    public static final String UNIV_NAME = "$univ";
-    public static final String NONE_NAME = "$none";
-    public static final String SIGINT_NAME = "$Int";
-    public static final String BITWIDTH_NAME = "$int";
+    public static final String UNIV_NAME = "univ";
+    public static final String NONE_NAME = "none";
+    public static final String SIGINT_NAME = "Int";
+    public static final String BITWIDTH_NAME = "int";
 
     // Abstract or not. Note, if a sig is abstract, it cannot be a subset sig (ie. "in" field must be null)
     public final boolean abs;
