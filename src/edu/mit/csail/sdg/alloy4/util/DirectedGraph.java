@@ -12,48 +12,40 @@ import java.util.LinkedHashMap;
  *
  * <br/> Note: it uses N.equals() for node equality.
  *
+ * <p/> <b>Invariant:</b>  nodes.contains(x) iff nodeToTargets.containsKey(x)
+ * 
  * @author Felix Chang
  *
  * @param <N> - the node type
  */
-public class DirectedGraph<N> {
+public final class DirectedGraph<N> {
 
-    /**
-     * This field maps each node in the directed graph to its "directed" neighbors.
-     *
-     * <p/>   More precisely, given a directed graph with N=nodes and E=edges, then
-     * <br/>  (1)        n in N  iff  nodeToTargets.containsKey(n)
-     * <br/>  (2)  (n1,n2) in E  iff  nodeToTargets.get(n1).contains(n2)
-     * <br/>  In particular, if n1 has "m" identical edges going to n2,
-     * then n2 will appear exactly m times in nodeToTargets.get(n1)
-     */
-    private Map<N,List<N>> nodeToTargets = new LinkedHashMap<N,List<N>>();
+	/** This field stores the set of nodes in the graph. */
+	private final Set<N> nodes = new LinkedHashSet<N>();
 
-    /** This returns the set of nodes in the graph. */
-    public Set<N> getNodes() { return nodeToTargets.keySet(); }
+    /** This field maps each node in the directed graph to its "directed" neighbors. */
+    private final Map<N,List<N>> nodeToTargets = new LinkedHashMap<N,List<N>>();
+
+    /** Default constructor that generates an empty graph. */
+    public DirectedGraph() { }
+
+    /** This returns a copy of the set of nodes in the graph. */
+    public List<N> getNodes() { return new ArrayList<N>(nodes); }
 
     /** This adds a node to the graph if it is not in the graph already. */
     public void addNode(N newnode){
-        if (!nodeToTargets.containsKey(newnode)) {
+        if (!nodes.contains(newnode)) {
+            nodes.add(newnode);
             nodeToTargets.put(newnode, new ArrayList<N>());
         }
     }
 
-    /** This adds a directed edge from v1 to v2 (even if there were already edges from v1 to v2). */
+    /** This adds a directed edge from v1 to v2 if there wasn't an edge already. */
     public void addEdge(N v1, N v2) {
         addNode(v1);
         addNode(v2);
-        nodeToTargets.get(v1).add(v2);
-    }
-
-    /**
-     * This returns the list of neighbors reachable via 1 directed edge.
-     * If there are multiple edges going to the same neighbor,
-     * this method will return duplicates.
-     */
-    private List<N> getTargets(N node) {
-        addNode(node);
-        return nodeToTargets.get(node);
+        List<N> targets=nodeToTargets.get(v1);
+        if (!targets.contains(v2)) targets.add(v2);
     }
 
     /** Returns true if and only if there is a directed path from start node to end node. */
@@ -63,7 +55,9 @@ public class DirectedGraph<N> {
         while(true) {
             if (start.equals(end)) return true;
             visited.add(start);
-            for (N next: getTargets(start)) if (!visited.contains(next)) todo.add(next);
+            for (N next: nodeToTargets.get(start))
+               if (!visited.contains(next))
+                  todo.add(next);
             if (todo.size()==0) return false;
             start = todo.iterator().next();
             todo.remove(start);
