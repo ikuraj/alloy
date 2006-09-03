@@ -8,13 +8,15 @@ import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.Pos;
 
 /**
- * Immutable; represents a function/predicate call
- * (note: parser must not create ExprCall nodes, only ExprJoin nodes).
+ * Immutable; represents a call
+ * (Note: only typechecker may make ExprCall nodes; others must make only ExprJoin nodes).
  *
  * <p/>
- * During parsing, it's not easy to tell if expressions
+ * Before typechecking, it's not easy to tell if expressions
  * like "a[b]" or "b.a" are joins or calls.
- * So instead, the parser should always generate ExprJoin nodes.
+ *
+ * <p/>
+ * So instead, everyone (except the typechecker) must create only ExprJoin nodes.
  * The typechecker will convert it to an appropriate ExprCall node if it's a call.
  *
  * <p/> <b>Invariant:</b>  name!=null.
@@ -64,7 +66,7 @@ public final class ExprCall extends Expr {
      * @param name - the name of the procedure
      * @param fun - the procedure (null if this expression has not been typechecked)
      * @param args - the list of arguments
-     * @param type - the type (null if this expression has not been typechecked)
+     * @param type - the type
      *
      * @throws ErrorInternal if pos==null, name==null, args==null, or at least one argument is null
      * @throws ErrorInternal if name is equal to "" or "@"
@@ -73,6 +75,8 @@ public final class ExprCall extends Expr {
      */
     public ExprCall(Pos pos, String name, ParaFun fun, List<Expr> args, Type type) {
         super(pos,type,0);
+        if (type==null)
+        	throw internalError("ExprCall nodes must only be created by the typechecker.");
         this.name=nonnull(name);
         this.fun=fun;
         this.args=Collections.unmodifiableList(new ArrayList<Expr>(nonnull(args)));

@@ -89,12 +89,21 @@ public final class ExprBinary extends Expr {
     }
 
     /**
-     * Generate a new type error exception with "msg" as the message,
-     * and include the left-hand-type "lefttype"
-     * and right-hand-type "righttype" in the message.
+     * Convenience method that generate a new type error exception with "msg" as the message,
+     * and include the left bounding type "leftType"
+     * and right bounding type "rightType" in the message.
      */
-    public final ErrorType typeError(String msg, Type leftType, Type rightType) {
-        return typeError(msg+" Left type = "+leftType+" Right type = "+rightType);
+    public ErrorType boundingTypeError(String msg, Type leftType, Type rightType) {
+        return typeError(msg+" Left bounding type = "+leftType+", Right bounding type = "+rightType);
+    }
+
+    /**
+     * Convenience method that generate a new type error exception with "msg" as the message,
+     * and include the left relevant type "leftType"
+     * and right relevant type "rightType" in the message.
+     */
+    public ErrorType relevantTypeError(String msg, Type leftType, Type rightType) {
+        return typeError(msg+" Left relevant type = "+leftType+", Right relevant type = "+rightType);
     }
 
     /** This class contains all possible binary operators. */

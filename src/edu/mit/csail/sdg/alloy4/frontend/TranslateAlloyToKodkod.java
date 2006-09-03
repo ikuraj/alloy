@@ -105,14 +105,18 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         throw x.internalError("This should have been a set or a relation! Instead it is "+y);
     }
 
-    /*==============================*/
-    /** Evaluates an ExprJoin node. */
-    /*==============================*/
+    /*=============================*/
+    /** Evaluates an ExprITE node. */
+    /*=============================*/
 
-    public Object accept(ExprJoin x) {
-        Expression a=cset(x.left);
-        Expression b=cset(x.right);
-        return a.join(b);
+    public Object accept(ExprITE x) {
+        Formula c=cform(x.cond);
+        Object l=x.left.accept(this);
+        if (l instanceof Formula)
+            return c.implies((Formula)l).and(c.not().implies(cform(x.right)));
+        if (l instanceof Expression)
+            return c.thenElse((Expression)l,cset(x.right));
+        return c.thenElse((IntExpression)l,cint(x.right));
     }
 
     /*================================*/
@@ -229,20 +233,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         Formula pa=isInAM(r,ab,aa,bb);
         Formula pb=isInNB(r,ab,aa,bb);
         return r.in(y0).and(pa).and(pb);
-    }
-
-    /*=============================*/
-    /** Evaluates an ExprITE node. */
-    /*=============================*/
-
-    public Object accept(ExprITE x) {
-        Formula c=cform(x.cond);
-        Object l=x.left.accept(this);
-        if (l instanceof Formula)
-            return c.implies((Formula)l).and(c.not().implies(cform(x.right)));
-        if (l instanceof Expression)
-            return c.thenElse((Expression)l,cset(x.right));
-        return c.thenElse((IntExpression)l,cint(x.right));
     }
 
     /*=============================*/
@@ -439,6 +429,42 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         ans=env.get(x.name);
         if (ans==null) throw x.internalError("ExprName \""+x.name+"\" cannot be found during code gen! r=="+r);
         return ans;
+    }
+
+    /*==============================*/
+    /** Evaluates an ExprJoin node. */
+    /*==============================*/
+
+    public Object accept(ExprJoin x) {
+    	/*
+    	int count=1;
+    	ExprJoin ptr=x;
+    	while(ptr.right instanceof ExprJoin) { count++; ptr=(ExprJoin)(ptr.right); }
+    	if (ptr.right instanceof ExprName && ((ExprName)ptr.right).object instanceof ParaFun) {
+    		ParaFun f=(ParaFun) (((ExprName)ptr.right).object);
+			if (f.argCount>count)
+				throw x.internalError("Argument count mismatch. This should have been detected by the typechecker!");
+    		if (f.argCount==count) {
+    			Env newenv=new Env();
+    			for(int di=f.decls.size()-1; di>=0; di--) {
+    				VarDecl d=f.decls.get(di);
+    				for(int ni=d.names.size()-1; ni>=0; ni--) {
+    					String n=d.names.get(ni);
+    					newenv.put(n, cset(x.left));
+    					x=(ExprJoin)(x.right);
+    				}
+    			}
+    			Env oldenv=this.env;
+    			this.env=newenv;
+    			Object ans=f.value.accept(this);
+    			this.env=oldenv;
+    			return ans;
+    		}
+    	}
+    	*/
+        Expression a=cset(x.left);
+        Expression b=cset(x.right);
+        return a.join(b);
     }
 
     /*==============================*/

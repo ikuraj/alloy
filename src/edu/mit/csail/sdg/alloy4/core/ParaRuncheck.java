@@ -10,7 +10,7 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 /**
  * Immutable; reresents a "run" or "check" command.
  *
- * <p/> <b>Invariant:</b>  the map does not contain any duplicate names
+ * <p/> <b>Invariant:</b>  the map does not contain ""
  * <p/> <b>Invariant:</b>  expects == -1, 0, or 1
  * <p/> <b>Invariant:</b>  overall >= -1
  *
@@ -66,14 +66,14 @@ public final class ParaRuncheck extends Para {
      *
      * @throws ErrorSyntax if the path contains '@'
      * @throws ErrorSyntax if the name contains '@' or '/', or is equal to ""
-     * @throws ErrorSyntax if at least one of the signature name is ""
+     * @throws ErrorSyntax if one of the signature name is ""
      * @throws ErrorInternal if pos==null, path==null, name==null, or scope==null
      */
     public ParaRuncheck(Pos pos, String path, String name, boolean check,
         int overall, int expects, Map<String,Integer> scope) {
         super(pos,path,name);
         if (name.length()==0)
-            throw this.syntaxError(
+            throw syntaxError(
                "The \"run\" and \"check\" statement must give the name of the pred/fun/assert to check.");
         this.check=check;
         this.overall=(overall<0 ? -1 : overall);

@@ -5,7 +5,16 @@ import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.Pos;
 
 /**
- * Immutable; represents a relational join expression.
+ * Immutable; represents a relational join expression
+ * (though the typechecker may later replace this with an ExprCall node).
+ *
+ * <p/>
+ * Before typechecking, it's not easy to tell if expressions
+ * like "a[b]" or "b.a" are joins or calls.
+ *
+ * <p/>
+ * So instead, everyone (except the typechecker) must create only ExprJoin nodes.
+ * The typechecker will convert it to an appropriate ExprCall node if it's a call.
  *
  * <p/> <b>Invariant:</b>  left!=null && left.mult==0
  * <p/> <b>Invariant:</b>  right!=null && right.mult==0

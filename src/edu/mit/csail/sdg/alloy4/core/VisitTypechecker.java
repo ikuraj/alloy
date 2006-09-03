@@ -485,31 +485,31 @@ public final class VisitTypechecker {
                     for (Type.Rel aa:a)
                       if (aa.arity()==bb.arity() && aa.basicTypes.get(0).intersect(bb.basicTypes.get(0)).isNonEmpty())
                         { c=a.union(b); break bigbreak; }
-                throw x.typeError("++ is irrelevant because its right hand side can never override the left hand side!",a,b);
+                throw x.boundingTypeError("++ is irrelevant because its right hand side can never override the left hand side!",a,b);
             case PLUS:
                 // RESULT=LEFT+RIGHT, if exists a in left, b in right, such that a.arity==b.arity
                 a=left.type;
                 b=right.type;
                 if (a.hasCommonArity(b)) { c=a.union(b); if (a.isInt && b.isInt) c=Type.makeInt(c); break; }
                 if (a.isInt && b.isInt) { c=Type.INT; break; }
-                throw x.typeError("+ can be used only between 2 sets and relations of the same arity, or between 2 integer expressions!",a,b);
+                throw x.boundingTypeError("+ can be used only between 2 sets and relations of the same arity, or between 2 integer expressions!",a,b);
             case MINUS:
                 // RESULT=LEFT, if exists a in left, b in right, such that a.arity==b.arity and (a&b is nonempty)
                 a=left.type;
                 b=right.type;
                 if (a.size()>0 || b.size()>0) {
                     if (a.intersect(b).hasTuple()) { c=a; if (a.isInt && b.isInt) c=Type.makeInt(c); break; }
-                    throw x.typeError("- is irrelevant because the two expressions are disjoint!",a,b);
+                    throw x.boundingTypeError("- is irrelevant because the two expressions are disjoint!",a,b);
                 }
                 if (a.isInt && b.isInt) { c=Type.INT; break; }
-                throw x.typeError("- can be used only between 2 sets and relations of the same arity, or between 2 integer expressions!",a,b);
+                throw x.boundingTypeError("- can be used only between 2 sets and relations of the same arity, or between 2 integer expressions!",a,b);
             case INTERSECT:
                 // RESULT TYPE = { a&b | a in leftType, b in rightType, a.arity==b.arity } if it's nonempty()
                 a=cset(left);
                 b=cset(right);
                 c=a.intersect(b);
                 if (c.hasTuple()) break;
-                throw x.typeError("& failed because there is an arity mismatch, or the 2 expressions are always disjoint!",a,b);
+                throw x.boundingTypeError("& failed because there is an arity mismatch, or the 2 expressions are always disjoint!",a,b);
             case ARROW: case ANY_ARROW_SOME: case ANY_ARROW_ONE: case ANY_ARROW_LONE:
             case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE:
             case ONE_ARROW_ANY: case ONE_ARROW_SOME: case ONE_ARROW_ONE: case ONE_ARROW_LONE:
@@ -519,30 +519,30 @@ public final class VisitTypechecker {
                 b=cset(right);
                 c=a.product_of_sameEmptyness(b);
                 if (c.size()>0) break;
-                throw x.typeError("-> cannot be used to combine empty and non-empty types!",a,b);
+                throw x.boundingTypeError("-> cannot be used to combine empty and non-empty types!",a,b);
             case DOMAIN:
                 // RESULT TYPE = { (B1&A)->B2->B3 | exists unary A in left, exists B1->B2->B3 in right } if nonempty()
                 a=cset(left);
                 b=cset(right);
                 c=b.domainRestrict(a);
                 if (c.hasTuple()) break;
-                throw x.typeError("<: failed because left and domain[right] are always disjoint!",a,b);
+                throw x.boundingTypeError("<: failed because left and domain[right] are always disjoint!",a,b);
             case RANGE:
                 // RESULT TYPE = { A1->A2->(A3&B) | exists unary B in right, exists A1->A2->A3 in left } if nonempty()
                 a=cset(left);
                 b=cset(right);
                 c=a.rangeRestrict(b);
                 if (c.hasTuple()) break;
-                throw x.typeError(":> failed because range(left) and right are always disjoint!",a,b);
+                throw x.boundingTypeError(":> failed because range(left) and right are always disjoint!",a,b);
             case IN:
                 // SUCCESS if exists a in left, and b in right, such that (a.arity==b.arity && a&b!=NONE)
                 a=cset(left);
                 b=cset(right);
                 c=a.intersect(b);
                 if (c.size()==0 || (a.hasTuple() && b.hasTuple() && c.hasNoTuple()))
-                    throw x.typeError("Subset operator is redundant, because the types are always disjoint!",a,b);
+                    throw x.boundingTypeError("Subset operator is redundant, because the types are always disjoint!",a,b);
                 if (a.hasNoTuple())
-                    throw x.typeError("Subset operator is redundant, because the left-hand-side expression is always empty!",a,b);
+                    throw x.boundingTypeError("Subset operator is redundant, because the left-hand-side expression is always empty!",a,b);
                 c=Type.FORMULA;
                 break;
             case EQUALS:
@@ -552,7 +552,7 @@ public final class VisitTypechecker {
                 c=a.intersect(b);
                 if (c.size()!=0 && (a.hasNoTuple() || b.hasNoTuple() || c.hasTuple())) {c=Type.FORMULA; break;}
                 if (a.isInt && b.isInt) { c=Type.FORMULA; break; }
-                throw x.typeError("= can be used only between 2 nondisjoint sets and relations, or 2 integer expressions!",a,b);
+                throw x.boundingTypeError("= can be used only between 2 nondisjoint sets and relations, or 2 integer expressions!",a,b);
         }
         if (c==null) throw x.internalError("Unexpected operator ("+x.op+") encountered in ExprBinary typechecker!");
         return x.op.make(x.pos, left, right, c);
@@ -586,7 +586,7 @@ public final class VisitTypechecker {
                 if (p.size()==0) throw x.typeError("This must be an integer, a set or a relation!");
                 a=p;
                 b=p.intersect(b);
-                if (b.hasNoTuple()) throw x.typeError("Inessential difference (right expression is redundant)",a,b);
+                if (b.hasNoTuple()) throw x.relevantTypeError("Inessential difference (right expression is redundant)",a,b);
                 break;
             }
             case PLUS: {
@@ -600,9 +600,9 @@ public final class VisitTypechecker {
                 // Otherwise, child.type := child.type & parent.type
                 // ALSO: for OVERRIDE, make sure the essential left and right types are override-compatible
                 if (p.size()==0) throw x.typeError("This must be a set or a relation!");
-                a=p.intersect(a); if (a.hasNoTuple()) throw x.typeError("Inessential union: the left expression is redundant",a,b);
-                b=p.intersect(b); if (b.hasNoTuple()) throw x.typeError("Inessential union: the right expression is redundant",a,b);
-                if (x.op==ExprBinary.Op.PLUSPLUS && !b.canOverride(a)) throw x.typeError("Relevant types incompatible for relational override",a,b);
+                a=p.intersect(a); if (a.hasNoTuple()) throw x.relevantTypeError("Inessential union: the left expression is redundant",a,b);
+                b=p.intersect(b); if (b.hasNoTuple()) throw x.relevantTypeError("Inessential union: the right expression is redundant",a,b);
+                if (x.op==ExprBinary.Op.PLUSPLUS && !b.canOverride(a)) throw x.relevantTypeError("Relevant types incompatible for relational override",a,b);
                 break;
             }
             case ARROW: case ANY_ARROW_SOME: case ANY_ARROW_ONE: case ANY_ARROW_LONE:
