@@ -2,10 +2,11 @@ package edu.mit.csail.sdg.alloy4.frontend;
 
 import java.util.ArrayList;
 import java.io.FileNotFoundException;
-import edu.mit.csail.sdg.alloy4.core.Log;
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
+import edu.mit.csail.sdg.alloy4.util.Log;
+import edu.mit.csail.sdg.alloy4.util.LogToFile;
 
 public final class SimpleCLI {
 

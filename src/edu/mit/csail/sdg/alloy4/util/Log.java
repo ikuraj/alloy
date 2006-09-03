@@ -1,7 +1,7 @@
-package edu.mit.csail.sdg.alloy4.core;
+package edu.mit.csail.sdg.alloy4.util;
 
 /**
- * This inteface defines what a logger can do.
+ * This inteface defines what a logger should do.
  *
  * @author Felix Chang
  */
