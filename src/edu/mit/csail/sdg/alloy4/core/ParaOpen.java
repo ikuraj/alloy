@@ -10,9 +10,9 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 /**
  * Immutable; reresents an "open" declaration.
  *
- * <p/> <b>Invariant:</b>  name!=null and name is not ""
- * <p/> <b>Invariant:</b>  file!=null and file is not ""
- * <p/> <b>Invariant:</b>  list!=null and (all x:list | x is not null nor "")
+ * <p/> <b>Invariant:</b>  name!=null     and name     is not ""
+ * <p/> <b>Invariant:</b>  filename!=null and filename is not ""
+ * <p/> <b>Invariant:</b>  list!=null     and (all x:list | x is not null nor "")
  *
  * @author Felix Chang
  */
@@ -23,8 +23,8 @@ public final class ParaOpen extends Para {
     public final List<String> list;
 
     /**
-     * The relative filename for the file being imported, without ".als"
-     * (this field is always a non-empty string).
+     * The relative filename for the file being imported, without final ".als" part
+     * (thus this field must be a nonempty string).
      *
      * <br/> eg. "util/ordering"
      * <br/> eg. "myexample"
@@ -35,8 +35,8 @@ public final class ParaOpen extends Para {
      * Convenience method that computes what the actual alias should be.
      *
      * @param pos - the original position in the file
-     * @param filename - the relative filename of the file being imported (without the ".als" part)
-     * @param alias - the alias that the user specified for the file (could be "")
+     * @param filename - the relative filename of the file being imported (without final ".als" part)
+     * @param alias - the alias that the user explicitly specified ("" if the user didn't specify)
      * @param list - the list of instantiating arguments
      *
      * @return If the alias argument is a legal alias, then it's returned.
@@ -79,7 +79,7 @@ public final class ParaOpen extends Para {
      * @param path - a valid path to the Unit containing the paragraph
      * @param alias - the alias for the imported module ("" if the user intends to use the filename as the alias)
      * @param list - the list of instantiating arguments
-     * @param filename - the relative filename of the file being imported (without the ".als" part)
+     * @param filename - the relative filename of the file being imported (without final ".als" part)
      *
      * @throws ErrorSyntax if path contains '@'
      * @throws ErrorSyntax if filename is ""

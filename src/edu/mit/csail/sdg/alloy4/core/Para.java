@@ -53,7 +53,7 @@ public abstract class Para {
     public final String name;
 
     /**
-     * Constructs a new paragraph node.
+     * Constructs a new paragraph.
      *
      * @param pos - the original position in the file
      * @param path - a valid path to the Unit containing this paragraph

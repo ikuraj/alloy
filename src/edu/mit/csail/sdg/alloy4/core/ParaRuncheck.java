@@ -36,7 +36,7 @@ public final class ParaRuncheck extends Para {
      */
     public final Map<String,Integer> map;
     
-    /** Returns a human-readable string representing this Run or Check command. */
+    /** Returns a human-readable string that summarizes this Run or Check command. */
     @Override public final String toString() {
         String a=(check?"check ":"run ")+name;
         if (overall>=0 && map.size()>0) a=a+" for "+overall+" but";

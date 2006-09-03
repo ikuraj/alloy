@@ -20,16 +20,16 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 
 public final class ParaFun extends Para {
 
-    /** The mutable list of parameters (its number of names must match this.argCount) */
+    /** The mutable list of parameters (its number of names must match this.argCount). */
     public List<VarDecl> decls;
 
-    /** The number of parameters (it must equal the number of names in this.decls) */
+    /** The number of parameters (it must equal the number of names in this.decls). */
     public int argCount;
 
-    /** The return type (null if this is a "predicate" rather than a "function") */
+    /** The return type (null if this is a "predicate" rather than a "function"). */
     public Expr type;
 
-    /** The body of the predicate/function */
+    /** The body of the predicate/function. */
     public Expr value;
 
     /**
@@ -56,14 +56,17 @@ public final class ParaFun extends Para {
         String dup=VarDecl.hasDuplicateName(this.decls);
         if (dup!=null)
             throw syntaxError("The parameter name \""
-            +dup+"\" appears more than once in this predicate/function declaration.");
-        argCount=VarDecl.nameCount(this.decls);
+            +dup+"\" cannot appear more than once in this predicate/function declaration.");
+        this.argCount=VarDecl.nameCount(this.decls);
         this.type=type;
         this.value=nonnull(value);
     }
 
     /** Returns a human-readable label for this predicate/function */
     @Override public String toString() {
-        return (type==null?"(pred ":"(fun ") + (path.length()==0?"this/":path+"/") + name +")";
+        return (type==null ? "(pred " : "(fun ")
+             + (path.length()==0 ? "this/" : path+"/")
+             + name 
+             + ")";
     }
 }
