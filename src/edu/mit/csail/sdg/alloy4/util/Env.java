@@ -5,12 +5,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
 /**
- * Mutable; this implements an undoable mapping from nonnull String to nullable Object.
+ * Mutable; this implements an undoable mapping from nonnull String to nullable Object references.
  *
- * <p/>  To be more precise, every key is internally mapped to a list of Object.
- * <br/> The put(X,Y)  method appends Y to that list.
- * <br/> The get(X)    method returns the last element in that list.
- * <br/> The remove(X) method removes the last element in that list.
+ * <p/>  To be more precise, every key is internally mapped to a list of values.
+ * <br/> The put(X,Y)  method appends Y onto the end of X's list.
+ * <br/> The get(X)    method returns the last element in X's list.
+ * <br/> The remove(X) method removes the last element in X's list.
  *
  * <p/>
  * This is very useful for representing lexical scoping: when a local variable
@@ -23,20 +23,28 @@ import java.util.LinkedList;
 
 public final class Env {
 
-    /** If a key is bound to one or more objects, this stores the first object. */
+    /**
+     * If a key is bound to one or more values, this stores the first value.
+     * <p/>
+     * For example: if key K is bound to V1..Vn, then map1.get(K)==V1
+     */
     private final Map<String,Object> map1=new LinkedHashMap<String,Object>();
 
-    /** If a key is bound to more than one objects, this stores every object except the first. */
+    /**
+     * If a key is bound to more than one value, this stores every value except the first value.
+     * <p/>
+     * For example: if key K is bound to values V1..Vn, then map2.get(K) returns the list V2..Vn
+     */
     private final Map<String,LinkedList<Object>> map2=new LinkedHashMap<String,LinkedList<Object>>();
 
     /** Constructor that builds an empty environement. */
     public Env() { }
 
     /**
-     * Returns true if the key k is mapped to one or more object.
+     * Returns true if the key k is mapped to one or more values.
      *
      * @param k - the key (which must not be null)
-     * @return true if the key is mapped to one or more object
+     * @return true if the key is mapped to one or more values
      */
     public boolean has(String k) {
         return map1.containsKey(k) || map2.containsKey(k);

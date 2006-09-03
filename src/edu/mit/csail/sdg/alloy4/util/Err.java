@@ -13,11 +13,11 @@ public abstract class Err extends RuntimeException {
     /** This stores the filename/line/row information (null if unknown). */
     public final Pos pos;
 
-    /** The actual error message. */
-    public final String msg;
-
     /** The object that triggered the error (null if unknown). */
     public final Object obj;
+
+    /** The actual error message. */
+    public final String msg;
 
     /**
      * Constructs a new error.
