@@ -562,12 +562,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         final int overall;
         int bitwidth=(-1); // The bound on "int".
         for(ParaSig s:sigs) { sig2bound(s,-1); if (s.one && !s.subset) exact(s,true); }
-        if (cmd.map.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
-        for(Map.Entry<String,Integer> entry:cmd.map.entrySet()) {
-        	String name=entry.getKey();
-        	int scope=entry.getValue();
-        	boolean exact=(scope<0);
-        	if (scope<0) scope=0-(scope+1);
+        if (cmd.scope.size()==0 && cmd.overall<0) overall=3; else overall=cmd.overall;
+        for(Map.Entry<String,Integer> entry:cmd.scope.entrySet()) {
+            String name=entry.getKey();
+            int scope=entry.getValue();
+            boolean exact=(scope<0);
+            if (scope<0) scope=0-(scope+1);
             if (name.equals(ParaSig.BITWIDTH_NAME)) { bitwidth=scope; continue; }
             Set<Object> set=root.lookup_sigORparam(name);
             Iterator<Object> it=set.iterator();
@@ -575,7 +575,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 ParaSig choice1=(ParaSig)(it.next());
                 ParaSig choice2=(ParaSig)(it.next());
                 throw cmd.syntaxError("The name \""+name+"\" is ambiguous: it could be "
-                		              +choice1.fullvname+" or "+choice2.fullvname);
+                                      +choice1.fullvname+" or "+choice2.fullvname);
             }
             if (set.size()<1) throw cmd.syntaxError("The name \""+name+"\" cannot be found");
             ParaSig s=(ParaSig)(it.next());
@@ -677,12 +677,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     // zzz: Should make sure we don't load Int unless we need to
 
     private boolean alloy3(ParaSig s, Unit u) {
-    	ParaSig elem=u.params.get("elem");
+        ParaSig elem=u.params.get("elem");
         return (elem!=null
-        		&& elem!=ParaSig.NONE && elem!=ParaSig.SIGINT && elem!=ParaSig.UNIV
-        		&& s.pos!=null && s.pos.filename!=null
-        		&& s.pos.filename.endsWith("util/ordering.als")
-        		&& s.name.equals("Ord"));
+                && elem!=ParaSig.NONE && elem!=ParaSig.SIGINT && elem!=ParaSig.UNIV
+                && s.pos!=null && s.pos.filename!=null
+                && s.pos.filename.endsWith("util/ordering.als")
+                && s.name.equals("Ord"));
     }
 
     public List<Result> codegen(List<ParaSig> sigs)  {
@@ -805,13 +805,13 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 sig2upperbound.clear();
                 int bitwidth=compute(units.get(0), sigs, x);
                 for(ParaSig s:sigs) {
-                	Unit u=units.get(0).lookupPath(s.path);
-                	if (alloy3(s,u)) {
-                		ParaSig s2=u.params.get("elem");
-                		if (sig2bound(s2)<=0) throw x.syntaxError("The signature "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
-                		log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2)+"\n");
-                		if (s2!=null) exact(s2,true);
-                	}
+                    Unit u=units.get(0).lookupPath(s.path);
+                    if (alloy3(s,u)) {
+                        ParaSig s2=u.params.get("elem");
+                        if (sig2bound(s2)<=0) throw x.syntaxError("The signature "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
+                        log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2)+"\n");
+                        if (s2!=null) exact(s2,true);
+                    }
                 }
                 this.env.clear();
                 result.add(runcheck(x, units, bitwidth, sigs, kfact));
@@ -943,7 +943,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         // Bound the FIELDS
         for(Unit u:units) for(Map.Entry<String,ParaSig> entry:u.sigs.entrySet()) {
-        	ParaSig s=entry.getValue();
+            ParaSig s=entry.getValue();
             if (s==ParaSig.SIGINT) continue;
             if (alloy3(s,u)) {
                 Relation first=null, last=null, next=null;
@@ -1058,7 +1058,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
         Instance inst=sol.instance();
-        log.log(inst.toString());
+        //log.log(inst.toString());
         Evaluator eval=new Evaluator(inst);
         out.printf("<ssolution name=\"%s\">%n", "this");
         Set<Relation> rels=new LinkedHashSet<Relation>(inst.relations());

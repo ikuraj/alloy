@@ -109,15 +109,17 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
   // This stores the list of RUN/CHECK commands, in the order they appear in the file.
   public final List<ParaRuncheck> runchecks=new ArrayList<ParaRuncheck>();
-  public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
+
+  public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,Map<String,Integer> s) {
     if (!aliases.contains("")) return;
-    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, exa));
+    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s));
   }
-  public void makeRuncheck(Pos p,Expr e,boolean c,int o,int exp,Map<String,Integer> s,Set<String> exa) {
+
+  public void makeRuncheck(Pos p,Expr e,boolean c,int o,int exp,Map<String,Integer> s) {
     if (!aliases.contains("")) return;
     String n;
     if (c) n=makeAssert(p,"",e); else { n="*"+(++anonymous_id)+"*"; makeFun(p,n,null,new ArrayList<VarDecl>(),null,e); }
-    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, exa));
+    runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s));
   }
 
   private void lookupNQsig_noparam(String name,Set<Object> ans) { // It ignores "params"

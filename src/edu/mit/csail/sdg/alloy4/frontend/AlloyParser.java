@@ -8,9 +8,7 @@ package edu.mit.csail.sdg.alloy4.frontend;
 import java.util.Stack;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.TreeSet;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.io.BufferedReader;
@@ -4323,15 +4321,15 @@ class CUP$AlloyParser$actions {
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
-  Set<String> exact=new LinkedHashSet<String>();
   for(int i=2; i<s.size()-1; i=i+2) {
+    int j;
     String a=s.get(i);
     String b=s.get(i+1);
-    if (a.charAt(0)=='e') { exact.add(b); a=a.substring(1); }
+    if (a.charAt(0)=='e') { j=Integer.parseInt(a.substring(1)); j=(0-j)-1; } else { j=Integer.parseInt(a); }
     if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
-    scope.put(b, Integer.parseInt(a));
+    scope.put(b,j);
   }
-  parser.alloyunit.makeRuncheck(o, e, false, overall,expects,scope,exact);
+  parser.alloyunit.makeRuncheck(o, e, false, overall, expects, scope);
 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",33, RESULT);
             }
@@ -4348,15 +4346,15 @@ class CUP$AlloyParser$actions {
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
-  Set<String> exact=new LinkedHashSet<String>();
   for(int i=2; i<s.size()-1; i=i+2) {
+    int j;
     String a=s.get(i);
     String b=s.get(i+1);
-    if (a.charAt(0)=='e') { exact.add(b); a=a.substring(1); }
+    if (a.charAt(0)=='e') { j=Integer.parseInt(a.substring(1)); j=(0-j)-1; } else { j=Integer.parseInt(a); }
     if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
-    scope.put(b, Integer.parseInt(a));
+    scope.put(b,j);
   }
-  parser.alloyunit.makeRuncheck(o, n.name, false, overall,expects,scope,exact);
+  parser.alloyunit.makeRuncheck(o, n.name, false, overall, expects, scope);
 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",33, RESULT);
             }
@@ -4373,15 +4371,15 @@ class CUP$AlloyParser$actions {
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
-  Set<String> exact=new LinkedHashSet<String>();
   for(int i=2; i<s.size()-1; i=i+2) {
+    int j;
     String a=s.get(i);
     String b=s.get(i+1);
-    if (a.charAt(0)=='e') { exact.add(b); a=a.substring(1); }
+    if (a.charAt(0)=='e') { j=Integer.parseInt(a.substring(1)); j=(0-j)-1; } else { j=Integer.parseInt(a); }
     if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
-    scope.put(b, Integer.parseInt(a));
+    scope.put(b,j);
   }
-  parser.alloyunit.makeRuncheck(o, n.name, true, overall,expects,scope,exact);
+  parser.alloyunit.makeRuncheck(o, n.name, true, overall, expects, scope);
 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",33, RESULT);
             }
@@ -4398,15 +4396,15 @@ class CUP$AlloyParser$actions {
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
-  Set<String> exact=new LinkedHashSet<String>();
   for(int i=2; i<s.size()-1; i=i+2) {
+    int j;
     String a=s.get(i);
     String b=s.get(i+1);
-    if (a.charAt(0)=='e') { exact.add(b); a=a.substring(1); }
+    if (a.charAt(0)=='e') { j=Integer.parseInt(a.substring(1)); j=(0-j)-1; } else { j=Integer.parseInt(a); }
     if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
-    scope.put(b, Integer.parseInt(a));
+    scope.put(b,j);
   }
-  parser.alloyunit.makeRuncheck(o, e, true, overall,expects,scope,exact);
+  parser.alloyunit.makeRuncheck(o, e, true, overall, expects, scope);
 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",33, RESULT);
             }
