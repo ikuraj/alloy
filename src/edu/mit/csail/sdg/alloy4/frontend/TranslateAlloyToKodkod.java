@@ -23,6 +23,7 @@ import edu.mit.csail.sdg.alloy4.core.ExprName;
 import edu.mit.csail.sdg.alloy4.core.ExprQuant;
 import edu.mit.csail.sdg.alloy4.core.ExprSequence;
 import edu.mit.csail.sdg.alloy4.core.ExprUnary;
+import edu.mit.csail.sdg.alloy4.core.Field;
 import edu.mit.csail.sdg.alloy4.core.ParaAssert;
 import edu.mit.csail.sdg.alloy4.core.ParaFact;
 import edu.mit.csail.sdg.alloy4.core.ParaFun;
@@ -412,8 +413,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     public Object accept(ExprName x) {
         Object r = x.object;
-        if (r instanceof ParaSig.Field.Full) {
-            ParaSig.Field.Full y=(ParaSig.Field.Full)r;
+        if (r instanceof Field) {
+        	Field y=(Field)r;
             return rel(y);
         }
         if (r instanceof ParaSig) {
@@ -506,9 +507,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         return sig2rel.get(x); }
     private void rel(ParaSig x,Expression y) { sig2rel.put(x,y); }
 
-    private Map<ParaSig.Field.Full, Expression> field2rel = new LinkedHashMap<ParaSig.Field.Full,Expression>();
-    private Expression rel(ParaSig.Field.Full x) { return field2rel.get(x); }
-    private void rel(ParaSig.Field.Full x,Expression y) { field2rel.put(x,y); }
+    private Map<Field, Expression> field2rel = new LinkedHashMap<Field,Expression>();
+    private Expression rel(Field x) { return field2rel.get(x); }
+    private void rel(Field x,Expression y) { field2rel.put(x,y); }
 
     private Map<ParaSig,Integer> sig2bound = new LinkedHashMap<ParaSig,Integer>();
     private int sig2bound(ParaSig x) { Integer y=sig2bound.get(x); if (y==null) return -1; return y; }
@@ -727,19 +728,19 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 Relation last=Relation.unary("last_");
                 Relation next=Relation.binary("next_");
                 ParaSig s2=u.params.get("elem");
-                rel(s.fields.get(0).full, rel(s).product(first));
-                rel(s.fields.get(1).full, rel(s).product(last));
-                rel(s.fields.get(2).full, rel(s).product(next));
-                rel(s.fields.get(3).full, rel(s).product(next.transpose()));
+                rel(s.fields.get(0), rel(s).product(first));
+                rel(s.fields.get(1), rel(s).product(last));
+                rel(s.fields.get(2), rel(s).product(next));
+                rel(s.fields.get(3), rel(s).product(next.transpose()));
                 kfact=next.totalOrder((Relation)(rel(s2)), first, last).and(kfact);
                 continue;
             }
             int fi=0;
             for(VarDecl fd:s.decls) {
                 for(String fn:fd.names) {
-                    ParaSig.Field f=s.fields.get(fi); fi++;
+                	Field f=s.fields.get(fi); fi++;
                     int a=fd.value.type.arity()+1;
-                    rel(f.full, Relation.nary(s.fullname+"."+fn, a));
+                    rel(f, Relation.nary(s.fullname+"."+fn, a));
                 }
             }
         }
@@ -789,8 +790,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
           for(VarDecl d:s.decls) {
             boolean noThis=!hasThis.query(d.value);
             for(int n=0; n<d.names.size(); n++) {
-              ParaSig.Field x00=s.fields.get(f); f++;
-              Expr x22=new ExprName(d.value.pos, x00.full.fullname, x00.full, x00.full.fulltype);
+              Field x00=s.fields.get(f); f++;
+              Expr x22=new ExprName(d.value.pos, x00.fullname, x00, x00.fulltype);
               Expr x5=new ExprName(s.pos, s.fullname, s, s.type);
               if (noThis && d.value.mult==0)
                  { kfact=kfact.and((Formula)(x22.in(x5.product(d.value)).accept(this))); continue; }
@@ -974,10 +975,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (alloy3(s,u)) {
                 Relation first=null, last=null, next=null;
                 TupleSet ts1=null, ts2=null;
-                for(ParaSig.Field f:s.fields) {
-                    if (f.name.equals("first_")) { first=right(rel(f.full)); ts1=comp(f.pos, f.halftype, factory); }
-                    if (f.name.equals("last_")) { last=right(rel(f.full)); }
-                    if (f.name.equals("next_")) { next=right(rel(f.full)); ts2=comp(f.pos, f.halftype, factory); }
+                for(Field f:s.fields) {
+                    if (f.name.equals("first_")) { first=right(rel(f)); ts1=comp(f.pos, f.halftype, factory); }
+                    if (f.name.equals("last_")) { last=right(rel(f)); }
+                    if (f.name.equals("next_")) { next=right(rel(f)); ts2=comp(f.pos, f.halftype, factory); }
                 }
                 bounds.bound(first,ts1);
                 bounds.bound(last,ts1);
@@ -987,9 +988,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             int fi=0;
             for(VarDecl fd:s.decls) {
                 for(int fn=fd.names.size(); fn>0; fn--) {
-                    ParaSig.Field f=s.fields.get(fi); fi++;
+                	Field f=s.fields.get(fi); fi++;
                     TupleSet ts=comp(f.pos, s.type.product_of_anyEmptyness(fd.value.type), factory);
-                    bounds.bound((Relation)(rel(f.full)),ts);
+                    bounds.bound((Relation)(rel(f)),ts);
                 }
             }
         }
@@ -1122,9 +1123,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     out.printf("  <atom name=\"%s\"/>%n", lastatom);
                 }
                 if (alloy3(s,u)) {
-                    Relation rfirst = right(rel(s.fields.get(0).full));
-                    Relation rlast = right(rel(s.fields.get(1).full));
-                    Relation rnext = right(rel(s.fields.get(2).full));
+                    Relation rfirst = right(rel(s.fields.get(0)));
+                    Relation rlast = right(rel(s.fields.get(1)));
+                    Relation rnext = right(rel(s.fields.get(2)));
                     rels.remove(rfirst);
                     rels.remove(rlast);
                     rels.remove(rnext);
@@ -1143,11 +1144,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 } else {
                     int fi=0;
                     for(VarDecl fd:s.decls) for(String fn:fd.names) {
-                        ParaSig.Field f=s.fields.get(fi); fi++;
-                        Relation rf=(Relation)(rel(f.full));
+                    	Field f=s.fields.get(fi); fi++;
+                        Relation rf=(Relation)(rel(f));
                         rels.remove(rf);
                         out.printf("  <field name=\"%s\" arity=\"%d\">%n", fn, rf.arity());
-                        Type type=f.full.fulltype;
+                        Type type=f.fulltype;
                         for(Type.Rel t:type) {
                             out.printf("    <type>");
                             for(int ti=1; ti<t.basicTypes.size(); ti++) {

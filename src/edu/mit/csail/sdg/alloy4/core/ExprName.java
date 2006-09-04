@@ -16,7 +16,7 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
  * <p/> <b>Invariant:</b>
  *      (object==null)
  *      || (object instanceof ParaSig)
- *      || (object instanceof ParaSig.Field.Full)
+ *      || (object instanceof ParaSig.FieldZ.Full)
  *      || (object instanceof ParaFun, and the function has 0 parameters)
  *
  * @author Felix Chang
@@ -48,7 +48,7 @@ public final class ExprName extends Expr {
      *  <p/> Note: After typechecking, this field can have the following possibilities:
      *  <br/> (1) null (meaning it's a quantification/let/function_call_parameter or it's univ/iden/none/Int)
      *  <br/> (2) ParaSig
-     *  <br/> (3) ParaSig.Field.Full
+     *  <br/> (3) ParaSig.FieldZ.Full
      *  <br/> (4) parameter-less ParaFun
      */
     public final Object object;
@@ -64,7 +64,7 @@ public final class ExprName extends Expr {
      * @throws ErrorInternal if pos==null or name==null
      * @throws ErrorInternal if name is equal to "" or "@"
      * @throws ErrorInternal if name.lastIndexOf('@')>0
-     * @throws ErrorInternal if object is not one of {null, ParaSig, ParaSig.Field.Full, ParaFun}
+     * @throws ErrorInternal if object is not one of {null, ParaSig, ParaSig.FieldZ.Full, ParaFun}
      * @throws ErrorInternal if object is a ParaFun with more than one parameter
      */
     public ExprName(Pos pos, String name, Object object, Type type) {
@@ -79,9 +79,9 @@ public final class ExprName extends Expr {
             throw syntaxError("If a variable name contains @, it must be the first character!");
         if (object!=null
             && !(object instanceof ParaSig)
-            && !(object instanceof ParaSig.Field.Full)
+            && !(object instanceof Field)
             && !(object instanceof ParaFun))
-            throw internalError("ExprName object must be ParaSig, ParaSig.Field.Full, ParaFun, or null!");
+            throw internalError("ExprName object must be ParaSig, ParaSig.FieldZ.Full, ParaFun, or null!");
         if (object instanceof ParaFun && ((ParaFun)object).argCount>0)
             throw internalError("If ExprName object is a function, it must have exactly 0 parameters!");
     }

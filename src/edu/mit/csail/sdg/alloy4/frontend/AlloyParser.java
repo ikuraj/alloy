@@ -2330,7 +2330,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       // The returned Unit object is fully-filled-in except
       // * Unit.{opens,params}
       // * Sig.{type,sup,sups,subs}
-      // * Field.halftype, Field.Full.fulltype, Expr*.type, and ExprName.resolved
+      // * Field.halftype, FieldZ.Full.fulltype, Expr*.type, and ExprName.resolved
       // Also, there will not be any ExprCall. Only ExprJoin.
       for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
           // Here, we recursively open the included files (to fill out the "Unit.opens" field)

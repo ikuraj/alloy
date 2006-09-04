@@ -5,11 +5,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.ErrorType;
 import edu.mit.csail.sdg.alloy4.util.DirectedGraph;
@@ -53,20 +51,9 @@ public final class VisitTypechecker {
 
     /**
      * This maps each ambiguous ExprCall and ExprName node
-     * to a list of possible nodes that it could refer to.
+     * to a list of possible Expr nodes that it should be replaced with.
      */
-    private final Map<Expr,List<Object>> objChoices=new LinkedHashMap<Expr,List<Object>>();
-
-    /**
-     * This maps each ambiguous ExprCall and ExprName node
-     * to a list of possible types that it could have.
-     *
-     * <p/> More precisely, for each ambiguous node X, the following are true:
-     * <br/> 1. objChoices.containsKey(X) iff typeChoices.containsKey(X)
-     * <br/> 2. objChoices.containsKey(X) => (objChoices.get(X).size() == typeChoices.get(X).size())
-     * <br/> 3. objChoices.containsKey(X) => (all i: objChoices.get(X).get(i) corresponds to typeChoices.get(X).get(i))
-     */
-    private final Map<Expr,List<Type>> typeChoices=new LinkedHashMap<Expr,List<Type>>();
+    private final Map<Expr,List<Expr>> objChoices=new LinkedHashMap<Expr,List<Expr>>();
 
     /**
      * This maps local names (that is, LET variable / QUANT variable / FUNCTION parameter)
@@ -129,7 +116,7 @@ public final class VisitTypechecker {
         }
     }
 
-    /** This is step 2: merging modules that have same filename and same instantiating arguments. */
+    /** This is step 2: merging modules that have same filename and instantiating arguments. */
     private static void mergeunits(ArrayList<Unit> units, Log log) {
         while(true) {
             // Before merging, the only pointers that go between Unit objects are
@@ -243,18 +230,13 @@ public final class VisitTypechecker {
 
    /** This is step 4: typecheck everything. */
    private void check(ArrayList<Unit> units, List<ParaSig> sigs) {
-       objChoices.clear(); typeChoices.clear(); env.clear();
-       for(ParaSig s:sigs) {
-           Unit u=units.get(0).lookupPath(s.path);
-           check(s,u);
-       }
+       for(ParaSig s:sigs)
+    	 check(s, units.get(0).lookupPath(s.path));
        for(Unit u:units)
          for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet())
             for(ParaFun f:funi.getValue())
-              { objChoices.clear(); typeChoices.clear(); env.clear(); check(f,u); }
-       objChoices.clear(); typeChoices.clear(); env.clear();
+              check(f,u);
        for(Unit u:units) check(u);
-       objChoices.clear(); typeChoices.clear(); env.clear();
    }
 
    /** This is step 4A: typechecking every field. */
@@ -265,6 +247,8 @@ public final class VisitTypechecker {
        //   as well as any visible SIG.
        // * For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
        //   then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
+       objChoices.clear();
+       env.clear();
        int fi=0;
        List<VarDecl> newdecl=new ArrayList<VarDecl>();
        List<VarDecl> olddecl=x.decls;
@@ -272,15 +256,15 @@ public final class VisitTypechecker {
        for(VarDecl d:olddecl) {
            Expr value=d.value;
            for(int ni=0; ni<d.names.size(); ni++) {
-               ParaSig.Field f=x.fields.get(fi);
+        	   Field f=x.fields.get(fi);
                if (ni==0) {
                    this.root=f; this.rootunit=u; value=addOne(this.resolve(value));
                    if (value.type.arity()<1) throw x.typeError("Field declaration must be a set or relation, but its type is "+value.type);
                }
                f.halftype = value.type;
-               f.full.fulltype = x.type.product_of_anyEmptyness(value.type);
+               f.fulltype = x.type.product_of_anyEmptyness(value.type);
                fi++;
-               log.log("Unit ["+u.aliases.get(0)+"], Sig "+x.name+", Field "+f.name+": "+f.full.fulltype+"\n");
+               log.log("Unit ["+u.aliases.get(0)+"], Sig "+x.name+", Field "+f.name+": "+f.fulltype+"\n");
            }
            newdecl.add(new VarDecl(d.pos, d, value));
        }
@@ -291,9 +275,10 @@ public final class VisitTypechecker {
        // Now, typecheck all function/predicate PARAMETERS and RETURNTYPE
        // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
        // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
-       this.env.clear();
-       this.root=fun;
-       this.rootunit=u;
+       objChoices.clear();
+       env.clear();
+       root=fun;
+       rootunit=u;
        List<VarDecl> newdecls=new ArrayList<VarDecl>();
        for(VarDecl d:fun.decls) {
            Expr value=d.value;
@@ -319,6 +304,8 @@ public final class VisitTypechecker {
    /** This is step 4C: typecheck (1) pred/fun bodies, (2) sig facts, (3) standalone facts, (4) assertions. */
    private void check(Unit u) {
        // These can refer to any SIG/FIELD/FUN/PRED visible from here.
+       objChoices.clear();
+       env.clear();
        String uu=u.aliases.iterator().next();
        for(Map.Entry<String,List<ParaFun>> xi:u.funs.entrySet()) for(int xii=0; xii<xi.getValue().size(); xii++) {
            ParaFun x=xi.getValue().get(xii);
@@ -962,61 +949,26 @@ public final class VisitTypechecker {
     //=========================================================//
 
     public Expr accept(ExprName x) {
-        List<Object> objects=new ArrayList<Object>();
-        List<Type> types=new ArrayList<Type>();
-        Set<Object> y=populate(x.name); if (y.size()==0) ExprName.hint(x.pos, x.name);
         Type t=null,tt;
-        for(Object z:y) {
-            Object obj=z;
-            if (z instanceof Type) tt=(Type)z;
-            else if (z instanceof ParaSig) tt=((ParaSig)z).type;
-            else if (z instanceof ParaSig.Field) {if (x.name.charAt(0)!='@') tt=((ParaSig.Field)z).halftype; else {obj=((ParaSig.Field)z).full; tt=((ParaSig.Field)z).full.fulltype;}}
-            else if (z instanceof ParaSig.Field.Full) tt=((ParaSig.Field.Full)z).fulltype;
-            else if (z instanceof ParaFun && ((ParaFun)z).argCount==0 && ((ParaFun)z).type!=null) tt=((ParaFun)z).type.type;
-            else if (z instanceof ParaFun && ((ParaFun)z).argCount==0 && ((ParaFun)z).type==null) tt=Type.FORMULA;
-            else continue;
-            if (t==null) t=tt; else t=t.merge(tt);
-            objects.add(obj);
-            types.add(tt);
+        List<Expr> objects=new ArrayList<Expr>();
+        if (env.has(x.name)) {        
+    	  Object y3=env.get(x.name);
+    	  if (y3 instanceof Type) { t=(Type)y3; objects.add(new ExprName(x.pos, x.name, null,t)); }
+        }
+        else {
+          Set<Object> list=rootunit.populate(root, x.pos, x.name);
+          if (list.size()==0) ExprName.hint(x.pos, x.name);
+          for(Object obj:list) {
+              if (obj instanceof Expr) {
+              	objects.add((Expr)obj); tt=((Expr)obj).type;
+              } else continue;
+              if (t==null) t=tt; else t=t.merge(tt);
+          }
         }
         if (t==null || isbad(t)) throw x.typeError("The name \""+x.name+"\" failed to be typechecked here!");
         ExprName ans=new ExprName(x.pos, x.name, null, t);
         objChoices.put(ans, objects);
-        typeChoices.put(ans, types);
         return ans;
-    }
-
-    private Set<Object> populate(String x1) {
-        Set<Object> y;
-        String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
-        Object y3=env.get(x2); if (y3!=null) { y=new LinkedHashSet<Object>(); y.add(y3); return y; }
-        if (root instanceof ParaSig.Field) {
-            ParaSig.Field rt=(ParaSig.Field)root;
-            ParaSig rts=rt.parent();
-            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add(rts.type); return y; }
-            y=rootunit.lookup_sigORparam(x2);
-            ParaSig.Field y2=rootunit.lookup_Field(rts, x2, rt.name);
-            if (y2!=null) { y.add(y2); if (y2.halftype==null) throw new ErrorInternal(y2.pos, y2, "This field is being referenced before it is typechecked!"); }
-        }
-        else if (root instanceof ParaSig) {
-            if (x2.equals("this")) { y=new LinkedHashSet<Object>(); y.add( ((ParaSig)root).type ); return y; }
-            y=rootunit.lookup_SigParamFunPred(x2);
-            ParaSig.Field y22=rootunit.lookup_Field((ParaSig)root,x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field)
-            {if (y2==y22) y.add(y2); else if (y22==null) y.add(((ParaSig.Field)y2).full); }
-        }
-        else if (root instanceof ParaFun) {
-            y=rootunit.lookup_sigORparam(x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
-        }
-        else if (root==null) {
-            y=rootunit.lookup_SigParamFunPred(x2);
-            for(Object y2:rootunit.lookup_Field(x2)) if (y2 instanceof ParaSig.Field) y.add(((ParaSig.Field)y2).full);
-        }
-        else {
-            y=new LinkedHashSet<Object>();
-        }
-        return y;
     }
 
     //==========================================================//
@@ -1024,14 +976,13 @@ public final class VisitTypechecker {
     //==========================================================//
 
     public Expr accept(ExprName x, Type t) {
-        List<Object> objects=objChoices.get(x);
+    	resolved(t,x);
+        List<Expr> objects=objChoices.get(x);
         objChoices.remove(x);
-        List<Type> types=typeChoices.get(x);
-        typeChoices.remove(x);
-        Object match=null;
-        for(int i=0; i<objects.size(); i++) {
-            Object z=objects.get(i);
-            Type tt=types.get(i);
+        if (objects==null) throw x.internalError("Unknown ExprName object encountered!");
+        Expr match=null;
+        for(Expr z:objects) {
+            Type tt=z.type;
             if (t==tt
                 ||(!t.isInt && !t.isBool && t.hasNoTuple())
                 ||(t.isInt && tt.isInt)
@@ -1041,21 +992,8 @@ public final class VisitTypechecker {
                 match=z;
             }
         }
-        if (match==null) throw x.typeError("The name \""+x.name+"\" failed to be typechecked here due to no match!");
-        if (match instanceof ParaSig)
-            return new ExprName(x.pos, ((ParaSig)match).fullname, match, t);
-        if (match instanceof ParaSig.Field) {
-            ParaSig.Field f = (ParaSig.Field)match;
-            ParaSig rts=f.parent();
-            ExprName l=new ExprName(x.pos, "this", null, rts.type);
-            ExprName r=new ExprName(x.pos, f.full.fullname, f.full, f.full.fulltype);
-            return new ExprJoin(x.pos,l,r,x.type);
-        }
-        if (match instanceof ParaSig.Field.Full)
-            return new ExprName(x.pos, ((ParaSig.Field.Full)match).fullname, match, t);
-        if (match instanceof ParaFun)
-            return new ExprName(x.pos, x.name, match, t);
-        return new ExprName(x.pos, x.name, null, t);
+        if (match!=null) return match;
+        throw x.typeError("The name \""+x.name+"\" failed to be typechecked here due to no match!");
     }
 
     //=========================================================//
@@ -1067,11 +1005,10 @@ public final class VisitTypechecker {
         // Another inefficiency: we don't jump forward, so sublists are re-Desugared again and again until the end of list.
         Expr ptr=x.right;
         while(ptr instanceof ExprJoin) ptr=((ExprJoin)ptr).right;
-        if (ptr instanceof ExprName) {
+        if (ptr instanceof ExprName && !env.has(((ExprName)ptr).name)) {
             String name=((ExprName)ptr).name;
-            Set<Object> y=populate(name);
-            List<Object> objects=new ArrayList<Object>();
-            List<Type> types=new ArrayList<Type>();
+            Set<Object> y=rootunit.populate(root, ptr.pos, name);
+            List<Expr> objects=new ArrayList<Expr>();
             if (y.size()>0 && containsApplicable(y)) {
                 List<Expr> args=new ArrayList<Expr>();
                 ptr=x;
@@ -1079,34 +1016,31 @@ public final class VisitTypechecker {
                     Expr left=((ExprJoin)ptr).left;
                     left=resolve(left); cset(left); ptr=((ExprJoin)ptr).right; args.add(0,left);
                 }
+                Expr resultexpr;
                 Type ans=null, temp;
                 for(Object z:y) {
-                    if (z instanceof ParaFun && ((ParaFun)z).argCount>0 && ((ParaFun)z).type==null) {
-                        ParaFun f=(ParaFun)z;
-                        if (f.argCount!=args.size()) continue;
-                        if (!applicable(f,args)) continue;
-                        objects.add(f); types.add(temp=Type.FORMULA);
-                    } else if (z instanceof ParaFun && ((ParaFun)z).argCount>0 && ((ParaFun)z).type!=null) {
+                	int fi=0;
+                    if (z instanceof ParaFun) {
                         ParaFun f=(ParaFun)z;
                         if (f.argCount>args.size()) continue;
+                        if (f.argCount<args.size() && f.type==null) continue;
                         if (!applicable(f,args)) continue;
-                        temp=f.type.type;
-                        for(int fi=f.argCount; fi<args.size(); fi++) temp=args.get(fi).type.join(temp);
-                        if (temp.hasNoTuple()) continue;
-                        objects.add(f); types.add(temp);
-                    } else if ((z instanceof Type) || (z instanceof ParaSig) || (z instanceof ParaSig.Field) || (z instanceof ParaSig.Field.Full)) {
-                        if (z instanceof Type) temp=(Type)z;
-                        else if (z instanceof ParaSig) temp=((ParaSig)z).type;
-                        else if (z instanceof ParaSig.Field.Full) temp=((ParaSig.Field.Full)z).fulltype;
-                        else if (name.charAt(0)=='@') {temp=((ParaSig.Field)z).full.fulltype; z=((ParaSig.Field)z).full;}
-                        else temp=((ParaSig.Field)z).halftype;
-                        for(int fi=0; fi<args.size(); fi++) temp=args.get(fi).type.join(temp);
-                        if (temp.hasNoTuple()) continue;
-                        objects.add(z); types.add(temp);
+                        fi=f.argCount;
+                        resultexpr=new ExprCall(ptr.pos, name, f, args.subList(0,fi), (f.type==null ? Type.FORMULA : f.type.type));
+                        temp=(f.type==null ? Type.FORMULA : f.type.type);
+                    } else if (z instanceof Expr) {
+                    	resultexpr=(Expr)z;
+                        temp=resultexpr.type;
                     } else continue;
+                    for(; fi<args.size(); fi++) {
+                    	resultexpr=new ExprJoin(args.get(fi).pos, args.get(fi), resultexpr, args.get(fi).type.join(temp));
+                    	temp=args.get(fi).type.join(temp);
+                    }
+                    if (temp!=Type.FORMULA && temp.hasNoTuple()) continue;
+                    objects.add(resultexpr);
                     if (ans==null) ans=temp; else ans=ans.merge(temp);
                 }
-                if (ans!=null) { ExprCall xx=new ExprCall(x.pos, name, null, args, ans); objChoices.put(xx,objects); typeChoices.put(xx,types); return xx; }
+                if (ans!=null) { Expr xx=new ExprName(x.pos, name, null, ans); objChoices.put(xx,objects); return xx; }
             }
         }
         // TYPE[A.B] = TYPE[A].TYPE[B] if there exist r1 in TYPE[A] and r2 in TYPE[B],
@@ -1170,64 +1104,16 @@ public final class VisitTypechecker {
     /** Method that typechecks an ExprCall object. First pass. */
     //=========================================================//
 
-    public Expr accept(ExprCall x) { throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!"); }
+    public Expr accept(ExprCall x) {
+    	throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!");
+    }
 
     //==========================================================//
     /** Method that typechecks an ExprCall object. Second pass. */
     //==========================================================//
 
     public Expr accept(ExprCall x, Type t) {
-        resolved(t,x);
-        List<Object> objects=objChoices.get(x);
-        objChoices.remove(x);
-        List<Type> types=typeChoices.get(x);
-        typeChoices.remove(x);
-        if (objects==null || types==null) throw x.internalError("Unknown ExprCall object encountered!");
-        Object match=null;
-        for(int i=0; i<objects.size(); i++) {
-            Object a=objects.get(i);
-            Type b=types.get(i);
-            if (t==b
-                    ||(!t.isInt && !t.isBool && t.hasNoTuple())
-                    ||(t.isInt && b.isInt)
-                    ||(t.isBool && b.isBool)
-                    ||t.intersect(b).hasTuple())
-            { if (match==null) match=a; else throw x.typeError("The name is ambiguous here. There are at least 2 matches: "+match+" and "+a); }
-        }
-        Expr ans=null;
-        int r=0;
-        if (match instanceof ParaFun) {
-            ParaFun y=(ParaFun)match;
-            if (y.argCount==0) ans=new ExprName(x.pos, y.name, y, (y.type==null?Type.FORMULA:y.type.type));
-            else {
-                List<Expr> newlist=new ArrayList<Expr>();
-                for(int newlen=0; newlen<y.argCount; newlen++) {newlist.add(x.args.get(r)); r++;}
-                ans=new ExprCall(x.pos, y.name, y, newlist, (y.type==null?Type.FORMULA:y.type.type));
-            }
-            if (ans.type==null || (!ans.type.isInt && !ans.type.isBool && ans.type.size()==0))
-                throw x.internalError("ExprCall encountered before all function/predicate return types are typechecked");
-        } else if (match instanceof ParaSig) {
-            ParaSig s=(ParaSig)match;
-            ans=new ExprName(x.pos, s.fullname, match, s.type);
-        } else if (match instanceof ParaSig.Field) {
-            ParaSig.Field f=(ParaSig.Field)match;
-            ParaSig rts=f.parent();
-            ExprName l=new ExprName(x.pos, "this", null, rts.type);
-            ExprName rr=new ExprName(x.pos, f.full.fullname, f.full, f.full.fulltype);
-            ans=new ExprJoin(x.pos,l,rr,x.type);
-        } else if (match instanceof ParaSig.Field.Full) {
-            ParaSig.Field.Full s=(ParaSig.Field.Full)match;
-            ans=new ExprName(x.pos, s.fullname, match, s.fulltype);
-        } else if (match instanceof Type) {
-            ans=new ExprName(x.pos, x.name, null, (Type)match);
-        } else throw x.internalError("ExprCall resolved to an unknown object type: "+match);
-        for(;r<x.args.size();r++) {
-            Expr ans3=x.args.get(r);
-            Expr ans2=new ExprJoin(x.pos, ans3, ans, ans3.type.join(ans.type));
-            if (ans2.type.size()==0) throw x.internalError("Resolved function call argument should have been valid sets or relations");
-            ans=ans2;
-        }
-        return ans;
+    	throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!");
     }
 
     //==========================================================//

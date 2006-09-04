@@ -128,7 +128,8 @@ public final class ParaSig extends Para {
         for(VarDecl dd:decls) {
             List<String> names=new ArrayList<String>();
             for(String dn:dd.names) {
-                fields.add(new Field(dd.value.pos, (path.length()==0?"/"+name:"/"+path+"/"+name), dn, null, null));
+            	Field x=new Field(this, dd.value.pos, (path.length()==0?"/"+name:"/"+path+"/"+name), dn, null, null);
+                fields.add(x);
                 names.add(dn);
             }
         }
@@ -162,6 +163,7 @@ public final class ParaSig extends Para {
         decls=new ArrayList<VarDecl>(0);
         appendedFacts=null;
         type=Type.make(this);
+        //fields=new ArrayList<Field>(0);
         fields=new ArrayList<Field>(0);
         sup=null;
         subset=false;
@@ -169,33 +171,4 @@ public final class ParaSig extends Para {
 
     public boolean isEmpty() { return this==NONE; }
     public boolean isNonEmpty() { return this!=NONE; }
-
-    public final class Field {
-        public final Pos pos;
-        public final String name;
-        public final String fullname;
-        public Type halftype;
-        public final String sig;
-        public final Full full;
-        public ParaSig parent() { return ParaSig.this; }
-        public Field(Pos pos, String pathsig, String name, Type halftype, Type fulltype) {
-            this.pos=pos;
-            this.name=name;
-            this.full=new Full(pos, pathsig, name, fulltype);
-            this.sig=pathsig;
-            this.fullname=this.sig+".."+name;
-            this.halftype=halftype;
-        }
-        public final class Full {
-            public final Pos pos;
-            public final String fullname;
-            public Type fulltype;
-            public Full(Pos pos, String pathsig, String name, Type type) {
-                this.pos=pos;
-                this.fullname=pathsig+"."+name;
-                this.fulltype=type;
-            }
-        }
-    }
-
 }
