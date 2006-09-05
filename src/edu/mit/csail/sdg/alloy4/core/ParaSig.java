@@ -128,7 +128,7 @@ public final class ParaSig extends Para {
         for(VarDecl dd:decls) {
             List<String> names=new ArrayList<String>();
             for(String dn:dd.names) {
-                Field x=new Field(this, dd.value.pos, (path.length()==0?"/"+name:"/"+path+"/"+name), dn, null, null);
+                Field x=new Field(dd.value.pos, dn, (path.length()==0?"/"+name:"/"+path+"/"+name)+"."+dn);
                 fields.add(x);
                 names.add(dn);
             }

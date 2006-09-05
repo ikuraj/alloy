@@ -65,6 +65,7 @@ public final class VisitTypechecker {
     private Log log;
 
     private Object root=null;
+    private ParaSig rootsig=null;
     private Unit rootunit=null;
 
     /** Private constructor (to ensure the only way to access the typechecker is via the check() method. */
@@ -258,7 +259,7 @@ public final class VisitTypechecker {
            for(int ni=0; ni<d.names.size(); ni++) {
                Field f=x.fields.get(fi);
                if (ni==0) {
-                   this.root=f; this.rootunit=u; value=addOne(this.resolve(value));
+                   this.root=f; this.rootsig=x; this.rootunit=u; value=addOne(this.resolve(value));
                    if (value.type.arity()<1) throw x.typeError("Field declaration must be a set or relation, but its type is "+value.type);
                }
                f.halftype = value.type;
@@ -278,6 +279,7 @@ public final class VisitTypechecker {
        objChoices.clear();
        env.clear();
        root=fun;
+       rootsig=null;
        rootunit=u;
        List<VarDecl> newdecls=new ArrayList<VarDecl>();
        for(VarDecl d:fun.decls) {
@@ -309,7 +311,7 @@ public final class VisitTypechecker {
        String uu=u.aliases.iterator().next();
        for(Map.Entry<String,List<ParaFun>> xi:u.funs.entrySet()) for(int xii=0; xii<xi.getValue().size(); xii++) {
            ParaFun x=xi.getValue().get(xii);
-           this.env.clear(); this.root=null; this.rootunit=u;
+           this.env.clear(); this.root=null; this.rootsig=null; this.rootunit=u;
            for(VarDecl d:x.decls) for(String n:d.names) this.env.put(n, d.value.type);
            Expr value=this.resolve(x.value);
            log.log("Unit ["+uu+"], Pred/Fun "+x.name+", BODY:"+value.type+"\n");
@@ -326,19 +328,19 @@ public final class VisitTypechecker {
        for(Map.Entry<String,ParaSig> xi:u.sigs.entrySet()) {
            ParaSig x=xi.getValue();
            if (x.appendedFacts==null) continue;
-           this.root=x; this.rootunit=u; x.appendedFacts=this.resolve(x.appendedFacts);
+           this.root=x; this.rootsig=null; this.rootunit=u; x.appendedFacts=this.resolve(x.appendedFacts);
            if (!x.appendedFacts.type.isBool) throw x.typeError("Appended facts must be a formula, but it has type "+x.appendedFacts.type);
            log.log("Unit ["+uu+"], Sig "+x.name+", Appended: "+x.appendedFacts.type+"\n");
        }
        for(Map.Entry<String,ParaFact> xi:u.facts.entrySet()) {
            ParaFact x=xi.getValue();
-           this.root=null; this.rootunit=u; x.value=resolve(x.value);
+           this.root=null; this.rootsig=null; this.rootunit=u; x.value=resolve(x.value);
            log.log("Unit ["+uu+"], Fact ["+x.name+"]: "+x.value.type+"\n");
            if (!x.value.type.isBool) throw x.typeError("Fact must be a formula, but it has type "+x.value.type);
        }
        for(Map.Entry<String,ParaAssert> xi:u.asserts.entrySet()) {
            ParaAssert x=xi.getValue();
-           this.root=null; this.rootunit=u; x.value=resolve(x.value);
+           this.root=null; this.rootsig=null; this.rootunit=u; x.value=resolve(x.value);
            log.log("Unit ["+uu+"], Assert ["+x.name+"]: "+x.value.type+"\n");
            if (!x.value.type.isBool) throw x.typeError("Assertion must be a formula, but it has type "+x.value.type);
        }
@@ -956,7 +958,7 @@ public final class VisitTypechecker {
           if (y3 instanceof Type) { t=(Type)y3; objects.add(new ExprName(x.pos, x.name, null,t)); }
         }
         else {
-          Set<Object> list=rootunit.populate(root, x.pos, x.name);
+          Set<Object> list=rootunit.populate(root, rootsig, x.pos, x.name);
           if (list.size()==0) ExprName.hint(x.pos, x.name);
           for(Object obj:list) {
               if (obj instanceof Expr) {
@@ -1007,7 +1009,7 @@ public final class VisitTypechecker {
         while(ptr instanceof ExprJoin) ptr=((ExprJoin)ptr).right;
         if (ptr instanceof ExprName && !env.has(((ExprName)ptr).name)) {
             String name=((ExprName)ptr).name;
-            Set<Object> y=rootunit.populate(root, ptr.pos, name);
+            Set<Object> y=rootunit.populate(root, rootsig, ptr.pos, name);
             List<Expr> objects=new ArrayList<Expr>();
             if (y.size()>0 && containsApplicable(y)) {
                 List<Expr> args=new ArrayList<Expr>();

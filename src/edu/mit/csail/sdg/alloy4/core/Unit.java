@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.util.Pair;
 import edu.mit.csail.sdg.alloy4.util.Pos;
 
 public final class Unit { // Represents 1 instantiation of an ALS file
@@ -194,16 +195,16 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     }
 
     // Used by populate()
-    private Field lookup_Field(ParaSig origin, ParaSig s, String n) {
-        Field ans=null;
-        if (canSee(origin.aliases, s.aliases)) for(Field f:s.fields) if (f.name.equals(n)) ans=f;
+    private Pair<ParaSig,Field> lookup_Field(ParaSig origin, ParaSig s, String n) {
+        Pair<ParaSig,Field> ans=null;
+        if (canSee(origin.aliases, s.aliases)) for(Field f:s.fields) if (f.name.equals(n)) ans=new Pair<ParaSig,Field>(s,f);
         for(ParaSig p:s.sups()) {
-            Field ans2=lookup_Field(origin,p,n);
+            Pair<ParaSig,Field> ans2=lookup_Field(origin,p,n);
             if (ans==null) ans=ans2;
             else if (ans2!=null) throw s.syntaxError("This signature's \""+n+"\" field conflicts with a parent signature's field with the same name!");
         }
         if (s.sup()!=null) {
-            Field ans2=lookup_Field(origin,s.sup(),n);
+            Pair<ParaSig,Field> ans2=lookup_Field(origin,s.sup(),n);
             if (ans==null) ans=ans2;
             else if (ans2!=null) throw s.syntaxError("This signature's \""+n+"\" field conflicts with a parent signature's field with the same name!");
         }
@@ -211,7 +212,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     }
 
     // Used by populate()
-    private Field lookup_Field(ParaSig s, String n, String me) {
+    private Pair<ParaSig,Field> lookup_Field(ParaSig s, String n, String me) {
         // Looks up "n" from this SIG or any visible ancestor SIG.
         // But will return null if ((n and me are both fields in s) && (n==me, or n comes after me))
         int ii=0;
@@ -226,11 +227,11 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     }
 
     // Looks up "n" from any visible SIG
-    private Set<Field> lookup_Field(String name, Set<Field> ans) {
-        if (ans==null) ans=new LinkedHashSet<Field>();
+    private Set<Pair<ParaSig,Field>> lookup_Field(String name, Set<Pair<ParaSig,Field>> ans) {
+        if (ans==null) ans=new LinkedHashSet<Pair<ParaSig,Field>>();
         for(Map.Entry<String,ParaSig> e:sigs.entrySet())
             for(Field f:e.getValue().fields)
-                if (f.name.equals(name)) ans.add(f);
+                if (f.name.equals(name)) ans.add(new Pair<ParaSig,Field>(e.getValue(), f));
         for (Map.Entry<String,Unit> e:opens.entrySet()) e.getValue().lookup_Field(name,ans);
         return ans;
     }
@@ -278,47 +279,47 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
     /*======================================================================*/
 
-    public Set<Object> populate(final Object root, final Pos pos, final String x1) {
+    public Set<Object> populate(final Object root, final ParaSig rootsig, final Pos pos, final String x1) {
         // Return object can be ParaFun(with >0 arg) or Expr
         Set<Object> y=new LinkedHashSet<Object>();
         Set<Object> zz=null;
         final String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
         if (x2.equals("this")) {
             if (root instanceof Field)
-                y.add(new ExprName(pos, "this", null, ((Field)root).parent().type));
+                y.add(new ExprName(pos, "this", null, rootsig.type));
             else if (root instanceof ParaSig)
                 y.add(new ExprName(pos, "this", null, ((ParaSig)root).type));
         }
         else if (root instanceof Field) {
             Field rt=(Field)root;
             zz=this.lookup_sigORparam(x2);
-            Field y2=this.lookup_Field(rt.parent(), x2, rt.name);
+            Pair<ParaSig,Field> y2=this.lookup_Field(rootsig, x2, rt.name);
             if (y2!=null) {
-                if (x1.charAt(0)=='@') zz.add(y2); else {
-                    ExprName l=new ExprName(pos, "this", null, y2.parent().type);
-                    ExprName r=new ExprName(pos, y2.fullname, y2, y2.fulltype);
-                    y.add(new ExprJoin(pos, l, r, y2.halftype));
+                if (x1.charAt(0)=='@') zz.add(y2.b); else {
+                    ExprName l=new ExprName(pos, "this", null, y2.a.type);
+                    ExprName r=new ExprName(pos, y2.b.fullname, y2.b, y2.b.fulltype);
+                    y.add(new ExprJoin(pos, l, r, y2.b.halftype));
                 }
             }
         }
         else if (root instanceof ParaSig) {
             zz=this.lookup_SigParamFunPred(pos,x2);
             ParaSig sig=(ParaSig)root;
-            Field y22=this.lookup_Field(sig,sig,x2);
-            for(Object y2:this.lookup_Field(x2,null)) if (y2 instanceof Field) {
-                if (y2==y22) {
-                    if (x1.charAt(0)=='@') zz.add(y22); else {
-                        ExprName l=new ExprName(pos, "this", null, y22.parent().type);
-                        ExprName r=new ExprName(pos, y22.fullname, y22, y22.fulltype);
-                        y.add(new ExprJoin(pos, l, r, y22.halftype));
+            Pair<ParaSig,Field> y22=this.lookup_Field(sig,sig,x2);
+            for(Pair<ParaSig,Field> y2:this.lookup_Field(x2,null)) {
+                if (y22!=null && y2.a==y22.a && y2.b==y22.b) {
+                    if (x1.charAt(0)=='@') zz.add(y22.b); else {
+                        ExprName l=new ExprName(pos, "this", null, y22.a.type);
+                        ExprName r=new ExprName(pos, y22.b.fullname, y22.b, y22.b.fulltype);
+                        y.add(new ExprJoin(pos, l, r, y22.b.halftype));
                     }
                 }
-                else if (y22==null) zz.add(y2);
+                else if (y22==null) zz.add(y2.b);
             }
         }
         else if (root==null || root instanceof ParaFun) {
             if (root instanceof ParaFun) zz=this.lookup_sigORparam(x2); else zz=this.lookup_SigParamFunPred(pos,x2);
-            for(Object y2:this.lookup_Field(x2,null)) if (y2 instanceof Field) zz.add(y2);
+            for(Pair<ParaSig,Field> y2:this.lookup_Field(x2,null)) zz.add(y2.b);
         }
         if (zz!=null) for(Object z:zz) {
             if (z instanceof ParaSig) {

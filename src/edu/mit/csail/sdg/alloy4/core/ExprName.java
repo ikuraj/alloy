@@ -15,9 +15,9 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
  *
  * <p/> <b>Invariant:</b>
  *      (object==null)
- *      || (object instanceof ParaSig)
- *      || (object instanceof ParaSig.FieldZ.Full)
- *      || (object instanceof ParaFun, and the function has 0 parameters)
+ *      || (object is a Field)
+ *      || (object is a ParaSig)
+ *      || (object is a ParaFun that has 0 parameters)
  *
  * @author Felix Chang
  */
@@ -47,9 +47,9 @@ public final class ExprName extends Expr {
      *
      *  <p/> Note: After typechecking, this field can have the following possibilities:
      *  <br/> (1) null (meaning it's a quantification/let/function_call_parameter or it's univ/iden/none/Int)
-     *  <br/> (2) ParaSig
-     *  <br/> (3) ParaSig.FieldZ.Full
-     *  <br/> (4) parameter-less ParaFun
+     *  <br/> (2) Field
+     *  <br/> (3) ParaSig
+     *  <br/> (4) ParaFun with 0 parameter
      */
     public final Object object;
 
@@ -78,8 +78,8 @@ public final class ExprName extends Expr {
         if (name.lastIndexOf('@')>0)
             throw syntaxError("If a variable name contains @, it must be the first character!");
         if (object!=null
-            && !(object instanceof ParaSig)
             && !(object instanceof Field)
+            && !(object instanceof ParaSig)
             && !(object instanceof ParaFun))
             throw internalError("ExprName object must be ParaSig, ParaSig.FieldZ.Full, ParaFun, or null!");
         if (object instanceof ParaFun && ((ParaFun)object).argCount>0)
