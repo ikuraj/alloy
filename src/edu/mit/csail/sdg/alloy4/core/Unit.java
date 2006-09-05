@@ -255,15 +255,9 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 		Set<Object> ans=lookup_sigORparam(name);
 		Set<Object> reply=new LinkedHashSet<Object>();
 		if (name.indexOf('/')>=0) lookupQfunpred(name,ans); else lookupNQfunpred(name,ans);
-		// zzz DUP!
 		for(Object z:ans) {
 			if (z instanceof ParaSig) {
 				reply.add(new ExprName(pos, ((ParaSig)z).fullname, z, ((ParaSig)z).type));
-			} else if (z instanceof Field) {
-				Field s=(Field)z;
-				reply.add(new ExprName(pos, s.fullname, z, s.fulltype));
-			} else if (z instanceof Type) {
-				reply.add(new ExprName(pos, name, null, (Type)z));
 			} else if (z instanceof ParaFun) {
 				ParaFun f=(ParaFun)z;
 				if (f.argCount==0) reply.add(new ExprName(pos, name, f, (f.type==null?Type.FORMULA:f.type.type)));

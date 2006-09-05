@@ -159,11 +159,10 @@ public final class ParaSig extends Para {
         fullname="/"+al+"/"+n;
         fullvname=al+"/"+n;
         aliases.add(al);
-        abs=false; lone=false; one=false; some=false; //in=null; // ext=null;
+        abs=false; lone=false; one=false; some=false;
         decls=new ArrayList<VarDecl>(0);
         appendedFacts=null;
         type=Type.make(this);
-        //fields=new ArrayList<Field>(0);
         fields=new ArrayList<Field>(0);
         sup=null;
         subset=false;
