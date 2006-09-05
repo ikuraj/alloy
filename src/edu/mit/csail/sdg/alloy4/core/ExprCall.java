@@ -76,7 +76,7 @@ public final class ExprCall extends Expr {
     public ExprCall(Pos pos, String name, ParaFun fun, List<Expr> args, Type type) {
         super(pos,type,0);
         if (type==null)
-        	throw internalError("ExprCall nodes must only be created by the typechecker.");
+            throw internalError("ExprCall nodes must only be created by the typechecker.");
         this.name=nonnull(name);
         this.fun=fun;
         this.args=Collections.unmodifiableList(new ArrayList<Expr>(nonnull(args)));

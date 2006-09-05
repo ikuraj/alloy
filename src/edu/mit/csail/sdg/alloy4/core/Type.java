@@ -14,7 +14,7 @@ import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
  *
  * <p/> In Alloy, each expression can be a set/relation, or a formula, or a primitive integer.
  *
- * @author Felix Chang with some code adapted from Alloy 3
+ * @author Felix Chang plus code adapted from Alloy 3
  */
 
 //===========================================================================================================

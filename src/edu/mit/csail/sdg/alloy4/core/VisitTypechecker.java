@@ -41,7 +41,7 @@ import edu.mit.csail.sdg.alloy4.util.Log;
  * <br/> (3) quantifer x:a|b (here we first fully resolve a, and then fully resolve b)
  * <br/> etc.
  *
- * @author Felix Chang with some code adapted from Alloy 3
+ * @author Felix Chang plus code adapted from Alloy 3
  */
 
 public final class VisitTypechecker {
@@ -231,7 +231,7 @@ public final class VisitTypechecker {
    /** This is step 4: typecheck everything. */
    private void check(ArrayList<Unit> units, List<ParaSig> sigs) {
        for(ParaSig s:sigs)
-    	 check(s, units.get(0).lookupPath(s.path));
+         check(s, units.get(0).lookupPath(s.path));
        for(Unit u:units)
          for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet())
             for(ParaFun f:funi.getValue())
@@ -256,7 +256,7 @@ public final class VisitTypechecker {
        for(VarDecl d:olddecl) {
            Expr value=d.value;
            for(int ni=0; ni<d.names.size(); ni++) {
-        	   Field f=x.fields.get(fi);
+               Field f=x.fields.get(fi);
                if (ni==0) {
                    this.root=f; this.rootunit=u; value=addOne(this.resolve(value));
                    if (value.type.arity()<1) throw x.typeError("Field declaration must be a set or relation, but its type is "+value.type);
@@ -951,16 +951,16 @@ public final class VisitTypechecker {
     public Expr accept(ExprName x) {
         Type t=null,tt;
         List<Expr> objects=new ArrayList<Expr>();
-        if (env.has(x.name)) {        
-    	  Object y3=env.get(x.name);
-    	  if (y3 instanceof Type) { t=(Type)y3; objects.add(new ExprName(x.pos, x.name, null,t)); }
+        if (env.has(x.name)) {
+          Object y3=env.get(x.name);
+          if (y3 instanceof Type) { t=(Type)y3; objects.add(new ExprName(x.pos, x.name, null,t)); }
         }
         else {
           Set<Object> list=rootunit.populate(root, x.pos, x.name);
           if (list.size()==0) ExprName.hint(x.pos, x.name);
           for(Object obj:list) {
               if (obj instanceof Expr) {
-              	objects.add((Expr)obj); tt=((Expr)obj).type;
+                objects.add((Expr)obj); tt=((Expr)obj).type;
               } else continue;
               if (t==null) t=tt; else t=t.merge(tt);
           }
@@ -976,7 +976,7 @@ public final class VisitTypechecker {
     //==========================================================//
 
     public Expr accept(ExprName x, Type t) {
-    	resolved(t,x);
+        resolved(t,x);
         List<Expr> objects=objChoices.get(x);
         objChoices.remove(x);
         if (objects==null) throw x.internalError("Unknown ExprName object encountered!");
@@ -1019,7 +1019,7 @@ public final class VisitTypechecker {
                 Expr resultexpr;
                 Type ans=null, temp;
                 for(Object z:y) {
-                	int fi=0;
+                    int fi=0;
                     if (z instanceof ParaFun) {
                         ParaFun f=(ParaFun)z;
                         if (f.argCount>args.size()) continue;
@@ -1029,12 +1029,12 @@ public final class VisitTypechecker {
                         resultexpr=new ExprCall(ptr.pos, name, f, args.subList(0,fi), (f.type==null ? Type.FORMULA : f.type.type));
                         temp=(f.type==null ? Type.FORMULA : f.type.type);
                     } else if (z instanceof Expr) {
-                    	resultexpr=(Expr)z;
+                        resultexpr=(Expr)z;
                         temp=resultexpr.type;
                     } else continue;
                     for(; fi<args.size(); fi++) {
-                    	resultexpr=new ExprJoin(args.get(fi).pos, args.get(fi), resultexpr, args.get(fi).type.join(temp));
-                    	temp=args.get(fi).type.join(temp);
+                        resultexpr=new ExprJoin(args.get(fi).pos, args.get(fi), resultexpr, args.get(fi).type.join(temp));
+                        temp=args.get(fi).type.join(temp);
                     }
                     if (temp!=Type.FORMULA && temp.hasNoTuple()) continue;
                     objects.add(resultexpr);
@@ -1105,7 +1105,7 @@ public final class VisitTypechecker {
     //=========================================================//
 
     public Expr accept(ExprCall x) {
-    	throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!");
+        throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!");
     }
 
     //==========================================================//
@@ -1113,7 +1113,7 @@ public final class VisitTypechecker {
     //==========================================================//
 
     public Expr accept(ExprCall x, Type t) {
-    	throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!");
+        throw x.internalError("ExprCall objects shouldn't be encountered during the first pass!");
     }
 
     //==========================================================//
