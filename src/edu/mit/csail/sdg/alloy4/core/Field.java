@@ -6,13 +6,11 @@ public final class Field {
     public final Pos pos;
     public final String name;
     public final String fullname;
-    public Type halftype;
-    public Type fulltype;
+    public Type halftype=null;
+    public Type fulltype=null;
     public Field(Pos pos, String name, String fullname) {
         this.pos=pos;
         this.name=name;
         this.fullname=fullname;
-        this.fulltype=null;
-        this.halftype=null;
     }
 }
