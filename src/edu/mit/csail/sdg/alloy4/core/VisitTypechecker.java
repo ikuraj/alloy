@@ -1004,7 +1004,7 @@ public final class VisitTypechecker {
 			String name=((ExprName)ptr).name;
 			Set<Object> choices=rootunit.populate(rootfield, rootsig, rootfun, ptr.pos, name);
 			List<Expr> objects=new ArrayList<Expr>();
-			if (rootunit.populateFunc(rootfield,rootsig,rootfun,name,n)) {
+			if (containsApplicable(choices,n)) {
 				List<Expr> args=new ArrayList<Expr>();
 				for(ptr=x; ptr instanceof ExprJoin; ptr=((ExprJoin)ptr).right) {
 					Expr left=((ExprJoin)ptr).left;
@@ -1055,10 +1055,10 @@ public final class VisitTypechecker {
 		return true;
 	}
 	
-	//private boolean containsApplicable(Set<Object> x, int n) {
-	//	for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount==n) return true;
-	//	return false;
-	//}
+	private boolean containsApplicable(Set<Object> x, int n) {
+		for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount==n) return true;
+		return false;
+	}
 	
 	//==========================================================//
 	/** Method that typechecks an ExprJoin object. Second pass. */

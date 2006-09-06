@@ -44,10 +44,26 @@ public final class TranslateKodkodToJava implements VoidVisitor {
   private final PrintWriter file;
   private final Pos pos;
 
+  /**
+   * Given an existing Kodkod formula node, generate a Java program that would generate an equivalent node.
+   * 
+   * @param pos - if we throw an exception, this is the location in the Alloy model we want to blame
+   * @param x - the formula to convert
+   * @param bitwidth - the integer bitwidth
+   * @param bounds - the Kodkod bounds object to use
+   */
   public static void convert(Pos pos, Formula x, int bitwidth, Bounds bounds) {
       new TranslateKodkodToJava(pos, x, bitwidth, bounds);
   }
 
+  /**
+   * Constructor is private, so that the only way to access this class is via the static convert() method.
+   *
+   * @param pos - if we throw an exception, this is the location in the Alloy model we want to blame
+   * @param x - the formula to convert
+   * @param bitwidth - the integer bitwidth
+   * @param bounds - the Kodkod bounds object to use
+   */
   private TranslateKodkodToJava(Pos pos, Formula x, int bitwidth, Bounds bounds) {
     this.pos=pos;
     try {

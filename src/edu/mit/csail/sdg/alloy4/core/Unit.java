@@ -296,16 +296,6 @@ public final class Unit {
 
     /*======================================================================*/
 
-    public boolean populateFunc(Field rootfield, ParaSig rootsig, ParaFun rootfun, String name, int n) {
-    	if (rootfield==null && (rootsig!=null || rootfun==null)) {
-    		if (name.charAt(0)=='@') name=name.substring(1);
-            Set<Object> ans=new LinkedHashSet<Object>();
-            if (name.indexOf('/')>=0) lookupQfunpred(name,ans); else lookupNQfunpred(name,ans);
-    		for(Object x:ans) if (x instanceof ParaFun && ((ParaFun)x).argCount==n) return true;
-    	}
-		return false;
-    }
-
     public Set<Object> populate(Field rootfield, ParaSig rootsig, ParaFun rootfun, Pos pos, String fullname) {
         // Return object can be ParaFun(with >0 arg) or Expr
         Set<Object> ans=new LinkedHashSet<Object>();
