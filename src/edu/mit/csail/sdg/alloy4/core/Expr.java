@@ -213,6 +213,15 @@ public abstract class Expr {
         return new ExprJoin(this.pos, me, y, ans);
     }
 
+    public final Expr joinNOCHECK(Expr y) {
+        if (type==null) return null;
+        if (y.type==null) return null;
+        Expr me=(VisitTypechecker.autoIntCast ? this.int2Int() : this);
+        y=(VisitTypechecker.autoIntCast ? y.int2Int() : y);
+        Type ans=me.type.join(y.type);
+        if (ans.arity()<1) return null; else return new ExprJoin(this.pos, me, y, ans);
+    }
+
     /**
      * Convenience method that
      * returns a typechecked node representing (this -> y)

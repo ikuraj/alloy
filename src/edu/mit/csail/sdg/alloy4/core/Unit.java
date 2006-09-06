@@ -6,40 +6,54 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
-
 import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.Pair;
 import edu.mit.csail.sdg.alloy4.util.Pos;
 
-public final class Unit { // Represents 1 instantiation of an ALS file
+/**
+ * Mutable; this class represents one instantiation of an Alloy module.
+ *
+ * @author Felix Chang
+ */
+
+public final class Unit {
 
     public Unit(String prefix) { aliases.add(prefix); }
 
-    // The "MODULE" line at the top of the file.
-    public Pos pos;
-
-    // The list of aliases (from root) that point to this Unit. Contains "" if it's the outermost module.
+    /** The list of aliases that point to this Unit; it contains "" if it's the outermost module. */
     public final List<String> aliases=new ArrayList<String>();
 
-    // List of all the PARAMETRIC PARAMETERS used in instantiating this file. Each name cannot have "/" or "@".
-    // This must be a LinkedHashMap because we depend on the iterator returning them in the original order
+    /** The position of the "MODULE" line at the top of the file. */
+    public Pos pos=null;
+
+    /**
+     * List of all the PARAMETRIC PARAMETERS used in instantiating this file. Each name cannot have "/" or "@".
+     * This must be a LinkedHashMap because we depend on the iterator returning them in the original order.
+     */
     public final Map<String,ParaSig> params=new LinkedHashMap<String,ParaSig>();
 
-    public void makeModule(Pos p, List<ExprName> l) {
-        pos=p;
-        for(ExprName x:l) {
-            String y=x.name;
-            if (params.containsKey(y)) throw new ErrorSyntax(p,"You cannot use the same name for more than 1 instantiating parameter!");
-            if (sigs.containsKey(y)) throw new ErrorSyntax(p,"Within the same file, a signature and a polymorphic parameter cannot have the same name!");
-            if (!aliases.contains("")) params.put(y, null);
-            else makeSig(p, y, false, false, false, false, null, null, new ArrayList<VarDecl>(), null);
+    public void makeModule(Pos pos, List<ExprName> list) {
+        this.pos=pos;
+        for(ExprName expr:list) {
+            String name=expr.name;
+            if (params.containsKey(name))
+            	throw new ErrorSyntax(pos, "You cannot use the same name for more than 1 instantiating parameter!");
+            if (sigs.containsKey(name))
+            	throw new ErrorSyntax(pos, "Within the same file, a signature and a polymorphic parameter cannot have the same name!");
+            if (!aliases.contains(""))
+            	params.put(name, null);
+            else
+            	makeSig(pos, name, false, false, false, false, null, null, new ArrayList<VarDecl>(), null);
         }
     }
 
-    // This lists all the SIGS defined inside this file.
-    // The NAME must not contain any "/" or "@"
+    /**
+     * This lists all the SIGS defined inside this file.
+     * The NAME must not contain any "/" or "@"
+     */
     public final Map<String,ParaSig> sigs=new LinkedHashMap<String,ParaSig>();
+
     public void makeSig(Pos p,String n,boolean fa,boolean fl,boolean fo,boolean fs,List<String> i,String e,List<VarDecl> d,Expr f) {
         ParaSig x=new ParaSig(p,aliases.get(0),n,fa,fl,fo,fs,i,e,d,f);
         if (asserts.containsKey(x.name)) throw x.syntaxError("Within the same file, a signature cannot have the same name as another assertion!");
@@ -52,9 +66,12 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
     private int anonymous_id=0;
 
-    // This lists all the FACTS defined inside this file.
-    // The NAME must not contain any "/" or "@"
+    /**
+     * This lists all the FACTS defined inside this file.
+     * The NAME must not contain any "/" or "@"
+     */
     public final Map<String,ParaFact> facts=new LinkedHashMap<String,ParaFact>();
+
     public void makeFact(Pos p,String n,Expr v) {
         if (n==null || n.length()==0) n="*"+(++anonymous_id)+"*";
         ParaFact x=new ParaFact(p,aliases.get(0),n,v);
@@ -149,13 +166,13 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
     /*======================================================================*/
 
-    private void lookupNQsig_noparam(String name,Set<Object> ans) { // It ignores "params"
+    private void lookupNQsig_noparam (String name, Set<Object> ans) { // It ignores "params"
         Para x=sigs.get(name);
         if (x!=null) ans.add(x);
         for(Map.Entry<String,Unit> i:opens.entrySet()) i.getValue().lookupNQsig_noparam(name,ans);
     }
 
-    private Para lookupQsig_noparam(String name) { // It ignores "params"
+    private Para lookupQsig_noparam (String name) { // It ignores "params"
         Unit u=this;
         if (name.startsWith("this/")) name=name.substring(5);
         while(true) {
@@ -167,7 +184,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
         }
     }
 
-    public Set<Object> lookup_sigORparam(String name) { // Will search "params" too, if at the CURRENT LEVEL
+    public Set<Object> lookup_sigORparam (String name) { // Will search "params" too, if at the CURRENT LEVEL
         Para s;
         Set<Object> ans=new LinkedHashSet<Object>();
         if (name.indexOf('/')<0) {
@@ -246,7 +263,7 @@ public final class Unit { // Represents 1 instantiation of an ALS file
     }
 
     // Used by lookup_SigParamFunPred, which is only used by populate()
-    private void lookupQfunpred(String name,Set<Object> ans) {
+    private void lookupQfunpred(String name, Set<Object> ans) {
         Unit u=this;
         if (name.startsWith("this/")) name=name.substring(5);
         while(true) {
@@ -279,65 +296,71 @@ public final class Unit { // Represents 1 instantiation of an ALS file
 
     /*======================================================================*/
 
-    public Set<Object> populate(final Object root, final ParaSig rootsig, final Pos pos, final String x1) {
+    public boolean populateFunc(Field rootfield, ParaSig rootsig, ParaFun rootfun, String name, int n) {
+    	if (rootfield==null && (rootsig!=null || rootfun==null)) {
+    		if (name.charAt(0)=='@') name=name.substring(1);
+            Set<Object> ans=new LinkedHashSet<Object>();
+            if (name.indexOf('/')>=0) lookupQfunpred(name,ans); else lookupNQfunpred(name,ans);
+    		for(Object x:ans) if (x instanceof ParaFun && ((ParaFun)x).argCount==n) return true;
+    	}
+		return false;
+    }
+
+    public Set<Object> populate(Field rootfield, ParaSig rootsig, ParaFun rootfun, Pos pos, String fullname) {
         // Return object can be ParaFun(with >0 arg) or Expr
-        Set<Object> y=new LinkedHashSet<Object>();
-        Set<Object> zz=null;
-        final String x2=(x1.charAt(0)=='@') ? x1.substring(1) : x1;
-        if (x2.equals("this")) {
-            if (root instanceof Field)
-                y.add(new ExprName(pos, "this", null, rootsig.type));
-            else if (root instanceof ParaSig)
-                y.add(new ExprName(pos, "this", null, ((ParaSig)root).type));
+        Set<Object> ans=new LinkedHashSet<Object>();
+        Set<Object> ans2=null;
+        final String name=(fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
+        if (name.equals("this") && rootsig!=null) {
+            ans.add(new ExprName(pos, "this", null, rootsig.type));
         }
-        else if (root instanceof Field) {
-            Field rt=(Field)root;
-            zz=this.lookup_sigORparam(x2);
-            Pair<ParaSig,Field> y2=this.lookup_Field(rootsig, x2, rt.name);
+        else if (rootfield!=null) {
+            ans2=this.lookup_sigORparam(name);
+            Pair<ParaSig,Field> y2=this.lookup_Field(rootsig, name, rootfield.name);
             if (y2!=null) {
-                if (x1.charAt(0)=='@') zz.add(y2.b); else {
+                if (fullname.charAt(0)=='@') ans2.add(y2.b); else {
                     ExprName l=new ExprName(pos, "this", null, y2.a.type);
                     ExprName r=new ExprName(pos, y2.b.fullname, y2.b, y2.b.fulltype);
-                    y.add(new ExprJoin(pos, l, r, y2.b.halftype));
+                    ans.add(new ExprJoin(pos, l, r, y2.b.halftype));
                 }
             }
         }
-        else if (root instanceof ParaSig) {
-            zz=this.lookup_SigParamFunPred(pos,x2);
-            ParaSig sig=(ParaSig)root;
-            Pair<ParaSig,Field> y22=this.lookup_Field(sig,sig,x2);
-            for(Pair<ParaSig,Field> y2:this.lookup_Field(x2,null)) {
+        else if (rootsig!=null) {
+            ans2=this.lookup_SigParamFunPred(pos,name);
+            Pair<ParaSig,Field> y22=this.lookup_Field(rootsig,rootsig,name);
+            for(Pair<ParaSig,Field> y2:this.lookup_Field(name,null)) {
                 if (y22!=null && y2.a==y22.a && y2.b==y22.b) {
-                    if (x1.charAt(0)=='@') zz.add(y22.b); else {
+                    if (fullname.charAt(0)=='@') ans2.add(y22.b); else {
                         ExprName l=new ExprName(pos, "this", null, y22.a.type);
                         ExprName r=new ExprName(pos, y22.b.fullname, y22.b, y22.b.fulltype);
-                        y.add(new ExprJoin(pos, l, r, y22.b.halftype));
+                        ans.add(new ExprJoin(pos, l, r, y22.b.halftype));
                     }
                 }
-                else if (y22==null) zz.add(y2.b);
+                else if (y22==null) ans2.add(y2.b);
             }
         }
-        else if (root==null || root instanceof ParaFun) {
-            if (root instanceof ParaFun) zz=this.lookup_sigORparam(x2); else zz=this.lookup_SigParamFunPred(pos,x2);
-            for(Pair<ParaSig,Field> y2:this.lookup_Field(x2,null)) zz.add(y2.b);
+        else {
+            if (rootfun!=null) ans2=this.lookup_sigORparam(name); else ans2=this.lookup_SigParamFunPred(pos,name);
+            for(Pair<ParaSig,Field> y2:this.lookup_Field(name,null)) ans2.add(y2.b);
         }
-        if (zz!=null) for(Object z:zz) {
-            if (z instanceof ParaSig) {
-                y.add(new ExprName(pos, ((ParaSig)z).fullname, z, ((ParaSig)z).type));
-            } else if (z instanceof Field) {
-                Field s=(Field)z;
-                y.add(new ExprName(pos, s.fullname, z, s.fulltype));
-            } else if (z instanceof Type) {
-                y.add(new ExprName(pos, x2, null, (Type)z));
-            } else if (z instanceof ParaFun) {
-                ParaFun f=(ParaFun)z;
-                if (f.argCount==0) y.add(new ExprName(pos, x2, f, (f.type==null?Type.FORMULA:f.type.type)));
-                else y.add(z);
-            } else if (z instanceof Expr) {
-                y.add(z);
-            } else throw new ErrorInternal(pos,null,"populuate() encountered unknown object "+z);
+        if (ans2!=null) for(Object x:ans2) {
+            if (x instanceof ParaSig) {
+                ans.add(new ExprName(pos, ((ParaSig)x).fullname, x, ((ParaSig)x).type));
+            } else if (x instanceof Field) {
+                Field s=(Field)x;
+                ans.add(new ExprName(pos, s.fullname, x, s.fulltype));
+            } else if (x instanceof Type) {
+                ans.add(new ExprName(pos, name, null, (Type)x));
+            } else if (x instanceof ParaFun) {
+                ParaFun f=(ParaFun)x;
+                if (f.argCount==0) ans.add(new ExprName(pos, name, f, (f.type==null?Type.FORMULA:f.type.type)));
+                else ans.add(x);
+            } else if (x instanceof Expr) {
+                ans.add(x);
+            } else throw new ErrorInternal(pos,null,"populuate() encountered unknown object "+x);
         }
-        return y;
+        return ans;
     }
+
 
 }
