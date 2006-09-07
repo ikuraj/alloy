@@ -6,7 +6,7 @@ import javax.swing.text.Style;
 import javax.swing.text.StyledDocument;
 
 /**
- * This JTextPane logger will append the messages into an existing JTextPane.
+ * This logger will append the messages into an existing JTextPane.
  *
  * @author Felix Chang
  */

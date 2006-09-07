@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 
 /**
- * This file logger will log the messages into a text file.
+ * This logger will log the messages into a text file.
  *
  * Since the output is plain text, the logBold() and log() methods are the same.
  *

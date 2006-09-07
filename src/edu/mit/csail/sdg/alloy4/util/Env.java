@@ -18,7 +18,7 @@ import java.util.LinkedList;
  * the old binding; and when the new variable falls out of scope,
  * the previous binding is once again "revealed".
  *
- * @param V - the type for Value
+ * @param <V> - the type for Value
  *
  * @author Felix Chang
  */
