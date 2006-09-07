@@ -46,7 +46,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
 
   /**
    * Given an existing Kodkod formula node, generate a Java program that would generate an equivalent node.
-   * 
+   *
    * @param pos - if we throw an exception, this is the location in the Alloy model we want to blame
    * @param x - the formula to convert
    * @param bitwidth - the integer bitwidth

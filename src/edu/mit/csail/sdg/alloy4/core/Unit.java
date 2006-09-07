@@ -38,13 +38,13 @@ public final class Unit {
         for(ExprName expr:list) {
             String name=expr.name;
             if (params.containsKey(name))
-            	throw new ErrorSyntax(pos, "You cannot use the same name for more than 1 instantiating parameter!");
+                throw new ErrorSyntax(pos, "You cannot use the same name for more than 1 instantiating parameter!");
             if (sigs.containsKey(name))
-            	throw new ErrorSyntax(pos, "Within the same file, a signature and a polymorphic parameter cannot have the same name!");
+                throw new ErrorSyntax(pos, "Within the same file, a signature and a polymorphic parameter cannot have the same name!");
             if (!aliases.contains(""))
-            	params.put(name, null);
+                params.put(name, null);
             else
-            	makeSig(pos, name, false, false, false, false, null, null, new ArrayList<VarDecl>(), null);
+                makeSig(pos, name, false, false, false, false, null, null, new ArrayList<VarDecl>(), null);
         }
     }
 

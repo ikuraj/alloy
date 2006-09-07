@@ -110,7 +110,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprITE node. */
     /*=============================*/
 
-    public Object accept(ExprITE x) {
+    public Object visit(ExprITE x) {
         Formula c=cform(x.cond);
         Object l=x.left.accept(this);
         if (l instanceof Formula)
@@ -124,7 +124,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprBinary node. */
     /*================================*/
 
-    public Object accept(ExprBinary x) {
+    public Object visit(ExprBinary x) {
         if (x.op==ExprBinary.Op.IN) return isIn(cset(x.left), x.right);
         Expr a=x.left, b=x.right;
         Expression s; IntExpression i; Formula f;
@@ -240,7 +240,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprLet node. */
     /*=============================*/
 
-    public Object accept(ExprLet x) {
+    public Object visit(ExprLet x) {
         Object r=x.right.accept(this);
         env.put(x.left, r);
         Object ans=x.sub.accept(this);
@@ -252,7 +252,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprConstant node. */
     /*==================================*/
 
-    public Object accept(ExprConstant x) {
+    public Object visit(ExprConstant x) {
         switch(x.op) {
         case NONE: return Expression.NONE;
         case IDEN: return Expression.IDEN;
@@ -267,7 +267,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprQuant node. */
     /*===============================*/
 
-    public Object accept(ExprQuant x) {
+    public Object visit(ExprQuant x) {
         Decls dd=null;
         int ri=0; List<Expression> exprs=new ArrayList<Expression>();
         int vi=0; List<Variable> vars=new ArrayList<Variable>();
@@ -374,7 +374,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprSequuence node. */
     /*===================================*/
 
-    public Object accept (ExprSequence x) {
+    public Object visit (ExprSequence x) {
         Formula ans=Formula.TRUE;
         for(int i=0; i<x.list.size(); i++) {
             Expr sub=x.list.get(i);
@@ -387,7 +387,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprUnary node. */
     /*===============================*/
 
-    public Object accept(ExprUnary x) {
+    public Object visit(ExprUnary x) {
         switch(x.op) {
             case SOMEMULT: case LONEMULT: case ONEMULT: case SETMULT:
                 if (demul) return cset(x.sub);
@@ -404,17 +404,17 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             case SUM: return cset(x.sub).sum();
             case INTTOATOM: return cint(x.sub).toExpression();
         }
-        throw x.internalError("Unsupported operator ("+x.op+") encountered during ExprUnary.accept()");
+        throw x.internalError("Unsupported operator ("+x.op+") encountered during ExprUnary.visit()");
     }
 
     /*==============================*/
     /** Evaluates an ExprName node. */
     /*==============================*/
 
-    public Object accept(ExprName x) {
+    public Object visit(ExprName x) {
         Object r = x.object;
         if (r instanceof Field) {
-        	Field y=(Field)r;
+            Field y=(Field)r;
             return rel(y);
         }
         if (r instanceof ParaSig) {
@@ -436,33 +436,33 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprJoin node. */
     /*==============================*/
 
-    public Object accept(ExprJoin x) {
-    	/*
-    	int count=1;
-    	ExprJoin ptr=x;
-    	while(ptr.right instanceof ExprJoin) { count++; ptr=(ExprJoin)(ptr.right); }
-    	if (ptr.right instanceof ExprName && ((ExprName)ptr.right).object instanceof ParaFun) {
-    		ParaFun f=(ParaFun) (((ExprName)ptr.right).object);
-			if (f.argCount>count)
-				throw x.internalError("Argument count mismatch. This should have been detected by the typechecker!");
-    		if (f.argCount==count) {
-    			Env newenv=new Env();
-    			for(int di=f.decls.size()-1; di>=0; di--) {
-    				VarDecl d=f.decls.get(di);
-    				for(int ni=d.names.size()-1; ni>=0; ni--) {
-    					String n=d.names.get(ni);
-    					newenv.put(n, cset(x.left));
-    					x=(ExprJoin)(x.right);
-    				}
-    			}
-    			Env oldenv=this.env;
-    			this.env=newenv;
-    			Object ans=f.value.accept(this);
-    			this.env=oldenv;
-    			return ans;
-    		}
-    	}
-    	*/
+    public Object visit(ExprJoin x) {
+        /*
+        int count=1;
+        ExprJoin ptr=x;
+        while(ptr.right instanceof ExprJoin) { count++; ptr=(ExprJoin)(ptr.right); }
+        if (ptr.right instanceof ExprName && ((ExprName)ptr.right).object instanceof ParaFun) {
+            ParaFun f=(ParaFun) (((ExprName)ptr.right).object);
+            if (f.argCount>count)
+                throw x.internalError("Argument count mismatch. This should have been detected by the typechecker!");
+            if (f.argCount==count) {
+                Env newenv=new Env();
+                for(int di=f.decls.size()-1; di>=0; di--) {
+                    VarDecl d=f.decls.get(di);
+                    for(int ni=d.names.size()-1; ni>=0; ni--) {
+                        String n=d.names.get(ni);
+                        newenv.put(n, cset(x.left));
+                        x=(ExprJoin)(x.right);
+                    }
+                }
+                Env oldenv=this.env;
+                this.env=newenv;
+                Object ans=f.value.accept(this);
+                this.env=oldenv;
+                return ans;
+            }
+        }
+        */
         Expression a=cset(x.left);
         Expression b=cset(x.right);
         return a.join(b);
@@ -472,7 +472,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /** Evaluates an ExprCall node. */
     /*==============================*/
 
-    public Object accept(ExprCall x) {
+    public Object visit(ExprCall x) {
         // zzz: Should make sure there are no recursion.
         ParaFun y=x.fun;
         if (y==null) throw x.internalError("ExprCall should now refer to a Function or Predicate");
@@ -738,7 +738,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             int fi=0;
             for(VarDecl fd:s.decls) {
                 for(String fn:fd.names) {
-                	Field f=s.fields.get(fi); fi++;
+                    Field f=s.fields.get(fi); fi++;
                     int a=fd.value.type.arity()+1;
                     rel(f, Relation.nary(s.fullname+"."+fn, a));
                 }
@@ -780,7 +780,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         // Add the sig declaration facts, and sig appended facts
         VisitQuery hasThis=new VisitQuery() {
-          @Override public Object accept(ExprName x) { if (x.name.equals("this")) return this; return null; }
+          @Override public Object visit(ExprName x) { if (x.name.equals("this")) return this; return null; }
         };
         for(Unit u:units) for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
           ParaSig s=e.getValue();
@@ -988,7 +988,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             int fi=0;
             for(VarDecl fd:s.decls) {
                 for(int fn=fd.names.size(); fn>0; fn--) {
-                	Field f=s.fields.get(fi); fi++;
+                    Field f=s.fields.get(fi); fi++;
                     TupleSet ts=comp(f.pos, s.type.product_of_anyEmptyness(fd.value.type), factory);
                     bounds.bound((Relation)(rel(f)),ts);
                 }
@@ -1144,7 +1144,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 } else {
                     int fi=0;
                     for(VarDecl fd:s.decls) for(String fn:fd.names) {
-                    	Field f=s.fields.get(fi); fi++;
+                        Field f=s.fields.get(fi); fi++;
                         Relation rf=(Relation)(rel(f));
                         rels.remove(rf);
                         out.printf("  <field name=\"%s\" arity=\"%d\">%n", fn, rf.arity());

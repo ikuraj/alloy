@@ -22,17 +22,17 @@ public final class ExprBinary extends Expr {
 
     /** Accepts the return visitor. */
     @Override public Object accept(VisitReturn visitor) {
-        return visitor.accept(this);
+        return visitor.visit(this);
     }
 
     /** Accepts the typecheck visitor bottom-up. */
     @Override public Expr accept(VisitTypechecker visitor) {
-        return visitor.accept(this);
+        return visitor.visit(this);
     }
 
     /** Accepts the typecheck visitor top-down. */
     @Override public Expr accept(VisitTypechecker visitor, Type type) {
-        return visitor.accept(this,type);
+        return visitor.visit(this,type);
     }
 
     /** The binary operator. */
