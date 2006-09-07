@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 
 /**
- * Mutable; this class implements a graph with nodes and directed edges.
+ * Mutable; this implements a graph with nodes and directed edges.
  *
  * <p/> Note: it uses N.equals() for node equality.
  *
