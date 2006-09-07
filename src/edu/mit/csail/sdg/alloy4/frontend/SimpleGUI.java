@@ -107,11 +107,7 @@ public final class SimpleGUI {
         /** The run() method to start this runner. */
         public void run() {
             try {
-                Log blanklog=new Log() {
-                    public void log(String x) {}
-                    public void logBold(String x) {}
-                    public void flush() {}
-                };
+                Log blanklog=new Log();
                 Log reallog=new LogToTextPane(log,styleRegular,styleGreen);
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);

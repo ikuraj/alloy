@@ -13,11 +13,12 @@ package edu.mit.csail.sdg.alloy4.core;
 
 public abstract class VisitQuery implements VisitReturn {
 
+  /** Visits an Expr node, then returns either true or false. */
   public final boolean query(Expr x) {
     return x.accept(this)!=null;
   }
 
-  /** Visits an ExprBinary node (A OP B) by calling accept() on both A and B. */
+  /** Visits an ExprBinary node (A OP B) by calling accept() on A then B. */
   public Object visit(ExprBinary x) {
     if (x.left.accept(this)!=null) return this;
     return x.right.accept(this);
@@ -30,7 +31,7 @@ public abstract class VisitQuery implements VisitReturn {
     return x.right.accept(this);
   }
 
-  /** Visits an ExprLet node (let A=B | F) by calling accept() on B and F. */
+  /** Visits an ExprLet node (let A=B | F) by calling accept() on B then F. */
   public Object visit(ExprLet x) {
     if (x.right.accept(this)!=null) return this;
     return x.sub.accept(this);
@@ -41,7 +42,7 @@ public abstract class VisitQuery implements VisitReturn {
     return null;
   }
 
-  /** Visits an ExprQuant node (all a:X1, b:X2 | F) by calling accept() on X1.. and then on F. */
+  /** Visits an ExprQuant node (all a:X1, b:X2... | F) by calling accept() on X1, X2... and then on F. */
   public Object visit(ExprQuant x) {
     for(int i=0; i<x.list.size(); i++)
         if (x.list.get(i).value.accept(this)!=null)

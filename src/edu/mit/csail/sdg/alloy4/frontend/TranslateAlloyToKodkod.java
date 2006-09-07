@@ -425,7 +425,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (r instanceof ParaFun) {
             ParaFun y=(ParaFun)r;
             if (y.argCount!=0) throw x.internalError("ExprName \""+x.name+"\" is not resolved prior to code gen! Its resolution == "+r);
-            Env oldenv=this.env; this.env=new Env(); ans=y.value.accept(this); this.env=oldenv; return ans;
+            Env<Object> oldenv=this.env; this.env=new Env<Object>(); ans=y.value.accept(this); this.env=oldenv; return ans;
         }
         ans=env.get(x.name);
         if (ans==null) throw x.internalError("ExprName \""+x.name+"\" cannot be found during code gen! r=="+r);
@@ -476,21 +476,21 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         // zzz: Should make sure there are no recursion.
         ParaFun y=x.fun;
         if (y==null) throw x.internalError("ExprCall should now refer to a Function or Predicate");
-        Env newenv=new Env();
+        Env<Object> newenv=new Env<Object>();
         int r=0;
         for(VarDecl d:y.decls) {
             for(String n:d.names) {
                 newenv.put(n,cset(x.args.get(r))); r++;
             }
         }
-        Env oldenv=this.env; this.env=newenv; Object ans=y.value.accept(this); this.env=oldenv; return ans;
+        Env<Object> oldenv=this.env; this.env=newenv; Object ans=y.value.accept(this); this.env=oldenv; return ans;
     }
 
 //################################################################################################
 
     private boolean demul=false;
     private final List<Unit> units;
-    private Env env=new Env();
+    private Env<Object> env=new Env<Object>();
     private final Log log;
     private final int codeindex;
     private TranslateAlloyToKodkod(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }

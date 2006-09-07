@@ -57,7 +57,7 @@ public final class VisitTypechecker {
      * This maps local names (that is, LET variable / QUANT variable / FUNCTION parameter)
      * to the object that it refers to.
      */
-    private final Env env=new Env();
+    private final Env<Type> env=new Env<Type>();
 
     /** This is a logger that will receive verbose debugging output during typechecking. */
     private Log log;
@@ -949,8 +949,8 @@ public final class VisitTypechecker {
         Type t=null,tt;
         List<Expr> objects=new ArrayList<Expr>();
         if (env.has(x.name)) {
-            Object ch=env.get(x.name);
-            if (ch instanceof Type) objects.add(new ExprName(x.pos, x.name, null, t=(Type)ch));
+            t=env.get(x.name);
+            if (t!=null) objects.add(new ExprName(x.pos, x.name, null, t));
         }
         else {
             Set<Object> choices=rootunit.populate(rootfield, rootsig, rootfun, x.pos, x.name);

@@ -4,14 +4,14 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 
 /**
- * This logger will log the messages into a text file.
+ * This file logger will log the messages into a text file.
  *
  * Since the output is plain text, the logBold() and log() methods are the same.
  *
  * @author Felix Chang
  */
 
-public final class LogToFile implements Log {
+public final class LogToFile extends Log {
 
     /** The PrintWriter object for the output file (null if the log has been closed). */
     private PrintWriter file;
@@ -26,17 +26,17 @@ public final class LogToFile implements Log {
     }
 
     /** Writes msg into the log. */
-    public void log(String x) {
+    @Override public void log(String x) {
         if (file!=null) file.print(x);
     }
 
     /** Writes msg into the log (just like log() since text files don't support bold styles). */
-    public void logBold(String x) {
+    @Override public void logBold(String x) {
         if (file!=null) file.print(x);
     }
 
     /** Commits all outstanding writes (if the logger is buffered). */
-    public void flush() {
+    @Override public void flush() {
         if (file!=null) file.flush();
     }
 

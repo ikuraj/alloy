@@ -6,12 +6,12 @@ import javax.swing.text.Style;
 import javax.swing.text.StyledDocument;
 
 /**
- * This logger will append the messages into an existing JTextPane object.
+ * This JTextPane logger will append the messages into an existing JTextPane.
  *
  * @author Felix Chang
  */
 
-public final class LogToTextPane implements Log {
+public final class LogToTextPane extends Log {
 
     /** The JTextPane object to send the messages to. */
     private final JTextPane pane;
@@ -36,7 +36,7 @@ public final class LogToTextPane implements Log {
     }
 
     /** Writes msg into the log. */
-    public void log(String msg) {
+    @Override public void log(String msg) {
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, defaultStyle);
@@ -45,7 +45,7 @@ public final class LogToTextPane implements Log {
     }
 
     /** Writes msg into the log in a bold style. */
-    public void logBold(String msg) {
+    @Override public void logBold(String msg) {
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, boldStyle);
@@ -54,5 +54,5 @@ public final class LogToTextPane implements Log {
     }
 
     /** This method does nothing (since JTextPane buffering, if any, is beyond our control). */
-    public void flush() { }
+    @Override public void flush() { }
 }
