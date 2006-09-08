@@ -1,0 +1,30 @@
+Compiling models/examples/toys/genealogy.als...
+Compilation successful!
+Analyzing command: run Show for 6 expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Adam_0, Eve_0, Man_0, Man_1, Woman_0, Woman_1}
+
+module examples/toys/genealogy
+sig Person extends univ = {Adam_0, Eve_0, Man_0, Man_1, Woman_0, Woman_1}
+  spouse : lone examples/toys/genealogy/Person = 
+    {Adam_0 -> Eve_0, 
+     Eve_0 -> Adam_0, 
+     Man_0 -> Woman_0, 
+     Woman_0 -> Man_0}
+  parents : set examples/toys/genealogy/Person = 
+    {Man_0 -> {Man_1, Woman_1}, 
+     Man_1 -> {Adam_0, Eve_0}, 
+     Woman_0 -> {Adam_0, Eve_0}, 
+     Woman_1 -> {Adam_0, Woman_0}}
+sig Man extends Person = {Adam_0, Man_0, Man_1}
+sig Woman extends Person = {Eve_0, Woman_0, Woman_1}
+sig Eve extends Woman = Eve_0
+sig Adam extends Man = Adam_0
+
+skolem constants
+Show_p = 
+    {Woman_0}
+

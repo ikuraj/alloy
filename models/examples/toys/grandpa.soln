@@ -1,0 +1,29 @@
+Compiling models/examples/toys/grandpa.als...
+Compilation successful!
+Analyzing command: run ownGrandpa for 4 grandpa/Person
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Man_0, Man_1, Woman_0, Woman_1}
+
+module grandpa
+sig Person extends univ = {Man_0, Man_1, Woman_0, Woman_1}
+  father : lone grandpa/Man = 
+    {}
+  mother : lone grandpa/Woman = 
+    {Man_0 -> Woman_0, 
+     Man_1 -> Woman_1}
+sig Man extends Person = {Man_0, Man_1}
+  wife : lone grandpa/Woman = 
+    {Man_0 -> Woman_1, 
+     Man_1 -> Woman_0}
+sig Woman extends Person = {Woman_0, Woman_1}
+  husband : lone grandpa/Man = 
+    {Woman_0 -> Man_1, 
+     Woman_1 -> Man_0}
+
+skolem constants
+ownGrandpa_m = 
+    {Man_0}
+

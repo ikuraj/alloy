@@ -1,0 +1,51 @@
+Compiling models/examples/systems/lists.als...
+Compilation successful!
+Analyzing command: check reflexive for 6 expect 0
+
+No solution found.
+
+Analyzing command: check symmetric for 6 expect 0
+
+No solution found.
+
+Analyzing command: check empties for 6 expect 0
+
+No solution found.
+
+Analyzing command: run show for 4 expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {EmptyList_0, NonEmptyList_0, NonEmptyList_1, NonEmptyList_2, Thing_0, Thing_1}
+
+module list
+sig Thing extends univ = {Thing_0, Thing_1}
+sig List extends univ = {EmptyList_0, NonEmptyList_0, NonEmptyList_1, NonEmptyList_2}
+  equivTo : set list/List = 
+    {EmptyList_0 -> EmptyList_0, 
+     NonEmptyList_0 -> NonEmptyList_0, 
+     NonEmptyList_1 -> NonEmptyList_1, 
+     NonEmptyList_2 -> NonEmptyList_2}
+  prefixes : set list/List = 
+    {EmptyList_0 -> EmptyList_0, 
+     NonEmptyList_0 -> {EmptyList_0, NonEmptyList_1}, 
+     NonEmptyList_1 -> EmptyList_0, 
+     NonEmptyList_2 -> EmptyList_0}
+sig NonEmptyList extends List = {NonEmptyList_0, NonEmptyList_1, NonEmptyList_2}
+  car : one list/Thing = 
+    {NonEmptyList_0 -> Thing_0, 
+     NonEmptyList_1 -> Thing_0, 
+     NonEmptyList_2 -> Thing_1}
+  cdr : one list/List = 
+    {NonEmptyList_0 -> NonEmptyList_2, 
+     NonEmptyList_1 -> EmptyList_0, 
+     NonEmptyList_2 -> NonEmptyList_1}
+sig EmptyList extends List = {EmptyList_0}
+
+skolem constants
+show_a = 
+    {NonEmptyList_0}
+show_b = 
+    {NonEmptyList_1}
+

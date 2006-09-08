@@ -2,17 +2,15 @@ package edu.mit.csail.sdg.alloy4.util;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.LinkedHashMap;
+import java.util.IdentityHashMap;
 
 /**
  * Mutable; this implements a graph with nodes and directed edges.
  *
- * <p/> Note: it uses N.equals() for node equality.
+ * <p/> Note: it uses object identity for node equality.
  *
- * <p/> <b>Invariant:</b>  (nodes.contains(x)) iff (nodeToTargets.containsKey(x))
+ * <p/> <b>Invariant:</b>  nodeToTargets.containsKey(x) => nodeToTargets.get(x).size()>0
  *
  * @param <N> - the node type
  *
@@ -21,53 +19,37 @@ import java.util.LinkedHashMap;
 
 public final class DirectedGraph<N> {
 
-    /** This field stores the set of nodes in the graph. */
-    private final Set<N> nodes = new LinkedHashSet<N>();
+    /** This field maps each node X to a list of "neighbor nodes" that X can reach by following a directed edge. */
+    private final Map<N,List<N>> nodeToTargets = new IdentityHashMap<N,List<N>>();
 
-    /** This field maps each node in the directed graph to its "directed" neighbors. */
-    private final Map<N,List<N>> nodeToTargets = new LinkedHashMap<N,List<N>>();
-
-    /** Default constructor that generates an empty graph. */
+    /** Constructs an empty graph. */
     public DirectedGraph() { }
 
-    /** This returns a copy of the set of nodes in the graph. */
-    public List<N> getNodes() { return new ArrayList<N>(nodes); }
-
-    /** Returns true if the node is in the graph. */
-    public boolean hasNode(N node) { return nodes.contains(node); }
-
-    /** This adds a node to the graph if it is not in the graph already. */
-    public void addNode(N newnode){
-        if (!nodes.contains(newnode)) {
-            nodes.add(newnode);
-            nodeToTargets.put(newnode, new ArrayList<N>());
-        }
+    /** Adds a directed edge from node1 to node2 if there wasn't such a directed edge already. */
+    public void addEdge (N start, N end) {
+        List<N> targets=nodeToTargets.get(start);
+        if (targets==null) { targets=new ArrayList<N>(); nodeToTargets.put(start,targets); }
+        for(int i=targets.size()-1; i>=0; i--)
+        	if (targets.get(i)==end)
+        		return;
+        targets.add(end);
     }
 
-    /**
-     * This adds a directed edge from node1 to node2 if there wasn't such an edge already.
-     * If node1 and node2 don't exist in the graph yet, they will be added.
-     */
-    public void addEdge(N node1, N node2) {
-        addNode(node1);
-        addNode(node2);
-        List<N> targets=nodeToTargets.get(node1);
-        if (!targets.contains(node2)) targets.add(node2);
-    }
-
-    /** Returns true if and only if there is a directed path from start node to end node. */
+    /** Returns whether there is a directed path from start node to end node by following 0 or more directed edges. */
     public boolean hasPath (N start, N end) {
-        Set<N> visited = new LinkedHashSet<N>();
-        Set<N> todo = new LinkedHashSet<N>();
-        while(true) {
-            if (start.equals(end)) return true;
-            visited.add(start);
-            for (N next: nodeToTargets.get(start))
-                if (!visited.contains(next))
-                   todo.add(next);
-            if (todo.size()==0) return false;
-            start = todo.iterator().next();
-            todo.remove(start);
-        }
+    	List<N> todo = new ArrayList<N>();
+    	IdentitySet<N> visited = new IdentitySet<N>();
+    	while(true) {
+    		if (start.equals(end)) return true;
+    		visited.add(start);
+    		List<N> targets=nodeToTargets.get(start);
+    		if (targets!=null)
+    			for (int i=0, n=targets.size(); i<n; i++) {
+    				N next=targets.get(i);
+    				if (!visited.contains(next)) todo.add(next);
+    			}
+    		if (todo.size()==0) return false;
+    		start=todo.remove(todo.size()-1);
+    	}
     }
 }

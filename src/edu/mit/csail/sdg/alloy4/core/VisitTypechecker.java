@@ -11,6 +11,7 @@ import java.util.Set;
 import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.DirectedGraph;
 import edu.mit.csail.sdg.alloy4.util.Env;
+import edu.mit.csail.sdg.alloy4.util.IdentitySet;
 import edu.mit.csail.sdg.alloy4.util.Log;
 
 /**
@@ -899,11 +900,15 @@ public final class VisitTypechecker {
     private static Type closureResolveChild (Type parent, Type child) {
         Type answer=Type.make();
         if (parent.size()==0) return answer;
+        IdentitySet<ParaSig> nodes=new IdentitySet<ParaSig>();
         DirectedGraph<ParaSig> graph=new DirectedGraph<ParaSig>();
         // For each (v1->v2) in childType, add (v1->v2) into the graph.
-        for (Type.Rel c:child) if (c.arity()==2) graph.addEdge(c.basicTypes.get(0), c.basicTypes.get(1));
+        for (Type.Rel c:child) if (c.arity()==2) {
+        	ParaSig a=c.basicTypes.get(0); if (!nodes.contains(a)) nodes.add(a);
+        	ParaSig b=c.basicTypes.get(1); if (!nodes.contains(b)) nodes.add(b);
+        	graph.addEdge(a,b);
+        }
         // For each distinct v1 and v2 in the graph where v1&v2!=empty, add the edges v1->v2 and v2->v1.
-        List<ParaSig> nodes=graph.getNodes();
         for (ParaSig a:nodes)
             for (ParaSig b:nodes)
                 if (a!=b && a.intersect(b).isNonEmpty()) graph.addEdge(a,b);
@@ -912,18 +917,18 @@ public final class VisitTypechecker {
             ParaSig a=p.basicTypes.get(0);
             ParaSig b=p.basicTypes.get(1);
             // Add edges between a and all its subtypes and supertypes
-            if (!graph.hasNode(a)) {
-                graph.addNode(a);
-                for (ParaSig other: graph.getNodes())
+            if (!nodes.contains(a)) {
+                for (ParaSig other:nodes)
                     if (a!=other && !a.intersect(other).isEmpty())
-                    { graph.addEdge(a,other); graph.addEdge(other,a); }
+                       { graph.addEdge(a,other); graph.addEdge(other,a); }
+                nodes.add(a);
             }
             // Add edges between b and all its subtypes and supertypes
-            if (!graph.hasNode(b)) {
-                graph.addNode(b);
-                for (ParaSig other: graph.getNodes())
+            if (!nodes.contains(b)) {
+                for (ParaSig other:nodes)
                     if (b!=other && !b.intersect(other).isEmpty())
-                    { graph.addEdge(b,other); graph.addEdge(other,b); }
+                       { graph.addEdge(b,other); graph.addEdge(other,b); }
+                nodes.add(b);
             }
         }
         // For each c1->c2 in childType, add c1->c2 into the finalType
@@ -934,8 +939,7 @@ public final class VisitTypechecker {
             for (Type.Rel p:parent) {
                 ParaSig p1=p.basicTypes.get(0);
                 ParaSig p2=p.basicTypes.get(1);
-                if (graph.hasPath(p1,c1) && graph.hasPath(c2,p2))
-                { answer=answer.union(Type.make(c)); break; }
+                if (graph.hasPath(p1,c1) && graph.hasPath(c2,p2)) { answer=answer.union(Type.make(c)); break; }
             }
         }
         return answer;

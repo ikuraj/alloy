@@ -1,0 +1,248 @@
+Compiling models/examples/algorithms/ringlead.als...
+Compilation successful!
+Analyzing command: run NeverFindLeader for 1 but 3 msg/Tick, 2 util/boolean/Bool, 2 msg/NodeState expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {False_0, MsgViz_0, Ord_0, Ord_0, RingLeadMsgState_0, RingLeadNodeState_0, RingLeadNodeState_1, RingLeadNode_0, Tick_0, Tick_1, Tick_2, True_0}
+
+module examples/algorithms/ringlead
+sig RingLeadNode extends Node = {RingLeadNode_0}
+  rightNeighbor :  examples/algorithms/messaging/Node = 
+    {RingLeadNode_0 -> RingLeadNode_0}
+sig RingLeadMsgState extends MsgState = {RingLeadMsgState_0}
+  id :  examples/algorithms/messaging/Node = 
+    {RingLeadMsgState_0 -> RingLeadNode_0}
+sig MsgViz extends Msg = {MsgViz_0}
+  vFrom :  examples/algorithms/messaging/Node = 
+    {MsgViz_0 -> RingLeadNode_0}
+  vTo : set examples/algorithms/messaging/Node = 
+    {MsgViz_0 -> RingLeadNode_0}
+  vId :  examples/algorithms/messaging/Node = 
+    {MsgViz_0 -> RingLeadNode_0}
+sig RingLeadNodeState extends NodeState = {RingLeadNodeState_0, RingLeadNodeState_1}
+  leader :  util/boolean/Bool = 
+    {RingLeadNodeState_0 -> False_0, 
+     RingLeadNodeState_1 -> False_0}
+
+module util/boolean
+sig Bool extends univ = {False_0, True_0}
+sig True extends Bool = True_0
+sig False extends Bool = False_0
+
+module examples/algorithms/messaging
+sig Node extends univ = {RingLeadNode_0}
+sig MsgState extends univ = {RingLeadMsgState_0}
+  from :  examples/algorithms/messaging/Node = 
+    {RingLeadMsgState_0 -> RingLeadNode_0}
+  to : set examples/algorithms/messaging/Node = 
+    {RingLeadMsgState_0 -> RingLeadNode_0}
+sig Msg extends univ = {MsgViz_0}
+  state :  examples/algorithms/messaging/MsgState = 
+    {MsgViz_0 -> RingLeadMsgState_0}
+  sentOn :  examples/algorithms/messaging/Tick = 
+    {MsgViz_0 -> Tick_0}
+  readOn :  ( examples/algorithms/messaging/Node) ->lone ( examples/algorithms/messaging/Tick) = 
+    {}
+sig Tick extends univ = {Tick_0, Tick_1, Tick_2}
+  state :  ( examples/algorithms/messaging/Node) ->one ( examples/algorithms/messaging/NodeState) = 
+    {Tick_0 -> RingLeadNode_0 -> RingLeadNodeState_0, 
+     Tick_1 -> RingLeadNode_0 -> RingLeadNodeState_1, 
+     Tick_2 -> RingLeadNode_0 -> RingLeadNodeState_0}
+  visible :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {}
+  read :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {}
+  sent :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_0 -> RingLeadNode_0 -> MsgViz_0}
+  available : set examples/algorithms/messaging/Msg = 
+    {Tick_0 -> MsgViz_0}
+  needsToSend :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_0 -> RingLeadNode_0 -> MsgViz_0}
+sig NodeState extends univ = {RingLeadNodeState_0, RingLeadNodeState_1}
+
+module util/ordering[examples/algorithms/messaging/Tick]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/messaging/Tick = 
+    {Ord_0 -> Tick_0}
+  last_ :  examples/algorithms/messaging/Tick = 
+    {Ord_0 -> Tick_2}
+  next_ :  ( examples/algorithms/messaging/Tick) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Ord_0 -> {Tick_0 -> Tick_1, Tick_1 -> Tick_2}}
+  prev_ :  ( examples/algorithms/messaging/Tick) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Ord_0 -> {Tick_1 -> Tick_0, Tick_2 -> Tick_1}}
+
+module util/relation
+
+module util/ordering[examples/algorithms/messaging/Node]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/messaging/Node = 
+    {Ord_0 -> RingLeadNode_0}
+  last_ :  examples/algorithms/messaging/Node = 
+    {Ord_0 -> RingLeadNode_0}
+  next_ :  ( examples/algorithms/messaging/Node) ->lone ( examples/algorithms/messaging/Node) = 
+    {}
+  prev_ :  ( examples/algorithms/messaging/Node) ->lone ( examples/algorithms/messaging/Node) = 
+    {}
+
+skolem constants
+Loop_t = 
+    {Tick_0}
+TicksEquivalent_r = 
+    {}
+TicksEquivalent_r_1 = 
+    {}
+
+Analyzing command: check Liveness for 3 but 6 msg/Msg, 2 util/boolean/Bool, 2 msg/NodeState expect 0
+
+No solution found.
+
+Analyzing command: check OneLeader for 5 but 2 util/boolean/Bool, 2 msg/NodeState expect 0
+
+No solution found.
+
+Analyzing command: run SomeLeader for 2 but 3 msg/Node, 5 msg/Msg, 5 msg/Tick, 5 msg/MsgState expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {False_0, MsgViz_0, MsgViz_1, MsgViz_2, MsgViz_3, MsgViz_4, Ord_0, Ord_0, RingLeadMsgState_0, RingLeadMsgState_1, RingLeadMsgState_2, RingLeadMsgState_3, RingLeadMsgState_4, RingLeadNodeState_0, RingLeadNodeState_1, RingLeadNode_0, RingLeadNode_1, RingLeadNode_2, Tick_0, Tick_1, Tick_2, Tick_3, Tick_4, True_0}
+
+module examples/algorithms/ringlead
+sig RingLeadNode extends Node = {RingLeadNode_0, RingLeadNode_1, RingLeadNode_2}
+  rightNeighbor :  examples/algorithms/messaging/Node = 
+    {RingLeadNode_0 -> RingLeadNode_1, 
+     RingLeadNode_1 -> RingLeadNode_2, 
+     RingLeadNode_2 -> RingLeadNode_0}
+sig RingLeadMsgState extends MsgState = {RingLeadMsgState_0, RingLeadMsgState_1, RingLeadMsgState_2, RingLeadMsgState_3, RingLeadMsgState_4}
+  id :  examples/algorithms/messaging/Node = 
+    {RingLeadMsgState_0 -> RingLeadNode_0, 
+     RingLeadMsgState_1 -> RingLeadNode_1, 
+     RingLeadMsgState_2 -> RingLeadNode_2, 
+     RingLeadMsgState_3 -> RingLeadNode_2, 
+     RingLeadMsgState_4 -> RingLeadNode_2}
+sig MsgViz extends Msg = {MsgViz_0, MsgViz_1, MsgViz_2, MsgViz_3, MsgViz_4}
+  vFrom :  examples/algorithms/messaging/Node = 
+    {MsgViz_0 -> RingLeadNode_0, 
+     MsgViz_1 -> RingLeadNode_0, 
+     MsgViz_2 -> RingLeadNode_1, 
+     MsgViz_3 -> RingLeadNode_1, 
+     MsgViz_4 -> RingLeadNode_2}
+  vTo : set examples/algorithms/messaging/Node = 
+    {MsgViz_0 -> RingLeadNode_1, 
+     MsgViz_1 -> RingLeadNode_1, 
+     MsgViz_2 -> RingLeadNode_2, 
+     MsgViz_3 -> RingLeadNode_2, 
+     MsgViz_4 -> RingLeadNode_0}
+  vId :  examples/algorithms/messaging/Node = 
+    {MsgViz_0 -> RingLeadNode_0, 
+     MsgViz_1 -> RingLeadNode_2, 
+     MsgViz_2 -> RingLeadNode_1, 
+     MsgViz_3 -> RingLeadNode_2, 
+     MsgViz_4 -> RingLeadNode_2}
+sig RingLeadNodeState extends NodeState = {RingLeadNodeState_0, RingLeadNodeState_1}
+  leader :  util/boolean/Bool = 
+    {RingLeadNodeState_0 -> True_0, 
+     RingLeadNodeState_1 -> False_0}
+
+module util/boolean
+sig Bool extends univ = {False_0, True_0}
+sig True extends Bool = True_0
+sig False extends Bool = False_0
+
+module examples/algorithms/messaging
+sig Node extends univ = {RingLeadNode_0, RingLeadNode_1, RingLeadNode_2}
+sig MsgState extends univ = {RingLeadMsgState_0, RingLeadMsgState_1, RingLeadMsgState_2, RingLeadMsgState_3, RingLeadMsgState_4}
+  from :  examples/algorithms/messaging/Node = 
+    {RingLeadMsgState_0 -> RingLeadNode_0, 
+     RingLeadMsgState_1 -> RingLeadNode_1, 
+     RingLeadMsgState_2 -> RingLeadNode_0, 
+     RingLeadMsgState_3 -> RingLeadNode_1, 
+     RingLeadMsgState_4 -> RingLeadNode_2}
+  to : set examples/algorithms/messaging/Node = 
+    {RingLeadMsgState_0 -> RingLeadNode_1, 
+     RingLeadMsgState_1 -> RingLeadNode_2, 
+     RingLeadMsgState_2 -> RingLeadNode_1, 
+     RingLeadMsgState_3 -> RingLeadNode_2, 
+     RingLeadMsgState_4 -> RingLeadNode_0}
+sig Msg extends univ = {MsgViz_0, MsgViz_1, MsgViz_2, MsgViz_3, MsgViz_4}
+  state :  examples/algorithms/messaging/MsgState = 
+    {MsgViz_0 -> RingLeadMsgState_0, 
+     MsgViz_1 -> RingLeadMsgState_2, 
+     MsgViz_2 -> RingLeadMsgState_1, 
+     MsgViz_3 -> RingLeadMsgState_3, 
+     MsgViz_4 -> RingLeadMsgState_4}
+  sentOn :  examples/algorithms/messaging/Tick = 
+    {MsgViz_0 -> Tick_0, 
+     MsgViz_1 -> Tick_1, 
+     MsgViz_2 -> Tick_0, 
+     MsgViz_3 -> Tick_2, 
+     MsgViz_4 -> Tick_0}
+  readOn :  ( examples/algorithms/messaging/Node) ->lone ( examples/algorithms/messaging/Tick) = 
+    {MsgViz_0 -> RingLeadNode_1 -> Tick_4}
+sig Tick extends univ = {Tick_0, Tick_1, Tick_2, Tick_3, Tick_4}
+  state :  ( examples/algorithms/messaging/Node) ->one ( examples/algorithms/messaging/NodeState) = 
+    {Tick_0 -> {RingLeadNode_0 -> RingLeadNodeState_1, RingLeadNode_1 -> RingLeadNodeState_1, RingLeadNode_2 -> RingLeadNodeState_1}, 
+     Tick_1 -> {RingLeadNode_0 -> RingLeadNodeState_1, RingLeadNode_1 -> RingLeadNodeState_1, RingLeadNode_2 -> RingLeadNodeState_1}, 
+     Tick_2 -> {RingLeadNode_0 -> RingLeadNodeState_1, RingLeadNode_1 -> RingLeadNodeState_1, RingLeadNode_2 -> RingLeadNodeState_1}, 
+     Tick_3 -> {RingLeadNode_0 -> RingLeadNodeState_1, RingLeadNode_1 -> RingLeadNodeState_1, RingLeadNode_2 -> RingLeadNodeState_1}, 
+     Tick_4 -> {RingLeadNode_0 -> RingLeadNodeState_1, RingLeadNode_1 -> RingLeadNodeState_1, RingLeadNode_2 -> RingLeadNodeState_0}}
+  visible :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_1 -> {RingLeadNode_0 -> MsgViz_4, RingLeadNode_2 -> MsgViz_2}, 
+     Tick_2 -> RingLeadNode_1 -> MsgViz_1, 
+     Tick_3 -> RingLeadNode_2 -> MsgViz_3, 
+     Tick_4 -> RingLeadNode_1 -> MsgViz_0}
+  read :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_1 -> {RingLeadNode_0 -> MsgViz_4, RingLeadNode_2 -> MsgViz_2}, 
+     Tick_2 -> RingLeadNode_1 -> MsgViz_1, 
+     Tick_3 -> RingLeadNode_2 -> MsgViz_3, 
+     Tick_4 -> RingLeadNode_1 -> MsgViz_0}
+  sent :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_0 -> {RingLeadNode_0 -> MsgViz_0, RingLeadNode_1 -> MsgViz_2, RingLeadNode_2 -> MsgViz_4}, 
+     Tick_1 -> RingLeadNode_0 -> MsgViz_1, 
+     Tick_2 -> RingLeadNode_1 -> MsgViz_3}
+  available : set examples/algorithms/messaging/Msg = 
+    {Tick_0 -> {MsgViz_0, MsgViz_1, MsgViz_2, MsgViz_3, MsgViz_4}, 
+     Tick_1 -> {MsgViz_1, MsgViz_3}, 
+     Tick_2 -> MsgViz_3}
+  needsToSend :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_0 -> {RingLeadNode_0 -> MsgViz_4, RingLeadNode_1 -> MsgViz_2, RingLeadNode_2 -> MsgViz_4}, 
+     Tick_1 -> RingLeadNode_0 -> MsgViz_4, 
+     Tick_2 -> RingLeadNode_1 -> MsgViz_2}
+sig NodeState extends univ = {RingLeadNodeState_0, RingLeadNodeState_1}
+
+module util/ordering[examples/algorithms/messaging/Tick]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/messaging/Tick = 
+    {Ord_0 -> Tick_0}
+  last_ :  examples/algorithms/messaging/Tick = 
+    {Ord_0 -> Tick_4}
+  next_ :  ( examples/algorithms/messaging/Tick) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Ord_0 -> {Tick_0 -> Tick_1, Tick_1 -> Tick_2, Tick_2 -> Tick_3, Tick_3 -> Tick_4}}
+  prev_ :  ( examples/algorithms/messaging/Tick) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Ord_0 -> {Tick_1 -> Tick_0, Tick_2 -> Tick_1, Tick_3 -> Tick_2, Tick_4 -> Tick_3}}
+
+module util/relation
+
+module util/ordering[examples/algorithms/messaging/Node]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/messaging/Node = 
+    {Ord_0 -> RingLeadNode_0}
+  last_ :  examples/algorithms/messaging/Node = 
+    {Ord_0 -> RingLeadNode_2}
+  next_ :  ( examples/algorithms/messaging/Node) ->lone ( examples/algorithms/messaging/Node) = 
+    {Ord_0 -> {RingLeadNode_0 -> RingLeadNode_1, RingLeadNode_1 -> RingLeadNode_2}}
+  prev_ :  ( examples/algorithms/messaging/Node) ->lone ( examples/algorithms/messaging/Node) = 
+    {Ord_0 -> {RingLeadNode_1 -> RingLeadNode_0, RingLeadNode_2 -> RingLeadNode_1}}
+
+skolem constants
+SomeLeader_t = 
+    {Tick_4}
+SomeLeaderAtTick_n = 
+    {RingLeadNode_2}
+
+Analyzing command: check LeaderHighest for 3 but 2 msg/NodeState, 5 msg/Msg, 5 msg/MsgState, 5 msg/Tick expect 0
+
+No solution found.
+

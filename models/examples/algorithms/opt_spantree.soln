@@ -1,0 +1,67 @@
+Compiling models/examples/algorithms/opt_spantree.als...
+Compilation successful!
+Analyzing command: run SuccessfulRun for 4 examples/algorithms/opt_spantree/State, 5 examples/algorithms/opt_spantree/Process, 3 examples/algorithms/opt_spantree/Lvl expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Lvl_0, Lvl_1, Lvl_2, Ord_0, Ord_0, Process_0, Process_1, Process_2, Process_3, Root_0, State_0, State_1, State_2, State_3}
+
+module examples/algorithms/opt_spantree
+sig Process extends univ = {Process_0, Process_1, Process_2, Process_3, Root_0}
+  adj : set examples/algorithms/opt_spantree/Process = 
+    {Process_0 -> {Process_1, Process_2, Process_3, Root_0}, 
+     Process_1 -> {Process_0, Process_2, Process_3, Root_0}, 
+     Process_2 -> {Process_0, Process_1, Root_0}, 
+     Process_3 -> {Process_0, Process_1, Root_0}, 
+     Root_0 -> {Process_0, Process_1, Process_2, Process_3}}
+sig Root extends Process = Root_0
+sig Lvl extends univ = {Lvl_0, Lvl_1, Lvl_2}
+sig State extends univ = {State_0, State_1, State_2, State_3}
+  runs : set examples/algorithms/opt_spantree/Process = 
+    {State_0 -> {Process_0, Process_2, Root_0}, 
+     State_1 -> Process_0, 
+     State_2 -> {Process_1, Process_2, Process_3, Root_0}, 
+     State_3 -> Root_0}
+  lvl :  ( examples/algorithms/opt_spantree/Process) ->lone ( examples/algorithms/opt_spantree/Lvl) = 
+    {State_1 -> Root_0 -> Lvl_0, 
+     State_2 -> {Process_0 -> Lvl_1, Root_0 -> Lvl_0}, 
+     State_3 -> {Process_0 -> Lvl_1, Process_1 -> Lvl_1, Process_2 -> Lvl_2, Process_3 -> Lvl_2, Root_0 -> Lvl_0}}
+  parent :  ( examples/algorithms/opt_spantree/Process) ->lone ( examples/algorithms/opt_spantree/Process) = 
+    {State_2 -> Process_0 -> Root_0, 
+     State_3 -> {Process_0 -> Root_0, Process_1 -> Root_0, Process_2 -> Process_0, Process_3 -> Process_0}}
+
+module util/ordering[examples/algorithms/opt_spantree/Lvl]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/opt_spantree/Lvl = 
+    {Ord_0 -> Lvl_0}
+  last_ :  examples/algorithms/opt_spantree/Lvl = 
+    {Ord_0 -> Lvl_2}
+  next_ :  ( examples/algorithms/opt_spantree/Lvl) ->lone ( examples/algorithms/opt_spantree/Lvl) = 
+    {Ord_0 -> {Lvl_0 -> Lvl_1, Lvl_1 -> Lvl_2}}
+  prev_ :  ( examples/algorithms/opt_spantree/Lvl) ->lone ( examples/algorithms/opt_spantree/Lvl) = 
+    {Ord_0 -> {Lvl_1 -> Lvl_0, Lvl_2 -> Lvl_1}}
+
+module util/ordering[examples/algorithms/opt_spantree/State]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/opt_spantree/State = 
+    {Ord_0 -> State_0}
+  last_ :  examples/algorithms/opt_spantree/State = 
+    {Ord_0 -> State_3}
+  next_ :  ( examples/algorithms/opt_spantree/State) ->lone ( examples/algorithms/opt_spantree/State) = 
+    {Ord_0 -> {State_0 -> State_1, State_1 -> State_2, State_2 -> State_3}}
+  prev_ :  ( examples/algorithms/opt_spantree/State) ->lone ( examples/algorithms/opt_spantree/State) = 
+    {Ord_0 -> {State_1 -> State_0, State_2 -> State_1, State_3 -> State_2}}
+
+module util/graph[examples/algorithms/opt_spantree/Process]
+
+module util/relation
+
+Analyzing command: run BadLivenessTrace for 5 but 7 examples/algorithms/opt_spantree/State expect 0
+
+No solution found.
+
+Analyzing command: check Closure for 5 but 7 examples/algorithms/opt_spantree/State expect 0
+
+No solution found.
+

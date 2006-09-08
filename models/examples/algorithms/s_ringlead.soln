@@ -1,0 +1,127 @@
+Compiling models/examples/algorithms/s_ringlead.als...
+Compilation successful!
+Analyzing command: run BadLivenessTrace for 3 but 8 examples/algorithms/s_ringlead/State expect 0
+
+No solution found.
+
+Analyzing command: run SomeLeader for 4 but 6 examples/algorithms/s_ringlead/State expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Ord_0, Ord_0, Process_0, Process_1, Process_2, Process_3, State_0, State_1, State_2, State_3, State_4, State_5}
+
+module examples/algorithms/s_ringlead
+sig Process extends univ = {Process_0, Process_1, Process_2, Process_3}
+  rightNeighbor :  examples/algorithms/s_ringlead/Process = 
+    {Process_0 -> Process_1, 
+     Process_1 -> Process_2, 
+     Process_2 -> Process_3, 
+     Process_3 -> Process_0}
+sig State extends univ = {State_0, State_1, State_2, State_3, State_4, State_5}
+  buffer :  ( examples/algorithms/s_ringlead/Process) -> ( examples/algorithms/s_ringlead/Process) = 
+    {State_1 -> {Process_0 -> Process_0, Process_1 -> Process_1, Process_2 -> Process_2, Process_3 -> Process_3}, 
+     State_2 -> {Process_0 -> Process_0, Process_0 -> Process_3, Process_1 -> Process_1}, 
+     State_3 -> {Process_0 -> Process_0, Process_1 -> Process_1, Process_1 -> Process_3}, 
+     State_4 -> {Process_1 -> Process_1, Process_2 -> Process_3}}
+  runs : set examples/algorithms/s_ringlead/Process = 
+    {State_0 -> {Process_0, Process_1, Process_2, Process_3}, 
+     State_1 -> {Process_0, Process_3}, 
+     State_2 -> Process_1, 
+     State_3 -> {Process_1, Process_2}, 
+     State_4 -> {Process_2, Process_3}}
+  leader : set examples/algorithms/s_ringlead/Process = 
+    {State_5 -> Process_3}
+
+module util/ordering[examples/algorithms/s_ringlead/State]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/s_ringlead/State = 
+    {Ord_0 -> State_0}
+  last_ :  examples/algorithms/s_ringlead/State = 
+    {Ord_0 -> State_5}
+  next_ :  ( examples/algorithms/s_ringlead/State) ->lone ( examples/algorithms/s_ringlead/State) = 
+    {Ord_0 -> {State_0 -> State_1, State_1 -> State_2, State_2 -> State_3, State_3 -> State_4, State_4 -> State_5}}
+  prev_ :  ( examples/algorithms/s_ringlead/State) ->lone ( examples/algorithms/s_ringlead/State) = 
+    {Ord_0 -> {State_1 -> State_0, State_2 -> State_1, State_3 -> State_2, State_4 -> State_3, State_5 -> State_4}}
+
+module util/ordering[examples/algorithms/s_ringlead/Process]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/s_ringlead/Process = 
+    {Ord_0 -> Process_0}
+  last_ :  examples/algorithms/s_ringlead/Process = 
+    {Ord_0 -> Process_3}
+  next_ :  ( examples/algorithms/s_ringlead/Process) ->lone ( examples/algorithms/s_ringlead/Process) = 
+    {Ord_0 -> {Process_0 -> Process_1, Process_1 -> Process_2, Process_2 -> Process_3}}
+  prev_ :  ( examples/algorithms/s_ringlead/Process) ->lone ( examples/algorithms/s_ringlead/Process) = 
+    {Ord_0 -> {Process_1 -> Process_0, Process_2 -> Process_1, Process_3 -> Process_2}}
+
+module util/graph[examples/algorithms/s_ringlead/Process]
+
+module util/relation
+
+Analyzing command: check Safety for 7 expect 0
+
+No solution found.
+
+Analyzing command: run AltTrans for 5 but 8 examples/algorithms/s_ringlead/State expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Ord_0, Ord_0, Process_0, Process_1, Process_2, Process_3, Process_4, State_0, State_1, State_2, State_3, State_4, State_5, State_6, State_7}
+
+module examples/algorithms/s_ringlead
+sig Process extends univ = {Process_0, Process_1, Process_2, Process_3, Process_4}
+  rightNeighbor :  examples/algorithms/s_ringlead/Process = 
+    {Process_0 -> Process_4, 
+     Process_1 -> Process_3, 
+     Process_2 -> Process_0, 
+     Process_3 -> Process_2, 
+     Process_4 -> Process_1}
+sig State extends univ = {State_0, State_1, State_2, State_3, State_4, State_5, State_6, State_7}
+  buffer :  ( examples/algorithms/s_ringlead/Process) -> ( examples/algorithms/s_ringlead/Process) = 
+    {State_1 -> {Process_0 -> Process_0, Process_1 -> Process_1, Process_2 -> Process_2, Process_3 -> Process_3, Process_4 -> Process_4}, 
+     State_2 -> {Process_0 -> Process_0, Process_1 -> Process_4, Process_2 -> Process_2, Process_2 -> Process_3}, 
+     State_3 -> {Process_0 -> Process_0, Process_0 -> Process_3, Process_2 -> Process_2, Process_3 -> Process_4}, 
+     State_4 -> {Process_0 -> Process_0, Process_0 -> Process_3, Process_2 -> Process_2, Process_2 -> Process_4}, 
+     State_5 -> {Process_0 -> Process_0, Process_0 -> Process_3, Process_0 -> Process_4, Process_2 -> Process_2}, 
+     State_6 -> {Process_0 -> Process_0, Process_0 -> Process_4, Process_2 -> Process_2}, 
+     State_7 -> Process_0 -> Process_2}
+  runs : set examples/algorithms/s_ringlead/Process = 
+    {State_0 -> {Process_0, Process_1, Process_2, Process_3, Process_4}, 
+     State_1 -> {Process_1, Process_2, Process_3}, 
+     State_2 -> {Process_0, Process_3}, 
+     State_3 -> Process_2, 
+     State_4 -> Process_0, 
+     State_5 -> Process_4, 
+     State_6 -> {Process_0, Process_4}}
+  leader : set examples/algorithms/s_ringlead/Process = 
+    {State_6 -> Process_4, 
+     State_7 -> Process_4}
+
+module util/ordering[examples/algorithms/s_ringlead/State]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/s_ringlead/State = 
+    {Ord_0 -> State_0}
+  last_ :  examples/algorithms/s_ringlead/State = 
+    {Ord_0 -> State_7}
+  next_ :  ( examples/algorithms/s_ringlead/State) ->lone ( examples/algorithms/s_ringlead/State) = 
+    {Ord_0 -> {State_0 -> State_1, State_1 -> State_2, State_2 -> State_3, State_3 -> State_4, State_4 -> State_5, State_5 -> State_6, State_6 -> State_7}}
+  prev_ :  ( examples/algorithms/s_ringlead/State) ->lone ( examples/algorithms/s_ringlead/State) = 
+    {Ord_0 -> {State_1 -> State_0, State_2 -> State_1, State_3 -> State_2, State_4 -> State_3, State_5 -> State_4, State_6 -> State_5, State_7 -> State_6}}
+
+module util/ordering[examples/algorithms/s_ringlead/Process]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/s_ringlead/Process = 
+    {Ord_0 -> Process_0}
+  last_ :  examples/algorithms/s_ringlead/Process = 
+    {Ord_0 -> Process_4}
+  next_ :  ( examples/algorithms/s_ringlead/Process) ->lone ( examples/algorithms/s_ringlead/Process) = 
+    {Ord_0 -> {Process_0 -> Process_1, Process_1 -> Process_2, Process_2 -> Process_3, Process_3 -> Process_4}}
+  prev_ :  ( examples/algorithms/s_ringlead/Process) ->lone ( examples/algorithms/s_ringlead/Process) = 
+    {Ord_0 -> {Process_1 -> Process_0, Process_2 -> Process_1, Process_3 -> Process_2, Process_4 -> Process_3}}
+
+module util/graph[examples/algorithms/s_ringlead/Process]
+
+module util/relation
+

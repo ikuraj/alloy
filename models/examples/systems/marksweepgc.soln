@@ -1,0 +1,14 @@
+Compiling models/examples/systems/marksweepgc.als...
+Compilation successful!
+Analyzing command: check Soundness1 for 3 expect 0
+
+No solution found.
+
+Analyzing command: check Soundness2 for 3 expect 0
+
+No solution found.
+
+Analyzing command: check Completeness for 3 expect 0
+
+No solution found.
+

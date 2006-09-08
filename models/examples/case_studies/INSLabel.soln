@@ -1,0 +1,10 @@
+Compiling models/examples/case_studies/INSLabel.als...
+Compilation successful!
+Analyzing command: check LookupConforms2 for 4 but 1 examples/case_studies/INSLabel/State, 3 examples/case_studies/INSLabel/LabelTree, 2 examples/case_studies/INSLabel/Record expect 0
+
+No solution found.
+
+Analyzing command: run Lookup for 3 expect 0
+
+No solution found.
+

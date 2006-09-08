@@ -1,0 +1,60 @@
+Compiling models/examples/puzzles/hanoi.als...
+Compilation successful!
+Analyzing command: run Game2 for 1 but 3 examples/puzzles/hanoi/Stake, 3 examples/puzzles/hanoi/Disc, 8 examples/puzzles/hanoi/State expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Disc_0, Disc_1, Disc_2, Ord_0, Ord_0, Ord_0, Stake_0, Stake_1, Stake_2, State_0, State_1, State_2, State_3, State_4, State_5, State_6, State_7}
+
+module examples/puzzles/hanoi
+sig Stake extends univ = {Stake_0, Stake_1, Stake_2}
+sig Disc extends univ = {Disc_0, Disc_1, Disc_2}
+sig State extends univ = {State_0, State_1, State_2, State_3, State_4, State_5, State_6, State_7}
+  on :  ( examples/puzzles/hanoi/Disc) ->one ( examples/puzzles/hanoi/Stake) = 
+    {State_0 -> {Disc_0 -> Stake_0, Disc_1 -> Stake_0, Disc_2 -> Stake_0}, 
+     State_1 -> {Disc_0 -> Stake_2, Disc_1 -> Stake_0, Disc_2 -> Stake_0}, 
+     State_2 -> {Disc_0 -> Stake_2, Disc_1 -> Stake_1, Disc_2 -> Stake_0}, 
+     State_3 -> {Disc_0 -> Stake_1, Disc_1 -> Stake_1, Disc_2 -> Stake_0}, 
+     State_4 -> {Disc_0 -> Stake_1, Disc_1 -> Stake_1, Disc_2 -> Stake_2}, 
+     State_5 -> {Disc_0 -> Stake_0, Disc_1 -> Stake_1, Disc_2 -> Stake_2}, 
+     State_6 -> {Disc_0 -> Stake_0, Disc_1 -> Stake_2, Disc_2 -> Stake_2}, 
+     State_7 -> {Disc_0 -> Stake_2, Disc_1 -> Stake_2, Disc_2 -> Stake_2}}
+
+module util/ordering[examples/puzzles/hanoi/State]
+sig Ord extends univ = Ord_0
+  first_ :  examples/puzzles/hanoi/State = 
+    {Ord_0 -> State_0}
+  last_ :  examples/puzzles/hanoi/State = 
+    {Ord_0 -> State_7}
+  next_ :  ( examples/puzzles/hanoi/State) ->lone ( examples/puzzles/hanoi/State) = 
+    {Ord_0 -> {State_0 -> State_1, State_1 -> State_2, State_2 -> State_3, State_3 -> State_4, State_4 -> State_5, State_5 -> State_6, State_6 -> State_7}}
+  prev_ :  ( examples/puzzles/hanoi/State) ->lone ( examples/puzzles/hanoi/State) = 
+    {Ord_0 -> {State_1 -> State_0, State_2 -> State_1, State_3 -> State_2, State_4 -> State_3, State_5 -> State_4, State_6 -> State_5, State_7 -> State_6}}
+
+module util/ordering[examples/puzzles/hanoi/Stake]
+sig Ord extends univ = Ord_0
+  first_ :  examples/puzzles/hanoi/Stake = 
+    {Ord_0 -> Stake_0}
+  last_ :  examples/puzzles/hanoi/Stake = 
+    {Ord_0 -> Stake_2}
+  next_ :  ( examples/puzzles/hanoi/Stake) ->lone ( examples/puzzles/hanoi/Stake) = 
+    {Ord_0 -> {Stake_0 -> Stake_1, Stake_1 -> Stake_2}}
+  prev_ :  ( examples/puzzles/hanoi/Stake) ->lone ( examples/puzzles/hanoi/Stake) = 
+    {Ord_0 -> {Stake_1 -> Stake_0, Stake_2 -> Stake_1}}
+
+module util/ordering[examples/puzzles/hanoi/Disc]
+sig Ord extends univ = Ord_0
+  first_ :  examples/puzzles/hanoi/Disc = 
+    {Ord_0 -> Disc_0}
+  last_ :  examples/puzzles/hanoi/Disc = 
+    {Ord_0 -> Disc_2}
+  next_ :  ( examples/puzzles/hanoi/Disc) ->lone ( examples/puzzles/hanoi/Disc) = 
+    {Ord_0 -> {Disc_0 -> Disc_1, Disc_1 -> Disc_2}}
+  prev_ :  ( examples/puzzles/hanoi/Disc) ->lone ( examples/puzzles/hanoi/Disc) = 
+    {Ord_0 -> {Disc_1 -> Disc_0, Disc_2 -> Disc_1}}
+
+skolem constants
+Game2_finalState = 
+    {State_7}
+

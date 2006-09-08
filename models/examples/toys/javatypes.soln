@@ -1,0 +1,28 @@
+Compiling models/examples/toys/javatypes.als...
+Compilation successful!
+Analyzing command: run Show for 3 expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Class_0, Instance_0, Instance_1, Instance_2, Interface_0, Object_0, Variable_0}
+
+module examples/toys/javatypes
+sig Type extends univ = {Class_0, Interface_0, Object_0}
+  subtypes : set examples/toys/javatypes/Type = 
+    {Interface_0 -> Class_0, 
+     Object_0 -> {Class_0, Interface_0}}
+sig Class extends Type = {Class_0, Object_0}
+sig Interface extends Type = {Interface_0}
+sig Object extends Class = Object_0
+sig Instance extends univ = {Instance_0, Instance_1, Instance_2}
+  type :  examples/toys/javatypes/Class = 
+    {Instance_0 -> Class_0, 
+     Instance_1 -> Class_0, 
+     Instance_2 -> Class_0}
+sig Variable extends univ = {Variable_0}
+  holds : lone examples/toys/javatypes/Instance = 
+    {Variable_0 -> Instance_0}
+  type :  examples/toys/javatypes/Type = 
+    {Variable_0 -> Interface_0}
+

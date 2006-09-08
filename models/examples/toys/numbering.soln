@@ -1,0 +1,56 @@
+Compiling models/examples/toys/numbering.als...
+Compilation successful!
+Analyzing command: check PreserveForest for 4 expect 0
+
+No solution found.
+
+Analyzing command: check AddNeverReduces for 5 expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {NumberedState_0, NumberedState_1, NumberedState_2, NumberedState_3, NumberedState_4, NumberedStyle_0, Value_0, Value_1, Value_2}
+
+module examples/toys/numbering
+sig Style extends univ = {NumberedStyle_0}
+  replaces : set examples/toys/numbering/Style = 
+    {NumberedStyle_0 -> NumberedStyle_0}
+  parents : set examples/toys/numbering/Style = 
+    {}
+sig State extends univ = {NumberedState_0, NumberedState_1, NumberedState_2, NumberedState_3, NumberedState_4}
+  context : set examples/toys/numbering/Style = 
+    {NumberedState_1 -> NumberedStyle_0, 
+     NumberedState_2 -> NumberedStyle_0, 
+     NumberedState_3 -> NumberedStyle_0}
+  ancestors :  ( examples/toys/numbering/Style) -> ( examples/toys/numbering/Style) = 
+    {NumberedState_1 -> NumberedStyle_0 -> NumberedStyle_0, 
+     NumberedState_2 -> NumberedStyle_0 -> NumberedStyle_0, 
+     NumberedState_3 -> NumberedStyle_0 -> NumberedStyle_0}
+sig Value extends univ = {Value_0, Value_1, Value_2}
+  next :  examples/toys/numbering/Value = 
+    {Value_0 -> Value_0, 
+     Value_1 -> Value_0, 
+     Value_2 -> Value_0}
+sig NumberedStyle extends Style = {NumberedStyle_0}
+  initial :  examples/toys/numbering/Value = 
+    {NumberedStyle_0 -> Value_1}
+sig NumberedState extends State = {NumberedState_0, NumberedState_1, NumberedState_2, NumberedState_3, NumberedState_4}
+  value :  ( examples/toys/numbering/Style) ->one ( examples/toys/numbering/Value) = 
+    {NumberedState_0 -> NumberedStyle_0 -> Value_2, 
+     NumberedState_1 -> NumberedStyle_0 -> Value_1, 
+     NumberedState_2 -> NumberedStyle_0 -> Value_0, 
+     NumberedState_3 -> NumberedStyle_0 -> Value_0, 
+     NumberedState_4 -> NumberedStyle_0 -> Value_0}
+
+module util/relation
+
+skolem constants
+AddNeverReduces_s = 
+    {NumberedState_0}
+AddNeverReduces_s' = 
+    {NumberedState_1}
+AddNeverReduces_z = 
+    {NumberedStyle_0}
+AddNeverReduces_y = 
+    {NumberedStyle_0}
+

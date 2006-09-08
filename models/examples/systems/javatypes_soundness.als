@@ -135,12 +135,11 @@ fact ScopeFact {
 
 check TypeSoundness for 3 expect 0
 
-// slow
 check TypeSoundness for 2 State, 1 Assignment,
 1 Statement, 5 Interface, 5 Class, 1 Null,
 7 Object, 12 Expr, 3 Field, 3 Slot expect 0
 
-// slow
-check TypeSoundness for 2 State, 1 Statement,
-10 Type, 8 Value, 12 Expr,
-3 Field, 3 Slot expect 0
+// very slow
+// check TypeSoundness for 2 State, 1 Statement,
+// 10 Type, 8 Value, 12 Expr,
+// 3 Field, 3 Slot expect 0

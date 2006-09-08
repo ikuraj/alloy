@@ -1,0 +1,132 @@
+Compiling models/examples/algorithms/stable_orient_ring.als...
+Compilation successful!
+Analyzing command: run SomeState for 1 but 2 examples/algorithms/stable_orient_ring/Tick, 2 util/boolean/Bool, 3 examples/algorithms/stable_orient_ring/Process expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {False_0, Ord_0, Process_0, Process_1, Process_2, Tick_0, Tick_1, True_0}
+
+module examples/algorithms/stable_orient_ring
+sig Process extends univ = {Process_0, Process_1, Process_2}
+  rightNeighbor :  examples/algorithms/stable_orient_ring/Process = 
+    {Process_0 -> Process_1, 
+     Process_1 -> Process_2, 
+     Process_2 -> Process_0}
+  AP1 :  examples/algorithms/stable_orient_ring/Process = 
+    {Process_0 -> Process_2, 
+     Process_1 -> Process_2, 
+     Process_2 -> Process_0}
+  AP2 :  examples/algorithms/stable_orient_ring/Process = 
+    {Process_0 -> Process_1, 
+     Process_1 -> Process_0, 
+     Process_2 -> Process_1}
+sig Tick extends univ = {Tick_0, Tick_1}
+  runs : set examples/algorithms/stable_orient_ring/Process = 
+    {Tick_0 -> {Process_0, Process_1, Process_2}, 
+     Tick_1 -> {Process_0, Process_1, Process_2}}
+  dir :  ( examples/algorithms/stable_orient_ring/Process) ->one ( util/boolean/Bool) = 
+    {Tick_0 -> {Process_0 -> True_0, Process_1 -> True_0, Process_2 -> True_0}, 
+     Tick_1 -> {Process_0 -> False_0, Process_1 -> True_0, Process_2 -> True_0}}
+  S :  ( examples/algorithms/stable_orient_ring/Process) ->one ( util/boolean/Bool) = 
+    {Tick_0 -> {Process_0 -> False_0, Process_1 -> False_0, Process_2 -> True_0}, 
+     Tick_1 -> {Process_0 -> True_0, Process_1 -> False_0, Process_2 -> True_0}}
+  T :  ( examples/algorithms/stable_orient_ring/Process) ->one ( util/boolean/Bool) = 
+    {Tick_0 -> {Process_0 -> True_0, Process_1 -> False_0, Process_2 -> True_0}, 
+     Tick_1 -> {Process_0 -> False_0, Process_1 -> False_0, Process_2 -> True_0}}
+  ring_ :  ( examples/algorithms/stable_orient_ring/Process) -> ( examples/algorithms/stable_orient_ring/Process) = 
+    {Tick_0 -> {Process_0 -> Process_2, Process_1 -> Process_2, Process_2 -> Process_0}, 
+     Tick_1 -> {Process_0 -> Process_1, Process_1 -> Process_2, Process_2 -> Process_0}}
+
+module util/boolean
+sig Bool extends univ = {False_0, True_0}
+sig True extends Bool = True_0
+sig False extends Bool = False_0
+
+module util/ordering[examples/algorithms/stable_orient_ring/Tick]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/stable_orient_ring/Tick = 
+    {Ord_0 -> Tick_0}
+  last_ :  examples/algorithms/stable_orient_ring/Tick = 
+    {Ord_0 -> Tick_1}
+  next_ :  ( examples/algorithms/stable_orient_ring/Tick) ->lone ( examples/algorithms/stable_orient_ring/Tick) = 
+    {Ord_0 -> Tick_0 -> Tick_1}
+  prev_ :  ( examples/algorithms/stable_orient_ring/Tick) ->lone ( examples/algorithms/stable_orient_ring/Tick) = 
+    {Ord_0 -> Tick_1 -> Tick_0}
+
+module util/graph[examples/algorithms/stable_orient_ring/Process]
+
+module util/relation
+
+skolem constants
+ring_n = 
+    {Process_0}
+SomeState_t = 
+    {Tick_1}
+
+Analyzing command: check Closure for 1 but 2 examples/algorithms/stable_orient_ring/Tick, 2 util/boolean/Bool, 3 examples/algorithms/stable_orient_ring/Process expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {False_0, Ord_0, Process_0, Process_1, Process_2, Tick_0, Tick_1, True_0}
+
+module examples/algorithms/stable_orient_ring
+sig Process extends univ = {Process_0, Process_1, Process_2}
+  rightNeighbor :  examples/algorithms/stable_orient_ring/Process = 
+    {Process_0 -> Process_2, 
+     Process_1 -> Process_0, 
+     Process_2 -> Process_1}
+  AP1 :  examples/algorithms/stable_orient_ring/Process = 
+    {Process_0 -> Process_2, 
+     Process_1 -> Process_0, 
+     Process_2 -> Process_0}
+  AP2 :  examples/algorithms/stable_orient_ring/Process = 
+    {Process_0 -> Process_1, 
+     Process_1 -> Process_2, 
+     Process_2 -> Process_1}
+sig Tick extends univ = {Tick_0, Tick_1}
+  runs : set examples/algorithms/stable_orient_ring/Process = 
+    {Tick_0 -> Process_0, 
+     Tick_1 -> Process_2}
+  dir :  ( examples/algorithms/stable_orient_ring/Process) ->one ( util/boolean/Bool) = 
+    {Tick_0 -> {Process_0 -> False_0, Process_1 -> False_0, Process_2 -> True_0}, 
+     Tick_1 -> {Process_0 -> True_0, Process_1 -> False_0, Process_2 -> True_0}}
+  S :  ( examples/algorithms/stable_orient_ring/Process) ->one ( util/boolean/Bool) = 
+    {Tick_0 -> {Process_0 -> False_0, Process_1 -> True_0, Process_2 -> False_0}, 
+     Tick_1 -> {Process_0 -> True_0, Process_1 -> True_0, Process_2 -> False_0}}
+  T :  ( examples/algorithms/stable_orient_ring/Process) ->one ( util/boolean/Bool) = 
+    {Tick_0 -> {Process_0 -> True_0, Process_1 -> True_0, Process_2 -> False_0}, 
+     Tick_1 -> {Process_0 -> False_0, Process_1 -> True_0, Process_2 -> False_0}}
+  ring_ :  ( examples/algorithms/stable_orient_ring/Process) -> ( examples/algorithms/stable_orient_ring/Process) = 
+    {Tick_0 -> {Process_0 -> Process_1, Process_1 -> Process_2, Process_2 -> Process_0}, 
+     Tick_1 -> {Process_0 -> Process_2, Process_1 -> Process_2, Process_2 -> Process_0}}
+
+module util/boolean
+sig Bool extends univ = {False_0, True_0}
+sig True extends Bool = True_0
+sig False extends Bool = False_0
+
+module util/ordering[examples/algorithms/stable_orient_ring/Tick]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/stable_orient_ring/Tick = 
+    {Ord_0 -> Tick_0}
+  last_ :  examples/algorithms/stable_orient_ring/Tick = 
+    {Ord_0 -> Tick_1}
+  next_ :  ( examples/algorithms/stable_orient_ring/Tick) ->lone ( examples/algorithms/stable_orient_ring/Tick) = 
+    {Ord_0 -> Tick_0 -> Tick_1}
+  prev_ :  ( examples/algorithms/stable_orient_ring/Tick) ->lone ( examples/algorithms/stable_orient_ring/Tick) = 
+    {Ord_0 -> Tick_1 -> Tick_0}
+
+module util/graph[examples/algorithms/stable_orient_ring/Process]
+
+module util/relation
+
+skolem constants
+Closure_t = 
+    {Tick_0}
+ring_n = 
+    {Process_0}
+ring_n_1 = 
+    {Process_1}
+

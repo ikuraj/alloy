@@ -1,0 +1,128 @@
+Compiling models/examples/algorithms/messaging.als...
+Compilation successful!
+Analyzing command: run SomeState for 2 expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {MsgState_0, MsgState_1, NodeState_0, Node_0, Node_1, Ord_0, Tick_0, Tick_1}
+
+module examples/algorithms/messaging
+sig Node extends univ = {Node_0, Node_1}
+sig MsgState extends univ = {MsgState_0, MsgState_1}
+  from :  examples/algorithms/messaging/Node = 
+    {MsgState_0 -> Node_0, 
+     MsgState_1 -> Node_1}
+  to : set examples/algorithms/messaging/Node = 
+    {MsgState_0 -> Node_1, 
+     MsgState_1 -> Node_1}
+sig Msg extends univ = {}
+  state :  examples/algorithms/messaging/MsgState = 
+    {}
+  sentOn :  examples/algorithms/messaging/Tick = 
+    {}
+  readOn :  ( examples/algorithms/messaging/Node) ->lone ( examples/algorithms/messaging/Tick) = 
+    {}
+sig Tick extends univ = {Tick_0, Tick_1}
+  state :  ( examples/algorithms/messaging/Node) ->one ( examples/algorithms/messaging/NodeState) = 
+    {Tick_0 -> {Node_0 -> NodeState_0, Node_1 -> NodeState_0}, 
+     Tick_1 -> {Node_0 -> NodeState_0, Node_1 -> NodeState_0}}
+  visible :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {}
+  read :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {}
+  sent :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {}
+  available : set examples/algorithms/messaging/Msg = 
+    {}
+  needsToSend :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {}
+sig NodeState extends univ = {NodeState_0}
+
+module util/ordering[examples/algorithms/messaging/Tick]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/messaging/Tick = 
+    {Ord_0 -> Tick_0}
+  last_ :  examples/algorithms/messaging/Tick = 
+    {Ord_0 -> Tick_1}
+  next_ :  ( examples/algorithms/messaging/Tick) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Ord_0 -> Tick_0 -> Tick_1}
+  prev_ :  ( examples/algorithms/messaging/Tick) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Ord_0 -> Tick_1 -> Tick_0}
+
+module util/relation
+
+Analyzing command: run OutOfOrder for 4 expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {MsgState_0, MsgState_1, MsgState_2, MsgState_3, Msg_0, Msg_1, NodeState_0, Node_0, Node_1, Ord_0, Tick_0, Tick_1, Tick_2, Tick_3}
+
+module examples/algorithms/messaging
+sig Node extends univ = {Node_0, Node_1}
+sig MsgState extends univ = {MsgState_0, MsgState_1, MsgState_2, MsgState_3}
+  from :  examples/algorithms/messaging/Node = 
+    {MsgState_0 -> Node_0, 
+     MsgState_1 -> Node_0, 
+     MsgState_2 -> Node_0, 
+     MsgState_3 -> Node_0}
+  to : set examples/algorithms/messaging/Node = 
+    {MsgState_0 -> {Node_0, Node_1}, 
+     MsgState_1 -> Node_0, 
+     MsgState_2 -> Node_1}
+sig Msg extends univ = {Msg_0, Msg_1}
+  state :  examples/algorithms/messaging/MsgState = 
+    {Msg_0 -> MsgState_1, 
+     Msg_1 -> MsgState_1}
+  sentOn :  examples/algorithms/messaging/Tick = 
+    {Msg_0 -> Tick_1, 
+     Msg_1 -> Tick_0}
+  readOn :  ( examples/algorithms/messaging/Node) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Msg_0 -> Node_0 -> Tick_2, 
+     Msg_1 -> Node_0 -> Tick_3}
+sig Tick extends univ = {Tick_0, Tick_1, Tick_2, Tick_3}
+  state :  ( examples/algorithms/messaging/Node) ->one ( examples/algorithms/messaging/NodeState) = 
+    {Tick_0 -> {Node_0 -> NodeState_0, Node_1 -> NodeState_0}, 
+     Tick_1 -> {Node_0 -> NodeState_0, Node_1 -> NodeState_0}, 
+     Tick_2 -> {Node_0 -> NodeState_0, Node_1 -> NodeState_0}, 
+     Tick_3 -> {Node_0 -> NodeState_0, Node_1 -> NodeState_0}}
+  visible :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_2 -> Node_0 -> Msg_0, 
+     Tick_3 -> Node_0 -> Msg_1}
+  read :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_2 -> Node_0 -> Msg_0, 
+     Tick_3 -> Node_0 -> Msg_1}
+  sent :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {Tick_0 -> Node_0 -> Msg_1, 
+     Tick_1 -> Node_0 -> Msg_0}
+  available : set examples/algorithms/messaging/Msg = 
+    {Tick_0 -> {Msg_0, Msg_1}, 
+     Tick_1 -> Msg_0}
+  needsToSend :  ( examples/algorithms/messaging/Node) -> ( examples/algorithms/messaging/Msg) = 
+    {}
+sig NodeState extends univ = {NodeState_0}
+
+module util/ordering[examples/algorithms/messaging/Tick]
+sig Ord extends univ = Ord_0
+  first_ :  examples/algorithms/messaging/Tick = 
+    {Ord_0 -> Tick_0}
+  last_ :  examples/algorithms/messaging/Tick = 
+    {Ord_0 -> Tick_3}
+  next_ :  ( examples/algorithms/messaging/Tick) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Ord_0 -> {Tick_0 -> Tick_1, Tick_1 -> Tick_2, Tick_2 -> Tick_3}}
+  prev_ :  ( examples/algorithms/messaging/Tick) ->lone ( examples/algorithms/messaging/Tick) = 
+    {Ord_0 -> {Tick_1 -> Tick_0, Tick_2 -> Tick_1, Tick_3 -> Tick_2}}
+
+module util/relation
+
+skolem constants
+ReadInOrder_n1 = 
+    {Node_0}
+ReadInOrder_n2 = 
+    {Node_0}
+ReadInOrder_m1 = 
+    {Msg_0}
+ReadInOrder_m2 = 
+    {Msg_1}
+

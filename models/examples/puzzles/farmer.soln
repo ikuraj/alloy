@@ -1,0 +1,47 @@
+Compiling models/examples/puzzles/farmer.als...
+Compilation successful!
+Analyzing command: run solvePuzzle for 8 examples/puzzles/farmer/State expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Chicken_0, Farmer_0, Fox_0, Grain_0, Ord_0, State_0, State_1, State_2, State_3, State_4, State_5, State_6, State_7}
+
+module examples/puzzles/farmer
+sig Object extends univ = {Chicken_0, Farmer_0, Fox_0, Grain_0}
+  eats : set examples/puzzles/farmer/Object = 
+    {Chicken_0 -> Grain_0, 
+     Fox_0 -> Chicken_0}
+sig Farmer extends Object = Farmer_0
+sig Fox extends Object = Fox_0
+sig Chicken extends Object = Chicken_0
+sig Grain extends Object = Grain_0
+sig State extends univ = {State_0, State_1, State_2, State_3, State_4, State_5, State_6, State_7}
+  near : set examples/puzzles/farmer/Object = 
+    {State_0 -> {Chicken_0, Farmer_0, Fox_0, Grain_0}, 
+     State_1 -> {Fox_0, Grain_0}, 
+     State_2 -> {Farmer_0, Fox_0, Grain_0}, 
+     State_3 -> Grain_0, 
+     State_4 -> {Chicken_0, Farmer_0, Grain_0}, 
+     State_5 -> Chicken_0, 
+     State_6 -> {Chicken_0, Farmer_0}}
+  far : set examples/puzzles/farmer/Object = 
+    {State_1 -> {Chicken_0, Farmer_0}, 
+     State_2 -> Chicken_0, 
+     State_3 -> {Chicken_0, Farmer_0, Fox_0}, 
+     State_4 -> Fox_0, 
+     State_5 -> {Farmer_0, Fox_0, Grain_0}, 
+     State_6 -> {Fox_0, Grain_0}, 
+     State_7 -> {Chicken_0, Farmer_0, Fox_0, Grain_0}}
+
+module util/ordering[examples/puzzles/farmer/State]
+sig Ord extends univ = Ord_0
+  first_ :  examples/puzzles/farmer/State = 
+    {Ord_0 -> State_0}
+  last_ :  examples/puzzles/farmer/State = 
+    {Ord_0 -> State_7}
+  next_ :  ( examples/puzzles/farmer/State) ->lone ( examples/puzzles/farmer/State) = 
+    {Ord_0 -> {State_0 -> State_1, State_1 -> State_2, State_2 -> State_3, State_3 -> State_4, State_4 -> State_5, State_5 -> State_6, State_6 -> State_7}}
+  prev_ :  ( examples/puzzles/farmer/State) ->lone ( examples/puzzles/farmer/State) = 
+    {Ord_0 -> {State_1 -> State_0, State_2 -> State_1, State_3 -> State_2, State_4 -> State_3, State_5 -> State_4, State_6 -> State_5, State_7 -> State_6}}
+

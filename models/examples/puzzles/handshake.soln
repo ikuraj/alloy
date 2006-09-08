@@ -1,0 +1,35 @@
+Compiling models/examples/puzzles/handshake.als...
+Compilation successful!
+Analyzing command: run Puzzle for 10 expect 1
+
+Solution #1
+
+module alloy/lang/univ
+sig univ = {Hilary_0, Jocelyn_0, Person_0, Person_1, Person_2, Person_3, Person_4, Person_5, Person_6, Person_7}
+
+module examples/puzzles/handshake
+sig Person extends univ = {Hilary_0, Jocelyn_0, Person_0, Person_1, Person_2, Person_3, Person_4, Person_5, Person_6, Person_7}
+  spouse :  examples/puzzles/handshake/Person = 
+    {Hilary_0 -> Jocelyn_0, 
+     Jocelyn_0 -> Hilary_0, 
+     Person_0 -> Person_1, 
+     Person_1 -> Person_0, 
+     Person_2 -> Person_3, 
+     Person_3 -> Person_2, 
+     Person_4 -> Person_5, 
+     Person_5 -> Person_4, 
+     Person_6 -> Person_7, 
+     Person_7 -> Person_6}
+  shaken : set examples/puzzles/handshake/Person = 
+    {Hilary_0 -> {Person_1, Person_2, Person_5, Person_6}, 
+     Jocelyn_0 -> {Person_1, Person_2, Person_5, Person_6}, 
+     Person_0 -> {Person_2, Person_5, Person_6}, 
+     Person_1 -> {Hilary_0, Jocelyn_0, Person_2, Person_5, Person_6}, 
+     Person_2 -> {Hilary_0, Jocelyn_0, Person_0, Person_1, Person_5, Person_6}, 
+     Person_3 -> {Person_5, Person_6}, 
+     Person_4 -> Person_6, 
+     Person_5 -> {Hilary_0, Jocelyn_0, Person_0, Person_1, Person_2, Person_3, Person_6}, 
+     Person_6 -> {Hilary_0, Jocelyn_0, Person_0, Person_1, Person_2, Person_3, Person_4, Person_5}}
+sig Jocelyn extends Person = Jocelyn_0
+sig Hilary extends Person = Hilary_0
+
