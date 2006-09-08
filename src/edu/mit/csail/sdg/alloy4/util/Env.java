@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
 /**
- * Mutable; this is a String-to-Value map that supports the undo operation.
+ * Mutable; this implements a String-to-Value map that supports the undo operation.
  * Null keys and null values are supported.
  *
  * <p/>   To be more precise, every key is internally mapped to a list of values.
