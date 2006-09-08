@@ -39,7 +39,7 @@ public final class IdentitySet<T> implements Iterable<T> {
 	 * <br/> Modification via the iterator has undefined behavior.
 	 *
 	 * <br/> Also, if the set is modified after the iterator is created,
-	 * the behavior is undefined.
+	 * the behavior of the iterator is undefined.
 	 */ 
 	public Iterator<T> iterator() { return map.keySet().iterator(); }
 }
