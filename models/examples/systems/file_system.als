@@ -45,6 +45,6 @@ assert NoDirAliases { all o: Dir | lone o.~contents }
 check NoDirAliases for 5 expect 1
 
 /* defined variables
- * 
+ *
  * child = ~parent
  */

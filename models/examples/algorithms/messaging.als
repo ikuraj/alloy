@@ -45,7 +45,7 @@ sig Tick {
    // Messages that the node _can_ read in this tick, i.e. messages available
    // for reading at the beginning of this tick.  The messages that
    // the node actually reads are a subset of this set.  Determined by
-   // constraints in this module.  
+   // constraints in this module.
    visible: Node -> Msg,
 
    // Messages that the node _actually reads_ in this tick.  Must be a subset
@@ -100,10 +100,10 @@ fact MsgMovementConstraints {
       MsgsSentOnTick[t] = t.sent[Node]
 
       all n: Node, m: Msg |
-           m.readOn[n] = t => m in t.read[n]  
+           m.readOn[n] = t => m in t.read[n]
       // Return addresses are correct
       all n: Node | t.sent[n].state.from in n
-   
+
       // messages sent to a node on a tick become visible to that node on some subseqent tick,
       // and permanently stop being visible to that node on the tick after that node reads the message
       all n: Node, m: Msg | {
@@ -128,11 +128,11 @@ pred TicksEquivalent(t1, t2: Tick) {
    t1.state = t2.state
    some r: (MsgsLiveOnTick[t1] - MsgsVisibleOnTick[t1]) one -> one (MsgsLiveOnTick[t2] - MsgsVisibleOnTick[t2])  |
        all m1: dom[r] | let m2 = m1.r | {
-         m1.(Msg<:state) = m2.state 
+         m1.(Msg<:state) = m2.state
        }
    some r: MsgsVisibleOnTick[t1]  one -> one MsgsVisibleOnTick[t2]  |
        all m1: dom[r] | let m2 = m1.r | {
-         m1.(Msg<:state) = m2.state 
+         m1.(Msg<:state) = m2.state
        }
 }
 
@@ -149,7 +149,7 @@ fact CleanupViz {
 
 pred ReadInOrder ( ) {
     //
-    // This function ensures that messages are read in order. 
+    // This function ensures that messages are read in order.
     //
 
     // for all pairs of nodes
@@ -170,14 +170,14 @@ pred ReadInOrder ( ) {
                 ord/lte[m1.sentOn, m2.sentOn]
            }
 }
-            
-fact ReadOnlyVisible { read in visible } 
+
+fact ReadOnlyVisible { read in visible }
 
 pred NoLostMessages() {
   // this function ensures that messages will not
   // be lost, i.e. a message send to a node will
   // eventually be visible to that node
-  all m: Msg | 
+  all m: Msg |
     (m.sentOn != ord/last[]) =>
       (all n: m.state.to | some t: ord/nexts[m.sentOn] | m in t.visible[n])
 }

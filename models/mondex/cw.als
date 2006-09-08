@@ -3,41 +3,41 @@ open mondex/c as mondexC
 open mondex/common as mondexCOMMON
 
 pred Logbook (log : ConPurse -> PayDetails) {
-	all c : ConPurse, pd : PayDetails | (c->pd) in log implies c in pd.(from + to)
+    all c : ConPurse, pd : PayDetails | (c->pd) in log implies c in pd.(from + to)
 }
 
 sig ConWorld extends ConState {
-	conAuthPurse : set ConPurse,
-	ether : set MESSAGE,
-	archive : ConPurse -> PayDetails
+    conAuthPurse : set ConPurse,
+    ether : set MESSAGE,
+    archive : ConPurse -> PayDetails
 }
 
 fun allPayDetails (s : ConWorld) : set PayDetails {
-	s.conAuthPurse.(s.archive + (exLog + status.s.(STATUS - eaFrom) <: pdAuth).s) + s.ether.((req <: details) + (val <: details) + (ack <: details) + (exceptionLogResult <: details) + (exceptionLogClear <: pds))
+    s.conAuthPurse.(s.archive + (exLog + status.s.(STATUS - eaFrom) <: pdAuth).s) + s.ether.((req <: details) + (val <: details) + (ack <: details) + (exceptionLogResult <: details) + (exceptionLogClear <: pds))
 }
 
 pred Concrete_conAuthPurse (s : ConWorld) {
-	-- purse spec constraints
-	all c : ConPurse | c in s.conAuthPurse implies {
-		all p : PayDetails | p in c.exLog.s implies c in p.(from+to)
-		c.status.s = epr implies {
-			c.pdAuth.s.from = c
-			c.pdAuth.s.value in c.balance.s
-			Lt [c.pdAuth.s.fromSeqNo, c.nextSeqNo.s]
-		}
-		c.status.s = epv implies {
-			Lt [c.pdAuth.s.toSeqNo, c.nextSeqNo.s]
-		}
-		c.status.s = epa implies {
-			Lt [c.pdAuth.s.fromSeqNo, c.nextSeqNo.s]
-		}
-	}
+    -- purse spec constraints
+    all c : ConPurse | c in s.conAuthPurse implies {
+        all p : PayDetails | p in c.exLog.s implies c in p.(from+to)
+        c.status.s = epr implies {
+            c.pdAuth.s.from = c
+            c.pdAuth.s.value in c.balance.s
+            Lt [c.pdAuth.s.fromSeqNo, c.nextSeqNo.s]
+        }
+        c.status.s = epv implies {
+            Lt [c.pdAuth.s.toSeqNo, c.nextSeqNo.s]
+        }
+        c.status.s = epa implies {
+            Lt [c.pdAuth.s.fromSeqNo, c.nextSeqNo.s]
+        }
+    }
 }
 
 pred Concrete_archive (s : ConWorld) {
-	-- world constraints
-	Logbook [s.archive]
-	s.archive.PayDetails in s.conAuthPurse
+    -- world constraints
+    Logbook [s.archive]
+    s.archive.PayDetails in s.conAuthPurse
 }
 
 -- Concrete_mult and Concrete_PayDetails are actual constraints holding also for the Concrete.
@@ -51,10 +51,10 @@ pred Concrete_archive (s : ConWorld) {
 -- defined by the Z spec, but also the schema structure, i.e. the "availability" of the fields.
 
 pred Concrete_mult (s : ConWorld) {
-	-- multiplicity constraints for well-definedness
-	s.conAuthPurse <: status.s in s.conAuthPurse -> one STATUS
-	s.conAuthPurse <: nextSeqNo.s in s.conAuthPurse -> one SEQNO
-	(s.conAuthPurse :> status.s.(STATUS - eaFrom)) <: pdAuth.s in (s.conAuthPurse :> status.s.(STATUS - eaFrom)) -> one PayDetails
+    -- multiplicity constraints for well-definedness
+    s.conAuthPurse <: status.s in s.conAuthPurse -> one STATUS
+    s.conAuthPurse <: nextSeqNo.s in s.conAuthPurse -> one SEQNO
+    (s.conAuthPurse :> status.s.(STATUS - eaFrom)) <: pdAuth.s in (s.conAuthPurse :> status.s.(STATUS - eaFrom)) -> one PayDetails
 }
 
 -- The PayDetails constraints are only relevant to the ConWorlds. I.e, we do not care about payDetails
@@ -69,30 +69,30 @@ pred Concrete_mult (s : ConWorld) {
 -- and the StartToEafrom operations at the world level.
 
 pred PayDetails_canon (s : ConWorld) {
-	let f = allPayDetails [s] |
-	f->f & from.~from & to.~to & fromSeqNo.~fromSeqNo & toSeqNo.~toSeqNo in iden
+    let f = allPayDetails [s] |
+    f->f & from.~from & to.~to & fromSeqNo.~fromSeqNo & toSeqNo.~toSeqNo in iden
 }
 
 pred Concrete_PayDetails (s : ConWorld) {
-	-- Spec constraint
-	let f = allPayDetails [s] | no iden & ~from.(f <: to)
+    -- Spec constraint
+    let f = allPayDetails [s] | no iden & ~from.(f <: to)
 
-	-- canonicalization
-	PayDetails_canon [s]
+    -- canonicalization
+    PayDetails_canon [s]
 }
 
 pred Concrete (s : ConWorld) {
-	Concrete_conAuthPurse [s]
-	Concrete_archive [s]
-	Concrete_mult [s]
-	Concrete_PayDetails [s]
+    Concrete_conAuthPurse [s]
+    Concrete_archive [s]
+    Concrete_mult [s]
+    Concrete_PayDetails [s]
 }
 
 pred ConWorld_ex () {
-	some c :ConWorld {
-		Concrete [c]
-		some c.conAuthPurse
-	}
+    some c :ConWorld {
+        Concrete [c]
+        some c.conAuthPurse
+    }
 }
 
 run ConWorld_ex for 3

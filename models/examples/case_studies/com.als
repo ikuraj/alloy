@@ -7,7 +7,7 @@ module examples/case_studies/com
  * For a detailed description, see:
  *   http://sdg.lcs.mit.edu/~dnj/publications/com-fse00.pdf
  *
- * author: Daniel Jackson 
+ * author: Daniel Jackson
  */
 
 open util/relation as rel
@@ -49,7 +49,7 @@ fact ComponentProps {
     all i : c.interfaces | all x : IID | x.(i.qi) in c.interfaces
   }
 }
-    
+
 sig LegalInterface extends Interface { }
 fact { all i : LegalInterface | all x : i.iidsKnown | x in x.(i.qi).iids}
 
@@ -81,7 +81,7 @@ assert Theorem3 {
     }
 
 assert Theorem4a {
-      all c1: Component, c2: LegalComponent | 
+      all c1: Component, c2: LegalComponent |
          some (c1.interfaces & c2.interfaces) => c2.iids in c1.iids
     }
 

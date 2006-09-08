@@ -24,12 +24,12 @@ pred Safe (x: TrainState) {all s: Seg | lone s.overlaps.~(x.on)}
 pred MayMove (g: GateState, x: TrainState, ts: set Train) {
   no ts.(x.on) & g.closed
   }
-  
+
 pred TrainsMove (x, x': TrainState, ts: set Train) {
   all t: ts | t.(x'.on) in t.(x.on).next
   all t: Train - ts | t.(x'.on) = t.(x.on)
   }
-  
+
 pred GatePolicy (g: GateState, x: TrainState) {
   x.occupied.overlaps.~next in g.closed
   all s1, s2: Seg | some s1.next.overlaps & s2.next => lone (s1+s2) - g.closed
@@ -43,7 +43,7 @@ assert PolicyWorks {
     GatePolicy [g, x]
     } => Safe [x']
   }
-  
+
 -- has counterexample in scope of 4
 check PolicyWorks for 2 Train, 1 GateState, 2 TrainState, 4 Seg expect 1
 
@@ -56,6 +56,6 @@ run TrainsMoveLegal for 3 expect 1
 
 
 /* defined variables:
- * 
+ *
  * contains = {state: TrainState, seg: Seg, train: Train | seg = train.(state.on)}
  */

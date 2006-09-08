@@ -18,10 +18,10 @@ sig Process {}
 sig Mutex {}
 
 sig State { holds, waits: Process -> Mutex }
-  
+
 
 pred State.Initial () { no this.holds + this.waits }
-        
+
 pred State.IsFree (m: Mutex) {
    // no process holds this mutex
    no m.~(this.holds)
@@ -31,7 +31,7 @@ pred State.IsFree (m: Mutex) {
 pred State.IsStalled (p: Process) { some p.(this.waits) }
 
 pred State.GrabMutex (p: Process, m: Mutex, s': State) {
-   // a process can only act if it is not 
+   // a process can only act if it is not
    // waiting for a mutex
    !this::IsStalled[p]
    // can only grab a mutex we do not yet hold
@@ -54,7 +54,7 @@ pred State.GrabMutex (p: Process, m: Mutex, s': State) {
      otherProc.(s'.waits) = otherProc.(this.waits)
   }
 }
-        
+
 pred State.ReleaseMutex (p: Process, m: Mutex, s': State) {
    !this::IsStalled[p]
    m in p.(this.holds)
@@ -82,13 +82,13 @@ pred State.ReleaseMutex (p: Process, m: Mutex, s': State) {
 pred GrabOrRelease () {
     Initial[so/first[]] &&
     (
-    all pre: State - so/last [] | let post = so/next [pre] | 
+    all pre: State - so/last [] | let post = so/next [pre] |
        (post.holds = pre.holds && post.waits = pre.waits)
         ||
        (some p: Process, m: Mutex | pre::GrabMutex [p, m, post])
         ||
        (some p: Process, m: Mutex | pre::ReleaseMutex [p, m, post])
-    
+
     )
 }
 

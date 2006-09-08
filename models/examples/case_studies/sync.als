@@ -29,7 +29,7 @@ one sig RootName extends Name { }
 
 fact { Name in RootName.*children }
 
-// We assume that the empty path always 
+// We assume that the empty path always
 
 sig FileContents { }
 one sig Dir extends FileContents { }
@@ -67,12 +67,12 @@ fun RestrictFSComplement(fs: Name -> lone FileContents, p: Name): Name -> lone F
 }
 
 // The following function test whether a particular synchronizer
-// operation satisfies the "reasonableness" conditions. 
+// operation satisfies the "reasonableness" conditions.
 // The arguments are:
-// O - the original filesystem. 
+// O - the original filesystem.
 // A,B - separately modified copies
 // Adirty, Bdirty - sets of paths modified in A and B, respectively, from O.
-//   
+//
 // A',B' - results of synchronizer operation
 pred SyncSpec(A, B, A', B': Name -> lone FileContents, Adirty, Bdirty: set Name) {
   {
@@ -118,7 +118,7 @@ pred SyncSpecExample(A, B, A', B': Name -> lone FileContents, Adirty, Bdirty: se
 
 pred SyncSpecNotUnique ( ) {
   some A, B, A1', B1', A2', B2': Name -> lone FileContents, Adirty, Bdirty: set Name | {
-    IsValidFS[A] && IsValidFS[B] 
+    IsValidFS[A] && IsValidFS[B]
     IsValidDirty[Adirty] && IsValidDirty[Bdirty]
     //DirtiesValid[A, B, Adirty, Bdirty]
     (A1' != A2'  || B1' != B2')

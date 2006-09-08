@@ -46,9 +46,9 @@ sig Member {
 fact MemberBehavior {
   Init[ord/first[]]
   all m : Member, t : Tick - ord/first[] |
-    (some msg : Message | 
+    (some msg : Message |
       SendMessage[m, t, msg] || ReceiveMessage[m, t, msg]) ||
-    (some kds : KDS | Join[m, t, kds]) || 
+    (some kds : KDS | Join[m, t, kds]) ||
     Leave[m, t] || MemberInactive[m, t]
 }
 
@@ -61,27 +61,27 @@ sig GroupKey extends Key {
   generator : GSA,
   generatedTime : Tick
 }{
-  some c : Client | 
-   (Join[c, generatedTime, c.server] || Leave[c, generatedTime]) && 
+  some c : Client |
+   (Join[c, generatedTime, c.server] || Leave[c, generatedTime]) &&
    c.server = generator
 }
 
 sig DataMessage extends Message {
   gsaID : GSA,
   retransmitTime : Tick }
-{ SendMessage[sender, sentTime, this] || 
-  (some msg' : DataMessage | 
-     Remulticast[gsaID, msg', retransmitTime, this]) } 
+{ SendMessage[sender, sentTime, this] ||
+  (some msg' : DataMessage |
+     Remulticast[gsaID, msg', retransmitTime, this]) }
 
 sig GSA extends KDS {
   parent : lone GSA }
 { keys[Tick].generator = this
-  all t : Tick, k : keys[t] - keys[ord/prev[t]] | 
+  all t : Tick, k : keys[t] - keys[ord/prev[t]] |
     k.generatedTime = t }
 
 sig Client extends Member {
   server : GSA }
-{ all t : Tick, k : ownedKeys[t] - ownedKeys[ord/prev[t]] | 
+{ all t : Tick, k : ownedKeys[t] - ownedKeys[ord/prev[t]] |
     k.generator = server && k.generatedTime = t }
 
 fact IolusProperties {
@@ -92,14 +92,14 @@ fact IolusProperties {
 
 fact GSATree {
   let root = {g : GSA | no g.parent} {
-    one root    
+    one root
     GSA in root.*~parent }}
 
-fact { 
+fact {
   Member = Client
   KDS = GSA
-  Message = DataMessage 
-  Key = GroupKey 
+  Message = DataMessage
+  Key = GroupKey
   no m, m' : DataMessage {
     m != m'
     m.sender = m'.sender
@@ -111,7 +111,7 @@ fact {
 ----------------------------------------------
 pred Init(t : Tick) {
   no Member.receivedMessages[t]
-  no Member.ownedKeys[t] 
+  no Member.ownedKeys[t]
   no KDS.keys[t]
   no KDS.members[t] }
 
@@ -122,7 +122,7 @@ pred Join(m : Member, t : Tick, kds : KDS) {
 }
 pred JoinRequest(c : Client, gsa : GSA, t : Tick) {
   c !in gsa.members[ord/prev[t]]
-  KeyUpdate[gsa, t] 
+  KeyUpdate[gsa, t]
   c in gsa.members[t] }
 
 pred Leave(m : Member, t : Tick) {
@@ -131,23 +131,23 @@ pred Leave(m : Member, t : Tick) {
 
 pred LeaveRequest(c : Client, gsa : GSA, t : Tick) {
     c in gsa.members[ord/prev[t]]
-    KeyUpdate[gsa, t] 
+    KeyUpdate[gsa, t]
     c !in gsa.members[t] }
 
 pred SendMessage(m : Member, t : Tick, msg : Message) {
-  SendRequest[m, m.server, t, msg] 
-  m.receivedMessages[t] = m.receivedMessages[ord/prev[t]] + msg 
+  SendRequest[m, m.server, t, msg]
+  m.receivedMessages[t] = m.receivedMessages[ord/prev[t]] + msg
   ConstantMembership[m, t] }
 
 pred SendRequest(c : Client, gsa : GSA, t : Tick, msg : DataMessage) {
   c in gsa.members[t]
   msg.sender = c
   msg.sentTime = t
-  NewestKey[gsa.keys[t], msg.key] 
+  NewestKey[gsa.keys[t], msg.key]
   msg.gsaID = gsa
   msg.retransmitTime = t
   (some gsa.parent.members[t]) =>
-    (some msg' : DataMessage | Remulticast[gsa, msg, t, msg']) } 
+    (some msg' : DataMessage | Remulticast[gsa, msg, t, msg']) }
 
 pred ReceiveMessage(m : Member, t : Tick, msg : Message) {
   ReceiveConditions[m, t, msg]
@@ -159,8 +159,8 @@ pred MemberInactive(m : Member, t : Tick) {
 
 pred ReceiveConditions(m : Member, t : Tick, msg : Message) {
   ConstantMembership[m, t]
-  msg !in m.receivedMessages[ord/prev[t]] 
-  msg.retransmitTime in ord/prevs[t] 
+  msg !in m.receivedMessages[ord/prev[t]]
+  msg.retransmitTime in ord/prevs[t]
   msg.key in m.ownedKeys[t] }
 
 pred CanReceive(m : Member, t : Tick, msg : Message) {
@@ -185,18 +185,18 @@ pred Remulticast(g : GSA, msg : DataMessage, t : Tick, msg': lone DataMessage) {
   msg'.sender = msg.sender
   msg'.sentTime = msg.sentTime
   msg'.retransmitTime = t
-  msg'.gsaID = g 
+  msg'.gsaID = g
 }
 
 pred KeyUpdate(g : GSA, t : Tick) {
   some k : Key {
     GeneratedKey[g, t, k]
-    all c : Client | c in g.members[t] <=> k in c.ownedKeys[t]  
+    all c : Client | c in g.members[t] <=> k in c.ownedKeys[t]
     k in g.keys[t] }}
 
 pred NewestKey(keys : set GroupKey, newest: lone GroupKey) {
   some keys <=> some newest
-  newest in keys  
+  newest in keys
   no ord/nexts[newest.generatedTime] & keys.generatedTime }
 
 pred GeneratedKey(g : GSA, t : Tick, key : GroupKey) {
@@ -267,7 +267,7 @@ assert Trivial {
 //check Trivial for 2 but 1 KDS
 
 assert x {
-  !(LoopFree[] && some DataMessage && 
+  !(LoopFree[] && some DataMessage &&
      (some t : Tick | some m, m' : Member |
         m!=m' && IsMember[m, t] && IsMember[m', t] && t != ord/next[ord/first[]]))
 }
@@ -278,7 +278,7 @@ assert OutsiderCantRead {
   no msg : Message, m : Member, t : Tick {
     IsMember[msg.sender, msg.sentTime]
     !IsMember[m, msg.sentTime]
-    CanReceive[m, t, msg] 
+    CanReceive[m, t, msg]
   }
 }
 assert OutsiderCantSend {

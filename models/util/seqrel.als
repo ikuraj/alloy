@@ -49,7 +49,7 @@ fun inds (s: SeqIdx -> elem): set SeqIdx { s.elem }
 /* returns last index occupied by this sequence */
 fun lastIdx (s: SeqIdx -> elem): lone SeqIdx { ord/max[inds[s]] }
 
-/* 
+/*
  * returns the index after the last index
  * if this sequence is empty, returns the first index,
  * if this sequence is full, returns empty set

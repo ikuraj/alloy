@@ -55,7 +55,7 @@ pred reconHelper(Adirty, Bdirty: set Name) {
                     p.first_p_child.Bin = p.Bin
                     p.Aout = p.last_p_child.Aout
                     p.Bout = p.last_p_child.Bout
-                    all pchild: p.p_children - p.first_p_child | { 
+                    all pchild: p.p_children - p.first_p_child | {
                         pchild.Ain = (pchild.(p.prev_p_child)).Aout
                         pchild.Bin = (pchild.(p.prev_p_child)).Bout
                      }

@@ -72,7 +72,7 @@ fun Seq::elems (): set elem { SeqIdx.(this.seqElems) }
 fun Seq::first (): lone elem { this::at[ord/first[]] }
 /* returns the last element in the sequence */
 fun Seq::last (): lone elem { this::at[this::lastIdx[]] }
-/* 
+/*
  * true if the argument is the "cdr" of this sequence
  * false if this sequence is empty
  */
@@ -89,7 +89,7 @@ pred Seq::hasDups () { #elems[this] < #inds[this] }
 fun Seq::inds (): set SeqIdx { elem.~(this.seqElems) }
 /* returns last index occupied by this sequence */
 fun Seq::lastIdx (): lone SeqIdx { ord/max[this::inds[]] }
-/* 
+/*
  * returns the index after the last index
  * if this sequence is empty, returns the first index,
  * if this sequence is full, returns empty set

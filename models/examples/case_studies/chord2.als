@@ -78,7 +78,7 @@ assert Same2 {all s: State | s.active = Node => (NextCorrect'[s] => NextCorrect[
 -- assert NextInFinger {all s: State | all n: s.active | some n.s::data.finger[n.id.next] }
 
 -- says that finger entry maps an id to a node so that there are no intervening nodes
--- between the id and the node 
+-- between the id and the node
 pred FingersCorrect (s: State) {
   all nd: s.active.(s.data) | all start: dom [nd.finger] |
     nd.finger[start] in s.active &&
@@ -131,7 +131,7 @@ pred CPFBody (s: State, n: Node, nd: NodeData, i: Id, cpf: Node) {
   }
 pred ClosestPrecedingFinger(s: State) {
   all n: s.active | let nd = n.(s.data) |
-    all i: Id | 
+    all i: Id |
     some cpf: Node | CPFBody [s,n,nd,i,cpf] => CPFBody [s,n,nd,i,nd.closest_preceding_finger[i]]
   }
 

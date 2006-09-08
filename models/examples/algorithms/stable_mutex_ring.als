@@ -2,7 +2,7 @@ module examples/algorithms/stable_mutex_ring
 
 /*
  * Dijkstra's K-state mutual exclusion algorithm for a ring
- * 
+ *
  * Original paper describing the algorithm:
  *   [1] E.W.Dijkstra, "Self-Stabilizing Systems in Spite of
  *   Distributed Control", Comm. ACM, vol. 17, no. 11, pp.
@@ -19,7 +19,7 @@ module examples/algorithms/stable_mutex_ring
  *   Systems, vol. 12, no. 1, January 2001
  *
  * Description of algorithm (adapted from [3]):
- * 
+ *
  * Consider a distributed system that consists of n processes
  * connected in the form of a ring.  We assume the state-reading
  * model in which processes can directly read the state of their
@@ -27,7 +27,7 @@ module examples/algorithms/stable_mutex_ring
  * change its current state.  This ability is based on a Boolean
  * predicate that consists of its current state and the state of
  * one of its neighboring processes.
- * 
+ *
  * We then define the legitimate states as those in which the
  * following two properties hold: 1) exactly one process has a
  * privilege, and 2) every process will eventually have a privilege.
@@ -96,11 +96,11 @@ fact LegalTrans {
         all p: Process |
            let curVal = tp.val[p], neighborVal = tp.val[p.rightNeighbor], newVal = tn.val[p] | {
                 p !in tp.runs => newVal = curVal else {
-                   p = FirstProc => 
-                       newVal = FirstProcTrans[curVal, neighborVal] 
+                   p = FirstProc =>
+                       newVal = FirstProcTrans[curVal, neighborVal]
                    else
                        newVal = RestProcTrans[curVal, neighborVal]
-                }  
+                }
           }
       }
 }
@@ -108,8 +108,8 @@ fact LegalTrans {
 pred TickTrans(tp, tn : Tick) {
   all p : Process |
     let curVal = tp.val[p], neighborVal = tp.val[p.rightNeighbor], newVal = tn.val[p] | {
-                   p = FirstProc => 
-                       newVal = FirstProcTrans[curVal, neighborVal] 
+                   p = FirstProc =>
+                       newVal = FirstProcTrans[curVal, neighborVal]
                    else
                        newVal = RestProcTrans[curVal, neighborVal]
     }
@@ -120,7 +120,7 @@ pred Privileged(p : Process, t : Tick) {
   // on this tick
   p = FirstProc =>
     t.val[p] = t.val[p.rightNeighbor]
-  else 
+  else
     t.val[p] != t.val[p.rightNeighbor]
 }
 

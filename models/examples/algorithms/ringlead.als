@@ -2,7 +2,7 @@ module examples/algorithms/ringlead
 
 /*
  * Model of leader election on a ring
- * 
+ *
  * Each process has a unique ID, IDs are ordered.
  * The algorithm elects the process with the highest
  * ID the leader, as follows.  First, each process
@@ -21,7 +21,7 @@ open util/ordering[msg/Tick] as tickOrd
 
 sig RingLeadNode extends msg/Node {
    rightNeighbor: msg/Node
-} 
+}
 
 fact DefineRing {
   (one msg/Node || (no n: msg/Node | n = n.rightNeighbor))
@@ -36,7 +36,7 @@ sig MsgViz extends msg/Msg {
   vFrom: msg/Node,
   vTo: set msg/Node,
   vId: msg/Node
-} 
+}
 
 fact {
   MsgViz = msg/Msg
@@ -44,7 +44,7 @@ fact {
   vTo = state.to
   vId = state.id
 }
-  
+
 
 sig RingLeadNodeState extends msg/NodeState {
   leader: Bool
@@ -79,8 +79,8 @@ pred RingLeadTransHelper(self: msg/Node, sees, reads, sends, needsToSend: set ms
    // id, we're the leader.
    reads = sees
 
-   all received: reads | 
-     (received.state.id in nodeOrd/nexts[self]) => 
+   all received: reads |
+     (received.state.id in nodeOrd/nexts[self]) =>
        (one weSend: sends | (weSend.state.id = received.state.id && weSend.state.to = self.rightNeighbor))
 
    all weSend: sends | {
@@ -92,13 +92,13 @@ pred RingLeadTransHelper(self: msg/Node, sees, reads, sends, needsToSend: set ms
      //weSend.sentBecauseOf = { received : reads | received.id = weSend.id }
      //all otherWeSend: sends - weSend | otherWeSend.id != weSend.id
    }
-  
+
    # needsToSend = # { m: reads | m.state.id in nodeOrd/nexts[self] }
 }
 fact RingLeadTransitions {
    all n: msg/Node {
       all t: msg/Tick - tickOrd/last[] | {
-         t = tickOrd/first[] => 
+         t = tickOrd/first[] =>
            RingLeadFirstTrans[n, t.state[n], tickOrd/next[t].state[n], t.visible[n], t.read[n], t.sent[n], t.needsToSend[n]]
          else
            RingLeadRestTrans[n, t.state[n], tickOrd/next[t].state[n], t.visible[n], t.read[n], t.sent[n], t.needsToSend[n]]
@@ -139,10 +139,10 @@ assert LeaderHighest {
   all t: msg/Tick, n: msg/Node |
     t.state[n].leader = True => n = nodeOrd/last[]
 }
- 
+
 run NeverFindLeader for 1 but 3 msg/Tick, 2 Bool, 2 msg/NodeState expect 1
 check Liveness for 3 but 6 msg/Msg, 2 Bool, 2 msg/NodeState expect 0
 check OneLeader for 5 but 2 Bool, 2 msg/NodeState expect 0
 run SomeLeader for 2 but 3 msg/Node, 5 msg/Msg, 5 msg/Tick, 5 msg/MsgState expect 1
 check LeaderHighest for 3 but 2 msg/NodeState, 5 msg/Msg, 5 msg/MsgState, 5 msg/Tick expect 0
-  
+

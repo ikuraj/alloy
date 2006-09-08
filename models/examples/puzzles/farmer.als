@@ -50,7 +50,7 @@ fact initialState {
  */
 pred crossRiver (from, from', to, to': set Object) {
   // either the Farmer takes no items
-  ( from' = from - Farmer && 
+  ( from' = from - Farmer &&
     to' = to - to.eats + Farmer ) ||
   // or the Farmer takes one item
   (some item: from - Farmer {

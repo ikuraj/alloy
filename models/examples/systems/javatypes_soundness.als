@@ -61,7 +61,7 @@ sig Getter extends Expr {
   field: Field,
   expr: Expr
   } {type = field.declType}
-  
+
 sig State {
   objects: set Object,
   reaches: Object -> Object,
@@ -70,18 +70,18 @@ sig State {
   val: Expr -> lone Value
   } {
   all o: Object | o.reaches = holds[o.slot[Field]] & Object
-  holds.Value & Variable = vars  
-  objects = holds[vars].^reaches  
+  holds.Value & Variable = vars
+  objects = holds[vars].^reaches
   all e: Expr | let v = val[e] {
     e in Variable => v = holds[e]
     e in Getter => v = holds[(val[e.expr]).slot[e.field]]
     e in Constructor => v in Object and v.type = e.type }
   }
-  
+
 pred RuntimeTypesOK (s: State) {
   all o: s.objects, f: o.type.fields |
     let v = s.holds [o.slot [f]] | HasType [v, f.declType]
-  all var: s.vars | 
+  all var: s.vars |
     let v = s.holds [var] | HasType [v, var.declType]
   }
 
@@ -90,7 +90,7 @@ pred HasType (v: Value, t: Type) {
   }
 
 pred Subtype (t, t': Type) {
-  t in Class => (let supers = (t & Class).*(Class<:xtends) | 
+  t in Class => (let supers = (t & Class).*(Class<:xtends) |
         t' in (supers + supers.implements.*(Interface<:xtends)))
   t in Interface => t' in (t & Interface).*(Interface<:xtends)
   }
@@ -106,12 +106,12 @@ pred ExecuteSetter (s, s': State, stmt: Setter) {
   s'.objects = s.objects and s'.vars = s.vars
   let rval = s.val [stmt.rexpr], lval = s.val [stmt.lexpr] {
     no lval & Null
-    -- this does not work for some reason . . . seems like a parser bug  
+    -- this does not work for some reason . . . seems like a parser bug
     -- s'.holds = s.holds ++ (lval.slot[stmt.field] -> rval)
     s'.holds = s.holds ++ ((stmt.field).(lval.slot) -> rval)
-    --s'.holds = ((stmt.field).(lval.slot) -> rval) + 
-     --s.holds & ((Slot-{x:Slot | some x.((stmt.field).(lval.slot)->rval)})->Value + Variable->Value)     
-    
+    --s'.holds = ((stmt.field).(lval.slot) -> rval) +
+     --s.holds & ((Slot-{x:Slot | some x.((stmt.field).(lval.slot)->rval)})->Value + Variable->Value)
+
    }
   }
 
@@ -135,8 +135,12 @@ fact ScopeFact {
 
 check TypeSoundness for 3 expect 0
 
-//SLOW: check TypeSoundness for 2 State, 1 Assignment, 1 Statement, 5 Interface, 5 Class, 1 Null, 7 Object, 12 Expr, 3 Field, 3 Slot expect 0
+// slow
+check TypeSoundness for 2 State, 1 Assignment,
+1 Statement, 5 Interface, 5 Class, 1 Null,
+7 Object, 12 Expr, 3 Field, 3 Slot expect 0
 
-//check TypeSoundness for 2 State, 1 Statement,
-//10 Type, 8 Value, 12 Expr,
-//3 Field, 3 Slot expect 0
+// slow
+check TypeSoundness for 2 State, 1 Statement,
+10 Type, 8 Value, 12 Expr,
+3 Field, 3 Slot expect 0

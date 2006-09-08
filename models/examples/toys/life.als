@@ -41,7 +41,7 @@ pred Square() {
   #Root.*right=#Root.*below
 }
 
-//run Square for 6Point, 3State
+run Square for 6 Point, 3 State
 
 pred Rectangle() {}
 
@@ -51,7 +51,7 @@ sig State {
 
 fun Neighbors(p : Point) : set Point {
   p.right + p.right.below + p.below
-              + p.below.~right + p.~right 
+              + p.below.~right + p.~right
               + p.~right.~below + p.~below +
               p.~below.right
 }
@@ -81,9 +81,5 @@ fact ValidTrans {
 
 pred Show() {}
 
-//SLOW: run Show for exactly 12 Point, 3 State expect 1
-
-/* defined variables:
- * 
- * dead = {s: State, p: Point | !(p in s.live)}
- */
+// slow!
+run Show for exactly 12 Point, 3 State expect 1

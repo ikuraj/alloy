@@ -29,7 +29,7 @@ module examples/systems/views
  *
  * More work is needed if we want to model more closely the
  * failure of an iterator when its collection is invalidated.
- * 
+ *
  * As a terminological convention, when there are two
  * complementary view relationships, we will give them types
  * t and t'. For example, KeySetView propagates from map to

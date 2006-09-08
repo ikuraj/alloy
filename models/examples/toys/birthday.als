@@ -28,41 +28,41 @@ sig Date {}
 sig BirthdayBook {known: set Name, date: known -> one Date}
 
 pred AddBirthday (bb, bb': BirthdayBook, n: Name, d: Date) {
-	bb'.date = bb.date ++ (n->d)
-	}
+    bb'.date = bb.date ++ (n->d)
+    }
 
 pred DelBirthday (bb, bb': BirthdayBook, n: Name) {
-	bb'.date = bb.date - (n->Date)
-	}
+    bb'.date = bb.date - (n->Date)
+    }
 
 pred FindBirthday (bb: BirthdayBook, n: Name, d: lone Date) {
-	d = bb.date[n]
-	}
+    d = bb.date[n]
+    }
 
 pred Remind (bb: BirthdayBook, today: Date, cards: set Name) {
-	cards = (bb.date).today
-	}
+    cards = (bb.date).today
+    }
 
 pred InitBirthdayBook (bb: BirthdayBook) {
-	no bb.known
-	}
+    no bb.known
+    }
 
 assert AddWorks {
-	all bb, bb': BirthdayBook, n: Name, d: Date, d': lone Date |
-		AddBirthday [bb,bb',n,d] && FindBirthday [bb',n,d'] => d = d'
-	}
+    all bb, bb': BirthdayBook, n: Name, d: Date, d': lone Date |
+        AddBirthday [bb,bb',n,d] && FindBirthday [bb',n,d'] => d = d'
+    }
 
 assert DelIsUndo {
-	all bb1,bb2,bb3: BirthdayBook, n: Name, d: Date|
-		AddBirthday [bb1,bb2,n,d] && DelBirthday [bb2,bb3,n]
-			=> bb1.date = bb3.date
-	}
+    all bb1,bb2,bb3: BirthdayBook, n: Name, d: Date|
+        AddBirthday [bb1,bb2,n,d] && DelBirthday [bb2,bb3,n]
+            => bb1.date = bb3.date
+    }
 
 check AddWorks for 3 but 2 BirthdayBook expect 0
 check DelIsUndo for 3 but 2 BirthdayBook expect 1
 
 pred BusyDay (bb: BirthdayBook, d: Date){
-	some cards: set Name | Remind [bb,d,cards] && !(lone cards)
-	}
+    some cards: set Name | Remind [bb,d,cards] && !(lone cards)
+    }
 
 run BusyDay for 3 but 1 BirthdayBook expect 1

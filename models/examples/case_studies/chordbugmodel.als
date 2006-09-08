@@ -78,7 +78,7 @@ pred IrrelevantFact1 ( )  {
       FindSuccessor[s]
    }
 }
-   
+
 pred ShowMe1Node () {
    #Node = 1
    all s : State | NextCorrect[s] && FingersCorrect[s]
@@ -123,9 +123,9 @@ run ShowMe3 for 5 but 1 State expect 1
 
 pred FindSuccessorWorks ( ) {
    //State.active = Node
-   IrrelevantFact1 [ ] 
+   IrrelevantFact1 [ ]
    ! (
-      all s: State | FingersCorrect[s] 
+      all s: State | FingersCorrect[s]
       => FindSuccessorIsCorrect[s]
    )
 }

@@ -14,7 +14,7 @@ sig HeapState {
 }
 
 pred HeapState.clearMarks(hs' : HeapState) {
-  // clear marked set 
+  // clear marked set
   no hs'.marked
   // left and right fields are unchanged
   hs'.left = this.left
@@ -37,7 +37,7 @@ pred HeapState.setFreeList(hs': HeapState) {
   // especially hackish
   hs'.freeList.*(hs'.left) in (Node - this.marked)
   all n: Node |
-    (n !in this.marked) => { 
+    (n !in this.marked) => {
       no hs'.right[n]
       hs'.left[n] in (hs'.freeList.*(hs'.left))
       n in hs'.freeList.*(hs'.left)
@@ -55,7 +55,7 @@ pred HeapState.GC(root : Node, hs': HeapState) {
 
 assert Soundness1 {
   all h, h' : HeapState, root : Node |
-    h::GC[root, h'] => 
+    h::GC[root, h'] =>
       (all live : h::reachable[root] | {
         h'.left[live] = h.left[live]
         h'.right[live] = h.right[live]
@@ -64,13 +64,13 @@ assert Soundness1 {
 
 assert Soundness2 {
   all h, h' : HeapState, root : Node |
-    h::GC[root, h'] => 
+    h::GC[root, h'] =>
       no h'::reachable[root] & h'::reachable[h'.freeList]
 }
 
 assert Completeness {
   all h, h' : HeapState, root : Node |
-    h::GC[root, h'] => 
+    h::GC[root, h'] =>
       (Node - h'::reachable[root]) in h'::reachable[h'.freeList]
 }
 

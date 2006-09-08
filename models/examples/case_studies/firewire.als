@@ -186,13 +186,13 @@ fact {no x,y: Link | x!=y && x.source=y.source && x.target=y.target}
 fact Topology {
 some tree: Node lone -> Node, root: Node {
   Node in root.*tree
-  no ^tree & iden & Node->Node 
+  no ^tree & iden & Node->Node
   tree + ~tree = ~source.target
   }
 }
 
 sig Op {}
-one sig Init, AssignParent, ReadReqOrAck, Elect, WriteReqOrAck, 
+one sig Init, AssignParent, ReadReqOrAck, Elect, WriteReqOrAck,
 ResolveContention, Stutter extends Op {}
 
 sig State {
@@ -281,7 +281,7 @@ sig Queue {slot: lone Msg, overflow: lone Msg}
 pred SameQueue (q, q': Queue) {
     q.slot = q'.slot && q.overflow = q'.overflow
   }
-  
+
 pred ReadQueue (s, s': State, x: Link) {
 --  let q = s'.queue[x] | no q.(slot + overflow)
   no s'.queue[x].(slot + overflow)
@@ -293,13 +293,13 @@ pred PeekQueue (s: State, x: Link, m: Msg) {
   }
 
 pred WriteQueue (s, s': State, x: Link, m: Msg) {
-        let q = s'.queue[x] | 
+        let q = s'.queue[x] |
   no s.queue[x].slot =>
     ( q.slot = m && no q.overflow) else
     some q.overflow
   }
 
-pred QueuesUnchanged (s, s': State, xs: set Link) { 
+pred QueuesUnchanged (s, s': State, xs: set Link) {
   all x: xs | s'.queue[x] = s.queue[x]
   }
 
@@ -307,7 +307,7 @@ pred IsEmptyQueue (s: State, x: Link) {
   no s.queue[x].(slot + overflow)
 --  let q = s.queue[x] | no q.(slot + overflow)
   }
-  
+
 pred Initialization (s: State) {
   s.op = Init
   Node in s.waiting
@@ -321,9 +321,9 @@ pred Execution () {
   }
 
 pred ElectionHappens() {
-	Execution []
-     	some s: State | some s.elected
-	some s: State | no s.elected
+    Execution []
+        some s: State | some s.elected
+    some s: State | no s.elected
 }
 
 pred NoRepeats () {
@@ -361,7 +361,7 @@ run NoRepeats for 1 Int, 7 Op, 2 Msg,
 
 -- solution for 8 but not 9 State
 run NoRepeats for 1 Int, 7 Op, 2 Msg,
-	3 Node, 6 Link, 6 Queue, 8 State expect 0
+    3 Node, 6 Link, 6 Queue, 8 State expect 0
 
 -- only 5 queues needed: just count
 -- no solution: establishes at most 3 queues needed

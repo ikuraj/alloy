@@ -89,7 +89,7 @@ pred Game ( ) {
    some finalState: State | Disc in finalState::discsOnStake[stakes/last[]]
 
    // each adjacent pair of states are related by a valid move of one disc
-   all preState: State - states/last[] | 
+   all preState: State - states/last[] |
        let postState = states/next[preState] |
           some fromStake: Stake | {
              // must have at least one disk on fromStake to be able to move
@@ -107,9 +107,9 @@ pred Game2 ( ) {
    some finalState: State | Disc in finalState::discsOnStake[stakes/last[]]
 
    // each adjacent pair of states are related by a valid move of one disc
-   all preState: State - states/last[] | 
+   all preState: State - states/last[] |
        let postState = states/next[preState] |
-          some fromStake: Stake | 
+          some fromStake: Stake |
              let d = preState::topDisc[fromStake] | {
                // must have at least one disk on fromStake to be able to move
                // a disc from fromStake to toStake
@@ -121,7 +121,7 @@ pred Game2 ( ) {
                  postState::discsOnStake[toStake] = preState::discsOnStake[toStake] + d
                 // the remaining stake afterwards has exactly the discs it had before
                 let otherStake = Stake - fromStake - toStake |
-	                postState::discsOnStake[otherStake] = preState::discsOnStake[otherStake]
+                    postState::discsOnStake[otherStake] = preState::discsOnStake[otherStake]
                 }
              }
       }
@@ -130,6 +130,6 @@ run Game2 for 1 but 3 Stake, 3 Disc, 8 State expect 1
 //run Game for 1 but 3 Stake, 5 Disc, 32 State
 
 /* defined variables:
- * 
+ *
  * isSmallerThan = {small, large: Disc | large = discs/next[small]}
  */

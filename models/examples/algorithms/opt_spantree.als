@@ -13,9 +13,9 @@ module examples/algorithms/opt_spantree
  * parent, and sends the level k+1 to its neighbors. Once a node
  * has set its level and parent, it ignores subsequent messages.
  * Eventually, the parent pointers will form a spanning tree,
- * rooted at Root.  
+ * rooted at Root.
  *
- * We model communication through a state-reading model, in which 
+ * We model communication through a state-reading model, in which
  * nodes can directly read the state of their neighbors. Messages
  * are not explicity modelled. This makes no difference for this
  * algorithm since once a node sends a message, the state of the
@@ -51,7 +51,7 @@ sig State {
   // the level of a process in this state
   lvl: Process -> lone Lvl,
   // who the process thinks is its parent in this state.
-  // the parent pointers should eventually become 
+  // the parent pointers should eventually become
   // the spanning tree
   parent: Process -> lone Process
 }
@@ -79,7 +79,7 @@ pred TRActPreConds(p : Process, pre : State) {
   no pre.lvl[p]
   // must have a neighbor with a set level so
   // p can read it
-  // Root doesn't need to read value from a 
+  // Root doesn't need to read value from a
   // neighbor
   (p = Root || some pre.lvl[p.adj])
 }
@@ -89,7 +89,7 @@ pred TRAct(p : Process, pre, post : State) {
   // can't already have a level
   no pre.lvl[p]
   (p = Root) => {
-    // the root sets its level to 
+    // the root sets its level to
     // 0, and has no parent pointer
     post.lvl[p] = lo/first[]
     no post.parent[p]
@@ -100,15 +100,15 @@ pred TRAct(p : Process, pre, post : State) {
       let nLvl = pre.lvl[adjProc] | {
         some nLvl
         // p's parent is the adjacent
-        // process, and p's level is one greater than 
-        // the level of the adjacent process (since 
+        // process, and p's level is one greater than
+        // the level of the adjacent process (since
         // its one level deeper)
         post.lvl[p] = lo/next[nLvl]
         post.parent[p] = adjProc
       }
   }
 }
-    
+
 pred Trans(p : Process, pre, post : State) {
   TRAct[p, pre, post] ||
   TRNop[p, pre, post]
@@ -141,7 +141,7 @@ pred SpanTreeAtState(s : State) {
   // from root (spanning)
   Process in Root.*~(s.parent)
   // parent relation is a tree (DAG)
-  // we only need to check the DAG condition since there can 
+  // we only need to check the DAG condition since there can
   // be at most one parent for a process (constrained by
   // multiplicity)
   graph/dag[~(s.parent)]

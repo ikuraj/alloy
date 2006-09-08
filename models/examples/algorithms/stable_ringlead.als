@@ -17,10 +17,10 @@ sig Process {
 sig Val {
   nextVal : Val
 }
-  
+
 fact {
   graph/ring[rightNeighbor]
-  vo/Ord.next_ + (vo/last[] -> vo/first[]) = nextVal 
+  vo/Ord.next_ + (vo/last[] -> vo/first[]) = nextVal
   # Val = # Process
 }
 
@@ -65,7 +65,7 @@ fun minus(v1, v2 : Val) : Int {
   $ ((v1 = v2) => 0
     else vo/gt[v1,v2] => (#(vo/nexts[v2] & vo/prevs[v1] + v1))
     else (# (Val - (vo/nexts[v1] & vo/prevs[v2] + v1))))
-} 
+}
 
 fun Trans(oldVal : Val, x, y : Int) : Val {
   ((int x = int y && int y = # Val) || (int x < int y))
@@ -93,12 +93,12 @@ pred DDaemonTrans( ) {
         ValAtState[other,tn] = ValAtState[other,tp]
     }
 }
-  
+
 pred TransHelper(p : Process, tp, tn : State) {
         let oldVal = ValAtState[p, tp],
             newVal = ValAtState[p, tn],
             x = XAtState[p, tp],
-            y = YAtState[p,tp] | 
+            y = YAtState[p,tp] |
           newVal = Trans[oldVal, x, y]
 
 }
@@ -136,7 +136,7 @@ pred CTraceWithoutLoop ( ) {
 }
 
 pred DTraceWithoutLoop ( ) {
-  DDaemonTrans[ ] 
+  DDaemonTrans[ ]
   all t, t' : State | t!=t' => {
     t.val != t'.val
     (t' in so/nexts[t] && t' != so/next[t]) => !StateTrans[t,t']
@@ -167,7 +167,7 @@ pred Legit (s : State) {
   all p : Process | {
     int(XAtState[p,s]) < # Val
     int(YAtState[p,s]) < # Val
-  } 
+  }
   all p, p' : Process | {
     int(XAtState[p,s])= int(XAtState[p',s])
     int(YAtState[p,s])= int(YAtState[p',s])

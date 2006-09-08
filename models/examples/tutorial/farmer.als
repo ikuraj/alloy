@@ -50,7 +50,7 @@ fact initialState {
  */
 pred crossRiver (from, from', to, to': set Object) {
   // either the Farmer takes no items
-  ( from' = from - Farmer && 
+  ( from' = from - Farmer &&
     to' = to - to.eats + Farmer ) ||
   // or the Farmer takes one item
   (some item: from - Farmer {
@@ -65,7 +65,7 @@ pred crossRiver (from, from', to, to': set Object) {
 fact stateTransition {
   all s: State, s': ord/next[s] {
     Farmer in s.near =>
-      crossRiver[s.near, s'.near, s.far, s'.far] else 
+      crossRiver[s.near, s'.near, s.far, s'.far] else
       crossRiver[s.far, s'.far, s.near, s'.near]
   }
 }

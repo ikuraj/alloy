@@ -55,7 +55,7 @@ fact  Transitions {
            p !in tp.runs => ( Sn = Sp && Tn = Tp && dirn = dirp ) else (
            S1p = S2p => ( Sn = Not[S1p] && Tn = True && dirn=dirp) else (
              (Eq3[S1p, Sp, Not[S2p]] &&
-              Eq4[Not[T1p],Tp,T2p,True]) => 
+              Eq4[Not[T1p],Tp,T2p,True]) =>
                 (Sn = Not[Sp] && Tn = False && dirn = True)
               else (
                  (Eq3[Not[S1p],Sp,S2p] && Eq4[T1p,Tp,Not[T2p],True]) =>

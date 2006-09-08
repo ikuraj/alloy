@@ -85,7 +85,7 @@ pred L3TransPre(i : pid, pre : State) {
   // precondition
   pre.P[i] = L3
 
-  all k : pid - i | 
+  all k : pid - i |
     po/lt[pre.Q[k], pre.localj[i]] ||
     pre.turn[pre.localj[i]] != i
 }
@@ -128,7 +128,7 @@ pred SomePre(i : pid, pre : State) {
   L1TransPre[i, pre] ||
   L2TransPre[i, pre] ||
   L3TransPre[i, pre] ||
-  L4TransPre[i, pre] 
+  L4TransPre[i, pre]
 }
 
 fact Init {
@@ -155,10 +155,10 @@ fact LegalTrans {
         all j : pid - i |
           NOPTrans[j,pre,post]
       }*/
-      all i : pid | 
+      all i : pid |
         RealTrans[i,pre,post] || NOPTrans[i,pre,post]
       (all i : pid | NOPTrans[i,pre,post]) => {
-         all i : pid | !SomePre[i,pre] 
+         all i : pid | !SomePre[i,pre]
          post.turn = pre.turn
       }
     }

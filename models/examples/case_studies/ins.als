@@ -83,7 +83,7 @@ pred DB::Lookup(q : Query, found: set Record) {
 }
 
 assert CorrectLookup {
-  all db: DB | all q : Query | all r : Record | 
+  all db: DB | all q : Query | all r : Record |
     Conforms [db,q,r] <=> db::Lookup[q, r]
 }
 

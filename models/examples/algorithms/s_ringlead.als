@@ -33,7 +33,7 @@ sig State {
 fact DefineRing {
   graph/ring[rightNeighbor]
 }
-  
+
 fact InitialState {
   no so/first[].buffer
   no so/first[].leader
@@ -50,15 +50,15 @@ pred ValidTrans2(s, s': State) {
   all p : s.runs | VT2Helper[p,s,s']
   all p : Process - s.runs | NOP2[p,s,s']
   NoMagicMsg[s,s']
-  
+
 }
 
 pred NoMagicMsg(s, s' : State) {
     // no magically appearing messages
     all p : Process, m : s'.buffer[p] |
-      m in s.buffer[p] || (!NOP2[p,s,s'] && 
+      m in s.buffer[p] || (!NOP2[p,s,s'] &&
                             ((s = so/first[] && m = p) ||
-                             (s != so/first[] && m in s.buffer[p.~rightNeighbor] 
+                             (s != so/first[] && m in s.buffer[p.~rightNeighbor]
                               && m !in s'.buffer[p.~rightNeighbor] && po/gt[m,p])))
 }
 
@@ -69,10 +69,10 @@ pred PossTrans(s, s' : State) {
 
 pred VT2Helper(p : Process, s, s' : State) {
     (
-      let readable=s.buffer[p.~rightNeighbor] | 
+      let readable=s.buffer[p.~rightNeighbor] |
         (s = so/first[]) => {
           p = s'.buffer[p]
-          readable in s'.buffer[p.~rightNeighbor] 
+          readable in s'.buffer[p.~rightNeighbor]
           p !in s'.leader
         } else {
           (some readable) => {
@@ -88,7 +88,7 @@ pred VT2Helper(p : Process, s, s' : State) {
     )
 }
 
-pred NOP2(p : Process, s,s': State) {  
+pred NOP2(p : Process, s,s': State) {
   p in s'.leader iff p in s.leader
   // no reads
   s.buffer[p.~rightNeighbor] in s'.buffer[p.~rightNeighbor]
@@ -105,13 +105,13 @@ fact TransIfPossible {
     (all p : Process | NOP2[p, s, so/next[s]]) =>
       (all p : Process | !Preconds[p,s])
 }
-  
+
 fact LegalTrans {
   all s : State - so/last[] |
-    let s' = so/next[s] |       
+    let s' = so/next[s] |
       ValidTrans2[s,s']
 }
-           
+
 pred EquivStates(s, s': State) {
   s.buffer = s'.buffer
   s.leader = s'.leader

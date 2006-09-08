@@ -14,7 +14,7 @@ module examples/toys/javatypes
  *
  * An object instance has a type (its creation type) that is a class.
  * A variable may hold an instance, and has a declared type. The
- * fact TypeSoundness says that all instances held by a variable 
+ * fact TypeSoundness says that all instances held by a variable
  * have types that are direct or indirect subtypes of the variable's
  * declared type.
  *

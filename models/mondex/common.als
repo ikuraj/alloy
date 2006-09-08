@@ -10,11 +10,11 @@ sig Coin {}
 sig Purse {}
 
 sig TransferDetails {
-	from, to : Purse, value : set Coin
+    from, to : Purse, value : set Coin
 }
 
 pred XiTransfer (p, p' : TransferDetails) {
-	p.from = p'.from
-	p.to = p'.to
-	p.value = p'.value
+    p.from = p'.from
+    p.to = p'.to
+    p.value = p'.value
 }

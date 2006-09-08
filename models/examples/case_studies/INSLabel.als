@@ -28,11 +28,11 @@ sig LabelTree {
   some root.children
 }
 
-pred Get(db: DB, r: Record, a:Advertisement) { 
+pred Get(db: DB, r: Record, a:Advertisement) {
   root[a] = root[db]
   nodes[a] =
     nodes[db]  & r.~(db.recs).*(~(db.children))
-  anodes[a] = 
+  anodes[a] =
     anodes[db] & r.~(db.recs).*(~(db.children))
   vnodes[a] =
     vnodes[db] & r.~(db.recs).*(~(db.children))
@@ -78,7 +78,7 @@ one sig DB extends AVTree {
 {
   Wildcard !in vnodes.label
   all a: anodes | no a.recs
-  all v: vnodes { 
+  all v: vnodes {
     no v.children => some v.recs
     no v.recs & v.^(~children).recs }
   all a: anodes | all v,v':a.children | (no(v&v')) => (no v.*children.recs & v'.*children.recs)
@@ -90,12 +90,12 @@ one sig State {
 }
 
 fact ConformsFixPoint {
-  all q: Query | all a: Advertisement | 
+  all q: Query | all a: Advertisement |
     all nq: Node | all na: Node |
       ConformsAux[q,a,nq,na] <=>
       {
        nq.label in Wildcard + na.label
-       all nq': q.children[nq] | some na': a.children[na] | 
+       all nq': q.children[nq] | some na': a.children[na] |
          ConformsAux[q,a,nq',na']
       }
 }
@@ -117,7 +117,7 @@ fact LookupFixPoint {
          Ta.label = na.label                                       //  Ta is a child node with attribute na
          nv.label = Wildcard =>                                    //  wildcard matching
            r in Ta.^(db.children).(db.recs) else                   //   r is a record of any child of Ta
-           (some Tv: Ta.(db.children) {                             //  normal matching                                     
+           (some Tv: Ta.(db.children) {                             //  normal matching
              Tv.label = nv.label                                   //   Tv is a child of Ta with value nv
              no nv.(q.children) =>                                 //   if Tv is a leaf-node
                r in Tv.*(db.children).(db.recs) else               //        r is a record of Tv or of v
@@ -126,11 +126,11 @@ fact LookupFixPoint {
 }
 
 fun DB::LookupAux(q: Query, vd: Node, vq: Node): set Record {      // helper function for Lookup
-  State.lookup[this][q][vd][vq] 
+  State.lookup[this][q][vd][vq]
 }
 
 fun DB::Lookup(q: Query): set Record {                             // models Lookup-Name algorithm invocation
-  LookupAux[this,q,this.root,q.root] 
+  LookupAux[this,q,this.root,q.root]
 }
 
 assert LookupConforms2 { //soundness and completeness

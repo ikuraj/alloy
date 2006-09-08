@@ -10,9 +10,9 @@ module examples/toys/genealogy
  * woman.
  *
  * The Person signature declares two fields: a person has one or zero spouses
- * and a set of parents. 
+ * and a set of parents.
  *
- * The facts should be self-explanatory. Note that the constraint that 
+ * The facts should be self-explanatory. Note that the constraint that
  * spouse is a symmetric relation (that is, p is a spouse of q if q is a spouse
  * of p) is written by equating the field, viewed as a relation, to its
  * transpose. Since signatures have their own namespaces, and the same field
@@ -35,40 +35,40 @@ one sig Eve extends Woman {}
 one sig Adam extends Man {}
 
 fact Biology {
-	-- nobody is his or her own ancestor
-	no p: Person | p in p.^parents
-	}
+    -- nobody is his or her own ancestor
+    no p: Person | p in p.^parents
+    }
 
 fact Bible {
-	-- every person except Adam and Eve has a mother and father
-	all p: Person - (Adam + Eve) | one mother: Woman, father: Man |
-		p.parents = mother + father
-	-- Adam and Eve have no parents
-	no (Adam + Eve).parents
-	-- Adam's spouse is Eve
-	Adam.spouse = Eve
-	}
+    -- every person except Adam and Eve has a mother and father
+    all p: Person - (Adam + Eve) | one mother: Woman, father: Man |
+        p.parents = mother + father
+    -- Adam and Eve have no parents
+    no (Adam + Eve).parents
+    -- Adam's spouse is Eve
+    Adam.spouse = Eve
+    }
 
 fact SocialNorms {
-	-- nobody is his or her own spouse
-	no p: Person | p.spouse = p
-	-- spouse is symmetric
-	spouse = ~spouse
-	-- a man's spouse is a woman and vice versa
-	Man.spouse in Woman && Woman.spouse in Man
-	}
+    -- nobody is his or her own spouse
+    no p: Person | p.spouse = p
+    -- spouse is symmetric
+    spouse = ~spouse
+    -- a man's spouse is a woman and vice versa
+    Man.spouse in Woman && Woman.spouse in Man
+    }
 
 fact NoIncest {
-	-- can't marry a sibling
-	no p: Person | some p.spouse.parents & p.parents
-	-- can't marry a parent
-	no p: Person | some p.spouse & p.parents
-	}
+    -- can't marry a sibling
+    no p: Person | some p.spouse.parents & p.parents
+    -- can't marry a parent
+    no p: Person | some p.spouse & p.parents
+    }
 
 pred Show () {
-	some p: Person - (Adam + Eve) | some p.spouse
-	}
+    some p: Person - (Adam + Eve) | some p.spouse
+    }
 run Show for 6 expect 1
 
-	
+
 
