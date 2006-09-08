@@ -1,3 +1,8 @@
+NEED TO DO BETTER SKOLEM NAMING:
+
+/*
+
+This is how it was done in Alloy 3.
 1) given a string s, split it into two strings s0 and s1 such that
 
 s0 + s1 == s &&
@@ -17,4 +22,6 @@ return s0 + currentSuffix
 
 maxReturnedSuffix(s0) = intValue(s1) + 1
 return s
+
+*/
 

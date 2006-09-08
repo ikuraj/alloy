@@ -1,3 +1,6 @@
-check { no none->none } // Bad error message.
+REVEALS A BAD ERROR MESSAGE!
+
+check { no none->none }
+
 
 

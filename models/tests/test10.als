@@ -1,4 +1,4 @@
-module main
+// ==> Gets a Kodkod "NegativeArraySizeException"
 
 one sig A {}
 one sig B {}
@@ -14,3 +14,6 @@ assert claim {
 }
 
 check claim for 3 expect 0
+
+
+

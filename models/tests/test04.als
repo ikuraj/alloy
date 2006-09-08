@@ -1,3 +1,5 @@
+REVEALS A BUG!!!
+
 open util/ordering[Int] as ord
 
 sig A {}
@@ -9,4 +11,5 @@ run {} for 1
 run {} for 2
 run {} for 3
 run {} for 4
+
 
