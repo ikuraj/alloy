@@ -34,8 +34,12 @@ public final class IdentitySet<T> implements Iterable<T> {
 	public void remove(T x) { map.remove(x); }
 
 	/**
-	 * Returns an iterator that iterates over elements in this set;
-	 * modification via the iterator has undefined behavior.
+	 * Returns an iterator that iterates over elements in this set.
+	 *
+	 * <br/> Modification via the iterator has undefined behavior.
+	 *
+	 * <br/> Also, if the set is modified after the iterator is created,
+	 * the behavior is undefined.
 	 */ 
 	public Iterator<T> iterator() { return map.keySet().iterator(); }
 }
