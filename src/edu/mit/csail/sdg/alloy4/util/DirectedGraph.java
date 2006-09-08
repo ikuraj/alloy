@@ -8,9 +8,9 @@ import java.util.IdentityHashMap;
 /**
  * Mutable; this implements a graph with nodes and directed edges.
  *
- * <p/> Note: it uses object identity for node equality.
+ * <p/> Note: it uses reference identity for comparing nodes (rather than N.equals).
  *
- * <p/> <b>Invariant:</b>  nodeToTargets.containsKey(x) => nodeToTargets.get(x).size()>0
+ * <p/> <b>Invariant:</b>  nodeToTargets.containsKey(x) => nodeToTargets.get(x)!=null
  *
  * @param <N> - the node type
  *
