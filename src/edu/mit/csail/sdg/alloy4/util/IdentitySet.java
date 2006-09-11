@@ -2,7 +2,6 @@ package edu.mit.csail.sdg.alloy4.util;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Mutable; this implements a set based on reference identity; the null value is allowed.
@@ -19,7 +18,7 @@ import java.util.Map;
 public final class IdentitySet<T> implements Iterable<T> {
 
     /** This map's key set is used to store the set of elements; the values are ignored. */
-    private final Map<T,Object> map = new IdentityHashMap<T,Object>();
+    private final IdentityHashMap<T,Object> map = new IdentityHashMap<T,Object>();
 
     /** Constructs an empty set. */
     public IdentitySet() { }
