@@ -37,6 +37,7 @@ public final class LogToTextPane extends Log {
 
     /** Writes msg into the log. */
     @Override public void log(String msg) {
+        // zzz: Need to LOCK the pane (to ensure thread safety)
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, defaultStyle);
@@ -46,6 +47,7 @@ public final class LogToTextPane extends Log {
 
     /** Writes msg into the log in a bold style. */
     @Override public void logBold(String msg) {
+        // zzz: Need to LOCK the pane (to ensure thread safety)
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, boldStyle);
