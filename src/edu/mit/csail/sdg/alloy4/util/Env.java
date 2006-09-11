@@ -6,7 +6,7 @@ import java.util.LinkedList;
 
 /**
  * Mutable; this implements a String-to-Value map that supports the undo operation.
- * Null keys and null values are supported.
+ * Null key and null values are allowed.
  *
  * <p/>   To be more precise, every key is internally mapped to a list of values.
  * <br/>  The put(X,Y)  method appends Y onto the end of X's list.
@@ -98,11 +98,11 @@ public final class Env<V> {
     public void remove (String k) {
         LinkedList<V> list=map2.get(k);
         if (list==null) {
-        	map1.remove(k);
+            map1.remove(k);
         } else if (list.size()<=1) {
-        	map2.remove(k);
+            map2.remove(k);
         } else {
-        	list.removeLast();
+            list.removeLast();
         }
     }
 

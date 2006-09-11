@@ -904,9 +904,9 @@ public final class VisitTypechecker {
         DirectedGraph<ParaSig> graph=new DirectedGraph<ParaSig>();
         // For each (v1->v2) in childType, add (v1->v2) into the graph.
         for (Type.Rel c:child) if (c.arity()==2) {
-        	ParaSig a=c.basicTypes.get(0); if (!nodes.contains(a)) nodes.add(a);
-        	ParaSig b=c.basicTypes.get(1); if (!nodes.contains(b)) nodes.add(b);
-        	graph.addEdge(a,b);
+            ParaSig a=c.basicTypes.get(0); if (!nodes.contains(a)) nodes.add(a);
+            ParaSig b=c.basicTypes.get(1); if (!nodes.contains(b)) nodes.add(b);
+            graph.addEdge(a,b);
         }
         // For each distinct v1 and v2 in the graph where v1&v2!=empty, add the edges v1->v2 and v2->v1.
         for (ParaSig a:nodes)
