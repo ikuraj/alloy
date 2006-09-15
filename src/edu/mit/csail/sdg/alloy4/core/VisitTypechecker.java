@@ -190,7 +190,7 @@ public final class VisitTypechecker {
         for(ParaSig y:sigs) {
             Boolean v=status.get(y);
             if (v==null) tsort(y,status,list);
-            else if (v==Boolean.FALSE) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
+            else if (v==false) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
         }
         for(ParaSig y:list) if (y.sup()!=null) y.sup().subs.add(y);
         // Now we fill in the Type field of all the ParaSig objects.
@@ -214,12 +214,12 @@ public final class VisitTypechecker {
         if (y!=null) {
             Boolean v=status.get(y);
             if (v==null) tsort(y,status,list);
-            else if (v==Boolean.FALSE) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
+            else if (v==false) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
         }
         for(ParaSig yy:x.sups()) {
             Boolean v=status.get(yy);
             if (v==null) tsort(yy,status,list);
-            else if (v==Boolean.FALSE) throw yy.syntaxError("Circular extension detected, involving the signature named \""+yy.fullname+"\"");
+            else if (v==false) throw yy.syntaxError("Circular extension detected, involving the signature named \""+yy.fullname+"\"");
         }
         status.put(x, Boolean.TRUE);
         list.add(x);
