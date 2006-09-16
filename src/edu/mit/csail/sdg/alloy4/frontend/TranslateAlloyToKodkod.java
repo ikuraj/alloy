@@ -1014,8 +1014,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 f=((Formula)(v.accept(this))).and(kfact);
             }
             Solver solver = new Solver();
-            solver.options().setSolver(SATFactory.PipeSAT);
-            //solver.options().setSolver(SATFactory.MiniSat);
+            //solver.options().setSolver(SATFactory.PipeSAT);
+            solver.options().setSolver(SATFactory.MiniSat);
             //solver.options().setSolver(SATFactory.ZChaffBasic);
             //solver.options().setSolver(SATFactory.DefaultSAT4J);
             solver.options().setBitwidth(bitwidth);

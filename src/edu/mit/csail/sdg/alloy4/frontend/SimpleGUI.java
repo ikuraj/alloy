@@ -49,6 +49,7 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
+
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
@@ -226,8 +227,15 @@ public final class SimpleGUI {
     private synchronized boolean modified() { return modified; }
 
     private Thread current_thread=null;
-    private synchronized void thread_reportTermination() { current_thread=null; }
+    private synchronized void thread_reportTermination() {
+    	current_thread=null;
+    	Stopper.stopped=0;
+    }
     private synchronized boolean thread_stillRunning() { return current_thread!=null; }
+    private synchronized void thread_stop() {
+    	if (current_thread==null) return;
+    	Stopper.stopped=1;
+    }
 
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */
     private String latestName = "";
@@ -299,7 +307,13 @@ public final class SimpleGUI {
         if (thread_stillRunning()) {
             compiled(false);
             runmenu.removeAll();
-            runmenu.add(new JMenuItem("The current analysis is still running..."));
+            JMenuItem y=new JMenuItem("The current analysis is still running...");
+            y.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					thread_stop();
+				}
+            });
+            runmenu.add(y);
             return;
         }
         if (compiled()) return;

@@ -5,6 +5,6 @@
 	<classpathentry kind="lib" path="src/sat4j-1.6.jar"/>
 	<classpathentry kind="lib" path="src/java-cup-11a-runtime.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/kodviz"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/relations"/>
+	<classpathentry kind="lib" path="src/kodkod.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
