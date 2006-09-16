@@ -53,7 +53,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
   public AlloyParser(java_cup.runtime.Scanner s, java_cup.runtime.SymbolFactory sf) {super(s,sf);}
 
   /** Production table. */
-  protected static final short _production_table[][] =
+  protected static final short _production_table[][] = 
     unpackFromStrings(new String[] {
     "\000\304\000\002\060\005\000\002\002\004\000\002\031" +
     "\004\000\002\031\007\000\002\031\002\000\002\037\004" +
@@ -121,7 +121,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
   public short[][] production_table() {return _production_table;}
 
   /** Parse-action table. */
-  protected static final short[][] _action_table =
+  protected static final short[][] _action_table = 
     unpackFromStrings(new String[] {
     "\000\u0193\000\036\002\ufffd\023\ufffd\032\ufffd\037\ufffd\054" +
     "\ufffd\056\ufffd\073\ufffd\100\005\114\ufffd\115\ufffd\122\ufffd" +
@@ -1695,7 +1695,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
   public short[][] action_table() {return _action_table;}
 
   /** <code>reduce_goto</code> table. */
-  protected static final short[][] _reduce_table =
+  protected static final short[][] _reduce_table = 
     unpackFromStrings(new String[] {
     "\000\u0193\000\006\031\003\060\005\001\001\000\004\040" +
     "\025\001\001\000\006\032\010\033\011\001\001\000\002" +
@@ -2407,1597 +2407,1597 @@ class CUP$AlloyParser$actions {
       switch (CUP$AlloyParser$act_num)
         {
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 195: // BaseExpr ::= LBRACE Declp RBRACE
+          case 195: // BaseExpr ::= LBRACE Declp RBRACE 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         RESULT=ExprQuant.Op.COMPREHENSION.make(o,a,new ExprSequence(null,new ArrayList<Expr>()),null);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 RESULT=ExprQuant.Op.COMPREHENSION.make(o,a,new ExprSequence(null,new ArrayList<Expr>()),null); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 194: // BaseExpr ::= LBRACE Declp ExprParaOrBar RBRACE
+          case 194: // BaseExpr ::= LBRACE Declp ExprParaOrBar RBRACE 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         RESULT=ExprQuant.Op.COMPREHENSION.make(o,a,b,null);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 RESULT=ExprQuant.Op.COMPREHENSION.make(o,a,b,null); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 193: // BaseExpr ::= ExprPara
+          case 193: // BaseExpr ::= ExprPara 
             {
               Expr RESULT =null;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 192: // BaseExpr ::= Name
+          case 192: // BaseExpr ::= Name 
             {
               Expr RESULT =null;
-        ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 191: // BaseExpr ::= AT Name
+          case 191: // BaseExpr ::= AT Name 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprName(o,"@"+x.name);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprName(o,"@"+x.name);                  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 190: // BaseExpr ::= LPAREN Expr RPAREN
+          case 190: // BaseExpr ::= LPAREN Expr RPAREN 
             {
               Expr RESULT =null;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         RESULT=x;
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 RESULT=x;                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 189: // BaseExpr ::= THIS
+          case 189: // BaseExpr ::= THIS 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprName(o,"this");
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprName(o,"this");                      
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 188: // BaseExpr ::= SIGINT
+          case 188: // BaseExpr ::= SIGINT 
             {
               Expr RESULT =null;
-        Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprConstant.Op.SIGINT.make(x);
+		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprConstant.Op.SIGINT.make(x);              
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 187: // BaseExpr ::= UNIV
+          case 187: // BaseExpr ::= UNIV 
             {
               Expr RESULT =null;
-        Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprConstant.Op.UNIV.make(x);
+		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprConstant.Op.UNIV.make(x);                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 186: // BaseExpr ::= IDEN
+          case 186: // BaseExpr ::= IDEN 
             {
               Expr RESULT =null;
-        Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprConstant.Op.IDEN.make(x);
+		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprConstant.Op.IDEN.make(x);                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 185: // BaseExpr ::= NONE
+          case 185: // BaseExpr ::= NONE 
             {
               Expr RESULT =null;
-        Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprConstant.Op.NONE.make(x);
+		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprConstant.Op.NONE.make(x);                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 184: // BaseExpr ::= NUMBER
+          case 184: // BaseExpr ::= NUMBER 
             {
               Expr RESULT =null;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 183: // UnopExpr ::= CARET UnopExpr
+          case 183: // UnopExpr ::= CARET UnopExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.CLOSURE    .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.CLOSURE    .make(o,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("UnopExpr",50, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 182: // UnopExpr ::= STAR UnopExpr
+          case 182: // UnopExpr ::= STAR UnopExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.RCLOSURE   .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.RCLOSURE   .make(o,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("UnopExpr",50, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 181: // UnopExpr ::= TILDE UnopExpr
+          case 181: // UnopExpr ::= TILDE UnopExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.TRANSPOSE  .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.TRANSPOSE  .make(o,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("UnopExpr",50, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 180: // UnopExpr ::= BaseExpr
+          case 180: // UnopExpr ::= BaseExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("UnopExpr",50, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 179: // DotExpr ::= BracketExpr DOT DISJ
+          case 179: // DotExpr ::= BracketExpr DOT DISJ 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Pos b = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprJoin(o,a,new ExprName(b,"disj"));
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Pos b = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprJoin(o,a,new ExprName(b,"disj")); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("DotExpr",7, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 178: // DotExpr ::= BracketExpr DOT UnopExpr
+          case 178: // DotExpr ::= BracketExpr DOT UnopExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprJoin(o,a,b                     );
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprJoin(o,a,b                     ); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("DotExpr",7, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 177: // DotExpr ::= UnopExpr
+          case 177: // DotExpr ::= UnopExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                        
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("DotExpr",7, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 176: // BracketExpr ::= DISJ LBRACKET Exprs RBRACKET
+          case 176: // BracketExpr ::= DISJ LBRACKET Exprs RBRACKET 
             {
               Expr RESULT =null;
-        Pos a = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        List<Expr> b = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         Expr aa=new ExprName(a,"disj"); for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa;
+		Pos a = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		List<Expr> b = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 Expr aa=new ExprName(a,"disj"); for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BracketExpr",2, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 175: // BracketExpr ::= BracketExpr LBRACKET Exprs RBRACKET
+          case 175: // BracketExpr ::= BracketExpr LBRACKET Exprs RBRACKET 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        List<Expr> b = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         Expr aa=a;                      for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa;
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		List<Expr> b = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 Expr aa=a;                      for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BracketExpr",2, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 174: // BracketExpr ::= DotExpr
+          case 174: // BracketExpr ::= DotExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                                                                  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("BracketExpr",2, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 173: // RangeExpr ::= RangeExpr RANGE BracketExpr
+          case 173: // RangeExpr ::= RangeExpr RANGE BracketExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.RANGE.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.RANGE.make(o,a,b);     
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RangeExpr",35, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 172: // RangeExpr ::= BracketExpr
+          case 172: // RangeExpr ::= BracketExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RangeExpr",35, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 171: // DomainExpr ::= DomainExpr DOMAIN RangeExpr
+          case 171: // DomainExpr ::= DomainExpr DOMAIN RangeExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.DOMAIN.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.DOMAIN.make(o,a,b);    
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("DomainExpr",6, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 170: // DomainExpr ::= RangeExpr
+          case 170: // DomainExpr ::= RangeExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("DomainExpr",6, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 169: // RelationExpr ::= DomainExpr LONE_ARROW_LONE RelationExpr
+          case 169: // RelationExpr ::= DomainExpr LONE_ARROW_LONE RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.LONE_ARROW_LONE .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.LONE_ARROW_LONE .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 168: // RelationExpr ::= DomainExpr LONE_ARROW_ONE RelationExpr
+          case 168: // RelationExpr ::= DomainExpr LONE_ARROW_ONE RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.LONE_ARROW_ONE  .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.LONE_ARROW_ONE  .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 167: // RelationExpr ::= DomainExpr LONE_ARROW_SOME RelationExpr
+          case 167: // RelationExpr ::= DomainExpr LONE_ARROW_SOME RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.LONE_ARROW_SOME .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.LONE_ARROW_SOME .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 166: // RelationExpr ::= DomainExpr LONE_ARROW_ANY RelationExpr
+          case 166: // RelationExpr ::= DomainExpr LONE_ARROW_ANY RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.LONE_ARROW_ANY  .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.LONE_ARROW_ANY  .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 165: // RelationExpr ::= DomainExpr ONE_ARROW_LONE RelationExpr
+          case 165: // RelationExpr ::= DomainExpr ONE_ARROW_LONE RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.ONE_ARROW_LONE  .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.ONE_ARROW_LONE  .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 164: // RelationExpr ::= DomainExpr ONE_ARROW_ONE RelationExpr
+          case 164: // RelationExpr ::= DomainExpr ONE_ARROW_ONE RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.ONE_ARROW_ONE   .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.ONE_ARROW_ONE   .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 163: // RelationExpr ::= DomainExpr ONE_ARROW_SOME RelationExpr
+          case 163: // RelationExpr ::= DomainExpr ONE_ARROW_SOME RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.ONE_ARROW_SOME  .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.ONE_ARROW_SOME  .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 162: // RelationExpr ::= DomainExpr ONE_ARROW_ANY RelationExpr
+          case 162: // RelationExpr ::= DomainExpr ONE_ARROW_ANY RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.ONE_ARROW_ANY   .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.ONE_ARROW_ANY   .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 161: // RelationExpr ::= DomainExpr SOME_ARROW_LONE RelationExpr
+          case 161: // RelationExpr ::= DomainExpr SOME_ARROW_LONE RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.SOME_ARROW_LONE .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.SOME_ARROW_LONE .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 160: // RelationExpr ::= DomainExpr SOME_ARROW_ONE RelationExpr
+          case 160: // RelationExpr ::= DomainExpr SOME_ARROW_ONE RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.SOME_ARROW_ONE  .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.SOME_ARROW_ONE  .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 159: // RelationExpr ::= DomainExpr SOME_ARROW_SOME RelationExpr
+          case 159: // RelationExpr ::= DomainExpr SOME_ARROW_SOME RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.SOME_ARROW_SOME .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.SOME_ARROW_SOME .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 158: // RelationExpr ::= DomainExpr SOME_ARROW_ANY RelationExpr
+          case 158: // RelationExpr ::= DomainExpr SOME_ARROW_ANY RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.SOME_ARROW_ANY  .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.SOME_ARROW_ANY  .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 157: // RelationExpr ::= DomainExpr ANY_ARROW_LONE RelationExpr
+          case 157: // RelationExpr ::= DomainExpr ANY_ARROW_LONE RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.ANY_ARROW_LONE  .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.ANY_ARROW_LONE  .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 156: // RelationExpr ::= DomainExpr ANY_ARROW_ONE RelationExpr
+          case 156: // RelationExpr ::= DomainExpr ANY_ARROW_ONE RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.ANY_ARROW_ONE   .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.ANY_ARROW_ONE   .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 155: // RelationExpr ::= DomainExpr ANY_ARROW_SOME RelationExpr
+          case 155: // RelationExpr ::= DomainExpr ANY_ARROW_SOME RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.ANY_ARROW_SOME  .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.ANY_ARROW_SOME  .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 154: // RelationExpr ::= DomainExpr ARROW RelationExpr
+          case 154: // RelationExpr ::= DomainExpr ARROW RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.ARROW           .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.ARROW           .make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 153: // RelationExpr ::= DomainExpr
+          case 153: // RelationExpr ::= DomainExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=a;
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=a;                                          
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("RelationExpr",36, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 152: // IntersectExpr ::= IntersectExpr AMPERSAND RelationExpr
+          case 152: // IntersectExpr ::= IntersectExpr AMPERSAND RelationExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.INTERSECT.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.INTERSECT.make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("IntersectExpr",21, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 151: // IntersectExpr ::= RelationExpr
+          case 151: // IntersectExpr ::= RelationExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("IntersectExpr",21, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 150: // OverrideExpr ::= OverrideExpr PLUSPLUS IntersectExpr
+          case 150: // OverrideExpr ::= OverrideExpr PLUSPLUS IntersectExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.PLUSPLUS.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.PLUSPLUS.make(o,a,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("OverrideExpr",32, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 149: // OverrideExpr ::= IntersectExpr
+          case 149: // OverrideExpr ::= IntersectExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("OverrideExpr",32, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 148: // NumUnopExpr ::= DOLLAR NumUnopExpr
+          case 148: // NumUnopExpr ::= DOLLAR NumUnopExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.INTTOATOM  .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.INTTOATOM  .make(o,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NumUnopExpr",28, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 147: // NumUnopExpr ::= INT NumUnopExpr
+          case 147: // NumUnopExpr ::= INT NumUnopExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.SUM        .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.SUM        .make(o,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NumUnopExpr",28, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 146: // NumUnopExpr ::= SUM NumUnopExpr
+          case 146: // NumUnopExpr ::= SUM NumUnopExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.SUM        .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.SUM        .make(o,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NumUnopExpr",28, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 145: // NumUnopExpr ::= HASH NumUnopExpr
+          case 145: // NumUnopExpr ::= HASH NumUnopExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.CARDINALITY.make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.CARDINALITY.make(o,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NumUnopExpr",28, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 144: // NumUnopExpr ::= OverrideExpr
+          case 144: // NumUnopExpr ::= OverrideExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NumUnopExpr",28, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 143: // UnionDiffExpr ::= UnionDiffExpr MINUS NumUnopExpr
+          case 143: // UnionDiffExpr ::= UnionDiffExpr MINUS NumUnopExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.MINUS.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.MINUS.make(o,a,b);     
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("UnionDiffExpr",49, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 142: // UnionDiffExpr ::= UnionDiffExpr PLUS NumUnopExpr
+          case 142: // UnionDiffExpr ::= UnionDiffExpr PLUS NumUnopExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.PLUS.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.PLUS.make(o,a,b);      
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("UnionDiffExpr",49, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 141: // UnionDiffExpr ::= NumUnopExpr
+          case 141: // UnionDiffExpr ::= NumUnopExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("UnionDiffExpr",49, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 140: // CompareExpr ::= UnionDiffExpr
+          case 140: // CompareExpr ::= UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 139: // CompareExpr ::= ALL UnionDiffExpr
+          case 139: // CompareExpr ::= ALL UnionDiffExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\".");
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 138: // CompareExpr ::= SET UnionDiffExpr
+          case 138: // CompareExpr ::= SET UnionDiffExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary .Op.SETMULT  .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.SETMULT  .make(o,b);                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 137: // CompareExpr ::= ONE UnionDiffExpr
+          case 137: // CompareExpr ::= ONE UnionDiffExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary .Op.ONE      .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.ONE      .make(o,b);                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 136: // CompareExpr ::= LONE UnionDiffExpr
+          case 136: // CompareExpr ::= LONE UnionDiffExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary .Op.LONE     .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.LONE     .make(o,b);                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 135: // CompareExpr ::= SOME UnionDiffExpr
+          case 135: // CompareExpr ::= SOME UnionDiffExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary .Op.SOME     .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.SOME     .make(o,b);                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 134: // CompareExpr ::= NO UnionDiffExpr
+          case 134: // CompareExpr ::= NO UnionDiffExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary .Op.NO       .make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary .Op.NO       .make(o,b);                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 133: // CompareExpr ::= CompareExpr NOTGTE UnionDiffExpr
+          case 133: // CompareExpr ::= CompareExpr NOTGTE UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GTE   .make(o,a,b      ));
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GTE   .make(o,a,b      )); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 132: // CompareExpr ::= CompareExpr NOTLTE UnionDiffExpr
+          case 132: // CompareExpr ::= CompareExpr NOTLTE UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LTE   .make(o,a,b      ));
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LTE   .make(o,a,b      )); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 131: // CompareExpr ::= CompareExpr NOTGT UnionDiffExpr
+          case 131: // CompareExpr ::= CompareExpr NOTGT UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GT    .make(o,a,b      ));
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.GT    .make(o,a,b      )); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 130: // CompareExpr ::= CompareExpr NOTLT UnionDiffExpr
+          case 130: // CompareExpr ::= CompareExpr NOTLT UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LT    .make(o,a,b      ));
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.LT    .make(o,a,b      )); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 129: // CompareExpr ::= CompareExpr NOTIN UnionDiffExpr
+          case 129: // CompareExpr ::= CompareExpr NOTIN UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.IN    .make(o,a,mult(b)));
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.IN    .make(o,a,mult(b))); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 128: // CompareExpr ::= CompareExpr NOTEQUALS UnionDiffExpr
+          case 128: // CompareExpr ::= CompareExpr NOTEQUALS UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.EQUALS.make(o,a,b      ));
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.NOT.make(o,ExprBinary.Op.EQUALS.make(o,a,b      )); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 127: // CompareExpr ::= CompareExpr GTE UnionDiffExpr
+          case 127: // CompareExpr ::= CompareExpr GTE UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.GTE      .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.GTE      .make(o,a,b);                             
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 126: // CompareExpr ::= CompareExpr LTE UnionDiffExpr
+          case 126: // CompareExpr ::= CompareExpr LTE UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.LTE      .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.LTE      .make(o,a,b);                             
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 125: // CompareExpr ::= CompareExpr GT UnionDiffExpr
+          case 125: // CompareExpr ::= CompareExpr GT UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.GT       .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.GT       .make(o,a,b);                             
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 124: // CompareExpr ::= CompareExpr LT UnionDiffExpr
+          case 124: // CompareExpr ::= CompareExpr LT UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.LT       .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.LT       .make(o,a,b);                             
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 123: // CompareExpr ::= CompareExpr IN UnionDiffExpr
+          case 123: // CompareExpr ::= CompareExpr IN UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.IN       .make(o,a,mult(b));
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.IN       .make(o,a,mult(b));                       
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 122: // CompareExpr ::= CompareExpr EQUALS UnionDiffExpr
+          case 122: // CompareExpr ::= CompareExpr EQUALS UnionDiffExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.EQUALS   .make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.EQUALS   .make(o,a,b);                             
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 121: // NegExpr ::= NOT NegExpr
+          case 121: // NegExpr ::= NOT NegExpr 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprUnary.Op.NOT.make(o,b);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprUnary.Op.NOT.make(o,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NegExpr",27, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 120: // NegExpr ::= CompareExpr
+          case 120: // NegExpr ::= CompareExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                          
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NegExpr",27, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 119: // AndExpr ::= AndExpr AND NegExpr
+          case 119: // AndExpr ::= AndExpr AND NegExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.AND.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.AND.make(o,a,b);       
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("AndExpr",0, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 118: // AndExpr ::= NegExpr
+          case 118: // AndExpr ::= NegExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("AndExpr",0, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 117: // ImpliesExprOpen ::= AndExpr IMPLIES ImpliesExpr
+          case 117: // ImpliesExprOpen ::= AndExpr IMPLIES ImpliesExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.IMPLIES.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.IMPLIES.make(o,a,b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprOpen",20, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 116: // ImpliesExprOpen ::= AndExpr IMPLIES ImpliesExprClose ELSE ImpliesExprOpen
+          case 116: // ImpliesExprOpen ::= AndExpr IMPLIES ImpliesExprClose ELSE ImpliesExprOpen 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr c = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprITE(o,a,b,c);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr c = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprITE(o,a,b,c);              
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprOpen",20, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 115: // ImpliesExprClose ::= AndExpr IMPLIES ImpliesExprClose ELSE ImpliesExprClose
+          case 115: // ImpliesExprClose ::= AndExpr IMPLIES ImpliesExprClose ELSE ImpliesExprClose 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr c = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprITE(o,a,b,c);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr c = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprITE(o,a,b,c);              
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprClose",19, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 114: // ImpliesExprClose ::= AndExpr
+          case 114: // ImpliesExprClose ::= AndExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=a;
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=a; 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprClose",19, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 113: // ImpliesExpr ::= ImpliesExprOpen
+          case 113: // ImpliesExpr ::= ImpliesExprOpen 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=a;
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=a; 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ImpliesExpr",18, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 112: // ImpliesExpr ::= ImpliesExprClose
+          case 112: // ImpliesExpr ::= ImpliesExprClose 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=a;
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=a; 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ImpliesExpr",18, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 111: // EquivExpr ::= EquivExpr IFF ImpliesExpr
+          case 111: // EquivExpr ::= EquivExpr IFF ImpliesExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.IFF.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.IFF.make(o,a,b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("EquivExpr",8, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 110: // EquivExpr ::= ImpliesExpr
+          case 110: // EquivExpr ::= ImpliesExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                              
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("EquivExpr",8, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 109: // OrExpr ::= OrExpr OR EquivExpr
+          case 109: // OrExpr ::= OrExpr OR EquivExpr 
             {
               Expr RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprBinary.Op.OR.make(o,a,b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprBinary.Op.OR.make(o,a,b);   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("OrExpr",31, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 108: // OrExpr ::= EquivExpr
+          case 108: // OrExpr ::= EquivExpr 
             {
               Expr RESULT =null;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                              
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("OrExpr",31, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 107: // Expr ::= SUM2 Declp ExprParaOrBar
+          case 107: // Expr ::= SUM2 Declp ExprParaOrBar 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprQuant.Op.SUM .make(o,a,b,null);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprQuant.Op.SUM .make(o,a,b,null); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expr",10, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 106: // Expr ::= ONE2 Declp ExprParaOrBar
+          case 106: // Expr ::= ONE2 Declp ExprParaOrBar 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprQuant.Op.ONE .make(o,a,b,null);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprQuant.Op.ONE .make(o,a,b,null); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expr",10, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 105: // Expr ::= LONE2 Declp ExprParaOrBar
+          case 105: // Expr ::= LONE2 Declp ExprParaOrBar 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprQuant.Op.LONE.make(o,a,b,null);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprQuant.Op.LONE.make(o,a,b,null); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expr",10, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 104: // Expr ::= SOME2 Declp ExprParaOrBar
+          case 104: // Expr ::= SOME2 Declp ExprParaOrBar 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprQuant.Op.SOME.make(o,a,b,null);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprQuant.Op.SOME.make(o,a,b,null); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expr",10, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 103: // Expr ::= NO2 Declp ExprParaOrBar
+          case 103: // Expr ::= NO2 Declp ExprParaOrBar 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprQuant.Op.NO  .make(o,a,b,null);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprQuant.Op.NO  .make(o,a,b,null); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expr",10, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 102: // Expr ::= ALL2 Declp ExprParaOrBar
+          case 102: // Expr ::= ALL2 Declp ExprParaOrBar 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=ExprQuant.Op.ALL .make(o,a,b,null);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<VarDecl> a = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=ExprQuant.Op.ALL .make(o,a,b,null); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expr",10, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 101: // Expr ::= LET Let
+          case 101: // Expr ::= LET Let 
             {
               Expr RESULT =null;
-        ExprLet x = (ExprLet)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		ExprLet x = (ExprLet)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expr",10, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 100: // Expr ::= OrExpr
+          case 100: // Expr ::= OrExpr 
             {
               Expr RESULT =null;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expr",10, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 99: // Exprp ::= Exprp COMMA Expr
+          case 99: // Exprp ::= Exprp COMMA Expr 
             {
               List<Expr> RESULT =null;
-        List<Expr> a = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         a.add(b); RESULT=a;
+		List<Expr> a = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 a.add(b); RESULT=a;                          
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Exprp",16, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 98: // Exprp ::= Expr
+          case 98: // Exprp ::= Expr 
             {
               List<Expr> RESULT =null;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<Expr>(); RESULT.add(x);
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<Expr>(); RESULT.add(x); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Exprp",16, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 97: // Exprs ::= Exprp
+          case 97: // Exprs ::= Exprp 
             {
               List<Expr> RESULT =null;
-        List<Expr> x = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		List<Expr> x = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                    
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Exprs",15, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 96: // Exprs ::=
+          case 96: // Exprs ::= 
             {
               List<Expr> RESULT =null;
-         RESULT=new ArrayList<Expr>();
+		 RESULT=new ArrayList<Expr>();                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Exprs",15, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 95: // ExprParaOrBar ::= ExprPara
+          case 95: // ExprParaOrBar ::= ExprPara 
             {
               Expr RESULT =null;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x; 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ExprParaOrBar",14, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 94: // ExprParaOrBar ::= BAR Expr
+          case 94: // ExprParaOrBar ::= BAR Expr 
             {
               Expr RESULT =null;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x; 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ExprParaOrBar",14, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 93: // ExprParas ::= Expr ExprParas
+          case 93: // ExprParas ::= Expr ExprParas 
             {
               List<Expr> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        List<Expr> b = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         b.add(0,a); RESULT=b;
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		List<Expr> b = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 b.add(0,a); RESULT=b;          
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ExprParas",13, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 92: // ExprParas ::=
+          case 92: // ExprParas ::= 
             {
               List<Expr> RESULT =null;
-         RESULT=new ArrayList<Expr>();
+		 RESULT=new ArrayList<Expr>();  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ExprParas",13, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 91: // ExprPara ::= LBRACE ExprParas RBRACE
+          case 91: // ExprPara ::= LBRACE ExprParas RBRACE 
             {
               Expr RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<Expr> x = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         RESULT=new ExprSequence(o,x);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<Expr> x = (List<Expr>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 RESULT=new ExprSequence(o,x);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ExprPara",11, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 90: // ExprParaOpt ::= ExprPara
+          case 90: // ExprParaOpt ::= ExprPara 
             {
               Expr RESULT =null;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                      
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ExprParaOpt",12, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 89: // ExprParaOpt ::=
+          case 89: // ExprParaOpt ::= 
             {
               Expr RESULT =null;
-         RESULT=null;
+		 RESULT=null;                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("ExprParaOpt",12, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 88: // Let ::= Name EQUALS Expr COMMA Let
+          case 88: // Let ::= Name EQUALS Expr COMMA Let 
             {
               ExprLet RESULT =null;
-        ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprLet x = (ExprLet)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprLet(a.pos,a.name,b,x);
+		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprLet x = (ExprLet)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprLet(a.pos,a.name,b,x); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Let",22, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 87: // Let ::= Name EQUALS Expr ExprParaOrBar
+          case 87: // Let ::= Name EQUALS Expr ExprParaOrBar 
             {
               ExprLet RESULT =null;
-        ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprLet(a.pos,a.name,b,x);
+		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr x = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprLet(a.pos,a.name,b,x); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Let",22, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 86: // Decls ::= Declp
+          case 86: // Decls ::= Declp 
             {
               List<VarDecl> RESULT =null;
-        List<VarDecl> x = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		List<VarDecl> x = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                        
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Decls",5, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 85: // Decls ::=
+          case 85: // Decls ::= 
             {
               List<VarDecl> RESULT =null;
-         RESULT=new ArrayList<VarDecl>();
+		 RESULT=new ArrayList<VarDecl>(); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Decls",5, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 84: // Declp ::= Names COLON Expr
+          case 84: // Declp ::= Names COLON Expr 
             {
               List<VarDecl> RESULT =null;
-        List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(o,a,mult(b)));
+		List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<VarDecl>(); RESULT.add(new VarDecl(o,a,mult(b))); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 83: // Declp ::= EXH Names COLON Expr
+          case 83: // Declp ::= EXH Names COLON Expr 
             {
               List<VarDecl> RESULT =null;
-        Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-         ExprName.hint(k,"exh");
+		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		 ExprName.hint(k,"exh");                                                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 82: // Declp ::= DISJ Names COLON Expr
+          case 82: // Declp ::= DISJ Names COLON Expr 
             {
               List<VarDecl> RESULT =null;
-        Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-         ExprName.hint(k,"disj");
+		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		 ExprName.hint(k,"disj");                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 81: // Declp ::= PART Names COLON Expr
+          case 81: // Declp ::= PART Names COLON Expr 
             {
               List<VarDecl> RESULT =null;
-        Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-         ExprName.hint(k,"part");
+		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		 ExprName.hint(k,"part");                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 80: // Declp ::= Declp COMMA Names COLON Expr
+          case 80: // Declp ::= Declp COMMA Names COLON Expr 
             {
               List<VarDecl> RESULT =null;
-        List<VarDecl> x = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x; RESULT.add(new VarDecl(o,a,mult(b)));
+		List<VarDecl> x = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr b = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x; RESULT.add(new VarDecl(o,a,mult(b)));                        
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 79: // Declp ::= Declp COMMA EXH Names COLON Expr
+          case 79: // Declp ::= Declp COMMA EXH Names COLON Expr 
             {
               List<VarDecl> RESULT =null;
-        Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-         ExprName.hint(k,"exh");
+		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		 ExprName.hint(k,"exh");                                                
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 78: // Declp ::= Declp COMMA DISJ Names COLON Expr
+          case 78: // Declp ::= Declp COMMA DISJ Names COLON Expr 
             {
               List<VarDecl> RESULT =null;
-        Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-         ExprName.hint(k,"disj");
+		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		 ExprName.hint(k,"disj");                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 77: // Declp ::= Declp COMMA PART Names COLON Expr
+          case 77: // Declp ::= Declp COMMA PART Names COLON Expr 
             {
               List<VarDecl> RESULT =null;
-        Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-         ExprName.hint(k,"part");
+		Pos k = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		 ExprName.hint(k,"part");                                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Declp",4, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 76: // Names ::= Names COMMA Name
+          case 76: // Names ::= Names COMMA Name 
             {
               List<ExprName> RESULT =null;
-        List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         a.add(b); RESULT=a;
+		List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 a.add(b); RESULT=a;                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Names",26, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 75: // Names ::= Name
+          case 75: // Names ::= Name 
             {
               List<ExprName> RESULT =null;
-        ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<ExprName>(); RESULT.add(x);
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<ExprName>(); RESULT.add(x);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Names",26, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 74: // NameHelper ::= NameHelper SLASH ID
+          case 74: // NameHelper ::= NameHelper SLASH ID 
             {
               ExprName RESULT =null;
-        ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprName(a.pos, a.name+"/"+b.name);
+		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprName(a.pos, a.name+"/"+b.name); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NameHelper",25, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 73: // NameHelper ::= ID
+          case 73: // NameHelper ::= ID 
             {
               ExprName RESULT =null;
-        ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                      
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("NameHelper",25, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 72: // Name ::= THIS SLASH NameHelper
+          case 72: // Name ::= THIS SLASH NameHelper 
             {
               ExprName RESULT =null;
-        Pos a = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprName(a, "this/"+b.name);
+		Pos a = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprName(a, "this/"+b.name); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Name",24, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 71: // Name ::= NameHelper
+          case 71: // Name ::= NameHelper 
             {
               ExprName RESULT =null;
-        ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Name",24, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 70: // SigRefu ::= SigRefu PLUS SIGINT
+          case 70: // SigRefu ::= SigRefu PLUS SIGINT 
             {
               List<String> RESULT =null;
-        List<String> a = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-         RESULT=a; RESULT.add(ParaSig.SIGINT_NAME);
+		List<String> a = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		 RESULT=a; RESULT.add(ParaSig.SIGINT_NAME);                                          
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefu",45, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 69: // SigRefu ::= SigRefu PLUS Name
+          case 69: // SigRefu ::= SigRefu PLUS Name 
             {
               List<String> RESULT =null;
-        List<String> a = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=a; RESULT.add(b.name);
+		List<String> a = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=a; RESULT.add(b.name);                                                       
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefu",45, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 68: // SigRefu ::= SIGINT
+          case 68: // SigRefu ::= SIGINT 
             {
               List<String> RESULT =null;
-         RESULT=new ArrayList<String>(); RESULT.add(ParaSig.SIGINT_NAME);
+		 RESULT=new ArrayList<String>(); RESULT.add(ParaSig.SIGINT_NAME);                    
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefu",45, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 67: // SigRefu ::= Name
+          case 67: // SigRefu ::= Name 
             {
               List<String> RESULT =null;
-        ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<String>(); RESULT.add(x.name);
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<String>(); RESULT.add(x.name);                                 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefu",45, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 66: // SigRefp ::= SigRefp COMMA SigRef
+          case 66: // SigRefp ::= SigRefp COMMA SigRef 
             {
               List<ExprName> RESULT =null;
-        List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         a.add(b); RESULT=a;
+		List<ExprName> a = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 a.add(b); RESULT=a;                                                                 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefp",43, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 65: // SigRefp ::= SigRef
+          case 65: // SigRefp ::= SigRef 
             {
               List<ExprName> RESULT =null;
-        ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<ExprName>(); RESULT.add(x);
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<ExprName>(); RESULT.add(x);                                    
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefp",43, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 64: // SigRefs ::= SigRefp
+          case 64: // SigRefs ::= SigRefp 
             {
               List<ExprName> RESULT =null;
-        List<ExprName> x = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		List<ExprName> x = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefs",44, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 63: // SigRefs ::=
+          case 63: // SigRefs ::= 
             {
               List<ExprName> RESULT =null;
-         RESULT=new ArrayList<ExprName>();
+		 RESULT=new ArrayList<ExprName>();                                                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRefs",44, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 62: // SigRef ::= SIGINT
+          case 62: // SigRef ::= SIGINT 
             {
               ExprName RESULT =null;
-        Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprName(x, ParaSig.SIGINT_NAME);
+		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprName(x, ParaSig.SIGINT_NAME);                                        
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRef",42, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 61: // SigRef ::= UNIV
+          case 61: // SigRef ::= UNIV 
             {
               ExprName RESULT =null;
-        Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ExprName(x, ParaSig.UNIV_NAME);
+		Pos x = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ExprName(x, ParaSig.UNIV_NAME);                                          
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRef",42, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 60: // SigRef ::= Name
+          case 60: // SigRef ::= Name 
             {
               ExprName RESULT =null;
-        ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=x;
+		ExprName x = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=x;                                                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigRef",42, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 59: // SigIn ::=
+          case 59: // SigIn ::= 
             {
               List<String> RESULT =null;
-         RESULT=null;
+		 RESULT=null;                                                                        
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigIn",39, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 58: // SigIn ::= IN SigRefu
+          case 58: // SigIn ::= IN SigRefu 
             {
               List<String> RESULT =null;
-        List<String> b = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=b;
+		List<String> b = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=b;                                                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigIn",39, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 57: // SigIn ::= EXTENDS SIGINT
+          case 57: // SigIn ::= EXTENDS SIGINT 
             {
               List<String> RESULT =null;
-         RESULT=new ArrayList<String>(); RESULT.add(null); RESULT.add(ParaSig.SIGINT_NAME);
+		 RESULT=new ArrayList<String>(); RESULT.add(null); RESULT.add(ParaSig.SIGINT_NAME);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigIn",39, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 56: // SigIn ::= EXTENDS Name
+          case 56: // SigIn ::= EXTENDS Name 
             {
               List<String> RESULT =null;
-        ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<String>(); RESULT.add(null); RESULT.add(a.name);
+		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<String>(); RESULT.add(null); RESULT.add(a.name);               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigIn",39, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 55: // SigQuals ::= SigQuals SigQual
+          case 55: // SigQuals ::= SigQuals SigQual 
             {
               Integer RESULT =null;
-        Integer a = (Integer)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Integer b = (Integer)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=(a|b);
+		Integer a = (Integer)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Integer b = (Integer)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=(a|b);                                                                       
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigQuals",41, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 54: // SigQuals ::=
+          case 54: // SigQuals ::= 
             {
               Integer RESULT =null;
-         RESULT=0;
+		 RESULT=0;                                                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigQuals",41, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 53: // SigQual ::= SOME
+          case 53: // SigQual ::= SOME 
             {
               Integer RESULT =null;
-         RESULT=8;
+		 RESULT=8;                                                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigQual",40, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 52: // SigQual ::= ONE
+          case 52: // SigQual ::= ONE 
             {
               Integer RESULT =null;
-         RESULT=4;
+		 RESULT=4;                                                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigQual",40, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 51: // SigQual ::= LONE
+          case 51: // SigQual ::= LONE 
             {
               Integer RESULT =null;
-         RESULT=2;
+		 RESULT=2;                                                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigQual",40, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 50: // SigQual ::= ABSTRACT
+          case 50: // SigQual ::= ABSTRACT 
             {
               Integer RESULT =null;
-         RESULT=1;
+		 RESULT=1;                                                                           
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("SigQual",40, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 49: // Sig ::= SigQuals SIG Names SigIn LBRACE Decls RBRACE ExprParaOpt
+          case 49: // Sig ::= SigQuals SIG Names SigIn LBRACE Decls RBRACE ExprParaOpt 
             {
               Object RESULT =null;
-        Integer a = (Integer)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-7)).value;
-        List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
-        List<String> c = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-
+		Integer a = (Integer)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-7)).value;
+		List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
+		List<String> c = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		
    for(ExprName bbb:b) {
      String bb=bbb.name;
      if (c==null)
@@ -4007,317 +4007,317 @@ class CUP$AlloyParser$actions {
      else
        parser.alloyunit.makeSig(bbb.pos, bb, (a&1)!=0,(a&2)!=0,(a&4)!=0,(a&8)!=0,c,null,d,e);
    }
-
+ 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Sig",38, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 48: // Predicate ::= SigRef DOT Name ExprPara
+          case 48: // Predicate ::= SigRef DOT Name ExprPara 
             {
               Object RESULT =null;
-        ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeFun(n.pos,n.name,f   ,new ArrayList<VarDecl>(),null,v);
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,f   ,new ArrayList<VarDecl>(),null,v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Predicate",34, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 47: // Predicate ::= SigRef DOT Name LBRACKET Decls RBRACKET ExprPara
+          case 47: // Predicate ::= SigRef DOT Name LBRACKET Decls RBRACKET ExprPara 
             {
               Object RESULT =null;
-        ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,null,v);
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,null,v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Predicate",34, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 46: // Predicate ::= SigRef DOT Name LPAREN Decls RPAREN ExprPara
+          case 46: // Predicate ::= SigRef DOT Name LPAREN Decls RPAREN ExprPara 
             {
               Object RESULT =null;
-        ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,null,v);
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,null,v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Predicate",34, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 45: // Predicate ::= Name ExprPara
+          case 45: // Predicate ::= Name ExprPara 
             {
               Object RESULT =null;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeFun(n.pos,n.name,null,new ArrayList<VarDecl>(),null,v);
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,null,new ArrayList<VarDecl>(),null,v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Predicate",34, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 44: // Predicate ::= Name LBRACKET Decls RBRACKET ExprPara
+          case 44: // Predicate ::= Name LBRACKET Decls RBRACKET ExprPara 
             {
               Object RESULT =null;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,null,v);
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,null,v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Predicate",34, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 43: // Predicate ::= Name LPAREN Decls RPAREN ExprPara
+          case 43: // Predicate ::= Name LPAREN Decls RPAREN ExprPara 
             {
               Object RESULT =null;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,null,v);
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,null,v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Predicate",34, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 42: // Function ::= SigRef DOT Name COLON Expr LBRACE Expr RBRACE
+          case 42: // Function ::= SigRef DOT Name COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-        ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-7)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
-        Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeFun(n.pos,n.name,f   ,new ArrayList<VarDecl>(),mult(t),v);
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-7)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
+		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,f   ,new ArrayList<VarDecl>(),mult(t),v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Function",17, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 41: // Function ::= SigRef DOT Name LBRACKET Decls RBRACKET COLON Expr LBRACE Expr RBRACE
+          case 41: // Function ::= SigRef DOT Name LBRACKET Decls RBRACKET COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-        ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-10)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
-        Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,mult(t),v);
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-10)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,mult(t),v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Function",17, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 40: // Function ::= SigRef DOT Name LPAREN Decls RPAREN COLON Expr LBRACE Expr RBRACE
+          case 40: // Function ::= SigRef DOT Name LPAREN Decls RPAREN COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-        ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-10)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
-        Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,mult(t),v);
+		ExprName f = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-10)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,f   ,d                       ,mult(t),v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Function",17, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 39: // Function ::= Name COLON Expr LBRACE Expr RBRACE
+          case 39: // Function ::= Name COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
-        Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeFun(n.pos,n.name,null,new ArrayList<VarDecl>(),mult(t),v);
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
+		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,null,new ArrayList<VarDecl>(),mult(t),v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Function",17, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 38: // Function ::= Name LBRACKET Decls RBRACKET COLON Expr LBRACE Expr RBRACE
+          case 38: // Function ::= Name LBRACKET Decls RBRACKET COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
-        Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,mult(t),v);
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,mult(t),v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Function",17, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 37: // Function ::= Name LPAREN Decls RPAREN COLON Expr LBRACE Expr RBRACE
+          case 37: // Function ::= Name LPAREN Decls RPAREN COLON Expr LBRACE Expr RBRACE 
             {
               Object RESULT =null;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
-        List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
-        Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,mult(t),v);
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-8)).value;
+		List<VarDecl> d = (List<VarDecl>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		Expr t = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		Expr v = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,mult(t),v); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Function",17, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 36: // Typescope ::= NUMBER SIGINT
+          case 36: // Typescope ::= NUMBER SIGINT 
             {
               List<String> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(ParaSig.SIGINT_NAME);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(ParaSig.SIGINT_NAME);    
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Typescope",48, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 35: // Typescope ::= EXACTLY NUMBER SIGINT
+          case 35: // Typescope ::= EXACTLY NUMBER SIGINT 
             {
               List<String> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(ParaSig.SIGINT_NAME);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(ParaSig.SIGINT_NAME);    
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Typescope",48, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 34: // Typescope ::= NUMBER INT
+          case 34: // Typescope ::= NUMBER INT 
             {
               List<String> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(ParaSig.BITWIDTH_NAME);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(ParaSig.BITWIDTH_NAME);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Typescope",48, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 33: // Typescope ::= EXACTLY NUMBER INT
+          case 33: // Typescope ::= EXACTLY NUMBER INT 
             {
               List<String> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(ParaSig.BITWIDTH_NAME);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(ParaSig.BITWIDTH_NAME);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Typescope",48, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 32: // Typescope ::= NUMBER Name
+          case 32: // Typescope ::= NUMBER Name 
             {
               List<String> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(b.name);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(b.name);                 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Typescope",48, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 31: // Typescope ::= EXACTLY NUMBER Name
+          case 31: // Typescope ::= EXACTLY NUMBER Name 
             {
               List<String> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(b.name);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		ExprName b = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(b.name);                 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Typescope",48, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 30: // Typescopes ::= Typescopes COMMA Typescope
+          case 30: // Typescopes ::= Typescopes COMMA Typescope 
             {
               List<String> RESULT =null;
-        List<String> a = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        List<String> b = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=a; a.addAll(b);
+		List<String> a = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		List<String> b = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=a; a.addAll(b);  
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Typescopes",47, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 29: // Typescopes ::= Typescope
+          case 29: // Typescopes ::= Typescope 
             {
               List<String> RESULT =null;
-        List<String> a = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=a;
+		List<String> a = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=a;               
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Typescopes",47, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 28: // Scope ::= Expects
+          case 28: // Scope ::= Expects 
             {
               List<String> RESULT =null;
-        String c = (String)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<String>(); RESULT.add("");                         RESULT.add(c);
+		String c = (String)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<String>(); RESULT.add("");                         RESULT.add(c);                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Scope",37, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 27: // Scope ::= FOR Typescopes Expects
+          case 27: // Scope ::= FOR Typescopes Expects 
             {
               List<String> RESULT =null;
-        List<String> b = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        String c = (String)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<String>(); RESULT.add("");                         RESULT.add(c); RESULT.addAll(b);
+		List<String> b = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		String c = (String)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<String>(); RESULT.add("");                         RESULT.add(c); RESULT.addAll(b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Scope",37, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 26: // Scope ::= FOR NUMBER BUT Typescopes Expects
+          case 26: // Scope ::= FOR NUMBER BUT Typescopes Expects 
             {
               List<String> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        List<String> b = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        String c = (String)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<String>(); RESULT.add(""+((ExprConstant)a).num()); RESULT.add(c); RESULT.addAll(b);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		List<String> b = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		String c = (String)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<String>(); RESULT.add(""+((ExprConstant)a).num()); RESULT.add(c); RESULT.addAll(b); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Scope",37, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 25: // Scope ::= FOR NUMBER Expects
+          case 25: // Scope ::= FOR NUMBER Expects 
             {
               List<String> RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        String c = (String)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=new ArrayList<String>(); RESULT.add(""+((ExprConstant)a).num()); RESULT.add(c);
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		String c = (String)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=new ArrayList<String>(); RESULT.add(""+((ExprConstant)a).num()); RESULT.add(c);                   
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Scope",37, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 24: // Expects ::= EXPECT NUMBER
+          case 24: // Expects ::= EXPECT NUMBER 
             {
               String RESULT =null;
-        Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         RESULT=""+((ExprConstant)a).num();
+		Expr a = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 RESULT=""+((ExprConstant)a).num(); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expects",9, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 23: // Expects ::=
+          case 23: // Expects ::= 
             {
               String RESULT =null;
-         RESULT="";
+		 RESULT="";                         
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Expects",9, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 22: // Paragraphs ::= Paragraphs RUN ExprPara Scope
+          case 22: // Paragraphs ::= Paragraphs RUN ExprPara Scope 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        List<String> s = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		List<String> s = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
@@ -4336,13 +4336,13 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 21: // Paragraphs ::= Paragraphs RUN Name Scope
+          case 21: // Paragraphs ::= Paragraphs RUN Name Scope 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        List<String> s = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		List<String> s = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
@@ -4361,13 +4361,13 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 20: // Paragraphs ::= Paragraphs CHECK Name Scope
+          case 20: // Paragraphs ::= Paragraphs CHECK Name Scope 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        List<String> s = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		List<String> s = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
@@ -4386,13 +4386,13 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 19: // Paragraphs ::= Paragraphs CHECK ExprPara Scope
+          case 19: // Paragraphs ::= Paragraphs CHECK ExprPara Scope 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        List<String> s = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		List<String> s = (List<String>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
@@ -4411,7 +4411,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 18: // Paragraphs ::=
+          case 18: // Paragraphs ::= 
             {
               Object RESULT =null;
 
@@ -4420,7 +4420,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 17: // Paragraphs ::= Paragraphs PRED Predicate
+          case 17: // Paragraphs ::= Paragraphs PRED Predicate 
             {
               Object RESULT =null;
 
@@ -4429,7 +4429,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 16: // Paragraphs ::= Paragraphs FUN Function
+          case 16: // Paragraphs ::= Paragraphs FUN Function 
             {
               Object RESULT =null;
 
@@ -4438,7 +4438,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 15: // Paragraphs ::= Paragraphs Sig
+          case 15: // Paragraphs ::= Paragraphs Sig 
             {
               Object RESULT =null;
 
@@ -4447,53 +4447,53 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 14: // Paragraphs ::= Paragraphs ASSERT Name ExprPara
+          case 14: // Paragraphs ::= Paragraphs ASSERT Name ExprPara 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeAssert (o,n.name,e);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeAssert (o,n.name,e); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",33, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 13: // Paragraphs ::= Paragraphs ASSERT ExprPara
+          case 13: // Paragraphs ::= Paragraphs ASSERT ExprPara 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeAssert (o,""    ,e);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeAssert (o,""    ,e); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",33, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 12: // Paragraphs ::= Paragraphs FACT Name ExprPara
+          case 12: // Paragraphs ::= Paragraphs FACT Name ExprPara 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeFact   (o,n.name,e);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName n = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeFact   (o,n.name,e); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",33, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 11: // Paragraphs ::= Paragraphs FACT ExprPara
+          case 11: // Paragraphs ::= Paragraphs FACT ExprPara 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeFact   (o,""    ,e);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		Expr e = (Expr)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeFact   (o,""    ,e); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",33, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 10: // Opens ::= Opens Open
+          case 10: // Opens ::= Opens Open 
             {
               Object RESULT =null;
 
@@ -4502,7 +4502,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 9: // Opens ::=
+          case 9: // Opens ::= 
             {
               Object RESULT =null;
 
@@ -4511,89 +4511,89 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 8: // Open ::= OPEN Name LBRACKET SigRefs RBRACKET AS Name
+          case 8: // Open ::= OPEN Name LBRACKET SigRefs RBRACKET AS Name 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
-        ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
-        List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        ExprName c = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeOpen(o, a.name, b, c.name);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-6)).value;
+		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-5)).value;
+		List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		ExprName c = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeOpen(o, a.name, b, c.name);                         
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Open",29, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 7: // Open ::= OPEN Name LBRACKET SigRefs RBRACKET
+          case 7: // Open ::= OPEN Name LBRACKET SigRefs RBRACKET 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeOpen(o, a.name, b, "");
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeOpen(o, a.name, b, "");                             
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Open",29, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 6: // Open ::= OPEN Name AS Name
+          case 6: // Open ::= OPEN Name AS Name 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
-        ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
-        ExprName c = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), c.name);
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-3)).value;
+		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-2)).value;
+		ExprName c = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), c.name); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Open",29, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 5: // Open ::= OPEN Name
+          case 5: // Open ::= OPEN Name 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
-         parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), "");
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		ExprName a = (ExprName)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.peek()).value;
+		 parser.alloyunit.makeOpen(o, a.name, new ArrayList<ExprName>(), "");     
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Open",29, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 4: // Module ::=
+          case 4: // Module ::= 
             {
               Object RESULT =null;
-         parser.alloyunit.makeModule(new Pos(parser.alloyfile,1,1), new ArrayList<ExprName>());
+		 parser.alloyunit.makeModule(new Pos(parser.alloyfile,1,1), new ArrayList<ExprName>()); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Module",23, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 3: // Module ::= MODULE Name LBRACKET Names RBRACKET
+          case 3: // Module ::= MODULE Name LBRACKET Names RBRACKET 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
-        List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeModule(o                            , b                        );
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-4)).value;
+		List<ExprName> b = (List<ExprName>)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeModule(o                            , b                        ); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Module",23, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 2: // Module ::= MODULE Name
+          case 2: // Module ::= MODULE Name 
             {
               Object RESULT =null;
-        Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-         parser.alloyunit.makeModule(o                            , new ArrayList<ExprName>());
+		Pos o = (Pos)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		 parser.alloyunit.makeModule(o                            , new ArrayList<ExprName>()); 
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("Module",23, RESULT);
             }
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 1: // $START ::= Specification EOF
+          case 1: // $START ::= Specification EOF 
             {
               Object RESULT =null;
-        Object start_val = (Object)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
-        RESULT = start_val;
+		Object start_val = (Object)((java_cup.runtime.Symbol) CUP$AlloyParser$stack.elementAt(CUP$AlloyParser$top-1)).value;
+		RESULT = start_val;
               CUP$AlloyParser$result = parser.getSymbolFactory().newSymbol("$START",0, RESULT);
             }
           /* ACCEPT */
@@ -4601,7 +4601,7 @@ class CUP$AlloyParser$actions {
           return CUP$AlloyParser$result;
 
           /*. . . . . . . . . . . . . . . . . . . .*/
-          case 0: // Specification ::= Module Opens Paragraphs
+          case 0: // Specification ::= Module Opens Paragraphs 
             {
               Object RESULT =null;
 

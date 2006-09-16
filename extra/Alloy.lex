@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.frontend;
+package edu.mit.csail.sdg.alloy4.client;
 
 import edu.mit.csail.sdg.alloy4.core.ExprConstant;
 import edu.mit.csail.sdg.alloy4.core.ExprName;
