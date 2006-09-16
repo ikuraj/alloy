@@ -235,7 +235,7 @@ public final class SimpleGUI {
     private Thread current_thread=null;
     private synchronized void thread_reportTermination() { current_thread=null; }
     private synchronized boolean thread_stillRunning() { return current_thread!=null; }
-    private synchronized void thread_stop() { if (current_thread!=null) Stopper.stopped=1; }
+    private synchronized void thread_stop() { if (current_thread!=null) Stopper.stopped=true; }
 
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */
     private String latestName = "";
@@ -286,7 +286,7 @@ public final class SimpleGUI {
                 log("...The previous analysis is still running...", styleRed);
                 return;
             }
-            Stopper.stopped=0;
+            Stopper.stopped=false;
             Runner r=new Runner(new StringReader(text.getText()), cwd, index);
             Thread t=new Thread(r);
             t.start();
