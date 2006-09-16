@@ -1,0 +1,36 @@
+package edu.mit.csail.sdg.alloy4.client;
+
+import java.util.ArrayList;
+import java.io.FileNotFoundException;
+import edu.mit.csail.sdg.alloy4.core.ParaSig;
+import edu.mit.csail.sdg.alloy4.core.Unit;
+import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
+import edu.mit.csail.sdg.alloy4.util.Log;
+import edu.mit.csail.sdg.alloy4.util.LogToFile;
+
+public final class SimpleCLI {
+
+    private static void run(int code, String[] args, Log log) throws FileNotFoundException {
+        ArrayList<Unit> units;
+        ArrayList<ParaSig> sigs;
+        if (args.length==0) {
+            System.out.print("% ");
+            System.out.flush();
+            units=AlloyParser.alloy_totalparseFile("");
+            sigs=VisitTypechecker.check(log,units);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs);
+        }
+        else for(String a:args) {
+            log.log("\n\nMain file = "+a+"\n");
+            units=AlloyParser.alloy_totalparseFile(a);
+            sigs=VisitTypechecker.check(log,units);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs);
+        }
+    }
+
+    public static void main(String[] args) throws FileNotFoundException {
+        LogToFile log=new LogToFile(".alloy.tmp");
+        if (args.length<=1) run(-1,args,log); else run(-2,args,log);
+        log.close();
+    }
+}
