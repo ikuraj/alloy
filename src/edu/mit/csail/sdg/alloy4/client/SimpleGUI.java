@@ -500,6 +500,9 @@ public final class SimpleGUI {
         filemenu.add(make_JMenuItem("Save As", KeyEvent.VK_A, null, new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_saveAs(); }
         }));
+        filemenu.add(make_JMenuItem("Load Standalone Visualizer", KeyEvent.VK_V, null, new ActionListener() {
+            public void actionPerformed(ActionEvent e) { new KodVizGUIFactory(false).create(null); }
+        }));
         filemenu.add(make_JMenuItem("Exit", KeyEvent.VK_X, null,new ActionListener() {
             public void actionPerformed(ActionEvent e) { if (my_confirm()) System.exit(1); }
         }));

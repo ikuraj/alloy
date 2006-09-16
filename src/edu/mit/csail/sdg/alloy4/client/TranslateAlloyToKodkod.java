@@ -1100,7 +1100,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         Instance inst=sol.instance();
         //log.log(inst.toString());
         Evaluator eval=new Evaluator(inst);
-        out.printf("<ssolution name=\"%s\">%n", "this");
+        out.printf("<solution name=\"%s\">%n", "this");
         Set<Relation> rels=new LinkedHashSet<Relation>(inst.relations());
         for(Unit u:units) {
             String n=u.aliases.get(0);
