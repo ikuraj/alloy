@@ -71,7 +71,7 @@ import kodkod.instance.Universe;
 
 public final class TranslateAlloyToKodkod implements VisitReturn {
 
-    public enum Result { SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
+    public enum Result { CANCELED, SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
     /**
      * Convenience method that evalutes x and cast the result to be a Kodkod Formula.
@@ -1023,24 +1023,35 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, f, bitwidth, bounds);
-            Solution sol = solver.solve(f,bounds);
+            if (Stopper.stopped!=0) {
+                log.log("TIME=0+0=0 CANCELED\n");
+                log.flush();
+                return Result.CANCELED;
+            }
+            Solution sol=solver.solve(f,bounds);
             long t1=sol.stats().translationTime();
             long t2=sol.stats().solvingTime();
             switch(sol.outcome()) {
             case TRIVIALLY_SATISFIABLE:
                 mainResult=Result.TRIVIALLY_SAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)\n"); else log.log(" TRIVIALLY SAT\n");
+                if (Stopper.stopped!=0) { log.log(" CANCELED\n"); mainResult=Result.CANCELED; }
+                else if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)\n");
+                else log.log(" TRIVIALLY SAT\n");
                 break;
             case TRIVIALLY_UNSATISFIABLE:
                 mainResult=Result.TRIVIALLY_UNSAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)\n"); else log.log(" TRIVIALLY UNSAT\n");
+                if (Stopper.stopped!=0) { log.log(" CANCELED\n"); mainResult=Result.CANCELED; }
+                else if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)\n");
+                else log.log(" TRIVIALLY UNSAT\n");
                 break;
             case SATISFIABLE:
                 mainResult=Result.SAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (cmd.check) log.log(" VIOLATED (SAT)"); else log.log(" SAT");
+                if (Stopper.stopped!=0) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
+                else if (cmd.check) log.log(" VIOLATED (SAT)");
+                else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
                 writeXML(cmd.pos, sol, units, sigs);
                 if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
@@ -1048,7 +1059,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             case UNSATISFIABLE:
                 mainResult=Result.UNSAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (cmd.check) log.log(" OK (UNSAT)"); else log.log(" UNSAT");
+                if (Stopper.stopped!=0) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
+                else if (cmd.check) log.log(" OK (UNSAT)");
+                else log.log(" UNSAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
                 break;
             }

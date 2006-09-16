@@ -125,7 +125,13 @@ public final class SimpleGUI {
                 if (result.size()>1) {
                     log("\n" + result.size() + " command" + (result.size()>1?"s were":" was") + " completed", styleGreen);
                     String summary = "The result" + (result.size()>1?"s are":" is");
-                    for(TranslateAlloyToKodkod.Result b:result) summary += ((b==TranslateAlloyToKodkod.Result.TRIVIALLY_SAT||b==TranslateAlloyToKodkod.Result.SAT)?" SAT":" UNSAT");
+                    for(TranslateAlloyToKodkod.Result b:result) {
+                    	switch(b) {
+                    		case SAT: TRIVIALLY_SAT: summary+=" SAT"; break;
+                    		case UNSAT: TRIVIALLY_UNSAT: summary+=" UNSAT"; break;
+                			default: summary+=" CANCELED";
+                    	}
+                    }
                     log(summary+".", styleRegular);
                 }
             }
@@ -227,15 +233,9 @@ public final class SimpleGUI {
     private synchronized boolean modified() { return modified; }
 
     private Thread current_thread=null;
-    private synchronized void thread_reportTermination() {
-    	current_thread=null;
-    	Stopper.stopped=0;
-    }
+    private synchronized void thread_reportTermination() { current_thread=null; }
     private synchronized boolean thread_stillRunning() { return current_thread!=null; }
-    private synchronized void thread_stop() {
-    	if (current_thread==null) return;
-    	Stopper.stopped=1;
-    }
+    private synchronized void thread_stop() { if (current_thread!=null) Stopper.stopped=1; }
 
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */
     private String latestName = "";
@@ -286,6 +286,7 @@ public final class SimpleGUI {
                 log("...The previous analysis is still running...", styleRed);
                 return;
             }
+            Stopper.stopped=0;
             Runner r=new Runner(new StringReader(text.getText()), cwd, index);
             Thread t=new Thread(r);
             t.start();
