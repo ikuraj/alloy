@@ -12,6 +12,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.prefs.Preferences;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -207,11 +208,21 @@ public final class SimpleGUI {
         JFileChooser open=new JFileChooser(fileOpenDirectory);
         open.setFileFilter(filter);
         if (open.showSaveDialog(frame)!=JFileChooser.APPROVE_OPTION) return false;
-        fileOpenDirectory=open.getSelectedFile().getParent();
+        fileOpenDirectory=open.getSelectedFile().getParent(); set("lastdir",fileOpenDirectory);
         String f=open.getSelectedFile().getPath();
         return my_save(f,false);
     }
 
+    private void set(String key, String value) {
+       Preferences pref= Preferences.userNodeForPackage(this.getClass());
+       pref.put(key,value);
+    }
+    
+    private String get(String key) {
+        Preferences pref= Preferences.userNodeForPackage(this.getClass());
+        return pref.get(key,"");
+    }
+    
     /** The default title */
     private final String title = "Alloy Analyzer";
 
@@ -418,7 +429,7 @@ public final class SimpleGUI {
         JFileChooser open=new JFileChooser(fileOpenDirectory);
         open.setFileFilter(filter);
         if (open.showOpenDialog(frame)!=JFileChooser.APPROVE_OPTION) return;
-        fileOpenDirectory=open.getSelectedFile().getParent();
+        fileOpenDirectory=open.getSelectedFile().getParent(); set("lastdir",fileOpenDirectory);
         my_open(open.getSelectedFile().getPath());
     }
 
@@ -480,7 +491,11 @@ public final class SimpleGUI {
      * It will create a GUI window, and populate it with two JTextArea and one JMenuBar.
      */
     private synchronized final void my_setup() {
-        int width=1000, height=600;
+
+    	String temp=get("lastdir");
+    	if (temp.length()>0) fileOpenDirectory=temp;
+    	
+    	int width=1000, height=600;
         Font font=new Font("Monospaced",0,12);
         JMenuBar bar=new JMenuBar();
         bar.setVisible(true);
