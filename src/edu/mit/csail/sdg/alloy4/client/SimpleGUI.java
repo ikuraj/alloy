@@ -271,16 +271,16 @@ public final class SimpleGUI {
     private JLabel status;
 
     /** Main method that launches the program. */
-    public static final void main (String[] unused) {
-        new SimpleGUI();
+    public static final void main (String[] args) {
+        new SimpleGUI(args);
     }
 
     /**
      * The constructor. To ensure thread safety, we move all initialization
      * code into a synchronized helper method named "my_setup".
      */
-    public SimpleGUI() {
-        my_setup();
+    public SimpleGUI(String[] args) {
+        my_setup(args);
     }
 
     /** An ActionListener that is called when the user indicates a particular command to execute. */
@@ -490,11 +490,11 @@ public final class SimpleGUI {
      * <p/> This method is called by the SimpleGUI's constructor to actually initialize everything.
      * It will create a GUI window, and populate it with two JTextArea and one JMenuBar.
      */
-    private synchronized final void my_setup() {
+    private synchronized final void my_setup(String[] args) {
 
     	String temp=get("lastdir");
     	if (temp.length()>0) fileOpenDirectory=temp;
-    	
+
     	int width=1000, height=600;
         Font font=new Font("Monospaced",0,12);
         JMenuBar bar=new JMenuBar();
@@ -591,5 +591,7 @@ public final class SimpleGUI {
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setVisible(true);
+        
+        if (args.length>0) my_open(args[0]);
     }
 }
