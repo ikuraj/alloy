@@ -492,6 +492,18 @@ public final class SimpleGUI {
      */
     private synchronized final void my_setup(String[] args) {
 
+    	String basedir=get("basedir");
+    	if (basedir.length()==0) {
+            JFileChooser open=new JFileChooser(System.getProperty("user.home"));
+            open.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            open.setDialogTitle("Please specify where you want to install Alloy 4");
+            open.setApproveButtonText("OK");
+            if (open.showOpenDialog(null)==JFileChooser.APPROVE_OPTION) {
+              System.out.println(open.getSelectedFile().getPath()+System.getProperty("file.separator")+"Alloy4");
+              System.out.flush();
+            } else return;
+    	}
+
     	String temp=get("lastdir");
     	if (temp.length()>0) fileOpenDirectory=temp;
 
