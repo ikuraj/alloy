@@ -50,8 +50,8 @@ public final class DirectedGraph<N> {
     public boolean hasPath(N start, N end) {
         if (start==end) return true;
         List<N> todo = new ArrayList<N>();
-        IdentitySet<N> visited = new IdentitySet<N>();
-        visited.add(start);
+        IdentityHashMap<N,Object> visited = new IdentityHashMap<N,Object>();
+        visited.put(start,null);
         todo.add(start);
         while(todo.size()!=0) {
             List<N> targets=nodeToTargets.get(todo.remove(todo.size()-1));
@@ -59,7 +59,7 @@ public final class DirectedGraph<N> {
                 for (int i=targets.size()-1; i>=0; i--) {
                     N next=targets.get(i);
                     if (next==end) return true;
-                    if (!visited.contains(next)) { visited.add(next); todo.add(next); }
+                    if (!visited.containsKey(next)) { visited.put(next,null); todo.add(next); }
                 }
             }
         }
