@@ -48,12 +48,13 @@ public final class IdentitySet<T> implements Iterable<T> {
 	public void add(T x) { if (!hashmap.containsKey(x)) { hashmap.put(x,null); list.add(x); } }
 	
 	/**
-	 * Returns an iterator that iterates over elements in this set.
+	 * Returns an iterator that iterates over elements in this set
+	 * (in the order that they were inserted).
 	 *
-	 * <br/> Note: This iterator throws UnsupportedOperationException
+	 * <p/> Note: This iterator throws UnsupportedOperationException
 	 * if you attempt to call its remove() method.
 	 *
-	 * <br/> Note: This iterator will always iterate over the elements that existed
+	 * <p/> Note: This iterator will always return exactly the set of elements that existed
 	 * at the time that the iterator was created (even if the set is modified after that point).
 	 */
 	public Iterator<T> iterator() {
