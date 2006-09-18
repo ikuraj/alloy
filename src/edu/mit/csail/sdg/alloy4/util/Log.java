@@ -1,12 +1,15 @@
 package edu.mit.csail.sdg.alloy4.util;
 
 /**
- * This default logger ignores all calls and simply does nothing.
+ * This default logger ignores all calls and simply logs nothing.
  *
  * @author Felix Chang
  */
 
 public class Log {
+
+	/** Constructs a logger that ignores all calls and simply logs nothing. */
+	public Log() { }
 
     /**
      * This method is supposed to write msg into the log
