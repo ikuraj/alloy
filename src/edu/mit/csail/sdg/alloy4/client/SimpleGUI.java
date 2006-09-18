@@ -281,8 +281,11 @@ public final class SimpleGUI {
      * The constructor. To ensure thread safety, we move all initialization
      * code into a synchronized helper method named "my_setup".
      */
+    public final String alloyhome;
     public SimpleGUI(String[] args) {
         my_setup(args);
+        alloyhome=get("basedir");
+        System.setProperty("alloyhome",alloyhome);
     }
 
     /** An ActionListener that is called when the user indicates a particular command to execute. */
@@ -496,25 +499,33 @@ public final class SimpleGUI {
     private synchronized void my_setup(String[] args) {
 
         String basedir=get("basedir");
-        if (basedir==null || basedir.length()==0 || (args.length==1 && args[0].equals("-jaws"))) {
+        if (basedir==null) basedir="";
+        String binary=basedir+fs+"binary";
+        File bindir=new File(binary);
+        File modeldir=new File(basedir+fs+"models");
+        
+        if (basedir.length()==0 || (args.length==1 && args[0].equals("-jaws")) || !bindir.isDirectory() || !modeldir.isDirectory()) {
             basedir=KodVizInstaller.install(basedir);
             if (basedir==null || basedir.length()==0) System.exit(1);
-            String binary=basedir+fs+"binary";
-            File bindir=new File(binary);
-            File modeldir=new File(basedir+fs+"models");
+            binary=basedir+fs+"binary";
+            bindir=new File(binary);
+            modeldir=new File(basedir+fs+"models");
             if (!bindir.isDirectory() || !modeldir.isDirectory()) System.exit(1);
-            // The following files we want to overwrite each time, to keep them up-to-date.
-            KodVizInstaller.copy("alloy4.jar", basedir, false);
-            KodVizInstaller.copy("libminisat.so", binary, true);
-            KodVizInstaller.copy("libzchaff_basic.so", binary, true);
-            KodVizInstaller.copy("libminisat.jnilib", binary, true);
-            KodVizInstaller.copy("libzchaff_basic.jnilib", binary, true);
-            KodVizInstaller.copy("minisat.dll", binary, false);
-            KodVizInstaller.copy("zchaff_basic.dll", binary, false);
-            set("basedir",basedir);
         }
-
-        String binary=basedir+fs+"binary";
+        
+        // The following files we want to overwrite each time, to keep them up-to-date.
+        KodVizInstaller.copy("alloy4.jar", basedir, false);
+        KodVizInstaller.copy("libminisat.so", binary, true);
+        KodVizInstaller.copy("libminisat4.so", binary, true);
+        KodVizInstaller.copy("libminisat6.so", binary, true);
+        KodVizInstaller.copy("libzchaff_basic.so", binary, true);
+        KodVizInstaller.copy("libzchaff_basic4.so", binary, true);
+        KodVizInstaller.copy("libzchaff_basic6.so", binary, true);
+        KodVizInstaller.copy("libminisat.jnilib", binary, true);
+        KodVizInstaller.copy("libzchaff_basic.jnilib", binary, true);
+        KodVizInstaller.copy("minisat.dll", binary, false);
+        KodVizInstaller.copy("zchaff_basic.dll", binary, false);
+        set("basedir",basedir);
 
         try { System.load(binary+fs+"libminisat6.so"); } catch(UnsatisfiedLinkError ex) {
          try { System.load(binary+fs+"libminisat4.so"); } catch(UnsatisfiedLinkError ex2) {
