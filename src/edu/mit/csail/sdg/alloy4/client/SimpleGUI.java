@@ -1,15 +1,12 @@
 package edu.mit.csail.sdg.alloy4.client;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
@@ -37,7 +34,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
@@ -62,6 +58,7 @@ import edu.mit.csail.sdg.alloy4.util.Err;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
+import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
 @SuppressWarnings("serial")
 public final class SimpleGUI {
@@ -120,8 +117,7 @@ public final class SimpleGUI {
 				List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs);
 				if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
 					log("Visualizer loading... please wait...", styleRegular);
-					String ps=System.getProperty("file.separator");
-					String newcwd = new File(cwd+".."+ps+"kodviz").getAbsolutePath();
+					String newcwd = new File(cwd+".."+fs+"kodviz").getAbsolutePath();
 					System.setProperty("kodviz.dir",newcwd);
 					KodVizGUIFactory factory=new KodVizGUIFactory(false);
 					factory.create(new File(cwd+".alloy.xml"));
@@ -229,6 +225,8 @@ public final class SimpleGUI {
 	
 	/** The default title */
 	private final String title = "Alloy Analyzer";
+	
+	private static final String fs=System.getProperty("file.separator");
 	
 	/** The current directory (plus a trailing FILE SEPARATOR) */
 	private final String cwd = new File(".").getAbsolutePath() + System.getProperty("file.separator");
@@ -488,84 +486,6 @@ public final class SimpleGUI {
 		return ans;
 	}
 	
-	private static void alert(String msg) {
-		JOptionPane.showMessageDialog(null,msg);
-	}
-	
-	private static boolean yesno(String msg) {
-		// Default is NO.
-		Object[] yesno = {"Yes", "No"};
-		if (JOptionPane.showOptionDialog(null,
-				msg,
-				"Warning!",
-				JOptionPane.YES_NO_OPTION,
-				JOptionPane.WARNING_MESSAGE,
-				null,
-				yesno,
-				yesno[1])==JOptionPane.YES_OPTION) return true;
-		return false;
-	}
-	
-	private static String chooseInstallDirectory() {
-		JTextField answer = new JTextField(System.getProperty("user.home")+System.getProperty("file.separator")+"Alloy4");
-		Object[] array = {"Please select an installation directory to install Alloy 4:", answer};
-		Object[] options = {"OK", "Cancel the Installation", "Select a Different Directory"};
-		while(true) {
-			int button = JOptionPane.showOptionDialog(null, array, "Alloy Installation", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, "ABC");
-			if (button<0 || button==1) {
-				if (yesno("Are you sure you wish to cancel the installation of Alloy 4?")) return null;
-				continue;
-			}
-			if (button==0) {
-				File dir=new File(answer.getText());
-				if (dir.isDirectory()) {
-					if (!yesno("The directory \""+dir.getPath()+"\" already exists! Are you sure you wish to install into this directory?")) continue;
-				} else if (dir.exists()) {
-					alert("The location \""+dir.getPath()+"\" already exists, but is not a directory! Please select another location!");
-					continue;
-				}
-				return dir.getPath();
-			}
-			JFileChooser open=new JFileChooser(System.getProperty("user.home"));
-			open.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-			open.setDialogTitle("Please specify where you want to install Alloy 4");
-			if (open.showDialog(null,"OK")==JFileChooser.APPROVE_OPTION) {
-				answer.setText(open.getSelectedFile().getPath());
-			}
-		}
-	}
-	
-	private static boolean copy(String resourceName, String tmpFile) {
-		String fs=System.getProperty("file.separator");
-		tmpFile=(tmpFile+fs+resourceName).replace('/', fs.charAt(0));
-		int last=tmpFile.lastIndexOf(fs.charAt(0));
-		if (!(new File(tmpFile.substring(0,last)).mkdirs())) return false;
-		boolean result=true;
-		InputStream resStream=SimpleGUI.class.getClassLoader().getResourceAsStream(resourceName);
-		if (resStream==null) return false;
-		InputStream binStream=new BufferedInputStream(resStream);
-		FileOutputStream tmpFileOutputStream=null;
-		try {
-			tmpFileOutputStream=new FileOutputStream(tmpFile);
-		} catch (FileNotFoundException e) {
-			result=false;
-		}
-		if (result) {
-			try {
-				byte[] b = new byte[16384];	
-				while (true) {
-					int numRead = binStream.read(b);
-					if (numRead == -1)	
-						break;
-					tmpFileOutputStream.write(b, 0, numRead);
-				}
-			} catch(IOException e) { result=false; }
-		}
-		try { tmpFileOutputStream.close(); } catch(IOException ex) { result=false; }
-		try { binStream.close(); } catch(IOException ex) { result=false; }
-		try { resStream.close(); } catch(IOException ex) { result=false; }
-		return result;
-	}
 	
 	/**
 	 * Synchronized helper method that actually initializes everything.
@@ -575,29 +495,22 @@ public final class SimpleGUI {
 	 */
 	private synchronized void my_setup(String[] args) {
 		
-		String fs=System.getProperty("file.separator");
 		String basedir=get("basedir");
-		File bindir=new File(basedir+fs+"binary");
-		File modeldir=new File(basedir+fs+"models");
-		if (basedir.length()==0 || !bindir.isDirectory() || !modeldir.isDirectory()) {
-			basedir=chooseInstallDirectory();
-			if (basedir==null) System.exit(0);
-			bindir=new File(basedir+fs+"binary");
-			modeldir=new File(basedir+fs+"models");
-			if (!bindir.mkdirs()) { alert("Error occurred in creating the directory \""+bindir.getPath()+"\"!"); return; }
-			if (!modeldir.mkdirs()) { alert("Error occurred in creating the directory \""+modeldir.getPath()+"\"!"); return; }
-			copy("dotbin", basedir+fs+"binary");
-			copy("dotbin.exe", basedir+fs+"binary");
-			copy("jpeg.dll", basedir+fs+"binary");
-			copy("libexpat.dll", basedir+fs+"binary");
-			copy("libexpatw.dll", basedir+fs+"binary");
-			copy("zlib1.dll", basedir+fs+"binary");
-			copy("z.dll", basedir+fs+"binary");
-			copy("freetype6.dll", basedir+fs+"binary");
-			copy("png.dll", basedir+fs+"binary");
-			copy("models/examples/algorithms/dijkstra.als", basedir);
-			String[] a={"chmod","u+rx",basedir+fs+"binary"+fs+"dotbin"};
-			try { Runtime.getRuntime().exec(a,null,null).waitFor(); } catch (Exception ex) {} // We just want a best effort
+		if (basedir==null || basedir.length()==0 || (args.length==1 && args[0].equals("-jaws"))) {
+			basedir=KodVizInstaller.install(basedir);
+			if (basedir==null || basedir.length()==0) System.exit(1);
+			String binary=basedir+fs+"binary";
+			File bindir=new File(binary);
+			File modeldir=new File(basedir+fs+"models");
+			if (!bindir.isDirectory() || !modeldir.isDirectory()) System.exit(1);
+			// The following files we want to overwrite each time, to keep them up-to-date.
+			KodVizInstaller.copy("alloy4.jar", basedir, false);
+			KodVizInstaller.copy("libminisat.so", binary, true);
+			KodVizInstaller.copy("libzchaff_basic.so", binary, true);
+			KodVizInstaller.copy("libminisat.jnilib", binary, true);
+			KodVizInstaller.copy("libzchaff_basic.jnilib", binary, true);
+			KodVizInstaller.copy("minisat.dll", binary, false);
+			KodVizInstaller.copy("zchaff_basic.dll", binary, false);
 			set("basedir",basedir);
 		}
 		
