@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
  * <p/>
  * Note: this class's iterator always returns the elements in the order they were inserted.
  *
- * <p/><b>Invariant:</b> (map.containsKey(x)) iff (x==list.get(i) for some i)
+ * <p/><b>Invariant:</b> (hashmap.containsKey(x)) iff (x==list.get(i) for some i)
  *
  * @author Felix Chang
  *
@@ -30,7 +30,7 @@ import java.util.NoSuchElementException;
 public final class IdentitySet<T> implements Iterable<T> {
 	
 	/** This map's key set is used to store the set of elements; the values are ignored. */
-	private final IdentityHashMap<T,Object> map = new IdentityHashMap<T,Object>();
+	private final IdentityHashMap<T,Object> hashmap = new IdentityHashMap<T,Object>();
 	
 	/**
 	 * This array also stores the set of elements;
@@ -42,10 +42,10 @@ public final class IdentitySet<T> implements Iterable<T> {
 	public IdentitySet() { }
 	
 	/** Returns whether the element x is in the set. */
-	public boolean contains(T x) { return map.containsKey(x); }
+	public boolean contains(T x) { return hashmap.containsKey(x); }
 	
 	/** Adds the element x into the set (if it isn't in the set already). */
-	public void add(T x) { if (!map.containsKey(x)) { map.put(x,null); list.add(x); } }
+	public void add(T x) { if (!hashmap.containsKey(x)) { hashmap.put(x,null); list.add(x); } }
 	
 	/**
 	 * Returns an iterator that iterates over elements in this set.
