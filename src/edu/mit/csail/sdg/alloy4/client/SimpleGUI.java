@@ -114,7 +114,7 @@ public final class SimpleGUI {
                 Log reallog=new LogToTextPane(log,styleRegular,styleGreen);
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
-                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs);
+                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0));
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     log("Visualizer loading... please wait...", styleRegular);
                     String newcwd = new File(cwd+".."+fs+"kodviz").getAbsolutePath();
@@ -496,6 +496,8 @@ public final class SimpleGUI {
      * <p/> This method is called by the SimpleGUI's constructor to actually initialize everything.
      * It will create a GUI window, and populate it with two JTextArea and one JMenuBar.
      */
+    private boolean minisat=true;
+    private boolean zchaff_basic=true;
     private synchronized void my_setup(String[] args) {
 
         String basedir=get("basedir");
@@ -531,7 +533,9 @@ public final class SimpleGUI {
          try { System.load(binary+fs+"libminisat4.so"); } catch(UnsatisfiedLinkError ex2) {
           try { System.load(binary+fs+"libminisat.so"); } catch(UnsatisfiedLinkError ex3) {
            try { System.load(binary+fs+"libminisat.jnilib"); } catch(UnsatisfiedLinkError ex4) {
-            System.load(binary+fs+"minisat.dll");
+            try { System.load(binary+fs+"minisat.dll"); } catch(UnsatisfiedLinkError ex5) {
+             minisat=false;
+            }
            }
           }
          }
@@ -541,7 +545,9 @@ public final class SimpleGUI {
          try { System.load(binary+fs+"libzchaff_basic4.so"); } catch(UnsatisfiedLinkError ex2) {
           try { System.load(binary+fs+"libzchaff_basic.so"); } catch(UnsatisfiedLinkError ex3) {
            try { System.load(binary+fs+"libzchaff_basic.jnilib"); } catch(UnsatisfiedLinkError ex4) {
-            System.load(binary+fs+"zchaff_basic.dll");
+            try { System.load(binary+fs+"zchaff_basic.dll"); } catch(UnsatisfiedLinkError ex5) {
+             zchaff_basic=false;
+            }
            }
           }
          }

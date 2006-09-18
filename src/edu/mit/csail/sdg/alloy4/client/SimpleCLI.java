@@ -18,13 +18,13 @@ public final class SimpleCLI {
             System.out.flush();
             units=AlloyParser.alloy_totalparseFile("");
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2);
         }
         else for(String a:args) {
             log.log("\n\nMain file = "+a+"\n");
             units=AlloyParser.alloy_totalparseFile(a);
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2);
         }
     }
 

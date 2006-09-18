@@ -494,9 +494,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private final Log log;
     private final int codeindex;
     private TranslateAlloyToKodkod(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
-    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs) {
+    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs, int solver) {
         TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,units);
-        return ve.codegen(sigs);
+        return ve.codegen(sigs, solver);
     }
 
     private Map<ParaSig,Expression> sig2rel = new LinkedHashMap<ParaSig,Expression>();
@@ -712,7 +712,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 && s.name.equals("Ord"));
     }
 
-    public List<Result> codegen(List<ParaSig> sigs)  {
+    public List<Result> codegen(List<ParaSig> sigs, int solver)  {
         Formula kfact=Formula.TRUE;
         // Generate the relations for the SIGS.
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -841,7 +841,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     }
                 }
                 this.env.clear();
-                result.add(runcheck(x, units, bitwidth, sigs, kfact));
+                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver));
             }
         return result;
     }
@@ -904,7 +904,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact)  {
+    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice)  {
         Result mainResult=null;
         Unit root=units.get(0);
         unique.clear();
@@ -1014,9 +1014,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 f=((Formula)(v.accept(this))).and(kfact);
             }
             Solver solver = new Solver();
-            solver.options().setSolver(SATFactory.MiniSat);
-            //solver.options().setSolver(SATFactory.ZChaffBasic);
-            //solver.options().setSolver(SATFactory.DefaultSAT4J);
+            if (solverChoice==0)
+               solver.options().setSolver(SATFactory.DefaultSAT4J);
+            else if (solverChoice==1)
+                solver.options().setSolver(SATFactory.ZChaffBasic);
+            else if (solverChoice==2)
+            	solver.options().setSolver(SATFactory.MiniSat);
             solver.options().setBitwidth(bitwidth);
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
             log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");
