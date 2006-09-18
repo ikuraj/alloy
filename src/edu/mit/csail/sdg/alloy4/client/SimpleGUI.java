@@ -518,13 +518,11 @@ public final class SimpleGUI {
 			}
 			if (button==0) {
 				File dir=new File(answer.getText());
-				if (dir.exists()) {
-					if (dir.isDirectory()) {
-						if (!yesno("The directory \""+dir.getPath()+"\" already exists! Are you sure you wish to install into this directory?")) continue;
-					} else {
-						alert("The location \""+dir.getPath()+"\" already exists, but is not a directory! Please select another location!");
-						continue;
-					}
+				if (dir.isDirectory()) {
+					if (!yesno("The directory \""+dir.getPath()+"\" already exists! Are you sure you wish to install into this directory?")) continue;
+				} else if (dir.exists()) {
+					alert("The location \""+dir.getPath()+"\" already exists, but is not a directory! Please select another location!");
+					continue;
 				}
 				return dir.getPath();
 			}
@@ -538,6 +536,10 @@ public final class SimpleGUI {
 	}
 	
 	private static boolean copy(String resourceName, String tmpFile) {
+		String fs=System.getProperty("file.separator");
+		tmpFile=(tmpFile+fs+resourceName).replace('/', fs.charAt(0));
+		int last=tmpFile.lastIndexOf(fs.charAt(0));
+		if (!(new File(tmpFile.substring(0,last)).mkdirs())) return false;
 		boolean result=true;
 		InputStream resStream=SimpleGUI.class.getClassLoader().getResourceAsStream(resourceName);
 		if (resStream==null) return false;
@@ -573,30 +575,33 @@ public final class SimpleGUI {
 	 */
 	private synchronized void my_setup(String[] args) {
 		
+		String fs=System.getProperty("file.separator");
 		String basedir=get("basedir");
-		File dir=new File(basedir);
-		if (basedir.length()==0 || !dir.exists() || !dir.isDirectory()) {
+		File bindir=new File(basedir+fs+"binary");
+		File modeldir=new File(basedir+fs+"models");
+		if (basedir.length()==0 || !bindir.isDirectory() || !modeldir.isDirectory()) {
 			basedir=chooseInstallDirectory();
 			if (basedir==null) System.exit(0);
-			String fs=System.getProperty("file.separator");
-			dir=new File(basedir);
-			if (!dir.mkdirs()) { alert("Error occurred in creating the directory \""+basedir+"\"!"); return; }
-			copy("dotbin", basedir+fs+"dotbin");
-			copy("dotbin.exe", basedir+fs+"dotbin.exe");
-			copy("jpeg.dll", basedir+fs+"jpeg.dll");
-			copy("libexpatw.dll", basedir+fs+"libexpatw.dll");
-			copy("z.dll", basedir+fs+"z.dll");
-			copy("freetype6.dll", basedir+fs+"freetype6.dll");
-			copy("libexpat.dll", basedir+fs+"libexpat.dll");
-			copy("png.dll", basedir+fs+"png.dll");
-			copy("zlib1.dll", basedir+fs+"zlib1.dll");
-			String[] a={"chmod","u+rx",basedir+fs+"dotbin"};
+			bindir=new File(basedir+fs+"binary");
+			modeldir=new File(basedir+fs+"models");
+			if (!bindir.mkdirs()) { alert("Error occurred in creating the directory \""+bindir.getPath()+"\"!"); return; }
+			if (!modeldir.mkdirs()) { alert("Error occurred in creating the directory \""+modeldir.getPath()+"\"!"); return; }
+			copy("dotbin", basedir+fs+"binary");
+			copy("dotbin.exe", basedir+fs+"binary");
+			copy("jpeg.dll", basedir+fs+"binary");
+			copy("libexpat.dll", basedir+fs+"binary");
+			copy("libexpatw.dll", basedir+fs+"binary");
+			copy("zlib1.dll", basedir+fs+"binary");
+			copy("z.dll", basedir+fs+"binary");
+			copy("freetype6.dll", basedir+fs+"binary");
+			copy("png.dll", basedir+fs+"binary");
+			copy("models/examples/algorithms/dijkstra.als", basedir);
+			String[] a={"chmod","u+rx",basedir+fs+"binary"+fs+"dotbin"};
 			try { Runtime.getRuntime().exec(a,null,null).waitFor(); } catch (Exception ex) {} // We just want a best effort
 			set("basedir",basedir);
 		}
 		
-		String temp=get("lastdir");
-		if (temp.length()>0) fileOpenDirectory=temp;
+		fileOpenDirectory=basedir+fs+"models";
 		
 		int width=1000, height=600;
 		Font font=new Font("Monospaced",0,12);
