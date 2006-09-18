@@ -1,7 +1,9 @@
 package edu.mit.csail.sdg.alloy4.util;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Mutable; this implements a set based on reference identity; the null value is allowed.
@@ -9,6 +11,15 @@ import java.util.Iterator;
  * <p/>
  * Since this violates java.util.Set's contract of using object equality,
  * this class intentionally does not implement the java.util.Set interface.
+ *
+ * <p/>
+ * For simplicity, and since the remove() feature isn't needed,
+ * this implementation does not provide the remove() method.
+ *
+ * <p/>
+ * Note: this class's iterator always returns the elements in the order they were inserted.
+ *
+ * <p/><b>Invariant:</b> (map.containsKey(x)) iff (x==list.get(i) for some i)
  *
  * @author Felix Chang
  *
@@ -19,6 +30,12 @@ public final class IdentitySet<T> implements Iterable<T> {
 
     /** This map's key set is used to store the set of elements; the values are ignored. */
     private final IdentityHashMap<T,Object> map = new IdentityHashMap<T,Object>();
+    
+    /**
+     * This array also stores the set of elements;
+     * this allows the iterator to return the elements in a deterministic order.
+     */
+    private final List<T> list=new ArrayList<T>();
 
     /** Constructs an empty set. */
     public IdentitySet() { }
@@ -27,18 +44,24 @@ public final class IdentitySet<T> implements Iterable<T> {
     public boolean contains(T x) { return map.containsKey(x); }
 
     /** Adds the element x into the set (if it isn't in the set already). */
-    public void add(T x) { map.put(x,null); }
-
-    /** Removes the element x from the set (if it is in the set). */
-    public void remove(T x) { map.remove(x); }
+    public void add(T x) { if (!map.containsKey(x)) { map.put(x,null); list.add(x); } }
 
     /**
      * Returns an iterator that iterates over elements in this set.
      *
-     * <br/> Modification via the iterator has undefined behavior.
+     * <br/> Note: This iterator throws UnsupportedOperationException
+     * if you attempt to call its remove() method.
      *
-     * <br/> Also, if the set is modified after the iterator is created,
-     * the behavior of the iterator is undefined.
+     * <br/> Note: This iterator will always iterate over the elements that existed
+     * at the time of the iterator's creation (even if the set is modified after that point).
      */
-    public Iterator<T> iterator() { return map.keySet().iterator(); }
+    public Iterator<T> iterator() {
+    	return new Iterator<T>() {
+    		private final int length=list.size();
+    		private int now=0;
+    		public final boolean hasNext() { return now<length; }
+    		public final T next() { return list.get(now++); }
+    		public final void remove() { throw new UnsupportedOperationException("Elements cannot be removed from an IdentitySet!"); }
+    	};
+    }
 }
