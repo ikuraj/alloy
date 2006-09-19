@@ -274,10 +274,8 @@ public final class SimpleGUI {
      * The constructor. To ensure thread safety, we move all initialization
      * code into a synchronized helper method named "my_setup".
      */
-    public final String alloyhome;
+    public String alloyhome="";
     public SimpleGUI(final String[] args) {
-        alloyhome=get("basedir");
-        System.setProperty("alloyhome",alloyhome);
         SwingUtilities.invokeLater(new Runnable() {
             public void run() { my_setup(args); }
         });
@@ -492,10 +490,12 @@ public final class SimpleGUI {
     private boolean minisat=true;
     private boolean zchaff_basic=true;
     private synchronized void my_setup(String[] args) {
-        String basedir=KodVizInstaller.install(get("basedir"));
-        String binary=basedir+fs+"binary";
+    	alloyhome=KodVizInstaller.install(get("basedir"));
+        fileOpenDirectory=alloyhome+fs+"models";
+        System.setProperty("alloyhome",alloyhome);
+        String binary=alloyhome+fs+"binary";
         // The following files we want to overwrite each time, to keep them up-to-date.
-        KodVizInstaller.copy("alloy4.jar", basedir, false);
+        KodVizInstaller.copy("alloy4.jar", alloyhome, false);
         KodVizInstaller.copy("libminisat.so", binary, true);
         KodVizInstaller.copy("libminisat4.so", binary, true);
         KodVizInstaller.copy("libminisat6.so", binary, true);
@@ -506,7 +506,7 @@ public final class SimpleGUI {
         KodVizInstaller.copy("libzchaff_basic.jnilib", binary, true);
         KodVizInstaller.copy("minisat.dll", binary, false);
         KodVizInstaller.copy("zchaff_basic.dll", binary, false);
-        set("basedir",basedir);
+        set("basedir",alloyhome);
 
         try { System.load(binary+fs+"libminisat6.so"); } catch(UnsatisfiedLinkError ex) {
          try { System.load(binary+fs+"libminisat4.so"); } catch(UnsatisfiedLinkError ex2) {
@@ -531,8 +531,6 @@ public final class SimpleGUI {
           }
          }
         }
-
-        fileOpenDirectory=basedir+fs+"models";
 
         int width=1000, height=600;
         Font font=new Font("Monospaced",0,12);
