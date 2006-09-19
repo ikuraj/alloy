@@ -629,6 +629,8 @@ public final class SimpleGUI {
         frame.setSize(new Dimension(width,height));
         frame.setVisible(true);
 
+        if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
+
         if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
     }
 }
