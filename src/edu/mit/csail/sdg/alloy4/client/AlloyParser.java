@@ -2287,14 +2287,14 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     return u;
   }
 
-  public static ArrayList<Unit> alloy_totalparseFile (String name) {
+  public static ArrayList<Unit> alloy_totalparseFile (String rootdir, String name) {
       ArrayList<Unit> units=new ArrayList<Unit>();
       ArrayList<String> thispath=new ArrayList<String>();
-      alloy_totalparseHelper(new Pos(name,1,1), name, "", units, thispath);
+      alloy_totalparseHelper(rootdir, new Pos(name,1,1), name, "", units, thispath);
       return units;
   }
 
-  public static ArrayList<Unit> alloy_totalparseStream (Reader i) {
+  public static ArrayList<Unit> alloy_totalparseStream (String rootdir, Reader i) {
       ArrayList<Unit> units=new ArrayList<Unit>();
       ArrayList<String> thispath=new ArrayList<String>();
       Unit u=AlloyParser.alloy_parseStream(i);
@@ -2302,17 +2302,18 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
           // Here, we recursively open the included files (to fill out the "Unit.opens" field)
           ParaOpen y=opens.getValue();
-          Unit uu=alloy_totalparseHelper(y.pos, y.filename, y.name, units, thispath);
+          Unit uu=alloy_totalparseHelper(rootdir, y.pos, y.filename, y.name, units, thispath);
           if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
           u.opens.put(y.name, uu);
       }
       return units;
   }
 
-  private static Unit alloy_totalparseHelper(Pos pos,String name,String prefix,ArrayList<Unit> units,ArrayList<String> thispath) {
+  private static Unit alloy_totalparseHelper(String rootdir,Pos pos,String name,String prefix,ArrayList<Unit> units,ArrayList<String> thispath) {
       // Figure out the exact filename
+      String fs=System.getProperty("file.separator");
       File f=new File(name);
-      if (!f.exists()) f=new File("models/"+name+".als");
+      if (!f.exists()) f=new File((rootdir+"/models/"+name+".als").replace('/',fs.charAt(0)));
       if (!f.exists()) throw new ErrorSyntax(pos, "The module \""+name+"\" cannot be found!");
       // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
       // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
@@ -2335,7 +2336,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       for(Map.Entry<String, ParaOpen> opens:u.opencmds.entrySet()) {
           // Here, we recursively open the included files (to fill out the "Unit.opens" field)
           ParaOpen y=opens.getValue();
-          Unit uu=alloy_totalparseHelper(y.pos, y.filename, prefix.length()==0 ? y.name : prefix+"/"+y.name, units, thispath);
+          Unit uu=alloy_totalparseHelper(rootdir, y.pos, y.filename, prefix.length()==0 ? y.name : prefix+"/"+y.name, units, thispath);
           if (y.list.size() != uu.params.size()) throw y.syntaxError("You supplied "+y.list.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments!");
           u.opens.put(y.name, uu);
       }

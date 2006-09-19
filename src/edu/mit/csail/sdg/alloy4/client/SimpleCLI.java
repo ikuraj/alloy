@@ -27,13 +27,13 @@ public final class SimpleCLI {
         if (args.length==0) {
             System.out.print("% ");
             System.out.flush();
-            units=AlloyParser.alloy_totalparseFile("");
+            units=AlloyParser.alloy_totalparseFile(alloyhome, "");
             sigs=VisitTypechecker.check(log,units);
             if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2,dest);
         }
         else for(String a:args) {
             log.log("\n\nMain file = "+a+"\n");
-            units=AlloyParser.alloy_totalparseFile(a);
+            units=AlloyParser.alloy_totalparseFile(alloyhome, a);
             sigs=VisitTypechecker.check(log,units);
             if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2,dest);
         }

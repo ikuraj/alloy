@@ -109,7 +109,7 @@ public final class SimpleGUI {
             try {
                 Log blanklog=new Log();
                 Log reallog=new LogToTextPane(log,styleRegular,styleGreen);
-                ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(source);
+                ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(alloyhome, source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
                 String dest=alloyhome+fs+"tmp"+fs+"solution.xml";
                 List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0), dest);
