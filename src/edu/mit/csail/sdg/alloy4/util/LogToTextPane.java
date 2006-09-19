@@ -1,6 +1,7 @@
 package edu.mit.csail.sdg.alloy4.util;
 
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyledDocument;
@@ -36,22 +37,44 @@ public final class LogToTextPane extends Log {
     }
 
     /** Writes msg into the log. */
-    @Override public void log(String msg) {
-        // zzz: Need to LOCK the pane (to ensure thread safety)
+    @Override public void log(final String msg) {
+    	if (!SwingUtilities.isEventDispatchThread()) {
+    		try {
+				SwingUtilities.invokeAndWait(new Runnable() {
+				    public void run() { log(msg); }
+				});
+			} catch (Exception e) {
+				return; // If this happens, so be it.
+			}
+			return;
+    	}
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, defaultStyle);
-        } catch (BadLocationException e) { /* Should not happen. */ }
+        } catch (BadLocationException e) {
+        	return; // Should not happen
+        }
         pane.setCaretPosition(doc.getLength());
     }
 
     /** Writes msg into the log in a bold style. */
-    @Override public void logBold(String msg) {
-        // zzz: Need to LOCK the pane (to ensure thread safety)
+    @Override public void logBold(final String msg) {
+    	if (!SwingUtilities.isEventDispatchThread()) {
+    		try {
+				SwingUtilities.invokeAndWait(new Runnable() {
+				    public void run() { logBold(msg); }
+				});
+			} catch (Exception e) {
+				return; // If this happened, so be it.
+			}
+			return;
+    	}
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, boldStyle);
-        } catch (BadLocationException e) { /* Should not happen. */ }
+        } catch (BadLocationException e) {
+        	return; // Should not happen
+        }
         pane.setCaretPosition(doc.getLength());
     }
 

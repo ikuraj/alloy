@@ -37,6 +37,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
@@ -282,10 +283,12 @@ public final class SimpleGUI {
      * code into a synchronized helper method named "my_setup".
      */
     public final String alloyhome;
-    public SimpleGUI(String[] args) {
-        my_setup(args);
+    public SimpleGUI(final String[] args) {
         alloyhome=get("basedir");
         System.setProperty("alloyhome",alloyhome);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() { my_setup(args); }
+        });
     }
 
     /** An ActionListener that is called when the user indicates a particular command to execute. */
