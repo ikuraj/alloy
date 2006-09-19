@@ -158,7 +158,7 @@ public abstract class Expr {
         if (type==null) throw internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
         Expr me=(VisitTypechecker.autoIntCast ? this.int2Int() : this);
-        y=(VisitTypechecker.autoIntCast ? y.int2Int() : y);
+        if (VisitTypechecker.autoIntCast) y=y.int2Int();
         int myArity=me.type.arity();
         if (myArity>0 && myArity==y.type.arity())
             return ExprBinary.Op.IN.make(pos, me, y, Type.FORMULA);
@@ -207,7 +207,7 @@ public abstract class Expr {
         if (type==null) throw internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
         Expr me=(VisitTypechecker.autoIntCast ? this.int2Int() : this);
-        y=(VisitTypechecker.autoIntCast ? y.int2Int() : y);
+        if (VisitTypechecker.autoIntCast) y=y.int2Int();
         Type ans=me.type.join(y.type);
         if (ans.arity()<1) throw internalError("Cannot perform Expr.join()");
         return new ExprJoin(this.pos, me, y, ans);
@@ -217,7 +217,7 @@ public abstract class Expr {
         if (type==null) return null;
         if (y.type==null) return null;
         Expr me=(VisitTypechecker.autoIntCast ? this.int2Int() : this);
-        y=(VisitTypechecker.autoIntCast ? y.int2Int() : y);
+        if (VisitTypechecker.autoIntCast) y=y.int2Int();
         Type ans=me.type.join(y.type);
         if (ans.arity()<1) return null; else return new ExprJoin(this.pos, me, y, ans);
     }
@@ -234,7 +234,7 @@ public abstract class Expr {
         if (type==null) throw internalError("The node is not yet typechecked");
         if (y.type==null) throw y.internalError("The node is not yet typechecked");
         Expr me=(VisitTypechecker.autoIntCast ? this.int2Int() : this);
-        y=(VisitTypechecker.autoIntCast ? y.int2Int() : y);
+        if (VisitTypechecker.autoIntCast) y=y.int2Int();
         Type ans=me.type.product_of_anyEmptyness(y.type);
         if (ans.arity()<1) throw internalError("Cannot perform Expr.product()");
         return ExprBinary.Op.ARROW.make(this.pos, me, y, ans);

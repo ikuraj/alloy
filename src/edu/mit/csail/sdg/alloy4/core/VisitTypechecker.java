@@ -61,7 +61,7 @@ public final class VisitTypechecker {
     private final Env<Type> env=new Env<Type>();
 
     /** This is a logger that will receive verbose debugging output during typechecking. */
-    private Log log;
+    private Log log=null;
 
     // field&sig!=null    else if sig!=null     else if fun!=null     allelse
     private Field rootfield=null;
@@ -550,11 +550,10 @@ public final class VisitTypechecker {
     public final Expr visit(ExprBinary x, Type p) {
         Type a=x.left.type, b=x.right.type;
         switch(x.op) {
-        case IN: {
-            b=a.intersect(b);
-            // Intentional fall-through to the "case EQUALS" case.
-        }
-        case EQUALS: case AND: case OR: case IFF: case IMPLIES: case LT: case LTE: case GT: case GTE: {
+        case IN: case EQUALS:
+        case AND: case OR: case IFF: case IMPLIES:
+        case LT: case LTE: case GT: case GTE: {
+        	if (x.op==ExprBinary.Op.IN) b=a.intersect(b);
             if (!p.isBool) throw x.typeError("This must be a set or relation!");
             break;
         }
