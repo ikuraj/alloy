@@ -494,9 +494,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private final Log log;
     private final int codeindex;
     private TranslateAlloyToKodkod(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
-    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs, int solver) {
+    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs, int solver, String dest) {
         TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,units);
-        return ve.codegen(sigs, solver);
+        return ve.codegen(sigs, solver, dest);
     }
 
     private Map<ParaSig,Expression> sig2rel = new LinkedHashMap<ParaSig,Expression>();
@@ -712,7 +712,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 && s.name.equals("Ord"));
     }
 
-    public List<Result> codegen(List<ParaSig> sigs, int solver)  {
+    private List<Result> codegen(List<ParaSig> sigs, int solver, String dest)  {
         Formula kfact=Formula.TRUE;
         // Generate the relations for the SIGS.
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -841,7 +841,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     }
                 }
                 this.env.clear();
-                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver));
+                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver, dest));
             }
         return result;
     }
@@ -904,7 +904,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice)  {
+    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice, String dest)  {
         Result mainResult=null;
         Unit root=units.get(0);
         unique.clear();
@@ -1055,7 +1055,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 else if (cmd.check) log.log(" VIOLATED (SAT)");
                 else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
-                writeXML(cmd.pos, sol, units, sigs);
+                writeXML(cmd.pos, sol, units, sigs, dest);
                 if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
                 break;
             case UNSATISFIABLE:
@@ -1085,12 +1085,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         for(Tuple tp:tps) writeXML_tuple(out, firstatom, tp);
     }
 
-    private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs) {
+    private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String dest) {
         FileWriter fw=null;
         BufferedWriter bw=null;
         PrintWriter out=null;
         try {
-            fw=new FileWriter(".alloy.xml");
+            fw=new FileWriter(dest);
             bw=new BufferedWriter(fw);
             out=new PrintWriter(bw);
         } catch(IOException ex) {

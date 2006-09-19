@@ -90,9 +90,6 @@ public final class SimpleGUI {
         /** The Alloy model to be anaylzed */
         private final Reader source;
 
-        /** The current directory (with a trailing FILE SEPARATOR) */
-        private final String cwd;
-
         /** The command that this runner should run (0..) (-1 means all of them) */
         private final int index;
 
@@ -102,9 +99,8 @@ public final class SimpleGUI {
          * @param cwd - the current directory (with a trailing FILE SERPATOR)
          * @param index - the command that this runner will run
          */
-        public Runner(Reader source, String cwd, int index) {
+        public Runner(Reader source, int index) {
             this.source=source;
-            this.cwd=cwd;
             this.index=index;
         }
 
@@ -115,13 +111,12 @@ public final class SimpleGUI {
                 Log reallog=new LogToTextPane(log,styleRegular,styleGreen);
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
-                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0));
+                String dest=alloyhome+fs+"tmp"+fs+"solution.xml";
+                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0), dest);
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     log("Visualizer loading... please wait...", styleRegular);
-                    String newcwd = new File(cwd+".."+fs+"kodviz").getAbsolutePath();
-                    System.setProperty("kodviz.dir",newcwd);
                     KodVizGUIFactory factory=new KodVizGUIFactory(false);
-                    factory.create(new File(cwd+".alloy.xml"));
+                    factory.create(new File(dest));
                     log("Visualizer loaded.", styleRegular);
                 }
                 if (result.size()>1) {
@@ -229,9 +224,6 @@ public final class SimpleGUI {
 
     private static final String fs=System.getProperty("file.separator");
 
-    /** The current directory (plus a trailing FILE SEPARATOR) */
-    private final String cwd = new File(".").getAbsolutePath() + System.getProperty("file.separator");
-
     /** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
     private boolean compiled=false;
     /** Synchronized helper method that sets or clears the "compiled" flag. */
@@ -293,12 +285,10 @@ public final class SimpleGUI {
 
     /** An ActionListener that is called when the user indicates a particular command to execute. */
     private class RunListener implements ActionListener {
-        /** The current working directory (plus a trailing FILE SEPARATOR) */
-        private final String cwd;
         /** The index number of the command that the user wishes to execute (0..) (-1 means ALL of them). */
         private final int index;
         /** The constructor. */
-        public RunListener(String c,int i) {cwd=c; index=i;}
+        public RunListener(int i) {index=i;}
         /** The event handler that gets called when the user clicked on one of the menu item. */
         public void actionPerformed(ActionEvent e) {
             if (thread_stillRunning()) {
@@ -306,7 +296,7 @@ public final class SimpleGUI {
                 return;
             }
             Stopper.stopped=false;
-            Runner r=new Runner(new StringReader(text.getText()), cwd, index);
+            Runner r=new Runner(new StringReader(text.getText()), index);
             Thread t=new Thread(r);
             t.start();
             current_thread=t;
@@ -375,14 +365,14 @@ public final class SimpleGUI {
         }
         if (u.runchecks.size()>1) {
             y=new JMenuItem("All");
-            y.addActionListener(new RunListener(cwd,-1));
+            y.addActionListener(new RunListener(-1));
             runmenu.add(y);
             runmenu.add(new JSeparator());
         }
         for(int i=0; i<u.runchecks.size(); i++) {
             String label=u.runchecks.get(i).toString();
             y=new JMenuItem(label);
-            y.addActionListener(new RunListener(cwd,i));
+            y.addActionListener(new RunListener(i));
             runmenu.add(y);
         }
     }

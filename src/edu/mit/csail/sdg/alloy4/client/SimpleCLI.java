@@ -19,6 +19,9 @@ public final class SimpleCLI {
     private static final String fs=System.getProperty("file.separator");
 
     private static void run(int code, String[] args, Log log) throws FileNotFoundException {
+    	Preferences pref=Preferences.userNodeForPackage(SimpleCLI.class);
+    	String alloyhome=pref.get("basedir","");
+        String dest=alloyhome+fs+"tmp"+fs+"solution.xml";
         ArrayList<Unit> units;
         ArrayList<ParaSig> sigs;
         if (args.length==0) {
@@ -26,13 +29,13 @@ public final class SimpleCLI {
             System.out.flush();
             units=AlloyParser.alloy_totalparseFile("");
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2,dest);
         }
         else for(String a:args) {
             log.log("\n\nMain file = "+a+"\n");
             units=AlloyParser.alloy_totalparseFile(a);
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2,dest);
         }
     }
 
