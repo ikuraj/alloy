@@ -8,8 +8,8 @@ package edu.mit.csail.sdg.alloy4.util;
 
 public class Log {
 
-	/** Constructs a logger that ignores all calls and simply logs nothing. */
-	public Log() { }
+    /** Constructs a logger that ignores all calls and simply logs nothing. */
+    public Log() { }
 
     /**
      * This method is supposed to write msg into the log

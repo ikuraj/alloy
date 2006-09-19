@@ -38,42 +38,42 @@ public final class LogToTextPane extends Log {
 
     /** Writes msg into the log. */
     @Override public void log(final String msg) {
-    	if (!SwingUtilities.isEventDispatchThread()) {
-    		try {
-				SwingUtilities.invokeAndWait(new Runnable() {
-				    public void run() { log(msg); }
-				});
-			} catch (Exception e) {
-				return; // If this happens, so be it.
-			}
-			return;
-    	}
+        if (!SwingUtilities.isEventDispatchThread()) {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() { log(msg); }
+                });
+            } catch (Exception e) {
+                return; // If this happens, so be it.
+            }
+            return;
+        }
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, defaultStyle);
         } catch (BadLocationException e) {
-        	return; // Should not happen
+            return; // Should not happen
         }
         pane.setCaretPosition(doc.getLength());
     }
 
     /** Writes msg into the log in a bold style. */
     @Override public void logBold(final String msg) {
-    	if (!SwingUtilities.isEventDispatchThread()) {
-    		try {
-				SwingUtilities.invokeAndWait(new Runnable() {
-				    public void run() { logBold(msg); }
-				});
-			} catch (Exception e) {
-				return; // If this happened, so be it.
-			}
-			return;
-    	}
+        if (!SwingUtilities.isEventDispatchThread()) {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() { logBold(msg); }
+                });
+            } catch (Exception e) {
+                return; // If this happened, so be it.
+            }
+            return;
+        }
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, boldStyle);
         } catch (BadLocationException e) {
-        	return; // Should not happen
+            return; // Should not happen
         }
         pane.setCaretPosition(doc.getLength());
     }
