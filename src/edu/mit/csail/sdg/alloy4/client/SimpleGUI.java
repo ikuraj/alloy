@@ -115,7 +115,7 @@ public final class SimpleGUI {
                 List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0), dest);
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     log("Visualizer loading... please wait...", styleRegular);
-                    KodVizGUIFactory factory=new KodVizGUIFactory(false);
+                    KodVizGUIFactory factory=new KodVizGUIFactory(alloyhome,false);
                     factory.create(new File(dest));
                     log("Visualizer loaded.", styleRegular);
                 }
@@ -553,7 +553,7 @@ public final class SimpleGUI {
             public void actionPerformed(ActionEvent e) { my_saveAs(); }
         }));
         filemenu.add(make_JMenuItem("Load Standalone Visualizer", KeyEvent.VK_V, null, new ActionListener() {
-            public void actionPerformed(ActionEvent e) { new KodVizGUIFactory(false).create(null); }
+            public void actionPerformed(ActionEvent e) { new KodVizGUIFactory(alloyhome,false).create(null); }
         }));
         filemenu.add(make_JMenuItem("Exit", KeyEvent.VK_X, null,new ActionListener() {
             public void actionPerformed(ActionEvent e) { if (my_confirm()) System.exit(1); }
