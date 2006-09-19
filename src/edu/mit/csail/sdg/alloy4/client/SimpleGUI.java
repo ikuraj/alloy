@@ -492,22 +492,8 @@ public final class SimpleGUI {
     private boolean minisat=true;
     private boolean zchaff_basic=true;
     private synchronized void my_setup(String[] args) {
-
-        String basedir=get("basedir");
-        if (basedir==null) basedir="";
+        String basedir=KodVizInstaller.install(get("basedir"));
         String binary=basedir+fs+"binary";
-        File bindir=new File(binary);
-        File modeldir=new File(basedir+fs+"models");
-        
-        if (basedir.length()==0 || (args.length==1 && args[0].equals("-jaws")) || !bindir.isDirectory() || !modeldir.isDirectory()) {
-            basedir=KodVizInstaller.install(basedir);
-            if (basedir==null || basedir.length()==0) System.exit(1);
-            binary=basedir+fs+"binary";
-            bindir=new File(binary);
-            modeldir=new File(basedir+fs+"models");
-            if (!bindir.isDirectory() || !modeldir.isDirectory()) System.exit(1);
-        }
-        
         // The following files we want to overwrite each time, to keep them up-to-date.
         KodVizInstaller.copy("alloy4.jar", basedir, false);
         KodVizInstaller.copy("libminisat.so", binary, true);
