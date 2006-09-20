@@ -58,6 +58,7 @@ import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.util.Err;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
+import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
@@ -417,7 +418,7 @@ public final class SimpleGUI {
         if (!my_confirm()) return;
         latestName="";
         text.setText("");
-        frame.setTitle(Version.version());
+        frame.setTitle(AlloyVersion.version());
         compiled(false);
         modified(false);
     }
@@ -643,7 +644,7 @@ public final class SimpleGUI {
         split.setOneTouchExpandable(false);
 
         // Make the JFrame, and put the JSplitPane and a JLabel into it.
-        frame=new JFrame(Version.version());
+        frame=new JFrame(AlloyVersion.version());
         frame.setBackground(Color.lightGray);
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
@@ -660,7 +661,7 @@ public final class SimpleGUI {
         frame.setSize(new Dimension(width,height));
         frame.setVisible(true);
         
-        log(Version.version(), styleGreen);
+        log(AlloyVersion.version(), styleGreen);
 
         if (minisat) log("\nSolver: MiniSAT using JNI", styleGreen);
         else if (zchaff_basic) log("\nSolver: ZChaff using JNI", styleGreen);
