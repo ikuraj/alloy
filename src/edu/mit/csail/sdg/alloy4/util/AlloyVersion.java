@@ -4,7 +4,7 @@ package edu.mit.csail.sdg.alloy4.util;
  * This class holds the version String.
  * 
  * The Release build script
- * will provide a customized version of Version.java with the correct date.
+ * will provide a customized version of AlloyVersion.java with the correct date.
  *
  * @author Felix Chang
  */
