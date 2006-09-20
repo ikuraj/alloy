@@ -9,7 +9,7 @@ package edu.mit.csail.sdg.alloy4.util;
  * @author Felix Chang
  */
 public final class AlloyVersion {
-	
+
 	/** Returns the version String. */
 	public static String version() { return "Alloy version 4: latest development branch"; }
 }
