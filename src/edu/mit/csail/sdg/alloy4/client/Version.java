@@ -10,6 +10,6 @@ package edu.mit.csail.sdg.alloy4.client;
  */
 public final class Version {
 
-	/** The VERSION String. */
-	public static final String VERSION = "latest development branch";
+	/** Returns the VERSION String. */
+	public static String version() { return "latest development branch"; }
 }

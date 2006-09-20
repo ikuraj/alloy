@@ -417,7 +417,7 @@ public final class SimpleGUI {
         if (!my_confirm()) return;
         latestName="";
         text.setText("");
-        frame.setTitle("Alloy 4 ("+Version.VERSION+")");
+        frame.setTitle("Alloy 4 ("+Version.version()+")");
         compiled(false);
         modified(false);
     }
@@ -643,7 +643,7 @@ public final class SimpleGUI {
         split.setOneTouchExpandable(false);
 
         // Make the JFrame, and put the JSplitPane and a JLabel into it.
-        frame=new JFrame("Alloy 4 ("+Version.VERSION+")");
+        frame=new JFrame("Alloy 4 ("+Version.version()+")");
         frame.setBackground(Color.lightGray);
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
@@ -660,7 +660,7 @@ public final class SimpleGUI {
         frame.setSize(new Dimension(width,height));
         frame.setVisible(true);
         
-        log("Alloy version: "+Version.VERSION, styleGreen);
+        log("Alloy version: "+Version.version(), styleGreen);
 
         if (minisat) log("\nSolver: MiniSAT using JNI", styleGreen);
         else if (zchaff_basic) log("\nSolver: ZChaff using JNI", styleGreen);
