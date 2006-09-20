@@ -904,14 +904,34 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
+    // TODO: do we allow sigs to extends or subset SIGINT?
     private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice, String dest)  {
         Result mainResult=null;
         Unit root=units.get(0);
+        Formula mainformula;
+        if (cmd.check) {
+            ParaAssert e=root.asserts.get(cmd.name);
+            if (e==null) throw cmd.syntaxError("The assertion \""+cmd.name+"\" cannot be found.");
+            mainformula=((Formula)(e.value.accept(this))).not().and(kfact);
+        } else {
+            List<ParaFun> ee=root.funs.get(cmd.name);
+            if (ee==null || ee.size()<1) throw cmd.syntaxError("The predicate/function \""+cmd.name+"\" cannot be found.");
+            if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate/function with the name \""+cmd.name+"\"!");
+            ParaFun e=ee.get(0);
+            Expr v=e.value;
+            if (e.type!=null) {
+                Expr vv=e.type;
+                v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
+            }
+            if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
+            mainformula=((Formula)(v.accept(this))).and(kfact);
+        }
+        boolean hasSigInt=mainformula.accept(new HasSigInt());
         unique.clear();
         Set<String> atoms=new LinkedHashSet<String>();
         if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
         if (ParaSig.SIGINT.subs.size()>0) throw ParaSig.SIGINT.subs.get(0).internalError("SIGINT can no longer be extended!");
-        for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
+        if (hasSigInt) for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
             String ii=new String("Int_"+i);
             atoms.add(ii);
             sig2lowerbound(ParaSig.SIGINT).add(ii);
@@ -919,15 +939,27 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeLowerBound(s); }
         for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeUpperBound(s); atoms.addAll(sig2upperbound(s)); }
+        boolean universeEmpty=atoms.isEmpty();
+        if (universeEmpty) {
+        	String ii="Int_0"; // If the universe is empty, we have no choice but to add at least 1 atom.
+        	atoms.add(ii);
+        	sig2lowerbound(ParaSig.SIGINT).add(ii);
+        	sig2upperbound(ParaSig.SIGINT).add(ii);
+        }
         final Universe universe = new Universe(atoms);
         final TupleFactory factory = universe.factory();
         final Bounds bounds = new Bounds(universe);
         sig2ts(ParaSig.UNIV, factory.allOf(1));
         sig2ts(ParaSig.NONE, factory.noneOf(1));
         sig2ts(ParaSig.SIGINT, factory.noneOf(1));
-        for(int j=0,i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++,j++) {
+        if (hasSigInt) for(int j=0,i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++,j++) {
             Tuple ii=factory.tuple(sig2upperbound(ParaSig.SIGINT).get(j));
             bounds.boundExactly(i,factory.range(ii,ii));
+            sig2ts(ParaSig.SIGINT).add(ii);
+        }
+        if (universeEmpty) {
+            Tuple ii=factory.tuple(sig2upperbound(ParaSig.SIGINT).get(0));
+            bounds.boundExactly(0,factory.range(ii,ii));
             sig2ts(ParaSig.SIGINT).add(ii);
         }
         for(int si=sigs.size()-1; si>=0; si--) {
@@ -995,24 +1027,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
         }
         try {
-            Formula f;
-            if (cmd.check) {
-                ParaAssert e=root.asserts.get(cmd.name);
-                if (e==null) throw cmd.syntaxError("The assertion \""+cmd.name+"\" cannot be found.");
-                f=((Formula)(e.value.accept(this))).not().and(kfact);
-            } else {
-                List<ParaFun> ee=root.funs.get(cmd.name);
-                if (ee==null || ee.size()<1) throw cmd.syntaxError("The predicate/function \""+cmd.name+"\" cannot be found.");
-                if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate/function with the name \""+cmd.name+"\"!");
-                ParaFun e=ee.get(0);
-                Expr v=e.value;
-                if (e.type!=null) {
-                    Expr vv=e.type;
-                    v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
-                }
-                if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
-                f=((Formula)(v.accept(this))).and(kfact);
-            }
             Solver solver = new Solver();
             if (solverChoice==0)
                solver.options().setSolver(SATFactory.DefaultSAT4J);
@@ -1030,7 +1044,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 log.flush();
                 return Result.CANCELED;
             }
-            Solution sol=solver.solve(f,bounds);
+            Solution sol=solver.solve(mainformula,bounds);
             long t1=sol.stats().translationTime();
             long t2=sol.stats().solvingTime();
             switch(sol.outcome()) {
