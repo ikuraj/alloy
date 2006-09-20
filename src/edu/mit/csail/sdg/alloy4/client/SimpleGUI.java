@@ -260,7 +260,7 @@ public final class SimpleGUI {
     private Style styleRegular,styleBold,styleRed,styleGreen,styleGray;
 
     /** The JMenu that contains the list of RUN and CHECK commands in the current file. */
-    private JMenu runmenu;
+    private JMenu runmenu,filemenu;
 
     /** The JLabel that displays the current line/column position, etc. */
     private JLabel status;
@@ -298,6 +298,30 @@ public final class SimpleGUI {
             Thread t=new Thread(r);
             t.start();
             current_thread=t;
+        }
+    }
+
+    /**
+     * Synchronized helper method that gets called whenever the user tries to expand the FILE menu.
+     */
+    private synchronized void my_file() {
+    	boolean hasEntries=false;
+    	while(filemenu.getItemCount()>6) filemenu.remove(6);
+    	for(int i=0; i<=3; i++) {
+    		final String n=get("history"+i);
+    		if (n.length()>0) {
+    			if (!hasEntries) {
+    				hasEntries=true;
+    				filemenu.addSeparator();
+    			}
+        		JMenuItem x=new JMenuItem(n);
+        		x.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						my_open(n);
+					}
+        		});
+        		filemenu.add(x);
+    		}
         }
     }
 
@@ -455,6 +479,13 @@ public final class SimpleGUI {
             log("\nFile \""+f+"\" successfully loaded.", styleGreen);
             frame.setTitle(title+": "+f);
             latestName=f;
+            String name0=get("history0");
+            String name1=get("history1");
+            String name2=get("history2");
+            if (name0.equals(f)) { }
+            else if (name1.equals(f)) { set("history1",name0); set("history0",f); }
+            else if (name2.equals(f)) { set("history2",name1); set("history1",name0); set("history0",f); }
+            else { set("history3",name2); set("history2",name1); set("history1",name0); set("history0",f); }
             compiled(false);
             modified(false);
         } catch(FileNotFoundException e) { log("\nCannot open the file! "+e.toString(), styleGreen);
@@ -538,8 +569,13 @@ public final class SimpleGUI {
         bar.setVisible(true);
 
         // Create the File menu
-        JMenu filemenu=new JMenu("File",true);
+        filemenu=new JMenu("File",true);
         filemenu.setMnemonic(KeyEvent.VK_F);
+        filemenu.addMenuListener(new MenuListener() {
+            public void menuSelected(MenuEvent e) { my_file(); }
+            public void menuDeselected(MenuEvent e) { }
+            public void menuCanceled(MenuEvent e) { }
+        });
         filemenu.add(make_JMenuItem("New", KeyEvent.VK_N, "ctrl N", new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_new(); }
         }));
