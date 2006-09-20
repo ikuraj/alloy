@@ -1130,12 +1130,14 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     out.printf("  <atom name=\"%s\"/>%n", atom);
                 }
                 out.printf("</sig>%n");
-                out.printf("<sig name=\"Int\" extends=\"univ\">%n");
-                for(Tuple t:eval.evaluate(Relation.INTS)) {
-                    String atom=(String)(t.atom(0));
-                    out.printf("  <atom name=\"%s\"/>%n", atom);
+                if (!eval.evaluate(Relation.INTS).isEmpty()) {
+                	out.printf("<sig name=\"Int\" extends=\"univ\">%n");
+                	for(Tuple t:eval.evaluate(Relation.INTS)) {
+                		String atom=(String)(t.atom(0));
+                		out.printf("  <atom name=\"%s\"/>%n", atom);
+                	}
+                	out.printf("</sig>%n");
                 }
-                out.printf("</sig>%n");
             }
             for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
                 String lastatom="";
