@@ -95,8 +95,6 @@ public final class SimpleGUI {
 
         /**
          * Constructor for this runner.
-         *
-         * @param cwd - the current directory (with a trailing FILE SERPATOR)
          * @param index - the command that this runner will run
          */
         public Runner(Reader source, int index) {
