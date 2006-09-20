@@ -170,7 +170,7 @@ public final class SimpleGUI {
             modified(false);
             log("\nContent saved to file \""+filename+"\"", styleGreen);
             latestName=filename;
-            frame.setTitle(title+": "+latestName);
+            frame.setTitle("Alloy File: "+latestName);
             return true;
         } catch(IOException e) {
             log("\nCannot write to the file \""+filename+"\"! "+e.toString(), styleRed);
@@ -216,9 +216,6 @@ public final class SimpleGUI {
         Preferences pref= Preferences.userNodeForPackage(this.getClass());
         return pref.get(key,"");
     }
-
-    /** The default title */
-    private final String title = "Alloy Analyzer";
 
     private static final String fs=System.getProperty("file.separator");
 
@@ -420,7 +417,7 @@ public final class SimpleGUI {
         if (!my_confirm()) return;
         latestName="";
         text.setText("");
-        frame.setTitle(title);
+        frame.setTitle("Alloy 4 ("+Version.VERSION+")");
         compiled(false);
         modified(false);
     }
@@ -475,7 +472,7 @@ public final class SimpleGUI {
             text.setText(sb.toString());
             text.setCaretPosition(0);
             log("\nFile \""+f+"\" successfully loaded.", styleGreen);
-            frame.setTitle(title+": "+f);
+            frame.setTitle("Alloy File: "+f);
             latestName=f;
             String name0=get("history0");
             String name1=get("history1");
@@ -646,7 +643,7 @@ public final class SimpleGUI {
         split.setOneTouchExpandable(false);
 
         // Make the JFrame, and put the JSplitPane and a JLabel into it.
-        frame=new JFrame(title);
+        frame=new JFrame("Alloy 4 ("+Version.VERSION+")");
         frame.setBackground(Color.lightGray);
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
@@ -662,7 +659,13 @@ public final class SimpleGUI {
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setVisible(true);
+        
+        log("Alloy version: "+Version.VERSION, styleGreen);
 
+        if (minisat) log("\nSolver: MiniSAT using JNI", styleGreen);
+        else if (zchaff_basic) log("\nSolver: ZChaff using JNI", styleGreen);
+        else log("\nSolver: SAT4J", styleGreen);
+        
         if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
 
         if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
