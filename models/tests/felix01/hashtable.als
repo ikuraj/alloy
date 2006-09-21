@@ -69,8 +69,8 @@ pred interesting {
   k1!=k2 && v1!=v2 && k1.hc=k2.hc && write[k1,v1,t0,t1] && write[k1,v2,t1,t2] && write[k2,v2,t2,t3]
 }
 
-run interesting for 3 but 2 Hashcode, 4 Time, 3 int, 2 Key, 3 Value, 4 Bucket expect 0 // I say "expect 0" in order to force AA4 to display the instance
-check readwriteWorks for 3 but 2 Hashcode, 3 Time, 3 int, 2 Key, 3 Value, 4 Bucket
+run interesting for 3 but 2 Hashcode, 4 Time, 3 int, 2 Key, 3 Value, 4 Bucket expect 1
+check readwriteWorks for 3 but 2 Hashcode, 3 Time, 3 int, 2 Key, 3 Value, 4 Bucket expect 0
 
 // METHODS on SEQUENCES
 
@@ -85,9 +85,10 @@ fun remove [x:Int->Bucket, i:Int] : Int->Bucket {
   else i=Int[1] =>
     Int[0]->Int[0].x + Int[1]->Int[2].x
   else
-    Int[0]->Int[0].x + Int[1])->Int[1].x
+    Int[0]->Int[0].x + Int[1]->Int[1].x
   // Somehow I couldn't make the following work:
   // { j:Int, b:Bucket | ((int j)<(int i) && b=j.x) || ((int j)>=(int i) && b=Int[(int j)+1].x) }
 }
 
 fun append [x:Int->Bucket, b:Bucket] : Int->Bucket { x+Int[#x]->b }
+
