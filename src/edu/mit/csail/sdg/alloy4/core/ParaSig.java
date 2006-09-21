@@ -16,9 +16,9 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 
 public final class ParaSig extends Para {
 
-    public static final ParaSig UNIV=new ParaSig("univ","");
-    public static final ParaSig NONE=new ParaSig("none","");
-    public static final ParaSig SIGINT=new ParaSig("Int","");
+    public static final ParaSig UNIV=new ParaSig("univ");
+    public static final ParaSig NONE=new ParaSig("none");
+    public static final ParaSig SIGINT=new ParaSig("Int");
 
     public static final String UNIV_NAME = "univ";
     public static final String NONE_NAME = "none";
@@ -160,11 +160,11 @@ public final class ParaSig extends Para {
         return NONE;
     }
 
-    private ParaSig(String n, String al) {
-        super(new Pos("$builtin library$",1,1), al, n);
-        fullname="/"+al+"/"+n;
-        fullvname=al+"/"+n;
-        aliases.add(al);
+    private ParaSig(String n) {
+        super(new Pos("$builtin$",1,1), "", n);
+        fullname="/"+n;
+        fullvname=n;
+        aliases.add("");
         abs=false; lone=false; one=false; some=false;
         decls=new ArrayList<VarDecl>(0);
         appendedFacts=null;
