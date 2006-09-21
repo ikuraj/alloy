@@ -909,6 +909,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         Result mainResult=null;
         Unit root=units.get(0);
         Formula mainformula;
+        try {
         if (cmd.check) {
             ParaAssert e=root.asserts.get(cmd.name);
             if (e==null) throw cmd.syntaxError("The assertion \""+cmd.name+"\" cannot be found.");
@@ -925,6 +926,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
             if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
             mainformula=((Formula)(v.accept(this))).and(kfact);
+        }
+        } catch(HigherOrderDeclException ex) {
+          log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n");
+          log.flush();
+          return null;
+        } catch(Err ex) {
+          log.log(ex.msg+"\n");
+          log.flush();
+          return null;
         }
         boolean hasSigInt=mainformula.accept(new HasSigInt());
         unique.clear();
