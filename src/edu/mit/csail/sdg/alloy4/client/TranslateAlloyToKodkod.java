@@ -699,7 +699,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /**                                                                         */
     /*==========================================================================*/
 
-    private Expression kuniv=Relation.UNIV;
+    private Expression kuniv=null;//Relation.UNIV;
     private Expression kiden=Relation.IDEN;
 
     // zzz: Should make sure we don't load Int unless we need to
@@ -719,7 +719,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
             Relation r=Relation.unary(s.fullname);
             rel(s,r);
-            if (kuniv!=Relation.UNIV) { if (kuniv==null) kuniv=r; else kuniv=kuniv.union(r); }
+            if (kuniv!=Relation.UNIV) {
+            	if (kuniv==null) kuniv=r; else kuniv=kuniv.union(r);
+            	kiden = Relation.IDEN.intersection(kuniv.product(kuniv));
+            }
         }
         // Generate the relations for the FIELDS
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
