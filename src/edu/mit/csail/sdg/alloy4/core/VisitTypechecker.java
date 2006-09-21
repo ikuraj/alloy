@@ -1024,9 +1024,9 @@ public final class VisitTypechecker {
                         if (f.argCount<args.size() && f.type==null) continue;
                         if (!applicable(f,args)) continue;
                         i=f.argCount;
-                        resultexpr=new ExprCall(ptr.pos, name, f, args.subList(0,i), (f.type==null?Type.FORMULA:f.type.type));
+                        resultexpr=new ExprCall(ptr.pos, f, args.subList(0,i), (f.type==null?Type.FORMULA:f.type.type));
                     }
-                    for(; i<args.size(); i++) resultexpr=args.get(i).joinNOCHECK(resultexpr);
+                    for(; i<args.size(); i++) resultexpr=args.get(i).relationalJoinUnchecked(resultexpr);
                     Type temp=resultexpr.type;
                     if (temp!=Type.FORMULA && temp.hasNoTuple()) continue;
                     objects.add(resultexpr);

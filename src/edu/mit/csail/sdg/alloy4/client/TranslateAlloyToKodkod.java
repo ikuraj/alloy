@@ -800,7 +800,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
               for(int i=x22.type.arity(); i>1; i--) x5=x5.product(ExprConstant.Op.UNIV.make(x5.pos));
               kfact=kfact.and((Formula) (x22.in(x5).accept(this)));
               ExprName x11=new ExprName(d.value.pos, "this", null, s.type);
-              Expr x33=x11.join(x22);
+              Expr x33=x11.relationalJoin(x22);
               Expr x44=x33.in(d.value);
               if (temp==null) temp=x44; else temp=temp.and(x44);
             }
