@@ -84,7 +84,7 @@ public final class SimpleGUI {
 		"  Added a new builtin method: int",
 		"  int[x] converts a set of Int atoms into a primitive integer.",
 		"  The old Alloy 3 syntax ``int x'' and ``sum x'' are still allowed.",
-		"  For historical reasons, sum[ ] is an alias for int[ ]",
+		"  Note: for historical reasons, sum[ ] is an alias for int[ ]",
 		"2006 Sep 21, 2:30PM:",
 		"  Added a new builtin method: Int",
 		"  Int[x] converts a primitive integer into a SIGINT atom.",
