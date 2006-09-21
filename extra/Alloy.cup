@@ -760,10 +760,14 @@ RangeExpr ::= RangeExpr:a RANGE:o BracketExpr:b           {: RESULT=ExprBinary.O
 BracketExpr ::= DotExpr:b                               {: RESULT=b;                                                                                  :};
 BracketExpr ::= BracketExpr:a LBRACKET Exprs:b RBRACKET {: Expr aa=a;                      for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; :};
 BracketExpr ::= DISJ:a        LBRACKET Exprs:b RBRACKET {: Expr aa=new ExprName(a,"disj"); for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; :};
+BracketExpr ::= INT:a         LBRACKET Exprs:b RBRACKET {: Expr aa=new ExprName(a,"int");  for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; :};
+BracketExpr ::= SUM:a         LBRACKET Exprs:b RBRACKET {: Expr aa=new ExprName(a,"int");  for(Expr bb:b) aa=new ExprJoin(bb.pos, bb, aa); RESULT=aa; :};
 
 DotExpr ::=                     UnopExpr:b      {: RESULT=b;                                        :};
 DotExpr ::= BracketExpr:a DOT:o UnopExpr:b      {: RESULT=new ExprJoin(o,a,b                     ); :};
 DotExpr ::= BracketExpr:a DOT:o DISJ:b          {: RESULT=new ExprJoin(o,a,new ExprName(b,"disj")); :};
+DotExpr ::= BracketExpr:a DOT:o INT             {: RESULT=ExprUnary.Op.SUM.make(o,a); :};
+DotExpr ::= BracketExpr:a DOT:o SUM             {: RESULT=ExprUnary.Op.SUM.make(o,a); :};
 
 UnopExpr ::=          BaseExpr:b      {: RESULT=b;                                   :};
 UnopExpr ::= TILDE:o  UnopExpr:b      {: RESULT=ExprUnary.Op.TRANSPOSE  .make(o,b);  :};
