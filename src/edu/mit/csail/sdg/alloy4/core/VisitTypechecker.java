@@ -860,7 +860,7 @@ public final class VisitTypechecker {
             // If size of ^TYPE(X).^TYPE(X) is 0, report an error!
             cset(sub); if (!sub.type.hasArity(2)) throw sub.typeError("This expression's arity must be 2!");
             ans=sub.type.closure();
-            if (ans.join(ans).size()==0) throw x.typeError("redundant closure operation (domain and range are disjoint)");
+            if (ans.join(ans).size()==0) throw x.typeError("redundant closure operation (domain and range are sdoint)");
             if (x.op==ExprUnary.Op.RCLOSURE) ans=ans.union(Type.make(ParaSig.UNIV,ParaSig.UNIV));
             break;
 
@@ -1043,7 +1043,7 @@ public final class VisitTypechecker {
             		return cache(ExprUnary.Op.SUM.make(ptr.pos, arg1, Type.INT));
                 throw arg1.typeError("This expression must contain integer atoms! Instead, its possible type(s) are: "+arg1.type);
             }
-            if (n>0 && name.equals("disj")) {
+            if (n>1 && name.equals("disj")) {
             	// Handles the builtin function disj[]
             	List<Expr> args=resolveArgs(x);
             	int arity = -1;

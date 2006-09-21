@@ -18,6 +18,7 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -64,6 +65,72 @@ import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
 @SuppressWarnings("serial")
 public final class SimpleGUI {
+
+	public static int getScreenWidth() {
+		return Toolkit.getDefaultToolkit().getScreenSize().width;
+	}
+	
+	public static int getScreenHeight() {
+		return Toolkit.getDefaultToolkit().getScreenSize().height;
+	}
+
+	private static final String[] changelog = new String[]{
+		"2006 Sep 21, 3:55PM:",
+		"  Added a new builtin method: disj",
+		"  disj is a predicate that takes 2 or more arguments.",
+		"  For example, disj[x,y,z] means no(x&y) && no(y&z) && no(x&z)",
+		"  Note: for historical reasons, disjoint[ ] is an alias for disj[ ]",
+		"2006 Sep 21, 3:15PM:",
+		"  Added a new builtin method: int",
+		"  int[x] converts a set of Int atoms into a primitive integer.",
+		"  The old Alloy 3 syntax ``int x'' and ``sum x'' are still allowed.",
+		"  For historical reasons, sum[ ] is an alias for int[ ]",
+		"2006 Sep 21, 2:30PM:",
+		"  Added a new builtin method: Int",
+		"  Int[x] converts a primitive integer into a SIGINT atom.",
+		"  The old Alloy 3 syntax ``Int x'' must now be written as ``Int[x]'' or ``x.Int''",
+		"2006 Sep 21, 1:10PM:",
+		"  Alloy4 Beta1 released."
+    };
+	
+	private static final void showChangeLog() {
+		int screenWidth=getScreenWidth();
+		int screenHeight=getScreenHeight();
+        int width=screenWidth/3*2, height=screenHeight/3*2;
+        JTextPane log=new JTextPane();
+        log.setBackground(Color.getHSBColor(0f,0f,0.95f));
+        log.setEditable(false);
+        StyledDocument doc=log.getStyledDocument();
+        Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
+        Style styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, "Monospaced");
+        Style styleBold=doc.addStyle("bold", styleRegular); StyleConstants.setBold(styleBold, true);
+        Style styleGreen=doc.addStyle("green", styleBold); StyleConstants.setForeground(styleGreen, new Color(0.2f,0.7f,0.2f));
+        for(int i=0; i<changelog.length; i++) {
+            try {
+            	if (changelog[i].startsWith("20"))
+            		doc.insertString(doc.getLength(), (i==0?"":"\n")+changelog[i]+"\n", styleGreen);
+            	else
+            		doc.insertString(doc.getLength(), changelog[i]+"\n", styleRegular);
+            } catch(BadLocationException ex) {
+            	// This should not happen
+            }
+        }
+        JScrollPane textPane=new JScrollPane(log,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        textPane.setMinimumSize(new Dimension(50, 50));
+        final JFrame frame=new JFrame("Alloy change log");
+        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) { frame.dispose(); }
+        });
+        Container all=frame.getContentPane();
+        all.setLayout(new BorderLayout());
+        all.add(textPane, BorderLayout.CENTER);
+        frame.pack();
+        frame.setSize(new Dimension(width,height));
+        frame.setVisible(true);
+	}
 
     private synchronized void log(String x, Style s) {
         StyledDocument doc=log.getStyledDocument();
@@ -601,6 +668,21 @@ public final class SimpleGUI {
             public void menuCanceled(MenuEvent e) { }
         });
         bar.add(runmenu);
+        
+        // Create the About menu
+        JMenu helpmenu=new JMenu("Help",true);
+        helpmenu.setMnemonic(KeyEvent.VK_H);
+        helpmenu.add(make_JMenuItem("See Alloy4 Change Log", KeyEvent.VK_C, null, new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showChangeLog();
+			}
+        }));
+        helpmenu.add(make_JMenuItem("See Alloy4 Version", KeyEvent.VK_V, null, new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.showMessageDialog(null,AlloyVersion.version());
+			}
+        }));
+        bar.add(helpmenu);
 
         // Create the text editor
         text=new JTextArea();
