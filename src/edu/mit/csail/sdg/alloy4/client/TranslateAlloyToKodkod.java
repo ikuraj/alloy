@@ -424,8 +424,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         Object ans;
         if (r instanceof ParaFun) {
             ParaFun y=(ParaFun)r;
-            if (y.argCount!=0) throw x.internalError("ExprName \""+x.name+"\" is not resolved prior to code gen! Its resolution == "+r);
-            Env<Object> oldenv=this.env; this.env=new Env<Object>(); ans=y.value.accept(this); this.env=oldenv; return ans;
+            if (y.getArgCount()!=0) throw x.internalError("ExprName \""+x.name+"\" is not resolved prior to code gen! Its resolution == "+r);
+            Env<Object> oldenv=this.env; this.env=new Env<Object>(); ans=y.getValue().accept(this); this.env=oldenv; return ans;
         }
         ans=env.get(x.name);
         if (ans==null) throw x.internalError("ExprName \""+x.name+"\" cannot be found during code gen! r=="+r);
@@ -478,12 +478,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (y==null) throw x.internalError("ExprCall should now refer to a Function or Predicate");
         Env<Object> newenv=new Env<Object>();
         int r=0;
-        for(VarDecl d:y.decls) {
+        for(VarDecl d:y.getDecls()) {
             for(String n:d.names) {
                 newenv.put(n,cset(x.args.get(r))); r++;
             }
         }
-        Env<Object> oldenv=this.env; this.env=newenv; Object ans=y.value.accept(this); this.env=oldenv; return ans;
+        Env<Object> oldenv=this.env; this.env=newenv; Object ans=y.getValue().accept(this); this.env=oldenv; return ans;
     }
 
 //################################################################################################
@@ -851,7 +851,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private String makeAtom(ParaSig s) {
         int i=0;
         if (unique.containsKey(s.fullvname)) i=unique.get(s.fullvname);
-        String ans = (i==0) ? s.fullvname : s.fullvname+"_"+i;
+        String ans = /*(i==0) ? s.fullvname :*/ s.fullvname+"_"+i;
         unique.put(s.fullvname, i+1);
         return new String(ans);
     }
@@ -919,12 +919,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (ee==null || ee.size()<1) throw cmd.syntaxError("The predicate/function \""+cmd.name+"\" cannot be found.");
             if (ee.size()>1) throw cmd.syntaxError("There are more than 1 predicate/function with the name \""+cmd.name+"\"!");
             ParaFun e=ee.get(0);
-            Expr v=e.value;
-            if (e.type!=null) {
-                Expr vv=e.type;
+            Expr v=e.getValue();
+            if (e.getType()!=null) {
+                Expr vv=e.getType();
                 v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
             }
-            if (e.argCount>0) v=ExprQuant.Op.SOME.make(v.pos, e.decls, v, Type.FORMULA);
+            if (e.getArgCount()>0) v=ExprQuant.Op.SOME.make(v.pos, e.getDecls(), v, Type.FORMULA);
             mainformula=((Formula)(v.accept(this))).and(kfact);
         }
         } catch(HigherOrderDeclException ex) {
@@ -1048,7 +1048,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
             log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");
             log.flush();
-            //TranslateKodkodToJava.convert(cmd.pos, f, bitwidth, bounds);
+            //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (Stopper.stopped) {
                 log.log("TIME=0+0=0 CANCELED\n");
                 log.flush();
@@ -1159,7 +1159,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 else if (!s.subset)
                     out.printf("<sig name=\"%s\" extends=\"univ\">%n", s.fullvname);
                 else
-                    out.printf("<sig name=\"%s\" extends=\"zzz\">%n", s.fullvname);
+                    out.printf("<sig name=\"%s\" extends=\"univ\">%n", s.fullvname); // zzz WHAT SHOULD BE DONE HERE?
                 for(Tuple t:inst.tuples(r)) {
                     lastatom=(String)(t.atom(0));
                     out.printf("  <atom name=\"%s\"/>%n", lastatom);

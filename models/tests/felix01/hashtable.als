@@ -80,14 +80,14 @@ fun get [x:Int->Bucket, i:Int] : Bucket { i.x }
 
 fun remove [x:Int->Bucket, i:Int] : Int->Bucket {
   // Obviously this only works for lists that have 3 or fewer elements.
-  i=($0) =>
-    ($0)->($1).x + ($1)->($2).x
-  else i=($1) =>
-    ($0)->($0).x + ($1)->($2).x
+  i=Int[0] =>
+    Int[0]->Int[1].x + Int[1]->Int[2].x
+  else i=Int[1] =>
+    Int[0]->Int[0].x + Int[1]->Int[2].x
   else
-    ($0)->($0).x + ($1)->($1).x
+    Int[0]->Int[0].x + Int[1])->Int[1].x
   // Somehow I couldn't make the following work:
-  // { j:Int, b:Bucket | ((int j)<(int i) && b=j.x) || ((int j)>=(int i) && b=($((int j)+1)).x) }
+  // { j:Int, b:Bucket | ((int j)<(int i) && b=j.x) || ((int j)>=(int i) && b=Int[(int j)+1].x) }
 }
 
-fun append [x:Int->Bucket, b:Bucket] : Int->Bucket { x+($(#x))->b }
+fun append [x:Int->Bucket, b:Bucket] : Int->Bucket { x+Int[#x]->b }

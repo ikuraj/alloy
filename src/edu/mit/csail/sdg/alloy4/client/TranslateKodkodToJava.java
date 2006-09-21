@@ -67,9 +67,9 @@ public final class TranslateKodkodToJava implements VoidVisitor {
   private TranslateKodkodToJava(Pos pos, Formula x, int bitwidth, Bounds bounds) {
     this.pos=pos;
     try {
-      file=new PrintWriter(".alloy.tmpjava");
+      file=new PrintWriter("/zweb/zweb/Alloy4/tmp/Test.java");
     } catch(FileNotFoundException e) {
-      throw new ErrorInternal(pos,null,"Cannot open the file \".alloy.tmpjava\"");
+      throw new ErrorInternal(pos,null,"Cannot open the file \"/zweb/zweb/Alloy4/Test.java");
     }
     file.println("import kodkod.ast.IntExpression;");
     file.println("import kodkod.ast.Expression;");

@@ -60,7 +60,6 @@ import java_cup.runtime.*;
 
 "!"                   { return alloy_sym(AlloySym.NOT         );}
 "#"                   { return alloy_sym(AlloySym.HASH        );}
-"$"                   { return alloy_sym(AlloySym.DOLLAR      );}
 "&"                   { return alloy_sym(AlloySym.AMPERSAND   );}
 "&&"                  { return alloy_sym(AlloySym.AND         );}
 "("                   { return alloy_sym(AlloySym.LPAREN      );}

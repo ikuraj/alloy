@@ -287,7 +287,7 @@ public final class Unit {
                 reply.add(new ExprName(pos, ((ParaSig)z).fullname, z, ((ParaSig)z).type));
             } else if (z instanceof ParaFun) {
                 ParaFun f=(ParaFun)z;
-                if (f.argCount==0) reply.add(new ExprName(pos, name, f, (f.type==null?Type.FORMULA:f.type.type)));
+                if (f.getArgCount()==0) reply.add(new ExprName(pos, name, f, (f.getType()==null?Type.FORMULA:f.getType().type)));
                 else reply.add(z);
             } else reply.add(z);
         }
@@ -343,7 +343,7 @@ public final class Unit {
                 ans.add(new ExprName(pos, name, null, (Type)x));
             } else if (x instanceof ParaFun) {
                 ParaFun f=(ParaFun)x;
-                if (f.argCount==0) ans.add(new ExprName(pos, name, f, (f.type==null?Type.FORMULA:f.type.type)));
+                if (f.getArgCount()==0) ans.add(new ExprName(pos, name, f, (f.getType()==null?Type.FORMULA:f.getType().type)));
                 else ans.add(x);
             } else if (x instanceof Expr) {
                 ans.add(x);

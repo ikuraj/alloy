@@ -82,7 +82,7 @@ public final class ExprName extends Expr {
             && !(object instanceof ParaSig)
             && !(object instanceof ParaFun))
             throw internalError("ExprName object must be ParaSig, ParaSig.FieldZ.Full, ParaFun, or null!");
-        if (object instanceof ParaFun && ((ParaFun)object).argCount>0)
+        if (object instanceof ParaFun && ((ParaFun)object).getArgCount()>0)
             throw internalError("If ExprName object is a function, it must have exactly 0 parameters!");
     }
 
@@ -116,5 +116,9 @@ public final class ExprName extends Expr {
             +"online documentation on how to translate models that use the \""
             +name+"\" keyword.";
         throw new ErrorSyntax(pos, msg);
+    }
+    
+    @Override public String toString() {
+    	return "ExprName("+name+", type="+type+", hash="+hashCode()+")";
     }
 }

@@ -60,6 +60,10 @@ public final class VisitTypechecker {
      */
     private final Env<Type> env=new Env<Type>();
 
+    private final IdentitySet<Expr> cache=new IdentitySet<Expr>();
+    private Expr cache(Expr x) { cache.add(x); return x; }
+    private boolean cached(Expr x) { return cache.contains(x); }
+    
     /** This is a logger that will receive verbose debugging output during typechecking. */
     private Log log=null;
 
@@ -276,7 +280,7 @@ public final class VisitTypechecker {
         objChoices.clear();
         env.clear();
         List<VarDecl> newdecls=new ArrayList<VarDecl>();
-        for(VarDecl d:fun.decls) {
+        for(VarDecl d:fun.getDecls()) {
             Expr value=d.value;
             for(int ni=0; ni<d.names.size(); ni++) {
                 String n=d.names.get(ni);
@@ -287,15 +291,15 @@ public final class VisitTypechecker {
             }
             newdecls.add(new VarDecl(d.pos, d, value));
         }
-        Expr type=fun.type;
+        Expr type=fun.getType();
         if (type!=null) {
             type=addOne(resolve(type));
             if (type.type.arity()<1) throw type.typeError("Function return type must be a set or relation, but its type is "+type.type);
             log.log("Unit ["+u.aliases.get(0)+"], Pred/Fun "+fun.name+", RETURN: "+type.type+"\n");
         }
         env.clear();
-        fun.decls=newdecls;
-        fun.type=type;
+        fun.setDecls(newdecls);
+        fun.setType(type);
     }
 
     /** This is step 4C: typecheck (1) pred/fun bodies, (2) sig facts, (3) standalone facts, (4) assertions. */
@@ -308,17 +312,17 @@ public final class VisitTypechecker {
             ParaFun x=xi.getValue().get(xii);
             env.clear();
             rootfield=null; rootsig=null; rootfun=null; rootunit=u;
-            for(VarDecl d:x.decls) for(String n:d.names) env.put(n, d.value.type);
-            Expr value=resolve(x.value);
+            for(VarDecl d:x.getDecls()) for(String n:d.names) env.put(n, d.value.type);
+            Expr value=resolve(x.getValue());
             log.log("Unit ["+uu+"], Pred/Fun "+x.name+", BODY:"+value.type+"\n");
-            if (x.type==null) {
+            if (x.getType()==null) {
                 if (!value.type.isBool) throw x.typeError("Predicate body must be a formula, but it has type "+value.type);
             } else {
                 if (value.type.arity()<1) throw x.typeError("Function body must be a set or relation, but its type is "+value.type);
-                if (value.type.arity()!=x.type.type.arity()) throw x.typeError("Function body has type "+value.type+" but the return type must be "+x.type.type);
-                if (value.type.intersect(x.type.type).hasNoTuple()) throw x.typeError("Function return value is disjoint from its return type! Function body has type "+value.type+" but the return type must be "+x.type.type);
+                if (value.type.arity()!=x.getType().type.arity()) throw x.typeError("Function body has type "+value.type+" but the return type must be "+x.getType().type);
+                if (value.type.intersect(x.getType().type).hasNoTuple()) throw x.typeError("Function return value is disjoint from its return type! Function body has type "+value.type+" but the return type must be "+x.getType().type);
             }
-            x.value=value;
+            x.setValue(value);
         }
         env.clear();
         for(Map.Entry<String,ParaSig> xi:u.sigs.entrySet()) {
@@ -447,6 +451,7 @@ public final class VisitTypechecker {
     //===========================================================//
 
     public Expr visit(ExprBinary x) {
+    	if (cached(x)) return x;
         Expr left=x.left.accept(this);
         Expr right=x.right.accept(this);
         Type a,b,c=null;
@@ -548,6 +553,7 @@ public final class VisitTypechecker {
     //============================================================//
 
     public final Expr visit(ExprBinary x, Type p) {
+    	if (cached(x)) return x;
         Type a=x.left.type, b=x.right.type;
         switch(x.op) {
         case IN: case EQUALS:
@@ -654,6 +660,7 @@ public final class VisitTypechecker {
     //========================================================//
 
     public Expr visit(ExprITE x) {
+    	if (cached(x)) return x;
         Expr right=x.right.accept(this);
         Expr left=x.left.accept(this);
         Expr cond=x.cond.accept(this); cform(cond.type, cond);
@@ -671,6 +678,7 @@ public final class VisitTypechecker {
     //=========================================================//
 
     public final Expr visit(ExprITE x, Type p) {
+    	if (cached(x)) return x;
         Type a=x.left.type, b=x.right.type;
         resolved(p,x);
         if (p.size()>0) {
@@ -696,6 +704,7 @@ public final class VisitTypechecker {
     //========================================================//
 
     public Expr visit(ExprLet x) {
+    	if (cached(x)) return x;
         Expr right=resolve(x.right);
         env.put(x.left, right.type);
         Expr sub=x.sub.accept(this);
@@ -709,6 +718,7 @@ public final class VisitTypechecker {
     //=========================================================//
 
     public Expr visit(ExprLet x, Type p) {
+    	if (cached(x)) return x;
         resolved(p,x);
         env.put(x.left, x.right.type);
         Expr sub=x.sub.accept(this,p);
@@ -727,6 +737,7 @@ public final class VisitTypechecker {
     //==============================================================//
 
     public Expr visit(ExprConstant x, Type p) {
+    	if (cached(x)) return x;
         if (x.op==ExprConstant.Op.NUMBER) {
             if (!p.isInt) throw x.typeError("This must be an integer expression");
         } else if (x.op==ExprConstant.Op.IDEN) {
@@ -742,6 +753,7 @@ public final class VisitTypechecker {
     //==========================================================//
 
     public Expr visit(ExprQuant x) {
+    	if (cached(x)) return x;
         List<VarDecl> list=new ArrayList<VarDecl>();
         Type comp=null; // Stores the Union Type for a Set Comprehension expression
         for(int i=0;i<x.list.size();i++) {
@@ -776,6 +788,7 @@ public final class VisitTypechecker {
     //===========================================================//
 
     public Expr visit(ExprQuant x, Type p) {
+    	if (cached(x)) return x;
         resolved(p,x);
         for(VarDecl d:x.list) {
             for(String j:d.names) env.put(j, d.value.type);
@@ -792,6 +805,7 @@ public final class VisitTypechecker {
     //=============================================================//
 
     public Expr visit(ExprSequence x) {
+    	if (cached(x)) return x;
         List<Expr> list=new ArrayList<Expr>();
         for(int i=0; i<x.list.size(); i++) {
             Expr newvalue=x.list.get(i).accept(this);
@@ -806,6 +820,7 @@ public final class VisitTypechecker {
     //==============================================================//
 
     public Expr visit(ExprSequence x, Type t) {
+    	if (cached(x)) return x;
         List<Expr> list=new ArrayList<Expr>();
         cform(t,x);
         for(int i=0; i<x.list.size(); i++) {
@@ -821,6 +836,7 @@ public final class VisitTypechecker {
     //==========================================================//
 
     public Expr visit(ExprUnary x) {
+    	if (cached(x)) return x;
         Type ans=null;
         Expr sub=x.sub.accept(this);
         switch(x.op) {
@@ -867,6 +883,7 @@ public final class VisitTypechecker {
     //===========================================================//
 
     public final Expr visit(ExprUnary x, Type p) {
+    	if (cached(x)) return x;
         Type subtype=x.sub.type;
         resolved(p,x);
         switch(x.op) {
@@ -949,6 +966,7 @@ public final class VisitTypechecker {
     //=========================================================//
 
     public Expr visit(ExprName x) {
+    	if (cached(x)) return x;
         Type t=null,tt;
         List<Expr> objects=new ArrayList<Expr>();
         if (env.has(x.name)) {
@@ -973,10 +991,11 @@ public final class VisitTypechecker {
     //==========================================================//
 
     public Expr visit(ExprName x, Type t) {
+    	if (cached(x)) return x;
         resolved(t,x);
         List<Expr> choices=objChoices.get(x);
         objChoices.remove(x);
-        if (choices==null) throw x.internalError("Unknown ExprName object encountered!");
+        if (choices==null) throw x.internalError("Unknown ExprName object encountered: "+x);
         Expr match=null;
         for(Expr ch:choices) {
             Type tt=ch.type;
@@ -997,34 +1016,67 @@ public final class VisitTypechecker {
     /** Method that typechecks an ExprJoin object. First pass. */
     //=========================================================//
 
+    private List<Expr> resolveArgs(Expr x) {
+        List<Expr> args=new ArrayList<Expr>();
+        for(Expr ptr=x; ptr instanceof ExprJoin; ptr=((ExprJoin)ptr).right) {
+            Expr left=((ExprJoin)ptr).left;
+            cset(left=resolve(left));
+            args.add(0,left);
+        }
+        return args;
+    }
+
     public Expr visit(ExprJoin x) {
         // This is not optimal. eg. given b.a.(func[x,y,z]), "a" and "b" will be forced to be locally-unambiguous.
         // Another inefficiency: we don't jump forward, so sublists are re-Desugared again and again until the end of list.
+    	if (cached(x)) return x;
         int n=1;
         Expr ptr=x.right;
         while(ptr instanceof ExprJoin) { n++; ptr=((ExprJoin)ptr).right; }
         if (ptr instanceof ExprName && !env.has(((ExprName)ptr).name)) {
             String name=((ExprName)ptr).name;
+            if (n==1 && name.equals("int")) {
+            	// Handles the builtin function int[] aka sum[]
+            	Expr arg1=resolveArgs(x).get(0);
+            	cset(arg1);
+            	if (arg1.type.intersect(ParaSig.SIGINT.type).hasTuple())
+            		return cache(ExprUnary.Op.SUM.make(ptr.pos, arg1, Type.INT));
+                throw arg1.typeError("This expression must contain integer atoms! Instead, its possible type(s) are: "+arg1.type);
+            }
+            if (n>0 && name.equals("disj")) {
+            	// Handles the builtin function disj[]
+            	List<Expr> args=resolveArgs(x);
+            	int arity = -1;
+            	for(Expr a:args) {
+            		cset(a);
+            		if (arity<0) arity=a.type.arity();
+            		if (arity!=a.type.arity()) throw x.typeError("The builtin disj[] predicate can only accept arguments of the same arity!");
+            	}
+            	Expr answer=Expr.TRUE(x.pos);
+            	for(int ai=0; ai<args.size(); ai++) {
+            	  Expr a=args.get(ai);
+                  for(int bi=ai+1; bi<args.size(); bi++) {
+                	  Expr b=args.get(bi);
+                	  answer=a.disj(b).and(answer);
+                  }
+            	}
+                return cache(answer);
+            }
             Set<Object> choices=rootunit.populate(rootfield, rootsig, rootfun, ptr.pos, name);
             List<Expr> objects=new ArrayList<Expr>();
             if (containsApplicable(choices,n)) {
-                List<Expr> args=new ArrayList<Expr>();
-                for(ptr=x; ptr instanceof ExprJoin; ptr=((ExprJoin)ptr).right) {
-                    Expr left=((ExprJoin)ptr).left;
-                    cset(left=resolve(left));
-                    args.add(0,left);
-                }
+                List<Expr> args=resolveArgs(x);
                 Type ans=null;
                 for(Object ch:choices) {
                     Expr resultexpr;
                     int i=0;
                     if (ch instanceof Expr) resultexpr=(Expr)ch; else {
                         ParaFun f=(ParaFun)ch;
-                        if (f.argCount>args.size()) continue;
-                        if (f.argCount<args.size() && f.type==null) continue;
+                        if (f.getArgCount()>args.size()) continue;
+                        if (f.getArgCount()<args.size() && f.getType()==null) continue;
                         if (!applicable(f,args)) continue;
-                        i=f.argCount;
-                        resultexpr=new ExprCall(ptr.pos, f, args.subList(0,i), (f.type==null?Type.FORMULA:f.type.type));
+                        i=f.getArgCount();
+                        resultexpr=new ExprCall(ptr.pos, f, args.subList(0,i), (f.getType()==null?Type.FORMULA:f.getType().type));
                     }
                     for(; i<args.size(); i++) resultexpr=args.get(i).relationalJoinUnchecked(resultexpr);
                     Type temp=resultexpr.type;
@@ -1037,8 +1089,15 @@ public final class VisitTypechecker {
         }
         // TYPE[A.B] = TYPE[A].TYPE[B] if there exist r1 in TYPE[A] and r2 in TYPE[B],
         // such that r1.arity+r2.arity>2, and range(r1)&dom(r2) nonempty.
-        Expr left=x.left.accept(this); cset(left);
-        Expr right=x.right.accept(this); cset(right);
+        Expr left=x.left.accept(this);
+        Expr right=x.right.accept(this);
+        if (left.type.isInt && right instanceof ExprConstant && ((ExprConstant)(right)).op==ExprConstant.Op.SIGINT) {
+        	// Handles the builtin function Int[]
+        	left=resolve(x.left);
+        	if (left.type.isInt) return cache(ExprUnary.Op.INTTOATOM.make(right.pos, left, ParaSig.SIGINT.type));
+        }
+        cset(left);
+        cset(right);
         Expr newx=new ExprJoin(x.pos, left, right, left.type.join(right.type));
         if (newx.type.hasNoTuple()) throw newx.typeError("The join operation here always yields an empty set! LeftType="+left.type+" RightType="+right.type);
         return newx;
@@ -1046,7 +1105,7 @@ public final class VisitTypechecker {
 
     private boolean applicable(ParaFun f, List<Expr> args) {
         int argi=0;
-        for(VarDecl d:f.decls) for(int j=0; j<d.names.size(); j++) {
+        for(VarDecl d:f.getDecls()) for(int j=0; j<d.names.size(); j++) {
             Type arg=args.get(argi).type;
             argi++;
             if (arg.size()==0) continue;
@@ -1059,7 +1118,7 @@ public final class VisitTypechecker {
     }
 
     private boolean containsApplicable(Set<Object> x, int n) {
-        for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).argCount==n) return true;
+        for(Object y:x) if (y instanceof ParaFun && ((ParaFun)y).getArgCount()==n) return true;
         return false;
     }
 
@@ -1068,6 +1127,7 @@ public final class VisitTypechecker {
     //==========================================================//
 
     public Expr visit(ExprJoin x, Type p) {
+    	if (cached(x)) return x;
         // leftType' = {r1 | r1 in leftType and there exists r2 in rightType such that r1.r2 in parentType}
         // rightType' = {r2 | r2 in rightType and there exists r1 in leftType such that r1.r2 in parentType}
         Type leftType = Type.make();

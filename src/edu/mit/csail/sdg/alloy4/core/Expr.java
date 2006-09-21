@@ -1,5 +1,7 @@
 package edu.mit.csail.sdg.alloy4.core;
 
+import java.util.ArrayList;
+
 import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.ErrorType;
@@ -163,6 +165,27 @@ public abstract class Expr {
         if (myArity>0 && myArity==y.type.arity())
             return ExprBinary.Op.IN.make(pos, me, y, Type.FORMULA);
         throw internalError("Cannot perform Expr.in()");
+    }
+
+    /**
+     * Convenience method that
+     * returns a typechecked node representing ("this and y are disjoint")
+     * <br/> Note: this node and y must both be fully typechecked.
+     *
+     * @throws ErrorInternal if this node and y are not both fully typechecked
+     */
+    public final Expr disj(Expr y) {
+        if (type==null) throw internalError("The node is not yet typechecked");
+        if (y.type==null) throw y.internalError("The node is not yet typechecked");
+        Expr me=(VisitTypechecker.autoIntCast ? this.int2sigint() : this);
+        if (VisitTypechecker.autoIntCast) y=y.int2sigint();
+        Type returnType = me.type.intersect(y.type);
+        if (returnType.hasNoTuple()) return TRUE(pos);
+        return ExprUnary.Op.NO.make(pos, ExprBinary.Op.INTERSECT.make(pos, me, y, returnType), Type.FORMULA);
+    }
+
+    public static final Expr TRUE(Pos p) {
+    	return new ExprSequence(p, new ArrayList<Expr>());
     }
 
     /**

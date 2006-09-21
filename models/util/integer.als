@@ -13,12 +13,12 @@ module util/integer
  */
 
 /* add */
-fun add (n1, n2: Int) : Int { $ (int n1 + int n2) }
+fun add (n1, n2: Int) : Int { Int [int n1 + int n2] }
 /* subtract */
-fun sub (n1, n2: Int) : Int { $ (int n1 - int n2) }
+fun sub (n1, n2: Int) : Int { Int [int n1 - int n2] }
 
 /* negate */
-fun negate (n: Int) : Int { $ (0 - int n) }
+fun negate (n: Int) : Int { Int [0 - int n] }
 
 /* equal to */
 pred eq (n1, n2: Int) { int n1 = int n2 }
@@ -48,7 +48,7 @@ pred nonneg (n: Int) { int n >= 0 }
 
 /* signum (aka sign or sgn) */
 fun signum (n: Int) : Int {
-  $ (pos[n] => (0 - 1) else (neg[n] => 1 else 0))
+  Int [pos[n] => (0 - 1) else (neg[n] => 1 else 0)]
 }
 
 /*
@@ -66,5 +66,5 @@ fun int2elem(i: Int, next: univ->univ, s: set univ) : lone univ {
  * like that provided by util/ordering
  */
 fun elem2int(e: univ, next: univ->univ) : lone Int {
-  $ # ^next.e
+  Int[# ^next.e]
 }

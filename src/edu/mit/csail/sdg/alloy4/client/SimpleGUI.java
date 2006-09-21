@@ -123,8 +123,8 @@ public final class SimpleGUI {
                     String summary = "The result" + (result.size()>1?"s are":" is");
                     for(TranslateAlloyToKodkod.Result b:result) {
                         switch(b) {
-                        case SAT: TRIVIALLY_SAT: summary+=" SAT"; break;
-                        case UNSAT: TRIVIALLY_UNSAT: summary+=" UNSAT"; break;
+                        case SAT: case TRIVIALLY_SAT: summary+=" SAT"; break;
+                        case UNSAT: case TRIVIALLY_UNSAT: summary+=" UNSAT"; break;
                         default: summary+=" CANCELED";
                         }
                     }

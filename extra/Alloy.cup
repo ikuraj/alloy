@@ -111,7 +111,6 @@ parser code {:
     ch.put(AlloySym.CARET           , "^");
     ch.put(AlloySym.COLON           , ":");
     ch.put(AlloySym.COMMA           , ",");
-    ch.put(AlloySym.DOLLAR          , "$");
     ch.put(AlloySym.DOMAIN          , "<:");
     ch.put(AlloySym.DOT             , ".");
     ch.put(AlloySym.EQUALS          , "=");
@@ -354,7 +353,7 @@ terminal Pos CHECK;            //  check
 terminal Pos COLON;            //  :
 terminal Pos COMMA;            //  ,
 terminal Pos DISJ;             //  disj disjoint
-terminal Pos DOLLAR;           //  $
+//terminal Pos DOLLAR;           //  $
 terminal Pos DOMAIN;           //  <:
 terminal Pos DOT;              //  .
 terminal Pos ELSE;             //  else
@@ -725,7 +724,7 @@ NumUnopExpr ::=          OverrideExpr:b      {: RESULT=b;                       
 NumUnopExpr ::= HASH:o   NumUnopExpr:b       {: RESULT=ExprUnary.Op.CARDINALITY.make(o,b);  :};
 NumUnopExpr ::= SUM:o    NumUnopExpr:b       {: RESULT=ExprUnary.Op.SUM        .make(o,b);  :};
 NumUnopExpr ::= INT:o    NumUnopExpr:b       {: RESULT=ExprUnary.Op.SUM        .make(o,b);  :};
-NumUnopExpr ::= DOLLAR:o NumUnopExpr:b       {: RESULT=ExprUnary.Op.INTTOATOM  .make(o,b);  :};
+// NumUnopExpr ::= DOLLAR:o NumUnopExpr:b       {: RESULT=ExprUnary.Op.INTTOATOM  .make(o,b);  :};
 
 OverrideExpr ::=                           IntersectExpr:b   {: RESULT=b;                                   :};
 OverrideExpr ::= OverrideExpr:a PLUSPLUS:o IntersectExpr:b   {: RESULT=ExprBinary.Op.PLUSPLUS.make(o,a,b);  :};

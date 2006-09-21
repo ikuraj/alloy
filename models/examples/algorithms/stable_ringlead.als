@@ -58,13 +58,13 @@ fun YAtState(p : Process, t : State) : Int {
 }
 
 fun g(a, b : Val) : Int {
-  $ ((a = b) => (# Val) else int(minus[b,a]))
+  Int [(a = b) => (# Val) else int(minus[b,a])]
 }
 
 fun minus(v1, v2 : Val) : Int {
-  $ ((v1 = v2) => 0
+  Int [(v1 = v2) => 0
     else vo/gt[v1,v2] => (#(vo/nexts[v2] & vo/prevs[v1] + v1))
-    else (# (Val - (vo/nexts[v1] & vo/prevs[v2] + v1))))
+    else (# (Val - (vo/nexts[v1] & vo/prevs[v2] + v1)))]
 }
 
 fun Trans(oldVal : Val, x, y : Int) : Val {
