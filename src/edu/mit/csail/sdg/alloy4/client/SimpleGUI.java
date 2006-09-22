@@ -85,6 +85,9 @@ public final class SimpleGUI {
 	}
 	
 	private static final String[] changelog = new String[]{
+		"2006 Sep 22, 12:30PM:",
+		"  Fixed several bugs in the visualizer regarding skolem values and SIGINT values.",
+		"  They should show up correctly now.",
 		"2006 Sep 22, 10AM:",
 		"  Added 2 more buttons to the visualizer for debugging: KodInstance and VizInstance.",
 		"  KodInstance displays the toString() result on the KodKod instance.",

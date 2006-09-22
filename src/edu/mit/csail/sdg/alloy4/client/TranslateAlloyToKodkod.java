@@ -182,7 +182,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private Formula isInAM(Expression r, ExprBinary op, Expression a, Expression b) {
         int arity=a.arity();
         if (arity==1) {
-            Variable v1=Variable.unary("@");
+            Variable v1=Variable.unary("$");
             Expression x=v1.join(r);
             Formula ans=x.in(b);
             switch(op.op) {
@@ -195,18 +195,13 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
             return ans.forAll(v1.oneOf(a));
         }
-        /*
-         List<Variable> vars=new ArrayList<Variable>(arity);
-         Expression temp=r;
-         for(int i=0; i<arity; i++) { Variable v1=Variable.unary("@"); temp=v1.join(temp); vars.add(v1); }
-         */
         throw op.internalError("Only unary and binary multiplicity are currently supported."/*zzz*/);
     }
 
     private Formula isInNB(Expression r, ExprBinary op, Expression a, Expression b) {
         int arity=b.arity();
         if (arity==1) {
-            Variable v2=Variable.unary("@");
+            Variable v2=Variable.unary("$");
             Expression x=r.join(v2);
             Formula ans=x.in(a);
             switch(op.op) {
@@ -323,11 +318,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         demul=true;
         Expression dv=cset(dex);
         demul=old;
-        for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
+        for(String n:d.names) { Variable var=Variable.nary(n, dv.arity()); vars.add(var); env.put(n,var); }
         Formula ans1=cform(x.sub);
         for(String n:d.names) { env.remove(n); }
         if (x.op==ExprQuant.Op.LONE) {
-            for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
+            for(String n:d.names) { Variable var=Variable.nary(n, dv.arity()); vars.add(var); env.put(n,var); }
             Formula ans2=cform(x.sub);
             for(String n:d.names) { env.remove(n); }
             Formula ans3=Formula.TRUE;
@@ -351,11 +346,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             else if (((ExprUnary)dex).op==ExprUnary.Op.LONEMULT) op=ExprUnary.Op.LONEMULT;
         }
         Expression dv=cset(stripSetMult(dex));
-        for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
+        for(String n:d.names) { Variable var=Variable.nary(n, dv.arity()); vars.add(var); env.put(n,var); }
         Formula ans1=cform(x.sub);
         for(String n:d.names) { env.remove(n); }
         if (x.op==ExprQuant.Op.LONE) {
-            for(String n:d.names) { Variable var=Variable.nary("@"+n, dv.arity()); vars.add(var); env.put(n,var); }
+            for(String n:d.names) { Variable var=Variable.nary(n, dv.arity()); vars.add(var); env.put(n,var); }
             Formula ans2=cform(x.sub);
             for(String n:d.names) { env.remove(n); }
             Formula ans3=Formula.TRUE;
@@ -909,7 +904,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    // TODO: do we allow sigs to extends or subset SIGINT?
     private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice, String dest)  {
         Result mainResult=null;
         Unit root=units.get(0);
@@ -945,7 +939,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         unique.clear();
         Set<String> atoms=new LinkedHashSet<String>();
         if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
-        if (ParaSig.SIGINT.subs.size()>0) throw ParaSig.SIGINT.subs.get(0).internalError("SIGINT can no longer be extended!");
         if (hasSigInt) for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
             String ii=new String("Int_"+i);
             atoms.add(ii);
@@ -1115,6 +1108,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String dest) {
+    	LinkedHashSet<String> skolemSet = new LinkedHashSet<String>();
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
         FileWriter fw=null;
         BufferedWriter bw=null;
@@ -1146,7 +1140,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());
         }
         Instance inst=sol.instance();
-        //log.log(inst.toString());
         Evaluator eval=new Evaluator(inst);
         out.printf("<solution name=\"%s\">%n", "this");
         IdentitySet<Relation> rels=new IdentitySet<Relation>();
@@ -1228,7 +1221,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             out.printf("</module>%n");
         }
         for(Relation r:inst.relations()) if (!rels.contains(r)) {
-        	out.printf("<skolem name=\"%s\">%n", r.name());
+        	String name=r.name();
+        	while(skolemSet.contains(name)) name=name+"\'";
+        	skolemSet.add(name);
+        	out.printf("<skolem name=\"$%s\">%n", name);
         	writeXML_tupleset(out, null, inst.tuples(r));
             out.printf("</skolem>%n");        	
         }
