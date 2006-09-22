@@ -129,6 +129,7 @@ public final class SimpleGUI {
         all.add(textPane, BorderLayout.CENTER);
         frame.pack();
         frame.setSize(new Dimension(width,height));
+        frame.setLocation(screenWidth/6, screenHeight/6);
         frame.setVisible(true);
 	}
 
@@ -626,7 +627,9 @@ public final class SimpleGUI {
          }
         }
 
-        int width=1000, height=600;
+        int screenWidth=getScreenWidth();
+        int screenHeight=getScreenHeight();
+        int width=screenWidth/10*8, height=screenHeight/10*8;
         Font font=new Font("Monospaced",0,12);
         JMenuBar bar=new JMenuBar();
         bar.setVisible(true);
@@ -722,7 +725,7 @@ public final class SimpleGUI {
 
         // Create a JSplitPane to hold the text editor and the message area
         JSplitPane split=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane);
-        split.setDividerLocation(500);
+        split.setDividerLocation(width/2);
         split.setOneTouchExpandable(false);
 
         // Make the JFrame, and put the JSplitPane and a JLabel into it.
@@ -741,6 +744,7 @@ public final class SimpleGUI {
         frame.setJMenuBar(bar);
         frame.pack();
         frame.setSize(new Dimension(width,height));
+        frame.setLocation(screenWidth/10, screenHeight/10);
         frame.setVisible(true);
         
         log(AlloyVersion.version(), styleGreen);
