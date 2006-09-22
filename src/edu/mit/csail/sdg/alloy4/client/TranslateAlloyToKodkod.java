@@ -38,6 +38,7 @@ import edu.mit.csail.sdg.alloy4.util.Env;
 import edu.mit.csail.sdg.alloy4.util.Err;
 import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.util.IdentitySet;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.Pos;
 import kodkod.ast.IntExpression;
@@ -699,7 +700,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /**                                                                         */
     /*==========================================================================*/
 
-    private Expression kuniv=null;//Relation.UNIV;
+    private Expression kuniv=Relation.INTS;//Relation.UNIV;
     private Expression kiden=Relation.IDEN;
 
     // zzz: Should make sure we don't load Int unless we need to
@@ -720,8 +721,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             Relation r=Relation.unary(s.fullname);
             rel(s,r);
             if (kuniv!=Relation.UNIV) {
-            	if (kuniv==null) kuniv=r; else kuniv=kuniv.union(r);
-            	kiden = Relation.IDEN.intersection(kuniv.product(kuniv));
+            	kuniv=kuniv.union(r);
+            	kiden=Relation.IDEN.intersection(kuniv.product(kuniv));
             }
         }
         // Generate the relations for the FIELDS
@@ -1114,9 +1115,26 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String dest) {
+        if (sol.outcome()!=Outcome.SATISFIABLE) return;
         FileWriter fw=null;
         BufferedWriter bw=null;
         PrintWriter out=null;
+        try {
+            fw=new FileWriter(dest+".txt");
+            bw=new BufferedWriter(fw);
+            out=new PrintWriter(bw);
+        } catch(IOException ex) {
+            if (out!=null) { out.close(); out=null; }
+            if (bw!=null) { try {bw.close();} catch(IOException exx) {} bw=null; }
+            if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
+            throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());
+        }
+        out.println(sol);
+        out.flush();
+        out.close();
+        try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
+        try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
+        out=null; bw=null; fw=null;      
         try {
             fw=new FileWriter(dest);
             bw=new BufferedWriter(fw);
@@ -1127,12 +1145,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
             throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());
         }
-        if (sol.outcome()!=Outcome.SATISFIABLE) return;
         Instance inst=sol.instance();
         //log.log(inst.toString());
         Evaluator eval=new Evaluator(inst);
         out.printf("<solution name=\"%s\">%n", "this");
-        Set<Relation> rels=new LinkedHashSet<Relation>(inst.relations());
+        IdentitySet<Relation> rels=new IdentitySet<Relation>();
         for(Unit u:units) {
             String n=u.aliases.get(0);
             out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
@@ -1140,7 +1157,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 out.printf("<sig name=\"univ\">%n");
                 for(Tuple t:eval.evaluate(kuniv)) {
                     String atom=(String)(t.atom(0));
-                    //if (atom.startsWith("Int_")) continue;
                     out.printf("  <atom name=\"%s\"/>%n", atom);
                 }
                 out.printf("</sig>%n");
@@ -1157,7 +1173,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 String lastatom="";
                 ParaSig s=e.getValue();
                 Relation r=(Relation)(rel(s));
-                rels.remove(r);
+                rels.add(r);
                 if (s.sup()!=null)
                     out.printf("<sig name=\"%s\" extends=\"%s\">%n", s.fullvname, s.sup().fullvname);
                 else if (!s.subset)
@@ -1172,9 +1188,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     Relation rfirst = right(rel(s.fields.get(0)));
                     Relation rlast = right(rel(s.fields.get(1)));
                     Relation rnext = right(rel(s.fields.get(2)));
-                    rels.remove(rfirst);
-                    rels.remove(rlast);
-                    rels.remove(rnext);
+                    rels.add(rfirst);
+                    rels.add(rlast);
+                    rels.add(rnext);
                     out.printf("  <field name=\"first\" arity=\"2\">%n");
                     out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
                     writeXML_tupleset(out, lastatom, inst.tuples(rfirst));
@@ -1192,7 +1208,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     for(VarDecl fd:s.decls) for(String fn:fd.names) {
                         Field f=s.fields.get(fi); fi++;
                         Relation rf=(Relation)(rel(f));
-                        rels.remove(rf);
+                        rels.add(rf);
                         out.printf("  <field name=\"%s\" arity=\"%d\">%n", fn, rf.arity());
                         Type type=f.fulltype;
                         for(Type.Rel t:type) {
@@ -1211,7 +1227,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
             out.printf("</module>%n");
         }
-        //for(Relation r:rels) { }
+        for(Relation r:inst.relations()) if (!rels.contains(r)) {
+        	out.printf("<skolem name=\"%s\">%n", r.name());
+        	writeXML_tupleset(out, null, inst.tuples(r));
+            out.printf("</skolem>%n");        	
+        }
         out.printf("%n</solution>%n");
         out.flush();
         out.close();

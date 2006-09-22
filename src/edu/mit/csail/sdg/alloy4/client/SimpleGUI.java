@@ -75,6 +75,10 @@ public final class SimpleGUI {
 	}
 	
 	private static final String[] changelog = new String[]{
+		"2006 Sep 22, 10AM:",
+		"  Added 2 more buttons to the visualizer for debugging: KodInstance and VizInstance.",
+		"  KodInstance displays the toString() result on the KodKod instance.",
+		"  VizInstance displays the VizInstance we get after parsing the XML file.",
 		"2006 Sep 21, 3:55PM:",
 		"  Added a new builtin method: disj",
 		"  disj is a predicate that takes 2 or more arguments.",
@@ -116,7 +120,7 @@ public final class SimpleGUI {
 			}
 		}
 		JScrollPane textPane=new JScrollPane(log,
-				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+				ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		textPane.setMinimumSize(new Dimension(50, 50));
 		final JFrame frame=new JFrame("Alloy change log");
