@@ -19,8 +19,8 @@ public final class SimpleCLI {
     private static final String fs=System.getProperty("file.separator");
 
     private static void run(int code, String[] args, Log log) throws FileNotFoundException {
-    	Preferences pref=Preferences.userNodeForPackage(SimpleCLI.class);
-    	String alloyhome=pref.get("basedir","");
+        Preferences pref=Preferences.userNodeForPackage(SimpleCLI.class);
+        String alloyhome=pref.get("basedir","");
         String dest=alloyhome+fs+"tmp"+fs+"solution.xml";
         ArrayList<Unit> units;
         ArrayList<ParaSig> sigs;

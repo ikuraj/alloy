@@ -425,7 +425,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             ParaFun y=(ParaFun)r;
             if (y.getArgCount()!=0) throw x.internalError("ExprName \""+x.name+"\" is not resolved prior to code gen! Its resolution == "+r);
             Env<Object> oldenv=this.env; String oldfunc=current_function;
-            env=new Env<Object>(); current_function=y.name+"_"; 
+            env=new Env<Object>(); current_function=y.name+"_";
             ans=y.getValue().accept(this);
             env=oldenv; current_function=oldfunc;
             return ans;
@@ -683,8 +683,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private Expression kuniv=Relation.INTS;//Relation.UNIV;
     private Expression kiden=Relation.IDEN;
 
-    // zzz: Should make sure we don't load Int unless we need to
-
     private boolean alloy3(ParaSig s, Unit u) {
         ParaSig elem=u.params.get("elem");
         return (elem!=null
@@ -701,8 +699,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             Relation r=Relation.unary(s.fullname);
             rel(s,r);
             if (kuniv!=Relation.UNIV) {
-            	kuniv=kuniv.union(r);
-            	kiden=Relation.IDEN.intersection(kuniv.product(kuniv));
+                kuniv=kuniv.union(r);
+                kiden=Relation.IDEN.intersection(kuniv.product(kuniv));
             }
         }
         // Generate the relations for the FIELDS
@@ -936,10 +934,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeUpperBound(s); atoms.addAll(sig2upperbound(s)); }
         boolean universeEmpty=atoms.isEmpty();
         if (universeEmpty) {
-        	String ii="Int_0"; // If the universe is empty, we have no choice but to add at least 1 atom.
-        	atoms.add(ii);
-        	sig2lowerbound(ParaSig.SIGINT).add(ii);
-        	sig2upperbound(ParaSig.SIGINT).add(ii);
+            String ii="Int_0"; // If the universe is empty, we have no choice but to add at least 1 atom.
+            atoms.add(ii);
+            sig2lowerbound(ParaSig.SIGINT).add(ii);
+            sig2upperbound(ParaSig.SIGINT).add(ii);
         }
         final Universe universe = new Universe(atoms);
         final TupleFactory factory = universe.factory();
@@ -1028,7 +1026,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             else if (solverChoice==1)
                 solver.options().setSolver(SATFactory.ZChaffBasic);
             else if (solverChoice==2)
-            	solver.options().setSolver(SATFactory.MiniSat);
+                solver.options().setSolver(SATFactory.MiniSat);
             solver.options().setBitwidth(bitwidth);
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
             log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");
@@ -1095,7 +1093,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String dest) {
-    	LinkedHashSet<String> skolemSet = new LinkedHashSet<String>();
+        LinkedHashSet<String> skolemSet = new LinkedHashSet<String>();
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
         FileWriter fw=null;
         BufferedWriter bw=null;
@@ -1115,7 +1113,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         out.close();
         try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
         try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
-        out=null; bw=null; fw=null;      
+        out=null; bw=null; fw=null;
         try {
             fw=new FileWriter(dest);
             bw=new BufferedWriter(fw);
@@ -1141,12 +1139,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 }
                 out.printf("</sig>%n");
                 if (!eval.evaluate(Relation.INTS).isEmpty()) {
-                	out.printf("<sig name=\"Int\" extends=\"univ\">%n");
-                	for(Tuple t:eval.evaluate(Relation.INTS)) {
-                		String atom=(String)(t.atom(0));
-                		out.printf("  <atom name=\"%s\"/>%n", atom);
-                	}
-                	out.printf("</sig>%n");
+                    out.printf("<sig name=\"Int\" extends=\"univ\">%n");
+                    for(Tuple t:eval.evaluate(Relation.INTS)) {
+                        String atom=(String)(t.atom(0));
+                        out.printf("  <atom name=\"%s\"/>%n", atom);
+                    }
+                    out.printf("</sig>%n");
                 }
             }
             for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
@@ -1208,12 +1206,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             out.printf("</module>%n");
         }
         for(Relation r:inst.relations()) if (!rels.contains(r)) {
-        	String name=r.name();
-        	while(skolemSet.contains(name)) name=name+"\'";
-        	skolemSet.add(name);
-        	out.printf("<skolem name=\"$%s\">%n", name);
-        	writeXML_tupleset(out, null, inst.tuples(r));
-            out.printf("</skolem>%n");        	
+            String name=r.name();
+            while(skolemSet.contains(name)) name=name+"\'";
+            skolemSet.add(name);
+            out.printf("<skolem name=\"$%s\">%n", name);
+            writeXML_tupleset(out, null, inst.tuples(r));
+            out.printf("</skolem>%n");
         }
         out.printf("%n</solution>%n");
         out.flush();

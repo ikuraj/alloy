@@ -117,8 +117,8 @@ public final class ExprName extends Expr {
             +name+"\" keyword.";
         throw new ErrorSyntax(pos, msg);
     }
-    
+
     @Override public String toString() {
-    	return "ExprName("+name+", type="+type+", hash="+hashCode()+")";
+        return "ExprName("+name+", type="+type+", hash="+hashCode()+")";
     }
 }

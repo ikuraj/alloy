@@ -118,15 +118,15 @@ public final class ParaSig extends Para {
             if (e!=null) throw this.syntaxError("A signature cannot both be a subset signature and a subsignature!");
             if (i.size()==0) throw this.syntaxError("To declare a subset signature, you must give the names of its parent signatures!");
             for(String ii:i) {
-            	if (SIGINT_NAME.equals(ii))
-            		throw this.syntaxError("You can no longer declare a sig to be a subset of Int!");
-            	sups.add(ii);
+                if (SIGINT_NAME.equals(ii))
+                    throw this.syntaxError("You can no longer declare a sig to be a subset of Int!");
+                sups.add(ii);
             }
             subset=true;
         } else subset=false;
 
         if (SIGINT_NAME.equals(e))
-        	throw this.syntaxError("You can no longer declare a sig to be a subsig of Int!");
+            throw this.syntaxError("You can no longer declare a sig to be a subsig of Int!");
         sup=e;
 
         fields=new ArrayList<Field>();

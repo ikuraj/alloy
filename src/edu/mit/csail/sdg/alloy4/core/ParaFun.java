@@ -20,21 +20,21 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 
 public final class ParaFun extends Para {
 
-	private ParaFun(String name) {
-		super(new Pos("$builtin$",1,1), "", name);
-		this.decls=null;
-		this.argCount=0;
-		this.type=null;
-		this.value=null;
-	}
+    private ParaFun(String name) {
+        super(new Pos("$builtin$",1,1), "", name);
+        this.decls=null;
+        this.argCount=0;
+        this.type=null;
+        this.value=null;
+    }
 
-	public static final ParaFun INT    = new ParaFun("int");
-	public static final ParaFun SIGINT = new ParaFun("Int");
-	public static final ParaFun DISJ   = new ParaFun("disj");
+    public static final ParaFun INT    = new ParaFun("int");
+    public static final ParaFun SIGINT = new ParaFun("Int");
+    public static final ParaFun DISJ   = new ParaFun("disj");
 
-	private void check() {
-		if (this==INT || this==SIGINT || this==DISJ) throw internalError("Builtin function cannot be directly accessed!");
-	}
+    private void check() {
+        if (this==INT || this==SIGINT || this==DISJ) throw internalError("Builtin function cannot be directly accessed!");
+    }
 
     /** The mutable list of parameters (its number of names must match this.argCount). */
     private List<VarDecl> decls;
