@@ -74,6 +74,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     public enum Result { CANCELED, SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
+    private String current_function=""; // This is purely a hint, meant to give a more meaningful Skolem names.
+                                       // Correctness is not required.
+
     /**
      * Convenience method that evalutes x and cast the result to be a Kodkod Formula.
      * @return the formula - if x evaluates to a Formula
@@ -283,7 +286,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
             Expression dv=cset(stripSetMult(d.value));
             exprs.add(dv);
-            for(String n:d.names) { Variable var=Variable.nary("VAR<"+n+">",dv.arity()); vars.add(var); env.put(n,var); }
+            for(String n:d.names) { Variable var=Variable.nary(current_function+n,dv.arity()); vars.add(var); env.put(n,var); }
         }
         Formula ans=cform(x.sub);
         for(VarDecl d:x.list) {
@@ -318,11 +321,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         demul=true;
         Expression dv=cset(dex);
         demul=old;
-        for(String n:d.names) { Variable var=Variable.nary(n, dv.arity()); vars.add(var); env.put(n,var); }
+        for(String n:d.names) { Variable var=Variable.nary(current_function+n, dv.arity()); vars.add(var); env.put(n,var); }
         Formula ans1=cform(x.sub);
         for(String n:d.names) { env.remove(n); }
         if (x.op==ExprQuant.Op.LONE) {
-            for(String n:d.names) { Variable var=Variable.nary(n, dv.arity()); vars.add(var); env.put(n,var); }
+            for(String n:d.names) { Variable var=Variable.nary(current_function+n, dv.arity()); vars.add(var); env.put(n,var); }
             Formula ans2=cform(x.sub);
             for(String n:d.names) { env.remove(n); }
             Formula ans3=Formula.TRUE;
@@ -346,11 +349,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             else if (((ExprUnary)dex).op==ExprUnary.Op.LONEMULT) op=ExprUnary.Op.LONEMULT;
         }
         Expression dv=cset(stripSetMult(dex));
-        for(String n:d.names) { Variable var=Variable.nary(n, dv.arity()); vars.add(var); env.put(n,var); }
+        for(String n:d.names) { Variable var=Variable.nary(current_function+n, dv.arity()); vars.add(var); env.put(n,var); }
         Formula ans1=cform(x.sub);
         for(String n:d.names) { env.remove(n); }
         if (x.op==ExprQuant.Op.LONE) {
-            for(String n:d.names) { Variable var=Variable.nary(n, dv.arity()); vars.add(var); env.put(n,var); }
+            for(String n:d.names) { Variable var=Variable.nary(current_function+n, dv.arity()); vars.add(var); env.put(n,var); }
             Formula ans2=cform(x.sub);
             for(String n:d.names) { env.remove(n); }
             Formula ans3=Formula.TRUE;
@@ -421,7 +424,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (r instanceof ParaFun) {
             ParaFun y=(ParaFun)r;
             if (y.getArgCount()!=0) throw x.internalError("ExprName \""+x.name+"\" is not resolved prior to code gen! Its resolution == "+r);
-            Env<Object> oldenv=this.env; this.env=new Env<Object>(); ans=y.getValue().accept(this); this.env=oldenv; return ans;
+            Env<Object> oldenv=this.env; String oldfunc=current_function;
+            env=new Env<Object>(); current_function=y.name+"_"; 
+            ans=y.getValue().accept(this);
+            env=oldenv; current_function=oldfunc;
+            return ans;
         }
         ans=env.get(x.name);
         if (ans==null) throw x.internalError("ExprName \""+x.name+"\" cannot be found during code gen! r=="+r);
@@ -433,32 +440,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /*==============================*/
 
     public Object visit(ExprJoin x) {
-        /*
-        int count=1;
-        ExprJoin ptr=x;
-        while(ptr.right instanceof ExprJoin) { count++; ptr=(ExprJoin)(ptr.right); }
-        if (ptr.right instanceof ExprName && ((ExprName)ptr.right).object instanceof ParaFun) {
-            ParaFun f=(ParaFun) (((ExprName)ptr.right).object);
-            if (f.argCount>count)
-                throw x.internalError("Argument count mismatch. This should have been detected by the typechecker!");
-            if (f.argCount==count) {
-                Env newenv=new Env();
-                for(int di=f.decls.size()-1; di>=0; di--) {
-                    VarDecl d=f.decls.get(di);
-                    for(int ni=d.names.size()-1; ni>=0; ni--) {
-                        String n=d.names.get(ni);
-                        newenv.put(n, cset(x.left));
-                        x=(ExprJoin)(x.right);
-                    }
-                }
-                Env oldenv=this.env;
-                this.env=newenv;
-                Object ans=f.value.accept(this);
-                this.env=oldenv;
-                return ans;
-            }
-        }
-        */
         Expression a=cset(x.left);
         Expression b=cset(x.right);
         return a.join(b);
@@ -479,7 +460,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 newenv.put(n,cset(x.args.get(r))); r++;
             }
         }
-        Env<Object> oldenv=this.env; this.env=newenv; Object ans=y.getValue().accept(this); this.env=oldenv; return ans;
+        Env<Object> oldenv=env; env=newenv;
+        String oldfunc=current_function; current_function=y.name+"_";
+        Object ans=y.getValue().accept(this);
+        env=oldenv; current_function=oldfunc;
+        return ans;
     }
 
 //################################################################################################
@@ -924,7 +909,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 v=ExprBinary.Op.IN.make(v.pos, v, vv, Type.FORMULA);
             }
             if (e.getArgCount()>0) v=ExprQuant.Op.SOME.make(v.pos, e.getDecls(), v, Type.FORMULA);
+            current_function=e.name+"_";
             mainformula=((Formula)(v.accept(this))).and(kfact);
+            current_function="";
         }
         } catch(HigherOrderDeclException ex) {
           log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n");
