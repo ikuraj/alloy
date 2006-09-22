@@ -66,6 +66,16 @@ import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 @SuppressWarnings("serial")
 public final class SimpleGUI {
 	
+	private void addHistory(String f) {
+		String name0=get("history0");
+		String name1=get("history1");
+		String name2=get("history2");
+		if (name0.equals(f)) return;
+		if (name1.equals(f)) { set("history1",name0); set("history0",f); return; }
+		if (name2.equals(f)) { set("history2",name1); set("history1",name0); set("history0",f); return ;}
+		set("history3",name2); set("history2",name1); set("history1",name0); set("history0",f);
+	}
+
 	public static int getScreenWidth() {
 		return Toolkit.getDefaultToolkit().getScreenSize().width;
 	}
@@ -240,6 +250,7 @@ public final class SimpleGUI {
 			modified(false);
 			log("\nContent saved to file \""+filename+"\"", styleGreen);
 			latestName=filename;
+			addHistory(filename);
 			frame.setTitle("Alloy File: "+latestName);
 			return true;
 		} catch(IOException e) {
@@ -544,13 +555,7 @@ public final class SimpleGUI {
 			log("\nFile \""+f+"\" successfully loaded.", styleGreen);
 			frame.setTitle("Alloy File: "+f);
 			latestName=f;
-			String name0=get("history0");
-			String name1=get("history1");
-			String name2=get("history2");
-			if (name0.equals(f)) { }
-			else if (name1.equals(f)) { set("history1",name0); set("history0",f); }
-			else if (name2.equals(f)) { set("history2",name1); set("history1",name0); set("history0",f); }
-			else { set("history3",name2); set("history2",name1); set("history1",name0); set("history0",f); }
+			addHistory(f);
 			compiled(false);
 			modified(false);
 		} catch(FileNotFoundException e) { log("\nCannot open the file! "+e.toString(), styleGreen);
