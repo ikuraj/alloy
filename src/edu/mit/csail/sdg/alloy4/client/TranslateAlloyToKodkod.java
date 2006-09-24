@@ -1092,6 +1092,13 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         for(Tuple tp:tps) writeXML_tuple(out, firstatom, tp);
     }
 
+    private void writeXML_atoms(PrintWriter out, TupleSet tps) {
+        for(Tuple t:tps) {
+          String atom=(String)(t.atom(0));
+          out.printf("  <atom name=\"%s\"/>%n", atom);
+        }
+    }
+
     private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String dest) {
         LinkedHashSet<String> skolemSet = new LinkedHashSet<String>();
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
@@ -1126,42 +1133,31 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         Instance inst=sol.instance();
         Evaluator eval=new Evaluator(inst);
-        out.printf("<solution name=\"%s\">%n", "this");
+        out.printf("<instance name=\"%s\">%n", "this");
         IdentitySet<Relation> rels=new IdentitySet<Relation>();
-        for(Unit u:units) {
+        for(int ui=units.size()-1; ui>=0; ui--) { // Goes backwards since we want the ROOT MODULE at the end
+        	Unit u=units.get(ui);
             String n=u.aliases.get(0);
             out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
-            if (u==units.get(0)) {
-                out.printf("<sig name=\"univ\">%n");
-                for(Tuple t:eval.evaluate(kuniv)) {
-                    String atom=(String)(t.atom(0));
-                    out.printf("  <atom name=\"%s\"/>%n", atom);
-                }
-                out.printf("</sig>%n");
-                if (!eval.evaluate(Relation.INTS).isEmpty()) {
-                    out.printf("<sig name=\"Int\" extends=\"univ\">%n");
-                    for(Tuple t:eval.evaluate(Relation.INTS)) {
-                        String atom=(String)(t.atom(0));
-                        out.printf("  <atom name=\"%s\"/>%n", atom);
-                    }
-                    out.printf("</sig>%n");
-                }
-            }
             for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
                 String lastatom="";
                 ParaSig s=e.getValue();
                 Relation r=(Relation)(rel(s));
                 rels.add(r);
                 if (s.sup()!=null)
-                    out.printf("<sig name=\"%s\" extends=\"%s\">%n", s.fullvname, s.sup().fullvname);
+                {
+                 if (s.sup()==ParaSig.UNIV) out.printf("<sig name=\"%s\">%n", s.fullvname);
+                 else  out.printf("<sig name=\"%s\" extends=\"%s\">%n", s.fullvname, s.sup().fullvname);
+                }
                 else if (!s.subset)
-                    out.printf("<sig name=\"%s\" extends=\"univ\">%n", s.fullvname);
+                    out.printf("<sig name=\"%s\">%n", s.fullvname);
                 else
-                    out.printf("<sig name=\"%s\" extends=\"univ\">%n", s.fullvname); // zzz WHAT SHOULD BE DONE HERE?
+                    out.printf("<sig name=\"%s\">%n", s.fullvname); // zzz WHAT SHOULD BE DONE HERE?
                 for(Tuple t:inst.tuples(r)) {
                     lastatom=(String)(t.atom(0));
                     out.printf("  <atom name=\"%s\"/>%n", lastatom);
                 }
+                out.printf("</sig>%n");
                 if (alloy3(s,u)) {
                     Relation rfirst = right(rel(s.fields.get(0)));
                     Relation rlast = right(rel(s.fields.get(1)));
@@ -1169,51 +1165,49 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     rels.add(rfirst);
                     rels.add(rlast);
                     rels.add(rnext);
-                    out.printf("  <field name=\"first\" arity=\"2\">%n");
-                    out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
+                    out.printf("<field name=\"first\">%n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rfirst));
-                    out.printf("  </field>");
-                    out.printf("  <field name=\"last\" arity=\"2\">%n");
-                    out.printf("    <type> %s </type>%n", u.params.get("elem").fullvname);
+                    out.printf("</field>%n");
+                    out.printf("<field name=\"last\">%n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rlast));
-                    out.printf("  </field>");
-                    out.printf("  <field name=\"next\" arity=\"3\">%n");
-                    out.printf("    <type> ( %s ) -> ( %s ) </type>%n", u.params.get("elem").fullvname, u.params.get("elem").fullvname);
+                    out.printf("</field>%n");
+                    out.printf("<field name=\"next\">%n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rnext));
-                    out.printf("  </field>%n");
+                    out.printf("</field>%n");
                 } else {
                     int fi=0;
                     for(VarDecl fd:s.decls) for(String fn:fd.names) {
                         Field f=s.fields.get(fi); fi++;
                         Relation rf=(Relation)(rel(f));
                         rels.add(rf);
-                        out.printf("  <field name=\"%s\" arity=\"%d\">%n", fn, rf.arity());
-                        Type type=f.fulltype;
-                        for(Type.Rel t:type) {
-                            out.printf("    <type>");
-                            for(int ti=1; ti<t.basicTypes.size(); ti++) {
-                                if (ti>1) out.printf(" -> ");
-                                out.printf(" (%s) ", t.basicTypes.get(ti).fullvname);
-                            }
-                            out.printf("</type>%n");
-                            writeXML_tupleset(out, null, inst.tuples(rf));
-                        }
-                        out.printf("  </field>%n");
+                        out.printf("<field name=\"%s\">%n", fn, rf.arity());
+                        writeXML_tupleset(out, null, inst.tuples(rf));
+                        out.printf("</field>%n");
                     }
                 }
-                out.printf("</sig>%n");
+            }
+            if (ui==0 && !eval.evaluate(Relation.INTS).isEmpty()) {
+            	out.printf("<sig name=\"Int\" extends=\"univ\">%n");
+            	writeXML_atoms(out, eval.evaluate(Relation.INTS));
+            	out.printf("</sig>%n");
+            }
+            if (ui==0) for(Relation r:inst.relations()) if (!rels.contains(r)) {
+            	String name=r.name();
+            	while(skolemSet.contains(name)) name=name+"\'";
+            	skolemSet.add(name);
+            	if (r.arity()>1) {
+            	   out.printf("<field name=\"$%s\">%n", name);
+            	   writeXML_tupleset(out, null, inst.tuples(r));
+            	   out.printf("</field>%n");
+            	} else {
+             	   out.printf("<set name=\"$%s\">%n", name);
+             	   writeXML_atoms(out, inst.tuples(r));
+            	   out.printf("</set>%n");
+            	}
             }
             out.printf("</module>%n");
         }
-        for(Relation r:inst.relations()) if (!rels.contains(r)) {
-            String name=r.name();
-            while(skolemSet.contains(name)) name=name+"\'";
-            skolemSet.add(name);
-            out.printf("<skolem name=\"$%s\">%n", name);
-            writeXML_tupleset(out, null, inst.tuples(r));
-            out.printf("</skolem>%n");
-        }
-        out.printf("%n</solution>%n");
+        out.printf("%n</instance>%n");
         out.flush();
         out.close();
         try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
