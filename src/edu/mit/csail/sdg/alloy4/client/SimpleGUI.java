@@ -86,8 +86,8 @@ public final class SimpleGUI {
 
     private static final String[] changelog = new String[]{
     	"2006 Sep 24, 3:00PM:",
-    	"  Major overhaul in the XML format for the model instance,",
-    	"  and the visualizer's palette.",
+    	"  Major overhaul in the XML formats for the model instance",
+    	"  and for the visualizer palette.",
         "2006 Sep 22, 12:30PM:",
         "  Fixed several bugs in the visualizer regarding skolem values and SIGINT values.",
         "  They should show up correctly now.",
@@ -135,6 +135,7 @@ public final class SimpleGUI {
                 // This should not happen
             }
         }
+        log.setCaretPosition(0);
         JScrollPane textPane=new JScrollPane(log,
                 ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
