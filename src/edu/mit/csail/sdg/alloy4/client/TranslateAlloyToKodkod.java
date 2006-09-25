@@ -1136,7 +1136,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         out.printf("<instance name=\"%s\">%n", "this");
         IdentitySet<Relation> rels=new IdentitySet<Relation>();
         for(int ui=units.size()-1; ui>=0; ui--) { // Goes backwards since we want the ROOT MODULE at the end
-        	Unit u=units.get(ui);
+            Unit u=units.get(ui);
             String n=u.aliases.get(0);
             out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
             for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
@@ -1187,23 +1187,23 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 }
             }
             if (ui==0 && !eval.evaluate(Relation.INTS).isEmpty()) {
-            	out.printf("<sig name=\"Int\" extends=\"univ\">%n");
-            	writeXML_atoms(out, eval.evaluate(Relation.INTS));
-            	out.printf("</sig>%n");
+                out.printf("<sig name=\"Int\" extends=\"univ\">%n");
+                writeXML_atoms(out, eval.evaluate(Relation.INTS));
+                out.printf("</sig>%n");
             }
             if (ui==0) for(Relation r:inst.relations()) if (!rels.contains(r)) {
-            	String name=r.name();
-            	while(skolemSet.contains(name)) name=name+"\'";
-            	skolemSet.add(name);
-            	if (r.arity()>1) {
-            	   out.printf("<field name=\"$%s\">%n", name);
-            	   writeXML_tupleset(out, null, inst.tuples(r));
-            	   out.printf("</field>%n");
-            	} else {
-             	   out.printf("<set name=\"$%s\">%n", name);
-             	   writeXML_atoms(out, inst.tuples(r));
-            	   out.printf("</set>%n");
-            	}
+                String name=r.name();
+                while(skolemSet.contains(name)) name=name+"\'";
+                skolemSet.add(name);
+                if (r.arity()>1) {
+                   out.printf("<field name=\"$%s\">%n", name);
+                   writeXML_tupleset(out, null, inst.tuples(r));
+                   out.printf("</field>%n");
+                } else {
+                   out.printf("<set name=\"$%s\">%n", name);
+                   writeXML_atoms(out, inst.tuples(r));
+                   out.printf("</set>%n");
+                }
             }
             out.printf("</module>%n");
         }
