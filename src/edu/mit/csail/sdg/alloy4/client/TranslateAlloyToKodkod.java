@@ -41,6 +41,7 @@ import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.IdentitySet;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.Pos;
+import edu.mit.csail.sdg.alloy4.util.Util;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
 import kodkod.ast.IntConstant;
@@ -1082,10 +1083,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     private void writeXML_tuple(PrintWriter out, String firstatom, Tuple tp) {
-        out.printf("    <tuple>");
-        if (firstatom!=null) out.printf("  <atom name=\"%s\"/>", firstatom);
-        for(int i=0; i<tp.arity(); i++) out.printf(" <atom name=\"%s\"/>", (String)(tp.atom(i)));
-        out.printf(" </tuple>%n");
+        out.print("    <tuple>");
+        if (firstatom!=null) Util.encodeXMLs(out, "  <atom name=\"", firstatom, "\"/>");
+        for(int i=0; i<tp.arity(); i++) Util.encodeXMLs(out, " <atom name=\"", (String)(tp.atom(i)), "\"/>");
+        out.print(" </tuple>\n");
     }
 
     private void writeXML_tupleset(PrintWriter out, String firstatom, TupleSet tps) {
@@ -1095,7 +1096,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private void writeXML_atoms(PrintWriter out, TupleSet tps) {
         for(Tuple t:tps) {
           String atom=(String)(t.atom(0));
-          out.printf("  <atom name=\"%s\"/>%n", atom);
+          Util.encodeXMLs(out, "  <atom name=\"", atom, "\"/>\n");
         }
     }
 
@@ -1105,22 +1106,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         FileWriter fw=null;
         BufferedWriter bw=null;
         PrintWriter out=null;
-        try {
-            fw=new FileWriter(dest+".txt");
-            bw=new BufferedWriter(fw);
-            out=new PrintWriter(bw);
-        } catch(IOException ex) {
-            if (out!=null) { out.close(); out=null; }
-            if (bw!=null) { try {bw.close();} catch(IOException exx) {} bw=null; }
-            if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
-            throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());
-        }
-        out.println(sol);
-        out.flush();
-        out.close();
-        try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
-        try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
-        out=null; bw=null; fw=null;
         try {
             fw=new FileWriter(dest+".xml");
             bw=new BufferedWriter(fw);
@@ -1133,12 +1118,16 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         Instance inst=sol.instance();
         Evaluator eval=new Evaluator(inst);
-        out.printf("<instance name=\"%s\">%n", "this");
+        out.print("<alloy>\n");
+        out.print("<instance>\n");
         IdentitySet<Relation> rels=new IdentitySet<Relation>();
         for(int ui=units.size()-1; ui>=0; ui--) { // Goes backwards since we want the ROOT MODULE at the end
             Unit u=units.get(ui);
             String n=u.aliases.get(0);
-            out.printf("%n<module name=\"%s\">%n", (n.length()==0?"this":n));
+            if (n.length()==0 || n.equals("this"))
+            	out.print("\n<module>\n");
+            else
+            	Util.encodeXMLs(out, "\n<module name=\"", (n.length()==0?"this":n), "\">\n");
             for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
                 String lastatom="";
                 ParaSig s=e.getValue();
@@ -1146,18 +1135,17 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 rels.add(r);
                 if (s.sup()!=null)
                 {
-                 if (s.sup()==ParaSig.UNIV) out.printf("<sig name=\"%s\">%n", s.fullvname);
-                 else  out.printf("<sig name=\"%s\" extends=\"%s\">%n", s.fullvname, s.sup().fullvname);
+                 if (s.sup()==ParaSig.UNIV) Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n");
+                 else Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\" extends=\"", s.sup().fullvname, "\">\n");
                 }
                 else if (!s.subset)
-                    out.printf("<sig name=\"%s\">%n", s.fullvname);
+                	Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n");
                 else
-                    out.printf("<sig name=\"%s\">%n", s.fullvname); // zzz WHAT SHOULD BE DONE HERE?
+                	Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n"); // zzz WHAT SHOULD BE DONE HERE?
                 for(Tuple t:inst.tuples(r)) {
-                    lastatom=(String)(t.atom(0));
-                    out.printf("  <atom name=\"%s\"/>%n", lastatom);
+                    Util.encodeXMLs(out, "  <atom name=\"", lastatom=(String)(t.atom(0)), "\"/>\n");
                 }
-                out.printf("</sig>%n");
+                out.printf("</sig>\n");
                 if (alloy3(s,u)) {
                     Relation rfirst = right(rel(s.fields.get(0)));
                     Relation rlast = right(rel(s.fields.get(1)));
@@ -1165,53 +1153,52 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     rels.add(rfirst);
                     rels.add(rlast);
                     rels.add(rnext);
-                    out.printf("<field name=\"first\">%n");
+                    out.print("<field name=\"first\">\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rfirst));
-                    out.printf("</field>%n");
-                    out.printf("<field name=\"last\">%n");
+                    out.print("</field>\n");
+                    out.print("<field name=\"last\">\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rlast));
-                    out.printf("</field>%n");
-                    out.printf("<field name=\"next\">%n");
+                    out.print("</field>\n");
+                    out.print("<field name=\"next\">\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rnext));
-                    out.printf("</field>%n");
+                    out.print("</field>\n");
                 } else {
                     int fi=0;
                     for(VarDecl fd:s.decls) for(String fn:fd.names) {
                         Field f=s.fields.get(fi); fi++;
                         Relation rf=(Relation)(rel(f));
                         rels.add(rf);
-                        out.printf("<field name=\"%s\">%n", fn, rf.arity());
+                        Util.encodeXMLs(out, "<field name=\"", fn, "\">\n");
                         writeXML_tupleset(out, null, inst.tuples(rf));
-                        out.printf("</field>%n");
+                        out.print("</field>\n");
                     }
                 }
             }
             if (ui==0 && !eval.evaluate(Relation.INTS).isEmpty()) {
-                out.printf("<sig name=\"Int\" extends=\"univ\">%n");
+                out.print("<sig name=\"Int\" extends=\"univ\">\n");
                 writeXML_atoms(out, eval.evaluate(Relation.INTS));
-                out.printf("</sig>%n");
+                out.print("</sig>\n");
             }
             if (ui==0) for(Relation r:inst.relations()) if (!rels.contains(r)) {
                 String name=r.name();
                 while(skolemSet.contains(name)) name=name+"\'";
                 skolemSet.add(name);
                 if (r.arity()>1) {
-                   out.printf("<field name=\"$%s\">%n", name);
+                   Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
                    writeXML_tupleset(out, null, inst.tuples(r));
-                   out.printf("</field>%n");
+                   out.print("</field>\n");
                 } else {
-                   out.printf("<set name=\"$%s\">%n", name);
+                   Util.encodeXMLs(out, "<set name=\"$", name, "\">\n");
                    writeXML_atoms(out, inst.tuples(r));
-                   out.printf("</set>%n");
+                   out.print("</set>\n");
                 }
             }
-            out.printf("</module>%n");
+            out.print("</module>\n");
         }
-        out.printf("%n</instance>%n");
+        Util.encodeXMLs(out, "\n</instance>\n\n<kinstance value=\"", sol.toString(), "\"/>\n\n</alloy>\n");
         out.flush();
         out.close();
         try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
         try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
     }
-
 }
