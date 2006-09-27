@@ -11,7 +11,9 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.prefs.Preferences;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -168,6 +170,20 @@ public final class SimpleGUI {
         log.setCaretPosition(doc.getLength());
     }
 
+    private String maketemp() {
+    	Random r=new Random(new Date().getTime());
+    	while(true) {
+    		int i=(r.nextInt()%10000);
+    		if (i<0) i=(0-i);
+    		if (i<0) i=0;
+    		String dest=alloyhome+fs+"tmp"+fs+i;
+    		File f=new File(dest);
+    		if (f.exists()) continue;
+    		f.mkdirs();
+    		return dest+fs;
+    	}
+    }
+
     /**
      * This Runnable is used to execute a SAT query.
      * By having a separate runnable, we allow the main GUI to remain responsive.
@@ -196,12 +212,13 @@ public final class SimpleGUI {
                 Log reallog=new LogToTextPane(log,styleRegular,styleGreen);
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(alloyhome, source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
-                String dest=alloyhome+fs+"tmp"+fs+"solution.xml";
+                String tempdir=maketemp();
+                String dest=tempdir+"solution.xml";
                 List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0), dest);
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     log("Visualizer loading... please wait...", styleRegular);
                     KodVizGUIFactory factory=new KodVizGUIFactory(alloyhome,false);
-                    factory.create(new File(dest));
+                    factory.create(tempdir,new File(dest));
                     log("Visualizer loaded.", styleRegular);
                 }
                 if (result.size()>1) {
@@ -400,6 +417,7 @@ public final class SimpleGUI {
                 JMenuItem x=new JMenuItem(n);
                 x.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
+                        if (!my_confirm()) return;
                         my_open(n);
                     }
                 });
@@ -493,7 +511,7 @@ public final class SimpleGUI {
                 null,
                 new Object[]{"Save","Discard",cancel},
                 cancel);
-        if (ans==JOptionPane.YES_OPTION) { if (!my_save()) return false; }
+        if (ans==JOptionPane.YES_OPTION) { if (!my_save()) return false; return true; }
         if (ans!=JOptionPane.NO_OPTION) return false;
         return true;
     }
@@ -668,7 +686,7 @@ public final class SimpleGUI {
             public void actionPerformed(ActionEvent e) { my_saveAs(); }
         }));
         filemenu.add(make_JMenuItem("Load Standalone Visualizer", KeyEvent.VK_V, null, new ActionListener() {
-            public void actionPerformed(ActionEvent e) { new KodVizGUIFactory(alloyhome,false).create(null); }
+            public void actionPerformed(ActionEvent e) { new KodVizGUIFactory(alloyhome,false).create(maketemp(),null); }
         }));
         filemenu.add(make_JMenuItem("Exit", KeyEvent.VK_X, null,new ActionListener() {
             public void actionPerformed(ActionEvent e) { if (my_confirm()) System.exit(1); }
