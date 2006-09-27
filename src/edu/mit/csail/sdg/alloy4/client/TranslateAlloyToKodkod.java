@@ -824,7 +824,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     }
                 }
                 this.env.clear();
-                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver, dest));
+                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver, dest+(xi+1)));
             }
         return result;
     }
@@ -1122,7 +1122,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
         out=null; bw=null; fw=null;
         try {
-            fw=new FileWriter(dest);
+            fw=new FileWriter(dest+".xml");
             bw=new BufferedWriter(fw);
             out=new PrintWriter(bw);
         } catch(IOException ex) {

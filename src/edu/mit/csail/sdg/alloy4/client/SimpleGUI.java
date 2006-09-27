@@ -24,8 +24,12 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -87,9 +91,8 @@ public final class SimpleGUI {
     }
 
     private static final String[] changelog = new String[]{
-        "2006 Sep 24, 3:00PM:",
-        "  Major overhaul in the XML formats for the model instance",
-        "  and for the visualizer palette.",
+        "2006 Sep 26, 9:45PM:",
+        "  Major overhaul in the XML formats and the visualizer.",
         "2006 Sep 22, 12:30PM:",
         "  Fixed several bugs in the visualizer regarding skolem values and SIGINT values.",
         "  They should show up correctly now.",
@@ -153,6 +156,44 @@ public final class SimpleGUI {
         frame.setVisible(true);
     }
 
+    private synchronized void logButton(String label, final String tmpdir, final String f) {
+    	StyledDocument doc=log.getStyledDocument();
+    	Style s=doc.addStyle("link", styleRegular);
+    	JButton b=new JButton(label);
+    	b.setMaximumSize(b.getPreferredSize());
+    	b.setFont(new Font("Monospaced", Font.PLAIN, 11));
+    	b.setForeground(Color.BLUE);
+    	b.addActionListener(new ActionListener(){
+			public final void actionPerformed(ActionEvent e) {
+                KodVizGUIFactory factory=new KodVizGUIFactory(alloyhome,false);
+                factory.create(tmpdir, new File(f));
+			}
+		});
+    	StyleConstants.setComponent(s, b);
+    	log("", s);
+	}
+
+    private synchronized void logLink(String label, final String tmpdir, final String f) {
+    	StyledDocument doc=log.getStyledDocument();
+    	Style s=doc.addStyle("link", styleRegular);
+    	JLabel b=new JLabel(label);
+    	b.setMaximumSize(b.getPreferredSize());
+    	b.setFont(new Font("Monospaced", Font.PLAIN, 11));
+    	b.setForeground(Color.BLUE);
+    	b.addMouseListener(new MouseListener(){
+			public void mouseClicked(MouseEvent e) {
+                KodVizGUIFactory factory=new KodVizGUIFactory(alloyhome,false);
+                factory.create(tmpdir, new File(f));
+			}
+			public void mousePressed(MouseEvent e) { }
+			public void mouseReleased(MouseEvent e) { }
+			public void mouseEntered(MouseEvent e) { }
+			public void mouseExited(MouseEvent e) { }
+    	});
+    	StyleConstants.setComponent(s, b);
+    	log("", s);
+	}
+
     private synchronized void log(String x, Style s) {
         StyledDocument doc=log.getStyledDocument();
         if (doc.getLength()==0) x=x.trim();
@@ -213,25 +254,27 @@ public final class SimpleGUI {
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(alloyhome, source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
                 String tempdir=maketemp();
-                String dest=tempdir+"solution.xml";
-                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0), dest);
+                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0), tempdir);
+                new File(tempdir).delete(); // In case it was UNSAT, or was TRIVIALLY SAT. Or cancelled.
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
-                    log("Visualizer loading... please wait...", styleRegular);
-                    KodVizGUIFactory factory=new KodVizGUIFactory(alloyhome,false);
-                    factory.create(tempdir,new File(dest));
-                    log("Visualizer loaded.", styleRegular);
+                    //log("Visualizer loading... please wait...", styleRegular);
+                    //KodVizGUIFactory factory=new KodVizGUIFactory(alloyhome,false);
+                    //factory.create(tempdir,new File(tempdir+(index+1)+".xml"));
+                    //log("Visualizer loaded.", styleRegular);
+                    logButton("Click here to display this instance", tempdir, tempdir+(index+1)+".xml");
                 }
                 if (result.size()>1) {
-                    log("\n" + result.size() + " command" + (result.size()>1?"s were":" was") + " completed", styleGreen);
-                    String summary = "The result" + (result.size()>1?"s are":" is");
+                    log("\n" + result.size() + " commands were completed. The results are:", styleGreen);
+                    int i=0;
                     for(TranslateAlloyToKodkod.Result b:result) {
+                    	i++;
                         switch(b) {
-                        case SAT: case TRIVIALLY_SAT: summary+=" SAT"; break;
-                        case UNSAT: case TRIVIALLY_UNSAT: summary+=" UNSAT"; break;
-                        default: summary+=" CANCELED";
+                        case SAT: logLink("#"+i+": SAT (Click here to see the instance)", tempdir, tempdir+i+".xml"); break;
+                        case TRIVIALLY_SAT: log("#"+i+": SAT", styleRegular); break;
+                        case UNSAT: case TRIVIALLY_UNSAT: log("#"+i+": UNSAT", styleRegular); break;
+                        default: log("#"+i+": CANCELED", styleRegular);
                         }
                     }
-                    log(summary+".", styleRegular);
                 }
             }
             catch(UnsatisfiedLinkError e) { log("\nCannot run the command! The required JNI library cannot be found! "+e.toString(), styleRed); }
@@ -685,9 +728,9 @@ public final class SimpleGUI {
         filemenu.add(make_JMenuItem("Save As", KeyEvent.VK_A, null, new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_saveAs(); }
         }));
-        filemenu.add(make_JMenuItem("Load Standalone Visualizer", KeyEvent.VK_V, null, new ActionListener() {
-            public void actionPerformed(ActionEvent e) { new KodVizGUIFactory(alloyhome,false).create(maketemp(),null); }
-        }));
+        //filemenu.add(make_JMenuItem("Load Standalone Visualizer", KeyEvent.VK_V, null, new ActionListener() {
+        //    public void actionPerformed(ActionEvent e) { new KodVizGUIFactory(alloyhome,false).create(maketemp(),null); }
+        //}));
         filemenu.add(make_JMenuItem("Exit", KeyEvent.VK_X, null,new ActionListener() {
             public void actionPerformed(ActionEvent e) { if (my_confirm()) System.exit(1); }
         }));
