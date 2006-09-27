@@ -449,7 +449,7 @@ public final class SimpleGUI {
      */
     private synchronized void my_file() {
         boolean hasEntries=false;
-        while(filemenu.getItemCount()>6) filemenu.remove(6);
+        while(filemenu.getItemCount()>5) filemenu.remove(5);
         for(int i=0; i<=3; i++) {
             final String n=get("history"+i);
             if (n.length()>0) {
@@ -728,9 +728,6 @@ public final class SimpleGUI {
         filemenu.add(make_JMenuItem("Save As", KeyEvent.VK_A, null, new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_saveAs(); }
         }));
-        //filemenu.add(make_JMenuItem("Load Standalone Visualizer", KeyEvent.VK_V, null, new ActionListener() {
-        //    public void actionPerformed(ActionEvent e) { new KodVizGUIFactory(alloyhome,false).create(maketemp(),null); }
-        //}));
         filemenu.add(make_JMenuItem("Exit", KeyEvent.VK_X, null,new ActionListener() {
             public void actionPerformed(ActionEvent e) { if (my_confirm()) System.exit(1); }
         }));
