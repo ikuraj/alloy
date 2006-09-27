@@ -213,9 +213,7 @@ public final class SimpleGUI {
     private String maketemp() {
     	Random r=new Random(new Date().getTime());
     	while(true) {
-    		int i=(r.nextInt()%10000);
-    		if (i<0) i=(0-i);
-    		if (i<0) i=0;
+    		int i=r.nextInt(100000);
     		String dest=alloyhome+fs+"tmp"+fs+i;
     		File f=new File(dest);
     		if (f.exists()) continue;
