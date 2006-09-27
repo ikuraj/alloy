@@ -90,15 +90,11 @@ public final class SimpleGUI {
     }
 
     private static final String[] changelog = new String[]{
-        "2006 Sep 26, 9:45PM:",
+        "2006 Sep 27, 1PM:",
         "  Major overhaul in the XML formats and the visualizer.",
-        "2006 Sep 22, 12:30PM:",
-        "  Fixed several bugs in the visualizer regarding skolem values and SIGINT values.",
-        "  They should show up correctly now.",
         "2006 Sep 22, 10AM:",
-        "  Added 2 more buttons to the visualizer for debugging: KodInstance and VizInstance.",
-        "  KodInstance displays the toString() result on the KodKod instance.",
-        "  VizInstance displays the VizInstance we get after parsing the XML file.",
+        "  Added a new button to the visualizer for debugging: KodInstance.",
+        "  It displays the toString() result on the KodKod instance.",
         "2006 Sep 21, 3:55PM:",
         "  Added a new builtin method: disj",
         "  disj is a predicate that takes 2 or more arguments.",
