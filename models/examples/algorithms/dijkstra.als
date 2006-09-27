@@ -25,7 +25,6 @@ pred State.Initial () { no this.holds + this.waits }
 pred State.IsFree (m: Mutex) {
    // no process holds this mutex
    no m.~(this.holds)
-   // all p: Process | m !in p.(this.holds)
 }
 
 pred State.IsStalled (p: Process) { some p.(this.waits) }
@@ -93,6 +92,7 @@ pred GrabOrRelease () {
 }
 
 pred Deadlock () {
+         some Process
          some s: State | all p: Process | some p.(s.waits)
 }
 
@@ -105,13 +105,12 @@ pred GrabbedInOrder ( ) {
 }
 
 assert DijkstraPreventsDeadlocks {
-   some Process && GrabOrRelease[] && GrabbedInOrder[] => ! Deadlock[]
+   some Process && GrabOrRelease && GrabbedInOrder => !Deadlock
 }
 
 
 pred ShowDijkstra ( ) {
-    GrabOrRelease [] && Deadlock []
-    some waits
+    GrabOrRelease && Deadlock
 }
 
 run Deadlock for 3 expect 1
