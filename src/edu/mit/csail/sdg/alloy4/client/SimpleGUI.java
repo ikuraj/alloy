@@ -69,7 +69,6 @@ import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
-@SuppressWarnings("serial")
 public final class SimpleGUI {
 
     private void addHistory(String f) {
