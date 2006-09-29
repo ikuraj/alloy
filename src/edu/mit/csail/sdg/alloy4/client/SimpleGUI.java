@@ -68,11 +68,14 @@ import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
 import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
 import edu.mit.csail.sdg.alloy4.util.Util;
+import edu.mit.csail.sdg.kodviz.gui.KodVizGUI;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
 public final class SimpleGUI {
 
+	private KodVizGUIFactory factory;
+	
     private void addHistory(String f) {
         String name0=get("history0");
         String name1=get("history1");
@@ -138,8 +141,8 @@ public final class SimpleGUI {
         }
         log.setCaretPosition(0);
         JScrollPane textPane=new JScrollPane(log,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         textPane.setMinimumSize(new Dimension(50, 50));
         final JFrame frame=new JFrame("Alloy change log");
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -162,7 +165,6 @@ public final class SimpleGUI {
     	b.setForeground(Color.BLUE);
     	b.addActionListener(new ActionListener(){
 			public final void actionPerformed(ActionEvent e) {
-                KodVizGUIFactory factory=new KodVizGUIFactory(alloyhome,false);
                 factory.create(tmpdir, new File(f));
 			}
 		});
@@ -179,7 +181,6 @@ public final class SimpleGUI {
     	b.setForeground(Color.BLUE);
     	b.addMouseListener(new MouseListener(){
 			public void mouseClicked(MouseEvent e) {
-                KodVizGUIFactory factory=new KodVizGUIFactory(alloyhome,false);
                 factory.create(tmpdir, new File(f));
 			}
 			public void mousePressed(MouseEvent e) { }
@@ -398,7 +399,7 @@ public final class SimpleGUI {
     private Style styleRegular,styleBold,styleRed,styleGreen,styleGray;
 
     /** The JMenu that contains the list of RUN and CHECK commands in the current file. */
-    private JMenu runmenu,filemenu;
+    private JMenu runmenu,filemenu,windowmenu;
 
     /** The JLabel that displays the current line/column position, etc. */
     private JLabel status;
@@ -469,6 +470,28 @@ public final class SimpleGUI {
                 });
                 filemenu.add(x);
             }
+        }
+    }
+
+    /**
+     * Synchronized helper method that gets called whenever the user tries to expand the WINDOW menu.
+     */
+    private synchronized void my_window() {
+    	windowmenu.removeAll();
+    	List<KodVizGUI> list=factory.windowList();
+    	if (list.size()==0) {
+    		windowmenu.add(new JMenuItem("No visualizer windows are associated with this window."));
+    		return;
+    	}
+    	for(int i=0; i<list.size(); i++) {
+    		final KodVizGUI g = list.get(i);
+    		JMenuItem x=new JMenuItem(g.getTitle());
+            x.addActionListener(new ActionListener() {
+               public void actionPerformed(ActionEvent e) {
+            	   factory.show(g);
+               }
+            });
+            windowmenu.add(x);
         }
     }
 
@@ -747,6 +770,16 @@ public final class SimpleGUI {
         });
         bar.add(runmenu);
 
+        // Create the Window menu
+        windowmenu=new JMenu("Window",true);
+        windowmenu.setMnemonic(KeyEvent.VK_W);
+        windowmenu.addMenuListener(new MenuListener() {
+            public void menuSelected(MenuEvent e) { my_window(); }
+            public void menuDeselected(MenuEvent e) { }
+            public void menuCanceled(MenuEvent e) { }
+        });
+        bar.add(windowmenu);
+
         // Create the About menu
         JMenu helpmenu=new JMenu("Help",true);
         helpmenu.setMnemonic(KeyEvent.VK_H);
@@ -777,8 +810,8 @@ public final class SimpleGUI {
             public void changedUpdate(DocumentEvent e) {compiled(false); modified(true);}
         });
         JScrollPane textPane=new JScrollPane(text,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         textPane.setMinimumSize(new Dimension(50, 50));
 
         // Create the message area
@@ -794,8 +827,8 @@ public final class SimpleGUI {
         styleRed=doc.addStyle("red", styleBold); StyleConstants.setForeground(styleRed, new Color(0.7f,0.2f,0.2f));
         styleGray=doc.addStyle("gray", styleBold); StyleConstants.setBackground(styleGray, new Color(0.8f,0.8f,0.8f));
         JScrollPane statusPane=new JScrollPane(log,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         statusPane.setMinimumSize(new Dimension(50, 50));
 
         // Create a JSplitPane to hold the text editor and the message area
@@ -832,6 +865,8 @@ public final class SimpleGUI {
         
         if (Util.onMac()) log("\nMac OS X detected.", styleGreen);
 
+        factory = new KodVizGUIFactory(alloyhome, false);
+        
         if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
 
         if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
