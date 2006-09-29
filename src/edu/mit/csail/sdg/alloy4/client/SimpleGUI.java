@@ -883,8 +883,18 @@ public final class SimpleGUI {
 
         factory = new KodVizGUIFactory(alloyhome, false);
         
-        if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
+        if (args.length==1 && args[0].equals("-jaws")) {
+        	System.out.println("Jaws..."); return;
+        }
+        
+        if (args.length==1 && new File(args[0]).exists()) {
+        	my_open(args[0]);
+        	return;
+        }
 
-        if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
+        if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) {
+        	my_open(args[1]);
+        	return;
+        }
     }
 }
