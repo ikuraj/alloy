@@ -681,7 +681,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /**                                                                         */
     /*==========================================================================*/
 
-    private Expression kuniv=Relation.INTS;//Relation.UNIV;
+    private Expression kuniv=Relation.INTS;// Relation.UNIV;
     private Expression kiden=Relation.IDEN;
 
     private boolean alloy3(ParaSig s, Unit u) {
@@ -921,11 +921,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
           log.flush();
           return null;
         }
-        boolean hasSigInt=mainformula.accept(new HasSigInt());
         unique.clear();
         Set<String> atoms=new LinkedHashSet<String>();
         if (bitwidth<1 || bitwidth>30) throw cmd.syntaxError("The integer bitwidth must be between 1..30");
-        if (hasSigInt) for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
+        for(int i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++) {
             String ii=new String("Int_"+i);
             atoms.add(ii);
             sig2lowerbound(ParaSig.SIGINT).add(ii);
@@ -933,27 +932,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeLowerBound(s); }
         for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeUpperBound(s); atoms.addAll(sig2upperbound(s)); }
-        boolean universeEmpty=atoms.isEmpty();
-        if (universeEmpty) {
-            String ii="Int_0"; // If the universe is empty, we have no choice but to add at least 1 atom.
-            atoms.add(ii);
-            sig2lowerbound(ParaSig.SIGINT).add(ii);
-            sig2upperbound(ParaSig.SIGINT).add(ii);
-        }
         final Universe universe = new Universe(atoms);
         final TupleFactory factory = universe.factory();
         final Bounds bounds = new Bounds(universe);
         sig2ts(ParaSig.UNIV, factory.allOf(1));
         sig2ts(ParaSig.NONE, factory.noneOf(1));
         sig2ts(ParaSig.SIGINT, factory.noneOf(1));
-        if (hasSigInt) for(int j=0,i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++,j++) {
+        for(int j=0,i=0-(1<<(bitwidth-1)); i<(1<<(bitwidth-1)); i++,j++) {
             Tuple ii=factory.tuple(sig2upperbound(ParaSig.SIGINT).get(j));
             bounds.boundExactly(i,factory.range(ii,ii));
-            sig2ts(ParaSig.SIGINT).add(ii);
-        }
-        if (universeEmpty) {
-            Tuple ii=factory.tuple(sig2upperbound(ParaSig.SIGINT).get(0));
-            bounds.boundExactly(0,factory.range(ii,ii));
             sig2ts(ParaSig.SIGINT).add(ii);
         }
         for(int si=sigs.size()-1; si>=0; si--) {

@@ -20,40 +20,24 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 
 public final class ParaFun extends Para {
 
-    private ParaFun(String name) {
-        super(new Pos("$builtin$",1,1), "", name);
-        this.decls=null;
-        this.argCount=0;
-        this.type=null;
-        this.value=null;
-    }
-
-    public static final ParaFun INT    = new ParaFun("int");
-    public static final ParaFun SIGINT = new ParaFun("Int");
-    public static final ParaFun DISJ   = new ParaFun("disj");
-
-    private void check() {
-        if (this==INT || this==SIGINT || this==DISJ) throw internalError("Builtin function cannot be directly accessed!");
-    }
-
     /** The mutable list of parameters (its number of names must match this.argCount). */
     private List<VarDecl> decls;
-    public List<VarDecl> getDecls() { check(); return decls; }
-    public void setDecls(List<VarDecl> d) { check(); decls=d; }
+    public List<VarDecl> getDecls() { return decls; }
+    public void setDecls(List<VarDecl> d) { decls=d; }
 
     /** The number of parameters (it must equal the number of names in this.decls). */
     private int argCount;
-    public int getArgCount() { check(); return argCount; }
+    public int getArgCount() { return argCount; }
 
     /** The return type (null if this is a "predicate" rather than a "function"). */
     private Expr type;
-    public Expr getType() { check(); return type; }
-    public void setType(Expr t) { check(); type=t; }
+    public Expr getType() { return type; }
+    public void setType(Expr t) { type=t; }
 
     /** The body of the predicate/function. */
     private Expr value;
-    public Expr getValue() { check(); return value; }
-    public void setValue(Expr v) { check(); value=v; }
+    public Expr getValue() { return value; }
+    public void setValue(Expr v) { value=v; }
 
     /**
      * Constructs a new ParaFun object.
