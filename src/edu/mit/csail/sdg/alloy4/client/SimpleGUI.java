@@ -702,8 +702,15 @@ public final class SimpleGUI {
     private boolean minisat=true;
     private boolean zchaff_basic=true;
     private synchronized void my_setup(String[] args) {
-        
-    	alloyhome=KodVizInstaller.install(get("basedir"));
+
+    	boolean relaunch=false;
+    	if (args.length==2 && args[0].equals("-relaunch") && new File(args[1]).isDirectory()) {
+    		alloyhome=args[1];
+    		relaunch=true;
+    	} else {
+    		alloyhome=KodVizInstaller.install(get("basedir"));
+    	}
+    	
         fileOpenDirectory=alloyhome+fs+"models";
         System.setProperty("alloyhome",alloyhome);
         String binary=alloyhome+fs+"binary";
@@ -721,13 +728,16 @@ public final class SimpleGUI {
         KodVizInstaller.copy("zchaff_basic.dll", binary, false);
         set("basedir",alloyhome);
 
-        if (args.length==1 && args[0].equals("-jaws")) {
-        	String[] cmdArgs = {"java", "-jar", alloyhome+fs+"alloy4.jar", "-relaunch"};
+        if (args.length==1 && args[0].equals("-jaws") && !get("version").equals(AlloyVersion.version())) {
+        	set("version", AlloyVersion.version());
+        	String[] cmdArgs = {"java", "-jar", alloyhome+fs+"alloy4.jar", "-relaunch", alloyhome};
         	Process p=null;
         	try { p=Runtime.getRuntime().exec(cmdArgs); } catch(IOException e) { p=null; }
         	if (p!=null) { try { p.waitFor(); } catch (InterruptedException e) { } }
         	return;
         }
+
+        set("version", AlloyVersion.version());
 
         try { System.load(binary+fs+"libminisat6.so"); } catch(UnsatisfiedLinkError ex) {
             try { System.load(binary+fs+"libminisat4.so"); } catch(UnsatisfiedLinkError ex2) {
@@ -890,7 +900,7 @@ public final class SimpleGUI {
         
         if (Util.onMac()) log("\nMac OS X detected.", styleGreen);
 
-        if (args.length==1 && args[0].equals("-relaunch")) log("\nJAR file autolaunched.", styleGreen);
+        if (relaunch) log("\nJAR file autolaunched.", styleGreen);
 
         factory = new KodVizGUIFactory(alloyhome, false);
         
