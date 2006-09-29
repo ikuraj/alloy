@@ -45,6 +45,7 @@ import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
@@ -402,7 +403,14 @@ public final class SimpleGUI {
 
     /** Main method that launches the program. */
     public static final void main (String[] args) {
-        new SimpleGUI(args);
+       System.setProperty("com.apple.mrj.application.growbox.intrudes","false");
+       System.setProperty("com.apple.mrj.application.live-resize","true");
+       System.setProperty("com.apple.macos.useScreenMenuBar","true");
+       //System.setProperty("Xdock:name=Alloy4");
+       try {
+   	        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+   	   } catch (Exception e) { }
+       new SimpleGUI(args);
     }
 
     /**
