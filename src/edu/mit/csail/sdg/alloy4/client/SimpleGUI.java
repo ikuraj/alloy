@@ -76,6 +76,16 @@ public final class SimpleGUI {
 
 	private KodVizGUIFactory factory;
 	
+	/*
+	private String getbasename(String x) {
+		int i=x.lastIndexOf('/');
+		if (i>=0) x=x.substring(i+1);
+		i=x.lastIndexOf('\\');
+		if (i>=0) x=x.substring(i+1);
+		return x;
+	}
+	*/
+	
     private void addHistory(String f) {
         String name0=get("history0");
         String name1=get("history1");
@@ -95,6 +105,8 @@ public final class SimpleGUI {
     }
 
     private static final String[] changelog = new String[]{
+    	"2006 Sep 29 6:30PM:",
+    	"  Major improvements to the look-and-feel components on Mac OS X.",
     	"2006 Spe 29 10AM:",
     	"  1) Unconnected Int atoms are now hidden by default.",
     	"  2) Projection and Unprojection buttons are changed into hyperlinks in the titlebar.",
@@ -165,7 +177,7 @@ public final class SimpleGUI {
     	b.setForeground(Color.BLUE);
     	b.addActionListener(new ActionListener(){
 			public final void actionPerformed(ActionEvent e) {
-                factory.create(tmpdir, new File(f));
+                factory.create(tmpdir, new File(f), frame);
 			}
 		});
     	StyleConstants.setComponent(s, b);
@@ -181,7 +193,7 @@ public final class SimpleGUI {
     	b.setForeground(Color.BLUE);
     	b.addMouseListener(new MouseListener(){
 			public void mouseClicked(MouseEvent e) {
-                factory.create(tmpdir, new File(f));
+                factory.create(tmpdir, new File(f), frame);
 			}
 			public void mousePressed(MouseEvent e) { }
 			public void mouseReleased(MouseEvent e) { }
@@ -478,14 +490,18 @@ public final class SimpleGUI {
      */
     private synchronized void my_window() {
     	windowmenu.removeAll();
+    	JMenuItem x=new JMenuItem("Editor Window");
+    	x.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				frame.setExtendedState(JFrame.NORMAL);
+				frame.toFront();
+			}
+    	});
+    	windowmenu.add(x);
     	List<KodVizGUI> list=factory.windowList();
-    	if (list.size()==0) {
-    		windowmenu.add(new JMenuItem("No visualizer windows are associated with this window."));
-    		return;
-    	}
     	for(int i=0; i<list.size(); i++) {
     		final KodVizGUI g = list.get(i);
-    		JMenuItem x=new JMenuItem(g.getTitle());
+    		x=new JMenuItem(g.getTitle());
             x.addActionListener(new ActionListener() {
                public void actionPerformed(ActionEvent e) {
             	   factory.show(g);
@@ -771,7 +787,7 @@ public final class SimpleGUI {
         bar.add(runmenu);
 
         // Create the Window menu
-        windowmenu=new JMenu("Window",true);
+        windowmenu=new JMenu("Window",false);
         windowmenu.setMnemonic(KeyEvent.VK_W);
         windowmenu.addMenuListener(new MenuListener() {
             public void menuSelected(MenuEvent e) { my_window(); }
