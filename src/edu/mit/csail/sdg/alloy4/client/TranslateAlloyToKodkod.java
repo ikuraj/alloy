@@ -41,6 +41,7 @@ import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.util.IdentitySet;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.Pos;
+import edu.mit.csail.sdg.alloy4.util.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.util.Util;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
@@ -1088,7 +1089,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String dest) {
-        LinkedHashSet<String> skolemSet = new LinkedHashSet<String>();
+        UniqueNameGenerator skolemSet = new UniqueNameGenerator();
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
         FileWriter fw=null;
         BufferedWriter bw=null;
@@ -1166,19 +1167,37 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 writeXML_atoms(out, eval.evaluate(Relation.INTS));
                 out.print("</sig>\n");
             }
-            if (ui==0) for(Relation r:inst.relations()) if (!rels.contains(r)) {
-                String name=r.name();
-                while(skolemSet.contains(name)) name=name+"\'";
-                skolemSet.add(name);
-                if (r.arity()>1) {
-                   Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
-                   writeXML_tupleset(out, null, inst.tuples(r));
-                   out.print("</field>\n");
-                } else {
-                   Util.encodeXMLs(out, "<set name=\"$", name, "\">\n");
-                   writeXML_atoms(out, inst.tuples(r));
-                   out.print("</set>\n");
-                }
+            if (ui==0) {
+            	for(Relation r:inst.relations()) if (!rels.contains(r)) {
+            		String name=skolemSet.make(r.name());
+            		if (r.arity()>1) {
+            			Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
+            			writeXML_tupleset(out, null, inst.tuples(r));
+            			out.print("</field>\n");
+            		} else {
+            			Util.encodeXMLs(out, "<set name=\"$", name, "\">\n");
+            			writeXML_atoms(out, inst.tuples(r));
+            			out.print("</set>\n");
+            		}
+            	}
+            	for(Map.Entry<String,List<ParaFun>> pflist: u.funs.entrySet()) for(ParaFun pf: pflist.getValue()) {
+            		if (pf.getArgCount()!=0) continue;
+            		if (pf.getType()==null) continue;
+            		Object obj=pf.getValue().accept(this);
+            		if (!(obj instanceof Expression)) continue;
+            		Expression e=(Expression)obj;
+            		TupleSet ts=eval.evaluate(e);
+            		String name=skolemSet.make(pf.name);
+            		if (ts.arity()>1) {
+            			Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
+            			writeXML_tupleset(out, null, ts);
+            			out.print("</field>\n");
+            		} else {
+            			Util.encodeXMLs(out, "<set name=\"$", name, "\">\n");
+            			writeXML_atoms(out, ts);
+            			out.print("</set>\n");
+            		}
+            	}
             }
             out.print("</module>\n");
         }
