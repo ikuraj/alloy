@@ -67,6 +67,7 @@ import edu.mit.csail.sdg.alloy4.util.Err;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
 import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
+import edu.mit.csail.sdg.alloy4.util.Util;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
@@ -122,7 +123,7 @@ public final class SimpleGUI {
         log.setEditable(false);
         StyledDocument doc=log.getStyledDocument();
         Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-        Style styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, "Monospaced");
+        Style styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, Util.getFontName());
         Style styleBold=doc.addStyle("bold", styleRegular); StyleConstants.setBold(styleBold, true);
         Style styleGreen=doc.addStyle("green", styleBold); StyleConstants.setForeground(styleGreen, new Color(0.2f,0.7f,0.2f));
         for(int i=0; i<changelog.length; i++) {
@@ -137,8 +138,8 @@ public final class SimpleGUI {
         }
         log.setCaretPosition(0);
         JScrollPane textPane=new JScrollPane(log,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         textPane.setMinimumSize(new Dimension(50, 50));
         final JFrame frame=new JFrame("Alloy change log");
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -155,8 +156,9 @@ public final class SimpleGUI {
     	StyledDocument doc=log.getStyledDocument();
     	Style s=doc.addStyle("link", styleRegular);
     	JButton b=new JButton(label);
+    	if (Util.onMac()) b.setBackground(Color.getHSBColor(0f,0f,0.95f));
     	b.setMaximumSize(b.getPreferredSize());
-    	b.setFont(new Font("Monospaced", Font.PLAIN, 11));
+    	b.setFont(Util.getFont());
     	b.setForeground(Color.BLUE);
     	b.addActionListener(new ActionListener(){
 			public final void actionPerformed(ActionEvent e) {
@@ -173,7 +175,7 @@ public final class SimpleGUI {
     	Style s=doc.addStyle("link", styleRegular);
     	JLabel b=new JLabel(label);
     	b.setMaximumSize(b.getPreferredSize());
-    	b.setFont(new Font("Monospaced", Font.PLAIN, 11));
+    	b.setFont(Util.getFont());
     	b.setForeground(Color.BLUE);
     	b.addMouseListener(new MouseListener(){
 			public void mouseClicked(MouseEvent e) {
@@ -402,7 +404,8 @@ public final class SimpleGUI {
     private JLabel status;
 
     /** Main method that launches the program. */
-    public static final void main (String[] args) {
+    public static final void main(String[] args) {
+       System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
        System.setProperty("com.apple.mrj.application.growbox.intrudes","false");
        System.setProperty("com.apple.mrj.application.live-resize","true");
        System.setProperty("com.apple.macos.useScreenMenuBar","true");
@@ -704,7 +707,7 @@ public final class SimpleGUI {
         int screenWidth=getScreenWidth();
         int screenHeight=getScreenHeight();
         int width=screenWidth/10*8, height=screenHeight/10*8;
-        Font font=new Font("Monospaced",0,12);
+        Font font=Util.getFont();
         JMenuBar bar=new JMenuBar();
         bar.setVisible(true);
 
@@ -763,7 +766,7 @@ public final class SimpleGUI {
         text.setLineWrap(false);
         text.setEditable(true);
         text.setTabSize(3);
-        text.setFont(font);
+        text.setFont(Util.getFont());
         text.addCaretListener(new CaretListener() {
             public void caretUpdate(CaretEvent e) { my_caret(); }
         });
@@ -774,28 +777,30 @@ public final class SimpleGUI {
         });
         JScrollPane textPane=new JScrollPane(text,
                 ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         textPane.setMinimumSize(new Dimension(50, 50));
 
         // Create the message area
         log=new JTextPane();
         log.setBackground(Color.getHSBColor(0f,0f,0.95f));
         log.setEditable(false);
-        log.setFont(font);
+        log.setFont(Util.getFont());
         StyledDocument doc=log.getStyledDocument();
         Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-        styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, "Monospaced");
+        styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, Util.getFontName());
         styleBold=doc.addStyle("bold", styleRegular); StyleConstants.setBold(styleBold, true);
         styleGreen=doc.addStyle("green", styleBold); StyleConstants.setForeground(styleGreen, new Color(0.2f,0.7f,0.2f));
         styleRed=doc.addStyle("red", styleBold); StyleConstants.setForeground(styleRed, new Color(0.7f,0.2f,0.2f));
         styleGray=doc.addStyle("gray", styleBold); StyleConstants.setBackground(styleGray, new Color(0.8f,0.8f,0.8f));
         JScrollPane statusPane=new JScrollPane(log,
                 ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         statusPane.setMinimumSize(new Dimension(50, 50));
 
         // Create a JSplitPane to hold the text editor and the message area
-        JSplitPane split=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane);
+        JSplitPane split=new NiceSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane);
+        split.setBorder(null);
+        split.setContinuousLayout(true);
         split.setDividerLocation(width/2);
         split.setOneTouchExpandable(false);
 
@@ -823,6 +828,8 @@ public final class SimpleGUI {
         if (minisat) log("\nSolver: MiniSAT using JNI", styleGreen);
         else if (zchaff_basic) log("\nSolver: ZChaff using JNI", styleGreen);
         else log("\nSolver: SAT4J", styleGreen);
+        
+        if (Util.onMac()) log("\nMac OS X detected.", styleGreen);
 
         if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
 

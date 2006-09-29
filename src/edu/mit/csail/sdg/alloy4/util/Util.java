@@ -1,6 +1,9 @@
 package edu.mit.csail.sdg.alloy4.util;
 
+import java.awt.Font;
 import java.io.PrintWriter;
+
+import javax.swing.UIManager;
 
 /**
  * An utility class for doing common I/O and XML and GUI operations.
@@ -9,9 +12,25 @@ import java.io.PrintWriter;
  */
 public final class Util {
 
-	/** Constructor is private, since this utility class never needs to be instantiated. */
+	public static String getFontName() { if (onMac()) return "LucidaGrande"; else return "Monospaced"; }
+	public static int getFontSize() { if (onMac()) return 12; else return 12; }
+	public static Font getFont() {
+		if (onMac()) return new Font("LucidaGrande", Font.PLAIN, 12);
+		else return new Font("Monospaced", Font.PLAIN, 12);
+	}
 
-	private Util() { }
+	/** This method returns true iff running on a Mac
+    and look and feel is Aqua **/
+    public static boolean onMac() {
+        return System.getProperty("mrj.version") != null
+            && UIManager.getSystemLookAndFeelClassName().equals(
+                UIManager.getLookAndFeel().getClass().getName());
+    }
+
+
+	/** Constructor is private, since this utility class never needs to be instantiated. */
+    private Util() { }
+
 	/**
 	 * Write a String into a PrintWriter, and encode special characters if needed.
 	 * 
