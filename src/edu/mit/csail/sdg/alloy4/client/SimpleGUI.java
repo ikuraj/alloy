@@ -645,9 +645,10 @@ public final class SimpleGUI {
         }
     }
 
-    private JMenuItem make_JMenuItem(String label, int key, String accelerator, ActionListener al) {
+    private JMenuItem make_JMenuItem(String label, int key, int accel, ActionListener al) {
         JMenuItem ans = new JMenuItem(label,key);
-        if (accelerator!=null) ans.setAccelerator(KeyStroke.getKeyStroke(accelerator));
+        int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+        if (accel>=0) ans.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
         if (al!=null) ans.addActionListener(al);
         return ans;
     }
@@ -719,19 +720,19 @@ public final class SimpleGUI {
             public void menuDeselected(MenuEvent e) { }
             public void menuCanceled(MenuEvent e) { }
         });
-        filemenu.add(make_JMenuItem("New", KeyEvent.VK_N, "ctrl N", new ActionListener() {
+        filemenu.add(make_JMenuItem("New", KeyEvent.VK_N, KeyEvent.VK_N, new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_new(); }
         }));
-        filemenu.add(make_JMenuItem("Open", KeyEvent.VK_O, "ctrl O", new ActionListener() {
+        filemenu.add(make_JMenuItem("Open", KeyEvent.VK_O, KeyEvent.VK_O, new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_open(); }
         }));
-        filemenu.add(make_JMenuItem("Save", KeyEvent.VK_S, "ctrl S", new ActionListener() {
+        filemenu.add(make_JMenuItem("Save", KeyEvent.VK_S, KeyEvent.VK_S, new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_save(); }
         }));
-        filemenu.add(make_JMenuItem("Save As", KeyEvent.VK_A, null, new ActionListener() {
+        filemenu.add(make_JMenuItem("Save As", KeyEvent.VK_A, -1, new ActionListener() {
             public void actionPerformed(ActionEvent e) { my_saveAs(); }
         }));
-        filemenu.add(make_JMenuItem("Exit", KeyEvent.VK_X, null,new ActionListener() {
+        filemenu.add(make_JMenuItem("Quit", KeyEvent.VK_Q, -1,new ActionListener() {
             public void actionPerformed(ActionEvent e) { if (my_confirm()) System.exit(1); }
         }));
         bar.add(filemenu);
@@ -749,12 +750,12 @@ public final class SimpleGUI {
         // Create the About menu
         JMenu helpmenu=new JMenu("Help",true);
         helpmenu.setMnemonic(KeyEvent.VK_H);
-        helpmenu.add(make_JMenuItem("See Alloy4 Change Log", KeyEvent.VK_C, null, new ActionListener() {
+        helpmenu.add(make_JMenuItem("See Alloy4 Change Log", KeyEvent.VK_C, -1, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 showChangeLog();
             }
         }));
-        helpmenu.add(make_JMenuItem("See Alloy4 Version", KeyEvent.VK_V, null, new ActionListener() {
+        helpmenu.add(make_JMenuItem("See Alloy4 Version", KeyEvent.VK_V, -1, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 JOptionPane.showMessageDialog(null,AlloyVersion.version());
             }
@@ -806,7 +807,7 @@ public final class SimpleGUI {
 
         // Make the JFrame, and put the JSplitPane and a JLabel into it.
         frame=new JFrame(AlloyVersion.version());
-        frame.setBackground(Color.lightGray);
+        //frame.setBackground(Color.lightGray);
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) { if (my_confirm()) System.exit(0); }
