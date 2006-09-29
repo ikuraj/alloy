@@ -90,11 +90,9 @@ public final class SimpleGUI {
     }
 
     private static final String[] changelog = new String[]{
-        "2006 Sep 27, 1PM:",
-        "  Major overhaul in the XML formats and the visualizer.",
-        "2006 Sep 22, 10AM:",
-        "  Added a new button to the visualizer for debugging: KodInstance.",
-        "  It displays the toString() result on the KodKod instance.",
+    	"2006 Spe 28 9PM:",
+    	"  1) Unconnected Int atoms are now hidden by default.",
+    	"  2) Projection and Unprojection buttons are changed into hyperlinks in the titlebar.",
         "2006 Sep 21, 3:55PM:",
         "  Added a new builtin method: disj",
         "  disj is a predicate that takes 2 or more arguments.",
@@ -110,7 +108,7 @@ public final class SimpleGUI {
         "  Int[x] converts a primitive integer into a SIGINT atom.",
         "  The old Alloy 3 syntax ``Int x'' must now be written as ``Int[x]'' or ``x.Int''",
         "2006 Sep 21, 1:10PM:",
-        "  Alloy4 Beta1 released."
+        "  Alloy4 Alpha1 released."
     };
 
     private static final void showChangeLog() {
