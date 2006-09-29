@@ -90,9 +90,10 @@ public final class SimpleGUI {
     }
 
     private static final String[] changelog = new String[]{
-    	"2006 Spe 28 9PM:",
+    	"2006 Spe 29 10AM:",
     	"  1) Unconnected Int atoms are now hidden by default.",
     	"  2) Projection and Unprojection buttons are changed into hyperlinks in the titlebar.",
+    	"  3) Projection Panel and Tree View will now use the label from the theme.",
         "2006 Sep 21, 3:55PM:",
         "  Added a new builtin method: disj",
         "  disj is a predicate that takes 2 or more arguments.",
