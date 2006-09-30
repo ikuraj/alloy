@@ -419,7 +419,7 @@ public final class SimpleGUI {
     /** Main method that launches the program. */
     public static final void main(String[] args) {
        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
-       System.setProperty("com.apple.mrj.application.growbox.intrudes","false");
+       System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
        System.setProperty("com.apple.mrj.application.live-resize","true");
        System.setProperty("com.apple.macos.useScreenMenuBar","true");
        //System.setProperty("Xdock:name=Alloy4");
