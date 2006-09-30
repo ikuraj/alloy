@@ -1,9 +1,22 @@
 package edu.mit.csail.sdg.alloy4.util;
 
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 
 /**
  * An utility class for doing common I/O and XML and GUI operations.
@@ -12,27 +25,68 @@ import javax.swing.UIManager;
  */
 public final class Util {
 
-	public static String getFontName() { if (onMac()) return "LucidaGrande"; else return "Monospaced"; }
-	public static int getFontSize() { if (onMac()) return 12; else return 12; }
-	public static Font getFont() {
-		if (onMac()) return new Font("LucidaGrande", Font.PLAIN, 12);
-		else return new Font("Monospaced", Font.PLAIN, 12);
-	}
-
-	/** This method returns true iff running on a Mac
-    and look and feel is Aqua **/
-    public static boolean onMac() {
-        return System.getProperty("mrj.version") != null
-            && UIManager.getSystemLookAndFeelClassName().equals(
-                UIManager.getLookAndFeel().getClass().getName());
-    }
-
-
 	/** Constructor is private, since this utility class never needs to be instantiated. */
     private Util() { }
 
+	/** Returns true iff running on a Mac OS X, with look and feel of Aqua **/
+    public static boolean onMac() {
+        return System.getProperty("mrj.version") != null
+            && UIManager.getSystemLookAndFeelClassName().equals(UIManager.getLookAndFeel().getClass().getName());
+    }
+
+    /** Returns the recommended font name to use, based on the OS. */
+	public static String getFontName() { if (onMac()) return "LucidaGrande"; else return "Monospaced"; }
+	
+	/** Returns the recommended font size to use, based on the OS. */
+	public static int getFontSize() { if (onMac()) return 12; else return 12; }
+	
+	/** Returns the recommended Font to use, based on the OS. */
+	public static Font getFont() { return new Font(getFontName(), Font.PLAIN, getFontSize()); }
+
+	/** Make a JScrollPane. */
+	public static JScrollPane makeJScrollPane(Component component) {
+		JScrollPane ans = new JScrollPane(component,
+				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		ans.setMinimumSize(new Dimension(50, 50));
+		return ans;
+	}
+	
+	/** Make a JMenu. */
+	public static JMenu makeJMenu(JMenuBar parent, String label, boolean enabled, int mnemonic, final MessageHandler handler, final String message) {
+		JMenu ans=new JMenu(label,false);
+		if (!onMac()) ans.setMnemonic(mnemonic);
+		if (handler!=null) ans.addMenuListener(new MenuListener() {
+			public final void menuSelected(MenuEvent e) { handler.handleMessage(message); }
+			public final void menuDeselected(MenuEvent e) { }
+			public final void menuCanceled(MenuEvent e) { }
+		});
+		ans.setEnabled(enabled);
+		parent.add(ans);
+		return ans;
+	}
+	
+	/** Make a JMenu. */
+	public static JMenuItem makeJMenuItem(JMenu parent, String label, int key, int accel, final MessageHandler handler, final String message) {
+		JMenuItem ans = new JMenuItem(label,key);
+		int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+		if (accel>=0) ans.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
+		if (handler!=null) ans.addActionListener(new ActionListener() {
+			public final void actionPerformed(ActionEvent e) { handler.handleMessage(message); }
+		});
+		parent.add(ans);
+		return ans;
+	}
+
+	/** Make a JLabel. */
+	public static JLabel makeJLabel(String label, Font font) {
+		JLabel ans = new JLabel(label);
+		ans.setFont(font);
+		return ans;
+	}
+	
 	/**
-	 * Write a String into a PrintWriter, and encode special characters if needed.
+	 * Write a String into a PrintWriter, and encode special characters are XML-encoded.
 	 * 
 	 * <p/>
 	 * In particular, it changes LESS THAN, GREATER THAN, AMPERSAND, SINGLE QUOTE, and DOUBLE QUOTE
