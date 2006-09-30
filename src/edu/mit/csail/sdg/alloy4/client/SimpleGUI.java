@@ -66,9 +66,9 @@ import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
 import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
 import edu.mit.csail.sdg.alloy4.util.MessageHandler;
 import edu.mit.csail.sdg.alloy4.util.Util;
-import edu.mit.csail.sdg.kodviz.gui.KodVizGUI;
-import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
-import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
+import edu.mit.csail.sdg.kodviz.KodVizGUI;
+import edu.mit.csail.sdg.kodviz.KodVizGUIFactory;
+import edu.mit.csail.sdg.kodviz.KodVizInstaller;
 
 public final class SimpleGUI implements MessageHandler {
 	
