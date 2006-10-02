@@ -89,19 +89,6 @@ public final class SimpleGUI implements MessageHandler {
         set("history3",name2); set("history2",name1); set("history1",name0); set("history0",f);
     }
 
-    private static int getScreenWidth() {
-        return Toolkit.getDefaultToolkit().getScreenSize().width;
-    }
-
-    private static int getScreenHeight() {
-        return Toolkit.getDefaultToolkit().getScreenSize().height;
-    }
-
-
-
-
-
-
     private KodVizGUIFactory factory;
 
     private static final String[] changelog = new String[]{
@@ -130,8 +117,8 @@ public final class SimpleGUI implements MessageHandler {
     };
 
     private static final void showChangeLog() {
-        int screenWidth=getScreenWidth();
-        int screenHeight=getScreenHeight();
+        int screenWidth=Toolkit.getDefaultToolkit().getScreenSize().width;
+        int screenHeight=Toolkit.getDefaultToolkit().getScreenSize().height;
         int width=screenWidth/3*2, height=screenHeight/3*2;
         JTextPane log=new JTextPane();
         log.setBackground(Color.getHSBColor(0f,0f,0.95f));
@@ -291,23 +278,12 @@ public final class SimpleGUI implements MessageHandler {
      * Synchronized helper method that writes the content of the editor to a file.
      * (If this method fails, it will output an error message to the JTextArea that displays messages)
      *
-     * @return true if the method succeeds; false if the method fails.
+     * @return non-null if the method succeeds; null if the method fails.
      */
-    private synchronized boolean my_save(String filename, boolean alwaysOverwrite) {
+    private synchronized Object my_save(String filename, boolean alwaysOverwrite) {
         if (!alwaysOverwrite) {
             File file=new File(filename);
-            if (file.exists()) {
-                String cancel="Cancel"; // This ensures that the same object is used, regardless of the compiler interning.
-                int ans=JOptionPane.showOptionDialog(frame,
-                        "The file \""+filename+"\" already exists. Do you wish to overwrite it?",
-                        "Warning: the file already exists!",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE,
-                        null,
-                        new Object[]{"Overwrite",cancel},
-                        cancel);
-                if (ans!=JOptionPane.YES_OPTION) return false;
-            }
+            if (file.exists() && !Util.questionOverwrite(frame,filename)) return null;
         }
         try {
             FileWriter fw=new FileWriter(filename);
@@ -323,10 +299,10 @@ public final class SimpleGUI implements MessageHandler {
             latestName=filename;
             addHistory(filename);
             frame.setTitle("Alloy File: "+latestName);
-            return true;
+            return Boolean.TRUE;
         } catch(IOException e) {
             log("\nCannot write to the file \""+filename+"\"! "+e.toString(), styleRed);
-            return false;
+            return null;
         }
     }
 
@@ -449,19 +425,11 @@ public final class SimpleGUI implements MessageHandler {
     }
 
     private synchronized final boolean my_confirm() {
-        if (!modified()) return true;
-        String cancel="Cancel"; // This ensures that the same object is used, regardless of the compiler interning.
-        int ans=JOptionPane.showOptionDialog(frame,
-                "The text in the text editor has not been saved yet! Do you wish to save it, discard it, or cancel?",
-                "Warning! The text editor content has not been saved!",
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.WARNING_MESSAGE,
-                null,
-                new Object[]{"Save","Discard",cancel},
-                cancel);
-        if (ans==JOptionPane.YES_OPTION) return handleMessage("save");
-        if (ans!=JOptionPane.NO_OPTION) return false;
-        return true;
+   		if (!modified()) return true;
+   		Boolean ans=Util.questionSaveDiscardCancel(frame);
+   		if (ans==null) return false;
+   		if (!ans.booleanValue()) return true;
+   		return handleMessage("save")!=null;
     }
 
     /**
@@ -513,36 +481,45 @@ public final class SimpleGUI implements MessageHandler {
         }
     }
 
-    public synchronized boolean handleMessage(String x) {
-        if ("file".equals(x)) my_file();
+    /** Convention for this method: return==null means failure, return!=null means success. */
+    public synchronized Object handleMessage(String x) {
+        if ("file".equals(x)) {
+        	my_file();
+        	return Boolean.TRUE;
+        }
         if ("new".equals(x)) {
-            if (!my_confirm()) return false;
+            if (!my_confirm()) return null;
             latestName="";
             text.setText("");
             frame.setTitle(AlloyVersion.version());
             compiled(false);
             modified(false);
-            return true;
+            return Boolean.TRUE;
         }
         if ("open".equals(x)) {
-            if (!my_confirm()) return false;
+            if (!my_confirm()) return null;
             JFileChooser open=new JFileChooser(fileOpenDirectory);
             open.setFileFilter(filterALS);
-            if (open.showOpenDialog(frame)!=JFileChooser.APPROVE_OPTION) return false;
+            if (open.showOpenDialog(frame)!=JFileChooser.APPROVE_OPTION) return null;
             fileOpenDirectory=open.getSelectedFile().getParent(); set("lastdir",fileOpenDirectory);
             my_open(open.getSelectedFile().getPath());
-            return true;
+            return Boolean.TRUE;
         }
-        if ("save".equals(x)) { return latestName.length()!=0 ? my_save(latestName,true) : handleMessage("saveas"); }
+        if ("save".equals(x)) {
+        	return latestName.length()!=0 ? my_save(latestName,true) : handleMessage("saveas");
+        }
         if ("saveas".equals(x)) {
             JFileChooser open=new JFileChooser(fileOpenDirectory);
             open.setFileFilter(filterALS);
-            if (open.showSaveDialog(frame)!=JFileChooser.APPROVE_OPTION) return false;
+            if (open.showSaveDialog(frame)!=JFileChooser.APPROVE_OPTION) return null;
             fileOpenDirectory=open.getSelectedFile().getParent(); set("lastdir",fileOpenDirectory);
             String f=open.getSelectedFile().getPath();
             return my_save(f,false);
         }
-        if ("quit".equals(x)) { if (my_confirm()) System.exit(0); return true; }
+        if ("quit".equals(x)) {
+        	if (my_confirm()) System.exit(0);
+        	return Boolean.TRUE;
+        }
         if ("run".equals(x)) {
             if (thread_stillRunning()) {
                 compiled(false);
@@ -554,9 +531,9 @@ public final class SimpleGUI implements MessageHandler {
                     }
                 });
                 runmenu.add(y);
-                return true;
+                return Boolean.TRUE;
             }
-            if (compiled()) return true;
+            if (compiled()) return Boolean.TRUE;
             compiled(true);
             runmenu.removeAll();
             JMenuItem y=new JMenuItem("Cannot run any commands! See the error box below for details!");
@@ -580,18 +557,18 @@ public final class SimpleGUI implements MessageHandler {
                 }
                 else
                     log("\nCannot parse the model! "+e.toString(), styleRed);
-                return true;
+                return Boolean.TRUE;
             }
             catch(Exception e) {
                 log("\nCannot parse the model! "+e.toString(), styleRed);
-                return true;
+                return Boolean.TRUE;
             }
             log("\nParser succeeded: there are "+u.runchecks.size()+" command(s) in this model.", styleGreen);
             runmenu.removeAll();
             if (u.runchecks.size()==0) {
                 y=new JMenuItem("There are no commands in this model!");
                 runmenu.add(y);
-                return true;
+                return Boolean.TRUE;
             }
             if (u.runchecks.size()>1) {
                 y=new JMenuItem("All");
@@ -630,7 +607,7 @@ public final class SimpleGUI implements MessageHandler {
         }
         if ("showchange".equals(x)) showChangeLog();
         if ("showversion".equals(x)) JOptionPane.showMessageDialog(null,AlloyVersion.version());
-        return false;
+        return Boolean.TRUE;
     }
 
     /**
@@ -668,7 +645,7 @@ public final class SimpleGUI implements MessageHandler {
         KodVizInstaller.copy("zchaff_basic.dll", binary, false);
         set("basedir",alloyhome);
 
-        if (args.length==1 && args[0].equals("-jaws") && !get("version").equals(AlloyVersion.version())) {
+        if (Util.onMac() && args.length==1 && args[0].equals("-jaws") && !get("version").equals(AlloyVersion.version())) {
             set("version", AlloyVersion.version());
             String[] cmdArgs = {"java", "-jar", alloyhome+fs+"alloy4.jar", "-relaunch", alloyhome};
             Process p=null;
@@ -703,8 +680,8 @@ public final class SimpleGUI implements MessageHandler {
             }
         }
 
-        int screenWidth=getScreenWidth();
-        int screenHeight=getScreenHeight();
+        int screenWidth=Toolkit.getDefaultToolkit().getScreenSize().width;
+        int screenHeight=Toolkit.getDefaultToolkit().getScreenSize().height;
         int width=screenWidth/10*8, height=screenHeight/10*8;
         Font font=Util.getFont();
         frame=new JFrame(AlloyVersion.version());

@@ -8,10 +8,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
@@ -19,7 +21,7 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 /**
- * An utility class for doing common I/O and XML and GUI operations.
+ * Utility class for doing common I/O and XML and GUI operations.
  *
  * @author Felix Chang
  */
@@ -132,5 +134,45 @@ public final class Util {
         for(int i=0; i<strs.length; i++) {
             if ((i%2)==0) out.print(strs[i]); else encodeXML(out,strs[i]);
         }
+    }
+    
+    /** Default is no. */
+    public static boolean yesno(JFrame parentFrame, String message, String yes, String no) {
+        int ans=JOptionPane.showOptionDialog(parentFrame, message, "Warning!",
+        		JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                new Object[]{yes,no},
+                no);
+        return ans==JOptionPane.YES_OPTION;
+    }
+
+    /** Default is no. */
+    public static boolean questionOverwrite(JFrame parentFrame, String filename) {
+    	String yes="Overwrite", no="Cancel";
+        int ans=JOptionPane.showOptionDialog(parentFrame,
+            	"The file \""+filename+"\" already exists. Do you wish to overwrite it?",
+                "Warning: the file already exists!",
+        		JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                new Object[]{yes,no},
+                no);
+        return ans==JOptionPane.YES_OPTION;
+    }
+
+    /** Default is CANCEL; return null if cancel, TRUE if save, FALSE if discard. */
+    public static Boolean questionSaveDiscardCancel(JFrame parentFrame) {
+    	String save="Save", discard="Discard", cancel="Cancel";
+        int ans=JOptionPane.showOptionDialog(parentFrame,
+            	"The content has not been saved. Do you wish to save it, discard it, or cancel the operation?",
+                "Warning: the content has not been saved!",
+        		JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                new Object[]{save,discard,cancel},
+                cancel);
+        if (ans==JOptionPane.YES_OPTION) return Boolean.TRUE;
+        if (ans!=JOptionPane.NO_OPTION) return null; else return Boolean.FALSE;
     }
 }
