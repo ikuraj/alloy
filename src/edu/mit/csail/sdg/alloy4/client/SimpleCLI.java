@@ -3,6 +3,8 @@ package edu.mit.csail.sdg.alloy4.client;
 import java.util.ArrayList;
 import java.util.prefs.Preferences;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
@@ -39,7 +41,7 @@ public final class SimpleCLI {
         }
     }
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws IOException {
         String basedir=get("basedir");
         String binary=basedir+fs+"binary";
         try { System.load(binary+fs+"libminisat6.so"); } catch(UnsatisfiedLinkError ex) {

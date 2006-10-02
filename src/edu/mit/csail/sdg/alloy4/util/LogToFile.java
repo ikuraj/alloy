@@ -1,6 +1,7 @@
 package edu.mit.csail.sdg.alloy4.util;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
@@ -20,10 +21,11 @@ public final class LogToFile extends Log {
     /**
      * Creates a logger that logs to "filename" (which will be overwritten if it exists).
      * @param filename - the filename to log to
-     * @throws FileNotFoundException - if the file could not be opened for some reason
+     * @throws IOException - if the file could not be opened for some reason
      */
-    public LogToFile(String filename) throws FileNotFoundException {
-        file=new PrintWriter(filename);
+    public LogToFile(String filename) throws IOException {
+        try { file=new PrintWriter(filename); }
+        catch(FileNotFoundException ex) { throw new IOException(ex.getMessage()); }
     }
 
     /** Writes msg into the log. */

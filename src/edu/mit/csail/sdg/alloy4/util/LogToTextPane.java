@@ -41,19 +41,15 @@ public final class LogToTextPane extends Log {
         if (!SwingUtilities.isEventDispatchThread()) {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
-                    public void run() { log(msg); }
+                    public final void run() { log(msg); }
                 });
-            } catch (Exception e) {
-                return; // If this happens, so be it.
-            }
+            } catch (Exception e) { } // Should not happens
             return;
         }
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, defaultStyle);
-        } catch (BadLocationException e) {
-            return; // Should not happen
-        }
+        } catch (BadLocationException e) { } // Should not happen
         pane.setCaretPosition(doc.getLength());
     }
 
@@ -62,19 +58,15 @@ public final class LogToTextPane extends Log {
         if (!SwingUtilities.isEventDispatchThread()) {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
-                    public void run() { logBold(msg); }
+                    public final void run() { logBold(msg); }
                 });
-            } catch (Exception e) {
-                return; // If this happened, so be it.
-            }
+            } catch (Exception e) { } // Should not happen
             return;
         }
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), msg, boldStyle);
-        } catch (BadLocationException e) {
-            return; // Should not happen
-        }
+        } catch (BadLocationException e) { } // Should not happen
         pane.setCaretPosition(doc.getLength());
     }
 
