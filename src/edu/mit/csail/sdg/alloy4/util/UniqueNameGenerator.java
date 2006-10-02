@@ -20,7 +20,7 @@ public final class UniqueNameGenerator {
     /**
      * Generate a unique name based on the input name.
      *
-     * <p/> If the input name has not been seen already by this generator,
+     * <p/> If the input name has not been generated already by this generator,
      * then it is returned as is. Otherwise, we append characters to it
      * until the name becomes unique.
      */
