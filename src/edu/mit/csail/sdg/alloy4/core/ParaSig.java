@@ -16,9 +16,9 @@ import edu.mit.csail.sdg.alloy4.util.Pos;
 
 public final class ParaSig extends Para {
 
-    public static final ParaSig UNIV=new ParaSig("univ");
-    public static final ParaSig NONE=new ParaSig("none");
-    public static final ParaSig SIGINT=new ParaSig("Int");
+    public static final ParaSig UNIV=new ParaSig("univ",true,null);
+    public static final ParaSig NONE=new ParaSig("none",false,null);
+    public static final ParaSig SIGINT=new ParaSig("Int",false,UNIV);
 
     public static final String UNIV_NAME = "univ";
     public static final String NONE_NAME = "none";
@@ -47,6 +47,8 @@ public final class ParaSig extends Para {
     // (Though "type" will be set already, for ParaSig.UNIV/NONE/SIGINT)
     public Type type;
 
+    public boolean toplevel() { return !subset && (sup()==null || sup()==ParaSig.UNIV); }
+    
     private Object sup;                        // If I'm a SUBSIG, this is the parent. ELSE null.
     public ParaSig sup() {
        if (sup==null) return null;
@@ -60,7 +62,7 @@ public final class ParaSig extends Para {
        if (ans.size()<1) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" tries to extend a non-existent signature \""+((String)sup)+"\"");
        ParaSig parent=(ParaSig)(ans.iterator().next());
        if (parent==ParaSig.NONE) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" cannot extend the builtin \"none\" signature");
-       if (parent==ParaSig.UNIV) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" already implicitly extend the builtin \"univ\" signature");
+       //if (parent==ParaSig.UNIV) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" already implicitly extend the builtin \"univ\" signature");
        if (parent.subset) throw new ErrorSyntax(pos, "Sig \""+fullname+"\" cannot extend a subset signature \""+parent.fullname+"\"! A signature can only extend a toplevel signature or a subsignature.");
        sup=parent;
     }
@@ -128,6 +130,7 @@ public final class ParaSig extends Para {
         if (SIGINT_NAME.equals(e))
             throw this.syntaxError("You can no longer declare a sig to be a subsig of Int!");
         sup=e;
+        if (!subset && sup==null) sup="univ";
 
         fields=new ArrayList<Field>();
         decls=new ArrayList<VarDecl>(d);
@@ -160,17 +163,17 @@ public final class ParaSig extends Para {
         return NONE;
     }
 
-    private ParaSig(String n) {
+    private ParaSig(String n, boolean isAbstract, ParaSig myParent) {
         super(new Pos("$builtin$",1,1), "", n);
         fullname="/"+n;
         fullvname=n;
         aliases.add("");
-        abs=false; lone=false; one=false; some=false;
+        abs=isAbstract; lone=false; one=false; some=false;
         decls=new ArrayList<VarDecl>(0);
         appendedFacts=null;
         type=Type.make(this);
         fields=new ArrayList<Field>(0);
-        sup=null;
+        sup=myParent; if (myParent!=null) myParent.subs.add(this);
         subset=false;
     }
 

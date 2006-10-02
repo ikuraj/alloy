@@ -220,7 +220,7 @@ public final class Unit {
             if (ans==null) ans=ans2;
             else if (ans2!=null) throw s.syntaxError("This signature's \""+n+"\" field conflicts with a parent signature's field with the same name!");
         }
-        if (s.sup()!=null) {
+        if (s.sup()!=null && s.sup()!=ParaSig.UNIV) {
             Pair<ParaSig,Field> ans2=lookup_Field(origin,s.sup(),n);
             if (ans==null) ans=ans2;
             else if (ans2!=null) throw s.syntaxError("This signature's \""+n+"\" field conflicts with a parent signature's field with the same name!");

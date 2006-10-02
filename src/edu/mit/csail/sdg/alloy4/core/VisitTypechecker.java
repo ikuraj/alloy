@@ -78,13 +78,15 @@ public final class VisitTypechecker {
 
     /** This is the main method to call to do typechecking. */
     public static ArrayList<ParaSig> check(Log log, ArrayList<Unit> units) {
+    	ParaSig.UNIV.subs.clear();
+    	ParaSig.UNIV.subs.add(ParaSig.SIGINT);
         VisitTypechecker tc=new VisitTypechecker();
         tc.log=log;
         while(fillParams(units,log)) {}
         while(mergeUnits(units,log)) {}
-        ArrayList<ParaSig> sigs=fillSig(units);
-        tc.check(units,sigs);
-        return sigs;
+        ArrayList<ParaSig> allsigs=fillSig(units);
+        tc.check(units,allsigs);
+        return allsigs;
     }
 
     /** This is step 1: figure out the instantiating parameters of each module. */
@@ -173,7 +175,7 @@ public final class VisitTypechecker {
     };
 
     /**
-     * This is step 3: fill in the "sup", "sups", "subs", and "type" field of every ParaSig,
+     * This is step 3B: fill in the "sup", "sups", "subs", and "type" field of every ParaSig,
      * then return the list of all ParaSig (topologically sorted).
      * (meaning: if A extends or is subset of B, then B will preceed A in the list)
      *
@@ -184,9 +186,9 @@ public final class VisitTypechecker {
         ArrayList<ParaSig> sigs=new ArrayList<ParaSig>();
         for(Unit u:units) for(Map.Entry<String,ParaSig> si:u.sigs.entrySet()) {
             ParaSig s=si.getValue();
-            sigs.add(s);
             s.resolveSup(u);
             s.resolveSups(u);
+            sigs.add(s);
         }
         // Now we perform a topological sort on the sigs
         LinkedHashMap<ParaSig,Boolean> status=new LinkedHashMap<ParaSig,Boolean>(); // NONE=NONE FALSE=VISITING TRUE=VISITED
@@ -215,7 +217,7 @@ public final class VisitTypechecker {
         // Performs a topological sort
         status.put(x, Boolean.FALSE);
         ParaSig y=x.sup();
-        if (y!=null) {
+        if (y!=null && y!=ParaSig.UNIV) {
             Boolean v=status.get(y);
             if (v==null) tsort(y,status,list);
             else if (v==false) throw y.syntaxError("Circular extension detected, involving the signature named \""+y.fullname+"\"");
@@ -230,8 +232,8 @@ public final class VisitTypechecker {
     }
 
     /** This is step 4: typecheck everything. */
-    private void check(ArrayList<Unit> units, List<ParaSig> sigs) {
-        for(ParaSig s:sigs)
+    private void check(ArrayList<Unit> units, List<ParaSig> allsigs) {
+        for(ParaSig s:allsigs)
             check(s, units.get(0).lookupPath(s.path));
         for(Unit u:units)
             for(Map.Entry<String,List<ParaFun>> funi:u.funs.entrySet())

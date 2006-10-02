@@ -561,7 +561,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     private boolean derive2(ParaRuncheck cmd, List<ParaSig> sigs) {
         boolean chg=false;
-        for(ParaSig s:sigs) if (s.sup()!=null && sig2bound(s)<0 && sig2bound(s.sup())>=0) {
+        for(ParaSig s:sigs) if (!s.toplevel() && sig2bound(s)<0 && sig2bound(s.sup())>=0) {
             bound("#5: ", cmd, s, sig2bound(s.sup()));
             chg=true;
         }
@@ -607,7 +607,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         again: while(true) {
             while(derive(cmd,sigs)) {}
             // TopLevel sigs must have bounds!
-            for(ParaSig s:sigs) if (!s.subset && s.sup()==null && sig2bound(s)<0) {
+            for(ParaSig s:sigs) if (s.toplevel() && sig2bound(s)<0) {
                 if (overall<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" needs a specific scope!");
                 if (s.lone || s.one) bound("#7: ",cmd, s, 1); else bound("#8: ",cmd, s, overall);
                 continue again;
@@ -682,7 +682,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /**                                                                         */
     /*==========================================================================*/
 
-    private Expression kuniv=Relation.INTS;// Relation.UNIV;
+    private Expression kuniv=Relation.UNIV; // INTS;// Relation.UNIV;
     private Expression kiden=Relation.IDEN;
 
     private boolean alloy3(ParaSig s, Unit u) {
@@ -747,7 +747,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 for(int x2=1; x2<subs.size(); x2++) x1=x1.union(rel(subs.get(x2)));
                 kfact=x1.eq(rel(s)).and(kfact);
             }
-            if (s.sup()!=null && s.sup()!=ParaSig.UNIV && !s.sup().abs) {
+            if (!s.toplevel() && !s.sup().abs) {
                 // If X extends Y, then X in Y
                 kfact=rel(s).in(rel(s.sup())).and(kfact);
             }
@@ -870,7 +870,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     private void computeUpperBound(ParaSig s) {
-        if (s.sup()==null) {
+        if (s.toplevel()) {
             int n=sig2bound(s);
             int nn=sig2upperbound(s).size();
             while(n>nn) { sig2upperbound(s).add(makeAtom(s)); nn++; }
@@ -931,8 +931,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             sig2lowerbound(ParaSig.SIGINT).add(ii);
             sig2upperbound(ParaSig.SIGINT).add(ii);
         }
-        for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeLowerBound(s); }
-        for(ParaSig s:sigs) if (!s.subset && s.sup()==null) { computeUpperBound(s); atoms.addAll(sig2upperbound(s)); }
+        for(ParaSig s:sigs) if (s.toplevel()) { computeLowerBound(s); }
+        for(ParaSig s:sigs) if (s.toplevel()) { computeUpperBound(s); atoms.addAll(sig2upperbound(s)); }
         final Universe universe = new Universe(atoms);
         final TupleFactory factory = universe.factory();
         final Bounds bounds = new Bounds(universe);
@@ -1072,7 +1072,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     private void writeXML_tuple(PrintWriter out, String firstatom, Tuple tp) {
         out.print("    <tuple>");
-        if (firstatom!=null) Util.encodeXMLs(out, "  <atom name=\"", firstatom, "\"/>");
+        if (firstatom!=null) Util.encodeXMLs(out, " <atom name=\"", firstatom, "\"/>");
         for(int i=0; i<tp.arity(); i++) Util.encodeXMLs(out, " <atom name=\"", (String)(tp.atom(i)), "\"/>");
         out.print(" </tuple>\n");
     }
@@ -1121,13 +1121,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 ParaSig s=e.getValue();
                 Relation r=(Relation)(rel(s));
                 rels.add(r);
-                if (s.sup()!=null)
-                {
-                 if (s.sup()==ParaSig.UNIV) Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n");
-                 else Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\" extends=\"", s.sup().fullvname, "\">\n");
-                }
+                if (s.toplevel())
+                    Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n");
                 else if (!s.subset)
-                	Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n");
+                    Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\" extends=\"", s.sup().fullvname, "\">\n");
                 else
                 	Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n"); // zzz WHAT SHOULD BE DONE HERE?
                 for(Tuple t:inst.tuples(r)) {
@@ -1142,12 +1139,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     rels.add(rlast);
                     rels.add(rnext);
                     out.print("<field name=\"first\">\n");
+                    Util.encodeXMLs(out, "    <type> <sig name=\"", s.fullvname, "\"/> <sig name=\"", u.params.get("elem").fullvname, "\"/> </type>\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rfirst));
                     out.print("</field>\n");
                     out.print("<field name=\"last\">\n");
+                    Util.encodeXMLs(out, "    <type> <sig name=\"", s.fullvname, "\"/> <sig name=\"", u.params.get("elem").fullvname, "\"/> </type>\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rlast));
                     out.print("</field>\n");
                     out.print("<field name=\"next\">\n");
+                    Util.encodeXMLs(out, "    <type> <sig name=\"", s.fullvname, "\"/> <sig name=\"", u.params.get("elem").fullvname, "\"/> <sig name=\"", u.params.get("elem").fullvname, "\"/></type>\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rnext));
                     out.print("</field>\n");
                 } else {
@@ -1156,9 +1156,17 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                         Field f=s.fields.get(fi); fi++;
                         Relation rf=(Relation)(rel(f));
                         rels.add(rf);
-                        Util.encodeXMLs(out, "<field name=\"", fn, "\">\n");
-                        writeXML_tupleset(out, null, inst.tuples(rf));
-                        out.print("</field>\n");
+                        for(Type.Rel typerel: f.fulltype) {
+                        	Expression intersect=null;
+                        	for(ParaSig type:typerel.basicTypes) if (intersect==null) intersect=rel(type); else intersect=intersect.product(rel(type));
+                        	TupleSet intersectTS = eval.evaluate(intersect.intersection(rf));
+                        	if (intersectTS.isEmpty()) continue;
+                        	Util.encodeXMLs(out, "<field name=\"", fn, "\">\n    <type>");
+                        	for(ParaSig type:typerel.basicTypes) Util.encodeXMLs(out, " <sig name=\"", type.fullvname, "\"/>");
+                        	out.print("</type>\n");
+                        	writeXML_tupleset(out, null, intersectTS);
+                        	out.print("</field>\n");
+                        }
                     }
                 }
             }
@@ -1172,6 +1180,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             		String name=skolemSet.make(r.name());
             		if (r.arity()>1) {
             			Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
+            			out.print("    <type>"); for(int ri=0; ri<r.arity(); ri++) out.print(" <sig name=\"univ\"/>"); out.print(" </type>\n");
             			writeXML_tupleset(out, null, inst.tuples(r));
             			out.print("</field>\n");
             		} else {
@@ -1190,6 +1199,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             		String name=skolemSet.make(pf.name);
             		if (ts.arity()>1) {
             			Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
+            			out.print("    <type>"); for(int ri=0; ri<ts.arity(); ri++) out.print(" <sig name=\"univ\"/>"); out.print(" </type>\n");
             			writeXML_tupleset(out, null, ts);
             			out.print("</field>\n");
             		} else {
