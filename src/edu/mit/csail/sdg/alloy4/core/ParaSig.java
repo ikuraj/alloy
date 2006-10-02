@@ -48,7 +48,7 @@ public final class ParaSig extends Para {
     public Type type;
 
     public boolean toplevel() { return !subset && (sup()==null || sup()==ParaSig.UNIV); }
-    
+
     private Object sup;                        // If I'm a SUBSIG, this is the parent. ELSE null.
     public ParaSig sup() {
        if (sup==null) return null;

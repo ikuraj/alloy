@@ -1113,9 +1113,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             Unit u=units.get(ui);
             String n=u.aliases.get(0);
             if (n.length()==0 || n.equals("this"))
-            	out.print("\n<module>\n");
+                out.print("\n<module>\n");
             else
-            	Util.encodeXMLs(out, "\n<module name=\"", (n.length()==0?"this":n), "\">\n");
+                Util.encodeXMLs(out, "\n<module name=\"", (n.length()==0?"this":n), "\">\n");
             for(Map.Entry<String,ParaSig> e:u.sigs.entrySet()) {
                 String lastatom="";
                 ParaSig s=e.getValue();
@@ -1126,7 +1126,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 else if (!s.subset)
                     Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\" extends=\"", s.sup().fullvname, "\">\n");
                 else
-                	Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n"); // zzz WHAT SHOULD BE DONE HERE?
+                    Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n"); // zzz WHAT SHOULD BE DONE HERE?
                 for(Tuple t:inst.tuples(r)) {
                     Util.encodeXMLs(out, "  <atom name=\"", lastatom=(String)(t.atom(0)), "\"/>\n");
                 }
@@ -1157,15 +1157,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                         Relation rf=(Relation)(rel(f));
                         rels.add(rf);
                         for(Type.Rel typerel: f.fulltype) {
-                        	Expression intersect=null;
-                        	for(ParaSig type:typerel.basicTypes) if (intersect==null) intersect=rel(type); else intersect=intersect.product(rel(type));
-                        	TupleSet intersectTS = eval.evaluate(intersect.intersection(rf));
-                        	if (intersectTS.isEmpty()) continue;
-                        	Util.encodeXMLs(out, "<field name=\"", fn, "\">\n    <type>");
-                        	for(ParaSig type:typerel.basicTypes) Util.encodeXMLs(out, " <sig name=\"", type.fullvname, "\"/>");
-                        	out.print("</type>\n");
-                        	writeXML_tupleset(out, null, intersectTS);
-                        	out.print("</field>\n");
+                            Expression intersect=null;
+                            for(ParaSig type:typerel.basicTypes) if (intersect==null) intersect=rel(type); else intersect=intersect.product(rel(type));
+                            TupleSet intersectTS = eval.evaluate(intersect.intersection(rf));
+                            if (intersectTS.isEmpty()) continue;
+                            Util.encodeXMLs(out, "<field name=\"", fn, "\">\n    <type>");
+                            for(ParaSig type:typerel.basicTypes) Util.encodeXMLs(out, " <sig name=\"", type.fullvname, "\"/>");
+                            out.print("</type>\n");
+                            writeXML_tupleset(out, null, intersectTS);
+                            out.print("</field>\n");
                         }
                     }
                 }
@@ -1176,38 +1176,38 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 out.print("</sig>\n");
             }
             if (ui==0) {
-            	for(Relation r:inst.relations()) if (!rels.contains(r)) {
-            		String name=skolemSet.make(r.name());
-            		if (r.arity()>1) {
-            			Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
-            			out.print("    <type>"); for(int ri=0; ri<r.arity(); ri++) out.print(" <sig name=\"univ\"/>"); out.print(" </type>\n");
-            			writeXML_tupleset(out, null, inst.tuples(r));
-            			out.print("</field>\n");
-            		} else {
-            			Util.encodeXMLs(out, "<set name=\"$", name, "\">\n");
-            			writeXML_atoms(out, inst.tuples(r));
-            			out.print("</set>\n");
-            		}
-            	}
-            	for(Map.Entry<String,List<ParaFun>> pflist: u.funs.entrySet()) for(ParaFun pf: pflist.getValue()) {
-            		if (pf.getArgCount()!=0) continue;
-            		if (pf.getType()==null) continue;
-            		Object obj=pf.getValue().accept(this);
-            		if (!(obj instanceof Expression)) continue;
-            		Expression e=(Expression)obj;
-            		TupleSet ts=eval.evaluate(e);
-            		String name=skolemSet.make(pf.name);
-            		if (ts.arity()>1) {
-            			Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
-            			out.print("    <type>"); for(int ri=0; ri<ts.arity(); ri++) out.print(" <sig name=\"univ\"/>"); out.print(" </type>\n");
-            			writeXML_tupleset(out, null, ts);
-            			out.print("</field>\n");
-            		} else {
-            			Util.encodeXMLs(out, "<set name=\"$", name, "\">\n");
-            			writeXML_atoms(out, ts);
-            			out.print("</set>\n");
-            		}
-            	}
+                for(Relation r:inst.relations()) if (!rels.contains(r)) {
+                    String name=skolemSet.make(r.name());
+                    if (r.arity()>1) {
+                        Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
+                        out.print("    <type>"); for(int ri=0; ri<r.arity(); ri++) out.print(" <sig name=\"univ\"/>"); out.print(" </type>\n");
+                        writeXML_tupleset(out, null, inst.tuples(r));
+                        out.print("</field>\n");
+                    } else {
+                        Util.encodeXMLs(out, "<set name=\"$", name, "\">\n");
+                        writeXML_atoms(out, inst.tuples(r));
+                        out.print("</set>\n");
+                    }
+                }
+                for(Map.Entry<String,List<ParaFun>> pflist: u.funs.entrySet()) for(ParaFun pf: pflist.getValue()) {
+                    if (pf.getArgCount()!=0) continue;
+                    if (pf.getType()==null) continue;
+                    Object obj=pf.getValue().accept(this);
+                    if (!(obj instanceof Expression)) continue;
+                    Expression e=(Expression)obj;
+                    TupleSet ts=eval.evaluate(e);
+                    String name=skolemSet.make(pf.name);
+                    if (ts.arity()>1) {
+                        Util.encodeXMLs(out, "<field name=\"$", name, "\">\n");
+                        out.print("    <type>"); for(int ri=0; ri<ts.arity(); ri++) out.print(" <sig name=\"univ\"/>"); out.print(" </type>\n");
+                        writeXML_tupleset(out, null, ts);
+                        out.print("</field>\n");
+                    } else {
+                        Util.encodeXMLs(out, "<set name=\"$", name, "\">\n");
+                        writeXML_atoms(out, ts);
+                        out.print("</set>\n");
+                    }
+                }
             }
             out.print("</module>\n");
         }

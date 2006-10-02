@@ -18,7 +18,8 @@ import java.util.NoSuchElementException;
  * this implementation does not provide the remove() method.
  *
  * <p/>
- * Note: this class's iterator always returns the elements in the order they were inserted.
+ * By making this simplification, we are able to ensure its iterator
+ * always returns the elements in the order they were inserted.
  *
  * <p/><b>Invariant:</b> (hashmap.containsKey(x)) iff (x==list.get(i) for some i)
  *

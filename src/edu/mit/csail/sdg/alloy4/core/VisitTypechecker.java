@@ -78,8 +78,8 @@ public final class VisitTypechecker {
 
     /** This is the main method to call to do typechecking. */
     public static ArrayList<ParaSig> check(Log log, ArrayList<Unit> units) {
-    	ParaSig.UNIV.subs.clear();
-    	ParaSig.UNIV.subs.add(ParaSig.SIGINT);
+        ParaSig.UNIV.subs.clear();
+        ParaSig.UNIV.subs.add(ParaSig.SIGINT);
         VisitTypechecker tc=new VisitTypechecker();
         tc.log=log;
         while(fillParams(units,log)) {}

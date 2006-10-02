@@ -20,83 +20,83 @@ import javax.swing.event.MenuListener;
 
 /**
  * An utility class for doing common I/O and XML and GUI operations.
- * 
+ *
  * @author Felix Chang
  */
 public final class Util {
 
-	/** Constructor is private, since this utility class never needs to be instantiated. */
+    /** Constructor is private, since this utility class never needs to be instantiated. */
     private Util() { }
 
-	/** Returns true iff running on a Mac OS X, with look and feel of Aqua **/
+    /** Returns true iff running on a Mac OS X, with look and feel of Aqua **/
     public static boolean onMac() {
         return System.getProperty("mrj.version") != null
             && UIManager.getSystemLookAndFeelClassName().equals(UIManager.getLookAndFeel().getClass().getName());
     }
 
     /** Returns the recommended font name to use, based on the OS. */
-	public static String getFontName() { if (onMac()) return "LucidaGrande"; else return "Monospaced"; }
-	
-	/** Returns the recommended font size to use, based on the OS. */
-	public static int getFontSize() { if (onMac()) return 12; else return 12; }
-	
-	/** Returns the recommended Font to use, based on the OS. */
-	public static Font getFont() { return new Font(getFontName(), Font.PLAIN, getFontSize()); }
+    public static String getFontName() { if (onMac()) return "LucidaGrande"; else return "Monospaced"; }
 
-	/** Make a JScrollPane. */
-	public static JScrollPane makeJScrollPane(Component component) {
-		JScrollPane ans = new JScrollPane(component,
-				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		ans.setMinimumSize(new Dimension(50, 50));
-		return ans;
-	}
-	
-	/** Make a JMenu. */
-	public static JMenu makeJMenu(JMenuBar parent, String label, boolean enabled, int mnemonic, final MessageHandler handler, final String message) {
-		JMenu ans=new JMenu(label,false);
-		if (!onMac()) ans.setMnemonic(mnemonic);
-		if (handler!=null) ans.addMenuListener(new MenuListener() {
-			public final void menuSelected(MenuEvent e) { handler.handleMessage(message); }
-			public final void menuDeselected(MenuEvent e) { }
-			public final void menuCanceled(MenuEvent e) { }
-		});
-		ans.setEnabled(enabled);
-		parent.add(ans);
-		return ans;
-	}
-	
-	/** Make a JMenu. */
-	public static JMenuItem makeJMenuItem(JMenu parent, String label, int key, int accel, final MessageHandler handler, final String message) {
-		JMenuItem ans = new JMenuItem(label,key);
-		int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-		if (accel>=0) ans.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
-		if (handler!=null) ans.addActionListener(new ActionListener() {
-			public final void actionPerformed(ActionEvent e) { handler.handleMessage(message); }
-		});
-		parent.add(ans);
-		return ans;
-	}
+    /** Returns the recommended font size to use, based on the OS. */
+    public static int getFontSize() { if (onMac()) return 12; else return 12; }
 
-	/** Make a JLabel. */
-	public static JLabel makeJLabel(String label, Font font) {
-		JLabel ans = new JLabel(label);
-		ans.setFont(font);
-		return ans;
-	}
-	
-	/**
-	 * Write a String into a PrintWriter, and encode special characters are XML-encoded.
-	 * 
-	 * <p/>
-	 * In particular, it changes LESS THAN, GREATER THAN, AMPERSAND, SINGLE QUOTE, and DOUBLE QUOTE
-	 * into the lt; gt; amp; apos; and quot; encoding. And it turns any characters outside of 32..126 range
-	 * into the #xHHHH encoding (where HHHH is the 4 digit hexadecimal representation of the character value).
-	 * 
-	 * @param out - the PrintWriter to write into
-	 * @param str - the String to write out
-	 */
-	public static void encodeXML(PrintWriter out, String str) {
+    /** Returns the recommended Font to use, based on the OS. */
+    public static Font getFont() { return new Font(getFontName(), Font.PLAIN, getFontSize()); }
+
+    /** Make a JScrollPane. */
+    public static JScrollPane makeJScrollPane(Component component) {
+        JScrollPane ans = new JScrollPane(component,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        ans.setMinimumSize(new Dimension(50, 50));
+        return ans;
+    }
+
+    /** Make a JMenu. */
+    public static JMenu makeJMenu(JMenuBar parent, String label, boolean enabled, int mnemonic, final MessageHandler handler, final String message) {
+        JMenu ans=new JMenu(label,false);
+        if (!onMac()) ans.setMnemonic(mnemonic);
+        if (handler!=null) ans.addMenuListener(new MenuListener() {
+            public final void menuSelected(MenuEvent e) { handler.handleMessage(message); }
+            public final void menuDeselected(MenuEvent e) { }
+            public final void menuCanceled(MenuEvent e) { }
+        });
+        ans.setEnabled(enabled);
+        parent.add(ans);
+        return ans;
+    }
+
+    /** Make a JMenu. */
+    public static JMenuItem makeJMenuItem(JMenu parent, String label, int key, int accel, final MessageHandler handler, final String message) {
+        JMenuItem ans = new JMenuItem(label,key);
+        int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+        if (accel>=0) ans.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
+        if (handler!=null) ans.addActionListener(new ActionListener() {
+            public final void actionPerformed(ActionEvent e) { handler.handleMessage(message); }
+        });
+        parent.add(ans);
+        return ans;
+    }
+
+    /** Make a JLabel. */
+    public static JLabel makeJLabel(String label, Font font) {
+        JLabel ans = new JLabel(label);
+        ans.setFont(font);
+        return ans;
+    }
+
+    /**
+     * Write a String into a PrintWriter, and encode special characters are XML-encoded.
+     *
+     * <p/>
+     * In particular, it changes LESS THAN, GREATER THAN, AMPERSAND, SINGLE QUOTE, and DOUBLE QUOTE
+     * into the lt; gt; amp; apos; and quot; encoding. And it turns any characters outside of 32..126 range
+     * into the #xHHHH encoding (where HHHH is the 4 digit hexadecimal representation of the character value).
+     *
+     * @param out - the PrintWriter to write into
+     * @param str - the String to write out
+     */
+    public static void encodeXML(PrintWriter out, String str) {
         int n=str.length();
         for(int i=0; i<n; i++) {
             char c=str.charAt(i);
@@ -114,23 +114,23 @@ public final class Util {
         }
     }
 
-	/**
-	 * Write a list of Strings into a PrintWriter, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
-	 * 
-	 * <p/> For example, if you call encodeXML(out, A, B, C, D, E), it desugars into the following:
-	 * <br/> out.print(A);
-	 * <br/> out.encodeXML(B);
-	 * <br/> out.print(C);
-	 * <br/> out.encodeXML(D);
-	 * <br/> out.print(E);
-	 * <br/> In other words, it writes the even entries as-is, and print the odd entries using XML encoding.
-	 * 
-	 * @param out - the PrintWriter to write into
-	 * @param strs - the list of Strings to write out
-	 */
-	public static void encodeXMLs(PrintWriter out, String... strs) {
-		for(int i=0; i<strs.length; i++) {
-			if ((i%2)==0) out.print(strs[i]); else encodeXML(out,strs[i]);
-		}
-	}
+    /**
+     * Write a list of Strings into a PrintWriter, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
+     *
+     * <p/> For example, if you call encodeXML(out, A, B, C, D, E), it desugars into the following:
+     * <br/> out.print(A);
+     * <br/> out.encodeXML(B);
+     * <br/> out.print(C);
+     * <br/> out.encodeXML(D);
+     * <br/> out.print(E);
+     * <br/> In other words, it writes the even entries as-is, and print the odd entries using XML encoding.
+     *
+     * @param out - the PrintWriter to write into
+     * @param strs - the list of Strings to write out
+     */
+    public static void encodeXMLs(PrintWriter out, String... strs) {
+        for(int i=0; i<strs.length; i++) {
+            if ((i%2)==0) out.print(strs[i]); else encodeXML(out,strs[i]);
+        }
+    }
 }
