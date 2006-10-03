@@ -29,7 +29,9 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -37,6 +39,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
@@ -249,7 +252,7 @@ public final class SimpleGUI implements MessageHandler {
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(alloyhome, source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
                 String tempdir=maketemp();
-                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, minisat?2:(zchaff_basic?1:0), tempdir);
+                List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, satOPTION, tempdir);
                 new File(tempdir).delete(); // In case it was UNSAT, or was TRIVIALLY SAT. Or cancelled.
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     logButton("Click here to display this instance", tempdir, tempdir+(index+1)+".xml");
@@ -259,7 +262,8 @@ public final class SimpleGUI implements MessageHandler {
                     int i=0;
                     for(TranslateAlloyToKodkod.Result b:result) {
                         i++;
-                        switch(b) {
+                        if (b==null) log("#"+i+": CANCELED", styleRegular);
+                        else switch(b) {
                         case SAT: logLink("#"+i+": SAT (Click here to see the instance)", tempdir, tempdir+i+".xml"); break;
                         case TRIVIALLY_SAT: log("#"+i+": SAT", styleRegular); break;
                         case UNSAT: case TRIVIALLY_UNSAT: log("#"+i+": UNSAT", styleRegular); break;
@@ -330,11 +334,22 @@ public final class SimpleGUI implements MessageHandler {
     /** Synchronized helper method that returns true if and only if the "modified" flag is true */
     private synchronized boolean modified() { return modified; }
 
+    private JButton stopbutton=null;
     private Thread current_thread=null;
-    private synchronized void thread_reportStarting(Thread x) { current_thread=x; }
-    private synchronized void thread_reportTermination() { current_thread=null; }
+    private synchronized void thread_reportStarting(Thread x) { runmenu.setEnabled(false); stopbutton.setVisible(true); current_thread=x; }
+    private synchronized void thread_reportTermination() { runmenu.setEnabled(true); stopbutton.setVisible(false); current_thread=null; }
     private synchronized boolean thread_stillRunning() { return current_thread!=null; }
-    private synchronized void thread_stop() { if (current_thread!=null) Stopper.stopped=true; }
+    private synchronized void thread_stop() {
+    	/*
+    	System.out.println("START...");
+    	for(StackTraceElement e: current_thread.getStackTrace()) {
+    		System.out.println("  ENTRY: " + e.toString());
+    	}
+    	System.out.println("Done.\n\n");
+    	System.out.flush();
+    	*/
+    	if (current_thread!=null) Stopper.stopped=true;
+    }
 
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */
     private String latestName = "";
@@ -483,10 +498,6 @@ public final class SimpleGUI implements MessageHandler {
 
     /** Convention for this method: return==null means failure, return!=null means success. */
     public synchronized Object handleMessage(String x) {
-        if ("file".equals(x)) {
-            my_file();
-            return Boolean.TRUE;
-        }
         if ("new".equals(x)) {
             if (!my_confirm()) return null;
             latestName="";
@@ -505,9 +516,6 @@ public final class SimpleGUI implements MessageHandler {
             my_open(open.getSelectedFile().getPath());
             return Boolean.TRUE;
         }
-        if ("save".equals(x)) {
-            return latestName.length()!=0 ? my_save(latestName,true) : handleMessage("saveas");
-        }
         if ("saveas".equals(x)) {
             JFileChooser open=new JFileChooser(fileOpenDirectory);
             open.setFileFilter(filterALS);
@@ -516,23 +524,7 @@ public final class SimpleGUI implements MessageHandler {
             String f=open.getSelectedFile().getPath();
             return my_save(f,false);
         }
-        if ("quit".equals(x)) {
-            if (my_confirm()) System.exit(0);
-            return Boolean.TRUE;
-        }
         if ("run".equals(x)) {
-            if (thread_stillRunning()) {
-                compiled(false);
-                runmenu.removeAll();
-                JMenuItem y=new JMenuItem("The current analysis is still running...");
-                y.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        thread_stop();
-                    }
-                });
-                runmenu.add(y);
-                return Boolean.TRUE;
-            }
             if (compiled()) return Boolean.TRUE;
             compiled(true);
             runmenu.removeAll();
@@ -607,8 +599,20 @@ public final class SimpleGUI implements MessageHandler {
         }
         if ("showchange".equals(x)) showChangeLog();
         if ("showversion".equals(x)) JOptionPane.showMessageDialog(null,AlloyVersion.version());
+        if ("quit".equals(x)) if (my_confirm()) System.exit(0);
+        if ("stop".equals(x)) thread_stop();
+        if ("sat=sat4j".equals(x)) { satMINISAT.setIcon(iconNo); satZCHAFF.setIcon(iconNo); satSAT4J.setIcon(iconYes); satFILE.setIcon(iconNo); satOPTION=0; }
+        if ("sat=zchaff".equals(x)) { satMINISAT.setIcon(iconNo); satZCHAFF.setIcon(iconYes); satSAT4J.setIcon(iconNo); satFILE.setIcon(iconNo); satOPTION=1; }
+        if ("sat=minisat".equals(x)) { satMINISAT.setIcon(iconYes); satZCHAFF.setIcon(iconNo); satSAT4J.setIcon(iconNo); satFILE.setIcon(iconNo); satOPTION=2; }
+        if ("sat=file".equals(x)) { satMINISAT.setIcon(iconNo); satZCHAFF.setIcon(iconNo); satSAT4J.setIcon(iconNo); satFILE.setIcon(iconYes); satOPTION=(-1); }
+        if ("save".equals(x)) return latestName.length()!=0 ? my_save(latestName,true) : handleMessage("saveas");
+        if ("file".equals(x)) my_file();
         return Boolean.TRUE;
     }
+
+    private static final ImageIcon iconYes=Util.loadIcon("images/menu1.gif");
+    private static final ImageIcon iconNo=Util.loadIcon("images/menu0.gif");
+    private JMenuItem satSAT4J, satZCHAFF, satMINISAT, satFILE;
 
     /**
      * Synchronized helper method that actually initializes everything.
@@ -616,8 +620,7 @@ public final class SimpleGUI implements MessageHandler {
      * <p/> This method is called by the SimpleGUI's constructor to actually initialize everything.
      * It will create a GUI window, and populate it with two JTextArea and one JMenuBar.
      */
-    private boolean minisat=true;
-    private boolean zchaff_basic=true;
+    private int satOPTION=2;
     private synchronized void my_setup(String[] args) {
 
         boolean relaunch=false;
@@ -656,24 +659,26 @@ public final class SimpleGUI implements MessageHandler {
 
         set("version", AlloyVersion.version());
 
+        boolean minisat=true;
         try { System.load(binary+fs+"libminisat6.so"); } catch(UnsatisfiedLinkError ex) {
             try { System.load(binary+fs+"libminisat4.so"); } catch(UnsatisfiedLinkError ex2) {
                 try { System.load(binary+fs+"libminisat.so"); } catch(UnsatisfiedLinkError ex3) {
                     try { System.load(binary+fs+"libminisat.jnilib"); } catch(UnsatisfiedLinkError ex4) {
                         try { System.load(binary+fs+"minisat.dll"); } catch(UnsatisfiedLinkError ex5) {
-                            minisat=false;
+                            minisat=false; if (satOPTION==2) satOPTION=1;
                         }
                     }
                 }
             }
         }
 
+        boolean zchaff_basic=true;
         try { System.load(binary+fs+"libzchaff_basic6.so"); } catch(UnsatisfiedLinkError ex) {
             try { System.load(binary+fs+"libzchaff_basic4.so"); } catch(UnsatisfiedLinkError ex2) {
                 try { System.load(binary+fs+"libzchaff_basic.so"); } catch(UnsatisfiedLinkError ex3) {
                     try { System.load(binary+fs+"libzchaff_basic.jnilib"); } catch(UnsatisfiedLinkError ex4) {
                         try { System.load(binary+fs+"zchaff_basic.dll"); } catch(UnsatisfiedLinkError ex5) {
-                            zchaff_basic=false;
+                            zchaff_basic=false; if (satOPTION==1) satOPTION=0;
                         }
                     }
                 }
@@ -697,6 +702,11 @@ public final class SimpleGUI implements MessageHandler {
         Util.makeJMenuItem(filemenu, "Save As", KeyEvent.VK_A, -1,            this, "saveas");
         Util.makeJMenuItem(filemenu, "Quit",    KeyEvent.VK_Q, -1,            this, "quit");
         runmenu =        Util.makeJMenu(bar, "Run",    true, KeyEvent.VK_R, this, "run");
+        JMenu optmenu =  Util.makeJMenu(bar, "Options",true, KeyEvent.VK_O, null, null);
+        (satSAT4J=Util.makeJMenuItem(optmenu, "Use SAT4J", -1, -1, this, "sat=sat4j")).setIcon(iconNo);
+        (satZCHAFF=Util.makeJMenuItem(optmenu, "Use ZChaff", KeyEvent.VK_Z, -1, this, "sat=zchaff")).setIcon(iconNo);
+        (satMINISAT=Util.makeJMenuItem(optmenu, "Use MiniSat", KeyEvent.VK_M, -1, this, "sat=minisat")).setIcon(iconNo);
+        (satFILE=Util.makeJMenuItem(optmenu, "Use CommandLine", KeyEvent.VK_C, -1, this, "sat=file")).setIcon(iconNo);
         windowmenu =     Util.makeJMenu(bar, "Window", true, KeyEvent.VK_W, this, "window");
         JMenu helpmenu = Util.makeJMenu(bar, "Help",   true, KeyEvent.VK_H, null, null);
         Util.makeJMenuItem(helpmenu, "See Alloy4 Change Log", KeyEvent.VK_C, -1, this, "showchange");
@@ -717,7 +727,21 @@ public final class SimpleGUI implements MessageHandler {
             public void removeUpdate(DocumentEvent e) {compiled(false); modified(true);}
             public void changedUpdate(DocumentEvent e) {compiled(false); modified(true);}
         });
-        JScrollPane textPane = Util.makeJScrollPane(text);
+        JComponent textPane = Util.makeJScrollPane(text);
+
+        // Create the toolbar
+        JPanel toolbar=edu.mit.csail.sdg.kodviz.util.Util.makeH();
+        if (!Util.onMac()) toolbar.setBackground(Color.getHSBColor(0f,0f,0.95f));
+        toolbar.add(Util.makeJButton("New","Starts a new blank model","images/24_new.gif", this, "new"));
+        toolbar.add(Util.makeJButton("Open","Opens an existing model","images/24_open.gif", this, "open"));
+        toolbar.add(Util.makeJButton("Save","Saves the current model","images/24_save.gif", this, "save"));
+        toolbar.add(stopbutton=Util.makeJButton("Stop","Stops the current analysis","images/24_execute_abort2.gif", this, "stop"));
+        stopbutton.setVisible(false);
+        JPanel lefthalf=new JPanel();
+        lefthalf.setLayout(new BorderLayout());
+        lefthalf.add(toolbar, BorderLayout.NORTH);
+        lefthalf.add(textPane, BorderLayout.CENTER);
+        textPane=lefthalf;
 
         // Create the message area
         log=new JTextPane();
@@ -755,6 +779,11 @@ public final class SimpleGUI implements MessageHandler {
         if (minisat) log("\nSolver: MiniSAT using JNI", styleGreen);
             else if (zchaff_basic) log("\nSolver: ZChaff using JNI", styleGreen);
             else log("\nSolver: SAT4J", styleGreen);
+        if (!minisat) satMINISAT.setEnabled(false);
+        if (!zchaff_basic) satZCHAFF.setEnabled(false);
+        if (satOPTION==2) handleMessage("sat=minisat");
+        	else if (satOPTION==1) handleMessage("sat=zchaff");
+        	else handleMessage("sat=sat4j");
         if (Util.onMac()) log("\nMac OS X detected.", styleGreen);
         if (relaunch) log("\nJAR file autolaunched.", styleGreen);
 

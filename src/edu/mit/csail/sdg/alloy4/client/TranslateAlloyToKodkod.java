@@ -54,7 +54,9 @@ import kodkod.ast.BinaryExpression;
 import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
+import kodkod.engine.satlab.FileSAT;
 import kodkod.engine.satlab.SATFactory;
+import kodkod.engine.satlab.SATSolver;
 import kodkod.engine.Options;
 import kodkod.engine.Solution.Outcome;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
@@ -896,7 +898,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice, String dest)  {
+    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice, final String dest)  {
         Result mainResult=null;
         Unit root=units.get(0);
         Formula mainformula;
@@ -1017,13 +1019,17 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         try {
             Solver solver = new Solver();
-            if (solverChoice==0)
-               solver.options().setSolver(SATFactory.DefaultSAT4J);
-            else if (solverChoice==1)
+            if (solverChoice==1)
                 solver.options().setSolver(SATFactory.ZChaffBasic);
             else if (solverChoice==2)
                 solver.options().setSolver(SATFactory.MiniSat);
-            //solver.options().setSolver(SATFactory.FileSAT);
+            else if (solverChoice==(-1))
+                solver.options().setSolver(new SATFactory() {
+					@Override public final SATSolver instance() { return new FileSAT(dest+".cnf"); }
+					@Override public String toString() { return "CommandLine"; }
+                });
+            else // if (solverChoice==0)
+                solver.options().setSolver(SATFactory.DefaultSAT4J);
             solver.options().setBitwidth(bitwidth);
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
             log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");

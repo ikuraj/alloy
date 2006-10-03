@@ -1,13 +1,20 @@
 package edu.mit.csail.sdg.alloy4.util;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
+import java.net.URL;
 
+import javax.swing.AbstractAction;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -86,7 +93,41 @@ public final class Util {
         ans.setFont(font);
         return ans;
     }
+    
+    /** Make a graphical button. */
+    public static JButton makeJButton
+    	(String label, String tip, String iconname, final MessageHandler handler, final String message) {
+    	final ImageIcon icon=new ImageIcon(loadImage(iconname));
+        final JButton button = new JButton();
+        button.setVerticalTextPosition(JButton.BOTTOM);
+        button.setHorizontalTextPosition(JButton.CENTER);
+        button.setBorderPainted(false);
+        if (!onMac()) button.setBackground(Color.getHSBColor(0f,0f,0.95f));
+        button.setFont(button.getFont().deriveFont((float)1));
+        button.setAction(new AbstractAction("", icon) {
+			private static final long serialVersionUID = 1L;
+			public void actionPerformed(ActionEvent e) { handler.handleMessage(message); }
+        });
+        button.setPreferredSize(new Dimension(icon.getIconWidth()+10, icon.getIconHeight()+15));
+        button.setMaximumSize(new Dimension(icon.getIconWidth()+10, icon.getIconHeight()+15));
+        button.setToolTipText(tip);
+        button.setAlignmentX(0);
+        button.setAlignmentY(0);
+        return button;
+    }
 
+    private static Image getImage(String resourceName) {
+        URL url = Util.class.getClassLoader().getResource(resourceName);
+        if (url!=null) return Toolkit.getDefaultToolkit().createImage(url); else return null;
+    }
+
+    public static Image loadImage(String pathName) {
+        Image image = getImage(pathName);
+        if (image==null) return new BufferedImage(5, 5, BufferedImage.TYPE_INT_RGB); else return image;
+    }
+    
+    public static ImageIcon loadIcon(String pathname) { return new ImageIcon(loadImage(pathname)); } 
+    
     /**
      * Write a String into a PrintWriter, and encode special characters are XML-encoded.
      *
