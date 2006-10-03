@@ -3,4 +3,6 @@ module trivial
 sig S {}
 fact {S != S}
 pred show () {some S}
-run show
+run show expect 0
+
+

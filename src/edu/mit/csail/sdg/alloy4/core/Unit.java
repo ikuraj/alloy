@@ -130,16 +130,16 @@ public final class Unit {
     // This stores the list of RUN/CHECK commands, in the order they appear in the file.
     public final List<ParaRuncheck> runchecks=new ArrayList<ParaRuncheck>();
 
-    public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,Map<String,Integer> s) {
+    public void makeRuncheck(Pos p,String n,boolean c,int o,int exp,Map<String,Integer> s, String label, List<ExprName> opts) {
         if (!aliases.contains("")) return;
-        runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s));
+        runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, label, opts));
     }
 
-    public void makeRuncheck(Pos p,Expr e,boolean c,int o,int exp,Map<String,Integer> s) {
+    public void makeRuncheck(Pos p,Expr e,boolean c,int o,int exp,Map<String,Integer> s, String label, List<ExprName> opts) {
         if (!aliases.contains("")) return;
         String n;
         if (c) n=makeAssert(p,"",e); else { n="*"+(++anonymous_id)+"*"; makeFun(p,n,null,new ArrayList<VarDecl>(),null,e); }
-        runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s));
+        runchecks.add(new ParaRuncheck(p, aliases.get(0), n, c, o, exp, s, label, opts));
     }
 
     /*======================================================================*/
@@ -188,9 +188,9 @@ public final class Unit {
         Para s;
         Set<Object> ans=new LinkedHashSet<Object>();
         if (name.indexOf('/')<0) {
-            if (name.equals(ParaSig.SIGINT_NAME)) { ans.add(ParaSig.SIGINT); return ans; }
-            if (name.equals(ParaSig.UNIV_NAME)) { ans.add(ParaSig.UNIV); return ans; }
-            if (name.equals(ParaSig.NONE_NAME)) { ans.add(ParaSig.NONE); return ans; }
+            if (name.equals("Int")) { ans.add(ParaSig.SIGINT); return ans; }
+            if (name.equals("univ")) { ans.add(ParaSig.UNIV); return ans; }
+            if (name.equals("none")) { ans.add(ParaSig.NONE); return ans; }
             lookupNQsig_noparam(name,ans); s=params.get(name); if (s!=null) ans.add(s);
             return ans;
         }

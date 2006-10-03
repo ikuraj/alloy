@@ -578,14 +578,14 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             int scope=entry.getValue();
             boolean exact=(scope<0);
             if (scope<0) scope=0-(scope+1);
-            if (name.equals(ParaSig.BITWIDTH_NAME)) { bitwidth=scope; continue; }
+            if (name.equals("int")) { bitwidth=scope; continue; }
             Set<Object> set=root.lookup_sigORparam(name);
             Iterator<Object> it=set.iterator();
             if (set.size()>1) {
                 ParaSig choice1=(ParaSig)(it.next());
                 ParaSig choice2=(ParaSig)(it.next());
                 throw cmd.syntaxError("The name \""+name+"\" is ambiguous: it could be "
-                                      +choice1.fullvname+" or "+choice2.fullvname);
+                                      +choice1.fullname+" or "+choice2.fullname);
             }
             if (set.size()<1) throw cmd.syntaxError("The name \""+name+"\" cannot be found");
             ParaSig s=(ParaSig)(it.next());
@@ -833,11 +833,18 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     private final Map<String,Integer> unique=new LinkedHashMap<String,Integer>();
 
+    private static String shorten(String string) {
+        if (string.startsWith("/")) string=string.substring(1);
+        if (string.startsWith("this/")) string=string.substring(5);
+        return string;
+    }
+
     private String makeAtom(ParaSig s) {
+        String name=shorten(s.fullname);
         int i=0;
-        if (unique.containsKey(s.fullvname)) i=unique.get(s.fullvname);
-        String ans = /*(i==0) ? s.fullvname :*/ s.fullvname+"_"+i;
-        unique.put(s.fullvname, i+1);
+        if (unique.containsKey(name)) i=unique.get(name);
+        String ans = name+"_"+i;
+        unique.put(name, i+1);
         return new String(ans);
     }
 
@@ -1016,9 +1023,16 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 solver.options().setSolver(SATFactory.ZChaffBasic);
             else if (solverChoice==2)
                 solver.options().setSolver(SATFactory.MiniSat);
+            //solver.options().setSolver(SATFactory.FileSAT);
             solver.options().setBitwidth(bitwidth);
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
             log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");
+            boolean flatten=true, sym=true;
+            if (cmd.options.contains("noflatten")) flatten=false;
+            if (cmd.options.contains("nosym")) sym=false;
+            if (cmd.expects!=0) sym=false;
+        	if (!flatten) { solver.options().setFlatten(false); log.log("noflatten... "); }
+        	if (!sym) { solver.options().setSymmetryBreaking(0); log.log("nosym... "); }
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (Stopper.stopped) {
@@ -1065,6 +1079,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
         } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n");
         } catch(Err ex) { log.log(ex.msg+"\n");
+        } catch(Exception ex) { log.log(ex.getMessage()+"\n");
         }
         log.flush();
         return mainResult;
@@ -1122,11 +1137,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 Relation r=(Relation)(rel(s));
                 rels.add(r);
                 if (s.toplevel())
-                    Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n");
+                    Util.encodeXMLs(out, "<sig name=\"", shorten(s.fullname), "\">\n");
                 else if (!s.subset)
-                    Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\" extends=\"", s.sup().fullvname, "\">\n");
+                    Util.encodeXMLs(out, "<sig name=\"", shorten(s.fullname), "\" extends=\"", shorten(s.sup().fullname), "\">\n");
                 else
-                    Util.encodeXMLs(out, "<sig name=\"", s.fullvname, "\">\n"); // zzz WHAT SHOULD BE DONE HERE?
+                    Util.encodeXMLs(out, "<sig name=\"", shorten(s.fullname), "\">\n"); // zzz WHAT SHOULD BE DONE HERE?
                 for(Tuple t:inst.tuples(r)) {
                     Util.encodeXMLs(out, "  <atom name=\"", lastatom=(String)(t.atom(0)), "\"/>\n");
                 }
@@ -1139,15 +1154,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     rels.add(rlast);
                     rels.add(rnext);
                     out.print("<field name=\"first\">\n");
-                    Util.encodeXMLs(out, "    <type> <sig name=\"", s.fullvname, "\"/> <sig name=\"", u.params.get("elem").fullvname, "\"/> </type>\n");
+                    Util.encodeXMLs(out, "    <type> <sig name=\"", shorten(s.fullname), "\"/> <sig name=\"", shorten(u.params.get("elem").fullname), "\"/> </type>\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rfirst));
                     out.print("</field>\n");
                     out.print("<field name=\"last\">\n");
-                    Util.encodeXMLs(out, "    <type> <sig name=\"", s.fullvname, "\"/> <sig name=\"", u.params.get("elem").fullvname, "\"/> </type>\n");
+                    Util.encodeXMLs(out, "    <type> <sig name=\"", shorten(s.fullname), "\"/> <sig name=\"", shorten(u.params.get("elem").fullname), "\"/> </type>\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rlast));
                     out.print("</field>\n");
                     out.print("<field name=\"next\">\n");
-                    Util.encodeXMLs(out, "    <type> <sig name=\"", s.fullvname, "\"/> <sig name=\"", u.params.get("elem").fullvname, "\"/> <sig name=\"", u.params.get("elem").fullvname, "\"/></type>\n");
+                    Util.encodeXMLs(out, "    <type> <sig name=\"", shorten(s.fullname), "\"/> <sig name=\"", shorten(u.params.get("elem").fullname), "\"/> <sig name=\"", shorten(u.params.get("elem").fullname), "\"/></type>\n");
                     writeXML_tupleset(out, lastatom, inst.tuples(rnext));
                     out.print("</field>\n");
                 } else {
@@ -1162,7 +1177,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                             TupleSet intersectTS = eval.evaluate(intersect.intersection(rf));
                             if (intersectTS.isEmpty()) continue;
                             Util.encodeXMLs(out, "<field name=\"", fn, "\">\n    <type>");
-                            for(ParaSig type:typerel.basicTypes) Util.encodeXMLs(out, " <sig name=\"", type.fullvname, "\"/>");
+                            for(ParaSig type:typerel.basicTypes) Util.encodeXMLs(out, " <sig name=\"", shorten(type.fullname), "\"/>");
                             out.print("</type>\n");
                             writeXML_tupleset(out, null, intersectTS);
                             out.print("</field>\n");

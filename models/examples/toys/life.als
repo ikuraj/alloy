@@ -41,7 +41,7 @@ pred Square() {
   #Root.*right=#Root.*below
 }
 
-run Square for 6 Point, 3 State
+run Square for 6 Point, 3 State expect 1
 
 pred Rectangle() {}
 
@@ -83,3 +83,4 @@ pred Show() {}
 
 // slow!
 run Show for exactly 12 Point, 3 State expect 1
+

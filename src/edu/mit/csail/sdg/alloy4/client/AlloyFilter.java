@@ -53,7 +53,11 @@ public final class AlloyFilter implements Scanner {
       if (b.sym==AlloySym.COLON)
        {
         Symbol c; c=myread();
-        if (c.sym==AlloySym.RUN || c.sym==AlloySym.CHECK) return last=c;
+        if (c.sym==AlloySym.RUN || c.sym==AlloySym.CHECK) {
+        	undo.add(0,c);
+        	undo.add(0,a);
+        	return last=b;
+        }
         undo.add(0,c);
        }
       undo.add(0,b);

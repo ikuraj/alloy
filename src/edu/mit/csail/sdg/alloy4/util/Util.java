@@ -135,11 +135,11 @@ public final class Util {
             if ((i%2)==0) out.print(strs[i]); else encodeXML(out,strs[i]);
         }
     }
-    
+
     /** Default is no. */
     public static boolean yesno(JFrame parentFrame, String message, String yes, String no) {
         int ans=JOptionPane.showOptionDialog(parentFrame, message, "Warning!",
-        		JOptionPane.YES_NO_OPTION,
+                JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
                 new Object[]{yes,no},
@@ -149,11 +149,11 @@ public final class Util {
 
     /** Default is no. */
     public static boolean questionOverwrite(JFrame parentFrame, String filename) {
-    	String yes="Overwrite", no="Cancel";
+        String yes="Overwrite", no="Cancel";
         int ans=JOptionPane.showOptionDialog(parentFrame,
-            	"The file \""+filename+"\" already exists. Do you wish to overwrite it?",
+                "The file \""+filename+"\" already exists. Do you wish to overwrite it?",
                 "Warning: the file already exists!",
-        		JOptionPane.YES_NO_OPTION,
+                JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
                 new Object[]{yes,no},
@@ -163,11 +163,11 @@ public final class Util {
 
     /** Default is CANCEL; return null if cancel, TRUE if save, FALSE if discard. */
     public static Boolean questionSaveDiscardCancel(JFrame parentFrame) {
-    	String save="Save", discard="Discard", cancel="Cancel";
+        String save="Save", discard="Discard", cancel="Cancel";
         int ans=JOptionPane.showOptionDialog(parentFrame,
-            	"The content has not been saved. Do you wish to save it, discard it, or cancel the operation?",
+                "The content has not been saved. Do you wish to save it, discard it, or cancel the operation?",
                 "Warning: the content has not been saved!",
-        		JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.YES_NO_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
                 new Object[]{save,discard,cancel},

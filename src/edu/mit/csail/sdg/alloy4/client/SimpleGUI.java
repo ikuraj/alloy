@@ -425,11 +425,11 @@ public final class SimpleGUI implements MessageHandler {
     }
 
     private synchronized final boolean my_confirm() {
-   		if (!modified()) return true;
-   		Boolean ans=Util.questionSaveDiscardCancel(frame);
-   		if (ans==null) return false;
-   		if (!ans.booleanValue()) return true;
-   		return handleMessage("save")!=null;
+        if (!modified()) return true;
+        Boolean ans=Util.questionSaveDiscardCancel(frame);
+        if (ans==null) return false;
+        if (!ans.booleanValue()) return true;
+        return handleMessage("save")!=null;
     }
 
     /**
@@ -484,8 +484,8 @@ public final class SimpleGUI implements MessageHandler {
     /** Convention for this method: return==null means failure, return!=null means success. */
     public synchronized Object handleMessage(String x) {
         if ("file".equals(x)) {
-        	my_file();
-        	return Boolean.TRUE;
+            my_file();
+            return Boolean.TRUE;
         }
         if ("new".equals(x)) {
             if (!my_confirm()) return null;
@@ -506,7 +506,7 @@ public final class SimpleGUI implements MessageHandler {
             return Boolean.TRUE;
         }
         if ("save".equals(x)) {
-        	return latestName.length()!=0 ? my_save(latestName,true) : handleMessage("saveas");
+            return latestName.length()!=0 ? my_save(latestName,true) : handleMessage("saveas");
         }
         if ("saveas".equals(x)) {
             JFileChooser open=new JFileChooser(fileOpenDirectory);
@@ -517,8 +517,8 @@ public final class SimpleGUI implements MessageHandler {
             return my_save(f,false);
         }
         if ("quit".equals(x)) {
-        	if (my_confirm()) System.exit(0);
-        	return Boolean.TRUE;
+            if (my_confirm()) System.exit(0);
+            return Boolean.TRUE;
         }
         if ("run".equals(x)) {
             if (thread_stillRunning()) {

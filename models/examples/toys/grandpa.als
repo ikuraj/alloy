@@ -39,7 +39,7 @@ fun grandpas (p: Person): set Person {
 
 pred ownGrandpa (m: Man) { m in grandpas[m]  }
 
-run ownGrandpa for 4 Person
+run ownGrandpa for 4 Person expect 1
 
 /* defined variables:
  *
@@ -86,3 +86,4 @@ As the husband of my grandmother, I am my own grandpa.
     It sounds funny, I know, but it really is so—
     I'm my own grandpa.
 */
+

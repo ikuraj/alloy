@@ -200,13 +200,14 @@ pred ThreeRun ( ) {
 
 // 2 pids requires 8 states
 // 3 pids requires 16 states
-run TwoRun for 13 but 3 pid, 4 priority, 5 label_t
+run TwoRun for 13 but 3 pid, 4 priority, 5 label_t expect 1
 
 // haven't run this one successfully yet
-run ThreeRun for 19 but 3 pid,4 priority,5 label_t
+run ThreeRun for 19 but 3 pid,4 priority,5 label_t expect 1
 
 // how many states do we need for this to match murphi?
 check Safety for 10 but 2 pid, 3 priority, 5 label_t expect 0
 
 // this assertion is trivial because of the hack described above
-check NotStuck for 10 but 2 pid, 3 priority, 5 label_t
+check NotStuck for 10 but 2 pid, 3 priority, 5 label_t expect 0
+

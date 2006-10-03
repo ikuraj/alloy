@@ -23,7 +23,6 @@ import edu.mit.csail.sdg.alloy4.core.ExprName;
 import edu.mit.csail.sdg.alloy4.core.ExprQuant;
 import edu.mit.csail.sdg.alloy4.core.ExprSequence;
 import edu.mit.csail.sdg.alloy4.core.ExprUnary;
-import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.ParaOpen;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VarDecl;
@@ -428,6 +427,8 @@ nonterminal Expr                       AndExpr;
 nonterminal Expr                       BaseExpr;
 nonterminal Expr                       BracketExpr;
 nonterminal Expr                       CompareExpr;
+nonterminal String                     CmdLabel;
+nonterminal List<ExprName>             CmdOpt;
 nonterminal List<VarDecl>              Declp;
 nonterminal List<VarDecl>              Decls;
 nonterminal Expr                       DomainExpr;
@@ -502,7 +503,13 @@ Paragraphs ::= Paragraphs FUN Function    ;
 Paragraphs ::= Paragraphs PRED Predicate  ;
 Paragraphs ::=                            ;
 
-Paragraphs ::= Paragraphs CHECK:o  ExprPara:e  Scope:s  {:
+CmdLabel ::=             {: RESULT="";     :};
+CmdLabel ::= COLON ID:i  {: RESULT=i.name; :};
+
+CmdOpt ::=                               {: RESULT=new ArrayList<ExprName>(); :};
+CmdOpt ::= LBRACKET SigRefp:o RBRACKET   {: RESULT=o;                         :};
+
+Paragraphs ::= Paragraphs CmdLabel:x CHECK:o CmdOpt:y ExprPara:e  Scope:s  {:
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
@@ -514,10 +521,10 @@ Paragraphs ::= Paragraphs CHECK:o  ExprPara:e  Scope:s  {:
     if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
     scope.put(b,j);
   }
-  parser.alloyunit.makeRuncheck(o, e, true, overall, expects, scope);
+  parser.alloyunit.makeRuncheck(o, e, true, overall, expects, scope, x, y);
 :};
 
-Paragraphs ::= Paragraphs CHECK:o  Name:n  Scope:s  {:
+Paragraphs ::= Paragraphs CmdLabel:x CHECK:o CmdOpt:y Name:n  Scope:s  {:
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
@@ -529,10 +536,10 @@ Paragraphs ::= Paragraphs CHECK:o  Name:n  Scope:s  {:
     if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
     scope.put(b,j);
   }
-  parser.alloyunit.makeRuncheck(o, n.name, true, overall, expects, scope);
+  parser.alloyunit.makeRuncheck(o, n.name, true, overall, expects, scope, x, y);
 :};
 
-Paragraphs ::= Paragraphs RUN:o  Name:n  Scope:s  {:
+Paragraphs ::= Paragraphs CmdLabel:x RUN:o CmdOpt:y Name:n  Scope:s  {:
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
@@ -544,10 +551,10 @@ Paragraphs ::= Paragraphs RUN:o  Name:n  Scope:s  {:
     if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
     scope.put(b,j);
   }
-  parser.alloyunit.makeRuncheck(o, n.name, false, overall, expects, scope);
+  parser.alloyunit.makeRuncheck(o, n.name, false, overall, expects, scope, x, y);
 :};
 
-Paragraphs ::= Paragraphs RUN:o  ExprPara:e  Scope:s  {:
+Paragraphs ::= Paragraphs CmdLabel:x RUN:o CmdOpt:y ExprPara:e  Scope:s  {:
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
   Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
@@ -559,7 +566,7 @@ Paragraphs ::= Paragraphs RUN:o  ExprPara:e  Scope:s  {:
     if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once!");
     scope.put(b,j);
   }
-  parser.alloyunit.makeRuncheck(o, e, false, overall, expects, scope);
+  parser.alloyunit.makeRuncheck(o, e, false, overall, expects, scope, x, y);
 :};
 
 Expects    ::=                 {: RESULT="";                         :};
@@ -572,12 +579,12 @@ Scope      ::=                               Expects:c {: RESULT=new ArrayList<S
 
 Typescopes ::= Typescope:a                    {: RESULT=a;               :};
 Typescopes ::= Typescopes:a COMMA Typescope:b {: RESULT=a; a.addAll(b);  :};
-Typescope  ::= EXACTLY NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(b.name);                 :};
-Typescope  ::=         NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(b.name);                 :};
-Typescope  ::= EXACTLY NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(ParaSig.BITWIDTH_NAME);  :};
-Typescope  ::=         NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(ParaSig.BITWIDTH_NAME);  :};
-Typescope  ::= EXACTLY NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(ParaSig.SIGINT_NAME);    :};
-Typescope  ::=         NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(ParaSig.SIGINT_NAME);    :};
+Typescope  ::= EXACTLY NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add(b.name); :};
+Typescope  ::=         NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add(b.name); :};
+Typescope  ::= EXACTLY NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add("int");  :};
+Typescope  ::=         NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add("int");  :};
+Typescope  ::= EXACTLY NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExprConstant)a).num()); RESULT.add("Int");  :};
+Typescope  ::=         NUMBER:a SIGINT        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExprConstant)a).num()); RESULT.add("Int");  :};
 
 Function ::=              Name:n LPAREN   Decls:d RPAREN   COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,mult(t),v); :};
 Function ::=              Name:n LBRACKET Decls:d RBRACKET COLON Expr:t LBRACE Expr:v RBRACE   {: parser.alloyunit.makeFun(n.pos,n.name,null,d                       ,mult(t),v); :};
@@ -606,27 +613,27 @@ Sig ::= SigQuals:a SIG Names:b SigIn:c LBRACE Decls:d RBRACE ExprParaOpt:e
    }
  :};
 
-SigQual  ::= ABSTRACT                 {: RESULT=1;                                                                           :};
-SigQual  ::= LONE                     {: RESULT=2;                                                                           :};
-SigQual  ::= ONE                      {: RESULT=4;                                                                           :};
-SigQual  ::= SOME                     {: RESULT=8;                                                                           :};
-SigQuals ::=                          {: RESULT=0;                                                                           :};
-SigQuals ::= SigQuals:a SigQual:b     {: RESULT=(a|b);                                                                       :};
-SigIn    ::= EXTENDS Name:a           {: RESULT=new ArrayList<String>(); RESULT.add(null); RESULT.add(a.name);               :};
-SigIn    ::= EXTENDS SIGINT           {: RESULT=new ArrayList<String>(); RESULT.add(null); RESULT.add(ParaSig.SIGINT_NAME);  :};
-SigIn    ::= IN SigRefu:b             {: RESULT=b;                                                                           :};
-SigIn    ::=                          {: RESULT=null;                                                                        :};
-SigRef   ::= Name:x                   {: RESULT=x;                                                                           :};
-SigRef   ::= UNIV:x                   {: RESULT=new ExprName(x, ParaSig.UNIV_NAME);                                          :};
-SigRef   ::= SIGINT:x                 {: RESULT=new ExprName(x, ParaSig.SIGINT_NAME);                                        :};
-SigRefs  ::=                          {: RESULT=new ArrayList<ExprName>();                                                   :};
-SigRefs  ::= SigRefp:x                {: RESULT=x;                                                                           :};
-SigRefp  ::= SigRef:x                 {: RESULT=new ArrayList<ExprName>(); RESULT.add(x);                                    :};
-SigRefp  ::= SigRefp:a COMMA SigRef:b {: a.add(b); RESULT=a;                                                                 :};
-SigRefu  ::= Name:x                   {: RESULT=new ArrayList<String>(); RESULT.add(x.name);                                 :};
-SigRefu  ::= SIGINT                   {: RESULT=new ArrayList<String>(); RESULT.add(ParaSig.SIGINT_NAME);                    :};
-SigRefu  ::= SigRefu:a PLUS Name:b    {: RESULT=a; RESULT.add(b.name);                                                       :};
-SigRefu  ::= SigRefu:a PLUS SIGINT    {: RESULT=a; RESULT.add(ParaSig.SIGINT_NAME);                                          :};
+SigQual  ::= ABSTRACT                 {: RESULT=1;                                                             :};
+SigQual  ::= LONE                     {: RESULT=2;                                                             :};
+SigQual  ::= ONE                      {: RESULT=4;                                                             :};
+SigQual  ::= SOME                     {: RESULT=8;                                                             :};
+SigQuals ::=                          {: RESULT=0;                                                             :};
+SigQuals ::= SigQuals:a SigQual:b     {: RESULT=(a|b);                                                         :};
+SigIn    ::= EXTENDS Name:a           {: RESULT=new ArrayList<String>(); RESULT.add(null); RESULT.add(a.name); :};
+SigIn    ::= EXTENDS SIGINT           {: RESULT=new ArrayList<String>(); RESULT.add(null); RESULT.add("Int");  :};
+SigIn    ::= IN SigRefu:b             {: RESULT=b;                                                             :};
+SigIn    ::=                          {: RESULT=null;                                                          :};
+SigRef   ::= Name:x                   {: RESULT=x;                                                             :};
+SigRef   ::= UNIV:x                   {: RESULT=new ExprName(x, "univ");                                       :};
+SigRef   ::= SIGINT:x                 {: RESULT=new ExprName(x, "Int");                                        :};
+SigRefs  ::=                          {: RESULT=new ArrayList<ExprName>();                                     :};
+SigRefs  ::= SigRefp:x                {: RESULT=x;                                                             :};
+SigRefp  ::= SigRef:x                 {: RESULT=new ArrayList<ExprName>(); RESULT.add(x);                      :};
+SigRefp  ::= SigRefp:a COMMA SigRef:b {: a.add(b); RESULT=a;                                                   :};
+SigRefu  ::= Name:x                   {: RESULT=new ArrayList<String>(); RESULT.add(x.name);                   :};
+SigRefu  ::= SIGINT                   {: RESULT=new ArrayList<String>(); RESULT.add("Int");                    :};
+SigRefu  ::= SigRefu:a PLUS Name:b    {: RESULT=a; RESULT.add(b.name);                                         :};
+SigRefu  ::= SigRefu:a PLUS SIGINT    {: RESULT=a; RESULT.add("Int");                                          :};
 
 Name ::= NameHelper:x              {: RESULT=x;                               :};
 Name ::= THIS:a SLASH NameHelper:b {: RESULT=new ExprName(a, "this/"+b.name); :};

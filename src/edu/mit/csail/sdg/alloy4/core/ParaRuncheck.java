@@ -1,6 +1,8 @@
 package edu.mit.csail.sdg.alloy4.core;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
@@ -35,9 +37,15 @@ public final class ParaRuncheck extends Para {
      */
     public final Map<String,Integer> scope;
 
+	/** The label given in front of a command; can be ""; unmodifiable. */
+	private final String label;
+	
+	/** The list of options given in a command; can be empty; unmodifiable. */
+	public final List<String> options;	
+
     /** Returns a human-readable string that summarizes this Run or Check command. */
     @Override public final String toString() {
-        String a=(check?"check ":"run ")+name;
+        String a=(check?"check ":"run ")+(label.length()>0 ? label : name);
         if (overall>=0 && scope.size()>0) a=a+" for "+overall+" but";
            else if (overall>=0) a=a+" for "+overall;
            else if (scope.size()>0) a=a+" for";
@@ -70,7 +78,7 @@ public final class ParaRuncheck extends Para {
      * @throws ErrorInternal if pos==null, path==null, name==null, or scope==null
      */
     public ParaRuncheck(Pos pos, String path, String name, boolean check,
-        int overall, int expects, Map<String,Integer> scope) {
+        int overall, int expects, Map<String,Integer> scope, String label, List<ExprName> opts) {
         super(pos,path,name);
         if (name.length()==0)
             throw syntaxError(
@@ -80,5 +88,9 @@ public final class ParaRuncheck extends Para {
         this.expects=(expects<0 ? -1 : (expects>0 ? 1 : 0));
         this.scope=Collections.unmodifiableMap(new LinkedHashMap<String,Integer>(nonnull(scope)));
         if (this.scope.containsKey("")) throw syntaxError("Signature name cannot be empty!");
+        this.label=label;
+        List<String> options=new ArrayList<String>(nonnull(opts).size());
+        for(ExprName n:opts) options.add(nonnull(n).name);
+        this.options=Collections.unmodifiableList(options);
     }
 }

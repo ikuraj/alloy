@@ -51,13 +51,15 @@ fact Spouses {
         }
     }
 
-pred Puzzle() {
+fact Puzzle {
     // everyone but Jocelyn has shaken a different number of hands
     all p,q: Person - Jocelyn | p!=q => #p.shaken != #q.shaken
-    // there are 10 persons
-    #Person = 10
     // Hilary's spouse is Jocelyn
     Hilary.spouse = Jocelyn
     }
 
-run Puzzle for 10 expect 1
+P10: run[nosym]  {#Person=10} for 10 Person, 5 int expect 1
+P12: run[nosym]  {#Person=12} for 12 Person, 5 int expect 1
+P14: run[nosym]  {#Person=14} for 14 Person, 5 int expect 1
+P16: run[nosym]  {#Person=16} for 16 Person, 5 int expect 1
+
