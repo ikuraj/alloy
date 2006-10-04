@@ -374,13 +374,10 @@ public final class SimpleGUI implements MessageHandler {
     private JLabel status;
 
     /** Main method that launches the program. */
-    public static final void main(String[] args) {
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
-        System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
-        System.setProperty("com.apple.mrj.application.live-resize","true");
-        System.setProperty("com.apple.macos.useScreenMenuBar","true");
-        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
-        new SimpleGUI(args);
+    public static final void main(final String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public final void run() { new SimpleGUI(args); }
+        });
     }
 
     /**
@@ -388,11 +385,6 @@ public final class SimpleGUI implements MessageHandler {
      * code into a synchronized helper method named "my_setup".
      */
     public String alloyhome="";
-    public SimpleGUI(final String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public final void run() { my_setup(args); }
-        });
-    }
 
     /** An ActionListener that is called when the user indicates a particular command to execute. */
     private class RunListener implements ActionListener {
@@ -621,7 +613,14 @@ public final class SimpleGUI implements MessageHandler {
      * It will create a GUI window, and populate it with two JTextArea and one JMenuBar.
      */
     private int satOPTION=2;
-    private synchronized void my_setup(String[] args) {
+
+    private SimpleGUI(String[] args) {
+
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
+        System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
+        System.setProperty("com.apple.mrj.application.live-resize","true");
+        System.setProperty("com.apple.macos.useScreenMenuBar","true");
+        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
 
         boolean relaunch=false;
         if (args.length==2 && args[0].equals("-relaunch") && new File(args[1]).isDirectory()) {
