@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * Mutable; this implements a set based on reference identity; the null value is allowed.
+ *  Mutable; this implements a set based on reference identity; the null value is allowed.
  *
  * <p/>
  * Since this violates java.util.Set's contract of using object equality,
