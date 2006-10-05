@@ -77,6 +77,9 @@ import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
 public final class SimpleGUI implements Util.MessageHandler {
 
+    private static final ImageIcon iconYes=Util.loadIcon("images/menu1.gif");
+    private static final ImageIcon iconNo=Util.loadIcon("images/menu0.gif");
+
     /** The system-specific file separator (forward-slash on UNIX, back-slash on Windows, etc.) */
     private static final String fs=System.getProperty("file.separator");
 
@@ -617,9 +620,6 @@ public final class SimpleGUI implements Util.MessageHandler {
         return Boolean.TRUE;
     }
 
-    private static final ImageIcon iconYes=Util.loadIcon("images/menu1.gif");
-    private static final ImageIcon iconNo=Util.loadIcon("images/menu0.gif");
-
     /**
      * Synchronized helper method that actually initializes everything.
      *
@@ -630,14 +630,7 @@ public final class SimpleGUI implements Util.MessageHandler {
 
     private SimpleGUI(String[] args) {
 
-        boolean relaunch=false;
-        if (args.length==2 && args[0].equals("-relaunch") && new File(args[1]).isDirectory()) {
-            alloyhome=args[1];
-            relaunch=true;
-        } else {
-            alloyhome=KodVizInstaller.install(get("basedir"));
-        }
-
+        alloyhome=KodVizInstaller.install(get("basedir"));
         fileOpenDirectory=alloyhome+fs+"models";
         System.setProperty("alloyhome",alloyhome);
         String binary=alloyhome+fs+"binary";
@@ -677,6 +670,10 @@ public final class SimpleGUI implements Util.MessageHandler {
 
         if (1==1) { // Run menu
             runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, "run");
+        }
+        
+        if (Util.keepMenuConsistent && Util.onMac()) { // Theme menu
+        	bar.addMenu("Theme", false, -1, null);
         }
 
         if (1==1) { // Options menu
@@ -775,21 +772,19 @@ public final class SimpleGUI implements Util.MessageHandler {
         frame.setLocation(screenWidth/10, screenHeight/10);
         frame.setVisible(true);
 
-        //log("ARGS = "+args.length+"\n", styleGreen);
-        //for(String a:args) log("# = "+a+"\n",styleGreen);
-
         // Generate some informative log messages
         log(AlloyVersion.version(), styleGreen);
         if (satOPTION==2) log("\nSolver: MiniSAT using JNI", styleGreen);
             else if (satOPTION==1) log("\nSolver: ZChaff using JNI", styleGreen);
             else if (satOPTION==0) log("\nSolver: SAT4J", styleGreen);
-        if (Util.onMac()) log("\nMac OS X detected.", styleGreen);
-        if (relaunch) log("\nJAR file autolaunched.", styleGreen);
-        log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
-
+        if (Util.onMac()) { log("\nMac OS X detected.", styleGreen); new OurMacListener(this,"quit"); }
+        
+        // log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
+        // On Mac, it will be the directory that contains "Alloy4.app". Problem: people can RENAME "Alloy4.app"...
+        //log("ARGS = "+args.length+"\n", styleGreen);
+        //for(String a:args) log("# = "+a+"\n",styleGreen);
         // If commandline tells you to load a file, load it.
         //if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
         //else if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
-        if (Util.onMac()) new OurMacListener(this,"quit");
     }
 }
