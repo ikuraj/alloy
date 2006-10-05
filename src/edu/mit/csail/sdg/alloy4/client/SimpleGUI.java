@@ -57,6 +57,7 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
+
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
@@ -803,5 +804,6 @@ public final class SimpleGUI implements MessageHandler {
         // If commandline tells you to load a file, load it.
         //if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
         //else if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
+        if (Util.onMac()) new MacListener(this);
     }
 }
