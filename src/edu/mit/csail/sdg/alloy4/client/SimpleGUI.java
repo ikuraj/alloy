@@ -71,9 +71,9 @@ import edu.mit.csail.sdg.alloy4util.OurMenuBar;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.alloy4util.Version;
-import edu.mit.csail.sdg.kodviz.gui.KodVizGUI;
-import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
-import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
+import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
+import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUIFactory;
+import edu.mit.csail.sdg.alloy4viz.gui.KodVizInstaller;
 
 public final class SimpleGUI implements Util.MessageHandler {
 
