@@ -76,21 +76,21 @@ public final class LogToTextPane extends Log {
      * we made sure this method only uses final references to GUI Objects or String objects.
      */
     private static void realFlush(final JTextPane pane, final String content, final Style style) {
-    	if (!SwingUtilities.isEventDispatchThread()) {
-    		// GUI methods must only be called by the event dispatch thread
-    		try {
-    			SwingUtilities.invokeAndWait(new Runnable() {
-    				public final void run() { realFlush(pane,content,style); }
-    			});
-    		} catch(InterruptedException x) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            // GUI methods must only be called by the event dispatch thread
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public final void run() { realFlush(pane,content,style); }
+                });
+            } catch(InterruptedException x) {
                 // Should not happen. Util.harmless() method could choose to log this occurrence.
                 Util.harmless("LogToTextPane.realFlush()", x);
-		    } catch(InvocationTargetException x) {
-	            // Should not happen. Util.harmless() method could choose to log this occurrence.
-	            Util.harmless("LogToTextPane.realFlush()", x);
-		    }
-		    return;
-    	}
+            } catch(InvocationTargetException x) {
+                // Should not happen. Util.harmless() method could choose to log this occurrence.
+                Util.harmless("LogToTextPane.realFlush()", x);
+            }
+            return;
+        }
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), content, style);

@@ -671,9 +671,9 @@ public final class SimpleGUI implements Util.MessageHandler {
         if (1==1) { // Run menu
             runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, "run");
         }
-        
+
         if (Util.keepMenuConsistent && Util.onMac()) { // Theme menu
-        	bar.addMenu("Theme", false, -1, null);
+            bar.addMenu("Theme", false, -1, null);
         }
 
         if (1==1) { // Options menu
@@ -777,8 +777,11 @@ public final class SimpleGUI implements Util.MessageHandler {
         if (satOPTION==2) log("\nSolver: MiniSAT using JNI", styleGreen);
             else if (satOPTION==1) log("\nSolver: ZChaff using JNI", styleGreen);
             else if (satOPTION==0) log("\nSolver: SAT4J", styleGreen);
-        if (Util.onMac()) { log("\nMac OS X detected.", styleGreen); new OurMacListener(this,"quit"); }
-        
+        if (Util.onMac()) {
+            log("\nMac OS X detected.", styleGreen);
+            OurMacListener.addQuitListener(this,"quit");
+        }
+
         // log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
         // On Mac, it will be the directory that contains "Alloy4.app". Problem: people can RENAME "Alloy4.app"...
         //log("ARGS = "+args.length+"\n", styleGreen);
