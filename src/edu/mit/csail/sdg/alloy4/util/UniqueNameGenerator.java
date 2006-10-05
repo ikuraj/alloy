@@ -14,7 +14,7 @@ public final class UniqueNameGenerator {
     /** This stores the set of names we've generated so far. */
     private final Set<String> names = new LinkedHashSet<String>();
 
-    /** Construct a blank UniqueNameGenerator. */
+    /** Construct a UniqueNameGenerator with a blank history. */
     public UniqueNameGenerator() { }
 
     /**
