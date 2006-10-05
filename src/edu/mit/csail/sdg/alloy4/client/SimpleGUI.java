@@ -794,6 +794,7 @@ public final class SimpleGUI implements MessageHandler {
         	else handleMessage("sat=sat4j");
         if (Util.onMac()) log("\nMac OS X detected.", styleGreen);
         if (relaunch) log("\nJAR file autolaunched.", styleGreen);
+        log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
 
         // If commandline tells you to load a file, load it.
         if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
