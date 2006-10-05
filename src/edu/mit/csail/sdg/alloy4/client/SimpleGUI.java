@@ -60,21 +60,20 @@ import javax.swing.text.StyledDocument;
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
-import edu.mit.csail.sdg.alloy4.gui.OurDialog;
-import edu.mit.csail.sdg.alloy4.gui.OurMenu;
-import edu.mit.csail.sdg.alloy4.gui.OurMenuItem;
-import edu.mit.csail.sdg.alloy4.gui.OurMenubar;
 import edu.mit.csail.sdg.alloy4.util.Err;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
 import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
-import edu.mit.csail.sdg.alloy4.util.MessageHandler;
-import edu.mit.csail.sdg.alloy4.util.Util;
+import edu.mit.csail.sdg.alloy4util.OurDialog;
+import edu.mit.csail.sdg.alloy4util.OurMenu;
+import edu.mit.csail.sdg.alloy4util.OurMenuItem;
+import edu.mit.csail.sdg.alloy4util.OurMenubar;
+import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUI;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
-public final class SimpleGUI implements MessageHandler {
+public final class SimpleGUI implements Util.MessageHandler {
 
 	/** The system-specific file separator (forward-slash on UNIX, back-slash on Windows, etc.) */
     private static final String fs=System.getProperty("file.separator");

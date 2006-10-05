@@ -5,6 +5,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyledDocument;
+import edu.mit.csail.sdg.alloy4util.Util;
 
 /**
  * This logger will append the messages into an existing JTextPane.

@@ -7,8 +7,7 @@ import java.awt.Insets;
 import javax.swing.JSplitPane;
 import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
-
-import edu.mit.csail.sdg.alloy4.util.Util;
+import edu.mit.csail.sdg.alloy4util.Util;
 
 /** Taken from Alloy 3 */
 

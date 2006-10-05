@@ -42,7 +42,7 @@ import edu.mit.csail.sdg.alloy4.util.IdentitySet;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.Pos;
 import edu.mit.csail.sdg.alloy4.util.UniqueNameGenerator;
-import edu.mit.csail.sdg.alloy4.util.Util;
+import edu.mit.csail.sdg.alloy4util.Util;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
 import kodkod.ast.IntConstant;

@@ -4,13 +4,13 @@ import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationEvent;
 import com.apple.eawt.ApplicationListener;
 
-import edu.mit.csail.sdg.alloy4.util.MessageHandler;
+import edu.mit.csail.sdg.alloy4util.Util;
 
 public final class MacListener extends Application implements ApplicationListener {
 
-	private final MessageHandler handler;
+	private final Util.MessageHandler handler;
 	
-	public MacListener(MessageHandler handler) {
+	public MacListener(Util.MessageHandler handler) {
 		super();
 		this.handler=handler;
 		addApplicationListener(this);
