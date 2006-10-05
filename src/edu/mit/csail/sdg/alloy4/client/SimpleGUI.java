@@ -728,7 +728,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         JComponent textPane = Util.makeJScrollPane(text);
 
         // Create the toolbar
-        JPanel toolbar=edu.mit.csail.sdg.kodviz.util.Util.makeH();
+        JPanel toolbar=Util.makeH();
         if (!Util.onMac()) toolbar.setBackground(gray);
         toolbar.add(Util.makeJButton("New","Starts a new blank model","images/24_new.gif", this, "new"));
         toolbar.add(Util.makeJButton("Open","Opens an existing model","images/24_open.gif", this, "open"));
