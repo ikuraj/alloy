@@ -65,7 +65,7 @@ import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
 import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
-import edu.mit.csail.sdg.alloy4util.OurMacListener;
+import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
 import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurMenuBar;
@@ -430,7 +430,8 @@ public final class SimpleGUI implements Util.MessageHandler {
      */
     private synchronized void my_file(OurMenu filemenu) {
         boolean hasEntries=false;
-        while(filemenu.getItemCount()>5) filemenu.remove(5);
+        int itemCount=(Util.onMac() ? 4 : 5); // On Mac, we don't have "File->Quit". Elsewhere, we do.
+        while(filemenu.getItemCount()>itemCount) filemenu.remove(itemCount);
         for(int i=0; i<=3; i++) {
             final String n=get("history"+i);
             if (n.length()>0) {
@@ -665,7 +666,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             filemenu.addMenuItem("Open",    true, KeyEvent.VK_O, KeyEvent.VK_O, "open");
             filemenu.addMenuItem("Save",    true, KeyEvent.VK_S, KeyEvent.VK_S, "save");
             filemenu.addMenuItem("Save As", true, KeyEvent.VK_A, -1,            "saveas");
-            filemenu.addMenuItem("Quit",    true, KeyEvent.VK_Q, -1,            "quit");
+            if (!Util.onMac()) filemenu.addMenuItem("Quit", true, KeyEvent.VK_Q, -1, "quit");
         }
 
         if (1==1) { // Run menu
@@ -779,7 +780,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             else if (satOPTION==0) log("\nSolver: SAT4J", styleGreen);
         if (Util.onMac()) {
             log("\nMac OS X detected.", styleGreen);
-            OurMacListener.addQuitListener(this,"quit");
+            MacUtil.addQuitListener(this,"quit");
         }
 
         // log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
