@@ -7,25 +7,15 @@ import java.awt.Font;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
 import java.net.URL;
-
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
-import javax.swing.KeyStroke;
 import javax.swing.UIManager;
-import javax.swing.event.MenuEvent;
-import javax.swing.event.MenuListener;
 
 /**
  * Utility class for doing common I/O and XML and GUI operations.
@@ -34,7 +24,7 @@ import javax.swing.event.MenuListener;
  */
 public final class Util {
 
-    /** Constructor is private, since this utility class never needs to be instantiated. */
+    /** This constructor is private, since this utility class never needs to be instantiated. */
     private Util() { }
 
     public static void harmless(String message, Exception ex) { }
@@ -63,32 +53,6 @@ public final class Util {
         return ans;
     }
 
-    /** Make a JMenu. */
-    public static JMenu makeJMenu(JMenuBar parent, String label, boolean enabled, int mnemonic, final MessageHandler handler, final String message) {
-        JMenu ans=new JMenu(label,false);
-        if (!onMac()) ans.setMnemonic(mnemonic);
-        if (handler!=null) ans.addMenuListener(new MenuListener() {
-            public final void menuSelected(MenuEvent e) { handler.handleMessage(message); }
-            public final void menuDeselected(MenuEvent e) { }
-            public final void menuCanceled(MenuEvent e) { }
-        });
-        ans.setEnabled(enabled);
-        parent.add(ans);
-        return ans;
-    }
-
-    /** Make a JMenu. */
-    public static JMenuItem makeJMenuItem(JMenu parent, String label, int key, int accel, final MessageHandler handler, final String message) {
-        JMenuItem ans = new JMenuItem(label,key);
-        int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-        if (accel>=0) ans.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
-        if (handler!=null) ans.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { handler.handleMessage(message); }
-        });
-        parent.add(ans);
-        return ans;
-    }
-
     /** Make a JLabel. */
     public static JLabel makeJLabel(String label, Font font) {
         JLabel ans = new JLabel(label);
@@ -108,7 +72,7 @@ public final class Util {
         button.setFont(button.getFont().deriveFont((float)1));
         button.setAction(new AbstractAction("", icon) {
 			private static final long serialVersionUID = 1L;
-			public void actionPerformed(ActionEvent e) { handler.handleMessage(message); }
+			public void actionPerformed(ActionEvent e) { handler.handleMessage(button, message); }
         });
         button.setPreferredSize(new Dimension(icon.getIconWidth()+10, icon.getIconHeight()+15));
         button.setMaximumSize(new Dimension(icon.getIconWidth()+10, icon.getIconHeight()+15));
@@ -177,45 +141,5 @@ public final class Util {
         for(int i=0; i<strs.length; i++) {
             if ((i%2)==0) out.print(strs[i]); else encodeXML(out,strs[i]);
         }
-    }
-
-    /** Default is no. */
-    public static boolean yesno(JFrame parentFrame, String message, String yes, String no) {
-        int ans=JOptionPane.showOptionDialog(parentFrame, message, "Warning!",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE,
-                null,
-                new Object[]{yes,no},
-                no);
-        return ans==JOptionPane.YES_OPTION;
-    }
-
-    /** Default is no. */
-    public static boolean questionOverwrite(JFrame parentFrame, String filename) {
-        String yes="Overwrite", no="Cancel";
-        int ans=JOptionPane.showOptionDialog(parentFrame,
-                "The file \""+filename+"\" already exists. Do you wish to overwrite it?",
-                "Warning: the file already exists!",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE,
-                null,
-                new Object[]{yes,no},
-                no);
-        return ans==JOptionPane.YES_OPTION;
-    }
-
-    /** Default is CANCEL; return null if cancel, TRUE if save, FALSE if discard. */
-    public static Boolean questionSaveDiscardCancel(JFrame parentFrame) {
-        String save="Save", discard="Discard", cancel="Cancel";
-        int ans=JOptionPane.showOptionDialog(parentFrame,
-                "The content has not been saved. Do you wish to save it, discard it, or cancel the operation?",
-                "Warning: the content has not been saved!",
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.WARNING_MESSAGE,
-                null,
-                new Object[]{save,discard,cancel},
-                cancel);
-        if (ans==JOptionPane.YES_OPTION) return Boolean.TRUE;
-        if (ans!=JOptionPane.NO_OPTION) return null; else return Boolean.FALSE;
     }
 }

@@ -21,6 +21,6 @@ public final class MacListener extends Application implements ApplicationListene
 	public void handleOpenFile(ApplicationEvent arg0) {	}
 	public void handlePreferences(ApplicationEvent arg0) { }
 	public void handlePrintFile(ApplicationEvent arg0) { }
-	public void handleQuit(ApplicationEvent arg0) { arg0.setHandled(false); handler.handleMessage("quit"); } 
+	public void handleQuit(ApplicationEvent arg0) { arg0.setHandled(false); handler.handleMessage(null,"quit"); } 
 	public void handleReOpenApplication(ApplicationEvent arg0) { }
 }

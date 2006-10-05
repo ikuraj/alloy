@@ -12,5 +12,5 @@ public interface MessageHandler {
      * The meaning of the argument and the meaning of the return results
      * are dependent on the specific implementation.
      */
-    public Object handleMessage(String message);
+    public Object handleMessage(Object caller, String message);
 }

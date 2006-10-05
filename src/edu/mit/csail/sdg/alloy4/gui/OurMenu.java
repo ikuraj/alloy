@@ -1,32 +1,51 @@
 package edu.mit.csail.sdg.alloy4.gui;
 
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.Icon;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.KeyStroke;
-import edu.mit.csail.sdg.alloy4.util.MessageHandler;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
+import edu.mit.csail.sdg.alloy4.util.Util;
 
-public class OurMenu extends JMenu {
+public final class OurMenu extends JMenu {
 
 	private static final long serialVersionUID = 1L;
 	
-	private final MessageHandler handler;
+	public final OurMenubar parent;
 	
-	public OurMenu(MessageHandler handler, String label, boolean tearoff) {
-		super(label,tearoff);
-		this.handler=handler;
-	}
-	
-    public JMenuItem addMenuItem(String label, int key, int accel, final String message) {
-        JMenuItem ans = new JMenuItem(label,key);
-        int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-        if (accel>=0) ans.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
-        if (handler!=null) ans.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { handler.handleMessage(message); }
+	public OurMenu(OurMenubar in_parent, String label, boolean enabled, int mnemonic, final String message) {
+		super(label,false);
+		parent=in_parent;
+        if (!Util.onMac()) setMnemonic(mnemonic);
+        if (message!=null) addMenuListener(new MenuListener() {
+            public final void menuSelected(MenuEvent e) { parent.handleMessage(OurMenu.this, message); }
+            public final void menuDeselected(MenuEvent e) { }
+            public final void menuCanceled(MenuEvent e) { }
         });
-        this.add(ans);
+        setEnabled(enabled);
+	}
+
+	public void handleMessage(Object caller, String message) { parent.handleMessage(caller,message); }
+
+    public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, int key, int accel, final String message) {
+        OurMenuItem ans = new OurMenuItem(this,label,key,accel,message);
+        ans.setEnabled(enabled);
+        add(ans);
+        ans.setIcon(icon);
         return ans;
+    }
+
+    public OurMenuItem addMenuItem(String label, boolean enabled, int key, int accel, final String message) {
+        OurMenuItem ans = new OurMenuItem(this,label,key,accel,message);
+        ans.setEnabled(enabled);
+        add(ans);
+        return ans;
+    }
+    
+    public void setIconForChildren(Icon icon) {
+    	for(int i=0; i<getItemCount(); i++) {
+    		Object obj=getItem(i);
+    		if (obj instanceof JMenuItem) ((JMenuItem)obj).setIcon(icon);
+    	}
     }
 }
