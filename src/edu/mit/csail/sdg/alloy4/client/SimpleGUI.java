@@ -76,6 +76,7 @@ import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 public final class SimpleGUI implements MessageHandler {
 
     private static final String fs=System.getProperty("file.separator");
+    private static final Color gray=Color.getHSBColor(0f,0f,0.90f);
 
     private static final FileFilter filterALS = new FileFilter() {
         @Override public final boolean accept(File f) { return !f.isFile() || f.getPath().endsWith(".als"); }
@@ -124,7 +125,7 @@ public final class SimpleGUI implements MessageHandler {
         int screenHeight=Toolkit.getDefaultToolkit().getScreenSize().height;
         int width=screenWidth/3*2, height=screenHeight/3*2;
         JTextPane log=new JTextPane();
-        log.setBackground(Color.getHSBColor(0f,0f,0.95f));
+        log.setBackground(gray);
         log.setEditable(false);
         StyledDocument doc=log.getStyledDocument();
         Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
@@ -151,6 +152,7 @@ public final class SimpleGUI implements MessageHandler {
         Container all=frame.getContentPane();
         all.setLayout(new BorderLayout());
         all.add(textPane, BorderLayout.CENTER);
+        if (Util.onMac()) all.add(new JLabel(" "), BorderLayout.SOUTH); // Make room for the RESIZING HANDLE
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setLocation(screenWidth/6, screenHeight/6);
@@ -161,7 +163,7 @@ public final class SimpleGUI implements MessageHandler {
         StyledDocument doc=log.getStyledDocument();
         Style s=doc.addStyle("link", styleRegular);
         JButton b=new JButton(label);
-        if (Util.onMac()) b.setBackground(Color.getHSBColor(0f,0f,0.95f));
+        if (Util.onMac()) b.setBackground(gray);
         b.setMaximumSize(b.getPreferredSize());
         b.setFont(Util.getFont());
         b.setForeground(Color.BLUE);
@@ -732,7 +734,7 @@ public final class SimpleGUI implements MessageHandler {
 
         // Create the toolbar
         JPanel toolbar=edu.mit.csail.sdg.kodviz.util.Util.makeH();
-        if (!Util.onMac()) toolbar.setBackground(Color.getHSBColor(0f,0f,0.95f));
+        if (!Util.onMac()) toolbar.setBackground(gray);
         toolbar.add(Util.makeJButton("New","Starts a new blank model","images/24_new.gif", this, "new"));
         toolbar.add(Util.makeJButton("Open","Opens an existing model","images/24_open.gif", this, "open"));
         toolbar.add(Util.makeJButton("Save","Saves the current model","images/24_save.gif", this, "save"));
@@ -746,7 +748,7 @@ public final class SimpleGUI implements MessageHandler {
 
         // Create the message area
         log=new JTextPane();
-        log.setBackground(Color.getHSBColor(0f,0f,0.95f));
+        log.setBackground(gray);
         log.setEditable(false);
         log.setFont(Util.getFont());
         StyledDocument doc=log.getStyledDocument();
@@ -770,13 +772,15 @@ public final class SimpleGUI implements MessageHandler {
         all.setLayout(new BorderLayout());
         all.add(new NiceSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane, width/2), BorderLayout.CENTER);
         all.add(status=Util.makeJLabel(" ",font), BorderLayout.SOUTH);
+        status.setBackground(gray);
+        status.setOpaque(true);
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setLocation(screenWidth/10, screenHeight/10);
         frame.setVisible(true);
 
-    	log("ARGS = "+args.length+"\n", styleGreen);
-    	for(String a:args) log("# = "+a+"\n",styleGreen);
+    	//log("ARGS = "+args.length+"\n", styleGreen);
+    	//for(String a:args) log("# = "+a+"\n",styleGreen);
 
         // Generate some informative log messages
         log(AlloyVersion.version(), styleGreen);

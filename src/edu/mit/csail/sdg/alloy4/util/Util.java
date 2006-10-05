@@ -37,6 +37,8 @@ public final class Util {
     /** Constructor is private, since this utility class never needs to be instantiated. */
     private Util() { }
 
+    public static void harmless(String message, Exception ex) { }
+    
     /** Returns true iff running on a Mac OS X, with look and feel of Aqua **/
     public static boolean onMac() {
         return System.getProperty("mrj.version") != null
@@ -102,7 +104,7 @@ public final class Util {
         button.setVerticalTextPosition(JButton.BOTTOM);
         button.setHorizontalTextPosition(JButton.CENTER);
         button.setBorderPainted(false);
-        if (!onMac()) button.setBackground(Color.getHSBColor(0f,0f,0.95f));
+        if (!onMac()) button.setBackground(Color.getHSBColor(0f,0f,0.90f));
         button.setFont(button.getFont().deriveFont((float)1));
         button.setAction(new AbstractAction("", icon) {
 			private static final long serialVersionUID = 1L;
