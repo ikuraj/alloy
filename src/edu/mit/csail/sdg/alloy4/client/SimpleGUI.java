@@ -253,6 +253,7 @@ public final class SimpleGUI implements MessageHandler {
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
                 String tempdir=maketemp();
                 List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, satOPTION, tempdir);
+                reallog.flush(); // To make sure everything is flushed.
                 new File(tempdir).delete(); // In case it was UNSAT, or was TRIVIALLY SAT. Or cancelled.
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     logButton("Click here to display this instance", tempdir, tempdir+(index+1)+".xml");
@@ -620,6 +621,7 @@ public final class SimpleGUI implements MessageHandler {
         System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
         System.setProperty("com.apple.mrj.application.live-resize","true");
         System.setProperty("com.apple.macos.useScreenMenuBar","true");
+        System.setProperty("apple.laf.useScreenMenuBar","true");
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
 
         boolean relaunch=false;
@@ -772,6 +774,9 @@ public final class SimpleGUI implements MessageHandler {
         frame.setSize(new Dimension(width,height));
         frame.setLocation(screenWidth/10, screenHeight/10);
         frame.setVisible(true);
+
+    	log("ARGS = "+args.length+"\n", styleGreen);
+    	for(String a:args) log("# = "+a+"\n",styleGreen);
 
         // Generate some informative log messages
         log(AlloyVersion.version(), styleGreen);
