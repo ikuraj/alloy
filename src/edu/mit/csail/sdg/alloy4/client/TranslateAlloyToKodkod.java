@@ -1025,8 +1025,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 solver.options().setSolver(SATFactory.MiniSat);
             else if (solverChoice==(-1))
                 solver.options().setSolver(new SATFactory() {
-					@Override public final SATSolver instance() { return new FileSAT(dest+".cnf"); }
-					@Override public String toString() { return "CommandLine"; }
+                    @Override public final SATSolver instance() { return new FileSAT(dest+".cnf"); }
+                    @Override public String toString() { return "CommandLine"; }
                 });
             else // if (solverChoice==0)
                 solver.options().setSolver(SATFactory.DefaultSAT4J);
@@ -1037,8 +1037,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (cmd.options.contains("noflatten")) flatten=false;
             if (cmd.options.contains("nosym")) sym=false;
             if (cmd.expects!=0) sym=false;
-        	if (!flatten) { solver.options().setFlatten(false); log.log("noflatten... "); }
-        	if (!sym) { solver.options().setSymmetryBreaking(0); log.log("nosym... "); }
+            if (!flatten) { solver.options().setFlatten(false); log.log("noflatten... "); }
+            if (!sym) { solver.options().setSymmetryBreaking(0); log.log("nosym... "); }
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (Stopper.stopped) {

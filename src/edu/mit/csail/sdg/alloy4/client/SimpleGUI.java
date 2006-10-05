@@ -77,7 +77,7 @@ import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
 public final class SimpleGUI implements Util.MessageHandler {
 
-	/** The system-specific file separator (forward-slash on UNIX, back-slash on Windows, etc.) */
+    /** The system-specific file separator (forward-slash on UNIX, back-slash on Windows, etc.) */
     private static final String fs=System.getProperty("file.separator");
 
     /** The darker background (for the MessageLog window and the Toolbar and the Status Bar, etc.) */
@@ -237,19 +237,18 @@ public final class SimpleGUI implements Util.MessageHandler {
      */
     private final class Runner implements Runnable {
 
-        /** The Alloy model to be anaylzed */
-        private final Reader source;
-
-        /** The command that this runner should run (0..) (-1 means all of them) */
-        private final int index;
+        /** The Alloy model to be anaylzed */  private final Reader source;
+        /** The command that this runner should run (0..) (-1 means all of them) */ private final int index;
+        /** The SAT solver to use. */ private final int satOPTION;
 
         /**
          * Constructor for this runner.
          * @param index - the command that this runner will run
          */
-        public Runner(Reader source, int index) {
+        public Runner(Reader source, int index, int satOPTION) {
             this.source=source;
             this.index=index;
+            this.satOPTION=satOPTION;
         }
 
         /** The run() method to start this runner. */
@@ -349,15 +348,15 @@ public final class SimpleGUI implements Util.MessageHandler {
     private synchronized void thread_reportTermination() { runmenu.setEnabled(true); stopbutton.setVisible(false); current_thread=null; }
     private synchronized boolean thread_stillRunning() { return current_thread!=null; }
     private synchronized void thread_stop() {
-    	/*
-    	System.out.println("START...");
-    	for(StackTraceElement e: current_thread.getStackTrace()) {
-    		System.out.println("  ENTRY: " + e.toString());
-    	}
-    	System.out.println("Done.\n\n");
-    	System.out.flush();
-    	*/
-    	if (current_thread!=null) Stopper.stopped=true;
+        /*
+        System.out.println("START...");
+        for(StackTraceElement e: current_thread.getStackTrace()) {
+            System.out.println("  ENTRY: " + e.toString());
+        }
+        System.out.println("Done.\n\n");
+        System.out.flush();
+        */
+        if (current_thread!=null) Stopper.stopped=true;
     }
 
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */
@@ -405,8 +404,10 @@ public final class SimpleGUI implements Util.MessageHandler {
     private class RunListener implements ActionListener {
         /** The index number of the command that the user wishes to execute (0..) (-1 means ALL of them). */
         private final int index;
+        /** The SAT solver to use. */
+        private final int satOPTION;
         /** The constructor. */
-        public RunListener(int i) {index=i;}
+        public RunListener(int index, int satOPTION) {this.index=index; this.satOPTION=satOPTION;}
         /** The event handler that gets called when the user clicked on one of the menu item. */
         public void actionPerformed(ActionEvent e) {
             if (thread_stillRunning()) {
@@ -414,7 +415,7 @@ public final class SimpleGUI implements Util.MessageHandler {
                 return;
             }
             Stopper.stopped=false;
-            Runner r=new Runner(new StringReader(text.getText()), index);
+            Runner r=new Runner(new StringReader(text.getText()), index, satOPTION);
             Thread t=new Thread(r);
             t.start();
             thread_reportStarting(t);
@@ -571,19 +572,19 @@ public final class SimpleGUI implements Util.MessageHandler {
             }
             if (u.runchecks.size()>1) {
                 y=new JMenuItem("All");
-                y.addActionListener(new RunListener(-1));
+                y.addActionListener(new RunListener(-1, satOPTION));
                 runmenu.add(y);
                 runmenu.add(new JSeparator());
             }
             for(int i=0; i<u.runchecks.size(); i++) {
                 String label=u.runchecks.get(i).toString();
                 y=new JMenuItem(label);
-                y.addActionListener(new RunListener(i));
+                y.addActionListener(new RunListener(i, satOPTION));
                 runmenu.add(y);
             }
         }
         if ("window".equals(x)) {
-        	OurMenu windowmenu=(OurMenu)caller;
+            OurMenu windowmenu=(OurMenu)caller;
             windowmenu.removeAll();
             JMenuItem et=new JMenuItem("Editor Window");
             et.setIcon(iconYes);
@@ -664,53 +665,53 @@ public final class SimpleGUI implements Util.MessageHandler {
         // Create the menu
         OurMenubar bar=new OurMenubar(this);
         frame.setJMenuBar(bar);
-        
+
         if (1==1) { // File menu
-        	OurMenu filemenu = bar.addMenu("File", true, KeyEvent.VK_F, "file");
-        	filemenu.addMenuItem("New",     true, KeyEvent.VK_N, KeyEvent.VK_N, "new");
-        	filemenu.addMenuItem("Open",    true, KeyEvent.VK_O, KeyEvent.VK_O, "open");
-        	filemenu.addMenuItem("Save",    true, KeyEvent.VK_S, KeyEvent.VK_S, "save");
-        	filemenu.addMenuItem("Save As", true, KeyEvent.VK_A, -1,            "saveas");
-        	filemenu.addMenuItem("Quit",    true, KeyEvent.VK_Q, -1,            "quit");
+            OurMenu filemenu = bar.addMenu("File", true, KeyEvent.VK_F, "file");
+            filemenu.addMenuItem("New",     true, KeyEvent.VK_N, KeyEvent.VK_N, "new");
+            filemenu.addMenuItem("Open",    true, KeyEvent.VK_O, KeyEvent.VK_O, "open");
+            filemenu.addMenuItem("Save",    true, KeyEvent.VK_S, KeyEvent.VK_S, "save");
+            filemenu.addMenuItem("Save As", true, KeyEvent.VK_A, -1,            "saveas");
+            filemenu.addMenuItem("Quit",    true, KeyEvent.VK_Q, -1,            "quit");
         }
-        
+
         if (1==1) { // Run menu
-        	runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, "run");
+            runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, "run");
         }
 
         if (1==1) { // Options menu
-        	Error ex=null;
-        	boolean minisat;
-        	try {               System.load(binary+fs+"libminisat6.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) try { System.load(binary+fs+"libminisat4.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) try { System.load(binary+fs+"libminisat.so");     } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) try { System.load(binary+fs+"libminisat.jnilib"); } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) try { System.load(binary+fs+"minisat.dll");       } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) { minisat=false; satOPTION=1; } else minisat=true;
-        	boolean zchaff;
-        	try { ex=null;      System.load(binary+fs+"libzchaff_basic6.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) try { System.load(binary+fs+"libzchaff_basic4.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.so");     } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       } catch(UnsatisfiedLinkError e) {ex=e;}
-        	if (ex!=null) { zchaff=false; if (satOPTION==1) satOPTION=0; } else zchaff=true;
-        	OurMenu optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, "");
-        	optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",       true,    -1,            -1, "sat=sat4j");
-        	optmenu.addMenuItem(satOPTION==1?iconYes:iconNo, "Use ZChaff",      zchaff,  KeyEvent.VK_Z, -1, "sat=zchaff");
-        	optmenu.addMenuItem(satOPTION==2?iconYes:iconNo, "Use MiniSat",     minisat, KeyEvent.VK_M, -1, "sat=minisat");
-        	optmenu.addMenuItem(iconNo,                      "Use CommandLine", true,    KeyEvent.VK_C, -1, "sat=file");
+            Error ex=null;
+            boolean minisat;
+            try {               System.load(binary+fs+"libminisat6.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libminisat4.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libminisat.so");     } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libminisat.jnilib"); } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"minisat.dll");       } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) { minisat=false; satOPTION=1; } else minisat=true;
+            boolean zchaff;
+            try { ex=null;      System.load(binary+fs+"libzchaff_basic6.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic4.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.so");     } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) { zchaff=false; if (satOPTION==1) satOPTION=0; } else zchaff=true;
+            OurMenu optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, "");
+            optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",       true,    -1,            -1, "sat=sat4j");
+            optmenu.addMenuItem(satOPTION==1?iconYes:iconNo, "Use ZChaff",      zchaff,  KeyEvent.VK_Z, -1, "sat=zchaff");
+            optmenu.addMenuItem(satOPTION==2?iconYes:iconNo, "Use MiniSat",     minisat, KeyEvent.VK_M, -1, "sat=minisat");
+            optmenu.addMenuItem(iconNo,                      "Use CommandLine", true,    KeyEvent.VK_C, -1, "sat=file");
         }
-        
+
         if (1==1) { // Window menu
-        	bar.addMenu("Window", true, KeyEvent.VK_W, "window");
+            bar.addMenu("Window", true, KeyEvent.VK_W, "window");
         }
-        
+
         if (1==1) { // Help menu
-        	OurMenu helpmenu = bar.addMenu("Help", true, KeyEvent.VK_H, null);
-        	helpmenu.addMenuItem("See Alloy4 Change Log", true, KeyEvent.VK_C, -1, "showchange");
-        	helpmenu.addMenuItem("See Alloy4 Version",    true, KeyEvent.VK_V, -1, "showversion");
+            OurMenu helpmenu = bar.addMenu("Help", true, KeyEvent.VK_H, null);
+            helpmenu.addMenuItem("See Alloy4 Change Log", true, KeyEvent.VK_C, -1, "showchange");
+            helpmenu.addMenuItem("See Alloy4 Version",    true, KeyEvent.VK_V, -1, "showversion");
         }
-        
+
         // Create the text editor
         text=new JTextArea();
         text.setLineWrap(false);
@@ -774,8 +775,8 @@ public final class SimpleGUI implements Util.MessageHandler {
         frame.setLocation(screenWidth/10, screenHeight/10);
         frame.setVisible(true);
 
-    	//log("ARGS = "+args.length+"\n", styleGreen);
-    	//for(String a:args) log("# = "+a+"\n",styleGreen);
+        //log("ARGS = "+args.length+"\n", styleGreen);
+        //for(String a:args) log("# = "+a+"\n",styleGreen);
 
         // Generate some informative log messages
         log(AlloyVersion.version(), styleGreen);

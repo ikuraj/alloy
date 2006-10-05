@@ -37,11 +37,11 @@ public final class ParaRuncheck extends Para {
      */
     public final Map<String,Integer> scope;
 
-	/** The label given in front of a command; can be ""; unmodifiable. */
-	private final String label;
-	
-	/** The list of options given in a command; can be empty; unmodifiable. */
-	public final List<String> options;	
+    /** The label given in front of a command; can be ""; unmodifiable. */
+    private final String label;
+
+    /** The list of options given in a command; can be empty; unmodifiable. */
+    public final List<String> options;
 
     /** Returns a human-readable string that summarizes this Run or Check command. */
     @Override public final String toString() {

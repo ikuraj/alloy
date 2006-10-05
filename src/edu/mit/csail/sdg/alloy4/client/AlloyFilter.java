@@ -54,9 +54,9 @@ public final class AlloyFilter implements Scanner {
        {
         Symbol c; c=myread();
         if (c.sym==AlloySym.RUN || c.sym==AlloySym.CHECK) {
-        	undo.add(0,c);
-        	undo.add(0,a);
-        	return last=b;
+            undo.add(0,c);
+            undo.add(0,a);
+            return last=b;
         }
         undo.add(0,c);
        }
