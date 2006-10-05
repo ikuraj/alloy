@@ -31,7 +31,7 @@ import java.util.NoSuchElementException;
 public final class IdentitySet<T> implements Iterable<T> {
 
     /** This map's key set is used to store the set of elements; the values are ignored. */
-    private final IdentityHashMap<T,Object> hashmap = new IdentityHashMap<T,Object>();
+    private final IdentityHashMap<T,Object> hashmap=new IdentityHashMap<T,Object>();
 
     /**
      * This array also stores the set of elements;
@@ -45,25 +45,24 @@ public final class IdentitySet<T> implements Iterable<T> {
     /** Returns whether the element x is in the set. */
     public boolean contains(T x) { return hashmap.containsKey(x); }
 
-    /** Adds the element x into the set (if it isn't in the set already). */
+    /** Adds the element x into the set; if x is already in the set, then this method does nothing. */
     public void add(T x) { if (!hashmap.containsKey(x)) { hashmap.put(x,null); list.add(x); } }
 
     /**
      * Returns an iterator that iterates over elements in this set
      * (in the order that they were inserted).
      *
-     * <p/> Note: This iterator throws UnsupportedOperationException
-     * if you attempt to call its remove() method.
+     * <p/> Note: This iterator's remove() method always throws UnsupportedOperationException.
      *
-     * <p/> Note: This iterator will always return exactly the set of elements that existed
+     * <p/> Note: This iterator always returns exactly the set of elements that existed
      * at the time that the iterator was created (even if the set is modified after that point).
      */
     public Iterator<T> iterator() {
         return new Iterator<T>() {
-            private final int length=list.size();
+            private final int max=list.size();
             private int now=0;
-            public final boolean hasNext() { return now<length; }
-            public final T next() { if (now>=length) throw new NoSuchElementException(); return list.get(now++); }
+            public final boolean hasNext() { return now<max; }
+            public final T next() { if (now>=max) throw new NoSuchElementException(); now++; return list.get(now-1); }
             public final void remove() { throw new UnsupportedOperationException(); }
         };
     }

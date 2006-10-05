@@ -1,5 +1,7 @@
 package edu.mit.csail.sdg.alloy4.util;
 
+import java.lang.reflect.InvocationTargetException;
+
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
@@ -24,7 +26,7 @@ public final class LogToTextPane extends Log {
     /** The style to use when printing bold messages. */
     private final Style boldStyle;
 
-    /** An internal buffer, used to cache the messages. */
+    /** An internal buffer used to cache messages. */
     private final StringBuilder buffer=new StringBuilder();
 
     /** If buffer.length()!=0, then this is the style to use to write the buffer out. */
@@ -65,29 +67,35 @@ public final class LogToTextPane extends Log {
         final String content=buffer.toString();
         final Style style=(latestStyle==boldStyle ? boldStyle : defaultStyle);
         buffer.setLength(0);
-        if (SwingUtilities.isEventDispatchThread()) { realFlush(pane,content,style); return; }
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public final void run() { realFlush(pane,content,style); }
-            });
-        } catch (Exception e) {
-            // Should not happen. Added "Util.harmless()" to silence FindBugs's warning about ignoring exception
-            Util.harmless("LogToTextPane.flush()", e);
-        }
+        realFlush(pane,content,style);
     }
 
     /**
      * This method performs the actual GUI operation.
-     * Note: this method must only be called from the AWT Event Dispatch Thread.
-     * Also, since this method might be executed from code other than the main data thread,
-     * we made sure this method doesn't access any fields, just final handles to GUI or String objects.
+     * Since this method might be executed from code other than the main data thread,
+     * we made sure this method only uses final references to GUI Objects or String objects.
      */
     private static void realFlush(final JTextPane pane, final String content, final Style style) {
+    	if (!SwingUtilities.isEventDispatchThread()) {
+    		// GUI methods must only be called by the event dispatch thread
+    		try {
+    			SwingUtilities.invokeAndWait(new Runnable() {
+    				public final void run() { realFlush(pane,content,style); }
+    			});
+    		} catch(InterruptedException x) {
+                // Should not happen. Util.harmless() method could choose to log this occurrence.
+                Util.harmless("LogToTextPane.realFlush()", x);
+		    } catch(InvocationTargetException x) {
+	            // Should not happen. Util.harmless() method could choose to log this occurrence.
+	            Util.harmless("LogToTextPane.realFlush()", x);
+		    }
+		    return;
+    	}
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), content, style);
         } catch (BadLocationException e) {
-            // Should not happen. Added "Util.harmless()" to silence FindBugs's warning about ignoring exception
+            // Should not happen. Util.harmless() method could choose to log this occurrence.
             Util.harmless("LogToTextPane.realFlush()",e);
         }
         pane.setCaretPosition(doc.getLength());
