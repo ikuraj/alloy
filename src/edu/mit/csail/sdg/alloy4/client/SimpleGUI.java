@@ -63,7 +63,6 @@ import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.util.Err;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
-import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
@@ -71,6 +70,7 @@ import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurMenuBar;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.Util;
+import edu.mit.csail.sdg.alloy4util.Version;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUI;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
 import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
@@ -514,7 +514,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             if (!my_confirm()) return null;
             latestName="";
             text.setText("");
-            frame.setTitle(AlloyVersion.version());
+            frame.setTitle("Alloy4: build date "+Version.buildDate());
             compiled(false);
             modified(false);
             return Boolean.TRUE;
@@ -609,7 +609,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             }
         }
         if ("showchange".equals(x)) showChangeLog();
-        if ("showversion".equals(x)) JOptionPane.showMessageDialog(null,AlloyVersion.version());
+        if ("showversion".equals(x)) JOptionPane.showMessageDialog(null,"Alloy 4: build date "+Version.buildDate());
         if ("quit".equals(x)) if (my_confirm()) System.exit(0);
         if ("stop".equals(x)) thread_stop();
         if ("sat=sat4j".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=0; }
@@ -653,7 +653,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         int screenHeight=Toolkit.getDefaultToolkit().getScreenSize().height;
         int width=screenWidth/10*8, height=screenHeight/10*8;
         Font font=Util.getFont();
-        frame=new JFrame(AlloyVersion.version());
+        frame=new JFrame("Alloy4: build date "+Version.buildDate());
         factory=new KodVizGUIFactory(alloyhome, false);
 
         // Create the menu
@@ -774,7 +774,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         frame.setVisible(true);
 
         // Generate some informative log messages
-        log(AlloyVersion.version(), styleGreen);
+        log("Alloy4: build date "+Version.buildDate(), styleGreen);
         if (satOPTION==2) log("\nSolver: MiniSAT using JNI", styleGreen);
             else if (satOPTION==1) log("\nSolver: ZChaff using JNI", styleGreen);
             else if (satOPTION==0) log("\nSolver: SAT4J", styleGreen);
