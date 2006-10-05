@@ -68,7 +68,7 @@ import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.OurMacListener;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
 import edu.mit.csail.sdg.alloy4util.OurMenuItem;
-import edu.mit.csail.sdg.alloy4util.OurMenubar;
+import edu.mit.csail.sdg.alloy4util.OurMenuBar;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUI;
@@ -656,7 +656,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         factory=new KodVizGUIFactory(alloyhome, false);
 
         // Create the menu
-        OurMenubar bar=new OurMenubar(this);
+        OurMenuBar bar=new OurMenuBar(this);
         frame.setJMenuBar(bar);
 
         if (1==1) { // File menu
