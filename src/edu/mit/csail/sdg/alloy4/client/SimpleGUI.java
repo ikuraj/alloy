@@ -28,7 +28,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -36,7 +35,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
-import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -59,10 +57,11 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
-
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
+import edu.mit.csail.sdg.alloy4.gui.OurMenu;
+import edu.mit.csail.sdg.alloy4.gui.OurMenubar;
 import edu.mit.csail.sdg.alloy4.util.Err;
 import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
@@ -75,9 +74,13 @@ import edu.mit.csail.sdg.kodviz.gui.KodVizInstaller;
 
 public final class SimpleGUI implements MessageHandler {
 
+	/** The system-specific file separator (forward-slash on UNIX, back-slash on Windows, etc.) */
     private static final String fs=System.getProperty("file.separator");
+
+    /** The darker background (for the MessageLog window and the Toolbar and the Status Bar, etc.) */
     private static final Color gray=Color.getHSBColor(0f,0f,0.90f);
 
+    /** FileChooser filter that forces ".ALS" extension. */
     private static final FileFilter filterALS = new FileFilter() {
         @Override public final boolean accept(File f) { return !f.isFile() || f.getPath().endsWith(".als"); }
         @Override public final String getDescription() { return ".als files"; }
@@ -152,7 +155,7 @@ public final class SimpleGUI implements MessageHandler {
         Container all=frame.getContentPane();
         all.setLayout(new BorderLayout());
         all.add(textPane, BorderLayout.CENTER);
-        if (Util.onMac()) all.add(new JLabel(" "), BorderLayout.SOUTH); // Make room for the RESIZING HANDLE
+        if (Util.onMac()) all.add(new JLabel(" "), BorderLayout.SOUTH); // Make room for the Mac "grow box"
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setLocation(screenWidth/6, screenHeight/6);
@@ -371,13 +374,19 @@ public final class SimpleGUI implements MessageHandler {
     private Style styleRegular,styleBold,styleRed,styleGreen,styleGray;
 
     /** The JMenu that contains the list of RUN and CHECK commands in the current file. */
-    private JMenu runmenu,filemenu,windowmenu;
+    private OurMenu runmenu,filemenu,windowmenu;
 
     /** The JLabel that displays the current line/column position, etc. */
     private JLabel status;
 
     /** Main method that launches the program. */
     public static final void main(final String[] args) {
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
+        System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
+        System.setProperty("com.apple.mrj.application.live-resize","true");
+        System.setProperty("com.apple.macos.useScreenMenuBar","true");
+        System.setProperty("apple.laf.useScreenMenuBar","true");
+        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
         SwingUtilities.invokeLater(new Runnable() {
             public final void run() { new SimpleGUI(args); }
         });
@@ -619,13 +628,6 @@ public final class SimpleGUI implements MessageHandler {
 
     private SimpleGUI(String[] args) {
 
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
-        System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
-        System.setProperty("com.apple.mrj.application.live-resize","true");
-        System.setProperty("com.apple.macos.useScreenMenuBar","true");
-        System.setProperty("apple.laf.useScreenMenuBar","true");
-        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
-
         boolean relaunch=false;
         if (args.length==2 && args[0].equals("-relaunch") && new File(args[1]).isDirectory()) {
             alloyhome=args[1];
@@ -651,6 +653,7 @@ public final class SimpleGUI implements MessageHandler {
         KodVizInstaller.copy("zchaff_basic.dll", binary, false);
         set("basedir",alloyhome);
 
+        /*
         if (Util.onMac() && args.length==1 && args[0].equals("-jaws") && !get("version").equals(AlloyVersion.version())) {
             set("version", AlloyVersion.version());
             String[] cmdArgs = {"java", "-jar", alloyhome+fs+"alloy4.jar", "-relaunch", alloyhome};
@@ -659,8 +662,8 @@ public final class SimpleGUI implements MessageHandler {
             if (p!=null) { try { p.waitFor(); } catch (InterruptedException e) { } }
             return;
         }
-
         set("version", AlloyVersion.version());
+        */
 
         boolean minisat=true;
         try { System.load(binary+fs+"libminisat6.so"); } catch(UnsatisfiedLinkError ex) {
@@ -696,21 +699,22 @@ public final class SimpleGUI implements MessageHandler {
         factory=new KodVizGUIFactory(alloyhome, false);
 
         // Create the menu
-        JMenuBar bar=new JMenuBar();
-        bar.setVisible(true);
-        filemenu = Util.makeJMenu(bar, "File", true, KeyEvent.VK_F, this, "file");
-        Util.makeJMenuItem(filemenu, "New",     KeyEvent.VK_N, KeyEvent.VK_N, this, "new");
-        Util.makeJMenuItem(filemenu, "Open",    KeyEvent.VK_O, KeyEvent.VK_O, this, "open");
-        Util.makeJMenuItem(filemenu, "Save",    KeyEvent.VK_S, KeyEvent.VK_S, this, "save");
-        Util.makeJMenuItem(filemenu, "Save As", KeyEvent.VK_A, -1,            this, "saveas");
-        Util.makeJMenuItem(filemenu, "Quit",    KeyEvent.VK_Q, -1,            this, "quit");
-        runmenu =        Util.makeJMenu(bar, "Run",    true, KeyEvent.VK_R, this, "run");
+        OurMenubar bar=new OurMenubar(this);
+        
+        filemenu = bar.addMenu("File", true, KeyEvent.VK_F, "file");
+        filemenu.addMenuItem("New",     KeyEvent.VK_N, KeyEvent.VK_N, "new");
+        filemenu.addMenuItem("Open",    KeyEvent.VK_O, KeyEvent.VK_O, "open");
+        filemenu.addMenuItem("Save",    KeyEvent.VK_S, KeyEvent.VK_S, "save");
+        filemenu.addMenuItem("Save As", KeyEvent.VK_A, -1,            "saveas");
+        filemenu.addMenuItem("Quit",    KeyEvent.VK_Q, -1,            "quit");
+        
+        runmenu =        bar.addMenu("Run",    true, KeyEvent.VK_R, "run");
         JMenu optmenu =  Util.makeJMenu(bar, "Options",true, KeyEvent.VK_O, null, null);
         (satSAT4J=Util.makeJMenuItem(optmenu, "Use SAT4J", -1, -1, this, "sat=sat4j")).setIcon(iconNo);
         (satZCHAFF=Util.makeJMenuItem(optmenu, "Use ZChaff", KeyEvent.VK_Z, -1, this, "sat=zchaff")).setIcon(iconNo);
         (satMINISAT=Util.makeJMenuItem(optmenu, "Use MiniSat", KeyEvent.VK_M, -1, this, "sat=minisat")).setIcon(iconNo);
         (satFILE=Util.makeJMenuItem(optmenu, "Use CommandLine", KeyEvent.VK_C, -1, this, "sat=file")).setIcon(iconNo);
-        windowmenu =     Util.makeJMenu(bar, "Window", true, KeyEvent.VK_W, this, "window");
+        windowmenu =     bar.addMenu("Window", true, KeyEvent.VK_W, "window");
         JMenu helpmenu = Util.makeJMenu(bar, "Help",   true, KeyEvent.VK_H, null, null);
         Util.makeJMenuItem(helpmenu, "See Alloy4 Change Log", KeyEvent.VK_C, -1, this, "showchange");
         Util.makeJMenuItem(helpmenu, "See Alloy4 Version",    KeyEvent.VK_V, -1, this, "showversion");
@@ -797,7 +801,7 @@ public final class SimpleGUI implements MessageHandler {
         log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
 
         // If commandline tells you to load a file, load it.
-        if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
-        else if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
+        //if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
+        //else if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
     }
 }
