@@ -65,9 +65,11 @@ import edu.mit.csail.sdg.alloy4.util.Log;
 import edu.mit.csail.sdg.alloy4.util.LogToTextPane;
 import edu.mit.csail.sdg.alloy4.util.AlloyVersion;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
+import edu.mit.csail.sdg.alloy4util.OurMacListener;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
 import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurMenubar;
+import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUI;
 import edu.mit.csail.sdg.kodviz.gui.KodVizGUIFactory;
@@ -763,7 +765,7 @@ public final class SimpleGUI implements Util.MessageHandler {
 
         Container all=frame.getContentPane();
         all.setLayout(new BorderLayout());
-        all.add(new NiceSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane, width/2), BorderLayout.CENTER);
+        all.add(new OurSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane, width/2), BorderLayout.CENTER);
         all.add(status=Util.makeJLabel(" ",font), BorderLayout.SOUTH);
         status.setBackground(gray);
         status.setOpaque(true);
@@ -787,6 +789,6 @@ public final class SimpleGUI implements Util.MessageHandler {
         // If commandline tells you to load a file, load it.
         //if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
         //else if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
-        if (Util.onMac()) new MacListener(this);
+        if (Util.onMac()) new OurMacListener(this,"quit");
     }
 }

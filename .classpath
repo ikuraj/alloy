@@ -6,7 +6,6 @@
 	<classpathentry kind="lib" path="src/java-cup-11a-runtime.jar"/>
 	<classpathentry kind="lib" path="src/kodkod.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/kodviz"/>
-	<classpathentry kind="lib" path="src/apple-osx-ui.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/alloy4util"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
