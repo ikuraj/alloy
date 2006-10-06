@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4.node;
 
-
 /**
  * This abstract class implements a Query visitor that walks over an Expr and its subnodes.
  * <br/> The visit() methods returns null for false, nonnull for true.

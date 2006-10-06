@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4.node;
 
-
 /**
  * This interface defines what a Return Visitor's interface should be.
  *

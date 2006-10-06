@@ -1,7 +1,6 @@
 package edu.mit.csail.sdg.alloy4.node;
 
 import java.util.ArrayList;
-
 import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.helper.ErrorType;

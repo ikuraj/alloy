@@ -3,7 +3,6 @@ package edu.mit.csail.sdg.alloy4.node;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
-
 import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.helper.Pos;
 

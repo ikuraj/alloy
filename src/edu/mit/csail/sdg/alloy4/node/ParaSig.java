@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Set;
-
 import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.helper.Pos;

@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-
 import edu.mit.csail.sdg.alloy4.helper.DirectedGraph;
 import edu.mit.csail.sdg.alloy4.helper.Env;
 import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
