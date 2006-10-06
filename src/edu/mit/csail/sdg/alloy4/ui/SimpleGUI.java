@@ -28,6 +28,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
+import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -740,6 +742,7 @@ public final class SimpleGUI implements MessageHandler {
         toolbar.add(OurUtil.makeJButton("Open","Opens an existing model","images/24_open.gif", this, "open"));
         toolbar.add(OurUtil.makeJButton("Save","Saves the current model","images/24_save.gif", this, "save"));
         toolbar.add(stopbutton=OurUtil.makeJButton("Stop","Stops the current analysis","images/24_execute_abort2.gif", this, "stop"));
+        toolbar.add(Box.createHorizontalGlue());
         stopbutton.setVisible(false);
         JPanel lefthalf=new JPanel();
         lefthalf.setLayout(new BorderLayout());
