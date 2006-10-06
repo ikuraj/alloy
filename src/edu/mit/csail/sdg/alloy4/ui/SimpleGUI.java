@@ -685,18 +685,18 @@ public final class SimpleGUI implements Util.MessageHandler {
         if (1==1) { // Options menu
             Error ex=null;
             boolean minisat;
-            try {               System.load(binary+fs+"libminisat6.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) try { System.load(binary+fs+"libminisat4.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) try { System.load(binary+fs+"libminisat.so");     } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) try { System.load(binary+fs+"libminisat.jnilib"); } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) try { System.load(binary+fs+"minisat.dll");       } catch(UnsatisfiedLinkError e) {ex=e;}
+            try {               System.load(binary+fs+"libminisat6.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libminisat4.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libminisat.so");     ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libminisat.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"minisat.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) { minisat=false; satOPTION=1; } else minisat=true;
             boolean zchaff;
-            try { ex=null;      System.load(binary+fs+"libzchaff_basic6.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic4.so");    } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.so");     } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       } catch(UnsatisfiedLinkError e) {ex=e;}
+            try { ex=null;      System.load(binary+fs+"libzchaff_basic6.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic4.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.so");     ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
+            if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) { zchaff=false; if (satOPTION==1) satOPTION=0; } else zchaff=true;
             OurMenu optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, "");
             optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",       true,                       "sat=sat4j");
@@ -787,7 +787,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             log("\nMac OS X detected.", styleGreen);
             MacUtil.addApplicationListener(this);
         }
-
+        
         // log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
         // On Mac, it will be the directory that contains "Alloy4.app". Problem: people can RENAME "Alloy4.app"...
         //log("ARGS = "+args.length+"\n", styleGreen);
