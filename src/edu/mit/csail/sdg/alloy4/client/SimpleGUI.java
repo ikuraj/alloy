@@ -526,9 +526,9 @@ public final class SimpleGUI implements Util.MessageHandler {
             return Boolean.TRUE;
         }
         if (x instanceof String && ((String)x).startsWith("open:")) {
-        	if (!my_confirm()) return null;
-        	my_open(((String)x).substring(5));
-        	return Boolean.TRUE;
+            if (!my_confirm()) return null;
+            my_open(((String)x).substring(5));
+            return Boolean.TRUE;
         }
         if ("saveas".equals(x)) {
             JFileChooser open=new JFileChooser(fileOpenDirectory);
@@ -665,11 +665,11 @@ public final class SimpleGUI implements Util.MessageHandler {
 
         if (1==1) { // File menu
             OurMenu filemenu = bar.addMenu("File", true, KeyEvent.VK_F, "file");
-            filemenu.addMenuItem("New",     true, KeyEvent.VK_N, KeyEvent.VK_N, "new");
-            filemenu.addMenuItem("Open",    true, KeyEvent.VK_O, KeyEvent.VK_O, "open");
-            filemenu.addMenuItem("Save",    true, KeyEvent.VK_S, KeyEvent.VK_S, "save");
-            filemenu.addMenuItem("Save As", true, KeyEvent.VK_A, -1,            "saveas");
-            if (!Util.onMac()) filemenu.addMenuItem("Quit", true, KeyEvent.VK_Q, -1, "quit");
+            filemenu.addMenuItem(null, "New",     true, KeyEvent.VK_N, KeyEvent.VK_N, "new");
+            filemenu.addMenuItem(null, "Open",    true, KeyEvent.VK_O, KeyEvent.VK_O, "open");
+            filemenu.addMenuItem(null, "Save",    true, KeyEvent.VK_S, KeyEvent.VK_S, "save");
+            filemenu.addMenuItem(null, "Save As", true, KeyEvent.VK_A, -1,            "saveas");
+            if (!Util.onMac()) filemenu.addMenuItem(null, "Quit", true, KeyEvent.VK_Q, -1, "quit");
         }
 
         if (1==1) { // Run menu
@@ -697,7 +697,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) { zchaff=false; if (satOPTION==1) satOPTION=0; } else zchaff=true;
             OurMenu optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, "");
-            optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",       true,    -1,            -1, "sat=sat4j");
+            optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",       true,                       "sat=sat4j");
             optmenu.addMenuItem(satOPTION==1?iconYes:iconNo, "Use ZChaff",      zchaff,  KeyEvent.VK_Z, -1, "sat=zchaff");
             optmenu.addMenuItem(satOPTION==2?iconYes:iconNo, "Use MiniSat",     minisat, KeyEvent.VK_M, -1, "sat=minisat");
             optmenu.addMenuItem(iconNo,                      "Use CommandLine", true,    KeyEvent.VK_C, -1, "sat=file");
@@ -709,8 +709,8 @@ public final class SimpleGUI implements Util.MessageHandler {
 
         if (1==1) { // Help menu
             OurMenu helpmenu = bar.addMenu("Help", true, KeyEvent.VK_H, null);
-            helpmenu.addMenuItem("See Alloy4 Change Log", true, KeyEvent.VK_C, -1, "showchange");
-            helpmenu.addMenuItem("See Alloy4 Version",    true, KeyEvent.VK_V, -1, "showversion");
+            helpmenu.addMenuItem(null, "See Alloy4 Change Log", true, KeyEvent.VK_C, -1, "showchange");
+            helpmenu.addMenuItem(null, "See Alloy4 Version",    true, KeyEvent.VK_V, -1, "showversion");
         }
 
         // Create the text editor
@@ -783,7 +783,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             else if (satOPTION==0) log("\nSolver: SAT4J", styleGreen);
         if (Util.onMac()) {
             log("\nMac OS X detected.", styleGreen);
-            MacUtil.addAppListener(this);
+            MacUtil.addApplicationListener(this);
         }
 
         // log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
