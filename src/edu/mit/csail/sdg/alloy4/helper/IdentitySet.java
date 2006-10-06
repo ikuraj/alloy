@@ -21,7 +21,9 @@ import java.util.NoSuchElementException;
  * By making this simplification, we are able to ensure its iterator
  * always returns the elements in the order they were inserted.
  *
- * <p/><b>Invariant:</b> (hashmap.containsKey(x)) iff (x==list.get(i) for some i)
+ * <p/><b>Invariant:</b>      (hashmap.containsKey(x)) iff (x==list.get(i) for some i)
+ *
+ * <p/><b>Thread Safety:</b>  Unsafe.
  *
  * @author Felix Chang
  *
