@@ -65,22 +65,24 @@ import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
 import edu.mit.csail.sdg.alloy4.translator.Stopper;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
+import edu.mit.csail.sdg.alloy4util.MessageHandler;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
 import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurMenuBar;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
+import edu.mit.csail.sdg.alloy4util.OurUtil;
 import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.alloy4util.Version;
 import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
 import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUIFactory;
 import edu.mit.csail.sdg.alloy4viz.gui.KodVizInstaller;
 
-public final class SimpleGUI implements Util.MessageHandler {
+public final class SimpleGUI implements MessageHandler {
 
-    private static final ImageIcon iconYes=Util.loadIcon("images/menu1.gif");
-    private static final ImageIcon iconNo=Util.loadIcon("images/menu0.gif");
+    private static final ImageIcon iconYes=OurUtil.loadIcon("images/menu1.gif");
+    private static final ImageIcon iconNo=OurUtil.loadIcon("images/menu0.gif");
 
     /** The system-specific file separator (forward-slash on UNIX, back-slash on Windows, etc.) */
     private static final String fs=System.getProperty("file.separator");
@@ -140,7 +142,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         log.setEditable(false);
         StyledDocument doc=log.getStyledDocument();
         Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-        Style styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, Util.getFontName());
+        Style styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
         Style styleBold=doc.addStyle("bold", styleRegular); StyleConstants.setBold(styleBold, true);
         Style styleGreen=doc.addStyle("green", styleBold); StyleConstants.setForeground(styleGreen, new Color(0.2f,0.7f,0.2f));
         for(int i=0; i<changelog.length; i++) {
@@ -176,7 +178,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         JButton b=new JButton(label);
         if (Util.onMac()) b.setBackground(gray);
         b.setMaximumSize(b.getPreferredSize());
-        b.setFont(Util.getFont());
+        b.setFont(OurUtil.getFont());
         b.setForeground(Color.BLUE);
         b.addActionListener(new ActionListener(){
             public final void actionPerformed(ActionEvent e) {
@@ -192,7 +194,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         Style s=doc.addStyle("link", styleRegular);
         JLabel b=new JLabel(label);
         b.setMaximumSize(b.getPreferredSize());
-        b.setFont(Util.getFont());
+        b.setFont(OurUtil.getFont());
         b.setForeground(Color.BLUE);
         b.addMouseListener(new MouseListener(){
             public void mouseClicked(MouseEvent e) {
@@ -657,7 +659,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         int screenWidth=Toolkit.getDefaultToolkit().getScreenSize().width;
         int screenHeight=Toolkit.getDefaultToolkit().getScreenSize().height;
         int width=screenWidth/10*8, height=screenHeight/10*8;
-        Font font=Util.getFont();
+        Font font=OurUtil.getFont();
         frame=new JFrame("Alloy4: build date "+Version.buildDate());
         factory=new KodVizGUIFactory(alloyhome, false);
 
@@ -720,7 +722,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         text.setLineWrap(false);
         text.setEditable(true);
         text.setTabSize(3);
-        text.setFont(Util.getFont());
+        text.setFont(OurUtil.getFont());
         text.addCaretListener(new CaretListener() {
             public final void caretUpdate(CaretEvent e) {my_caret();}
         });
@@ -729,15 +731,15 @@ public final class SimpleGUI implements Util.MessageHandler {
             public final void removeUpdate(DocumentEvent e) {compiled(false); modified(true);}
             public final void changedUpdate(DocumentEvent e) {compiled(false); modified(true);}
         });
-        JComponent textPane = Util.makeJScrollPane(text);
+        JComponent textPane = OurUtil.makeJScrollPane(text);
 
         // Create the toolbar
-        JPanel toolbar=Util.makeH();
+        JPanel toolbar=OurUtil.makeH();
         if (!Util.onMac()) toolbar.setBackground(gray);
-        toolbar.add(Util.makeJButton("New","Starts a new blank model","images/24_new.gif", this, "new"));
-        toolbar.add(Util.makeJButton("Open","Opens an existing model","images/24_open.gif", this, "open"));
-        toolbar.add(Util.makeJButton("Save","Saves the current model","images/24_save.gif", this, "save"));
-        toolbar.add(stopbutton=Util.makeJButton("Stop","Stops the current analysis","images/24_execute_abort2.gif", this, "stop"));
+        toolbar.add(OurUtil.makeJButton("New","Starts a new blank model","images/24_new.gif", this, "new"));
+        toolbar.add(OurUtil.makeJButton("Open","Opens an existing model","images/24_open.gif", this, "open"));
+        toolbar.add(OurUtil.makeJButton("Save","Saves the current model","images/24_save.gif", this, "save"));
+        toolbar.add(stopbutton=OurUtil.makeJButton("Stop","Stops the current analysis","images/24_execute_abort2.gif", this, "stop"));
         stopbutton.setVisible(false);
         JPanel lefthalf=new JPanel();
         lefthalf.setLayout(new BorderLayout());
@@ -749,10 +751,10 @@ public final class SimpleGUI implements Util.MessageHandler {
         log=new JTextPane();
         log.setBackground(gray);
         log.setEditable(false);
-        log.setFont(Util.getFont());
+        log.setFont(OurUtil.getFont());
         StyledDocument doc=log.getStyledDocument();
         Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-        styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, Util.getFontName());
+        styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
         styleBold=doc.addStyle("bold", styleRegular); StyleConstants.setBold(styleBold, true);
         styleGreen=doc.addStyle("green", styleBold); StyleConstants.setForeground(styleGreen, new Color(0.2f,0.7f,0.2f));
         styleRed=doc.addStyle("red", styleBold); StyleConstants.setForeground(styleRed, new Color(0.7f,0.2f,0.2f));
@@ -770,7 +772,7 @@ public final class SimpleGUI implements Util.MessageHandler {
         Container all=frame.getContentPane();
         all.setLayout(new BorderLayout());
         all.add(new OurSplitPane(JSplitPane.HORIZONTAL_SPLIT, textPane, statusPane, width/2), BorderLayout.CENTER);
-        all.add(status=Util.makeJLabel(" ",font), BorderLayout.SOUTH);
+        all.add(status=OurUtil.makeJLabel(" ",font), BorderLayout.SOUTH);
         status.setBackground(gray);
         status.setOpaque(true);
         frame.pack();
