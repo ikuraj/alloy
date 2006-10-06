@@ -10,6 +10,8 @@ import java.io.PrintWriter;
  *
  * Since the output is plain text, the logBold() and log() methods are the same.
  *
+ * <p/><b>Thread Safety:</b>  Safe.
+ *
  * @author Felix Chang
  */
 
@@ -29,17 +31,17 @@ public final class LogToFile extends Log {
     }
 
     /** Writes msg into the log. */
-    @Override public void log(String x) {
+    @Override public synchronized void log(String x) {
         if (file!=null) file.print(x);
     }
 
     /** Writes msg into the log (just like log() since text files don't support bold styles). */
-    @Override public void logBold(String x) {
+    @Override public synchronized void logBold(String x) {
         if (file!=null) file.print(x);
     }
 
     /** Commits all outstanding writes (if the logger is buffered). */
-    @Override public void flush() {
+    @Override public synchronized void flush() {
         if (file!=null) file.flush();
     }
 
@@ -47,7 +49,7 @@ public final class LogToFile extends Log {
      * This method flushes then closes the file
      * (after this, further calls to this logger will be ignored).
      */
-    public void close() {
+    public synchronized void close() {
         if (file!=null) { file.flush(); file.close(); file=null; }
     }
 }

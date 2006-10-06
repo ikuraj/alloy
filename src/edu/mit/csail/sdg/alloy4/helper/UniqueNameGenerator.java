@@ -4,7 +4,9 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * This class generates unique names based on names provided by callers.
+ * This class generates unique names based on names provided by the caller.
+ *
+ * <p/><b>Thread Safety:</b>  Safe.
  *
  * @author Felix Chang
  */
@@ -24,7 +26,7 @@ public final class UniqueNameGenerator {
      * then it is returned as is. Otherwise, we append characters to it
      * until the name becomes unique.
      */
-    public String make(String name) {
+    public synchronized String make(String name) {
         while(names.contains(name)) name=name+"'";
         names.add(name);
         return name;

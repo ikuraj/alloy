@@ -12,7 +12,7 @@ package edu.mit.csail.sdg.alloy4.helper;
 
 public final class ErrorInternal extends Err {
 
-    /** This silences the javac warning about missing serialVersionUID. */
+    /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
 
     /**

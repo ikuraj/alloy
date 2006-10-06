@@ -11,6 +11,8 @@ import edu.mit.csail.sdg.alloy4util.Util;
 /**
  * This logger will append the messages into an existing JTextPane.
  *
+ * <p/><b>Thread Safety:</b>  Safe (Though it could deadlock if the AWT thread somehow gets blocked by other threads)
+ *
  * @author Felix Chang
  */
 
@@ -45,7 +47,7 @@ public final class LogToTextPane extends Log {
     }
 
     /** Writes msg into the log. */
-    @Override public void log(final String msg) {
+    @Override public synchronized void log(final String msg) {
         if (latestStyle==defaultStyle) { buffer.append(msg); return; }
         flush();
         latestStyle=defaultStyle;
@@ -53,7 +55,7 @@ public final class LogToTextPane extends Log {
     }
 
     /** Writes msg into the log in a bold style. */
-    @Override public void logBold(final String msg) {
+    @Override public synchronized void logBold(final String msg) {
         if (latestStyle==boldStyle) { buffer.append(msg); return; }
         flush();
         latestStyle=boldStyle;
@@ -61,18 +63,18 @@ public final class LogToTextPane extends Log {
     }
 
     /** Flushes the buffered text (if any) to the JTextPane. */
-    @Override public void flush() {
+    @Override public synchronized void flush() {
         if (buffer.length()==0) return;
-        final String content=buffer.toString();
-        final Style style=(latestStyle==boldStyle ? boldStyle : defaultStyle);
+        String content=buffer.toString();
+        Style style=(latestStyle==boldStyle ? boldStyle : defaultStyle);
         buffer.setLength(0);
         realFlush(pane,content,style);
     }
 
     /**
      * This method performs the actual GUI operation.
-     * Since this method might be executed from code other than the main data thread,
-     * we made sure this method only uses final references to GUI Objects or String objects.
+     * Since this method may switch threads to use the AWT thread,
+     * we made sure this method only takes in final references to GUI objects and String objects.
      */
     private static void realFlush(final JTextPane pane, final String content, final Style style) {
         if (!SwingUtilities.isEventDispatchThread()) {
@@ -81,21 +83,21 @@ public final class LogToTextPane extends Log {
                 SwingUtilities.invokeAndWait(new Runnable() {
                     public final void run() { realFlush(pane,content,style); }
                 });
-            } catch(InterruptedException x) {
+            } catch(InterruptedException ex) {
                 // Should not happen. Util.harmless() method could choose to log this occurrence.
-                Util.harmless("LogToTextPane.realFlush()", x);
-            } catch(InvocationTargetException x) {
+                Util.harmless("LogToTextPane.realFlush()", ex);
+            } catch(InvocationTargetException ex) {
                 // Should not happen. Util.harmless() method could choose to log this occurrence.
-                Util.harmless("LogToTextPane.realFlush()", x);
+                Util.harmless("LogToTextPane.realFlush()", ex);
             }
             return;
         }
         StyledDocument doc=pane.getStyledDocument();
         try {
             doc.insertString(doc.getLength(), content, style);
-        } catch (BadLocationException e) {
+        } catch (BadLocationException ex) {
             // Should not happen. Util.harmless() method could choose to log this occurrence.
-            Util.harmless("LogToTextPane.realFlush()",e);
+            Util.harmless("LogToTextPane.realFlush()", ex);
         }
         pane.setCaretPosition(doc.getLength());
     }

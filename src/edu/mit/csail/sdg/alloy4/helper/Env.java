@@ -20,8 +20,8 @@ import java.util.LinkedList;
  *
  * <p/><b>Invariant:</b>  map2.containsKey(x) => (map1.containsKey(x) && map2.get(x).size()>0)
  *
- * <p/><b>Thread Safety:</b>  Unsafe.
- * 
+ * <p/><b>Thread Safety:</b>  Safe.
+ *
  * @param <V> - the type for Value
  *
  * @author Felix Chang
@@ -52,7 +52,7 @@ public final class Env<V> {
      * @param k - the key
      * @return true if the key is mapped to one or more values
      */
-    public boolean has (String k) {
+    public synchronized boolean has (String k) {
         return map1.containsKey(k);
     }
 
@@ -66,7 +66,7 @@ public final class Env<V> {
      * @param k - the key
      * @return the latest value associated with key k (and returns null if none).
      */
-    public V get (String k) {
+    public synchronized V get (String k) {
         LinkedList<V> list=map2.get(k);
         if (list!=null) return list.getLast(); else return map1.get(k);
     }
@@ -77,7 +77,7 @@ public final class Env<V> {
      * @param k - the key
      * @param v - the value (which can be null)
      */
-    public void put (String k, V v) {
+    public synchronized void put (String k, V v) {
         LinkedList<V> list=map2.get(k);
         if (list!=null) {
             list.add(v);
@@ -97,7 +97,7 @@ public final class Env<V> {
      *
      * @param k - the key
      */
-    public void remove (String k) {
+    public synchronized void remove (String k) {
         LinkedList<V> list=map2.get(k);
         if (list==null) {
             map1.remove(k);
@@ -109,7 +109,7 @@ public final class Env<V> {
     }
 
     /** Removes all bindings. */
-    public void clear() {
+    public synchronized void clear() {
         map1.clear();
         map2.clear();
     }

@@ -787,7 +787,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             log("\nMac OS X detected.", styleGreen);
             MacUtil.addApplicationListener(this);
         }
-        
+
         // log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
         // On Mac, it will be the directory that contains "Alloy4.app". Problem: people can RENAME "Alloy4.app"...
         //log("ARGS = "+args.length+"\n", styleGreen);

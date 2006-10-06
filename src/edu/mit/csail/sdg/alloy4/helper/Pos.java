@@ -3,7 +3,9 @@ package edu.mit.csail.sdg.alloy4.helper;
 /**
  * Immutable; stores the filename and line/column position.
  *
- * <p/> <b>Invariant:</b>  filename!=null && x>0 && y>0
+ * <p/> <b>Invariant:</b>     filename!=null && x>0 && y>0
+ *
+ * <p/><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  *
  * @author Felix Chang
  */

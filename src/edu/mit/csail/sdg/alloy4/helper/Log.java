@@ -3,6 +3,8 @@ package edu.mit.csail.sdg.alloy4.helper;
 /**
  * This default logger ignores all calls and simply logs nothing.
  *
+ * <p/><b>Thread Safety:</b>  Safe.
+ *
  * @author Felix Chang
  */
 
