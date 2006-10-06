@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4.helper;
 
-
 /**
  * Immutable; represents a syntax error that should be reported to the user.
  *

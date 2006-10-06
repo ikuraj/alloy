@@ -1,7 +1,6 @@
 package edu.mit.csail.sdg.alloy4.helper;
 
 import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;

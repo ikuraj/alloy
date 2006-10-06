@@ -1,6 +1,5 @@
 package edu.mit.csail.sdg.alloy4.helper;
 
-
 /**
  * Immutable; this is the abstract super class of the various possible errors.
  *
