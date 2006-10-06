@@ -1,6 +1,6 @@
 package edu.mit.csail.sdg.alloy4.core;
 
-import edu.mit.csail.sdg.alloy4.util.Pos;
+import edu.mit.csail.sdg.alloy4.helper.Pos;
 
 public final class Field {
     public final Pos pos;

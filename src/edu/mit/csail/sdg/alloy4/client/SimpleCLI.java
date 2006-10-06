@@ -8,8 +8,8 @@ import java.io.IOException;
 import edu.mit.csail.sdg.alloy4.core.ParaSig;
 import edu.mit.csail.sdg.alloy4.core.Unit;
 import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
-import edu.mit.csail.sdg.alloy4.util.Log;
-import edu.mit.csail.sdg.alloy4.util.LogToFile;
+import edu.mit.csail.sdg.alloy4.helper.Log;
+import edu.mit.csail.sdg.alloy4.helper.LogToFile;
 
 public final class SimpleCLI {
 

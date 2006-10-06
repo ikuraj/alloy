@@ -8,11 +8,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.util.DirectedGraph;
-import edu.mit.csail.sdg.alloy4.util.Env;
-import edu.mit.csail.sdg.alloy4.util.IdentitySet;
-import edu.mit.csail.sdg.alloy4.util.Log;
+
+import edu.mit.csail.sdg.alloy4.helper.DirectedGraph;
+import edu.mit.csail.sdg.alloy4.helper.Env;
+import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.helper.IdentitySet;
+import edu.mit.csail.sdg.alloy4.helper.Log;
 
 /**
  * This class computes both the bounding type and the relevant type.

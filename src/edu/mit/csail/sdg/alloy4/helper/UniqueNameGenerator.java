@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.util;
+package edu.mit.csail.sdg.alloy4.helper;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

@@ -1,9 +1,9 @@
 package edu.mit.csail.sdg.alloy4.core;
 
-import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
-import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.util.ErrorType;
-import edu.mit.csail.sdg.alloy4.util.Pos;
+import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.helper.ErrorType;
+import edu.mit.csail.sdg.alloy4.helper.Pos;
 
 /**
  * Immutable; represents a toplevel paragraph in the model.

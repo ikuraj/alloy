@@ -6,10 +6,11 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
-import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
-import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.util.Pair;
-import edu.mit.csail.sdg.alloy4.util.Pos;
+
+import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.helper.Pair;
+import edu.mit.csail.sdg.alloy4.helper.Pos;
 
 /**
  * Mutable; this class represents one instantiation of an Alloy module.

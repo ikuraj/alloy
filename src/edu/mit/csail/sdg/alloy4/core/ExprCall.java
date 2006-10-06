@@ -3,9 +3,10 @@ package edu.mit.csail.sdg.alloy4.core;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
-import edu.mit.csail.sdg.alloy4.util.ErrorInternal;
-import edu.mit.csail.sdg.alloy4.util.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.util.Pos;
+
+import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
+import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.helper.Pos;
 
 /**
  * Immutable; represents a call
