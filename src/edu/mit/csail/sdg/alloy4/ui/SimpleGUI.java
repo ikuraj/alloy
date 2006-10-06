@@ -44,6 +44,7 @@ import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
+import javax.swing.JToolBar;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -736,7 +737,8 @@ public final class SimpleGUI implements MessageHandler {
         JComponent textPane = OurUtil.makeJScrollPane(text);
 
         // Create the toolbar
-        JPanel toolbar=OurUtil.makeH();
+        JToolBar toolbar=new JToolBar();
+        toolbar.setFloatable(false);
         if (!Util.onMac()) toolbar.setBackground(gray);
         toolbar.add(OurUtil.makeJButton("New","Starts a new blank model","images/24_new.gif", this, "new"));
         toolbar.add(OurUtil.makeJButton("Open","Opens an existing model","images/24_open.gif", this, "open"));
