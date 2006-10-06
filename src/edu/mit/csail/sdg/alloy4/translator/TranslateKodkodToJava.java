@@ -6,7 +6,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.io.PrintWriter;
 import java.io.FileNotFoundException;
-
 import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.helper.Pos;
 import kodkod.ast.BinaryExpression;

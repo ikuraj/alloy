@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.prefs.Preferences;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-
 import edu.mit.csail.sdg.alloy4.helper.Log;
 import edu.mit.csail.sdg.alloy4.helper.LogToFile;
 import edu.mit.csail.sdg.alloy4.node.ParaSig;
