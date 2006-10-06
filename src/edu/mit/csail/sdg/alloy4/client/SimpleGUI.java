@@ -525,6 +525,11 @@ public final class SimpleGUI implements Util.MessageHandler {
             my_open(open.getSelectedFile().getPath());
             return Boolean.TRUE;
         }
+        if (x instanceof String && ((String)x).startsWith("open:")) {
+        	if (!my_confirm()) return null;
+        	my_open(((String)x).substring(5));
+        	return Boolean.TRUE;
+        }
         if ("saveas".equals(x)) {
             JFileChooser open=new JFileChooser(fileOpenDirectory);
             open.setFileFilter(filterALS);
@@ -778,7 +783,7 @@ public final class SimpleGUI implements Util.MessageHandler {
             else if (satOPTION==0) log("\nSolver: SAT4J", styleGreen);
         if (Util.onMac()) {
             log("\nMac OS X detected.", styleGreen);
-            MacUtil.addQuitListener(this,"quit");
+            MacUtil.addAppListener(this);
         }
 
         // log("\nCurrent directory = " + (new File(".")).getAbsolutePath(), styleGreen);
