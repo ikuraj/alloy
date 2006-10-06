@@ -53,7 +53,7 @@ public final class DirectedGraph<N> {
         IdentityHashMap<N,Object> visited = new IdentityHashMap<N,Object>();
         visited.put(start,null);
         todo.add(start);
-        while(todo.size()!=0) {
+        while(todo.size()>0) {
             List<N> targets=nodeToTargets.get(todo.remove(todo.size()-1));
             if (targets!=null) {
                 for (int i=targets.size()-1; i>=0; i--) {
