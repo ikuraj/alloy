@@ -57,12 +57,12 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
-import edu.mit.csail.sdg.alloy4.core.ParaSig;
-import edu.mit.csail.sdg.alloy4.core.Unit;
-import edu.mit.csail.sdg.alloy4.core.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.helper.Err;
 import edu.mit.csail.sdg.alloy4.helper.Log;
 import edu.mit.csail.sdg.alloy4.helper.LogToTextPane;
+import edu.mit.csail.sdg.alloy4.node.ParaSig;
+import edu.mit.csail.sdg.alloy4.node.Unit;
+import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
