@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.client;
+package edu.mit.csail.sdg.alloy4.translator;
 
 /**
  * This class contains a global flag

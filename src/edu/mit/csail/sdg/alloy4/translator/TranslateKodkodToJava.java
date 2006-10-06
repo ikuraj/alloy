@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.client;
+package edu.mit.csail.sdg.alloy4.translator;
 
 import java.util.Collections;
 import java.util.ArrayList;

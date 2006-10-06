@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.client;
+package edu.mit.csail.sdg.alloy4.ui;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -63,6 +63,9 @@ import edu.mit.csail.sdg.alloy4.helper.LogToTextPane;
 import edu.mit.csail.sdg.alloy4.node.ParaSig;
 import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
+import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
+import edu.mit.csail.sdg.alloy4.translator.Stopper;
+import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;

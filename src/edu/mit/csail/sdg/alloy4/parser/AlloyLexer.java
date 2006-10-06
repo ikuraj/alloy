@@ -1,5 +1,5 @@
 
-package edu.mit.csail.sdg.alloy4.client;
+package edu.mit.csail.sdg.alloy4.parser;
 
 import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.helper.Pos;

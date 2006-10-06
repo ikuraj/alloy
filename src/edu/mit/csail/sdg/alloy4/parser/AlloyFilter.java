@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.client;
+package edu.mit.csail.sdg.alloy4.parser;
 
 import java.util.LinkedList;
 import java.io.Reader;

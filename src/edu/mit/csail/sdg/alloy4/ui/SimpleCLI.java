@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.client;
+package edu.mit.csail.sdg.alloy4.ui;
 
 import java.util.ArrayList;
 import java.util.prefs.Preferences;
@@ -10,6 +10,8 @@ import edu.mit.csail.sdg.alloy4.helper.LogToFile;
 import edu.mit.csail.sdg.alloy4.node.ParaSig;
 import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
+import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
+import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
 
 public final class SimpleCLI {
 
