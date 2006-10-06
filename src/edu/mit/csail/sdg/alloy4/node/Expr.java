@@ -79,12 +79,12 @@ public abstract class Expr {
 
     /** Convenience method that constructs a type error exception. */
     public final ErrorType typeError (String msg) {
-        return new ErrorType(pos, this, msg);
+        return new ErrorType(pos, msg);
     }
 
     /** Convenience method that constructs an internal error exception. */
     public final ErrorInternal internalError (String msg) {
-        return new ErrorInternal(pos, this, msg);
+        return new ErrorInternal(pos, msg);
     }
 
     /**

@@ -48,7 +48,7 @@ public final class ParaSig extends Para {
     public ParaSig sup() {
         if (sup==null) return null;
         if (sup instanceof ParaSig) return ((ParaSig)sup);
-        throw new ErrorInternal(pos, this, "Sig \""+fullname+"\" should have resolved its sup field!");
+        throw new ErrorInternal(pos, "Sig \""+fullname+"\" should have resolved its sup field!");
     }
 
     public void resolveSup(Unit u) {
@@ -67,7 +67,7 @@ public final class ParaSig extends Para {
 
     public Iterable<ParaSig> sups() {
         if (sups.size()>0 && !(sups.get(0) instanceof ParaSig))
-            throw new ErrorInternal(pos, this, "Sig \""+fullname+"\" should have resolved its sups field!");
+            throw new ErrorInternal(pos, "Sig \""+fullname+"\" should have resolved its sups field!");
         return new Iterable<ParaSig>() {
             public final Iterator<ParaSig> iterator() {
                 return new Iterator<ParaSig>() {

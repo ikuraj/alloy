@@ -396,7 +396,7 @@ public static final class Rel {
 
   // PRECONDITION: x must not be a SUBSET sig
   public Rel(ParaSig x) {
-    if (x.subset) throw new ErrorInternal(null,null,"Attempting to add a subset signature into a Type.Rel object!");
+    if (x.subset) throw new ErrorInternal(null,"Attempting to add a subset signature into a Type.Rel object!");
     List<ParaSig> y=new ArrayList<ParaSig>();
     y.add(x);
     basicTypes=Collections.unmodifiableList(y);
@@ -404,11 +404,11 @@ public static final class Rel {
 
   // PRECONDITION: None of them can be a SUBSET SIG. And the incoming list must have at least 1 element.
   public Rel(List<ParaSig> x) {
-    if (x==null || x.size()==0) throw new ErrorInternal(null,null,"Attempting to create a 0-length Type.Rel object!");
+    if (x==null || x.size()==0) throw new ErrorInternal(null,"Attempting to create a 0-length Type.Rel object!");
     x=new ArrayList<ParaSig>(x);
     for(int i=0; i<x.size(); i++) {
       ParaSig y=x.get(i);
-      if (y.subset) throw new ErrorInternal(null,null,"Attempting to add a subset signature into a Type.Rel object!");
+      if (y.subset) throw new ErrorInternal(null,"Attempting to add a subset signature into a Type.Rel object!");
       if (y.isEmpty()) {
         for(int j=0;j<x.size();j++) x.set(j, ParaSig.NONE);
         break;

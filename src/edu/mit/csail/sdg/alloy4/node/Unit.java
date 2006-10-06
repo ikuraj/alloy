@@ -347,7 +347,7 @@ public final class Unit {
                 else ans.add(x);
             } else if (x instanceof Expr) {
                 ans.add(x);
-            } else throw new ErrorInternal(pos,null,"populuate() encountered unknown object "+x);
+            } else throw new ErrorInternal(pos,"populuate() encountered unknown object "+x);
         }
         return ans;
     }

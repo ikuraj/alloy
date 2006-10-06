@@ -3,7 +3,9 @@ package edu.mit.csail.sdg.alloy4.helper;
 /**
  * Immutable; represents an internal error that should be reported to the developers.
  *
- * <p/> <b>Invariant:</b> msg!=null
+ * <p/><b>Invariant:</b> msg!=null
+ *
+ * <p/><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  *
  * @author Felix Chang
  */
@@ -16,10 +18,9 @@ public final class ErrorInternal extends Err {
     /**
      * Constructs a new internal error.
      * @param pos - the filename/line/row information (null if unknown)
-     * @param obj - the object that triggered the error (null if unknown)
      * @param msg - the actual error message
      */
-    public ErrorInternal(Pos pos, Object obj, String msg) { super(pos,obj,msg); }
+    public ErrorInternal(Pos pos, String msg) { super(pos,msg); }
 
     /** Returns a human-readable description of the error. */
     @Override public String toString() {

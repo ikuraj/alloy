@@ -20,6 +20,8 @@ import java.util.LinkedList;
  *
  * <p/><b>Invariant:</b>  map2.containsKey(x) => (map1.containsKey(x) && map2.get(x).size()>0)
  *
+ * <p/><b>Thread Safety:</b>  Unsafe.
+ * 
  * @param <V> - the type for Value
  *
  * @author Felix Chang

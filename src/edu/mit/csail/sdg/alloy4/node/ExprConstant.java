@@ -92,7 +92,7 @@ public final class ExprConstant extends Expr {
                 return new ExprConstant(pos, this, ParaSig.SIGINT.type, 0);
             if (this==IDEN)
                 return new ExprConstant(pos, this, ParaSig.UNIV.type.product_of_anyEmptyness(ParaSig.UNIV.type), 0);
-            throw new ErrorInternal(pos, this, "Illegal operator "+this+" in ExprConstant.Op.make(pos)");
+            throw new ErrorInternal(pos, "Illegal operator "+this+" in ExprConstant.Op.make(pos)");
         }
 
         /**
@@ -106,9 +106,9 @@ public final class ExprConstant extends Expr {
          */
         public final ExprConstant make(Pos pos, String num) {
             if (this!=NUMBER)
-                throw new ErrorInternal(pos, this, "Illegal operator "+this+" in ExprConstant.Op.make(pos,num)");
+                throw new ErrorInternal(pos, "Illegal operator "+this+" in ExprConstant.Op.make(pos,num)");
             if (num==null)
-                throw new ErrorInternal(pos, this, "NullPointerException");
+                throw new ErrorInternal(pos, "NullPointerException");
             try {
                 int n=Integer.parseInt(num);
                 return new ExprConstant(pos, this, Type.INT, n);

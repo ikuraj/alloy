@@ -46,14 +46,14 @@ public final class VarDecl {
     public VarDecl (Pos pos, List<ExprName> x, Expr y) {
         this.pos=pos;
         if (pos==null || x==null || y==null)
-            throw new ErrorInternal(pos,null,"NullPointerException");
+            throw new ErrorInternal(pos,"NullPointerException");
         List<String> newlist=new ArrayList<String>();
         if (x.size()==0)
             throw new ErrorSyntax(pos,"The list of declarations cannot be empty!");
         for(int i=0; i<x.size(); i++) {
             ExprName e=x.get(i);
             if (e==null || e.name==null)
-                throw new ErrorInternal(pos, e, "NullPointerException");
+                throw new ErrorInternal(pos,"NullPointerException");
             String n=e.name;
             if (n.length()==0)
                 throw e.syntaxError("Variable name cannot be empty!");
@@ -81,7 +81,7 @@ public final class VarDecl {
     public VarDecl (Pos pos, String x, Expr y) {
         this.pos=pos;
         if (pos==null || x==null || y==null)
-            throw new ErrorInternal(pos,null,"NullPointerException");
+            throw new ErrorInternal(pos,"NullPointerException");
         if (x.length()==0)
             throw y.syntaxError("Variable name must not be empty!");
         if (x.indexOf('/')>=0)
@@ -106,7 +106,7 @@ public final class VarDecl {
     public VarDecl (Pos pos, VarDecl x, Expr y) {
         this.pos=pos;
         if (pos==null || x==null || y==null)
-            throw new ErrorInternal(pos,null,"NullPointerException");
+            throw new ErrorInternal(pos,"NullPointerException");
         names=x.names;
         value=y;
     }

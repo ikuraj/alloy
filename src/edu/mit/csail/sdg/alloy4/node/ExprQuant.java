@@ -148,12 +148,12 @@ public final class ExprQuant extends Expr {
             //
             if (this!=Op.COMPREHENSION && this!=Op.SUM)
                 type=Type.FORMULA;
-            if (list==null) throw new ErrorInternal(pos,null,"NullPointerException");
+            if (list==null) throw new ErrorInternal(pos,"NullPointerException");
             list=new ArrayList<VarDecl>(list);
             ArrayList<VarDecl> list2=new ArrayList<VarDecl>();
-            if (list.size()==0) throw new ErrorInternal(pos,null,"The list cannot be empty");
+            if (list.size()==0) throw new ErrorInternal(pos,"The list cannot be empty");
             for(int i=0; i<list.size(); i++)
-                if (list.get(i)==null) throw new ErrorInternal(pos,null,"NullPointerException");
+                if (list.get(i)==null) throw new ErrorInternal(pos,"NullPointerException");
             if (this==NO) {
                 if (list.size()==1) return new ExprQuant(pos,ALL,list,ExprUnary.Op.NOT.make(sub.pos,sub,type),type);
                 list2.add(list.get(0));

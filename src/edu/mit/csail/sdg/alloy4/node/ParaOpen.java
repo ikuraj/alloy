@@ -51,7 +51,7 @@ public final class ParaOpen extends Para {
      */
     private static String computeAlias(Pos pos, String filename, String alias, List<ExprName> list) {
         if (pos==null || filename==null || alias==null || list==null)
-            throw new ErrorInternal(pos,null,"NullPointerException");
+            throw new ErrorInternal(pos,"NullPointerException");
         if (filename.length()==0) throw new ErrorSyntax(pos,"The filename cannot be \"\"");
         if (alias.indexOf('@')>=0) throw new ErrorSyntax(pos,"Alias \""+alias+"\" must not contain \'@\'");
         if (alias.indexOf('/')>=0) throw new ErrorSyntax(pos,"Alias \""+alias+"\" must not contain \'/\'");

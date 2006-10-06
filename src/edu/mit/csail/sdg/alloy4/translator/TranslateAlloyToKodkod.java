@@ -664,7 +664,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     /*==========================================================================*/
 
     private TupleSet comp(Pos pos, Type t, TupleFactory factory) {
-        int a=t.arity(); if (a<1) throw new ErrorInternal(pos, t, "Attempting to create a 0-arity TupleSet!");
+        int a=t.arity(); if (a<1) throw new ErrorInternal(pos, "Attempting to create a 0-arity TupleSet!");
         TupleSet ans=factory.noneOf(a);
         for(Type.Rel r:t) {
             TupleSet temp1=null,temp2;
@@ -1123,7 +1123,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (out!=null) { out.close(); out=null; }
             if (bw!=null) { try {bw.close();} catch(IOException exx) {} bw=null; }
             if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
-            throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());
+            throw new ErrorInternal(pos, "writeXML failed: "+ex.toString());
         }
         Instance inst=sol.instance();
         Evaluator eval=new Evaluator(inst);
@@ -1235,7 +1235,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         Util.encodeXMLs(out, "\n</instance>\n\n<kinstance value=\"", sol.toString(), "\"/>\n\n</alloy>\n");
         out.flush();
         out.close();
-        try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
-        try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos,null,"writeXML failed: "+ex.toString());}
+        try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos, "writeXML failed: "+ex.toString());}
+        try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos, "writeXML failed: "+ex.toString());}
     }
 }

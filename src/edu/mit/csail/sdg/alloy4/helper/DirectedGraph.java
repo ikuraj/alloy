@@ -10,7 +10,9 @@ import java.util.IdentityHashMap;
  *
  * <p/> Note: it uses reference identity for comparing nodes, rather than using N.equals().
  *
- * <p/> <b>Invariant:</b>  nodeToTargets.containsKey(x) => nodeToTargets.get(x)!=null
+ * <p/><b>Invariant:</b>  nodeToTargets.containsKey(x) => nodeToTargets.get(x)!=null
+ * 
+ * <p/><b>Thread Safety:</b>  Unsafe.
  *
  * @param <N> - the node type
  *

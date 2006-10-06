@@ -2319,7 +2319,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     try { if (s!=null) s.close(); } catch(IOException x) {u=null;}
     try { if (isr!=null) isr.close(); } catch(IOException x) {u=null;}
     try { if (fis!=null) fis.close(); } catch(IOException x) {u=null;}
-    if (u==null) throw new ErrorInternal(new Pos(name,1,1),null,"Failed to parse the file \""+name+"\"");
+    if (u==null) throw new ErrorInternal(new Pos(name,1,1), "Failed to parse the file \""+name+"\"");
     return u;
   }
 
@@ -2340,7 +2340,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
     // so we really need to make best effort to close all the input streams.
     try { if (s!=null) s.close(); } catch(IOException x) {u=null;}
     try { if (isr!=null) isr.close(); } catch(IOException x) {u=null;}
-    if (u==null) throw new ErrorInternal(new Pos("",1,1),null,"Parser failed to parse this input!");
+    if (u==null) throw new ErrorInternal(new Pos("",1,1), "Parser failed to parse this input!");
     return u;
   }
 
