@@ -54,7 +54,6 @@ import kodkod.ast.BinaryExpression;
 import kodkod.engine.Evaluator;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
-import kodkod.engine.satlab.FileSAT;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.engine.Options;
@@ -1023,9 +1022,14 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 solver.options().setSolver(SATFactory.ZChaffBasic);
             else if (solverChoice==2)
                 solver.options().setSolver(SATFactory.MiniSat);
+            else if (solverChoice==3)
+                solver.options().setSolver(new SATFactory() {
+                    @Override public final SATSolver instance() { return new ViaBerkMin(dest+".cnf"); }
+                    @Override public String toString() { return "BerkMin"; }
+                });
             else if (solverChoice==(-1))
                 solver.options().setSolver(new SATFactory() {
-                    @Override public final SATSolver instance() { return new FileSAT(dest+".cnf"); }
+                    @Override public final SATSolver instance() { return new ViaFile(dest+".cnf"); }
                     @Override public String toString() { return "CommandLine"; }
                 });
             else // if (solverChoice==0)

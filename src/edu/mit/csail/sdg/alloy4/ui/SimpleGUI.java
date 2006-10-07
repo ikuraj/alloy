@@ -624,6 +624,7 @@ public final class SimpleGUI implements MessageHandler {
         if ("sat=sat4j".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=0; }
         if ("sat=zchaff".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=1; }
         if ("sat=minisat".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=2; }
+        if ("sat=berkmin".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=3; }
         if ("sat=file".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=(-1); }
         if ("save".equals(x)) return latestName.length()!=0 ? my_save(latestName,true) : handleMessage(caller,"saveas");
         if ("file".equals(x)) my_file((OurMenu)caller);
@@ -707,6 +708,7 @@ public final class SimpleGUI implements MessageHandler {
             optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",       true,                       "sat=sat4j");
             optmenu.addMenuItem(satOPTION==1?iconYes:iconNo, "Use ZChaff",      zchaff,  KeyEvent.VK_Z, -1, "sat=zchaff");
             optmenu.addMenuItem(satOPTION==2?iconYes:iconNo, "Use MiniSat",     minisat, KeyEvent.VK_M, -1, "sat=minisat");
+            optmenu.addMenuItem(iconNo,                      "Use BerkMin",     true,    KeyEvent.VK_B, -1, "sat=berkmin");
             optmenu.addMenuItem(iconNo,                      "Use CommandLine", true,    KeyEvent.VK_C, -1, "sat=file");
         }
 
