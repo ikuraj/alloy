@@ -87,7 +87,7 @@ public final class ViaPipe implements SATSolver {
             cleanup();
             throw new RuntimeException("Error occurred in writing to file \""+name+"\": "+ex.getMessage());
         }
-        for(String attempt: new String[]{"6", "4", "", "exe"}) {
+        for(String attempt: new String[]{"", "6", "4", "exe"}) {
             Subprocess sp=new Subprocess(new String[]{binary+attempt,name});
             // We don't care about race condition here, since the only reason "latest" is used
             // is in the GUI, where only 1 solving can occur at a time.

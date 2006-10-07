@@ -80,11 +80,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     public enum SolverChoice {
         BerkMinPIPE("BerkMin (via PIPE)"),
+        MiniSatPIPE("MiniSat (via PIPE)"),
         MiniSatJNI("MiniSat (via JNI)"),
         ZChaffJNI("ZChaff (via JNI)"),
         SAT4J("SAT4J"),
-        //ZChaffPIPE("Zchaff (via PIPE)"),
-        //MiniSatPIPE("MiniSat (via PIPE)"),
         FILE("Output to file");
         private final String label;
         private SolverChoice(String label) { this.label=label; }
@@ -1037,14 +1036,19 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             switch(solverChoice) {
             case ZChaffJNI: solver.options().setSolver(SATFactory.ZChaffBasic); break;
             case MiniSatJNI: solver.options().setSolver(SATFactory.MiniSat); break;
+            case MiniSatPIPE: solver.options().setSolver(new SATFactory() {
+            	@Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"minisat", dest+destnum+".cnf"); }
+            	@Override public String toString() { return "MiniSat (PIPE)"; }
+            });
+            break;
             case BerkMinPIPE: solver.options().setSolver(new SATFactory() {
-                    @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"berkmin", dest+destnum+".cnf"); }
-                    @Override public String toString() { return "BerkMin"; }
-                });
-                break;
+            	@Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"berkmin", dest+destnum+".cnf"); }
+            	@Override public String toString() { return "BerkMin (PIPE)"; }
+            });
+            break;
             case FILE: solver.options().setSolver(new SATFactory() {
-                    @Override public final SATSolver instance() { return new ViaFile(dest+destnum+".cnf"); }
-                    @Override public String toString() { return "CommandLine"; }
+            	@Override public final SATSolver instance() { return new ViaFile(dest+destnum+".cnf"); }
+            	@Override public String toString() { return "CommandLine"; }
                 });
                 break;
             default: solver.options().setSolver(SATFactory.DefaultSAT4J);
