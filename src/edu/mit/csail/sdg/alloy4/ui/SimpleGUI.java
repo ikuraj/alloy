@@ -660,6 +660,14 @@ public final class SimpleGUI implements MessageHandler {
         KodVizInstaller.copy("libzchaff_basic.jnilib", binary, true);
         KodVizInstaller.copy("minisat.dll", binary, false);
         KodVizInstaller.copy("zchaff_basic.dll", binary, false);
+        KodVizInstaller.copy("minisat6", binary, true);
+        KodVizInstaller.copy("minisat4", binary, true);
+        KodVizInstaller.copy("minisat", binary, true);
+        KodVizInstaller.copy("minisat.exe", binary, false);
+        KodVizInstaller.copy("berkmin6", binary, true);
+        KodVizInstaller.copy("berkmin4", binary, true);
+        KodVizInstaller.copy("berkmin", binary, true);
+        KodVizInstaller.copy("berkmin.exe", binary, false);
         set("basedir",alloyhome);
 
         int screenWidth=Toolkit.getDefaultToolkit().getScreenSize().width;
