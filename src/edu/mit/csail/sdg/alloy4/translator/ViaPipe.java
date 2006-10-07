@@ -7,10 +7,13 @@ import java.io.RandomAccessFile;
 import edu.mit.csail.sdg.alloy4util.Subprocess;
 import kodkod.engine.satlab.SATSolver;
 
-public final class ViaBerkMin implements SATSolver {
+public final class ViaPipe implements SATSolver {
 
     /** The number of variables and clauses given to us so far. */
     private int vars=0,clauses=0;
+
+    /** The binary's file name. */
+    private final String binary;
 
     /** The temporary file name. */
     private final String name;
@@ -24,16 +27,17 @@ public final class ViaBerkMin implements SATSolver {
     /** If nonnull, that means an error had occurred. */
     private Exception error=null;
 
-    /** The latest BerkMin subprocess. */
+    /** The latest subprocess. */
     private static volatile Subprocess latest=null;
-    /** Terminate the latest BerkMin subprocess. */
+    /** Terminate the latest subprocess. */
     public static void forceTerminate() {
         Subprocess pro=latest;
         if (pro!=null) pro.terminate();
     }
 
     /** Constructs a new instance of SATSolver using "name" as the temporary file for writing the CNF clauses. */
-    public ViaBerkMin(String temporaryFilename) {
+    public ViaPipe(String binaryFilename, String temporaryFilename) {
+    	binary=binaryFilename;
         name=temporaryFilename;
         try {
             file=new RandomAccessFile(name, "rw");
@@ -83,25 +87,27 @@ public final class ViaBerkMin implements SATSolver {
             cleanup();
             throw new RuntimeException("Error occurred in writing to file \""+name+"\": "+ex.getMessage());
         }
-        Subprocess sp=new Subprocess(new String[]{"/tmp/berkmin",name});
-        // TODO: we don't care about race condition here, since the only reason "latest" is used
-        // is in the GUI, where only 1 solving can occur at a time.
-        latest=sp;
-        int r=sp.waitFor();
-        latest=null;
-        if (r==0) {
-            solution=sp.getOutput();
-            cleanup();
-            if (solution.startsWith("BerkMin sat:")) return true;
-            if (solution.startsWith("BerkMin unsat")) return false;
+        for(String attempt: new String[]{"6", "4", "", "exe"}) {
+            Subprocess sp=new Subprocess(new String[]{binary+attempt,name});
+            // We don't care about race condition here, since the only reason "latest" is used
+            // is in the GUI, where only 1 solving can occur at a time.
+            latest=sp;
+            int r=sp.waitFor();
+            latest=null;
+        	if (r==0) {
+                solution=sp.getOutput();
+                cleanup();
+                if (solution.startsWith("SAT:")) return true;
+                if (solution.startsWith("UNSAT:")) return false;
+        	}
         }
         cleanup();
-        throw new RuntimeException("BerkMin failed...");
+        throw new RuntimeException("An error has occurred in calling the SAT solver...");
     }
 
     public boolean valueOf(int variable) { // variable = 1..N where N is the number of primary variables
-        // 12 is the number of characters in "BerkMin sat:"
-        if (variable+12-1 < solution.length()) return solution.charAt(variable+12-1)=='1'; else return false;
+        // 4 is the number of characters in "SAT:"
+        if (variable+4-1 < solution.length()) return solution.charAt(variable+4-1)=='1'; else return false;
     }
 
     private void cleanup() {

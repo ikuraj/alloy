@@ -69,7 +69,7 @@ import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
-import edu.mit.csail.sdg.alloy4.translator.ViaBerkMin;
+import edu.mit.csail.sdg.alloy4.translator.ViaPipe;
 import edu.mit.csail.sdg.alloy4util.MessageHandler;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
@@ -231,6 +231,7 @@ public final class SimpleGUI implements MessageHandler {
         log.setCaretPosition(doc.getLength());
     }
 
+    /** Note: It must be "ALLOYHOME/tmp/SOMETHING/" since we want to be able to derive ALLOYHOME from it. */
     private String maketemp() {
         Random r=new Random(new Date().getTime());
         while(true) {
@@ -367,7 +368,7 @@ public final class SimpleGUI implements MessageHandler {
         System.out.println("Done.\n\n");
         System.out.flush();
         */
-        if (current_thread!=null) { AlloyBridge.stopped=true; ViaBerkMin.forceTerminate(); }
+        if (current_thread!=null) { AlloyBridge.stopped=true; ViaPipe.forceTerminate(); }
     }
 
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */

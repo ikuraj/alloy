@@ -76,6 +76,8 @@ import kodkod.instance.Universe;
 
 public final class TranslateAlloyToKodkod implements VisitReturn {
 
+	private static final String fs = System.getProperty("file.separator");
+
     public enum Result { CANCELED, SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
     private String current_function=""; // This is purely a hint, meant to give a more meaningful Skolem names.
@@ -828,7 +830,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     }
                 }
                 this.env.clear();
-                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver, dest+(xi+1)));
+                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver, dest, xi+1));
             }
         return result;
     }
@@ -898,7 +900,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice, final String dest)  {
+    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice, final String dest, final int destnum)  {
         Result mainResult=null;
         Unit root=units.get(0);
         Formula mainformula;
@@ -1025,12 +1027,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 solver.options().setSolver(SATFactory.MiniSat);
             else if (solverChoice==3)
                 solver.options().setSolver(new SATFactory() {
-                    @Override public final SATSolver instance() { return new ViaBerkMin(dest+".cnf"); }
+                    @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"berkmin", dest+destnum+".cnf"); }
                     @Override public String toString() { return "BerkMin"; }
                 });
             else if (solverChoice==(-1))
                 solver.options().setSolver(new SATFactory() {
-                    @Override public final SATSolver instance() { return new ViaFile(dest+".cnf"); }
+                    @Override public final SATSolver instance() { return new ViaFile(dest+destnum+".cnf"); }
                     @Override public String toString() { return "CommandLine"; }
                 });
             else // if (solverChoice==0)
@@ -1076,7 +1078,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 else if (cmd.check) log.log(" VIOLATED (SAT)");
                 else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
-                writeXML(cmd.pos, sol, units, sigs, dest);
+                writeXML(cmd.pos, sol, units, sigs, dest+destnum);
                 //if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
                 break;
             case UNSATISFIABLE:
