@@ -59,6 +59,8 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
+
+import kodkod.AlloyBridge;
 import edu.mit.csail.sdg.alloy4.helper.Err;
 import edu.mit.csail.sdg.alloy4.helper.Log;
 import edu.mit.csail.sdg.alloy4.helper.LogToTextPane;
@@ -66,7 +68,6 @@ import edu.mit.csail.sdg.alloy4.node.ParaSig;
 import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
-import edu.mit.csail.sdg.alloy4.translator.Stopper;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.alloy4.translator.ViaBerkMin;
 import edu.mit.csail.sdg.alloy4util.MessageHandler;
@@ -366,7 +367,7 @@ public final class SimpleGUI implements MessageHandler {
         System.out.println("Done.\n\n");
         System.out.flush();
         */
-        if (current_thread!=null) { Stopper.stopped=true; ViaBerkMin.forceTerminate(); }
+        if (current_thread!=null) { AlloyBridge.stopped=true; ViaBerkMin.forceTerminate(); }
     }
 
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */
@@ -422,7 +423,7 @@ public final class SimpleGUI implements MessageHandler {
                 log("...The previous analysis is still running...", styleRed);
                 return;
             }
-            Stopper.stopped=false;
+            AlloyBridge.stopped=false;
             Runner r=new Runner(new StringReader(text.getText()), index);
             Thread t=new Thread(r);
             t.start();

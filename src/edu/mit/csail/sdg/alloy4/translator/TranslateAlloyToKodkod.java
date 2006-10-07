@@ -43,6 +43,7 @@ import edu.mit.csail.sdg.alloy4.node.VarDecl;
 import edu.mit.csail.sdg.alloy4.node.VisitQuery;
 import edu.mit.csail.sdg.alloy4.node.VisitReturn;
 import edu.mit.csail.sdg.alloy4util.Util;
+import kodkod.AlloyBridge;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
 import kodkod.ast.IntConstant;
@@ -1045,7 +1046,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (!sym) { solver.options().setSymmetryBreaking(0); log.log("nosym... "); }
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
-            if (Stopper.stopped) {
+            if (AlloyBridge.stopped) {
                 log.log("TIME=0+0=0 CANCELED\n");
                 log.flush();
                 return Result.CANCELED;
@@ -1057,21 +1058,21 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             case TRIVIALLY_SATISFIABLE:
                 mainResult=Result.TRIVIALLY_SAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (Stopper.stopped) { log.log(" CANCELED\n"); mainResult=Result.CANCELED; }
+                if (AlloyBridge.stopped) { log.log(" CANCELED\n"); mainResult=Result.CANCELED; }
                 else if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)\n");
                 else log.log(" TRIVIALLY SAT\n");
                 break;
             case TRIVIALLY_UNSATISFIABLE:
                 mainResult=Result.TRIVIALLY_UNSAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (Stopper.stopped) { log.log(" CANCELED\n"); mainResult=Result.CANCELED; }
+                if (AlloyBridge.stopped) { log.log(" CANCELED\n"); mainResult=Result.CANCELED; }
                 else if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)\n");
                 else log.log(" TRIVIALLY UNSAT\n");
                 break;
             case SATISFIABLE:
                 mainResult=Result.SAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (Stopper.stopped) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
+                if (AlloyBridge.stopped) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
                 else if (cmd.check) log.log(" VIOLATED (SAT)");
                 else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
@@ -1081,7 +1082,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             case UNSATISFIABLE:
                 mainResult=Result.UNSAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (Stopper.stopped) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
+                if (AlloyBridge.stopped) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
                 else if (cmd.check) log.log(" OK (UNSAT)");
                 else log.log(" UNSAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
