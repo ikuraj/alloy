@@ -37,7 +37,7 @@ public final class ViaPipe implements SATSolver {
 
     /** Constructs a new instance of SATSolver using "name" as the temporary file for writing the CNF clauses. */
     public ViaPipe(String binaryFilename, String temporaryFilename) {
-    	binary=binaryFilename;
+        binary=binaryFilename;
         name=temporaryFilename;
         try {
             file=new RandomAccessFile(name, "rw");
@@ -94,12 +94,12 @@ public final class ViaPipe implements SATSolver {
             latest=sp;
             int r=sp.waitFor();
             latest=null;
-        	if (r==0) {
+            if (r==0) {
                 solution=sp.getOutput();
                 cleanup();
                 if (solution.startsWith("SAT:")) return true;
                 if (solution.startsWith("UNSAT:")) return false;
-        	}
+            }
         }
         cleanup();
         throw new RuntimeException("An error has occurred in calling the SAT solver...");

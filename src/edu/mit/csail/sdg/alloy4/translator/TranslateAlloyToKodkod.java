@@ -76,20 +76,20 @@ import kodkod.instance.Universe;
 
 public final class TranslateAlloyToKodkod implements VisitReturn {
 
-	private static final String fs = System.getProperty("file.separator");
+    private static final String fs = System.getProperty("file.separator");
 
-	public enum SolverChoice {
-		BerkMinPIPE("BerkMin (via PIPE)"),
-		MiniSatJNI("MiniSat (via JNI)"),
-		ZChaffJNI("ZChaff (via JNI)"),
-		SAT4J("SAT4J"),
-		//ZChaffPIPE("Zchaff (via PIPE)"),
-		//MiniSatPIPE("MiniSat (via PIPE)"),
-		FILE("Output to file");
-		private final String label;
-		private SolverChoice(String label) { this.label=label; }
-		@Override public final String toString() { return label; }
-	};
+    public enum SolverChoice {
+        BerkMinPIPE("BerkMin (via PIPE)"),
+        MiniSatJNI("MiniSat (via JNI)"),
+        ZChaffJNI("ZChaff (via JNI)"),
+        SAT4J("SAT4J"),
+        //ZChaffPIPE("Zchaff (via PIPE)"),
+        //MiniSatPIPE("MiniSat (via PIPE)"),
+        FILE("Output to file");
+        private final String label;
+        private SolverChoice(String label) { this.label=label; }
+        @Override public final String toString() { return label; }
+    };
 
     public enum Result { CANCELED, SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 

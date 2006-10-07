@@ -626,15 +626,15 @@ public final class SimpleGUI implements MessageHandler {
         if ("quit".equals(x)) if (my_confirm()) System.exit(0);
         if ("stop".equals(x)) thread_stop();
         if (x!=null && x.startsWith("sat=")) {
-        	for(SolverChoice sc: SolverChoice.values()) {
-        		if (x.equals("sat="+sc)) {
-                	OurMenuItem m=(OurMenuItem)caller;
-                	m.parent.setIconForChildren(iconNo);
-                	m.setIcon(iconYes);
-                	satOPTION=sc;
-                	return Boolean.TRUE;
-        		}
-        	}
+            for(SolverChoice sc: SolverChoice.values()) {
+                if (x.equals("sat="+sc)) {
+                    OurMenuItem m=(OurMenuItem)caller;
+                    m.parent.setIconForChildren(iconNo);
+                    m.setIcon(iconYes);
+                    satOPTION=sc;
+                    return Boolean.TRUE;
+                }
+            }
         }
         if ("save".equals(x)) return latestName.length()!=0 ? my_save(latestName,true) : handleMessage(caller,"saveas");
         if ("file".equals(x)) my_file((OurMenu)caller);
@@ -724,7 +724,7 @@ public final class SimpleGUI implements MessageHandler {
             if (ex!=null) choices.remove(SolverChoice.ZChaffJNI);
             OurMenu optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, "");
             for(SolverChoice sc:choices) {
-            	optmenu.addMenuItem(sc==satOPTION?iconYes:iconNo, "Use "+sc, true, "sat="+sc);
+                optmenu.addMenuItem(sc==satOPTION?iconYes:iconNo, "Use "+sc, true, "sat="+sc);
             }
         }
 
