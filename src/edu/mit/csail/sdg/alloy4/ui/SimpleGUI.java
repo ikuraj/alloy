@@ -69,6 +69,7 @@ import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
+import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.SolverChoice;
 import edu.mit.csail.sdg.alloy4.translator.ViaPipe;
 import edu.mit.csail.sdg.alloy4util.MessageHandler;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
@@ -624,11 +625,17 @@ public final class SimpleGUI implements MessageHandler {
         if ("showversion".equals(x)) JOptionPane.showMessageDialog(null,"Alloy 4: build date "+Version.buildDate());
         if ("quit".equals(x)) if (my_confirm()) System.exit(0);
         if ("stop".equals(x)) thread_stop();
-        if ("sat=sat4j".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=0; }
-        if ("sat=zchaff".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=1; }
-        if ("sat=minisat".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=2; }
-        if ("sat=berkmin".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=3; }
-        if ("sat=file".equals(x)) { OurMenuItem m=(OurMenuItem)caller; m.parent.setIconForChildren(iconNo); m.setIcon(iconYes); satOPTION=(-1); }
+        if (x!=null && x.startsWith("sat=")) {
+        	for(SolverChoice sc: SolverChoice.values()) {
+        		if (x.equals("sat="+sc)) {
+                	OurMenuItem m=(OurMenuItem)caller;
+                	m.parent.setIconForChildren(iconNo);
+                	m.setIcon(iconYes);
+                	satOPTION=sc;
+                	return Boolean.TRUE;
+        		}
+        	}
+        }
         if ("save".equals(x)) return latestName.length()!=0 ? my_save(latestName,true) : handleMessage(caller,"saveas");
         if ("file".equals(x)) my_file((OurMenu)caller);
         return Boolean.TRUE;
@@ -640,8 +647,8 @@ public final class SimpleGUI implements MessageHandler {
      * <p/> This method is called by the SimpleGUI's constructor to actually initialize everything.
      * It will create a GUI window, and populate it with two JTextArea and one JMenuBar.
      */
-    private int satOPTION=2;
-    private synchronized int satOPTION() { return satOPTION; }
+    private SolverChoice satOPTION = SolverChoice.BerkMinPIPE;
+    private synchronized SolverChoice satOPTION() { return satOPTION; }
 
     private SimpleGUI(String[] args) {
 
@@ -701,26 +708,24 @@ public final class SimpleGUI implements MessageHandler {
 
         if (1==1) { // Options menu
             Error ex=null;
-            boolean minisat;
+            List<SolverChoice> choices=new ArrayList<SolverChoice>();
+            for(SolverChoice sc:SolverChoice.values()) { choices.add(sc); }
             try {               System.load(binary+fs+"libminisat6.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat4.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat.so");     ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"minisat.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) { minisat=false; satOPTION=1; } else minisat=true;
-            boolean zchaff;
+            if (ex!=null) choices.remove(SolverChoice.MiniSatJNI);
             try { ex=null;      System.load(binary+fs+"libzchaff_basic6.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic4.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.so");     ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) { zchaff=false; if (satOPTION==1) satOPTION=0; } else zchaff=true;
+            if (ex!=null) choices.remove(SolverChoice.ZChaffJNI);
             OurMenu optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, "");
-            optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",              true,                       "sat=sat4j");
-            optmenu.addMenuItem(satOPTION==1?iconYes:iconNo, "Use ZChaff (via JNI)",   zchaff,  KeyEvent.VK_Z, -1, "sat=zchaff");
-            optmenu.addMenuItem(satOPTION==2?iconYes:iconNo, "Use MiniSat (via JNI)",  minisat, KeyEvent.VK_M, -1, "sat=minisat");
-            optmenu.addMenuItem(iconNo,                      "Use BerkMin (via pipe)", true,    KeyEvent.VK_B, -1, "sat=berkmin");
-            optmenu.addMenuItem(iconNo,                      "Use CommandLine",        true,    KeyEvent.VK_C, -1, "sat=file");
+            for(SolverChoice sc:choices) {
+            	optmenu.addMenuItem(sc==satOPTION?iconYes:iconNo, "Use "+sc, true, "sat="+sc);
+            }
         }
 
         if (1==1) { // Window menu
@@ -800,9 +805,9 @@ public final class SimpleGUI implements MessageHandler {
 
         // Generate some informative log messages
         log("Alloy4: build date "+Version.buildDate(), styleGreen);
-        if (satOPTION==2) log("\nSolver: MiniSAT using JNI", styleGreen);
-            else if (satOPTION==1) log("\nSolver: ZChaff using JNI", styleGreen);
-            else if (satOPTION==0) log("\nSolver: SAT4J", styleGreen);
+        if (satOPTION==SolverChoice.MiniSatJNI) log("\nSolver: MiniSAT using JNI", styleGreen);
+            else if (satOPTION==SolverChoice.ZChaffJNI) log("\nSolver: ZChaff using JNI", styleGreen);
+            else if (satOPTION==SolverChoice.SAT4J) log("\nSolver: SAT4J", styleGreen);
         if (Util.onMac()) {
             log("\nMac OS X detected.", styleGreen);
             MacUtil.addApplicationListener(this);

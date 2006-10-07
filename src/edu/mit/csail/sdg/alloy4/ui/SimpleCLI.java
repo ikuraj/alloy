@@ -11,6 +11,7 @@ import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
+import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.SolverChoice;
 
 public final class SimpleCLI {
 
@@ -32,13 +33,13 @@ public final class SimpleCLI {
             System.out.flush();
             units=AlloyParser.alloy_totalparseFile(alloyhome, "");
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2,dest);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,SolverChoice.SAT4J,dest);
         }
         else for(String a:args) {
             log.log("\n\nMain file = "+a+"\n");
             units=AlloyParser.alloy_totalparseFile(alloyhome, a);
             sigs=VisitTypechecker.check(log,units);
-            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,2,dest);
+            if (code>=(-1)) TranslateAlloyToKodkod.codegen(code,log,units,sigs,SolverChoice.SAT4J,dest);
         }
     }
 

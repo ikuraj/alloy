@@ -78,6 +78,19 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
 	private static final String fs = System.getProperty("file.separator");
 
+	public enum SolverChoice {
+		BerkMinPIPE("BerkMin (via PIPE)"),
+		MiniSatJNI("MiniSat (via JNI)"),
+		ZChaffJNI("ZChaff (via JNI)"),
+		SAT4J("SAT4J"),
+		//ZChaffPIPE("Zchaff (via PIPE)"),
+		//MiniSatPIPE("MiniSat (via PIPE)"),
+		FILE("Output to file");
+		private final String label;
+		private SolverChoice(String label) { this.label=label; }
+		@Override public final String toString() { return label; }
+	};
+
     public enum Result { CANCELED, SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
     private String current_function=""; // This is purely a hint, meant to give a more meaningful Skolem names.
@@ -481,7 +494,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private final Log log;
     private final int codeindex;
     private TranslateAlloyToKodkod(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
-    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs, int solver, String dest) {
+    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs, SolverChoice solver, String dest) {
         TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,units);
         return ve.codegen(sigs, solver, dest);
     }
@@ -698,7 +711,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 && s.name.equals("Ord"));
     }
 
-    private List<Result> codegen(List<ParaSig> sigs, int solver, String dest)  {
+    private List<Result> codegen(List<ParaSig> sigs, SolverChoice solver, String dest)  {
         Formula kfact=Formula.TRUE;
         // Generate the relations for the SIGS.
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -900,7 +913,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, int solverChoice, final String dest, final int destnum)  {
+    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, SolverChoice solverChoice, final String dest, final int destnum)  {
         Result mainResult=null;
         Unit root=units.get(0);
         Formula mainformula;
@@ -1021,22 +1034,21 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         try {
             Solver solver = new Solver();
-            if (solverChoice==1)
-                solver.options().setSolver(SATFactory.ZChaffBasic);
-            else if (solverChoice==2)
-                solver.options().setSolver(SATFactory.MiniSat);
-            else if (solverChoice==3)
-                solver.options().setSolver(new SATFactory() {
+            switch(solverChoice) {
+            case ZChaffJNI: solver.options().setSolver(SATFactory.ZChaffBasic); break;
+            case MiniSatJNI: solver.options().setSolver(SATFactory.MiniSat); break;
+            case BerkMinPIPE: solver.options().setSolver(new SATFactory() {
                     @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"berkmin", dest+destnum+".cnf"); }
                     @Override public String toString() { return "BerkMin"; }
                 });
-            else if (solverChoice==(-1))
-                solver.options().setSolver(new SATFactory() {
+                break;
+            case FILE: solver.options().setSolver(new SATFactory() {
                     @Override public final SATSolver instance() { return new ViaFile(dest+destnum+".cnf"); }
                     @Override public String toString() { return "CommandLine"; }
                 });
-            else // if (solverChoice==0)
-                solver.options().setSolver(SATFactory.DefaultSAT4J);
+                break;
+            default: solver.options().setSolver(SATFactory.DefaultSAT4J);
+            }
             solver.options().setBitwidth(bitwidth);
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
             log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");
