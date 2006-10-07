@@ -68,6 +68,7 @@ import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
 import edu.mit.csail.sdg.alloy4.translator.Stopper;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
+import edu.mit.csail.sdg.alloy4.translator.ViaBerkMin;
 import edu.mit.csail.sdg.alloy4util.MessageHandler;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
@@ -365,7 +366,7 @@ public final class SimpleGUI implements MessageHandler {
         System.out.println("Done.\n\n");
         System.out.flush();
         */
-        if (current_thread!=null) Stopper.stopped=true;
+        if (current_thread!=null) { Stopper.stopped=true; ViaBerkMin.forceTerminate(); }
     }
 
     /** The filename of the file most-recently-opened ("" if there is no loaded file) */
@@ -705,11 +706,11 @@ public final class SimpleGUI implements MessageHandler {
             if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) { zchaff=false; if (satOPTION==1) satOPTION=0; } else zchaff=true;
             OurMenu optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, "");
-            optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",       true,                       "sat=sat4j");
-            optmenu.addMenuItem(satOPTION==1?iconYes:iconNo, "Use ZChaff",      zchaff,  KeyEvent.VK_Z, -1, "sat=zchaff");
-            optmenu.addMenuItem(satOPTION==2?iconYes:iconNo, "Use MiniSat",     minisat, KeyEvent.VK_M, -1, "sat=minisat");
-            optmenu.addMenuItem(iconNo,                      "Use BerkMin",     true,    KeyEvent.VK_B, -1, "sat=berkmin");
-            optmenu.addMenuItem(iconNo,                      "Use CommandLine", true,    KeyEvent.VK_C, -1, "sat=file");
+            optmenu.addMenuItem(satOPTION==0?iconYes:iconNo, "Use SAT4J",              true,                       "sat=sat4j");
+            optmenu.addMenuItem(satOPTION==1?iconYes:iconNo, "Use ZChaff (via JNI)",   zchaff,  KeyEvent.VK_Z, -1, "sat=zchaff");
+            optmenu.addMenuItem(satOPTION==2?iconYes:iconNo, "Use MiniSat (via JNI)",  minisat, KeyEvent.VK_M, -1, "sat=minisat");
+            optmenu.addMenuItem(iconNo,                      "Use BerkMin (via pipe)", true,    KeyEvent.VK_B, -1, "sat=berkmin");
+            optmenu.addMenuItem(iconNo,                      "Use CommandLine",        true,    KeyEvent.VK_C, -1, "sat=file");
         }
 
         if (1==1) { // Window menu

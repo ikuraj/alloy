@@ -1,5 +1,6 @@
 package edu.mit.csail.sdg.alloy4.translator;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -8,15 +9,32 @@ import kodkod.engine.satlab.SATSolver;
 
 public final class ViaBerkMin implements SATSolver {
 
-    private RandomAccessFile file;
+    /** The number of variables and clauses given to us so far. */
+    private int vars=0,clauses=0;
+
+    /** The temporary file name. */
     private final String name;
-    private int vars=0;
-    private int clauses=0;
+
+    /** The RandomAccessFile handle to the temporary file. */
+    private RandomAccessFile file;
+
+    /** This buffers the write to the file; whenever it reaches a certain size, we will call flush() to flush it. */
     private final StringBuilder sb=new StringBuilder();
+
+    /** If nonnull, that means an error had occurred. */
     private Exception error=null;
 
-    public ViaBerkMin(String name) {
-        this.name=name;
+    /** The latest BerkMin subprocess. */
+    private static volatile Subprocess latest=null;
+    /** Terminate the latest BerkMin subprocess. */
+    public static void forceTerminate() {
+        Subprocess pro=latest;
+        if (pro!=null) pro.terminate();
+    }
+
+    /** Constructs a new instance of SATSolver using "name" as the temporary file for writing the CNF clauses. */
+    public ViaBerkMin(String temporaryFilename) {
+        name=temporaryFilename;
         try {
             file=new RandomAccessFile(name, "rw");
             file.setLength(0);
@@ -24,9 +42,7 @@ public final class ViaBerkMin implements SATSolver {
             // This reserves enough spaces so that we can come back and
             // write out the actual number of variables and clauses.
         }
-        catch(IOException ex) {
-            error=ex;
-        }
+        catch(IOException ex) { error=ex; cleanup(); }
     }
 
     public int numberOfVariables() { return vars; }
@@ -41,16 +57,19 @@ public final class ViaBerkMin implements SATSolver {
     }
 
     public void addClause(int[] lits) {
-        if (error!=null) return;
+        clauses++;
+        if (error!=null) return; // If an error has already occurred, there's no point in writing any further
         for(int i=0; i<lits.length; i++) { sb.append(lits[i]); sb.append(' '); if (sb.length()>8192) flush(); }
         sb.append("0\n");
-        clauses++;
     }
 
     private void flush() {
-        try {file.writeBytes(sb.toString());} catch(IOException ex) {error=ex;}
+        if (error!=null || sb.length()==0) return;
+        try {file.writeBytes(sb.toString());} catch(IOException ex) {error=ex; cleanup();}
         sb.setLength(0);
     }
+
+    private String solution="";
 
     public boolean solve() {
         flush();
@@ -58,20 +77,38 @@ public final class ViaBerkMin implements SATSolver {
             file.seek(0);
             file.writeBytes("p cnf "+vars+" "+clauses);
             file.close();
-            System.out.println(""+vars+" variables and "+clauses+" clauses written to "+name+"...");
-            System.out.flush();
-            Subprocess sp=new Subprocess(new String[]{"/tmp/berkmin",name});
-            int r=sp.waitFor();
-            if (r!=0) throw new RuntimeException("BerkMin failed...");
-            System.out.println("Result = "+sp.getOutput());
-            return true;
+            file=null;
         } catch(IOException ex) {
             error=ex;
+            cleanup();
+            throw new RuntimeException("Error occurred in writing to file \""+name+"\": "+ex.getMessage());
         }
-        throw new RuntimeException("Error occurred in writing to file \""+name+"\": "+error.getMessage());
+        Subprocess sp=new Subprocess(new String[]{"/tmp/berkmin",name});
+        // TODO: we don't care about race condition here, since the only reason "latest" is used
+        // is in the GUI, where only 1 solving can occur at a time.
+        latest=sp;
+        int r=sp.waitFor();
+        latest=null;
+        if (r==0) {
+            solution=sp.getOutput();
+            cleanup();
+            if (solution.startsWith("BerkMin sat:")) return true;
+            if (solution.startsWith("BerkMin unsat")) return false;
+        }
+        cleanup();
+        throw new RuntimeException("BerkMin failed...");
     }
 
-    public boolean valueOf(int variable) { return false; }
+    public boolean valueOf(int variable) { // variable = 1..N where N is the number of primary variables
+        // 12 is the number of characters in "BerkMin sat:"
+        if (variable+12-1 < solution.length()) return solution.charAt(variable+12-1)=='1'; else return false;
+    }
 
-    public void free() { }
+    private void cleanup() {
+        try { if (file!=null) file.close(); } catch(IOException ex) { error=ex; }
+        file=null;
+        (new File(name)).delete(); // Removes the temporary file
+    }
+
+    public void free() { cleanup(); solution=""; }
 }
