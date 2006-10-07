@@ -1076,7 +1076,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
                 writeXML(cmd.pos, sol, units, sigs, dest);
-                if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
+                //if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
                 break;
             case UNSATISFIABLE:
                 mainResult=Result.UNSAT;
