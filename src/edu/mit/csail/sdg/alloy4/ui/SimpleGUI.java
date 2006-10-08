@@ -780,7 +780,7 @@ public final class SimpleGUI implements MessageHandler {
 
         if (1==1) { // Help menu
             OurMenu helpmenu = bar.addMenu("Help", true, KeyEvent.VK_H, null);
-            helpmenu.addMenuItem(null, "About Alloy4",          true, KeyEvent.VK_A, -1, "about");
+            if (!Util.onMac()) helpmenu.addMenuItem(null, "About Alloy4",          true, KeyEvent.VK_A, -1, "about");
             helpmenu.addMenuItem(null, "See the Change Log",    true, KeyEvent.VK_V, -1, "showchange");
         }
 
