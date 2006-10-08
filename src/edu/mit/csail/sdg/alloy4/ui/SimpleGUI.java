@@ -8,8 +8,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
@@ -378,16 +381,26 @@ public final class SimpleGUI implements MessageHandler {
     /** The JLabel that displays the current line/column position, etc. */
     private JLabel status;
 
-    /** Main method that launches the program. */
-    public static final void main(final String[] args) {
+    @SuppressWarnings("unused")
+	private static FileLock lock=null; // Static, to ensure the lock object stays around until JVM terminates
+    /** Main method that launches the program. 
+     * @throws FileNotFoundException */
+    public static final void main(final String[] args) throws IOException {
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
         System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
         System.setProperty("com.apple.mrj.application.live-resize","true");
         System.setProperty("com.apple.macos.useScreenMenuBar","true");
         System.setProperty("apple.laf.useScreenMenuBar","true");
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
+        File lockfile = new File(Util.alloyHome() + File.separatorChar + "lock");
+        FileChannel lockchannel = new RandomAccessFile(lockfile, "rw").getChannel();
+        lock = lockchannel.tryLock();
+        final boolean locked=(lock!=null);
         SwingUtilities.invokeLater(new Runnable() {
-            public final void run() { new SimpleGUI(args); }
+            public final void run() {
+            	if (locked) new SimpleGUI(args);
+            	else OurDialog.fatal(null,"Error! Alloy4 is already running!");
+            }
         });
     }
 
