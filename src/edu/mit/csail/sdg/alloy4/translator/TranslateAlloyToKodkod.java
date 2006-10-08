@@ -79,12 +79,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private static final String fs = System.getProperty("file.separator");
 
     public enum SolverChoice {
-        BerkMinPIPE("BerkMin (via PIPE)"),
-        MiniSatSimpPIPE("MiniSat2simp (via PIPE)"),
-        MiniSatCorePIPE("MiniSat2core (via PIPE)"),
-        MiniSatPIPE("MiniSat (via PIPE)"),
-        MiniSatJNI("MiniSat (via JNI)"),
-        ZChaffJNI("ZChaff (via JNI)"),
+        BerkMinPIPE("BerkMin"),
+        MiniSatSimpPIPE("MiniSat2+Simp"),
+        MiniSatCorePIPE("MiniSat2"),
+        MiniSatPIPE("MiniSat"),
+        MiniSatJNI("MiniSat (JNI)"),
+        ZChaffJNI("ZChaff (JNI)"),
         SAT4J("SAT4J"),
         FILE("Output to file");
         private final String label;
@@ -495,9 +495,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private final Log log;
     private final int codeindex;
     private TranslateAlloyToKodkod(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
-    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs, SolverChoice solver, String dest) {
+    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs, SolverChoice solver, String destdir) {
         TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,units);
-        return ve.codegen(sigs, solver, dest);
+        return ve.codegen(sigs, solver, destdir);
     }
 
     private Map<ParaSig,Expression> sig2rel = new LinkedHashMap<ParaSig,Expression>();
@@ -712,7 +712,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 && s.name.equals("Ord"));
     }
 
-    private List<Result> codegen(List<ParaSig> sigs, SolverChoice solver, String dest)  {
+    private List<Result> codegen(List<ParaSig> sigs, SolverChoice solver, String destdir)  {
         Formula kfact=Formula.TRUE;
         // Generate the relations for the SIGS.
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -844,7 +844,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     }
                 }
                 this.env.clear();
-                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver, dest, xi+1));
+                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver, destdir, xi+1));
             }
         return result;
     }
@@ -914,7 +914,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, SolverChoice solverChoice, final String dest, final int destnum)  {
+    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, SolverChoice solverChoice, final String destdir, final int destnum)  {
         Result mainResult=null;
         Unit root=units.get(0);
         Formula mainformula;
@@ -1039,27 +1039,27 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             case ZChaffJNI: solver.options().setSolver(SATFactory.ZChaffBasic); break;
             case MiniSatJNI: solver.options().setSolver(SATFactory.MiniSat); break;
             case MiniSatSimpPIPE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"minisatsimp", dest+destnum+".cnf"); }
-                @Override public String toString() { return "MiniSat2+Simp (PIPE)"; }
+                @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisatsimp", destdir+fs+destnum+".cnf"); }
+                @Override public String toString() { return "MiniSat2+Simp"; }
             });
             break;
             case MiniSatCorePIPE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"minisatcore", dest+destnum+".cnf"); }
-                @Override public String toString() { return "MiniSat2 (PIPE)"; }
+                @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisatcore", destdir+fs+destnum+".cnf"); }
+                @Override public String toString() { return "MiniSat2"; }
             });
             break;
             case MiniSatPIPE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"minisat", dest+destnum+".cnf"); }
-                @Override public String toString() { return "MiniSat (PIPE)"; }
+                @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisat", destdir+fs+destnum+".cnf"); }
+                @Override public String toString() { return "MiniSat"; }
             });
             break;
             case BerkMinPIPE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"berkmin", dest+destnum+".cnf"); }
-                @Override public String toString() { return "BerkMin (PIPE)"; }
+                @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"berkmin", destdir+fs+destnum+".cnf"); }
+                @Override public String toString() { return "BerkMin"; }
             });
             break;
             case FILE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaFile(dest+destnum+".cnf"); }
+                @Override public final SATSolver instance() { return new ViaFile(destdir+fs+destnum+".cnf"); }
                 @Override public String toString() { return "CommandLine"; }
                 });
                 break;
@@ -1106,7 +1106,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 else if (cmd.check) log.log(" VIOLATED (SAT)");
                 else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
-                writeXML(cmd.pos, sol, units, sigs, dest+destnum);
+                writeXML(cmd.pos, sol, units, sigs, destdir+fs+destnum+".xml");
                 //if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
                 break;
             case UNSATISFIABLE:
@@ -1144,14 +1144,14 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
     }
 
-    private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String dest) {
+    private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String destfilename) {
         UniqueNameGenerator skolemSet = new UniqueNameGenerator();
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
         FileWriter fw=null;
         BufferedWriter bw=null;
         PrintWriter out=null;
         try {
-            fw=new FileWriter(dest+".xml");
+            fw=new FileWriter(destfilename);
             bw=new BufferedWriter(fw);
             out=new PrintWriter(bw);
         } catch(IOException ex) {

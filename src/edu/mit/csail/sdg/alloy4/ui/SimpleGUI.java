@@ -11,9 +11,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Random;
 import java.util.prefs.Preferences;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -30,6 +28,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.Box;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -37,7 +36,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -83,7 +81,6 @@ import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.alloy4util.Version;
 import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
 import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUIFactory;
-import edu.mit.csail.sdg.alloy4viz.gui.KodVizInstaller;
 
 public final class SimpleGUI implements MessageHandler {
 
@@ -232,19 +229,6 @@ public final class SimpleGUI implements MessageHandler {
         log.setCaretPosition(doc.getLength());
     }
 
-    /** Note: It must be "ALLOYHOME/tmp/SOMETHING/" since we want to be able to derive ALLOYHOME from it. */
-    private String maketemp() {
-        Random r=new Random(new Date().getTime());
-        while(true) {
-            int i=r.nextInt(100000);
-            String dest=alloyhome+fs+"tmp"+fs+i;
-            File f=new File(dest);
-            if (f.exists()) continue;
-            f.mkdirs();
-            return dest+fs;
-        }
-    }
-
     /**
      * This Runnable is used to execute a SAT query.
      * By having a separate runnable, we allow the main GUI to remain responsive.
@@ -269,14 +253,14 @@ public final class SimpleGUI implements MessageHandler {
             try {
                 Log blanklog=new Log();
                 Log reallog=new LogToTextPane(log,styleRegular,styleGreen);
-                ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(alloyhome, source);
+                ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(Util.alloyHome(), source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog,units);
-                String tempdir=maketemp();
+                String tempdir = Util.maketemp();
                 List<TranslateAlloyToKodkod.Result> result=TranslateAlloyToKodkod.codegen(index,reallog,units,sigs, satOPTION(), tempdir);
                 reallog.flush(); // To make sure everything is flushed.
                 new File(tempdir).delete(); // In case it was UNSAT, or was TRIVIALLY SAT. Or cancelled.
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
-                    logButton("Click here to display this instance", tempdir, tempdir+(index+1)+".xml");
+                    logButton("Click here to display this instance", tempdir, tempdir+fs+(index+1)+".xml");
                 }
                 if (result.size()>1) {
                     log("\n" + result.size() + " commands were completed. The results are:", styleGreen);
@@ -285,7 +269,7 @@ public final class SimpleGUI implements MessageHandler {
                         i++;
                         if (b==null) log("#"+i+": CANCELED", styleRegular);
                         else switch(b) {
-                        case SAT: logLink("#"+i+": SAT (Click here to see the instance)", tempdir, tempdir+i+".xml"); break;
+                        case SAT: logLink("#"+i+": SAT (Click here to see the instance)", tempdir, tempdir+fs+i+".xml"); break;
                         case TRIVIALLY_SAT: log("#"+i+": SAT", styleRegular); break;
                         case UNSAT: case TRIVIALLY_UNSAT: log("#"+i+": UNSAT", styleRegular); break;
                         default: log("#"+i+": CANCELED", styleRegular);
@@ -406,12 +390,6 @@ public final class SimpleGUI implements MessageHandler {
             public final void run() { new SimpleGUI(args); }
         });
     }
-
-    /**
-     * The constructor. To ensure thread safety, we move all initialization
-     * code into a synchronized helper method named "my_setup".
-     */
-    public String alloyhome="";
 
     /** An ActionListener that is called when the user indicates a particular command to execute. */
     private class RunListener implements ActionListener {
@@ -622,7 +600,7 @@ public final class SimpleGUI implements MessageHandler {
             }
         }
         if ("showchange".equals(x)) showChangeLog();
-        if ("showversion".equals(x)) JOptionPane.showMessageDialog(null,"Alloy 4: build date "+Version.buildDate());
+        if ("about".equals(x)) welcome(frame);
         if ("quit".equals(x)) if (my_confirm()) System.exit(0);
         if ("stop".equals(x)) thread_stop();
         if (x!=null && x.startsWith("sat=")) {
@@ -650,48 +628,95 @@ public final class SimpleGUI implements MessageHandler {
     private SolverChoice satOPTION = SolverChoice.BerkMinPIPE;
     private synchronized SolverChoice satOPTION() { return satOPTION; }
 
+    private static void welcome(JFrame parent) {
+        Icon icon=OurUtil.loadIcon("images/logo.gif");
+        Object[] array = {
+                icon,
+                "Thank you for using Alloy 4 (build date "+Version.buildDate()+").",
+                "If you have any suggestions or bug reports, please email us at alloy@mit.edu",
+                " ",
+                "If you are installing using WebStart, it should have created an Alloy4 icon",
+                "on your desktop. Clicking on it will load the Alloy4 graphical interface.",
+                " ",
+                "If you wish to run the program from the command-line,",
+                "you can invoke the alloy4.jar file directly. Please see",
+                "online documentation for more information.",
+                " ", "Thank You."};
+        OurDialog.alert(parent, array, "About Alloy 4");
+    }
+
     private SimpleGUI(String[] args) {
 
-        alloyhome=KodVizInstaller.install(get("basedir"));
-        fileOpenDirectory=alloyhome+fs+"models";
-        System.setProperty("alloyhome",alloyhome);
-        String binary=alloyhome+fs+"binary";
-        // The following files we want to overwrite each time, to keep them up-to-date.
-        KodVizInstaller.copy("alloy4.jar", alloyhome, false);
-        KodVizInstaller.copy("libminisat.so", binary, true);
-        KodVizInstaller.copy("libminisat4.so", binary, true);
-        KodVizInstaller.copy("libminisat6.so", binary, true);
-        KodVizInstaller.copy("libzchaff_basic.so", binary, true);
-        KodVizInstaller.copy("libzchaff_basic4.so", binary, true);
-        KodVizInstaller.copy("libzchaff_basic6.so", binary, true);
-        KodVizInstaller.copy("libminisat.jnilib", binary, true);
-        KodVizInstaller.copy("libzchaff_basic.jnilib", binary, true);
-        KodVizInstaller.copy("minisat.dll", binary, false);
-        KodVizInstaller.copy("zchaff_basic.dll", binary, false);
-        KodVizInstaller.copy("minisatsimp6", binary, true);
-        KodVizInstaller.copy("minisatcore6", binary, true);
-        KodVizInstaller.copy("minisat6", binary, true);
-        KodVizInstaller.copy("minisatsimp4", binary, true);
-        KodVizInstaller.copy("minisatcore4", binary, true);
-        KodVizInstaller.copy("minisat4", binary, true);
-        KodVizInstaller.copy("minisatsimp", binary, true);
-        KodVizInstaller.copy("minisatcore", binary, true);
-        KodVizInstaller.copy("minisat", binary, true);
-        KodVizInstaller.copy("minisatsimp.exe", binary, false);
-        KodVizInstaller.copy("minisatcore.exe", binary, false);
-        KodVizInstaller.copy("minisat.exe", binary, false);
-        KodVizInstaller.copy("berkmin6", binary, true);
-        KodVizInstaller.copy("berkmin4", binary, true);
-        KodVizInstaller.copy("berkmin", binary, true);
-        KodVizInstaller.copy("berkmin.exe", binary, false);
-        set("basedir",alloyhome);
+        String alloyHome=Util.alloyHome();
+        String binary=alloyHome+fs+"binary";
+        fileOpenDirectory=alloyHome+fs+"models";
+        // JAR
+        Util.copy(false, alloyHome, "alloy4.jar");
+        // JNI
+        Util.copy(true,binary,"libminisat.so", "libminisat4.so", "libminisat6.so", "libminisat.jnilib");
+        Util.copy(true,binary,"libzchaff_basic.so", "libzchaff_basic4.so", "libzchaff_basic6.so", "libzchaff_basic.jnilib");
+        Util.copy(false,binary,"minisat.dll", "zchaff_basic.dll");
+        // BINARY
+        Util.copy(true, binary,"dotbin6", "minisatsimp6", "minisatcore6", "minisat6", "berkmin6");
+        Util.copy(true, binary,"dotbin4", "minisatsimp4", "minisatcore4", "minisat4", "berkmin4");
+        Util.copy(true, binary,"dotbin", "minisatsimp", "minisatcore", "minisat", "berkmin");
+        Util.copy(false,binary,"dotbin.exe", "minisatsimp.exe", "minisatcore.exe", "minisat.exe", "berkmin.exe");
+        Util.copy(false,binary,"jpeg.dll","libexpat.dll","libexpatw.dll","zlib1.dll","z.dll","freetype6.dll","png.dll");
+        // MODELS
+        Util.copy(false,alloyHome,
+        "models/examples/algorithms/dijkstra.als",
+        "models/examples/algorithms/messaging.als",
+        "models/examples/algorithms/opt_spantree.als",
+        "models/examples/algorithms/peterson.als",
+        "models/examples/algorithms/ringlead.als",
+        "models/examples/algorithms/s_ringlead.als",
+        "models/examples/algorithms/stable_mutex_ring.als",
+        "models/examples/algorithms/stable_orient_ring.als",
+        "models/examples/algorithms/stable_ringlead.als",
+        "models/examples/case_studies/INSLabel.als",
+        "models/examples/case_studies/chord.als",
+        "models/examples/case_studies/chord2.als",
+        "models/examples/case_studies/chordbugmodel.als",
+        "models/examples/case_studies/com.als",
+        "models/examples/case_studies/firewire.als",
+        "models/examples/case_studies/ins.als",
+        "models/examples/case_studies/iolus.als",
+        "models/examples/case_studies/sync.als",
+        "models/examples/case_studies/syncimpl.als",
+        "models/examples/puzzles/farmer.als",
+        "models/examples/puzzles/handshake.als",
+        "models/examples/puzzles/hanoi.als",
+        "models/examples/systems/file_system.als",
+        "models/examples/systems/javatypes_soundness.als",
+        "models/examples/systems/lists.als",
+        "models/examples/systems/marksweepgc.als",
+        "models/examples/systems/views.als",
+        "models/examples/toys/birthday.als",
+        "models/examples/toys/ceilingsAndFloors.als",
+        "models/examples/toys/genealogy.als",
+        "models/examples/toys/grandpa.als",
+        "models/examples/toys/javatypes.als",
+        "models/examples/toys/life.als",
+        "models/examples/toys/numbering.als",
+        "models/examples/toys/railway.als",
+        "models/examples/toys/trivial.als",
+        "models/examples/tutorial/farmer.als",
+        "models/util/boolean.als",
+        "models/util/graph.als",
+        "models/util/integer.als",
+        "models/util/natural.als",
+        "models/util/ordering.als",
+        "models/util/relation.als",
+        "models/util/seqrel.als",
+        "models/util/sequence.als",
+        "models/util/ternary.als");
 
         int screenWidth=Toolkit.getDefaultToolkit().getScreenSize().width;
         int screenHeight=Toolkit.getDefaultToolkit().getScreenSize().height;
         int width=screenWidth/10*8, height=screenHeight/10*8;
         Font font=OurUtil.getFont();
         frame=new JFrame("Alloy4: build date "+Version.buildDate());
-        factory=new KodVizGUIFactory(alloyhome, false);
+        factory=new KodVizGUIFactory(false);
 
         // Create the menu
         OurMenuBar bar=new OurMenuBar(this);
@@ -742,8 +767,8 @@ public final class SimpleGUI implements MessageHandler {
 
         if (1==1) { // Help menu
             OurMenu helpmenu = bar.addMenu("Help", true, KeyEvent.VK_H, null);
-            helpmenu.addMenuItem(null, "See Alloy4 Change Log", true, KeyEvent.VK_C, -1, "showchange");
-            helpmenu.addMenuItem(null, "See Alloy4 Version",    true, KeyEvent.VK_V, -1, "showversion");
+            helpmenu.addMenuItem(null, "About Alloy4",          true, KeyEvent.VK_A, -1, "about");
+            helpmenu.addMenuItem(null, "See the Change Log",    true, KeyEvent.VK_V, -1, "showchange");
         }
 
         // Create the text editor
