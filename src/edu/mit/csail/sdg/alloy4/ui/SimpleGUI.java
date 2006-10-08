@@ -683,7 +683,7 @@ public final class SimpleGUI implements MessageHandler {
                    if (msg.startsWith("open:")) handleMessage(null,msg);
                 } catch(IOException e) { }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(400);
                 } catch (InterruptedException e) {}
             }
         }
