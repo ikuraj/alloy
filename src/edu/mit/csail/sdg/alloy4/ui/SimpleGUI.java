@@ -633,7 +633,7 @@ public final class SimpleGUI implements MessageHandler {
         Object[] array = {
                 icon,
                 "Thank you for using Alloy 4 (build date "+Version.buildDate()+").",
-                "If you have any suggestions or bug reports, please email us at alloy@mit.edu",
+                "If you have any suggestions or bug reports, please visit our website: alloy.mit.edu",
                 " ",
                 "If you are installing using WebStart, it should have created an Alloy4 icon",
                 "on your desktop. Clicking on it will load the Alloy4 graphical interface.",
@@ -641,7 +641,7 @@ public final class SimpleGUI implements MessageHandler {
                 "If you wish to run the program from the command-line,",
                 "you can invoke the alloy4.jar file directly. Please see",
                 "online documentation for more information.",
-                " ", "Thank You."};
+                " ", "Thank you."};
         OurDialog.alert(parent, array, "About Alloy 4");
     }
 
@@ -724,10 +724,10 @@ public final class SimpleGUI implements MessageHandler {
 
         if (1==1) { // File menu
             OurMenu filemenu = bar.addMenu("File", true, KeyEvent.VK_F, "file");
-            filemenu.addMenuItem(null, "New",     true, KeyEvent.VK_N, KeyEvent.VK_N, "new");
-            filemenu.addMenuItem(null, "Open",    true, KeyEvent.VK_O, KeyEvent.VK_O, "open");
-            filemenu.addMenuItem(null, "Save",    true, KeyEvent.VK_S, KeyEvent.VK_S, "save");
-            filemenu.addMenuItem(null, "Save As", true, KeyEvent.VK_A, -1,            "saveas");
+            filemenu.addMenuItem(null, "New",      true, KeyEvent.VK_N, KeyEvent.VK_N, "new");
+            filemenu.addMenuItem(null, "Open",     true, KeyEvent.VK_O, KeyEvent.VK_O, "open");
+            filemenu.addMenuItem(null, "Save",     true, KeyEvent.VK_S, KeyEvent.VK_S, "save");
+            filemenu.addMenuItem(null, "Save As",  true, KeyEvent.VK_A, -1,            "saveas");
             if (!Util.onMac()) filemenu.addMenuItem(null, "Quit", true, KeyEvent.VK_Q, -1, "quit");
         }
 
