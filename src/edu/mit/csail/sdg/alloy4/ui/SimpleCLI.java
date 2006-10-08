@@ -20,7 +20,8 @@ public final class SimpleCLI {
 
     private static void run(String[] args, Log log) throws FileNotFoundException {
         String destdir = Util.alloyHome()+fs+"tmp";
-        (new File(destdir)).mkdirs();
+        File destdirObj = new File(destdir);
+        destdirObj.mkdirs();
         ArrayList<Unit> units;
         ArrayList<ParaSig> sigs;
         for(String a:args) {

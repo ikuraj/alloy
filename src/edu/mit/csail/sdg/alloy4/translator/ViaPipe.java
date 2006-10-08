@@ -39,6 +39,7 @@ public final class ViaPipe implements SATSolver {
     public ViaPipe(String binaryFilename, String temporaryFilename) {
         binary=binaryFilename;
         name=temporaryFilename;
+        (new File(temporaryFilename)).deleteOnExit();
         try {
             file=new RandomAccessFile(name, "rw");
             file.setLength(0);

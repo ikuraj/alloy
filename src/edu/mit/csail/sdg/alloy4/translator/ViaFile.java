@@ -15,6 +15,7 @@ public final class ViaFile implements SATSolver {
 
     public ViaFile(String name) {
         this.name=name;
+        // TODO: We intentionally DO NOT delete the CNF file, since the user may want it...
         try {
             file=new RandomAccessFile(name, "rw");
             file.setLength(0);
