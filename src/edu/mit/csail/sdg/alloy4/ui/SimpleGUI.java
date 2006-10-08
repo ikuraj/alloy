@@ -175,7 +175,7 @@ public final class SimpleGUI implements MessageHandler {
         frame.setVisible(true);
     }
 
-    private synchronized void logButton(String label, final String tmpdir, final String f) {
+    private synchronized void logButton(String label, final String tmpfilename, final String f) {
         StyledDocument doc=log.getStyledDocument();
         Style s=doc.addStyle("link", styleRegular);
         JButton b=new JButton(label);
@@ -185,14 +185,14 @@ public final class SimpleGUI implements MessageHandler {
         b.setForeground(Color.BLUE);
         b.addActionListener(new ActionListener(){
             public final void actionPerformed(ActionEvent e) {
-                factory.create(tmpdir, new File(f), frame);
+                factory.create(tmpfilename, new File(f), frame);
             }
         });
         StyleConstants.setComponent(s, b);
         log("", s);
     }
 
-    private synchronized void logLink(String label, final String tmpdir, final String f) {
+    private synchronized void logLink(String label, final String tmpfilename, final String f) {
         StyledDocument doc=log.getStyledDocument();
         Style s=doc.addStyle("link", styleRegular);
         JLabel b=new JLabel(label);
@@ -201,7 +201,7 @@ public final class SimpleGUI implements MessageHandler {
         b.setForeground(Color.BLUE);
         b.addMouseListener(new MouseListener(){
             public void mouseClicked(MouseEvent e) {
-                factory.create(tmpdir, new File(f), frame);
+                factory.create(tmpfilename, new File(f), frame);
             }
             public void mousePressed(MouseEvent e) { }
             public void mouseReleased(MouseEvent e) { }
@@ -260,7 +260,7 @@ public final class SimpleGUI implements MessageHandler {
                 reallog.flush(); // To make sure everything is flushed.
                 new File(tempdir).delete(); // In case it was UNSAT, or was TRIVIALLY SAT. Or cancelled.
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
-                    logButton("Click here to display this instance", tempdir, tempdir+fs+(index+1)+".xml");
+                    logButton("Click here to display this instance", tempdir+fs+(index+1)+".dot", tempdir+fs+(index+1)+".xml");
                 }
                 if (result.size()>1) {
                     log("\n" + result.size() + " commands were completed. The results are:", styleGreen);
@@ -269,7 +269,7 @@ public final class SimpleGUI implements MessageHandler {
                         i++;
                         if (b==null) log("#"+i+": CANCELED", styleRegular);
                         else switch(b) {
-                        case SAT: logLink("#"+i+": SAT (Click here to see the instance)", tempdir, tempdir+fs+i+".xml"); break;
+                        case SAT: logLink("#"+i+": SAT (Click here to see the instance)", tempdir+fs+i+".dot", tempdir+fs+i+".xml"); break;
                         case TRIVIALLY_SAT: log("#"+i+": SAT", styleRegular); break;
                         case UNSAT: case TRIVIALLY_UNSAT: log("#"+i+": UNSAT", styleRegular); break;
                         default: log("#"+i+": CANCELED", styleRegular);
