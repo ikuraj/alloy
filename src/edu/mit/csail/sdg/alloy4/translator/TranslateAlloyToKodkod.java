@@ -1145,7 +1145,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String destfilename) {
-    	// TODO: We intentionally do not delete the ".xml" file on exit, since the user may want it.
+        // TODO: We intentionally do not delete the ".xml" file on exit, since the user may want it.
         UniqueNameGenerator skolemSet = new UniqueNameGenerator();
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
         FileWriter fw=null;

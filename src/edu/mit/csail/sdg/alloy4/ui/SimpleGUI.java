@@ -382,8 +382,8 @@ public final class SimpleGUI implements MessageHandler {
     private JLabel status;
 
     @SuppressWarnings("unused")
-	private static FileLock lock=null; // Static, to ensure the lock object stays around until JVM terminates
-    /** Main method that launches the program. 
+    private static FileLock lock=null; // Static, to ensure the lock object stays around until JVM terminates
+    /** Main method that launches the program.
      * @throws FileNotFoundException */
     public static final void main(final String[] args) throws IOException {
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
@@ -395,12 +395,17 @@ public final class SimpleGUI implements MessageHandler {
         File lockfile = new File(Util.alloyHome() + File.separatorChar + "lock");
         FileChannel lockchannel = new RandomAccessFile(lockfile, "rw").getChannel();
         lock = lockchannel.tryLock();
-        final boolean locked=(lock!=null);
+        if (lock==null) {
+            if (args.length==1 && (new File(args[0])).isFile())
+                Util.lockThenWrite(Util.alloyHome() + File.separatorChar + "msg", "open:"+args[0]);
+            else if (args.length==2 && args[0].equals("-open") && (new File(args[1])).isFile())
+                Util.lockThenWrite(Util.alloyHome() + File.separatorChar + "msg", "open:"+args[1]);
+            else
+                Util.lockThenWrite(Util.alloyHome() + File.separatorChar + "msg", "open:");
+            System.exit(0); // Just in case some AWT thread got started, perhaps due to UIManager.setLookAndFeel().
+        }
         SwingUtilities.invokeLater(new Runnable() {
-            public final void run() {
-            	if (locked) new SimpleGUI(args);
-            	else OurDialog.fatal(null,"Error! Alloy4 is already running!");
-            }
+            public final void run() { new SimpleGUI(args); }
         });
     }
 
@@ -528,8 +533,10 @@ public final class SimpleGUI implements MessageHandler {
             return Boolean.TRUE;
         }
         if (x instanceof String && ((String)x).startsWith("open:")) {
+            frame.setExtendedState(JFrame.NORMAL); frame.toFront(); // In case the "open:" message came from elsewhere
             if (!my_confirm()) return null;
-            my_open(((String)x).substring(5));
+            if (x.length()>5) my_open(((String)x).substring(5));
+            frame.setExtendedState(JFrame.NORMAL); frame.toFront(); // In case the "open:" message came from elsewhere
             return Boolean.TRUE;
         }
         if ("saveas".equals(x)) {
@@ -656,6 +663,30 @@ public final class SimpleGUI implements MessageHandler {
                 "online documentation for more information.",
                 " ", "Thank you."};
         OurDialog.alert(parent, array, "About Alloy 4");
+    }
+
+
+
+
+
+
+
+    /**
+     * This Runnable is used to watch for another instance of SimpleGUI.
+     * By having a separate runnable, we allow the main GUI to remain responsive.
+     */
+    private final class InstanceWatcher implements Runnable {
+        public final void run() {
+            while(true) {
+                try {
+                   String msg=Util.lockThenReadThenErase(Util.alloyHome()+File.separatorChar+"msg");
+                   if (msg.startsWith("open:")) handleMessage(null,msg);
+                } catch(IOException e) { }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {}
+            }
+        }
     }
 
     private SimpleGUI(String[] args) {
@@ -864,7 +895,12 @@ public final class SimpleGUI implements MessageHandler {
         //log("ARGS = "+args.length+"\n", styleGreen);
         //for(String a:args) log("# = "+a+"\n",styleGreen);
         // If commandline tells you to load a file, load it.
-        //if (args.length==1 && new File(args[0]).exists()) my_open(args[0]);
-        //else if (args.length==2 && args[0].equals("-open") && new File(args[1]).exists()) my_open(args[1]);
+
+        if (args.length==1 && (new File(args[0])).exists()) my_open(args[0]);
+        else if (args.length==2 && args[0].equals("-open") && (new File(args[1])).exists()) my_open(args[1]);
+
+        InstanceWatcher r=new InstanceWatcher();
+        Thread t=new Thread(r);
+        t.start();
     }
 }
