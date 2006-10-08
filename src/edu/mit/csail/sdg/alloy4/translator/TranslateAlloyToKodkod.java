@@ -80,6 +80,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
     public enum SolverChoice {
         BerkMinPIPE("BerkMin (via PIPE)"),
+        MiniSatSimpPIPE("MiniSat2simp (via PIPE)"),
+        MiniSatCorePIPE("MiniSat2core (via PIPE)"),
         MiniSatPIPE("MiniSat (via PIPE)"),
         MiniSatJNI("MiniSat (via JNI)"),
         ZChaffJNI("ZChaff (via JNI)"),
@@ -1036,19 +1038,29 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             switch(solverChoice) {
             case ZChaffJNI: solver.options().setSolver(SATFactory.ZChaffBasic); break;
             case MiniSatJNI: solver.options().setSolver(SATFactory.MiniSat); break;
+            case MiniSatSimpPIPE: solver.options().setSolver(new SATFactory() {
+                @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"minisatsimp", dest+destnum+".cnf"); }
+                @Override public String toString() { return "MiniSat2+Simp (PIPE)"; }
+            });
+            break;
+            case MiniSatCorePIPE: solver.options().setSolver(new SATFactory() {
+                @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"minisatcore", dest+destnum+".cnf"); }
+                @Override public String toString() { return "MiniSat2 (PIPE)"; }
+            });
+            break;
             case MiniSatPIPE: solver.options().setSolver(new SATFactory() {
-            	@Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"minisat", dest+destnum+".cnf"); }
-            	@Override public String toString() { return "MiniSat (PIPE)"; }
+                @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"minisat", dest+destnum+".cnf"); }
+                @Override public String toString() { return "MiniSat (PIPE)"; }
             });
             break;
             case BerkMinPIPE: solver.options().setSolver(new SATFactory() {
-            	@Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"berkmin", dest+destnum+".cnf"); }
-            	@Override public String toString() { return "BerkMin (PIPE)"; }
+                @Override public final SATSolver instance() { return new ViaPipe(dest+".."+fs+".."+fs+"binary"+fs+"berkmin", dest+destnum+".cnf"); }
+                @Override public String toString() { return "BerkMin (PIPE)"; }
             });
             break;
             case FILE: solver.options().setSolver(new SATFactory() {
-            	@Override public final SATSolver instance() { return new ViaFile(dest+destnum+".cnf"); }
-            	@Override public String toString() { return "CommandLine"; }
+                @Override public final SATSolver instance() { return new ViaFile(dest+destnum+".cnf"); }
+                @Override public String toString() { return "CommandLine"; }
                 });
                 break;
             default: solver.options().setSolver(SATFactory.DefaultSAT4J);
