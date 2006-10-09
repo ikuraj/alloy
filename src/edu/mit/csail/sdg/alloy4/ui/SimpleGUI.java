@@ -385,24 +385,32 @@ public final class SimpleGUI implements MessageHandler {
     private static FileLock lock=null; // Static, to ensure the lock object stays around until JVM terminates
     /** Main method that launches the program.
      * @throws FileNotFoundException */
-    public static final void main(final String[] args) throws IOException {
+    public static final void main(final String[] args) {
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
         System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
         System.setProperty("com.apple.mrj.application.live-resize","true");
         System.setProperty("com.apple.macos.useScreenMenuBar","true");
         System.setProperty("apple.laf.useScreenMenuBar","true");
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
-        File lockfile = new File(Util.alloyHome() + File.separatorChar + "lock");
-        FileChannel lockchannel = new RandomAccessFile(lockfile, "rw").getChannel();
-        lock = lockchannel.tryLock();
-        if (lock==null) {
-            if (args.length==1 && (new File(args[0])).isFile())
-                Util.lockThenWrite(Util.alloyHome() + File.separatorChar + "msg", "open:"+args[0]);
-            else if (args.length==2 && args[0].equals("-open") && (new File(args[1])).isFile())
-                Util.lockThenWrite(Util.alloyHome() + File.separatorChar + "msg", "open:"+args[1]);
-            else
-                Util.lockThenWrite(Util.alloyHome() + File.separatorChar + "msg", "open:");
-            System.exit(0); // Just in case some AWT thread got started, perhaps due to UIManager.setLookAndFeel().
+        try {
+        	File lockfile = new File(Util.alloyHome() + File.separatorChar + "lock");
+        	FileChannel lockchannel = new RandomAccessFile(lockfile, "rw").getChannel();
+        	lock = lockchannel.tryLock();
+        	if (lock==null) {
+        		String dest = Util.alloyHome() + File.separatorChar + "msg";
+        		if (args.length==1) {
+        			File f=new File(args[0]);
+        			if (f.exists()) Util.lockThenWrite(dest, "open:"+f.getAbsolutePath());
+        		} else if (args.length==2 && args[0].equals("-open")) {
+        			File f=new File(args[1]);
+        			if (f.exists()) Util.lockThenWrite(dest, "open:"+f.getAbsolutePath());
+        		} else {
+        			Util.lockThenWrite(dest, "open:");
+        		}
+        		System.exit(0); // Just in case some AWT thread got started, perhaps due to UIManager.setLookAndFeel().
+        	}
+        } catch(IOException ex) {
+        	OurDialog.fatal(null, "A fatal error has occurred! "+ex.getMessage());
         }
         SwingUtilities.invokeLater(new Runnable() {
             public final void run() { new SimpleGUI(args); }
@@ -532,10 +540,14 @@ public final class SimpleGUI implements MessageHandler {
             my_open(open.getSelectedFile().getPath());
             return Boolean.TRUE;
         }
+        if ("open:".equals(x)) {
+        	frame.setExtendedState(JFrame.NORMAL); frame.toFront(); // In case the "open:" message came from elsewhere
+            return Boolean.TRUE;
+        }
         if (x instanceof String && ((String)x).startsWith("open:")) {
             frame.setExtendedState(JFrame.NORMAL); frame.toFront(); // In case the "open:" message came from elsewhere
             if (!my_confirm()) return null;
-            if (x.length()>5) my_open(((String)x).substring(5));
+            my_open(((String)x).substring(5));
             frame.setExtendedState(JFrame.NORMAL); frame.toFront(); // In case the "open:" message came from elsewhere
             return Boolean.TRUE;
         }
@@ -896,8 +908,13 @@ public final class SimpleGUI implements MessageHandler {
         //for(String a:args) log("# = "+a+"\n",styleGreen);
         // If commandline tells you to load a file, load it.
 
-        if (args.length==1 && (new File(args[0])).exists()) my_open(args[0]);
-        else if (args.length==2 && args[0].equals("-open") && (new File(args[1])).exists()) my_open(args[1]);
+        if (args.length==1) {
+        	File f=new File(args[0]);
+            if (f.exists()) my_open(f.getAbsolutePath());
+        } else if (args.length==2 && args[0].equals("-open")) {
+        	File f=new File(args[1]);
+        	if (f.exists()) my_open(f.getAbsolutePath());
+        }
 
         InstanceWatcher r=new InstanceWatcher();
         Thread t=new Thread(r);
