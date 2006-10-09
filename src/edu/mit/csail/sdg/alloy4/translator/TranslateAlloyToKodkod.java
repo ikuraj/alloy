@@ -1157,8 +1157,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             out=new PrintWriter(bw);
         } catch(IOException ex) {
             if (out!=null) { out.close(); out=null; }
-            if (bw!=null) { try {bw.close();} catch(IOException exx) {} bw=null; }
-            if (fw!=null) { try {fw.close();} catch(IOException exx) {} fw=null; }
+            if (bw!=null) { try {bw.close();} catch(IOException exx) {bw=null;} }
+            if (fw!=null) { try {fw.close();} catch(IOException exx) {fw=null;} }
             throw new ErrorInternal(pos, "writeXML failed: "+ex.toString());
         }
         Instance inst=sol.instance();
