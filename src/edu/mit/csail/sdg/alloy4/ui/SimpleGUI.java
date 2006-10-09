@@ -895,10 +895,6 @@ public final class SimpleGUI {
             runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, a_run);
         }
 
-        if (Util.keepMenuConsistent && Util.onMac()) { // Theme menu
-            bar.addMenu("Theme", false, -1, null);
-        }
-
         if (1==1) { // Options menu
             Error ex=null;
             List<SolverChoice> choices=new ArrayList<SolverChoice>();
