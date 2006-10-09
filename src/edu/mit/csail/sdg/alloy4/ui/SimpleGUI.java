@@ -100,6 +100,9 @@ public final class SimpleGUI {
 
     //====== static readonly fields =========================================//
 
+    /** True iff we want to allow multiple editor windows concurrently. */
+    private static boolean MULTI_EDITOR=false;
+
     /** The current change log. */
     private static final String[] changelog = new String[]{
         "2006 Oct 9, 2PM:",
@@ -208,7 +211,7 @@ public final class SimpleGUI {
     private final OurMenu filemenu, runmenu;
 
     /** The "Run" and "Stop" buttons. */
-    private final JButton runbutton, stopbutton;
+    private final JButton runbutton, stopbutton, showbutton;
 
     /** The JLabel that displays the current line/column position, etc. */
     private final JLabel status;
@@ -433,11 +436,15 @@ public final class SimpleGUI {
     /** Called when the user clicks "File", then "New"; always returns true. */
     private final Func0 a_new = new Func0() {
         public final boolean run() {
-            if (!my_confirm()) return false;
-            latestName="";
-            text.setText("");
-            frame.setTitle("Alloy4: build date "+Version.buildDate());
-            compiled=false; modified=false; updateStatusBar();
+            if (MULTI_EDITOR) {
+                new SimpleGUI(new String[]{});
+            } else {
+                if (!my_confirm()) return false;
+                latestName="";
+                text.setText("");
+                frame.setTitle("Alloy4: build date "+Version.buildDate());
+                compiled=false; modified=false; updateStatusBar();
+            }
             return true;
         }
     };
@@ -475,7 +482,7 @@ public final class SimpleGUI {
                 text.setText(sb.toString());
                 text.setCaretPosition(0);
                 log("\nFile \""+shortFileName(f)+"\" successfully loaded.", styleGreen);
-                frame.setTitle("Alloy File: "+f);
+                frame.setTitle("Alloy Model: "+shortFileName(f));
                 addHistory(latestName=f);
                 compiled=false; modified=false; updateStatusBar();
                 // The following is needed, in case this message came from another window.
@@ -538,7 +545,7 @@ public final class SimpleGUI {
                 log("\nFile \""+shortFileName(filename)+"\" successfully saved.", styleGreen);
                 latestName=filename;
                 addHistory(filename);
-                frame.setTitle("Alloy File: "+latestName);
+                frame.setTitle("Alloy Model: "+shortFileName(latestName));
             } catch(IOException e) {
                 log("\nCannot write to the file \""+filename+"\"! "+e.toString(), styleRed);
                 return false;
@@ -572,6 +579,17 @@ public final class SimpleGUI {
     private final Func0 a_save = new Func0() {
         public final boolean run() {
             if (latestName.length()>0) return a_saveFile.run(latestName); else return a_saveAs.run();
+        }
+    };
+
+    /**
+     * Called when the user clicks "File", then "Close".
+     * (Returns false iff the user cancels the Close operation)
+     */
+    private final Func0 a_close = new Func0() {
+        public final boolean run() {
+            if (my_confirm()) { OurWindowMenu.removeWindow(frame); frame.dispose(); return true; }
+            return false;
         }
     };
 
@@ -760,11 +778,22 @@ public final class SimpleGUI {
         }
     };
 
-    //====== Constructor ====================================================//
+    //=======================================================================//
 
-    /** The constructor; this method will be called by the AWT thread, using the "invokeLater" method. */
-    private SimpleGUI(String[] args) {
+    /** Records whether the an instance has loaded or not. */
+    private static boolean firstInstance=false;
 
+    /**
+     * This method will only be called by the first instance.
+     * Note: simply putting this in a static initializer block won't work,
+     * because if another JVM is launched while an Alloy4 JVM is already running,
+     * we want the other JVM to exit without calling this method (we do this by using a lock file).
+     * So once a SimpleGUI instance has passed the "multiple JVM" test, we then check whether
+     * this is the first instance of this JVM or not.
+     */
+    private static synchronized void firstInstance() {
+        if (firstInstance) return;
+        firstInstance=true;
         // Enable better look-and-feel
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
         System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
@@ -773,26 +802,21 @@ public final class SimpleGUI {
         System.setProperty("apple.laf.useScreenMenuBar","true");
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
         catch (Exception e) { Util.harmless("SimpleGUI()",e); }
-
         // Find out the appropriate Alloy directory
         final String alloyHome=Util.alloyHome();
         final String binary=alloyHome+fs+"binary";
-
         // Copy the JAR file
         Util.copy(false, alloyHome, "alloy4.jar");
-
         // Copy the JNI files
         Util.copy(true,binary,"libminisat.so", "libminisat4.so", "libminisat6.so", "libminisat.jnilib");
         Util.copy(true,binary,"libzchaff_basic.so", "libzchaff_basic4.so", "libzchaff_basic6.so", "libzchaff_basic.jnilib");
         Util.copy(false,binary,"minisat.dll", "zchaff_basic.dll");
-
         // Copy the platform-dependent binaries
         Util.copy(true, binary,"dotbin6", "minisatsimp6", "minisatcore6", "minisat6", "berkmin6");
         Util.copy(true, binary,"dotbin4", "minisatsimp4", "minisatcore4", "minisat4", "berkmin4");
         Util.copy(true, binary,"dotbin", "minisatsimp", "minisatcore", "minisat", "berkmin");
         Util.copy(false,binary,"dotbin.exe", "minisatsimp.exe", "minisatcore.exe", "minisat.exe", "berkmin.exe");
         Util.copy(false,binary,"jpeg.dll","libexpat.dll","libexpatw.dll","zlib1.dll","z.dll","freetype6.dll","png.dll");
-
         // Copy the model files
         Util.copy(false,alloyHome,
                 "models/examples/algorithms/dijkstra.als",
@@ -842,6 +866,14 @@ public final class SimpleGUI {
                 "models/util/sequence.als",
                 "models/util/ternary.als"
         );
+    }
+
+    //====== Constructor ====================================================//
+
+    /** The constructor; this method will be called by the AWT thread, using the "invokeLater" method. */
+    private SimpleGUI(String[] args) {
+
+        firstInstance();
 
         // Construct the JFrame object
         int screenWidth=OurUtil.getScreenWidth(), width=screenWidth/10*8;
@@ -860,6 +892,7 @@ public final class SimpleGUI {
             filemenu.addMenuItem(null, "Open Builtin Models",     true, KeyEvent.VK_B, -1,            a_openBuiltin);
             filemenu.addMenuItem(null, "Save",                    true, KeyEvent.VK_S, KeyEvent.VK_S, a_save);
             filemenu.addMenuItem(null, "Save As",                 true, KeyEvent.VK_A, -1,            a_saveAs);
+            filemenu.addMenuItem(null, "Close Window",            true, KeyEvent.VK_W, KeyEvent.VK_W, a_close);
             if (!Util.onMac()) filemenu.addMenuItem(null, "Quit", true, KeyEvent.VK_Q, -1,            a_quit);
         }
 
@@ -868,6 +901,7 @@ public final class SimpleGUI {
         }
 
         if (1==1) { // Options menu
+            String binary=Util.alloyHome()+fs+"binary";
             Error ex=null;
             List<SolverChoice> choices=new ArrayList<SolverChoice>();
             for(SolverChoice sc:SolverChoice.values()) choices.add(sc);
@@ -907,7 +941,6 @@ public final class SimpleGUI {
         }
 
         // Create the toolbar
-        JButton showbutton;
         JToolBar toolbar=new JToolBar();
         toolbar.setFloatable(false);
         if (!Util.onMac()) toolbar.setBackground(gray);
@@ -964,8 +997,9 @@ public final class SimpleGUI {
         // Add everything to the frame, then display the frame
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
-            public final void windowClosing(WindowEvent e) { if (my_confirm()) System.exit(0); }
-        });
+            public final void windowClosing(WindowEvent e) {
+                if (my_confirm()) { OurWindowMenu.removeWindow(frame); frame.dispose(); }
+            }});
         Container all=frame.getContentPane();
         all.setLayout(new BorderLayout());
         JPanel lefthalf=new JPanel();
@@ -1112,6 +1146,7 @@ public final class SimpleGUI {
                 public final void run() {
                     runmenu.setEnabled(true);
                     runbutton.setVisible(true);
+                    showbutton.setEnabled(true);
                     stopbutton.setVisible(false);
                     setCurrentThread(null);
                 }
@@ -1137,6 +1172,7 @@ public final class SimpleGUI {
             setCurrentThread(t);
             runmenu.setEnabled(false);
             runbutton.setVisible(false);
+            showbutton.setEnabled(false);
             stopbutton.setVisible(true);
             t.start();
         }
