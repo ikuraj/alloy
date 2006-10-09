@@ -353,10 +353,7 @@ public final class SimpleGUI {
 
     //====== Message handlers ===============================================//
 
-    /**
-     * Called then the user expands the "File" menu.
-     * @return true
-     */
+    /** Called then the user expands the "File" menu; always returns true. */
     private final Func0 a_file = new Func0() {
         public final boolean run() {
             synchronized (SimpleGUI.this) {
@@ -381,10 +378,7 @@ public final class SimpleGUI {
         }
     };
 
-    /**
-     * Called when the user clicks "File", then "New".
-     * @return true
-     */
+    /** Called when the user clicks "File", then "New"; always returns true. */
     private final Func0 a_new = new Func0() {
         public final boolean run() {
             synchronized (SimpleGUI.this) {
@@ -402,7 +396,7 @@ public final class SimpleGUI {
     /**
      * Called when the user requests that a specific file should be opened; this method will check
      * if the current text editor needs to be saved or not.
-     * @return true iff the file was opened successfully.
+     * (Returns true iff the file was opened successfully)
      */
     private final Func1 a_openFileIfOk = new Func1() {
         public final boolean run(String arg) {
@@ -415,7 +409,7 @@ public final class SimpleGUI {
 
     /**
      * Called when the user requests that a specific file should be opened.
-     * @return true iff the file was opened successfully.
+     * (Returns true iff the file was opened successfully)
      */
     private final Func1 a_openFile = new Func1() {
         public final boolean run(String f) {
@@ -449,7 +443,7 @@ public final class SimpleGUI {
 
     /**
      * Called when the user clicks "File", then "Open".
-     * @return true iff a file was chosen and opened successfully.
+     * (Rreturns true iff a file was chosen and opened successfully)
      */
     private final Func0 a_open = new Func0() {
         public final boolean run() {
@@ -466,7 +460,7 @@ public final class SimpleGUI {
 
     /**
      * Called when the user clicks "File", then "Open Builtin Models".
-     * @return true iff a file was chosen and opened successfully.
+     * (Returns true iff a file was chosen and opened successfully)
      */
     private final Func0 a_openBuiltin = new Func0() {
         public final boolean run() {
@@ -482,7 +476,7 @@ public final class SimpleGUI {
 
     /**
      * Called when the user requests that the text editor content be saved to a specific filename.
-     * @return true iff the file was saved successfully.
+     * (Returns true iff the file was saved successfully)
      */
     private final Func1 a_saveFile = new Func1() {
         public final boolean run(String filename) {
@@ -512,7 +506,7 @@ public final class SimpleGUI {
 
     /**
      * Called when the user clicks "File", then "Save As".
-     * @return true iff a file was chosen and saved successfully.
+     * (Returns true iff a file was chosen and saved successfully)
      */
     private final Func0 a_saveAs = new Func0() {
         public final boolean run() {
@@ -532,7 +526,7 @@ public final class SimpleGUI {
 
     /**
      * Called when the user clicks "File", then "Save".
-     * @return true iff the file was saved successfully.
+     * (Returns true iff the file was saved successfully)
      */
     private final Func0 a_save = new Func0() {
         public final boolean run() {
@@ -544,7 +538,7 @@ public final class SimpleGUI {
 
     /**
      * Called when the user clicks "File", then "Quit".
-     * @return false iff the user cancels the Quit operation.
+     * (Returns false iff the user cancels the Quit operation)
      */
     private final Func0 a_quit = new Func0() {
         public final boolean run() {
@@ -606,10 +600,7 @@ public final class SimpleGUI {
         }
     }
 
-    /**
-     * Called when the user expands the "Run" menu.
-     * @return true
-     */
+    /** Called when the user expands the "Run" menu; always returns true. */
     private final Func0 a_run = new Func0() {
         public final boolean run() {
             synchronized (SimpleGUI.this) {
@@ -624,10 +615,7 @@ public final class SimpleGUI {
         }
     };
 
-    /**
-     * Called when the user clicks the "Run the latest command" button.
-     * @return true
-     */
+    /** Called when the user clicks the "Run the latest command" button; always returns true. */
     private final Func0 a_runLatest = new Func0() {
         public final boolean run() {
             synchronized (SimpleGUI.this) {
@@ -642,10 +630,7 @@ public final class SimpleGUI {
         }
     };
 
-    /**
-     * Called when the user clicks the "Stop" button.
-     * @return true
-     */
+    /** Called when the user clicks the "Stop" button; always returns true. */
     private final Func0 a_stop = new Func0() {
         public final boolean run() {
             synchronized (SimpleGUI.this) {
@@ -657,7 +642,7 @@ public final class SimpleGUI {
 
     /**
      * Called when the user clicks the "Show the latest instance" button.
-     * @return true iff there was a latest instance to show.
+     * (returns true iff there was a latest instance to show)
      */
     private final Func0 a_showLatestInstance = new Func0() {
         public final boolean run() {
@@ -686,10 +671,7 @@ public final class SimpleGUI {
         }
     };
 
-    /**
-     * Called when the user expands the "Window" menu.
-     * @return true
-     */
+    /** Called when the user expands the "Window" menu; always returns true. */
     private final Func0 a_window = new Func0() {
         public final boolean run() {
             synchronized (SimpleGUI.this) {
@@ -717,10 +699,7 @@ public final class SimpleGUI {
         }
     };
 
-    /**
-     * Called when the user clicks "Help", then "About".
-     * @return true
-     */
+    /** Called when the user clicks "Help", then "About"; always returns true. */
     private final Func0 a_showAbout = new Func0() {
         public final boolean run() {
             synchronized (SimpleGUI.this) {
@@ -742,10 +721,7 @@ public final class SimpleGUI {
         }
     };
 
-    /**
-     * Called when the user clicks "Help", then "Show the change log".
-     * @return true
-     */
+    /** Called when the user clicks "Help", then "Show the change log"; always returns true. */
     private final Func0 a_showChangeLog = new Func0() {
         public final boolean run() {
             synchronized (SimpleGUI.this) {
