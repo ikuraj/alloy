@@ -93,6 +93,9 @@ public final class SimpleGUI {
 
     /** The current change log. */
     private static final String[] changelog = new String[]{
+    	"2006 Oct 9, 2PM:",
+    	"  Added BerkMin (via pipe), MiniSat2+Simp (via pipe), and MiniSat2 (via pipe).",
+    	"  The pipe-based method is now default, since it's more stable than JNI.",
         "2006 Sep 29 6:30PM:",
         "  Major improvements to the look-and-feel components on Mac OS X.",
         "2006 Spe 29 10AM:",
@@ -155,28 +158,33 @@ public final class SimpleGUI {
         if (index>=0) return filename.substring(index+1); else return filename;
     }
 
-    //====== instance fields (access to these must be synchronized) =========//
+    //====== final instance fields ==========================================//
 
     /** The JFrame for the main window. */
-    private JFrame frame;
+    private final JFrame frame;
 
     /** The "File", "Window", and "Run" menus. */
-    private OurMenu filemenu, windowmenu, runmenu;
+    private final OurMenu filemenu, windowmenu, runmenu;
 
     /** The "Run" and "Stop" buttons. */
-    private JButton runbutton, stopbutton;
+    private final JButton runbutton, stopbutton;
 
     /** The JLabel that displays the current line/column position, etc. */
-    private JLabel status;
+    private final JLabel status;
 
     /** The JTextArea containing the editor buffer. */
-    private JTextArea text;
+    private final JTextArea text;
 
     /** The JTextPane containing the error messages and success messages. */
-    private JTextPane log;
+    private final JTextPane log;
 
     /** The rich styles to use when writing into the JTextPane. */
-    private Style styleRegular,styleBold,styleRed,styleGreen,styleGray;
+    private final Style styleRegular,styleBold,styleRed,styleGreen,styleGray;
+
+    /** The factory that constructs Visualizer windows. */
+    private final KodVizGUIFactory factory;
+
+    //====== instance fields (access to these must be synchronized) =========//
 
     /** The filename for the content currently in the text editor. ("" if the text editor is unnamed) */
     private String latestName="";
@@ -205,9 +213,6 @@ public final class SimpleGUI {
     /** The current choice of SAT solver. */
     private SolverChoice satOPTION=SolverChoice.MiniSatSimpPIPE;
 
-    /** The factory that constructs Visualizer windows. */
-    private KodVizGUIFactory factory;
-
     //====== helper methods =================================================//
 
     /** Inserts "filename" as into the "recently opened file list". */
@@ -219,7 +224,7 @@ public final class SimpleGUI {
     }
 
     /** Updates the status bar at the bottom of the screen. */
-    private synchronized final void my_caret() {
+    private synchronized final void updateStatusBar() {
         try {
             if (Util.onMac()) {
                 if (modified) frame.getRootPane().putClientProperty("windowModified",Boolean.TRUE);
@@ -247,19 +252,19 @@ public final class SimpleGUI {
         if (!ans.booleanValue()) return true; else return a_save.run();
     }
 
-    /** Call SwingUtilities.invokeLater() on the runnable. */
+    /** Run r using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeLater() for it. */
     private static void invokeLater(Runnable r) {
         if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
         SwingUtilities.invokeLater(r);
     }
 
-    /** Call SwingUtilities.invokeLater() on the function. */
+    /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeLater() for it. */
     private static void invokeLater(final Func0 func) {
         if (SwingUtilities.isEventDispatchThread()) { func.run(); return; }
         SwingUtilities.invokeLater(new Runnable() { public final void run() { func.run(); }});
     }
 
-    /** Call SwingUtilities.invokeLater() on the function with the given argument. */
+    /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeLater() for it. */
     private static void invokeLater(final Func1 func, final String arg) {
         if (SwingUtilities.isEventDispatchThread()) { func.run(arg); return; }
         SwingUtilities.invokeLater(new Runnable() { public final void run() { func.run(arg); }});
@@ -274,7 +279,8 @@ public final class SimpleGUI {
         }
         StyledDocument doc=log.getStyledDocument();
         String realmsg = (doc.getLength()==0) ? msg.trim() : msg;
-        try { doc.insertString(doc.getLength(), realmsg+"\n", style); } catch (BadLocationException e) { }
+        try { doc.insertString(doc.getLength(), realmsg+"\n", style); }
+        catch (BadLocationException e) { Util.harmless("SimpleGUI.log()",e); }
         log.setCaretPosition(doc.getLength());
     }
 
@@ -290,7 +296,7 @@ public final class SimpleGUI {
         try {
             doc.insertString(doc.getLength(),realmsg1,style1);
             doc.insertString(doc.getLength(),msg2+"\n",styleRegular);
-        } catch (BadLocationException e) { }
+        } catch (BadLocationException e) { Util.harmless("SimpleGUI.log()",e); } 
         log.setCaretPosition(doc.getLength());
     }
 
@@ -386,8 +392,7 @@ public final class SimpleGUI {
                 latestName="";
                 text.setText("");
                 frame.setTitle("Alloy4: build date "+Version.buildDate());
-                compiled=false;
-                if (modified) {modified=false; my_caret();}
+                compiled=false; modified=false; updateStatusBar();
             }
             return true;
         }
@@ -427,10 +432,8 @@ public final class SimpleGUI {
                     text.setCaretPosition(0);
                     log("\nFile \""+shortFileName(f)+"\" successfully loaded.", styleGreen);
                     frame.setTitle("Alloy File: "+f);
-                    latestName=f;
-                    addHistory(f);
-                    compiled=false;
-                    if (modified) {modified=false; my_caret();}
+                    addHistory(latestName=f);
+                    compiled=false; modified=false; updateStatusBar();
                     // The following is needed, in case this message came from another window.
                     frame.setExtendedState(JFrame.NORMAL); frame.requestFocus(); frame.toFront();
                 } catch(FileNotFoundException e) { log("\nCannot open the file! "+e.toString(), styleGreen); return false;
@@ -490,7 +493,8 @@ public final class SimpleGUI {
                     out.close();
                     bw.close();
                     fw.close();
-                    if (modified) {modified=false; my_caret();}
+                    modified=false;
+                    updateStatusBar();
                     log("\nFile \""+shortFileName(filename)+"\" successfully saved.", styleGreen);
                     latestName=filename;
                     addHistory(filename);
@@ -582,7 +586,7 @@ public final class SimpleGUI {
                 int c=text.getLineStartOffset(e.pos.y-1)+e.pos.x-1;
                 text.setSelectionStart(c);
                 text.setSelectionEnd(c+1);
-            } catch(BadLocationException ex) {}
+            } catch(BadLocationException ex) { Util.harmless("tryCompile()",ex); }
             String msg=e.toString();
             if (msg.matches("^.*There are [0-9]* possible tokens that can appear here:.*$")) {
                 // Special handling, to display that particular message in a clearer style.
@@ -773,7 +777,8 @@ public final class SimpleGUI {
         System.setProperty("com.apple.mrj.application.live-resize","true");
         System.setProperty("com.apple.macos.useScreenMenuBar","true");
         System.setProperty("apple.laf.useScreenMenuBar","true");
-        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
+        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
+        catch (Exception e) { Util.harmless("SimpleGUI()",e); }
 
         // Find out the appropriate Alloy directory
         final String alloyHome=Util.alloyHome();
@@ -930,17 +935,17 @@ public final class SimpleGUI {
         text.setTabSize(3);
         text.setFont(OurUtil.getFont());
         text.addCaretListener(new CaretListener() {
-            public final void caretUpdate(CaretEvent e) {my_caret();}
+            public final void caretUpdate(CaretEvent e) {updateStatusBar();}
         });
         text.getDocument().addDocumentListener(new DocumentListener(){
             public final void insertUpdate(DocumentEvent e) {
-                synchronized(SimpleGUI.this) { compiled=false; if (!modified) {modified=true;my_caret();} }
+                synchronized(SimpleGUI.this) { compiled=false; if (!modified) {modified=true;updateStatusBar();} }
             }
             public final void removeUpdate(DocumentEvent e) {
-                synchronized(SimpleGUI.this) { compiled=false; if (!modified) {modified=true;my_caret();} }
+                synchronized(SimpleGUI.this) { compiled=false; if (!modified) {modified=true;updateStatusBar();} }
             }
             public final void changedUpdate(DocumentEvent e) {
-                synchronized(SimpleGUI.this) { compiled=false; if (!modified) {modified=true;my_caret();} }
+                synchronized(SimpleGUI.this) { compiled=false; if (!modified) {modified=true;updateStatusBar();} }
             }
         });
         JComponent textPane = OurUtil.makeJScrollPane(text);
