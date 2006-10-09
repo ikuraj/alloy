@@ -307,7 +307,7 @@ public final class SimpleGUI implements MessageHandler {
             bw.close();
             fw.close();
             modified(false);
-            log("\nContent saved to file \""+filename+"\"", styleGreen);
+            log("\nFile \""+shortFileName(filename)+"\" successfully saved.", styleGreen);
             latestName=filename;
             addHistory(filename);
             frame.setTitle("Alloy File: "+latestName);
@@ -349,13 +349,13 @@ public final class SimpleGUI implements MessageHandler {
     private synchronized boolean thread_stillRunning() { return current_thread!=null; }
     private synchronized void thread_stop() {
         /*
-        System.out.println("START...");
-        for(StackTraceElement e: current_thread.getStackTrace()) {
-            System.out.println("  ENTRY: " + e.toString());
-        }
-        System.out.println("Done.\n\n");
-        System.out.flush();
-        */
+         System.out.println("START...");
+         for(StackTraceElement e: current_thread.getStackTrace()) {
+         System.out.println("  ENTRY: " + e.toString());
+         }
+         System.out.println("Done.\n\n");
+         System.out.flush();
+         */
         if (current_thread!=null) { AlloyBridge.stopped=true; ViaPipe.forceTerminate(); }
     }
 
@@ -363,7 +363,7 @@ public final class SimpleGUI implements MessageHandler {
     private String latestName = "";
 
     /** The latest FileOpen directory. */
-    private String fileOpenDirectory = new File("models").getAbsolutePath();
+    private String fileOpenDirectory;
 
     /** The JFrame for the main window. */
     private JFrame frame;
@@ -393,24 +393,24 @@ public final class SimpleGUI implements MessageHandler {
         System.setProperty("apple.laf.useScreenMenuBar","true");
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception e) { }
         try {
-        	File lockfile = new File(Util.alloyHome() + File.separatorChar + "lock");
-        	FileChannel lockchannel = new RandomAccessFile(lockfile, "rw").getChannel();
-        	lock = lockchannel.tryLock();
-        	if (lock==null) {
-        		String dest = Util.alloyHome() + File.separatorChar + "msg";
-        		if (args.length==1) {
-        			File f=new File(args[0]);
-        			if (f.exists()) Util.lockThenWrite(dest, "open:"+f.getAbsolutePath());
-        		} else if (args.length==2 && args[0].equals("-open")) {
-        			File f=new File(args[1]);
-        			if (f.exists()) Util.lockThenWrite(dest, "open:"+f.getAbsolutePath());
-        		} else {
-        			Util.lockThenWrite(dest, "open:");
-        		}
-        		System.exit(0); // Just in case some AWT thread got started, perhaps due to UIManager.setLookAndFeel().
-        	}
+            File lockfile = new File(Util.alloyHome() + File.separatorChar + "lock");
+            FileChannel lockchannel = new RandomAccessFile(lockfile, "rw").getChannel();
+            lock = lockchannel.tryLock();
+            if (lock==null) {
+                String dest = Util.alloyHome() + File.separatorChar + "msg";
+                if (args.length==1) {
+                    File f=new File(args[0]);
+                    if (f.exists()) Util.lockThenWrite(dest, "open:"+f.getAbsolutePath());
+                } else if (args.length==2 && args[0].equals("-open")) {
+                    File f=new File(args[1]);
+                    if (f.exists()) Util.lockThenWrite(dest, "open:"+f.getAbsolutePath());
+                } else {
+                    Util.lockThenWrite(dest, "open:");
+                }
+                System.exit(0); // Just in case some AWT thread got started, perhaps due to UIManager.setLookAndFeel().
+            }
         } catch(IOException ex) {
-        	OurDialog.fatal(null, "A fatal error has occurred! "+ex.getMessage());
+            OurDialog.fatal(null, "A fatal error has occurred! "+ex.getMessage());
         }
         SwingUtilities.invokeLater(new Runnable() {
             public final void run() { new SimpleGUI(args); }
@@ -471,6 +471,11 @@ public final class SimpleGUI implements MessageHandler {
         return handleMessage(this,"save")!=null;
     }
 
+    public static String shortFileName(String name) {
+        int index=name.lastIndexOf(File.separatorChar);
+        if (index>=0) return name.substring(index+1); else return name;
+    }
+
     /**
      * Synchronized helper method that opens a new file.
      *
@@ -494,7 +499,7 @@ public final class SimpleGUI implements MessageHandler {
             fr.close();
             text.setText(sb.toString());
             text.setCaretPosition(0);
-            log("\nFile \""+f+"\" successfully loaded.", styleGreen);
+            log("\nFile \""+shortFileName(f)+"\" successfully loaded.", styleGreen);
             frame.setTitle("Alloy File: "+f);
             latestName=f;
             addHistory(f);
@@ -531,17 +536,21 @@ public final class SimpleGUI implements MessageHandler {
             modified(false);
             return Boolean.TRUE;
         }
-        if ("open".equals(x)) {
+        if ("open".equals(x) || "openbuiltin".equals(x)) {
             if (!my_confirm()) return null;
-            JFileChooser open=new JFileChooser(fileOpenDirectory);
+            JFileChooser open;
+            if ("open".equals(x))
+                open=new JFileChooser(fileOpenDirectory);
+            else
+                open=new JFileChooser(Util.alloyHome()+File.separatorChar+"models");
             open.setFileFilter(filterALS);
             if (open.showOpenDialog(frame)!=JFileChooser.APPROVE_OPTION) return null;
-            fileOpenDirectory=open.getSelectedFile().getParent(); set("lastdir",fileOpenDirectory);
+            if ("open".equals(x)) fileOpenDirectory=open.getSelectedFile().getParent();
             my_open(open.getSelectedFile().getPath());
             return Boolean.TRUE;
         }
         if ("open:".equals(x)) {
-        	frame.setExtendedState(JFrame.NORMAL); frame.toFront(); // In case the "open:" message came from elsewhere
+            frame.setExtendedState(JFrame.NORMAL); frame.toFront(); // In case the "open:" message came from elsewhere
             return Boolean.TRUE;
         }
         if (x instanceof String && ((String)x).startsWith("open:")) {
@@ -555,7 +564,7 @@ public final class SimpleGUI implements MessageHandler {
             JFileChooser open=new JFileChooser(fileOpenDirectory);
             open.setFileFilter(filterALS);
             if (open.showSaveDialog(frame)!=JFileChooser.APPROVE_OPTION) return null;
-            fileOpenDirectory=open.getSelectedFile().getParent(); set("lastdir",fileOpenDirectory);
+            fileOpenDirectory=open.getSelectedFile().getParent();
             String f=open.getSelectedFile().getPath();
             return my_save(f,false);
         }
@@ -657,7 +666,7 @@ public final class SimpleGUI implements MessageHandler {
      * <p/> This method is called by the SimpleGUI's constructor to actually initialize everything.
      * It will create a GUI window, and populate it with two JTextArea and one JMenuBar.
      */
-    private SolverChoice satOPTION = SolverChoice.BerkMinPIPE;
+    private SolverChoice satOPTION = SolverChoice.MiniSatSimpPIPE;
     private synchronized SolverChoice satOPTION() { return satOPTION; }
 
     private static void welcome(JFrame parent) {
@@ -691,8 +700,8 @@ public final class SimpleGUI implements MessageHandler {
         public final void run() {
             while(true) {
                 try {
-                   String msg=Util.lockThenReadThenErase(Util.alloyHome()+File.separatorChar+"msg");
-                   if (msg.startsWith("open:")) handleMessage(null,msg);
+                    String msg=Util.lockThenReadThenErase(Util.alloyHome()+File.separatorChar+"msg");
+                    if (msg.startsWith("open:")) handleMessage(null,msg);
                 } catch(IOException e) { }
                 try {
                     Thread.sleep(400);
@@ -705,7 +714,7 @@ public final class SimpleGUI implements MessageHandler {
 
         String alloyHome=Util.alloyHome();
         String binary=alloyHome+fs+"binary";
-        fileOpenDirectory=alloyHome+fs+"models";
+        fileOpenDirectory=(new File(System.getProperty("user.home"))).getAbsolutePath();
         // JAR
         Util.copy(false, alloyHome, "alloy4.jar");
         // JNI
@@ -720,51 +729,51 @@ public final class SimpleGUI implements MessageHandler {
         Util.copy(false,binary,"jpeg.dll","libexpat.dll","libexpatw.dll","zlib1.dll","z.dll","freetype6.dll","png.dll");
         // MODELS
         Util.copy(false,alloyHome,
-        "models/examples/algorithms/dijkstra.als",
-        "models/examples/algorithms/messaging.als",
-        "models/examples/algorithms/opt_spantree.als",
-        "models/examples/algorithms/peterson.als",
-        "models/examples/algorithms/ringlead.als",
-        "models/examples/algorithms/s_ringlead.als",
-        "models/examples/algorithms/stable_mutex_ring.als",
-        "models/examples/algorithms/stable_orient_ring.als",
-        "models/examples/algorithms/stable_ringlead.als",
-        "models/examples/case_studies/INSLabel.als",
-        "models/examples/case_studies/chord.als",
-        "models/examples/case_studies/chord2.als",
-        "models/examples/case_studies/chordbugmodel.als",
-        "models/examples/case_studies/com.als",
-        "models/examples/case_studies/firewire.als",
-        "models/examples/case_studies/ins.als",
-        "models/examples/case_studies/iolus.als",
-        "models/examples/case_studies/sync.als",
-        "models/examples/case_studies/syncimpl.als",
-        "models/examples/puzzles/farmer.als",
-        "models/examples/puzzles/handshake.als",
-        "models/examples/puzzles/hanoi.als",
-        "models/examples/systems/file_system.als",
-        "models/examples/systems/javatypes_soundness.als",
-        "models/examples/systems/lists.als",
-        "models/examples/systems/marksweepgc.als",
-        "models/examples/systems/views.als",
-        "models/examples/toys/birthday.als",
-        "models/examples/toys/ceilingsAndFloors.als",
-        "models/examples/toys/genealogy.als",
-        "models/examples/toys/grandpa.als",
-        "models/examples/toys/javatypes.als",
-        "models/examples/toys/life.als",
-        "models/examples/toys/numbering.als",
-        "models/examples/toys/railway.als",
-        "models/examples/toys/trivial.als",
-        "models/examples/tutorial/farmer.als",
-        "models/util/boolean.als",
-        "models/util/graph.als",
-        "models/util/integer.als",
-        "models/util/natural.als",
-        "models/util/ordering.als",
-        "models/util/relation.als",
-        "models/util/seqrel.als",
-        "models/util/sequence.als",
+                "models/examples/algorithms/dijkstra.als",
+                "models/examples/algorithms/messaging.als",
+                "models/examples/algorithms/opt_spantree.als",
+                "models/examples/algorithms/peterson.als",
+                "models/examples/algorithms/ringlead.als",
+                "models/examples/algorithms/s_ringlead.als",
+                "models/examples/algorithms/stable_mutex_ring.als",
+                "models/examples/algorithms/stable_orient_ring.als",
+                "models/examples/algorithms/stable_ringlead.als",
+                "models/examples/case_studies/INSLabel.als",
+                "models/examples/case_studies/chord.als",
+                "models/examples/case_studies/chord2.als",
+                "models/examples/case_studies/chordbugmodel.als",
+                "models/examples/case_studies/com.als",
+                "models/examples/case_studies/firewire.als",
+                "models/examples/case_studies/ins.als",
+                "models/examples/case_studies/iolus.als",
+                "models/examples/case_studies/sync.als",
+                "models/examples/case_studies/syncimpl.als",
+                "models/examples/puzzles/farmer.als",
+                "models/examples/puzzles/handshake.als",
+                "models/examples/puzzles/hanoi.als",
+                "models/examples/systems/file_system.als",
+                "models/examples/systems/javatypes_soundness.als",
+                "models/examples/systems/lists.als",
+                "models/examples/systems/marksweepgc.als",
+                "models/examples/systems/views.als",
+                "models/examples/toys/birthday.als",
+                "models/examples/toys/ceilingsAndFloors.als",
+                "models/examples/toys/genealogy.als",
+                "models/examples/toys/grandpa.als",
+                "models/examples/toys/javatypes.als",
+                "models/examples/toys/life.als",
+                "models/examples/toys/numbering.als",
+                "models/examples/toys/railway.als",
+                "models/examples/toys/trivial.als",
+                "models/examples/tutorial/farmer.als",
+                "models/util/boolean.als",
+                "models/util/graph.als",
+                "models/util/integer.als",
+                "models/util/natural.als",
+                "models/util/ordering.als",
+                "models/util/relation.als",
+                "models/util/seqrel.als",
+                "models/util/sequence.als",
         "models/util/ternary.als");
 
         int screenWidth=Toolkit.getDefaultToolkit().getScreenSize().width;
@@ -782,6 +791,7 @@ public final class SimpleGUI implements MessageHandler {
             OurMenu filemenu = bar.addMenu("File", true, KeyEvent.VK_F, "file");
             filemenu.addMenuItem(null, "New",      true, KeyEvent.VK_N, KeyEvent.VK_N, "new");
             filemenu.addMenuItem(null, "Open",     true, KeyEvent.VK_O, KeyEvent.VK_O, "open");
+            filemenu.addMenuItem(null, "Open Builtin Models", true, KeyEvent.VK_B, -1, "openbuiltin");
             filemenu.addMenuItem(null, "Save",     true, KeyEvent.VK_S, KeyEvent.VK_S, "save");
             filemenu.addMenuItem(null, "Save As",  true, KeyEvent.VK_A, -1,            "saveas");
             if (!Util.onMac()) filemenu.addMenuItem(null, "Quit", true, KeyEvent.VK_Q, -1, "quit");
@@ -895,8 +905,8 @@ public final class SimpleGUI implements MessageHandler {
         // Generate some informative log messages
         log("Alloy4: build date "+Version.buildDate(), styleGreen);
         if (satOPTION==SolverChoice.MiniSatJNI) log("\nSolver: MiniSAT using JNI", styleGreen);
-            else if (satOPTION==SolverChoice.ZChaffJNI) log("\nSolver: ZChaff using JNI", styleGreen);
-            else if (satOPTION==SolverChoice.SAT4J) log("\nSolver: SAT4J", styleGreen);
+        else if (satOPTION==SolverChoice.ZChaffJNI) log("\nSolver: ZChaff using JNI", styleGreen);
+        else if (satOPTION==SolverChoice.SAT4J) log("\nSolver: SAT4J", styleGreen);
         if (Util.onMac()) {
             log("\nMac OS X detected.", styleGreen);
             MacUtil.addApplicationListener(this);
@@ -909,11 +919,11 @@ public final class SimpleGUI implements MessageHandler {
         // If commandline tells you to load a file, load it.
 
         if (args.length==1) {
-        	File f=new File(args[0]);
+            File f=new File(args[0]);
             if (f.exists()) my_open(f.getAbsolutePath());
         } else if (args.length==2 && args[0].equals("-open")) {
-        	File f=new File(args[1]);
-        	if (f.exists()) my_open(f.getAbsolutePath());
+            File f=new File(args[1]);
+            if (f.exists()) my_open(f.getAbsolutePath());
         }
 
         InstanceWatcher r=new InstanceWatcher();

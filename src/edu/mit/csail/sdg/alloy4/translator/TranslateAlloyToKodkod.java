@@ -1168,6 +1168,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         IdentitySet<Relation> rels=new IdentitySet<Relation>();
         for(int ui=units.size()-1; ui>=0; ui--) { // Goes backwards since we want the ROOT MODULE at the end
             Unit u=units.get(ui);
+            if (ui!=0 && u.sigs.size()==0) continue;
             String n=u.aliases.get(0);
             if (n.length()==0 || n.equals("this"))
                 out.print("\n<module>\n");
