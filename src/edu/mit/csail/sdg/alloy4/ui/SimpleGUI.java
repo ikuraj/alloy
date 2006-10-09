@@ -264,6 +264,7 @@ public final class SimpleGUI implements MessageHandler {
                 new File(tempdir).delete(); // In case it was UNSAT, or was TRIVIALLY SAT. Or cancelled.
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     logButton("Click here to display this instance", tempdir+fs+(index+1)+".dot", tempdir+fs+(index+1)+".xml");
+                    setLatestInstance(tempdir+fs+(index+1));
                 }
                 if (result.size()>1) {
                     log("\n" + result.size() + " commands were completed. The results are:", styleGreen);
@@ -272,9 +273,16 @@ public final class SimpleGUI implements MessageHandler {
                         i++;
                         if (b==null) log("#"+i+": CANCELED", styleRegular);
                         else switch(b) {
-                        case SAT: logLink("#"+i+": SAT (Click here to see the instance)", tempdir+fs+i+".dot", tempdir+fs+i+".xml"); break;
-                        case TRIVIALLY_SAT: log("#"+i+": SAT", styleRegular); break;
-                        case UNSAT: case TRIVIALLY_UNSAT: log("#"+i+": UNSAT", styleRegular); break;
+                        case SAT:
+                        	logLink("#"+i+": SAT (Click here to see the instance)", tempdir+fs+i+".dot", tempdir+fs+i+".xml");
+                            setLatestInstance(tempdir+fs+i);
+                        	break;
+                        case TRIVIALLY_SAT:
+                        	log("#"+i+": SAT (Trivially SAT)", styleRegular);
+                        	break;
+                        case UNSAT: case TRIVIALLY_UNSAT:
+                        	log("#"+i+": UNSAT", styleRegular);
+                        	break;
                         default: log("#"+i+": CANCELED", styleRegular);
                         }
                     }
@@ -342,10 +350,10 @@ public final class SimpleGUI implements MessageHandler {
     /** Synchronized helper method that returns true if and only if the "modified" flag is true */
     private synchronized boolean modified() { return modified; }
 
-    private JButton stopbutton=null;
+    private JButton runbutton=null,stopbutton=null;
     private Thread current_thread=null;
-    private synchronized void thread_reportStarting(Thread x) { runmenu.setEnabled(false); stopbutton.setVisible(true); current_thread=x; }
-    private synchronized void thread_reportTermination() { runmenu.setEnabled(true); stopbutton.setVisible(false); current_thread=null; }
+    private synchronized void thread_reportStarting(Thread x) { runmenu.setEnabled(false); runbutton.setVisible(false); stopbutton.setVisible(true); current_thread=x; }
+    private synchronized void thread_reportTermination() { runmenu.setEnabled(true); runbutton.setVisible(true); stopbutton.setVisible(false); current_thread=null; }
     private synchronized boolean thread_stillRunning() { return current_thread!=null; }
     private synchronized void thread_stop() {
         /*
@@ -429,6 +437,7 @@ public final class SimpleGUI implements MessageHandler {
                 log("...The previous analysis is still running...", styleRed);
                 return;
             }
+            setLatestCommand(index);
             AlloyBridge.stopped=false;
             Runner r=new Runner(new StringReader(text.getText()), index);
             Thread t=new Thread(r);
@@ -525,6 +534,65 @@ public final class SimpleGUI implements MessageHandler {
         }
     }
 
+    private synchronized Unit tryCompile() {
+    	Unit u;
+        try {
+            Reader isr=new StringReader(text.getText());
+            u=AlloyParser.alloy_parseStream(isr);
+            runmenu.removeAll();
+            if (u.runchecks.size()==0) {
+                JMenuItem y=new JMenuItem("There are no commands in this model!");
+                runmenu.add(y);
+                return u;
+            }
+            if (u.runchecks.size()>1) {
+                JMenuItem y=new JMenuItem("All");
+                y.addActionListener(new RunListener(-1));
+                runmenu.add(y);
+                runmenu.add(new JSeparator());
+            }
+            for(int i=0; i<u.runchecks.size(); i++) {
+                String label=u.runchecks.get(i).toString();
+                JMenuItem y=new JMenuItem(label);
+                y.addActionListener(new RunListener(i));
+                runmenu.add(y);
+            }
+            return u;
+        }
+        catch(Err e) {
+            if (e.pos!=null && e.pos.y>0 && e.pos.x>0) try {
+                int c=text.getLineStartOffset(e.pos.y-1)+e.pos.x-1;
+                text.setSelectionStart(c);
+                text.setSelectionEnd(c+1);
+            } catch(BadLocationException ex) {}
+            String msg=e.toString();
+            if (msg.matches("^.*There are [0-9]* possible tokens that can appear here:.*$")) {
+                String head=msg.replaceAll("^(.*There are [0-9]* possible tokens that can appear here:).*$","$1");
+                String tail=msg.replaceAll("^.*There are [0-9]* possible tokens that can appear here:(.*)$","$1");
+                log("\nCannot parse the model! "+head, styleRed, tail);
+            }
+            else
+                log("\nCannot parse the model! "+e.toString(), styleRed);
+            return null;
+        }
+        catch(Exception e) {
+            log("\nCannot parse the model! "+e.toString(), styleRed);
+            return null;
+        }
+    }
+
+    private int latestCommand=0;
+    private synchronized void setLatestCommand(int i) { latestCommand=i; }
+    private synchronized int getLatestCommand() { return latestCommand; }
+
+    private String latestInstance="";
+    private synchronized void setLatestInstance(String x) { latestInstance=x; }
+    private synchronized void showLatestInstance() {
+    	if (latestInstance.length()==0)
+    		log("\nNo previous instances are available for viewing.", styleRed);
+    	else factory.create(latestInstance+".dot", new File(latestInstance+".xml"), frame);
+    }
+
     /** Convention for this method: return==null means failure, return!=null means success. */
     public synchronized Object handleMessage(Object caller, String x) {
         if ("new".equals(x)) {
@@ -568,56 +636,23 @@ public final class SimpleGUI implements MessageHandler {
             String f=open.getSelectedFile().getPath();
             return my_save(f,false);
         }
+        if ("runLatest".equals(x)) {
+            Unit u=tryCompile();
+            if (u!=null) {
+               int i=getLatestCommand();
+               if (i>=u.runchecks.size()) i=u.runchecks.size()-1;
+               if (i<0) log("\nThere are no commands in this model!", styleRed);
+               else (new RunListener(i)).actionPerformed(null);
+            }
+        }
         if ("run".equals(x)) {
             if (compiled()) return Boolean.TRUE;
             compiled(true);
             runmenu.removeAll();
-            JMenuItem y=new JMenuItem("Cannot run any commands! See the error box below for details!");
+            JMenuItem y=new JMenuItem("Cannot run any commands! See the error message for details!");
             runmenu.add(y);
-            Unit u;
-            try {
-                Reader isr=new StringReader(text.getText());
-                u=AlloyParser.alloy_parseStream(isr);
-            }
-            catch(Err e) {
-                if (e.pos!=null && e.pos.y>0 && e.pos.x>0) try {
-                    int c=text.getLineStartOffset(e.pos.y-1)+e.pos.x-1;
-                    text.setSelectionStart(c);
-                    text.setSelectionEnd(c+1);
-                } catch(BadLocationException ex) {}
-                String msg=e.toString();
-                if (msg.matches("^.*There are [0-9]* possible tokens that can appear here:.*$")) {
-                    String head=msg.replaceAll("^(.*There are [0-9]* possible tokens that can appear here:).*$","$1");
-                    String tail=msg.replaceAll("^.*There are [0-9]* possible tokens that can appear here:(.*)$","$1");
-                    log("\nCannot parse the model! "+head, styleRed, tail);
-                }
-                else
-                    log("\nCannot parse the model! "+e.toString(), styleRed);
-                return Boolean.TRUE;
-            }
-            catch(Exception e) {
-                log("\nCannot parse the model! "+e.toString(), styleRed);
-                return Boolean.TRUE;
-            }
-            log("\nParser succeeded: there are "+u.runchecks.size()+" command(s) in this model.", styleGreen);
-            runmenu.removeAll();
-            if (u.runchecks.size()==0) {
-                y=new JMenuItem("There are no commands in this model!");
-                runmenu.add(y);
-                return Boolean.TRUE;
-            }
-            if (u.runchecks.size()>1) {
-                y=new JMenuItem("All");
-                y.addActionListener(new RunListener(-1));
-                runmenu.add(y);
-                runmenu.add(new JSeparator());
-            }
-            for(int i=0; i<u.runchecks.size(); i++) {
-                String label=u.runchecks.get(i).toString();
-                y=new JMenuItem(label);
-                y.addActionListener(new RunListener(i));
-                runmenu.add(y);
-            }
+            Unit u=tryCompile();
+            if (u!=null) log("\nParser succeeded: there are "+u.runchecks.size()+" command(s) in this model.", styleGreen);
         }
         if ("window".equals(x)) {
             OurMenu windowmenu=(OurMenu)caller;
@@ -641,6 +676,7 @@ public final class SimpleGUI implements MessageHandler {
             }
         }
         if ("showchange".equals(x)) showChangeLog();
+        if ("showLatest".equals(x)) showLatestInstance();
         if ("about".equals(x)) welcome(frame);
         if ("quit".equals(x)) if (my_confirm()) System.exit(0);
         if ("stop".equals(x)) thread_stop();
@@ -854,13 +890,18 @@ public final class SimpleGUI implements MessageHandler {
         JComponent textPane = OurUtil.makeJScrollPane(text);
 
         // Create the toolbar
+        JButton showbutton;
         JToolBar toolbar=new JToolBar();
         toolbar.setFloatable(false);
         if (!Util.onMac()) toolbar.setBackground(gray);
         toolbar.add(OurUtil.makeJButton("New","Starts a new blank model","images/24_new.gif", this, "new"));
         toolbar.add(OurUtil.makeJButton("Open","Opens an existing model","images/24_open.gif", this, "open"));
         toolbar.add(OurUtil.makeJButton("Save","Saves the current model","images/24_save.gif", this, "save"));
+        toolbar.add(runbutton=OurUtil.makeJButton("Run","Runs the latest command","images/24_execute.gif", this, "runLatest"));
         toolbar.add(stopbutton=OurUtil.makeJButton("Stop","Stops the current analysis","images/24_execute_abort2.gif", this, "stop"));
+        toolbar.add(showbutton=OurUtil.makeJButton("Visualize","Visualize the latest instance","images/24_graph.gif", this, "showLatest"));
+        runbutton.setMnemonic(KeyEvent.VK_N);
+        showbutton.setMnemonic(KeyEvent.VK_V);
         toolbar.add(Box.createHorizontalGlue());
         stopbutton.setVisible(false);
         JPanel lefthalf=new JPanel();
