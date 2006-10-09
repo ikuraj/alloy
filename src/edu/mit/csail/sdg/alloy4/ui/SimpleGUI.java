@@ -656,10 +656,7 @@ public final class SimpleGUI {
         }
     };
 
-    /**
-     * Called when the user wishes to bring this window to the foreground.
-     * @return true
-     */
+    /** Called when the user wishes to bring this window to the foreground; always returns true. */
     private final Func0 a_windowRaise = new Func0() {
         public final boolean run() {
             JFrame topframe;
