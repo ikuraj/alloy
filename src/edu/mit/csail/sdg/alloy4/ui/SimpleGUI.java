@@ -442,6 +442,7 @@ public final class SimpleGUI {
                 latestName="";
                 text.setText("");
                 frame.setTitle("Alloy4: build date "+Version.buildDate());
+                OurWindowMenu.addWindow(frame, "");
                 compiled=false; modified=false; updateStatusBar();
             }
             return true;
@@ -466,6 +467,7 @@ public final class SimpleGUI {
      */
     private final Func1 a_openFile = new Func1() {
         public final boolean run(String f) {
+            f=(new File(f)).getAbsolutePath();
             boolean result=true;
             FileReader fr=null;
             BufferedReader br=null;
@@ -481,7 +483,8 @@ public final class SimpleGUI {
                 text.setText(sb.toString());
                 text.setCaretPosition(0);
                 log("\nFile \""+shortFileName(f)+"\" successfully loaded.", styleGreen);
-                frame.setTitle("Alloy Model: "+shortFileName(f));
+                frame.setTitle("Alloy Model: "+f);
+                OurWindowMenu.addWindow(frame, f);
                 addHistory(latestName=f);
                 compiled=false; modified=false; updateStatusBar();
                 // The following is needed, in case this message came from another window.
@@ -530,6 +533,7 @@ public final class SimpleGUI {
      */
     private final Func1 a_saveFile = new Func1() {
         public final boolean run(String filename) {
+            filename=(new File(filename)).getAbsolutePath();
             try {
                 FileWriter fw=new FileWriter(filename);
                 BufferedWriter bw=new BufferedWriter(fw);
@@ -542,9 +546,9 @@ public final class SimpleGUI {
                 modified=false;
                 updateStatusBar();
                 log("\nFile \""+shortFileName(filename)+"\" successfully saved.", styleGreen);
-                latestName=filename;
-                addHistory(filename);
-                frame.setTitle("Alloy Model: "+shortFileName(latestName));
+                addHistory(latestName=filename);
+                frame.setTitle("Alloy Model: "+latestName);
+                OurWindowMenu.addWindow(frame, latestName);
             } catch(IOException e) {
                 log("\nCannot write to the file \""+filename+"\"! "+e.toString(), styleRed);
                 return false;
@@ -874,7 +878,7 @@ public final class SimpleGUI {
         int screenWidth=OurUtil.getScreenWidth(), width=screenWidth/10*8;
         int screenHeight=OurUtil.getScreenHeight(), height=screenHeight/10*8;
         frame=new JFrame("Alloy4: build date "+Version.buildDate());
-        OurWindowMenu.addWindow(frame);
+        OurWindowMenu.addWindow(frame,"");
 
         // Create the menu bar
         OurMenuBar bar=new OurMenuBar();
