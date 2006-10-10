@@ -753,7 +753,8 @@ public final class SimpleGUI {
             if (name.length()==0) {
                 log("\nNo previous instances are available for viewing.", styleRed); return false;
             } else {
-                new KodVizGUI(name+".dot", new File(name+".xml"));
+                String xmlName=name+".xml";
+                if (!OurWindowMenu.focusByFilename(xmlName)) new KodVizGUI(name+".dot", new File(xmlName));
                 return true;
             }
         }
