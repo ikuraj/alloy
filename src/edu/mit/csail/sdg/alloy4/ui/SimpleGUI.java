@@ -39,7 +39,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -51,6 +50,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
@@ -58,7 +58,6 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
@@ -99,7 +98,7 @@ import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
  * The GUI; except noted below, methods in this class can only be called by the AWT thread.
  *
  * <p/> The methods that might get called from other threads are:
- * <br/> (1) The two log() methods and the logButton() and logLink() methods.
+ * <br/> (1) The two log() methods and the logButton(), logLink(), and the highlight() methods.
  * <br/> (2) run() method in Runner is launched from a fresh thread
  * <br/> (3) run() method in the instance watcher (in constructor) is launched from a fresh thread
  *
@@ -152,12 +151,6 @@ public final class SimpleGUI {
 
     /** The darker background color (for the MessageLog window and the Toolbar and the Status Bar, etc.) */
     private static final Color gray=Color.getHSBColor(0f,0f,0.90f);
-
-    /** FileChooser filter that forces ".ALS" extension. */
-    private static final FileFilter filterALS = new FileFilter() {
-        @Override public final boolean accept(File f) { return !f.isFile() || f.getPath().endsWith(".als"); }
-        @Override public final String getDescription() { return ".als files"; }
-    };
 
     //====== static methods =================================================//
 
@@ -304,7 +297,7 @@ public final class SimpleGUI {
      */
     private boolean my_confirm() {
         if (!modified) return true;
-        Boolean ans=OurDialog.questionSaveDiscardCancel(frame);
+        Boolean ans=OurDialog.questionSaveDiscardCancel(frame,"The current Alloy model");
         if (ans==null) return false;
         if (!ans.booleanValue()) return true; else return a_save.run();
     }
@@ -560,11 +553,10 @@ public final class SimpleGUI {
     private final Func0 a_open = new Func0() {
         public final boolean run() {
             if (!my_confirm()) return false;
-            JFileChooser open=new JFileChooser(fileOpenDirectory);
-            open.setFileFilter(filterALS);
-            if (open.showOpenDialog(frame)!=JFileChooser.APPROVE_OPTION) return false;
-            fileOpenDirectory=open.getSelectedFile().getParent();
-            return a_openFile.run(open.getSelectedFile().getPath());
+            File file=OurDialog.showFileChooser(frame,true,fileOpenDirectory,".als",".als files");
+            if (file==null) return false;
+            fileOpenDirectory=file.getParent();
+            return a_openFile.run(file.getAbsolutePath());
         }
     };
 
@@ -575,10 +567,9 @@ public final class SimpleGUI {
     private final Func0 a_openBuiltin = new Func0() {
         public final boolean run() {
             if (!my_confirm()) return false;
-            JFileChooser open=new JFileChooser(Util.alloyHome()+File.separatorChar+"models");
-            open.setFileFilter(filterALS);
-            if (open.showOpenDialog(frame)!=JFileChooser.APPROVE_OPTION) return false;
-            return a_openFile.run(open.getSelectedFile().getPath());
+            File file=OurDialog.showFileChooser(frame, true, Util.alloyHome()+File.separatorChar+"models", ".als", ".als files");
+            if (file==null) return false;
+            return a_openFile.run(file.getAbsolutePath());
         }
     };
 
@@ -618,14 +609,12 @@ public final class SimpleGUI {
      */
     private final Func0 a_saveAs = new Func0() {
         public final boolean run() {
-            JFileChooser open=new JFileChooser(fileOpenDirectory);
-            open.setFileFilter(filterALS);
-            if (open.showSaveDialog(frame)!=JFileChooser.APPROVE_OPTION) return false;
-            File file=open.getSelectedFile();
+            File file=OurDialog.showFileChooser(frame,false,fileOpenDirectory,".als",".als files");
+            if (file==null) return false;
             String filename=file.getAbsolutePath();
             if (file.exists() && !OurDialog.questionOverwrite(frame,filename)) return false;
             if (!a_saveFile.run(filename)) return false;
-            fileOpenDirectory=open.getSelectedFile().getParent();
+            fileOpenDirectory=file.getParent();
             return true;
         }
     };
@@ -673,15 +662,16 @@ public final class SimpleGUI {
      * Called when we need to recompile the current text buffer (to see how many commands there are).
      * @return nonnull iff the current text buffer is successfully parsed (the resulting Unit object is returned)
      */
-    private Unit tryCompile() {
+    private Unit tryCompile(boolean reportError) {
         Unit u;
         try {
             runmenu.removeAll();
             Reader isr=new StringReader(text.getText());
             u=AlloyParser.alloy_parseStream(isr);
             if (u.runchecks.size()==0) {
-                //runmenu.setEnabled(false);
-                runmenu.add(new JMenuItem("No commands to run"));
+                JMenuItem y=new JMenuItem("No commands to run");
+                y.setEnabled(false);
+                runmenu.add(y);
                 return u;
             }
             if (u.runchecks.size()>1) {
@@ -698,6 +688,7 @@ public final class SimpleGUI {
             return u;
         }
         catch(Err e) {
+            if (!reportError) return null;
             runmenu.add(new JMenuItem("Cannot run any commands! See the error message for details!"));
             highlight(e);
             String msg=e.toString();
@@ -711,6 +702,7 @@ public final class SimpleGUI {
             return null;
         }
         catch(Exception e) {
+            if (!reportError) return null;
             runmenu.add(new JMenuItem("Cannot run any commands! See the error message for details!"));
             log("\nCannot parse the model! "+e.toString(), styleRed);
             return null;
@@ -721,7 +713,7 @@ public final class SimpleGUI {
     private final Func0 a_run = new Func0() {
         public final boolean run() {
             if (compiled) return true;
-            Unit u=tryCompile();
+            Unit u=tryCompile(true);
             if (u!=null) {
                 compiled=true;
                 log("\nParser succeeded: there are "+u.runchecks.size()+" command(s) in this model.", styleGreen);
@@ -733,7 +725,7 @@ public final class SimpleGUI {
     /** Called when the user clicks the "Run the latest command" button; always returns true. */
     private final Func0 a_runLatest = new Func0() {
         public final boolean run() {
-            Unit u=tryCompile();
+            Unit u=tryCompile(true);
             if (u!=null) {
                 if (latestCommand>=u.runchecks.size()) latestCommand=u.runchecks.size()-1;
                 if (latestCommand<0) {latestCommand=0;log("\nThere are no commands to run.", styleRed);}
@@ -1031,6 +1023,7 @@ public final class SimpleGUI {
             // TODO: code copied from Java SDK
             private final Color color = new Color(0.9f, 0.4f, 0.4f);
             public void paint(Graphics g, int start, int end, Shape shape, JTextComponent text) {
+                Color oldcolor=g.getColor();
                 g.setColor(color);
                 Rectangle box = shape.getBounds();
                 try {
@@ -1046,13 +1039,13 @@ public final class SimpleGUI {
                         g.fillRect(box.x, b.y, b.x-box.x, b.height);
                     }
                 } catch (BadLocationException e) { Util.harmless("highlightPainter",e); }
+                g.setColor(oldcolor);
             }
         };
 
         // Create the text editor
         textListener=new DocumentListener(){
             public final void insertUpdate(DocumentEvent e) {
-                //runmenu.setEnabled(true);
                 highlighter.removeAllHighlights();
                 compiled=false; if (!modified) {modified=true;updateStatusBar();}
             }
@@ -1140,6 +1133,16 @@ public final class SimpleGUI {
             if (f.exists()) a_openFile.run(f.getAbsolutePath());
         }
 
+        // Start an idleness thread (Must make sure this is javax.swing.Timer rather than java.util.Timer)
+        new Timer(1000, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (getCurrentThread()==null) {
+                    Unit u=tryCompile(false);
+                    if (u==null || u.runchecks.size()==0) runmenu.setEnabled(false); else runmenu.setEnabled(true);
+                }
+            }
+        }).start();
+
         // Start a separate thread to watch for other invocations of Alloy4
         Runnable r = new Runnable() {
             public final void run() {
@@ -1165,6 +1168,7 @@ public final class SimpleGUI {
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
     public static final void main(final String[] args) {
+        Thread.setDefaultUncaughtExceptionHandler(new CrashReport());
         try {
             File lockfile = new File(Util.alloyHome() + File.separatorChar + "lock");
             FileChannel lockchannel = new RandomAccessFile(lockfile, "rw").getChannel();
