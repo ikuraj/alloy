@@ -22,10 +22,13 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -50,6 +53,7 @@ import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
@@ -106,9 +110,6 @@ import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
 public final class SimpleGUI {
 
     //====== static readonly fields =========================================//
-
-    /** True iff we want to allow multiple editor windows concurrently. */
-    private static boolean MULTI_EDITOR=false;
 
     /** The current change log. */
     private static final String[] changelog = new String[]{
@@ -171,6 +172,18 @@ public final class SimpleGUI {
         return pref.get(key,"");
     }
 
+    /** Sets a persistent integer property. */
+    private static void propertySetInt(String key, int value) {
+        Preferences pref=Preferences.userNodeForPackage(SimpleGUI.class);
+        pref.putInt(key,value);
+    }
+
+    /** Reads a persistent integer property. */
+    private static int propertyGetInt(String key) {
+        Preferences pref=Preferences.userNodeForPackage(SimpleGUI.class);
+        return pref.getInt(key,-1);
+    }
+
     /** Remove the directory part from a pathname (for example, on UNIX, shortFileName("/abc/x") returns "x") */
     public static String shortFileName(String filename) {
         int index=filename.lastIndexOf(File.separatorChar);
@@ -228,7 +241,7 @@ public final class SimpleGUI {
 
     /** The DocumentListener for the editor buffer. */
     private final DocumentListener textListener;
-    
+
     /** The Highlighter to use with the editor buffer. */
     private final Highlighter highlighter;
 
@@ -423,22 +436,22 @@ public final class SimpleGUI {
         StyleConstants.setComponent(s, b);
         log("",s);
     }
-    
+
     private void highlight(final Err e) {
-    	if (!SwingUtilities.isEventDispatchThread()) {
-    		invokeAndWait(new Runnable() { public final void run() { highlight(e); }});
-    		return;
-    	}
-    	if (e.pos!=null && e.pos.y>0 && e.pos.x>0) try {
-    		int c=text.getLineStartOffset(e.pos.y-1)+e.pos.x-1;
-    		highlighter.removeAllHighlights();
-    		highlighter.addHighlight(c, c+1, highlightPainter);
-    		text.setSelectionStart(c);
-    		text.setSelectionEnd(c);
-    		text.requestFocusInWindow();
-    	} catch(BadLocationException ex) { Util.harmless("tryCompile()",ex); }
+        if (!SwingUtilities.isEventDispatchThread()) {
+            invokeAndWait(new Runnable() { public final void run() { highlight(e); }});
+            return;
+        }
+        if (e.pos!=null && e.pos.y>0 && e.pos.x>0) try {
+            int c=text.getLineStartOffset(e.pos.y-1)+e.pos.x-1;
+            highlighter.removeAllHighlights();
+            highlighter.addHighlight(c, c+1, highlightPainter);
+            text.setSelectionStart(c);
+            text.setSelectionEnd(c);
+            text.requestFocusInWindow();
+        } catch(BadLocationException ex) { Util.harmless("tryCompile()",ex); }
     }
-    
+
     //====== Message handlers ===============================================//
 
     /** Called then the user expands the "File" menu; always returns true. */
@@ -467,17 +480,13 @@ public final class SimpleGUI {
     /** Called when the user clicks "File", then "New"; always returns true. */
     private final Func0 a_new = new Func0() {
         public final boolean run() {
-            if (MULTI_EDITOR) {
-                new SimpleGUI(new String[]{});
-            } else {
-                if (!my_confirm()) return false;
-                latestName="";
-                highlighter.removeAllHighlights();
-                text.setText("");
-                frame.setTitle("Alloy4: build date "+Version.buildDate());
-                OurWindowMenu.addWindow(frame, "");
-                compiled=false; modified=false; updateStatusBar();
-            }
+            if (!my_confirm()) return false;
+            latestName="";
+            highlighter.removeAllHighlights();
+            text.setText("");
+            frame.setTitle("Alloy4: build date "+Version.buildDate());
+            OurWindowMenu.addWindow(frame, "");
+            compiled=false; modified=false; updateStatusBar();
             return true;
         }
     };
@@ -489,6 +498,7 @@ public final class SimpleGUI {
      */
     private final Func1 a_openFileIfOk = new Func1() {
         public final boolean run(String arg) {
+            frame.setVisible(true); // In case the text window is closed on Mac
             if (!my_confirm()) return false;
             return a_openFile.run(arg);
         }
@@ -529,6 +539,14 @@ public final class SimpleGUI {
             if (br!=null) try{br.close();} catch(IOException ex) {Util.harmless("close()",ex);}
             if (fr!=null) try{fr.close();} catch(IOException ex) {Util.harmless("close()",ex);}
             return result;
+        }
+    };
+
+    /** Called when the user trigers the "ReOpen" event in Mac OS X; always return true. */
+    private final Func0 a_reopen = new Func0() {
+        public final boolean run() {
+            frame.setVisible(true);
+            return true;
         }
     };
 
@@ -625,7 +643,14 @@ public final class SimpleGUI {
      */
     private final Func0 a_close = new Func0() {
         public final boolean run() {
-            if (my_confirm()) { OurWindowMenu.removeWindow(frame); frame.dispose(); return true; }
+            if (my_confirm()) {
+                modified=false;
+                a_new.run();
+                log.setText("");
+                frame.setVisible(false);
+                if (!Util.onMac()) OurWindowMenu.removeWindow(frame);
+                return true;
+            }
             return false;
         }
     };
@@ -742,6 +767,7 @@ public final class SimpleGUI {
     /** Called when the user wishes to bring this window to the foreground; always returns true. */
     private final Func0 a_windowRaise = new Func0() {
         public final boolean run() {
+            frame.setVisible(true);
             frame.setExtendedState(JFrame.NORMAL);
             frame.requestFocus();
             frame.toFront();
@@ -764,7 +790,9 @@ public final class SimpleGUI {
                     "If you installed the jar file manually, please see alloy.mit.edu for more",
                     "information on the available command line options.",
                     " ", "Thank you."};
-            OurDialog.alert(frame, array, "About Alloy 4");
+            OurDialog.alert(null, array, "About Alloy 4");
+            // We intentionally chose "null" as the parent, since otherwise
+            // the main window would show up on Mac, even when it should be hidden.
             return true;
         }
     };
@@ -904,9 +932,18 @@ public final class SimpleGUI {
 
         firstInstance();
 
+        // Figure out the desired x, y, width, and height
+        int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
+        int width=propertyGetInt("width");
+        if (width<=0) width=screenWidth/10*8; else if (width<100) width=100;
+        if (width>screenWidth) width=screenWidth;
+        int height=propertyGetInt("height");
+        if (height<=0) height=screenHeight/10*8; else if (height<100) height=100;
+        if (height>screenHeight) height=screenHeight;
+        int x=propertyGetInt("x"); if (x<0) x=screenWidth/10; if (x+width>screenWidth) x=0;
+        int y=propertyGetInt("y"); if (y<0) y=screenHeight/10; if (y+height>screenHeight) y=0;
+
         // Construct the JFrame object
-        int screenWidth=OurUtil.getScreenWidth(), width=screenWidth/10*8;
-        int screenHeight=OurUtil.getScreenHeight(), height=screenHeight/10*8;
         frame=new JFrame("Alloy4: build date "+Version.buildDate());
         OurWindowMenu.addWindow(frame,"");
 
@@ -983,44 +1020,45 @@ public final class SimpleGUI {
         runbutton.setMnemonic(KeyEvent.VK_N);
         showbutton.setMnemonic(KeyEvent.VK_V);
         stopbutton.setVisible(false);
-        
+
         // Create the highlighter
         highlighter=new DefaultHighlighter();
         highlightPainter=new Highlighter.HighlightPainter() {
-        	// TODO: code copied from Java SDK
-        	private final Color color = new Color(0.9f, 0.4f, 0.4f);
+            // TODO: code copied from Java SDK
+            private final Color color = new Color(0.9f, 0.4f, 0.4f);
             public void paint(Graphics g, int start, int end, Shape shape, JTextComponent text) {
-    			g.setColor(color);
-        		Rectangle box = shape.getBounds();
-        		try {
-        			Rectangle a = text.getUI().modelToView(text, start);
-        			Rectangle b = text.getUI().modelToView(text, end);
-        			if (a.y == b.y) { // same line, render a rectangle
-        				Rectangle r = a.union(b);
-        				g.fillRect(r.x, r.y, (r.width<=1 ? (box.x+box.width-r.x) : r.width), r.height);
-        			} else { // different lines
-        				int toMarginWidth = box.x + box.width - a.x;
-        				g.fillRect(a.x, a.y, toMarginWidth, a.height);
-        				if (a.y+a.height != b.y) g.fillRect(box.x, a.y+a.height, box.width, b.y-(a.y+a.height));
-        				g.fillRect(box.x, b.y, b.x-box.x, b.height);
-        			}
-        		} catch (BadLocationException e) { Util.harmless("highlightPainter",e); }
-        	}
+                g.setColor(color);
+                Rectangle box = shape.getBounds();
+                try {
+                    Rectangle a = text.getUI().modelToView(text, start);
+                    Rectangle b = text.getUI().modelToView(text, end);
+                    if (a.y == b.y) { // same line, render a rectangle
+                        Rectangle r = a.union(b);
+                        g.fillRect(r.x, r.y, (r.width<=1 ? (box.x+box.width-r.x) : r.width), r.height);
+                    } else { // different lines
+                        int toMarginWidth = box.x + box.width - a.x;
+                        g.fillRect(a.x, a.y, toMarginWidth, a.height);
+                        if (a.y+a.height != b.y) g.fillRect(box.x, a.y+a.height, box.width, b.y-(a.y+a.height));
+                        g.fillRect(box.x, b.y, b.x-box.x, b.height);
+                    }
+                } catch (BadLocationException e) { Util.harmless("highlightPainter",e); }
+            }
         };
-        
+
         // Create the text editor
         textListener=new DocumentListener(){
             public final void insertUpdate(DocumentEvent e) {
                 highlighter.removeAllHighlights(); compiled=false; if (!modified) {modified=true;updateStatusBar();}
             }
             public final void removeUpdate(DocumentEvent e) {
-            	highlighter.removeAllHighlights(); compiled=false; if (!modified) {modified=true;updateStatusBar();}
+                highlighter.removeAllHighlights(); compiled=false; if (!modified) {modified=true;updateStatusBar();}
             }
             public final void changedUpdate(DocumentEvent e) {
-            	highlighter.removeAllHighlights(); compiled=false; if (!modified) {modified=true;updateStatusBar();}
+                highlighter.removeAllHighlights(); compiled=false; if (!modified) {modified=true;updateStatusBar();}
             }
         };
         text=new JTextArea();
+        text.setBorder(new EmptyBorder(2,2,2,2));
         text.setHighlighter(highlighter);
         text.setLineWrap(false);
         text.setEditable(true);
@@ -1031,9 +1069,11 @@ public final class SimpleGUI {
         });
         text.getDocument().addDocumentListener(textListener);
         JComponent textPane = OurUtil.makeJScrollPane(text);
+        textPane.setBorder(new EmptyBorder(2,2,2,2));
 
         // Create the message area
         log=new JTextPane();
+        log.setBorder(new EmptyBorder(2,2,2,2));
         log.setBackground(gray);
         log.setEditable(false);
         log.setFont(OurUtil.getFont());
@@ -1049,9 +1089,21 @@ public final class SimpleGUI {
         // Add everything to the frame, then display the frame
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
-            public final void windowClosing(WindowEvent e) {
-                if (my_confirm()) { OurWindowMenu.removeWindow(frame); frame.dispose(); }
-            }});
+            public final void windowClosing(WindowEvent e) { a_close.run(); }
+        });
+        frame.addComponentListener(new ComponentListener() {
+            public void componentResized(ComponentEvent e) {
+                propertySetInt("width", frame.getWidth());
+                propertySetInt("height", frame.getHeight());
+            }
+            public void componentMoved(ComponentEvent e) {
+                Point p=frame.getLocation();
+                propertySetInt("x", p.x);
+                propertySetInt("y", p.y);
+            }
+            public void componentShown(ComponentEvent e) {}
+            public void componentHidden(ComponentEvent e) {}
+        });
         Container all=frame.getContentPane();
         all.setLayout(new BorderLayout());
         JPanel lefthalf=new JPanel();
@@ -1064,7 +1116,7 @@ public final class SimpleGUI {
         status.setOpaque(true);
         frame.pack();
         frame.setSize(new Dimension(width,height));
-        frame.setLocation(screenWidth/10, screenHeight/10);
+        frame.setLocation(x,y);
         frame.setVisible(true);
 
         // Generate some informative log messages
@@ -1072,7 +1124,7 @@ public final class SimpleGUI {
         log("\nSolver: "+getSatOption(), styleGreen);
         if (Util.onMac()) {
             log("\nMac OS X detected.", styleGreen);
-            MacUtil.addApplicationListener(a_showAbout, a_openFileIfOk, a_quit);
+            MacUtil.addApplicationListener(a_reopen, a_showAbout, a_openFileIfOk, a_quit);
         }
 
         // Open the given file, if a filename is given in the command line
@@ -1186,7 +1238,7 @@ public final class SimpleGUI {
                 log("\nCannot run the command! The required JNI library cannot be found! "+e.toString(), styleRed);
             }
             catch(Err e) {
-            	highlight(e);
+                highlight(e);
                 log("\nCannot run the command! "+e.toString(), styleRed);
             }
             invokeAndWait(new Runnable() {
