@@ -402,7 +402,7 @@ public final class SimpleGUI {
         b.setForeground(Color.BLUE);
         b.addActionListener(new ActionListener(){
             public final void actionPerformed(ActionEvent e) {
-                new KodVizGUI(dotName, new File(xmlName));
+                if (!OurWindowMenu.focusByFilename(xmlName)) new KodVizGUI(dotName, new File(xmlName));
             }
         });
         StyleConstants.setComponent(s,b);
@@ -428,7 +428,9 @@ public final class SimpleGUI {
         b.setFont(OurUtil.getFont());
         b.setForeground(Color.BLUE);
         b.addMouseListener(new MouseListener(){
-            public final void mouseClicked(MouseEvent e) { new KodVizGUI(dotName, new File(xmlName)); }
+            public final void mouseClicked(MouseEvent e) {
+                if (!OurWindowMenu.focusByFilename(xmlName)) new KodVizGUI(dotName, new File(xmlName));
+            }
             public final void mousePressed(MouseEvent e) { }
             public final void mouseReleased(MouseEvent e) { }
             public final void mouseEntered(MouseEvent e) { }
