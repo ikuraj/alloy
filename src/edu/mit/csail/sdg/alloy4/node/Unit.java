@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
+import edu.mit.csail.sdg.alloy4util.Pair;
 import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.helper.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.helper.Pair;
 import edu.mit.csail.sdg.alloy4.helper.Pos;
 
 /**
