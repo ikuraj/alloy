@@ -82,6 +82,7 @@ import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.SolverChoice;
 import edu.mit.csail.sdg.alloy4.translator.ViaPipe;
 import edu.mit.csail.sdg.alloy4util.Func0;
 import edu.mit.csail.sdg.alloy4util.Func1;
+import edu.mit.csail.sdg.alloy4util.OurBorder;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
@@ -677,7 +678,8 @@ public final class SimpleGUI {
             Reader isr=new StringReader(text.getText());
             u=AlloyParser.alloy_parseStream(isr);
             if (u.runchecks.size()==0) {
-                runmenu.add(new JMenuItem("There are no commands in this model!"));
+                //runmenu.setEnabled(false);
+                runmenu.add(new JMenuItem("No commands to run"));
                 return u;
             }
             if (u.runchecks.size()>1) {
@@ -732,7 +734,7 @@ public final class SimpleGUI {
             Unit u=tryCompile();
             if (u!=null) {
                 if (latestCommand>=u.runchecks.size()) latestCommand=u.runchecks.size()-1;
-                if (latestCommand<0) {latestCommand=0;log("\nThere are no commands in this model!", styleRed);}
+                if (latestCommand<0) {latestCommand=0;log("\nThere are no commands to run.", styleRed);}
                 else (new RunListener(latestCommand)).actionPerformed(null);
             }
             return true;
@@ -1048,17 +1050,15 @@ public final class SimpleGUI {
         // Create the text editor
         textListener=new DocumentListener(){
             public final void insertUpdate(DocumentEvent e) {
-                highlighter.removeAllHighlights(); compiled=false; if (!modified) {modified=true;updateStatusBar();}
+                //runmenu.setEnabled(true);
+                highlighter.removeAllHighlights();
+                compiled=false; if (!modified) {modified=true;updateStatusBar();}
             }
-            public final void removeUpdate(DocumentEvent e) {
-                highlighter.removeAllHighlights(); compiled=false; if (!modified) {modified=true;updateStatusBar();}
-            }
-            public final void changedUpdate(DocumentEvent e) {
-                highlighter.removeAllHighlights(); compiled=false; if (!modified) {modified=true;updateStatusBar();}
-            }
+            public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+            public final void changedUpdate(DocumentEvent e) { changedUpdate(e); }
         };
         text=new JTextArea();
-        text.setBorder(new EmptyBorder(2,2,2,2));
+        text.setBorder(new EmptyBorder(1,1,1,1));
         text.setHighlighter(highlighter);
         text.setLineWrap(false);
         text.setEditable(true);
@@ -1069,11 +1069,11 @@ public final class SimpleGUI {
         });
         text.getDocument().addDocumentListener(textListener);
         JComponent textPane = OurUtil.makeJScrollPane(text);
-        textPane.setBorder(new EmptyBorder(2,2,2,2));
+        textPane.setBorder(new OurBorder(true,false));
 
         // Create the message area
         log=new JTextPane();
-        log.setBorder(new EmptyBorder(2,2,2,2));
+        log.setBorder(new EmptyBorder(1,1,1,1));
         log.setBackground(gray);
         log.setEditable(false);
         log.setFont(OurUtil.getFont());
@@ -1085,6 +1085,7 @@ public final class SimpleGUI {
         styleRed=doc.addStyle("red", styleBold); StyleConstants.setForeground(styleRed, new Color(0.7f,0.2f,0.2f));
         styleGray=doc.addStyle("gray", styleBold); StyleConstants.setBackground(styleGray, new Color(0.8f,0.8f,0.8f));
         JScrollPane statusPane=OurUtil.makeJScrollPane(log);
+        statusPane.setBorder(new OurBorder(false,false));
 
         // Add everything to the frame, then display the frame
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -1114,6 +1115,7 @@ public final class SimpleGUI {
         all.add(status=OurUtil.makeJLabel(" ",OurUtil.getFont()), BorderLayout.SOUTH);
         status.setBackground(gray);
         status.setOpaque(true);
+        status.setBorder(new OurBorder(true,false));
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setLocation(x,y);
