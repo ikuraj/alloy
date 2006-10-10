@@ -44,7 +44,6 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
@@ -760,15 +759,11 @@ public final class SimpleGUI {
                 }
             }
             log.setCaretPosition(0);
-            JScrollPane textPane=new JScrollPane(log,
-                    ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                    ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            textPane.setMinimumSize(new Dimension(50, 50));
             final JFrame frame=new JFrame("Alloy change log");
             frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
             Container all=frame.getContentPane();
             all.setLayout(new BorderLayout());
-            all.add(textPane, BorderLayout.CENTER);
+            all.add(OurUtil.makeJScrollPane(log), BorderLayout.CENTER);
             if (Util.onMac()) all.add(new JLabel(" "), BorderLayout.SOUTH); // Make room for the Mac "grow box"
             frame.pack();
             frame.setSize(new Dimension(width,height));
@@ -989,10 +984,7 @@ public final class SimpleGUI {
         styleGreen=doc.addStyle("green", styleBold); StyleConstants.setForeground(styleGreen, new Color(0.2f,0.7f,0.2f));
         styleRed=doc.addStyle("red", styleBold); StyleConstants.setForeground(styleRed, new Color(0.7f,0.2f,0.2f));
         styleGray=doc.addStyle("gray", styleBold); StyleConstants.setBackground(styleGray, new Color(0.8f,0.8f,0.8f));
-        JScrollPane statusPane=new JScrollPane(log,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        statusPane.setMinimumSize(new Dimension(50, 50));
+        JScrollPane statusPane=OurUtil.makeJScrollPane(log);
 
         // Add everything to the frame, then display the frame
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
