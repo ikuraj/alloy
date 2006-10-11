@@ -96,7 +96,6 @@ public final class LogToJTextPane extends Log {
         log.setBorder(new EmptyBorder(1,1,1,1));
         log.setBackground(background);
         log.setEditable(false);
-        log.setFocusable(false);
         log.setFont(OurUtil.getFont());
         StyledDocument doc=log.getStyledDocument();
         Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);

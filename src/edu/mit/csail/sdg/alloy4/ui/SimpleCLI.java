@@ -46,6 +46,5 @@ public final class SimpleCLI {
         }
         LogToFile log=new LogToFile(".alloy.tmp");
         run(args,log);
-        log.close();
     }
 }

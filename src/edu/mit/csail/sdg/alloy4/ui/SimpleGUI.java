@@ -84,6 +84,7 @@ import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
 import edu.mit.csail.sdg.alloy4util.OurMenuBar;
+import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.OurUtil;
 import edu.mit.csail.sdg.alloy4util.OurWindowMenu;
@@ -227,6 +228,9 @@ public final class SimpleGUI {
 
     /** The "File", "Run", "Option", "Window", and "Help" menus. */
     private final OurMenu filemenu, runmenu, optmenu, helpmenu;
+    
+    /** The "close" menu item. */
+    private final OurMenuItem closemenu;
 
     /** The toolbar. */
     private final JToolBar toolbar;
@@ -331,6 +335,8 @@ public final class SimpleGUI {
                 // When we've found the separator (which is always null), we delete it and all entries after it.
                 if (filemenu.getItem(i)==null) { while(i<n) {filemenu.remove(i); n--;} break; }
             }
+            if (latestName.length()==0 && text.getDocument().getLength()==0) closemenu.setEnabled(false);
+            else closemenu.setEnabled(true);
             for(int i=0; i<=3; i++) {
                 final String name = propertyGet("history"+i);
                 if (name.length()==0) continue;
@@ -511,8 +517,7 @@ public final class SimpleGUI {
                 a_new.run();
                 modified=false;
                 log.clear();
-                frame.setVisible(false);
-                if (!Util.onMac()) OurWindowMenu.removeWindow(frame);
+                log.logBold("Alloy 4 (build date: "+Version.buildDate()+")\n\n");
                 return true;
             }
             return false;
@@ -595,7 +600,7 @@ public final class SimpleGUI {
                         item.setIcon(iconYes);
                     if (item.getText().equals("Verbosity level = verbose") && getVerbosity()==Verbosity.VERBOSE)
                         item.setIcon(iconYes);
-                    if (item.getText().equals("Verbosity level = very default") && getVerbosity()==Verbosity.DEBUG)
+                    if (item.getText().equals("Verbosity level = very verbose") && getVerbosity()==Verbosity.DEBUG)
                         item.setIcon(iconYes);
                 }
             }
@@ -831,7 +836,7 @@ public final class SimpleGUI {
             filemenu.addMenuItem(null, "Open Builtin Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
             filemenu.addMenuItem(null, "Save",                   true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
             filemenu.addMenuItem(null, "Save As...",             true,KeyEvent.VK_A,-1,           a_saveAs);
-            filemenu.addMenuItem(null, "Close Window",           true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
+            closemenu=filemenu.addMenuItem(null, "Close",        true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
             filemenu.addMenuItem(null, "Quit",                   true,KeyEvent.VK_Q,-1,           a_quit);
         }
 
@@ -971,7 +976,7 @@ public final class SimpleGUI {
             }
         };
         log = new LogToJTextPane(statusPane, gray, Color.BLACK, new Color(.2f,.7f,.2f), new Color(.7f,.2f,.2f), viz);
-        statusPane.setBorder(new OurBorder(false,false));
+        statusPane.setBorder(new EmptyBorder(0,0,0,0));
 
         // Add everything to the frame, then display the frame
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -1011,7 +1016,7 @@ public final class SimpleGUI {
         log.logBold("Alloy4: build date "+Version.buildDate()+"\n\nSolver: "+getSatOption()+"\n\n");
         if (Util.onMac()) {
             log.logBold("Mac OS X detected.\n\n");
-            MacUtil.addApplicationListener(a_reopen, a_showAbout, a_openFileIfOk, a_quit);
+            MacUtil.registerApplicationListener(a_reopen, a_showAbout, a_openFileIfOk, a_quit);
         }
 
         // Open the given file, if a filename is given in the command line

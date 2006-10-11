@@ -17,8 +17,8 @@ import java.io.PrintWriter;
 
 public final class LogToFile extends Log {
 
-    /** The PrintWriter object for the output file (null if the log has been closed). */
-    private PrintWriter file;
+    /** The PrintWriter object for the output file. */
+    private final PrintWriter file;
 
     /**
      * Creates a logger that logs to "filename" (which will be overwritten if it exists).
@@ -32,29 +32,21 @@ public final class LogToFile extends Log {
 
     /** Writes msg into the log. */
     @Override public synchronized void log(String x) {
-        if (file!=null) file.print(x);
+        file.print(x);
     }
 
     /** Writes msg into the log (just like log() since text files don't support bold styles). */
     @Override public synchronized void logBold(String x) {
-        if (file!=null) file.print(x);
+        file.print(x);
     }
 
     /** Writes msg into the log (just like log() since text files don't support hyperlinks). */
     @Override public synchronized void logLink(String x) {
-        if (file!=null) file.print(x);
+        file.print(x);
     }
 
     /** Commits all outstanding writes (if the logger is buffered). */
     @Override public synchronized void flush() {
-        if (file!=null) file.flush();
-    }
-
-    /**
-     * This method flushes then closes the file
-     * (after this, further calls to this logger will be ignored).
-     */
-    public synchronized void close() {
-        if (file!=null) { file.flush(); file.close(); file=null; }
+        file.flush();
     }
 }
