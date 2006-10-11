@@ -765,7 +765,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 for(int x2=1; x2<subs.size(); x2++) x1=x1.union(rel(subs.get(x2)));
                 kfact=x1.eq(rel(s)).and(kfact);
             }
-            if (!s.toplevel() && !s.sup().abs) {
+            if (!s.toplevel() && s.sup()!=null && !s.sup().abs) {
                 // If X extends Y, then X in Y
                 kfact=rel(s).in(rel(s.sup())).and(kfact);
             }

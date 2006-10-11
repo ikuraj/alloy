@@ -41,6 +41,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -67,7 +68,6 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.Highlighter.HighlightPainter;
-
 import kodkod.AlloyBridge;
 import edu.mit.csail.sdg.alloy4.helper.Err;
 import edu.mit.csail.sdg.alloy4.helper.Log;
@@ -221,8 +221,15 @@ public final class SimpleGUI {
     /** The JFrame for the main window. */
     private final JFrame frame;
 
-    /** The "File", "Window", and "Run" menus. */
-    private final OurMenu filemenu, runmenu;
+    /** The "File", "Run", "Option", "Window", and "Help" menus. */
+    private final OurMenu filemenu, runmenu, optmenu, helpmenu;
+    private final JMenu windowmenu;
+
+    /** The "Save", "SaveAs", and "Close" menu items. */
+    private final OurMenuItem saveMenu, saveAsMenu, closeMenu;
+
+    /** The toolbar. */
+    private final JToolBar toolbar;
 
     /** The "Run" and "Stop" buttons. */
     private final JButton runbutton, stopbutton, showbutton;
@@ -232,9 +239,6 @@ public final class SimpleGUI {
 
     /** The JTextArea containing the editor buffer. */
     private final JTextArea text;
-
-    /** The DocumentListener for the editor buffer. */
-    private final DocumentListener textListener;
 
     /** The Highlighter to use with the editor buffer. */
     private final Highlighter highlighter;
@@ -450,6 +454,42 @@ public final class SimpleGUI {
 
     //====== Message handlers ===============================================//
 
+    private boolean hidden=false;
+    private Point hiddenXY;
+    private int hiddenW,hiddenH;
+
+    private void show() {
+        frame.setVisible(true); frame.setExtendedState(JFrame.NORMAL); frame.requestFocus(); frame.toFront();
+        if (hidden) {
+            highlighter.removeAllHighlights(); text.setText(""); modified=false; compiled=false; latestName="";
+            frame.setTitle("Alloy4: build date "+Version.buildDate());
+            OurWindowMenu.addWindow(frame, ""); log.setText(""); updateStatusBar();
+            // The above are common with hide()
+            hidden=false;
+            toolbar.setVisible(true);
+            saveMenu.setEnabled(true); saveAsMenu.setEnabled(true); closeMenu.setEnabled(true);
+            runmenu.setEnabled(false); optmenu.setEnabled(true);
+            helpmenu.setEnabled(true); windowmenu.setEnabled(true);
+            frame.setSize(hiddenW, hiddenH);
+            frame.setLocation(hiddenXY);
+        }
+    }
+
+    private void hide() {
+        if (!hidden) {
+            hidden=true; hiddenXY=frame.getLocation(); hiddenW=frame.getWidth(); hiddenH=frame.getHeight();
+            frame.setLocation(10,10); frame.setSize(200,200);
+        }
+        toolbar.setVisible(false);
+        saveMenu.setEnabled(false); saveAsMenu.setEnabled(false); closeMenu.setEnabled(false);
+        runmenu.setEnabled(false); optmenu.setEnabled(false);
+        helpmenu.setEnabled(false); windowmenu.setEnabled(false);
+        // The below are common with show()
+        highlighter.removeAllHighlights(); text.setText(""); modified=false; compiled=false; latestName="";
+        frame.setTitle("Alloy4: build date "+Version.buildDate());
+        OurWindowMenu.addWindow(frame, ""); log.setText(""); updateStatusBar();
+    }
+
     /** Called then the user expands the "File" menu; always returns true. */
     private final Func0 a_file = new Func0() {
         public final boolean run() {
@@ -465,7 +505,7 @@ public final class SimpleGUI {
                 if (!hasEntries) { hasEntries=true; filemenu.addSeparator(); }
                 JMenuItem x=new JMenuItem(name);
                 x.addActionListener(new ActionListener() {
-                    public final void actionPerformed(ActionEvent e) {a_openFileIfOk.run(name);}
+                    public final void actionPerformed(ActionEvent e) {show(); a_openFileIfOk.run(name);}
                 });
                 filemenu.add(x);
             }
@@ -477,6 +517,7 @@ public final class SimpleGUI {
     private final Func0 a_new = new Func0() {
         public final boolean run() {
             if (!my_confirm()) return false;
+            show();
             latestName="";
             highlighter.removeAllHighlights();
             text.setText("");
@@ -494,7 +535,6 @@ public final class SimpleGUI {
      */
     private final Func1 a_openFileIfOk = new Func1() {
         public final boolean run(String arg) {
-            frame.setVisible(true); // In case the text window is closed on Mac
             if (!my_confirm()) return false;
             return a_openFile.run(arg);
         }
@@ -506,13 +546,13 @@ public final class SimpleGUI {
      */
     private final Func1 a_openFile = new Func1() {
         public final boolean run(String f) {
+            show();
             f=(new File(f)).getAbsolutePath();
             boolean result=true;
             FileReader fr=null;
             BufferedReader br=null;
             try {
-                // The following is needed, in case this message came from another window.
-                frame.setExtendedState(JFrame.NORMAL); frame.requestFocus(); frame.toFront();
+                show();
                 fr=new FileReader(f);
                 br=new BufferedReader(fr);
                 StringBuffer sb=new StringBuffer();
@@ -527,8 +567,7 @@ public final class SimpleGUI {
                 OurWindowMenu.addWindow(frame, f);
                 addHistory(latestName=f);
                 compiled=false; modified=false; updateStatusBar();
-                // The following is needed, in case this message came from another window.
-                frame.setExtendedState(JFrame.NORMAL); frame.requestFocus(); frame.toFront();
+                show();
             } catch(FileNotFoundException e) { log("\nCannot open the file! "+e.toString(), styleGreen); result=false;
             } catch(IOException e) { log("\nCannot open the file! "+e.toString(), styleGreen); result=false;
             }
@@ -541,7 +580,7 @@ public final class SimpleGUI {
     /** Called when the user trigers the "ReOpen" event in Mac OS X; always return true. */
     private final Func0 a_reopen = new Func0() {
         public final boolean run() {
-            frame.setVisible(true);
+            show();
             return true;
         }
     };
@@ -637,10 +676,8 @@ public final class SimpleGUI {
         public final boolean run() {
             if (my_confirm()) {
                 modified=false;
-                a_new.run();
-                log.setText("");
-                frame.setVisible(false);
-                if (!Util.onMac()) OurWindowMenu.removeWindow(frame);
+                if (!Util.onMac()) { frame.setVisible(false); OurWindowMenu.removeWindow(frame); }
+                else hide();
                 return true;
             }
             return false;
@@ -763,13 +800,7 @@ public final class SimpleGUI {
 
     /** Called when the user wishes to bring this window to the foreground; always returns true. */
     private final Func0 a_windowRaise = new Func0() {
-        public final boolean run() {
-            frame.setVisible(true);
-            frame.setExtendedState(JFrame.NORMAL);
-            frame.requestFocus();
-            frame.toFront();
-            return true;
-        }
+        public final boolean run() { show(); return true; }
     };
 
     /** Called when the user clicks "Help", then "About"; always returns true. */
@@ -950,13 +981,13 @@ public final class SimpleGUI {
 
         if (1==1) { // File menu
             filemenu = bar.addMenu("File", true, KeyEvent.VK_F, a_file);
-            filemenu.addMenuItem(null, "New",                     true, KeyEvent.VK_N, KeyEvent.VK_N, a_new);
-            filemenu.addMenuItem(null, "Open...",                 true, KeyEvent.VK_O, KeyEvent.VK_O, a_open);
-            filemenu.addMenuItem(null, "Open Builtin Models...",  true, KeyEvent.VK_B, -1,            a_openBuiltin);
-            filemenu.addMenuItem(null, "Save",                    true, KeyEvent.VK_S, KeyEvent.VK_S, a_save);
-            filemenu.addMenuItem(null, "Save As...",              true, KeyEvent.VK_A, -1,            a_saveAs);
-            filemenu.addMenuItem(null, "Close Window",            true, KeyEvent.VK_W, KeyEvent.VK_W, a_close);
-            if (!Util.onMac()) filemenu.addMenuItem(null, "Quit", true, KeyEvent.VK_Q, -1,            a_quit);
+            filemenu.addMenuItem(           null, "New",                    true,KeyEvent.VK_N,KeyEvent.VK_N,a_new);
+            filemenu.addMenuItem(           null, "Open...",                true,KeyEvent.VK_O,KeyEvent.VK_O,a_open);
+            filemenu.addMenuItem(           null, "Open Builtin Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
+            saveMenu=filemenu.addMenuItem(  null, "Save",                   true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
+            saveAsMenu=filemenu.addMenuItem(null, "Save As...",             true,KeyEvent.VK_A,-1,           a_saveAs);
+            closeMenu=filemenu.addMenuItem( null, "Close Window",           true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
+            filemenu.addMenuItem(           null, "Quit",                   true,KeyEvent.VK_Q,-1,           a_quit);
         }
 
         if (1==1) { // Run menu
@@ -980,7 +1011,7 @@ public final class SimpleGUI {
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) choices.remove(SolverChoice.ZChaffJNI);
-            final OurMenu optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, null);
+            optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, null);
             for(final SolverChoice sc:choices) {
                 final OurMenuItem item = optmenu.addMenuItem(sc==getSatOption()?iconYes:iconNo, "Use "+sc, true, null);
                 item.addActionListener(new ActionListener() {
@@ -994,17 +1025,17 @@ public final class SimpleGUI {
         }
 
         if (1==1) { // Window menu
-            new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
+            windowmenu=new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
         }
 
         if (1==1) { // Help menu
-            OurMenu helpmenu = bar.addMenu("Help", true, KeyEvent.VK_H, null);
+            helpmenu = bar.addMenu("Help", true, KeyEvent.VK_H, null);
             if (!Util.onMac()) helpmenu.addMenuItem(null, "About Alloy4...", true, KeyEvent.VK_A, -1, a_showAbout);
             helpmenu.addMenuItem(null, "See the Change Log...", true, KeyEvent.VK_V, -1, a_showChangeLog);
         }
 
         // Create the toolbar
-        JToolBar toolbar=new JToolBar();
+        toolbar=new JToolBar();
         toolbar.setFloatable(false);
         if (!Util.onMac()) toolbar.setBackground(gray);
         toolbar.add(OurUtil.makeJButton("New","Starts a new blank model","images/24_new.gif", a_new));
@@ -1045,14 +1076,6 @@ public final class SimpleGUI {
         };
 
         // Create the text editor
-        textListener=new DocumentListener(){
-            public final void insertUpdate(DocumentEvent e) {
-                highlighter.removeAllHighlights();
-                compiled=false; if (!modified) {modified=true;updateStatusBar();}
-            }
-            public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
-            public final void changedUpdate(DocumentEvent e) { changedUpdate(e); }
-        };
         text=new JTextArea();
         text.setBorder(new EmptyBorder(1,1,1,1));
         text.setHighlighter(highlighter);
@@ -1063,7 +1086,14 @@ public final class SimpleGUI {
         text.addCaretListener(new CaretListener() {
             public final void caretUpdate(CaretEvent e) {updateStatusBar();}
         });
-        text.getDocument().addDocumentListener(textListener);
+        text.getDocument().addDocumentListener(new DocumentListener() {
+            public final void insertUpdate(DocumentEvent e) {
+                highlighter.removeAllHighlights();
+                compiled=false; if (!modified) {modified=true;updateStatusBar();}
+            }
+            public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+            public final void changedUpdate(DocumentEvent e) { changedUpdate(e); }
+        });
         JComponent textPane = OurUtil.makeJScrollPane(text);
         textPane.setBorder(new OurBorder(true,false));
 
@@ -1090,10 +1120,12 @@ public final class SimpleGUI {
         });
         frame.addComponentListener(new ComponentListener() {
             public void componentResized(ComponentEvent e) {
+                if (hidden) return;
                 propertySetInt("width", frame.getWidth());
                 propertySetInt("height", frame.getHeight());
             }
             public void componentMoved(ComponentEvent e) {
+                if (hidden) return;
                 Point p=frame.getLocation();
                 propertySetInt("x", p.x);
                 propertySetInt("y", p.y);
@@ -1137,7 +1169,7 @@ public final class SimpleGUI {
         // Start an idleness thread (Must make sure this is javax.swing.Timer rather than java.util.Timer)
         new Timer(1000, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (getCurrentThread()==null) {
+                if (getCurrentThread()==null && !hidden) {
                     Unit u=tryCompile(false);
                     if (u==null || u.runchecks.size()==0) runmenu.setEnabled(false); else runmenu.setEnabled(true);
                 }
