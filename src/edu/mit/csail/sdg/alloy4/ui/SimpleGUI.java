@@ -508,6 +508,9 @@ public final class SimpleGUI {
         public final boolean run() {
             if (my_confirm()) {
                 modified=false;
+                a_new.run();
+                modified=false;
+                log.clear();
                 frame.setVisible(false);
                 if (!Util.onMac()) OurWindowMenu.removeWindow(frame);
                 return true;
@@ -527,10 +530,7 @@ public final class SimpleGUI {
         }
     };
 
-    /**
-     * Called when we need to recompile the current text buffer (to see how many commands there are).
-     * @return nonnull iff the current text buffer is successfully parsed (the resulting Unit object is returned)
-     */
+    /** This method recompiles the current text buffer so that we know what and how many commands there are. */
     private void tryCompile() {
         while(runmenu.getItemCount()>2) runmenu.remove(2);
         if (getLatestInstance().length()==0) runmenu.getItem(1).setEnabled(false);
@@ -611,8 +611,8 @@ public final class SimpleGUI {
             int n=compiled.runchecks.size();
             if (n==0) { log.logRed("There are no commands to run.\n\n"); return false; }
             if (latestCommand>=n) latestCommand=n-1;
-            if (latestCommand<0) (new RunListener(n-1)).actionPerformed(null);
-            else (new RunListener(latestCommand)).actionPerformed(null);
+            if (latestCommand<0) latestCommand=0;
+            new RunListener(latestCommand).actionPerformed(null);
             return true;
         }
     };
@@ -839,6 +839,8 @@ public final class SimpleGUI {
             runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, null);
             runmenu.addMenuListener(new MenuListener() {
                 public final void menuSelected(MenuEvent e) {
+                    runmenu.getItem(0).setEnabled(true);
+                    runmenu.getItem(1).setEnabled(true);
                     a_run.run();
                 }
                 public final void menuDeselected(MenuEvent e) {
@@ -1160,7 +1162,7 @@ public final class SimpleGUI {
         /** The event handler that gets called when the user clicked on one of the menu item. */
         public void actionPerformed(ActionEvent e) {
             if (getCurrentThread()!=null) return;
-            latestCommand=index;
+            latestCommand=(index>=0 ? index : 0);
             AlloyBridge.stopped=false;
             Runner r=new Runner(new StringReader(text.getText()), index);
             Thread t=new Thread(r);
