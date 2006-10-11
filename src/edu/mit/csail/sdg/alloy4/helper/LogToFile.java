@@ -8,7 +8,7 @@ import java.io.PrintWriter;
  * This logger will log the messages into a new text file
  * (which will be overwritten if it exists).
  *
- * Since the output is plain text, the logBold() and log() methods are the same.
+ * Since the output is plain text, logBold() and logLink() simply call log().
  *
  * <p/><b>Thread Safety:</b>  Safe.
  *
@@ -37,6 +37,11 @@ public final class LogToFile extends Log {
 
     /** Writes msg into the log (just like log() since text files don't support bold styles). */
     @Override public synchronized void logBold(String x) {
+        if (file!=null) file.print(x);
+    }
+
+    /** Writes msg into the log (just like log() since text files don't support hyperlinks). */
+    @Override public synchronized void logLink(String x) {
         if (file!=null) file.print(x);
     }
 

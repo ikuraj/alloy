@@ -489,14 +489,27 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
 //################################################################################################
 
+    public enum Verbosity {
+        DEFAULT, VERBOSE, DEBUG;
+        public boolean geq(Verbosity other) { return ordinal() >= other.ordinal(); }
+    };
+
     private boolean demul=false;
     private final List<Unit> units;
     private Env<Object> env=new Env<Object>();
     private final Log log;
+    private final Verbosity logVerbosity;
     private final int codeindex;
-    private TranslateAlloyToKodkod(int i, Log log, List<Unit> units) { codeindex=i; this.log=log; this.units=units; }
-    public static List<Result> codegen(int i, Log log, List<Unit> units, List<ParaSig> sigs, SolverChoice solver, String destdir) {
-        TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,units);
+
+    private TranslateAlloyToKodkod(int i, Log log, Verbosity logVerbosity, List<Unit> units) {
+        codeindex=i;
+        this.log=log;
+        this.logVerbosity=logVerbosity;
+        this.units=units;
+    }
+
+    public static List<Result> codegen(int i, Log log, Verbosity logVerbosity, List<Unit> units, List<ParaSig> sigs, SolverChoice solver, String destdir) {
+        TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,logVerbosity,units);
         return ve.codegen(sigs, solver, destdir);
     }
 
@@ -556,7 +569,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (b>=0 && (s==ParaSig.UNIV || s==ParaSig.NONE))
             throw c.syntaxError("You cannot specify a scope for the builtin signature \""+s.name+"\"");
         sig2bound(s,b);
-        log.log(debug+"Sig \""+s.fullname+"\" bound to be <= "+b+"\n");
+        if (logVerbosity.geq(Verbosity.DEBUG)) log.log(debug+"Sig \""+s.fullname+"\" bound to be <= "+b+"\n");
     }
 
     private boolean derive(ParaRuncheck cmd, List<ParaSig> sigs) {
@@ -826,7 +839,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         for(int xi=0; xi<units.get(0).runchecks.size(); xi++)
             if (codeindex==(-1) || codeindex==xi) {
                 ParaRuncheck x=units.get(0).runchecks.get(xi);
-                log.logBold("\nComputing the bounds for the command \""+x+"\"...\n");
+                log.logBold(x.toString()+"...\n");
                 log.flush();
                 sig2bound.clear();
                 sig2ts.clear();
@@ -839,7 +852,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     if (alloy3(s,u)) {
                         ParaSig s2=u.params.get("elem");
                         if (sig2bound(s2)<=0) throw x.syntaxError("The signature "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
-                        log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2)+"\n");
+                        if (logVerbosity.geq(Verbosity.VERBOSE)) {
+                            log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2)+"\n");
+                        }
                         if (s2!=null) exact(s2,true);
                     }
                 }
@@ -980,22 +995,22 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             bounds.bound((Relation)(rel(s)),lower,upper);
             if (s.subset) continue;
             if (exact(s) && upper.size()==sig2bound(s)) {
-                log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+upper.toString()+">\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+upper.toString()+">\n");
             }
             else if (exact(s)) {
-                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s)+"\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
                 else kfact=rel(s).count().eq(makeIntConstant(cmd.pos, bitwidth, sig2bound(s))).and(kfact);
             }
             else if (upper.size()>sig2bound(s)) {
-                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s)+"\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
                 else kfact=rel(s).count().lte(makeIntConstant(cmd.pos, bitwidth, sig2bound(s))).and(kfact);
             }
             else {
-                log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">\n");
             }
         }
         // Bound the SUBSETSIGS
@@ -1004,7 +1019,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (!s.subset) continue;
             TupleSet ts=factory.noneOf(1);
             for(ParaSig sup:s.sups()) for(Tuple temp:sig2ts(sup)) ts.add(temp);
-            log.log("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">\n");
+            if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">\n");
             bounds.bound((Relation)(rel(s)),ts); sig2ts(s,ts);
         }
         // Bound the FIELDS
@@ -1067,17 +1082,19 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
             solver.options().setBitwidth(bitwidth);
             solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-            log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+"... ");
             boolean flatten=true, sym=true;
-            if (cmd.options.contains("noflatten")) flatten=false;
-            if (cmd.options.contains("nosym")) sym=false;
             if (cmd.expects!=0) sym=false;
-            if (!flatten) { solver.options().setFlatten(false); log.log("noflatten... "); }
-            if (!sym) { solver.options().setSymmetryBreaking(0); log.log("nosym... "); }
+            if (cmd.options.contains("noflatten")) flatten=false;
+            if (cmd.options.contains("flatten")) flatten=true;
+            if (cmd.options.contains("nosym")) sym=false;
+            if (cmd.options.contains("sym")) sym=true;
+            if (!flatten) solver.options().setFlatten(false);
+            if (!sym) solver.options().setSymmetryBreaking(0);
+            log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+" SymBreak="+sym+" Flatten="+flatten+"... ");
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (AlloyBridge.stopped) {
-                log.log("TIME=0+0=0 CANCELED\n");
+                log.log("TIME=0+0=0 CANCELED\n\n");
                 log.flush();
                 return Result.CANCELED;
             }
@@ -1088,16 +1105,16 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             case TRIVIALLY_SATISFIABLE:
                 mainResult=Result.TRIVIALLY_SAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (AlloyBridge.stopped) { log.log(" CANCELED\n"); mainResult=Result.CANCELED; }
-                else if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)\n");
-                else log.log(" TRIVIALLY SAT\n");
+                if (AlloyBridge.stopped) { log.log(" CANCELED\n\n"); mainResult=Result.CANCELED; }
+                else if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)\n\n");
+                else log.log(" TRIVIALLY SAT\n\n");
                 break;
             case TRIVIALLY_UNSATISFIABLE:
                 mainResult=Result.TRIVIALLY_UNSAT;
                 log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (AlloyBridge.stopped) { log.log(" CANCELED\n"); mainResult=Result.CANCELED; }
-                else if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)\n");
-                else log.log(" TRIVIALLY UNSAT\n");
+                if (AlloyBridge.stopped) { log.log(" CANCELED\n\n"); mainResult=Result.CANCELED; }
+                else if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)\n\n");
+                else log.log(" TRIVIALLY UNSAT\n\n");
                 break;
             case SATISFIABLE:
                 mainResult=Result.SAT;
@@ -1106,8 +1123,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 else if (cmd.check) log.log(" VIOLATED (SAT)");
                 else log.log(" SAT");
                 log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
+                log.logLink(destdir+fs+destnum+".xml");
+                log.log("\n\n");
                 writeXML(cmd.pos, sol, units, sigs, destdir+fs+destnum+".xml");
-                //if (cmd.expects==0) for(Relation r:sol.instance().relations()) log.log("REL "+r+" = "+sol.instance().tuples(r)+"\n");
                 break;
             case UNSATISFIABLE:
                 mainResult=Result.UNSAT;
@@ -1115,12 +1133,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 if (AlloyBridge.stopped) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
                 else if (cmd.check) log.log(" OK (UNSAT)");
                 else log.log(" UNSAT");
-                log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
+                log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n\n");
                 break;
             }
-        } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n");
-        } catch(Err ex) { log.log(ex.msg+"\n");
-        } catch(Exception ex) { log.log(ex.getMessage()+"\n");
+        } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n\n");
+        } catch(Err ex) { log.log(ex.msg+"\n\n");
+        } catch(Exception ex) { log.log(ex.getMessage()+"\n\n");
         }
         log.flush();
         return mainResult;

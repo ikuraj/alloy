@@ -11,7 +11,6 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
@@ -30,8 +29,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.Box;
@@ -41,7 +38,6 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -51,7 +47,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
@@ -59,6 +54,8 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
@@ -71,13 +68,14 @@ import javax.swing.text.Highlighter.HighlightPainter;
 import kodkod.AlloyBridge;
 import edu.mit.csail.sdg.alloy4.helper.Err;
 import edu.mit.csail.sdg.alloy4.helper.Log;
-import edu.mit.csail.sdg.alloy4.helper.LogToTextPane;
+import edu.mit.csail.sdg.alloy4.helper.LogToJTextPane;
 import edu.mit.csail.sdg.alloy4.node.ParaSig;
 import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.SolverChoice;
+import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.Verbosity;
 import edu.mit.csail.sdg.alloy4.translator.ViaPipe;
 import edu.mit.csail.sdg.alloy4util.Func0;
 import edu.mit.csail.sdg.alloy4util.Func1;
@@ -86,7 +84,6 @@ import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
 import edu.mit.csail.sdg.alloy4util.OurMenuBar;
-import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.OurUtil;
 import edu.mit.csail.sdg.alloy4util.OurWindowMenu;
@@ -195,6 +192,13 @@ public final class SimpleGUI {
     /** Sets the current SAT option. */
     private synchronized void setSatOption(SolverChoice sc) { satOPTION=sc; }
 
+    /** The current verbosity level. */
+    private Verbosity verbosity = Verbosity.DEFAULT;
+
+    private synchronized Verbosity getVerbosity() { return verbosity; }
+
+    private synchronized void setVerbosity(Verbosity value) { verbosity=value; }
+
     /**
      * If it's not "", then it is the first part of the filename for the latest instance.
      * <p/> In particular, latestInstance+".dot" is the DOT file, and latestInstance+".xml" is the XML file.
@@ -223,10 +227,6 @@ public final class SimpleGUI {
 
     /** The "File", "Run", "Option", "Window", and "Help" menus. */
     private final OurMenu filemenu, runmenu, optmenu, helpmenu;
-    private final JMenu windowmenu;
-
-    /** The "Save", "SaveAs", and "Close" menu items. */
-    private final OurMenuItem saveMenu, saveAsMenu, closeMenu;
 
     /** The toolbar. */
     private final JToolBar toolbar;
@@ -247,10 +247,7 @@ public final class SimpleGUI {
     private final HighlightPainter highlightPainter;
 
     /** The JTextPane containing the error messages and success messages. */
-    private final JTextPane log;
-
-    /** The rich styles to use when writing into the JTextPane. */
-    private final Style styleRegular,styleBold,styleRed,styleGreen,styleGray;
+    private final LogToJTextPane log;
 
     /** The filename for the content currently in the text editor. ("" if the text editor is unnamed) */
     private String latestName="";
@@ -258,11 +255,11 @@ public final class SimpleGUI {
     /** The most-recently-used directory (this is the directory we use when launching a FileChooser next time) */
     private String fileOpenDirectory=(new File(System.getProperty("user.home"))).getAbsolutePath();
 
-    /** The latest command executed by the user (0 if it's the first command, 1 if it's the second command...) */
-    private int latestCommand=0;
+    /** The latest command executed by the user (-1 if the user hasn't executed any command) */
+    private int latestCommand=(-1);
 
     /** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
-    private boolean compiled=false;
+    private Unit compiled=null;
 
     /** This field is true iff the text in the text buffer hasn't been modified since the last time it was saved */
     private boolean modified=false;
@@ -306,188 +303,23 @@ public final class SimpleGUI {
         if (!ans.booleanValue()) return true; else return a_save.run();
     }
 
-    /** Run r using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeAndWait() for it. */
-    private static void invokeAndWait(Runnable r) {
-        if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
-        try { SwingUtilities.invokeAndWait(r); }
-        catch (InterruptedException e) { Util.harmless("invokeAndWait",e); }
-        catch (InvocationTargetException e) { Util.harmless("invokeAndWait",e); }
-    }
-
-    /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeAndWait() for it. */
-    private static void invokeAndWait(final Func0 func) {
-        if (SwingUtilities.isEventDispatchThread()) { func.run(); return; }
-        try { SwingUtilities.invokeAndWait(new Runnable() { public final void run() { func.run(); }}); }
-        catch (InterruptedException e) { Util.harmless("invokeAndWait",e); }
-        catch (InvocationTargetException e) { Util.harmless("invokeAndWait",e); }
-    }
-
-    /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeAndWait() for it. */
-    private static void invokeAndWait(final Func1 func, final String arg) {
-        if (SwingUtilities.isEventDispatchThread()) { func.run(arg); return; }
-        try { SwingUtilities.invokeAndWait(new Runnable() { public final void run() { func.run(arg); }}); }
-        catch (InterruptedException e) { Util.harmless("invokeAndWait",e); }
-        catch (InvocationTargetException e) { Util.harmless("invokeAndWait",e); }
-    }
-
-    // /** Run r using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeLater() for it. */
-    // private static void invokeLater(Runnable r) {
-    //   if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
-    //   SwingUtilities.invokeLater(r);
-    // }
-    //
-    // /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeLater() for it. */
-    // private static void invokeLater(final Func0 func) {
-    //   if (SwingUtilities.isEventDispatchThread()) { func.run(); return; }
-    //   SwingUtilities.invokeLater(new Runnable() { public final void run() { func.run(); }});
-    // }
-    //
-    // /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeLater() for it. */
-    // private static void invokeLater(final Func1 func, final String arg) {
-    //   if (SwingUtilities.isEventDispatchThread()) { func.run(arg); return; }
-    //   SwingUtilities.invokeLater(new Runnable() { public final void run() { func.run(arg); }});
-    // }
-
-    /** Print a text message into the log window using the provided style.
-     * <br/> NOTE: this method can be called by any thread (hence the extra precaution) */
-    private void log(final String msg, final Style style) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            invokeAndWait(new Runnable() { public final void run() { log(msg,style); } });
-            return;
-        }
-        StyledDocument doc=log.getStyledDocument();
-        String realmsg = (doc.getLength()==0) ? msg.trim() : msg;
-        try { doc.insertString(doc.getLength(), realmsg+"\n", style); }
-        catch (BadLocationException e) { Util.harmless("SimpleGUI.log()",e); }
-        log.setCaretPosition(doc.getLength());
-    }
-
-    /** Print msg1 into the log window using the provided style, then print msg2 using the default style.
-     * <br/> NOTE: this method can be called by any thread (hence the extra precaution) */
-    private void log(final String msg1, final Style style1, final String msg2) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            invokeAndWait(new Runnable() { public final void run() { log(msg1,style1,msg2); } });
-            return;
-        }
-        StyledDocument doc=log.getStyledDocument();
-        String realmsg1 = (doc.getLength()==0) ? msg1.trim() : msg1;
-        try {
-            doc.insertString(doc.getLength(),realmsg1,style1);
-            doc.insertString(doc.getLength(),msg2+"\n",styleRegular);
-        } catch (BadLocationException e) { Util.harmless("SimpleGUI.log()",e); }
-        log.setCaretPosition(doc.getLength());
-    }
-
-    /**
-     * Add a "visualize this" button to the log window.
-     * <br/> NOTE: this method can be called by any thread (hence the extra precaution).
-     * @param label - the label to show on the button
-     * @param dotName - the DOT filename corresponding to the instance to show
-     * @param xmlName - the XML filename corresponding to the instance to show
-     */
-    private void logButton(final String label, final String dotName, final String xmlName) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            invokeAndWait(new Runnable() { public final void run() { logButton(label,dotName,xmlName); } });
-            return;
-        }
-        StyledDocument doc=log.getStyledDocument();
-        Style s=doc.addStyle("link", styleRegular);
-        JButton b=new JButton(label);
-        if (Util.onMac()) b.setBackground(gray);
-        b.setMaximumSize(b.getPreferredSize());
-        b.setFont(OurUtil.getFont());
-        b.setForeground(Color.BLUE);
-        b.addActionListener(new ActionListener(){
-            public final void actionPerformed(ActionEvent e) {
-                if (!OurWindowMenu.focusByFilename(xmlName)) new KodVizGUI(dotName, new File(xmlName));
-            }
-        });
-        StyleConstants.setComponent(s,b);
-        log("",s);
-    }
-
-    /**
-     * Add a "visualize this" hyperlink to the log window.
-     * <br/> NOTE: this method can be called by any thread (hence the extra precaution).
-     * @param label - the label to show on the link
-     * @param dotName - the DOT filename corresponding to the instance to show
-     * @param xmlName - the XML filename corresponding to the instance to show
-     */
-    private void logLink(final String label, final String dotName, final String xmlName) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            invokeAndWait(new Runnable() { public final void run() { logLink(label,dotName,xmlName); } });
-            return;
-        }
-        StyledDocument doc=log.getStyledDocument();
-        Style s=doc.addStyle("link", styleRegular);
-        JLabel b=new JLabel(label);
-        b.setMaximumSize(b.getPreferredSize());
-        b.setFont(OurUtil.getFont());
-        b.setForeground(Color.BLUE);
-        b.addMouseListener(new MouseListener(){
-            public final void mouseClicked(MouseEvent e) {
-                if (!OurWindowMenu.focusByFilename(xmlName)) new KodVizGUI(dotName, new File(xmlName));
-            }
-            public final void mousePressed(MouseEvent e) { }
-            public final void mouseReleased(MouseEvent e) { }
-            public final void mouseEntered(MouseEvent e) { }
-            public final void mouseExited(MouseEvent e) { }
-        });
-        StyleConstants.setComponent(s, b);
-        log("",s);
-    }
-
     private void highlight(final Err e) {
         if (!SwingUtilities.isEventDispatchThread()) {
-            invokeAndWait(new Runnable() { public final void run() { highlight(e); }});
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { highlight(e); }});
             return;
         }
         if (e.pos!=null && e.pos.y>0 && e.pos.x>0) try {
             int c=text.getLineStartOffset(e.pos.y-1)+e.pos.x-1;
             highlighter.removeAllHighlights();
             highlighter.addHighlight(c, c+1, highlightPainter);
-            text.setSelectionStart(c);
-            text.setSelectionEnd(c);
-            text.requestFocusInWindow();
+            text.setSelectionStart(c); text.setSelectionEnd(c); text.requestFocusInWindow();
         } catch(BadLocationException ex) { Util.harmless("tryCompile()",ex); }
     }
 
     //====== Message handlers ===============================================//
 
-    private boolean hidden=false;
-    private Point hiddenXY;
-    private int hiddenW,hiddenH;
-
     private void show() {
         frame.setVisible(true); frame.setExtendedState(JFrame.NORMAL); frame.requestFocus(); frame.toFront();
-        if (hidden) {
-            highlighter.removeAllHighlights(); text.setText(""); modified=false; compiled=false; latestName="";
-            frame.setTitle("Alloy4: build date "+Version.buildDate());
-            OurWindowMenu.addWindow(frame, ""); log.setText(""); updateStatusBar();
-            // The above are common with hide()
-            hidden=false;
-            toolbar.setVisible(true);
-            saveMenu.setEnabled(true); saveAsMenu.setEnabled(true); closeMenu.setEnabled(true);
-            runmenu.setEnabled(false); optmenu.setEnabled(true);
-            helpmenu.setEnabled(true); windowmenu.setEnabled(true);
-            frame.setSize(hiddenW, hiddenH);
-            frame.setLocation(hiddenXY);
-        }
-    }
-
-    private void hide() {
-        if (!hidden) {
-            hidden=true; hiddenXY=frame.getLocation(); hiddenW=frame.getWidth(); hiddenH=frame.getHeight();
-            frame.setLocation(10,10); frame.setSize(200,200);
-        }
-        toolbar.setVisible(false);
-        saveMenu.setEnabled(false); saveAsMenu.setEnabled(false); closeMenu.setEnabled(false);
-        runmenu.setEnabled(false); optmenu.setEnabled(false);
-        helpmenu.setEnabled(false); windowmenu.setEnabled(false);
-        // The below are common with show()
-        highlighter.removeAllHighlights(); text.setText(""); modified=false; compiled=false; latestName="";
-        frame.setTitle("Alloy4: build date "+Version.buildDate());
-        OurWindowMenu.addWindow(frame, ""); log.setText(""); updateStatusBar();
     }
 
     /** Called then the user expands the "File" menu; always returns true. */
@@ -523,7 +355,7 @@ public final class SimpleGUI {
             text.setText("");
             frame.setTitle("Alloy4: build date "+Version.buildDate());
             OurWindowMenu.addWindow(frame, "");
-            compiled=false; modified=false; updateStatusBar();
+            latestCommand=-1; compiled=null; modified=false; updateStatusBar();
             return true;
         }
     };
@@ -562,14 +394,14 @@ public final class SimpleGUI {
                 highlighter.removeAllHighlights();
                 text.setText(sb.toString());
                 text.setCaretPosition(0);
-                log("\nFile \""+shortFileName(f)+"\" successfully loaded.", styleGreen);
+                log.logBold("File \""+shortFileName(f)+"\" successfully loaded.\n\n");
                 frame.setTitle("Alloy Model: "+f);
                 OurWindowMenu.addWindow(frame, f);
                 addHistory(latestName=f);
-                compiled=false; modified=false; updateStatusBar();
+                latestCommand=-1; compiled=null; modified=false; updateStatusBar();
                 show();
-            } catch(FileNotFoundException e) { log("\nCannot open the file! "+e.toString(), styleGreen); result=false;
-            } catch(IOException e) { log("\nCannot open the file! "+e.toString(), styleGreen); result=false;
+            } catch(FileNotFoundException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
+            } catch(IOException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
             }
             if (br!=null) try{br.close();} catch(IOException ex) {Util.harmless("close()",ex);}
             if (fr!=null) try{fr.close();} catch(IOException ex) {Util.harmless("close()",ex);}
@@ -630,12 +462,12 @@ public final class SimpleGUI {
                 fw.close();
                 modified=false;
                 updateStatusBar();
-                log("\nFile \""+shortFileName(filename)+"\" successfully saved.", styleGreen);
+                log.logBold("File \""+shortFileName(filename)+"\" successfully saved.\n\n");
                 addHistory(latestName=filename);
                 frame.setTitle("Alloy Model: "+latestName);
                 OurWindowMenu.addWindow(frame, latestName);
             } catch(IOException e) {
-                log("\nCannot write to the file \""+filename+"\"! "+e.toString(), styleRed);
+                log.logRed("Cannot write to the file \""+filename+"\"! "+e.toString()+"\n\n");
                 return false;
             }
             return true;
@@ -676,8 +508,8 @@ public final class SimpleGUI {
         public final boolean run() {
             if (my_confirm()) {
                 modified=false;
-                if (!Util.onMac()) { frame.setVisible(false); OurWindowMenu.removeWindow(frame); }
-                else hide();
+                frame.setVisible(false);
+                if (!Util.onMac()) OurWindowMenu.removeWindow(frame);
                 return true;
             }
             return false;
@@ -699,61 +531,73 @@ public final class SimpleGUI {
      * Called when we need to recompile the current text buffer (to see how many commands there are).
      * @return nonnull iff the current text buffer is successfully parsed (the resulting Unit object is returned)
      */
-    private Unit tryCompile(boolean reportError) {
-        Unit u;
-        try {
-            runmenu.removeAll();
-            Reader isr=new StringReader(text.getText());
-            u=AlloyParser.alloy_parseStream(isr);
-            if (u.runchecks.size()==0) {
-                JMenuItem y=new JMenuItem("No commands to run");
-                y.setEnabled(false);
-                runmenu.add(y);
-                return u;
+    private void tryCompile() {
+        while(runmenu.getItemCount()>2) runmenu.remove(2);
+        if (getLatestInstance().length()==0) runmenu.getItem(1).setEnabled(false);
+        if (latestCommand<0) runmenu.getItem(0).setEnabled(false);
+        if (compiled==null) {
+            try {
+                Reader isr=new StringReader(text.getText());
+                Unit u=AlloyParser.alloy_parseStream(isr);
+                compiled=u;
             }
-            if (u.runchecks.size()>1) {
-                JMenuItem y=new JMenuItem("All");
-                y.addActionListener(new RunListener(-1));
-                runmenu.add(y);
-                runmenu.add(new JSeparator());
+            catch(Err e) {
+                runmenu.getItem(0).setEnabled(false);
+                highlight(e);
+                String msg=e.toString();
+                if (msg.matches("^.*There are [0-9]* possible tokens that can appear here:.*$")) {
+                    // Special handling, to display that particular message in a clearer style.
+                    String head=msg.replaceAll("^(.*There are [0-9]* possible tokens that can appear here:).*$","$1");
+                    String tail=msg.replaceAll("^.*There are [0-9]* possible tokens that can appear here:(.*)$","$1");
+                    log.log("Cannot parse the model! "+head, tail+"\n\n");
+                }
+                else log.logRed("Cannot parse the model! "+e.toString()+"\n\n");
+                return;
             }
-            for(int i=0; i<u.runchecks.size(); i++) {
-                JMenuItem y=new JMenuItem(u.runchecks.get(i).toString());
-                y.addActionListener(new RunListener(i));
-                runmenu.add(y);
+            catch(Exception e) {
+                runmenu.getItem(0).setEnabled(false);
+                log.logRed("Cannot parse the model! "+e.toString()+"\n\n");
+                return;
             }
-            return u;
         }
-        catch(Err e) {
-            if (!reportError) return null;
-            runmenu.add(new JMenuItem("Cannot run any commands! See the error message for details!"));
-            highlight(e);
-            String msg=e.toString();
-            if (msg.matches("^.*There are [0-9]* possible tokens that can appear here:.*$")) {
-                // Special handling, to display that particular message in a clearer style.
-                String head=msg.replaceAll("^(.*There are [0-9]* possible tokens that can appear here:).*$","$1");
-                String tail=msg.replaceAll("^.*There are [0-9]* possible tokens that can appear here:(.*)$","$1");
-                log("\nCannot parse the model! "+head, styleRed, tail);
-            }
-            else log("\nCannot parse the model! "+e.toString(), styleRed);
-            return null;
+        log.logRed(""); // To clear any residual error message
+        if (compiled==null || compiled.runchecks.size()==0) { runmenu.getItem(0).setEnabled(false); return; }
+        if (compiled.runchecks.size()>1) {
+            JMenuItem y=new JMenuItem("All");
+            y.addActionListener(new RunListener(-1));
+            runmenu.add(y);
         }
-        catch(Exception e) {
-            if (!reportError) return null;
-            runmenu.add(new JMenuItem("Cannot run any commands! See the error message for details!"));
-            log("\nCannot parse the model! "+e.toString(), styleRed);
-            return null;
+        runmenu.add(new JSeparator());
+        for(int i=0; i<compiled.runchecks.size(); i++) {
+            JMenuItem y=new JMenuItem(compiled.runchecks.get(i).toString());
+            y.addActionListener(new RunListener(i));
+            runmenu.add(y);
         }
     }
 
     /** Called when the user expands the "Run" menu; always returns true. */
     private final Func0 a_run = new Func0() {
         public final boolean run() {
-            if (compiled) return true;
-            Unit u=tryCompile(true);
-            if (u!=null) {
-                compiled=true;
-                log("\nParser succeeded: there are "+u.runchecks.size()+" command(s) in this model.", styleGreen);
+            tryCompile();
+            return true;
+        }
+    };
+
+    /** Called when the user expands the "Options" menu; always returns true. */
+    private final Func0 a_option = new Func0() {
+        public final boolean run() {
+            optmenu.setIconForChildren(iconNo);
+            for(int i=0; i<optmenu.getItemCount(); i++) {
+                if (optmenu.getItem(i) instanceof JMenuItem) {
+                    JMenuItem item=(JMenuItem)(optmenu.getItem(i));
+                    if (item.getText().equals("Use "+getSatOption())) item.setIcon(iconYes);
+                    if (item.getText().equals("Verbosity level = default") && getVerbosity()==Verbosity.DEFAULT)
+                        item.setIcon(iconYes);
+                    if (item.getText().equals("Verbosity level = verbose") && getVerbosity()==Verbosity.VERBOSE)
+                        item.setIcon(iconYes);
+                    if (item.getText().equals("Verbosity level = very default") && getVerbosity()==Verbosity.DEBUG)
+                        item.setIcon(iconYes);
+                }
             }
             return true;
         }
@@ -762,12 +606,13 @@ public final class SimpleGUI {
     /** Called when the user clicks the "Run the latest command" button; always returns true. */
     private final Func0 a_runLatest = new Func0() {
         public final boolean run() {
-            Unit u=tryCompile(true);
-            if (u!=null) {
-                if (latestCommand>=u.runchecks.size()) latestCommand=u.runchecks.size()-1;
-                if (latestCommand<0) {latestCommand=0;log("\nThere are no commands to run.", styleRed);}
-                else (new RunListener(latestCommand)).actionPerformed(null);
-            }
+            tryCompile();
+            if (compiled==null) return false;
+            int n=compiled.runchecks.size();
+            if (n==0) { log.logRed("There are no commands to run.\n\n"); return false; }
+            if (latestCommand>=n) latestCommand=n-1;
+            if (latestCommand<0) (new RunListener(n-1)).actionPerformed(null);
+            else (new RunListener(latestCommand)).actionPerformed(null);
             return true;
         }
     };
@@ -788,7 +633,7 @@ public final class SimpleGUI {
         public final boolean run() {
             String name=getLatestInstance();
             if (name.length()==0) {
-                log("\nNo previous instances are available for viewing.", styleRed); return false;
+                log.logRed("No previous instances are available for viewing.\n\n"); return false;
             } else {
                 String xmlName=name+".xml";
                 if (!OurWindowMenu.focusByFilename(xmlName)) new KodVizGUI(name+".dot", new File(xmlName));
@@ -981,17 +826,29 @@ public final class SimpleGUI {
 
         if (1==1) { // File menu
             filemenu = bar.addMenu("File", true, KeyEvent.VK_F, a_file);
-            filemenu.addMenuItem(           null, "New",                    true,KeyEvent.VK_N,KeyEvent.VK_N,a_new);
-            filemenu.addMenuItem(           null, "Open...",                true,KeyEvent.VK_O,KeyEvent.VK_O,a_open);
-            filemenu.addMenuItem(           null, "Open Builtin Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
-            saveMenu=filemenu.addMenuItem(  null, "Save",                   true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
-            saveAsMenu=filemenu.addMenuItem(null, "Save As...",             true,KeyEvent.VK_A,-1,           a_saveAs);
-            closeMenu=filemenu.addMenuItem( null, "Close Window",           true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
-            filemenu.addMenuItem(           null, "Quit",                   true,KeyEvent.VK_Q,-1,           a_quit);
+            filemenu.addMenuItem(null, "New",                    true,KeyEvent.VK_N,KeyEvent.VK_N,a_new);
+            filemenu.addMenuItem(null, "Open...",                true,KeyEvent.VK_O,KeyEvent.VK_O,a_open);
+            filemenu.addMenuItem(null, "Open Builtin Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
+            filemenu.addMenuItem(null, "Save",                   true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
+            filemenu.addMenuItem(null, "Save As...",             true,KeyEvent.VK_A,-1,           a_saveAs);
+            filemenu.addMenuItem(null, "Close Window",           true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
+            filemenu.addMenuItem(null, "Quit",                   true,KeyEvent.VK_Q,-1,           a_quit);
         }
 
         if (1==1) { // Run menu
-            runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, a_run);
+            runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, null);
+            runmenu.addMenuListener(new MenuListener() {
+                public final void menuSelected(MenuEvent e) {
+                    a_run.run();
+                }
+                public final void menuDeselected(MenuEvent e) {
+                    runmenu.getItem(0).setEnabled(true);
+                    runmenu.getItem(1).setEnabled(true);
+                }
+                public final void menuCanceled(MenuEvent e) { }
+            });
+            runmenu.addMenuItem(null, "Run the latest command", true, KeyEvent.VK_R, KeyEvent.VK_R, a_runLatest);
+            runmenu.addMenuItem(null, "Show the latest instance", true, KeyEvent.VK_L, KeyEvent.VK_L, a_showLatestInstance);
         }
 
         if (1==1) { // Options menu
@@ -1011,21 +868,27 @@ public final class SimpleGUI {
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) choices.remove(SolverChoice.ZChaffJNI);
-            optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, null);
+            optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, a_option);
             for(final SolverChoice sc:choices) {
-                final OurMenuItem item = optmenu.addMenuItem(sc==getSatOption()?iconYes:iconNo, "Use "+sc, true, null);
-                item.addActionListener(new ActionListener() {
-                    public final void actionPerformed(ActionEvent e) {
-                        optmenu.setIconForChildren(iconNo);
-                        item.setIcon(iconYes);
-                        setSatOption(sc);
-                    }
+                optmenu.addMenuItem(sc==getSatOption()?iconYes:iconNo, "Use "+sc, true, new Func0() {
+                    public boolean run() { setSatOption(sc); return true; }
                 });
             }
+            optmenu.addSeparator();
+            optmenu.addMenuItem(iconYes, "Verbosity level = default", true, new Func0() {
+                public final boolean run() { setVerbosity(Verbosity.DEFAULT); return true; }
+            });
+            optmenu.addMenuItem(iconNo, "Verbosity level = verbose", true, new Func0() {
+                public final boolean run() { setVerbosity(Verbosity.VERBOSE); return true; }
+            });
+            optmenu.addMenuItem(iconNo, "Verbosity level = very verbose", true, new Func0() {
+                public final boolean run() { setVerbosity(Verbosity.DEBUG); return true; }
+            });
+            setVerbosity(Verbosity.DEFAULT);
         }
 
         if (1==1) { // Window menu
-            windowmenu=new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
+            new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
         }
 
         if (1==1) { // Help menu
@@ -1043,10 +906,8 @@ public final class SimpleGUI {
         toolbar.add(OurUtil.makeJButton("Save","Saves the current model","images/24_save.gif", a_save));
         toolbar.add(runbutton=OurUtil.makeJButton("Run","Runs the latest command","images/24_execute.gif", a_runLatest));
         toolbar.add(stopbutton=OurUtil.makeJButton("Stop","Stops the current analysis","images/24_execute_abort2.gif", a_stop));
-        toolbar.add(showbutton=OurUtil.makeJButton("Visualize","Visualize the latest instance","images/24_graph.gif", a_showLatestInstance));
+        toolbar.add(showbutton=OurUtil.makeJButton("Show","Show the latest instance","images/24_graph.gif", a_showLatestInstance));
         toolbar.add(Box.createHorizontalGlue());
-        runbutton.setMnemonic(KeyEvent.VK_N);
-        showbutton.setMnemonic(KeyEvent.VK_V);
         stopbutton.setVisible(false);
 
         // Create the highlighter
@@ -1089,7 +950,7 @@ public final class SimpleGUI {
         text.getDocument().addDocumentListener(new DocumentListener() {
             public final void insertUpdate(DocumentEvent e) {
                 highlighter.removeAllHighlights();
-                compiled=false; if (!modified) {modified=true;updateStatusBar();}
+                compiled=null; if (!modified) {modified=true;updateStatusBar();}
             }
             public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
             public final void changedUpdate(DocumentEvent e) { changedUpdate(e); }
@@ -1098,19 +959,16 @@ public final class SimpleGUI {
         textPane.setBorder(new OurBorder(true,false));
 
         // Create the message area
-        log=new JTextPane();
-        log.setBorder(new EmptyBorder(1,1,1,1));
-        log.setBackground(gray);
-        log.setEditable(false);
-        log.setFont(OurUtil.getFont());
-        StyledDocument doc=log.getStyledDocument();
-        Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-        styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
-        styleBold=doc.addStyle("bold", styleRegular); StyleConstants.setBold(styleBold, true);
-        styleGreen=doc.addStyle("green", styleBold); StyleConstants.setForeground(styleGreen, new Color(0.2f,0.7f,0.2f));
-        styleRed=doc.addStyle("red", styleBold); StyleConstants.setForeground(styleRed, new Color(0.7f,0.2f,0.2f));
-        styleGray=doc.addStyle("gray", styleBold); StyleConstants.setBackground(styleGray, new Color(0.8f,0.8f,0.8f));
-        JScrollPane statusPane=OurUtil.makeJScrollPane(log);
+        JScrollPane statusPane = OurUtil.makeJScrollPane();
+        Func1 viz=new Func1() {
+            public final boolean run(final String arg) {
+                if (!arg.endsWith(".xml")) return false;
+                String dotname=arg.substring(0, arg.length()-4)+".dot";
+                if (!OurWindowMenu.focusByFilename(arg)) new KodVizGUI(dotname, new File(arg));
+                return true;
+            }
+        };
+        log = new LogToJTextPane(statusPane, gray, Color.BLACK, new Color(.2f,.7f,.2f), new Color(.7f,.2f,.2f), viz);
         statusPane.setBorder(new OurBorder(false,false));
 
         // Add everything to the frame, then display the frame
@@ -1120,12 +978,10 @@ public final class SimpleGUI {
         });
         frame.addComponentListener(new ComponentListener() {
             public void componentResized(ComponentEvent e) {
-                if (hidden) return;
                 propertySetInt("width", frame.getWidth());
                 propertySetInt("height", frame.getHeight());
             }
             public void componentMoved(ComponentEvent e) {
-                if (hidden) return;
                 Point p=frame.getLocation();
                 propertySetInt("x", p.x);
                 propertySetInt("y", p.y);
@@ -1150,10 +1006,9 @@ public final class SimpleGUI {
         frame.setVisible(true);
 
         // Generate some informative log messages
-        log("Alloy4: build date "+Version.buildDate(), styleGreen);
-        log("\nSolver: "+getSatOption(), styleGreen);
+        log.logBold("Alloy4: build date "+Version.buildDate()+"\n\nSolver: "+getSatOption()+"\n\n");
         if (Util.onMac()) {
-            log("\nMac OS X detected.", styleGreen);
+            log.logBold("Mac OS X detected.\n\n");
             MacUtil.addApplicationListener(a_reopen, a_showAbout, a_openFileIfOk, a_quit);
         }
 
@@ -1166,15 +1021,15 @@ public final class SimpleGUI {
             if (f.exists()) a_openFile.run(f.getAbsolutePath());
         }
 
-        // Start an idleness thread (Must make sure this is javax.swing.Timer rather than java.util.Timer)
+        /* Start a background-compilation thread (Must make sure this is javax.swing.Timer rather than java.util.Timer)
         new Timer(1000, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (getCurrentThread()==null && !hidden) {
+                if (getCurrentThread()==null && frame.isVisible()) {
                     Unit u=tryCompile(false);
                     if (u==null || u.runchecks.size()==0) runmenu.setEnabled(false); else runmenu.setEnabled(true);
                 }
             }
-        }).start();
+        }).start();*/
 
         // Start a separate thread to watch for other invocations of Alloy4
         Runnable r = new Runnable() {
@@ -1182,8 +1037,8 @@ public final class SimpleGUI {
                 while(true) {
                     try {
                         String msg=Util.lockThenReadThenErase(Util.alloyHome()+File.separatorChar+"msg");
-                        if (msg.equals("open:")) invokeAndWait(a_windowRaise);
-                        else if (msg.startsWith("open:")) invokeAndWait(a_openFileIfOk,msg.substring(5));
+                        if (msg.equals("open:")) OurUtil.invokeAndWait(a_windowRaise);
+                        else if (msg.startsWith("open:")) OurUtil.invokeAndWait(a_openFileIfOk,msg.substring(5));
                     } catch(IOException e) { }
                     try {Thread.sleep(400);} catch (InterruptedException e) {}
                 }
@@ -1242,47 +1097,47 @@ public final class SimpleGUI {
         /** The run() method that actually runs the SAT query. */
         public void run() {
             try {
-                // It's safe to pass "log" to "reallog", since the LogToTextPane class
-                // is careful about only doing GUI operations via the AWT thread.
-                Log reallog=new LogToTextPane(log,styleRegular,styleGreen);
                 Log blanklog=new Log();
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(Util.alloyHome(), source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog, units);
                 String tempdir = Util.maketemp();
                 List<TranslateAlloyToKodkod.Result> result=
-                    TranslateAlloyToKodkod.codegen(index,reallog,units,sigs,getSatOption(),tempdir);
-                reallog.flush(); // To make sure everything is flushed.
+                    TranslateAlloyToKodkod.codegen(index,log,getVerbosity(),units,sigs,getSatOption(),tempdir);
+                log.flush(); // To make sure everything is flushed.
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
                 if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
-                    logButton("Click here to display this instance", tempdir+fs+(index+1)+".dot", tempdir+fs+(index+1)+".xml");
+                    //log.logButton(tempdir+fs+(index+1)+".xml");
                     setLatestInstance(tempdir+fs+(index+1));
                 }
                 if (result.size()>1) {
-                    log("\n" + result.size() + " commands were completed. The results are:", styleGreen);
+                    log.logBold("" + result.size() + " commands were executed. The results are:\n");
                     int i=0;
                     for(TranslateAlloyToKodkod.Result b:result) {
                         i++;
-                        if (b==null) {log("#"+i+": CANCELED", styleRegular); continue;}
+                        if (b==null) {log.log("#"+i+": CANCELED\n"); continue;}
                         switch(b) {
                         case SAT:
-                            logLink("#"+i+": SAT (Click here to see the instance)", tempdir+fs+i+".dot", tempdir+fs+i+".xml");
+                            log.log("#"+i+": SAT ");
+                            log.logTextLink(tempdir+fs+i+".xml");
+                            log.log("\n");
                             setLatestInstance(tempdir+fs+i);
                             break;
-                        case TRIVIALLY_SAT: log("#"+i+": SAT (trivially SAT)", styleRegular); break;
-                        case UNSAT: case TRIVIALLY_UNSAT: log("#"+i+": UNSAT", styleRegular); break;
-                        default: log("#"+i+": CANCELED", styleRegular);
+                        case TRIVIALLY_SAT: log.log("#"+i+": SAT (trivially SAT)\n"); break;
+                        case UNSAT: case TRIVIALLY_UNSAT: log.log("#"+i+": UNSAT\n"); break;
+                        default: log.log("#"+i+": CANCELED\n");
                         }
                     }
+                    log.log("\n");
                 }
             }
             catch(UnsatisfiedLinkError e) {
-                log("\nCannot run the command! The required JNI library cannot be found! "+e.toString(), styleRed);
+                log.logRed("Cannot run the command! The required JNI library cannot be found! "+e.toString()+"\n\n");
             }
             catch(Err e) {
                 highlight(e);
-                log("\nCannot run the command! "+e.toString(), styleRed);
+                log.logRed("Cannot run the command! "+e.toString()+"\n\n");
             }
-            invokeAndWait(new Runnable() {
+            OurUtil.invokeAndWait(new Runnable() {
                 public final void run() {
                     runmenu.setEnabled(true);
                     runbutton.setVisible(true);
