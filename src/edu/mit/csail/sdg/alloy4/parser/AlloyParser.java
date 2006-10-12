@@ -2371,6 +2371,7 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
       String fs=System.getProperty("file.separator");
       File f=new File(name);
       if (!f.exists()) f=new File((rootdir+"/models/"+name+".als").replace('/',fs.charAt(0)));
+      if (!f.exists()) f=new File(("/zweb/zweb/w/m/"+name+".als").replace('/',fs.charAt(0))); // TODO
       if (!f.exists()) throw new ErrorSyntax(pos, "The module \""+name+"\" cannot be found (File \""+f.getPath()+"\" cannot be found)");
       // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
       // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)

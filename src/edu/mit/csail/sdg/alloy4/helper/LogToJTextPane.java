@@ -22,8 +22,7 @@ import edu.mit.csail.sdg.alloy4util.Util;
 /**
  * This logger will log the messages into a JTextPane.
  *
- * <p/> Its constructor and its public methods can be called by any thread,
- *      but some of its private methods can be called only by the AWT thread.
+ * <p/> Its constructor and its public methods can be called by any thread.
  *
  * <p/><b>Thread Safety:</b>  Safe (as long as the AWT thread never blocks on other threads)
  *
@@ -32,28 +31,22 @@ import edu.mit.csail.sdg.alloy4util.Util;
 
 public final class LogToJTextPane extends Log {
 
-    /**
-     * The JTextPane object that will display the log.
-     * Since it's a GUI object, only the AWT thread may call its methods.
-     */
+    /** The newly created JTextPane object that will display the log. */
     private JTextPane log;
 
-    /**
-     * The styles to use when writing regular messages, bold messages, and red messages.
-     * Since these are GUI objects, only the AWT thread may call their methods.
-     */
-    private Style styleRegular, styleBold, styleRed;
+    /** The style to use when writing regular messages. */
+    private Style styleRegular;
 
-    /**
-     * These store the JLabels used for generating the hyperlinks.
-     * Since these are GUI objects, only the AWT thread may call their methods.
-     */
+    /** The style to use when writing bold messages. */
+    private Style styleBold;
+
+    /** The style to use when writing red messages. */
+    private Style styleRed;
+
+    /** This stores the JLabels used for displaying the hyperlinks. */
     private List<JLabel> links=new ArrayList<JLabel>();
 
-    /**
-     * The color to use as the background of the JTextPane.
-     * Since it's a GUI object, only the AWT thread may call its methods.
-     */
+    /** The color to use as the background of the JTextPane. */
     private final Color background;
 
     /**

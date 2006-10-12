@@ -1251,7 +1251,6 @@ public final class SimpleGUI {
                 log.flush(); // To make sure everything is flushed.
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
                 if (sc!=SolverChoice.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
-                    //log.logButton(tempdir+fs+(index+1)+".xml");
                     setLatestInstance(tempdir+fs+(index+1));
                 }
                 if (sc!=SolverChoice.FILE && result.size()>1) {

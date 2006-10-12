@@ -587,7 +587,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (b>=0 && (s==ParaSig.UNIV || s==ParaSig.NONE))
             throw c.syntaxError("You cannot specify a scope for the builtin signature \""+s.name+"\"");
         sig2bound(s,b);
-        if (logVerbosity.geq(Verbosity.DEBUG)) log.log("Sig \""+s.fullname+"\" bound to be <= "+b+"\n");
+        if (logVerbosity.geq(Verbosity.DEBUG)) log.log("Sig "+s.fullname+" bound to be <= "+b+"\n");
     }
 
     private boolean derive(ParaRuncheck cmd, List<ParaSig> sigs) {
