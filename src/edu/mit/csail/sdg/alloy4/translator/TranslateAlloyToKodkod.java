@@ -1109,7 +1109,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (!flatten) solver.options().setFlatten(false);
             if (!sym) solver.options().setSymmetryBreaking(0);
             log.log("   Solver: "+solver.options().solver()+" | Bitwidth: "+bitwidth
-            		+" | Symmetry: "+(sym?"on\nCompiling...":"off\nCompiling..."));
+                    +" | Symmetry: "+(sym?"on\nCompiling...":"off\nCompiling..."));
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (AlloyBridge.stopped) {
@@ -1118,11 +1118,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 return Result.CANCELED;
             }
             Solution sol=solver.solve(mainformula, bounds, new Logger() {
-				public void report(long translationTime, int variableCount, int primaryVariableCount, int clauseCount) {
-					log.log(" done\n   "+variableCount+" variables | "+clauseCount+" clauses | "
-							+translationTime+" ms\nSolving...");
-					log.flush();
-				}
+                public void report(long translationTime, int variableCount, int primaryVariableCount, int clauseCount) {
+                    log.log(" done\n   "+variableCount+" variables | "+clauseCount+" clauses | "
+                            +translationTime+" ms\nSolving...");
+                    log.flush();
+                }
             });
             String label="It";//cmd.name;
             //long t1=sol.stats().translationTime();

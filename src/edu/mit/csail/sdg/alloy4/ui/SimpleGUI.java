@@ -237,8 +237,8 @@ public final class SimpleGUI {
     /** The JFrame for the main window. */
     private final JFrame frame;
 
-    /** The "File", "Run", "Option", "Window", and "Help" menus. */
-    private final OurMenu filemenu, runmenu, optmenu, helpmenu;
+    /** The "File", "Edit", "Run", "Option", "Window", and "Help" menus. */
+    private final OurMenu filemenu, editmenu, runmenu, optmenu, helpmenu;
 
     /** The "File->Recent" menu. */
     private final JMenu recentmenu;
@@ -341,7 +341,7 @@ public final class SimpleGUI {
     /** Called then the user expands the "File" menu; always returns true. */
     private final Func0 a_file = new Func0() {
         public final boolean run() {
-        	boolean found=false;
+            boolean found=false;
             closemenu.setEnabled(latestName.length()>0 || text.getDocument().getLength()>0);
             recentmenu.removeAll();
             for(int i=0; i<=3; i++) {
@@ -357,11 +357,11 @@ public final class SimpleGUI {
             recentmenu.addSeparator();
             JMenuItem y=new JMenuItem("Clear Menu");
             y.addActionListener(new ActionListener() {
-            	public final void actionPerformed(ActionEvent e) {
-            		propertySet("history0",""); propertySet("history1","");
-            		propertySet("history2","");	propertySet("history3","");
-            		openfiles.clear();
-            	}
+                public final void actionPerformed(ActionEvent e) {
+                    propertySet("history0",""); propertySet("history1","");
+                    propertySet("history2",""); propertySet("history3","");
+                    openfiles.clear();
+                }
             });
             recentmenu.add(y);
             recentmenu.setEnabled(found);
@@ -870,6 +870,18 @@ public final class SimpleGUI {
             filemenu.addMenuItem(null, "Save As...",            true,KeyEvent.VK_A,-1,           a_saveAs);
             closemenu=filemenu.addMenuItem(null, "Close",       true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
             filemenu.addMenuItem(null, "Quit",true,KeyEvent.VK_Q,(Util.onMac()?-1:KeyEvent.VK_Q),a_quit);
+        }
+
+        if (1==1) { // Edit menu
+            editmenu = bar.addMenu("Edit", true, KeyEvent.VK_E, null);
+            editmenu.addMenuItem(null, "Undo",      true, KeyEvent.VK_Z, KeyEvent.VK_Z, null);
+            editmenu.addSeparator();
+            editmenu.addMenuItem(null, "Cut",       true, KeyEvent.VK_X, KeyEvent.VK_X, null);
+            editmenu.addMenuItem(null, "Copy",      true, KeyEvent.VK_C, KeyEvent.VK_C, null);
+            editmenu.addMenuItem(null, "Paste",     true, KeyEvent.VK_V, KeyEvent.VK_V, null);
+            editmenu.addSeparator();
+            editmenu.addMenuItem(null, "Find...",   true, KeyEvent.VK_F, KeyEvent.VK_F, null);
+            editmenu.addMenuItem(null, "Find Next", true,                               null);
         }
 
         if (1==1) { // Run menu
