@@ -20,6 +20,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -38,6 +39,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -152,6 +154,14 @@ public final class SimpleGUI {
 
     //====== static methods =================================================//
 
+    /** Constrain the font size to a reasonable number. */
+    private static int boundFontSize(int n, int min, int max) {
+        if (n<10) n=12; // Just pick a reasonable default value if the key didn't exist
+        if (n<min) return min;
+        if (n>max) return max;
+        return n;
+    }
+
     /** Sets a persistent property. */
     private static void propertySet(String key, String value) {
         Preferences pref=Preferences.userNodeForPackage(SimpleGUI.class);
@@ -185,7 +195,8 @@ public final class SimpleGUI {
     //====== synchronized fields (you must lock SimpleGUI.this before accessing them) =======//
 
     /** The current choice of SAT solver. */
-    private SolverChoice satOPTION=SolverChoice.MiniSatSimpPIPE;
+    private SolverChoice satOPTION = SolverChoice.parse(propertyGet("solver"));
+    private final List<SolverChoice> satChoices;
 
     /** Read the current SAT option. */
     private synchronized SolverChoice getSatOption() { return satOPTION; }
@@ -194,11 +205,13 @@ public final class SimpleGUI {
     private synchronized void setSatOption(SolverChoice sc) { satOPTION=sc; }
 
     /** The current verbosity level. */
-    private Verbosity verbosity = Verbosity.DEFAULT;
+    private Verbosity verbosity = Verbosity.parse(propertyGet("verbosity"));
 
     private synchronized Verbosity getVerbosity() { return verbosity; }
 
     private synchronized void setVerbosity(Verbosity value) { verbosity=value; }
+
+    private int fontSize = boundFontSize(propertyGetInt("fontsize"),12,24);
 
     /**
      * If it's not "", then it is the first part of the filename for the latest instance.
@@ -228,7 +241,7 @@ public final class SimpleGUI {
 
     /** The "File", "Run", "Option", "Window", and "Help" menus. */
     private final OurMenu filemenu, runmenu, optmenu, helpmenu;
-    
+
     /** The "close" menu item. */
     private final OurMenuItem closemenu;
 
@@ -255,6 +268,7 @@ public final class SimpleGUI {
 
     /** The filename for the content currently in the text editor. ("" if the text editor is unnamed) */
     private String latestName="";
+    private List<String> openfiles=new ArrayList<String>();
 
     /** The most-recently-used directory (this is the directory we use when launching a FileChooser next time) */
     private String fileOpenDirectory=(new File(System.getProperty("user.home"))).getAbsolutePath();
@@ -359,7 +373,7 @@ public final class SimpleGUI {
             latestName="";
             highlighter.removeAllHighlights();
             text.setText("");
-            frame.setTitle("Alloy4: build date "+Version.buildDate());
+            frame.setTitle("Alloy Analyzer Version 4.0");
             OurWindowMenu.addWindow(frame, "");
             latestCommand=-1; compiled=null; modified=false; updateStatusBar();
             return true;
@@ -400,10 +414,10 @@ public final class SimpleGUI {
                 highlighter.removeAllHighlights();
                 text.setText(sb.toString());
                 text.setCaretPosition(0);
-                log.logBold("File \""+shortFileName(f)+"\" successfully loaded.\n\n");
                 frame.setTitle("Alloy Model: "+f);
                 OurWindowMenu.addWindow(frame, f);
                 addHistory(latestName=f);
+                openfiles.remove(f); openfiles.add(f);
                 latestCommand=-1; compiled=null; modified=false; updateStatusBar();
                 show();
             } catch(FileNotFoundException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
@@ -468,8 +482,8 @@ public final class SimpleGUI {
                 fw.close();
                 modified=false;
                 updateStatusBar();
-                log.logBold("File \""+shortFileName(filename)+"\" successfully saved.\n\n");
                 addHistory(latestName=filename);
+                openfiles.remove(filename); openfiles.add(filename);
                 frame.setTitle("Alloy Model: "+latestName);
                 OurWindowMenu.addWindow(frame, latestName);
             } catch(IOException e) {
@@ -513,11 +527,10 @@ public final class SimpleGUI {
     private final Func0 a_close = new Func0() {
         public final boolean run() {
             if (my_confirm()) {
+                openfiles.remove(latestName);
                 modified=false;
                 a_new.run();
-                modified=false;
-                log.clear();
-                log.logBold("Alloy 4 (build date: "+Version.buildDate()+")\n\n");
+                if (openfiles.size()>0) a_openFile.run(openfiles.get(openfiles.size()-1));
                 return true;
             }
             return false;
@@ -591,19 +604,33 @@ public final class SimpleGUI {
     /** Called when the user expands the "Options" menu; always returns true. */
     private final Func0 a_option = new Func0() {
         public final boolean run() {
-            optmenu.setIconForChildren(iconNo);
-            for(int i=0; i<optmenu.getItemCount(); i++) {
-                if (optmenu.getItem(i) instanceof JMenuItem) {
-                    JMenuItem item=(JMenuItem)(optmenu.getItem(i));
-                    if (item.getText().equals("Use "+getSatOption())) item.setIcon(iconYes);
-                    if (item.getText().equals("Verbosity level = default") && getVerbosity()==Verbosity.DEFAULT)
-                        item.setIcon(iconYes);
-                    if (item.getText().equals("Verbosity level = verbose") && getVerbosity()==Verbosity.VERBOSE)
-                        item.setIcon(iconYes);
-                    if (item.getText().equals("Verbosity level = very verbose") && getVerbosity()==Verbosity.DEBUG)
-                        item.setIcon(iconYes);
-                }
+            optmenu.removeAll();
+            JMenu sat=new JMenu("SAT solver: "+getSatOption());
+            for(final SolverChoice sc:satChoices) {
+                (new OurMenuItem(sat, ""+sc, new Func0() {
+                    public boolean run() { setSatOption(sc); propertySet("solver",sc.id); return true; }
+                })).setIcon(sc==getSatOption()?iconYes:iconNo);
             }
+            optmenu.add(sat);
+            JMenu verb=new JMenu("Verbosity level: "+getVerbosity());
+            for(final Verbosity vb:Verbosity.values()) {
+                (new OurMenuItem(verb, ""+vb, new Func0() {
+                    public final boolean run() { setVerbosity(vb); propertySet("verbosity",vb.id); return true; }
+                })).setIcon(vb==getVerbosity()?iconYes:iconNo);
+            }
+            optmenu.add(verb);
+            JMenu size=new JMenu("Font size: "+fontSize);
+            for(final int n: new Integer[]{10,11,12,14,16,18,24}) {
+                (new OurMenuItem(size, ""+n, new Func0() {
+                    public final boolean run() {
+                        fontSize=n; propertySetInt("fontsize",n);
+                        text.setFont(new Font(OurUtil.getFontName(), Font.PLAIN, n));
+                        log.setFontSize(n);
+                        return true;
+                    }
+                })).setIcon(n==fontSize?iconYes:iconNo);
+            }
+            optmenu.add(size);
             return true;
         }
     };
@@ -659,18 +686,21 @@ public final class SimpleGUI {
             Icon icon=OurUtil.loadIcon("images/logo.gif");
             Object[] array = {
                     icon,
-                    "Thank you for using Alloy 4 (build date "+Version.buildDate()+").",
-                    "If you have any suggestions or bug reports, please visit our website: alloy.mit.edu",
+                    "Alloy Analyzer Version 4.0",
+                    "Build date: "+Version.buildDate(),
                     " ",
-                    "If you installed Alloy4 using WebStart, it should have created an Alloy4 icon",
-                    "on your desktop. Clicking on it will load the Alloy4 graphical interface.",
+                    "Lead developer: Felix Chang",
+                    "Engine developer: Emina Torlak",
+                    "Graphic design: Julie Pelaez",
+                    "Project lead: Daniel Jackson",
                     " ",
-                    "If you installed the jar file manually, please see alloy.mit.edu for more",
-                    "information on the available command line options.",
-                    " ", "Thank you."};
+                    "More information at: http://alloy.mit.edu",
+                    "Comments and questions to: alloy@mit.edu",
+                    " ",
+                    "Thanks to: Ilya Shlyakhter, Manu Sridharan, Derek Rayside, Jonathan Edwards, Gregory Dennis,",
+                    "Robert Seater, Edmond Lau, Vincent Yeung, Sam Daitch, Andrew Yip, Jongmin Baek, Ning Song,",
+                    "Arturo Arizpe, Li-kuo (Brian) Lin, Joseph Cohen, Jesse Pavel, Ian Schechter, and Uriel Schafer."};
             OurDialog.alert(null, array, "About Alloy 4");
-            // We intentionally chose "null" as the parent, since otherwise
-            // the main window would show up on Mac, even when it should be hidden.
             return true;
         }
     };
@@ -822,7 +852,7 @@ public final class SimpleGUI {
         int y=propertyGetInt("y"); if (y<0) y=screenHeight/10; if (y+height>screenHeight) y=0;
 
         // Construct the JFrame object
-        frame=new JFrame("Alloy4: build date "+Version.buildDate());
+        frame=new JFrame("Alloy Analyzer Version 4.0");
         OurWindowMenu.addWindow(frame,"");
 
         // Create the menu bar
@@ -831,13 +861,13 @@ public final class SimpleGUI {
 
         if (1==1) { // File menu
             filemenu = bar.addMenu("File", true, KeyEvent.VK_F, a_file);
-            filemenu.addMenuItem(null, "New",                    true,KeyEvent.VK_N,KeyEvent.VK_N,a_new);
-            filemenu.addMenuItem(null, "Open...",                true,KeyEvent.VK_O,KeyEvent.VK_O,a_open);
-            filemenu.addMenuItem(null, "Open Builtin Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
-            filemenu.addMenuItem(null, "Save",                   true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
-            filemenu.addMenuItem(null, "Save As...",             true,KeyEvent.VK_A,-1,           a_saveAs);
-            closemenu=filemenu.addMenuItem(null, "Close",        true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
-            filemenu.addMenuItem(null, "Quit",                   true,KeyEvent.VK_Q,-1,           a_quit);
+            filemenu.addMenuItem(null, "New",                   true,KeyEvent.VK_N,KeyEvent.VK_N,a_new);
+            filemenu.addMenuItem(null, "Open...",               true,KeyEvent.VK_O,KeyEvent.VK_O,a_open);
+            filemenu.addMenuItem(null, "Open Sample Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
+            filemenu.addMenuItem(null, "Save",                  true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
+            filemenu.addMenuItem(null, "Save As...",            true,KeyEvent.VK_A,-1,           a_saveAs);
+            closemenu=filemenu.addMenuItem(null, "Close",       true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
+            filemenu.addMenuItem(null, "Quit",true,KeyEvent.VK_Q,(Util.onMac()?-1:KeyEvent.VK_Q),a_quit);
         }
 
         if (1==1) { // Run menu
@@ -861,37 +891,24 @@ public final class SimpleGUI {
         if (1==1) { // Options menu
             String binary=Util.alloyHome()+fs+"binary";
             Error ex=null;
-            List<SolverChoice> choices=new ArrayList<SolverChoice>();
-            for(SolverChoice sc:SolverChoice.values()) choices.add(sc);
+            satChoices = new ArrayList<SolverChoice>();
+            for(SolverChoice sc:SolverChoice.values()) satChoices.add(sc);
             try {               System.load(binary+fs+"libminisat6.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat4.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat.so");     ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"minisat.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) choices.remove(SolverChoice.MiniSatJNI);
+            if (ex!=null) satChoices.remove(SolverChoice.MiniSatJNI);
             try {               System.load(binary+fs+"libzchaff_basic6.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic4.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.so");     ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) choices.remove(SolverChoice.ZChaffJNI);
+            if (ex!=null) satChoices.remove(SolverChoice.ZChaffJNI);
+            // Query twice, so that we can gracefully back off along the JNI choices
+            if (!satChoices.contains(getSatOption())) setSatOption(SolverChoice.ZChaffJNI);
+            if (!satChoices.contains(getSatOption())) setSatOption(SolverChoice.MiniSatPIPE);
             optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, a_option);
-            for(final SolverChoice sc:choices) {
-                optmenu.addMenuItem(sc==getSatOption()?iconYes:iconNo, "Use "+sc, true, new Func0() {
-                    public boolean run() { setSatOption(sc); return true; }
-                });
-            }
-            optmenu.addSeparator();
-            optmenu.addMenuItem(iconYes, "Verbosity level = default", true, new Func0() {
-                public final boolean run() { setVerbosity(Verbosity.DEFAULT); return true; }
-            });
-            optmenu.addMenuItem(iconNo, "Verbosity level = verbose", true, new Func0() {
-                public final boolean run() { setVerbosity(Verbosity.VERBOSE); return true; }
-            });
-            optmenu.addMenuItem(iconNo, "Verbosity level = very verbose", true, new Func0() {
-                public final boolean run() { setVerbosity(Verbosity.DEBUG); return true; }
-            });
-            setVerbosity(Verbosity.DEFAULT);
         }
 
         if (1==1) { // Window menu
@@ -950,7 +967,7 @@ public final class SimpleGUI {
         text.setLineWrap(false);
         text.setEditable(true);
         text.setTabSize(3);
-        text.setFont(OurUtil.getFont());
+        text.setFont(OurUtil.getFont(fontSize));
         text.addCaretListener(new CaretListener() {
             public final void caretUpdate(CaretEvent e) {updateStatusBar();}
         });
@@ -975,7 +992,7 @@ public final class SimpleGUI {
                 return true;
             }
         };
-        log = new LogToJTextPane(statusPane, gray, Color.BLACK, new Color(.2f,.7f,.2f), new Color(.7f,.2f,.2f), viz);
+        log = new LogToJTextPane(statusPane, fontSize, gray, Color.BLACK, Color.BLACK, new Color(.7f,.2f,.2f), viz);
         statusPane.setBorder(new EmptyBorder(0,0,0,0));
 
         // Add everything to the frame, then display the frame
@@ -1003,7 +1020,7 @@ public final class SimpleGUI {
         lefthalf.add(toolbar, BorderLayout.NORTH);
         lefthalf.add(textPane, BorderLayout.CENTER);
         all.add(new OurSplitPane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, statusPane, width/2), BorderLayout.CENTER);
-        all.add(status=OurUtil.makeJLabel(" ",OurUtil.getFont()), BorderLayout.SOUTH);
+        all.add(status=OurUtil.makeJLabel(" ",OurUtil.getFont(fontSize)), BorderLayout.SOUTH);
         status.setBackground(gray);
         status.setOpaque(true);
         status.setBorder(new OurBorder(true,false));
@@ -1013,11 +1030,8 @@ public final class SimpleGUI {
         frame.setVisible(true);
 
         // Generate some informative log messages
-        log.logBold("Alloy4: build date "+Version.buildDate()+"\n\nSolver: "+getSatOption()+"\n\n");
-        if (Util.onMac()) {
-            log.logBold("Mac OS X detected.\n\n");
-            MacUtil.registerApplicationListener(a_reopen, a_showAbout, a_openFileIfOk, a_quit);
-        }
+        log.logBold("Alloy Analyzer Version 4.0 (build date: "+Version.buildDate()+")\n\n");
+        if (Util.onMac()) MacUtil.registerApplicationListener(a_reopen, a_showAbout, a_openFileIfOk, a_quit);
 
         // Open the given file, if a filename is given in the command line
         if (args.length==1) {
@@ -1125,7 +1139,7 @@ public final class SimpleGUI {
                         switch(b) {
                         case SAT:
                             log.log("#"+i+": SAT ");
-                            log.logTextLink(tempdir+fs+i+".xml");
+                            log.logLink(tempdir+fs+i+".xml");
                             log.log("\n");
                             setLatestInstance(tempdir+fs+i);
                             break;

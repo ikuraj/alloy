@@ -2,11 +2,10 @@ package edu.mit.csail.sdg.alloy4.helper;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import javax.swing.JButton;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -25,7 +24,7 @@ import edu.mit.csail.sdg.alloy4util.Util;
  * This logger will log the messages into a JTextPane.
  *
  * <p/> Its constructor and its public methods can be called by any thread,
- *      though some of its private methods can be called only by the AWT thread.
+ *      but some of its private methods can be called only by the AWT thread.
  *
  * <p/><b>Thread Safety:</b>  Safe (as long as the AWT thread never blocks on other threads)
  *
@@ -42,9 +41,15 @@ public final class LogToJTextPane extends Log {
 
     /**
      * The styles to use when writing regular messages, bold messages, and red messages.
-     * Since these are GUI objects, only the AWT thread may call its methods.
+     * Since these are GUI objects, only the AWT thread may call their methods.
      */
     private Style styleRegular, styleBold, styleRed;
+
+    /**
+     * These store the JLabels used for generating the hyperlinks.
+     * Since these are GUI objects, only the AWT thread may call their methods.
+     */
+    private List<JLabel> links=new ArrayList<JLabel>();
 
     /**
      * The color to use as the background of the JTextPane.
@@ -65,8 +70,29 @@ public final class LogToJTextPane extends Log {
     private int lastSize=0;
 
     /**
+     * The current font size.
+     * For simplicity, we insist that only the AWT thread may read and write this field.
+     */
+    private int fontSize=0;
+
+    /** Set the font size. */
+    public void setFontSize(final int fontSize) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { setFontSize(fontSize); } });
+            return;
+        }
+        this.fontSize=fontSize;
+        StyleConstants.setFontSize(styleRegular, fontSize);
+        StyleConstants.setFontSize(styleBold, fontSize);
+        StyleConstants.setFontSize(styleRed, fontSize);
+        Font newFont=new Font(OurUtil.getFontName(), Font.BOLD, fontSize);
+        for(JLabel x:links) x.setFont(newFont);
+    }
+
+    /**
      * Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
      * @param parent - the JScrollPane to insert the JTextPane into
+     * @param fontSize - the font size to start with
      * @param background - the background color to use for the JTextPane
      * @param regular - the color to use for regular messages
      * @param bold - the color to use for bold messages
@@ -74,10 +100,11 @@ public final class LogToJTextPane extends Log {
      * @param action - the function to call when users click on a hyperlink message
      * (as required by Func1's specification, we guarantee we will only call action.run() from the AWT thread).
      */
-    public LogToJTextPane(final JScrollPane parent,
+    public LogToJTextPane(final JScrollPane parent, final int fontSize,
             Color background, final Color regular, final Color bold, final Color red, Func1 action) {
         this.background=background;
         this.action=action;
+        this.fontSize=fontSize;
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() {
                 public final void run() { initialize(parent,regular,bold,red); }
@@ -96,11 +123,11 @@ public final class LogToJTextPane extends Log {
         log.setBorder(new EmptyBorder(1,1,1,1));
         log.setBackground(background);
         log.setEditable(false);
-        log.setFont(OurUtil.getFont());
         StyledDocument doc=log.getStyledDocument();
         Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
         styleRegular=doc.addStyle("regular", old);
         StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
+        StyleConstants.setFontSize(styleRegular, fontSize);
         StyleConstants.setForeground(styleRegular, regular);
         styleBold=doc.addStyle("bold", styleRegular);
         StyleConstants.setBold(styleBold, true);
@@ -125,7 +152,6 @@ public final class LogToJTextPane extends Log {
         if (style!=styleRed) lastSize=doc.getLength();
     }
 
-
     /** Write "msg" in regular style. */
     @Override public void log(String msg) { log(msg,styleRegular); }
 
@@ -146,37 +172,14 @@ public final class LogToJTextPane extends Log {
         try {
             doc.insertString(doc.getLength(),msg1,styleRed);
             doc.insertString(doc.getLength(),msg2,styleRegular);
-        }
-        catch (BadLocationException e) {Util.harmless("log()",e);}
+        } catch (BadLocationException e) {Util.harmless("log()",e);}
         log.setCaretPosition(doc.getLength());
     }
 
-    /** Write a clickable button into the log window. */
+    /** Write a clickable link into the log window. */
     @Override public void logLink(final String link) {
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() { public final void run() { logLink(link); } });
-            return;
-        }
-        clearError();
-        StyledDocument doc=log.getStyledDocument();
-        Style s=doc.addStyle("link", styleRegular);
-        JButton b=new JButton("Click here to see the result");
-        if (Util.onMac()) b.setBackground(background);
-        b.setMaximumSize(b.getPreferredSize());
-        b.setFont(OurUtil.getFont());
-        b.setForeground(Color.BLUE);
-        b.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { action.run(link); }
-        });
-        StyleConstants.setComponent(s,b);
-        log(" ",s);
-        lastSize=doc.getLength();
-    }
-
-    /** Write a clickable text link into the log window. */
-    public void logTextLink(final String link) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public final void run() { logTextLink(link); } });
             return;
         }
         clearError();
@@ -186,7 +189,7 @@ public final class LogToJTextPane extends Log {
         final Color linkColor=new Color(0.3f, 0.3f, 0.9f), hoverColor=new Color(.9f, .3f, .3f);
         b.setAlignmentY(0.8f);
         b.setMaximumSize(b.getPreferredSize());
-        b.setFont(OurUtil.getFont().deriveFont(Font.BOLD));
+        b.setFont(OurUtil.getFont(fontSize).deriveFont(Font.BOLD));
         b.setForeground(linkColor);
         b.addMouseListener(new MouseListener(){
             public final void mouseClicked(MouseEvent e) { action.run(link); }
@@ -196,6 +199,7 @@ public final class LogToJTextPane extends Log {
             public final void mouseExited(MouseEvent e) { b.setForeground(linkColor); }
         });
         StyleConstants.setComponent(s, b);
+        links.add(b);
         log(" ",s);
         lastSize=doc.getLength();
     }

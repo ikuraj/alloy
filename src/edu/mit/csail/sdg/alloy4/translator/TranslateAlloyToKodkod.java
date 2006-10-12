@@ -79,17 +79,39 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private static final String fs = System.getProperty("file.separator");
 
     public enum SolverChoice {
-        BerkMinPIPE("BerkMin"),
-        MiniSatSimpPIPE("MiniSat2+Simp"),
-        MiniSatCorePIPE("MiniSat2"),
-        MiniSatPIPE("MiniSat"),
-        MiniSatJNI("MiniSat (JNI)"),
-        ZChaffJNI("ZChaff (JNI)"),
-        SAT4J("SAT4J"),
-        FILE("Output to file");
+        BerkMinPIPE("berkmin", "BerkMin"),
+        MiniSatSimpPIPE("minisat2simp", "MiniSat2+Simp"),
+        MiniSatCorePIPE("minisat2core", "MiniSat2"),
+        MiniSatPIPE("minisat", "MiniSat"),
+        MiniSatJNI("minisat(jni)", "MiniSat using JNI"),
+        ZChaffJNI("zchaff(jni)", "ZChaff using JNI"),
+        SAT4J("sat4j", "SAT4J"),
+        FILE("file", "Output to file");
+        public final String id; // Should be unique, and consistent in future versions
         private final String label;
-        private SolverChoice(String label) { this.label=label; }
+        private SolverChoice(String id, String label) {
+            this.id=id; this.label=label;
+        }
+        public static SolverChoice parse(String id) {
+            for(SolverChoice sc:values()) if (sc.id.equals(id)) return sc;
+            return SAT4J;
+        }
         @Override public final String toString() { return label; }
+    };
+
+    public enum Verbosity {
+        DEFAULT("0", "low"),
+        VERBOSE("1", "medium"),
+        DEBUG("2", "high");
+        public final String id; // Should be unique, and consistent in future versions
+        private final String label;
+        private Verbosity(String id, String label) { this.id=id; this.label=label; }
+        @Override public final String toString() { return label; }
+        public static Verbosity parse(String id) {
+            for(Verbosity vb:values()) if (vb.id.equals(id)) return vb;
+            return DEFAULT;
+        }
+        public boolean geq(Verbosity other) { return ordinal() >= other.ordinal(); }
     };
 
     public enum Result { CANCELED, SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
@@ -489,11 +511,6 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
 
 //################################################################################################
 
-    public enum Verbosity {
-        DEFAULT, VERBOSE, DEBUG;
-        public boolean geq(Verbosity other) { return ordinal() >= other.ordinal(); }
-    };
-
     private boolean demul=false;
     private final List<Unit> units;
     private Env<Object> env=new Env<Object>();
@@ -569,7 +586,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (b>=0 && (s==ParaSig.UNIV || s==ParaSig.NONE))
             throw c.syntaxError("You cannot specify a scope for the builtin signature \""+s.name+"\"");
         sig2bound(s,b);
-        if (logVerbosity.geq(Verbosity.DEBUG)) log.log(debug+"Sig \""+s.fullname+"\" bound to be <= "+b+"\n");
+        if (logVerbosity.geq(Verbosity.DEBUG)) log.log("Sig \""+s.fullname+"\" bound to be <= "+b+"\n");
     }
 
     private boolean derive(ParaRuncheck cmd, List<ParaSig> sigs) {
@@ -839,7 +856,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         for(int xi=0; xi<units.get(0).runchecks.size(); xi++)
             if (codeindex==(-1) || codeindex==xi) {
                 ParaRuncheck x=units.get(0).runchecks.get(xi);
-                log.logBold(x.toString()+"...\n");
+                log.logBold("Executing \""+x.toString()+"\"...\n");
                 log.flush();
                 sig2bound.clear();
                 sig2ts.clear();
@@ -851,9 +868,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     Unit u=units.get(0).lookupPath(s.path);
                     if (alloy3(s,u)) {
                         ParaSig s2=u.params.get("elem");
-                        if (sig2bound(s2)<=0) throw x.syntaxError("The signature "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
+                        if (sig2bound(s2)<=0) throw x.syntaxError("Sig "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
                         if (logVerbosity.geq(Verbosity.VERBOSE)) {
-                            log.log("Compatibility hack: "+s2.fullname+" set to exactly "+sig2bound(s2)+"\n");
+                            log.log("Sig "+s2.fullname+" forced to have exactly "+sig2bound(s2)+" atoms.\n");
                         }
                         if (s2!=null) exact(s2,true);
                     }
@@ -995,22 +1012,22 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             bounds.bound((Relation)(rel(s)),lower,upper);
             if (s.subset) continue;
             if (exact(s) && upper.size()==sig2bound(s)) {
-                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SIG "+s.fullname+" BOUNDEXACTLY=<"+upper.toString()+">\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" == "+upper.toString()+"\n");
             }
             else if (exact(s)) {
-                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #=="+sig2bound(s)+"\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" in "+upper.toString()+" with size=="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
                 else kfact=rel(s).count().eq(makeIntConstant(cmd.pos, bitwidth, sig2bound(s))).and(kfact);
             }
             else if (upper.size()>sig2bound(s)) {
-                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+"> and #<="+sig2bound(s)+"\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" in "+upper.toString()+" with size<="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
                 else kfact=rel(s).count().lte(makeIntConstant(cmd.pos, bitwidth, sig2bound(s))).and(kfact);
             }
             else {
-                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SIG "+s.fullname+" BOUND=<"+upper.toString()+">\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" in "+upper.toString()+"\n");
             }
         }
         // Bound the SUBSETSIGS
@@ -1019,7 +1036,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (!s.subset) continue;
             TupleSet ts=factory.noneOf(1);
             for(ParaSig sup:s.sups()) for(Tuple temp:sig2ts(sup)) ts.add(temp);
-            if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("SUBSETSIG "+s.fullname+" BOUND=<"+ts.toString()+">\n");
+            if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" in "+ts.toString()+"\n");
             bounds.bound((Relation)(rel(s)),ts); sig2ts(s,ts);
         }
         // Bound the FIELDS
@@ -1090,7 +1107,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (cmd.options.contains("sym")) sym=true;
             if (!flatten) solver.options().setFlatten(false);
             if (!sym) solver.options().setSymmetryBreaking(0);
-            log.log("Solver="+solver.options().solver()+" Bitwidth="+bitwidth+" SymBreak="+sym+" Flatten="+flatten+"... ");
+            log.log("  Solver: "+solver.options().solver()+" | bitwidth: "+bitwidth+" | symmetry: "+(sym?"on":"off"));
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (AlloyBridge.stopped) {
