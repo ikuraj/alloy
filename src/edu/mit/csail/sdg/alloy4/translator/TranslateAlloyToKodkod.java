@@ -1123,13 +1123,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             Solution sol=solver.solve(mainformula, bounds, new Logger() {
                 public void report(long translationTime, int variableCount, int primaryVariableCount, int clauseCount) {
                     log.setLength(loglength);
-                    log.log("   "+variableCount+" variables | "+clauseCount+" clauses | "
+                    log.log("   "+variableCount+" vars | "+clauseCount+" clauses | "
                             +translationTime+" ms\n   Solving...");
                     log.flush();
                 }
             });
             log.setLength(loglength);
-            log.log("   "+sol.stats().variables()+" variables | "+sol.stats().clauses()+" clauses | "+sol.stats().translationTime()+" ms\n");
+            log.log("   "+sol.stats().variables()+" vars | "
+            		+sol.stats().primaryVariables()+" primary vars | "
+            		+sol.stats().clauses()+" clauses | "+sol.stats().translationTime()+" ms\n");
             String label="It";//cmd.name;
             long t2=sol.stats().solvingTime();
             if (AlloyBridge.stopped) {log.log("   Canceled. "+t2+" ms.\n\n"); log.flush(); return Result.CANCELED;}
