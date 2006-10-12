@@ -1066,95 +1066,100 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 }
             }
         }
+        Solver solver = new Solver();
+        switch(solverChoice) {
+        case ZChaffJNI: solver.options().setSolver(SATFactory.ZChaffBasic); break;
+        case MiniSatJNI: solver.options().setSolver(SATFactory.MiniSat); break;
+        case MiniSatSimpPIPE: solver.options().setSolver(new SATFactory() {
+            @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisatsimp", destdir+fs+destnum+".cnf"); }
+            @Override public String toString() { return "MiniSat2+Simp"; }
+        });
+        break;
+        case MiniSatCorePIPE: solver.options().setSolver(new SATFactory() {
+            @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisatcore", destdir+fs+destnum+".cnf"); }
+            @Override public String toString() { return "MiniSat2"; }
+        });
+        break;
+        case MiniSatPIPE: solver.options().setSolver(new SATFactory() {
+            @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisat", destdir+fs+destnum+".cnf"); }
+            @Override public String toString() { return "MiniSat"; }
+        });
+        break;
+        case BerkMinPIPE: solver.options().setSolver(new SATFactory() {
+            @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"berkmin", destdir+fs+destnum+".cnf"); }
+            @Override public String toString() { return "BerkMin"; }
+        });
+        break;
+        case FILE: solver.options().setSolver(new SATFactory() {
+            @Override public final SATSolver instance() { return new ViaFile(destdir+fs+destnum+".cnf"); }
+            @Override public String toString() { return "CommandLine"; }
+            });
+            break;
+        default: solver.options().setSolver(SATFactory.DefaultSAT4J);
+        }
+        solver.options().setBitwidth(bitwidth);
+        solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+        boolean flatten=true, sym=true;
+        if (cmd.expects!=0) sym=false;
+        if (cmd.options.contains("noflatten")) flatten=false;
+        if (cmd.options.contains("flatten")) flatten=true;
+        if (cmd.options.contains("nosym")) sym=false;
+        if (cmd.options.contains("sym")) sym=true;
+        if (!flatten) solver.options().setFlatten(false);
+        if (!sym) solver.options().setSymmetryBreaking(0);
+        log.log("   Solver: "+solver.options().solver()+" | Bitwidth: "+bitwidth
+                +" | Symmetry: "+(sym?"on\n":"off\n"));
+        final int loglength=log.getLength();
+        log.log("   Compiling...");
+        log.flush();
         try {
-            Solver solver = new Solver();
-            switch(solverChoice) {
-            case ZChaffJNI: solver.options().setSolver(SATFactory.ZChaffBasic); break;
-            case MiniSatJNI: solver.options().setSolver(SATFactory.MiniSat); break;
-            case MiniSatSimpPIPE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisatsimp", destdir+fs+destnum+".cnf"); }
-                @Override public String toString() { return "MiniSat2+Simp"; }
-            });
-            break;
-            case MiniSatCorePIPE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisatcore", destdir+fs+destnum+".cnf"); }
-                @Override public String toString() { return "MiniSat2"; }
-            });
-            break;
-            case MiniSatPIPE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"minisat", destdir+fs+destnum+".cnf"); }
-                @Override public String toString() { return "MiniSat"; }
-            });
-            break;
-            case BerkMinPIPE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaPipe(Util.alloyHome()+fs+"binary"+fs+"berkmin", destdir+fs+destnum+".cnf"); }
-                @Override public String toString() { return "BerkMin"; }
-            });
-            break;
-            case FILE: solver.options().setSolver(new SATFactory() {
-                @Override public final SATSolver instance() { return new ViaFile(destdir+fs+destnum+".cnf"); }
-                @Override public String toString() { return "CommandLine"; }
-                });
-                break;
-            default: solver.options().setSolver(SATFactory.DefaultSAT4J);
-            }
-            solver.options().setBitwidth(bitwidth);
-            solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-            boolean flatten=true, sym=true;
-            if (cmd.expects!=0) sym=false;
-            if (cmd.options.contains("noflatten")) flatten=false;
-            if (cmd.options.contains("flatten")) flatten=true;
-            if (cmd.options.contains("nosym")) sym=false;
-            if (cmd.options.contains("sym")) sym=true;
-            if (!flatten) solver.options().setFlatten(false);
-            if (!sym) solver.options().setSymmetryBreaking(0);
-            log.log("   Solver: "+solver.options().solver()+" | Bitwidth: "+bitwidth
-                    +" | Symmetry: "+(sym?"on\nCompiling...":"off\nCompiling..."));
-            log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (AlloyBridge.stopped) {
-                log.log("TIME=0+0=0 CANCELED\n\n");
+                log.setLength(loglength);
+                log.log("   Canceled.\n\n");
                 log.flush();
                 return Result.CANCELED;
             }
             Solution sol=solver.solve(mainformula, bounds, new Logger() {
                 public void report(long translationTime, int variableCount, int primaryVariableCount, int clauseCount) {
-                    log.log(" done\n   "+variableCount+" variables | "+clauseCount+" clauses | "
-                            +translationTime+" ms\nSolving...");
+                    log.setLength(loglength);
+                    log.log("   "+variableCount+" variables | "+clauseCount+" clauses | "
+                            +translationTime+" ms\n   Solving...");
                     log.flush();
                 }
             });
+            log.setLength(loglength);
+            log.log("   "+sol.stats().variables()+" variables | "+sol.stats().clauses()+" clauses | "+sol.stats().translationTime()+" ms\n");
             String label="It";//cmd.name;
-            //long t1=sol.stats().translationTime();
             long t2=sol.stats().solvingTime();
-            if (AlloyBridge.stopped) {log.log(" canceled. | "+t2+" ms\n\n"); log.flush(); return Result.CANCELED;}
+            if (AlloyBridge.stopped) {log.log("   Canceled. "+t2+" ms.\n\n"); log.flush(); return Result.CANCELED;}
             switch(sol.outcome()) {
             case TRIVIALLY_SATISFIABLE:
                 mainResult=Result.TRIVIALLY_SAT;
-                if (cmd.check) log.log(" done\n   Trivial counterexample found: "+label+" is invalid.");
-                else log.log(" done\n   Trivial instance found: "+label+" is consistent.");
-                log.log(" | "+t2+" ms\n\n");
+                if (cmd.check) log.log("   Trivial counterexample found: "+label+" is invalid.");
+                else log.log("   Trivial instance found: "+label+" is consistent.");
+                log.log(" "+t2+" ms.\n\n");
                 break;
             case TRIVIALLY_UNSATISFIABLE:
             case UNSATISFIABLE:
                 mainResult=Result.UNSAT;
-                if (cmd.check) log.log(" done\n   No counterexample found: "+label+" may be valid.");
-                else log.log(" done\n   No instance found: "+label+" may be inconsistent.");
-                log.log(" | "+t2+" ms\n\n");
+                if (cmd.check) log.log("   No counterexample found: "+label+" may be valid.");
+                else log.log("   No instance found: "+label+" may be inconsistent.");
+                log.log(" "+t2+" ms.\n\n");
                 break;
             case SATISFIABLE:
                 mainResult=Result.SAT;
-                if (cmd.check) log.log(" done\n   Counterexample found: "+label+" is invalid.");
-                else log.log(" done\n   Instance found: "+label+" is consistent.");
-                log.log(" | "+t2+" ms | ");
+                if (cmd.check) log.log("   Counterexample found: "+label+" is invalid.");
+                else log.log("   Instance found: "+label+" is consistent.");
+                log.log(" "+t2+" ms. ");
                 log.logLink(destdir+fs+destnum+".xml");
                 log.log("\n\n");
                 writeXML(cmd.pos, sol, units, sigs, destdir+fs+destnum+".xml");
                 break;
             }
-        } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n\n");
-        } catch(Err ex) { log.log(ex.msg+"\n\n");
-        } catch(Exception ex) { log.log(ex.getMessage()+"\n\n");
+        } catch(HigherOrderDeclException ex) { log.setLength(loglength); log.log("   Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n\n");
+        } catch(Err ex) { log.setLength(loglength); log.log("   "+ex.msg+"\n\n");
+        } catch(Exception ex) { log.setLength(loglength); log.log("   "+ex.getMessage()+"\n\n");
         }
         log.flush();
         return mainResult;

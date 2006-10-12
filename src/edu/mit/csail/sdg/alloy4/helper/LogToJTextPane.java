@@ -212,6 +212,43 @@ public final class LogToJTextPane extends Log {
         lastSize=doc.getLength();
     }
 
+    private static final class IntegerBox {
+        private int value;
+        public IntegerBox() {value=0;}
+        public synchronized int getValue() { return value; }
+        public synchronized void setValue(int newValue) { value=newValue; }
+    }
+
+    /** Query the current length of the log. */
+    public void getLength(final IntegerBox answer) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { getLength(answer); } });
+            return;
+        }
+        int length=log.getStyledDocument().getLength();
+        answer.setValue(length);
+    }
+
+    /** Query the current length of the log. */
+    @Override public int getLength() {
+        IntegerBox box=new IntegerBox();
+        getLength(box);
+        return box.getValue();
+    }
+
+    /** Truncate the log to the given length; if the log is smaller than the number given, then nothing happens. */
+    @Override public void setLength(final int newLength) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { setLength(newLength); } });
+            return;
+        }
+        StyledDocument doc=log.getStyledDocument();
+        int n=doc.getLength();
+        if (n<=newLength) return;
+        try {doc.remove(newLength,n-newLength);}
+        catch (BadLocationException e) {Util.harmless("log",e);}
+    }
+
     /** Erase the entire log. */
     public void clear() {
         if (!SwingUtilities.isEventDispatchThread()) {

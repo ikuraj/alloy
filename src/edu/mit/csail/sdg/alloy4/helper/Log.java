@@ -36,4 +36,16 @@ public class Log {
      * (but this default implementation does nothing).
      */
     public void flush() { }
+
+    /**
+     * This method is supposed to return the current size of the log
+     * (but this default implementation always returns 0)
+     */
+    public int getLength() { return 0; }
+
+    /**
+     * This method is supposed to truncate the log if it's longer than the given length
+     * (but this default implementation does nothing)
+     */
+    public void setLength(int newLength) { }
 }

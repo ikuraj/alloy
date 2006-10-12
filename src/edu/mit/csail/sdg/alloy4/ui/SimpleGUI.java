@@ -80,6 +80,7 @@ import kodkod.AlloyBridge;
 import edu.mit.csail.sdg.alloy4.helper.Err;
 import edu.mit.csail.sdg.alloy4.helper.Log;
 import edu.mit.csail.sdg.alloy4.helper.LogToJTextPane;
+import edu.mit.csail.sdg.alloy4.node.ParaRuncheck;
 import edu.mit.csail.sdg.alloy4.node.ParaSig;
 import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
@@ -394,6 +395,7 @@ public final class SimpleGUI {
             latestName="";
             highlighter.removeAllHighlights();
             text.setText("");
+            undo.discardAllEdits();
             frame.setTitle("Alloy Analyzer Version 4.0");
             log.clearError();
             OurWindowMenu.addWindow(frame, "");
@@ -435,6 +437,7 @@ public final class SimpleGUI {
                 highlighter.removeAllHighlights();
                 text.setText(sb.toString());
                 text.setCaretPosition(0);
+                undo.discardAllEdits();
                 frame.setTitle("Alloy Model: "+f);
                 OurWindowMenu.addWindow(frame, f);
                 addHistory(latestName=f);
@@ -1242,30 +1245,40 @@ public final class SimpleGUI {
                 ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(Util.alloyHome(), source);
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog, units);
                 String tempdir = Util.maketemp();
+                SolverChoice sc=getSatOption();
                 List<TranslateAlloyToKodkod.Result> result=
-                    TranslateAlloyToKodkod.codegen(index,log,getVerbosity(),units,sigs,getSatOption(),tempdir);
+                    TranslateAlloyToKodkod.codegen(index,log,getVerbosity(),units,sigs,sc,tempdir);
                 log.flush(); // To make sure everything is flushed.
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
-                if (result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
+                if (sc!=SolverChoice.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     //log.logButton(tempdir+fs+(index+1)+".xml");
                     setLatestInstance(tempdir+fs+(index+1));
                 }
-                if (result.size()>1) {
+                if (sc!=SolverChoice.FILE && result.size()>1) {
                     log.logBold("" + result.size() + " commands were executed. The results are:\n");
                     int i=0;
                     for(TranslateAlloyToKodkod.Result b:result) {
+                        ParaRuncheck r=units.get(0).runchecks.get(i);
+                        String label=r.getLabel();
                         i++;
-                        if (b==null) {log.log("#"+i+": CANCELED\n"); continue;}
+                        if (b==null) {log.log("   #"+i+": Canceled.\n"); continue;}
                         switch(b) {
                         case SAT:
-                            log.log("#"+i+": SAT ");
+                            if (r.check) log.log("   #"+i+": Counterexample found. "+label+" is invalid. ");
+                            else log.log("   #"+i+": Instance found. "+label+" is consistent. ");
                             log.logLink(tempdir+fs+i+".xml");
                             log.log("\n");
                             setLatestInstance(tempdir+fs+i);
                             break;
-                        case TRIVIALLY_SAT: log.log("#"+i+": SAT (trivially SAT)\n"); break;
-                        case UNSAT: case TRIVIALLY_UNSAT: log.log("#"+i+": UNSAT\n"); break;
-                        default: log.log("#"+i+": CANCELED\n");
+                        case TRIVIALLY_SAT:
+                            if (r.check) log.log("   #"+i+": Trivial counterexample found. "+label+" is invalid.\n");
+                            else log.log("   #"+i+": Trivial instance found. "+label+" is consistent.\n");
+                            break;
+                        case UNSAT: case TRIVIALLY_UNSAT:
+                            if (r.check) log.log("   #"+i+": No counterexample found. "+label+" may be valid.\n");
+                            else log.log("   #"+i+": No instance found. "+label+" may be inconsistent.\n");
+                            break;
+                        default: log.log("   #"+i+": Canceled.\n");
                         }
                     }
                     log.log("\n");

@@ -43,9 +43,14 @@ public final class ParaRuncheck extends Para {
     /** The list of options given in a command; can be empty; unmodifiable. */
     public final List<String> options;
 
+    /** Returns the label (if it's not empty); otherwise it returns the name of the paragraph. */
+    public final String getLabel() {
+        if (label.length()>0) return label; else return name;
+    }
+
     /** Returns a human-readable string that summarizes this Run or Check command. */
     @Override public final String toString() {
-        String a=(check?"check ":"run ")+(label.length()>0 ? label : name);
+        String a=(check?"check ":"run ")+getLabel();
         if (overall>=0 && scope.size()>0) a=a+" for "+overall+" but";
            else if (overall>=0) a=a+" for "+overall;
            else if (scope.size()>0) a=a+" for";
