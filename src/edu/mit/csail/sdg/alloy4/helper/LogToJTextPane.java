@@ -11,10 +11,17 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.BoxView;
+import javax.swing.text.Element;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
+import javax.swing.text.StyledEditorKit;
+import javax.swing.text.View;
+import javax.swing.text.ViewFactory;
+
 import edu.mit.csail.sdg.alloy4util.Func1;
 import edu.mit.csail.sdg.alloy4util.OurUtil;
 import edu.mit.csail.sdg.alloy4util.Util;
@@ -115,12 +122,41 @@ public final class LogToJTextPane extends Log {
         initialize(parent,regular,bold,red);
     }
 
+    /** This customized EditorKit forces the JTextPane to use our customized StyledViewFactory. */
+    private static final class OurEditorKit extends StyledEditorKit {
+        /** This suppresses javac's warning about missing serialVersionUID. */
+        private static final long serialVersionUID = 1L;
+        /** This method returns our customized ViewFactory rather than the default ViewFactory. */
+        @Override public ViewFactory getViewFactory() { return new OurViewFactory(); }
+    }
+
+    /**
+     * This customized StyledViewFactory gives prevents line-wrapping up to 30000 pixels;
+     * value higher than about 32768 gives an error.
+     */
+    private static class OurViewFactory implements ViewFactory {
+        /** This stores a default ViewFactory that will handle the requests we don't care about. */
+        private static final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
+        /** This implementation prevents line-wrapping up to 30000 pixels wide. */
+        public View create(Element x) {
+            String name=x.getName();
+            if (name!=null && name.equals(AbstractDocument.SectionElementName)) {
+                return new BoxView(x, View.Y_AXIS) {
+                    @Override public void layout(int width, int height) { super.layout(30000,height); }
+                    @Override public float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
+                };
+            }
+            return defaultFactory.create(x);
+        }
+    }
+
     /**
      * Helper method that actually initializes the various GUI objects;
      * This method can be called only by the AWT thread.
      */
     private void initialize(JScrollPane parent, Color regular, Color bold, Color red) {
         log=new JTextPane();
+        log.setEditorKit(new OurEditorKit()); // This customized EditorKit prevents line-wrapping.
         log.setBorder(new EmptyBorder(1,1,1,1));
         log.setBackground(background);
         log.setEditable(false);

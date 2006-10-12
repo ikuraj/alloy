@@ -1130,8 +1130,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             });
             log.setLength(loglength);
             log.log("   "+sol.stats().variables()+" vars | "
-            		+sol.stats().primaryVariables()+" primary vars | "
-            		+sol.stats().clauses()+" clauses | "+sol.stats().translationTime()+" ms\n");
+                    +sol.stats().primaryVariables()+" primary vars | "
+                    +sol.stats().clauses()+" clauses | "+sol.stats().translationTime()+" ms\n");
             String label="It";//cmd.name;
             long t2=sol.stats().solvingTime();
             if (AlloyBridge.stopped) {log.log("   Canceled. "+t2+" ms.\n\n"); log.flush(); return Result.CANCELED;}
