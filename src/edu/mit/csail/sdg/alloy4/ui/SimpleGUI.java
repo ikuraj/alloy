@@ -271,7 +271,7 @@ public final class SimpleGUI {
 
     /** The UndoManager for the editor buffer. */
     private final UndoManager undo = new UndoManager();
-    
+
     /** The Highlighter to use with the editor buffer. */
     private final Highlighter highlighter;
 
@@ -566,81 +566,81 @@ public final class SimpleGUI {
 
     /** Called when the user expands the Edit menu */
     private final Func0 a_edit = new Func0() {
-    	public final boolean run() {
-    		undomenu.setEnabled(undo.canUndo());
-    		redomenu.setEnabled(undo.canRedo());
-    		return true;
-    	}
+        public final boolean run() {
+            undomenu.setEnabled(undo.canUndo());
+            redomenu.setEnabled(undo.canRedo());
+            return true;
+        }
     };
 
     /** Called when the user clicks Edit->Undo */
     private final Func0 a_undo = new Func0() {
-    	public final boolean run() {
-    		try {  if (undo.canUndo()) undo.undo(); }
+        public final boolean run() {
+            try {  if (undo.canUndo()) undo.undo(); }
             catch (CannotUndoException ex) { Util.harmless("undo",ex); }
             return true;
-    	}
+        }
     };
 
     /** Called when the user clicks Edit->Redo */
     private final Func0 a_redo = new Func0() {
-    	public final boolean run() {
-    		try {  if (undo.canRedo()) undo.redo(); }
+        public final boolean run() {
+            try {  if (undo.canRedo()) undo.redo(); }
             catch (CannotRedoException ex) { Util.harmless("redo",ex); }
             return true;
-    	}
+        }
     };
 
     /** Called when the user clicks Edit->Copy */
     private final Func0 a_copy = new Func0() {
-    	public final boolean run() {
-    		if (text.hasFocus()) text.copy(); else log.copy();
-    		return true;
-    	}
+        public final boolean run() {
+            if (text.hasFocus()) text.copy(); else log.copy();
+            return true;
+        }
     };
 
     /** Called when the user clicks Edit->Cut */
     private final Func0 a_cut = new Func0() {
-    	public final boolean run() {
-    		if (text.hasFocus()) text.cut();
-    		return true;
-    	}
+        public final boolean run() {
+            if (text.hasFocus()) text.cut();
+            return true;
+        }
     };
 
     /** Called when the user clicks Edit->Paste */
     private final Func0 a_paste = new Func0() {
-    	public final boolean run() {
-    		if (text.hasFocus()) text.paste();
-    		return true;
-    	}
+        public final boolean run() {
+            if (text.hasFocus()) text.paste();
+            return true;
+        }
     };
 
     /** Called when the user clicks Edit->Find */
     private final Func0 a_find = new Func0() {
-    	public final boolean run() {
-    		Object answer=JOptionPane.showInputDialog(frame, "Find: ", "Find", JOptionPane.PLAIN_MESSAGE, null, null, lastFind);
-    		if (!(answer instanceof String)) return false;
-    		lastFind=(String)answer;
-    		return a_findnext.run();
-    	}
+        public final boolean run() {
+            Object answer=JOptionPane.showInputDialog(frame, "Find: ", "Find", JOptionPane.PLAIN_MESSAGE, null, null, lastFind);
+            if (!(answer instanceof String)) return false;
+            lastFind=(String)answer;
+            return a_findnext.run();
+        }
     };
 
     /** Called when the user clicks Edit->FindNext */
     private final Func0 a_findnext = new Func0() {
-    	public final boolean run() {
-    		String all=text.getText();
-    		int i=all.indexOf(lastFind, text.getCaretPosition());
-    		if (i<0) {
-    			i=all.indexOf(lastFind);
-    			if (i<0) {log.logRed("The specified search string cannot be found."); return false;}
-    			log.logRed("Search wrapped.");
-    		} else log.clearError();
-    		text.setCaretPosition(i);
-    		text.setSelectionStart(i);
-    		text.setSelectionEnd(i+lastFind.length());
-    		text.requestFocusInWindow();
-    		return true;
-    	}
+        public final boolean run() {
+            String all=text.getText();
+            int i=all.indexOf(lastFind, text.getCaretPosition());
+            if (i<0) {
+                i=all.indexOf(lastFind);
+                if (i<0) {log.logRed("The specified search string cannot be found."); return false;}
+                log.logRed("Search wrapped.");
+            } else log.clearError();
+            text.setCaretPosition(i);
+            text.setSelectionStart(i);
+            text.setSelectionEnd(i+lastFind.length());
+            text.requestFocusInWindow();
+            return true;
+        }
     };
 
     /** Called when the user expands the "Run" menu; always returns true. */
@@ -965,9 +965,9 @@ public final class SimpleGUI {
             filemenu.add(recentmenu = new JMenu("Open Recent"));
             filemenu.addMenuItem(null, "Save",                  true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
             if (Util.onMac())
-            	new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_S, a_saveAs);
+                new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_S, a_saveAs);
             else
-            	new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_A, -1, a_saveAs);
+                new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_A, -1, a_saveAs);
             closemenu=filemenu.addMenuItem(null, "Close",       true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
             filemenu.addMenuItem(null, "Quit",true,KeyEvent.VK_Q,(Util.onMac()?-1:KeyEvent.VK_Q),a_quit);
         }
@@ -976,9 +976,9 @@ public final class SimpleGUI {
             editmenu = bar.addMenu("Edit", true, KeyEvent.VK_E, a_edit);
             undomenu=new OurMenuItem(editmenu, "Undo", KeyEvent.VK_Z, KeyEvent.VK_Z, a_undo);
             if (Util.onMac())
-            	redomenu=new OurMenuItem(editmenu, "Redo",                KeyEvent.VK_Z, a_redo);
+                redomenu=new OurMenuItem(editmenu, "Redo",                KeyEvent.VK_Z, a_redo);
             else
-            	redomenu=new OurMenuItem(editmenu, "Redo", KeyEvent.VK_Y, KeyEvent.VK_Y, a_redo);
+                redomenu=new OurMenuItem(editmenu, "Redo", KeyEvent.VK_Y, KeyEvent.VK_Y, a_redo);
             editmenu.addSeparator();
             editmenu.addMenuItem(null, "Cut",           true, KeyEvent.VK_X, KeyEvent.VK_X, a_cut);
             editmenu.addMenuItem(null, "Copy",          true, KeyEvent.VK_C, KeyEvent.VK_C, a_copy);
@@ -1095,23 +1095,23 @@ public final class SimpleGUI {
         JComponent textPane = OurUtil.makeJScrollPane(text);
         textPane.setBorder(new OurBorder(true,false));
         if (!Util.onMac()) {
-        	text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
-        		private static final long serialVersionUID = 1L;
-        		public void actionPerformed(ActionEvent e) { a_copy.run(); }
-        	});
-        	text.getActionMap().put("my_cut", new AbstractAction("my_cut") {
-        		private static final long serialVersionUID = 1L;
-        		public void actionPerformed(ActionEvent e) { a_cut.run(); }
-        	});
-        	text.getActionMap().put("my_paste", new AbstractAction("my_paste") {
-        		private static final long serialVersionUID = 1L;
-        		public void actionPerformed(ActionEvent e) { a_paste.run(); }
-        	});
-        	text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "my_copy");
-        	text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "my_cut");
-        	text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.SHIFT_MASK), "my_paste");
+            text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
+                private static final long serialVersionUID = 1L;
+                public void actionPerformed(ActionEvent e) { a_copy.run(); }
+            });
+            text.getActionMap().put("my_cut", new AbstractAction("my_cut") {
+                private static final long serialVersionUID = 1L;
+                public void actionPerformed(ActionEvent e) { a_cut.run(); }
+            });
+            text.getActionMap().put("my_paste", new AbstractAction("my_paste") {
+                private static final long serialVersionUID = 1L;
+                public void actionPerformed(ActionEvent e) { a_paste.run(); }
+            });
+            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "my_copy");
+            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "my_cut");
+            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.SHIFT_MASK), "my_paste");
         }
-        
+
         // Create the message area
         JScrollPane statusPane = OurUtil.makeJScrollPane();
         Func1 viz=new Func1() {
