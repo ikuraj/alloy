@@ -239,4 +239,13 @@ public final class LogToJTextPane extends Log {
 
     /** This method does nothing, since changes to a JTextPane will always show up automatically. */
     @Override public void flush() { }
+
+    /** This method copies the currently selected text in the log (if any) into the clipboard. */
+    public void copy() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { copy(); } });
+            return;
+        }
+        log.copy();
+    }
 }

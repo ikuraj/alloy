@@ -29,9 +29,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
+import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -41,6 +44,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -48,6 +52,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
@@ -56,6 +61,8 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
@@ -65,6 +72,10 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.Highlighter.HighlightPainter;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoManager;
+
 import kodkod.AlloyBridge;
 import edu.mit.csail.sdg.alloy4.helper.Err;
 import edu.mit.csail.sdg.alloy4.helper.Log;
@@ -244,7 +255,7 @@ public final class SimpleGUI {
     private final JMenu recentmenu;
 
     /** The "close" menu item. */
-    private final OurMenuItem closemenu;
+    private final OurMenuItem closemenu, undomenu, redomenu;
 
     /** The toolbar. */
     private final JToolBar toolbar;
@@ -258,6 +269,9 @@ public final class SimpleGUI {
     /** The JTextArea containing the editor buffer. */
     private final JTextArea text;
 
+    /** The UndoManager for the editor buffer. */
+    private final UndoManager undo = new UndoManager();
+    
     /** The Highlighter to use with the editor buffer. */
     private final Highlighter highlighter;
 
@@ -273,6 +287,9 @@ public final class SimpleGUI {
 
     /** The most-recently-used directory (this is the directory we use when launching a FileChooser next time) */
     private String fileOpenDirectory=(new File(System.getProperty("user.home"))).getAbsolutePath();
+
+    /** The last "find" that the user issued. */
+    private String lastFind="";
 
     /** The latest command executed by the user. */
     private int latestCommand=0;
@@ -425,6 +442,7 @@ public final class SimpleGUI {
                 openfiles.remove(f); openfiles.add(f);
                 latestCommand=0; compiled=null; modified=false; updateStatusBar();
                 a_show.run();
+                text.requestFocusInWindow();
             } catch(FileNotFoundException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
             } catch(IOException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
             }
@@ -544,6 +562,85 @@ public final class SimpleGUI {
             if (my_confirm()) System.exit(0);
             return false;
         }
+    };
+
+    /** Called when the user expands the Edit menu */
+    private final Func0 a_edit = new Func0() {
+    	public final boolean run() {
+    		undomenu.setEnabled(undo.canUndo());
+    		redomenu.setEnabled(undo.canRedo());
+    		return true;
+    	}
+    };
+
+    /** Called when the user clicks Edit->Undo */
+    private final Func0 a_undo = new Func0() {
+    	public final boolean run() {
+    		try {  if (undo.canUndo()) undo.undo(); }
+            catch (CannotUndoException ex) { Util.harmless("undo",ex); }
+            return true;
+    	}
+    };
+
+    /** Called when the user clicks Edit->Redo */
+    private final Func0 a_redo = new Func0() {
+    	public final boolean run() {
+    		try {  if (undo.canRedo()) undo.redo(); }
+            catch (CannotRedoException ex) { Util.harmless("redo",ex); }
+            return true;
+    	}
+    };
+
+    /** Called when the user clicks Edit->Copy */
+    private final Func0 a_copy = new Func0() {
+    	public final boolean run() {
+    		if (text.hasFocus()) text.copy(); else log.copy();
+    		return true;
+    	}
+    };
+
+    /** Called when the user clicks Edit->Cut */
+    private final Func0 a_cut = new Func0() {
+    	public final boolean run() {
+    		if (text.hasFocus()) text.cut();
+    		return true;
+    	}
+    };
+
+    /** Called when the user clicks Edit->Paste */
+    private final Func0 a_paste = new Func0() {
+    	public final boolean run() {
+    		if (text.hasFocus()) text.paste();
+    		return true;
+    	}
+    };
+
+    /** Called when the user clicks Edit->Find */
+    private final Func0 a_find = new Func0() {
+    	public final boolean run() {
+    		Object answer=JOptionPane.showInputDialog(frame, "Find: ", "Find", JOptionPane.PLAIN_MESSAGE, null, null, lastFind);
+    		if (!(answer instanceof String)) return false;
+    		lastFind=(String)answer;
+    		return a_findnext.run();
+    	}
+    };
+
+    /** Called when the user clicks Edit->FindNext */
+    private final Func0 a_findnext = new Func0() {
+    	public final boolean run() {
+    		String all=text.getText();
+    		int i=all.indexOf(lastFind, text.getCaretPosition());
+    		if (i<0) {
+    			i=all.indexOf(lastFind);
+    			if (i<0) {log.logRed("The specified search string cannot be found."); return false;}
+    			log.logRed("Search wrapped.");
+    		} else log.clearError();
+    		text.setCaretPosition(i);
+    		text.setSelectionStart(i);
+    		text.setSelectionEnd(i+lastFind.length());
+    		text.requestFocusInWindow();
+    		return true;
+    	}
     };
 
     /** Called when the user expands the "Run" menu; always returns true. */
@@ -867,21 +964,28 @@ public final class SimpleGUI {
             filemenu.addMenuItem(null, "Open Sample Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
             filemenu.add(recentmenu = new JMenu("Open Recent"));
             filemenu.addMenuItem(null, "Save",                  true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
-            filemenu.addMenuItem(null, "Save As...",            true,KeyEvent.VK_A,-1,           a_saveAs);
+            if (Util.onMac())
+            	new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_S, a_saveAs);
+            else
+            	new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_A, -1, a_saveAs);
             closemenu=filemenu.addMenuItem(null, "Close",       true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
             filemenu.addMenuItem(null, "Quit",true,KeyEvent.VK_Q,(Util.onMac()?-1:KeyEvent.VK_Q),a_quit);
         }
 
         if (1==1) { // Edit menu
-            editmenu = bar.addMenu("Edit", true, KeyEvent.VK_E, null);
-            editmenu.addMenuItem(null, "Undo",      true, KeyEvent.VK_Z, KeyEvent.VK_Z, null);
+            editmenu = bar.addMenu("Edit", true, KeyEvent.VK_E, a_edit);
+            undomenu=new OurMenuItem(editmenu, "Undo", KeyEvent.VK_Z, KeyEvent.VK_Z, a_undo);
+            if (Util.onMac())
+            	redomenu=new OurMenuItem(editmenu, "Redo",                KeyEvent.VK_Z, a_redo);
+            else
+            	redomenu=new OurMenuItem(editmenu, "Redo", KeyEvent.VK_Y, KeyEvent.VK_Y, a_redo);
             editmenu.addSeparator();
-            editmenu.addMenuItem(null, "Cut",       true, KeyEvent.VK_X, KeyEvent.VK_X, null);
-            editmenu.addMenuItem(null, "Copy",      true, KeyEvent.VK_C, KeyEvent.VK_C, null);
-            editmenu.addMenuItem(null, "Paste",     true, KeyEvent.VK_V, KeyEvent.VK_V, null);
+            editmenu.addMenuItem(null, "Cut",           true, KeyEvent.VK_X, KeyEvent.VK_X, a_cut);
+            editmenu.addMenuItem(null, "Copy",          true, KeyEvent.VK_C, KeyEvent.VK_C, a_copy);
+            editmenu.addMenuItem(null, "Paste",         true, KeyEvent.VK_V, KeyEvent.VK_V, a_paste);
             editmenu.addSeparator();
-            editmenu.addMenuItem(null, "Find...",   true, KeyEvent.VK_F, KeyEvent.VK_F, null);
-            editmenu.addMenuItem(null, "Find Next", true,                               null);
+            editmenu.addMenuItem(null, "Find...",       true, KeyEvent.VK_F, KeyEvent.VK_F, a_find);
+            editmenu.addMenuItem(null, "Find Next",     true, KeyEvent.VK_G, KeyEvent.VK_G, a_findnext);
         }
 
         if (1==1) { // Run menu
@@ -976,14 +1080,38 @@ public final class SimpleGUI {
         text.getDocument().addDocumentListener(new DocumentListener() {
             public final void changedUpdate(DocumentEvent e) {
                 highlighter.removeAllHighlights();
+                undomenu.setEnabled(true); // When the Edit menu opens, we will confirm whether it should be enabled
+                redomenu.setEnabled(true); // When the Edit menu opens, we will confirm whether it should be enabled
                 compiled=null; if (!modified) {modified=true;updateStatusBar();}
             }
             public final void removeUpdate(DocumentEvent e) { changedUpdate(e); }
             public final void insertUpdate(DocumentEvent e) { changedUpdate(e); }
         });
+        text.getDocument().addUndoableEditListener(new UndoableEditListener() {
+            public final void undoableEditHappened(UndoableEditEvent event) {
+                undo.addEdit(event.getEdit());
+            }
+        });
         JComponent textPane = OurUtil.makeJScrollPane(text);
         textPane.setBorder(new OurBorder(true,false));
-
+        if (!Util.onMac()) {
+        	text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
+        		private static final long serialVersionUID = 1L;
+        		public void actionPerformed(ActionEvent e) { a_copy.run(); }
+        	});
+        	text.getActionMap().put("my_cut", new AbstractAction("my_cut") {
+        		private static final long serialVersionUID = 1L;
+        		public void actionPerformed(ActionEvent e) { a_cut.run(); }
+        	});
+        	text.getActionMap().put("my_paste", new AbstractAction("my_paste") {
+        		private static final long serialVersionUID = 1L;
+        		public void actionPerformed(ActionEvent e) { a_paste.run(); }
+        	});
+        	text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "my_copy");
+        	text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "my_cut");
+        	text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.SHIFT_MASK), "my_paste");
+        }
+        
         // Create the message area
         JScrollPane statusPane = OurUtil.makeJScrollPane();
         Func1 viz=new Func1() {
@@ -1043,16 +1171,6 @@ public final class SimpleGUI {
             File f=new File(args[1]);
             if (f.exists()) a_openFile.run(f.getAbsolutePath());
         }
-
-        /* Start a background-compilation thread (Must make sure this is javax.swing.Timer rather than java.util.Timer)
-        new Timer(1000, new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (getCurrentThread()==null && frame.isVisible()) {
-                    Unit u=tryCompile(false);
-                    if (u==null || u.runchecks.size()==0) runmenu.setEnabled(false); else runmenu.setEnabled(true);
-                }
-            }
-        }).start();*/
 
         // Start a separate thread to watch for other invocations of Alloy4
         Runnable r = new Runnable() {
