@@ -59,6 +59,7 @@ import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.satlab.SATSolver;
 import kodkod.engine.Options;
 import kodkod.engine.Solution.Outcome;
+import kodkod.engine.Solver.Logger;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
@@ -94,7 +95,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
         public static SolverChoice parse(String id) {
             for(SolverChoice sc:values()) if (sc.id.equals(id)) return sc;
-            return SAT4J;
+            return MiniSatPIPE;
         }
         @Override public final String toString() { return label; }
     };
@@ -856,7 +857,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         for(int xi=0; xi<units.get(0).runchecks.size(); xi++)
             if (codeindex==(-1) || codeindex==xi) {
                 ParaRuncheck x=units.get(0).runchecks.get(xi);
-                log.logBold("Executing \""+x.toString()+"\"...\n");
+                log.logBold("Executing \""+x.toString()+"\"\n");
                 log.flush();
                 sig2bound.clear();
                 sig2ts.clear();
@@ -1107,7 +1108,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (cmd.options.contains("sym")) sym=true;
             if (!flatten) solver.options().setFlatten(false);
             if (!sym) solver.options().setSymmetryBreaking(0);
-            log.log("  Solver: "+solver.options().solver()+" | bitwidth: "+bitwidth+" | symmetry: "+(sym?"on":"off"));
+            log.log("   Solver: "+solver.options().solver()+" | Bitwidth: "+bitwidth
+            		+" | Symmetry: "+(sym?"on\nCompiling...":"off\nCompiling..."));
             log.flush();
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (AlloyBridge.stopped) {
@@ -1115,42 +1117,39 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 log.flush();
                 return Result.CANCELED;
             }
-            Solution sol=solver.solve(mainformula,bounds);
-            long t1=sol.stats().translationTime();
+            Solution sol=solver.solve(mainformula, bounds, new Logger() {
+				public void report(long translationTime, int variableCount, int primaryVariableCount, int clauseCount) {
+					log.log(" done\n   "+variableCount+" variables | "+clauseCount+" clauses | "
+							+translationTime+" ms\nSolving...");
+					log.flush();
+				}
+            });
+            String label="It";//cmd.name;
+            //long t1=sol.stats().translationTime();
             long t2=sol.stats().solvingTime();
+            if (AlloyBridge.stopped) {log.log(" canceled. | "+t2+" ms\n\n"); log.flush(); return Result.CANCELED;}
             switch(sol.outcome()) {
             case TRIVIALLY_SATISFIABLE:
                 mainResult=Result.TRIVIALLY_SAT;
-                log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (AlloyBridge.stopped) { log.log(" CANCELED\n\n"); mainResult=Result.CANCELED; }
-                else if (cmd.check) log.log(" TRIVIALLY VIOLATED (SAT)\n\n");
-                else log.log(" TRIVIALLY SAT\n\n");
+                if (cmd.check) log.log(" done\n   Trivial counterexample found: "+label+" is invalid.");
+                else log.log(" done\n   Trivial instance found: "+label+" is consistent.");
+                log.log(" | "+t2+" ms\n\n");
                 break;
             case TRIVIALLY_UNSATISFIABLE:
-                mainResult=Result.TRIVIALLY_UNSAT;
-                log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (AlloyBridge.stopped) { log.log(" CANCELED\n\n"); mainResult=Result.CANCELED; }
-                else if (cmd.check) log.log(" TRIVIALLY OK (UNSAT)\n\n");
-                else log.log(" TRIVIALLY UNSAT\n\n");
+            case UNSATISFIABLE:
+                mainResult=Result.UNSAT;
+                if (cmd.check) log.log(" done\n   No counterexample found: "+label+" may be valid.");
+                else log.log(" done\n   No instance found: "+label+" may be inconsistent.");
+                log.log(" | "+t2+" ms\n\n");
                 break;
             case SATISFIABLE:
                 mainResult=Result.SAT;
-                log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (AlloyBridge.stopped) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
-                else if (cmd.check) log.log(" VIOLATED (SAT)");
-                else log.log(" SAT");
-                log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n");
+                if (cmd.check) log.log(" done\n   Counterexample found: "+label+" is invalid.");
+                else log.log(" done\n   Instance found: "+label+" is consistent.");
+                log.log(" | "+t2+" ms | ");
                 log.logLink(destdir+fs+destnum+".xml");
                 log.log("\n\n");
                 writeXML(cmd.pos, sol, units, sigs, destdir+fs+destnum+".xml");
-                break;
-            case UNSATISFIABLE:
-                mainResult=Result.UNSAT;
-                log.log("TIME="+t1+"+"+t2+"="+(t1+t2));
-                if (AlloyBridge.stopped) { log.log(" CANCELED"); mainResult=Result.CANCELED; }
-                else if (cmd.check) log.log(" OK (UNSAT)");
-                else log.log(" UNSAT");
-                log.log(" TotalVar="+sol.stats().variables()+". Clauses="+sol.stats().clauses()+". PrimaryVar="+sol.stats().primaryVariables()+".\n\n");
                 break;
             }
         } catch(HigherOrderDeclException ex) { log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n\n");

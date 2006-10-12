@@ -14,7 +14,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 import edu.mit.csail.sdg.alloy4util.Func1;
 import edu.mit.csail.sdg.alloy4util.OurUtil;
@@ -73,7 +72,7 @@ public final class LogToJTextPane extends Log {
      * The current font size.
      * For simplicity, we insist that only the AWT thread may read and write this field.
      */
-    private int fontSize=0;
+    private int fontSize;
 
     /** Set the font size. */
     public void setFontSize(final int fontSize) {
@@ -81,10 +80,19 @@ public final class LogToJTextPane extends Log {
             OurUtil.invokeAndWait(new Runnable() { public final void run() { setFontSize(fontSize); } });
             return;
         }
+        // Changes the settings for future writes into the log
         this.fontSize=fontSize;
+        log.setFont(OurUtil.getFont(fontSize));
         StyleConstants.setFontSize(styleRegular, fontSize);
         StyleConstants.setFontSize(styleBold, fontSize);
         StyleConstants.setFontSize(styleRed, fontSize);
+        // Changes all existing text
+        StyledDocument doc=log.getStyledDocument();
+        Style temp=doc.addStyle("temp", null);
+        StyleConstants.setFontFamily(temp, OurUtil.getFontName());
+        StyleConstants.setFontSize(temp, fontSize);
+        doc.setCharacterAttributes(0, doc.getLength(), temp, false);
+        // Changes all existing hyperlinks
         Font newFont=new Font(OurUtil.getFontName(), Font.BOLD, fontSize);
         for(JLabel x:links) x.setFont(newFont);
     }
@@ -123,9 +131,9 @@ public final class LogToJTextPane extends Log {
         log.setBorder(new EmptyBorder(1,1,1,1));
         log.setBackground(background);
         log.setEditable(false);
+        log.setFont(OurUtil.getFont(fontSize));
         StyledDocument doc=log.getStyledDocument();
-        Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-        styleRegular=doc.addStyle("regular", old);
+        styleRegular=doc.addStyle("regular", null);
         StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
         StyleConstants.setFontSize(styleRegular, fontSize);
         StyleConstants.setForeground(styleRegular, regular);
@@ -185,7 +193,7 @@ public final class LogToJTextPane extends Log {
         clearError();
         StyledDocument doc=log.getStyledDocument();
         Style s=doc.addStyle("link", styleRegular);
-        final JLabel b=new JLabel("[Click here to see the result]");
+        final JLabel b=new JLabel("Visualize");
         final Color linkColor=new Color(0.3f, 0.3f, 0.9f), hoverColor=new Color(.9f, .3f, .3f);
         b.setAlignmentY(0.8f);
         b.setMaximumSize(b.getPreferredSize());
@@ -214,13 +222,14 @@ public final class LogToJTextPane extends Log {
         lastSize=0;
     }
 
-    /**
-     * Helper method that removes any messages writtin in "red" style.
-     * This method can be called only from the AWT thread.
-     */
-    private void clearError() {
+    /** Removes any messages writtin in "red" style. */
+    public void clearError() {
         // Since this class always removes "red" messages prior to writing anything,
         // that means if there are any red messages, they will always be at the end of the JTextPane.
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { clearError(); } });
+            return;
+        }
         StyledDocument doc=log.getStyledDocument();
         int n=doc.getLength();
         if (n<=lastSize) return;

@@ -56,8 +56,6 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.MenuEvent;
-import javax.swing.event.MenuListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
@@ -98,9 +96,9 @@ import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
  * The GUI; except noted below, methods in this class can only be called by the AWT thread.
  *
  * <p/> The methods that might get called from other threads are:
- * <br/> (1) The two log() methods and the logButton(), logLink(), and the highlight() methods.
- * <br/> (2) run() method in Runner is launched from a fresh thread
- * <br/> (3) run() method in the instance watcher (in constructor) is launched from a fresh thread
+ * <br/> (1) the highlight() methods.
+ * <br/> (2) the run() method in Runner is launched from a fresh thread
+ * <br/> (3) the run() method in the instance watcher (in constructor) is launched from a fresh thread
  *
  * <p/> As a result, exactly 3 fields must be guarded by a mutex: current_thread, latestInstance, and satOPTION.
  *
@@ -242,6 +240,9 @@ public final class SimpleGUI {
     /** The "File", "Run", "Option", "Window", and "Help" menus. */
     private final OurMenu filemenu, runmenu, optmenu, helpmenu;
 
+    /** The "File->Recent" menu. */
+    private final JMenu recentmenu;
+
     /** The "close" menu item. */
     private final OurMenuItem closemenu;
 
@@ -273,8 +274,8 @@ public final class SimpleGUI {
     /** The most-recently-used directory (this is the directory we use when launching a FileChooser next time) */
     private String fileOpenDirectory=(new File(System.getProperty("user.home"))).getAbsolutePath();
 
-    /** The latest command executed by the user (-1 if the user hasn't executed any command) */
-    private int latestCommand=(-1);
+    /** The latest command executed by the user. */
+    private int latestCommand=0;
 
     /** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
     private Unit compiled=null;
@@ -315,6 +316,7 @@ public final class SimpleGUI {
      * <p/> If the user says to cancel it, this method returns false.
      */
     private boolean my_confirm() {
+        log.clearError();
         if (!modified) return true;
         Boolean ans=OurDialog.questionSaveDiscardCancel(frame,"The current Alloy model");
         if (ans==null) return false;
@@ -331,36 +333,38 @@ public final class SimpleGUI {
             highlighter.removeAllHighlights();
             highlighter.addHighlight(c, c+1, highlightPainter);
             text.setSelectionStart(c); text.setSelectionEnd(c); text.requestFocusInWindow();
-        } catch(BadLocationException ex) { Util.harmless("tryCompile()",ex); }
+        } catch(BadLocationException ex) { Util.harmless("highlight()",ex); }
     }
 
     //====== Message handlers ===============================================//
 
-    private void show() {
-        frame.setVisible(true); frame.setExtendedState(JFrame.NORMAL); frame.requestFocus(); frame.toFront();
-    }
-
     /** Called then the user expands the "File" menu; always returns true. */
     private final Func0 a_file = new Func0() {
         public final boolean run() {
-            boolean hasEntries=false;
-            int n=filemenu.getItemCount();
-            for(int i=0; i<n; i++) {
-                // When we've found the separator (which is always null), we delete it and all entries after it.
-                if (filemenu.getItem(i)==null) { while(i<n) {filemenu.remove(i); n--;} break; }
-            }
-            if (latestName.length()==0 && text.getDocument().getLength()==0) closemenu.setEnabled(false);
-            else closemenu.setEnabled(true);
+        	boolean found=false;
+            closemenu.setEnabled(latestName.length()>0 || text.getDocument().getLength()>0);
+            recentmenu.removeAll();
             for(int i=0; i<=3; i++) {
                 final String name = propertyGet("history"+i);
                 if (name.length()==0) continue;
-                if (!hasEntries) { hasEntries=true; filemenu.addSeparator(); }
+                found=true;
                 JMenuItem x=new JMenuItem(name);
                 x.addActionListener(new ActionListener() {
-                    public final void actionPerformed(ActionEvent e) {show(); a_openFileIfOk.run(name);}
+                    public final void actionPerformed(ActionEvent e) {a_show.run(); a_openFileIfOk.run(name);}
                 });
-                filemenu.add(x);
+                recentmenu.add(x);
             }
+            recentmenu.addSeparator();
+            JMenuItem y=new JMenuItem("Clear Menu");
+            y.addActionListener(new ActionListener() {
+            	public final void actionPerformed(ActionEvent e) {
+            		propertySet("history0",""); propertySet("history1","");
+            		propertySet("history2","");	propertySet("history3","");
+            		openfiles.clear();
+            	}
+            });
+            recentmenu.add(y);
+            recentmenu.setEnabled(found);
             return true;
         }
     };
@@ -369,13 +373,14 @@ public final class SimpleGUI {
     private final Func0 a_new = new Func0() {
         public final boolean run() {
             if (!my_confirm()) return false;
-            show();
+            a_show.run();
             latestName="";
             highlighter.removeAllHighlights();
             text.setText("");
             frame.setTitle("Alloy Analyzer Version 4.0");
+            log.clearError();
             OurWindowMenu.addWindow(frame, "");
-            latestCommand=-1; compiled=null; modified=false; updateStatusBar();
+            latestCommand=0; compiled=null; modified=false; updateStatusBar();
             return true;
         }
     };
@@ -398,13 +403,12 @@ public final class SimpleGUI {
      */
     private final Func1 a_openFile = new Func1() {
         public final boolean run(String f) {
-            show();
+            a_show.run();
             f=(new File(f)).getAbsolutePath();
             boolean result=true;
             FileReader fr=null;
             BufferedReader br=null;
             try {
-                show();
                 fr=new FileReader(f);
                 br=new BufferedReader(fr);
                 StringBuffer sb=new StringBuffer();
@@ -417,23 +421,16 @@ public final class SimpleGUI {
                 frame.setTitle("Alloy Model: "+f);
                 OurWindowMenu.addWindow(frame, f);
                 addHistory(latestName=f);
+                log.clearError();
                 openfiles.remove(f); openfiles.add(f);
-                latestCommand=-1; compiled=null; modified=false; updateStatusBar();
-                show();
+                latestCommand=0; compiled=null; modified=false; updateStatusBar();
+                a_show.run();
             } catch(FileNotFoundException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
             } catch(IOException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
             }
             if (br!=null) try{br.close();} catch(IOException ex) {Util.harmless("close()",ex);}
             if (fr!=null) try{fr.close();} catch(IOException ex) {Util.harmless("close()",ex);}
             return result;
-        }
-    };
-
-    /** Called when the user trigers the "ReOpen" event in Mac OS X; always return true. */
-    private final Func0 a_reopen = new Func0() {
-        public final boolean run() {
-            show();
-            return true;
         }
     };
 
@@ -483,6 +480,7 @@ public final class SimpleGUI {
                 modified=false;
                 updateStatusBar();
                 addHistory(latestName=filename);
+                log.clearError();
                 openfiles.remove(filename); openfiles.add(filename);
                 frame.setTitle("Alloy Model: "+latestName);
                 OurWindowMenu.addWindow(frame, latestName);
@@ -548,89 +546,53 @@ public final class SimpleGUI {
         }
     };
 
-    /** This method recompiles the current text buffer so that we know what and how many commands there are. */
-    private void tryCompile() {
-        while(runmenu.getItemCount()>2) runmenu.remove(2);
-        if (getLatestInstance().length()==0) runmenu.getItem(1).setEnabled(false);
-        if (latestCommand<0) runmenu.getItem(0).setEnabled(false);
-        if (compiled==null) {
-            try {
-                Reader isr=new StringReader(text.getText());
-                Unit u=AlloyParser.alloy_parseStream(isr);
-                compiled=u;
-            }
-            catch(Err e) {
-                runmenu.getItem(0).setEnabled(false);
-                highlight(e);
-                String msg=e.toString();
-                if (msg.matches("^.*There are [0-9]* possible tokens that can appear here:.*$")) {
-                    // Special handling, to display that particular message in a clearer style.
-                    String head=msg.replaceAll("^(.*There are [0-9]* possible tokens that can appear here:).*$","$1");
-                    String tail=msg.replaceAll("^.*There are [0-9]* possible tokens that can appear here:(.*)$","$1");
-                    log.log("Cannot parse the model! "+head, tail+"\n\n");
-                }
-                else log.logRed("Cannot parse the model! "+e.toString()+"\n\n");
-                return;
-            }
-            catch(Exception e) {
-                runmenu.getItem(0).setEnabled(false);
-                log.logRed("Cannot parse the model! "+e.toString()+"\n\n");
-                return;
-            }
-        }
-        log.logRed(""); // To clear any residual error message
-        if (compiled==null || compiled.runchecks.size()==0) { runmenu.getItem(0).setEnabled(false); return; }
-        if (compiled.runchecks.size()>1) {
-            JMenuItem y=new JMenuItem("All");
-            y.addActionListener(new RunListener(-1));
-            runmenu.add(y);
-        }
-        runmenu.add(new JSeparator());
-        for(int i=0; i<compiled.runchecks.size(); i++) {
-            JMenuItem y=new JMenuItem(compiled.runchecks.get(i).toString());
-            y.addActionListener(new RunListener(i));
-            runmenu.add(y);
-        }
-    }
-
     /** Called when the user expands the "Run" menu; always returns true. */
     private final Func0 a_run = new Func0() {
         public final boolean run() {
-            tryCompile();
-            return true;
-        }
-    };
-
-    /** Called when the user expands the "Options" menu; always returns true. */
-    private final Func0 a_option = new Func0() {
-        public final boolean run() {
-            optmenu.removeAll();
-            JMenu sat=new JMenu("SAT solver: "+getSatOption());
-            for(final SolverChoice sc:satChoices) {
-                (new OurMenuItem(sat, ""+sc, new Func0() {
-                    public boolean run() { setSatOption(sc); propertySet("solver",sc.id); return true; }
-                })).setIcon(sc==getSatOption()?iconYes:iconNo);
-            }
-            optmenu.add(sat);
-            JMenu verb=new JMenu("Verbosity level: "+getVerbosity());
-            for(final Verbosity vb:Verbosity.values()) {
-                (new OurMenuItem(verb, ""+vb, new Func0() {
-                    public final boolean run() { setVerbosity(vb); propertySet("verbosity",vb.id); return true; }
-                })).setIcon(vb==getVerbosity()?iconYes:iconNo);
-            }
-            optmenu.add(verb);
-            JMenu size=new JMenu("Font size: "+fontSize);
-            for(final int n: new Integer[]{10,11,12,14,16,18,24}) {
-                (new OurMenuItem(size, ""+n, new Func0() {
-                    public final boolean run() {
-                        fontSize=n; propertySetInt("fontsize",n);
-                        text.setFont(new Font(OurUtil.getFontName(), Font.PLAIN, n));
-                        log.setFontSize(n);
-                        return true;
+            runmenu.getMenuComponent(0).setEnabled(true);
+            runmenu.getMenuComponent(1).setEnabled(true);
+            while(runmenu.getItemCount()>2) runmenu.remove(2);
+            runmenu.getItem(0).setText("Run the latest command");
+            if (getLatestInstance().length()==0) runmenu.getItem(1).setEnabled(false);
+            if (compiled==null) {
+                try {
+                    Reader isr=new StringReader(text.getText());
+                    Unit u=AlloyParser.alloy_parseStream(isr);
+                    compiled=u;
+                }
+                catch(Err e) {
+                    runmenu.getItem(0).setEnabled(false);
+                    highlight(e);
+                    String msg=e.toString();
+                    if (msg.matches("^.*There are [0-9]* possible tokens that can appear here:.*$")) {
+                        // Special handling, to display that particular message in a clearer style.
+                        String head=msg.replaceAll("^(.*There are [0-9]* possible tokens that can appear here:).*$","$1");
+                        String tail=msg.replaceAll("^.*There are [0-9]* possible tokens that can appear here:(.*)$","$1");
+                        log.log("Cannot parse the model! "+head, tail+"\n\n");
                     }
-                })).setIcon(n==fontSize?iconYes:iconNo);
+                    else log.logRed("Cannot parse the model! "+e.toString()+"\n\n");
+                    return true;
+                }
+                catch(Exception e) {
+                    runmenu.getItem(0).setEnabled(false);
+                    log.logRed("Cannot parse the model! "+e.toString()+"\n\n");
+                    return true;
+                }
             }
-            optmenu.add(size);
+            log.logRed(""); // To clear any residual error message
+            if (compiled==null || compiled.runchecks.size()==0) { runmenu.getItem(0).setEnabled(false); return true; }
+            runmenu.getItem(0).setText("Run "+(latestCommand+1)+"th command");
+            if (compiled.runchecks.size()>1) {
+                JMenuItem y=new JMenuItem("All");
+                y.addActionListener(new RunListener(-1));
+                runmenu.add(y);
+            }
+            runmenu.add(new JSeparator());
+            for(int i=0; i<compiled.runchecks.size(); i++) {
+                JMenuItem y=new JMenuItem(compiled.runchecks.get(i).toString());
+                y.addActionListener(new RunListener(i));
+                runmenu.add(y);
+            }
             return true;
         }
     };
@@ -638,7 +600,9 @@ public final class SimpleGUI {
     /** Called when the user clicks the "Run the latest command" button; always returns true. */
     private final Func0 a_runLatest = new Func0() {
         public final boolean run() {
-            tryCompile();
+            a_run.run();
+            runmenu.getMenuComponent(0).setEnabled(true);
+            runmenu.getMenuComponent(1).setEnabled(true);
             if (compiled==null) return false;
             int n=compiled.runchecks.size();
             if (n==0) { log.logRed("There are no commands to run.\n\n"); return false; }
@@ -674,14 +638,51 @@ public final class SimpleGUI {
         }
     };
 
+    /** Called when the user expands the "Options" menu; always returns true. */
+    private final Func0 a_option = new Func0() {
+        public final boolean run() {
+            optmenu.removeAll();
+            JMenu sat=new JMenu("SAT Solver: "+getSatOption());
+            for(final SolverChoice sc:satChoices) {
+                (new OurMenuItem(sat, ""+sc, new Func0() {
+                    public boolean run() { setSatOption(sc); propertySet("solver",sc.id); return true; }
+                })).setIcon(sc==getSatOption()?iconYes:iconNo);
+            }
+            optmenu.add(sat);
+            JMenu verb=new JMenu("Message Verbosity: "+getVerbosity());
+            for(final Verbosity vb:Verbosity.values()) {
+                (new OurMenuItem(verb, ""+vb, new Func0() {
+                    public final boolean run() { setVerbosity(vb); propertySet("verbosity",vb.id); return true; }
+                })).setIcon(vb==getVerbosity()?iconYes:iconNo);
+            }
+            optmenu.add(verb);
+            JMenu size=new JMenu("Font Size: "+fontSize);
+            for(final int n: new Integer[]{9,10,11,12,14,16,18,24}) {
+                (new OurMenuItem(size, ""+n, new Func0() {
+                    public final boolean run() {
+                        fontSize=n; propertySetInt("fontsize",n);
+                        text.setFont(new Font(OurUtil.getFontName(), Font.PLAIN, n));
+                        status.setFont(new Font(OurUtil.getFontName(), Font.PLAIN, n));
+                        log.setFontSize(n);
+                        return true;
+                    }
+                })).setIcon(n==fontSize?iconYes:iconNo);
+            }
+            optmenu.add(size);
+            return true;
+        }
+    };
 
     /** Called when the user wishes to bring this window to the foreground; always returns true. */
-    private final Func0 a_windowRaise = new Func0() {
-        public final boolean run() { show(); return true; }
+    private final Func0 a_show = new Func0() {
+        public final boolean run() {
+            frame.setVisible(true); frame.setExtendedState(JFrame.NORMAL); frame.requestFocus(); frame.toFront();
+            return true;
+        }
     };
 
     /** Called when the user clicks "Help", then "About"; always returns true. */
-    private final Func0 a_showAbout = new Func0() {
+    private static final Func0 a_showAbout = new Func0() {
         public final boolean run() {
             Icon icon=OurUtil.loadIcon("images/logo.gif");
             Object[] array = {
@@ -706,7 +707,7 @@ public final class SimpleGUI {
     };
 
     /** Called when the user clicks "Help", then "Show the change log"; always returns true. */
-    private final Func0 a_showChangeLog = new Func0() {
+    private static final Func0 a_showChangeLog = new Func0() {
         public final boolean run() {
             int screenWidth=OurUtil.getScreenWidth(), width=screenWidth/3*2;
             int screenHeight=OurUtil.getScreenHeight(), height=screenHeight/3*2;
@@ -848,8 +849,8 @@ public final class SimpleGUI {
         int height=propertyGetInt("height");
         if (height<=0) height=screenHeight/10*8; else if (height<100) height=100;
         if (height>screenHeight) height=screenHeight;
-        int x=propertyGetInt("x"); if (x<0) x=screenWidth/10; if (x+width>screenWidth) x=0;
-        int y=propertyGetInt("y"); if (y<0) y=screenHeight/10; if (y+height>screenHeight) y=0;
+        int x=propertyGetInt("x"); if (x<0) x=screenWidth/10; if (x>screenWidth-100) x=screenWidth-100;
+        int y=propertyGetInt("y"); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
 
         // Construct the JFrame object
         frame=new JFrame("Alloy Analyzer Version 4.0");
@@ -864,6 +865,7 @@ public final class SimpleGUI {
             filemenu.addMenuItem(null, "New",                   true,KeyEvent.VK_N,KeyEvent.VK_N,a_new);
             filemenu.addMenuItem(null, "Open...",               true,KeyEvent.VK_O,KeyEvent.VK_O,a_open);
             filemenu.addMenuItem(null, "Open Sample Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
+            filemenu.add(recentmenu = new JMenu("Open Recent"));
             filemenu.addMenuItem(null, "Save",                  true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
             filemenu.addMenuItem(null, "Save As...",            true,KeyEvent.VK_A,-1,           a_saveAs);
             closemenu=filemenu.addMenuItem(null, "Close",       true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
@@ -871,19 +873,7 @@ public final class SimpleGUI {
         }
 
         if (1==1) { // Run menu
-            runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, null);
-            runmenu.addMenuListener(new MenuListener() {
-                public final void menuSelected(MenuEvent e) {
-                    runmenu.getItem(0).setEnabled(true);
-                    runmenu.getItem(1).setEnabled(true);
-                    a_run.run();
-                }
-                public final void menuDeselected(MenuEvent e) {
-                    runmenu.getItem(0).setEnabled(true);
-                    runmenu.getItem(1).setEnabled(true);
-                }
-                public final void menuCanceled(MenuEvent e) { }
-            });
+            runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, a_run);
             runmenu.addMenuItem(null, "Run the latest command", true, KeyEvent.VK_R, KeyEvent.VK_R, a_runLatest);
             runmenu.addMenuItem(null, "Show the latest instance", true, KeyEvent.VK_L, KeyEvent.VK_L, a_showLatestInstance);
         }
@@ -972,12 +962,12 @@ public final class SimpleGUI {
             public final void caretUpdate(CaretEvent e) {updateStatusBar();}
         });
         text.getDocument().addDocumentListener(new DocumentListener() {
-            public final void insertUpdate(DocumentEvent e) {
+            public final void changedUpdate(DocumentEvent e) {
                 highlighter.removeAllHighlights();
                 compiled=null; if (!modified) {modified=true;updateStatusBar();}
             }
-            public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
-            public final void changedUpdate(DocumentEvent e) { changedUpdate(e); }
+            public final void removeUpdate(DocumentEvent e) { changedUpdate(e); }
+            public final void insertUpdate(DocumentEvent e) { changedUpdate(e); }
         });
         JComponent textPane = OurUtil.makeJScrollPane(text);
         textPane.setBorder(new OurBorder(true,false));
@@ -1031,7 +1021,7 @@ public final class SimpleGUI {
 
         // Generate some informative log messages
         log.logBold("Alloy Analyzer Version 4.0 (build date: "+Version.buildDate()+")\n\n");
-        if (Util.onMac()) MacUtil.registerApplicationListener(a_reopen, a_showAbout, a_openFileIfOk, a_quit);
+        if (Util.onMac()) MacUtil.registerApplicationListener(a_show, a_showAbout, a_openFileIfOk, a_quit);
 
         // Open the given file, if a filename is given in the command line
         if (args.length==1) {
@@ -1058,7 +1048,7 @@ public final class SimpleGUI {
                 while(true) {
                     try {
                         String msg=Util.lockThenReadThenErase(Util.alloyHome()+File.separatorChar+"msg");
-                        if (msg.equals("open:")) OurUtil.invokeAndWait(a_windowRaise);
+                        if (msg.equals("open:")) OurUtil.invokeAndWait(a_show);
                         else if (msg.startsWith("open:")) OurUtil.invokeAndWait(a_openFileIfOk,msg.substring(5));
                     } catch(IOException e) { }
                     try {Thread.sleep(400);} catch (InterruptedException e) {}
@@ -1181,7 +1171,7 @@ public final class SimpleGUI {
         /** The event handler that gets called when the user clicked on one of the menu item. */
         public void actionPerformed(ActionEvent e) {
             if (getCurrentThread()!=null) return;
-            latestCommand=(index>=0 ? index : 0);
+            latestCommand=(index>=0 ? index : compiled.runchecks.size()-1);
             AlloyBridge.stopped=false;
             Runner r=new Runner(new StringReader(text.getText()), index);
             Thread t=new Thread(r);
