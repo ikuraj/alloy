@@ -14,7 +14,9 @@ import java.io.StringReader;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -93,7 +95,6 @@ import edu.mit.csail.sdg.alloy4util.OurMenu;
 import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.OurUtil;
-import edu.mit.csail.sdg.alloy4util.OurWindowMenu;
 import edu.mit.csail.sdg.alloy4util.Pref;
 import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.alloy4util.Version;
@@ -119,8 +120,11 @@ public final class SimpleGUI {
     /** The JFrame for the main window. */
     private final JFrame frame;
 
-    /** The "File", "Edit", "Run", "Option", and "Help" menus. */
-    private final OurMenu filemenu, editmenu, runmenu, optmenu, helpmenu;
+    /** The JFrame for the visualizer window; null if it hasn't been opened yet. */
+    private KodVizGUI viz=null;
+
+    /** The "File", "Edit", "Run", "Option", "Window", and "Help" menus. */
+    private final OurMenu filemenu, editmenu, runmenu, optmenu, windowmenu, helpmenu;
 
     /** The toolbar. */
     private final JToolBar toolbar;
@@ -288,7 +292,90 @@ public final class SimpleGUI {
 
     //====== Message handlers ===============================================//
 
-    /** Called then the user expands the "File" menu; always returns true. */
+    /** Instance list */
+    private Map<String,String> xml2title = new LinkedHashMap<String,String>();
+    private List<String> xmlLoaded = new ArrayList<String>();
+
+    /** Called when we need to load a visualization window. */
+    private final Func1 a_viz = new Func1() {
+        public final boolean run(final String xmlName) {
+            if (!xmlLoaded.contains(xmlName)) xmlLoaded.add(xmlName);
+            if (viz!=null) {
+                viz.instantiate(xmlName,false);
+                viz.setVisible(true);
+                if ((viz.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
+                    viz.setExtendedState(JFrame.NORMAL);
+                viz.requestFocus();
+                viz.toFront();
+                return true;
+            }
+            if (!xmlName.endsWith(".xml")) return false;
+            String dotname=xmlName.substring(0, xmlName.length()-4)+".dot";
+            viz=new KodVizGUI(dotname, xmlName);
+            return true;
+        }
+    };
+
+    private static String slightlyShorterFilename(String name) {
+        if (name.toLowerCase().endsWith(".als")) {
+            int i=name.lastIndexOf(File.separatorChar);
+            if (i>=0) return name.substring(i+1);
+        } else if (name.toLowerCase().endsWith(".xml")) {
+            int i=name.lastIndexOf(File.separatorChar);
+            if (i>0) i=name.lastIndexOf(File.separatorChar, i-1);
+            if (i>=0) return name.substring(i+1);
+        }
+        return name;
+    }
+
+    private final Func0 a_window = new Func0() {
+        public final boolean run() {
+            windowmenu.removeAll();
+            new OurMenuItem(windowmenu, "Minimize", KeyEvent.VK_M, KeyEvent.VK_M, new Func0() {
+                public final boolean run() {
+                    frame.setExtendedState(JFrame.ICONIFIED);
+                    return true;
+                }
+            });
+            new OurMenuItem(windowmenu, "Zoom", new Func0() {
+                public final boolean run() {
+                    if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
+                        frame.setExtendedState(JFrame.NORMAL);
+                    else
+                        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                    return true;
+                }
+            });
+            JMenuItem it;
+            windowmenu.addSeparator();
+            if (openfiles.size()==0) {
+                it=new JMenuItem("Alloy Analyzer");
+                it.setIcon(iconYes);
+                windowmenu.add(it);
+            } else for(final String f:openfiles) {
+                it=new JMenuItem("Model: "+slightlyShorterFilename(f));
+                it.setIcon(f.equals(latestName)?iconYes:iconNo);
+                it.addActionListener(new ActionListener() {
+                    public final void actionPerformed(ActionEvent e) { a_openFileIfOk.run(f); }
+                });
+                windowmenu.add(it);
+            }
+            if (xmlLoaded.size()>0) {
+                windowmenu.addSeparator();
+                for(final String f:xmlLoaded) {
+                    it=new JMenuItem("Instance: "+xml2title.get(f));
+                    it.setIcon(iconNo);
+                    it.addActionListener(new ActionListener() {
+                        public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
+                    });
+                    windowmenu.add(it);
+                }
+            }
+            return true;
+        }
+    };
+
+    /** Called when the user expands the "File" menu; always returns true. */
     private final Func0 a_file = new Func0() {
         public final boolean run() {
             JMenu recentmenu;
@@ -346,7 +433,6 @@ public final class SimpleGUI {
             undo.discardAllEdits();
             frame.setTitle("Alloy Analyzer Version 4.0");
             log.clearError();
-            OurWindowMenu.addWindow(frame, "");
             latestCommand=0; compiled=null; modified=false; updateStatusBar();
             return true;
         }
@@ -387,10 +473,9 @@ public final class SimpleGUI {
                 text.setCaretPosition(0);
                 undo.discardAllEdits();
                 frame.setTitle("Alloy Model: "+f);
-                OurWindowMenu.addWindow(frame, f);
                 addHistory(latestName=f);
                 log.clearError();
-                openfiles.remove(f); openfiles.add(f);
+                if (!openfiles.contains(f)) openfiles.add(f);
                 latestCommand=0; compiled=null; modified=false; updateStatusBar();
                 a_show.run();
                 text.requestFocusInWindow();
@@ -451,9 +536,8 @@ public final class SimpleGUI {
                 updateStatusBar();
                 addHistory(latestName=filename);
                 log.clearError();
-                openfiles.remove(filename); openfiles.add(filename);
+                if (!openfiles.contains(latestName)) openfiles.add(latestName);
                 frame.setTitle("Alloy Model: "+latestName);
-                OurWindowMenu.addWindow(frame, latestName);
             } catch(IOException e) {
                 log.logRed("Cannot write to the file "+filename+"\n\n");
                 return false;
@@ -693,9 +777,7 @@ public final class SimpleGUI {
             if (name.length()==0) {
                 log.logRed("No previous instances are available for viewing.\n\n"); return false;
             } else {
-                String xmlName=name+".xml";
-                if (!OurWindowMenu.focusByFilename(xmlName)) new KodVizGUI(name+".dot", new File(xmlName));
-                return true;
+                return a_viz.run(name+".xml");
             }
         }
     };
@@ -929,7 +1011,6 @@ public final class SimpleGUI {
 
         // Construct the JFrame object
         frame=new JFrame("Alloy Analyzer Version 4.0");
-        OurWindowMenu.addWindow(frame,"");
 
         // Create the menu bar
         JMenuBar bar=new JMenuBar();
@@ -963,7 +1044,8 @@ public final class SimpleGUI {
             optmenu = new OurMenu(bar, "Options", KeyEvent.VK_O, a_option);
         }
 
-        new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
+        windowmenu = new OurMenu(bar, "Window", KeyEvent.VK_W, a_window);
+        //new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
 
         helpmenu = new OurMenu(bar, "Help", KeyEvent.VK_H, null);
         if (!Util.onMac()) helpmenu.addMenuItem(null, "About Alloy4...", true, KeyEvent.VK_A, -1, a_showAbout);
@@ -1068,16 +1150,7 @@ public final class SimpleGUI {
                 return true;
             }
         };
-        Func1 viz=new Func1() {
-            public final boolean run(final String arg) {
-                // TODO should somehow reuse an old window if the setting says so
-                if (!arg.endsWith(".xml")) return false;
-                String dotname=arg.substring(0, arg.length()-4)+".dot";
-                if (!OurWindowMenu.focusByFilename(arg)) new KodVizGUI(dotname, new File(arg));
-                return true;
-            }
-        };
-        log = new LogToJTextPane(logpane, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), focus, viz);
+        log = new LogToJTextPane(logpane, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), focus, a_viz);
         logpane.setBorder(new EmptyBorder(0,0,0,0));
 
         // Add everything to the frame, then display the frame
@@ -1116,6 +1189,7 @@ public final class SimpleGUI {
         a_file.run();
         a_edit.run();
         a_option.run();
+        a_window.run();
         frame.setVisible(true);
 
         // Generate some informative log messages
@@ -1213,6 +1287,7 @@ public final class SimpleGUI {
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
                 if (sc!=SolverChoice.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     setLatestInstance(tempdir+fs+(index+1));
+                    xml2title.put(tempdir+fs+(index+1)+".xml", units.get(0).runchecks.get(0).toString());
                 }
                 if (sc!=SolverChoice.FILE && result.size()>1) {
                     log.logBold("" + result.size() + " commands were executed. The results are:\n");
@@ -1227,6 +1302,7 @@ public final class SimpleGUI {
                             if (r.check) log.log("   #"+i+": Counterexample found. "+label+" is invalid. ");
                             else log.log("   #"+i+": Instance found. "+label+" is consistent. ");
                             log.logLink(tempdir+fs+i+".xml");
+                            xml2title.put(tempdir+fs+i+".xml", r.toString());
                             log.log("\n");
                             setLatestInstance(tempdir+fs+i);
                             break;
