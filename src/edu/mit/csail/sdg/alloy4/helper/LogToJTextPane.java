@@ -232,8 +232,8 @@ public final class LogToJTextPane extends Log {
         StyledDocument doc=log.getStyledDocument();
         Style s=doc.addStyle("link", styleRegular);
         JPanel jp = new JPanel();
-        jp.setBackground(Color.GRAY);
-        jp.setPreferredSize(new Dimension(300,2)); // 300 is arbitrary, since it will auto-stretch
+        jp.setBackground(Color.LIGHT_GRAY);
+        jp.setPreferredSize(new Dimension(300,1)); // 300 is arbitrary, since it will auto-stretch
         StyleConstants.setComponent(s, jp);
         log(".",s);
         log("\n\n",styleRegular);

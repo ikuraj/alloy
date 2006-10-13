@@ -44,6 +44,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -51,7 +52,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -68,10 +68,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-import javax.swing.text.StyledDocument;
 import javax.swing.text.Highlighter.HighlightPainter;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
@@ -95,7 +91,6 @@ import edu.mit.csail.sdg.alloy4util.OurBorder;
 import edu.mit.csail.sdg.alloy4util.OurDialog;
 import edu.mit.csail.sdg.alloy4util.MacUtil;
 import edu.mit.csail.sdg.alloy4util.OurMenu;
-import edu.mit.csail.sdg.alloy4util.OurMenuBar;
 import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.OurUtil;
@@ -108,7 +103,7 @@ import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
  * The GUI; except noted below, methods in this class can only be called by the AWT thread.
  *
  * <p/> The methods that might get called from other threads are:
- * <br/> (1) the highlight() methods.
+ * <br/> (1) the highlight() method.
  * <br/> (2) the run() method in Runner is launched from a fresh thread
  * <br/> (3) the run() method in the instance watcher (in constructor) is launched from a fresh thread
  *
@@ -119,36 +114,65 @@ import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
 
 public final class SimpleGUI {
 
-    //====== static readonly fields =========================================//
+    //====== GUI components; only the AWT thread may access these. ==========//
 
-    /** The current change log. */
-    private static final String[] changelog = new String[]{
-        "2006 Oct 9, 2PM:",
-        "  Added BerkMin (via pipe), MiniSat2+Simp (via pipe), and MiniSat2 (via pipe).",
-        "  The pipe-based method is now default, since it's more stable than JNI.",
-        "2006 Sep 29 6:30PM:",
-        "  Major improvements to the look-and-feel components on Mac OS X.",
-        "2006 Spe 29 10AM:",
-        "  1) Unconnected Int atoms are now hidden by default.",
-        "  2) Projection and Unprojection buttons are changed into hyperlinks in the titlebar.",
-        "  3) Projection Panel and Tree View will now use the label from the theme.",
-        "2006 Sep 21, 3:55PM:",
-        "  Added a new builtin method: disj",
-        "  disj is a predicate that takes 2 or more arguments.",
-        "  For example, disj[x,y,z] means no(x&y) && no(y&z) && no(x&z)",
-        "  Note: for historical reasons, disjoint[ ] is an alias for disj[ ]",
-        "2006 Sep 21, 3:15PM:",
-        "  Added a new builtin method: int",
-        "  int[x] converts a set of Int atoms into a primitive integer.",
-        "  The old Alloy 3 syntax ``int x'' and ``sum x'' are still allowed.",
-        "  Note: for historical reasons, sum[ ] is an alias for int[ ]",
-        "2006 Sep 21, 2:30PM:",
-        "  Added a new builtin method: Int",
-        "  Int[x] converts a primitive integer into a SIGINT atom.",
-        "  The old Alloy 3 syntax ``Int x'' must now be written as ``Int[x]'' or ``x.Int''",
-        "2006 Sep 21, 1:10PM:",
-        "  Alloy4 Alpha1 released."
-    };
+    /** The JFrame for the main window. */
+    private final JFrame frame;
+
+    /** The "File", "Edit", "Run", "Option", and "Help" menus. */
+    private final OurMenu filemenu, editmenu, runmenu, optmenu, helpmenu;
+
+    /** The toolbar. */
+    private final JToolBar toolbar;
+
+    /** The various toolbar buttons. */
+    private final JButton newbutton, openbutton, loadbutton, savebutton, runbutton, stopbutton, showbutton;
+
+    /** The Splitpane. */
+    private final OurSplitPane splitpane;
+
+    /** The JLabel that displays the current line/column position, etc. */
+    private final JLabel status;
+
+    /** Whether the editor has the focus, or the log window has the focus. */
+    private boolean lastFocusIsOnEditor=true;
+
+    /** The JTextArea containing the editor buffer. */
+    private final JTextArea text;
+
+    /** The UndoManager for the editor buffer. */
+    private final UndoManager undo = new UndoManager();
+
+    /** The Highlighter to use with the editor buffer. */
+    private final Highlighter highlighter;
+
+    /** The HighlightPainter to use to paint the highlights. */
+    private final HighlightPainter highlightPainter;
+
+    /** The JTextPane containing the error messages and success messages. */
+    private final LogToJTextPane log;
+    private final JScrollPane logpane;
+
+    /** The filename for the content currently in the text editor. ("" if the text editor is unnamed) */
+    private String latestName="";
+    private List<String> openfiles=new ArrayList<String>();
+
+    /** The most-recently-used directory (this is the directory we use when launching a FileChooser next time) */
+    private String fileOpenDirectory=(new File(System.getProperty("user.home"))).getAbsolutePath();
+
+    /** The last "find" that the user issued. */
+    private String lastFind="";
+
+    /** The latest command executed by the user. */
+    private int latestCommand=0;
+
+    /** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
+    private Unit compiled=null;
+
+    /** This field is true iff the text in the text buffer hasn't been modified since the last time it was saved */
+    private boolean modified=false;
+
+    //====== static readonly fields =========================================//
 
     /** The icon for a "checked" menu item. */
     private static final ImageIcon iconYes=OurUtil.loadIcon("images/menu1.gif");
@@ -160,7 +184,7 @@ public final class SimpleGUI {
     private static final String fs=System.getProperty("file.separator");
 
     /** The darker background color (for the MessageLog window and the Toolbar and the Status Bar, etc.) */
-    private static final Color gray=Color.getHSBColor(0f,0f,0.90f);
+    private static final Color background=Color.WHITE;
 
     //====== static methods =================================================//
 
@@ -246,69 +270,6 @@ public final class SimpleGUI {
     /** Sets the current SAT solver thread. */
     private synchronized void setCurrentThread(Thread value) { current_thread=value; }
 
-    //====== instance fields (only the AWT thread may access these) =========//
-
-    /** The JFrame for the main window. */
-    private final JFrame frame;
-
-    /** The "File", "Edit", "Run", "Option", "Window", and "Help" menus. */
-    private final OurMenu filemenu, editmenu, runmenu, optmenu, helpmenu;
-
-    /** The "File->Recent" menu. */
-    private final JMenu recentmenu;
-
-    /** The "close" menu item. */
-    private final OurMenuItem closemenu, undomenu, redomenu;
-
-    /** The toolbar. */
-    private final JToolBar toolbar;
-
-    /** The "Run" and "Stop" buttons. */
-    private final JButton runbutton, stopbutton, showbutton;
-
-    /** The Splitpane. */
-    private final OurSplitPane splitpane;
-
-    /** The JLabel that displays the current line/column position, etc. */
-    private final JLabel status;
-
-    /** Whether the editor has the focus, or the log window has the focus. */
-    private boolean lastFocusIsOnEditor=true;
-
-    /** The JTextArea containing the editor buffer. */
-    private final JTextArea text;
-
-    /** The UndoManager for the editor buffer. */
-    private final UndoManager undo = new UndoManager();
-
-    /** The Highlighter to use with the editor buffer. */
-    private final Highlighter highlighter;
-
-    /** The HighlightPainter to use to paint the highlights. */
-    private final HighlightPainter highlightPainter;
-
-    /** The JTextPane containing the error messages and success messages. */
-    private final LogToJTextPane log;
-    private final JScrollPane logpane;
-
-    /** The filename for the content currently in the text editor. ("" if the text editor is unnamed) */
-    private String latestName="";
-    private List<String> openfiles=new ArrayList<String>();
-
-    /** The most-recently-used directory (this is the directory we use when launching a FileChooser next time) */
-    private String fileOpenDirectory=(new File(System.getProperty("user.home"))).getAbsolutePath();
-
-    /** The last "find" that the user issued. */
-    private String lastFind="";
-
-    /** The latest command executed by the user. */
-    private int latestCommand=0;
-
-    /** This field is true iff the text in the text buffer hasn't been modified since the last time it was compiled */
-    private Unit compiled=null;
-
-    /** This field is true iff the text in the text buffer hasn't been modified since the last time it was saved */
-    private boolean modified=false;
 
     //====== helper methods =================================================//
 
@@ -322,11 +283,16 @@ public final class SimpleGUI {
 
     /** Updates the status bar at the bottom of the screen. */
     private void updateStatusBar() {
+        if (Util.onMac()) {
+            if (modified) frame.getRootPane().putClientProperty("windowModified",Boolean.TRUE);
+            else frame.getRootPane().putClientProperty("windowModified",Boolean.FALSE);
+        }
+        if (mode_externalEditor) {
+            if (latestName.length()>0) status.setText("<html><b>&nbsp; Current file:&nbsp; "+latestName+"</b></html>");
+            else status.setText("<html><b>&nbsp; Current file:&nbsp; None</b></html>");
+            return;
+        }
         try {
-            if (Util.onMac()) {
-                if (modified) frame.getRootPane().putClientProperty("windowModified",Boolean.TRUE);
-                else frame.getRootPane().putClientProperty("windowModified",Boolean.FALSE);
-            }
             int c=text.getCaretPosition();
             int y=text.getLineOfOffset(c)+1;
             int x=c-text.getLineStartOffset(y-1)+1;
@@ -368,6 +334,23 @@ public final class SimpleGUI {
     /** Called then the user expands the "File" menu; always returns true. */
     private final Func0 a_file = new Func0() {
         public final boolean run() {
+            JMenu recentmenu;
+            String open=(mode_externalEditor?"Load":"Open");
+            filemenu.removeAll();
+            filemenu.addMenuItem(null, "New",                   true,KeyEvent.VK_N,KeyEvent.VK_N,a_new);
+            filemenu.addMenuItem(null, open+"...",               true,KeyEvent.VK_O,KeyEvent.VK_O,a_open);
+            filemenu.addMenuItem(null, open+" Sample Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
+            filemenu.add(recentmenu = new JMenu(open+" Recent"));
+            if (!mode_externalEditor) {
+                filemenu.addMenuItem(null, "Save",                  true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
+                if (Util.onMac())
+                    new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_S, a_saveAs);
+                else
+                    new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_A, -1, a_saveAs);
+            }
+            JMenuItem closemenu=filemenu.addMenuItem(null, "Close",       true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
+            filemenu.addMenuItem(null, "Quit",true,KeyEvent.VK_Q,(Util.onMac()?-1:KeyEvent.VK_Q),a_quit);
+            //
             boolean found=false;
             closemenu.setEnabled(latestName.length()>0 || text.getDocument().getLength()>0);
             recentmenu.removeAll();
@@ -497,6 +480,7 @@ public final class SimpleGUI {
      */
     private final Func1 a_saveFile = new Func1() {
         public final boolean run(String filename) {
+            if (mode_externalEditor) return false;
             filename=(new File(filename)).getAbsolutePath();
             try {
                 FileWriter fw=new FileWriter(filename);
@@ -528,6 +512,7 @@ public final class SimpleGUI {
      */
     private final Func0 a_saveAs = new Func0() {
         public final boolean run() {
+            if (mode_externalEditor) return false;
             File file=OurDialog.showFileChooser(frame,false,fileOpenDirectory,".als",".als files");
             if (file==null) return false;
             String filename=file.getAbsolutePath();
@@ -544,6 +529,7 @@ public final class SimpleGUI {
      */
     private final Func0 a_save = new Func0() {
         public final boolean run() {
+            if (mode_externalEditor) return false;
             if (latestName.length()>0) return a_saveFile.run(latestName); else return a_saveAs.run();
         }
     };
@@ -579,8 +565,21 @@ public final class SimpleGUI {
     /** Called when the user expands the Edit menu */
     private final Func0 a_edit = new Func0() {
         public final boolean run() {
-            undomenu.setEnabled(undo.canUndo());
-            redomenu.setEnabled(undo.canRedo());
+            boolean canUndo = (undo!=null ? undo.canUndo() : true);
+            boolean canRedo = (undo!=null ? undo.canRedo() : true);
+            editmenu.removeAll();
+            (new OurMenuItem(editmenu, "Undo", KeyEvent.VK_Z, KeyEvent.VK_Z, a_undo)).setEnabled(canUndo);
+            if (Util.onMac())
+                (new OurMenuItem(editmenu, "Redo",                KeyEvent.VK_Z, a_redo)).setEnabled(canRedo);
+            else
+                (new OurMenuItem(editmenu, "Redo", KeyEvent.VK_Y, KeyEvent.VK_Y, a_redo)).setEnabled(canRedo);
+            editmenu.addSeparator();
+            editmenu.addMenuItem(null, "Cut",       !mode_externalEditor, KeyEvent.VK_X, KeyEvent.VK_X, a_cut);
+            editmenu.addMenuItem(null, "Copy",      true,                 KeyEvent.VK_C, KeyEvent.VK_C, a_copy);
+            editmenu.addMenuItem(null, "Paste",     !mode_externalEditor, KeyEvent.VK_V, KeyEvent.VK_V, a_paste);
+            editmenu.addSeparator();
+            editmenu.addMenuItem(null, "Find...",   !mode_externalEditor, KeyEvent.VK_F, KeyEvent.VK_F, a_find);
+            editmenu.addMenuItem(null, "Find Next", !mode_externalEditor, KeyEvent.VK_G, KeyEvent.VK_G, a_findnext);
             return true;
         }
     };
@@ -588,7 +587,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Undo */
     private final Func0 a_undo = new Func0() {
         public final boolean run() {
-            try {  if (undo.canUndo()) undo.undo(); }
+            try { if (undo!=null && !mode_externalEditor && undo.canUndo()) undo.undo(); }
             catch (CannotUndoException ex) { Util.harmless("undo",ex); }
             return true;
         }
@@ -597,7 +596,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Redo */
     private final Func0 a_redo = new Func0() {
         public final boolean run() {
-            try {  if (undo.canRedo()) undo.redo(); }
+            try {  if (undo!=null && !mode_externalEditor && undo.canRedo()) undo.redo(); }
             catch (CannotRedoException ex) { Util.harmless("redo",ex); }
             return true;
         }
@@ -606,7 +605,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Copy */
     private final Func0 a_copy = new Func0() {
         public final boolean run() {
-            if (lastFocusIsOnEditor) text.copy(); else log.copy();
+            if (lastFocusIsOnEditor && !mode_externalEditor) text.copy(); else log.copy();
             return true;
         }
     };
@@ -614,7 +613,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Cut */
     private final Func0 a_cut = new Func0() {
         public final boolean run() {
-            if (lastFocusIsOnEditor) text.cut();
+            if (lastFocusIsOnEditor && !mode_externalEditor) text.cut();
             return true;
         }
     };
@@ -622,7 +621,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Paste */
     private final Func0 a_paste = new Func0() {
         public final boolean run() {
-            if (lastFocusIsOnEditor) text.paste();
+            if (lastFocusIsOnEditor && !mode_externalEditor) text.paste();
             return true;
         }
     };
@@ -630,6 +629,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Find */
     private final Func0 a_find = new Func0() {
         public final boolean run() {
+            if (mode_externalEditor) return false;
             Object answer=JOptionPane.showInputDialog(frame, "Find: ", "Find", JOptionPane.PLAIN_MESSAGE, null, null, lastFind);
             if (!(answer instanceof String)) return false;
             lastFind=(String)answer;
@@ -640,6 +640,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->FindNext */
     private final Func0 a_findnext = new Func0() {
         public final boolean run() {
+            if (mode_externalEditor) return false;
             String all=text.getText();
             int i=all.indexOf(lastFind, text.getCaretPosition());
             if (i<0) {
@@ -690,7 +691,7 @@ public final class SimpleGUI {
             }
             log.logRed(""); // To clear any residual error message
             if (compiled==null || compiled.runchecks.size()==0) { runmenu.getItem(0).setEnabled(false); return true; }
-            runmenu.getItem(0).setText("Run "+(latestCommand+1)+"th command");
+            runmenu.getItem(0).setText("Run "+Util.th(latestCommand+1)+" command");
             if (compiled.runchecks.size()>1) {
                 JMenuItem y=new JMenuItem("All");
                 y.addActionListener(new RunListener(-1));
@@ -778,30 +779,35 @@ public final class SimpleGUI {
                 })).setIcon(n==fontSize?iconYes:iconNo);
             }
             optmenu.add(size);
-            /*
             new OurMenuItem(optmenu, "Use an external editor: "+(mode_externalEditor?"Yes":"No"), new Func0() {
                 public boolean run() {
+                    if (!mode_externalEditor && modified && !my_confirm()) return false;
+                    modified=false; String n=latestName; a_new.run(); if (n.length()>0) a_openFile.run(n);
                     mode_externalEditor = !mode_externalEditor;
                     Container all=frame.getContentPane();
                     all.removeAll();
-                    if (!mode_externalEditor) {
-                        ((JPanel)(splitpane.getTopComponent())).add(toolbar, BorderLayout.NORTH);
-                        splitpane.setBottomComponent(logpane);
-                        all.add(splitpane, BorderLayout.CENTER);
-                        all.add(status, BorderLayout.SOUTH);
-                    } else {
+                    newbutton.setVisible(!mode_externalEditor);
+                    openbutton.setVisible(!mode_externalEditor);
+                    savebutton.setVisible(!mode_externalEditor);
+                    loadbutton.setVisible(mode_externalEditor);
+                    if (mode_externalEditor) {
                         ((JPanel)(splitpane.getTopComponent())).remove(toolbar);
                         splitpane.setBottomComponent(null);
                         all.add(toolbar, BorderLayout.NORTH);
                         all.add(logpane, BorderLayout.CENTER);
-                        all.add(status, BorderLayout.SOUTH);
+                    } else {
+                        ((JPanel)(splitpane.getTopComponent())).add(toolbar, BorderLayout.NORTH);
+                        splitpane.setBottomComponent(logpane);
+                        all.add(splitpane, BorderLayout.CENTER);
                     }
+                    all.add(status, BorderLayout.SOUTH);
+                    updateStatusBar();
                     frame.validate();
                     if (mode_externalEditor) logpane.requestFocusInWindow(); else text.requestFocusInWindow();
+                    lastFocusIsOnEditor=!mode_externalEditor;
                     return true;
                 }
             });
-            */
             return true;
         }
     };
@@ -842,37 +848,34 @@ public final class SimpleGUI {
     /** Called when the user clicks "Help", then "Show the change log"; always returns true. */
     private static final Func0 a_showChangeLog = new Func0() {
         public final boolean run() {
-            int screenWidth=OurUtil.getScreenWidth(), width=screenWidth/3*2;
-            int screenHeight=OurUtil.getScreenHeight(), height=screenHeight/3*2;
-            JTextPane log=new JTextPane();
-            log.setBackground(gray);
-            log.setEditable(false);
-            StyledDocument doc=log.getStyledDocument();
-            Style old=StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-            Style styleRegular=doc.addStyle("regular", old);  StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
-            Style styleBold=doc.addStyle("bold", styleRegular); StyleConstants.setBold(styleBold, true);
-            Style styleGreen=doc.addStyle("green", styleBold); StyleConstants.setForeground(styleGreen, new Color(0.2f,0.7f,0.2f));
-            for(int i=0; i<changelog.length; i++) {
-                try {
-                    if (changelog[i].startsWith("20"))
-                        doc.insertString(doc.getLength(), (i==0?"":"\n")+changelog[i]+"\n", styleGreen);
-                    else
-                        doc.insertString(doc.getLength(), changelog[i]+"\n", styleRegular);
-                } catch(BadLocationException ex) {
-                    // This should not happen
-                }
-            }
-            log.setCaretPosition(0);
-            final JFrame frame=new JFrame("Alloy change log");
-            frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-            Container all=frame.getContentPane();
-            all.setLayout(new BorderLayout());
-            all.add(OurUtil.makeJScrollPane(log), BorderLayout.CENTER);
-            if (Util.onMac()) all.add(new JLabel(" "), BorderLayout.SOUTH); // Make room for the Mac "grow box"
-            frame.pack();
-            frame.setSize(new Dimension(width,height));
-            frame.setLocation(screenWidth/6, screenHeight/6);
-            frame.setVisible(true);
+            String[] changelog = new String[]{
+                "2006 Oct 9, 2PM:",
+                "  Added BerkMin (via pipe), MiniSat2+Simp (via pipe), and MiniSat2 (via pipe).",
+                "  The pipe-based method is now default, since it's more stable than JNI.",
+                "2006 Sep 29 6:30PM:",
+                "  Major improvements to the look-and-feel components on Mac OS X.",
+                "2006 Spe 29 10AM:",
+                "  1) Unconnected Int atoms are now hidden by default.",
+                "  2) Projection and Unprojection buttons are changed into hyperlinks in the titlebar.",
+                "  3) Projection Panel and Tree View will now use the label from the theme.",
+                "2006 Sep 21, 3:55PM:",
+                "  Added a new builtin method: disj",
+                "  disj is a predicate that takes 2 or more arguments.",
+                "  For example, disj[x,y,z] means no(x&y) && no(y&z) && no(x&z)",
+                "  Note: for historical reasons, disjoint[] is an alias for disj[]",
+                "2006 Sep 21, 3:15PM:",
+                "  Added a new builtin method: int",
+                "  int[x] converts a set of Int atoms into a primitive integer.",
+                "  The old Alloy 3 syntax ``int x'' and ``sum x'' are still allowed.",
+                "  Note: for historical reasons, sum[] is an alias for int[]",
+                "2006 Sep 21, 2:30PM:",
+                "  Added a new builtin method: Int",
+                "  Int[x] converts a primitive integer into a SIGINT atom.",
+                "  The old Alloy 3 syntax ``Int x'' must now be written as ``Int[x]'' or ``x.Int''",
+                "2006 Sep 21, 1:10PM:",
+                "  Alloy4 Alpha1 released."
+            };
+            OurDialog.popup(background,changelog);
             return true;
         }
     };
@@ -907,52 +910,29 @@ public final class SimpleGUI {
         Util.copy(false,binary,"jpeg.dll","libexpat.dll","libexpatw.dll","zlib1.dll","z.dll","freetype6.dll","png.dll");
         // Copy the model files
         Util.copy(false,alloyHome,
-                "models/examples/algorithms/dijkstra.als",
-                "models/examples/algorithms/messaging.als",
-                "models/examples/algorithms/opt_spantree.als",
-                "models/examples/algorithms/peterson.als",
-                "models/examples/algorithms/ringlead.als",
-                "models/examples/algorithms/s_ringlead.als",
+                "models/examples/algorithms/dijkstra.als", "models/examples/algorithms/messaging.als",
+                "models/examples/algorithms/opt_spantree.als", "models/examples/algorithms/peterson.als",
+                "models/examples/algorithms/ringlead.als", "models/examples/algorithms/s_ringlead.als",
                 "models/examples/algorithms/stable_mutex_ring.als",
                 "models/examples/algorithms/stable_orient_ring.als",
-                "models/examples/algorithms/stable_ringlead.als",
-                "models/examples/case_studies/INSLabel.als",
-                "models/examples/case_studies/chord.als",
-                "models/examples/case_studies/chord2.als",
-                "models/examples/case_studies/chordbugmodel.als",
-                "models/examples/case_studies/com.als",
-                "models/examples/case_studies/firewire.als",
-                "models/examples/case_studies/ins.als",
-                "models/examples/case_studies/iolus.als",
-                "models/examples/case_studies/sync.als",
-                "models/examples/case_studies/syncimpl.als",
-                "models/examples/puzzles/farmer.als",
-                "models/examples/puzzles/handshake.als",
-                "models/examples/puzzles/hanoi.als",
-                "models/examples/systems/file_system.als",
-                "models/examples/systems/javatypes_soundness.als",
-                "models/examples/systems/lists.als",
-                "models/examples/systems/marksweepgc.als",
-                "models/examples/systems/views.als",
-                "models/examples/toys/birthday.als",
-                "models/examples/toys/ceilingsAndFloors.als",
-                "models/examples/toys/genealogy.als",
-                "models/examples/toys/grandpa.als",
-                "models/examples/toys/javatypes.als",
-                "models/examples/toys/life.als",
-                "models/examples/toys/numbering.als",
-                "models/examples/toys/railway.als",
-                "models/examples/toys/trivial.als",
+                "models/examples/algorithms/stable_ringlead.als", "models/examples/case_studies/INSLabel.als",
+                "models/examples/case_studies/chord.als", "models/examples/case_studies/chord2.als",
+                "models/examples/case_studies/chordbugmodel.als", "models/examples/case_studies/com.als",
+                "models/examples/case_studies/firewire.als", "models/examples/case_studies/ins.als",
+                "models/examples/case_studies/iolus.als", "models/examples/case_studies/sync.als",
+                "models/examples/case_studies/syncimpl.als", "models/examples/puzzles/farmer.als",
+                "models/examples/puzzles/handshake.als", "models/examples/puzzles/hanoi.als",
+                "models/examples/systems/file_system.als", "models/examples/systems/javatypes_soundness.als",
+                "models/examples/systems/lists.als", "models/examples/systems/marksweepgc.als",
+                "models/examples/systems/views.als", "models/examples/toys/birthday.als",
+                "models/examples/toys/ceilingsAndFloors.als", "models/examples/toys/genealogy.als",
+                "models/examples/toys/grandpa.als", "models/examples/toys/javatypes.als",
+                "models/examples/toys/life.als", "models/examples/toys/numbering.als",
+                "models/examples/toys/railway.als", "models/examples/toys/trivial.als",
                 "models/examples/tutorial/farmer.als",
-                "models/util/boolean.als",
-                "models/util/graph.als",
-                "models/util/integer.als",
-                "models/util/natural.als",
-                "models/util/ordering.als",
-                "models/util/relation.als",
-                "models/util/seqrel.als",
-                "models/util/sequence.als",
-                "models/util/ternary.als"
+                "models/util/boolean.als", "models/util/graph.als", "models/util/integer.als",
+                "models/util/natural.als", "models/util/ordering.als", "models/util/relation.als",
+                "models/util/seqrel.als", "models/util/sequence.als", "models/util/ternary.als"
         );
 
         // Figure out the desired x, y, width, and height
@@ -971,45 +951,14 @@ public final class SimpleGUI {
         OurWindowMenu.addWindow(frame,"");
 
         // Create the menu bar
-        OurMenuBar bar=new OurMenuBar();
+        JMenuBar bar=new JMenuBar();
         frame.setJMenuBar(bar);
 
-        if (1==1) { // File menu
-            filemenu = bar.addMenu("File", true, KeyEvent.VK_F, a_file);
-            filemenu.addMenuItem(null, "New",                   true,KeyEvent.VK_N,KeyEvent.VK_N,a_new);
-            filemenu.addMenuItem(null, "Open...",               true,KeyEvent.VK_O,KeyEvent.VK_O,a_open);
-            filemenu.addMenuItem(null, "Open Sample Models...", true,KeyEvent.VK_B,-1,           a_openBuiltin);
-            filemenu.add(recentmenu = new JMenu("Open Recent"));
-            filemenu.addMenuItem(null, "Save",                  true,KeyEvent.VK_S,KeyEvent.VK_S,a_save);
-            if (Util.onMac())
-                new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_S, a_saveAs);
-            else
-                new OurMenuItem(filemenu,"Save As...",KeyEvent.VK_A, -1, a_saveAs);
-            closemenu=filemenu.addMenuItem(null, "Close",       true,KeyEvent.VK_W,KeyEvent.VK_W,a_close);
-            filemenu.addMenuItem(null, "Quit",true,KeyEvent.VK_Q,(Util.onMac()?-1:KeyEvent.VK_Q),a_quit);
-        }
-
-        if (1==1) { // Edit menu
-            editmenu = bar.addMenu("Edit", true, KeyEvent.VK_E, a_edit);
-            undomenu=new OurMenuItem(editmenu, "Undo", KeyEvent.VK_Z, KeyEvent.VK_Z, a_undo);
-            if (Util.onMac())
-                redomenu=new OurMenuItem(editmenu, "Redo",                KeyEvent.VK_Z, a_redo);
-            else
-                redomenu=new OurMenuItem(editmenu, "Redo", KeyEvent.VK_Y, KeyEvent.VK_Y, a_redo);
-            editmenu.addSeparator();
-            editmenu.addMenuItem(null, "Cut",           true, KeyEvent.VK_X, KeyEvent.VK_X, a_cut);
-            editmenu.addMenuItem(null, "Copy",          true, KeyEvent.VK_C, KeyEvent.VK_C, a_copy);
-            editmenu.addMenuItem(null, "Paste",         true, KeyEvent.VK_V, KeyEvent.VK_V, a_paste);
-            editmenu.addSeparator();
-            editmenu.addMenuItem(null, "Find...",       true, KeyEvent.VK_F, KeyEvent.VK_F, a_find);
-            editmenu.addMenuItem(null, "Find Next",     true, KeyEvent.VK_G, KeyEvent.VK_G, a_findnext);
-        }
-
-        if (1==1) { // Run menu
-            runmenu = bar.addMenu("Run", true, KeyEvent.VK_R, a_run);
-            runmenu.addMenuItem(null, "Run the latest command", true, KeyEvent.VK_R, KeyEvent.VK_R, a_runLatest);
-            runmenu.addMenuItem(null, "Show the latest instance", true, KeyEvent.VK_L, KeyEvent.VK_L, a_showLatestInstance);
-        }
+        filemenu = new OurMenu(bar, "File", KeyEvent.VK_F, a_file);
+        editmenu = new OurMenu(bar, "Edit", KeyEvent.VK_E, a_edit);
+        runmenu = new OurMenu(bar, "Run", KeyEvent.VK_R, a_run);
+        runmenu.addMenuItem(null, "Run the latest command", true, KeyEvent.VK_R, KeyEvent.VK_R, a_runLatest);
+        runmenu.addMenuItem(null, "Show the latest instance", true, KeyEvent.VK_L, KeyEvent.VK_L, a_showLatestInstance);
 
         if (1==1) { // Options menu
             Error ex=null;
@@ -1030,30 +979,30 @@ public final class SimpleGUI {
             // Query twice, so that we can gracefully back off along the JNI choices
             if (!satChoices.contains(getSatOption())) setSatOption(SolverChoice.ZChaffJNI);
             if (!satChoices.contains(getSatOption())) setSatOption(SolverChoice.MiniSatPIPE);
-            optmenu = bar.addMenu("Options", true, KeyEvent.VK_O, a_option);
+            optmenu = new OurMenu(bar, "Options", KeyEvent.VK_O, a_option);
         }
 
-        if (1==1) { // Window menu
-            new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
-        }
+        new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
 
-        if (1==1) { // Help menu
-            helpmenu = bar.addMenu("Help", true, KeyEvent.VK_H, null);
-            if (!Util.onMac()) helpmenu.addMenuItem(null, "About Alloy4...", true, KeyEvent.VK_A, -1, a_showAbout);
-            helpmenu.addMenuItem(null, "See the Change Log...", true, KeyEvent.VK_V, -1, a_showChangeLog);
-        }
+        helpmenu = new OurMenu(bar, "Help", KeyEvent.VK_H, null);
+        if (!Util.onMac()) helpmenu.addMenuItem(null, "About Alloy4...", true, KeyEvent.VK_A, -1, a_showAbout);
+        helpmenu.addMenuItem(null, "See the Change Log...", true, KeyEvent.VK_V, -1, a_showChangeLog);
 
         // Create the toolbar
         toolbar=new JToolBar();
         toolbar.setFloatable(false);
-        if (!Util.onMac()) toolbar.setBackground(gray);
-        toolbar.add(OurUtil.makeJButton("New","Starts a new blank model","images/24_new.gif", a_new));
-        toolbar.add(OurUtil.makeJButton("Open","Opens an existing model","images/24_open.gif", a_open));
-        toolbar.add(OurUtil.makeJButton("Save","Saves the current model","images/24_save.gif", a_save));
-        toolbar.add(runbutton=OurUtil.makeJButton("Run","Runs the latest command","images/24_execute.gif", a_runLatest));
-        toolbar.add(stopbutton=OurUtil.makeJButton("Stop","Stops the current analysis","images/24_execute_abort2.gif", a_stop));
-        toolbar.add(showbutton=OurUtil.makeJButton("Show","Show the latest instance","images/24_graph.gif", a_showLatestInstance));
+        Color tcolor=new Color(.9f, .9f, .9f);
+        if (!Util.onMac()) toolbar.setBackground(tcolor);
+        toolbar.add(newbutton=OurUtil.makeJButton(tcolor, "New","Starts a new blank model","images/24_new.gif", a_new));
+        toolbar.add(openbutton=OurUtil.makeJButton(tcolor, "Open","Opens an existing model","images/24_open.gif", a_open));
+        toolbar.add(loadbutton=OurUtil.makeJButton(tcolor, "Load","Chooses an Alloy model to analyze","images/24_open.gif", a_open));
+        loadbutton.setVisible(false);
+        toolbar.add(savebutton=OurUtil.makeJButton(tcolor, "Save","Saves the current model","images/24_save.gif", a_save));
+        toolbar.add(runbutton=OurUtil.makeJButton(tcolor, "Run","Runs the latest command","images/24_execute.gif", a_runLatest));
+        toolbar.add(stopbutton=OurUtil.makeJButton(tcolor, "Stop","Stops the current analysis","images/24_execute_abort2.gif", a_stop));
+        toolbar.add(showbutton=OurUtil.makeJButton(tcolor, "Show","Show the latest instance","images/24_graph.gif", a_showLatestInstance));
         toolbar.add(Box.createHorizontalGlue());
+        toolbar.setBorder(new OurBorder(false,true));
         stopbutton.setVisible(false);
 
         // Create the highlighter
@@ -1100,8 +1049,6 @@ public final class SimpleGUI {
         text.getDocument().addDocumentListener(new DocumentListener() {
             public final void changedUpdate(DocumentEvent e) {
                 highlighter.removeAllHighlights();
-                undomenu.setEnabled(true); // When the Edit menu opens, we will confirm whether it should be enabled
-                redomenu.setEnabled(true); // When the Edit menu opens, we will confirm whether it should be enabled
                 compiled=null; if (!modified) {modified=true;updateStatusBar();}
             }
             public final void removeUpdate(DocumentEvent e) { changedUpdate(e); }
@@ -1113,7 +1060,7 @@ public final class SimpleGUI {
             }
         });
         JComponent textPane = OurUtil.makeJScrollPane(text);
-        textPane.setBorder(new OurBorder(true,false));
+        textPane.setBorder(new EmptyBorder(0,0,0,0));
         if (!Util.onMac()) {
             text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
                 private static final long serialVersionUID = 1L;
@@ -1148,7 +1095,7 @@ public final class SimpleGUI {
                 return true;
             }
         };
-        log = new LogToJTextPane(logpane, fontSize, gray, Color.BLACK, new Color(.7f,.2f,.2f), focus, viz);
+        log = new LogToJTextPane(logpane, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), focus, viz);
         logpane.setBorder(new EmptyBorder(0,0,0,0));
 
         // Add everything to the frame, then display the frame
@@ -1178,9 +1125,11 @@ public final class SimpleGUI {
         splitpane=new OurSplitPane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, logpane, width/2);
         all.add(splitpane, BorderLayout.CENTER);
         all.add(status=OurUtil.makeJLabel(" ",OurUtil.getFont(fontSize)), BorderLayout.SOUTH);
-        status.setBackground(gray);
+        status.setBackground(new Color(.9f, .9f, .9f));
         status.setOpaque(true);
         status.setBorder(new OurBorder(true,false));
+        a_file.run();
+        a_edit.run();
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setLocation(x,y);

@@ -579,15 +579,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         ans.addAll(y);
     }
 
-    private void bound(String debug, ParaRuncheck c, ParaSig s, int b) {
+    private void bound(ParaRuncheck c, ParaSig s, int b) {
         if (b<0)
-            throw c.syntaxError("Cannot set a negative bound for signature \""+s.fullname+"\"");
+            throw c.syntaxError("Sig "+s.fullname+" cannot have a negative scope");
         if (sig2bound(s)>=0)
-            throw c.syntaxError("The signature \""+s.fullname+"\" already has a bound of "+sig2bound(s)+", so we cannot set it to "+b);
+            throw c.syntaxError("Sig "+s.fullname+" already has a scope of "+sig2bound(s)+", so we cannot set it to be "+b);
         if (b>=0 && (s==ParaSig.UNIV || s==ParaSig.NONE))
             throw c.syntaxError("You cannot specify a scope for the builtin signature \""+s.name+"\"");
         sig2bound(s,b);
-        if (logVerbosity.geq(Verbosity.DEBUG)) log.log("Sig "+s.fullname+" bound to be <= "+b+"\n");
+        if (logVerbosity.geq(Verbosity.DEBUG)) log.log("Sig "+s.fullname+" scope <= "+b+"\n");
     }
 
     private boolean derive(ParaRuncheck cmd, List<ParaSig> sigs) {
@@ -595,15 +595,15 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (s.abs && sig2bound(s)<0 && s.subs.size()>0) {
                 int sum=0;
                 for(ParaSig c:s.subs) {if (sig2bound(c)<0) {sum=(-1);break;} sum=sum+sig2bound(c);}
-                if (sum>=0) {bound("#1: ",cmd,s,sum);return true;}
+                if (sum>=0) {bound(cmd,s,sum);return true;}
             }
             if (s.abs && sig2bound(s)>=0 && s.subs.size()>0) {
                 int sum=0; ParaSig cc=null;
                 for(ParaSig c:s.subs) {if (sig2bound(c)>=0) sum=sum+sig2bound(c); else if (cc==null) cc=c; else {cc=null;break;}}
-                if (cc!=null) {bound("#2: ",cmd,cc,(sig2bound(s)<sum)?0:sig2bound(s)-sum); return true;}
+                if (cc!=null) {bound(cmd,cc,(sig2bound(s)<sum)?0:sig2bound(s)-sum); return true;}
             }
-            if (sig2bound(s)!=1 && !s.subset && s.one) {bound("#3: ",cmd,s,1); return true;}
-            if ((sig2bound(s)<0 || sig2bound(s)>1) && !s.subset && s.lone) {bound("#4: ",cmd,s,1); return true;}
+            if (sig2bound(s)!=1 && !s.subset && s.one) {bound(cmd,s,1); return true;}
+            if ((sig2bound(s)<0 || sig2bound(s)>1) && !s.subset && s.lone) {bound(cmd,s,1); return true;}
         }
         return false;
     }
@@ -611,7 +611,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     private boolean derive2(ParaRuncheck cmd, List<ParaSig> sigs) {
         boolean chg=false;
         for(ParaSig s:sigs) if (!s.toplevel() && sig2bound(s)<0 && sig2bound(s.sup())>=0) {
-            bound("#5: ", cmd, s, sig2bound(s.sup()));
+            bound(cmd, s, sig2bound(s.sup()));
             chg=true;
         }
         return chg;
@@ -640,16 +640,16 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             ParaSig s=(ParaSig)(it.next());
             if (s.subset) throw cmd.syntaxError("Can not specify a scope for a subset signature \""+s.fullname+"\"");
             if (exact) exact(s,true);
-            if (sig2bound(s)>=0) throw cmd.syntaxError("The signature \""+s.fullname+"\" already has a specified scope");
-            bound("#6: ",cmd, s, scope);
+            if (sig2bound(s)>=0) throw cmd.syntaxError("Sig "+s.fullname+" already has a scope of "+sig2bound(s));
+            bound(cmd, s, scope);
         }
         // Ensure "int" and "Int" are consistent
         if (bitwidth<0) bitwidth=4;
         if (bitwidth>=0) {
             if (bitwidth>30) throw cmd.syntaxError("Can not specify a bitwidth of greater than 30");
             int i=(1<<bitwidth);
-            if (sig2bound(ParaSig.SIGINT)>i) throw cmd.syntaxError("With an integer bitwidth of "+bitwidth+" you must have exactly "+i+" Int atoms, thus the bound on Int cannot be "+sig2bound(ParaSig.SIGINT));
-            if (sig2bound(ParaSig.SIGINT)<i && exact(ParaSig.SIGINT)) throw cmd.syntaxError("With an integer bitwidth of "+bitwidth+" you must allow exactly "+i+" Int atoms, thus the bound on Int cannot be exactly "+sig2bound(ParaSig.SIGINT));
+            if (sig2bound(ParaSig.SIGINT)>i) throw cmd.syntaxError("With an integer bitwidth of "+bitwidth+" you must have exactly "+i+" Int atoms, thus the scope on Int cannot be "+sig2bound(ParaSig.SIGINT));
+            if (sig2bound(ParaSig.SIGINT)<i && exact(ParaSig.SIGINT)) throw cmd.syntaxError("With an integer bitwidth of "+bitwidth+" you must allow exactly "+i+" Int atoms, thus the scope on Int cannot be exactly "+sig2bound(ParaSig.SIGINT));
             sig2bound(ParaSig.SIGINT, i);
         }
         // Derive the implicit bounds
@@ -657,8 +657,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             while(derive(cmd,sigs)) {}
             // TopLevel sigs must have bounds!
             for(ParaSig s:sigs) if (s.toplevel() && sig2bound(s)<0) {
-                if (overall<0) throw cmd.syntaxError("The signature \""+s.fullname+"\" needs a specific scope!");
-                if (s.lone || s.one) bound("#7: ",cmd, s, 1); else bound("#8: ",cmd, s, overall);
+                if (overall<0) throw cmd.syntaxError("Sig "+s.fullname+" needs a specific scope!");
+                if (s.lone || s.one) bound(cmd, s, 1); else bound(cmd, s, overall);
                 continue again;
             }
             break;
@@ -869,7 +869,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     Unit u=units.get(0).lookupPath(s.path);
                     if (alloy3(s,u)) {
                         ParaSig s2=u.params.get("elem");
-                        if (sig2bound(s2)<=0) throw x.syntaxError("Sig "+s2.fullname+" must have a bound >= 1, since it is used to instantiate the util/ordering.als module");
+                        if (sig2bound(s2)<=0) throw x.syntaxError("Sig "+s2.fullname+" must have a scope of 1 or above, since it is used to instantiate the util/ordering.als module");
                         if (logVerbosity.geq(Verbosity.VERBOSE)) {
                             log.log("Sig "+s2.fullname+" forced to have exactly "+sig2bound(s2)+" atoms.\n");
                         }
@@ -1107,8 +1107,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (cmd.options.contains("sym")) sym=true;
         if (!flatten) solver.options().setFlatten(false);
         if (!sym) solver.options().setSymmetryBreaking(0);
-        log.log("   Solver: "+solver.options().solver()+" | Bitwidth: "+bitwidth
-                +" | Symmetry: "+(sym?"on\n":"off\n"));
+        log.log("   Solver="+solver.options().solver()+" Bitwidth="+bitwidth
+                +" Symmetry="+(sym?"ON\n":"OFF\n"));
         final int loglength=log.getLength();
         log.log("   Compiling...");
         log.flush();
@@ -1123,37 +1123,37 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             Solution sol=solver.solve(mainformula, bounds, new Logger() {
                 public void report(long translationTime, int variableCount, int primaryVariableCount, int clauseCount) {
                     log.setLength(loglength);
-                    log.log("   "+variableCount+" vars | "+clauseCount+" clauses | "
-                            +translationTime+" ms\n   Solving...");
+                    log.log("   "+variableCount+" vars. "+clauseCount+" clauses. "
+                            +translationTime+"ms.\n   Solving...");
                     log.flush();
                 }
             });
             log.setLength(loglength);
-            log.log("   "+sol.stats().variables()+" vars | "
-                    +sol.stats().primaryVariables()+" primary vars | "
-                    +sol.stats().clauses()+" clauses | "+sol.stats().translationTime()+" ms\n");
+            log.log("   "+sol.stats().variables()+" vars. "
+                    +sol.stats().primaryVariables()+" primary vars. "
+                    +sol.stats().clauses()+" clauses. "+sol.stats().translationTime()+"ms.\n");
             String label="It";//cmd.name;
             long t2=sol.stats().solvingTime();
-            if (AlloyBridge.stopped) {log.log("   Canceled. "+t2+" ms.\n\n"); log.flush(); return Result.CANCELED;}
+            if (AlloyBridge.stopped) {log.log("   Canceled. "+t2+"ms.\n\n"); log.flush(); return Result.CANCELED;}
             switch(sol.outcome()) {
             case TRIVIALLY_SATISFIABLE:
                 mainResult=Result.TRIVIALLY_SAT;
                 if (cmd.check) log.log("   Trivial counterexample found: "+label+" is invalid.");
                 else log.log("   Trivial instance found: "+label+" is consistent.");
-                log.log(" "+t2+" ms.\n\n");
+                log.log(" "+t2+"ms.\n\n");
                 break;
             case TRIVIALLY_UNSATISFIABLE:
             case UNSATISFIABLE:
                 mainResult=Result.UNSAT;
                 if (cmd.check) log.log("   No counterexample found: "+label+" may be valid.");
                 else log.log("   No instance found: "+label+" may be inconsistent.");
-                log.log(" "+t2+" ms.\n\n");
+                log.log(" "+t2+"ms.\n\n");
                 break;
             case SATISFIABLE:
                 mainResult=Result.SAT;
                 if (cmd.check) log.log("   Counterexample found: "+label+" is invalid.");
                 else log.log("   Instance found: "+label+" is consistent.");
-                log.log(" "+t2+" ms. ");
+                log.log(" "+t2+"ms. ");
                 log.logLink(destdir+fs+destnum+".xml");
                 log.log("\n\n");
                 writeXML(cmd.pos, sol, units, sigs, destdir+fs+destnum+".xml");
