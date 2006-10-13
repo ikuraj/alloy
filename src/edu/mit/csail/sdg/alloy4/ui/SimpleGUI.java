@@ -15,7 +15,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.prefs.Preferences;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -95,6 +94,7 @@ import edu.mit.csail.sdg.alloy4util.OurMenuItem;
 import edu.mit.csail.sdg.alloy4util.OurSplitPane;
 import edu.mit.csail.sdg.alloy4util.OurUtil;
 import edu.mit.csail.sdg.alloy4util.OurWindowMenu;
+import edu.mit.csail.sdg.alloy4util.Pref;
 import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.alloy4util.Version;
 import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
@@ -196,30 +196,6 @@ public final class SimpleGUI {
         return n;
     }
 
-    /** Sets a persistent property. */
-    private static void propertySet(String key, String value) {
-        Preferences pref=Preferences.userNodeForPackage(SimpleGUI.class);
-        pref.put(key,value);
-    }
-
-    /** Reads a persistent property. */
-    private static String propertyGet(String key) {
-        Preferences pref=Preferences.userNodeForPackage(SimpleGUI.class);
-        return pref.get(key,"");
-    }
-
-    /** Sets a persistent integer property. */
-    private static void propertySetInt(String key, int value) {
-        Preferences pref=Preferences.userNodeForPackage(SimpleGUI.class);
-        pref.putInt(key,value);
-    }
-
-    /** Reads a persistent integer property. */
-    private static int propertyGetInt(String key) {
-        Preferences pref=Preferences.userNodeForPackage(SimpleGUI.class);
-        return pref.getInt(key,-1);
-    }
-
     /** Remove the directory part from a pathname (for example, on UNIX, shortFileName("/abc/x") returns "x") */
     public static String shortFileName(String filename) {
         int index=filename.lastIndexOf(File.separatorChar);
@@ -227,25 +203,6 @@ public final class SimpleGUI {
     }
 
     //====== synchronized fields (you must lock SimpleGUI.this before accessing them) =======//
-
-    //=== preferences ===
-
-    /** The current choice of SAT solver. */
-    private SolverChoice satOPTION = SolverChoice.parse(propertyGet("solver"));
-    private final List<SolverChoice> satChoices;
-    private synchronized SolverChoice getSatOption() { return satOPTION; }
-    private synchronized void setSatOption(SolverChoice sc) { satOPTION=sc; }
-
-    /** The current verbosity level. */
-    private Verbosity verbosity = Verbosity.parse(propertyGet("verbosity"));
-    private synchronized Verbosity getVerbosity() { return verbosity; }
-    private synchronized void setVerbosity(Verbosity value) { verbosity=value; }
-
-    /** The current font size. */
-    private int fontSize = boundFontSize(propertyGetInt("fontsize"),12,24);
-
-    /** Whether the system is using external editor or not. */
-    private boolean mode_externalEditor = (propertyGet("externalEditor").length()>0);
 
     //=== other fields===
 
@@ -275,10 +232,10 @@ public final class SimpleGUI {
 
     /** Inserts "filename" as into the "recently opened file list". */
     private void addHistory(String filename) {
-        String name0=propertyGet("history0"), name1=propertyGet("history1"), name2=propertyGet("history2");
-        if (name0.equals(filename)) return; else {propertySet("history0",filename); propertySet("history1",name0);}
-        if (name1.equals(filename)) return; else propertySet("history2",name1);
-        if (name2.equals(filename)) return; else propertySet("history3",name2);
+        String name0=Pref.get("history0"), name1=Pref.get("history1"), name2=Pref.get("history2");
+        if (name0.equals(filename)) return; else {Pref.set("history0",filename); Pref.set("history1",name0);}
+        if (name1.equals(filename)) return; else Pref.set("history2",name1);
+        if (name2.equals(filename)) return; else Pref.set("history3",name2);
     }
 
     /** Updates the status bar at the bottom of the screen. */
@@ -355,7 +312,7 @@ public final class SimpleGUI {
             closemenu.setEnabled(latestName.length()>0 || text.getDocument().getLength()>0);
             recentmenu.removeAll();
             for(int i=0; i<=3; i++) {
-                final String name = propertyGet("history"+i);
+                final String name = Pref.get("history"+i);
                 if (name.length()==0) continue;
                 found=true;
                 JMenuItem x=new JMenuItem(name);
@@ -368,8 +325,7 @@ public final class SimpleGUI {
             JMenuItem y=new JMenuItem("Clear Menu");
             y.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
-                    propertySet("history0",""); propertySet("history1","");
-                    propertySet("history2",""); propertySet("history3","");
+                    Pref.set("history0",""); Pref.set("history1",""); Pref.set("history2",""); Pref.set("history3","");
                     openfiles.clear();
                 }
             });
@@ -664,28 +620,24 @@ public final class SimpleGUI {
             while(runmenu.getItemCount()>2) runmenu.remove(2);
             runmenu.getItem(0).setText("Run the latest command");
             if (getLatestInstance().length()==0) runmenu.getItem(1).setEnabled(false);
+            if (mode_externalEditor) compiled=null;
             if (compiled==null) {
                 try {
-                    Reader isr=new StringReader(text.getText());
-                    Unit u=AlloyParser.alloy_parseStream(isr);
+                    Unit u=null;
+                    if (!mode_externalEditor)
+                        u=AlloyParser.alloy_parseStream(new StringReader(text.getText()));
+                    else if (latestName.length()>0)
+                        u=AlloyParser.alloy_parseFile(latestName,"");
                     compiled=u;
                 }
                 catch(Err e) {
                     runmenu.getItem(0).setEnabled(false);
-                    highlight(e);
-                    String msg=e.toString();
-                    if (msg.matches("^.*There are [0-9]* possible tokens that can appear here:.*$")) {
-                        // Special handling, to display that particular message in a clearer style.
-                        String head=msg.replaceAll("^(.*There are [0-9]* possible tokens that can appear here:).*$","$1");
-                        String tail=msg.replaceAll("^.*There are [0-9]* possible tokens that can appear here:(.*)$","$1");
-                        log.log("Cannot parse the model! "+head, tail+"\n\n");
-                    }
-                    else log.logRed("Cannot parse the model! "+e.toString()+"\n\n");
+                    highlight(e); log.logRed(e.toString()+"\n\n");
                     return true;
                 }
                 catch(Exception e) {
                     runmenu.getItem(0).setEnabled(false);
-                    log.logRed("Cannot parse the model! "+e.toString()+"\n\n");
+                    log.logRed("Cannot parse the model!\n"+e.toString()+"\n\n");
                     return true;
                 }
             }
@@ -748,6 +700,26 @@ public final class SimpleGUI {
         }
     };
 
+    /** The current choice of SAT solver. */
+    private SolverChoice satOPTION = SolverChoice.parse(Pref.get("solver"));
+    private final List<SolverChoice> satChoices;
+    private synchronized SolverChoice getSatOption() { return satOPTION; }
+    private synchronized void setSatOption(SolverChoice sc) { satOPTION=sc; }
+
+    /** The current verbosity level. */
+    private Verbosity verbosity = Verbosity.parse(Pref.get("verbosity"));
+    private synchronized Verbosity getVerbosity() { return verbosity; }
+    private synchronized void setVerbosity(Verbosity value) { verbosity=value; }
+
+    /** The current font size. */
+    private int fontSize = boundFontSize(Pref.getInt("fontsize"),12,24);
+
+    /** Whether the system is using external editor or not. */
+    private boolean mode_externalEditor = (Pref.get("externalEditor").length()>0);
+
+    /** Whether to use the same visualization window for all visualizations... */
+    private boolean mode_oneVizWindow = (Pref.get("oneVizWindow").length()>0);
+
     /** Called when the user expands the "Options" menu; always returns true. */
     private final Func0 a_option = new Func0() {
         public final boolean run() {
@@ -755,14 +727,14 @@ public final class SimpleGUI {
             JMenu sat=new JMenu("SAT Solver: "+getSatOption());
             for(final SolverChoice sc:satChoices) {
                 (new OurMenuItem(sat, ""+sc, new Func0() {
-                    public boolean run() { setSatOption(sc); propertySet("solver",sc.id); return true; }
+                    public boolean run() { setSatOption(sc); Pref.set("solver",sc.id); return true; }
                 })).setIcon(sc==getSatOption()?iconYes:iconNo);
             }
             optmenu.add(sat);
             JMenu verb=new JMenu("Message Verbosity: "+getVerbosity());
             for(final Verbosity vb:Verbosity.values()) {
                 (new OurMenuItem(verb, ""+vb, new Func0() {
-                    public final boolean run() { setVerbosity(vb); propertySet("verbosity",vb.id); return true; }
+                    public final boolean run() { setVerbosity(vb); Pref.set("verbosity",vb.id); return true; }
                 })).setIcon(vb==getVerbosity()?iconYes:iconNo);
             }
             optmenu.add(verb);
@@ -770,7 +742,7 @@ public final class SimpleGUI {
             for(final int n: new Integer[]{9,10,11,12,14,16,18,24}) {
                 (new OurMenuItem(size, ""+n, new Func0() {
                     public final boolean run() {
-                        fontSize=n; propertySetInt("fontsize",n);
+                        fontSize=n; Pref.setInt("fontsize",n);
                         text.setFont(new Font(OurUtil.getFontName(), Font.PLAIN, n));
                         status.setFont(new Font(OurUtil.getFontName(), Font.PLAIN, n));
                         log.setFontSize(n);
@@ -779,11 +751,11 @@ public final class SimpleGUI {
                 })).setIcon(n==fontSize?iconYes:iconNo);
             }
             optmenu.add(size);
-            new OurMenuItem(optmenu, "Use an external editor: "+(mode_externalEditor?"Yes":"No"), new Func0() {
+            Func0 ext=new Func0() {
                 public boolean run() {
                     if (!mode_externalEditor && modified && !my_confirm()) return false;
                     modified=false; String n=latestName; a_new.run(); if (n.length()>0) a_openFile.run(n);
-                    mode_externalEditor = !mode_externalEditor;
+                    mode_externalEditor = !mode_externalEditor; Pref.set("externalEditor",mode_externalEditor?"y":"");
                     Container all=frame.getContentPane();
                     all.removeAll();
                     newbutton.setVisible(!mode_externalEditor);
@@ -807,7 +779,16 @@ public final class SimpleGUI {
                     lastFocusIsOnEditor=!mode_externalEditor;
                     return true;
                 }
-            });
+            };
+            new OurMenuItem(optmenu, "Use an External Editor: "+(mode_externalEditor?"Yes":"No"), ext);
+            new OurMenuItem(optmenu, "Reuse the Last Visualization Window: "+(mode_oneVizWindow?"Yes":"No"), new Func0() {
+                public boolean run() {
+                    mode_oneVizWindow = !mode_oneVizWindow; Pref.set("oneVizWindow",mode_oneVizWindow?"y":"");
+                    log.changeLinkLabel(mode_oneVizWindow ? "Visualize" : "Visualize in new window");
+                    return true;
+                }});
+            if (mode_externalEditor && splitpane.getBottomComponent()!=null) {mode_externalEditor=false; ext.run();}
+            log.changeLinkLabel(mode_oneVizWindow ? "Visualize" : "Visualize in new window");
             return true;
         }
     };
@@ -937,14 +918,14 @@ public final class SimpleGUI {
 
         // Figure out the desired x, y, width, and height
         int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
-        int width=propertyGetInt("width");
+        int width=Pref.getInt("width");
         if (width<=0) width=screenWidth/10*8; else if (width<100) width=100;
         if (width>screenWidth) width=screenWidth;
-        int height=propertyGetInt("height");
+        int height=Pref.getInt("height");
         if (height<=0) height=screenHeight/10*8; else if (height<100) height=100;
         if (height>screenHeight) height=screenHeight;
-        int x=propertyGetInt("x"); if (x<0) x=screenWidth/10; if (x>screenWidth-100) x=screenWidth-100;
-        int y=propertyGetInt("y"); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
+        int x=Pref.getInt("x"); if (x<0) x=screenWidth/10; if (x>screenWidth-100) x=screenWidth-100;
+        int y=Pref.getInt("y"); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
 
         // Construct the JFrame object
         frame=new JFrame("Alloy Analyzer Version 4.0");
@@ -954,9 +935,9 @@ public final class SimpleGUI {
         JMenuBar bar=new JMenuBar();
         frame.setJMenuBar(bar);
 
-        filemenu = new OurMenu(bar, "File", KeyEvent.VK_F, a_file);
-        editmenu = new OurMenu(bar, "Edit", KeyEvent.VK_E, a_edit);
-        runmenu = new OurMenu(bar, "Run", KeyEvent.VK_R, a_run);
+        filemenu=new OurMenu(bar, "File", KeyEvent.VK_F, a_file);
+        editmenu=new OurMenu(bar, "Edit", KeyEvent.VK_E, a_edit);
+        runmenu=new OurMenu(bar, "Run", KeyEvent.VK_R, a_run);
         runmenu.addMenuItem(null, "Run the latest command", true, KeyEvent.VK_R, KeyEvent.VK_R, a_runLatest);
         runmenu.addMenuItem(null, "Show the latest instance", true, KeyEvent.VK_L, KeyEvent.VK_L, a_showLatestInstance);
 
@@ -1089,6 +1070,7 @@ public final class SimpleGUI {
         };
         Func1 viz=new Func1() {
             public final boolean run(final String arg) {
+                // TODO should somehow reuse an old window if the setting says so
                 if (!arg.endsWith(".xml")) return false;
                 String dotname=arg.substring(0, arg.length()-4)+".dot";
                 if (!OurWindowMenu.focusByFilename(arg)) new KodVizGUI(dotname, new File(arg));
@@ -1105,13 +1087,13 @@ public final class SimpleGUI {
         });
         frame.addComponentListener(new ComponentListener() {
             public void componentResized(ComponentEvent e) {
-                propertySetInt("width", frame.getWidth());
-                propertySetInt("height", frame.getHeight());
+                Pref.setInt("width", frame.getWidth());
+                Pref.setInt("height", frame.getHeight());
             }
             public void componentMoved(ComponentEvent e) {
                 Point p=frame.getLocation();
-                propertySetInt("x", p.x);
-                propertySetInt("y", p.y);
+                Pref.setInt("x", p.x);
+                Pref.setInt("y", p.y);
             }
             public void componentShown(ComponentEvent e) {}
             public void componentHidden(ComponentEvent e) {}
@@ -1128,11 +1110,12 @@ public final class SimpleGUI {
         status.setBackground(new Color(.9f, .9f, .9f));
         status.setOpaque(true);
         status.setBorder(new OurBorder(true,false));
-        a_file.run();
-        a_edit.run();
         frame.pack();
         frame.setSize(new Dimension(width,height));
         frame.setLocation(x,y);
+        a_file.run();
+        a_edit.run();
+        a_option.run();
         frame.setVisible(true);
 
         // Generate some informative log messages
@@ -1215,7 +1198,12 @@ public final class SimpleGUI {
         public void run() {
             try {
                 Log blanklog=new Log();
-                ArrayList<Unit> units=AlloyParser.alloy_totalparseStream(Util.alloyHome(), source);
+                ArrayList<Unit> units=null;
+                if (!mode_externalEditor)
+                    units=AlloyParser.alloy_totalparseStream(Util.alloyHome(), source);
+                else if (latestName.length()>0)
+                    units=AlloyParser.alloy_totalparseFile(Util.alloyHome(),latestName);
+                else return;
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog, units);
                 String tempdir = Util.maketemp();
                 SolverChoice sc=getSatOption();
@@ -1255,15 +1243,15 @@ public final class SimpleGUI {
                     }
                     log.log("\n");
                 }
+                log.logDivider();
             }
             catch(UnsatisfiedLinkError e) {
-                log.logRed("Cannot run the command! The required JNI library cannot be found! "+e.toString()+"\n\n");
+                log.logRed("Cannot run the command!\nThe required JNI library cannot be found!\n"+e.toString()+"\n\n");
             }
             catch(Err e) {
                 highlight(e);
-                log.logRed("Cannot run the command! "+e.toString()+"\n\n");
+                log.logRed(e.toString()+"\n\n");
             }
-            log.logDivider();
             OurUtil.invokeAndWait(new Runnable() {
                 public final void run() {
                     runmenu.setEnabled(true);

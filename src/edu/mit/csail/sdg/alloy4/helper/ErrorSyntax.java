@@ -27,7 +27,7 @@ public final class ErrorSyntax extends Err {
         if (pos==null) return "Syntax error: "+msg;
         if (pos.filename.length()>0)
             return "Syntax error in "+pos.filename
-            +" at line "+pos.y+" column "+pos.x+": "+msg;
-        return "Syntax error at line "+pos.y+" column "+pos.x+": "+msg;
+            +" at line "+pos.y+" column "+pos.x+":\n"+msg;
+        return "Syntax error at line "+pos.y+" column "+pos.x+":\n"+msg;
     }
 }

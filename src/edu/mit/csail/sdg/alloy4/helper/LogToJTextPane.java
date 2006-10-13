@@ -208,21 +208,6 @@ public final class LogToJTextPane extends Log {
     /** Write "msg" in red style. */
     public void logRed(String msg) { log(msg,styleRed); }
 
-    /** Write msg1 into the log window using the red style, then write msg2 using the default style. */
-    public void log(final String msg1, final String msg2) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public final void run() { log(msg1,msg2); } });
-            return;
-        }
-        clearError();
-        StyledDocument doc=log.getStyledDocument();
-        try {
-            doc.insertString(doc.getLength(),msg1,styleRed);
-            doc.insertString(doc.getLength(),msg2,styleRegular);
-        } catch (BadLocationException e) {Util.harmless("log()",e);}
-        log.setCaretPosition(doc.getLength());
-    }
-
     /** Write a horizontal separator into the log window. */
     public void logDivider() {
         if (!SwingUtilities.isEventDispatchThread()) {
@@ -249,7 +234,7 @@ public final class LogToJTextPane extends Log {
         clearError();
         StyledDocument doc=log.getStyledDocument();
         Style s=doc.addStyle("link", styleRegular);
-        final JLabel b=new JLabel("Visualize");
+        final JLabel b=new JLabel(label);
         final Color linkColor=new Color(0.3f, 0.3f, 0.9f), hoverColor=new Color(.9f, .3f, .3f);
         b.setAlignmentY(0.8f);
         b.setMaximumSize(b.getPreferredSize());
@@ -313,6 +298,19 @@ public final class LogToJTextPane extends Log {
         }
         log.setText("");
         lastSize=0;
+    }
+
+    /** Must only be accessed by the AWT thread. */
+    private String label="Visualize";
+
+    /** Change the label on all the hyperlinks, and remember it as the default label for the next hyperlink. */
+    public void changeLinkLabel(final String label) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { changeLinkLabel(label); } });
+            return;
+        }
+        for(JLabel x:links) x.setText(label);
+        this.label=label;
     }
 
     /** Removes any messages writtin in "red" style. */

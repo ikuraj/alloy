@@ -27,7 +27,7 @@ public final class ErrorType extends Err {
         if (pos==null) return "Type error: "+msg;
         if (pos.filename.length()>0)
             return "Type error in "+pos.filename
-            +" at line "+pos.y+" column "+pos.x+": "+msg;
-        return "Type error at line "+pos.y+" column "+pos.x+": "+msg;
+            +" at line "+pos.y+" column "+pos.x+":\n"+msg;
+        return "Type error at line "+pos.y+" column "+pos.x+":\n"+msg;
     }
 }

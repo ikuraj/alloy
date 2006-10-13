@@ -2270,8 +2270,8 @@ public class AlloyParser extends java_cup.runtime.lr_parser {
         if (act==0) continue;
         if (act>0 || alloy_confirm(key)) list.add(e.getValue());
     }
-    String result="There are "+list.size()+" possible tokens that can appear here:";
-    for(String item:list) result=result+" "+item;
+    String result="There are "+list.size()+" possible tokens that can appear here:\n";
+    for(String item:list) result=result+item+" ";
     throw new ErrorSyntax(p, (list.size()!=0)?result:"");
   }
 
