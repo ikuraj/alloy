@@ -124,7 +124,7 @@ public final class SimpleGUI {
     private KodVizGUI viz=null;
 
     /** The "File", "Edit", "Run", "Option", "Window", and "Help" menus. */
-    private final OurMenu filemenu, editmenu, runmenu, optmenu, windowmenu, helpmenu;
+    private final OurMenu filemenu, editmenu, runmenu, optmenu, windowmenu, windowmenu2, helpmenu;
 
     /** The toolbar. */
     private final JToolBar toolbar;
@@ -295,10 +295,12 @@ public final class SimpleGUI {
     /** Instance list */
     private Map<String,String> xml2title = new LinkedHashMap<String,String>();
     private List<String> xmlLoaded = new ArrayList<String>();
+    private String xmlLatest = "";
 
     /** Called when we need to load a visualization window. */
     private final Func1 a_viz = new Func1() {
         public final boolean run(final String xmlName) {
+            xmlLatest=xmlName;
             if (!xmlLoaded.contains(xmlName)) xmlLoaded.add(xmlName);
             if (viz!=null) {
                 viz.instantiate(xmlName,false);
@@ -311,7 +313,7 @@ public final class SimpleGUI {
             }
             if (!xmlName.endsWith(".xml")) return false;
             String dotname=xmlName.substring(0, xmlName.length()-4)+".dot";
-            viz=new KodVizGUI(dotname, xmlName);
+            viz=new KodVizGUI(dotname, xmlName, windowmenu2, a_close2);
             return true;
         }
     };
@@ -375,6 +377,56 @@ public final class SimpleGUI {
         }
     };
 
+    private final Func0 a_window2 = new Func0() {
+        public final boolean run() {
+            windowmenu2.removeAll();
+            new OurMenuItem(windowmenu2, "Minimize", KeyEvent.VK_M, KeyEvent.VK_M, new Func0() {
+                public final boolean run() {
+                    viz.setExtendedState(JFrame.ICONIFIED);
+                    return true;
+                }
+            });
+            new OurMenuItem(windowmenu2, "Zoom", new Func0() {
+                public final boolean run() {
+                    if ((viz.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
+                        viz.setExtendedState(JFrame.NORMAL);
+                    else
+                        viz.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                    return true;
+                }
+            });
+            JMenuItem it;
+            windowmenu2.addSeparator();
+            if (openfiles.size()==0) {
+                it=new JMenuItem("Alloy Analyzer");
+                it.setIcon(iconNo);
+                it.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) { a_show.run(); }
+                });
+                windowmenu2.add(it);
+            } else for(final String f:openfiles) {
+                it=new JMenuItem("Model: "+slightlyShorterFilename(f));
+                it.setIcon(iconNo);
+                it.addActionListener(new ActionListener() {
+                    public final void actionPerformed(ActionEvent e) { a_openFileIfOk.run(f); }
+                });
+                windowmenu2.add(it);
+            }
+            if (xmlLoaded.size()>0) {
+                windowmenu2.addSeparator();
+                for(final String f:xmlLoaded) {
+                    it=new JMenuItem("Instance: "+xml2title.get(f));
+                    it.setIcon(f.equals(xmlLatest)?iconYes:iconNo);
+                    it.addActionListener(new ActionListener() {
+                        public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
+                    });
+                    windowmenu2.add(it);
+                }
+            }
+            return true;
+        }
+    };
+
     /** Called when the user expands the "File" menu; always returns true. */
     private final Func0 a_file = new Func0() {
         public final boolean run() {
@@ -414,6 +466,7 @@ public final class SimpleGUI {
                 public final void actionPerformed(ActionEvent e) {
                     Pref.set("history0",""); Pref.set("history1",""); Pref.set("history2",""); Pref.set("history3","");
                     openfiles.clear();
+                    if (latestName.length()>0) openfiles.add(latestName);
                 }
             });
             recentmenu.add(y);
@@ -575,7 +628,7 @@ public final class SimpleGUI {
     };
 
     /**
-     * Called when the user clicks "File", then "Close".
+     * Called when the user clicks "File", then "Close", in the main window
      * (Returns false iff the user cancels the Close operation)
      */
     private final Func0 a_close = new Func0() {
@@ -588,6 +641,18 @@ public final class SimpleGUI {
                 return true;
             }
             return false;
+        }
+    };
+
+    /**
+     * Called when the user clicks "File", then "Close", in the visualizer window
+     * (Returns false iff the user cancels the Close operation)
+     */
+    private final Func0 a_close2 = new Func0() {
+        public final boolean run() {
+            xmlLoaded.remove(xmlLatest);
+            if (xmlLoaded.size()>0) a_viz.run(xmlLatest=xmlLoaded.get(xmlLoaded.size()-1)); else viz.setVisible(false);
+            return true;
         }
     };
 
@@ -799,9 +864,6 @@ public final class SimpleGUI {
     /** Whether the system is using external editor or not. */
     private boolean mode_externalEditor = (Pref.get("externalEditor").length()>0);
 
-    /** Whether to use the same visualization window for all visualizations... */
-    private boolean mode_oneVizWindow = (Pref.get("oneVizWindow").length()>0);
-
     /** Called when the user expands the "Options" menu; always returns true. */
     private final Func0 a_option = new Func0() {
         public final boolean run() {
@@ -863,14 +925,7 @@ public final class SimpleGUI {
                 }
             };
             new OurMenuItem(optmenu, "Use an External Editor: "+(mode_externalEditor?"Yes":"No"), ext);
-            new OurMenuItem(optmenu, "Reuse the Last Visualization Window: "+(mode_oneVizWindow?"Yes":"No"), new Func0() {
-                public boolean run() {
-                    mode_oneVizWindow = !mode_oneVizWindow; Pref.set("oneVizWindow",mode_oneVizWindow?"y":"");
-                    log.changeLinkLabel(mode_oneVizWindow ? "Visualize" : "Visualize in new window");
-                    return true;
-                }});
             if (mode_externalEditor && splitpane.getBottomComponent()!=null) {mode_externalEditor=false; ext.run();}
-            log.changeLinkLabel(mode_oneVizWindow ? "Visualize" : "Visualize in new window");
             return true;
         }
     };
@@ -1045,7 +1100,8 @@ public final class SimpleGUI {
         }
 
         windowmenu = new OurMenu(bar, "Window", KeyEvent.VK_W, a_window);
-        //new OurWindowMenu(frame, bar, "Window", KeyEvent.VK_W);
+
+        windowmenu2 = new OurMenu(null, "Window", KeyEvent.VK_W, a_window2);
 
         helpmenu = new OurMenu(bar, "Help", KeyEvent.VK_H, null);
         if (!Util.onMac()) helpmenu.addMenuItem(null, "About Alloy4...", true, KeyEvent.VK_A, -1, a_showAbout);
