@@ -29,11 +29,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
 import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.Icon;
@@ -75,7 +76,6 @@ import javax.swing.text.Highlighter.HighlightPainter;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
-
 import kodkod.AlloyBridge;
 import edu.mit.csail.sdg.alloy4.helper.Err;
 import edu.mit.csail.sdg.alloy4.helper.Log;
@@ -204,24 +204,26 @@ public final class SimpleGUI {
 
     //====== synchronized fields (you must lock SimpleGUI.this before accessing them) =======//
 
+    //=== preferences ===
+
     /** The current choice of SAT solver. */
     private SolverChoice satOPTION = SolverChoice.parse(propertyGet("solver"));
     private final List<SolverChoice> satChoices;
-
-    /** Read the current SAT option. */
     private synchronized SolverChoice getSatOption() { return satOPTION; }
-
-    /** Sets the current SAT option. */
     private synchronized void setSatOption(SolverChoice sc) { satOPTION=sc; }
 
     /** The current verbosity level. */
     private Verbosity verbosity = Verbosity.parse(propertyGet("verbosity"));
-
     private synchronized Verbosity getVerbosity() { return verbosity; }
-
     private synchronized void setVerbosity(Verbosity value) { verbosity=value; }
 
+    /** The current font size. */
     private int fontSize = boundFontSize(propertyGetInt("fontsize"),12,24);
+
+    /** Whether the system is using external editor or not. */
+    private boolean mode_externalEditor = (propertyGet("externalEditor").length()>0);
+
+    //=== other fields===
 
     /**
      * If it's not "", then it is the first part of the filename for the latest instance.
@@ -264,8 +266,14 @@ public final class SimpleGUI {
     /** The "Run" and "Stop" buttons. */
     private final JButton runbutton, stopbutton, showbutton;
 
+    /** The Splitpane. */
+    private final OurSplitPane splitpane;
+
     /** The JLabel that displays the current line/column position, etc. */
     private final JLabel status;
+
+    /** Whether the editor has the focus, or the log window has the focus. */
+    private boolean lastFocusIsOnEditor=true;
 
     /** The JTextArea containing the editor buffer. */
     private final JTextArea text;
@@ -281,6 +289,7 @@ public final class SimpleGUI {
 
     /** The JTextPane containing the error messages and success messages. */
     private final LogToJTextPane log;
+    private final JScrollPane logpane;
 
     /** The filename for the content currently in the text editor. ("" if the text editor is unnamed) */
     private String latestName="";
@@ -446,8 +455,8 @@ public final class SimpleGUI {
                 latestCommand=0; compiled=null; modified=false; updateStatusBar();
                 a_show.run();
                 text.requestFocusInWindow();
-            } catch(FileNotFoundException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
-            } catch(IOException e) { log.logBold("Cannot open the file! "+e.toString()+"\n\n"); result=false;
+            } catch(FileNotFoundException e) { log.logRed("Cannot open the file "+f+"\n\n"); result=false;
+            } catch(IOException e) { log.logRed("Cannot open the file "+f+"\n\n"); result=false;
             }
             if (br!=null) try{br.close();} catch(IOException ex) {Util.harmless("close()",ex);}
             if (fr!=null) try{fr.close();} catch(IOException ex) {Util.harmless("close()",ex);}
@@ -506,7 +515,7 @@ public final class SimpleGUI {
                 frame.setTitle("Alloy Model: "+latestName);
                 OurWindowMenu.addWindow(frame, latestName);
             } catch(IOException e) {
-                log.logRed("Cannot write to the file \""+filename+"\"! "+e.toString()+"\n\n");
+                log.logRed("Cannot write to the file "+filename+"\n\n");
                 return false;
             }
             return true;
@@ -597,7 +606,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Copy */
     private final Func0 a_copy = new Func0() {
         public final boolean run() {
-            if (text.hasFocus()) text.copy(); else log.copy();
+            if (lastFocusIsOnEditor) text.copy(); else log.copy();
             return true;
         }
     };
@@ -605,7 +614,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Cut */
     private final Func0 a_cut = new Func0() {
         public final boolean run() {
-            if (text.hasFocus()) text.cut();
+            if (lastFocusIsOnEditor) text.cut();
             return true;
         }
     };
@@ -613,7 +622,7 @@ public final class SimpleGUI {
     /** Called when the user clicks Edit->Paste */
     private final Func0 a_paste = new Func0() {
         public final boolean run() {
-            if (text.hasFocus()) text.paste();
+            if (lastFocusIsOnEditor) text.paste();
             return true;
         }
     };
@@ -769,6 +778,30 @@ public final class SimpleGUI {
                 })).setIcon(n==fontSize?iconYes:iconNo);
             }
             optmenu.add(size);
+            /*
+            new OurMenuItem(optmenu, "Use an external editor: "+(mode_externalEditor?"Yes":"No"), new Func0() {
+                public boolean run() {
+                    mode_externalEditor = !mode_externalEditor;
+                    Container all=frame.getContentPane();
+                    all.removeAll();
+                    if (!mode_externalEditor) {
+                        ((JPanel)(splitpane.getTopComponent())).add(toolbar, BorderLayout.NORTH);
+                        splitpane.setBottomComponent(logpane);
+                        all.add(splitpane, BorderLayout.CENTER);
+                        all.add(status, BorderLayout.SOUTH);
+                    } else {
+                        ((JPanel)(splitpane.getTopComponent())).remove(toolbar);
+                        splitpane.setBottomComponent(null);
+                        all.add(toolbar, BorderLayout.NORTH);
+                        all.add(logpane, BorderLayout.CENTER);
+                        all.add(status, BorderLayout.SOUTH);
+                    }
+                    frame.validate();
+                    if (mode_externalEditor) logpane.requestFocusInWindow(); else text.requestFocusInWindow();
+                    return true;
+                }
+            });
+            */
             return true;
         }
     };
@@ -844,22 +877,11 @@ public final class SimpleGUI {
         }
     };
 
-    //=======================================================================//
+    //====== Constructor ====================================================//
 
-    /** Records whether the an instance has loaded or not. */
-    private static boolean firstInstance=false;
+    /** The constructor; this method will be called by the AWT thread, using the "invokeLater" method. */
+    private SimpleGUI(String[] args) {
 
-    /**
-     * This method will only be called by the first instance.
-     * Note: simply putting this in a static initializer block won't work,
-     * because if another JVM is launched while an Alloy4 JVM is already running,
-     * we want the other JVM to exit without calling this method (we do this by using a lock file).
-     * So once a SimpleGUI instance has passed the "multiple JVM" test, we then check whether
-     * this is the first instance of this JVM or not.
-     */
-    private static synchronized void firstInstance() {
-        if (firstInstance) return;
-        firstInstance=true;
         // Enable better look-and-feel
         System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy 4");
         System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
@@ -932,14 +954,6 @@ public final class SimpleGUI {
                 "models/util/sequence.als",
                 "models/util/ternary.als"
         );
-    }
-
-    //====== Constructor ====================================================//
-
-    /** The constructor; this method will be called by the AWT thread, using the "invokeLater" method. */
-    private SimpleGUI(String[] args) {
-
-        firstInstance();
 
         // Figure out the desired x, y, width, and height
         int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
@@ -998,7 +1012,6 @@ public final class SimpleGUI {
         }
 
         if (1==1) { // Options menu
-            String binary=Util.alloyHome()+fs+"binary";
             Error ex=null;
             satChoices = new ArrayList<SolverChoice>();
             for(SolverChoice sc:SolverChoice.values()) satChoices.add(sc);
@@ -1080,6 +1093,10 @@ public final class SimpleGUI {
         text.addCaretListener(new CaretListener() {
             public final void caretUpdate(CaretEvent e) {updateStatusBar();}
         });
+        text.addFocusListener(new FocusListener() {
+            public final void focusGained(FocusEvent e) { lastFocusIsOnEditor=true; }
+            public final void focusLost(FocusEvent e) { }
+        });
         text.getDocument().addDocumentListener(new DocumentListener() {
             public final void changedUpdate(DocumentEvent e) {
                 highlighter.removeAllHighlights();
@@ -1116,7 +1133,13 @@ public final class SimpleGUI {
         }
 
         // Create the message area
-        JScrollPane statusPane = OurUtil.makeJScrollPane();
+        logpane = OurUtil.makeJScrollPane();
+        Func0 focus=new Func0() {
+            public final boolean run() {
+                lastFocusIsOnEditor=false;
+                return true;
+            }
+        };
         Func1 viz=new Func1() {
             public final boolean run(final String arg) {
                 if (!arg.endsWith(".xml")) return false;
@@ -1125,8 +1148,8 @@ public final class SimpleGUI {
                 return true;
             }
         };
-        log = new LogToJTextPane(statusPane, fontSize, gray, Color.BLACK, Color.BLACK, new Color(.7f,.2f,.2f), viz);
-        statusPane.setBorder(new EmptyBorder(0,0,0,0));
+        log = new LogToJTextPane(logpane, fontSize, gray, Color.BLACK, new Color(.7f,.2f,.2f), focus, viz);
+        logpane.setBorder(new EmptyBorder(0,0,0,0));
 
         // Add everything to the frame, then display the frame
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -1152,7 +1175,8 @@ public final class SimpleGUI {
         lefthalf.setLayout(new BorderLayout());
         lefthalf.add(toolbar, BorderLayout.NORTH);
         lefthalf.add(textPane, BorderLayout.CENTER);
-        all.add(new OurSplitPane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, statusPane, width/2), BorderLayout.CENTER);
+        splitpane=new OurSplitPane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, logpane, width/2);
+        all.add(splitpane, BorderLayout.CENTER);
         all.add(status=OurUtil.makeJLabel(" ",OurUtil.getFont(fontSize)), BorderLayout.SOUTH);
         status.setBackground(gray);
         status.setOpaque(true);
@@ -1290,6 +1314,7 @@ public final class SimpleGUI {
                 highlight(e);
                 log.logRed("Cannot run the command! "+e.toString()+"\n\n");
             }
+            log.logDivider();
             OurUtil.invokeAndWait(new Runnable() {
                 public final void run() {
                     runmenu.setEnabled(true);

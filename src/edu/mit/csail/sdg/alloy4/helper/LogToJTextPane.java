@@ -1,12 +1,16 @@
 package edu.mit.csail.sdg.alloy4.helper;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
@@ -21,7 +25,7 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
-
+import edu.mit.csail.sdg.alloy4util.Func0;
 import edu.mit.csail.sdg.alloy4util.Func1;
 import edu.mit.csail.sdg.alloy4util.OurUtil;
 import edu.mit.csail.sdg.alloy4util.Util;
@@ -103,23 +107,25 @@ public final class LogToJTextPane extends Log {
      * @param fontSize - the font size to start with
      * @param background - the background color to use for the JTextPane
      * @param regular - the color to use for regular messages
-     * @param bold - the color to use for bold messages
      * @param red - the color to use for red messages
-     * @param action - the function to call when users click on a hyperlink message
+     * @param focusAction - the function to call when this log window gets the focus
+     * @param clickAction - the function to call when users click on a hyperlink message
      * (as required by Func1's specification, we guarantee we will only call action.run() from the AWT thread).
      */
     public LogToJTextPane(final JScrollPane parent, final int fontSize,
-            Color background, final Color regular, final Color bold, final Color red, Func1 action) {
+            Color background, final Color regular, final Color red,
+            final Func0 focusAction,
+            final Func1 clickAction) {
         this.background=background;
-        this.action=action;
+        this.action=clickAction;
         this.fontSize=fontSize;
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() {
-                public final void run() { initialize(parent,regular,bold,red); }
+                public final void run() { initialize(parent,regular,red,focusAction); }
             });
             return;
         }
-        initialize(parent,regular,bold,red);
+        initialize(parent,regular,red,focusAction);
     }
 
     /** This customized EditorKit forces the JTextPane to use our customized StyledViewFactory. */
@@ -154,13 +160,17 @@ public final class LogToJTextPane extends Log {
      * Helper method that actually initializes the various GUI objects;
      * This method can be called only by the AWT thread.
      */
-    private void initialize(JScrollPane parent, Color regular, Color bold, Color red) {
+    private void initialize(JScrollPane parent, Color regular, Color red, final Func0 focusAction) {
         log=new JTextPane();
         log.setEditorKit(new OurEditorKit()); // This customized EditorKit prevents line-wrapping.
         log.setBorder(new EmptyBorder(1,1,1,1));
         log.setBackground(background);
         log.setEditable(false);
         log.setFont(OurUtil.getFont(fontSize));
+        log.addFocusListener(new FocusListener() {
+            public final void focusGained(FocusEvent e) { focusAction.run(); }
+            public final void focusLost(FocusEvent e) { }
+        });
         StyledDocument doc=log.getStyledDocument();
         styleRegular=doc.addStyle("regular", null);
         StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
@@ -168,7 +178,7 @@ public final class LogToJTextPane extends Log {
         StyleConstants.setForeground(styleRegular, regular);
         styleBold=doc.addStyle("bold", styleRegular);
         StyleConstants.setBold(styleBold, true);
-        StyleConstants.setForeground(styleBold,bold);
+        StyleConstants.setForeground(styleBold, regular);
         styleRed=doc.addStyle("red", styleBold);
         StyleConstants.setForeground(styleRed,red);
         parent.setViewportView(log);
@@ -211,6 +221,23 @@ public final class LogToJTextPane extends Log {
             doc.insertString(doc.getLength(),msg2,styleRegular);
         } catch (BadLocationException e) {Util.harmless("log()",e);}
         log.setCaretPosition(doc.getLength());
+    }
+
+    /** Write a horizontal separator into the log window. */
+    public void logDivider() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { logDivider(); } });
+            return;
+        }
+        StyledDocument doc=log.getStyledDocument();
+        Style s=doc.addStyle("link", styleRegular);
+        JPanel jp = new JPanel();
+        jp.setBackground(Color.GRAY);
+        jp.setPreferredSize(new Dimension(300,2)); // 300 is arbitrary, since it will auto-stretch
+        StyleConstants.setComponent(s, jp);
+        log(".",s);
+        log("\n\n",styleRegular);
+        lastSize=doc.getLength();
     }
 
     /** Write a clickable link into the log window. */
