@@ -188,7 +188,7 @@ public final class SimpleGUI {
     private static final String fs=System.getProperty("file.separator");
 
     /** The darker background color (for the MessageLog window and the Toolbar and the Status Bar, etc.) */
-    private static final Color background=Color.WHITE;
+    private static final Color background=new Color(.9f, .9f, .9f);
 
     //====== static methods =================================================//
 
@@ -333,13 +333,13 @@ public final class SimpleGUI {
     private final Func0 a_window = new Func0() {
         public final boolean run() {
             windowmenu.removeAll();
-            new OurMenuItem(windowmenu, "Minimize", KeyEvent.VK_M, KeyEvent.VK_M, new Func0() {
+            (new OurMenuItem(windowmenu, "Minimize", KeyEvent.VK_M, KeyEvent.VK_M, new Func0() {
                 public final boolean run() {
                     frame.setExtendedState(JFrame.ICONIFIED);
                     return true;
                 }
-            });
-            new OurMenuItem(windowmenu, "Zoom", new Func0() {
+            })).setIcon(iconNo);
+            (new OurMenuItem(windowmenu, "Zoom", new Func0() {
                 public final boolean run() {
                     if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
                         frame.setExtendedState(JFrame.NORMAL);
@@ -347,7 +347,7 @@ public final class SimpleGUI {
                         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
                     return true;
                 }
-            });
+            })).setIcon(iconNo);
             JMenuItem it;
             windowmenu.addSeparator();
             if (openfiles.size()==0) {
@@ -362,16 +362,13 @@ public final class SimpleGUI {
                 });
                 windowmenu.add(it);
             }
-            if (xmlLoaded.size()>0) {
-                windowmenu.addSeparator();
-                for(final String f:xmlLoaded) {
-                    it=new JMenuItem("Instance: "+xml2title.get(f));
-                    it.setIcon(iconNo);
-                    it.addActionListener(new ActionListener() {
-                        public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
-                    });
-                    windowmenu.add(it);
-                }
+            for(final String f:xmlLoaded) {
+                it=new JMenuItem("Instance: "+xml2title.get(f));
+                it.setIcon(iconNo);
+                it.addActionListener(new ActionListener() {
+                    public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
+                });
+                windowmenu.add(it);
             }
             return true;
         }
@@ -380,13 +377,13 @@ public final class SimpleGUI {
     private final Func0 a_window2 = new Func0() {
         public final boolean run() {
             windowmenu2.removeAll();
-            new OurMenuItem(windowmenu2, "Minimize", KeyEvent.VK_M, KeyEvent.VK_M, new Func0() {
+            (new OurMenuItem(windowmenu2, "Minimize", KeyEvent.VK_M, KeyEvent.VK_M, new Func0() {
                 public final boolean run() {
                     viz.setExtendedState(JFrame.ICONIFIED);
                     return true;
                 }
-            });
-            new OurMenuItem(windowmenu2, "Zoom", new Func0() {
+            })).setIcon(iconNo);
+            (new OurMenuItem(windowmenu2, "Zoom", new Func0() {
                 public final boolean run() {
                     if ((viz.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
                         viz.setExtendedState(JFrame.NORMAL);
@@ -394,7 +391,7 @@ public final class SimpleGUI {
                         viz.setExtendedState(JFrame.MAXIMIZED_BOTH);
                     return true;
                 }
-            });
+            })).setIcon(iconNo);
             JMenuItem it;
             windowmenu2.addSeparator();
             if (openfiles.size()==0) {
@@ -412,16 +409,13 @@ public final class SimpleGUI {
                 });
                 windowmenu2.add(it);
             }
-            if (xmlLoaded.size()>0) {
-                windowmenu2.addSeparator();
-                for(final String f:xmlLoaded) {
-                    it=new JMenuItem("Instance: "+xml2title.get(f));
-                    it.setIcon(f.equals(xmlLatest)?iconYes:iconNo);
-                    it.addActionListener(new ActionListener() {
-                        public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
-                    });
-                    windowmenu2.add(it);
-                }
+            for(final String f:xmlLoaded) {
+                it=new JMenuItem("Instance: "+xml2title.get(f));
+                it.setIcon(f.equals(xmlLatest)?iconYes:iconNo);
+                it.addActionListener(new ActionListener() {
+                    public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
+                });
+                windowmenu2.add(it);
             }
             return true;
         }
@@ -907,11 +901,13 @@ public final class SimpleGUI {
                     savebutton.setVisible(!mode_externalEditor);
                     loadbutton.setVisible(mode_externalEditor);
                     if (mode_externalEditor) {
+                        log.setBackground(Color.WHITE);
                         ((JPanel)(splitpane.getTopComponent())).remove(toolbar);
                         splitpane.setBottomComponent(null);
                         all.add(toolbar, BorderLayout.NORTH);
                         all.add(logpane, BorderLayout.CENTER);
                     } else {
+                        log.setBackground(background);
                         ((JPanel)(splitpane.getTopComponent())).add(toolbar, BorderLayout.NORTH);
                         splitpane.setBottomComponent(logpane);
                         all.add(splitpane, BorderLayout.CENTER);

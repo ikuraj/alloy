@@ -58,7 +58,7 @@ public final class LogToJTextPane extends Log {
     private List<JLabel> links=new ArrayList<JLabel>();
 
     /** The color to use as the background of the JTextPane. */
-    private final Color background;
+    private Color background;
 
     /**
      * The method to call when user clicks on one of the hyperlink in the JTextPane;
@@ -99,6 +99,16 @@ public final class LogToJTextPane extends Log {
         // Changes all existing hyperlinks
         Font newFont=new Font(OurUtil.getFontName(), Font.BOLD, fontSize);
         for(JLabel x:links) x.setFont(newFont);
+    }
+
+    /** Set the background color. */
+    public void setBackground(final Color newBackground) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { setBackground(newBackground); } });
+            return;
+        }
+        background=newBackground;
+        log.setBackground(background);
     }
 
     /**

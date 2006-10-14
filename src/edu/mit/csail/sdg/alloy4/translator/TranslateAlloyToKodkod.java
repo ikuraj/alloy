@@ -972,11 +972,11 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             current_function="";
         }
         } catch(HigherOrderDeclException ex) {
-          log.log("Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n");
+          log.log("   Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n\n");
           log.flush();
           return null;
         } catch(Err ex) {
-          log.log(ex.msg+"\n");
+          log.log("   "+ex.msg+"\n\n");
           log.flush();
           return null;
         }
