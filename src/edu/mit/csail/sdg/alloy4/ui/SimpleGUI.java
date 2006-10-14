@@ -1339,7 +1339,7 @@ public final class SimpleGUI {
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
                 if (sc!=SolverChoice.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     setLatestInstance(tempdir+fs+(index+1));
-                    xml2title.put(tempdir+fs+(index+1)+".xml", units.get(0).runchecks.get(0).toString());
+                    xml2title.put(tempdir+fs+(index+1)+".xml", units.get(0).runchecks.get(index).toString());
                 }
                 if (sc!=SolverChoice.FILE && result.size()>1) {
                     log.logBold("" + result.size() + " commands were executed. The results are:\n");
