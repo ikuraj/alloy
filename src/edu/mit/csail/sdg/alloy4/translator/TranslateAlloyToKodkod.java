@@ -1108,28 +1108,29 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (!flatten) solver.options().setFlatten(false);
         if (!sym) solver.options().setSymmetryBreaking(0);
         log.log("   Solver="+solver.options().solver()+" Bitwidth="+bitwidth
-                +" Symmetry="+(sym?"ON\n":"OFF\n"));
+                +" Symmetry="+(sym?"ON\n   ":"OFF\n   "));
         final int loglength=log.getLength();
-        log.log("   Compiling...");
+        log.logBold("Compiling...");
         log.flush();
         try {
             //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (AlloyBridge.stopped) {
                 log.setLength(loglength);
-                log.log("   Canceled.\n\n");
+                log.log("Canceled.\n\n");
                 log.flush();
                 return Result.CANCELED;
             }
             Solution sol=solver.solve(mainformula, bounds, new Logger() {
                 public void report(long translationTime, int variableCount, int primaryVariableCount, int clauseCount) {
                     log.setLength(loglength);
-                    log.log("   "+variableCount+" vars. "+clauseCount+" clauses. "
-                            +translationTime+"ms.\n   Solving...");
+                    log.log(""+variableCount+" vars. "+clauseCount+" clauses. "
+                            +translationTime+"ms. ");
+                    log.logBold("Solving...");
                     log.flush();
                 }
             });
             log.setLength(loglength);
-            log.log("   "+sol.stats().variables()+" vars. "
+            log.log(""+sol.stats().variables()+" vars. "
                     +sol.stats().primaryVariables()+" primary vars. "
                     +sol.stats().clauses()+" clauses. "+sol.stats().translationTime()+"ms.\n");
             String label="It";//cmd.name;
