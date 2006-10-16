@@ -292,13 +292,11 @@ public final class SimpleGUI {
 
     /** Instance list */
     private List<String> xmlLoaded = new ArrayList<String>();
-    private String xmlLatest = "";
 
     /** Called when we need to load a visualization window. */
     private final Func1 a_viz = new Func1() {
         public final boolean run(String xmlName) {
             xmlName=(new File(xmlName)).getAbsolutePath();
-            xmlLatest=xmlName;
             if (!xmlLoaded.contains(xmlName)) xmlLoaded.add(xmlName);
             if (viz!=null) {
                 viz.instantiate(xmlName);
@@ -411,7 +409,7 @@ public final class SimpleGUI {
             }
             if (viz!=null) for(final String f:xmlLoaded) {
                 it=new JMenuItem("Instance: "+viz.getInstanceTitle(f));
-                it.setIcon(f.equals(xmlLatest)?iconYes:iconNo);
+                it.setIcon(f.equals(viz.getXMLfilename())?iconYes:iconNo);
                 it.addActionListener(new ActionListener() {
                     public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
                 });
@@ -644,6 +642,7 @@ public final class SimpleGUI {
      */
     private final Func0 a_close2 = new Func0() {
         public final boolean run() {
+            String xmlLatest=viz.getXMLfilename();
             xmlLoaded.remove(xmlLatest);
             if (xmlLoaded.size()>0) a_viz.run(xmlLatest=xmlLoaded.get(xmlLoaded.size()-1)); else viz.setVisible(false);
             return true;
@@ -1249,7 +1248,6 @@ public final class SimpleGUI {
         a_window.run();
         frame.setJMenuBar(bar);
         frame.setTitle("Alloy Analyzer Version 4.0");
-        frame.setVisible(true);
 
         // Generate some informative log messages
         log.logBold("Alloy Analyzer Version 4.0 (build date: "+Version.buildDate()+")\n\n");
