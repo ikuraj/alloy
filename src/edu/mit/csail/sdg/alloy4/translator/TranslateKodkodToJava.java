@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.io.PrintWriter;
-import java.io.FileNotFoundException;
+import java.io.StringWriter;
 import edu.mit.csail.sdg.alloy4.helper.ErrorInternal;
 import edu.mit.csail.sdg.alloy4.helper.Pos;
 import kodkod.ast.BinaryExpression;
@@ -42,6 +42,7 @@ import kodkod.instance.Tuple;
 public final class TranslateKodkodToJava implements VoidVisitor {
 
   private final PrintWriter file;
+  private final StringWriter string;
   private final Pos pos;
 
   /**
@@ -52,8 +53,10 @@ public final class TranslateKodkodToJava implements VoidVisitor {
    * @param bitwidth - the integer bitwidth
    * @param bounds - the Kodkod bounds object to use
    */
-  public static void convert(Pos pos, Formula x, int bitwidth, Bounds bounds) {
-      new TranslateKodkodToJava(pos, x, bitwidth, bounds);
+  public static String convert(Pos pos, Formula x, int bitwidth, Bounds bounds) {
+      TranslateKodkodToJava obj = new TranslateKodkodToJava(pos, x, bitwidth, bounds);
+      obj.file.flush();
+      return obj.string.toString();
   }
 
   /**
@@ -66,11 +69,8 @@ public final class TranslateKodkodToJava implements VoidVisitor {
    */
   private TranslateKodkodToJava(Pos pos, Formula x, int bitwidth, Bounds bounds) {
     this.pos=pos;
-    try {
-      file=new PrintWriter("/zweb/zweb/Alloy4/tmp/Test.java");
-    } catch(FileNotFoundException e) {
-      throw new ErrorInternal(pos, "Cannot open the file \"/zweb/zweb/Alloy4/Test.java");
-    }
+    string=new StringWriter();
+    file=new PrintWriter(string);
     file.println("import kodkod.ast.IntExpression;");
     file.println("import kodkod.ast.Expression;");
     file.println("import kodkod.ast.BinaryExpression;");
@@ -81,7 +81,6 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     file.println("import kodkod.ast.Decls;");
     file.println("import kodkod.engine.Solution;");
     file.println("import kodkod.engine.Solver;");
-    file.println("import kodkod.engine.TimeoutException;");
     file.println("import kodkod.engine.satlab.SATFactory;");
     file.println("import kodkod.engine.Options;");
     file.println("import kodkod.engine.fol2sat.HigherOrderDeclException;");
@@ -148,7 +147,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     }
     x.accept(this);
     file.printf("%nSolver solver = new Solver();");
-    file.printf("%nsolver.options().setSolver(SATFactory.ZChaffBasic);");
+    file.printf("%nsolver.options().setSolver(SATFactory.DefaultSAT4J);");
     file.printf("%nsolver.options().setBitwidth(%d);",bitwidth);
     file.printf("%nsolver.options().setIntEncoding(Options.IntEncoding.BINARY);");
     file.printf("%nSolution sol = solver.solve(%s,bounds);",jk_map.get(x));

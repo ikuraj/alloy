@@ -1113,14 +1113,14 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         log.logBold("Compiling...");
         log.flush();
         try {
-            //TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
+            String kinput = TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
             if (AlloyBridge.stopped) {
                 log.setLength(loglength);
                 log.log("Canceled.\n\n");
                 log.flush();
                 return Result.CANCELED;
             }
-            Solution sol=solver.solve(mainformula, bounds, new Logger() {
+            Logger logger = new Logger() {
                 public void report(long translationTime, int variableCount, int primaryVariableCount, int clauseCount) {
                     log.setLength(loglength);
                     log.log(""+variableCount+" vars. "+clauseCount+" clauses. "
@@ -1128,7 +1128,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     log.logBold("Solving...");
                     log.flush();
                 }
-            });
+            };
+            Solution sol=solver.solve(logger, mainformula, bounds);
             log.setLength(loglength);
             log.log(""+sol.stats().variables()+" vars. "
                     +sol.stats().primaryVariables()+" primary vars. "
@@ -1157,7 +1158,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 log.log(" "+t2+"ms. ");
                 log.logLink(destdir+fs+destnum+".xml");
                 log.log("\n\n");
-                writeXML(originalFilename, cmd, sol, units, sigs, destdir+fs+destnum+".xml");
+                writeXML(originalFilename, cmd, kinput, sol, units, sigs, destdir+fs+destnum+".xml");
                 break;
             }
         } catch(HigherOrderDeclException ex) { log.setLength(loglength); log.log("   Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n\n");
@@ -1186,7 +1187,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
     }
 
-    private void writeXML(String originalFilename, ParaRuncheck cmd, Solution sol, List<Unit> units, List<ParaSig> sigs, String destfilename) {
+    private void writeXML(String originalFilename, ParaRuncheck cmd, String kinput, Solution sol, List<Unit> units, List<ParaSig> sigs, String destfilename) {
         // TODO: We intentionally do not delete the ".xml" file on exit, since the user may want it.
         UniqueNameGenerator skolemSet = new UniqueNameGenerator();
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
@@ -1311,7 +1312,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
             out.print("</module>\n");
         }
-        Util.encodeXMLs(out, "\n</instance>\n\n<kinstance value=\"", sol.toString(), "\"/>\n\n</alloy>\n");
+        Util.encodeXMLs(out, "\n</instance>\n\n<koutput value=\"", sol.toString(), "\"/>\n\n<kinput value=\"", kinput, "\"/>\n\n</alloy>\n");
         out.flush();
         out.close();
         try {bw.close();} catch(IOException ex) {throw new ErrorInternal(cmd.pos,"writeXML failed: "+ex.toString());}
