@@ -14,9 +14,7 @@ import java.io.StringReader;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -293,13 +291,13 @@ public final class SimpleGUI {
     //====== Message handlers ===============================================//
 
     /** Instance list */
-    private Map<String,String> xml2title = new LinkedHashMap<String,String>();
     private List<String> xmlLoaded = new ArrayList<String>();
     private String xmlLatest = "";
 
     /** Called when we need to load a visualization window. */
     private final Func1 a_viz = new Func1() {
-        public final boolean run(final String xmlName) {
+        public final boolean run(String xmlName) {
+            xmlName=(new File(xmlName)).getAbsolutePath();
             xmlLatest=xmlName;
             if (!xmlLoaded.contains(xmlName)) xmlLoaded.add(xmlName);
             if (viz!=null) {
@@ -312,8 +310,8 @@ public final class SimpleGUI {
                 return true;
             }
             if (!xmlName.endsWith(".xml")) return false;
-            String dotname=xmlName.substring(0, xmlName.length()-4)+".dot";
-            viz=new KodVizGUI(dotname, xmlName, windowmenu2, a_close2);
+            String dotname=Util.alloyHome()+"tmp"+File.separatorChar+"temp.dot";
+            viz=new KodVizGUI(dotname, xmlName, windowmenu2, a_viz, a_close2);
             return true;
         }
     };
@@ -364,8 +362,8 @@ public final class SimpleGUI {
                 });
                 windowmenu.add(it);
             }
-            for(final String f:xmlLoaded) {
-                it=new JMenuItem("Instance: "+xml2title.get(f));
+            if (viz!=null) for(final String f:xmlLoaded) {
+                it=new JMenuItem("Instance: "+viz.getInstanceTitle(f));
                 it.setIcon(iconNo);
                 it.addActionListener(new ActionListener() {
                     public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
@@ -411,8 +409,8 @@ public final class SimpleGUI {
                 });
                 windowmenu2.add(it);
             }
-            for(final String f:xmlLoaded) {
-                it=new JMenuItem("Instance: "+xml2title.get(f));
+            if (viz!=null) for(final String f:xmlLoaded) {
+                it=new JMenuItem("Instance: "+viz.getInstanceTitle(f));
                 it.setIcon(f.equals(xmlLatest)?iconYes:iconNo);
                 it.addActionListener(new ActionListener() {
                     public final void actionPerformed(ActionEvent e) { a_viz.run(f); }
@@ -1009,7 +1007,7 @@ public final class SimpleGUI {
         System.setProperty("apple.laf.useScreenMenuBar","true");
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
         catch (Exception e) { Util.harmless("SimpleGUI()",e); }
-        
+
         // Figure out the desired x, y, width, and height
         int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
         int width=Pref.getInt("width");
@@ -1044,7 +1042,7 @@ public final class SimpleGUI {
         frame.setSize(new Dimension(width,height));
         frame.setLocation(x,y);
         frame.setVisible(true);
-        
+
         // Find out the appropriate Alloy directory
         final String alloyHome=Util.alloyHome();
         final String binary=alloyHome+fs+"binary";
@@ -1321,14 +1319,6 @@ public final class SimpleGUI {
 
     //=======================================================================//
 
-    private static String makeVizTitle(String filename, ParaRuncheck command) {
-    	int i=filename.lastIndexOf('/');
-    	if (i>=0) filename=filename.substring(i+1);
-    	int n=filename.length();
-    	if (n>4 && filename.substring(n-4).equalsIgnoreCase(".als")) filename=filename.substring(0,n-4);
-    	if (filename.length()>0) return "("+filename+") "+command.toString(); else return command.toString();
-    }
-
     /** This Runnable is used to execute a SAT query; this allows the main GUI to remain responsive. */
     private final class Runner implements Runnable {
         /** The filename to store into the instance XML file. */
@@ -1358,7 +1348,6 @@ public final class SimpleGUI {
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
                 if (sc!=SolverChoice.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     setLatestInstance(tempdir+fs+(index+1));
-                    xml2title.put(tempdir+fs+(index+1)+".xml", makeVizTitle(filename,units.get(0).runchecks.get(index)));
                 }
                 if (sc!=SolverChoice.FILE && result.size()>1) {
                     log.logBold("" + result.size() + " commands were executed. The results are:\n");
@@ -1373,7 +1362,6 @@ public final class SimpleGUI {
                             if (r.check) log.log("   #"+i+": Counterexample found. "+label+" is invalid. ");
                             else log.log("   #"+i+": Instance found. "+label+" is consistent. ");
                             log.logLink(tempdir+fs+i+".xml");
-                            xml2title.put(tempdir+fs+i+".xml", makeVizTitle(filename,r));
                             log.log("\n");
                             setLatestInstance(tempdir+fs+i);
                             break;
