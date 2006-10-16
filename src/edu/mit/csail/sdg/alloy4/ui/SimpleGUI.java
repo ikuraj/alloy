@@ -290,26 +290,13 @@ public final class SimpleGUI {
 
     //====== Message handlers ===============================================//
 
-    /** Instance list */
-    private List<String> xmlLoaded = new ArrayList<String>();
 
     /** Called when we need to load a visualization window. */
     private final Func1 a_viz = new Func1() {
         public final boolean run(String xmlName) {
             xmlName=(new File(xmlName)).getAbsolutePath();
-            if (!xmlLoaded.contains(xmlName)) xmlLoaded.add(xmlName);
-            if (viz!=null) {
-                viz.instantiate(xmlName);
-                viz.setVisible(true);
-                if ((viz.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
-                    viz.setExtendedState(JFrame.NORMAL);
-                viz.requestFocus();
-                viz.toFront();
-                return true;
-            }
-            if (!xmlName.endsWith(".xml")) return false;
-            String dotname=Util.alloyHome()+"tmp"+File.separatorChar+"temp.dot";
-            viz=new KodVizGUI(dotname, xmlName, windowmenu2, a_viz, a_close2);
+            if (viz!=null) viz.a_loadXML.run(xmlName);
+            else viz=new KodVizGUI(Util.alloyHome()+"tmp"+File.separatorChar+"temp.dot", xmlName, windowmenu2);
             return true;
         }
     };
@@ -360,7 +347,7 @@ public final class SimpleGUI {
                 });
                 windowmenu.add(it);
             }
-            if (viz!=null) for(final String f:xmlLoaded) {
+            if (viz!=null) for(final String f:viz.getInstances()) {
                 it=new JMenuItem("Instance: "+viz.getInstanceTitle(f));
                 it.setIcon(iconNo);
                 it.addActionListener(new ActionListener() {
@@ -407,7 +394,7 @@ public final class SimpleGUI {
                 });
                 windowmenu2.add(it);
             }
-            if (viz!=null) for(final String f:xmlLoaded) {
+            if (viz!=null) for(final String f:viz.getInstances()) {
                 it=new JMenuItem("Instance: "+viz.getInstanceTitle(f));
                 it.setIcon(f.equals(viz.getXMLfilename())?iconYes:iconNo);
                 it.addActionListener(new ActionListener() {
@@ -637,19 +624,6 @@ public final class SimpleGUI {
     };
 
     /**
-     * Called when the user clicks "File", then "Close", in the visualizer window
-     * (Returns false iff the user cancels the Close operation)
-     */
-    private final Func0 a_close2 = new Func0() {
-        public final boolean run() {
-            String xmlLatest=viz.getXMLfilename();
-            xmlLoaded.remove(xmlLatest);
-            if (xmlLoaded.size()>0) a_viz.run(xmlLatest=xmlLoaded.get(xmlLoaded.size()-1)); else viz.setVisible(false);
-            return true;
-        }
-    };
-
-    /**
      * Called when the user clicks "File", then "Quit".
      * (Returns false iff the user cancels the Quit operation)
      */
@@ -857,6 +831,9 @@ public final class SimpleGUI {
     /** Whether the system is using external editor or not. */
     private boolean mode_externalEditor = (Pref.get("externalEditor").length()>0);
 
+    /** Whether the system should automatically visualize the latest instance. */
+    private boolean mode_autoVisualize = (Pref.get("autoVisualize").length()>0);
+
     /** Called when the user expands the "Options" menu; always returns true. */
     private final Func0 a_option = new Func0() {
         public final boolean run() {
@@ -921,6 +898,14 @@ public final class SimpleGUI {
             };
             new OurMenuItem(optmenu, "Use an External Editor: "+(mode_externalEditor?"Yes":"No"), ext);
             if (mode_externalEditor && splitpane.getBottomComponent()!=null) {mode_externalEditor=false; ext.run();}
+            Func0 autoViz = new Func0() {
+                public boolean run() {
+                    mode_autoVisualize=(!mode_autoVisualize);
+                    Pref.set("autoVisualize", mode_autoVisualize?"y":"");
+                    return true;
+                }
+            };
+            new OurMenuItem(optmenu, "Visualize Automatically: "+(mode_autoVisualize?"Yes":"No"), autoViz);
             return true;
         }
     };
@@ -1344,8 +1329,10 @@ public final class SimpleGUI {
                     TranslateAlloyToKodkod.codegen(filename,index,log,getVerbosity(),units,sigs,sc,tempdir);
                 log.flush(); // To make sure everything is flushed.
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
+                boolean hasInstance=false;
                 if (sc!=SolverChoice.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     setLatestInstance(tempdir+fs+(index+1));
+                    hasInstance=true;
                 }
                 if (sc!=SolverChoice.FILE && result.size()>1) {
                     log.logBold("" + result.size() + " commands were executed. The results are:\n");
@@ -1362,6 +1349,7 @@ public final class SimpleGUI {
                             log.logLink(tempdir+fs+i+".xml");
                             log.log("\n");
                             setLatestInstance(tempdir+fs+i);
+                            hasInstance=true;
                             break;
                         case TRIVIALLY_SAT:
                             if (r.check) log.log("   #"+i+": Trivial counterexample found. "+label+" is invalid.\n");
@@ -1377,6 +1365,9 @@ public final class SimpleGUI {
                     log.log("\n");
                 }
                 log.logDivider();
+                if (hasInstance && mode_autoVisualize) SwingUtilities.invokeLater(new Runnable() {
+                    public void run() { a_viz.run(getLatestInstance()+".xml"); }
+                });
             }
             catch(UnsatisfiedLinkError e) {
                 log.logRed("Cannot run the command!\nThe required JNI library cannot be found!\n"+e.toString()+"\n\n");
