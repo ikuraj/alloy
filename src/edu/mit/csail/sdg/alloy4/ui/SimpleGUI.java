@@ -303,7 +303,7 @@ public final class SimpleGUI {
             xmlLatest=xmlName;
             if (!xmlLoaded.contains(xmlName)) xmlLoaded.add(xmlName);
             if (viz!=null) {
-                viz.instantiate(xmlName,false);
+                viz.instantiate(xmlName);
                 viz.setVisible(true);
                 if ((viz.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
                     viz.setExtendedState(JFrame.NORMAL);
@@ -321,11 +321,13 @@ public final class SimpleGUI {
     private static String slightlyShorterFilename(String name) {
         if (name.toLowerCase().endsWith(".als")) {
             int i=name.lastIndexOf(File.separatorChar);
-            if (i>=0) return name.substring(i+1);
+            if (i>=0) name=name.substring(i+1);
+            return name.substring(0, name.length()-4);
         } else if (name.toLowerCase().endsWith(".xml")) {
             int i=name.lastIndexOf(File.separatorChar);
             if (i>0) i=name.lastIndexOf(File.separatorChar, i-1);
-            if (i>=0) return name.substring(i+1);
+            if (i>=0) name=name.substring(i+1);
+            return name.substring(0, name.length()-4);
         }
         return name;
     }
@@ -789,13 +791,13 @@ public final class SimpleGUI {
             runmenu.getItem(0).setText("Run "+Util.th(latestCommand+1)+" command");
             if (compiled.runchecks.size()>1) {
                 JMenuItem y=new JMenuItem("All");
-                y.addActionListener(new RunListener(-1));
+                y.addActionListener(new RunListener(latestName,-1));
                 runmenu.add(y);
             }
             runmenu.add(new JSeparator());
             for(int i=0; i<compiled.runchecks.size(); i++) {
                 JMenuItem y=new JMenuItem(compiled.runchecks.get(i).toString());
-                y.addActionListener(new RunListener(i));
+                y.addActionListener(new RunListener(latestName,i));
                 runmenu.add(y);
             }
             return true;
@@ -813,7 +815,7 @@ public final class SimpleGUI {
             if (n==0) { log.logRed("There are no commands to run.\n\n"); return false; }
             if (latestCommand>=n) latestCommand=n-1;
             if (latestCommand<0) latestCommand=0;
-            new RunListener(latestCommand).actionPerformed(null);
+            new RunListener(latestName,latestCommand).actionPerformed(null);
             return true;
         }
     };
@@ -1007,6 +1009,42 @@ public final class SimpleGUI {
         System.setProperty("apple.laf.useScreenMenuBar","true");
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
         catch (Exception e) { Util.harmless("SimpleGUI()",e); }
+        
+        // Figure out the desired x, y, width, and height
+        int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
+        int width=Pref.getInt("width");
+        if (width<=0) width=screenWidth/10*8; else if (width<100) width=100;
+        if (width>screenWidth) width=screenWidth;
+        int height=Pref.getInt("height");
+        if (height<=0) height=screenHeight/10*8; else if (height<100) height=100;
+        if (height>screenHeight) height=screenHeight;
+        int x=Pref.getInt("x"); if (x<0) x=screenWidth/10; if (x>screenWidth-100) x=screenWidth-100;
+        int y=Pref.getInt("y"); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
+
+        // Put up a slash screen
+        frame=new JFrame("Alloy Analyzer Version 4.0 loading... please wait...");
+        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            public final void windowClosing(WindowEvent e) { a_close.run(); }
+        });
+        frame.addComponentListener(new ComponentListener() {
+            public void componentResized(ComponentEvent e) {
+                Pref.setInt("width", frame.getWidth());
+                Pref.setInt("height", frame.getHeight());
+            }
+            public void componentMoved(ComponentEvent e) {
+                Point p=frame.getLocation();
+                Pref.setInt("x", p.x);
+                Pref.setInt("y", p.y);
+            }
+            public void componentShown(ComponentEvent e) {}
+            public void componentHidden(ComponentEvent e) {}
+        });
+        frame.pack();
+        frame.setSize(new Dimension(width,height));
+        frame.setLocation(x,y);
+        frame.setVisible(true);
+        
         // Find out the appropriate Alloy directory
         final String alloyHome=Util.alloyHome();
         final String binary=alloyHome+fs+"binary";
@@ -1049,23 +1087,8 @@ public final class SimpleGUI {
                 "models/util/seqrel.als", "models/util/sequence.als", "models/util/ternary.als"
         );
 
-        // Figure out the desired x, y, width, and height
-        int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
-        int width=Pref.getInt("width");
-        if (width<=0) width=screenWidth/10*8; else if (width<100) width=100;
-        if (width>screenWidth) width=screenWidth;
-        int height=Pref.getInt("height");
-        if (height<=0) height=screenHeight/10*8; else if (height<100) height=100;
-        if (height>screenHeight) height=screenHeight;
-        int x=Pref.getInt("x"); if (x<0) x=screenWidth/10; if (x>screenWidth-100) x=screenWidth-100;
-        int y=Pref.getInt("y"); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
-
-        // Construct the JFrame object
-        frame=new JFrame("Alloy Analyzer Version 4.0");
-
         // Create the menu bar
         JMenuBar bar=new JMenuBar();
-        frame.setJMenuBar(bar);
 
         filemenu=new OurMenu(bar, "File", KeyEvent.VK_F, a_file);
         editmenu=new OurMenu(bar, "Edit", KeyEvent.VK_E, a_edit);
@@ -1206,25 +1229,9 @@ public final class SimpleGUI {
         logpane.setBorder(new EmptyBorder(0,0,0,0));
 
         // Add everything to the frame, then display the frame
-        frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        frame.addWindowListener(new WindowAdapter() {
-            public final void windowClosing(WindowEvent e) { a_close.run(); }
-        });
-        frame.addComponentListener(new ComponentListener() {
-            public void componentResized(ComponentEvent e) {
-                Pref.setInt("width", frame.getWidth());
-                Pref.setInt("height", frame.getHeight());
-            }
-            public void componentMoved(ComponentEvent e) {
-                Point p=frame.getLocation();
-                Pref.setInt("x", p.x);
-                Pref.setInt("y", p.y);
-            }
-            public void componentShown(ComponentEvent e) {}
-            public void componentHidden(ComponentEvent e) {}
-        });
         Container all=frame.getContentPane();
         all.setLayout(new BorderLayout());
+        all.removeAll();
         JPanel lefthalf=new JPanel();
         lefthalf.setLayout(new BorderLayout());
         lefthalf.add(toolbar, BorderLayout.NORTH);
@@ -1235,13 +1242,15 @@ public final class SimpleGUI {
         status.setBackground(new Color(.9f, .9f, .9f));
         status.setOpaque(true);
         status.setBorder(new OurBorder(true,false));
-        frame.pack();
-        frame.setSize(new Dimension(width,height));
-        frame.setLocation(x,y);
+        //frame.pack();
+        //frame.setSize(new Dimension(width,height));
+        //frame.setLocation(x,y);
         a_file.run();
         a_edit.run();
         a_option.run();
         a_window.run();
+        frame.setJMenuBar(bar);
+        frame.setTitle("Alloy Analyzer Version 4.0");
         frame.setVisible(true);
 
         // Generate some informative log messages
@@ -1312,14 +1321,24 @@ public final class SimpleGUI {
 
     //=======================================================================//
 
+    private static String makeVizTitle(String filename, ParaRuncheck command) {
+    	int i=filename.lastIndexOf('/');
+    	if (i>=0) filename=filename.substring(i+1);
+    	int n=filename.length();
+    	if (n>4 && filename.substring(n-4).equalsIgnoreCase(".als")) filename=filename.substring(0,n-4);
+    	if (filename.length()>0) return "("+filename+") "+command.toString(); else return command.toString();
+    }
+
     /** This Runnable is used to execute a SAT query; this allows the main GUI to remain responsive. */
     private final class Runner implements Runnable {
+        /** The filename to store into the instance XML file. */
+        private final String filename;
         /** The Alloy model to be anaylzed */
         private final Reader source;
         /** The command that this runner should run (0 is first, 1 is second..) (-1 means all of them) */
         private final int index;
         /** Constructs a runner that runs the i-th command (0 is first, 1 is second...) (-1 means all of them) */
-        public Runner(Reader source, int i) { this.source=source; this.index=i; }
+        public Runner(String filename, Reader source, int i) { this.filename=filename; this.source=source; index=i; }
         /** The run() method that actually runs the SAT query. */
         public void run() {
             try {
@@ -1334,12 +1353,12 @@ public final class SimpleGUI {
                 String tempdir = Util.maketemp();
                 SolverChoice sc=getSatOption();
                 List<TranslateAlloyToKodkod.Result> result=
-                    TranslateAlloyToKodkod.codegen(index,log,getVerbosity(),units,sigs,sc,tempdir);
+                    TranslateAlloyToKodkod.codegen(filename,index,log,getVerbosity(),units,sigs,sc,tempdir);
                 log.flush(); // To make sure everything is flushed.
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
                 if (sc!=SolverChoice.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     setLatestInstance(tempdir+fs+(index+1));
-                    xml2title.put(tempdir+fs+(index+1)+".xml", units.get(0).runchecks.get(index).toString());
+                    xml2title.put(tempdir+fs+(index+1)+".xml", makeVizTitle(filename,units.get(0).runchecks.get(index)));
                 }
                 if (sc!=SolverChoice.FILE && result.size()>1) {
                     log.logBold("" + result.size() + " commands were executed. The results are:\n");
@@ -1354,7 +1373,7 @@ public final class SimpleGUI {
                             if (r.check) log.log("   #"+i+": Counterexample found. "+label+" is invalid. ");
                             else log.log("   #"+i+": Instance found. "+label+" is consistent. ");
                             log.logLink(tempdir+fs+i+".xml");
-                            xml2title.put(tempdir+fs+i+".xml", r.toString());
+                            xml2title.put(tempdir+fs+i+".xml", makeVizTitle(filename,r));
                             log.log("\n");
                             setLatestInstance(tempdir+fs+i);
                             break;
@@ -1396,16 +1415,18 @@ public final class SimpleGUI {
 
     /** This ActionListener is called when the user indicates a particular command to execute. */
     private class RunListener implements ActionListener {
+        /** The filename to store into the instance XML file. */
+        private final String filename;
         /** The index number of the command that the user wishes to execute (0..) (-1 means ALL of them). */
         private final int index;
         /** The constructor. */
-        public RunListener(int index) {this.index=index;}
+        public RunListener(String filename, int index) {this.filename=filename; this.index=index;}
         /** The event handler that gets called when the user clicked on one of the menu item. */
         public void actionPerformed(ActionEvent e) {
             if (getCurrentThread()!=null) return;
             latestCommand=(index>=0 ? index : compiled.runchecks.size()-1);
             AlloyBridge.stopped=false;
-            Runner r=new Runner(new StringReader(text.getText()), index);
+            Runner r=new Runner(filename, new StringReader(text.getText()), index);
             Thread t=new Thread(r);
             setCurrentThread(t);
             runmenu.setEnabled(false);

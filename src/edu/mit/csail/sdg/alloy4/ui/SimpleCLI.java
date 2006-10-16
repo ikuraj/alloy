@@ -29,7 +29,7 @@ public final class SimpleCLI {
             log.log("\n\nMain file = "+a+"\n");
             units=AlloyParser.alloy_totalparseFile(Util.alloyHome(), a);
             sigs=VisitTypechecker.check(log,units);
-            if (args.length==1) TranslateAlloyToKodkod.codegen(-1, log, Verbosity.DEBUG, units, sigs, SolverChoice.MiniSatJNI, destdir);
+            if (args.length==1) TranslateAlloyToKodkod.codegen(a, -1, log, Verbosity.DEBUG, units, sigs, SolverChoice.MiniSatJNI, destdir);
         }
     }
 

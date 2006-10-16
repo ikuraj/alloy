@@ -526,9 +526,9 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         this.units=units;
     }
 
-    public static List<Result> codegen(int i, Log log, Verbosity logVerbosity, List<Unit> units, List<ParaSig> sigs, SolverChoice solver, String destdir) {
+    public static List<Result> codegen(String originalFilename, int i, Log log, Verbosity logVerbosity, List<Unit> units, List<ParaSig> sigs, SolverChoice solver, String destdir) {
         TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,logVerbosity,units);
-        return ve.codegen(sigs, solver, destdir);
+        return ve.codegen(originalFilename, sigs, solver, destdir);
     }
 
     private Map<ParaSig,Expression> sig2rel = new LinkedHashMap<ParaSig,Expression>();
@@ -743,7 +743,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 && s.name.equals("Ord"));
     }
 
-    private List<Result> codegen(List<ParaSig> sigs, SolverChoice solver, String destdir)  {
+    private List<Result> codegen(String originalFilename, List<ParaSig> sigs, SolverChoice solver, String destdir)  {
         Formula kfact=Formula.TRUE;
         // Generate the relations for the SIGS.
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -877,7 +877,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                     }
                 }
                 this.env.clear();
-                result.add(runcheck(x, units, bitwidth, sigs, kfact, solver, destdir, xi+1));
+                result.add(runcheck(originalFilename, x, units, bitwidth, sigs, kfact, solver, destdir, xi+1));
             }
         return result;
     }
@@ -947,7 +947,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Result runcheck(ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, SolverChoice solverChoice, final String destdir, final int destnum)  {
+    private Result runcheck(String originalFilename, ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, SolverChoice solverChoice, final String destdir, final int destnum)  {
         Result mainResult=null;
         Unit root=units.get(0);
         Formula mainformula;
@@ -1133,7 +1133,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             log.log(""+sol.stats().variables()+" vars. "
                     +sol.stats().primaryVariables()+" primary vars. "
                     +sol.stats().clauses()+" clauses. "+sol.stats().translationTime()+"ms.\n");
-            String label="It";//cmd.name;
+            String label="It";
             long t2=sol.stats().solvingTime();
             if (AlloyBridge.stopped) {log.log("   Canceled. "+t2+"ms.\n\n"); log.flush(); return Result.CANCELED;}
             switch(sol.outcome()) {
@@ -1157,7 +1157,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 log.log(" "+t2+"ms. ");
                 log.logLink(destdir+fs+destnum+".xml");
                 log.log("\n\n");
-                writeXML(cmd.pos, sol, units, sigs, destdir+fs+destnum+".xml");
+                writeXML(originalFilename, cmd, sol, units, sigs, destdir+fs+destnum+".xml");
                 break;
             }
         } catch(HigherOrderDeclException ex) { log.setLength(loglength); log.log("   Analysis cannot be performed because it contains higher-order quanitifcation that could not be skolemized.\n\n");
@@ -1186,7 +1186,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         }
     }
 
-    private void writeXML(Pos pos, Solution sol, List<Unit> units, List<ParaSig> sigs, String destfilename) {
+    private void writeXML(String originalFilename, ParaRuncheck cmd, Solution sol, List<Unit> units, List<ParaSig> sigs, String destfilename) {
         // TODO: We intentionally do not delete the ".xml" file on exit, since the user may want it.
         UniqueNameGenerator skolemSet = new UniqueNameGenerator();
         if (sol.outcome()!=Outcome.SATISFIABLE) return;
@@ -1201,12 +1201,12 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (out!=null) { out.close(); out=null; }
             if (bw!=null) { try {bw.close();} catch(IOException exx) {bw=null;} }
             if (fw!=null) { try {fw.close();} catch(IOException exx) {fw=null;} }
-            throw new ErrorInternal(pos, "writeXML failed: "+ex.toString());
+            throw new ErrorInternal(cmd.pos, "writeXML failed: "+ex.toString());
         }
         Instance inst=sol.instance();
         Evaluator eval=new Evaluator(inst);
         out.print("<alloy>\n");
-        out.print("<instance>\n");
+        Util.encodeXMLs(out, "<instance filename=\"", originalFilename, "\" command=\"", cmd.toString(), "\">\n");
         IdentitySet<Relation> rels=new IdentitySet<Relation>();
         for(int ui=units.size()-1; ui>=0; ui--) { // Goes backwards since we want the ROOT MODULE at the end
             Unit u=units.get(ui);
@@ -1314,7 +1314,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         Util.encodeXMLs(out, "\n</instance>\n\n<kinstance value=\"", sol.toString(), "\"/>\n\n</alloy>\n");
         out.flush();
         out.close();
-        try {bw.close();} catch(IOException ex) {throw new ErrorInternal(pos, "writeXML failed: "+ex.toString());}
-        try {fw.close();} catch(IOException ex) {throw new ErrorInternal(pos, "writeXML failed: "+ex.toString());}
+        try {bw.close();} catch(IOException ex) {throw new ErrorInternal(cmd.pos,"writeXML failed: "+ex.toString());}
+        try {fw.close();} catch(IOException ex) {throw new ErrorInternal(cmd.pos,"writeXML failed: "+ex.toString());}
     }
 }
