@@ -74,6 +74,77 @@ public final class LogToJTextPane extends Log {
      */
     private int fontSize;
 
+    /** This stores a default ViewFactory that will handle the requests we don't care about. */
+    private static final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
+
+    /**
+     * Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
+     * @param parent - the JScrollPane to insert the JTextPane into
+     * @param fontSize - the font size to start with
+     * @param background - the background color to use for the JTextPane
+     * @param regular - the color to use for regular messages
+     * @param red - the color to use for red messages
+     * @param focusAction - the function to call when this log window gets the focus
+     * @param clickAction - the function to call when users click on a hyperlink message
+     * (as required by Func1's specification, we guarantee we will only call action.run() from the AWT thread).
+     */
+    public LogToJTextPane(final JScrollPane parent, final int fontSize,
+            Color background, final Color regular, final Color red,
+            final OurFunc0 focusAction,
+            final OurFunc1 clickAction) {
+        this.background=background;
+        this.action=clickAction;
+        this.fontSize=fontSize;
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() {
+                public final void run() { initialize(parent,regular,red,focusAction); }
+            });
+            return;
+        }
+        initialize(parent,regular,red,focusAction);
+    }
+
+    /**
+     * Helper method that actually initializes the various GUI objects;
+     * This method can be called only by the AWT thread.
+     */
+    private void initialize(JScrollPane parent, Color regular, Color red, final OurFunc0 focusAction) {
+    	log=new JTextPane();
+    	// This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
+    	log.setEditorKit(new StyledEditorKit() {
+    		private static final long serialVersionUID = 1L;
+    		@Override public ViewFactory getViewFactory() { return new ViewFactory() {
+    			public View create(Element x) {
+    				if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
+    				return new BoxView(x, View.Y_AXIS) {
+    					@Override public void layout(int width,int height) { super.layout(30000,height); }
+    					@Override public float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
+    				};
+    			}
+    		};}
+    	});
+    	log.setBorder(new EmptyBorder(1,1,1,1));
+        log.setBackground(background);
+        log.setEditable(false);
+        log.setFont(OurUtil.getFont(fontSize));
+        log.addFocusListener(new FocusListener() {
+            public final void focusGained(FocusEvent e) { focusAction.run(); }
+            public final void focusLost(FocusEvent e) { }
+        });
+        StyledDocument doc=log.getStyledDocument();
+        styleRegular=doc.addStyle("regular", null);
+        StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
+        StyleConstants.setFontSize(styleRegular, fontSize);
+        StyleConstants.setForeground(styleRegular, regular);
+        styleBold=doc.addStyle("bold", styleRegular);
+        StyleConstants.setBold(styleBold, true);
+        StyleConstants.setForeground(styleBold, regular);
+        styleRed=doc.addStyle("red", styleBold);
+        StyleConstants.setForeground(styleRed,red);
+        parent.setViewportView(log);
+        parent.setBackground(background);
+    }
+
     /** Set the font size. */
     public void setFontSize(final int fontSize) {
         if (!SwingUtilities.isEventDispatchThread()) {
@@ -107,89 +178,7 @@ public final class LogToJTextPane extends Log {
         log.setBackground(background);
     }
 
-    /**
-     * Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
-     * @param parent - the JScrollPane to insert the JTextPane into
-     * @param fontSize - the font size to start with
-     * @param background - the background color to use for the JTextPane
-     * @param regular - the color to use for regular messages
-     * @param red - the color to use for red messages
-     * @param focusAction - the function to call when this log window gets the focus
-     * @param clickAction - the function to call when users click on a hyperlink message
-     * (as required by Func1's specification, we guarantee we will only call action.run() from the AWT thread).
-     */
-    public LogToJTextPane(final JScrollPane parent, final int fontSize,
-            Color background, final Color regular, final Color red,
-            final OurFunc0 focusAction,
-            final OurFunc1 clickAction) {
-        this.background=background;
-        this.action=clickAction;
-        this.fontSize=fontSize;
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() {
-                public final void run() { initialize(parent,regular,red,focusAction); }
-            });
-            return;
-        }
-        initialize(parent,regular,red,focusAction);
-    }
 
-    /** This customized EditorKit forces the JTextPane to use our customized StyledViewFactory. */
-    private static final class OurEditorKit extends StyledEditorKit {
-        /** This suppresses javac's warning about missing serialVersionUID. */
-        private static final long serialVersionUID = 1L;
-        /** This method returns our customized ViewFactory rather than the default ViewFactory. */
-        @Override public ViewFactory getViewFactory() { return new OurViewFactory(); }
-    }
-
-    /**
-     * This customized StyledViewFactory gives prevents line-wrapping up to 30000 pixels;
-     * value higher than about 32768 gives an error.
-     */
-    private static class OurViewFactory implements ViewFactory {
-        /** This stores a default ViewFactory that will handle the requests we don't care about. */
-        private static final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
-        /** This implementation prevents line-wrapping up to 30000 pixels wide. */
-        public View create(Element x) {
-            String name=x.getName();
-            if (name!=null && name.equals(AbstractDocument.SectionElementName)) {
-                return new BoxView(x, View.Y_AXIS) {
-                    @Override public void layout(int width, int height) { super.layout(30000,height); }
-                    @Override public float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
-                };
-            }
-            return defaultFactory.create(x);
-        }
-    }
-
-    /**
-     * Helper method that actually initializes the various GUI objects;
-     * This method can be called only by the AWT thread.
-     */
-    private void initialize(JScrollPane parent, Color regular, Color red, final OurFunc0 focusAction) {
-        log=new JTextPane();
-        log.setEditorKit(new OurEditorKit()); // This customized EditorKit prevents line-wrapping.
-        log.setBorder(new EmptyBorder(1,1,1,1));
-        log.setBackground(background);
-        log.setEditable(false);
-        log.setFont(OurUtil.getFont(fontSize));
-        log.addFocusListener(new FocusListener() {
-            public final void focusGained(FocusEvent e) { focusAction.run(); }
-            public final void focusLost(FocusEvent e) { }
-        });
-        StyledDocument doc=log.getStyledDocument();
-        styleRegular=doc.addStyle("regular", null);
-        StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
-        StyleConstants.setFontSize(styleRegular, fontSize);
-        StyleConstants.setForeground(styleRegular, regular);
-        styleBold=doc.addStyle("bold", styleRegular);
-        StyleConstants.setBold(styleBold, true);
-        StyleConstants.setForeground(styleBold, regular);
-        styleRed=doc.addStyle("red", styleBold);
-        StyleConstants.setForeground(styleRed,red);
-        parent.setViewportView(log);
-        parent.setBackground(background);
-    }
 
     /** Print a text message into the log window using the provided style. */
     private void log(final String msg, final Style style) {
