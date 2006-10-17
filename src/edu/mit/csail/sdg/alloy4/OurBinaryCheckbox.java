@@ -27,18 +27,18 @@ import javax.swing.JPanel;
 
 public final class OurBinaryCheckbox extends JPanel {
 
-	/** This silences javac's warning about missing serialVersionUID. */
+    /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1;
-    
+
     /** The icon to use when the checkbox is off. */
     private static final ImageIcon off = OurUtil.loadIcon("images/cb0.gif");
-    
+
     /** The icon to use when the checkbox is on. */
     private static final ImageIcon on  = OurUtil.loadIcon("images/cb1.gif");
-    
+
     /** The underlying JCheckBox object. */
     private final JCheckBox box;
-    
+
     /** The JLabel object for displaying a label next to the checkbox. */
     private final JLabel jlabel;
 
@@ -60,9 +60,9 @@ public final class OurBinaryCheckbox extends JPanel {
      * @author Felix Chang
      */
     public interface GetterSetter {
-    	/** This method reads the boolean value associated with the key; this must be called only by the AWT thread. */
+        /** This method reads the boolean value associated with the key; this must be called only by the AWT thread. */
         public boolean get(Object key);
-    	/** This method sets the boolean value associated with the key; this must be called only by the AWT thread. */
+        /** This method sets the boolean value associated with the key; this must be called only by the AWT thread. */
         public void set(Object key, boolean value);
     }
 

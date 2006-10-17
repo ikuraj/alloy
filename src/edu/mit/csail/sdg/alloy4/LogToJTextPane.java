@@ -38,13 +38,13 @@ import javax.swing.text.ViewFactory;
 
 public final class LogToJTextPane extends Log {
 
-	/**
-	 * Mutable; this class holds a mutable integer.
-	 * <p/><b>Thread Safety:</b> Safe
-	 * @author Felix Chang
-	 */
+    /**
+     * Mutable; this class holds a mutable integer.
+     * <p/><b>Thread Safety:</b> Safe
+     * @author Felix Chang
+     */
     private static final class IntegerBox {
-    	/** The integer value. */
+        /** The integer value. */
         private int value;
         /** Constructs an IntegerBox with an initial value of 0. */
         public IntegerBox() {value=0;}
