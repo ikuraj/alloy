@@ -75,54 +75,34 @@ public final class OurDialog {
      * @param description - the description for the given extension
      * @return null if the user didn't choose anything, otherwise it returns the selected file
      */
-    public static File askFile(Frame parentFrame, boolean isOpen, String dir, String ext, String description) {
+    public static File askFile(
+            Frame parentFrame, boolean isOpen, String dir,
+            final String ext, final String description) {
         File ans;
-        if (Util.onMac()) ans=showAWTchooser(parentFrame,isOpen,dir,ext);
-        else ans=showSwingChooser(parentFrame,isOpen,dir,ext,description);
+        if (Util.onMac()) {
+            FileDialog f = new FileDialog(parentFrame, isOpen?"Open...":"Save...");
+            f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
+            f.setDirectory(dir);
+            f.setFilenameFilter(new FilenameFilter() {
+                public boolean accept(File dir, String name) { return name.toLowerCase().endsWith(ext); }
+            });
+            f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
+            if (f.getFile()==null) return null;
+            ans=new File(f.getDirectory()+File.separatorChar+f.getFile());
+        } else {
+            JFileChooser open=new JFileChooser(dir);
+            open.setDialogTitle(isOpen?"Open...":"Save...");
+            open.setApproveButtonText(isOpen?"Open":"Save");
+            FileFilter filter = new FileFilter() {
+                public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase().endsWith(ext); }
+                public String getDescription() { return description; }
+            };
+            open.setFileFilter(filter);
+            if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION) return null;
+            ans=open.getSelectedFile();
+        }
         if (ans!=null && !isOpen && ans.getName().lastIndexOf('.')<0) ans=new File(ans.getAbsolutePath()+ext);
         return ans;
-    }
-
-    /**
-     * Use Swing's JFileChooser to ask the user to select a file.
-     * @param parentFrame - the parentFrame
-     * @param isOpen - true means this is an Open operation; false means this is a Save operation
-     * @param dir - the initial directory
-     * @param ext - the file extension including "." using lowercase letters; for example, ".als"
-     * @param description - the description for the given extension
-     * @return null if the user didn't choose anything, otherwise it returns the selected file
-     */
-    private static File showSwingChooser(
-            Frame parentFrame, boolean isOpen, String dir, final String ext, final String description) {
-        JFileChooser open=new JFileChooser(dir);
-        open.setDialogTitle(isOpen?"Open...":"Save...");
-        open.setApproveButtonText(isOpen?"Open":"Save");
-        FileFilter filter = new FileFilter() {
-            public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase().endsWith(ext); }
-            public String getDescription() { return description; }
-        };
-        open.setFileFilter(filter);
-        if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION) return null;
-        return open.getSelectedFile();
-    }
-
-    /**
-     * Use AWT's FileDialog to ask the user to select a file.
-     * @param parentFrame - the parent frame
-     * @param isOpen - true means this is an Open operation; false means this is a Save operation
-     * @param dir - the initial directory
-     * @param ext - the file extension including "." using lowercase letters; for example, ".als"
-     * @return null if the user didn't choose anything, otherwise it returns the selected file
-     */
-    private static File showAWTchooser(Frame parentFrame, boolean isOpen, String dir, final String ext) {
-        FileDialog f = new FileDialog(parentFrame, isOpen?"Open...":"Save...");
-        f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
-        f.setDirectory(dir);
-        f.setFilenameFilter(new FilenameFilter() {
-            public boolean accept(File dir, String name) { return name.toLowerCase().endsWith(ext); }
-        });
-        f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
-        if (f.getFile()==null) return null; else return new File(f.getDirectory()+File.separatorChar+f.getFile());
     }
 
     /** Display "msg" in a dialogbox, and ask the user to choose yes versus no (default==no). */
