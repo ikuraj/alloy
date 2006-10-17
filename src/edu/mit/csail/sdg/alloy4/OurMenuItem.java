@@ -28,7 +28,7 @@ public final class OurMenuItem extends JMenuItem {
      * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the "SHIFT" mask on top of it
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      */
-    public OurMenuItem(JMenu parent, String label, int accel, final Func0 func) {
+    public OurMenuItem(JMenu parent, String label, int accel, final OurFunc0 func) {
         super(label);
         int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
         setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.SHIFT_MASK));
@@ -46,7 +46,7 @@ public final class OurMenuItem extends JMenuItem {
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      */
-    public OurMenuItem(JMenu parent, String label, int key, int accel, final Func0 func) {
+    public OurMenuItem(JMenu parent, String label, int key, int accel, final OurFunc0 func) {
         super(label,key);
         if (accel!=-1) {
             int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
@@ -64,7 +64,7 @@ public final class OurMenuItem extends JMenuItem {
      * @param label - the text to show on the menu
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      */
-    public OurMenuItem(JMenu parent, String label, final Func0 func) {
+    public OurMenuItem(JMenu parent, String label, final OurFunc0 func) {
         super(label);
         if (func!=null) addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) { func.run(); }

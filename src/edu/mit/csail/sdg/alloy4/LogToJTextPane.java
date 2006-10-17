@@ -60,7 +60,7 @@ public final class LogToJTextPane extends Log {
      * The method to call when user clicks on one of the hyperlink in the JTextPane;
      * Func1's specification insists that only the AWT thread may call its methods.
      */
-    private final Func1 action;
+    private final OurFunc1 action;
 
     /**
      * The current length of the log (not counting any "red" error message at the end of the log).
@@ -120,8 +120,8 @@ public final class LogToJTextPane extends Log {
      */
     public LogToJTextPane(final JScrollPane parent, final int fontSize,
             Color background, final Color regular, final Color red,
-            final Func0 focusAction,
-            final Func1 clickAction) {
+            final OurFunc0 focusAction,
+            final OurFunc1 clickAction) {
         this.background=background;
         this.action=clickAction;
         this.fontSize=fontSize;
@@ -166,7 +166,7 @@ public final class LogToJTextPane extends Log {
      * Helper method that actually initializes the various GUI objects;
      * This method can be called only by the AWT thread.
      */
-    private void initialize(JScrollPane parent, Color regular, Color red, final Func0 focusAction) {
+    private void initialize(JScrollPane parent, Color regular, Color red, final OurFunc0 focusAction) {
         log=new JTextPane();
         log.setEditorKit(new OurEditorKit()); // This customized EditorKit prevents line-wrapping.
         log.setBorder(new EmptyBorder(1,1,1,1));

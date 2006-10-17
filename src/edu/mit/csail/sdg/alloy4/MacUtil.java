@@ -33,7 +33,7 @@ public final class MacUtil {
      * @param quit - when the user clicks on Quit, this function will be called
      */
     public synchronized static void registerApplicationListener
-        (final Func0 reopen, final Func0 about, final Func1 open, final Func0 quit) {
+        (final OurFunc0 reopen, final OurFunc0 about, final OurFunc1 open, final OurFunc0 quit) {
         if (application==null) application=new Application();
         if (listener!=null) application.removeApplicationListener(listener);
         listener=new ApplicationAdapter() {

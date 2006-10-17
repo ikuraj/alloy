@@ -28,7 +28,7 @@ public final class OurMenu extends JMenu {
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      */
-    public OurMenu(JMenuBar parent, String label, int mnemonic, final Func0 func) {
+    public OurMenu(JMenuBar parent, String label, int mnemonic, final OurFunc0 func) {
         super(label,false);
         if (mnemonic!=-1 && !Util.onMac()) setMnemonic(mnemonic);
         if (func!=null) addMenuListener(new MenuListener() {
@@ -49,7 +49,7 @@ public final class OurMenu extends JMenu {
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      * @return the newly constructed OurMenuItem object
      */
-    public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, int key, int accel, Func0 func) {
+    public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, int key, int accel, OurFunc0 func) {
         // OurMenuItem's constructor will add the new item into the list, so we don't have to call add() here.
         OurMenuItem ans = new OurMenuItem(this,label,key,accel,func);
         ans.setEnabled(enabled);
@@ -65,7 +65,7 @@ public final class OurMenu extends JMenu {
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      * @return the newly constructed OurMenuItem object
      */
-    public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, Func0 func) {
+    public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, OurFunc0 func) {
         // OurMenuItem's constructor will add the new item into the list, so we don't have to call add() here.
         OurMenuItem ans = new OurMenuItem(this,label,func);
         ans.setEnabled(enabled);

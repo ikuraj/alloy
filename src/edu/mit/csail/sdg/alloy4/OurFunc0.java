@@ -8,8 +8,8 @@ package edu.mit.csail.sdg.alloy4;
  * @author Felix Chang
  */
 
-public interface Func0 {
+public interface OurFunc0 {
 
-    /** Note: this method must be called only by the AWT thread. */
+    /** Returns false if the method failed; Note: this method must be called only by the AWT thread. */
     public boolean run();
 }

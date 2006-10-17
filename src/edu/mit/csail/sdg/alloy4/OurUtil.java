@@ -48,7 +48,7 @@ public final class OurUtil {
     }
 
     /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeAndWait() for it. */
-    public static void invokeAndWait(final Func0 func) {
+    public static void invokeAndWait(final OurFunc0 func) {
         if (SwingUtilities.isEventDispatchThread()) { func.run(); return; }
         try { SwingUtilities.invokeAndWait(new Runnable() { public final void run() { func.run(); }}); }
         catch (InterruptedException e) { Util.harmless("invokeAndWait",e); }
@@ -56,7 +56,7 @@ public final class OurUtil {
     }
 
     /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeAndWait() for it. */
-    public static void invokeAndWait(final Func1 func, final String arg) {
+    public static void invokeAndWait(final OurFunc1 func, final String arg) {
         if (SwingUtilities.isEventDispatchThread()) { func.run(arg); return; }
         try { SwingUtilities.invokeAndWait(new Runnable() { public final void run() { func.run(arg); }}); }
         catch (InterruptedException e) { Util.harmless("invokeAndWait",e); }
@@ -95,7 +95,7 @@ public final class OurUtil {
      * @param iconname - the filename of the icon to show (it will be loaded from the accompanying jar file)
      * @param func - the function to call when the button is pressed (null if we don't want to call any function)
      */
-    public static JButton makeJButton (Color color, String label, String tip, String iconname, final Func0 func) {
+    public static JButton makeJButton (Color color, String label, String tip, String iconname, final OurFunc0 func) {
         ImageIcon icon = loadIcon(iconname);
         JButton button = new JButton(label,icon);
         if (func!=null) button.addActionListener(new ActionListener() {
