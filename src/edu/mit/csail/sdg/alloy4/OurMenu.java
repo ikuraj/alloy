@@ -27,7 +27,7 @@ public final class OurMenu extends JMenu {
      * <p/> Note: every time the user expands then collapses this menu,
      * it will automatically enable all JMenu and JMenuItem objects inside it.
      *
-     * @param parent - the MenuBar to add this Menu into (or null if we don't want to add it to a JMenuBar yet)
+     * @param parent - the JMenuBar to add this Menu into (or null if we don't want to add it to a JMenuBar yet)
      * @param label - the label to show on screen
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
      * @param func - the function to call if the user expands this menu (or null if there is no function to call)
@@ -48,21 +48,21 @@ public final class OurMenu extends JMenu {
      * @param icon - the icon to show on the left of the label (or null if you don't want an icon)
      * @param label - the label for the new MenuItem
      * @param enabled - whether the new MenuItem should be initially enabled or disabled
-     * @param key - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
+     * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      * @return the newly constructed OurMenuItem object
      */
-    public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, int key, int accel, OurFunc0 func) {
+    public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, int mnemonic, int accel, OurFunc0 func) {
         // OurMenuItem's constructor will add the new item into the list, so we don't have to call add() here.
-        OurMenuItem ans = new OurMenuItem(this,label,key,accel,func);
+        OurMenuItem ans = new OurMenuItem(this,label,mnemonic,accel,func);
         ans.setEnabled(enabled);
         if (icon!=null) ans.setIcon(icon);
         return ans;
     }
 
     /**
-     * Convenience method that recursively enable every Menu and MenuItem inside "menu".
+     * Convenience method that recursively enables every JMenu and JMenuItem inside "menu".
      * @param menu - the menu to start the recursive search
      */
     private static void enableChildren(JMenu menu) {

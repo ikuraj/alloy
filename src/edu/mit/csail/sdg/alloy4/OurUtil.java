@@ -21,7 +21,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 /**
- * Convenience utility class that provides many functions useful for GUI.
+ * Graphical convenience methods.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
  *
@@ -39,7 +39,7 @@ public final class OurUtil {
     /** Returns the screen height (in pixels). */
     public static int getScreenHeight() { return Toolkit.getDefaultToolkit().getScreenSize().height; }
 
-    /** Run r using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeAndWait() for it. */
+    /** Run r using the AWT thread; if this is not the AWT thread, call SwingUtilities.invokeAndWait() for it. */
     public static void invokeAndWait(Runnable r) {
         if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
         try { SwingUtilities.invokeAndWait(r); }
@@ -47,18 +47,18 @@ public final class OurUtil {
         catch (InvocationTargetException e) { Util.harmless("invokeAndWait",e); }
     }
 
-    /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeAndWait() for it. */
-    public static void invokeAndWait(final OurFunc0 func) {
-        if (SwingUtilities.isEventDispatchThread()) { func.run(); return; }
-        try { SwingUtilities.invokeAndWait(new Runnable() { public final void run() { func.run(); }}); }
+    /** Run f using the AWT thread; if this is not the AWT thread, call SwingUtilities.invokeAndWait() for it. */
+    public static void invokeAndWait(final OurFunc0 f) {
+        if (SwingUtilities.isEventDispatchThread()) { f.run(); return; }
+        try { SwingUtilities.invokeAndWait(new Runnable() { public final void run() { f.run(); }}); }
         catch (InterruptedException e) { Util.harmless("invokeAndWait",e); }
         catch (InvocationTargetException e) { Util.harmless("invokeAndWait",e); }
     }
 
-    /** Run f using the AWT thread; if this is not the AWT thread, then call SwingUtilities.invokeAndWait() for it. */
-    public static void invokeAndWait(final OurFunc1 func, final String arg) {
-        if (SwingUtilities.isEventDispatchThread()) { func.run(arg); return; }
-        try { SwingUtilities.invokeAndWait(new Runnable() { public final void run() { func.run(arg); }}); }
+    /** Run f(arg) using the AWT thread; if this is not the AWT thread, call SwingUtilities.invokeAndWait() for it. */
+    public static void invokeAndWait(final OurFunc1 f, final String arg) {
+        if (SwingUtilities.isEventDispatchThread()) { f.run(arg); return; }
+        try { SwingUtilities.invokeAndWait(new Runnable() { public final void run() { f.run(arg); }}); }
         catch (InterruptedException e) { Util.harmless("invokeAndWait",e); }
         catch (InvocationTargetException e) { Util.harmless("invokeAndWait",e); }
     }

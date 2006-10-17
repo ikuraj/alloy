@@ -22,7 +22,7 @@ public final class OurMenuItem extends JMenuItem {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Construct a new MenuItem then add it to an existing Menu.
+     * Construct a new MenuItem then add it to an existing Menu with SHIFT+accelerator.
      * @param parent - the Menu to add this MenuItem into
      * @param label - the text to show on the menu
      * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the "SHIFT" mask on top of it
@@ -42,13 +42,13 @@ public final class OurMenuItem extends JMenuItem {
      * Construct a new MenuItem then add it to an existing Menu.
      * @param parent - the Menu to add this MenuItem into
      * @param label - the text to show on the menu
-     * @param key - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
+     * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      */
-    public OurMenuItem(JMenu parent, String label, int key, int accel, final OurFunc0 func) {
+    public OurMenuItem(JMenu parent, String label, int mnemonic, int accel, final OurFunc0 func) {
         super(label);
-        if (key!=-1) setMnemonic(key);
+        if (mnemonic!=-1) setMnemonic(mnemonic);
         if (accel!=-1) {
             int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
             setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));

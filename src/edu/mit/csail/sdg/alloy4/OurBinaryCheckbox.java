@@ -53,11 +53,9 @@ public final class OurBinaryCheckbox extends JPanel {
     private final GetterSetter gs;
 
     /**
-     * This interface defines the "boolean get(Object key)" and "set(Object key, boolean value)" methods.
+     * This interface defines the get(key) and set(key,value) methods.
      *
      * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
-     *
-     * @author Felix Chang
      */
     public interface GetterSetter {
         /** This method reads the boolean value associated with the key; this must be called only by the AWT thread. */

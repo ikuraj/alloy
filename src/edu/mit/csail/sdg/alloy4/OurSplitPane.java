@@ -9,7 +9,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 /**
- * This wrapper around JSplitPane provides additional convenience methods and looks better than the default.
+ * Graphical splitpane with better looking border than the default JSplitPane.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
  *
@@ -35,30 +35,22 @@ public final class OurSplitPane extends JSplitPane {
         setDividerLocation(initialDividerLocation);
         setOneTouchExpandable(false);
         setResizeWeight(0.5);
-        fixDivider();
+        if (Util.onMac()) ((BasicSplitPaneUI)getUI()).getDivider().setBorder(new NiceBorder(orientation));
     }
 
     /**
-     * Changes the orientation, then calls fixDivider() to make sure we're using a nice looking border on Mac.
-     * @param orientation - either HORIZONTAL_SPLIT or VERTICAL_SPLIT
+     * Graphical border for the OurSplitPane class.
+     *
+     * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
      */
-    @Override public void setOrientation(int orientation) {
-        super.setOrientation(orientation);
-        fixDivider();
-    }
-
-    /** Private helper method that fixes the border to use a nicer looking border on Mac. */
-    private void fixDivider() {
-        if (Util.onMac())
-            ((BasicSplitPaneUI)getUI()).getDivider().setBorder(new NiceSplitPaneDividerBorder(getOrientation()));
-    }
-
-    /** Private helper class that provides a nicer looking border for the divider. */
-    private static class NiceSplitPaneDividerBorder implements Border {
+    private static final class NiceBorder implements Border {
+        /** The Insets of this border. */
         private final Insets insets;
-        public NiceSplitPaneDividerBorder(int orientation) {
+        /** Constructs a new NiceBorder object. */
+        public NiceBorder(int orientation) {
             insets = (orientation == JSplitPane.HORIZONTAL_SPLIT) ? new Insets(0,1,0,1) : new Insets(1,0,1,0);
         }
+        /** This method is called by Swing to actually paint the borders. */
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             if (height==0 || width==0) return;
             Color oldcolor=g.getColor();
@@ -69,7 +61,9 @@ public final class OurSplitPane extends JSplitPane {
             g.fillRect(width-1, 0,        insets.right,                         height + insets.top + insets.bottom);
             g.setColor(oldcolor);
         }
+        /** This method is called by Swing to return the Insets. */
         public Insets getBorderInsets(Component c) { return insets; }
+        /** This method is called by Swing to determine whether this object must fill in its own background or not. */
         public boolean isBorderOpaque() { return true; }
     }
 }

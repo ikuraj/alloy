@@ -42,8 +42,6 @@ public final class OurCombobox extends JComboBox {
      * This interface defines the getIcon, getText, getValue, and setValue methods.
      *
      * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
-     *
-     * @author Felix Chang
      */
     public interface ComboGetterSetter {
         /** Given a key and a value, this returns a suitable icon to display; returns null if no icon is needed. */
@@ -56,25 +54,22 @@ public final class OurCombobox extends JComboBox {
         public void setValue(Object key, Object value);
     }
 
-    /** This renderer draws the combobox value using the text and icon given by the GetterSetter. */
-    private final class OurRenderer extends JLabel implements ListCellRenderer {
+    /**
+     * This renderer draws the combobox value using the text and icon given by the GetterSetter.
+     *
+     * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+     */
+    private final class OurComboboxRenderer extends JLabel implements ListCellRenderer {
         /** This silences javac's warning about missing serialVersionUID. */
         private static final long serialVersionUID = 1L;
         /** This configures the JLabel with the appropriate icon and text, then return it to be displayed. */
-        public Component getListCellRendererComponent(
-                JList list, Object value, int index,
-                boolean isSelected, boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList list,Object value,int i,boolean selected,boolean focused) {
             setOpaque(true);
             setText(gs.getText(key,value));
             setIcon(gs.getIcon(key,value));
             setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 0));
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-            }
+            setBackground(selected ? list.getSelectionBackground() : list.getBackground());
+            setForeground(selected ? list.getSelectionForeground() : list.getForeground());
             return this;
         }
     }
@@ -102,7 +97,7 @@ public final class OurCombobox extends JComboBox {
         super(addNull(list,addNull));
         this.gs = gs;
         this.key = key;
-        setRenderer(new OurRenderer());
+        setRenderer(new OurComboboxRenderer());
         if (Util.onWindows()) { if (height>25) height=25; setPreferredSize(new Dimension(width,height)); }
         setMaximumSize(new Dimension(width,height));
         if (!Util.onWindows()) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
