@@ -2,9 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="src/java-cup-11a-runtime.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/alloy4util"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/alloy4viz"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/relations"/>
+	<classpathentry kind="lib" path="src/apple-osx-ui.jar"/>
+	<classpathentry exported="true" kind="lib" path="src/icons-and-images.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
