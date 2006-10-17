@@ -11,7 +11,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 /**
- * This implements a graphical on/off checkbox.
+ * Graphical on/off checkbox.
  *
  * <p/> To construct a OurBinaryCheckbox object, you need to give it a GetterSetter object and a key.
  * <br/> Whenever the checkbox needs to be repainted, it calls gs.get(key) to find out whether it is ON or OFF.

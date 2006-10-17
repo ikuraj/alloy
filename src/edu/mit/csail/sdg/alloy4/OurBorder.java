@@ -7,7 +7,7 @@ import java.awt.Insets;
 import javax.swing.border.Border;
 
 /**
- * This implements a graphical border above or below a component.
+ * Graphical border above or below a component.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
  *

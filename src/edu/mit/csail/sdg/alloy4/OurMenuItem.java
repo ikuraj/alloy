@@ -9,7 +9,7 @@ import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
 /**
- * This wrapper around JMenuItem provides additional convenience methods.
+ * Graphical menu item that extends JMenuItem.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
  *
@@ -42,30 +42,17 @@ public final class OurMenuItem extends JMenuItem {
      * Construct a new MenuItem then add it to an existing Menu.
      * @param parent - the Menu to add this MenuItem into
      * @param label - the text to show on the menu
-     * @param key - the mnemonic (eg. KeyEvent.VK_F)
+     * @param key - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
      */
     public OurMenuItem(JMenu parent, String label, int key, int accel, final OurFunc0 func) {
-        super(label,key);
+        super(label);
+        if (key!=-1) setMnemonic(key);
         if (accel!=-1) {
             int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
             setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
         }
-        if (func!=null) addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { func.run(); }
-        });
-        parent.add(this);
-    }
-
-    /**
-     * Construct a new MenuItem then add it to an existing Menu.
-     * @param parent - the Menu to add this MenuItem into
-     * @param label - the text to show on the menu
-     * @param func - the function to call if the user clicks this item (or null if there is no function to call)
-     */
-    public OurMenuItem(JMenu parent, String label, final OurFunc0 func) {
-        super(label);
         if (func!=null) addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) { func.run(); }
         });

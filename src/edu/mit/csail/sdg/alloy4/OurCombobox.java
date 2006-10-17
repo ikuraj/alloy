@@ -13,7 +13,7 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
 /**
- * This implements a graphical combobox.
+ * Graphical combobox.
  *
  * <p/> To construct a OurCombobox object, you need to give it a GetterSetter object and a key.
  * <br/> When the combobox is first created, it calls gs.get(key) to find out the initial value.

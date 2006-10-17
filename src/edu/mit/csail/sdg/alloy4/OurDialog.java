@@ -10,7 +10,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
 /**
- * This implements graphical dialog methods for asking the user some questions.
+ * Graphical dialog methods for asking the user some questions.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
  *
