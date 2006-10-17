@@ -15,8 +15,8 @@ import java.util.LinkedList;
  *
  * <p/>   This is very useful for representing lexical scoping: when a local
  *        variable is introduced with the same name as an existing variable,
- *        the new variable "hides" the old binding; and when the new variable falls
- *        out of scope, the previous binding is once again "revealed".
+ *        the new variable "hides" the old mapping; and when the new variable falls
+ *        out of scope, the previous mapping is once again "revealed".
  *
  * <p/><b>Invariant:</b>  map2.containsKey(x) => (map1.containsKey(x) && map2.get(x).size()>0)
  *
@@ -61,7 +61,7 @@ public final class Env<V> {
      *
      * <p/>
      * Since null is also a possible value, if you get null as the answer,
-     * you need to call has(key) to determine whether the key really has a binding or not.
+     * you need to call has(key) to determine whether the key really has a mapping or not.
      *
      * @param key - the key
      * @return the latest value associated with the key (and returns null if none).
@@ -91,7 +91,7 @@ public final class Env<V> {
     }
 
     /**
-     * Removes the latest binding for the key (and if the key had previous bindings, they become visible).
+     * Removes the latest mapping for the key (and if the key had previous mappings, they become visible).
      *
      * If there are no mappings for the key, then this method does nothing.
      *
@@ -108,7 +108,7 @@ public final class Env<V> {
         }
     }
 
-    /** Removes all bindings. */
+    /** Removes all mappings. */
     public synchronized void clear() {
         map1.clear();
         map2.clear();
