@@ -1,6 +1,0 @@
-Compiling models/examples/case_studies/chord2.als...
-Compilation successful!
-Analyzing command: check FindSuccessorWorks for 4 but 1 examples/case_studies/chord2/State, 3 examples/case_studies/chord2/Node, 3 examples/case_studies/chord2/NodeData expect 0
-
-No solution found.
-

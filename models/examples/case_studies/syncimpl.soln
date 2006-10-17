@@ -1,6 +1,0 @@
-Compiling models/examples/case_studies/syncimpl.als...
-Compilation successful!
-Analyzing command: check Correctness for 4 but 2 examples/case_studies/sync/FileContents expect 0
-
-No solution found.
-
