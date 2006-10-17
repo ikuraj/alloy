@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.helper;
+package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; stores the filename and line/column position.

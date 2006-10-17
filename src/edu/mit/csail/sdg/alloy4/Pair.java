@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4util;
+package edu.mit.csail.sdg.alloy4;
 
 /**
  * Immutable; stores a pair of object references.

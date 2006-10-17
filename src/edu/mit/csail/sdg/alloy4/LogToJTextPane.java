@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.helper;
+package edu.mit.csail.sdg.alloy4;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -25,10 +25,6 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
-import edu.mit.csail.sdg.alloy4util.Func0;
-import edu.mit.csail.sdg.alloy4util.Func1;
-import edu.mit.csail.sdg.alloy4util.OurUtil;
-import edu.mit.csail.sdg.alloy4util.Util;
 
 /**
  * This logger will log the messages into a JTextPane.

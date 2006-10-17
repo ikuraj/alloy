@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.helper;
+package edu.mit.csail.sdg.alloy4;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;

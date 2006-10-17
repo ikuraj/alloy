@@ -19,7 +19,7 @@ public abstract class Err extends RuntimeException {
     public final String msg;
 
     /**
-     * Constructs a new error.
+     * Constructs a new Err object.
      * @param pos - the filename/line/row information (null if unknown)
      * @param msg - the actual error message
      */

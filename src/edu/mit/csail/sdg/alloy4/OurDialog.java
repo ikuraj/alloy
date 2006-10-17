@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4util;
+package edu.mit.csail.sdg.alloy4;
 
 import java.io.File;
 import java.io.FilenameFilter;

@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4util;
+package edu.mit.csail.sdg.alloy4;
 
 /**
  * This class holds the buildDate String.

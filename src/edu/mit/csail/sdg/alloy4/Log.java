@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4.helper;
+package edu.mit.csail.sdg.alloy4;
 
 /**
  * This default logger ignores all calls and simply logs nothing.

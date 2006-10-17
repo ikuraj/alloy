@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4util;
+package edu.mit.csail.sdg.alloy4;
 
 /**
  * This interface defines a runnable with a "boolean run()" method.

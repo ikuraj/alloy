@@ -1,4 +1,4 @@
-package edu.mit.csail.sdg.alloy4util;
+package edu.mit.csail.sdg.alloy4;
 
 import javax.swing.SwingUtilities;
 import com.apple.eawt.Application;
