@@ -14,6 +14,7 @@ import java.io.StringReader;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -81,8 +82,6 @@ import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
-import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.SolverChoice;
-import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.Verbosity;
 import edu.mit.csail.sdg.alloy4.translator.ViaPipe;
 import edu.mit.csail.sdg.alloy4util.Func0;
 import edu.mit.csail.sdg.alloy4util.Func1;
@@ -96,6 +95,8 @@ import edu.mit.csail.sdg.alloy4util.OurUtil;
 import edu.mit.csail.sdg.alloy4util.Pref;
 import edu.mit.csail.sdg.alloy4util.Util;
 import edu.mit.csail.sdg.alloy4util.Version;
+import edu.mit.csail.sdg.alloy4util.Pref.SatSolver;
+import edu.mit.csail.sdg.alloy4util.Pref.Verbosity;
 import edu.mit.csail.sdg.alloy4viz.gui.KodVizGUI;
 
 /**
@@ -189,14 +190,6 @@ public final class SimpleGUI {
     private static final Color background=new Color(.9f, .9f, .9f);
 
     //====== static methods =================================================//
-
-    /** Constrain the font size to a reasonable number. */
-    private static int boundFontSize(int n, int min, int max) {
-        if (n<10) n=12; // Just pick a reasonable default value if the key didn't exist
-        if (n<min) return min;
-        if (n>max) return max;
-        return n;
-    }
 
     /** Remove the directory part from a pathname (for example, on UNIX, shortFileName("/abc/x") returns "x") */
     public static String shortFileName(String filename) {
@@ -335,11 +328,12 @@ public final class SimpleGUI {
             })).setIcon(iconNo);
             JMenuItem it;
             windowmenu.addSeparator();
-            if (openfiles.size()==0) {
+            if (latestName.length()==0) {
                 it=new JMenuItem("Alloy Analyzer");
                 it.setIcon(iconYes);
                 windowmenu.add(it);
-            } else for(final String f:openfiles) {
+            }
+            for(final String f:openfiles) {
                 it=new JMenuItem("Model: "+slightlyShorterFilename(f));
                 it.setIcon(f.equals(latestName)?iconYes:iconNo);
                 it.addActionListener(new ActionListener() {
@@ -379,14 +373,15 @@ public final class SimpleGUI {
             })).setIcon(iconNo);
             JMenuItem it;
             windowmenu2.addSeparator();
-            if (openfiles.size()==0) {
+            if (latestName.length()==0) {
                 it=new JMenuItem("Alloy Analyzer");
                 it.setIcon(iconNo);
                 it.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) { a_show.run(); }
+                    public final void actionPerformed(ActionEvent e) { a_show.run(); }
                 });
                 windowmenu2.add(it);
-            } else for(final String f:openfiles) {
+            }
+            for(final String f:openfiles) {
                 it=new JMenuItem("Model: "+slightlyShorterFilename(f));
                 it.setIcon(iconNo);
                 it.addActionListener(new ActionListener() {
@@ -427,9 +422,9 @@ public final class SimpleGUI {
             filemenu.addMenuItem(null, "Quit",true,KeyEvent.VK_Q,(Util.onMac()?-1:KeyEvent.VK_Q),a_quit);
             //
             boolean found=false;
-            closemenu.setEnabled(latestName.length()>0 || text.getDocument().getLength()>0);
+            closemenu.setEnabled(latestName.length()>0 || text.getDocument().getLength()>0 || openfiles.size()>0);
             recentmenu.removeAll();
-            for(Pref p: new Pref[]{ Pref.Model0, Pref.Model1, Pref.Model2, Pref.Model3 }) {
+            for(Pref.StringPref p: new Pref.StringPref[]{ Pref.Model0, Pref.Model1, Pref.Model2, Pref.Model3 }) {
                 final String name = p.get();
                 if (name.length()==0) continue;
                 found=true;
@@ -815,45 +810,40 @@ public final class SimpleGUI {
     };
 
     /** The current choices of SAT solver. */
-    private final List<SolverChoice> satChoices;
-
-    /** The current verbosity level. */
-    private Verbosity verbosity = Verbosity.parse(Pref.Verbosity.get());
-    private synchronized Verbosity getVerbosity() { return verbosity; }
-    private synchronized void setVerbosity(Verbosity value) { verbosity=value; }
-
-    /** The current font size. */
-    private int fontSize = boundFontSize(Pref.FontSize.getInt(),12,24);
+    private final List<SatSolver> satChoices;
 
     /** Whether the system is using external editor or not. */
-    private boolean mode_externalEditor = Pref.ExternalEditor.getBool();
+    private boolean mode_externalEditor = Pref.ExternalEditor.get();
 
     /** Whether the system should automatically visualize the latest instance. */
-    private boolean mode_autoVisualize = Pref.AutoVisualize.getBool();
+    private boolean mode_autoVisualize = Pref.AutoVisualize.get();
 
     /** Called when the user expands the "Options" menu; always returns true. */
     private final Func0 a_option = new Func0() {
         public final boolean run() {
+            SatSolver now=SatSolver.get();
             optmenu.removeAll();
-            JMenu sat=new JMenu("SAT Solver: "+SolverChoice.parse(Pref.Solver.get()));
-            for(final SolverChoice sc:satChoices) {
+            JMenu sat=new JMenu("SAT Solver: "+now);
+            for(final SatSolver sc:satChoices) {
                 (new OurMenuItem(sat, ""+sc, new Func0() {
-                    public boolean run() { Pref.Solver.set(sc.id); return true; }
-                })).setIcon(sc.id.equals(Pref.Solver.get())?iconYes:iconNo);
+                    public boolean run() { sc.set(); return true; }
+                })).setIcon(sc==now?iconYes:iconNo);
             }
             optmenu.add(sat);
-            JMenu verb=new JMenu("Message Verbosity: "+getVerbosity());
+            Verbosity vnow=Verbosity.get();
+            JMenu verb=new JMenu("Message Verbosity: "+vnow);
             for(final Verbosity vb:Verbosity.values()) {
                 (new OurMenuItem(verb, ""+vb, new Func0() {
-                    public final boolean run() { setVerbosity(vb); Pref.Verbosity.set(vb.id); return true; }
-                })).setIcon(vb==getVerbosity()?iconYes:iconNo);
+                    public final boolean run() { vb.set(); return true; }
+                })).setIcon(vb==vnow?iconYes:iconNo);
             }
             optmenu.add(verb);
+            int fontSize=Pref.FontSize.get();
             JMenu size=new JMenu("Font Size: "+fontSize);
             for(final int n: new Integer[]{9,10,11,12,14,16,18,24}) {
                 (new OurMenuItem(size, ""+n, new Func0() {
                     public final boolean run() {
-                        fontSize=n; Pref.FontSize.setInt(n);
+                        Pref.FontSize.set(n);
                         text.setFont(new Font(OurUtil.getFontName(), Font.PLAIN, n));
                         status.setFont(new Font(OurUtil.getFontName(), Font.PLAIN, n));
                         log.setFontSize(n);
@@ -866,7 +856,7 @@ public final class SimpleGUI {
                 public boolean run() {
                     if (!mode_externalEditor && modified && !my_confirm()) return false;
                     modified=false; String n=latestName; a_new.run(); if (n.length()>0) a_openFile.run(n);
-                    mode_externalEditor = !mode_externalEditor; Pref.ExternalEditor.setBool(mode_externalEditor);
+                    mode_externalEditor = !mode_externalEditor; Pref.ExternalEditor.set(mode_externalEditor);
                     Container all=frame.getContentPane();
                     all.removeAll();
                     newbutton.setVisible(!mode_externalEditor);
@@ -897,14 +887,14 @@ public final class SimpleGUI {
             new OurMenuItem(optmenu, "Visualize Automatically: "+(mode_autoVisualize?"Yes":"No"), new Func0() {
                 public boolean run() {
                     mode_autoVisualize=(!mode_autoVisualize);
-                    Pref.AutoVisualize.setBool(mode_autoVisualize);
+                    Pref.AutoVisualize.set(mode_autoVisualize);
                     return true;
                 }
             });
-            final boolean recordKK=Pref.RecordKodkod.getBool();
+            final boolean recordKK=Pref.RecordKodkod.get();
             new OurMenuItem(optmenu, "Record the Kodkod Input/Output: "+(recordKK?"Yes":"No"), new Func0() {
                 public boolean run() {
-                    Pref.RecordKodkod.setBool(!recordKK);
+                    Pref.RecordKodkod.set(!recordKK);
                     return true;
                 }
             });
@@ -997,14 +987,14 @@ public final class SimpleGUI {
 
         // Figure out the desired x, y, width, and height
         int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
-        int width=Pref.AnalyzerWidth.getInt();
+        int width=Pref.AnalyzerWidth.get();
         if (width<=0) width=screenWidth/10*8; else if (width<100) width=100;
         if (width>screenWidth) width=screenWidth;
-        int height=Pref.AnalyzerHeight.getInt();
+        int height=Pref.AnalyzerHeight.get();
         if (height<=0) height=screenHeight/10*8; else if (height<100) height=100;
         if (height>screenHeight) height=screenHeight;
-        int x=Pref.AnalyzerX.getInt(); if (x<0) x=screenWidth/10; if (x>screenWidth-100) x=screenWidth-100;
-        int y=Pref.AnalyzerY.getInt(); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
+        int x=Pref.AnalyzerX.get(); if (x<0) x=screenWidth/10; if (x>screenWidth-100) x=screenWidth-100;
+        int y=Pref.AnalyzerY.get(); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
 
         // Put up a slash screen
         frame=new JFrame("Alloy Analyzer Version 4.0 loading... please wait...");
@@ -1014,13 +1004,13 @@ public final class SimpleGUI {
         });
         frame.addComponentListener(new ComponentListener() {
             public void componentResized(ComponentEvent e) {
-                Pref.AnalyzerWidth.setInt(frame.getWidth());
-                Pref.AnalyzerHeight.setInt(frame.getHeight());
+                Pref.AnalyzerWidth.set(frame.getWidth());
+                Pref.AnalyzerHeight.set(frame.getHeight());
             }
             public void componentMoved(ComponentEvent e) {
                 Point p=frame.getLocation();
-                Pref.AnalyzerX.setInt(p.x);
-                Pref.AnalyzerY.setInt(p.y);
+                Pref.AnalyzerX.set(p.x);
+                Pref.AnalyzerY.set(p.y);
             }
             public void componentShown(ComponentEvent e) {}
             public void componentHidden(ComponentEvent e) {}
@@ -1082,26 +1072,25 @@ public final class SimpleGUI {
         runmenu.addMenuItem(null, "Show the latest instance", true, KeyEvent.VK_L, KeyEvent.VK_L, a_showLatestInstance);
 
         if (1==1) { // Options menu
-            SolverChoice now=SolverChoice.parse(Pref.Solver.get());
+            SatSolver now=SatSolver.get();
             Error ex=null;
-            satChoices = new ArrayList<SolverChoice>();
-            for(SolverChoice sc:SolverChoice.values()) satChoices.add(sc);
+            satChoices = new ArrayList<SatSolver>(Arrays.asList(SatSolver.values()));
             try {               System.load(binary+fs+"libminisat6.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat4.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat.so");     ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libminisat.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"minisat.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) satChoices.remove(SolverChoice.MiniSatJNI);
+            if (ex!=null) satChoices.remove(SatSolver.MiniSatJNI);
             try {               System.load(binary+fs+"libzchaff_basic6.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic4.so");    ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.so");     ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"libzchaff_basic.jnilib"); ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
             if (ex!=null) try { System.load(binary+fs+"zchaff_basic.dll");       ex=null; } catch(UnsatisfiedLinkError e) {ex=e;}
-            if (ex!=null) satChoices.remove(SolverChoice.ZChaffJNI);
+            if (ex!=null) satChoices.remove(SatSolver.ZChaffJNI);
             // Query twice, so that we can gracefully back off along the JNI choices
-            if (!satChoices.contains(now)) now=SolverChoice.ZChaffJNI;
-            if (!satChoices.contains(now)) now=SolverChoice.MiniSatPIPE;
-            Pref.Solver.set(now.id);
+            if (!satChoices.contains(now)) now=SatSolver.ZChaffJNI;
+            if (!satChoices.contains(now)) now=SatSolver.MiniSatPIPE;
+            now.set();
             optmenu = new OurMenu(bar, "Options", KeyEvent.VK_O, a_option);
         }
 
@@ -1157,6 +1146,7 @@ public final class SimpleGUI {
         };
 
         // Create the text editor
+        int fontSize=Pref.FontSize.get();
         text=new JTextArea();
         text.setBorder(new EmptyBorder(1,1,1,1));
         text.setHighlighter(highlighter);
@@ -1329,17 +1319,17 @@ public final class SimpleGUI {
                 else return;
                 ArrayList<ParaSig> sigs=VisitTypechecker.check(blanklog, units);
                 String tempdir = Util.maketemp();
-                SolverChoice sc=SolverChoice.parse(Pref.Solver.get());
+                SatSolver sc=SatSolver.get();
                 List<TranslateAlloyToKodkod.Result> result=
-                    TranslateAlloyToKodkod.codegen(filename,index,log,getVerbosity(),units,sigs,sc,tempdir);
+                    TranslateAlloyToKodkod.codegen(filename, index, log, Verbosity.get(), units, sigs, sc, tempdir);
                 log.flush(); // To make sure everything is flushed.
                 (new File(tempdir)).delete(); // In case it was UNSAT, or was TRIVIALLY SAT, or cancelled.
                 boolean hasInstance=false;
-                if (sc!=SolverChoice.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
+                if (sc!=SatSolver.FILE && result.size()==1 && result.get(0)==TranslateAlloyToKodkod.Result.SAT) {
                     setLatestInstance(tempdir+fs+(index+1));
                     hasInstance=true;
                 }
-                if (sc!=SolverChoice.FILE && result.size()>1) {
+                if (sc!=SatSolver.FILE && result.size()>1) {
                     log.logBold("" + result.size() + " commands were executed. The results are:\n");
                     int i=0;
                     for(TranslateAlloyToKodkod.Result b:result) {

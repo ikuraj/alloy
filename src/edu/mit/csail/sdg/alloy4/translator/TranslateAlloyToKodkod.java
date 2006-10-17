@@ -44,6 +44,8 @@ import edu.mit.csail.sdg.alloy4.node.VisitQuery;
 import edu.mit.csail.sdg.alloy4.node.VisitReturn;
 import edu.mit.csail.sdg.alloy4util.Pref;
 import edu.mit.csail.sdg.alloy4util.Util;
+import edu.mit.csail.sdg.alloy4util.Pref.SatSolver;
+import edu.mit.csail.sdg.alloy4util.Pref.Verbosity;
 import kodkod.AlloyBridge;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
@@ -79,42 +81,6 @@ import kodkod.instance.Universe;
 public final class TranslateAlloyToKodkod implements VisitReturn {
 
     private static final String fs = System.getProperty("file.separator");
-
-    public enum SolverChoice {
-        BerkMinPIPE("berkmin", "BerkMin"),
-        MiniSatSimpPIPE("minisat2simp", "MiniSat2+Simp"),
-        MiniSatCorePIPE("minisat2core", "MiniSat2"),
-        MiniSatPIPE("minisat", "MiniSat"),
-        MiniSatJNI("minisat(jni)", "MiniSat using JNI"),
-        ZChaffJNI("zchaff(jni)", "ZChaff using JNI"),
-        SAT4J("sat4j", "SAT4J"),
-        FILE("file", "Output to file");
-        public final String id; // Should be unique, and consistent in future versions
-        private final String label;
-        private SolverChoice(String id, String label) {
-            this.id=id; this.label=label;
-        }
-        public static SolverChoice parse(String id) {
-            for(SolverChoice sc:values()) if (sc.id.equals(id)) return sc;
-            return MiniSatPIPE;
-        }
-        @Override public final String toString() { return label; }
-    };
-
-    public enum Verbosity {
-        DEFAULT("0", "low"),
-        VERBOSE("1", "medium"),
-        DEBUG("2", "high");
-        public final String id; // Should be unique, and consistent in future versions
-        private final String label;
-        private Verbosity(String id, String label) { this.id=id; this.label=label; }
-        @Override public final String toString() { return label; }
-        public static Verbosity parse(String id) {
-            for(Verbosity vb:values()) if (vb.id.equals(id)) return vb;
-            return DEFAULT;
-        }
-        public boolean geq(Verbosity other) { return ordinal() >= other.ordinal(); }
-    };
 
     public enum Result { CANCELED, SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT };
 
@@ -527,7 +493,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         this.units=units;
     }
 
-    public static List<Result> codegen(String originalFilename, int i, Log log, Verbosity logVerbosity, List<Unit> units, List<ParaSig> sigs, SolverChoice solver, String destdir) {
+    public static List<Result> codegen(String originalFilename, int i, Log log, Verbosity logVerbosity, List<Unit> units, List<ParaSig> sigs, SatSolver solver, String destdir) {
         TranslateAlloyToKodkod ve=new TranslateAlloyToKodkod(i,log,logVerbosity,units);
         return ve.codegen(originalFilename, sigs, solver, destdir);
     }
@@ -588,7 +554,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         if (b>=0 && (s==ParaSig.UNIV || s==ParaSig.NONE))
             throw c.syntaxError("You cannot specify a scope for the builtin signature \""+s.name+"\"");
         sig2bound(s,b);
-        if (logVerbosity.geq(Verbosity.DEBUG)) log.log("Sig "+s.fullname+" scope <= "+b+"\n");
+        if (logVerbosity.geq(Verbosity.DEBUG)) log.log("   Sig "+s.fullname+" scope <= "+b+"\n");
     }
 
     private boolean derive(ParaRuncheck cmd, List<ParaSig> sigs) {
@@ -744,7 +710,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                 && s.name.equals("Ord"));
     }
 
-    private List<Result> codegen(String originalFilename, List<ParaSig> sigs, SolverChoice solver, String destdir)  {
+    private List<Result> codegen(String originalFilename, List<ParaSig> sigs, SatSolver solver, String destdir)  {
         Formula kfact=Formula.TRUE;
         // Generate the relations for the SIGS.
         for(ParaSig s:sigs) if (s!=ParaSig.SIGINT) {
@@ -872,7 +838,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
                         ParaSig s2=u.params.get("elem");
                         if (sig2bound(s2)<=0) throw x.syntaxError("Sig "+s2.fullname+" must have a scope of 1 or above, since it is used to instantiate the util/ordering.als module");
                         if (logVerbosity.geq(Verbosity.VERBOSE)) {
-                            log.log("Sig "+s2.fullname+" forced to have exactly "+sig2bound(s2)+" atoms.\n");
+                            log.log("   Sig "+s2.fullname+" forced to have exactly "+sig2bound(s2)+" atoms.\n");
                         }
                         if (s2!=null) exact(s2,true);
                     }
@@ -948,7 +914,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
     }
 
     // Result = SAT, UNSAT, TRIVIALLY_SAT, TRIVIALLY_UNSAT, or null.
-    private Result runcheck(String originalFilename, ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, SolverChoice solverChoice, final String destdir, final int destnum)  {
+    private Result runcheck(String originalFilename, ParaRuncheck cmd, List<Unit> units, int bitwidth, List<ParaSig> sigs, Formula kfact, SatSolver solverChoice, final String destdir, final int destnum)  {
         Result mainResult=null;
         Unit root=units.get(0);
         Formula mainformula;
@@ -1014,22 +980,22 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             bounds.bound((Relation)(rel(s)),lower,upper);
             if (s.subset) continue;
             if (exact(s) && upper.size()==sig2bound(s)) {
-                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" == "+upper.toString()+"\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("   Sig "+s.fullname+" == "+upper.toString()+"\n");
             }
             else if (exact(s)) {
-                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" in "+upper.toString()+" with size=="+sig2bound(s)+"\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("   Sig "+s.fullname+" in "+upper.toString()+" with size=="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).one().and(kfact);
                 else kfact=rel(s).count().eq(makeIntConstant(cmd.pos, bitwidth, sig2bound(s))).and(kfact);
             }
             else if (upper.size()>sig2bound(s)) {
-                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" in "+upper.toString()+" with size<="+sig2bound(s)+"\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("   Sig "+s.fullname+" in "+upper.toString()+" with size<="+sig2bound(s)+"\n");
                 if (sig2bound(s)==0) kfact=rel(s).no().and(kfact);
                 else if (sig2bound(s)==1) kfact=rel(s).lone().and(kfact);
                 else kfact=rel(s).count().lte(makeIntConstant(cmd.pos, bitwidth, sig2bound(s))).and(kfact);
             }
             else {
-                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" in "+upper.toString()+"\n");
+                if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("   Sig "+s.fullname+" in "+upper.toString()+"\n");
             }
         }
         // Bound the SUBSETSIGS
@@ -1038,7 +1004,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             if (!s.subset) continue;
             TupleSet ts=factory.noneOf(1);
             for(ParaSig sup:s.sups()) for(Tuple temp:sig2ts(sup)) ts.add(temp);
-            if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("Sig "+s.fullname+" in "+ts.toString()+"\n");
+            if (logVerbosity.geq(Verbosity.VERBOSE)) log.log("   Sig "+s.fullname+" in "+ts.toString()+"\n");
             bounds.bound((Relation)(rel(s)),ts); sig2ts(s,ts);
         }
         // Bound the FIELDS
@@ -1115,7 +1081,7 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         log.flush();
         try {
             String kinput="";
-            if (Pref.RecordKodkod.getBool()) kinput=TranslateKodkodToJava.convert(cmd.pos,mainformula,bitwidth,bounds);
+            if (Pref.RecordKodkod.get()) kinput=TranslateKodkodToJava.convert(cmd.pos,mainformula,bitwidth,bounds);
             if (AlloyBridge.stopped) {
                 log.setLength(loglength);
                 log.log("Canceled.\n\n");

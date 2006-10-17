@@ -11,9 +11,9 @@ import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VisitTypechecker;
 import edu.mit.csail.sdg.alloy4.parser.AlloyParser;
 import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod;
-import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.SolverChoice;
-import edu.mit.csail.sdg.alloy4.translator.TranslateAlloyToKodkod.Verbosity;
 import edu.mit.csail.sdg.alloy4util.Util;
+import edu.mit.csail.sdg.alloy4util.Pref.SatSolver;
+import edu.mit.csail.sdg.alloy4util.Pref.Verbosity;
 
 public final class SimpleCLI {
 
@@ -29,7 +29,7 @@ public final class SimpleCLI {
             log.log("\n\nMain file = "+a+"\n");
             units=AlloyParser.alloy_totalparseFile(Util.alloyHome(), a);
             sigs=VisitTypechecker.check(log,units);
-            if (args.length==1) TranslateAlloyToKodkod.codegen(a, -1, log, Verbosity.DEBUG, units, sigs, SolverChoice.MiniSatJNI, destdir);
+            if (args.length==1) TranslateAlloyToKodkod.codegen(a, -1, log, Verbosity.DEBUG, units, sigs, SatSolver.MiniSatJNI, destdir);
         }
     }
 
