@@ -7,7 +7,7 @@ import java.awt.Insets;
 import javax.swing.border.Border;
 
 /**
- * This class allows us to add borders to the top, to the bottom, or to both the top and bottom of a Component.
+ * This implements a graphical border above or below a component.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
  *
@@ -16,32 +16,27 @@ import javax.swing.border.Border;
 
 public final class OurBorder implements Border {
 
-    /** True if we want to have a border on top. */
-    private final boolean drawTop;
+    /** True if we want to a border above the component; false if we want the border below the component. */
+    private final boolean above;
 
-    /** True if we want to have a border on bottom. */
-    private final boolean drawBottom;
+    /**
+     * Construct a Border object that draws a light gray line above or below the component.
+     * @param above - if true, the border is above the component; if false, the border is below the component.
+     */
+    public OurBorder(boolean above) { this.above=above; }
 
-    /** Construct a Border object that draws a light gray line on top, bottom, or both sides of the components. */
-    public OurBorder(boolean drawTop, boolean drawBottom) {
-        this.drawTop=drawTop; this.drawBottom=drawBottom;
-    }
-
-    /** This method is called by the Java library to actually draw the borders. */
+    /** This method is called by Swing to actually draw the borders. */
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
         if (width<1 || height<1) return;
         Color oldColor = g.getColor();
         g.setColor(Color.LIGHT_GRAY);
-        if (drawTop) g.drawLine(x, y, x+width-1, y);
-        if (drawBottom) g.drawLine(x, y+height-1, x+width-1, y+height-1);
+        if (above) g.drawLine(x, y, x+width-1, y); else g.drawLine(x, y+height-1, x+width-1, y+height-1);
         g.setColor(oldColor);
     }
 
-    /** This method is called by the Java library to retrieve the dimension of the border. */
-    public Insets getBorderInsets(Component c) {
-        return new Insets(drawTop?1:0, 0, drawBottom?1:0, 0);
-    }
+    /** This method is called by Swing to retrieve the dimension of the border. */
+    public Insets getBorderInsets(Component c) { return new Insets(above?1:0, 0, above?0:1, 0); }
 
-    /** This method is called by the Java library to find out if the Border object is opaque or not. */
+    /** This method is called by Swing to find out whether this border object needs to fill in its own background. */
     public boolean isBorderOpaque() { return true; }
 }
