@@ -19,9 +19,13 @@ import java.util.NoSuchElementException;
  *
  * <p/>
  * By making this simplification, we are able to provide an iterator
- * that returns the elements in the order they were inserted.
+ * that returns the elements in the order they were inserted,
+ * and allow concurrent insertion and iteration (that is, we can iterate
+ * over the set while adding elements to the set at the same time).
+ * The iterator is guaranteed to iterate over exactly the elements
+ * that existed at the time that the iterator was created.
  *
- * <p/><b>Invariant:</b>      (hashmap.containsKey(x)) iff (x==list.get(i) for some i)
+ * <p/><b>Invariant:</b>      hashmap.containsKey(x) iff (x==list.get(i) for some i)
  *
  * <p/><b>Thread Safety:</b>  Safe.
  *
@@ -36,7 +40,7 @@ public final class IdentitySet<T> implements Iterable<T> {
     private final IdentityHashMap<T,Object> hashmap=new IdentityHashMap<T,Object>();
 
     /**
-     * This array also stores the set of elements;
+     * This list also stores the set of elements;
      * this allows the iterator to return the elements in the order they were inserted.
      */
     private final List<T> list=new ArrayList<T>();
@@ -49,9 +53,6 @@ public final class IdentitySet<T> implements Iterable<T> {
 
     /** Adds the element x into the set if it's not in the set already. */
     public synchronized void add(T x) { if (!hashmap.containsKey(x)) { hashmap.put(x,null); list.add(x); } }
-
-    /** This helper method ensures that the iterator's "next()" method will lock this object also. */
-    private synchronized T get(int i) { return list.get(i); }
 
     /**
      * Returns an iterator that iterates over elements in this set
@@ -67,7 +68,10 @@ public final class IdentitySet<T> implements Iterable<T> {
             private final int max=list.size();
             private int now=0;
             public final boolean hasNext() { return now<max; }
-            public final T next() { if (now>=max) throw new NoSuchElementException(); now++; return get(now-1); }
+            public final T next() {
+            	if (now>=max) throw new NoSuchElementException();
+            	synchronized(IdentitySet.this) { T answer=list.get(now); now++; return answer; }
+            }
             public final void remove() { throw new UnsupportedOperationException(); }
         };
     }
