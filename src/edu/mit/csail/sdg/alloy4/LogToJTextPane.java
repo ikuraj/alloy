@@ -109,21 +109,21 @@ public final class LogToJTextPane extends Log {
      * This method can be called only by the AWT thread.
      */
     private void initialize(JScrollPane parent, Color regular, Color red, final OurFunc0 focusAction) {
-    	log=new JTextPane();
-    	// This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
-    	log.setEditorKit(new StyledEditorKit() {
-    		private static final long serialVersionUID = 1L;
-    		@Override public ViewFactory getViewFactory() { return new ViewFactory() {
-    			public View create(Element x) {
-    				if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
-    				return new BoxView(x, View.Y_AXIS) {
-    					@Override public void layout(int width,int height) { super.layout(30000,height); }
-    					@Override public float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
-    				};
-    			}
-    		};}
-    	});
-    	log.setBorder(new EmptyBorder(1,1,1,1));
+        log=new JTextPane();
+        // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
+        log.setEditorKit(new StyledEditorKit() {
+            private static final long serialVersionUID = 1L;
+            @Override public ViewFactory getViewFactory() { return new ViewFactory() {
+                public View create(Element x) {
+                    if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
+                    return new BoxView(x, View.Y_AXIS) {
+                        @Override public void layout(int width,int height) { super.layout(30000,height); }
+                        @Override public float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
+                    };
+                }
+            };}
+        });
+        log.setBorder(new EmptyBorder(1,1,1,1));
         log.setBackground(background);
         log.setEditable(false);
         log.setFont(OurUtil.getFont(fontSize));
