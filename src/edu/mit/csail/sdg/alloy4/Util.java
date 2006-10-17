@@ -126,15 +126,15 @@ public final class Util {
         String arch = System.getProperty("os.arch").toLowerCase().replace(' ','-');
         if (arch.equals("powerpc")) arch="ppc-"+os; else arch=arch.replaceAll("\\Ai[3456]86\\z","x86")+"-"+os;
         if (resStream==null) {
-            try { resStream=new FileInputStream(".."+fs+"alloy4"+fs+sourcename); }
+            try { resStream=new FileInputStream(".."+fs+"alloy4compiler"+fs+sourcename); }
             catch (FileNotFoundException e) { resStream=null; }
         }
         if (resStream==null) {
-            try { resStream=new FileInputStream(".."+fs+"alloy4"+fs+"jni"+fs+arch+fs+sourcename); }
+            try { resStream=new FileInputStream(".."+fs+"alloy4compiler"+fs+"jni"+fs+arch+fs+sourcename); }
             catch (FileNotFoundException e) { resStream=null; }
         }
         if (resStream==null) {
-            try { resStream=new FileInputStream(".."+fs+"alloy4"+fs+"binary"+fs+arch+fs+sourcename); }
+            try { resStream=new FileInputStream(".."+fs+"alloy4compiler"+fs+"binary"+fs+arch+fs+sourcename); }
             catch (FileNotFoundException e) { resStream=null; }
         }
         if (resStream==null) {
