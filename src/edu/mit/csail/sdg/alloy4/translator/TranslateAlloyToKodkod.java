@@ -42,6 +42,7 @@ import edu.mit.csail.sdg.alloy4.node.Unit;
 import edu.mit.csail.sdg.alloy4.node.VarDecl;
 import edu.mit.csail.sdg.alloy4.node.VisitQuery;
 import edu.mit.csail.sdg.alloy4.node.VisitReturn;
+import edu.mit.csail.sdg.alloy4util.Pref;
 import edu.mit.csail.sdg.alloy4util.Util;
 import kodkod.AlloyBridge;
 import kodkod.ast.IntExpression;
@@ -1113,7 +1114,8 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
         log.logBold("Compiling...");
         log.flush();
         try {
-            String kinput = TranslateKodkodToJava.convert(cmd.pos, mainformula, bitwidth, bounds);
+            String kinput="";
+            if (Pref.RecordKodkod.getBool()) kinput=TranslateKodkodToJava.convert(cmd.pos,mainformula,bitwidth,bounds);
             if (AlloyBridge.stopped) {
                 log.setLength(loglength);
                 log.log("Canceled.\n\n");
@@ -1312,7 +1314,10 @@ public final class TranslateAlloyToKodkod implements VisitReturn {
             }
             out.print("</module>\n");
         }
-        Util.encodeXMLs(out, "\n</instance>\n\n<koutput value=\"", sol.toString(), "\"/>\n\n<kinput value=\"", kinput, "\"/>\n\n</alloy>\n");
+        out.print("\n</instance>\n\n");
+        if (kinput.length()>0)
+            Util.encodeXMLs(out, "<koutput value=\"", sol.toString(), "\"/>\n\n<kinput value=\"", kinput, "\"/>\n\n");
+        out.print("</alloy>\n");
         out.flush();
         out.close();
         try {bw.close();} catch(IOException ex) {throw new ErrorInternal(cmd.pos,"writeXML failed: "+ex.toString());}
