@@ -27,7 +27,7 @@ import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 
 /**
- * This logger will log the messages into a JTextPane.
+ * This logger writes the messages into a JTextPane.
  *
  * <p/> Its constructor and its public methods can be called by any thread.
  *

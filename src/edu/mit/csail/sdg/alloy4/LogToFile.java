@@ -2,9 +2,10 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 
 /**
- * This logger will log the messages using UTF-8 into a new text file
+ * This logger writes the messages using UTF-8 into a file
  * (which will be overwritten if it exists).
  *
  * Since the output is plain text, logBold() and logLink() simply call log().
@@ -22,7 +23,7 @@ public final class LogToFile extends Log {
     /** Records whether a failure has occurred or not. */
     private IOException error=null;
 
-    /** Records the current length of file. */
+    /** Records the current length of the file. */
     private int length=0;
 
     /**
@@ -37,9 +38,16 @@ public final class LogToFile extends Log {
 
     /** Writes msg into the log. */
     @Override public synchronized void log(String msg) {
-        int newlength=length+msg.length();
-        if (newlength<0) error=new IOException("File length overflow!"); else length=newlength;
-        if (error==null) try {file.write(msg.getBytes("UTF-8"));} catch(IOException ex) {error=ex;}
+        if (error!=null) return;
+        try {
+            byte[] bytes=msg.getBytes("UTF-8");
+            int newlength=length+bytes.length;
+            if (newlength<0) {error=new IOException("File length overflow!"); return;}
+            length=newlength;
+            try {file.write(bytes);} catch(IOException ex) {error=ex;}
+        } catch (UnsupportedEncodingException e) {
+            error=new IOException("UTF8 encoding error: "+e.getMessage());
+        }
     }
 
     /** Writes msg into the log (just like log() since text files don't support bold styles). */
@@ -57,7 +65,7 @@ public final class LogToFile extends Log {
     /** Truncate the file if it is longer than the given length. */
     @Override public synchronized void setLength(int newLength) {
         if (error==null) {
-            try { if (file.length()>newLength) file.setLength(newLength); length=newLength; }
+            try { if (file.length()>newLength) { file.setLength(newLength); length=newLength; } }
             catch(IOException ex) { error=ex; }
         }
     }
