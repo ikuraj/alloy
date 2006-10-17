@@ -43,66 +43,66 @@ public final class Env<V> {
      */
     private final Map<String,LinkedList<V>> map2=new LinkedHashMap<String,LinkedList<V>>();
 
-    /** Constructor that builds an empty environement. */
+    /** Constructs an empty environement. */
     public Env () { }
 
     /**
-     * Returns true if the key k is mapped to one or more values.
+     * Returns true if the key is mapped to one or more values.
      *
-     * @param k - the key
+     * @param key - the key
      * @return true if the key is mapped to one or more values
      */
-    public synchronized boolean has(String k) {
-        return map1.containsKey(k);
+    public synchronized boolean has(String key) {
+        return map1.containsKey(key);
     }
 
     /**
-     * Returns the latest value associated with the key k (and returns null if none).
+     * Returns the latest value associated with the key (and returns null if none).
      *
      * <p/>
      * Since null is also a possible value, if you get null as the answer,
-     * you need to call has(k) to determine whether the key really has a binding or not.
+     * you need to call has(key) to determine whether the key really has a binding or not.
      *
-     * @param k - the key
+     * @param key - the key
      * @return the latest value associated with key k (and returns null if none).
      */
-    public synchronized V get(String k) {
-        LinkedList<V> list=map2.get(k);
-        if (list!=null) return list.getLast(); else return map1.get(k);
+    public synchronized V get(String key) {
+        LinkedList<V> list=map2.get(key);
+        if (list!=null) return list.getLast(); else return map1.get(key);
     }
 
     /**
-     * Associates the key k with the value v.
+     * Associates the key with the value.
      *
-     * @param k - the key
-     * @param v - the value (which can be null)
+     * @param key - the key
+     * @param value - the value (which can be null)
      */
-    public synchronized void put(String k, V v) {
-        LinkedList<V> list=map2.get(k);
+    public synchronized void put(String key, V value) {
+        LinkedList<V> list=map2.get(key);
         if (list!=null) {
-            list.add(v);
-        } else if (!map1.containsKey(k)) {
-            map1.put(k,v);
+            list.add(value);
+        } else if (!map1.containsKey(key)) {
+            map1.put(key,value);
         } else {
             list=new LinkedList<V>();
-            list.add(v);
-            map2.put(k,list);
+            list.add(value);
+            map2.put(key,list);
         }
     }
 
     /**
-     * Removes the latest binding for k (and if k had previous bindings, they become visible).
+     * Removes the latest binding for the key (and if the key had previous bindings, they become visible).
      *
-     * If there are no mappings for k, then this method does nothing.
+     * If there are no mappings for the key, then this method does nothing.
      *
-     * @param k - the key
+     * @param key - the key
      */
-    public synchronized void remove(String k) {
-        LinkedList<V> list=map2.get(k);
+    public synchronized void remove(String key) {
+        LinkedList<V> list=map2.get(key);
         if (list==null) {
-            map1.remove(k);
+            map1.remove(key);
         } else if (list.size()<=1) {
-            map2.remove(k);
+            map2.remove(key);
         } else {
             list.removeLast();
         }
