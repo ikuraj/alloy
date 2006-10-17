@@ -64,7 +64,7 @@ public final class Env<V> {
      * you need to call has(key) to determine whether the key really has a binding or not.
      *
      * @param key - the key
-     * @return the latest value associated with key k (and returns null if none).
+     * @return the latest value associated with the key (and returns null if none).
      */
     public synchronized V get(String key) {
         LinkedList<V> list=map2.get(key);
