@@ -69,8 +69,8 @@ public final class IdentitySet<T> implements Iterable<T> {
             private int now=0;
             public final boolean hasNext() { return now<max; }
             public final T next() {
-            	if (now>=max) throw new NoSuchElementException();
-            	synchronized(IdentitySet.this) { T answer=list.get(now); now++; return answer; }
+                if (now>=max) throw new NoSuchElementException();
+                synchronized(IdentitySet.this) { T answer=list.get(now); now++; return answer; }
             }
             public final void remove() { throw new UnsupportedOperationException(); }
         };
