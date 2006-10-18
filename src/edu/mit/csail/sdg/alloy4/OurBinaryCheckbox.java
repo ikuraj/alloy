@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -31,10 +30,10 @@ public final class OurBinaryCheckbox extends JPanel {
     private static final long serialVersionUID = 1;
 
     /** The icon to use when the checkbox is off. */
-    private static final ImageIcon off = OurUtil.loadIcon("images/cb0.gif");
+    private static final Icon off = OurUtil.loadIcon("images/cb0.gif");
 
     /** The icon to use when the checkbox is on. */
-    private static final ImageIcon on  = OurUtil.loadIcon("images/cb1.gif");
+    private static final Icon on  = OurUtil.loadIcon("images/cb1.gif");
 
     /** The underlying JCheckBox object. */
     private final JCheckBox box;

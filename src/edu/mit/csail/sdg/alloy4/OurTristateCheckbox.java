@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -33,16 +32,16 @@ public final class OurTristateCheckbox extends JPanel {
     private static final long serialVersionUID = 1;
 
     /** The icon to use when the checkbox is off entirely. */
-    private static final ImageIcon off  = OurUtil.loadIcon("images/tcb01.gif");
+    private static final Icon off = OurUtil.loadIcon("images/tcb01.gif");
 
     /** The icon to use when the checkbox is on entirely. */
-    private static final ImageIcon on   = OurUtil.loadIcon("images/tcb02.gif");
+    private static final Icon on = OurUtil.loadIcon("images/tcb02.gif");
 
     /** The icon to use when the checkbox is off due to inheritance. */
-    private static final ImageIcon ioff = OurUtil.loadIcon("images/tcb03.gif");
+    private static final Icon ioff = OurUtil.loadIcon("images/tcb03.gif");
 
     /** The icon to use when the checkbox is on due to inheritance. */
-    private static final ImageIcon ion  = OurUtil.loadIcon("images/tcb04.gif");
+    private static final Icon ion = OurUtil.loadIcon("images/tcb04.gif");
 
     /** The underlying JCheckBox object. */
     private final JCheckBox box;

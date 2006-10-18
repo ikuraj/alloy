@@ -2,6 +2,14 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.util.prefs.Preferences;
 
+/**
+ * This convenience class reads and writes Java persistent preferences.
+ *
+ * <p/><b>Thread Safety:</b>  Safe.
+ *
+ * @author Felix Chang
+ */
+
 public class Pref {
 
     public enum SatSolver {
