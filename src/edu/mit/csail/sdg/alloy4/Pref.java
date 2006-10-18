@@ -145,6 +145,9 @@ public class Pref {
     /** The latest font size of the Alloy Analyzer. */
     public static final IntPref FontSize = new IntPref("FontSize",9,12,24);
 
+    /** The latest tab distance of the Alloy Analyzer. */
+    public static final IntPref TabSize = new IntPref("TabSize",1,2,16);
+
     /** The latest X corrdinate of the Alloy Visualizer window. */
     public static final IntPref VizX = new IntPref("VizX",0,-1,65535);
 
