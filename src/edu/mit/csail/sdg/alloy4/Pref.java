@@ -26,7 +26,7 @@ public class Pref {
         /** Outputs the raw CNF file only */  FILE("file", "Output to file");
 
         /** This is a unique String for this value; it should be kept consistent in future versions. */
-        public final String id;
+        private final String id;
 
         /** This is the label that the toString() method will return. */
         private final String label;
@@ -37,7 +37,7 @@ public class Pref {
         }
 
         /** Given an id, return the enum value corresponding to it (if there's no match, then return MiniSatPIPE). */
-        public static SatSolver parse(String id) {
+        private static SatSolver parse(String id) {
             for(SatSolver sc:values()) if (sc.id.equals(id)) return sc;
             return MiniSatPIPE;
         }
@@ -64,7 +64,7 @@ public class Pref {
         public boolean geq(Verbosity other) { return ordinal() >= other.ordinal(); }
 
         /** This is a unique String for this value; it should be kept consistent in future versions. */
-        public final String id;
+        private final String id;
 
         /** This is the label that the toString() method will return. */
         private final String label;
@@ -73,7 +73,7 @@ public class Pref {
         private Verbosity(String id, String label) { this.id=id; this.label=label; }
 
         /** Given an id, return the enum value corresponding to it (if there's no match, then return DEFAULT). */
-        public static Verbosity parse(String id) {
+        private static Verbosity parse(String id) {
             for(Verbosity vb:values()) if (vb.id.equals(id)) return vb;
             return DEFAULT;
         }
@@ -99,13 +99,13 @@ public class Pref {
         /** See the raw output from Kodkod. */    KOutput("kodkodInstance");
 
         /** This is a unique String for this value; it should be kept consistent in future versions. */
-        public final String id;
+        private final String id;
 
         /** Constructs a new VisualizerMode value with the given id. */
         private VisualizerMode(String id) { this.id=id; }
 
         /** Given an id, return the enum value corresponding to it (if there's no match, then return Viz). */
-        public static VisualizerMode parse(String id) {
+        private static VisualizerMode parse(String id) {
             for(VisualizerMode vm:values()) if (vm.id.equals(id)) return vm;
             return Viz;
         }
