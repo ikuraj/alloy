@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 import java.util.Vector;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -75,7 +76,7 @@ public final class OurCombobox extends JComboBox {
     }
 
     /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
-    private static Vector<Object> addNull(Vector<Object> list, boolean addNull) {
+    private static Vector<Object> addNull(List<Object> list, boolean addNull) {
         Vector<Object> answer=new Vector<Object>();
         if (addNull) answer.add(null);
         answer.addAll(list);
@@ -92,7 +93,7 @@ public final class OurCombobox extends JComboBox {
      * @param key - the key associated with this combobox
      */
     public OurCombobox(
-            final ComboGetterSetter gs, boolean addNull, Vector<Object> list,
+            final ComboGetterSetter gs, boolean addNull, List<Object> list,
             int width, int height, final Object key) {
         super(addNull(list,addNull));
         this.gs = gs;
