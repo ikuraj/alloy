@@ -4,7 +4,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Mutable; this class generates unique names based on names provided by the caller.
+ * This class generates unique names based on names provided by the caller.
  *
  * <p/><b>Thread Safety:</b>  Safe.
  *
