@@ -61,6 +61,9 @@ public final class OurMenu extends JMenu {
         return ans;
     }
 
+    /** Convenience method that recursively enables every JMenu and JMenuItem inside. */
+    public void enableChildren() { enableChildren(this); }
+
     /**
      * Convenience method that recursively enables every JMenu and JMenuItem inside "menu".
      * @param menu - the menu to start the recursive search
