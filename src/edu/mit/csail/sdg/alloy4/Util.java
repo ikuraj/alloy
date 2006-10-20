@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Random;
 
@@ -29,6 +30,26 @@ public final class Util {
 
     /** This variable caches the value of the system's file separator. */
     private static final String fs=System.getProperty("file.separator");
+
+    /**
+     * Sorts two strings for optimum module order; we guarantee aliasCompartor(a,b)==0 iff a.equals(b).
+     * <br/> (1) If one string has fewer '/' than the other, then it is considered smaller.
+     * <br/> (2) If both strings has same number of '/', then we first compare them lexically without case-sensitivity.
+     * <br/> (3) If they are identical when case-insensitive, then compare them lexically with case-sensitivity.
+     * <br/>
+     */
+    public static final Comparator<String> aliasComparator = new Comparator<String>() {
+        public final int compare(String a, String b) {
+            if (a==null) return (b==null)?0:-1;
+            if (b==null) return 1;
+            int acount=0, bcount=0;
+            for(int i=0; i<a.length(); i++) if (a.charAt(i)=='/') acount++;
+            for(int i=0; i<b.length(); i++) if (b.charAt(i)=='/') bcount++;
+            if (acount!=bcount) return (acount<bcount)?-1:1;
+            int result = a.compareToIgnoreCase(b);
+            return result!=0 ? result : a.compareTo(b);
+        }
+    };
 
     /** This variable caches the result of alloyHome() function call. */
     private static String alloyHome=null;
