@@ -10,7 +10,7 @@ import java.util.prefs.Preferences;
  * @author Felix Chang
  */
 
-public class Pref {
+public final class Pref {
 
     /*=======================================================================*/
 
