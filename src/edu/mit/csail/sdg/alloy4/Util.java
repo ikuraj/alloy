@@ -32,13 +32,13 @@ public final class Util {
     private static final String fs=System.getProperty("file.separator");
 
     /**
-     * Sorts two strings for optimum module order; we guarantee aliasCompartor(a,b)==0 iff a.equals(b).
+     * Sorts two strings for optimum module order; we guarantee slashCompartor(a,b)==0 iff a.equals(b).
      * <br/> (1) If one string has fewer '/' than the other, then it is considered smaller.
      * <br/> (2) If both strings has same number of '/', then we first compare them lexically without case-sensitivity.
      * <br/> (3) If they are identical when case-insensitive, then compare them lexically with case-sensitivity.
      * <br/>
      */
-    public static final Comparator<String> aliasComparator = new Comparator<String>() {
+    public static final Comparator<String> slashComparator = new Comparator<String>() {
         public final int compare(String a, String b) {
             if (a==null) return (b==null)?0:-1;
             if (b==null) return 1;
