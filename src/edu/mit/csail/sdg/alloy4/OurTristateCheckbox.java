@@ -99,10 +99,9 @@ public final class OurTristateCheckbox extends JPanel {
         box.addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) {
                 Boolean old=gs.get(key);
-                if (old==null) { box.setIcon(on); gs.set(key,Boolean.TRUE); }
-                else if (old.booleanValue()) { box.setIcon(off); gs.set(key,Boolean.FALSE); }
-                else if (gs.getInherited(key)) { box.setIcon(ion); gs.set(key,null); }
-                else { box.setIcon(ioff); gs.set(key,null); }
+                if (old==null) { gs.set(key,Boolean.TRUE); box.setIcon(on); }
+                else if (old.booleanValue()) { gs.set(key,Boolean.FALSE); box.setIcon(off); }
+                else { gs.set(key,null); box.setIcon(gs.getInherited(key)?ion:ioff); }
             }
         });
         box.setMaximumSize(box.getPreferredSize());
