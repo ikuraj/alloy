@@ -114,6 +114,7 @@ public final class OurUtil {
     public static JLabel label(Color color, String label) {
         JLabel answer = new JLabel(label);
         if (color!=null) answer.setForeground(color);
+        answer.setFont(getVizFont());
         return answer;
     }
 

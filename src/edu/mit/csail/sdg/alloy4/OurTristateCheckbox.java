@@ -108,6 +108,7 @@ public final class OurTristateCheckbox extends JPanel {
         box.setToolTipText(tip);
         jlabel=new JLabel(label);
         jlabel.setToolTipText(tip);
+        jlabel.setFont(OurUtil.getVizFont());
         add(jlabel);
         add(box);
         setAlignmentX(RIGHT_ALIGNMENT);
