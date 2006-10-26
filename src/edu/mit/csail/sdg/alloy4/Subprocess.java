@@ -2,6 +2,7 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * This class provides a convenience wrapper around a Process object.
@@ -70,6 +71,23 @@ public final class Subprocess {
         thread2.start();
     }
 
+    /** Executes the given command line, and returns a "Subprocess" object that allows us to query the subprocess. */
+    public Subprocess(String[] commandline, String input) {
+        try {
+            process=Runtime.getRuntime().exec(commandline);
+        } catch (IOException ex) {
+            process=null;
+            setOutput("Error:\n" + ex.getMessage());
+            return;
+        }
+        Thread thread0=new Thread(new SubinputPipe(process.getOutputStream(), input));
+        Thread thread1=new Thread(new Subpipe(process.getInputStream(), new StringBuilder()));
+        Thread thread2=new Thread(new Subpipe(process.getErrorStream(), null));
+        thread0.start();
+        thread1.start();
+        thread2.start();
+    }
+
     /** Forcibly terminate the process. */
     public void terminate() {
         Process p;
@@ -96,6 +114,31 @@ public final class Subprocess {
             terminate();
             setOutput("Error!\n"+e.getMessage());
             return -1;
+        }
+    }
+
+    /** Helper class that shuttles text into the subprocess. */
+    private class SubinputPipe implements Runnable {
+        /** The output stream to write the text into. */
+        private final OutputStream stream;
+        /** The text to write. */
+        private final String text;
+        /** Constructs the object that shuttles bytes from "text" into the output stream "stream". */
+        public SubinputPipe(OutputStream stream, String text) { this.stream=stream; this.text=text; }
+        /** This is the main run method that does the copying. */
+        public void run() {
+            try {
+                byte[] bytes=text.getBytes("UTF-8");
+                for(int i=0, n=bytes.length; i<n;) {
+                    int len=((n-i)>1024) ? 1024 : (n-i); // Pick a small number to avoid platform-dependent overflows
+                    stream.write(bytes,i,len);
+                    i=i+len;
+                }
+                stream.flush();
+            } catch(IOException ex) {
+                setOutputIfNotStopped("Error! Input stream failure");
+            }
+            try {stream.close();} catch(IOException ex) {setOutputIfNotStopped("Error! Input stream failure");}
         }
     }
 
