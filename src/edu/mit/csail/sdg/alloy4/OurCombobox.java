@@ -100,7 +100,7 @@ public final class OurCombobox extends JComboBox {
         this.key = key;
         setFont(OurUtil.getVizFont());
         setRenderer(new OurComboboxRenderer());
-        if (Util.onWindows()) { if (height>25) height=25; setPreferredSize(new Dimension(width,height)); }
+        if (Util.onWindows() && height>25) height=25;
         setPreferredSize(new Dimension(width,height));
         setMaximumSize(new Dimension(width,height));
         if (!Util.onWindows()) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
