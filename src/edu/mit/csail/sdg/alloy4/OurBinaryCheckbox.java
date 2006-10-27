@@ -50,14 +50,14 @@ public final class OurBinaryCheckbox extends JPanel {
      * <p/> When the checkbox needs to be repainted, we call gs.get(key) to find out whether it is ON or OFF.
      * <p/> When the checkbox is clicked by the user, we call gs.set(key,value) to set a new value.
      */
-    private final GetterSetter gs;
+    private final BinaryGetterSetter gs;
 
     /**
      * This interface defines the get(key) and set(key,value) methods.
      *
      * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
      */
-    public interface GetterSetter {
+    public interface BinaryGetterSetter {
         /** This method reads the boolean value associated with the key; this must be called only by the AWT thread. */
         public boolean get(Object key);
         /** This method sets the boolean value associated with the key; this must be called only by the AWT thread. */
@@ -71,7 +71,7 @@ public final class OurBinaryCheckbox extends JPanel {
      * @param label - the label to display next to the checkbox
      * @param tip - the tool tip to show when the mouse hovers over this check box
      */
-    public OurBinaryCheckbox(final GetterSetter gs, final Object key, String label, String tip) {
+    public OurBinaryCheckbox(final BinaryGetterSetter gs, final Object key, String label, String tip) {
         super();
         this.gs=gs;
         this.key=key;
