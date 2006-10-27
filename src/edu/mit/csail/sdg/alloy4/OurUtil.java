@@ -146,13 +146,17 @@ public final class OurUtil {
      * <br/> It will have the X_AXIS layout (or Y_AXIS if h>w).
      * <br/> If a component is null, we will insert a horizontal (or vertical) glue instead.
      * <br/> If a component is integer, we will insert an "n*1" rigid area (or "1*n" rigid area) instead.
+     * <br/> Each component will be center-aligned.
+     * <br/> Note: if the first component is a Color, we will set everything's background color to that color.
      */
     public static JPanel makeBox(int w, int h, Object... a) {
         JPanel ans=makeBox(w>=h ? BoxLayout.X_AXIS : BoxLayout.Y_AXIS);
         ans.setPreferredSize(new Dimension(w,h));
         ans.setMaximumSize(new Dimension(w,h));
+        Color color=null;
         for(int i=0; i<a.length; i++) {
             Component c;
+            if (a[i] instanceof Color) { color=(Color)(a[i]); ans.setBackground(color); continue; }
             if (a[i] instanceof Component) c=(Component)(a[i]);
             else if (a[i] instanceof Integer) {
                 if (w>=h) c=Box.createRigidArea(new Dimension((Integer)a[i], 1));
@@ -161,6 +165,7 @@ public final class OurUtil {
                 if (w>=h) c=Box.createHorizontalGlue();
                 else c=Box.createVerticalGlue();
             } else continue;
+            if (color!=null) c.setBackground(color);
             if (c instanceof JComponent) {
                 ((JComponent)c).setAlignmentX(0.5f);
                 ((JComponent)c).setAlignmentY(0.5f);
@@ -174,17 +179,22 @@ public final class OurUtil {
      * Make a JPanel using horizontal BoxLayout, and add the components to it.
      * <br/> If a component is null, we will insert a horizontal glue instead.
      * <br/> If a component is integer, we will insert an "n*1" rigid area instead.
+     * <br/> Each component will be center-aligned.
+     * <br/> Note: if the first component is a Color, we will set everything's background color to that color.
      */
     public static JPanel makeH(Object... a) {
         JPanel ans=makeBox(BoxLayout.X_AXIS);
+        Color color=null;
         for(int i=0; i<a.length; i++) {
             Component c;
+            if (a[i] instanceof Color) { color=(Color)(a[i]); ans.setBackground(color); continue; }
             if (a[i] instanceof Component) c=(Component)(a[i]);
             else if (a[i] instanceof Integer) {
                 c=Box.createRigidArea(new Dimension((Integer)a[i], 1));
             } else if (a[i]==null) {
                 c=Box.createHorizontalGlue();
             } else continue;
+            if (color!=null) c.setBackground(color);
             if (c instanceof JComponent) {
                 ((JComponent)c).setAlignmentX(0.5f);
                 ((JComponent)c).setAlignmentY(0.5f);
@@ -198,19 +208,53 @@ public final class OurUtil {
      * Make a JPanel using vertical BoxLayout, and add the components to it.
      * <br/> If a component is null, we will insert a vertical glue instead.
      * <br/> If a component is integer, we will insert an "1*n" rigid area instead.
+     * <br/> Each component will be center-aligned.
+     * <br/> Note: if the first component is a Color, we will set everything's background color to that color.
      */
     public static JPanel makeV(Object... a) {
         JPanel ans=makeBox(BoxLayout.Y_AXIS);
+        Color color=null;
         for(int i=0; i<a.length; i++) {
             Component c;
+            if (a[i] instanceof Color) { color=(Color)(a[i]); ans.setBackground(color); continue; }
             if (a[i] instanceof Component) c=(Component)(a[i]);
             else if (a[i] instanceof Integer) {
                 c=Box.createRigidArea(new Dimension(1,(Integer)a[i]));
             } else if (a[i]==null) {
                 c=Box.createVerticalGlue();
             } else continue;
+            if (color!=null) c.setBackground(color);
             if (c instanceof JComponent) {
                 ((JComponent)c).setAlignmentX(0.5f);
+                ((JComponent)c).setAlignmentY(0.5f);
+            }
+            ans.add(c);
+        }
+        return ans;
+    }
+
+    /**
+     * Make a JPanel using vertical BoxLayout, and add the components to it.
+     * <br/> If a component is null, we will insert a vertical glue instead.
+     * <br/> If a component is integer, we will insert an "1*n" rigid area instead.
+     * <br/> Each component will be right-aligned.
+     * <br/> Note: if the first component is a Color, we will set everything's background color to that color.
+     */
+    public static JPanel makeVR(Object... a) {
+        JPanel ans=makeBox(BoxLayout.Y_AXIS);
+        Color color=null;
+        for(int i=0; i<a.length; i++) {
+            Component c;
+            if (a[i] instanceof Color) { color=(Color)(a[i]); ans.setBackground(color); continue; }
+            if (a[i] instanceof Component) c=(Component)(a[i]);
+            else if (a[i] instanceof Integer) {
+                c=Box.createRigidArea(new Dimension(1,(Integer)a[i]));
+            } else if (a[i]==null) {
+                c=Box.createVerticalGlue();
+            } else continue;
+            if (color!=null) c.setBackground(color);
+            if (c instanceof JComponent) {
+                ((JComponent)c).setAlignmentX(1f);
                 ((JComponent)c).setAlignmentY(0.5f);
             }
             ans.add(c);

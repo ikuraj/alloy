@@ -1,5 +1,6 @@
 package edu.mit.csail.sdg.alloy4;
 
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -91,6 +92,13 @@ public final class OurBinaryCheckbox extends JPanel {
         add(box);
         add(jlabel);
         setAlignmentX(RIGHT_ALIGNMENT);
+    }
+
+    /** This method is called by Swing to change its background color. */
+    @Override public void setBackground(Color color) {
+        super.setBackground(color);
+        if (box!=null) box.setBackground(color);
+        if (jlabel!=null) jlabel.setBackground(color);
     }
 
     /** This method is called by Swing whenever this component needs to be painted. */
