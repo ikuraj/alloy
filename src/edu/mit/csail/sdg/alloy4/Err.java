@@ -27,4 +27,7 @@ public abstract class Err extends RuntimeException {
         this.pos=pos;
         this.msg=(msg==null?"":msg);
     }
+
+    /** Calls the subclass's "toString()" method to return a textual representation of the error. */
+    @Override public String getMessage() { return toString(); }
 }

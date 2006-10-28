@@ -17,6 +17,12 @@ public final class ErrorSyntax extends Err {
 
     /**
      * Constructs a new syntax error.
+     * @param msg - the actual error message
+     */
+    public ErrorSyntax(String msg) { super(null,msg); }
+
+    /**
+     * Constructs a new syntax error.
      * @param pos - the filename/line/row information (null if unknown)
      * @param msg - the actual error message
      */

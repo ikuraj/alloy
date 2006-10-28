@@ -17,6 +17,12 @@ public final class ErrorInternal extends Err {
 
     /**
      * Constructs a new internal error.
+     * @param msg - the actual error message
+     */
+    public ErrorInternal(String msg) { super(null,msg); }
+
+    /**
+     * Constructs a new internal error.
      * @param pos - the filename/line/row information (null if unknown)
      * @param msg - the actual error message
      */
