@@ -23,7 +23,7 @@ public final class OurMenuItem extends JMenuItem {
 
     /**
      * Construct a new MenuItem then add it to an existing Menu with SHIFT+accelerator.
-     * @param parent - the Menu to add this MenuItem into
+     * @param parent - the Menu to add this MenuItem into (or null if you don't want to add it to any JMenu yet)
      * @param label - the text to show on the menu
      * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the "SHIFT" mask on top of it
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
@@ -35,12 +35,12 @@ public final class OurMenuItem extends JMenuItem {
         if (func!=null) addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) { func.run(); }
         });
-        parent.add(this);
+        if (parent!=null) parent.add(this);
     }
 
     /**
      * Construct a new MenuItem then add it to an existing Menu.
-     * @param parent - the Menu to add this MenuItem into
+     * @param parent - the Menu to add this MenuItem into (or null if you don't want to add it to any JMenu yet)
      * @param label - the text to show on the menu
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
@@ -56,6 +56,6 @@ public final class OurMenuItem extends JMenuItem {
         if (func!=null) addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) { func.run(); }
         });
-        parent.add(this);
+        if (parent!=null) parent.add(this);
     }
 }
