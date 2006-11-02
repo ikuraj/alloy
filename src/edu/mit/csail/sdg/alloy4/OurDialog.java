@@ -40,8 +40,10 @@ public final class OurDialog {
     public static Boolean askSaveDiscardCancel(JFrame parentFrame, String description) {
         String save="Save", discard="Don\'t Save", cancel="Cancel";
         int ans=JOptionPane.showOptionDialog(parentFrame,
-                description+" has not been saved. Do you wish to save it, discard it, or cancel the operation?",
-                "Warning: "+description+" has not been saved!",
+                new String[]{
+                description+" has not been saved. Do you want to",
+                "cancel the operation, close the file without saving, or save it and close?"},
+                "Warning",
                 JOptionPane.YES_NO_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
