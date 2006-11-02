@@ -96,8 +96,11 @@ public final class Util {
         catch (Exception ex) {harmless("chmod",ex);} // We only intend to make a best effort
     }
 
-    /** Copy the given file from JAR into the destination file; the destination file is deleted first. */
+    /** Copy the given file from JAR into the destination file; if the destination file exists, we then do nothing. */
     private static synchronized void copy(String sourcename, String destname) {
+        File destfileobj=new File(destname);
+        if (destfileobj.isFile() && destfileobj.length()>0) return;
+        //
         InputStream resStream=Util.class.getClassLoader().getResourceAsStream(sourcename);
         // The following lines can be commented out in the release builds; they're only useful for Alloy 4 developers
         String os = System.getProperty("os.name").toLowerCase().replace(' ','-');
