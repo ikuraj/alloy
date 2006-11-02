@@ -42,7 +42,7 @@ public final class LogToFile extends Log {
         try {
             byte[] bytes=msg.getBytes("UTF-8");
             int newlength=length+bytes.length;
-            if (newlength<0) {error=new IOException("File length overflow!"); return;}
+            if (newlength<0) {error=new IOException("File length overflow."); return;}
             length=newlength;
             try {file.write(bytes);} catch(IOException ex) {error=ex;}
         } catch (UnsupportedEncodingException e) {

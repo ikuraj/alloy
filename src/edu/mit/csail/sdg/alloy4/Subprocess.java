@@ -13,7 +13,7 @@ import java.io.OutputStream;
  *
  * <p/>  (1) if you call x.terminate(), the subprocess will be terminated;
  * <br/> subsequent x.waitFor() will always return -1 (indicating error), and
- * <br/> subsequent x.getOutput() will always return "Error! Process forcibly terminated!"
+ * <br/> subsequent x.getOutput() will always return "Error! Process forcibly terminated."
  *
  * <p/>  (2) if you call x.waitFor(), you will wait until the process terminates and get the return value;
  * <br/> subsequent x.waitFor() calls will always return -1, and
@@ -91,7 +91,7 @@ public final class Subprocess {
     /** Forcibly terminate the process. */
     public void terminate() {
         Process p;
-        synchronized(Subprocess.this) {p=process; process=null; setOutput("Error!\nProcess forcibly terminated!\n");}
+        synchronized(Subprocess.this) {p=process; process=null; setOutput("Error!\nProcess forcibly terminated.\n");}
         if (p!=null) p.destroy();
     }
 
@@ -105,7 +105,7 @@ public final class Subprocess {
             synchronized(Subprocess.this) {process=null;}
             while(true) {
                 synchronized(Subprocess.this) {if (stopped) break;}
-                i++; if (i>10) { setOutput("Error!\nTimeout from the process!\n"); return -1; }
+                i++; if (i>10) { setOutput("Error!\nTimeout from the process.\n"); return -1; }
                 Thread.sleep(500);
             }
             return getOutput().startsWith("Error!") ? -1 : n;
@@ -136,9 +136,9 @@ public final class Subprocess {
                 }
                 stream.flush();
             } catch(IOException ex) {
-                setOutputIfNotStopped("Error! Input stream failure");
+                setOutputIfNotStopped("Error! Input stream failure.");
             }
-            try {stream.close();} catch(IOException ex) {setOutputIfNotStopped("Error! Input stream failure");}
+            try {stream.close();} catch(IOException ex) {setOutputIfNotStopped("Error! Input stream failure.");}
         }
     }
 

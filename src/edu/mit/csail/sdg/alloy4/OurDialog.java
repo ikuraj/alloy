@@ -29,7 +29,7 @@ public final class OurDialog {
 
     /** Popup the given error message, then terminate the program. */
     public static void fatal(JFrame parentFrame, Object message) {
-        JOptionPane.showMessageDialog(parentFrame, message, "A fatal error has occurred!", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(parentFrame, message, "A fatal error has occurred.", JOptionPane.ERROR_MESSAGE);
         System.exit(1);
     }
 
@@ -58,7 +58,7 @@ public final class OurDialog {
         String yes="Overwrite", no="Cancel";
         int ans=JOptionPane.showOptionDialog(parentFrame,
                 "The file \""+filename+"\" already exists. Do you wish to overwrite it?",
-                "Warning: the file already exists!",
+                "Warning: the file already exists.",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
@@ -109,7 +109,7 @@ public final class OurDialog {
 
     /** Display "msg" in a dialogbox, and ask the user to choose yes versus no (default==no). */
     public static boolean yesno(JFrame parentFrame, String msg, String yes, String no) {
-        return JOptionPane.showOptionDialog(parentFrame, msg, "Question!", JOptionPane.YES_NO_OPTION,
+        return JOptionPane.showOptionDialog(parentFrame, msg, "Question", JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE, null, new Object[]{yes,no}, no)==JOptionPane.YES_OPTION;
     }
 

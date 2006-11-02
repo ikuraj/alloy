@@ -59,13 +59,13 @@ public final class Util {
         if (alloyHome!=null) return alloyHome;
         String temp=System.getProperty("java.io.tmpdir");
         if (temp==null || temp.length()==0)
-            OurDialog.fatal(null,"Error! Please specify a temporary directory with the Java java.io.tmpdir property!");
+            OurDialog.fatal(null,"Error. Please specify a temporary directory using the Java java.io.tmpdir property.");
         String username=System.getProperty("user.name");
         File tempfile=new File(temp+fs+"alloy4tmp-"+(username==null?"":username));
         String ans=tempfile.getAbsolutePath();
         tempfile.mkdirs();
         if (!tempfile.isDirectory()) {
-            OurDialog.fatal(null, "Error! Cannot create the temporary directory "+ans);
+            OurDialog.fatal(null, "Error. Cannot create the temporary directory "+ans);
         }
         if (!onWindows()) {
             String[] args={"chmod", "700", ans};
@@ -147,7 +147,7 @@ public final class Util {
         }
         try { binStream.close(); } catch(IOException ex) { result=false; }
         try { resStream.close(); } catch(IOException ex) { result=false; }
-        if (!result) OurDialog.fatal(null,"Error occurred in writing the file \""+destname+"\"!");
+        if (!result) OurDialog.fatal(null,"Error occurred in writing the file \""+destname+"\"");
     }
 
     /** Returns true iff running on Windows **/
