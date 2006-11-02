@@ -9,6 +9,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -204,8 +205,28 @@ public final class LogToJTextPane extends Log {
     /** Write "msg" in bold style. */
     @Override public void logBold(String msg) { log(msg,styleBold); }
 
+    /** Wraps the String to at most N characters per line; the input string must NOT contain line breaks initially. */
+    public void linewrap(StringBuilder sb, String msg) {
+        StringTokenizer st=new StringTokenizer(msg,"\t ");
+        int max=50;
+        int now=0;
+        while(st.hasMoreTokens()) {
+            String tk=st.nextToken();
+            if (now+1+tk.length() > max) { if (now>0) sb.append('\n'); sb.append(tk); now=tk.length(); }
+            else { if (now>0) {now++; sb.append(' ');} sb.append(tk); now=now+tk.length(); }
+        }
+    }
+
     /** Write "msg" in red style. */
-    public void logRed(String msg) { log(msg,styleRed); }
+    public void logRed(String msg) {
+        StringBuilder sb=new StringBuilder();
+        while(msg.length()>0) {
+            int i=msg.indexOf('\n');
+            if (i>=0) { linewrap(sb, msg.substring(0,i)); sb.append('\n'); msg=msg.substring(i+1); }
+            else { linewrap(sb,msg); break; }
+        }
+        log(sb.toString(), styleRed);
+    }
 
     /** Write "msg" using the provided style. */
     private void log(final String msg, final Style style) {
