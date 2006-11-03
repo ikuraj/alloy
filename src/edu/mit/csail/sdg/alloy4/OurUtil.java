@@ -71,7 +71,7 @@ public final class OurUtil {
     /** Returns the recommended font to use in the visualizer, based on the OS. */
     public static Font getVizFont() {
         if (Util.onMac()) return new Font("LucidaGrande", Font.PLAIN, 11);
-        return new Font("Dialog", Font.BOLD, 12);
+        return new Font("Dialog", Font.PLAIN, 12);
     }
 
     /** Run f.run() using the AWT thread; if it's not the AWT thread, use SwingUtilities.invokeAndWait() on it. */
