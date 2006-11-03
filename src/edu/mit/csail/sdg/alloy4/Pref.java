@@ -17,8 +17,8 @@ public final class Pref {
     /** This enum defines the set of possible SAT solvers. */
     public enum SatSolver {
         /** BerkMin via pipe */               BerkMinPIPE("berkmin", "BerkMin"),
-        /** MiniSat2(simp) via pipe */        MiniSatSimpPIPE("minisat2simp", "MiniSat2+Simp"),
-        /** MiniSat2(core) via pipe */        MiniSatCorePIPE("minisat2core", "MiniSat2"),
+        // MiniSat2(simp) via pipe            MiniSatSimpPIPE("minisat2simp", "MiniSat2+Simp"),
+        // MiniSat2(core) via pipe            MiniSatCorePIPE("minisat2core", "MiniSat2"),
         /** MiniSat1 via pipe */              MiniSatPIPE("minisat", "MiniSat"),
         /** MiniSat1 via JNI */               MiniSatJNI("minisat(jni)", "MiniSat using JNI"),
         /** ZChaff via JNI */                 ZChaffJNI("zchaff(jni)", "ZChaff using JNI"),
