@@ -12,8 +12,6 @@ import javax.swing.KeyStroke;
  * Graphical menu item that extends JMenuItem.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
- *
- * @author Felix Chang
  */
 
 public final class OurMenuItem extends JMenuItem {

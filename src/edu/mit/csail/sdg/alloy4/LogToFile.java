@@ -11,8 +11,6 @@ import java.io.UnsupportedEncodingException;
  * Since the output is plain text, logBold() and logLink() simply call log().
  *
  * <p/><b>Thread Safety:</b>  Safe.
- *
- * @author Felix Chang
  */
 
 public final class LogToFile extends Log {

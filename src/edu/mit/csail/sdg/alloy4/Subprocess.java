@@ -24,8 +24,6 @@ import java.io.OutputStream;
  * <br/> (with -1 as the return code).
  *
  * <p/><b>Thread Safety:</b>  Safe.
- *
- * @author Felix Chang
  */
 
 public final class Subprocess {

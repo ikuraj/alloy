@@ -21,8 +21,6 @@ import javax.swing.JPanel;
  * committed into the data store, and it always re-queries the data store whenever it needs to know if it's on or off.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
- *
- * @author Felix Chang
  */
 
 public final class OurBinaryCheckbox extends JPanel {

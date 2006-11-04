@@ -10,8 +10,6 @@ import javax.swing.border.Border;
  * Graphical border on zero, one, two, three, or all four sides of a component.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
- *
- * @author Felix Chang
  */
 
 public final class OurBorder implements Border {

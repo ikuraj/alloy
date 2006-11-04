@@ -13,8 +13,6 @@ import com.apple.eawt.ApplicationListener;
  * since that will trigger the loading of com.apple.eawt.* which are not available on other platforms.
  *
  * <p/><b>Thread Safety:</b>  Safe.
- *
- * @author Felix Chang
  */
 public final class MacUtil {
 

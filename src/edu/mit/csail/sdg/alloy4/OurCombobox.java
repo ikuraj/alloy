@@ -24,8 +24,6 @@ import javax.swing.ListCellRenderer;
  * then this combobox and the underlying data will become out-of-sync.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
- *
- * @author Felix Chang
  */
 
 public final class OurCombobox extends JComboBox {

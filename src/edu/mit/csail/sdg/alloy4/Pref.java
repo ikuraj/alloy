@@ -6,8 +6,6 @@ import java.util.prefs.Preferences;
  * This class reads and writes Java persistent preferences.
  *
  * <p/><b>Thread Safety:</b>  Safe.
- *
- * @author Felix Chang
  */
 
 public final class Pref {

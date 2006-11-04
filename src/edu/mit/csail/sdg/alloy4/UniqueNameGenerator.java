@@ -7,8 +7,6 @@ import java.util.Set;
  * This class generates unique names based on names provided by the caller.
  *
  * <p/><b>Thread Safety:</b>  Safe.
- *
- * @author Felix Chang
  */
 
 public final class UniqueNameGenerator {

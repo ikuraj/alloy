@@ -29,8 +29,6 @@ import java.util.NoSuchElementException;
  *
  * <p/><b>Thread Safety:</b>  Safe.
  *
- * @author Felix Chang
- *
  * @param <T> - the type of element
  */
 

@@ -7,8 +7,6 @@ package edu.mit.csail.sdg.alloy4;
  * will generate a customized Version.java with the correct date.
  *
  * <p/><b>Thread Safety:</b>  Safe.
- *
- * @author Felix Chang
  */
 
 public final class Version {

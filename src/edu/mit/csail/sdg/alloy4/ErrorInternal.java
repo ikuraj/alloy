@@ -6,8 +6,6 @@ package edu.mit.csail.sdg.alloy4;
  * <p/><b>Invariant:</b>      msg!=null
  *
  * <p/><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
- *
- * @author Felix Chang
  */
 
 public final class ErrorInternal extends Err {

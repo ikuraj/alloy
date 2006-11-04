@@ -23,8 +23,6 @@ import java.util.LinkedList;
  * <p/><b>Thread Safety:</b>  Safe.
  *
  * @param <V> - the type for Value
- *
- * @author Felix Chang
  */
 
 public final class Env<V> {

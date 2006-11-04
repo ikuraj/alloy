@@ -23,8 +23,6 @@ import javax.swing.JPanel;
  * it needs to know if it's on or off or inherited.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
- *
- * @author Felix Chang
  */
 
 public final class OurTristateCheckbox extends JPanel {

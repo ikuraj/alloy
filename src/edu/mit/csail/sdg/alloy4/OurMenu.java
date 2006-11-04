@@ -12,8 +12,6 @@ import javax.swing.event.MenuListener;
  * Graphical menu that extends JMenu.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
- *
- * @author Felix Chang
  */
 
 public final class OurMenu extends JMenu {

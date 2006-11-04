@@ -15,8 +15,6 @@ import java.util.IdentityHashMap;
  * <p/><b>Thread Safety:</b>  Safe.
  *
  * @param <N> - the node type
- *
- * @author Felix Chang
  */
 
 public final class DirectedGraph<N> {

@@ -13,8 +13,6 @@ import javax.swing.filechooser.FileFilter;
  * Graphical dialog methods for asking the user some questions.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
- *
- * @author Felix Chang
  */
 
 public final class OurDialog {

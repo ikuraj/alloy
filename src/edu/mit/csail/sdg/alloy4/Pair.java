@@ -4,8 +4,6 @@ package edu.mit.csail.sdg.alloy4;
  * Immutable; stores a pair of object references.
  *
  * <p/><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
- *
- * @author Felix Chang
  */
 
 public final class Pair<A,B> {

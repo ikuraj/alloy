@@ -34,8 +34,6 @@ import javax.swing.text.ViewFactory;
  *
  * <p/><b>Thread Safety:</b>  Safe
  * (as long as we follow the important general rule that the AWT thread must never block on other threads)
- *
- * @author Felix Chang
  */
 
 public final class LogToJTextPane extends Log {
