@@ -100,12 +100,12 @@ public final class Util {
      * Returns true iff a file was created and written.
      */
     private static synchronized boolean copy(String sourcename, String destname) {
-        File destfileobj=new File(destname);
-        if (destfileobj.isFile() && destfileobj.length()>0) return false;
+        //File destfileobj=new File(destname);
+        //if (destfileobj.isFile() && destfileobj.length()>0) return false;
         //
         InputStream resStream=Util.class.getClassLoader().getResourceAsStream(sourcename);
-        // The following lines can be commented out in the release builds; they're only useful for Alloy 4 developers
-        /*
+        /* The following lines can be commented out in the release builds; they're only useful for Alloy 4 developers
+        //
         String os = System.getProperty("os.name").toLowerCase().replace(' ','-');
         if (os.startsWith("mac-")) os="mac"; else if (os.startsWith("windows-")) os="windows";
         String arch = System.getProperty("os.arch").toLowerCase().replace(' ','-');
