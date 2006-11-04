@@ -60,7 +60,7 @@ public final class Util {
         if (temp==null || temp.length()==0)
             OurDialog.fatal(null,"Error. Please specify a temporary directory using the Java java.io.tmpdir property.");
         String username=System.getProperty("user.name");
-        File tempfile=new File(temp+fs+"alloy4tmp1-"+(username==null?"":username));
+        File tempfile=new File(temp+fs+"alloy4tmp2-"+(username==null?"":username));
         String ans=tempfile.getAbsolutePath();
         tempfile.mkdirs();
         if (!tempfile.isDirectory()) {
