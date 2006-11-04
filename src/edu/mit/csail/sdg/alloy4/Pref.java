@@ -42,6 +42,9 @@ public final class Pref {
             return MiniSatPIPE;
         }
 
+        /** Returns the ID for this enum value. */
+        public final String id() { return id; }
+
         /** Returns the human-readable label for this enum value. */
         @Override public final String toString() { return label; }
 

@@ -2,7 +2,6 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -83,26 +82,32 @@ public final class Util {
         String[] args=new String[names.length+2];
         args[0]="chmod"; // This does not work on Windows, but the "executable" bit is not needed on Windows anyway.
         args[1]=(executable ? "700" : "600"); // 700 means read+write+executable; 600 means read+write.
+        int j=2;
         for(int i=0; i<names.length; i++) {
             String name=names[i];
             String destname=(destdir + File.separatorChar + name).replace('/', File.separatorChar);
             int last=destname.lastIndexOf(File.separatorChar);
             new File(destname.substring(0,last+1)).mkdirs(); // Error will be caught later by the file copy
-            copy(name, destname);
-            args[i+2]=destname;
+            if (copy(name, destname)) { args[j]=destname; j++; }
         }
-        if (onWindows()) return;
-        try {Runtime.getRuntime().exec(args).waitFor();}
+        if (onWindows() || j<=2) return;
+        String[] realargs=new String[j];
+        for(int i=0; i<j; i++) realargs[i]=args[i];
+        try {Runtime.getRuntime().exec(realargs).waitFor();}
         catch (Exception ex) {harmless("chmod",ex);} // We only intend to make a best effort
     }
 
-    /** Copy the given file from JAR into the destination file; if the destination file exists, we then do nothing. */
-    private static synchronized void copy(String sourcename, String destname) {
+    /**
+     * Copy the given file from JAR into the destination file; if the destination file exists, we then do nothing.
+     * Returns true iff a file was created and written.
+     */
+    private static synchronized boolean copy(String sourcename, String destname) {
         File destfileobj=new File(destname);
-        if (destfileobj.isFile() && destfileobj.length()>0) return;
+        if (destfileobj.isFile() && destfileobj.length()>0) return false;
         //
         InputStream resStream=Util.class.getClassLoader().getResourceAsStream(sourcename);
         // The following lines can be commented out in the release builds; they're only useful for Alloy 4 developers
+        /*
         String os = System.getProperty("os.name").toLowerCase().replace(' ','-');
         if (os.startsWith("mac-")) os="mac"; else if (os.startsWith("windows-")) os="windows";
         String arch = System.getProperty("os.arch").toLowerCase().replace(' ','-');
@@ -121,10 +126,11 @@ public final class Util {
         }
         if (resStream==null) {
             try { resStream=new FileInputStream(".."+fs+"alloy4viz"+fs+"binary"+fs+arch+fs+sourcename); }
-            catch (FileNotFoundException e) { harmless("The file is just not applicable on this platform",e); return; }
+            catch (FileNotFoundException e) { return false; }
         }
         // The above lines can be commented out in the release builds; they're only useful for Alloy 4 developers
-        if (resStream==null) return;
+        */
+        if (resStream==null) return false;
         boolean result=true;
         InputStream binStream=new BufferedInputStream(resStream);
         FileOutputStream tmpFileOutputStream=null;
@@ -148,6 +154,7 @@ public final class Util {
         try { binStream.close(); } catch(IOException ex) { result=false; }
         try { resStream.close(); } catch(IOException ex) { result=false; }
         if (!result) OurDialog.fatal(null,"Error occurred in writing the file \""+destname+"\"");
+        return true;
     }
 
     /** Returns true iff running on Windows **/
