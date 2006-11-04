@@ -30,8 +30,8 @@ public final class Util {
 
     /**
      * Returns the canonical and absolute path for a file.
-     * If an IO error occurred, it will at least return a noncanonical
-     * but absolute path for a file.
+     * If an IO error occurred, or if the file doesn't exist yet,
+     * we will at least return a noncanonical but absolute path for it.
      */
     public static final String canon(String filename) {
       String answer;
@@ -70,9 +70,9 @@ public final class Util {
         if (temp==null || temp.length()==0)
             OurDialog.fatal(null,"Error. Please specify a temporary directory using the Java java.io.tmpdir property.");
         String username=System.getProperty("user.name");
-        String ans=canon(temp+fs+"alloy4tmp2-"+(username==null?"":username));
-        File tempfile=new File(ans);
+        File tempfile=new File(temp+fs+"alloy4tmp2-"+(username==null?"":username));
         tempfile.mkdirs();
+        String ans=canon(tempfile.getPath());
         if (!tempfile.isDirectory()) {
             OurDialog.fatal(null, "Error. Cannot create the temporary directory "+ans);
         }
