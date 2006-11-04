@@ -78,7 +78,7 @@ public final class OurDialog {
     public static File askFile(
             Frame parentFrame, boolean isOpen, String dir,
             final String ext, final String description) {
-        File ans;
+        String ans;
         if (Util.onMac()) {
             FileDialog f = new FileDialog(parentFrame, isOpen?"Open...":"Save...");
             f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
@@ -88,7 +88,7 @@ public final class OurDialog {
             });
             f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
             if (f.getFile()==null) return null;
-            ans=new File(f.getDirectory()+File.separatorChar+f.getFile());
+            ans=f.getDirectory()+File.separatorChar+f.getFile();
         } else {
             JFileChooser open=new JFileChooser(dir);
             open.setDialogTitle(isOpen?"Open...":"Save...");
@@ -99,10 +99,11 @@ public final class OurDialog {
             };
             open.setFileFilter(filter);
             if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION) return null;
-            ans=open.getSelectedFile();
+            if (open.getSelectedFile()==null) return null;
+            ans=open.getSelectedFile().getPath();
         }
-        if (ans!=null && !isOpen && ans.getName().lastIndexOf('.')<0) ans=new File(ans.getAbsolutePath()+ext);
-        return ans;
+        if (!isOpen && ans.lastIndexOf('.')<0) ans=ans+ext;
+        return new File(Util.canon(ans));
     }
 
     /** Display "msg" in a dialogbox, and ask the user to choose yes versus no (default==no). */

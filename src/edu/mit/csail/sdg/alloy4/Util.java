@@ -29,6 +29,18 @@ public final class Util {
     private static final String fs=System.getProperty("file.separator");
 
     /**
+     * Returns the canonical and absolute path for a file.
+     * If an IO error occurred, it will at least return a noncanonical
+     * but absolute path for a file.
+     */
+    public static final String canon(String filename) {
+      String answer;
+      try { answer=(new File(filename)).getCanonicalPath(); }
+      catch(IOException ex) { answer=(new File(filename)).getAbsolutePath(); }
+      return answer;
+    }
+
+    /**
      * Sorts two strings for optimum module order; we guarantee slashCompartor(a,b)==0 iff a.equals(b).
      * <br/> (1) If one string has fewer '/' than the other, then it is considered smaller.
      * <br/> (2) If both strings has same number of '/', then we first compare them lexically without case-sensitivity.
@@ -51,15 +63,15 @@ public final class Util {
     /** This variable caches the result of alloyHome() function call. */
     private static String alloyHome=null;
 
-    /** Determines an appropriate temporary directory to store Alloy files; it is guaranteed to be an absolute path. */
+    /** Determines an appropriate temporary directory to store Alloy files; it is guaranteed to be a canonical absolute path. */
     public static synchronized String alloyHome() {
         if (alloyHome!=null) return alloyHome;
         String temp=System.getProperty("java.io.tmpdir");
         if (temp==null || temp.length()==0)
             OurDialog.fatal(null,"Error. Please specify a temporary directory using the Java java.io.tmpdir property.");
         String username=System.getProperty("user.name");
-        File tempfile=new File(temp+fs+"alloy4tmp2-"+(username==null?"":username));
-        String ans=tempfile.getAbsolutePath();
+        String ans=canon(temp+fs+"alloy4tmp2-"+(username==null?"":username));
+        File tempfile=new File(ans);
         tempfile.mkdirs();
         if (!tempfile.isDirectory()) {
             OurDialog.fatal(null, "Error. Cannot create the temporary directory "+ans);
