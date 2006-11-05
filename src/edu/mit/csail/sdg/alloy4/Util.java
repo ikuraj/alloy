@@ -175,9 +175,9 @@ public final class Util {
 
     /** Appends "st", "nd", "rd", "th"... as appropriate; (for example, 21 becomes 21st, 22 becomes 22nd...) */
     public static String th(int n) {
-        if (n==1) return "first";
-        if (n==2) return "second";
-        if (n==3) return "third";
+        if (n==1) return "First";
+        if (n==2) return "Second";
+        if (n==3) return "Third";
         if (n>0 && (n%10)==1 && (n%100)!=11) return n+"st";
         if (n>0 && (n%10)==2 && (n%100)!=12) return n+"nd";
         if (n>0 && (n%10)==3 && (n%100)!=13) return n+"rd";
