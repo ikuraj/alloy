@@ -1,9 +1,11 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -28,6 +30,23 @@ public final class Util {
     /** This variable caches the value of the system's file separator. */
     private static final String fs=System.getProperty("file.separator");
 
+    /** Read everything into a StringBuilder. */
+    public static StringBuilder readAll(String filename) {
+        StringBuilder sb=new StringBuilder();
+        FileReader fr=null;
+        BufferedReader br=null;
+        try { fr=new FileReader(filename); } catch(IOException ex) { return sb; }
+        br=new BufferedReader(fr);
+        try {
+           while(true) { String s=br.readLine(); if (s==null) break; sb.append(s); sb.append('\n'); }
+        } catch(IOException ex) {
+           sb.append("\nFILE IO ERROR: "+ex.toString()+"\n\n");
+        }
+        try { br.close(); } catch(IOException ex) {}
+        try { fr.close(); } catch(IOException ex) {}
+        return sb;
+    }
+
     /**
      * Returns the canonical and absolute path for a file.
      * If an IO error occurred, or if the file doesn't exist yet,
@@ -51,6 +70,10 @@ public final class Util {
         public final int compare(String a, String b) {
             if (a==null) return (b==null)?0:-1;
             if (b==null) return 1;
+            if (a.equals("extends")) { if (a.equals(b)) return 0; return -1; }
+            if (b.equals("extends")) return 1;
+            if (a.equals("in")) { if (a.equals(b)) return 0; return -1; }
+            if (b.equals("in")) return 1;
             int acount=0, bcount=0;
             for(int i=0; i<a.length(); i++) if (a.charAt(i)=='/') acount++;
             for(int i=0; i<b.length(); i++) if (b.charAt(i)=='/') bcount++;
