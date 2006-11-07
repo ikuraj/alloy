@@ -20,13 +20,13 @@ import javax.swing.border.LineBorder;
 
 /** When an uncaught exception occurs, this class asks for permission before sending crash report. */
 
-public final class CrashReport implements Thread.UncaughtExceptionHandler {
+public final class CrashReporter implements Thread.UncaughtExceptionHandler {
 
     /** A pre-created instance of CrashReport */
-    public static final CrashReport defaultReporter = new CrashReport();
+    public static final CrashReporter defaultReporter = new CrashReporter();
 
     /** Constructor is private since this class never needs to be instantiated. */
-    private CrashReport() { }
+    private CrashReporter() { }
 
     /** The name of the main file being analyzed; "" if none. */
     private String mainfile = "";
