@@ -80,6 +80,12 @@ public final class LogToJTextPane extends Log {
     /** The current font size. */
     private int fontSize;
 
+    /** The color to use for hyperlinks. */
+    private static final Color linkColor=new Color(0.3f, 0.3f, 0.9f);
+    
+    /** The color to use for a hyperlink when the mouse is hovering over it. */
+    private static final Color hoverColor=new Color(.9f, .3f, .3f);
+
     /** This stores a default ViewFactory that will handle the View requests that we don't care about. */
     private static final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
 
@@ -90,7 +96,7 @@ public final class LogToJTextPane extends Log {
      * @param background - the background color to use for the JTextPane
      * @param regular - the color to use for regular messages
      * @param red - the color to use for red messages
-     * @param focusAction - the function to call when this log window gets the focus
+     * @param focusAction - the function to call when this log panel gets the focus
      * (as required by Func0's specification, we guarantee we will only call focusAction.run() from the AWT thread).
      * @param clickAction - the function to call when users click on a hyperlink message
      * (as required by Func1's specification, we guarantee we will only call clickAction.run() from the AWT thread).
@@ -116,14 +122,15 @@ public final class LogToJTextPane extends Log {
     private void initialize(JScrollPane parent,Color background,Color regular,Color red,final OurFunc0 focusAction) {
         log=new JTextPane();
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
+        // 30000 is a good number; value higher than about 32768 will cause errors.
         log.setEditorKit(new StyledEditorKit() {
             private static final long serialVersionUID = 1L;
-            @Override public ViewFactory getViewFactory() { return new ViewFactory() {
-                public View create(Element x) {
+            @Override public final ViewFactory getViewFactory() { return new ViewFactory() {
+                public final View create(Element x) {
                     if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
                     return new BoxView(x, View.Y_AXIS) {
-                        @Override public float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
-                        @Override public void layout(int width,int height) { super.layout(30000,height); }
+                        @Override public final float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
+                        @Override public final void layout(int width,int height) { super.layout(30000,height); }
                     };
                 }
             };}
@@ -157,12 +164,12 @@ public final class LogToJTextPane extends Log {
         }
         clearError();
         StyledDocument doc=log.getStyledDocument();
-        Style style=doc.addStyle("bar", styleRegular);
+        Style dividerStyle=doc.addStyle("bar", styleRegular);
         JPanel jpanel=new JPanel();
         jpanel.setBackground(Color.LIGHT_GRAY);
         jpanel.setPreferredSize(new Dimension(300,1)); // 300 is arbitrary, since it will auto-stretch
-        StyleConstants.setComponent(style, jpanel);
-        log(".",style);
+        StyleConstants.setComponent(dividerStyle, jpanel);
+        log(".",dividerStyle); // Any character here would do; the "." will instead be replaced by the JPanel
         log("\n\n",styleRegular);
         log.setCaretPosition(doc.getLength());
         lastSize=doc.getLength();
@@ -176,9 +183,8 @@ public final class LogToJTextPane extends Log {
         }
         clearError();
         StyledDocument doc=log.getStyledDocument();
-        Style style=doc.addStyle("link", styleRegular);
+        Style linkStyle=doc.addStyle("link", styleRegular);
         final JLabel label=new JLabel("Visualize");
-        final Color linkColor=new Color(0.3f, 0.3f, 0.9f), hoverColor=new Color(.9f, .3f, .3f);
         label.setAlignmentY(0.8f);
         label.setMaximumSize(label.getPreferredSize());
         label.setFont(OurUtil.getFont(fontSize).deriveFont(Font.BOLD));
@@ -190,9 +196,9 @@ public final class LogToJTextPane extends Log {
             public final void mouseEntered(MouseEvent e) { label.setForeground(hoverColor); }
             public final void mouseExited(MouseEvent e) { label.setForeground(linkColor); }
         });
-        StyleConstants.setComponent(style, label);
+        StyleConstants.setComponent(linkStyle, label);
         links.add(label);
-        log(".",style);
+        log(".",linkStyle); // Any character here would do; the "." will instead be replaced by the JLabel
         log.setCaretPosition(doc.getLength());
         lastSize=doc.getLength();
     }
@@ -202,18 +208,6 @@ public final class LogToJTextPane extends Log {
 
     /** Write "msg" in bold style. */
     @Override public void logBold(String msg) { log(msg,styleBold); }
-
-    /** Wraps the String to at most N characters per line; the input string must NOT contain line breaks initially. */
-    public void linewrap(StringBuilder sb, String msg) {
-        StringTokenizer st=new StringTokenizer(msg,"\t ");
-        int max=50;
-        int now=0;
-        while(st.hasMoreTokens()) {
-            String tk=st.nextToken();
-            if (now+1+tk.length() > max) { if (now>0) sb.append('\n'); sb.append(tk); now=tk.length(); }
-            else { if (now>0) {now++; sb.append(' ');} sb.append(tk); now=now+tk.length(); }
-        }
-    }
 
     /** Write "msg" in red style. */
     public void logRed(String msg) {
@@ -240,6 +234,18 @@ public final class LogToJTextPane extends Log {
         if (style!=styleRed) lastSize=doc.getLength();
     }
 
+    /** Try to wrap the input to about 50 characters per line; however, if a token is too longer, we won't break it. */
+    public void linewrap(StringBuilder sb, String msg) {
+        StringTokenizer tokenizer=new StringTokenizer(msg,"\r\n\t ");
+        int max=50;
+        int now=0;
+        while(tokenizer.hasMoreTokens()) {
+            String x=tokenizer.nextToken();
+            if (now+1+x.length() > max) { if (now>0) sb.append('\n'); sb.append(x); now=x.length(); }
+            else { if (now>0) {now++; sb.append(' ');} sb.append(x); now=now+x.length(); }
+        }
+    }
+
     /** Set the font size. */
     public void setFontSize(final int fontSize) {
         if (!SwingUtilities.isEventDispatchThread()) {
@@ -260,7 +266,7 @@ public final class LogToJTextPane extends Log {
         doc.setCharacterAttributes(0, doc.getLength(), temp, false);
         // Changes all existing hyperlinks
         Font newFont=new Font(OurUtil.getFontName(), Font.BOLD, fontSize);
-        for(JLabel x:links) x.setFont(newFont);
+        for(JLabel link:links) link.setFont(newFont);
     }
 
     /** Set the background color. */
@@ -298,7 +304,7 @@ public final class LogToJTextPane extends Log {
         StyledDocument doc=log.getStyledDocument();
         int n=doc.getLength();
         if (n<=newLength) return;
-        try {doc.remove(newLength,n-newLength);}
+        try {doc.remove(newLength, n-newLength);}
         catch (BadLocationException e) {Util.harmless("This shouldn't happen",e);}
         if (lastSize>doc.getLength()) lastSize=doc.getLength();
     }

@@ -18,7 +18,7 @@ import javax.swing.JPanel;
  * <br/> Whenever the checkbox is clicked by the user, it calls gs.set(key,value) to set a new value.
  *
  * <p/> In other words, the checkbox does not contain any hidden states: all changes are immediately
- * committed into the data store, and it always re-queries the data store whenever it needs to know if it's on or off.
+ * committed into the data store, and it always re-queries the data store whenever it needs to repaint itself.
  *
  * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
  */
@@ -32,7 +32,7 @@ public final class OurBinaryCheckbox extends JPanel {
     private static final Icon off = OurUtil.loadIcon("images/cb0.gif");
 
     /** The icon to use when the checkbox is on. */
-    private static final Icon on  = OurUtil.loadIcon("images/cb1.gif");
+    private static final Icon on = OurUtil.loadIcon("images/cb1.gif");
 
     /** The underlying JCheckBox object. */
     private final JCheckBox box;
@@ -74,11 +74,11 @@ public final class OurBinaryCheckbox extends JPanel {
         this.gs=gs;
         this.key=key;
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-        box = new JCheckBox(off); // Doesn't matter if it's on or off; the paint() method will call gs.get() to decide.
+        box = new JCheckBox(on); // Doesn't matter if it's on or off; the paint() method will call gs.get() to decide.
         box.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 boolean v=!gs.get(key);
-                if (v) box.setIcon(on); else box.setIcon(off);
+                box.setIcon(v?on:off);
                 gs.set(key, v);
             }
         });

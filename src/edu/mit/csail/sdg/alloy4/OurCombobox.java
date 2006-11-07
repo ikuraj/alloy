@@ -74,7 +74,7 @@ public final class OurCombobox extends JComboBox {
     }
 
     /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
-    private static Vector<Object> addNull(List<Object> list, boolean addNull) {
+    private static Vector<Object> copy(List<Object> list, boolean addNull) {
         Vector<Object> answer=new Vector<Object>();
         if (addNull) answer.add(null);
         answer.addAll(list);
@@ -93,7 +93,7 @@ public final class OurCombobox extends JComboBox {
     public OurCombobox(
             final ComboGetterSetter gs, boolean addNull, List<Object> list,
             int width, int height, final Object key) {
-        super(addNull(list,addNull));
+        super(copy(list,addNull));
         this.gs = gs;
         this.key = key;
         setFont(OurUtil.getVizFont());
@@ -102,7 +102,7 @@ public final class OurCombobox extends JComboBox {
         setPreferredSize(new Dimension(width,height));
         setMaximumSize(new Dimension(width,height));
         if (!Util.onWindows()) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
-        // To avoid useless or harmful synchronizing between this GUI and the underlying data,
+        // To avoid useless or harmful synchronization between this GUI and the underlying data,
         // we make sure we set the initial value before adding the ActionListener.
         setSelectedItem(gs.getValue(key));
         addActionListener(new ActionListener() {

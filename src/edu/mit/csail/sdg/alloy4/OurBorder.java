@@ -41,15 +41,15 @@ public final class OurBorder implements Border {
     }
 
     /** This method is called by Swing to actually draw the borders. */
-    public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+    public void paintBorder(Component component, Graphics graphics, int x, int y, int width, int height) {
         if (width<1 || height<1) return;
-        Color oldColor = g.getColor();
-        g.setColor(Color.LIGHT_GRAY);
-        if (top) g.drawLine(x, y, x+width-1, y);
-        if (left) g.drawLine(x, y, x, y+height-1);
-        if (bottom) g.drawLine(x, y+height-1, x+width-1, y+height-1);
-        if (right) g.drawLine(x+width-1, y, x+width-1, y+height-1);
-        g.setColor(oldColor);
+        Color oldColor = graphics.getColor();
+        graphics.setColor(Color.LIGHT_GRAY);
+        if (top) graphics.drawLine(x, y, x+width-1, y);
+        if (left) graphics.drawLine(x, y, x, y+height-1);
+        if (bottom) graphics.drawLine(x, y+height-1, x+width-1, y+height-1);
+        if (right) graphics.drawLine(x+width-1, y, x+width-1, y+height-1);
+        graphics.setColor(oldColor);
     }
 
     /** This method is called by Swing to retrieve the dimension of the border. */

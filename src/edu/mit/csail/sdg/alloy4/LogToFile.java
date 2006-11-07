@@ -63,7 +63,7 @@ public final class LogToFile extends Log {
     /** Truncate the file if it is longer than the given length. */
     @Override public synchronized void setLength(int newLength) {
         if (error==null) {
-            try { if (file.length()>newLength) { file.setLength(newLength); length=newLength; } }
+            try { if (length>newLength) { file.setLength(newLength); length=newLength; } }
             catch(IOException ex) { error=ex; }
         }
     }

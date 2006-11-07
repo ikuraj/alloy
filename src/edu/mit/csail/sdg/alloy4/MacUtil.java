@@ -14,6 +14,7 @@ import com.apple.eawt.ApplicationListener;
  *
  * <p/><b>Thread Safety:</b>  Safe.
  */
+
 public final class MacUtil {
 
     /** Constructor is private, since this class never needs to be instantiated. */
@@ -37,18 +38,18 @@ public final class MacUtil {
         if (application==null) application=new Application();
         if (listener!=null) application.removeApplicationListener(listener);
         listener=new ApplicationAdapter() {
-            @Override public void handleReOpenApplication(ApplicationEvent arg) {
+            @Override public void handleReOpenApplication (ApplicationEvent arg) {
                 SwingUtilities.invokeLater(new Runnable() { public void run() { reopen.run(); } });
             }
-            @Override public void handleAbout(ApplicationEvent arg0) {
+            @Override public void handleAbout (ApplicationEvent arg0) {
                 arg0.setHandled(true);
                 SwingUtilities.invokeLater(new Runnable() { public void run() { about.run(); } });
             }
-            @Override public void handleOpenFile(ApplicationEvent arg0) {
+            @Override public void handleOpenFile (ApplicationEvent arg0) {
                 final String filename=arg0.getFilename();
                 SwingUtilities.invokeLater(new Runnable() { public void run() { open.run(filename); } });
             }
-            @Override public void handleQuit(ApplicationEvent arg0) {
+            @Override public void handleQuit (ApplicationEvent arg0) {
                 arg0.setHandled(false); // "false" is correct; some documentation on apple.com claims otherwise.
                 SwingUtilities.invokeLater(new Runnable() { public void run() { quit.run(); } });
             }

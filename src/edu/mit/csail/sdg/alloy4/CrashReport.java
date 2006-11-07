@@ -18,20 +18,35 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
+/** When an uncaught exception occurs, this class asks for permission before sending crash report. */
+
 public final class CrashReport implements Thread.UncaughtExceptionHandler {
 
+    /** A pre-created instance of CrashReport */
     public static final CrashReport defaultReporter = new CrashReport();
 
+    /** Constructor is private since this class never needs to be instantiated. */
+    private CrashReport() { }
+
+    /** The name of the main file being analyzed; "" if none. */
     private String mainfile = "";
+
+    /** The content of the main file being analyzed; "" if none. */
     private String mainfilecontent = "";
+
+    /** The list of additional files being included from the main file. */
     private Set<String> subfiles = new LinkedHashSet<String>();
 
-    public synchronized void clearSubFiles() { subfiles.clear(); }
+    /** Removes the info about main file and subfiles. */
+    public synchronized void clearAll() { subfiles.clear(); mainfile=""; mainfilecontent=""; }
 
-    public synchronized void setMainFile(String filename, String content) { mainfile=filename; mainfilecontent=content; }
+    /** Sets the main file's filename and main file's content. */
+    public synchronized void setMainFile(String filename,String content) {mainfile=filename; mainfilecontent=content;}
 
+    /** Add a new file to the set of "included files". */
     public synchronized void addSubFile(String filename) { subfiles.add(filename); }
 
+    /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException(Thread thread, Throwable ex) {
         String yes="Send the Bug Report", no="Don't Send the Bug Report";
         JTextField email = new JTextField(20);
@@ -57,14 +72,13 @@ public final class CrashReport implements Thread.UncaughtExceptionHandler {
             null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) System.exit(1);
         StringWriter sw=new StringWriter();
         PrintWriter pw=new PrintWriter(sw);
-        // Print the email, comment, thread name, exception message, and stack trace
-        pw.printf("\nAlloy4 crash report (Build Date = %s)\n", Version.buildDate());
-        pw.printf("\n========================= Email ============================\n%s", email.getText());
-        pw.printf("\n\n========================= Comment ==========================\n%s", comment.getText());
-        pw.printf("\n\n========================= Thread Name ======================\n%s", thread.getName());
-        pw.printf("\n\n========================= Exception ========================\n%s",
+        pw.printf("\nAlloy4 crash report (Build Date = %s)\n\n", Version.buildDate());
+        pw.printf("========================= Email ============================\n%s\n\n", email.getText());
+        pw.printf("========================= Comment ==========================\n%s\n\n", comment.getText());
+        pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
+        pw.printf("========================= Exception ========================\n%s\n\n",
                 ex.getClass().toString()+": "+ex.getMessage());
-        pw.printf("\n\n========================= Stack Trace ======================\n");
+        pw.printf("========================= Stack Trace ======================\n");
         ex.printStackTrace(pw);
         pw.printf("\n========================= System Properties ================\n");
         pw.println("Free memory = "+Runtime.getRuntime().freeMemory());
@@ -82,20 +96,15 @@ public final class CrashReport implements Thread.UncaughtExceptionHandler {
             pw.printf("\n\n========================= Sub Model ========================\n");
             pw.printf("// %s\n%s\n", e, content);
         }
-        pw.printf("\n\n========================= The End ==========================\n");
+        pw.printf("\n\n========================= The End ==========================\n\n");
         pw.close();
         sw.flush();
-        System.out.println(sw.toString()); // TODO
+        // System.err.println(sw.toString()); System.err.flush();
         postBug(sw.toString());
         System.exit(1);
     }
 
-    /**
-     * Post the given string -- which can be as large as needed -- via POST HTTP request.
-     * If we get an error attempting to post the bug (e.g. if an Internet connection
-     * is not available, or if the server that accepts bug reports is down), we then
-     * write a dump file and ask the user to mail it to the developers.
-     */
+    /** Post the given string -- which can be as large as needed -- via POST HTTP request. */
     private static String postBug(String bugReport) {
         final String NEW_LINE = System.getProperty("line.separator");
         final String BUG_POST_URL = "http://alloy.mit.edu/postbug.php";
@@ -107,14 +116,15 @@ public final class CrashReport implements Thread.UncaughtExceptionHandler {
             URLConnection connection = url.openConnection();
             connection.setDoOutput(true);
             // write the bug report to the cgi script
-            out = new OutputStreamWriter(connection.getOutputStream());
+            out = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
             out.write(bugReport);
             out.flush();
             // read the response back from the cgi script
-            in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuffer report = new StringBuffer();
+            in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+            StringBuilder report = new StringBuilder();
             for (String inputLine = in.readLine(); inputLine != null; inputLine = in.readLine()) {
-                report.append(inputLine).append(NEW_LINE);
+                report.append(inputLine);
+                report.append(NEW_LINE);
             }
             return report.toString();
         } catch (Exception ex) {

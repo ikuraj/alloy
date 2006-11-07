@@ -27,5 +27,5 @@ public abstract class Err extends RuntimeException {
     }
 
     /** Calls the subclass's "toString()" method to return a textual representation of the error. */
-    @Override public String getMessage() { return toString(); }
+    @Override public final String getMessage() { return toString(); }
 }

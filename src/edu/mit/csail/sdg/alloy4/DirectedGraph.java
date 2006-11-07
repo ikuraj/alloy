@@ -49,6 +49,7 @@ public final class DirectedGraph<N> {
         // (1) Nothing is ever removed from "visited".
         // (2) Every time we add X to "visited", we also simultaneously add X to "todo".
         // (3) Every time we add X to "todo", we also simultaneously add X to "visited".
+        // (4) Nothing is added to "todo" more than once
         visited.put(start,null);
         todo.add(start);
         while(todo.size()>0) {
