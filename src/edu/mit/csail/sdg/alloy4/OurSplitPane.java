@@ -52,7 +52,7 @@ public final class OurSplitPane extends JSplitPane {
         }
         /** This method is called by Swing to actually paint the borders. */
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            if (height==0 || width==0) return;
+            if (height<=0 || width<=0) return;
             Color oldcolor=g.getColor();
             g.setColor(Color.lightGray);
             g.fillRect(0,       0,        width + insets.left + insets.right,   insets.top);
@@ -61,7 +61,7 @@ public final class OurSplitPane extends JSplitPane {
             g.fillRect(width-1, 0,        insets.right,                         height + insets.top + insets.bottom);
             g.setColor(oldcolor);
         }
-        /** This method is called by Swing to return the Insets. */
+        /** This method is called by Swing to return the insets. */
         public Insets getBorderInsets(Component c) { return insets; }
         /** This method is called by Swing to determine whether this object must fill in its own background or not. */
         public boolean isBorderOpaque() { return true; }

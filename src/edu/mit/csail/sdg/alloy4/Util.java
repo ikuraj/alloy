@@ -31,39 +31,41 @@ public final class Util {
     private static final String fs=System.getProperty("file.separator");
 
     /** Read everything into a StringBuilder. */
-    public static StringBuilder readAll(String filename) {
+    public static String readAll(String filename) {
+        String error=null;
         StringBuilder sb=new StringBuilder();
         FileReader fr=null;
         BufferedReader br=null;
-        try { fr=new FileReader(filename); } catch(IOException ex) { return sb; }
+        try { fr=new FileReader(filename); } catch(IOException ex) { return "IO error: "+ex.getMessage(); }
         br=new BufferedReader(fr);
         try {
-           while(true) { String s=br.readLine(); if (s==null) break; sb.append(s); sb.append('\n'); }
+            while(true) { String s=br.readLine(); if (s==null) break; sb.append(s); sb.append('\n'); }
         } catch(IOException ex) {
-           sb.append("\nFILE IO ERROR: "+ex.toString()+"\n\n");
+            error="IO error: "+ex.getMessage();
         }
-        try { br.close(); } catch(IOException ex) {}
-        try { fr.close(); } catch(IOException ex) {}
-        return sb;
+        try { br.close(); } catch(IOException ex) { if (error==null) error=ex.getMessage(); }
+        try { fr.close(); } catch(IOException ex) { if (error==null) error=ex.getMessage(); }
+        return error==null ? (sb.toString()) : ("IO error"+error);
     }
 
     /**
-     * Returns the canonical and absolute path for a file.
+     * Returns the canonical absolute path for a file.
      * If an IO error occurred, or if the file doesn't exist yet,
      * we will at least return a noncanonical but absolute path for it.
      */
     public static final String canon(String filename) {
+      File file=new File(filename);
       String answer;
-      try { answer=(new File(filename)).getCanonicalPath(); }
-      catch(IOException ex) { answer=(new File(filename)).getAbsolutePath(); }
+      try { answer=file.getCanonicalPath(); } catch(IOException ex) { answer=file.getAbsolutePath(); }
       return answer;
     }
 
     /**
      * Sorts two strings for optimum module order; we guarantee slashCompartor(a,b)==0 iff a.equals(b).
-     * <br/> (1) If one string has fewer '/' than the other, then it is considered smaller.
-     * <br/> (2) If both strings has same number of '/', then we first compare them lexically without case-sensitivity.
-     * <br/> (3) If they are identical when case-insensitive, then compare them lexically with case-sensitivity.
+     * <br/> (1) First of all, the builtin names "extend" and "in" are sorted ahead of other names
+     * <br/> (2) Else, if one string has fewer '/' than the other, then it is considered smaller.
+     * <br/> (3) Else, we compare them lexically without case-sensitivity.
+     * <br/> (4) Else, we compare them lexically with case-sensitivity.
      * <br/>
      */
     public static final Comparator<String> slashComparator = new Comparator<String>() {
@@ -86,12 +88,12 @@ public final class Util {
     /** This variable caches the result of alloyHome() function call. */
     private static String alloyHome=null;
 
-    /** Determines an appropriate temporary directory to store Alloy files; it is guaranteed to be a canonical absolute path. */
+    /** Find a temporary directory to store Alloy files; it's guaranteed to be a canonical absolute path. */
     public static synchronized String alloyHome() {
         if (alloyHome!=null) return alloyHome;
         String temp=System.getProperty("java.io.tmpdir");
         if (temp==null || temp.length()==0)
-            OurDialog.fatal(null,"Error. Please specify a temporary directory using the Java java.io.tmpdir property.");
+            OurDialog.fatal(null,"Error. JVM need to specify a temporary directory using java.io.tmpdir property.");
         String username=System.getProperty("user.name");
         File tempfile=new File(temp+fs+"alloy4tmp3-"+(username==null?"":username));
         tempfile.mkdirs();
@@ -104,7 +106,7 @@ public final class Util {
             try {Runtime.getRuntime().exec(args).waitFor();}
             catch (Exception ex) {harmless("Util.alloyHome()", ex);} // We only intend to make a best effort.
         }
-        return alloyHome=ans+fs;
+        return alloyHome=ans;
     }
 
     /**
@@ -135,40 +137,14 @@ public final class Util {
      * Returns true iff a file was created and written.
      */
     private static synchronized boolean copy(String sourcename, String destname) {
-        //File destfileobj=new File(destname);
-        //if (destfileobj.isFile() && destfileobj.length()>0) return false;
-        //
+        File destfileobj=new File(destname);
+        if (destfileobj.isFile() && destfileobj.length()>0) return false;
         InputStream resStream=Util.class.getClassLoader().getResourceAsStream(sourcename);
-        /* The following lines can be commented out in the release builds; they're only useful for Alloy 4 developers
-        //
-        String os = System.getProperty("os.name").toLowerCase().replace(' ','-');
-        if (os.startsWith("mac-")) os="mac"; else if (os.startsWith("windows-")) os="windows";
-        String arch = System.getProperty("os.arch").toLowerCase().replace(' ','-');
-        if (arch.equals("powerpc")) arch="ppc-"+os; else arch=arch.replaceAll("\\Ai[3456]86\\z","x86")+"-"+os;
-        if (resStream==null) {
-            try { resStream=new FileInputStream(".."+fs+"alloy4compiler"+fs+sourcename); }
-            catch (FileNotFoundException e) { resStream=null; }
-        }
-        if (resStream==null) {
-            try { resStream=new FileInputStream(".."+fs+"alloy4compiler"+fs+"jni"+fs+arch+fs+sourcename); }
-            catch (FileNotFoundException e) { resStream=null; }
-        }
-        if (resStream==null) {
-            try { resStream=new FileInputStream(".."+fs+"alloy4compiler"+fs+"binary"+fs+arch+fs+sourcename); }
-            catch (FileNotFoundException e) { resStream=null; }
-        }
-        if (resStream==null) {
-            try { resStream=new FileInputStream(".."+fs+"alloy4viz"+fs+"binary"+fs+arch+fs+sourcename); }
-            catch (FileNotFoundException e) { return false; }
-        }
-        // The above lines can be commented out in the release builds; they're only useful for Alloy 4 developers
-        */
         if (resStream==null) return false;
         boolean result=true;
         InputStream binStream=new BufferedInputStream(resStream);
         FileOutputStream tmpFileOutputStream=null;
         try {
-            (new File(destname)).delete();
             tmpFileOutputStream=new FileOutputStream(destname);
         } catch (FileNotFoundException e) {
             result=false;
@@ -176,7 +152,7 @@ public final class Util {
         if (tmpFileOutputStream!=null) {
             try {
                 byte[] b = new byte[16384];
-                while (true) {
+                while(true) {
                     int numRead = binStream.read(b);
                     if (numRead == -1) break;
                     if (numRead > 0) tmpFileOutputStream.write(b, 0, numRead);
@@ -186,7 +162,7 @@ public final class Util {
         }
         try { binStream.close(); } catch(IOException ex) { result=false; }
         try { resStream.close(); } catch(IOException ex) { result=false; }
-        if (!result) OurDialog.fatal(null,"Error occurred in writing the file \""+destname+"\"");
+        if (!result) OurDialog.fatal(null,"Error occurred in creating the file \""+destname+"\"");
         return true;
     }
 
@@ -237,7 +213,7 @@ public final class Util {
             if (c>=32 && c<127) { out.write(c); continue; }
             out.write("&#x");
             String v=Integer.toString((int)c, 16);
-            while(v.length()<4) v="0"+v;
+            for(int j=v.length(); j<4; j++) out.write('0');
             out.write(v);
             out.write(';');
         }
@@ -265,24 +241,24 @@ public final class Util {
 
     /**
      * Create an empty temporary directory for use, designate it "deleteOnExit", then return it.
-     * It is guaranteed to be an absolute path.
+     * It is guaranteed to be a canonical absolute path.
      */
     public static String maketemp() {
         Random r=new Random(new Date().getTime());
         while(true) {
             int i=r.nextInt(1000000);
-            String dest = Util.alloyHome()+"tmp"+fs+i;
+            String dest = Util.alloyHome()+fs+"tmp"+fs+i;
             File f=new File(dest);
             if (f.exists()) continue;
             f.mkdirs();
             f.deleteOnExit();
-            if (f.isDirectory()) return dest+fs;
+            if (f.isDirectory()) return canon(dest);
         }
     }
 
-    /** Lock then overwrite the given file; throws IOException if there's an error. */
+    /** Lock then overwrite the given file. */
     public static synchronized void lockThenWrite(String filename, String content) throws IOException {
-        RandomAccessFile raf=null;
+        RandomAccessFile raf;
         raf = new RandomAccessFile(new File(filename),"rw"); // If this line fails, IOException will be thrown
         FileChannel fc = raf.getChannel(); // This line does not throw IOException
         try {
@@ -301,7 +277,7 @@ public final class Util {
         }
     }
 
-    /** Lock, read up to 30000 bytes, then erase the given file; throws IOException if there's an error. */
+    /** Open (create if does not exist), lock, read up to 30000 bytes, then truncate the given file. */
     public static synchronized String lockThenReadThenErase(String filename) throws IOException {
         RandomAccessFile raf;
         raf = new RandomAccessFile(new File(filename),"rw"); // If this line fails, IOException will be thrown

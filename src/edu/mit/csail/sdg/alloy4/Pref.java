@@ -15,8 +15,6 @@ public final class Pref {
     /** This enum defines the set of possible SAT solvers. */
     public enum SatSolver {
         /** BerkMin via pipe */               BerkMinPIPE("berkmin", "BerkMin"),
-        // MiniSat2(simp) via pipe            MiniSatSimpPIPE("minisat2simp", "MiniSat2+Simp"),
-        // MiniSat2(core) via pipe            MiniSatCorePIPE("minisat2core", "MiniSat2"),
         /** MiniSat1 via pipe */              MiniSatPIPE("minisat", "MiniSat"),
         /** MiniSat1 via JNI */               MiniSatJNI("minisat(jni)", "MiniSat using JNI"),
         /** ZChaff via JNI */                 ZChaffJNI("zchaff(jni)", "ZChaff using JNI"),
@@ -150,7 +148,7 @@ public final class Pref {
     public static final IntPref TabSize = new IntPref("TabSize",1,2,16);
 
     /** The skolem depth. */
-    public static final IntPref SkolemDepth = new IntPref("SkolemDepth",0,0,3);
+    public static final IntPref SkolemDepth = new IntPref("SkolemDepth",0,0,2);
 
     /** The latest X corrdinate of the Alloy Visualizer window. */
     public static final IntPref VizX = new IntPref("VizX",0,-1,65535);

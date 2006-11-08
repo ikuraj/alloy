@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 
 /**
  * Graphical convenience methods.
@@ -54,23 +55,22 @@ public final class OurUtil {
         return button;
     }
 
+    /** Returns the recommended font name to use in a textbox, based on the OS. */
+    public static String getFontName() { return "LucidaGrande"; }
+
     /** Returns the recommended font to use in a textbox, based on the OS and the given font size. */
     public static Font getFont(int fontSize) { return new Font(getFontName(), Font.PLAIN, fontSize); }
 
-    /** Returns the recommended font name to use in a textbox, based on the OS. */
-    public static String getFontName() { return "LucidaGrande"; }
+    /** Returns the recommended font to use in the visualizer, based on the OS. */
+    public static Font getVizFont() {
+        if (Util.onMac()) return getFont(11); else return new Font("Dialog", Font.PLAIN, 12);
+    }
 
     /** Returns the screen height (in pixels). */
     public static int getScreenHeight() { return Toolkit.getDefaultToolkit().getScreenSize().height; }
 
     /** Returns the screen width (in pixels). */
     public static int getScreenWidth() { return Toolkit.getDefaultToolkit().getScreenSize().width; }
-
-    /** Returns the recommended font to use in the visualizer, based on the OS. */
-    public static Font getVizFont() {
-        if (Util.onMac()) return new Font("LucidaGrande", Font.PLAIN, 11);
-        return new Font("Dialog", Font.PLAIN, 12);
-    }
 
     /** Run f.run() using the AWT thread; if it's not the AWT thread, use SwingUtilities.invokeAndWait() on it. */
     public static void invokeAndWait(final OurFunc0 f) {
@@ -87,31 +87,18 @@ public final class OurUtil {
     /** Run r.run() using the AWT thread; if it's not the AWT thread, use SwingUtilities.invokeAndWait() on it. */
     public static void invokeAndWait(Runnable r) {
         if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
-        try { SwingUtilities.invokeAndWait(r); }
-        catch (InterruptedException e) { Util.harmless("invokeAndWait",e); }
-        catch (InvocationTargetException e) { Util.harmless("invokeAndWait",e); }
-    }
-
-    /**
-     * Make a JLabel with the given color;
-     * if x>=0, it is the preferred width;
-     * if y>=0, it is the preferred height.
-     */
-    public static JLabel label(Color color, int x, int y, String label) {
-        JLabel answer = new JLabel(label);
-        if (color!=null) answer.setForeground(color);
-        Dimension d=answer.getPreferredSize();
-        if (x>=0) d.width=x;
-        if (y>=0) d.height=y;
-        answer.setPreferredSize(d);
-        answer.setMaximumSize(d);
-        return answer;
+        while(true) {
+            try { SwingUtilities.invokeAndWait(r); }
+            catch (InterruptedException e) { continue; }
+            catch (InvocationTargetException e) { break; }
+            break;
+        }
     }
 
     /** Make a JLabel with the given color. */
     public static JLabel label(Color color, String label) {
         JLabel answer = new JLabel(label);
-        if (color!=null) answer.setForeground(color);
+        answer.setForeground(color==null ? Color.BLACK : color);
         answer.setFont(getVizFont());
         return answer;
     }
@@ -119,7 +106,7 @@ public final class OurUtil {
     /** Make a JLabel with the given font. */
     public static JLabel label(Font font, String label) {
         JLabel answer = new JLabel(label);
-        answer.setFont(font);
+        if (font!=null) answer.setFont(font);
         return answer;
     }
 
@@ -127,7 +114,7 @@ public final class OurUtil {
     public static Icon loadIcon(String pathname) {
         URL url = OurUtil.class.getClassLoader().getResource(pathname);
         if (url!=null) return new ImageIcon(Toolkit.getDefaultToolkit().createImage(url));
-        return new ImageIcon(new BufferedImage(5, 5, BufferedImage.TYPE_INT_RGB));
+        return new ImageIcon(new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB));
     }
 
     /** Make a JPanel with BoxLayout in the given orientation; xy must be BoxLayout.X_AXIS or BoxLayout.Y_AXIS. */
@@ -320,6 +307,7 @@ public final class OurUtil {
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         ans.setMinimumSize(new Dimension(50, 50));
+        ans.setBorder(new EmptyBorder(0,0,0,0));
         return ans;
     }
 
@@ -329,6 +317,7 @@ public final class OurUtil {
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         ans.setMinimumSize(new Dimension(50, 50));
+        ans.setBorder(new EmptyBorder(0,0,0,0));
         return ans;
     }
 }

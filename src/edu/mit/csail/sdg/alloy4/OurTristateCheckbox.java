@@ -94,7 +94,7 @@ public final class OurTristateCheckbox extends JPanel {
         this.key=key;
         this.gs=gs;
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-        box = new JCheckBox(off); // Doesn't matter if it's on or off; the paint() method will call gs.get() to decide.
+        box = new JCheckBox(on); // Doesn't matter if it's on or off; the paint() method will call gs.get() to decide.
         box.addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) {
                 Boolean old=gs.get(key);

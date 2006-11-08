@@ -54,7 +54,7 @@ public final class OurMenu extends JMenu {
     public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, int mnemonic, int accel, OurFunc0 func) {
         // OurMenuItem's constructor will add the new item into the list, so we don't have to call add() here.
         OurMenuItem ans = new OurMenuItem(this,label,mnemonic,accel,func);
-        ans.setEnabled(enabled);
+        if (!enabled) ans.setEnabled(false);
         if (icon!=null) ans.setIcon(icon);
         return ans;
     }

@@ -27,7 +27,7 @@ public final class OurDialog {
 
     /** Popup the given error message, then terminate the program. */
     public static void fatal(JFrame parentFrame, Object message) {
-        JOptionPane.showMessageDialog(parentFrame, message, "A fatal error has occurred.", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(parentFrame, message, "Fatal Error", JOptionPane.ERROR_MESSAGE);
         System.exit(1);
     }
 
@@ -54,9 +54,11 @@ public final class OurDialog {
     /** Ask if the user really wishes to overwrite the file (default=no). */
     public static boolean askOverwrite(JFrame parentFrame, String filename) {
         String yes="Overwrite", no="Cancel";
-        int ans=JOptionPane.showOptionDialog(parentFrame,
-                "The file \""+filename+"\" already exists. Do you wish to overwrite it?",
-                "Warning: the file already exists.",
+        int ans=JOptionPane.showOptionDialog(parentFrame, new String[]{
+                "The file \""+filename+"\"",
+                "already exists. Do you wish to overwrite it?"
+                },
+                "Warning: file already exists",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,
@@ -67,7 +69,7 @@ public final class OurDialog {
 
     /**
      * Use the platform's preferred file chooser to ask the user to select a file.
-     * Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
+     * <br/> Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
      * @param parentFrame - the parent frame
      * @param isOpen - true means this is an Open operation; false means this is a Save operation
      * @param dir - the initial directory

@@ -92,6 +92,12 @@ public final class OurBinaryCheckbox extends JPanel {
         setAlignmentX(RIGHT_ALIGNMENT);
     }
 
+    /** This method is called by Swing to enable/disable a component. */
+    @Override public void setEnabled(boolean enabled) {
+        if (box!=null) box.setEnabled(enabled);
+        if (jlabel!=null) jlabel.setEnabled(enabled);
+    }
+
     /** This method is called by Swing to change its background color. */
     @Override public void setBackground(Color color) {
         super.setBackground(color);

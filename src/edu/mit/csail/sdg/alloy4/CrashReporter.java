@@ -1,7 +1,10 @@
 package edu.mit.csail.sdg.alloy4;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -12,10 +15,13 @@ import java.net.URLConnection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 /** When an uncaught exception occurs, this class asks for permission before sending crash report. */
@@ -54,7 +60,6 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
         email.setBorder(new LineBorder(Color.DARK_GRAY));
         comment.setBorder(null);
         JScrollPane scroll=OurUtil.scrollpane(comment);
-        scroll.setBorder(new LineBorder(Color.DARK_GRAY));
         scroll.setPreferredSize(new Dimension(300,200));
         if (JOptionPane.showOptionDialog(null, new Object[]{
                 "Sorry. An internal error has occurred.",
@@ -77,7 +82,7 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
         pw.printf("========================= Comment ==========================\n%s\n\n", comment.getText());
         pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
         pw.printf("========================= Exception ========================\n%s\n\n",
-                ex.getClass().toString()+": "+ex.getMessage());
+                ex.getClass().toString()+": "+ex.toString());
         pw.printf("========================= Stack Trace ======================\n");
         ex.printStackTrace(pw);
         pw.printf("\n========================= System Properties ================\n");
@@ -92,16 +97,39 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
         pw.printf("\n\n========================= Main Model =======================\n");
         pw.printf("// %s\n%s\n", mainfile, mainfilecontent);
         for(String e:subfiles) {
-            String content=Util.readAll(e).toString();
+            String content=Util.readAll(e);
             pw.printf("\n\n========================= Sub Model ========================\n");
             pw.printf("// %s\n%s\n", e, content);
         }
         pw.printf("\n\n========================= The End ==========================\n\n");
         pw.close();
         sw.flush();
-        // System.err.println(sw.toString()); System.err.flush();
-        postBug(sw.toString());
-        System.exit(1);
+        JTextArea status=null;
+        try {
+            JButton done=new JButton("Close");
+            done.addActionListener(new ActionListener() {public void actionPerformed(ActionEvent e){System.exit(1);}});
+            JFrame statusWindow=new JFrame();
+            status=new JTextArea("Sending the bug report... please wait...");
+            status.setEditable(false);
+            status.setLineWrap(true);
+            status.setWrapStyleWord(true);
+            status.setBackground(Color.WHITE);
+            status.setBorder(new EmptyBorder(2,2,2,2));
+            JScrollPane statusPane=new JScrollPane(status);
+            statusPane.setBorder(null);
+            statusWindow.setTitle("Sending Bug Report");
+            statusWindow.setBackground(Color.LIGHT_GRAY);
+            statusWindow.getContentPane().setLayout(new BorderLayout());
+            statusWindow.getContentPane().add(statusPane, BorderLayout.CENTER);
+            statusWindow.getContentPane().add(done, BorderLayout.SOUTH);
+            int w=OurUtil.getScreenWidth(), h=OurUtil.getScreenHeight();
+            statusWindow.pack();
+            statusWindow.setSize(600,200);
+            statusWindow.setLocation(w/2-300,h/2-100);
+            statusWindow.setVisible(true);
+        } catch(Exception exception) { }
+        String result=postBug(sw.toString());
+        if (status!=null) status.setText(result); else System.exit(1);
     }
 
     /** Post the given string -- which can be as large as needed -- via POST HTTP request. */
@@ -128,7 +156,9 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
             }
             return report.toString();
         } catch (Exception ex) {
-            return "Error posting bug report: " + ex.toString();
+            return "Sorry. An error has occurred in posting the bug report.\n\n"
+            +"Please email alloy.mit.edu directly and we will work to fix the problem.\n\n"
+            +"(Bug posting failed due to Java exception: "+ex.toString()+")";
         } finally {
             if (out != null) { try { out.close(); } catch(Exception ignore) { } }
             if (in != null) { try { in.close(); } catch(Exception ignore) { } }

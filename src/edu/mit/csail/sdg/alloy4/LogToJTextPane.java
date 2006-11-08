@@ -82,7 +82,7 @@ public final class LogToJTextPane extends Log {
 
     /** The color to use for hyperlinks. */
     private static final Color linkColor=new Color(0.3f, 0.3f, 0.9f);
-    
+
     /** The color to use for a hyperlink when the mouse is hovering over it. */
     private static final Color hoverColor=new Color(.9f, .3f, .3f);
 
