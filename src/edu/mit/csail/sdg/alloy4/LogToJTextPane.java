@@ -27,6 +27,8 @@ import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 
+import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
+
 /**
  * This logger writes the messages into a JTextPane.
  *
@@ -69,10 +71,16 @@ public final class LogToJTextPane extends Log {
     private List<JLabel> links=new ArrayList<JLabel>();
 
     /**
-     * The method to call when user clicks on one of the hyperlink in the JTextPane;
-     * OurFunc1's specification insists that only the AWT thread may call its methods.
+     * When the window gains focus, we'll call handler.run(ev_focus);
+     * When a hyperlink is clicked, we'll call handler.run(evs_click, linkURL);
      */
-    private final OurFunc1 clickAction;
+    private final MultiRunnable handler;
+
+    /** When the window gains focus, we'll call handler.run(ev_focus). */
+    private final int ev_focus;
+
+    /** When a hyperlink is clicked, we'll call handler.run(evs_click, linkURL). */
+    private final int evs_click;
 
     /** The current length of the log, not counting any "red" error message at the end of the log. */
     private int lastSize=0;
@@ -103,23 +111,25 @@ public final class LogToJTextPane extends Log {
      */
     public LogToJTextPane(final JScrollPane parent, final int fontSize,
             final Color background, final Color regular, final Color red,
-            final OurFunc0 focusAction, final OurFunc1 clickAction) {
-        this.clickAction=clickAction;
+            final MultiRunnable handler, final int ev_focus, final int evs_click) {
+        this.handler=handler;
+        this.ev_focus=ev_focus;
+        this.evs_click=evs_click;
         this.fontSize=fontSize;
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() {
-                public final void run() { initialize(parent,background,regular,red,focusAction); }
+                public final void run() { initialize(parent,background,regular,red); }
             });
             return;
         }
-        initialize(parent,background,regular,red,focusAction);
+        initialize(parent,background,regular,red);
     }
 
     /**
      * Helper method that actually initializes the various GUI objects;
      * This method can be called only by the AWT thread.
      */
-    private void initialize(JScrollPane parent,Color background,Color regular,Color red,final OurFunc0 focusAction) {
+    private void initialize(JScrollPane parent,Color background,Color regular,Color red) {
         log=new JTextPane();
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
@@ -140,7 +150,7 @@ public final class LogToJTextPane extends Log {
         log.setEditable(false);
         log.setFont(OurUtil.getFont(fontSize));
         log.addFocusListener(new FocusListener() {
-            public final void focusGained(FocusEvent e) { focusAction.run(); }
+            public final void focusGained(FocusEvent e) { handler.run(ev_focus); }
             public final void focusLost(FocusEvent e) { }
         });
         StyledDocument doc=log.getStyledDocument();
@@ -190,7 +200,7 @@ public final class LogToJTextPane extends Log {
         label.setFont(OurUtil.getFont(fontSize).deriveFont(Font.BOLD));
         label.setForeground(linkColor);
         label.addMouseListener(new MouseListener(){
-            public final void mouseClicked(MouseEvent e) { clickAction.run(link); }
+            public final void mouseClicked(MouseEvent e) { handler.run(evs_click, link); }
             public final void mousePressed(MouseEvent e) { }
             public final void mouseReleased(MouseEvent e) { }
             public final void mouseEntered(MouseEvent e) { label.setForeground(hoverColor); }

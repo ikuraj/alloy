@@ -5,6 +5,7 @@ import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
 import com.apple.eawt.ApplicationEvent;
 import com.apple.eawt.ApplicationListener;
+import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 
 /**
  * This class provides useful methods that may be called only on Mac OS X.
@@ -28,30 +29,31 @@ public final class MacUtil {
 
     /**
      * Register a Mac OS X "ApplicationListener"; if there was a previous listener, it will be removed.
-     * @param reopen - when the user clicks on the Dock icon, this function will be called
-     * @param about - when the user clicks on About, this function will be called
-     * @param open - when a file needs to be opened, this function will be called with the filename
-     * @param quit - when the user clicks on Quit, this function will be called
+     * @param handler - the application listener
+     * @param reopen - when the user clicks on the Dock icon, we'll call handler.run(reopen)
+     * @param about - when the user clicks on About, we'll call handler.run(about)
+     * @param open - when a file needs to be opened, we'll call handler.run(open,filename)
+     * @param quit - when the user clicks on Quit, we'll call handler.run(quit)
      */
     public synchronized static void registerApplicationListener
-        (final OurFunc0 reopen, final OurFunc0 about, final OurFunc1 open, final OurFunc0 quit) {
+        (final MultiRunnable handler, final int reopen, final int about, final int open, final int quit) {
         if (application==null) application=new Application();
         if (listener!=null) application.removeApplicationListener(listener);
         listener=new ApplicationAdapter() {
             @Override public void handleReOpenApplication (ApplicationEvent arg) {
-                SwingUtilities.invokeLater(new Runnable() { public void run() { reopen.run(); } });
+                SwingUtilities.invokeLater(new MultiRunner(handler, reopen));
             }
             @Override public void handleAbout (ApplicationEvent arg0) {
                 arg0.setHandled(true);
-                SwingUtilities.invokeLater(new Runnable() { public void run() { about.run(); } });
+                SwingUtilities.invokeLater(new MultiRunner(handler, about));
             }
             @Override public void handleOpenFile (ApplicationEvent arg0) {
                 final String filename=arg0.getFilename();
-                SwingUtilities.invokeLater(new Runnable() { public void run() { open.run(filename); } });
+                SwingUtilities.invokeLater(new MultiRunner(handler, open, filename));
             }
             @Override public void handleQuit (ApplicationEvent arg0) {
                 arg0.setHandled(false); // "false" is correct; some documentation on apple.com claims otherwise.
-                SwingUtilities.invokeLater(new Runnable() { public void run() { quit.run(); } });
+                SwingUtilities.invokeLater(new MultiRunner(handler, quit));
             }
         };
         application.addApplicationListener(listener);

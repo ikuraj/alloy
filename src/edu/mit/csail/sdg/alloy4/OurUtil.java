@@ -5,8 +5,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -21,6 +19,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 
 /**
  * Graphical convenience methods.
@@ -39,12 +38,11 @@ public final class OurUtil {
      * @param tip - the tooltip to show when the mouse hovers over the button
      * @param iconname - the filename of the icon to show (it will be loaded from an accompanying jar file)
      * @param func - the function to call when the button is pressed (null if we don't want to call any function)
+     * @param key - the parameter to pass to func() when the button is pressed
      */
-    public static JButton button (Color color, String label, String tip, String iconname, final OurFunc0 func) {
+    public static JButton button(Color color,String label, String tip,String iconname, MultiRunnable func, int key) {
         JButton button = new JButton(label,loadIcon(iconname));
-        if (func!=null) button.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { func.run(); }
-        });
+        if (func!=null) button.addActionListener(new MultiRunner(func,key));
         button.setVerticalTextPosition(JButton.BOTTOM);
         button.setHorizontalTextPosition(JButton.CENTER);
         button.setBorderPainted(false);
@@ -71,18 +69,6 @@ public final class OurUtil {
 
     /** Returns the screen width (in pixels). */
     public static int getScreenWidth() { return Toolkit.getDefaultToolkit().getScreenSize().width; }
-
-    /** Run f.run() using the AWT thread; if it's not the AWT thread, use SwingUtilities.invokeAndWait() on it. */
-    public static void invokeAndWait(final OurFunc0 f) {
-        if (SwingUtilities.isEventDispatchThread()) { f.run(); return; }
-        invokeAndWait(new Runnable() { public final void run() { f.run(); } });
-    }
-
-    /** Run f.run(arg) using the AWT thread; if it's not the AWT thread, use SwingUtilities.invokeAndWait() on it. */
-    public static void invokeAndWait(final OurFunc1 f, final String arg) {
-        if (SwingUtilities.isEventDispatchThread()) { f.run(arg); return; }
-        invokeAndWait(new Runnable() { public final void run() { f.run(arg); } });
-    }
 
     /** Run r.run() using the AWT thread; if it's not the AWT thread, use SwingUtilities.invokeAndWait() on it. */
     public static void invokeAndWait(Runnable r) {

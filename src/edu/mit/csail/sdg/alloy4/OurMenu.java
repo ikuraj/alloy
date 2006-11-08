@@ -7,6 +7,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
+import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 
 /**
  * Graphical menu that extends JMenu.
@@ -29,12 +30,14 @@ public final class OurMenu extends JMenu {
      * @param label - the label to show on screen
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
      * @param func - the function to call if the user expands this menu (or null if there is no function to call)
+     * @param key - the argument to pass to func() when the user expands this menu
      */
-    public OurMenu(JMenuBar parent, String label, int mnemonic, final OurFunc0 func) {
+    public OurMenu
+    (JMenuBar parent, String label, int mnemonic, final MultiRunnable func, final int key) {
         super(label,false);
         if (mnemonic!=-1 && !Util.onMac()) setMnemonic(mnemonic);
-        if (func!=null) addMenuListener(new MenuListener() {
-            public final void menuSelected(MenuEvent e) { func.run(); }
+        addMenuListener(new MenuListener() {
+            public final void menuSelected(MenuEvent e) { if (func!=null) func.run(key); }
             public final void menuDeselected(MenuEvent e) { enableChildren(OurMenu.this); }
             public final void menuCanceled(MenuEvent e) { enableChildren(OurMenu.this); }
         });
@@ -49,11 +52,13 @@ public final class OurMenu extends JMenu {
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
      * @param func - the function to call if the user clicks this item (or null if there is no function to call)
+     * @param key - the argument to pass to func() when the user clicks this item
      * @return the newly constructed OurMenuItem object
      */
-    public OurMenuItem addMenuItem(Icon icon, String label, boolean enabled, int mnemonic, int accel, OurFunc0 func) {
+    public OurMenuItem addMenuItem
+    (Icon icon, String label, boolean enabled, int mnemonic, int accel, MultiRunnable func, int key) {
         // OurMenuItem's constructor will add the new item into the list, so we don't have to call add() here.
-        OurMenuItem ans = new OurMenuItem(this,label,mnemonic,accel,func);
+        OurMenuItem ans = new OurMenuItem(this, label, mnemonic, accel, new MultiRunner(func,key));
         if (!enabled) ans.setEnabled(false);
         if (icon!=null) ans.setIcon(icon);
         return ans;

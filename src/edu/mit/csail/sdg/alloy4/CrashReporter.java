@@ -104,6 +104,7 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
         pw.printf("\n\n========================= The End ==========================\n\n");
         pw.close();
         sw.flush();
+        System.err.println(sw.toString()); System.err.flush(); // TODO
         JTextArea status=null;
         try {
             JButton done=new JButton("Close");
