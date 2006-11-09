@@ -64,6 +64,25 @@ public final class OurMenu extends JMenu {
         return ans;
     }
 
+    /**
+     * Convenience method that creates a new MenuItem and add it to this Menu.
+     * @param icon - the icon to show on the left of the label (or null if you don't want an icon)
+     * @param label - the label for the new MenuItem
+     * @param enabled - whether the new MenuItem should be initially enabled or disabled
+     * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the SHIFT mask on top of it
+     * @param func - the function to call if the user clicks this item (or null if there is no function to call)
+     * @param key - the argument to pass to func() when the user clicks this item
+     * @return the newly constructed OurMenuItem object
+     */
+    public OurMenuItem addMenuItem
+    (Icon icon, String label, boolean enabled, int accel, MultiRunnable func, int key) {
+        // OurMenuItem's constructor will add the new item into the list, so we don't have to call add() here.
+        OurMenuItem ans = new OurMenuItem(this, label, accel, new MultiRunner(func,key));
+        if (!enabled) ans.setEnabled(false);
+        if (icon!=null) ans.setIcon(icon);
+        return ans;
+    }
+
     /** Convenience method that recursively enables every JMenu and JMenuItem inside. */
     public void enableChildren() { enableChildren(this); }
 

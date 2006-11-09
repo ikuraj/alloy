@@ -40,14 +40,14 @@ public final class OurUtil {
      * @param func - the function to call when the button is pressed (null if we don't want to call any function)
      * @param key - the parameter to pass to func() when the button is pressed
      */
-    public static JButton button(Color color,String label, String tip,String iconname, MultiRunnable func, int key) {
+    public static JButton button(String label, String tip,String iconname, MultiRunnable func, int key) {
         JButton button = new JButton(label,loadIcon(iconname));
         if (func!=null) button.addActionListener(new MultiRunner(func,key));
         button.setVerticalTextPosition(JButton.BOTTOM);
         button.setHorizontalTextPosition(JButton.CENTER);
         button.setBorderPainted(false);
         button.setFocusable(false);
-        if (!Util.onMac()) button.setBackground(color);
+        if (!Util.onMac()) button.setBackground(new Color(0.9f, 0.9f, 0.9f));
         button.setFont(button.getFont().deriveFont(10.0f));
         button.setToolTipText(tip);
         return button;

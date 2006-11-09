@@ -30,22 +30,21 @@ public final class Util {
     /** This variable caches the value of the system's file separator. */
     private static final String fs=System.getProperty("file.separator");
 
-    /** Read everything into a StringBuilder. */
-    public static String readAll(String filename) {
+    /** Read everything into a String; throws IOException if an error occurred. */
+    public static String readAll(String filename) throws IOException {
         String error=null;
         StringBuilder sb=new StringBuilder();
-        FileReader fr=null;
-        BufferedReader br=null;
-        try { fr=new FileReader(filename); } catch(IOException ex) { return "IO error: "+ex.getMessage(); }
-        br=new BufferedReader(fr);
+        FileReader fr=new FileReader(filename);
+        BufferedReader br=new BufferedReader(fr);
         try {
             while(true) { String s=br.readLine(); if (s==null) break; sb.append(s); sb.append('\n'); }
         } catch(IOException ex) {
-            error="IO error: "+ex.getMessage();
+            error=ex.getMessage();
         }
         try { br.close(); } catch(IOException ex) { if (error==null) error=ex.getMessage(); }
         try { fr.close(); } catch(IOException ex) { if (error==null) error=ex.getMessage(); }
-        return error==null ? (sb.toString()) : ("IO error"+error);
+        if (error!=null) throw new IOException(error);
+        return sb.toString();
     }
 
     /**

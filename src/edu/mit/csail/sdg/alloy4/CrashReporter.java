@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -15,6 +16,7 @@ import java.net.URLConnection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.lang.Thread.UncaughtExceptionHandler;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -26,7 +28,7 @@ import javax.swing.border.LineBorder;
 
 /** When an uncaught exception occurs, this class asks for permission before sending crash report. */
 
-public final class CrashReporter implements Thread.UncaughtExceptionHandler {
+public final class CrashReporter implements UncaughtExceptionHandler, ActionListener {
 
     /** A pre-created instance of CrashReport */
     public static final CrashReporter defaultReporter = new CrashReporter();
@@ -77,7 +79,7 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
             null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) System.exit(1);
         StringWriter sw=new StringWriter();
         PrintWriter pw=new PrintWriter(sw);
-        pw.printf("\nAlloy4 crash report (Build Date = %s)\n\n", Version.buildDate());
+        pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
         pw.printf("========================= Email ============================\n%s\n\n", email.getText());
         pw.printf("========================= Comment ==========================\n%s\n\n", comment.getText());
         pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
@@ -97,18 +99,20 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
         pw.printf("\n\n========================= Main Model =======================\n");
         pw.printf("// %s\n%s\n", mainfile, mainfilecontent);
         for(String e:subfiles) {
-            String content=Util.readAll(e);
+            String content;
             pw.printf("\n\n========================= Sub Model ========================\n");
+            try {content=Util.readAll(e);} catch(IOException ex2) {content="// IO Exception: "+ex2.getMessage();}
             pw.printf("// %s\n%s\n", e, content);
         }
         pw.printf("\n\n========================= The End ==========================\n\n");
         pw.close();
         sw.flush();
-        System.err.println(sw.toString()); System.err.flush(); // TODO
+        System.err.println(sw.toString());
+        System.err.flush();
         JTextArea status=null;
         try {
             JButton done=new JButton("Close");
-            done.addActionListener(new ActionListener() {public void actionPerformed(ActionEvent e){System.exit(1);}});
+            done.addActionListener(this);
             JFrame statusWindow=new JFrame();
             status=new JTextArea("Sending the bug report... please wait...");
             status.setEditable(false);
@@ -165,4 +169,7 @@ public final class CrashReporter implements Thread.UncaughtExceptionHandler {
             if (in != null) { try { in.close(); } catch(Exception ignore) { } }
         }
     }
+
+    /** Called when the user clicks the CLOSE button. */
+    public void actionPerformed(ActionEvent e) { System.exit(1); }
 }

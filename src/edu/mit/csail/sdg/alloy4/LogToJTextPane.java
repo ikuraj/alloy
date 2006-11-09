@@ -26,7 +26,6 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
-
 import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 
 /**
@@ -39,21 +38,6 @@ import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
  */
 
 public final class LogToJTextPane extends Log {
-
-    /**
-     * Mutable; this class holds a mutable integer.
-     * <p/><b>Thread Safety:</b> Safe
-     */
-    private static final class IntegerBox {
-        /** The integer value. */
-        private int value;
-        /** Constructs an IntegerBox with an initial value of 0. */
-        public IntegerBox() {value=0;}
-        /** Reads the current value. */
-        public synchronized int getValue() {return value;}
-        /** Sets the current value. */
-        public synchronized void setValue(int newValue) {value=newValue;}
-    }
 
     /** The newly created JTextPane object that will display the log. */
     private JTextPane log;
@@ -104,10 +88,9 @@ public final class LogToJTextPane extends Log {
      * @param background - the background color to use for the JTextPane
      * @param regular - the color to use for regular messages
      * @param red - the color to use for red messages
-     * @param focusAction - the function to call when this log panel gets the focus
-     * (as required by Func0's specification, we guarantee we will only call focusAction.run() from the AWT thread).
-     * @param clickAction - the function to call when users click on a hyperlink message
-     * (as required by Func1's specification, we guarantee we will only call clickAction.run() from the AWT thread).
+     * @param handler - the function to call when this log panel gets the focus or a hyperlink is clicked
+     * @param ev_focus - When the window gains focus, we'll call handler.run(ev_focus)
+     * @param evs_click - when a hyperlink is clicked, we'll call handler.run(evs_click, linkURL)
      */
     public LogToJTextPane(final JScrollPane parent, final int fontSize,
             final Color background, final Color regular, final Color red,
@@ -167,57 +150,16 @@ public final class LogToJTextPane extends Log {
     }
 
     /** Write a horizontal separator into the log window. */
-    public void logDivider() {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { logDivider(); } });
-            return;
-        }
-        clearError();
-        StyledDocument doc=log.getStyledDocument();
-        Style dividerStyle=doc.addStyle("bar", styleRegular);
-        JPanel jpanel=new JPanel();
-        jpanel.setBackground(Color.LIGHT_GRAY);
-        jpanel.setPreferredSize(new Dimension(300,1)); // 300 is arbitrary, since it will auto-stretch
-        StyleConstants.setComponent(dividerStyle, jpanel);
-        log(".",dividerStyle); // Any character here would do; the "." will instead be replaced by the JPanel
-        log("\n\n",styleRegular);
-        log.setCaretPosition(doc.getLength());
-        lastSize=doc.getLength();
-    }
+    public void logDivider() { handle("logDivider"); }
 
     /** Write a clickable link into the log window. */
-    @Override public void logLink(final String link) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { logLink(link); } });
-            return;
-        }
-        clearError();
-        StyledDocument doc=log.getStyledDocument();
-        Style linkStyle=doc.addStyle("link", styleRegular);
-        final JLabel label=new JLabel("Visualize");
-        label.setAlignmentY(0.8f);
-        label.setMaximumSize(label.getPreferredSize());
-        label.setFont(OurUtil.getFont(fontSize).deriveFont(Font.BOLD));
-        label.setForeground(linkColor);
-        label.addMouseListener(new MouseListener(){
-            public final void mouseClicked(MouseEvent e) { handler.run(evs_click, link); }
-            public final void mousePressed(MouseEvent e) { }
-            public final void mouseReleased(MouseEvent e) { }
-            public final void mouseEntered(MouseEvent e) { label.setForeground(hoverColor); }
-            public final void mouseExited(MouseEvent e) { label.setForeground(linkColor); }
-        });
-        StyleConstants.setComponent(linkStyle, label);
-        links.add(label);
-        log(".",linkStyle); // Any character here would do; the "." will instead be replaced by the JLabel
-        log.setCaretPosition(doc.getLength());
-        lastSize=doc.getLength();
-    }
+    @Override public void logLink(final String link) { handle("logLink",0,null,link,null); }
 
     /** Write "msg" in regular style. */
-    @Override public void log(String msg) { log(msg,styleRegular); }
+    @Override public void log(String msg) { handle("log", 0, null, msg, styleRegular); }
 
     /** Write "msg" in bold style. */
-    @Override public void logBold(String msg) { log(msg,styleBold); }
+    @Override public void logBold(String msg) { handle("log", 0, null, msg, styleBold); }
 
     /** Write "msg" in red style. */
     public void logRed(String msg) {
@@ -227,25 +169,11 @@ public final class LogToJTextPane extends Log {
             if (i>=0) { linewrap(sb, msg.substring(0,i)); sb.append('\n'); msg=msg.substring(i+1); }
             else { linewrap(sb,msg); break; }
         }
-        log(sb.toString(), styleRed);
-    }
-
-    /** Write "msg" using the provided style. */
-    private void log(final String msg, final Style style) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { log(msg,style); } });
-            return;
-        }
-        clearError();
-        StyledDocument doc=log.getStyledDocument();
-        try { doc.insertString(doc.getLength(), msg, style); }
-        catch (BadLocationException e) { Util.harmless("Should not happen",e); }
-        log.setCaretPosition(doc.getLength());
-        if (style!=styleRed) lastSize=doc.getLength();
+        handle("log", 0, null, sb.toString(), styleRed);
     }
 
     /** Try to wrap the input to about 50 characters per line; however, if a token is too longer, we won't break it. */
-    public void linewrap(StringBuilder sb, String msg) {
+    private static void linewrap(StringBuilder sb, String msg) {
         StringTokenizer tokenizer=new StringTokenizer(msg,"\r\n\t ");
         int max=50;
         int now=0;
@@ -257,36 +185,10 @@ public final class LogToJTextPane extends Log {
     }
 
     /** Set the font size. */
-    public void setFontSize(final int fontSize) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { setFontSize(fontSize); } });
-            return;
-        }
-        // Changes the settings for future writes into the log
-        this.fontSize=fontSize;
-        log.setFont(OurUtil.getFont(fontSize));
-        StyleConstants.setFontSize(styleRegular, fontSize);
-        StyleConstants.setFontSize(styleBold, fontSize);
-        StyleConstants.setFontSize(styleRed, fontSize);
-        // Changes all existing text
-        StyledDocument doc=log.getStyledDocument();
-        Style temp=doc.addStyle("temp", null);
-        StyleConstants.setFontFamily(temp, OurUtil.getFontName());
-        StyleConstants.setFontSize(temp, fontSize);
-        doc.setCharacterAttributes(0, doc.getLength(), temp, false);
-        // Changes all existing hyperlinks
-        Font newFont=new Font(OurUtil.getFontName(), Font.BOLD, fontSize);
-        for(JLabel link:links) link.setFont(newFont);
-    }
+    public void setFontSize(int fontSize) { handle("setFontSize",fontSize); }
 
     /** Set the background color. */
-    public void setBackground(final Color background) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { setBackground(background); } });
-            return;
-        }
-        log.setBackground(background);
-    }
+    public void setBackground(Color background) { handle("setBackground",0,background,"",null); }
 
     /** Query the current length of the log, and store it into the IntegerBox object. */
     private void getLength(final IntegerBox answer) {
@@ -295,54 +197,118 @@ public final class LogToJTextPane extends Log {
             return;
         }
         int length=log.getStyledDocument().getLength();
-        answer.setValue(length);
+        answer.set(length);
     }
 
     /** Query the current length of the log. */
     @Override public int getLength() {
-        IntegerBox box=new IntegerBox();
+        IntegerBox box=new IntegerBox(0);
         getLength(box);
-        return box.getValue();
+        return box.get();
     }
 
     /** Truncate the log to the given length; if the log is shorter than the number given, then nothing happens. */
-    @Override public void setLength(final int newLength) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { setLength(newLength); } });
-            return;
-        }
-        StyledDocument doc=log.getStyledDocument();
-        int n=doc.getLength();
-        if (n<=newLength) return;
-        try {doc.remove(newLength, n-newLength);}
-        catch (BadLocationException e) {Util.harmless("This shouldn't happen",e);}
-        if (lastSize>doc.getLength()) lastSize=doc.getLength();
-    }
+    @Override public void setLength(int newLength) { handle("setLength",newLength); }
 
     /** Removes any messages writtin in "red" style. */
-    public void clearError() {
-        // Since this class always removes "red" messages prior to writing anything,
-        // that means if there are any red messages, they will always be at the end of the JTextPane.
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { clearError(); } });
-            return;
-        }
-        StyledDocument doc=log.getStyledDocument();
-        int n=doc.getLength();
-        if (n<=lastSize) return;
-        try {doc.remove(lastSize,n-lastSize);}
-        catch (BadLocationException e) {Util.harmless("This shouldn't happen",e);}
-    }
+    public void clearError() { handle("clearError"); }
 
     /** This method copies the currently selected text in the log (if any) into the clipboard. */
-    public void copy() {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { copy(); } });
-            return;
-        }
-        log.copy();
-    }
+    public void copy() { handle("copy"); }
 
     /** This method does nothing, since changes to a JTextPane will always show up automatically. */
     @Override public void flush() { }
+
+    /** Handles the given message (and switch to AWT event thread if the current thread != the AWT event thread). */
+    private void handle(final String op, final int arg, final Color color, final String text, final Style style) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public void run() { handle(op,arg,color,text,style); } });
+            return;
+        }
+        if (op=="setLength") {
+            StyledDocument doc=log.getStyledDocument();
+            int n=doc.getLength();
+            if (n<=arg) return;
+            try {doc.remove(arg, n-arg);}
+            catch (BadLocationException e) {Util.harmless("This shouldn't happen",e);}
+            if (lastSize>doc.getLength()) lastSize=doc.getLength();
+        }
+        if (op=="clearError") {
+            // Since this class always removes "red" messages prior to writing anything,
+            // that means if there are any red messages, they will always be at the end of the JTextPane.
+            StyledDocument doc=log.getStyledDocument();
+            int n=doc.getLength();
+            if (n<=lastSize) return;
+            try {doc.remove(lastSize,n-lastSize);}
+            catch (BadLocationException e) {Util.harmless("This shouldn't happen",e);}
+        }
+        if (op=="setFontSize") {
+            // Changes the settings for future writes into the log
+            this.fontSize=arg;
+            log.setFont(OurUtil.getFont(fontSize));
+            StyleConstants.setFontSize(styleRegular, fontSize);
+            StyleConstants.setFontSize(styleBold, fontSize);
+            StyleConstants.setFontSize(styleRed, fontSize);
+            // Changes all existing text
+            StyledDocument doc=log.getStyledDocument();
+            Style temp=doc.addStyle("temp", null);
+            StyleConstants.setFontFamily(temp, OurUtil.getFontName());
+            StyleConstants.setFontSize(temp, fontSize);
+            doc.setCharacterAttributes(0, doc.getLength(), temp, false);
+            // Changes all existing hyperlinks
+            Font newFont=new Font(OurUtil.getFontName(), Font.BOLD, fontSize);
+            for(JLabel link:links) link.setFont(newFont);
+        }
+        if (op=="logLink") {
+            clearError();
+            StyledDocument doc=log.getStyledDocument();
+            Style linkStyle=doc.addStyle("link", styleRegular);
+            final JLabel label=new JLabel("Visualize");
+            label.setAlignmentY(0.8f);
+            label.setMaximumSize(label.getPreferredSize());
+            label.setFont(OurUtil.getFont(fontSize).deriveFont(Font.BOLD));
+            label.setForeground(linkColor);
+            label.addMouseListener(new MouseListener(){
+                public final void mouseClicked(MouseEvent e) { handler.run(evs_click, text); }
+                public final void mousePressed(MouseEvent e) { }
+                public final void mouseReleased(MouseEvent e) { }
+                public final void mouseEntered(MouseEvent e) { label.setForeground(hoverColor); }
+                public final void mouseExited(MouseEvent e) { label.setForeground(linkColor); }
+            });
+            StyleConstants.setComponent(linkStyle, label);
+            links.add(label);
+            handle("log", 0, null, ".", linkStyle); // Any character would do; the "." will be replaced by the JLabel
+            log.setCaretPosition(doc.getLength());
+            lastSize=doc.getLength();
+        }
+        if (op=="logDivider") {
+            clearError();
+            StyledDocument doc=log.getStyledDocument();
+            Style dividerStyle=doc.addStyle("bar", styleRegular);
+            JPanel jpanel=new JPanel();
+            jpanel.setBackground(Color.LIGHT_GRAY);
+            jpanel.setPreferredSize(new Dimension(300,1)); // 300 is arbitrary, since it will auto-stretch
+            StyleConstants.setComponent(dividerStyle, jpanel);
+            handle("log", 0, null, ".", dividerStyle); // Any character would do; "." will be replaced by the JPanel
+            handle("log", 0, null, "\n\n", styleRegular);
+            log.setCaretPosition(doc.getLength());
+            lastSize=doc.getLength();
+        }
+        if (op=="log") {
+            clearError();
+            StyledDocument doc=log.getStyledDocument();
+            try { doc.insertString(doc.getLength(), text, style); }
+            catch (BadLocationException e) { Util.harmless("Should not happen",e); }
+            log.setCaretPosition(doc.getLength());
+            if (style!=styleRed) lastSize=doc.getLength();
+        }
+        if (op=="copy") log.copy();
+        if (op=="setBackground") log.setBackground(color);
+    }
+
+    /** Convenience method for calling handle() */
+    private void handle(final String op) { handle(op,0,null,"",null); }
+
+    /** Convenience method for calling handle() */
+    private void handle(final String op, final int arg) { handle(op,arg,null,"",null); }
 }
