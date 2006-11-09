@@ -15,7 +15,7 @@ public final class Version {
     private Version() { }
 
     /** Returns the version string. */
-    public static String version() { return "4.0 Beta1"; }
+    public static String version() { return "4.0"; }
 
     /** Returns the build date. */
     public static String buildDate() { return "unknown"; }

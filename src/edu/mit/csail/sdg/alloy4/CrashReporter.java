@@ -63,6 +63,7 @@ public final class CrashReporter implements UncaughtExceptionHandler, ActionList
         comment.setBorder(null);
         JScrollPane scroll=OurUtil.scrollpane(comment);
         scroll.setPreferredSize(new Dimension(300,200));
+        scroll.setBorder(new LineBorder(Color.DARK_GRAY));
         if (JOptionPane.showOptionDialog(null, new Object[]{
                 "Sorry. An internal error has occurred.",
                 " ",
