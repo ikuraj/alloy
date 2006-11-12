@@ -72,6 +72,9 @@ public final class LogToJTextPane extends Log {
     /** The current font size. */
     private int fontSize;
 
+    /** This field batches up previous calls to log() so that we can write them out in one go. */
+    private List<String> batch=null;
+
     /** The color to use for hyperlinks. */
     private static final Color linkColor=new Color(0.3f, 0.3f, 0.9f);
 
@@ -156,7 +159,10 @@ public final class LogToJTextPane extends Log {
     @Override public void logLink(final String link) { handle("logLink",0,null,link,null); }
 
     /** Write "msg" in regular style. */
-    @Override public void log(String msg) { handle("log", 0, null, msg, styleRegular); }
+    @Override public synchronized void log(String msg) {
+        if (batch==null) batch=new ArrayList<String>();
+        batch.add(msg);
+    }
 
     /** Write "msg" in bold style. */
     @Override public void logBold(String msg) { handle("log", 0, null, msg, styleBold); }
@@ -196,6 +202,7 @@ public final class LogToJTextPane extends Log {
             OurUtil.invokeAndWait(new Runnable() { public void run() { getLength(answer); } });
             return;
         }
+        handle("flush");
         int length=log.getStyledDocument().getLength();
         answer.set(length);
     }
@@ -217,7 +224,7 @@ public final class LogToJTextPane extends Log {
     public void copy() { handle("copy"); }
 
     /** This method does nothing, since changes to a JTextPane will always show up automatically. */
-    @Override public void flush() { }
+    @Override public void flush() { handle("flush"); }
 
     /** Handles the given message (and switch to AWT event thread if the current thread != the AWT event thread). */
     private void handle(final String op, final int arg, final Color color, final String text, final Style style) {
@@ -225,6 +232,9 @@ public final class LogToJTextPane extends Log {
             OurUtil.invokeAndWait(new Runnable() { public void run() { handle(op,arg,color,text,style); } });
             return;
         }
+        List<String> batch=null;
+        synchronized(this) { batch=this.batch; this.batch=null; }
+        if (batch!=null) for(String c:batch) handle("log",0,null,c,styleRegular);
         if (op=="setLength") {
             StyledDocument doc=log.getStyledDocument();
             int n=doc.getLength();
@@ -278,6 +288,7 @@ public final class LogToJTextPane extends Log {
             StyleConstants.setComponent(linkStyle, label);
             links.add(label);
             handle("log", 0, null, ".", linkStyle); // Any character would do; the "." will be replaced by the JLabel
+            handle("log", 0, null, "\n", styleRegular);
             log.setCaretPosition(doc.getLength());
             lastSize=doc.getLength();
         }
@@ -296,10 +307,19 @@ public final class LogToJTextPane extends Log {
         }
         if (op=="log") {
             clearError();
+            int i=text.lastIndexOf('\n'), j=text.lastIndexOf('\r');
+            if (i<j) i=j;
             StyledDocument doc=log.getStyledDocument();
-            try { doc.insertString(doc.getLength(), text, style); }
+            try {
+                if (i<0) {
+                    doc.insertString(doc.getLength(), text, style);
+                } else {
+                    doc.insertString(doc.getLength(), text.substring(0,i+1), style);
+                    log.setCaretPosition(doc.getLength());
+                    if (i<text.length()-1) doc.insertString(doc.getLength(), text.substring(i+1), style);
+                }
+            }
             catch (BadLocationException e) { Util.harmless("Should not happen",e); }
-            log.setCaretPosition(doc.getLength());
             if (style!=styleRed) lastSize=doc.getLength();
         }
         if (op=="copy") log.copy();
