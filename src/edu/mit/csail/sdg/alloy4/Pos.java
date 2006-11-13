@@ -13,16 +13,16 @@ public final class Pos {
     /** The filename (it can be an empty string if unknown) */
     public final String filename;
 
-    /** The column position (from 1..) */
+    /** The starting column position (from 1..) */
     public final int x;
 
-    /** The row position (from 1..) */
+    /** The starting row position (from 1..) */
     public final int y;
 
-    /** The column position (from 1..) */
+    /** The ending column position (from 1..) */
     public final int x2;
 
-    /** The row position (from 1..) */
+    /** The ending row position (from 1..) */
     public final int y2;
 
     /**
@@ -55,5 +55,16 @@ public final class Pos {
         if (y2==this.y) { if (x2<(this.x)) x2=this.x; } else { if (x2<1) x2=1; }
         this.x2=x2;
         this.y2=y2;
+    }
+
+    /**
+     * Return a new position that spans from the start of (this.x, this.y), up to and including (other.x2, other.y2)
+     * @param other - the other position object
+     */
+    public Pos upto(Pos other) {
+        int x=this.x, y=this.y, x2=other.x2, y2=other.y2;
+        if (y2<y) y2=y;
+        if (y2==y && x2<x) x2=x;
+        return new Pos(filename, x, y, x2, y2);
     }
 }
