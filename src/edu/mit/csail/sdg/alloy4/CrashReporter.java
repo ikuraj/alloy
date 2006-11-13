@@ -141,7 +141,7 @@ public final class CrashReporter implements UncaughtExceptionHandler, ActionList
     /** Post the given string -- which can be as large as needed -- via POST HTTP request. */
     private static String postBug(String bugReport) {
         final String NEW_LINE = System.getProperty("line.separator");
-        final String BUG_POST_URL = "http://alloy.mit.edu/postbug.php";
+        final String BUG_POST_URL = "http://alloy.mit.edu/postbug4.php";
         OutputStreamWriter out = null;
         BufferedReader in = null;
         try {
