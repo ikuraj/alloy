@@ -73,7 +73,7 @@ public final class OurDialog {
      * @param parentFrame - the parent frame
      * @param isOpen - true means this is an Open operation; false means this is a Save operation
      * @param dir - the initial directory
-     * @param ext - the file extension (including ".") (using lowercase letters); for example, ".als"
+     * @param ext - the file extension (including "."; using lowercase letters; for example, ".als") or ""
      * @param description - the description for the given extension
      * @return null if the user didn't choose anything, otherwise it returns the selected file
      */
@@ -85,7 +85,7 @@ public final class OurDialog {
             FileDialog f = new FileDialog(parentFrame, isOpen?"Open...":"Save...");
             f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
             f.setDirectory(dir);
-            f.setFilenameFilter(new FilenameFilter() {
+            if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
                 public boolean accept(File dir, String name) { return name.toLowerCase().endsWith(ext); }
             });
             f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
@@ -95,11 +95,10 @@ public final class OurDialog {
             JFileChooser open=new JFileChooser(dir);
             open.setDialogTitle(isOpen?"Open...":"Save...");
             open.setApproveButtonText(isOpen?"Open":"Save");
-            FileFilter filter = new FileFilter() {
+            if (ext.length()>0) open.setFileFilter(new FileFilter() {
                 public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase().endsWith(ext); }
                 public String getDescription() { return description; }
-            };
-            open.setFileFilter(filter);
+            });
             if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION) return null;
             if (open.getSelectedFile()==null) return null;
             ans=open.getSelectedFile().getPath();

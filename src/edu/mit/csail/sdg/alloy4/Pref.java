@@ -162,6 +162,9 @@ public final class Pref {
     /** The latest height of the Alloy Visualizer window. */
     public static final IntPref VizHeight = new IntPref("VizHeight",0,-1,65535);
 
+    /** The default directory for AlloyAnalyzer and AlloyVisualizer's "open"/"save" command. */
+    public static final StringPref Dir = new StringPref("Dir");
+
     /** The first file in Alloy Analyzer's "open recent" list. */
     public static final StringPref Model0 = new StringPref("Model0");
 
