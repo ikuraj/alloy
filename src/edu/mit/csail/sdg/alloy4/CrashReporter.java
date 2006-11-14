@@ -65,7 +65,7 @@ public final class CrashReporter implements UncaughtExceptionHandler, ActionList
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
         if (JOptionPane.showOptionDialog(null, new Object[]{
-                "Sorry. An internal error has occurred.",
+                (thread==null ? "Thank you for submitting a bg report." : "Sorry. An internal error has occurred."),
                 " ",
                 "You may post a bug report (via HTTP).",
                 "The error report will include your Alloy source",
@@ -77,17 +77,25 @@ public final class CrashReporter implements UncaughtExceptionHandler, ActionList
                 OurUtil.makeHT("Email:",5,email,null),
                 OurUtil.makeHT("Comment:",5,scroll,null)
             }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) System.exit(1);
+            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { if (thread!=null) System.exit(1); return; }
         StringWriter sw=new StringWriter();
         PrintWriter pw=new PrintWriter(sw);
         pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
         pw.printf("========================= Email ============================\n%s\n\n", email.getText());
         pw.printf("========================= Comment ==========================\n%s\n\n", comment.getText());
-        pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
-        pw.printf("========================= Exception ========================\n%s\n\n",
+        if (thread==null) {
+          pw.printf("================== Bug Report Manually Triggered! ==========\n\n");
+        } else {
+          pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
+        }
+        if (ex!=null) {
+          pw.printf("========================= Exception ========================\n%s\n\n",
                 ex.getClass().toString()+": "+ex.toString());
-        pw.printf("========================= Stack Trace ======================\n");
-        ex.printStackTrace(pw);
+          pw.printf("========================= Stack Trace ======================\n");
+          ex.printStackTrace(pw);
+        }
+        pw.printf("\n========================= Preferences ======================\n");
+        Pref.dump(pw);
         pw.printf("\n========================= System Properties ================\n");
         pw.println("Free memory = "+Runtime.getRuntime().freeMemory());
         pw.println("Total memory = "+Runtime.getRuntime().totalMemory());
@@ -112,9 +120,15 @@ public final class CrashReporter implements UncaughtExceptionHandler, ActionList
         System.err.flush();
         JTextArea status=null;
         try {
+            final JFrame statusWindow=new JFrame();
             JButton done=new JButton("Close");
-            done.addActionListener(this);
-            JFrame statusWindow=new JFrame();
+            if (thread==null) {
+                done.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) { statusWindow.dispose(); }
+                });
+            } else {
+                done.addActionListener(this);
+            }
             status=new JTextArea("Sending the bug report... please wait...");
             status.setEditable(false);
             status.setLineWrap(true);
@@ -135,7 +149,7 @@ public final class CrashReporter implements UncaughtExceptionHandler, ActionList
             statusWindow.setVisible(true);
         } catch(Exception exception) { }
         String result=postBug(sw.toString());
-        if (status!=null) status.setText(result); else System.exit(1);
+        if (status!=null) status.setText(result); else if (thread!=null) System.exit(1);
     }
 
     /** Post the given string -- which can be as large as needed -- via POST HTTP request. */

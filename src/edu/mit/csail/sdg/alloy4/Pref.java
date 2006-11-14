@@ -1,5 +1,7 @@
 package edu.mit.csail.sdg.alloy4;
 
+import java.io.PrintWriter;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 /**
@@ -9,6 +11,18 @@ import java.util.prefs.Preferences;
  */
 
 public final class Pref {
+
+    /** Dump an XML representation of all preferences into the given output stream. */
+    public static void dump(PrintWriter printWriter) {
+        try {
+            for(String key: Preferences.userNodeForPackage(Util.class).keys()) {
+                String value = Preferences.userNodeForPackage(Util.class).get(key,"");
+                printWriter.printf("%s = %s\n", key, value);
+            }
+        } catch(BackingStoreException ex) {
+            printWriter.println("** BackingStoreException: "+ex.getMessage()+"**");
+        }
+    }
 
     /*=======================================================================*/
 
