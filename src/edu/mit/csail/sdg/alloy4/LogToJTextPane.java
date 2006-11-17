@@ -156,7 +156,9 @@ public final class LogToJTextPane extends Log {
     public void logDivider() { handle("logDivider"); }
 
     /** Write a clickable link into the log window. */
-    @Override public void logLink(final String link) { handle("logLink",0,null,link,null); }
+    @Override public void logLink(String link, String linkDestination) {
+        handle("logLink",0,null,link,linkDestination,null);
+    }
 
     /** Write "msg" in regular style. */
     @Override public synchronized void log(String msg) {
@@ -165,7 +167,7 @@ public final class LogToJTextPane extends Log {
     }
 
     /** Write "msg" in bold style. */
-    @Override public void logBold(String msg) { handle("log", 0, null, msg, styleBold); }
+    @Override public void logBold(String msg) { handle("log", 0, null, msg, "", styleBold); }
 
     /** Write "msg" in red style. */
     public void logRed(String msg) {
@@ -175,7 +177,7 @@ public final class LogToJTextPane extends Log {
             if (i>=0) { linewrap(sb, msg.substring(0,i)); sb.append('\n'); msg=msg.substring(i+1); }
             else { linewrap(sb,msg); break; }
         }
-        handle("log", 0, null, sb.toString(), styleRed);
+        handle("log", 0, null, sb.toString(), "", styleRed);
     }
 
     /** Try to wrap the input to about 50 characters per line; however, if a token is too longer, we won't break it. */
@@ -194,7 +196,7 @@ public final class LogToJTextPane extends Log {
     public void setFontSize(int fontSize) { handle("setFontSize",fontSize); }
 
     /** Set the background color. */
-    public void setBackground(Color background) { handle("setBackground",0,background,"",null); }
+    public void setBackground(Color background) { handle("setBackground",0,background,"","",null); }
 
     /** Query the current length of the log, and store it into the IntegerBox object. */
     private void getLength(final IntegerBox answer) {
@@ -227,14 +229,15 @@ public final class LogToJTextPane extends Log {
     @Override public void flush() { handle("flush"); }
 
     /** Handles the given message (and switch to AWT event thread if the current thread != the AWT event thread). */
-    private void handle(final String op, final int arg, final Color color, final String text, final Style style) {
+    private void handle(final String op, final int arg,
+            final Color color, final String text, final String text2, final Style style) {
         if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() { public void run() { handle(op,arg,color,text,style); } });
+            OurUtil.invokeAndWait(new Runnable() { public void run() { handle(op,arg,color,text,text2,style); } });
             return;
         }
         List<String> batch=null;
         synchronized(this) { batch=this.batch; this.batch=null; }
-        if (batch!=null) for(String c:batch) handle("log",0,null,c,styleRegular);
+        if (batch!=null) for(String c:batch) handle("log",0,null,c,"",styleRegular);
         if (op=="setLength") {
             StyledDocument doc=log.getStyledDocument();
             int n=doc.getLength();
@@ -273,13 +276,13 @@ public final class LogToJTextPane extends Log {
             clearError();
             StyledDocument doc=log.getStyledDocument();
             Style linkStyle=doc.addStyle("link", styleRegular);
-            final JLabel label=new JLabel("Visualize");
+            final JLabel label=new JLabel(text);
             label.setAlignmentY(0.8f);
             label.setMaximumSize(label.getPreferredSize());
             label.setFont(OurUtil.getFont(fontSize).deriveFont(Font.BOLD));
             label.setForeground(linkColor);
             label.addMouseListener(new MouseListener(){
-                public final void mouseClicked(MouseEvent e) { handler.run(evs_click, text); }
+                public final void mouseClicked(MouseEvent e) { handler.run(evs_click, text2); }
                 public final void mousePressed(MouseEvent e) { }
                 public final void mouseReleased(MouseEvent e) { }
                 public final void mouseEntered(MouseEvent e) { label.setForeground(hoverColor); }
@@ -287,8 +290,7 @@ public final class LogToJTextPane extends Log {
             });
             StyleConstants.setComponent(linkStyle, label);
             links.add(label);
-            handle("log", 0, null, ".", linkStyle); // Any character would do; the "." will be replaced by the JLabel
-            handle("log", 0, null, "\n", styleRegular);
+            handle("log", 0, null, ".","",linkStyle); // Any character would do; the "." will be replaced by the JLabel
             log.setCaretPosition(doc.getLength());
             lastSize=doc.getLength();
         }
@@ -300,8 +302,8 @@ public final class LogToJTextPane extends Log {
             jpanel.setBackground(Color.LIGHT_GRAY);
             jpanel.setPreferredSize(new Dimension(300,1)); // 300 is arbitrary, since it will auto-stretch
             StyleConstants.setComponent(dividerStyle, jpanel);
-            handle("log", 0, null, ".", dividerStyle); // Any character would do; "." will be replaced by the JPanel
-            handle("log", 0, null, "\n\n", styleRegular);
+            handle("log", 0, null, ".","",dividerStyle); // Any character would do; "." will be replaced by the JPanel
+            handle("log", 0, null, "\n\n","", styleRegular);
             log.setCaretPosition(doc.getLength());
             lastSize=doc.getLength();
         }
@@ -327,8 +329,8 @@ public final class LogToJTextPane extends Log {
     }
 
     /** Convenience method for calling handle() */
-    private void handle(final String op) { handle(op,0,null,"",null); }
+    private void handle(final String op) { handle(op,0,null,"","",null); }
 
     /** Convenience method for calling handle() */
-    private void handle(final String op, final int arg) { handle(op,arg,null,"",null); }
+    private void handle(final String op, final int arg) { handle(op,arg,null,"","",null); }
 }

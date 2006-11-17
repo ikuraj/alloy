@@ -51,8 +51,8 @@ public final class LogToFile extends Log {
     /** Simply calls log(msg) since text files don't support bold styles. */
     @Override public synchronized void logBold(String msg) { log(msg); }
 
-    /** Simply calls log(msg+"\n") since text files don't support hyperlinks. */
-    @Override public synchronized void logLink(String msg) { log(msg+"\n"); }
+    /** Simply calls log(msg) since text files don't support hyperlinks. */
+    @Override public synchronized void logLink(String msg, String linkDestination) { log(msg); }
 
     /** Commits all outstanding writes (if the logger is buffered). */
     @Override public synchronized void flush() { }
