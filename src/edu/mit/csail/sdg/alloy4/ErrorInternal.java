@@ -3,9 +3,9 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * Immutable; represents an internal error that should be reported to the developers.
  *
- * <p/><b>Invariant:</b>      msg!=null
+ * <p><b>Invariant:</b>      msg!=null
  *
- * <p/><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
+ * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
 
 public final class ErrorInternal extends Err {

@@ -6,7 +6,7 @@ package edu.mit.csail.sdg.alloy4;
  * The release build script
  * will generate a customized Version.java with the correct date.
  *
- * <p/><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe.
  */
 
 public final class Version {

@@ -10,10 +10,10 @@ import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 /**
  * This class provides useful methods that may be called only on Mac OS X.
  *
- * <p/> You must not call any methods here if you're not on a Mac,
+ * <p> You must not call any methods here if you're not on a Mac,
  * since that will trigger the loading of com.apple.eawt.* which are not available on other platforms.
  *
- * <p/><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe.
  */
 
 public final class MacUtil {

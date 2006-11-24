@@ -31,9 +31,9 @@ import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 /**
  * This logger writes the messages into a JTextPane.
  *
- * <p/> Its constructor and its public methods can be called by any thread.
+ * <p> Its constructor and its public methods can be called by any thread.
  *
- * <p/><b>Thread Safety:</b>  Safe
+ * <p><b>Thread Safety:</b>  Safe
  * (as long as we follow the important general rule that the AWT thread must never block on other threads)
  */
 

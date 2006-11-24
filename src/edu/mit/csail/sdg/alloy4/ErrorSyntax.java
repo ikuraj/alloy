@@ -3,9 +3,9 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * Immutable; represents a syntax error that should be reported to the user.
  *
- * <p/><b>Invariant:</b>      msg!=null
+ * <p><b>Invariant:</b>      msg!=null
  *
- * <p/><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
+ * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
 
 public final class ErrorSyntax extends Err {

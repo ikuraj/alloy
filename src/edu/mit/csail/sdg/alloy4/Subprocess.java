@@ -7,23 +7,23 @@ import java.io.OutputStream;
 /**
  * This class provides a convenience wrapper around a Process object.
  *
- * <p/>  To launch a subprocess, simply write Subprocess x=new Subprocess(args);
- * <br/> The subprocess will run concurrently with your current JVM.
- * <br/> When you are ready to deal with the subprocess, you can do one of two things:
+ * <p>  To launch a subprocess, simply write Subprocess x=new Subprocess(args);
+ * <br> The subprocess will run concurrently with your current JVM.
+ * <br> When you are ready to deal with the subprocess, you can do one of two things:
  *
- * <p/>  (1) if you call x.terminate(), the subprocess will be terminated;
- * <br/> subsequent x.waitFor() will always return -1 (indicating error), and
- * <br/> subsequent x.getOutput() will always return "Error: Process forcibly terminated."
+ * <p>  (1) if you call x.terminate(), the subprocess will be terminated;
+ * <br> subsequent x.waitFor() will always return -1 (indicating error), and
+ * <br> subsequent x.getOutput() will always return "Error: Process forcibly terminated."
  *
- * <p/>  (2) if you call x.waitFor(), you will wait until the process terminates and get the return value;
- * <br/> subsequent x.waitFor() calls will always return -1, and
- * <br/> subsequent x.getOutput() will return either the program output, or an error message beginning with "Error"
+ * <p>  (2) if you call x.waitFor(), you will wait until the process terminates and get the return value;
+ * <br> subsequent x.waitFor() calls will always return -1, and
+ * <br> subsequent x.getOutput() will return either the program output, or an error message beginning with "Error"
  *
- * <p/>  If you have one thread waiting on waitFor(), you are allowed to call terminate() from other threads.
- * <br/> When that happens, the process will be terminated, and the waiting thread will awaken
- * <br/> (with -1 as the return code).
+ * <p>  If you have one thread waiting on waitFor(), you are allowed to call terminate() from other threads.
+ * <br> When that happens, the process will be terminated, and the waiting thread will awaken
+ * <br> (with -1 as the return code).
  *
- * <p/><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe.
  */
 
 public final class Subprocess {

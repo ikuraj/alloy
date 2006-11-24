@@ -9,15 +9,15 @@ import java.util.NoSuchElementException;
 /**
  * Mutable; this implements a set based on reference identity; the null value is allowed.
  *
- * <p/>
+ * <p>
  * Since this violates java.util.Set's contract of using object equality,
  * this class intentionally does not implement the java.util.Set interface.
  *
- * <p/>
+ * <p>
  * For simplicity, and since the remove() feature isn't needed,
  * this implementation does not provide the remove() method.
  *
- * <p/>
+ * <p>
  * By making this simplification, we are able to provide an iterator
  * that returns the elements in the order they were inserted,
  * and allow concurrent insertion and iteration (that is, we can iterate
@@ -25,9 +25,9 @@ import java.util.NoSuchElementException;
  * The iterator is guaranteed to iterate over exactly the elements
  * that existed at the time that the iterator was created.
  *
- * <p/><b>Invariant:</b>      hashmap.containsKey(x) iff (x==list.get(i) for some i)
+ * <p><b>Invariant:</b>      hashmap.containsKey(x) iff (x==list.get(i) for some i)
  *
- * <p/><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe.
  *
  * @param <T> - the type of element
  */
@@ -56,9 +56,9 @@ public final class IdentitySet<T> implements Iterable<T> {
      * Returns an iterator that iterates over elements in this set
      * (in the order that they were inserted).
      *
-     * <p/> Note: This iterator's remove() method always throws UnsupportedOperationException.
+     * <p> Note: This iterator's remove() method always throws UnsupportedOperationException.
      *
-     * <p/> Note: This iterator always returns exactly the set of elements that existed
+     * <p> Note: This iterator always returns exactly the set of elements that existed
      * at the time that the iterator was created (even if the set is modified after that point).
      */
     public synchronized Iterator<T> iterator() {

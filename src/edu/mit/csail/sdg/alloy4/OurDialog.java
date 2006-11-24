@@ -12,7 +12,7 @@ import javax.swing.filechooser.FileFilter;
 /**
  * Graphical dialog methods for asking the user some questions.
  *
- * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
  */
 
 public final class OurDialog {
@@ -69,7 +69,7 @@ public final class OurDialog {
 
     /**
      * Use the platform's preferred file chooser to ask the user to select a file.
-     * <br/> Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
+     * <br> Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
      * @param parentFrame - the parent frame
      * @param isOpen - true means this is an Open operation; false means this is a Save operation
      * @param dir - the initial directory

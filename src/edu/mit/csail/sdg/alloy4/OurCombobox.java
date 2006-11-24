@@ -16,14 +16,14 @@ import javax.swing.ListCellRenderer;
 /**
  * Graphical combobox.
  *
- * <p/> To construct a OurCombobox object, you need to give it a GetterSetter object and a key.
- * <br/> When the combobox is first created, it calls gs.get(key) to find out the initial value.
- * <br/> When the combobox value is changed by the user, it immediately calls gs.set(key,value) to notify the change.
+ * <p> To construct a OurCombobox object, you need to give it a GetterSetter object and a key.
+ * <br> When the combobox is first created, it calls gs.get(key) to find out the initial value.
+ * <br> When the combobox value is changed by the user, it immediately calls gs.set(key,value) to notify the change.
  *
- * <p/> This combobox does remember its current selection; so if the underlying data is altered by other code,
+ * <p> This combobox does remember its current selection; so if the underlying data is altered by other code,
  * then this combobox and the underlying data will become out-of-sync.
  *
- * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
  */
 
 public final class OurCombobox extends JComboBox {
@@ -40,7 +40,7 @@ public final class OurCombobox extends JComboBox {
     /**
      * This interface defines the getIcon, getText, getValue, and setValue methods.
      *
-     * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+     * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
      */
     public interface ComboGetterSetter {
         /** Given a key and a value, this returns a suitable icon to display; returns null if no icon is needed. */
@@ -56,7 +56,7 @@ public final class OurCombobox extends JComboBox {
     /**
      * This renderer draws the combobox value using the text and icon given by the GetterSetter.
      *
-     * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+     * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
      */
     private final class OurComboboxRenderer extends JLabel implements ListCellRenderer {
         /** This silences javac's warning about missing serialVersionUID. */

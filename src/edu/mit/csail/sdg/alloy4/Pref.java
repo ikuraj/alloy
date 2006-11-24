@@ -7,7 +7,7 @@ import java.util.prefs.Preferences;
 /**
  * This class reads and writes Java persistent preferences.
  *
- * <p/><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe.
  */
 
 public final class Pref {
@@ -207,7 +207,7 @@ public final class Pref {
 
     /**
      * This class reads and writes boolean-valued Java persistent preferences.
-     * <p/><b>Thread Safety:</b>  Safe.
+     * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class BooleanPref {
         /** The id associated with this preference. */
@@ -224,7 +224,7 @@ public final class Pref {
 
     /**
      * This class reads and writes integer-valued Java persistent preferences.
-     * <p/><b>Thread Safety:</b>  Safe.
+     * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class IntPref {
         /** The id associated with this preference. */
@@ -252,7 +252,7 @@ public final class Pref {
 
     /**
      * This class reads and writes String-valued Java persistent preferences.
-     * <p/><b>Thread Safety:</b>  Safe.
+     * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class StringPref {
         /** The id associated with this preference. */

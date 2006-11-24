@@ -3,7 +3,7 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * This logger is the superclass of all loggers; it ignores all calls and simply does nothing.
  *
- * <p/><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe.
  */
 
 public class Log {

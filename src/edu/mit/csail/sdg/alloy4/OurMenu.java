@@ -12,7 +12,7 @@ import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 /**
  * Graphical menu that extends JMenu.
  *
- * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
  */
 
 public final class OurMenu extends JMenu {
@@ -23,7 +23,7 @@ public final class OurMenu extends JMenu {
     /**
      * Construct a new menu and add it to an existing JMenuBar.
      *
-     * <p/> Note: every time the user expands then collapses this menu,
+     * <p> Note: every time the user expands then collapses this menu,
      * it will automatically enable all JMenu and JMenuItem objects inside it.
      *
      * @param parent - the JMenuBar to add this Menu into (or null if we don't want to add it to a JMenuBar yet)

@@ -3,9 +3,9 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * Immutable; this is the abstract super class of the various possible errors.
  *
- * <p/><b>Invariant</b>:      msg!=null
+ * <p><b>Invariant</b>:      msg!=null
  *
- * <p/><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
+ * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
 
 public abstract class Err extends RuntimeException {

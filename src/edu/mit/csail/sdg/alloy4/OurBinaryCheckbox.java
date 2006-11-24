@@ -13,14 +13,14 @@ import javax.swing.JPanel;
 /**
  * Graphical on/off checkbox.
  *
- * <p/> To construct a OurBinaryCheckbox object, you need to give it a GetterSetter object and a key.
- * <br/> Whenever the checkbox needs to be repainted, it calls gs.get(key) to find out whether it is ON or OFF.
- * <br/> Whenever the checkbox is clicked by the user, it calls gs.set(key,value) to set a new value.
+ * <p> To construct a OurBinaryCheckbox object, you need to give it a GetterSetter object and a key.
+ * <br> Whenever the checkbox needs to be repainted, it calls gs.get(key) to find out whether it is ON or OFF.
+ * <br> Whenever the checkbox is clicked by the user, it calls gs.set(key,value) to set a new value.
  *
- * <p/> In other words, the checkbox does not contain any hidden states: all changes are immediately
+ * <p> In other words, the checkbox does not contain any hidden states: all changes are immediately
  * committed into the data store, and it always re-queries the data store whenever it needs to repaint itself.
  *
- * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
  */
 
 public final class OurBinaryCheckbox extends JPanel {
@@ -45,15 +45,15 @@ public final class OurBinaryCheckbox extends JPanel {
 
     /**
      * The GetterSetter associated with this checkbox.
-     * <p/> When the checkbox needs to be repainted, we call gs.get(key) to find out whether it is ON or OFF.
-     * <p/> When the checkbox is clicked by the user, we call gs.set(key,value) to set a new value.
+     * <p> When the checkbox needs to be repainted, we call gs.get(key) to find out whether it is ON or OFF.
+     * <p> When the checkbox is clicked by the user, we call gs.set(key,value) to set a new value.
      */
     private final BinaryGetterSetter gs;
 
     /**
      * This interface defines the get(key) and set(key,value) methods.
      *
-     * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+     * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
      */
     public interface BinaryGetterSetter {
         /** This method reads the boolean value associated with the key; this must be called only by the AWT thread. */

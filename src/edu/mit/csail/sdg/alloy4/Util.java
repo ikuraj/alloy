@@ -19,7 +19,7 @@ import java.util.Random;
 /**
  * This class provides useful static methods for I/O and XML operations.
  *
- * <p/><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe.
  */
 
 public final class Util {
@@ -61,11 +61,11 @@ public final class Util {
 
     /**
      * Sorts two strings for optimum module order; we guarantee slashCompartor(a,b)==0 iff a.equals(b).
-     * <br/> (1) First of all, the builtin names "extend" and "in" are sorted ahead of other names
-     * <br/> (2) Else, if one string has fewer '/' than the other, then it is considered smaller.
-     * <br/> (3) Else, we compare them lexically without case-sensitivity.
-     * <br/> (4) Else, we compare them lexically with case-sensitivity.
-     * <br/>
+     * <br> (1) First of all, the builtin names "extend" and "in" are sorted ahead of other names
+     * <br> (2) Else, if one string has fewer '/' than the other, then it is considered smaller.
+     * <br> (3) Else, we compare them lexically without case-sensitivity.
+     * <br> (4) Else, we compare them lexically with case-sensitivity.
+     * <br>
      */
     public static final Comparator<String> slashComparator = new Comparator<String>() {
         public final int compare(String a, String b) {
@@ -191,7 +191,7 @@ public final class Util {
     /**
      * Write a String into a PrintWriter, and encode special characters using XML-specific encoding.
      *
-     * <p/>
+     * <p>
      * In particular, it changes LESS THAN, GREATER THAN, AMPERSAND, SINGLE QUOTE, and DOUBLE QUOTE
      * into "&amp;lt;" "&amp;gt;" "&amp;amp;" "&amp;apos;" and "&amp;quot;" and turns any characters
      * outside of the 32..126 range into the "&amp;#xHHHH;" encoding
@@ -221,13 +221,13 @@ public final class Util {
     /**
      * Write a list of Strings into a PrintWriter, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
      *
-     * <p/> For example, if you call encodeXML(out, A, B, C, D, E), it is equivalent to the following:
-     * <br/> out.print(A);
-     * <br/> out.encodeXML(B);
-     * <br/> out.print(C);
-     * <br/> out.encodeXML(D);
-     * <br/> out.print(E);
-     * <br/> In other words, it writes the even entries as-is, and writes the odd entries using XML encoding.
+     * <p> For example, if you call encodeXML(out, A, B, C, D, E), it is equivalent to the following:
+     * <br> out.print(A);
+     * <br> out.encodeXML(B);
+     * <br> out.print(C);
+     * <br> out.encodeXML(D);
+     * <br> out.print(E);
+     * <br> In other words, it writes the even entries as-is, and writes the odd entries using XML encoding.
      *
      * @param out - the PrintWriter to write into
      * @param strs - the list of Strings to write out

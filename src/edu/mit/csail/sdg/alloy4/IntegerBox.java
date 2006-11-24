@@ -3,7 +3,7 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * Mutable; this class holds a mutable integer.
  *
- * <p/><b>Thread Safety:</b> Safe
+ * <p><b>Thread Safety:</b> Safe
  */
 
 public class IntegerBox {

@@ -11,7 +11,7 @@ import javax.swing.KeyStroke;
 /**
  * Graphical menu item that extends JMenuItem.
  *
- * <p/><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
  */
 
 public final class OurMenuItem extends JMenuItem {

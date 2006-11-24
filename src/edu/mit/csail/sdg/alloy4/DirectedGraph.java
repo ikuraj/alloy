@@ -8,11 +8,11 @@ import java.util.IdentityHashMap;
  * Mutable; this implements a graph with nodes and directed edges.
  * Null node is allowed.
  *
- * <p/> Note: it uses reference identity for comparing nodes, rather than using N.equals().
+ * <p> Note: it uses reference identity for comparing nodes, rather than using N.equals().
  *
- * <p/><b>Invariant:</b>  nodeToTargets.containsKey(x) => nodeToTargets.get(x)!=null
+ * <p><b>Invariant:</b>  nodeToTargets.containsKey(x) => nodeToTargets.get(x)!=null
  *
- * <p/><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe.
  *
  * @param <N> - the node type
  */
