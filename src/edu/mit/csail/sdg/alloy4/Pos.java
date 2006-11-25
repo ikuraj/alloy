@@ -67,4 +67,9 @@ public final class Pos {
         if (y2==y && x2<x) x2=x;
         return new Pos(filename, x, y, x2, y2);
     }
+
+    @Override public String toString() {
+        if (filename.length()==0) return "(line "+y+", column "+x+")";
+        return "(line "+y+", column "+x+", filename="+filename+")";
+    }
 }
