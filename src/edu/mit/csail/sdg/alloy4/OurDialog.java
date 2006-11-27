@@ -2,11 +2,18 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.awt.BorderLayout;
 import java.awt.FileDialog;
 import java.awt.Frame;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.filechooser.FileFilter;
 
 /**
@@ -115,4 +122,26 @@ public final class OurDialog {
 
     /** Display "msg" in a dialogbox, and ask the user to choose "Yes" versus "No" (default==no). */
     public static boolean yesno(JFrame parentFrame, String msg) { return yesno(parentFrame, msg, "Yes", "No"); }
+
+    /** Display a simple window showing some text. */
+    public static void showtext(String title, String text, boolean autoLineWrap) {
+        final JFrame window = new JFrame(title);
+        final JButton done = new JButton("Close");
+        done.addActionListener(new ActionListener() {
+            public final void actionPerformed(ActionEvent e) { window.dispose(); }
+        });
+        JTextArea textarea = new JTextArea(text);
+        textarea.setEditable(false);
+        textarea.setLineWrap(autoLineWrap);
+        textarea.setWrapStyleWord(autoLineWrap);
+        JScrollPane scrollPane = new JScrollPane(textarea,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        window.getContentPane().setLayout(new BorderLayout());
+        window.getContentPane().add(scrollPane, BorderLayout.CENTER);
+        window.getContentPane().add(done, BorderLayout.SOUTH);
+        window.pack();
+        window.setLocation(100,100);
+        window.setSize(500,500);
+        window.setVisible(true);
+    }
 }

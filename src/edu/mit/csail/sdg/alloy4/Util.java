@@ -2,14 +2,17 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.io.StringReader;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.Comparator;
@@ -45,6 +48,29 @@ public final class Util {
         try { fr.close(); } catch(IOException ex) { if (error==null) error=ex.getMessage(); }
         if (error!=null) throw new IOException(error);
         return sb.toString();
+    }
+
+    /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
+    public static void writeAll(String filename, String content) throws IOException {
+        FileWriter fw=new FileWriter(filename);
+        BufferedWriter bw=new BufferedWriter(fw);
+        PrintWriter out=new PrintWriter(bw);
+        BufferedReader rd=new BufferedReader(new StringReader(content));
+        while(true) {
+            try {
+                String line=rd.readLine();
+                if (line==null) break;
+                out.println(line);
+            } catch(IOException ex) {
+                out.close();
+                out=null;
+                break;
+            }
+        }
+        if (out!=null) { out.flush(); out.close(); }
+        bw.close();
+        fw.close();
+        rd.close();
     }
 
     /**
