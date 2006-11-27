@@ -63,11 +63,12 @@ public final class Pos {
      */
     public Pos upto(Pos other) {
         int x=this.x, y=this.y, x2=other.x2, y2=other.y2;
-        if (y2<y) y2=y;
-        if (y2==y && x2<x) x2=x;
+        if (other.y<y || (other.y==y && other.x<x)) { x=other.x; y=other.y; }
+        if (this.y2>y2 || (this.y2==y2 && this.x2>x2)) { x2=this.x2; y2=this.y2; }
         return new Pos(filename, x, y, x2, y2);
     }
-
+               
+    /** Returns a String representation of this position value. */
     @Override public String toString() {
         if (filename.length()==0) return "(line "+y+", column "+x+")";
         return "(line "+y+", column "+x+", filename="+filename+")";
