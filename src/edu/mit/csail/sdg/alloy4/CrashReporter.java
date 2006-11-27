@@ -64,20 +64,42 @@ public final class CrashReporter implements UncaughtExceptionHandler, ActionList
         JScrollPane scroll=OurUtil.scrollpane(comment);
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
-        if (JOptionPane.showOptionDialog(null, new Object[]{
-                (thread==null ? "Thank you for submitting a bg report." : "Sorry. An internal error has occurred."),
-                " ",
-                "You may post a bug report (via HTTP).",
-                "The error report will include your Alloy source",
-                "and system configuration, but no other information.",
-                " ",
-                "If you'd like to be notified about a fix,",
-                "please enter your email adress and optionally add a comment.",
-                " ",
-                OurUtil.makeHT("Email:",5,email,null),
-                OurUtil.makeHT("Comment:",5,scroll,null)
+        if ((ex instanceof OutOfMemoryError) || (ex instanceof StackOverflowError)) {
+            if (JOptionPane.showOptionDialog(null, new Object[]{
+                    "Alloy Analyzer has run out of memory.",
+                    "Your model may be too large to be analysed, or may",
+                    "be using features that make the problem intractable.",
+                    "Please visit http://alloy.mit.edu/",
+                    "for tips on writing efficient Alloy models.",
+                    " ",
+                    "If you believe the model should be analyzable,",
+                    "you may submit a bug report (via HTTP).",
+                    "The error report will include your Alloy source",
+                    "and system configuration, but no other information.",
+                    " ",
+                    "If you'd like to be notified about a fix,",
+                    "please enter your email adress and optionally add a comment.",
+                    " ",
+                    OurUtil.makeHT("Email:",5,email,null),
+                    OurUtil.makeHT("Comment:",5,scroll,null)
             }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
             null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { if (thread!=null) System.exit(1); return; }
+        } else {
+            if (JOptionPane.showOptionDialog(null, new Object[]{
+                    (thread==null ? "Thank you for submitting a bug report." : "Sorry. An internal error has occurred."),
+                    " ",
+                    "You may post a bug report (via HTTP).",
+                    "The error report will include your Alloy source",
+                    "and system configuration, but no other information.",
+                    " ",
+                    "If you'd like to be notified about a fix,",
+                    "please enter your email adress and optionally add a comment.",
+                    " ",
+                    OurUtil.makeHT("Email:",5,email,null),
+                    OurUtil.makeHT("Comment:",5,scroll,null)
+            }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { if (thread!=null) System.exit(1); return; }
+        }
         StringWriter sw=new StringWriter();
         PrintWriter pw=new PrintWriter(sw);
         pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
