@@ -174,20 +174,32 @@ public final class LogToJTextPane extends Log {
         StringBuilder sb=new StringBuilder();
         while(msg.length()>0) {
             int i=msg.indexOf('\n');
-            if (i>=0) { linewrap(sb, msg.substring(0,i)); sb.append('\n'); msg=msg.substring(i+1); }
-            else { linewrap(sb,msg); break; }
+            if (i>=0) { linewrap(sb, msg.substring(0,i), ""); sb.append('\n'); msg=msg.substring(i+1); }
+            else { linewrap(sb,msg,""); break; }
         }
         handle("log", 0, null, sb.toString(), "", styleRed);
     }
 
-    /** Try to wrap the input to about 50 characters per line; however, if a token is too longer, we won't break it. */
-    private static void linewrap(StringBuilder sb, String msg) {
+    /** Write "msg" in regular style, with auto linewrap and indentation. */
+    public void logIndented(String msg) {
+        StringBuilder sb=new StringBuilder();
+        sb.append("   ");
+        while(msg.length()>0) {
+            int i=msg.indexOf('\n');
+            if (i>=0) { linewrap(sb, msg.substring(0,i), "   "); sb.append("\n   "); msg=msg.substring(i+1); }
+            else { linewrap(sb,msg,"   "); break; }
+        }
+        handle("log", 0, null, sb.toString(), "", styleRegular);
+    }
+
+    /** Try to wrap the input to about 60 characters per line; however, if a token is too longer, we won't break it. */
+    private static void linewrap(StringBuilder sb, String msg, String indentation) {
         StringTokenizer tokenizer=new StringTokenizer(msg,"\r\n\t ");
-        int max=50;
+        int max=60;
         int now=0;
         while(tokenizer.hasMoreTokens()) {
             String x=tokenizer.nextToken();
-            if (now+1+x.length() > max) { if (now>0) sb.append('\n'); sb.append(x); now=x.length(); }
+            if (now+1+x.length() > max) { if (now>0) sb.append("\n"+indentation); sb.append(x); now=x.length(); }
             else { if (now>0) {now++; sb.append(' ');} sb.append(x); now=now+x.length(); }
         }
     }
