@@ -67,7 +67,7 @@ public final class Pos {
         if (this.y2>y2 || (this.y2==y2 && this.x2>x2)) { x2=this.x2; y2=this.y2; }
         return new Pos(filename, x, y, x2, y2);
     }
-               
+
     /** Returns a String representation of this position value. */
     @Override public String toString() {
         if (filename.length()==0) return "(line "+y+", column "+x+")";
