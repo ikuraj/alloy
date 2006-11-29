@@ -70,7 +70,7 @@ public final class Pos {
 
     /** Returns a String representation of this position value. */
     @Override public String toString() {
-        if (filename.length()==0) return "(line "+y+", column "+x+")";
-        return "(line "+y+", column "+x+", filename="+filename+")";
+        if (filename.length()==0) return "line "+y+", column "+x;
+        return "line "+y+", column "+x+", filename="+filename;
     }
 }
