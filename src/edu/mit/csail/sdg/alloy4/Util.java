@@ -11,10 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.io.StringReader;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Random;
@@ -277,15 +274,15 @@ public final class Util {
             int i=r.nextInt(1000000);
             String dest = Util.alloyHome()+fs+"tmp"+fs+i;
             File f=new File(dest);
-            if (f.exists()) continue;
-            f.mkdirs();
-            f.deleteOnExit();
-            if (f.isDirectory()) return canon(dest);
+            if (f.mkdirs()) {
+                f.deleteOnExit();
+                return canon(dest);
+            }
         }
     }
 
-    /** Lock then overwrite the given file. */
-    public static synchronized void lockThenWrite(String filename, String content) throws IOException {
+    /* Lock then overwrite the given file. */
+    /* public static synchronized void lockThenWrite(String filename, String content) throws IOException {
         RandomAccessFile raf;
         raf = new RandomAccessFile(new File(filename),"rw"); // If this line fails, IOException will be thrown
         FileChannel fc = raf.getChannel(); // This line does not throw IOException
@@ -303,10 +300,10 @@ public final class Util {
             try { raf.close(); } catch(IOException ex2) { harmless("close",ex2); }
             throw ex;
         }
-    }
+    }*/
 
-    /** Open (create if does not exist), lock, read up to 30000 bytes, then truncate the given file. */
-    public static synchronized String lockThenReadThenErase(String filename) throws IOException {
+    /* Open (create if does not exist), lock, read up to 30000 bytes, then truncate the given file. */
+    /* public static synchronized String lockThenReadThenErase(String filename) throws IOException {
         RandomAccessFile raf;
         raf = new RandomAccessFile(new File(filename),"rw"); // If this line fails, IOException will be thrown
         FileChannel fc = raf.getChannel(); // This line does not throw IOException
@@ -333,5 +330,5 @@ public final class Util {
             try { raf.close(); } catch(IOException ex2) { harmless("close",ex2); }
             throw ex;
         }
-    }
+    }*/
 }
