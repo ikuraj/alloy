@@ -134,7 +134,7 @@ public final class Util {
     /**
      * Copy the list of files from JAR into the destination directory,
      * then set the correct permissions on them if possible.
-     * 
+     *
      * @param keepPath - if true, the directory of each file will be created
      * @param deleteOnExit - if true, each file will be deleted on exit
      */

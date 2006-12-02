@@ -3,6 +3,8 @@ package edu.mit.csail.sdg.alloy4;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * This class provides a convenience wrapper around a Process object.
@@ -17,13 +19,13 @@ import java.io.OutputStream;
  * <p><b>Thread Safety:</b>  Safe.
  */
 
-public final class Subprocess {
+public final class Subprocess extends TimerTask {
 
     /** The actual subprocess (null if the subprocess did not even start successfully). */
     private Process process=null;
 
     /** This field will store the process termination status. */
-    private String result="";
+    private String result=null;
 
     /** This field will store the result of sending stdin input to the program. */
     private String stdin=null;
@@ -38,10 +40,12 @@ public final class Subprocess {
      * Synchronized method that reads the output from the process
      * (Note: you must call waitFor() first)
      */
-    public synchronized String getOutput() { return result; }
+    public synchronized String getOutput() { if (result==null) return ""; else return result; }
+
+    private static Timer stopper = new Timer();
 
     /** Executes the given command line, and returns a "Subprocess" object that allows us to query the subprocess. */
-    public Subprocess(String[] commandline, String input) {
+    public Subprocess(int timeLimit, String[] commandline, String input) {
         try {
             process=Runtime.getRuntime().exec(commandline);
         } catch (IOException ex) {
@@ -55,6 +59,14 @@ public final class Subprocess {
         thread0.start();
         thread1.start();
         thread2.start();
+        if (timeLimit>0) stopper.schedule(this, timeLimit);
+    }
+
+    /** This method is called from a Timer when the allotted time has expired. */
+    public void run() {
+        Process p;
+        synchronized(this) {p=process; process=null; if (result==null) result="Error: time out.";}
+        if (p!=null) { p.destroy(); }
     }
 
     /** Wait for the process to finish and return its exit code (if we detected an error, we will return -1). */
@@ -71,6 +83,7 @@ public final class Subprocess {
                 Thread.sleep(500);
             }
             synchronized(this) {
+                if (result!=null && result.startsWith("Error")) return -1;
                 stdin=stdin.trim(); if (stdin.length()>0) stdin=stdin+"\n";
                 stdout=stdout.trim(); if (stdout.length()>0) stdout=stdout+"\n";
                 result=stdin+stdout+stderr.trim();
@@ -81,7 +94,10 @@ public final class Subprocess {
             return n;
         }
         catch (InterruptedException e) {
-            synchronized(this) {process=null; result="Error: "+e.getMessage();}
+            synchronized(this) {
+                process=null;
+                if (result==null || !result.startsWith("Error")) result="Error: "+e.getMessage();
+            }
             p.destroy();
             return -1;
         }
