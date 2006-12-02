@@ -134,8 +134,11 @@ public final class Util {
     /**
      * Copy the list of files from JAR into the destination directory,
      * then set the correct permissions on them if possible.
+     * 
+     * @param keepPath - if true, the directory of each file will be created
+     * @param deleteOnExit - if true, each file will be deleted on exit
      */
-    public static synchronized void copy(boolean executable, boolean keepPath, String destdir, String... names) {
+    public static synchronized void copy(boolean executable, boolean keepPath, boolean deleteOnExit, String destdir, String... names) {
         String[] args=new String[names.length+2];
         args[0]="chmod"; // This does not work on Windows, but the "executable" bit is not needed on Windows anyway.
         args[1]=(executable ? "700" : "600"); // 700 means read+write+executable; 600 means read+write.
@@ -147,7 +150,7 @@ public final class Util {
             destname=(destdir + File.separatorChar + destname).replace('/', File.separatorChar);
             int last=destname.lastIndexOf(File.separatorChar);
             new File(destname.substring(0,last+1)).mkdirs(); // Error will be caught later by the file copy
-            if (!keepPath) new File(destname).deleteOnExit();
+            if (deleteOnExit) new File(destname).deleteOnExit();
             if (copy(name, destname)) { args[j]=destname; j++; }
         }
         if (onWindows() || j<=2) return;
