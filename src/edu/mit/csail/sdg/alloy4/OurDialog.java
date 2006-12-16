@@ -3,12 +3,14 @@ package edu.mit.csail.sdg.alloy4;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FileDialog;
 import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -74,6 +76,45 @@ public final class OurDialog {
         return ans==JOptionPane.YES_OPTION;
     }
 
+    /** This caches the result of the call to get all fonts. */
+    private static String[] allFonts=null;
+
+    /** Returns true if a font with that name exists on the system. */
+    public static boolean hasFont(String fontname) {
+        String[] fonts;
+        synchronized (OurDialog.class) {
+            if (allFonts==null)
+                allFonts=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+            fonts=allFonts;
+        }
+        for(int i=0; i<fonts.length; i++) if (fontname.compareToIgnoreCase(fonts[i])==0) return true;
+        return false;
+    }
+
+    /** Asks the user to choose a font; returns "" if the user cancels the request. */
+    public static String askFont(JFrame parentFrame) {
+        String[] fonts;
+        synchronized (OurDialog.class) {
+            if (allFonts==null)
+                allFonts=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+            fonts=allFonts;
+        }
+        JComboBox jcombo = new JComboBox(fonts);
+        int ans=JOptionPane.showOptionDialog(parentFrame, new Object[]{
+                "Please choose the new font:",
+                jcombo
+                },
+                "Font",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                new Object[]{"Ok","Cancel"},
+                "Cancel");
+        if (ans!=JOptionPane.YES_OPTION) return "";
+        Object value=jcombo.getSelectedItem();
+        if (value instanceof String) return ((String)value); else return "";
+    }
+
     /**
      * Use the platform's preferred file chooser to ask the user to select a file.
      * <br> Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
@@ -131,6 +172,7 @@ public final class OurDialog {
             public final void actionPerformed(ActionEvent e) { window.dispose(); }
         });
         JTextArea textarea = new JTextArea(text);
+        textarea.setBackground(Color.WHITE);
         textarea.setEditable(false);
         textarea.setLineWrap(autoLineWrap);
         textarea.setWrapStyleWord(autoLineWrap);

@@ -69,6 +69,9 @@ public final class LogToJTextPane extends Log {
     /** The current length of the log, not counting any "red" error message at the end of the log. */
     private int lastSize=0;
 
+    /** The current font name. */
+    private String fontName;
+
     /** The current font size. */
     private int fontSize;
 
@@ -87,6 +90,7 @@ public final class LogToJTextPane extends Log {
     /**
      * Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
      * @param parent - the JScrollPane to insert the JTextPane into
+     * @param fontName - the font family to start with
      * @param fontSize - the font size to start with
      * @param background - the background color to use for the JTextPane
      * @param regular - the color to use for regular messages
@@ -95,12 +99,13 @@ public final class LogToJTextPane extends Log {
      * @param ev_focus - When the window gains focus, we'll call handler.run(ev_focus)
      * @param evs_click - when a hyperlink is clicked, we'll call handler.run(evs_click, linkURL)
      */
-    public LogToJTextPane(final JScrollPane parent, final int fontSize,
+    public LogToJTextPane(final JScrollPane parent, String fontName, int fontSize,
             final Color background, final Color regular, final Color red,
             final MultiRunnable handler, final int ev_focus, final int evs_click) {
         this.handler=handler;
         this.ev_focus=ev_focus;
         this.evs_click=evs_click;
+        this.fontName=fontName;
         this.fontSize=fontSize;
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() {
@@ -134,14 +139,14 @@ public final class LogToJTextPane extends Log {
         log.setBorder(new EmptyBorder(1,1,1,1));
         log.setBackground(background);
         log.setEditable(false);
-        log.setFont(OurUtil.getFont(fontSize));
+        log.setFont(new Font(fontName, Font.PLAIN, fontSize));
         log.addFocusListener(new FocusListener() {
             public final void focusGained(FocusEvent e) { handler.run(ev_focus); }
             public final void focusLost(FocusEvent e) { }
         });
         StyledDocument doc=log.getStyledDocument();
         styleRegular=doc.addStyle("regular", null);
-        StyleConstants.setFontFamily(styleRegular, OurUtil.getFontName());
+        StyleConstants.setFontFamily(styleRegular, fontName);
         StyleConstants.setFontSize(styleRegular, fontSize);
         StyleConstants.setForeground(styleRegular, regular);
         styleBold=doc.addStyle("bold", styleRegular);
@@ -203,6 +208,9 @@ public final class LogToJTextPane extends Log {
             else { if (now>0) {now++; sb.append(' ');} sb.append(x); now=now+x.length(); }
         }
     }
+
+    /** Set the font name. */
+    public void setFontName(String fontName) { handle("setFontName",0,null,fontName,"",null); }
 
     /** Set the font size. */
     public void setFontSize(int fontSize) { handle("setFontSize",fontSize); }
@@ -267,21 +275,21 @@ public final class LogToJTextPane extends Log {
             try {doc.remove(lastSize,n-lastSize);}
             catch (BadLocationException e) {Util.harmless("This shouldn't happen",e);}
         }
-        if (op=="setFontSize") {
+        if (op=="setFontSize" || op=="setFontName") {
             // Changes the settings for future writes into the log
-            this.fontSize=arg;
-            log.setFont(OurUtil.getFont(fontSize));
+            if (op=="setFontSize") this.fontSize=arg; else this.fontName=text;
+            log.setFont(new Font(fontName, Font.PLAIN, fontSize));
             StyleConstants.setFontSize(styleRegular, fontSize);
             StyleConstants.setFontSize(styleBold, fontSize);
             StyleConstants.setFontSize(styleRed, fontSize);
             // Changes all existing text
             StyledDocument doc=log.getStyledDocument();
             Style temp=doc.addStyle("temp", null);
-            StyleConstants.setFontFamily(temp, OurUtil.getFontName());
+            StyleConstants.setFontFamily(temp, fontName);
             StyleConstants.setFontSize(temp, fontSize);
             doc.setCharacterAttributes(0, doc.getLength(), temp, false);
             // Changes all existing hyperlinks
-            Font newFont=new Font(OurUtil.getFontName(), Font.BOLD, fontSize);
+            Font newFont=new Font(fontName, Font.BOLD, fontSize);
             for(JLabel link:links) link.setFont(newFont);
         }
         if (op=="logLink") {
@@ -291,7 +299,7 @@ public final class LogToJTextPane extends Log {
             final JLabel label=new JLabel(text);
             label.setAlignmentY(0.8f);
             label.setMaximumSize(label.getPreferredSize());
-            label.setFont(OurUtil.getFont(fontSize).deriveFont(Font.BOLD));
+            label.setFont(new Font(fontName, Font.BOLD, fontSize));
             label.setForeground(linkColor);
             label.addMouseListener(new MouseListener(){
                 public final void mouseClicked(MouseEvent e) { handler.run(evs_click, text2); }

@@ -158,6 +158,9 @@ public final class Pref {
     /** The latest font size of the Alloy Analyzer. */
     public static final IntPref FontSize = new IntPref("FontSize",9,12,24);
 
+    /** The latest font name of the Alloy Analyzer. */
+    public static final StringPref FontName = new StringPref("FontName","LucidaGrande");
+
     /** The latest tab distance of the Alloy Analyzer. */
     public static final IntPref TabSize = new IntPref("TabSize",1,2,16);
 
@@ -257,12 +260,19 @@ public final class Pref {
     public static final class StringPref {
         /** The id associated with this preference. */
         private final String id;
+        /** The default value for this preference. */
+        private final String defaultValue;
         /** Constructs a new StringPref object with the given id. */
-        private StringPref(String id) {this.id=id;}
+        private StringPref(String id) {this.id=id; this.defaultValue="";}
+        /** Constructs a new StringPref object with the given id and the given default value. */
+        private StringPref(String id, String defaultValue) {this.id=id; this.defaultValue=defaultValue;}
         /** Sets the value for this preference. */
         public void set(String value) { Preferences.userNodeForPackage(Util.class).put(id,value); }
-        /** Reads the value for this preference; if not set, we return the empty string. */
-        public String get() { return Preferences.userNodeForPackage(Util.class).get(id,""); }
+        /** Reads the value for this preference; if not set or is empty, we return the default value. */
+        public String get() {
+            String ans=Preferences.userNodeForPackage(Util.class).get(id,"");
+            return (ans==null || ans.length()==0) ? defaultValue : ans;
+        }
     }
 
     /*=======================================================================*/

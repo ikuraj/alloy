@@ -53,15 +53,9 @@ public final class OurUtil {
         return button;
     }
 
-    /** Returns the recommended font name to use in a textbox, based on the OS. */
-    public static String getFontName() { return "LucidaGrande"; }
-
-    /** Returns the recommended font to use in a textbox, based on the OS and the given font size. */
-    public static Font getFont(int fontSize) { return new Font(getFontName(), Font.PLAIN, fontSize); }
-
     /** Returns the recommended font to use in the visualizer, based on the OS. */
     public static Font getVizFont() {
-        if (Util.onMac()) return getFont(11); else return new Font("Dialog", Font.PLAIN, 12);
+        return Util.onMac() ? new Font("LucidaGrande",Font.PLAIN,11) : new Font("Dialog",Font.PLAIN,12);
     }
 
     /** Returns the screen height (in pixels). */
