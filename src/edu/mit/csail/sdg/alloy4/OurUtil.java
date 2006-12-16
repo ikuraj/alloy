@@ -55,7 +55,7 @@ public final class OurUtil {
 
     /** Returns the recommended font to use in the visualizer, based on the OS. */
     public static Font getVizFont() {
-        return Util.onMac() ? new Font("LucidaGrande",Font.PLAIN,11) : new Font("Dialog",Font.PLAIN,12);
+        return Util.onMac() ? new Font("Lucida Grande",Font.PLAIN,11) : new Font("Dialog",Font.PLAIN,12);
     }
 
     /** Returns the screen height (in pixels). */

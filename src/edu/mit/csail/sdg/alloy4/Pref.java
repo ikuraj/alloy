@@ -159,7 +159,7 @@ public final class Pref {
     public static final IntPref FontSize = new IntPref("FontSize",9,12,24);
 
     /** The latest font name of the Alloy Analyzer. */
-    public static final StringPref FontName = new StringPref("FontName","LucidaGrande");
+    public static final StringPref FontName = new StringPref("FontName","Lucida Grande");
 
     /** The latest tab distance of the Alloy Analyzer. */
     public static final IntPref TabSize = new IntPref("TabSize",1,2,16);
