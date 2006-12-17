@@ -15,6 +15,12 @@ public final class ErrorType extends Err {
 
     /**
      * Constructs a new type error.
+     * @param msg - the actual error message
+     */
+    public ErrorType(String msg) { super(null,msg); }
+
+    /**
+     * Constructs a new type error.
      * @param pos - the filename/line/row information (null if unknown)
      * @param msg - the actual error message
      */
