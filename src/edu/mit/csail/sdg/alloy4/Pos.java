@@ -25,6 +25,9 @@ public final class Pos {
     /** The ending row position (from 1..) */
     public final int y2;
 
+    /** The default "unknown" location. */
+    public static final Pos UNKNOWN=new Pos("",1,1);
+
     /**
      * Constructs a new Pos object.
      * @param filename - the filename (it can be an empty string if unknown)

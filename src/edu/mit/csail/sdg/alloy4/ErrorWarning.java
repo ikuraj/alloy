@@ -15,6 +15,12 @@ public final class ErrorWarning extends Err {
 
     /**
      * Constructs a new warning.
+     * @param msg - the actual error message
+     */
+    public ErrorWarning(String msg) { super(null,msg); }
+
+    /**
+     * Constructs a new warning.
      * @param pos - the filename/line/row information (null if unknown)
      * @param msg - the actual error message
      */
