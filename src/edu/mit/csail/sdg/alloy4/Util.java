@@ -12,8 +12,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -26,6 +29,20 @@ public final class Util {
 
     /** This constructor is private, since this utility class never needs to be instantiated. */
     private Util() { }
+
+    /** Copy the input list, append "element" to it, then return the result as a unmodifiable list. */
+    public static<T> List<T> add(List<T> list, T element) {
+        list=new ArrayList<T>(list);
+        list.add(element);
+        return Collections.unmodifiableList(list);
+    }
+
+    /** Copy the input list, remove a single instance of "element", then return the result as a unmodifiable list. */
+    public static<T> List<T> remove(List<T> list, T element) {
+        list=new ArrayList<T>(list);
+        list.remove(element);
+        return Collections.unmodifiableList(list);
+    }
 
     /** This variable caches the value of the system's file separator. */
     private static final String fs=System.getProperty("file.separator");
