@@ -8,7 +8,7 @@ package edu.mit.csail.sdg.alloy4;
  * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
 
-public abstract class Err extends RuntimeException {
+public abstract class Err extends Exception {
 
     /** This stores the filename/line/row information (null if unknown). */
     public final Pos pos;
