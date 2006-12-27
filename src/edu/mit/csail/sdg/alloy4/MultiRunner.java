@@ -11,7 +11,7 @@ import javax.swing.event.MenuListener;
 
 public final class MultiRunner implements MenuListener, ActionListener, WindowListener, Runnable {
 
-    /** This defines a Runnable that can be encapsulates inside a MultiRunner. */
+    /** This defines a Runnable that can be encapsulates in a MultiRunner. */
     public interface MultiRunnable {
         /** Returns true if the method succeeds; you can call this method only from the AWT thread. */
         public boolean run(int key);
@@ -41,36 +41,36 @@ public final class MultiRunner implements MenuListener, ActionListener, WindowLi
     /** This method is defined in java.lang.runnable */
     public void run() { if (arg==null) runnable.run(key); else runnable.run(key,arg); }
 
-    /** This method is defined in ActionListener */
+    /** This method is defined in java.awt.event.ActionListener; (this implementation calls this.run()) */
     public void actionPerformed(ActionEvent e) { run(); }
 
-    /** This method is defined in MenuListener */
+    /** This method is defined in javax.swing.event.MenuListener; (this implementation calls this.run()) */
     public void menuSelected(MenuEvent e) { run(); }
 
-    /** This method is defined in MenuListener */
+    /** This method is defined in javax.swing.event.MenuListener; (this implementation does nothing) */
     public void menuDeselected(MenuEvent e) { }
 
-    /** This method is defined in MenuListener */
+    /** This method is defined in javax.swing.event.MenuListener; (this implementation does nothing) */
     public void menuCanceled(MenuEvent e) { }
 
-    /** This method is defined in WindowListener */
+    /** This method is defined in java.awt.event.WindowListener; (this implementation calls this.run()) */
     public void windowClosing(WindowEvent e) { run(); }
 
-    /** This method is defined in WindowListener */
+    /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
     public void windowClosed(WindowEvent e) { }
 
-    /** This method is defined in WindowListener */
+    /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
     public void windowOpened(WindowEvent e) { }
 
-    /** This method is defined in WindowListener */
+    /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
     public void windowIconified(WindowEvent e) { }
 
-    /** This method is defined in WindowListener */
+    /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
     public void windowDeiconified(WindowEvent e) { }
 
-    /** This method is defined in WindowListener */
+    /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
     public void windowActivated(WindowEvent e) { }
 
-    /** This method is defined in WindowListener */
+    /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
     public void windowDeactivated(WindowEvent e) { }
 }

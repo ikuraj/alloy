@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * This class provides useful static methods for I/O and XML operations.
+ * This provides useful static methods for I/O and XML operations.
  *
  * <p><b>Thread Safety:</b>  Safe.
  */

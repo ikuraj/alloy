@@ -5,14 +5,14 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 /**
- * This class reads and writes Java persistent preferences.
+ * This reads and writes Java persistent preferences.
  *
  * <p><b>Thread Safety:</b>  Safe.
  */
 
 public final class Pref {
 
-    /** Dump an XML representation of all preferences into the given output stream. */
+    /** Write a textual representation of all preferences into the given output stream. */
     public static void dump(PrintWriter printWriter) {
         try {
             for(String key: Preferences.userNodeForPackage(Util.class).keys()) {
@@ -209,7 +209,7 @@ public final class Pref {
     /*=======================================================================*/
 
     /**
-     * This class reads and writes boolean-valued Java persistent preferences.
+     * This reads and writes boolean-valued Java persistent preferences.
      * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class BooleanPref {
@@ -226,7 +226,7 @@ public final class Pref {
     /*=======================================================================*/
 
     /**
-     * This class reads and writes integer-valued Java persistent preferences.
+     * This reads and writes integer-valued Java persistent preferences.
      * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class IntPref {
@@ -254,7 +254,7 @@ public final class Pref {
     /*=======================================================================*/
 
     /**
-     * This class reads and writes String-valued Java persistent preferences.
+     * This reads and writes String-valued Java persistent preferences.
      * <p><b>Thread Safety:</b>  Safe.
      */
     public static final class StringPref {

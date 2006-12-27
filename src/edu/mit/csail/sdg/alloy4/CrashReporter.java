@@ -26,7 +26,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
-/** When an uncaught exception occurs, this class asks for permission before sending crash report. */
+/** This asks for permission to email crash report when an uncaught exception occurs. */
 
 public final class CrashReporter implements UncaughtExceptionHandler, ActionListener {
 

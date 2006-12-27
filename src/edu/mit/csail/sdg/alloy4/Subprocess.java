@@ -7,7 +7,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * This class provides a convenience wrapper around a Process object.
+ * This provides a convenience wrapper around a Process object.
  *
  * <p>  To launch a subprocess, simply write Subprocess x=new Subprocess(args);
  * <br> The subprocess will run concurrently with your current JVM.

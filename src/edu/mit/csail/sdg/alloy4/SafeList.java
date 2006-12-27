@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * Mutable; this implements a list that does not support the remove() and set() methods.
+ * This list allows add() but disallows remove() and set(); null values are allowed.
  *
  * <p>
  * By making this sacrifice, we are able to provide a very cheap "copy constructor"
@@ -60,7 +60,7 @@ public final class SafeList<T> implements Collection<T> {
         return answer;
     }
 
-    /** Returns true if the list contains the same elements as the other list. */
+    /** Returns true if (that instanceof SafeList), and that contains the same elements as this list. */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof SafeList)) return false;

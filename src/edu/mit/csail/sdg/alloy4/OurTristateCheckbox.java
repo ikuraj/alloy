@@ -60,7 +60,7 @@ public final class OurTristateCheckbox extends JPanel {
     private final GetterSetter gs;
 
     /**
-     * This interface defines the get(key), getInherited(key), and set(key,value) methods.
+     * This interface defines get/getInherited/set methods.
      *
      * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
      */

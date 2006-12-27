@@ -61,14 +61,27 @@ public final class Pos {
     }
 
     /**
-     * Return a new position that spans from the start of (this.x, this.y), up to and including (other.x2, other.y2)
-     * @param other - the other position object
+     * Return a new position that merges this and that
+     * @param that - the other position object
      */
-    public Pos upto(Pos other) {
-        int x=this.x, y=this.y, x2=other.x2, y2=other.y2;
-        if (other.y<y || (other.y==y && other.x<x)) { x=other.x; y=other.y; }
+    public Pos merge(Pos that) {
+        int x=this.x, y=this.y, x2=that.x2, y2=that.y2;
+        if (that.y<y || (that.y==y && that.x<x)) { x=that.x; y=that.y; }
         if (this.y2>y2 || (this.y2==y2 && this.x2>x2)) { x2=this.x2; y2=this.y2; }
         return new Pos(filename, x, y, x2, y2);
+    }
+
+    /**
+     * Return a new position that merges every Pos object in the array.
+     * <p> (If pos[] contains null entries, those null entries are ignored.)
+     * <p> (If pos[] contains only null entries, or if the array is empty, or if pos==null, we return Pos.UNKNOWN)
+     */
+    public static Pos merge(Pos... pos) {
+        Pos ans=null;
+        if (pos!=null) for(int i=0; i<pos.length; i++) if (pos[i]!=null) {
+            if (ans==null) ans=pos[i]; else ans=ans.merge(pos[i]);
+        }
+        return ans==null ? UNKNOWN : ans;
     }
 
     /** Returns a String representation of this position value. */

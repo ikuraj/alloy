@@ -29,7 +29,7 @@ import javax.swing.text.ViewFactory;
 import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 
 /**
- * This logger writes the messages into a JTextPane.
+ * This logger writes messages into a JTextPane.
  *
  * <p> Its constructor and its public methods can be called by any thread.
  *
@@ -245,7 +245,7 @@ public final class LogToJTextPane extends Log {
     /** This method copies the currently selected text in the log (if any) into the clipboard. */
     public void copy() { handle("copy"); }
 
-    /** This method does nothing, since changes to a JTextPane will always show up automatically. */
+    /** Commits all outstanding writes (if the messages are buffered). */
     @Override public void flush() { handle("flush"); }
 
     /** Handles the given message (and switch to AWT event thread if the current thread != the AWT event thread). */

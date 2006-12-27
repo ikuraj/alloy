@@ -5,7 +5,7 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 
 /**
- * This logger writes the messages using UTF-8 into a file
+ * This logger writes messages to a file using UTF-8
  * (which will be overwritten if it exists).
  *
  * Since the output is plain text, logBold() and logLink() simply call log().
