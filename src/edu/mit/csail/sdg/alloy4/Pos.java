@@ -65,6 +65,8 @@ public final class Pos {
      * @param that - the other position object
      */
     public Pos merge(Pos that) {
+        if (this==UNKNOWN) return that;
+        if (that==UNKNOWN) return this;
         int x=this.x, y=this.y, x2=that.x2, y2=that.y2;
         if (that.y<y || (that.y==y && that.x<x)) { x=that.x; y=that.y; }
         if (this.y2>y2 || (this.y2==y2 && this.x2>x2)) { x2=this.x2; y2=this.y2; }
@@ -78,7 +80,7 @@ public final class Pos {
      */
     public static Pos merge(Pos... pos) {
         Pos ans=null;
-        if (pos!=null) for(int i=0; i<pos.length; i++) if (pos[i]!=null) {
+        if (pos!=null) for(int i=0; i<pos.length; i++) if (pos[i]!=null && pos[i]!=UNKNOWN) {
             if (ans==null) ans=pos[i]; else ans=ans.merge(pos[i]);
         }
         return ans==null ? UNKNOWN : ans;
