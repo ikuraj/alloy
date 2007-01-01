@@ -42,8 +42,16 @@ public final class SafeList<T> implements Collection<T> {
     /** Constructs a modifiable list containing the elements from the given collection. */
     public SafeList(Collection<? extends T> initialValue) { list=new ArrayList<T>(initialValue); max=(-1); }
 
+    /** Private constructor for assigning exact values to "list" and "max". */
+    private SafeList(List<T> list, int max) { this.list=list; this.max=max; }
+
     /** Constructs an unmodifiable copy of an existing SafeList. */
-    public SafeList(SafeList<T> somelist) { synchronized(SafeList.class) {list=somelist.list; max=somelist.size();} }
+    public SafeList<T> dup() {
+        List<T> mylist;
+        int mymax;
+        synchronized(SafeList.class) {mylist=list; mymax=size();}
+        return new SafeList<T>(mylist,mymax);
+    }
 
     /** Computes a hash code that is consistent with SafeList's equals() and java.util.List's hashCode() methods. */
     @Override public int hashCode() {
