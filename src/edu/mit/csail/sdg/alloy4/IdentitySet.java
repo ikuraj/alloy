@@ -46,6 +46,9 @@ public final class IdentitySet<T> implements Iterable<T> {
     /** Constructs an empty set. */
     public IdentitySet() { }
 
+    /** Constructs a set containing the elements from the given collection. */
+    public IdentitySet(Iterable<? extends T> collection) { for(T elem:collection) add(elem); }
+
     /** Returns whether the element x is in the set. */
     public synchronized boolean contains(T item) { return hashmap.containsKey(item); }
 
