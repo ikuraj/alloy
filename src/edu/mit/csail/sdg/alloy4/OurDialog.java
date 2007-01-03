@@ -24,6 +24,8 @@ import javax.swing.event.CaretListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
 
 /**
  * Graphical dialog methods for asking the user some questions.
@@ -197,12 +199,19 @@ public final class OurDialog {
 
     /** Display a simple console window that allows the user to interactively send queries and get answers from the "computer". */
     public static JFrame showConsole(String title, final Computer computer) {
+        final SimpleAttributeSet green = new SimpleAttributeSet();
+        StyleConstants.setForeground(green, Color.GREEN);
+        final SimpleAttributeSet blue = new SimpleAttributeSet();
+        StyleConstants.setForeground(blue, Color.BLUE);
+        final SimpleAttributeSet red = new SimpleAttributeSet();
+        StyleConstants.setForeground(red, Color.RED);
         final JFrame window = new JFrame(title);
         final JButton done = new JButton("Close");
         done.addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) { window.dispose(); }
         });
-        final JEditorPane textarea = new JEditorPane("text/html","Eval&gt;&nbsp;");
+        final JEditorPane textarea = new JEditorPane("text/html",
+            "<html><body style=\"font:16pt Verdana;\">Eval&gt;&nbsp;</body></html>");
         final Document doc = textarea.getDocument();
         final IntegerBox box = new IntegerBox(doc.getLength()); // Stores the caret position right after the latest "Eval>&nbsp;"
         textarea.addCaretListener(new CaretListener() {
@@ -222,12 +231,15 @@ public final class OurDialog {
                 // If the user hit ENTER, then...
                 if (e.getKeyChar()=='\n' || e.getKeyChar()=='\r') try {
                     // Send the query to the computer
-                    String ans=computer.compute(doc.getText(b,d-b));
+                    String ans=null, err=null;
+                    try { ans=computer.compute(doc.getText(b,d-b)); } catch(Exception ex) { err=ex.toString(); }
                     // Find out whether there was already a linebreak at the end of the user input or not
                     String n=doc.getText(d-1,1);
                     if (n.charAt(0)=='\r' || n.charAt(0)=='\n') n=""; else n="\n";
                     // Add a linebreak if needed, then add the answer, then add another "Eval> " prompt.
-                    doc.insertString(d, n+ans+"\n\nEval> ", null);
+                    if (err!=null) doc.insertString(d, n+err+"\n", red); else doc.insertString(d, n+ans+"\n", blue);
+                    d=doc.getLength();
+                    doc.insertString(d, "\nEval> ", null);
                     d=doc.getLength();
                     textarea.setCaretPosition(d);
                     box.set(d);
@@ -247,6 +259,7 @@ public final class OurDialog {
         window.setLocation(100,100);
         window.setSize(500,500);
         window.setVisible(true);
+        textarea.requestFocusInWindow();
         return window;
     }
 }

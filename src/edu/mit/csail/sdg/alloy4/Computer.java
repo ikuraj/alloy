@@ -5,5 +5,5 @@ package edu.mit.csail.sdg.alloy4;
 public interface Computer {
 
     /** This method takes a String input and produces a String output. */
-    public String compute(String input);
+    public String compute(String input) throws Exception;
 }
