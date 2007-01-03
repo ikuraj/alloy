@@ -9,14 +9,21 @@ import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 
 /**
  * Graphical dialog methods for asking the user some questions.
@@ -165,7 +172,7 @@ public final class OurDialog {
     public static boolean yesno(JFrame parentFrame, String msg) { return yesno(parentFrame, msg, "Yes", "No"); }
 
     /** Display a simple window showing some text. */
-    public static void showtext(String title, String text, boolean autoLineWrap) {
+    public static JFrame showtext(String title, String text, boolean autoLineWrap) {
         final JFrame window = new JFrame(title);
         final JButton done = new JButton("Close");
         done.addActionListener(new ActionListener() {
@@ -185,5 +192,61 @@ public final class OurDialog {
         window.setLocation(100,100);
         window.setSize(500,500);
         window.setVisible(true);
+        return window;
+    }
+
+    /** Display a simple console window that allows the user to interactively send queries and get answers from the "computer". */
+    public static JFrame showConsole(String title, final Computer computer) {
+        final JFrame window = new JFrame(title);
+        final JButton done = new JButton("Close");
+        done.addActionListener(new ActionListener() {
+            public final void actionPerformed(ActionEvent e) { window.dispose(); }
+        });
+        final JEditorPane textarea = new JEditorPane("text/html","Eval&gt;&nbsp;");
+        final Document doc = textarea.getDocument();
+        final IntegerBox box = new IntegerBox(doc.getLength()); // Stores the caret position right after the latest "Eval>&nbsp;"
+        textarea.addCaretListener(new CaretListener() {
+            public final void caretUpdate(CaretEvent e) {
+                // Ensure existing text are not editable
+                int a=e.getDot(), b=e.getMark(), n=box.get();
+                textarea.setEditable(a>=n && b>=n);
+            }
+        });
+        textarea.addKeyListener(new KeyListener() {
+            public final void keyTyped(KeyEvent e) {
+                // If the caret is right after "Eval>", and the user hits BACKSPACE, this will restore the deleted space
+                while(doc.getLength()<box.get()) { try{doc.insertString(doc.getLength()," ",null);} catch(BadLocationException ex){} }
+                // If the caret is before "Eval>", this will move the cursor to the end of the document before processing the key
+                int c=textarea.getCaretPosition(), b=box.get(), d=doc.getLength();
+                if (c<b) textarea.setCaretPosition(d);
+                // If the user hit ENTER, then...
+                if (e.getKeyChar()=='\n' || e.getKeyChar()=='\r') try {
+                    // Send the query to the computer
+                    String ans=computer.compute(doc.getText(b,d-b));
+                    // Find out whether there was already a linebreak at the end of the user input or not
+                    String n=doc.getText(d-1,1);
+                    if (n.charAt(0)=='\r' || n.charAt(0)=='\n') n=""; else n="\n";
+                    // Add a linebreak if needed, then add the answer, then add another "Eval> " prompt.
+                    doc.insertString(d, n+ans+"\n\nEval> ", null);
+                    d=doc.getLength();
+                    textarea.setCaretPosition(d);
+                    box.set(d);
+                } catch(Exception ex) {}
+            }
+            public void keyPressed(KeyEvent e) { }
+            public void keyReleased(KeyEvent e) { }
+        });
+        textarea.setBackground(Color.WHITE);
+        textarea.setEditable(true);
+        JScrollPane scrollPane = new JScrollPane(textarea,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        window.getContentPane().setLayout(new BorderLayout());
+        window.getContentPane().add(scrollPane, BorderLayout.CENTER);
+        window.getContentPane().add(done, BorderLayout.SOUTH);
+        window.pack();
+        window.setLocation(100,100);
+        window.setSize(500,500);
+        window.setVisible(true);
+        return window;
     }
 }
