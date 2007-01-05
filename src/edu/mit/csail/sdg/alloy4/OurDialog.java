@@ -2,6 +2,7 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.StringTokenizer;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FileDialog;
@@ -26,6 +27,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
+import javax.swing.text.html.HTMLDocument;
 
 /**
  * Graphical dialog methods for asking the user some questions.
@@ -198,7 +200,9 @@ public final class OurDialog {
     }
 
     /** Display a simple console window that allows the user to interactively send queries and get answers from the "computer". */
-    public static JFrame showConsole(String title, final Computer computer) {
+    public static JFrame showConsole(String title, String welcomeHtmlMessage, final Computer computer) {
+        final SimpleAttributeSet bold = new SimpleAttributeSet();
+        StyleConstants.setBold(bold, true);
         final SimpleAttributeSet green = new SimpleAttributeSet();
         StyleConstants.setForeground(green, Color.GREEN);
         final SimpleAttributeSet blue = new SimpleAttributeSet();
@@ -211,7 +215,7 @@ public final class OurDialog {
             public final void actionPerformed(ActionEvent e) { window.dispose(); }
         });
         final JEditorPane textarea = new JEditorPane("text/html",
-            "<html><body style=\"font:16pt Verdana;\">Eval&gt;&nbsp;</body></html>");
+            "<html><body style=\"font:14pt Verdana;\">"+(welcomeHtmlMessage.trim())+"<br><b>Eval&gt;</b>&nbsp;</body></html>");
         final Document doc = textarea.getDocument();
         final IntegerBox box = new IntegerBox(doc.getLength()); // Stores the caret position right after the latest "Eval>&nbsp;"
         textarea.addCaretListener(new CaretListener() {
@@ -232,14 +236,16 @@ public final class OurDialog {
                 if (e.getKeyChar()=='\n' || e.getKeyChar()=='\r') try {
                     // Send the query to the computer
                     String ans=null, err=null;
-                    try { ans=computer.compute(doc.getText(b,d-b)); } catch(Exception ex) { err=ex.toString(); }
+                    try { ans=linewrap(computer.compute(doc.getText(b,d-b))); }
+                    catch(Exception ex) { err=linewrap(ex.toString()); }
                     // Find out whether there was already a linebreak at the end of the user input or not
                     String n=doc.getText(d-1,1);
-                    if (n.charAt(0)=='\r' || n.charAt(0)=='\n') n=""; else n="\n";
+                    if (n.charAt(0)=='\r' || n.charAt(0)=='\n') n="   "; else n="\n   ";
                     // Add a linebreak if needed, then add the answer, then add another "Eval> " prompt.
                     if (err!=null) doc.insertString(d, n+err+"\n", red); else doc.insertString(d, n+ans+"\n", blue);
                     d=doc.getLength();
                     doc.insertString(d, "\nEval> ", null);
+                    if (doc instanceof HTMLDocument) ((HTMLDocument)doc).setCharacterAttributes(d, 6, bold, false);
                     d=doc.getLength();
                     textarea.setCaretPosition(d);
                     box.set(d);
@@ -257,9 +263,24 @@ public final class OurDialog {
         window.getContentPane().add(done, BorderLayout.SOUTH);
         window.pack();
         window.setLocation(100,100);
-        window.setSize(500,500);
+        window.setSize(700,500);
         window.setVisible(true);
         textarea.requestFocusInWindow();
         return window;
+    }
+
+    /** Try to wrap the input to about 60 characters per line; however, if a token is too longer, we won't break it. */
+    private static String linewrap(String msg) {
+        StringBuilder sb=new StringBuilder();
+        String indentation="   ";
+        StringTokenizer tokenizer=new StringTokenizer(msg.trim(), "\r\n\t ");
+        int max=60;
+        int now=0;
+        while(tokenizer.hasMoreTokens()) {
+            String x=tokenizer.nextToken();
+            if (now+1+x.length() > max) { if (now>0) sb.append("\n"+indentation); sb.append(x); now=x.length(); }
+            else { if (now>0) {now++; sb.append(' ');} sb.append(x); now=now+x.length(); }
+        }
+        return sb.toString();
     }
 }
