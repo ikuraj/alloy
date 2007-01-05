@@ -24,10 +24,10 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.html.HTMLDocument;
 
 /**
  * Graphical dialog methods for asking the user some questions.
@@ -245,7 +245,7 @@ public final class OurDialog {
                     if (err!=null) doc.insertString(d, n+err+"\n", red); else doc.insertString(d, n+ans+"\n", blue);
                     d=doc.getLength();
                     doc.insertString(d, "\nEval> ", null);
-                    if (doc instanceof HTMLDocument) ((HTMLDocument)doc).setCharacterAttributes(d, 6, bold, false);
+                    if (doc instanceof DefaultStyledDocument) ((DefaultStyledDocument)doc).setCharacterAttributes(d, 6, bold, false);
                     d=doc.getLength();
                     textarea.setCaretPosition(d);
                     box.set(d);
@@ -271,6 +271,8 @@ public final class OurDialog {
 
     /** Try to wrap the input to about 70 characters per line; however, if a token is too longer, we won't break it. */
     private static String linewrap(String msg) {
+        int lb=msg.indexOf('\n');
+        if (lb>=0) return linewrap(msg.substring(0,lb))+"\n   "+linewrap(msg.substring(lb+1));
         StringBuilder sb=new StringBuilder();
         String indentation="   ";
         StringTokenizer tokenizer=new StringTokenizer(msg.trim(), "\r\n\t ");
