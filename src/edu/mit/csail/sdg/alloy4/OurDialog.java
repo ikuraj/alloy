@@ -269,12 +269,12 @@ public final class OurDialog {
         return window;
     }
 
-    /** Try to wrap the input to about 60 characters per line; however, if a token is too longer, we won't break it. */
+    /** Try to wrap the input to about 70 characters per line; however, if a token is too longer, we won't break it. */
     private static String linewrap(String msg) {
         StringBuilder sb=new StringBuilder();
         String indentation="   ";
         StringTokenizer tokenizer=new StringTokenizer(msg.trim(), "\r\n\t ");
-        int max=60;
+        int max=70;
         int now=0;
         while(tokenizer.hasMoreTokens()) {
             String x=tokenizer.nextToken();
