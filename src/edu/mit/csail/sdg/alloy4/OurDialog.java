@@ -14,12 +14,15 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.filechooser.FileFilter;
@@ -174,6 +177,34 @@ public final class OurDialog {
 
     /** Display "msg" in a dialogbox, and ask the user to choose "Yes" versus "No" (default==no). */
     public static boolean yesno(JFrame parentFrame, String msg) { return yesno(parentFrame, msg, "Yes", "No"); }
+
+    /** Display a modal dialog window containing the "objects"; returns true iff the user clicks Ok. */
+    public static boolean getInput(JFrame parentFrame, String title, Object... objects) {
+        Object main="Ok";
+        for(int i=0; i<objects.length; i++) {
+            if (objects[i] instanceof JTextField) { main=objects[i]; break; }
+            if (objects[i] instanceof JTextArea) { main=objects[i]; break; }
+        }
+        final JOptionPane pane=new JOptionPane(
+            objects,
+            JOptionPane.QUESTION_MESSAGE,
+            JOptionPane.YES_NO_OPTION,
+            null,
+            new Object[]{"Ok","Cancel"},
+            main);
+        final JDialog jd=pane.createDialog(parentFrame,title);
+        for(int i=0; i<objects.length; i++) {
+            if (!(objects[i] instanceof JTextField)) continue;
+            JComponent x=(JComponent)(objects[i]);
+            x.addKeyListener(new KeyListener() {
+                public void keyPressed(KeyEvent e) { if (e.getKeyCode()==KeyEvent.VK_ENTER) {pane.setValue("Ok"); jd.dispose();} }
+                public void keyTyped(KeyEvent e) {}
+                public void keyReleased(KeyEvent e) {}
+            });
+        }
+        jd.setVisible(true);
+        if (pane.getValue()=="Ok") return true; else return false;
+    }
 
     /** Display a simple window showing some text. */
     public static JFrame showtext(String title, String text, boolean autoLineWrap) {
