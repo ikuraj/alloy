@@ -13,6 +13,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -194,7 +195,7 @@ public final class OurDialog {
             main);
         final JDialog jd=pane.createDialog(parentFrame,title);
         for(int i=0; i<objects.length; i++) {
-            if (!(objects[i] instanceof JTextField)) continue;
+            if (!(objects[i] instanceof JTextField || objects[i] instanceof JCheckBox)) continue;
             JComponent x=(JComponent)(objects[i]);
             x.addKeyListener(new KeyListener() {
                 public void keyPressed(KeyEvent e) { if (e.getKeyCode()==KeyEvent.VK_ENTER) {pane.setValue("Ok"); jd.dispose();} }

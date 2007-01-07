@@ -301,54 +301,30 @@ public final class Util {
         }
     }
 
-    /* Lock then overwrite the given file. */
-    /* public static synchronized void lockThenWrite(String filename, String content) throws IOException {
-        RandomAccessFile raf;
-        raf = new RandomAccessFile(new File(filename),"rw"); // If this line fails, IOException will be thrown
-        FileChannel fc = raf.getChannel(); // This line does not throw IOException
-        try {
-            // If any code in this block throws IOException, it will go to the catch clause for clean up
-            @SuppressWarnings("unused")
-            FileLock lock=fc.lock();
-            raf.setLength(0);
-            raf.write(content.getBytes("UTF-8"));
-            raf.close();
-        } catch(IOException ex) {
-            // Here, we make a final attempt to close the file, before forwarding the IOException to outside
-            // (Since open file descriptors is a scarce resource... furthermore, if it was locked, then
-            // it will prevent other processes from accessing this)
-            try { raf.close(); } catch(IOException ex2) { harmless("close",ex2); }
-            throw ex;
-        }
-    }*/
-
-    /* Open (create if does not exist), lock, read up to 30000 bytes, then truncate the given file. */
-    /* public static synchronized String lockThenReadThenErase(String filename) throws IOException {
-        RandomAccessFile raf;
-        raf = new RandomAccessFile(new File(filename),"rw"); // If this line fails, IOException will be thrown
-        FileChannel fc = raf.getChannel(); // This line does not throw IOException
-        byte[] buffer = new byte[30000];
-        int length = 0;
-        try {
-            // If any code in this block throws IOException, it will go to the catch clause for clean up
-            @SuppressWarnings("unused")
-            FileLock lock=fc.lock();
-            while(length<30000) {
-                int c=raf.read();
-                if (c<0) break;
-                buffer[length]=(byte)c;
-                length++;
+    /**
+     * Finds the first occurrence of <b>small</b> within <b>big</b>.
+     * @param big - the String that we want to perform the search on
+     * @param small - the pattern we are looking forward
+     * @param start - the offset within "big" to start (for example: 0 means to start from the beginning of "big")
+     * @param forward - true if the search should go forward; false if it should go backwards
+     * @param caseSensitive - true if the search should be done in a case-sensitive manner
+     *
+     * @return 0 or greater if found, -1 if not found (Note: if small=="", then we always return -1)
+     */
+    public static int indexOf(String big, String small, int start, boolean forward, boolean caseSensitive) {
+        int len=big.length(), slen=small.length();
+        if (slen==0) return -1;
+        while(start>=0 && start<len) {
+            for(int i=0;; i++) {
+                if (i>=slen) return start;
+                char b=big.charAt(start+i), s=small.charAt(i);
+                if (b==s) continue;
+                if (!caseSensitive && b>='A' && b<='Z') b=Character.toLowerCase(b);
+                if (!caseSensitive && s>='A' && s<='Z') s=Character.toLowerCase(s);
+                if (b!=s) break;
             }
-            raf.seek(0);
-            raf.setLength(0);
-            raf.close();
-            return new String(buffer,0,length,"UTF-8");
-        } catch(IOException ex) {
-            // Here, we make a final attempt to close the file, before forwarding the IOException to outside
-            // (Since open file descriptors is a scarce resource... furthermore, if it was locked, then
-            // it will prevent other processes from accessing this)
-            try { raf.close(); } catch(IOException ex2) { harmless("close",ex2); }
-            throw ex;
+            if (forward) start++; else start--;
         }
-    }*/
+        return -1;
+    }
 }
