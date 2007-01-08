@@ -46,10 +46,10 @@ public final class Pref {
             this.id=id; this.label=label;
         }
 
-        /** Given an id, return the enum value corresponding to it (if there's no match, then return MiniSatPIPE). */
+        /** Given an id, return the enum value corresponding to it (if there's no match, then return MiniSatJNI). */
         private static SatSolver parse(String id) {
             for(SatSolver sc:values()) if (sc.id.equals(id)) return sc;
-            return MiniSatPIPE;
+            return MiniSatJNI;
         }
 
         /** Returns the ID for this enum value. */
