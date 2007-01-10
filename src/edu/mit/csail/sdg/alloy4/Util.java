@@ -103,8 +103,9 @@ public final class Util {
      * Sorts two strings for optimum module order; we guarantee slashCompartor(a,b)==0 iff a.equals(b).
      * <br> (1) First of all, the builtin names "extend" and "in" are sorted ahead of other names
      * <br> (2) Else, if one string has fewer '/' than the other, then it is considered smaller.
-     * <br> (3) Else, we compare them lexically without case-sensitivity.
-     * <br> (4) Else, we compare them lexically with case-sensitivity.
+     * <br> (3) Else, if one string starts with "this/", then it is considered smaller
+     * <br> (4) Else, we compare them lexically without case-sensitivity.
+     * <br> (5) Else, we compare them lexically with case-sensitivity.
      * <br>
      */
     public static final Comparator<String> slashComparator = new Comparator<String>() {
@@ -119,6 +120,7 @@ public final class Util {
             for(int i=0; i<a.length(); i++) if (a.charAt(i)=='/') acount++;
             for(int i=0; i<b.length(); i++) if (b.charAt(i)=='/') bcount++;
             if (acount!=bcount) return (acount<bcount)?-1:1;
+            if (a.startsWith("this/")) { if (!b.startsWith("this/")) return -1; } else if (b.startsWith("this/")) return 1;
             int result = a.compareToIgnoreCase(b);
             return result!=0 ? result : a.compareTo(b);
         }
