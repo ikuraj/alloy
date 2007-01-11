@@ -4,12 +4,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import javax.swing.AbstractAction;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 /** This class encapsulates a Runnable. */
 
-public final class MultiRunner implements MenuListener, ActionListener, WindowListener, Runnable {
+@SuppressWarnings("serial")
+public final class MultiRunner extends AbstractAction implements MenuListener, ActionListener, WindowListener, Runnable {
 
     /** This defines a Runnable that can be encapsulates in a MultiRunner. */
     public interface MultiRunnable {
