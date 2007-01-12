@@ -18,6 +18,9 @@ public final class FileCache {
 
     /** Constructs a cache with no initial cached content. */
     public FileCache() { }
+    
+    /** Explicitly cache the content of a file. */
+    public void add(String filename, String content) { file2content.put(filename,content); }
 
     /** If the file was already cached, return the cached value; Otherwise read it, cache it, then return it. */
     public Reader readFile(String filename) throws IOException {
