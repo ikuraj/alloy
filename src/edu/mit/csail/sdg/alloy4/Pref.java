@@ -106,6 +106,7 @@ public final class Pref {
     /** This enum defines the set of possible visualizer modes. */
     public enum VisualizerMode {
         /** Visualize using graphviz's dot. */    Viz("graphviz"),
+        /** See the DOT content. */               DOT("dot"),
         /** See the XML file content. */          XML("xml"),
         /** See the instance as a tree. */        Tree("tree"),
         /** See the raw input to Kodkod. */       KInput("kodkodJava"),
