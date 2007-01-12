@@ -9,15 +9,18 @@ import java.io.StringReader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/** Mutable; this class caches all the files you read. */
+
 public final class FileCache {
 
+    /** This caches the content of each file. */
     private final Map<String,String> file2content=new LinkedHashMap<String,String>();
 
+    /** Constructs a cache with no initial cached content. */
     public FileCache() { }
 
-    public void clearCache() { file2content.clear(); }
-
-    public Reader read(String filename) throws IOException {
+    /** If the file was already cached, return the cached value; Otherwise read it, cache it, then return it. */
+    public Reader readFile(String filename) throws IOException {
         filename=Util.canon(filename);
         String value=file2content.get(filename);
         while(value==null) {
@@ -54,4 +57,6 @@ public final class FileCache {
         return new StringReader(value);
     }
 
+    /** Clears all currently cached results. */
+    public void clearCache() { file2content.clear(); }
 }
