@@ -91,8 +91,10 @@ public final class Util {
      * Returns the canonical absolute path for a file.
      * If an IO error occurred, or if the file doesn't exist yet,
      * we will at least return a noncanonical but absolute path for it.
+     * <p> Note: if filename=="", we return "".
      */
     public static final String canon(String filename) {
+      if (filename.length()==0) return filename;
       File file=new File(filename);
       String answer;
       try { answer=file.getCanonicalPath(); } catch(IOException ex) { answer=file.getAbsolutePath(); }
