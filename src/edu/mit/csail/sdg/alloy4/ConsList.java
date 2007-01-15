@@ -66,15 +66,14 @@ public final class ConsList<T> implements Iterable<T> {
         return false;
     }
 
-    /** Returns the size of the list. */
+    /** Returns the number of elements currently in this list. */
     public int size() { return size; }
 
     /** Returns true if the list is empty. */
     public boolean isEmpty() { return size==0; }
 
     /**
-     * Returns an iterator that iterates over elements in this list
-     * (in the order that they were inserted).
+     * Returns an iterator that iterates over elements in this list.
      *
      * <p> Note: This iterator's remove() method always throws UnsupportedOperationException.
      */
