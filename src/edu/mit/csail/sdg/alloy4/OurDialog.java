@@ -232,7 +232,7 @@ public final class OurDialog {
     }
 
     /** Display a simple console window that allows the user to interactively send queries and get answers from the "computer". */
-    public static JFrame showConsole(String title, String welcomeHtmlMessage, final Computer computer) {
+    public static JEditorPane showConsole(String title, String welcomeHtmlMessage, final Computer computer) {
         final SimpleAttributeSet bold = new SimpleAttributeSet();
         StyleConstants.setBold(bold, true);
         final SimpleAttributeSet green = new SimpleAttributeSet();
@@ -241,11 +241,7 @@ public final class OurDialog {
         StyleConstants.setForeground(blue, Color.BLUE);
         final SimpleAttributeSet red = new SimpleAttributeSet();
         StyleConstants.setForeground(red, Color.RED);
-        final JFrame window = new JFrame(title);
-        final JButton done = new JButton("Close");
-        done.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { window.dispose(); }
-        });
+        //final JFrame window = (title==null) ? null : new JFrame(title);
         final JEditorPane textarea = new JEditorPane("text/html",
             "<html><body style=\"font:14pt Verdana;\">"+(welcomeHtmlMessage.trim())+"<br><b>Eval&gt;</b>&nbsp;</body></html>");
         final Document doc = textarea.getDocument();
@@ -288,17 +284,26 @@ public final class OurDialog {
         });
         textarea.setBackground(Color.WHITE);
         textarea.setEditable(true);
-        JScrollPane scrollPane = new JScrollPane(textarea,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        window.getContentPane().setLayout(new BorderLayout());
-        window.getContentPane().add(scrollPane, BorderLayout.CENTER);
-        window.getContentPane().add(done, BorderLayout.SOUTH);
-        window.pack();
-        window.setLocation(100,100);
-        window.setSize(700,500);
-        window.setVisible(true);
-        textarea.requestFocusInWindow();
-        return window;
+        /*
+        if (window!=null) {
+            JScrollPane scrollPane = new JScrollPane(textarea,
+                    JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            final JButton done = new JButton("Close");
+            done.addActionListener(new ActionListener() {
+                public final void actionPerformed(ActionEvent e) { window.dispose(); }
+            });
+            window.getContentPane().setLayout(new BorderLayout());
+            window.getContentPane().add(scrollPane, BorderLayout.CENTER);
+            window.getContentPane().add(done, BorderLayout.SOUTH);
+            window.pack();
+            window.setLocation(100,100);
+            window.setSize(700,500);
+            window.setVisible(true);
+            textarea.requestFocusInWindow();
+            return window;
+        }
+        */
+        return textarea;
     }
 
     /** Try to wrap the input to about 70 characters per line; however, if a token is too longer, we won't break it. */
