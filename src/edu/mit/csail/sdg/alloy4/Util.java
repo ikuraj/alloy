@@ -137,7 +137,7 @@ public final class Util {
         String temp=System.getProperty("java.io.tmpdir");
         if (temp==null || temp.length()==0)
             OurDialog.fatal(null,"Error. JVM need to specify a temporary directory using java.io.tmpdir property.");
-        String username=System.getProperty("user.name").replace(' ','_').replace('\t','_');
+        String username=System.getProperty("user.name");
         File tempfile=new File(temp+fs+"alloy4tmp15-"+(username==null?"":username));
         tempfile.mkdirs();
         String ans=canon(tempfile.getPath());
