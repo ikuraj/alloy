@@ -57,7 +57,6 @@ public final class CrashReporter implements UncaughtExceptionHandler, ActionList
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException(Thread thread, Throwable ex) {
         if (ex!=null) { ex.printStackTrace(System.err); System.err.flush(); }
-        if (ex instanceof UnsatisfiedLinkError || ex instanceof NoClassDefFoundError) return;
         String yes="Send the Bug Report", no="Don't Send the Bug Report";
         JTextField email = new JTextField(20);
         JTextArea comment = new JTextArea();
