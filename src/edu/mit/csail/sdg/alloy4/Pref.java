@@ -110,7 +110,8 @@ public final class Pref {
         /** See the XML file content. */          XML("xml"),
         /** See the instance as a tree. */        Tree("tree"),
         /** See the raw input to Kodkod. */       KInput("kodkodJava"),
-        /** See the raw output from Kodkod. */    KOutput("kodkodInstance");
+        /** See the raw output from Kodkod. */    KOutput("kodkodInstance"),
+        /** Execute an external plugin. */        Plugin0("plugin0");
 
         /** This is a unique String for this value; it should be kept consistent in future versions. */
         private final String id;
