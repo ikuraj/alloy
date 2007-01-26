@@ -67,12 +67,9 @@ public final class OurUtil {
     /** Run r.run() using the AWT thread; if it's not the AWT thread, use SwingUtilities.invokeAndWait() on it. */
     public static void invokeAndWait(Runnable r) {
         if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
-        while(true) {
-            try { SwingUtilities.invokeAndWait(r); }
-            catch (InterruptedException e) { continue; }
-            catch (InvocationTargetException e) { break; }
-            break;
-        }
+        try { SwingUtilities.invokeAndWait(r); }
+        catch (InterruptedException e) { }
+        catch (InvocationTargetException e) { }
     }
 
     /** Make a JLabel with the given color. */
