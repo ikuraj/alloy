@@ -105,13 +105,23 @@ public final class Pref {
 
     /** This enum defines the set of possible visualizer modes. */
     public enum VisualizerMode {
-        /** Visualize using graphviz's dot. */    Viz("graphviz"),
-        /** See the DOT content. */               DOT("dot"),
-        /** See the XML file content. */          XML("xml"),
-        /** See the instance as a tree. */        Tree("tree"),
-        /** See the raw input to Kodkod. */       KInput("kodkodJava"),
-        /** See the raw output from Kodkod. */    KOutput("kodkodInstance"),
-        /** Execute an external plugin. */        Plugin0("plugin0");
+        /** Visualize using graphviz's dot. */  Viz("graphviz"),
+        /** See the DOT content. */             DOT("dot"),
+        /** See the XML file content. */        XML("xml"),
+        /** See the instance as a tree. */      Tree("tree"),
+        /** See the raw input to Kodkod. */     KInput("kodkodJava"),
+        /** See the raw output from Kodkod. */  KOutput("kodkodInstance"),
+        /** Execute external plugin #0. */      Plugin0("plugin0"),
+        /** Execute external plugin #1. */      Plugin1("plugin1"),
+        /** Execute external plugin #2. */      Plugin2("plugin2"),
+        /** Execute external plugin #3. */      Plugin3("plugin3"),
+        /** Execute external plugin #4. */      Plugin4("plugin4"),
+        /** Execute external plugin #5. */      Plugin5("plugin5"),
+        /** Execute external plugin #6. */      Plugin6("plugin6"),
+        /** Execute external plugin #7. */      Plugin7("plugin7"),
+        /** Execute external plugin #8. */      Plugin8("plugin8"),
+        /** Execute external plugin #9. */      Plugin9("plugin9")
+        ;
 
         /** This is a unique String for this value; it should be kept consistent in future versions. */
         private final String id;
