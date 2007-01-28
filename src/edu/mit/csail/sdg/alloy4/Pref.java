@@ -146,6 +146,9 @@ public final class Pref {
 
     /*=======================================================================*/
 
+    /** True if Alloy Analyzer should let warning be nonfatal. */
+    public static final BooleanPref WarningNonfatal = new BooleanPref("WarningNonfatal");
+
     /** True if Alloy Analyzer should use an external text editor rather than the builtin editor. */
     public static final BooleanPref ExternalEditor = new BooleanPref("ExternalEditor");
 
