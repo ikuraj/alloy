@@ -207,30 +207,6 @@ public final class OurDialog {
         if (pane.getValue()=="Ok") return true; else return false;
     }
 
-    /** Display a simple window showing some text. */
-    public static JFrame showtext(String title, String text, boolean autoLineWrap) {
-        final JFrame window = new JFrame(title);
-        final JButton done = new JButton("Close");
-        done.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { window.dispose(); }
-        });
-        JTextArea textarea = new JTextArea(text);
-        textarea.setBackground(Color.WHITE);
-        textarea.setEditable(false);
-        textarea.setLineWrap(autoLineWrap);
-        textarea.setWrapStyleWord(autoLineWrap);
-        JScrollPane scrollPane = new JScrollPane(textarea,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        window.getContentPane().setLayout(new BorderLayout());
-        window.getContentPane().add(scrollPane, BorderLayout.CENTER);
-        window.getContentPane().add(done, BorderLayout.SOUTH);
-        window.pack();
-        window.setLocation(100,100);
-        window.setSize(500,500);
-        window.setVisible(true);
-        return window;
-    }
-
     /** Returns a simple console that allows the user to interactively send queries and get answers from the "computer". */
     public static JFrame showConsole(String title, String welcomeHtmlMessage, final Computer computer) {
         final SimpleAttributeSet bold = new SimpleAttributeSet();
