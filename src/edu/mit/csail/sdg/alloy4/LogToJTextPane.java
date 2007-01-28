@@ -188,11 +188,10 @@ public final class LogToJTextPane extends Log {
     /** Write "msg" in regular style, with auto linewrap and indentation. */
     public void logIndented(String msg) {
         StringBuilder sb=new StringBuilder();
-        sb.append("   ");
         while(msg.length()>0) {
             int i=msg.indexOf('\n');
-            if (i>=0) { linewrap(sb, msg.substring(0,i), "   "); sb.append("\n   "); msg=msg.substring(i+1); }
-            else { linewrap(sb,msg,"   "); break; }
+            if (i>=0) { linewrap(sb, msg.substring(0,i), ""); sb.append("\n"); msg=msg.substring(i+1); }
+            else { linewrap(sb,msg,""); break; }
         }
         handle("log", 0, null, sb.toString(), "", styleRegular);
     }
