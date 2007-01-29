@@ -28,13 +28,13 @@ import javax.swing.border.LineBorder;
 
 /** This asks for permission to email crash report when an uncaught exception occurs. */
 
-public final class CrashReporter implements UncaughtExceptionHandler, ActionListener {
+public final class ExitReporter implements UncaughtExceptionHandler, ActionListener {
 
     /** A pre-created instance of CrashReport */
-    public static final CrashReporter defaultReporter = new CrashReporter();
+    public static final ExitReporter defaultReporter = new ExitReporter();
 
     /** Constructor is private since this class never needs to be instantiated. */
-    private CrashReporter() { }
+    private ExitReporter() { }
 
     /** The name of the main file being analyzed; "" if none. */
     private String mainfile = "";
