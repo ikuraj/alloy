@@ -4,12 +4,13 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -49,19 +50,11 @@ public final class Util {
 
     /** Read everything into a String; throws IOException if an error occurred. */
     public static String readAll(String filename) throws IOException {
-        String error=null;
-        StringBuilder sb=new StringBuilder();
-        FileReader fr=new FileReader(filename);
-        BufferedReader br=new BufferedReader(fr);
-        try {
-            while(true) { String s=br.readLine(); if (s==null) break; sb.append(s); sb.append('\n'); }
-        } catch(IOException ex) {
-            error=ex.getMessage();
-        }
-        try { br.close(); } catch(IOException ex) { if (error==null) error=ex.getMessage(); }
-        try { fr.close(); } catch(IOException ex) { if (error==null) error=ex.getMessage(); }
-        if (error!=null) throw new IOException(error);
-        return sb.toString();
+        Pair<char[],Integer> p = readEntireFile(filename);
+        char[] a = p.a;
+        int b = p.b;
+        while(b>0 && a[b-1]>=0 && a[b-1]<=32) b--; // Remove trailing whitespace
+        if (b==0) return ""; else if (b<a.length) { a[b]='\n'; return new String(a,0,b+1); } else return (new String(a,0,b))+"\n";
     }
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
@@ -215,12 +208,6 @@ public final class Util {
         return true;
     }
 
-    /** Returns true iff running on Windows **/
-    public static boolean onWindows() { return System.getProperty("os.name").toLowerCase().startsWith("windows"); };
-
-    /** Returns true iff running on Mac OS X. **/
-    public static boolean onMac() { return System.getProperty("mrj.version")!=null; }
-
     /** Appends "st", "nd", "rd", "th"... as appropriate; (for example, 21 becomes 21st, 22 becomes 22nd...) */
     public static String th(int n) {
         if (n==1) return "First";
@@ -331,4 +318,43 @@ public final class Util {
         }
         return -1;
     }
+
+    /** Read the file then return file size and a char[] array (the array could be slightly bigger than file size) */
+    private static Pair<char[],Integer> readEntireFile(String filename) throws IOException {
+        FileInputStream fis=null;
+        InputStreamReader isr=null;
+        int now=0, max=0;
+        char[] buf;
+        try {
+            fis=new FileInputStream(filename);
+            isr=new InputStreamReader(fis,"ISO8859_1");
+            buf=new char[max];
+            while(true) {
+               if (max<=now) {
+                    long fn=(new File(filename)).length();
+                    int max2=((int)fn)+16;
+                    if (max2<16 || ((long)(max2-16))!=fn) throw new IOException("File too big to fit in memory");
+                    if (max2<=now) throw new IOException("File shrunk during reading.");
+                    char[] buf2=new char[max2];
+                    if (now>0) System.arraycopy(buf, 0, buf2, 0, now);
+                    buf=buf2;
+                    max=max2;
+               }
+               int n=isr.read(buf, now, max-now);
+               if (n<=0) break;
+               now+=n;
+            }
+        } catch(IOException ex) {
+            if (isr!=null) { try {isr.close();} catch(IOException ex2) {} }
+            if (fis!=null) { try {fis.close();} catch(IOException ex2) {} }
+            throw ex;
+        }
+        return new Pair<char[],Integer>(buf,now);
+    }
+
+    /** Returns true iff running on Windows **/
+    public static boolean onWindows() { return System.getProperty("os.name").toLowerCase().startsWith("windows"); };
+
+    /** Returns true iff running on Mac OS X. **/
+    public static boolean onMac() { return System.getProperty("mrj.version")!=null; }
 }
