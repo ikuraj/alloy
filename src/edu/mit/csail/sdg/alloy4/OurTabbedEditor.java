@@ -225,7 +225,6 @@ public final class OurTabbedEditor {
             return true;
         }
         catch(IOException e) {
-            OurDialog.alert(parentFrame, "Error reading the file \""+filename+"\"", "Error");
             return false;
         }
     }
