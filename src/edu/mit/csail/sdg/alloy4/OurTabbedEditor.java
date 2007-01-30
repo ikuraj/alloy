@@ -21,11 +21,9 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.swing.AbstractAction;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -342,11 +340,15 @@ public final class OurTabbedEditor {
         setSelectedIndex(list.size()-1);
     }
 
-    /** Returns a map from each tab's filename to the content in the text buffer. */
+    /**
+     * Returns a map from each tab's filename to the content in the text buffer.
+     * Note: the returned map is modifiable, and the caller is free to do whatever with it
+     * (the changes do NOT affect this OurTabbedEditor object)
+     */
     public Map<String,String> takeSnapshot() {
         Map<String,String> map = new LinkedHashMap<String,String>();
         for(Tab t:list) map.put(t.filename, t.body.getText());
-        return Collections.unmodifiableMap(map);
+        return map;
     }
 
     /** Returns the list of filenames corresponding to each text buffer. */
