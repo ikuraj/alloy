@@ -1,0 +1,499 @@
+package edu.mit.csail.sdg.alloy4;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.event.ActionEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.Highlighter.HighlightPainter;
+import javax.swing.undo.UndoManager;
+import static java.awt.Color.BLACK;
+import static java.awt.Color.WHITE;
+
+/**
+ * This class provides a tabbed editor pane; only the AWT event thread may access methods/fields in this class
+ * (except the "highlight()" method which can be called by any thread).
+ *
+ * <p><b>Invariant</b>: this.openfiles must not contain duplicate entries.
+ */
+
+public final class OurTabbedEditor {
+
+    private static final Color gray=new Color(.9f, .9f, .9f);
+    private static final Color inactive=new Color(.8f, .8f, .8f);
+    private static final Color border=Color.LIGHT_GRAY;
+
+    public interface Parent {
+        public void notifyChange();
+        public void notifyFocusGained();
+    }
+
+    /** The font to use in the JTextArea */
+    private Font font;
+
+    /** The tabsize to use in the JTextArea */
+    private int tabSize;
+
+    /** The parent. */
+    private final Parent parent;
+
+    /** The parent's JFrame. */
+    private final JFrame parentFrame;
+
+    /** The entire area (Clickable tabs PLUS the text editor area). */
+    private final JPanel frame;
+
+    /** The list of clickable tabs. */
+    private final JPanel content;
+
+    /** The scroller that wraps around this.content */
+    private final JScrollPane scroller;
+
+    /** The list of tabs. */
+    private final List<Tab> list = new ArrayList<Tab>();
+
+    /** The currently selected tab (or 0 if there are no tabs) */
+    private int me=0;
+
+    /** This defines the data associated with each tab. */
+    private static final class Tab {
+        public JPanel tab;
+        public JLabel label;
+        public final JTextArea body;
+        public final JScrollPane scrolledbody;
+        public final UndoManager undo=new UndoManager();
+        public final Highlighter highlighter=new DefaultHighlighter();
+        public String filename;
+        public boolean isFile;
+        public boolean modified=false;
+        public Tab(JPanel tab, JLabel label, JTextArea body, String filename, boolean isFile) {
+            this.tab=tab;
+            this.label=label;
+            this.body=body;
+            scrolledbody=new JScrollPane(body, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            scrolledbody.setBorder(new EmptyBorder(0,0,0,0));
+            undo.setLimit(100);
+            body.setHighlighter(highlighter);
+            this.filename=filename;
+            this.isFile=isFile;
+        }
+    }
+
+    /** The anonymous filename to give to the next unnamed text buffer. */
+    private int nextNumber=1;
+
+    /** This field is nonnull iff the text in the latest text buffer hasn't been modified since the last compilation. */
+    private List compiled=null;
+    public List getCompiled() { return compiled; }
+    public void setCompiled(List commands) { compiled=commands; }
+
+    /** The latest command executed by the user; 0=first, 1=second... */
+    private int latestCommand=0; // TODO
+    public int getLatestCommand() { return latestCommand; }
+    public void setLatestCommand(int command) { latestCommand=command; }
+
+    /** Whether it is allowed to read/write files. */
+    private boolean allowIO=true;
+    /** Turn on the IO ability. */
+    public void enableIO() { allowIO=true; }
+    /** Turn off the IO ability. */
+    public void disableIO() { allowIO=false; }
+
+    /** The HighlightPainter to use to paint the highlights. */
+    private final HighlightPainter highlightPainter=new Highlighter.HighlightPainter() {
+        private final Color color = new Color(0.9f, 0.4f, 0.4f);
+        public void paint(Graphics g, int start, int end, Shape shape, JTextComponent text) {
+            Color oldcolor=g.getColor();
+            g.setColor(color);
+            try {
+                Rectangle box = shape.getBounds();
+                Rectangle a = text.getUI().modelToView(text,start);
+                Rectangle b = text.getUI().modelToView(text,end);
+                if (a.y == b.y) {
+                    // same line; if start==end, then draw all the way to the right edge.
+                    Rectangle r = a.union(b);
+                    g.fillRect(r.x, r.y, (r.width<=1 ? (box.x+box.width-r.x) : r.width), r.height);
+                } else {
+                    // On the first line, draw from "start" and extends to the right-most edge
+                    g.fillRect(a.x, a.y, box.x+box.width-a.x, a.height);
+                    // If there is a line between first and third, then draw that
+                    if (a.y+a.height != b.y) g.fillRect(box.x, a.y+a.height, box.width, b.y-(a.y+a.height));
+                    // Draw the last line
+                    g.fillRect(box.x, b.y, b.x-box.x, b.height);
+                }
+            } catch (BadLocationException e) { }
+            g.setColor(oldcolor);
+        }
+    };
+
+    /** Constructs a tabbed editor pane. */
+    public OurTabbedEditor(final Parent parent, final JFrame parentFrame, final Font font, final int tabSize) {
+        this.parent=parent;
+        this.parentFrame=parentFrame;
+        this.font=font;
+        this.tabSize=tabSize;
+        JPanel glue = OurUtil.makeHB(new Object[]{null});
+        glue.setBorder(new OurBorder(null,null,border,null));
+        content=OurUtil.makeHB(glue);
+        if (!Util.onMac()) {content.setOpaque(true); content.setBackground(gray);}
+        scroller=new JScrollPane(content, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroller.setFocusable(false);
+        scroller.setBorder(new EmptyBorder(0,0,0,0));
+        frame=new JPanel();
+        frame.setBorder(new EmptyBorder(0,0,0,0));
+        frame.setLayout(new BorderLayout());
+        frame.add(scroller, BorderLayout.NORTH);
+        frame.add(new JPanel(), BorderLayout.CENTER); // Create an "initial" content area beneath the list-of-tabs
+        newTab();
+        scroller.addComponentListener(new ComponentListener() {
+            public void componentResized(ComponentEvent e) {setSelectedIndex(me);}
+            public void componentMoved(ComponentEvent e) {setSelectedIndex(me);}
+            public void componentShown(ComponentEvent e) {setSelectedIndex(me);}
+            public void componentHidden(ComponentEvent e) {}
+        });
+    }
+
+    /** Create a new anonymous file name. */
+    private String newname() {
+        again:
+        while(true) {
+            String filename=Util.canon("Untitled "+nextNumber+".als");
+            nextNumber++;
+            for(Tab t:list) if (t.filename.equals(filename)) continue again;
+            return filename;
+        }
+    }
+
+    /** Create a new empty tab. */
+    public void newTab() { newTab(newname(), "", false); }
+
+    /**
+     * Create a new tab with the given filename and initial content.
+     * <p> Note: if a text buffer with that filename already exists, we will switch to it and ignore "content"
+     */
+    public void newTab(String filename, String fileContent, boolean isFile) {
+        // If exists, then switch to that tab directly
+        if (switchToFilename(filename)) return;
+        // Make the tab on top
+        final JLabel x=new JLabel("");
+        x.setFont(OurUtil.getVizFont());
+        x.setOpaque(true);
+        x.setBorder(new OurBorder(border, border, WHITE, border));
+        x.setBackground(WHITE);
+        x.setForeground(BLACK);
+        x.addMouseListener(new MouseListener() {
+            public void mouseClicked(MouseEvent e) {
+                for(int i=0;i<list.size();i++) if (list.get(i).label==x) {setSelectedIndex(i); break;}
+            }
+            public void mousePressed(MouseEvent e) {}
+            public void mouseReleased(MouseEvent e) {}
+            public void mouseEntered(MouseEvent e) {}
+            public void mouseExited(MouseEvent e) {}
+        });
+        JPanel h4=OurUtil.makeBox(4, 1); h4.setBorder(new OurBorder(null,null,border,null));
+        JPanel h2=OurUtil.makeBox(3, 1); h2.setBorder(new OurBorder(null,null,border,null));
+        JPanel xx;
+        if (Util.onMac())
+            xx=OurUtil.makeVL(null, 2, OurUtil.makeHB(h4, x, h2));
+        else
+            xx=OurUtil.makeVL(null, 2, OurUtil.makeHB(h4, x, h2, gray), gray);
+        xx.setAlignmentX(0.0f);
+        xx.setAlignmentY(1.0f);
+        // Make the JTextArea
+        final JTextArea text=new JTextArea(fileContent);
+        text.setBackground(Color.WHITE);
+        text.setBorder(new EmptyBorder(1,1,1,1));
+        text.setLineWrap(false);
+        text.setEditable(true);
+        text.setTabSize(tabSize);
+        text.setFont(font);
+        if (!Util.onMac()) {
+            text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
+                private static final long serialVersionUID = 1L;
+                public void actionPerformed(ActionEvent e) { text.copy(); }
+            });
+            text.getActionMap().put("my_cut", new AbstractAction("my_cut") {
+                private static final long serialVersionUID = 1L;
+                public void actionPerformed(ActionEvent e) { text.cut(); }
+            });
+            text.getActionMap().put("my_paste", new AbstractAction("my_paste") {
+                private static final long serialVersionUID = 1L;
+                public void actionPerformed(ActionEvent e) { text.paste(); }
+            });
+            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "my_copy");
+            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "my_cut");
+            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.SHIFT_MASK), "my_paste");
+        }
+        text.getActionMap().put("my_next", new AbstractAction("my_next") {
+            private static final long serialVersionUID = 1L;
+            public void actionPerformed(ActionEvent e) {
+                int j=(-1);
+                for(int n=list.size(), i=0; i<n; i++) if (list.get(i).body==text) {j=i+1; if (j>=n) j=0; break;}
+                if (j>=0) setSelectedIndex(j);
+            }
+        });
+        text.getActionMap().put("my_prev", new AbstractAction("my_prev") {
+            private static final long serialVersionUID = 1L;
+            public void actionPerformed(ActionEvent e) {
+                int j=(-1);
+                for(int n=list.size(), i=0; i<n; i++) if (list.get(i).body==text) {j=i-1; if (j<0) j=n-1; break;}
+                if (j>=0) setSelectedIndex(j);
+            }
+        });
+        text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, InputEvent.CTRL_MASK), "my_prev");
+        text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, InputEvent.CTRL_MASK), "my_next");
+        // Add everything
+        compiled=null;
+        content.add(xx, list.size());
+        final Tab tab=new Tab(xx, x, text, filename, isFile);
+        list.add(tab);
+        setTitle(tab.label, filename);
+        // Add these listeners last, to make sure this object is fully initialized first
+        text.addCaretListener(new CaretListener() {
+            public final void caretUpdate(CaretEvent e) {parent.notifyChange();}
+        });
+        text.addFocusListener(new FocusListener() {
+            public final void focusGained(FocusEvent e) {parent.notifyFocusGained();}
+            public final void focusLost(FocusEvent e) {}
+        });
+        text.getDocument().addDocumentListener(new DocumentListener() {
+            public final void changedUpdate(DocumentEvent e) {
+                tab.highlighter.removeAllHighlights();
+                if (!tab.modified) { setTitle(tab.label, tab.filename+" *"); tab.modified=true; parent.notifyChange(); }
+                compiled=null;
+            }
+            public final void removeUpdate(DocumentEvent e) { changedUpdate(e); }
+            public final void insertUpdate(DocumentEvent e) { changedUpdate(e); }
+        });
+        text.getDocument().addUndoableEditListener(new UndoableEditListener() {
+            public final void undoableEditHappened(UndoableEditEvent event) { tab.undo.addEdit(event.getEdit()); }
+        });
+        if (isFile)
+          for(int i=list.size()-1; i>=0; i--)
+            if (!list.get(i).isFile && list.get(i).body.getText().trim().length()==0)
+              { list.get(i).modified=false; close(i); break; } // So that we take over the rightmost untitled tab
+        setSelectedIndex(list.size()-1);
+    }
+
+    public List<String> getFilenames() {
+        List<String> ans=new ArrayList<String>(list.size());
+        for(Tab t:list) ans.add(t.filename);
+        return ans;
+    }
+
+    public String getFilename() { if (me>=0 && me<list.size()) return list.get(me).filename; else return ""; }
+    public void setTabSize(int tabSize) { this.tabSize=tabSize; for(Tab t:list) t.body.setTabSize(tabSize); }
+    public void setFont(Font font) { this.font=font; for(Tab t:list) t.body.setFont(font); }
+    public void removeAllHighlights() { if (me>=0 && me<list.size()) list.get(me).highlighter.removeAllHighlights(); }
+    public Component getUI() { return frame; }
+    private JTextArea t() { return (me>=0 && me<list.size()) ? list.get(me).body : new JTextArea(); }
+    public int getLineCount() { return t().getLineCount(); }
+    public void copy() { t().copy(); }
+    public void cut() { t().cut(); }
+    public void paste() { t().paste(); }
+    public boolean canUndo() { return (me>=0 && me<list.size()) ? list.get(me).undo.canUndo() : false; }
+    public boolean canRedo() { return (me>=0 && me<list.size()) ? list.get(me).undo.canRedo() : false; }
+    public boolean modified(int i) { return (i>=0 && i<list.size()) ? list.get(i).modified : false; }
+    public boolean modified() { return (me>=0 && me<list.size()) ? list.get(me).modified : false; }
+    public boolean isFile(int i) { return (i>=0 && i<list.size()) ? list.get(i).isFile : false; }
+    public boolean isFile() { return (me>=0 && me<list.size()) ? list.get(me).isFile : false; }
+    public void undo() { if (me>=0 && me<list.size()) list.get(me).undo.undo(); }
+    public void redo() { if (me>=0 && me<list.size()) list.get(me).undo.redo(); }
+    public int getCaretPosition() { return t().getCaretPosition(); }
+    public int getLineOfOffset(int offset) throws BadLocationException { return t().getLineOfOffset(offset); }
+    public int getLineStartOffset(int line) throws BadLocationException { return t().getLineStartOffset(line); }
+    public int getLineEndOffset(int line) throws BadLocationException { return t().getLineEndOffset(line); }
+    public void setCaretPosition(int pos) { t().setCaretPosition(pos); }
+    public void moveCaretPosition(int pos) { t().moveCaretPosition(pos); }
+    public void setSelectionStart(int pos) { t().setSelectionStart(pos); }
+    public void setSelectionEnd(int pos) { t().setSelectionEnd(pos); }
+    public void requestFocusInWindow() { t().requestFocusInWindow(); }
+    public String getText() { return t().getText(); }
+
+    /**
+     * If the text editor content is not modified since the last save, return true; otherwise, ask the user.
+     * <p> If the user says to save it, we will attempt to save it, then return true iff the save succeeded.
+     * <p> If the user says to discard it, this method returns true.
+     * <p> If the user says to cancel it, this method returns false.
+     */
+    public boolean close(int i) {
+        String filename=list.get(i).filename;
+        if (allowIO && list.get(i).modified) {
+            Boolean ans=OurDialog.askSaveDiscardCancel(parentFrame, "The file \""+getShorterTitle(filename)+"\"");
+            if (ans==null) return false;
+            if (ans.booleanValue()) if (!save(false)) return false;
+        }
+        compiled=null;
+        list.get(i).body.setText("");
+        if (list.size()==1) {
+            list.get(i).undo.discardAllEdits();
+            list.get(i).highlighter.removeAllHighlights();
+            list.get(i).modified=false;
+            if (list.get(i).isFile) { list.get(i).isFile=false; list.get(i).filename=newname(); }
+            setTitle(list.get(i).label, list.get(i).filename);
+        } else {
+            content.remove(i);
+            list.remove(i);
+            if (me>=list.size()) me=list.size()-1;
+        }
+        setSelectedIndex(me);
+        return true;
+    }
+
+    public void close() { if (me>=0 && me<list.size()) close(me); }
+
+    public boolean closeAll() {
+        for(int i=list.size()-1; i>=0; i--) if (list.get(i).modified==false) if (close(i)==false) return false;
+        for(int i=list.size()-1; i>=0; i--) if (close(i)==false) return false;
+        return true;
+    }
+
+    public boolean switchToFilename(String f) {
+        for(int i=0; i<list.size(); i++) if (list.get(i).filename.equals(f)) {setSelectedIndex(i); return true;}
+        return false;
+    }
+
+    public boolean save(boolean alwaysPickNewName) {
+        if (!allowIO) return false;
+        if (me<0 || me>=list.size()) return false;
+        String filename=list.get(me).filename;
+        if (list.get(me).isFile==false || alwaysPickNewName) {
+            String start = Pref.Dir.get();
+            if (!(new File(start)).isDirectory()) start=System.getProperty("user.home");
+            File file=OurDialog.askFile(parentFrame, false, start, ".als", ".als files");
+            if (file==null) return false;
+            filename=Util.canon(file.getPath());
+            if (file.exists() && !OurDialog.askOverwrite(parentFrame,filename)) return false;
+        }
+        if (saveAs(filename)) { Pref.Dir.set((new File(filename)).getParent()); return true; }
+        return false;
+    }
+
+    public boolean saveAs(String filename) {
+        if (!allowIO) return false;
+        if (me<0 || me>=list.size()) return false;
+        filename=Util.canon(filename);
+        for(int j=0; j<list.size(); j++) {
+            if (j!=me && list.get(j).filename.equals(filename)) {
+                OurDialog.alert(parentFrame, "Error. The filename \""+filename+"\"\nis already open in one of the tab.", "Error");
+                return false;
+            }
+        }
+        try {
+            Util.writeAll(filename, t().getText());
+        } catch (IOException e) {
+            OurDialog.alert(parentFrame, "Error writing to the file \""+filename+"\"", "Error");
+            return false;
+        }
+        filename=Util.canon(filename);
+        setTitle(list.get(me).label, filename);
+        list.get(me).filename=filename;
+        list.get(me).modified=false;
+        list.get(me).isFile=true;
+        parent.notifyChange();
+        return true;
+    }
+
+    /**
+     * Highlights the text editor, based on the location information in the Err object.
+     * <p> Note: this method can be called by any thread (not just the AWT event thread)
+     */
+    public void highlight(final Err e) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() { public final void run() { highlight(e); }});
+            return;
+        }
+        if (allowIO && e.pos!=null && e.pos.y>0 && e.pos.x>0) try {
+            String f=Util.canon(e.pos.filename);
+            if (!switchToFilename(f)) {
+                String content;
+                try {content=Util.readAll(f);} catch(IOException ex) {return;} // Error not fatal, since we just won't show the file
+                newTab(f, content, true);
+                parent.notifyChange();
+                requestFocusInWindow();
+            }
+            int c=t().getLineStartOffset(e.pos.y-1)+e.pos.x-1;
+            int d=t().getLineStartOffset(e.pos.y2-1)+e.pos.x2-1;
+            list.get(me).highlighter.removeAllHighlights();
+            list.get(me).highlighter.addHighlight(c, d+1, highlightPainter);
+            t().setSelectionStart(c); t().setSelectionEnd(c); t().requestFocusInWindow();
+        } catch(BadLocationException ex) { }
+    }
+
+    public int getTabCount() { return list.size(); }
+
+    private String getShorterTitle(String x) {
+        boolean modified = x.endsWith(" *");
+        if (modified) x=x.substring(0, x.length()-2);
+        int j=x.lastIndexOf('/'); if (j>=0) x=x.substring(j+1);
+        j=x.lastIndexOf('\\'); if (j>=0) x=x.substring(j+1);
+        j=x.lastIndexOf('.'); if (j>=0) x=x.substring(0,j);
+        return x;
+    }
+
+    private void setTitle(JLabel label, String x) {
+        label.setToolTipText(x);
+        boolean modified = x.endsWith(" *");
+        x=getShorterTitle(x);
+        if (x.length()>12) x=x.substring(0,12)+"...";
+        label.setText("  "+x+(modified?" *  ":"  "));
+    }
+
+    public void setSelectedIndex(final int i) {
+        if (i<0 || i>=list.size()) return;
+        frame.revalidate();
+        me=i;
+        for(int j=0; j<list.size(); j++) {
+            JLabel x=list.get(j).label;
+            x.setBorder(new OurBorder(border,border, j!=i?border:WHITE,border));
+            x.setBackground(j!=i ? inactive : WHITE);
+        }
+        frame.removeAll();
+        if (list.size()>1) frame.add(scroller, BorderLayout.NORTH);
+        frame.add(list.get(me).scrolledbody, BorderLayout.CENTER);
+        frame.repaint();
+        compiled=null;
+        parent.notifyChange();
+        list.get(i).body.requestFocusInWindow();
+        content.scrollRectToVisible(new Rectangle(0,0,0,0)); // Forces recalculation
+        Point p=list.get(me).tab.getLocation();
+        Dimension r=list.get(me).tab.getSize();
+        content.scrollRectToVisible(new Rectangle(p.x, 0, r.width, 1));
+    }
+}
