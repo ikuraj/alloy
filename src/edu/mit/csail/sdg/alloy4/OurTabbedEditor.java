@@ -338,42 +338,58 @@ public final class OurTabbedEditor {
         setSelectedIndex(list.size()-1);
     }
 
+    /** Returns the list of filenames corresponding to each text buffer. */
     public List<String> getFilenames() {
         List<String> ans=new ArrayList<String>(list.size());
         for(Tab t:list) ans.add(t.filename);
         return ans;
     }
 
+    /** Return the filename of the current text buffer. */
     public String getFilename() { if (me>=0 && me<list.size()) return list.get(me).filename; else return ""; }
+
+    /** Changes the tabsize in every text buffer. */
     public void setTabSize(int tabSize) { this.tabSize=tabSize; for(Tab t:list) t.body.setTabSize(tabSize); }
+
+    /** Changes the font in every text buffer. */
     public void setFont(Font font) { this.font=font; for(Tab t:list) t.body.setFont(font); }
+
+    /** Removes all highlights from the current text buffer. */
     public void removeAllHighlights() { if (me>=0 && me<list.size()) list.get(me).highlighter.removeAllHighlights(); }
+
+    /** Returne ths entire JPanel of this tabbed text editor. */
     public Component getUI() { return frame; }
-    private JTextArea t() { return (me>=0 && me<list.size()) ? list.get(me).body : new JTextArea(); }
-    public int getLineCount() { return t().getLineCount(); }
-    public void copy() { t().copy(); }
-    public void cut() { t().cut(); }
-    public void paste() { t().paste(); }
+
+    /** Returns the JTextArea of the current text buffer. */
+    public JTextArea text() { return (me>=0 && me<list.size()) ? list.get(me).body : new JTextArea(); }
+
+    /** True if the current text buffer has 1 or more "undo" that it can perform. */
     public boolean canUndo() { return (me>=0 && me<list.size()) ? list.get(me).undo.canUndo() : false; }
+
+    /** True if the current text buffer has 1 or more "redo" that it can perform. */
     public boolean canRedo() { return (me>=0 && me<list.size()) ? list.get(me).undo.canRedo() : false; }
+
+    /** True if the i-th text buffer has been modified since it was last loaded/saved */
     public boolean modified(int i) { return (i>=0 && i<list.size()) ? list.get(i).modified : false; }
+
+    /** True if the current text buffer has been modified since it was last loaded/saved */
     public boolean modified() { return (me>=0 && me<list.size()) ? list.get(me).modified : false; }
+
+    /** True if the i-th text buffer corresponds to an actual file. */
     public boolean isFile(int i) { return (i>=0 && i<list.size()) ? list.get(i).isFile : false; }
+
+    /** True if the current text buffer corresponds to an actual file. */
     public boolean isFile() { return (me>=0 && me<list.size()) ? list.get(me).isFile : false; }
+
+    /** Perform "undo" on the current text buffer. */
     public void undo() { if (me>=0 && me<list.size()) list.get(me).undo.undo(); }
+
+    /** Perform "redo" on the current text buffer. */
     public void redo() { if (me>=0 && me<list.size()) list.get(me).undo.redo(); }
-    public int getCaretPosition() { return t().getCaretPosition(); }
-    public int getLineOfOffset(int offset) throws BadLocationException { return t().getLineOfOffset(offset); }
-    public int getLineStartOffset(int line) throws BadLocationException { return t().getLineStartOffset(line); }
-    public int getLineEndOffset(int line) throws BadLocationException { return t().getLineEndOffset(line); }
-    public void setCaretPosition(int pos) { t().setCaretPosition(pos); }
-    public void moveCaretPosition(int pos) { t().moveCaretPosition(pos); }
-    public void setSelectionStart(int pos) { t().setSelectionStart(pos); }
-    public void setSelectionEnd(int pos) { t().setSelectionEnd(pos); }
-    public void requestFocusInWindow() { t().requestFocusInWindow(); }
-    public String getText() { return t().getText(); }
 
     /**
+     * Close the i-th tab (then create a new empty tab if there were no tabs remaining)
+     *
      * If the text editor content is not modified since the last save, return true; otherwise, ask the user.
      * <p> If the user says to save it, we will attempt to save it, then return true iff the save succeeded.
      * <p> If the user says to discard it, this method returns true.
@@ -403,19 +419,17 @@ public final class OurTabbedEditor {
         return true;
     }
 
+    /** Close the current tab (then create a new empty tab if there were no tabs remaining) */
     public void close() { if (me>=0 && me<list.size()) close(me); }
 
+    /** Close every tab, then create a new empty tab. */
     public boolean closeAll() {
         for(int i=list.size()-1; i>=0; i--) if (list.get(i).modified==false) if (close(i)==false) return false;
         for(int i=list.size()-1; i>=0; i--) if (close(i)==false) return false;
         return true;
     }
 
-    public boolean switchToFilename(String f) {
-        for(int i=0; i<list.size(); i++) if (list.get(i).filename.equals(f)) {setSelectedIndex(i); return true;}
-        return false;
-    }
-
+    /** Save the current tab to a file. */
     public boolean save(boolean alwaysPickNewName) {
         if (!allowIO) return false;
         if (me<0 || me>=list.size()) return false;
@@ -432,6 +446,7 @@ public final class OurTabbedEditor {
         return false;
     }
 
+    /** Save the current tab to a file. */
     public boolean saveAs(String filename) {
         if (!allowIO) return false;
         if (me<0 || me>=list.size()) return false;
@@ -443,7 +458,7 @@ public final class OurTabbedEditor {
             }
         }
         try {
-            Util.writeAll(filename, t().getText());
+            Util.writeAll(filename, text().getText());
         } catch (IOException e) {
             OurDialog.alert(parentFrame, "Error writing to the file \""+filename+"\"", "Error");
             return false;
@@ -473,36 +488,44 @@ public final class OurTabbedEditor {
                 try {content=Util.readAll(f);} catch(IOException ex) {return;} // Error not fatal, since we just won't show the file
                 newTab(f, content, true);
                 parent.notifyChange();
-                requestFocusInWindow();
+                text().requestFocusInWindow();
             }
-            int c=t().getLineStartOffset(e.pos.y-1)+e.pos.x-1;
-            int d=t().getLineStartOffset(e.pos.y2-1)+e.pos.x2-1;
+            int c=text().getLineStartOffset(e.pos.y-1)+e.pos.x-1;
+            int d=text().getLineStartOffset(e.pos.y2-1)+e.pos.x2-1;
             list.get(me).highlighter.removeAllHighlights();
             list.get(me).highlighter.addHighlight(c, d+1, highlightPainter);
-            t().setSelectionStart(c); t().setSelectionEnd(c); t().requestFocusInWindow();
+            text().setSelectionStart(c); text().setSelectionEnd(c); text().requestFocusInWindow();
         } catch(BadLocationException ex) { }
     }
 
+    /** Returns the number of tabs; always 1 or above. */
     public int getTabCount() { return list.size(); }
 
+    /** Returns a short title for a filename. */
     private String getShorterTitle(String x) {
-        boolean modified = x.endsWith(" *");
-        if (modified) x=x.substring(0, x.length()-2);
         int j=x.lastIndexOf('/'); if (j>=0) x=x.substring(j+1);
         j=x.lastIndexOf('\\'); if (j>=0) x=x.substring(j+1);
         j=x.lastIndexOf('.'); if (j>=0) x=x.substring(0,j);
         return x;
     }
 
+    /** Changes the label of a JLabel. */
     private void setTitle(JLabel label, String x) {
-        label.setToolTipText(x);
         boolean modified = x.endsWith(" *");
+        if (modified) x=x.substring(0, x.length()-2);
+        label.setToolTipText(x);
         x=getShorterTitle(x);
         if (x.length()>12) x=x.substring(0,12)+"...";
         label.setText("  "+x+(modified?" *  ":"  "));
     }
 
-    /** Switch the currently selected tab; note: it always calls parent.notifyChange() */
+    /** Switch the currently selected tab; returns false if no tab corresponds to that filename. */
+    public boolean switchToFilename(String filename) {
+        for(int i=0; i<list.size(); i++) if (list.get(i).filename.equals(filename)) {setSelectedIndex(i); return true;}
+        return false;
+    }
+
+    /** Switch the currently selected tab (Note: it always calls parent.notifyChange()) */
     public void setSelectedIndex(final int i) {
         if (i<0 || i>=list.size()) return;
         frame.revalidate();
