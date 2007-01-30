@@ -26,6 +26,9 @@ public abstract class Err extends Exception {
         this.msg=(msg==null?"":msg);
     }
 
+    /** Returns the same Err, but with the position changed. */
+    public abstract Err changePosition(Pos pos);
+
     /** Calls the subclass's "toString()" method to return a textual representation of the error. */
     @Override public final String getMessage() { return toString(); }
 }

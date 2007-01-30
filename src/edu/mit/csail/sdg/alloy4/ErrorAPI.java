@@ -26,6 +26,9 @@ public final class ErrorAPI extends Err {
      */
     public ErrorAPI(Pos pos, String msg) { super(pos,msg); }
 
+    /** Returns the same Err, but with the position changed. */
+    @Override public Err changePosition(Pos pos) { return new ErrorAPI(pos, this.msg); }
+
     /** Returns a human-readable description of the error. */
     @Override public String toString() {
         if (pos==null) return "API usage error: "+msg;
