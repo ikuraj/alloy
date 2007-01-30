@@ -47,20 +47,29 @@ import static java.awt.Color.BLACK;
 import static java.awt.Color.WHITE;
 
 /**
- * This class provides a tabbed editor pane; only the AWT event thread may access methods/fields in this class
- * (except the "highlight()" method which can be called by any thread).
+ * Graphical tabbed editor.
  *
- * <p><b>Invariant</b>: this.openfiles must not contain duplicate entries.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT thread (except "highlight()" method, which can be called by any thread)
+ *
+ * <p><b>Invariant</b>: list.get(i).filename must not contain duplicate entries.
  */
 
 public final class OurTabbedEditor {
 
+    /** Background color for the list of tabs. */
     private static final Color gray=new Color(.9f, .9f, .9f);
+
+    /** Background color for an inactive tab. */
     private static final Color inactive=new Color(.8f, .8f, .8f);
+
+    /** Border color for each tab. */
     private static final Color border=Color.LIGHT_GRAY;
 
+    /** This interface defines the list of events this tabbed editor may send to the parent. */
     public interface Parent {
+        /** This method is called when a tab is added or removed, or if the text is modified, or if cursor in text area is moved. */
         public void notifyChange();
+        /** This method is called when a tab in this tabbed editor gains the focus. */
         public void notifyFocusGained();
     }
 
@@ -88,21 +97,31 @@ public final class OurTabbedEditor {
     /** The list of tabs. */
     private final List<Tab> list = new ArrayList<Tab>();
 
-    /** The currently selected tab (or 0 if there are no tabs) */
+    /** The currently selected tab from 0 to list.size()-1 (This value is 0 if there are no tabs) */
     private int me=0;
 
     /** This defines the data associated with each tab. */
     private static final class Tab {
+        /** The Tab on top. */
         public JPanel tab;
+        /** The JPanel containing the decoration around the tab. */
         public JLabel label;
+        /** The text area. */
         public final JTextArea body;
+        /** The ScrollPane containing the text area. */
         public final JScrollPane scrolledbody;
+        /** The undo manager associated with this text area. */
         public final UndoManager undo=new UndoManager();
+        /** The highlighter associated with this text area. */
         public final Highlighter highlighter=new DefaultHighlighter();
+        /** The filename; always nonempty, canonical, absolute, and unique among all Tab objects in this editor. */
         public String filename;
+        /** True if this is associated with an actual file; false if it is still an "untitled" tab. */
         public boolean isFile;
+        /** True if the JTextArea has been modified since it was last loaded or saved. */
         public boolean modified=false;
-        public Tab(JPanel tab, JLabel label, JTextArea body, String filename, boolean isFile) {
+        /** Constructs a new Tab */
+        private Tab(JPanel tab, JLabel label, JTextArea body, String filename, boolean isFile) {
             this.tab=tab;
             this.label=label;
             this.body=body;
@@ -117,16 +136,6 @@ public final class OurTabbedEditor {
 
     /** The anonymous filename to give to the next unnamed text buffer. */
     private int nextNumber=1;
-
-    /** This field is nonnull iff the text in the latest text buffer hasn't been modified since the last compilation. */
-    private List compiled=null;
-    public List getCompiled() { return compiled; }
-    public void setCompiled(List commands) { compiled=commands; }
-
-    /** The latest command executed by the user; 0=first, 1=second... */
-    private int latestCommand=0; // TODO
-    public int getLatestCommand() { return latestCommand; }
-    public void setLatestCommand(int command) { latestCommand=command; }
 
     /** Whether it is allowed to read/write files. */
     private boolean allowIO=true;
@@ -207,12 +216,30 @@ public final class OurTabbedEditor {
      * Create a new tab with the given filename and initial content.
      * <p> Note: if a text buffer with that filename already exists, we will switch to it and ignore "content"
      */
-    public void newTab(String filename, String fileContent, boolean isFile) {
+    public boolean newTab(String filename) {
+        filename=Util.canon(filename);
+        if (switchToFilename(filename)) return true;
+        try {
+            String content = allowIO ? Util.readAll(filename) : "";
+            newTab(filename, content, true);
+            return true;
+        }
+        catch(IOException e) {
+            OurDialog.alert(parentFrame, "Error reading the file \""+filename+"\"", "Error");
+            return false;
+        }
+    }
+
+    /**
+     * Create a new tab with the given filename and initial content.
+     * <p> Note: if a text buffer with that filename already exists, we will switch to it and ignore "content"
+     */
+    private void newTab(String filename, String fileContent, boolean isFile) {
         // If exists, then switch to that tab directly
         if (switchToFilename(filename)) return;
         // Make the tab on top
         final JLabel x=new JLabel("");
-        x.setFont(OurUtil.getVizFont());
+        x.setFont(OurUtil.getVizFont().deriveFont(Font.BOLD));
         x.setOpaque(true);
         x.setBorder(new OurBorder(border, border, WHITE, border));
         x.setBackground(WHITE);
@@ -279,7 +306,6 @@ public final class OurTabbedEditor {
         text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, InputEvent.CTRL_MASK), "my_prev");
         text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, InputEvent.CTRL_MASK), "my_next");
         // Add everything
-        compiled=null;
         content.add(xx, list.size());
         final Tab tab=new Tab(xx, x, text, filename, isFile);
         list.add(tab);
@@ -295,8 +321,9 @@ public final class OurTabbedEditor {
         text.getDocument().addDocumentListener(new DocumentListener() {
             public final void changedUpdate(DocumentEvent e) {
                 tab.highlighter.removeAllHighlights();
-                if (!tab.modified) { setTitle(tab.label, tab.filename+" *"); tab.modified=true; parent.notifyChange(); }
-                compiled=null;
+                setTitle(tab.label, tab.filename+" *");
+                tab.modified=true;
+                parent.notifyChange();
             }
             public final void removeUpdate(DocumentEvent e) { changedUpdate(e); }
             public final void insertUpdate(DocumentEvent e) { changedUpdate(e); }
@@ -308,6 +335,7 @@ public final class OurTabbedEditor {
           for(int i=list.size()-1; i>=0; i--)
             if (!list.get(i).isFile && list.get(i).body.getText().trim().length()==0)
               { list.get(i).modified=false; close(i); break; } // So that we take over the rightmost untitled tab
+        // Must call this method to switch to the new tab; and it will call parent.notifyChange() which is important
         setSelectedIndex(list.size()-1);
     }
 
@@ -359,7 +387,6 @@ public final class OurTabbedEditor {
             if (ans==null) return false;
             if (ans.booleanValue()) if (!save(false)) return false;
         }
-        compiled=null;
         list.get(i).body.setText("");
         if (list.size()==1) {
             list.get(i).undo.discardAllEdits();
@@ -372,6 +399,7 @@ public final class OurTabbedEditor {
             list.remove(i);
             if (me>=list.size()) me=list.size()-1;
         }
+        // Must call this to change the active tab and call parent.notifyChange() (which is important)
         setSelectedIndex(me);
         return true;
     }
@@ -475,6 +503,7 @@ public final class OurTabbedEditor {
         label.setText("  "+x+(modified?" *  ":"  "));
     }
 
+    /** Switch the currently selected tab; note: it always calls parent.notifyChange() */
     public void setSelectedIndex(final int i) {
         if (i<0 || i>=list.size()) return;
         frame.revalidate();
@@ -488,7 +517,6 @@ public final class OurTabbedEditor {
         if (list.size()>1) frame.add(scroller, BorderLayout.NORTH);
         frame.add(list.get(me).scrolledbody, BorderLayout.CENTER);
         frame.repaint();
-        compiled=null;
         parent.notifyChange();
         list.get(i).body.requestFocusInWindow();
         content.scrollRectToVisible(new Rectangle(0,0,0,0)); // Forces recalculation
