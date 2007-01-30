@@ -301,8 +301,8 @@ public final class LogToJTextPane extends Log {
             label.setFont(new Font(fontName, Font.BOLD, fontSize));
             label.setForeground(linkColor);
             label.addMouseListener(new MouseListener(){
-                public final void mouseClicked(MouseEvent e) { handler.run(evs_click, text2); }
-                public final void mousePressed(MouseEvent e) { }
+                public final void mousePressed(MouseEvent e) { handler.run(evs_click, text2); }
+                public final void mouseClicked(MouseEvent e) { }
                 public final void mouseReleased(MouseEvent e) { }
                 public final void mouseEntered(MouseEvent e) { label.setForeground(hoverColor); }
                 public final void mouseExited(MouseEvent e) { label.setForeground(linkColor); }

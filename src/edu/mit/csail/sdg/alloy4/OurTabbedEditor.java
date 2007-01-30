@@ -248,10 +248,10 @@ public final class OurTabbedEditor {
         x.setBackground(WHITE);
         x.setForeground(BLACK);
         x.addMouseListener(new MouseListener() {
-            public void mouseClicked(MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 for(int i=0;i<list.size();i++) if (list.get(i).label==x) {setSelectedIndex(i); break;}
             }
-            public void mousePressed(MouseEvent e) {}
+            public void mouseClicked(MouseEvent e) {}
             public void mouseReleased(MouseEvent e) {}
             public void mouseEntered(MouseEvent e) {}
             public void mouseExited(MouseEvent e) {}
