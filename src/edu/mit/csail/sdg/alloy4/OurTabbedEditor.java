@@ -498,14 +498,15 @@ public final class OurTabbedEditor {
                 String content;
                 try {content=Util.readAll(f);} catch(IOException ex) {return;} // Error not fatal, since we just won't show the file
                 newTab(f, content, true);
-                parent.notifyChange();
-                text().requestFocusInWindow();
             }
             int c=text().getLineStartOffset(e.pos.y-1)+e.pos.x-1;
             int d=text().getLineStartOffset(e.pos.y2-1)+e.pos.x2-1;
             list.get(me).highlighter.removeAllHighlights();
             list.get(me).highlighter.addHighlight(c, d+1, highlightPainter);
-            text().setSelectionStart(c); text().setSelectionEnd(c); text().requestFocusInWindow();
+            text().setSelectionStart(c);
+            text().setSelectionEnd(c);
+            text().requestFocusInWindow();
+            parent.notifyChange();
         } catch(BadLocationException ex) { }
     }
 
