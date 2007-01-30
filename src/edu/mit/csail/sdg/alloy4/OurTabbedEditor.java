@@ -21,7 +21,11 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
 import javax.swing.AbstractAction;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -336,6 +340,13 @@ public final class OurTabbedEditor {
               { list.get(i).modified=false; close(i); break; } // So that we take over the rightmost untitled tab
         // Must call this method to switch to the new tab; and it will call parent.notifyChange() which is important
         setSelectedIndex(list.size()-1);
+    }
+
+    /** Returns a map from each tab's filename to the content in the text buffer. */
+    public Map<String,String> takeSnapshot() {
+        Map<String,String> map = new LinkedHashMap<String,String>();
+        for(Tab t:list) map.put(t.filename, t.body.getText());
+        return Collections.unmodifiableMap(map);
     }
 
     /** Returns the list of filenames corresponding to each text buffer. */
