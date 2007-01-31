@@ -27,7 +27,7 @@ public final class ErrorSyntax extends Err {
     public ErrorSyntax(Pos pos, String msg) { super(pos,msg); }
 
     /** Returns the same Err, but with the position changed. */
-    @Override public Err changePosition(Pos pos) { return new ErrorAPI(pos, this.msg); }
+    @Override public Err changePosition(Pos pos) { return new ErrorSyntax(pos, this.msg); }
 
     /** Returns a human-readable description of the error. */
     @Override public String toString() {

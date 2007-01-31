@@ -27,7 +27,7 @@ public final class ErrorFatal extends Err {
     public ErrorFatal(Pos pos, String msg) { super(pos,msg); }
 
     /** Returns the same Err, but with the position changed. */
-    @Override public Err changePosition(Pos pos) { return new ErrorAPI(pos, this.msg); }
+    @Override public Err changePosition(Pos pos) { return new ErrorFatal(pos, this.msg); }
 
     /** Returns a human-readable description of the error. */
     @Override public String toString() {
