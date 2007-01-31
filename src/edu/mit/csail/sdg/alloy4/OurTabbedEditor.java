@@ -341,13 +341,13 @@ public final class OurTabbedEditor {
     }
 
     /**
-     * Returns a map from each tab's filename to the content in the text buffer.
+     * If allowIO==false, return an empty map; otherwise return a map from each tab's filename to the text content in that tab.
      * Note: the returned map is modifiable, and the caller is free to do whatever with it
      * (the changes do NOT affect this OurTabbedEditor object)
      */
     public Map<String,String> takeSnapshot() {
         Map<String,String> map = new LinkedHashMap<String,String>();
-        for(Tab t:list) map.put(t.filename, t.body.getText());
+        if (allowIO) for(Tab t:list) map.put(t.filename, t.body.getText());
         return map;
     }
 
