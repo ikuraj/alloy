@@ -539,6 +539,9 @@ public final class OurTabbedEditor {
         return false;
     }
 
+    /** Returns the currently selected tab. */
+    public int getSelectedIndex() { return me; }
+
     /** Switch the currently selected tab (Note: it always calls parent.notifyChange()) */
     public void setSelectedIndex(final int i) {
         if (i<0 || i>=list.size()) return;
