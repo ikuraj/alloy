@@ -208,6 +208,27 @@ public final class Util {
         return true;
     }
 
+    /**
+     * Return the given text file from JAR as a String (or null if the file doesn't exist)
+     */
+    public static synchronized String readTextFromJAR(String sourcename) {
+        InputStream resStream=Util.class.getClassLoader().getResourceAsStream(sourcename);
+        if (resStream==null) return null;
+        StringBuilder result = new StringBuilder();
+        InputStream binStream=new BufferedInputStream(resStream);
+        try {
+            byte[] b = new byte[16384];
+            while(true) {
+                int numRead = binStream.read(b);
+                if (numRead == -1) break;
+                if (numRead > 0) for(int i=0;i<numRead;i++) result.append((char)(b[i]));
+            }
+        } catch(IOException e) { result=null; }
+        try { binStream.close(); } catch(IOException ex) { result=null; }
+        try { resStream.close(); } catch(IOException ex) { result=null; }
+        return result==null ? null : result.toString();
+    }
+
     /** Appends "st", "nd", "rd", "th"... as appropriate; (for example, 21 becomes 21st, 22 becomes 22nd...) */
     public static String th(int n) {
         if (n==1) return "First";
