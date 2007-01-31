@@ -16,9 +16,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
-import java.util.Random;
 
 /**
  * This provides useful static methods for I/O and XML operations.
@@ -44,9 +42,6 @@ public final class Util {
         list.remove(element);
         return Collections.unmodifiableList(list);
     }
-
-    /** This variable caches the value of the system's file separator. */
-    private static final String fs=System.getProperty("file.separator");
 
     /** Read everything into a String; throws IOException if an error occurred. */
     public static String readAll(String filename) throws IOException {
@@ -120,30 +115,6 @@ public final class Util {
             return result!=0 ? result : a.compareTo(b);
         }
     };
-
-    /** This variable caches the result of alloyHome() function call. */
-    private static String alloyHome=null;
-
-    /** Find a temporary directory to store Alloy files; it's guaranteed to be a canonical absolute path. */
-    public static synchronized String alloyHome() {
-        if (alloyHome!=null) return alloyHome;
-        String temp=System.getProperty("java.io.tmpdir");
-        if (temp==null || temp.length()==0)
-            OurDialog.fatal(null,"Error. JVM need to specify a temporary directory using java.io.tmpdir property.");
-        String username=System.getProperty("user.name");
-        File tempfile=new File(temp+fs+"alloy4tmp15-"+(username==null?"":username));
-        tempfile.mkdirs();
-        String ans=canon(tempfile.getPath());
-        if (!tempfile.isDirectory()) {
-            OurDialog.fatal(null, "Error. Cannot create the temporary directory "+ans);
-        }
-        if (!onWindows()) {
-            String[] args={"chmod", "700", ans};
-            try {Runtime.getRuntime().exec(args).waitFor();}
-            catch (Exception ex) {harmless("Util.alloyHome()", ex);} // We only intend to make a best effort.
-        }
-        return alloyHome=ans;
-    }
 
     /**
      * Copy the list of files from JAR into the destination directory,
@@ -294,51 +265,6 @@ public final class Util {
         for(int i=0; i<strs.length; i++) {
             if ((i%2)==0) out.print(strs[i]); else encodeXML(out,strs[i]);
         }
-    }
-
-    /**
-     * Create an empty temporary directory for use, designate it "deleteOnExit", then return it.
-     * It is guaranteed to be a canonical absolute path.
-     */
-    public static String maketemp() {
-        Random r=new Random(new Date().getTime());
-        while(true) {
-            int i=r.nextInt(1000000);
-            String dest = Util.alloyHome()+fs+"tmp"+fs+i;
-            File f=new File(dest);
-            if (f.mkdirs()) {
-                f.deleteOnExit();
-                return canon(dest);
-            }
-        }
-    }
-
-    /** Return the number of bytes used by the Temporary Directory (or return -1 if the answer exceeds "long") */
-    public static long computeTemporarySpaceUsed() {
-        long ans = iterateTemp(null,false);
-        if (ans<0) return -1; else return ans;
-    }
-
-    /** Delete every file in the Temporary Directory. */
-    public static void clearTemporarySpace() { iterateTemp(null,true); }
-
-    private static long iterateTemp(String filename, boolean delete) {
-        long ans=0;
-        if (filename==null) filename = Util.alloyHome()+fs+"tmp";
-        File x = new File(filename);
-        if (x.isDirectory()) {
-            for(String subfile:x.list()) {
-                long tmp=iterateTemp(filename+fs+subfile, delete);
-                if (ans>=0) ans=ans+tmp;
-            }
-            if (delete) x.delete();
-        }
-        else if (x.isFile()) {
-            long tmp=x.length();
-            if (ans>=0) ans=ans+tmp;
-            if (delete) x.delete();
-        }
-        return ans;
     }
 
     /**
