@@ -313,6 +313,34 @@ public final class Util {
         }
     }
 
+    /** Return the number of bytes used by the Temporary Directory (or return -1 if the answer exceeds "long") */
+    public static long computeTemporarySpaceUsed() {
+        long ans = iterateTemp(null,false);
+        if (ans<0) return -1; else return ans;
+    }
+
+    /** Delete every file in the Temporary Directory. */
+    public static void clearTemporarySpace() { iterateTemp(null,true); }
+
+    private static long iterateTemp(String filename, boolean delete) {
+        long ans=0;
+        if (filename==null) filename = Util.alloyHome()+fs+"tmp";
+        File x = new File(filename);
+        if (x.isDirectory()) {
+            for(String subfile:x.list()) {
+                long tmp=iterateTemp(filename+fs+subfile, delete);
+                if (ans>=0) ans=ans+tmp;
+            }
+            if (delete) x.delete();
+        }
+        else if (x.isFile()) {
+            long tmp=x.length();
+            if (ans>=0) ans=ans+tmp;
+            if (delete) x.delete();
+        }
+        return ans;
+    }
+
     /**
      * Finds the first occurrence of <b>small</b> within <b>big</b>.
      * @param big - the String that we want to perform the search on
