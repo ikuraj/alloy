@@ -31,7 +31,7 @@ public final class ErrorSyntax extends Err {
 
     /** Returns a human-readable description of the error. */
     @Override public String toString() {
-        if (pos==null) return "Syntax error: "+msg;
+        if (pos==null || pos==Pos.UNKNOWN) return "Syntax error: "+msg;
         if (pos.filename.length()>0)
             return "Syntax error in "+pos.filename
             +" at line "+pos.y+" column "+pos.x+":\n"+msg;

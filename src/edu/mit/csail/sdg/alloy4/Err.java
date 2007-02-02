@@ -22,7 +22,7 @@ public abstract class Err extends Exception {
      * @param msg - the actual error message
      */
     public Err(Pos pos, String msg) {
-        this.pos=pos;
+        this.pos=(pos==null?Pos.UNKNOWN:pos);
         this.msg=(msg==null?"":msg);
     }
 

@@ -31,7 +31,7 @@ public final class ErrorAPI extends Err {
 
     /** Returns a human-readable description of the error. */
     @Override public String toString() {
-        if (pos==null) return "API usage error: "+msg;
+        if (pos==null || pos==Pos.UNKNOWN) return "API usage error: "+msg;
         if (pos.filename.length()>0)
             return "API usage error in "+pos.filename
             +" at line "+pos.y+" column "+pos.x+":\n"+msg;

@@ -31,7 +31,7 @@ public final class ErrorType extends Err {
 
     /** Returns a human-readable description of the error. */
     @Override public String toString() {
-        if (pos==null) return "Type error: "+msg;
+        if (pos==null || pos==Pos.UNKNOWN) return "Type error: "+msg;
         if (pos.filename.length()>0)
             return "Type error in "+pos.filename
             +" at line "+pos.y+" column "+pos.x+":\n"+msg;

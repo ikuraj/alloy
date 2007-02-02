@@ -31,7 +31,7 @@ public final class ErrorWarning extends Err {
 
     /** Returns a human-readable description of the error. */
     @Override public String toString() {
-        if (pos==null) return msg;
+        if (pos==null || pos==Pos.UNKNOWN) return msg;
         if (pos.filename.length()>0) return "Line "+pos.y+" column "+pos.x+" in "+pos.filename+":\n"+msg;
         return "Line "+pos.y+" column "+pos.x+":\n"+msg;
     }
