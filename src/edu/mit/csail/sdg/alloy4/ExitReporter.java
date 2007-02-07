@@ -42,20 +42,32 @@ public final class ExitReporter implements UncaughtExceptionHandler, ActionListe
     private String mainfilecontent = "";
 
     /** The list of additional files being included from the main file. */
-    private Set<String> subfiles = new LinkedHashSet<String>();
+    private final Set<String> subfiles = new LinkedHashSet<String>();
 
     /** Removes the info about main file and subfiles. */
-    public synchronized void clearAll() { subfiles.clear(); mainfile=""; mainfilecontent=""; }
+    public synchronized void clearAll () {
+        mainfile="";
+        mainfilecontent="";
+        subfiles.clear();
+    }
 
     /** Sets the main file's filename and main file's content. */
-    public synchronized void setMainFile(String filename,String content) {mainfile=filename; mainfilecontent=content;}
+    public synchronized void setMainFile (String filename, String content) {
+        mainfile=filename;
+        mainfilecontent=content;
+    }
 
     /** Add a new file to the set of "included files". */
-    public synchronized void addSubFile(String filename) { subfiles.add(filename); }
+    public synchronized void addSubFile(String filename) {
+        subfiles.add(filename);
+    }
 
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException(Thread thread, Throwable ex) {
-        if (ex!=null) { ex.printStackTrace(System.err); System.err.flush(); }
+        if (ex!=null) {
+            ex.printStackTrace(System.err);
+            System.err.flush();
+        }
         String yes="Send the Bug Report", no="Don't Send the Bug Report";
         JTextField email = new JTextField(20);
         JTextArea comment = new JTextArea();
@@ -65,51 +77,48 @@ public final class ExitReporter implements UncaughtExceptionHandler, ActionListe
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
         if ((ex instanceof OutOfMemoryError) || (ex instanceof StackOverflowError)) {
-            if (JOptionPane.showOptionDialog(null, new Object[]{
-                    "Alloy Analyzer has run out of memory.",
-                    "Your model may be too large to be analysed, or may",
-                    "be using features that make the problem intractable.",
-                    "Please visit http://alloy.mit.edu/",
-                    "for tips on writing efficient Alloy models.",
-                    " ",
-                    "If you believe the model should be analyzable,",
-                    "you may submit a bug report (via HTTP).",
-                    "The error report will include your Alloy source",
-                    "and system configuration, but no other information.",
-                    " ",
-                    "If you'd like to be notified about a fix,",
-                    "please enter your email adress and optionally add a comment.",
-                    " ",
-                    OurUtil.makeHT("Email:",5,email,null),
-                    OurUtil.makeHT("Comment:",5,scroll,null)
+            if (JOptionPane.showOptionDialog(null, new Object[] {
+                "Alloy Analyzer has run out of memory.",
+                " ",
+                "Your model may be too large to be analysed, or may",
+                "be using features that make the problem intractable.",
+                "Please visit http://alloy.mit.edu/",
+                "for tips on writing efficient Alloy models.",
+                " ",
+                "If you believe the model should be analyzable,",
+                "you may submit a bug report (via HTTP).",
+                "The error report will include your Alloy source",
+                "and system configuration, but no other information.",
+                " ",
+                "If you'd like to be notified about a fix,",
+                "please enter your email adress and optionally add a comment.",
+                " ",
+                OurUtil.makeHT("Email:",5,email,null),
+                OurUtil.makeHT("Comment:",5,scroll,null)
             }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { if (thread!=null) System.exit(1); return; }
+            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { System.exit(1); }
         } else {
-            if (JOptionPane.showOptionDialog(null, new Object[]{
-                    (thread==null ? "Thank you for submitting a bug report." : "Sorry. An internal error has occurred."),
-                    " ",
-                    "You may post a bug report (via HTTP).",
-                    "The error report will include your Alloy source",
-                    "and system configuration, but no other information.",
-                    " ",
-                    "If you'd like to be notified about a fix,",
-                    "please enter your email adress and optionally add a comment.",
-                    " ",
-                    OurUtil.makeHT("Email:",5,email,null),
-                    OurUtil.makeHT("Comment:",5,scroll,null)
+            if (JOptionPane.showOptionDialog(null, new Object[] {
+                "Sorry. An internal error has occurred.",
+                " ",
+                "You may post a bug report (via HTTP).",
+                "The error report will include your Alloy source",
+                "and system configuration, but no other information.",
+                " ",
+                "If you'd like to be notified about a fix,",
+                "please enter your email adress and optionally add a comment.",
+                " ",
+                OurUtil.makeHT("Email:",5,email,null),
+                OurUtil.makeHT("Comment:",5,scroll,null)
             }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { if (thread!=null) System.exit(1); return; }
+            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { System.exit(1); }
         }
         StringWriter sw=new StringWriter();
         PrintWriter pw=new PrintWriter(sw);
         pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
         pw.printf("========================= Email ============================\n%s\n\n", email.getText());
         pw.printf("========================= Comment ==========================\n%s\n\n", comment.getText());
-        if (thread==null) {
-          pw.printf("================== Bug Report Manually Triggered! ==========\n\n");
-        } else {
-          pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
-        }
+        pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
         if (ex!=null) {
           pw.printf("========================= Exception ========================\n%s\n\n",
                 ex.getClass().toString()+": "+ex.toString());
@@ -144,13 +153,7 @@ public final class ExitReporter implements UncaughtExceptionHandler, ActionListe
         try {
             final JFrame statusWindow=new JFrame();
             JButton done=new JButton("Close");
-            if (thread==null) {
-                done.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) { statusWindow.dispose(); }
-                });
-            } else {
-                done.addActionListener(this);
-            }
+            done.addActionListener(this);
             status=new JTextArea("Sending the bug report... please wait...");
             status.setEditable(false);
             status.setLineWrap(true);
@@ -171,7 +174,7 @@ public final class ExitReporter implements UncaughtExceptionHandler, ActionListe
             statusWindow.setVisible(true);
         } catch(Exception exception) { }
         String result=postBug(sw.toString());
-        if (status!=null) status.setText(result); else if (thread!=null) System.exit(1);
+        if (status!=null) status.setText(result);
     }
 
     /** Post the given string via POST HTTP request. */
