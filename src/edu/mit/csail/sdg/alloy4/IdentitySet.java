@@ -25,9 +25,9 @@ import java.util.NoSuchElementException;
  * The iterator is guaranteed to iterate over exactly the elements
  * that existed at the time that the iterator was created.
  *
- * <p><b>Invariant:</b>      hashmap.containsKey(x) iff (x==list.get(i) for some i)
+ * <p><b>Invariant:</b>      hashmap.containsKey(x) if and only if (x==list.get(i) for some i)
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe
  *
  * @param <T> - the type of element
  */
@@ -35,25 +35,36 @@ import java.util.NoSuchElementException;
 public final class IdentitySet<T> implements Iterable<T> {
 
     /** This map's key set is used to store the set of elements; the values are ignored. */
-    private final IdentityHashMap<T,Object> hashmap=new IdentityHashMap<T,Object>();
+    private final IdentityHashMap<T,Object> hashmap = new IdentityHashMap<T,Object>();
 
     /**
-     * This list also stores the set of elements;
+     * This list also stores the same set of elements as this.hashmap;
      * this allows the iterator to return the elements in the order they were inserted.
      */
-    private final List<T> list=new ArrayList<T>();
+    private final List<T> list = new ArrayList<T>();
 
     /** Constructs an empty set. */
-    public IdentitySet() { }
+    public IdentitySet () { }
 
     /** Constructs a set containing the elements from the given collection. */
-    public IdentitySet(Iterable<? extends T> collection) { for(T elem:collection) add(elem); }
+    public IdentitySet (Iterable<? extends T> collection) {
+        for(T elem: collection) {
+            add(elem);
+        }
+    }
 
     /** Returns whether the element x is in the set. */
-    public synchronized boolean contains(T item) { return hashmap.containsKey(item); }
+    public synchronized boolean contains(T item) {
+        return hashmap.containsKey(item);
+    }
 
     /** Adds the element x into the set if it's not in the set already. */
-    public synchronized void add(T item) { if (!hashmap.containsKey(item)) { hashmap.put(item,null); list.add(item); } }
+    public synchronized void add(T item) {
+        if (!hashmap.containsKey(item)) {
+            hashmap.put(item,null);
+            list.add(item);
+        }
+    }
 
     /**
      * Returns an iterator that iterates over elements in this set
@@ -66,14 +77,24 @@ public final class IdentitySet<T> implements Iterable<T> {
      */
     public synchronized Iterator<T> iterator() {
         return new Iterator<T>() {
-            private final int max=list.size();
-            private int now=0;
-            public final boolean hasNext() { return now<max; }
-            public final T next() {
-                if (now>=max) throw new NoSuchElementException();
-                synchronized(IdentitySet.this) { T answer=list.get(now); now++; return answer; }
+            private final int max = list.size();
+            private int now = 0;
+            public final boolean hasNext() {
+                return now < max;
             }
-            public final void remove() { throw new UnsupportedOperationException(); }
+            public final T next() {
+                if (now >= max) {
+                    throw new NoSuchElementException();
+                }
+                synchronized(IdentitySet.this) {
+                    T answer=list.get(now);
+                    now++;
+                    return answer;
+                }
+            }
+            public final void remove() {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 }

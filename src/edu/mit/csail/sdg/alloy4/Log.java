@@ -24,7 +24,7 @@ public class Log {
     public void logBold(String msg) { }
 
     /**
-     * This method is supposed to write (msg) into the log as a clickable link (if possible)
+     * This method is supposed to write msg into the log as a clickable link (if possible)
      * (but this default implementation does nothing).
      */
     public void logLink(String msg, String linkDestination) { }

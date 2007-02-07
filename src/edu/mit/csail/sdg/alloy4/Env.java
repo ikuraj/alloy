@@ -20,7 +20,7 @@ import java.util.LinkedList;
  *
  * <p><b>Invariant:</b>  map2.containsKey(x) implies (map1.containsKey(x) && map2.get(x).size()>0)
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b>  Safe
  *
  * @param <V> - the type for Value
  */
@@ -30,18 +30,18 @@ public final class Env<V> {
     /**
      * If a key is bound to one or more values, this stores the first value.
      * <p>
-     * For example: if key K is bound to values {V1..Vn}, then map1.get(K)==V1
+     * For example: if key K is bound to values (V1..Vn), then map1.get(K) returns V1
      */
-    private final Map<String,V> map1=new LinkedHashMap<String,V>();
+    private final Map<String,V> map1 = new LinkedHashMap<String,V>();
 
     /**
      * If a key is bound to more than one value, this stores every value except the first value.
      * <p>
-     * For example: if key K is bound to values {V1..Vn}, then map2.get(K) returns the list {V2..Vn}
+     * For example: if key K is bound to values (V1..Vn), then map2.get(K) returns the list (V2..Vn)
      */
     private final Map<String,LinkedList<V>> map2=new LinkedHashMap<String,LinkedList<V>>();
 
-    /** Constructs an empty environement. */
+    /** Constructs an initially empty environement. */
     public Env () { }
 
     /**
@@ -50,7 +50,7 @@ public final class Env<V> {
      * @param key - the key
      * @return true if the key is mapped to one or more values
      */
-    public synchronized boolean has(String key) {
+    public synchronized boolean has (String key) {
         return map1.containsKey(key);
     }
 
@@ -64,9 +64,9 @@ public final class Env<V> {
      * @param key - the key
      * @return the latest value associated with the key (and returns null if none)
      */
-    public synchronized V get(String key) {
-        LinkedList<V> list=map2.get(key);
-        if (list!=null) {
+    public synchronized V get (String key) {
+        LinkedList<V> list = map2.get(key);
+        if (list != null) {
             return list.getLast();
         }
         return map1.get(key);
@@ -78,16 +78,16 @@ public final class Env<V> {
      * @param key - the key
      * @param value - the value (which can be null)
      */
-    public synchronized void put(String key, V value) {
-        LinkedList<V> list=map2.get(key);
-        if (list!=null) {
+    public synchronized void put (String key, V value) {
+        LinkedList<V> list = map2.get(key);
+        if (list != null) {
             list.add(value);
         } else if (!map1.containsKey(key)) {
-            map1.put(key,value);
+            map1.put(key, value);
         } else {
             list=new LinkedList<V>();
             list.add(value);
-            map2.put(key,list);
+            map2.put(key, list);
         }
     }
 
@@ -99,10 +99,10 @@ public final class Env<V> {
      * @param key - the key
      */
     public synchronized void remove(String key) {
-        LinkedList<V> list=map2.get(key);
-        if (list==null) {
+        LinkedList<V> list = map2.get(key);
+        if (list == null) {
             map1.remove(key);
-        } else if (list.size()<=1) {
+        } else if (list.size() <= 1) {
             map2.remove(key);
         } else {
             list.removeLast();

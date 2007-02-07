@@ -27,7 +27,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 /**
- * This class asks for permission to email crash report when an uncaught exception occurs.
+ * This class asks for permission to email a bug report when an uncaught exception occurs.
  */
 
 public final class ExitReporter implements UncaughtExceptionHandler, ActionListener {
@@ -35,10 +35,10 @@ public final class ExitReporter implements UncaughtExceptionHandler, ActionListe
     /** Construct a new ExirReporter. */
     public ExitReporter() { }
 
-    /** The name of the main file being analyzed; "" if none. */
+    /** The name of the main file being analyzed; "" if unknwon. */
     private String mainfile = "";
 
-    /** The content of the main file being analyzed; "" if none. */
+    /** The content of the main file being analyzed; "" if unknown. */
     private String mainfilecontent = "";
 
     /** The list of additional files being included from the main file. */
@@ -174,7 +174,7 @@ public final class ExitReporter implements UncaughtExceptionHandler, ActionListe
         if (status!=null) status.setText(result); else if (thread!=null) System.exit(1);
     }
 
-    /** Post the given string -- which can be as large as needed -- via POST HTTP request. */
+    /** Post the given string via POST HTTP request. */
     private static String postBug(String bugReport) {
         final String NEW_LINE = System.getProperty("line.separator");
         final String BUG_POST_URL = "http://alloy.mit.edu/postbug4.php";
