@@ -26,15 +26,14 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
-/** This asks for permission to email crash report when an uncaught exception occurs. */
+/**
+ * This class asks for permission to email crash report when an uncaught exception occurs.
+ */
 
 public final class ExitReporter implements UncaughtExceptionHandler, ActionListener {
 
-    /** A pre-created instance of CrashReport */
-    public static final ExitReporter defaultReporter = new ExitReporter();
-
-    /** Constructor is private since this class never needs to be instantiated. */
-    private ExitReporter() { }
+    /** Construct a new ExirReporter. */
+    public ExitReporter() { }
 
     /** The name of the main file being analyzed; "" if none. */
     private String mainfile = "";
