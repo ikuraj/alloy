@@ -14,11 +14,11 @@ import java.util.LinkedList;
  * <br>  The remove(X) method removes the last element in X's list.
  *
  * <p>   This is very useful for representing lexical scoping: when a local
- *        variable is introduced with the same name as an existing variable,
- *        the new variable "hides" the old mapping; and when the new variable falls
- *        out of scope, the previous mapping is once again "revealed".
+ *       variable is introduced with the same name as an existing variable,
+ *       the new variable "hides" the old mapping; and when the new variable falls
+ *       out of scope, the previous mapping is once again "revealed".
  *
- * <p><b>Invariant:</b>  map2.containsKey(x) => (map1.containsKey(x) && map2.get(x).size()>0)
+ * <p><b>Invariant:</b>  map2.containsKey(x) implies (map1.containsKey(x) && map2.get(x).size()>0)
  *
  * <p><b>Thread Safety:</b>  Safe.
  *
@@ -30,14 +30,14 @@ public final class Env<V> {
     /**
      * If a key is bound to one or more values, this stores the first value.
      * <p>
-     * For example: if key K is bound to values V1..Vn, then map1.get(K)==V1
+     * For example: if key K is bound to values {V1..Vn}, then map1.get(K)==V1
      */
     private final Map<String,V> map1=new LinkedHashMap<String,V>();
 
     /**
      * If a key is bound to more than one value, this stores every value except the first value.
      * <p>
-     * For example: if key K is bound to values V1..Vn, then map2.get(K) returns the list V2..Vn
+     * For example: if key K is bound to values {V1..Vn}, then map2.get(K) returns the list {V2..Vn}
      */
     private final Map<String,LinkedList<V>> map2=new LinkedHashMap<String,LinkedList<V>>();
 
@@ -62,11 +62,14 @@ public final class Env<V> {
      * you need to call has(key) to determine whether the key really has a mapping or not.
      *
      * @param key - the key
-     * @return the latest value associated with the key (and returns null if none).
+     * @return the latest value associated with the key (and returns null if none)
      */
     public synchronized V get(String key) {
         LinkedList<V> list=map2.get(key);
-        if (list!=null) return list.getLast(); else return map1.get(key);
+        if (list!=null) {
+            return list.getLast();
+        }
+        return map1.get(key);
     }
 
     /**

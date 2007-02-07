@@ -10,7 +10,7 @@ import java.util.IdentityHashMap;
  *
  * <p> Note: it uses reference identity for comparing nodes, rather than using N.equals().
  *
- * <p><b>Invariant:</b>  nodeToTargets.containsKey(x) => nodeToTargets.get(x)!=null
+ * <p><b>Invariant:</b>  nodeToTargets.containsKey(x) implies nodeToTargets.get(x)!=null
  *
  * <p><b>Thread Safety:</b>  Safe.
  *
@@ -32,7 +32,11 @@ public final class DirectedGraph<N> {
             targets=new ArrayList<N>();
             nodeToTargets.put(start,targets);
         } else {
-            for (int i=targets.size()-1; i>=0; i--) if (targets.get(i)==end) return;
+            for (int i=targets.size()-1; i>=0; i--) {
+                if (targets.get(i)==end) {
+                    return;
+                }
+            }
         }
         targets.add(end);
     }
@@ -42,7 +46,9 @@ public final class DirectedGraph<N> {
      * by following 0 or more directed edges.
      */
     public synchronized boolean hasPath(N start, N end) {
-        if (start==end) return true;
+        if (start==end) {
+            return true;
+        }
         List<N> todo = new ArrayList<N>();
         IdentityHashMap<N,Object> visited = new IdentityHashMap<N,Object>();
         // The correctness relies on three invariants:
@@ -57,8 +63,13 @@ public final class DirectedGraph<N> {
             if (targets!=null) {
                 for (int i=targets.size()-1; i>=0; i--) {
                     N next=targets.get(i);
-                    if (next==end) return true;
-                    if (!visited.containsKey(next)) { visited.put(next,null); todo.add(next); }
+                    if (next==end) {
+                        return true;
+                    }
+                    if (!visited.containsKey(next)) {
+                        visited.put(next,null);
+                        todo.add(next);
+                    }
                 }
             }
         }
