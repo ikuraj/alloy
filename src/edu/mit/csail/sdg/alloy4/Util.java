@@ -319,12 +319,11 @@ public final class Util {
                if (n<=0) break;
                now+=n;
             }
-        } catch(IOException ex) {
+            return new Pair<char[],Integer>(buf,now);
+        } finally {
             if (isr!=null) { try {isr.close();} catch(IOException ex2) {} }
             if (fis!=null) { try {fis.close();} catch(IOException ex2) {} }
-            throw ex;
         }
-        return new Pair<char[],Integer>(buf,now);
     }
 
     /** Returns true iff running on Windows **/

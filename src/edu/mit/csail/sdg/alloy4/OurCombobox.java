@@ -75,8 +75,10 @@ public final class OurCombobox extends JComboBox {
 
     /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
     private static Vector<Object> copy(List<Object> list, boolean addNull) {
-        Vector<Object> answer=new Vector<Object>();
-        if (addNull) answer.add(null);
+        Vector<Object> answer=new Vector<Object>(list.size() + (addNull?1:0));
+        if (addNull) {
+            answer.add(null);
+        }
         answer.addAll(list);
         return answer;
     }
@@ -90,9 +92,8 @@ public final class OurCombobox extends JComboBox {
      * @param height - the maximum height to use
      * @param key - the key associated with this combobox
      */
-    public OurCombobox(
-            final ComboGetterSetter gs, boolean addNull, List<Object> list,
-            int width, int height, final Object key) {
+    public OurCombobox
+    (final ComboGetterSetter gs, boolean addNull, List<Object> list, int width, int height, final Object key) {
         super(copy(list,addNull));
         this.gs = gs;
         this.key = key;
@@ -106,7 +107,9 @@ public final class OurCombobox extends JComboBox {
         // we make sure we set the initial value before adding the ActionListener.
         setSelectedItem(gs.getValue(key));
         addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { gs.setValue(key, getSelectedItem()); }
+            public final void actionPerformed(ActionEvent e) {
+                gs.setValue(key, getSelectedItem());
+            }
         });
     }
 }

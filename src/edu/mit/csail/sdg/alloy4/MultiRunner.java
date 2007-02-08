@@ -35,7 +35,7 @@ extends AbstractAction implements MenuListener, ActionListener, WindowListener, 
 
     /** Constructs a new runner to encapsulate the given runnable that takes an int argument. */
     public MultiRunner(MultiRunnable runnable, int key) {
-        this(runnable, key, "");
+        this(runnable, key, null);
     }
 
     /** Constructs a new runner to encapsulate the given runnable that takes an int argument and a String argument. */
