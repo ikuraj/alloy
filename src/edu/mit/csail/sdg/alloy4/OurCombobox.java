@@ -23,7 +23,7 @@ import javax.swing.ListCellRenderer;
  * <p> This combobox does remember its current selection; so if the underlying data is altered by other code,
  * then this combobox and the underlying data will become out-of-sync.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class OurCombobox extends JComboBox {
@@ -40,7 +40,7 @@ public final class OurCombobox extends JComboBox {
     /**
      * This defines getIcon/getText/getValue/setValue methods.
      *
-     * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+     * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
      */
     public interface ComboGetterSetter {
         /** Given a key and a value, this returns a suitable icon to display; returns null if no icon is needed. */
@@ -56,7 +56,7 @@ public final class OurCombobox extends JComboBox {
     /**
      * This renderer draws the combobox value using the text and icon given by the GetterSetter.
      *
-     * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+     * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
      */
     private final class OurComboboxRenderer extends JLabel implements ListCellRenderer {
         /** This silences javac's warning about missing serialVersionUID. */

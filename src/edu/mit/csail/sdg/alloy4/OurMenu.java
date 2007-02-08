@@ -12,7 +12,7 @@ import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 /**
  * Graphical menu that extends JMenu.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class OurMenu extends JMenu {

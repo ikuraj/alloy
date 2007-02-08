@@ -59,7 +59,7 @@ public final class Subprocess extends TimerTask {
         thread0.start();
         thread1.start();
         thread2.start();
-        if (timeLimit>0) stopper.schedule(this, timeLimit*1000);
+        if (timeLimit>0) stopper.schedule(this, ((long)timeLimit)*1000L);
     }
 
     /** This method is called from a Timer when the allotted time has expired. */

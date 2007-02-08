@@ -20,7 +20,7 @@ import javax.swing.JPanel;
  * <p> In other words, the checkbox does not contain any hidden states: all changes are immediately
  * committed into the data store, and it always re-queries the data store whenever it needs to repaint itself.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class OurBinaryCheckbox extends JPanel {
@@ -53,12 +53,12 @@ public final class OurBinaryCheckbox extends JPanel {
     /**
      * This defines get/set methods.
      *
-     * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+     * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
      */
     public interface BinaryGetterSetter {
-        /** This method reads the boolean value associated with the key; this must be called only by the AWT thread. */
+        /** This method reads the boolean value associated with the key; this must be called only by the AWT event thread. */
         public boolean get(Object key);
-        /** This method sets the boolean value associated with the key; this must be called only by the AWT thread. */
+        /** This method sets the boolean value associated with the key; this must be called only by the AWT event thread. */
         public void set(Object key, boolean value);
     }
 

@@ -36,7 +36,7 @@ import javax.swing.text.StyleConstants;
 /**
  * Graphical dialog methods for asking the user some questions.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class OurDialog {

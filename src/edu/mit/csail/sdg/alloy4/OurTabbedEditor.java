@@ -51,7 +51,7 @@ import static java.awt.Color.WHITE;
 /**
  * Graphical tabbed editor.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT thread (except "highlight()" method, which can be called by any thread)
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread (except "highlight()" method, which can be called by any thread)
  *
  * <p><b>Invariant</b>: list.get(i).filename must not contain duplicate entries.
  */

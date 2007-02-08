@@ -24,7 +24,7 @@ import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 /**
  * Graphical convenience methods.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class OurUtil {
@@ -64,7 +64,7 @@ public final class OurUtil {
     /** Returns the screen width (in pixels). */
     public static int getScreenWidth() { return Toolkit.getDefaultToolkit().getScreenSize().width; }
 
-    /** Run r.run() using the AWT thread; if it's not the AWT thread, use SwingUtilities.invokeAndWait() on it. */
+    /** Run r.run() using the AWT event thread; if it's not the AWT event thread, use SwingUtilities.invokeAndWait() on it. */
     public static void invokeAndWait(Runnable r) {
         if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
         try { SwingUtilities.invokeAndWait(r); }

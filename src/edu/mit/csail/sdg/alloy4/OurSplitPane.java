@@ -11,7 +11,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 /**
  * Graphical splitpane with better looking border than the default JSplitPane.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  *
  * @author Code adapted from Alloy3
  */
@@ -41,7 +41,7 @@ public final class OurSplitPane extends JSplitPane {
     /**
      * Graphical border for the OurSplitPane class.
      *
-     * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+     * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
      */
     private static final class NiceBorder implements Border {
         /** The Insets of this border. */

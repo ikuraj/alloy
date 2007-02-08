@@ -128,7 +128,7 @@ public final class LogToJTextPane extends Log {
 
     /**
      * Helper method that actually initializes the various GUI objects;
-     * This method can be called only by the AWT thread.
+     * This method can be called only by the AWT event thread.
      */
     private void initialize(JScrollPane parent, Color background, Color regular, Color red) {
         log=new JTextPane();

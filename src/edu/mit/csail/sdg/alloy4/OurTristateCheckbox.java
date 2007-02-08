@@ -22,7 +22,7 @@ import javax.swing.JPanel;
  * committed into the data store, and it always re-queries the data store whenever
  * it needs to know if it's on or off or inherited.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class OurTristateCheckbox extends JPanel {
@@ -62,21 +62,21 @@ public final class OurTristateCheckbox extends JPanel {
     /**
      * This defines get/getInherited/set methods.
      *
-     * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
+     * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
      */
     public interface GetterSetter {
         /**
-         * This method reads the value associated with the key; this must be called only by the AWT thread.
+         * This method reads the value associated with the key; this must be called only by the AWT event thread.
          * <br> If the answer is null, that means this key inherits its true or false value from its parent.
          */
         public Boolean get(Object key);
         /**
-         * This method reads the value associated with the key; this must be called only by the AWT thread.
+         * This method reads the value associated with the key; this must be called only by the AWT event thread.
          * <br> If this key inherits its value, this method will query its parent until we get either true or false.
          */
         public boolean getInherited(Object key);
         /**
-         * This method sets the value associated with the key; this must be called only by the AWT thread.
+         * This method sets the value associated with the key; this must be called only by the AWT event thread.
          * <br> If you want to tell this key to go into the "inherit" state, then use null as the value.
          */
         public void set(Object key,Boolean value);
