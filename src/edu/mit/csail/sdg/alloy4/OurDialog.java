@@ -71,8 +71,13 @@ public final class OurDialog {
                 null,
                 new Object[]{save,discard,cancel},
                 cancel);
-        if (ans==JOptionPane.YES_OPTION) return Boolean.TRUE;
-        if (ans!=JOptionPane.NO_OPTION) return null; else return Boolean.FALSE;
+        if (ans==JOptionPane.YES_OPTION) {
+            return Boolean.TRUE;
+        }
+        if (ans!=JOptionPane.NO_OPTION) {
+            return null;
+        }
+        return Boolean.FALSE;
     }
 
     /** Ask if the user really wishes to overwrite the file (default=no). */
@@ -98,11 +103,16 @@ public final class OurDialog {
     public static boolean hasFont(String fontname) {
         String[] fonts;
         synchronized (OurDialog.class) {
-            if (allFonts==null)
+            if (allFonts==null) {
                 allFonts=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+            }
             fonts=allFonts;
         }
-        for(int i=0; i<fonts.length; i++) if (fontname.compareToIgnoreCase(fonts[i])==0) return true;
+        for(int i=0; i<fonts.length; i++) {
+            if (fontname.compareToIgnoreCase(fonts[i])==0) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -110,8 +120,9 @@ public final class OurDialog {
     public static String askFont(JFrame parentFrame) {
         String[] fonts;
         synchronized (OurDialog.class) {
-            if (allFonts==null)
+            if (allFonts==null) {
                 allFonts=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+            }
             fonts=allFonts;
         }
         JComboBox jcombo = new JComboBox(fonts);
@@ -125,9 +136,11 @@ public final class OurDialog {
                 null,
                 new Object[]{"Ok","Cancel"},
                 "Cancel");
-        if (ans!=JOptionPane.YES_OPTION) return "";
         Object value=jcombo.getSelectedItem();
-        if (value instanceof String) return ((String)value); else return "";
+        if (ans!=JOptionPane.YES_OPTION || !(value instanceof String)) {
+            return "";
+        }
+        return ((String)value);
     }
 
     /**
@@ -140,40 +153,53 @@ public final class OurDialog {
      * @param description - the description for the given extension
      * @return null if the user didn't choose anything, otherwise it returns the selected file
      */
-    public static File askFile(
-            Frame parentFrame, boolean isOpen, String dir,
-            final String ext, final String description) {
+    public static File askFile
+    (Frame parentFrame, boolean isOpen, String dir, final String ext, final String description) {
         String ans;
         if (Util.onMac()) {
             FileDialog f = new FileDialog(parentFrame, isOpen?"Open...":"Save...");
             f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
             f.setDirectory(dir);
             if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
-                public boolean accept(File dir, String name) { return name.toLowerCase().endsWith(ext); }
+                public boolean accept(File dir, String name) {
+                    return name.toLowerCase().endsWith(ext);
+                }
             });
             f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
-            if (f.getFile()==null) return null;
+            if (f.getFile()==null) {
+                return null;
+            }
             ans=f.getDirectory()+File.separatorChar+f.getFile();
         } else {
             JFileChooser open=new JFileChooser(dir);
             open.setDialogTitle(isOpen?"Open...":"Save...");
             open.setApproveButtonText(isOpen?"Open":"Save");
             if (ext.length()>0) open.setFileFilter(new FileFilter() {
-                public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase().endsWith(ext); }
-                public String getDescription() { return description; }
+                public boolean accept(File f) {
+                    return !f.isFile() || f.getPath().toLowerCase().endsWith(ext);
+                }
+                public String getDescription() {
+                    return description;
+                }
             });
-            if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION) return null;
-            if (open.getSelectedFile()==null) return null;
+            if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION) {
+                return null;
+            }
+            if (open.getSelectedFile()==null) {
+                return null;
+            }
             ans=open.getSelectedFile().getPath();
         }
-        if (!isOpen && ans.lastIndexOf('.')<0) ans=ans+ext;
+        if (!isOpen && ans.lastIndexOf('.')<0) {
+            ans=ans+ext;
+        }
         return new File(Util.canon(ans));
     }
 
     /** Display "msg" in a dialogbox, and ask the user to choose yes versus no (default==no). */
     public static boolean yesno(JFrame parentFrame, String msg, String yes, String no) {
         return JOptionPane.showOptionDialog(parentFrame, msg, "Question", JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE, null, new Object[]{yes,no}, no)==JOptionPane.YES_OPTION;
+               JOptionPane.WARNING_MESSAGE, null, new Object[]{yes,no}, no)==JOptionPane.YES_OPTION;
     }
 
     /** Display "msg" in a dialogbox, and ask the user to choose "Yes" versus "No" (default==no). */

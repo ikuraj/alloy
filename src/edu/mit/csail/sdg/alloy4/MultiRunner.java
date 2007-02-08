@@ -1,7 +1,6 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import javax.swing.AbstractAction;
@@ -11,7 +10,7 @@ import javax.swing.event.MenuListener;
 /** This class encapsulates a Runnable. */
 
 public final class MultiRunner
-extends AbstractAction implements MenuListener, ActionListener, WindowListener, Runnable {
+extends AbstractAction implements MenuListener, WindowListener, Runnable {
 
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
