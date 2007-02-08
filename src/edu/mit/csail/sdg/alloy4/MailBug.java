@@ -6,16 +6,14 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.lang.Thread.UncaughtExceptionHandler;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -30,9 +28,9 @@ import javax.swing.border.LineBorder;
  * This class asks for permission to email a bug report when an uncaught exception occurs.
  */
 
-public final class MailBug implements UncaughtExceptionHandler, ActionListener {
+public final class MailBug implements UncaughtExceptionHandler {
 
-    /** Construct a new ExirReporter. */
+    /** Construct a new MailBug object. */
     public MailBug() { }
 
     /** The name of the main file being analyzed; "" if unknwon. */
@@ -42,9 +40,9 @@ public final class MailBug implements UncaughtExceptionHandler, ActionListener {
     private String mainfilecontent = "";
 
     /** The list of additional files being included from the main file. */
-    private final Set<String> subfiles = new LinkedHashSet<String>();
+    private final Map<String,String> subfiles = new LinkedHashMap<String,String>();
 
-    /** Removes the info about main file and subfiles. */
+    /** Removes all cached information. */
     public synchronized void clearAll () {
         mainfile="";
         mainfilecontent="";
@@ -52,14 +50,14 @@ public final class MailBug implements UncaughtExceptionHandler, ActionListener {
     }
 
     /** Sets the main file's filename and main file's content. */
-    public synchronized void setMainFile (String filename, String content) {
+    public synchronized void setMainFile (String filename, String fileContent) {
         mainfile=filename;
-        mainfilecontent=content;
+        mainfilecontent=fileContent;
     }
 
-    /** Add a new file to the set of "included files". */
-    public synchronized void addSubFile(String filename) {
-        subfiles.add(filename);
+    /** Adds a new file to the set of "included files". */
+    public synchronized void addSubFile(String filename, String fileContent) {
+        subfiles.put(filename, fileContent);
     }
 
     /** This method is an exception handler for uncaught exceptions. */
@@ -120,8 +118,7 @@ public final class MailBug implements UncaughtExceptionHandler, ActionListener {
         pw.printf("========================= Comment ==========================\n%s\n\n", comment.getText());
         pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
         if (ex!=null) {
-          pw.printf("========================= Exception ========================\n%s\n\n",
-                ex.getClass().toString()+": "+ex.toString());
+          pw.printf("========================= Exception ========================\n"+ex.getClass()+": "+ex+"\n\n");
           pw.printf("========================= Stack Trace ======================\n");
           ex.printStackTrace(pw);
         }
@@ -131,18 +128,23 @@ public final class MailBug implements UncaughtExceptionHandler, ActionListener {
         pw.println("Free memory = "+Runtime.getRuntime().freeMemory());
         pw.println("Total memory = "+Runtime.getRuntime().totalMemory());
         for(Map.Entry<Object,Object> e:System.getProperties().entrySet()) {
-            Object k=e.getKey(); if (k==null) k="null";
-            Object v=e.getValue(); if (v==null) v="null";
-            if (k.equals("line.separator")) continue;
+            Object k=e.getKey(), v=e.getValue();
+            if (k==null) {
+                k="null";
+            }
+            if (v==null) {
+                v="null";
+            }
+            if (k.equals("line.separator")) {
+                continue; // Useless, and it makes the mail harder to read
+            }
             pw.printf("%s = %s\n", k.toString(), v.toString());
         }
         pw.printf("\n\n========================= Main Model =======================\n");
         pw.printf("// %s\n%s\n", mainfile, mainfilecontent);
-        for(String e:subfiles) {
-            String content;
+        for(Map.Entry<String,String> e: subfiles.entrySet()) {
             pw.printf("\n\n========================= Sub Model ========================\n");
-            try {content=Util.readAll(e);} catch(IOException ex2) {content="// IO Exception: "+ex2.getMessage();}
-            pw.printf("// %s\n%s\n", e, content);
+            pw.printf("// %s\n%s\n", e.getKey(), e.getValue());
         }
         pw.printf("\n\n========================= The End ==========================\n\n");
         pw.close();
@@ -153,7 +155,11 @@ public final class MailBug implements UncaughtExceptionHandler, ActionListener {
         try {
             final JFrame statusWindow=new JFrame();
             JButton done=new JButton("Close");
-            done.addActionListener(this);
+            done.addActionListener(new ActionListener() {
+                public final void actionPerformed(ActionEvent e) {
+                    System.exit(0);
+                }
+            });
             status=new JTextArea("Sending the bug report... please wait...");
             status.setEditable(false);
             status.setLineWrap(true);
@@ -172,21 +178,23 @@ public final class MailBug implements UncaughtExceptionHandler, ActionListener {
             statusWindow.setSize(600,200);
             statusWindow.setLocation(w/2-300,h/2-100);
             statusWindow.setVisible(true);
-        } catch(Exception exception) { }
+        } catch(Exception exception) {
+            // Not much we can do; we are already shutting down the Application already...
+        }
         String result=postBug(sw.toString());
-        if (status!=null) status.setText(result);
+        if (status!=null) {
+            status.setText(result);
+        }
     }
 
     /** Post the given string via POST HTTP request. */
     private static String postBug(String bugReport) {
-        final String NEW_LINE = System.getProperty("line.separator");
         final String BUG_POST_URL = "http://alloy.mit.edu/postbug4.php";
         OutputStreamWriter out = null;
         BufferedReader in = null;
         try {
             // open the URL connection
-            URL url = new URL(BUG_POST_URL);
-            URLConnection connection = url.openConnection();
+            URLConnection connection = (new URL(BUG_POST_URL)).openConnection();
             connection.setDoOutput(true);
             // write the bug report to the cgi script
             out = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
@@ -197,7 +205,7 @@ public final class MailBug implements UncaughtExceptionHandler, ActionListener {
             StringBuilder report = new StringBuilder();
             for (String inputLine = in.readLine(); inputLine != null; inputLine = in.readLine()) {
                 report.append(inputLine);
-                report.append(NEW_LINE);
+                report.append('\n');
             }
             return report.toString();
         } catch (Exception ex) {
@@ -205,11 +213,20 @@ public final class MailBug implements UncaughtExceptionHandler, ActionListener {
             +"Please email alloy.mit.edu directly and we will work to fix the problem.\n\n"
             +"(Bug posting failed due to Java exception: "+ex.toString()+")";
         } finally {
-            if (out != null) { try { out.close(); } catch(Exception ignore) { } }
-            if (in != null) { try { in.close(); } catch(Exception ignore) { } }
+            if (out != null) {
+                try {
+                    out.close();
+                } catch(Exception ignore) {
+                    // Nothing further we can do. We already tried closing it...
+                }
+            }
+            if (in != null) {
+                try {
+                    in.close();
+                } catch(Exception ignore) {
+                    // Nothing further we can do. We already tried closing it...
+                }
+            }
         }
     }
-
-    /** Called when the user clicks the CLOSE button. */
-    public void actionPerformed(ActionEvent e) { System.exit(1); }
 }
