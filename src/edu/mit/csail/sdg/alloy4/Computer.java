@@ -1,7 +1,7 @@
 package edu.mit.csail.sdg.alloy4;
 
 /**
- * This interface defines a compute() method that take a String input and produces a String output.
+ * This defines a compute() method that take a String input and produces a String output.
  */
 
 public interface Computer {

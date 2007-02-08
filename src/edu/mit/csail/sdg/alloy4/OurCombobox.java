@@ -38,7 +38,7 @@ public final class OurCombobox extends JComboBox {
     private final Object key;
 
     /**
-     * This interface defines getIcon/getText/getValue/setValue methods.
+     * This defines getIcon/getText/getValue/setValue methods.
      *
      * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
      */

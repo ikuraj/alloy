@@ -30,10 +30,10 @@ import javax.swing.border.LineBorder;
  * This class asks for permission to email a bug report when an uncaught exception occurs.
  */
 
-public final class ExitReporter implements UncaughtExceptionHandler, ActionListener {
+public final class MailBug implements UncaughtExceptionHandler, ActionListener {
 
     /** Construct a new ExirReporter. */
-    public ExitReporter() { }
+    public MailBug() { }
 
     /** The name of the main file being analyzed; "" if unknwon. */
     private String mainfile = "";

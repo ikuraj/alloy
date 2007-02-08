@@ -51,7 +51,7 @@ public final class OurBinaryCheckbox extends JPanel {
     private final BinaryGetterSetter gs;
 
     /**
-     * This interface defines get/set methods.
+     * This defines get/set methods.
      *
      * <p><b>Thread Safety:</b> Can be called only by the AWT thread.
      */

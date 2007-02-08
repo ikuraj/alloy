@@ -67,7 +67,7 @@ public final class OurTabbedEditor {
     /** Border color for each tab. */
     private static final Color border=Color.LIGHT_GRAY;
 
-    /** This interface defines the list of events this tabbed editor may send to the parent. */
+    /** This defines notifyChange and notifyFocusGained events this tabbed editor may send to the parent. */
     public interface Parent {
         /** This method is called when a tab is added or removed, or if the text is modified, or if cursor in text area is moved. */
         public void notifyChange();
