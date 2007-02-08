@@ -3,9 +3,9 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * Immutable; represents a fatal error.
  *
- * <p><b>Invariant:</b>      pos!=null && msg!=null
+ * <p><b>Invariant:</b>       pos!=null && msg!=null
  *
- * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
+ * <p><b>Thread Safety:</b>   Safe (since objects of this class are immutable).
  */
 
 public final class ErrorFatal extends Err {
