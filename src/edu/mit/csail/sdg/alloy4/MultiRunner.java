@@ -10,10 +10,13 @@ import javax.swing.event.MenuListener;
 
 /** This class encapsulates a Runnable. */
 
-@SuppressWarnings("serial")
-public final class MultiRunner extends AbstractAction implements MenuListener, ActionListener, WindowListener, Runnable {
+public final class MultiRunner
+extends AbstractAction implements MenuListener, ActionListener, WindowListener, Runnable {
 
-    /** This defines a Runnable that can be encapsulated in a MultiRunner. */
+    /** This silences javac's warning about missing serialVersionUID. */
+	private static final long serialVersionUID = 1L;
+
+	/** This defines a Runnable that can be encapsulated in a MultiRunner. */
     public interface MultiRunnable {
         /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
         public boolean run(int key);
@@ -32,22 +35,34 @@ public final class MultiRunner extends AbstractAction implements MenuListener, A
 
     /** Constructs a new runner to encapsulate the given runnable that takes an int argument. */
     public MultiRunner(MultiRunnable runnable, int key) {
-        this.key=key; this.runnable=runnable; this.arg=null;
+    	this(runnable, key, "");
     }
 
     /** Constructs a new runner to encapsulate the given runnable that takes an int argument and a String argument. */
     public MultiRunner(MultiRunnable runnable, int key, String arg) {
-        this.key=key; this.runnable=runnable; this.arg=arg;
+        this.key=key;
+        this.runnable=runnable;
+        this.arg=arg;
     }
 
     /** This method is defined in java.lang.runnable */
-    public void run() { if (arg==null) runnable.run(key); else runnable.run(key,arg); }
+    public void run() {
+    	if (arg==null) {
+    		runnable.run(key);
+    	} else {
+    		runnable.run(key,arg);
+    	}
+    }
 
     /** This method is defined in java.awt.event.ActionListener; (this implementation calls this.run()) */
-    public void actionPerformed(ActionEvent e) { run(); }
+    public void actionPerformed(ActionEvent e) {
+    	run();
+    }
 
     /** This method is defined in javax.swing.event.MenuListener; (this implementation calls this.run()) */
-    public void menuSelected(MenuEvent e) { run(); }
+    public void menuSelected(MenuEvent e) {
+    	run();
+    }
 
     /** This method is defined in javax.swing.event.MenuListener; (this implementation does nothing) */
     public void menuDeselected(MenuEvent e) { }
@@ -56,7 +71,9 @@ public final class MultiRunner extends AbstractAction implements MenuListener, A
     public void menuCanceled(MenuEvent e) { }
 
     /** This method is defined in java.awt.event.WindowListener; (this implementation calls this.run()) */
-    public void windowClosing(WindowEvent e) { run(); }
+    public void windowClosing(WindowEvent e) {
+    	run();
+    }
 
     /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
     public void windowClosed(WindowEvent e) { }
