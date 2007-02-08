@@ -36,9 +36,13 @@ public final class MacUtil {
      * @param quit - when the user clicks on Quit, we'll call handler.run(quit)
      */
     public synchronized static void registerApplicationListener
-        (final MultiRunnable handler, final int reopen, final int about, final int open, final int quit) {
-        if (application==null) application=new Application();
-        if (listener!=null) application.removeApplicationListener(listener);
+    (final MultiRunnable handler, final int reopen, final int about, final int open, final int quit) {
+        if (application==null) {
+            application=new Application();
+        }
+        if (listener!=null) {
+            application.removeApplicationListener(listener);
+        }
         listener=new ApplicationAdapter() {
             @Override public void handleReOpenApplication (ApplicationEvent arg) {
                 SwingUtilities.invokeLater(new MultiRunner(handler, reopen));
@@ -48,8 +52,7 @@ public final class MacUtil {
                 SwingUtilities.invokeLater(new MultiRunner(handler, about));
             }
             @Override public void handleOpenFile (ApplicationEvent arg0) {
-                final String filename=arg0.getFilename();
-                SwingUtilities.invokeLater(new MultiRunner(handler, open, filename));
+                SwingUtilities.invokeLater(new MultiRunner(handler, open, arg0.getFilename()));
             }
             @Override public void handleQuit (ApplicationEvent arg0) {
                 arg0.setHandled(false); // "false" is correct; some documentation on apple.com claims otherwise.
