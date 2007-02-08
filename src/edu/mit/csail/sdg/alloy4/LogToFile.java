@@ -70,7 +70,7 @@ public final class LogToFile extends Log {
     /** Commits all outstanding writes (if the logger is buffered). */
     @Override public synchronized void flush() { }
 
-    /** Returns the current length of document. */
+    /** Returns the current size of the file. */
     @Override public synchronized int getLength() {
         return length;
     }

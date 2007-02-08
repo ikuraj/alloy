@@ -5,8 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
 /**
- * Mutable; this implements a String-to-Value map that supports the undo operation.
- * Null key and null values are allowed.
+ * Mutable; this implements a String-to-Value map that supports the undo operation; null key and value are allowed.
  *
  * <p>   To be more precise, every key is internally mapped to a list of values.
  * <br>  The put(X,Y)  method appends Y onto the end of X's list.
@@ -41,7 +40,7 @@ public final class Env<V> {
      */
     private final Map<String,LinkedList<V>> map2=new LinkedHashMap<String,LinkedList<V>>();
 
-    /** Constructs an initially empty environement. */
+    /** Constructs an initially empty environment. */
     public Env () { }
 
     /**

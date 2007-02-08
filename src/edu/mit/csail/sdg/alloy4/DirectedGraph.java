@@ -5,8 +5,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 
 /**
- * Mutable; this implements a graph with nodes and directed edges.
- * Null node is allowed.
+ * Mutable; this implements a graph with nodes and directed edges; null node is allowed.
  *
  * <p> Note: it uses reference identity for comparing nodes rather than using N.equals()
  *

@@ -13,11 +13,11 @@ import javax.swing.event.MenuListener;
 @SuppressWarnings("serial")
 public final class MultiRunner extends AbstractAction implements MenuListener, ActionListener, WindowListener, Runnable {
 
-    /** This defines a Runnable that can be encapsulates in a MultiRunner. */
+    /** This defines a Runnable that can be encapsulated in a MultiRunner. */
     public interface MultiRunnable {
-        /** Returns true if the method succeeds; you can call this method only from the AWT thread. */
+        /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
         public boolean run(int key);
-        /** Returns true if the method succeeds; you can call this method only from the AWT thread. */
+        /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
         public boolean run(int key,String arg);
     }
 

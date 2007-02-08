@@ -53,12 +53,12 @@ public final class IdentitySet<T> implements Iterable<T> {
         }
     }
 
-    /** Returns whether the element x is in the set. */
+    /** Returns whether the given element is in the set. */
     public synchronized boolean contains(T item) {
         return hashmap.containsKey(item);
     }
 
-    /** Adds the element x into the set if it's not in the set already. */
+    /** Adds the given element into the set if it's not in the set already. */
     public synchronized void add(T item) {
         if (!hashmap.containsKey(item)) {
             hashmap.put(item,null);

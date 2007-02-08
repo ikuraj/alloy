@@ -36,7 +36,7 @@ public class Log {
     public void flush() { }
 
     /**
-     * This method is supposed to return the current size of the log
+     * This method is supposed to return the current number of bytes in the log
      * (but this default implementation always returns 0).
      */
     public int getLength() { return 0; }
