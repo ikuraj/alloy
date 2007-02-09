@@ -141,8 +141,11 @@ public final class Util {
         if (onWindows() || j<=2) return;
         String[] realargs=new String[j];
         for(int i=0; i<j; i++) realargs[i]=args[i];
-        try {Runtime.getRuntime().exec(realargs).waitFor();}
-        catch (Exception ex) {harmless("chmod",ex);} // We only intend to make a best effort
+        try {
+            Runtime.getRuntime().exec(realargs).waitFor();
+        } catch (Exception ex) {
+            // We only intend to make a best effort
+        }
     }
 
     /**
@@ -210,12 +213,6 @@ public final class Util {
         if (n>0 && (n%10)==3 && (n%100)!=13) return n+"rd";
         return n+"th";
     }
-
-    /**
-     * This method is called when a harmless or impossible exception occurred;
-     * now it does nothing, but we could choose to log the occurrence instead.
-     */
-    public static void harmless(String message, Exception ex) { }
 
     /**
      * Write a String into a PrintWriter, and encode special characters using XML-specific encoding.

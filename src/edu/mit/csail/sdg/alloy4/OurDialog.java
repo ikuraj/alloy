@@ -22,6 +22,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import static javax.swing.JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
@@ -182,10 +184,7 @@ public final class OurDialog {
                     return description;
                 }
             });
-            if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION) {
-                return null;
-            }
-            if (open.getSelectedFile()==null) {
+            if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION || open.getSelectedFile()==null) {
                 return null;
             }
             ans=open.getSelectedFile().getPath();
@@ -198,19 +197,29 @@ public final class OurDialog {
 
     /** Display "msg" in a dialogbox, and ask the user to choose yes versus no (default==no). */
     public static boolean yesno(JFrame parentFrame, String msg, String yes, String no) {
-        return JOptionPane.showOptionDialog(parentFrame, msg, "Question", JOptionPane.YES_NO_OPTION,
-               JOptionPane.WARNING_MESSAGE, null, new Object[]{yes,no}, no)==JOptionPane.YES_OPTION;
+        return JOptionPane.showOptionDialog(parentFrame,
+                msg,
+                "Question",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                new Object[]{yes,no},
+                no) == JOptionPane.YES_OPTION;
     }
 
     /** Display "msg" in a dialogbox, and ask the user to choose "Yes" versus "No" (default==no). */
-    public static boolean yesno(JFrame parentFrame, String msg) { return yesno(parentFrame, msg, "Yes", "No"); }
+    public static boolean yesno(JFrame parentFrame, String msg) {
+        return yesno(parentFrame, msg, "Yes", "No");
+    }
 
     /** Display a modal dialog window containing the "objects"; returns true iff the user clicks Ok. */
     public static boolean getInput(JFrame parentFrame, String title, Object... objects) {
         Object main="Ok";
         for(int i=0; i<objects.length; i++) {
-            if (objects[i] instanceof JTextField) { main=objects[i]; break; }
-            if (objects[i] instanceof JTextArea) { main=objects[i]; break; }
+            if (objects[i] instanceof JTextField || objects[i] instanceof JTextArea) {
+                main=objects[i];
+                break;
+            }
         }
         final JOptionPane pane=new JOptionPane(
             objects,
@@ -220,17 +229,24 @@ public final class OurDialog {
             new Object[]{"Ok","Cancel"},
             main);
         final JDialog jd=pane.createDialog(parentFrame,title);
-        for(int i=0; i<objects.length; i++) {
-            if (!(objects[i] instanceof JTextField || objects[i] instanceof JCheckBox)) continue;
+        for (int i=0; i<objects.length; i++) {
+            if (!(objects[i] instanceof JTextField || objects[i] instanceof JCheckBox)) {
+                continue;
+            }
             JComponent x=(JComponent)(objects[i]);
             x.addKeyListener(new KeyListener() {
-                public void keyPressed(KeyEvent e) { if (e.getKeyCode()==KeyEvent.VK_ENTER) {pane.setValue("Ok"); jd.dispose();} }
-                public void keyTyped(KeyEvent e) {}
-                public void keyReleased(KeyEvent e) {}
+                public final void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode()==KeyEvent.VK_ENTER) {
+                        pane.setValue("Ok");
+                        jd.dispose();
+                    }
+                }
+                public final void keyTyped(KeyEvent e) {}
+                public final void keyReleased(KeyEvent e) {}
             });
         }
         jd.setVisible(true);
-        if (pane.getValue()=="Ok") return true; else return false;
+        return pane.getValue()=="Ok";
     }
 
     /** Display a simple window showing some text. */
@@ -238,15 +254,16 @@ public final class OurDialog {
         final JFrame window = new JFrame(title);
         final JButton done = new JButton("Close");
         done.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { window.dispose(); }
+            public final void actionPerformed(ActionEvent e) {
+                window.dispose();
+            }
         });
         JTextArea textarea = new JTextArea(text);
         textarea.setBackground(Color.WHITE);
         textarea.setEditable(false);
         textarea.setLineWrap(autoLineWrap);
         textarea.setWrapStyleWord(autoLineWrap);
-        JScrollPane scrollPane = new JScrollPane(textarea,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        JScrollPane scrollPane = new JScrollPane(textarea, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
         window.getContentPane().setLayout(new BorderLayout());
         window.getContentPane().add(scrollPane, BorderLayout.CENTER);
         window.getContentPane().add(done, BorderLayout.SOUTH);
@@ -270,10 +287,14 @@ public final class OurDialog {
         final JFrame window = new JFrame(title);
         final JButton done = new JButton("Close");
         done.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { window.dispose(); }
+            public final void actionPerformed(ActionEvent e) {
+                window.dispose();
+            }
         });
-        final JEditorPane textarea = new JEditorPane("text/html",
-            "<html><body style=\"font:14pt Verdana;\">"+(welcomeHtmlMessage.trim())+"<br><b>Eval&gt;</b>&nbsp;</body></html>");
+        final JEditorPane textarea = new JEditorPane(
+            "text/html",
+            "<html><body style=\"font:14pt Verdana;\">"
+            +(welcomeHtmlMessage.trim())+"<br><b>Eval&gt;</b>&nbsp;</body></html>");
         final Document doc = textarea.getDocument();
         final IntegerBox box = new IntegerBox(doc.getLength()); // Stores the caret position right after the latest "Eval>&nbsp;"
         textarea.addCaretListener(new CaretListener() {
@@ -286,36 +307,55 @@ public final class OurDialog {
         textarea.addKeyListener(new KeyListener() {
             public final void keyTyped(KeyEvent e) {
                 // If the caret is right after "Eval>", and the user hits BACKSPACE, this will restore the deleted space
-                while(doc.getLength()<box.get()) { try{doc.insertString(doc.getLength()," ",null);} catch(BadLocationException ex){} }
+                while(doc.getLength()<box.get()) {
+                    try {
+                        doc.insertString(doc.getLength()," ",null);
+                    } catch(BadLocationException ex) {
+                        // Should not happen
+                    }
+                }
                 // If the caret is before "Eval>", this will move the cursor to the end of the document before processing the key
                 int c=textarea.getCaretPosition(), b=box.get(), d=doc.getLength();
-                if (c<b) textarea.setCaretPosition(d);
+                if (c<b) {
+                    textarea.setCaretPosition(d);
+                }
                 // If the user hit ENTER, then...
-                if (e.getKeyChar()=='\n' || e.getKeyChar()=='\r') try {
+                if (e.getKeyChar()!='\n' && e.getKeyChar()!='\r') return;
+                try {
                     // Send the query to the computer
                     String ans=null, err=null;
-                    try { ans=linewrap(computer.compute(doc.getText(b,d-b))); }
-                    catch(Exception ex) { err=linewrap(ex.toString()); }
+                    try {
+                        ans=linewrap(computer.compute(doc.getText(b,d-b)));
+                    } catch(Exception ex) {
+                        err=linewrap(ex.toString());
+                    }
                     // Find out whether there was already a linebreak at the end of the user input or not
                     String n=doc.getText(d-1,1);
-                    if (n.charAt(0)=='\r' || n.charAt(0)=='\n') n="   "; else n="\n   ";
+                    n = (n.charAt(0)=='\r' || n.charAt(0)=='\n') ? "   " : "\n   ";
                     // Add a linebreak if needed, then add the answer, then add another "Eval> " prompt.
-                    if (err!=null) doc.insertString(d, n+err+"\n", red); else doc.insertString(d, n+ans+"\n", blue);
+                    if (err!=null) {
+                        doc.insertString(d, n+err+"\n", red);
+                    } else {
+                        doc.insertString(d, n+ans+"\n", blue);
+                    }
                     d=doc.getLength();
                     doc.insertString(d, "\nEval> ", null);
-                    if (doc instanceof DefaultStyledDocument) ((DefaultStyledDocument)doc).setCharacterAttributes(d, 6, bold, false);
+                    if (doc instanceof DefaultStyledDocument) {
+                        ((DefaultStyledDocument)doc).setCharacterAttributes(d, 6, bold, false);
+                    }
                     d=doc.getLength();
                     textarea.setCaretPosition(d);
                     box.set(d);
-                } catch(Exception ex) {}
+                } catch(Exception ex) {
+                    // Not fatal
+                }
             }
-            public void keyPressed(KeyEvent e) { }
-            public void keyReleased(KeyEvent e) { }
+            public final void keyPressed(KeyEvent e) { }
+            public final void keyReleased(KeyEvent e) { }
         });
         textarea.setBackground(Color.WHITE);
         textarea.setEditable(true);
-        JScrollPane scrollPane = new JScrollPane(textarea,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        JScrollPane scrollPane = new JScrollPane(textarea, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
         window.getContentPane().setLayout(new BorderLayout());
         window.getContentPane().add(scrollPane, BorderLayout.CENTER);
         window.getContentPane().add(done, BorderLayout.SOUTH);
@@ -330,16 +370,25 @@ public final class OurDialog {
     /** Try to wrap the input to about 70 characters per line; however, if a token is too longer, we won't break it. */
     private static String linewrap(String msg) {
         int lb=msg.indexOf('\n');
-        if (lb>=0) return linewrap(msg.substring(0,lb))+"\n   "+linewrap(msg.substring(lb+1));
+        if (lb>=0) {
+            return linewrap(msg.substring(0,lb))+"\n   "+linewrap(msg.substring(lb+1));
+        }
         StringBuilder sb=new StringBuilder();
-        String indentation="   ";
         StringTokenizer tokenizer=new StringTokenizer(msg.trim(), "\r\n\t ");
-        int max=70;
-        int now=0;
+        int max=70, now=0;
         while(tokenizer.hasMoreTokens()) {
             String x=tokenizer.nextToken();
-            if (now+1+x.length() > max) { if (now>0) sb.append("\n"+indentation); sb.append(x); now=x.length(); }
-            else { if (now>0) {now++; sb.append(' ');} sb.append(x); now=now+x.length(); }
+            if (now>0) {
+                if (now+1+x.length() > max) {
+                    now=0;
+                    sb.append("\n   ");
+                } else {
+                    now++;
+                    sb.append(' ');
+                }
+            }
+            now=now+x.length();
+            sb.append(x);
         }
         return sb.toString();
     }
