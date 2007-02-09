@@ -17,8 +17,11 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
+
 import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 
 /**
@@ -324,5 +327,28 @@ public final class OurUtil {
         ans.setMinimumSize(new Dimension(50, 50));
         ans.setBorder(new EmptyBorder(0,0,0,0));
         return ans;
+    }
+
+    /**
+     * Constructs a new SplitPane containing the two components given as arguments
+     * @param orientation - the orientation (HORIZONTAL_SPLIT or VERTICAL_SPLIT)
+     * @param leftComp - the left component (if horizontal) or top component (if vertical)
+     * @param rightComp - the right component (if horizontal) or bottom component (if vertical)
+     * @param initialDividerLocation - the initial divider location (in pixels)
+     */
+    public static JSplitPane splitpane
+    (int orientation, Component leftComp, Component rightComp, int initialDividerLocation) {
+        JSplitPane x = new JSplitPane(orientation, leftComp, rightComp);
+        x.setBorder(null);
+        x.setContinuousLayout(true);
+        x.setDividerLocation(initialDividerLocation);
+        x.setOneTouchExpandable(false);
+        x.setResizeWeight(0.5);
+        if (Util.onMac()) {
+            // This makes the border look nicer on Mac OS X
+            boolean h = (orientation == JSplitPane.HORIZONTAL_SPLIT);
+            ((BasicSplitPaneUI)(x.getUI())).getDivider().setBorder(new OurBorder(!h, h, !h, h));
+        }
+        return x;
     }
 }
