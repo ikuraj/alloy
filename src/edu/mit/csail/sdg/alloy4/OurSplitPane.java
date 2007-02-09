@@ -35,6 +35,8 @@ public final class OurSplitPane extends JSplitPane {
         setResizeWeight(0.5);
         if (Util.onMac()) {
         	// ((BasicSplitPaneUI)getUI()).getDivider().setBorder(new NiceBorder(orientation));
+        	boolean h = (orientation == HORIZONTAL_SPLIT);
+       		((BasicSplitPaneUI)getUI()).getDivider().setBorder(new OurBorder(!h, h, !h, h));
         }
     }
 
