@@ -34,14 +34,26 @@ public final class OurMenu extends JMenu {
      */
     public OurMenu
     (JMenuBar parent, String label, int mnemonic, final MultiRunnable func, final int key) {
-        super(label,false);
-        if (mnemonic!=-1 && !Util.onMac()) setMnemonic(mnemonic);
+        super(label, false);
+        if (mnemonic!=-1 && !Util.onMac()) {
+        	setMnemonic(mnemonic);
+        }
         addMenuListener(new MenuListener() {
-            public final void menuSelected(MenuEvent e) { if (func!=null) func.run(key); }
-            public final void menuDeselected(MenuEvent e) { enableChildren(OurMenu.this); }
-            public final void menuCanceled(MenuEvent e) { enableChildren(OurMenu.this); }
+            public final void menuSelected (MenuEvent e) {
+            	if (func!=null) {
+            		func.run(key);
+            	}
+            }
+            public final void menuDeselected (MenuEvent e) {
+            	enableChildren(OurMenu.this);
+            }
+            public final void menuCanceled (MenuEvent e) {
+            	enableChildren(OurMenu.this);
+            }
         });
-        if (parent!=null) parent.add(this);
+        if (parent!=null) {
+        	parent.add(this);
+        }
     }
 
     /**
@@ -59,8 +71,12 @@ public final class OurMenu extends JMenu {
     (Icon icon, String label, boolean enabled, int mnemonic, int accel, MultiRunnable func, int key) {
         // OurMenuItem's constructor will add the new item into the list, so we don't have to call add() here.
         OurMenuItem ans = new OurMenuItem(this, label, mnemonic, accel, new MultiRunner(func,key));
-        if (!enabled) ans.setEnabled(false);
-        if (icon!=null) ans.setIcon(icon);
+        if (!enabled) {
+        	ans.setEnabled(false);
+        }
+        if (icon!=null) {
+        	ans.setIcon(icon);
+        }
         return ans;
     }
 
@@ -78,13 +94,14 @@ public final class OurMenu extends JMenu {
     (Icon icon, String label, boolean enabled, int accel, MultiRunnable func, int key) {
         // OurMenuItem's constructor will add the new item into the list, so we don't have to call add() here.
         OurMenuItem ans = new OurMenuItem(this, label, accel, new MultiRunner(func,key));
-        if (!enabled) ans.setEnabled(false);
-        if (icon!=null) ans.setIcon(icon);
+        if (!enabled) {
+        	ans.setEnabled(false);
+        }
+        if (icon!=null) {
+        	ans.setIcon(icon);
+        }
         return ans;
     }
-
-    /** Convenience method that recursively enables every JMenu and JMenuItem inside. */
-    public void enableChildren() { enableChildren(this); }
 
     /**
      * Convenience method that recursively enables every JMenu and JMenuItem inside "menu".
@@ -93,8 +110,16 @@ public final class OurMenu extends JMenu {
     private static void enableChildren(JMenu menu) {
         for(int i=0; i<menu.getMenuComponentCount(); i++) {
             Component obj=menu.getMenuComponent(i);
-            if (obj instanceof JMenuItem) ((JMenuItem)obj).setEnabled(true);
-            else if (obj instanceof JMenu) enableChildren((JMenu)obj);
+            if (obj instanceof JMenuItem) {
+            	((JMenuItem)obj).setEnabled(true);
+            } else if (obj instanceof JMenu) {
+            	enableChildren((JMenu)obj);
+            }
         }
+    }
+
+    /** Convenience method that recursively enables every JMenu and JMenuItem inside. */
+    public void enableChildren() {
+    	enableChildren(this);
     }
 }

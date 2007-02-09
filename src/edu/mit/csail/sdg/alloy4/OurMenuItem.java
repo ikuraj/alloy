@@ -29,15 +29,23 @@ public final class OurMenuItem extends JMenuItem {
      */
     public OurMenuItem(JMenu parent, String label, int mnemonic, int accel, final Runnable func) {
         super(label);
-        if (mnemonic!=-1) setMnemonic(mnemonic);
+        if (mnemonic!=-1) {
+        	setMnemonic(mnemonic);
+        }
         if (accel!=-1) {
             int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
             setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
         }
-        if (func!=null) addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { func.run(); }
-        });
-        if (parent!=null) parent.add(this);
+        if (func!=null) {
+        	addActionListener(new ActionListener() {
+        		public final void actionPerformed(ActionEvent e) {
+        			func.run();
+        		}
+        	});
+        }
+        if (parent!=null) {
+        	parent.add(this);
+        }
     }
 
     /**
@@ -51,7 +59,11 @@ public final class OurMenuItem extends JMenuItem {
         super(label);
         int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
         setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.SHIFT_MASK));
-        if (func!=null) addActionListener(func);
-        if (parent!=null) parent.add(this);
+        if (func!=null) {
+        	addActionListener(func);
+        }
+        if (parent!=null) {
+        	parent.add(this);
+        }
     }
 }

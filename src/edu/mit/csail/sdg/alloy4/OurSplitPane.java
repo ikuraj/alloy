@@ -12,8 +12,6 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
  * Graphical splitpane with better looking border than the default JSplitPane.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
- *
- * @author Code adapted from Alloy3
  */
 
 public final class OurSplitPane extends JSplitPane {
@@ -35,7 +33,9 @@ public final class OurSplitPane extends JSplitPane {
         setDividerLocation(initialDividerLocation);
         setOneTouchExpandable(false);
         setResizeWeight(0.5);
-        if (Util.onMac()) ((BasicSplitPaneUI)getUI()).getDivider().setBorder(new NiceBorder(orientation));
+        if (Util.onMac()) {
+        	// ((BasicSplitPaneUI)getUI()).getDivider().setBorder(new NiceBorder(orientation));
+        }
     }
 
     /**
