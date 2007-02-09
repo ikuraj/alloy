@@ -15,7 +15,10 @@ public final class Pair<A,B> {
     public final B b;
 
     /** Constructs a new Pair object (a,b). */
-    public Pair(A a, B b) { this.a=a; this.b=b; }
+    public Pair(A a, B b) {
+        this.a=a;
+        this.b=b;
+    }
 
     /** Returns a hashcode based on (a==null?0:a.hashCode()) and (b==null?0:b.hashCode()). */
     @Override public int hashCode() {
@@ -26,11 +29,13 @@ public final class Pair<A,B> {
 
     /** Pairs (a1,b1) and (a2,b2) are equal iff a1.equals(a2) and b1.equals(b2). */
     @Override public boolean equals(Object that) {
-        if (this==that) return true;
-        if (!(that instanceof Pair)) return false;
+        if (this==that) {
+            return true;
+        }
+        if (!(that instanceof Pair)) {
+            return false;
+        }
         Pair p=(Pair)that;
-        if (a==null) { if (p.a!=null) return false; } else { if (!a.equals(p.a)) return false; }
-        if (b==null) { if (p.b!=null) return false; } else { if (!b.equals(p.b)) return false; }
-        return true;
+        return (a==null ? p.a==null : a.equals(p.a)) && (b==null ? p.b==null : b.equals(p.b));
     }
 }

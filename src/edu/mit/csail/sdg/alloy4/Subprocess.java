@@ -40,7 +40,9 @@ public final class Subprocess extends TimerTask {
      * Synchronized method that reads the output from the process
      * (Note: you must call waitFor() first)
      */
-    public synchronized String getOutput() { if (result==null) return ""; else return result; }
+    public synchronized String getOutput() {
+        return result==null ? "" : result;
+    }
 
     private static Timer stopper = new Timer();
 
@@ -59,44 +61,78 @@ public final class Subprocess extends TimerTask {
         thread0.start();
         thread1.start();
         thread2.start();
-        if (timeLimit>0) stopper.schedule(this, ((long)timeLimit)*1000L);
+        if (timeLimit>0) {
+            stopper.schedule(this, ((long)timeLimit)*1000L);
+        }
     }
 
     /** This method is called from a Timer when the allotted time has expired. */
     public void run() {
         Process p;
-        synchronized(this) {p=process; process=null; if (result==null) result="Error: time out.";}
-        if (p!=null) { p.destroy(); }
+        synchronized(this) {
+            p=process;
+            process=null;
+            if (result==null) {
+                result="Error: time out.";
+            }
+        }
+        if (p!=null) {
+            p.destroy();
+        }
     }
 
     /** Wait for the process to finish and return its exit code (if we detected an error, we will return -1). */
     public int waitFor() {
         Process p;
-        synchronized(this) {p=process;}
+        synchronized(this) {
+            p=process;
+        }
         try {
-            if (p==null) return -1;
+            if (p==null) {
+                return -1;
+            }
             int i=0, n=p.waitFor();
-            synchronized(this) {process=null;}
+            synchronized(this) {
+                process=null;
+            }
             while(true) {
-                synchronized(this) {if (stdin!=null && stdout!=null && stderr!=null) break;}
-                i++; if (i>10) synchronized(this) { result="Error: Timeout from the process.\n"; return -1; }
+                synchronized(this) {
+                    if (stdin!=null && stdout!=null && stderr!=null) break;
+                }
+                i++;
+                if (i>10) {
+                    synchronized(this) {
+                        result="Error: Timeout from the process.\n";
+                        return -1;
+                    }
+                }
                 Thread.sleep(500);
             }
             synchronized(this) {
-                if (result!=null && result.startsWith("Error")) return -1;
-                stdin=stdin.trim(); if (stdin.length()>0) stdin=stdin+"\n";
-                stdout=stdout.trim(); if (stdout.length()>0) stdout=stdout+"\n";
+                if (result!=null && result.startsWith("Error")) {
+                    return -1;
+                }
+                stdin=stdin.trim();
+                if (stdin.length()>0) {
+                    stdin=stdin+"\n";
+                }
+                stdout=stdout.trim();
+                if (stdout.length()>0) {
+                    stdout=stdout+"\n";
+                }
                 result=stdin+stdout+stderr.trim();
-                if (stdin.startsWith("Error")) return -1;
-                if (stdout.startsWith("Error")) return -1;
-                if (stderr.startsWith("Error")) return -1;
+                if (stdin.startsWith("Error") || stdout.startsWith("Error") || stderr.startsWith("Error")) {
+                    return -1;
+                }
             }
             return n;
         }
         catch (InterruptedException e) {
             synchronized(this) {
                 process=null;
-                if (result==null || !result.startsWith("Error")) result="Error: "+e.getMessage();
+                if (result==null || !result.startsWith("Error")) {
+                    result="Error: "+e.getMessage();
+                }
             }
             p.destroy();
             return -1;
@@ -110,7 +146,10 @@ public final class Subprocess extends TimerTask {
         /** The text to write. */
         private final String text;
         /** Constructs the object that shuttles bytes from "text" into the output stream "stream". */
-        public InPipe(OutputStream stream, String text) { this.stream=stream; this.text=text; }
+        public InPipe(OutputStream stream, String text) {
+            this.stream=stream;
+            this.text=text;
+        }
         /** This is the main run method that does the copying. */
         public void run() {
             String result="";
@@ -125,8 +164,14 @@ public final class Subprocess extends TimerTask {
             } catch(IOException ex) {
                 result="Error: Input stream failure.";
             }
-            try {stream.close();} catch(IOException ex) {result="Error: Input stream failure.";}
-            synchronized(Subprocess.this) {stdin=result;}
+            try {
+                stream.close();
+            } catch(IOException ex) {
+                result="Error: Input stream failure.";
+            }
+            synchronized(Subprocess.this) {
+                stdin=result;
+            }
         }
     }
 
@@ -149,13 +194,33 @@ public final class Subprocess extends TimerTask {
             try {
                 while(true) {
                     int n=input.read(buffer);
-                    if (n<=0) break;
-                    for(int i=0;i<n;i++) output.append((char)(buffer[i]));
+                    if (n<=0) {
+                        break;
+                    }
+                    for(int i=0;i<n;i++) {
+                        output.append((char)(buffer[i]));
+                    }
                 }
-            } catch (IOException ex) { text="Error: "+ex.getMessage()+"\n"; }
-            try { input.close(); } catch(IOException ex) { if (text.length()==0) text="Error: "+ex.getMessage()+"\n"; }
-            if (text.length()==0) text=output.toString();
-            synchronized(Subprocess.this) { if (isStdout) stdout=text; else stderr=text; }
+            } catch (IOException ex) {
+                text="Error: "+ex.getMessage()+"\n";
+            }
+            try {
+                input.close();
+            } catch(IOException ex) {
+                if (text.length()==0) {
+                    text="Error: "+ex.getMessage()+"\n";
+                }
+            }
+            if (text.length()==0) {
+                text=output.toString();
+            }
+            synchronized(Subprocess.this) {
+                if (isStdout) {
+                    stdout=text;
+                } else {
+                    stderr=text;
+                }
+            }
         }
     }
 }

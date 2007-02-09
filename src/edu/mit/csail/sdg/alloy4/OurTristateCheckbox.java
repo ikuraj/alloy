@@ -98,9 +98,16 @@ public final class OurTristateCheckbox extends JPanel {
         box.addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) {
                 Boolean old=gs.get(key);
-                if (old==null) { gs.set(key,Boolean.TRUE); box.setIcon(on); }
-                else if (old.booleanValue()) { gs.set(key,Boolean.FALSE); box.setIcon(off); }
-                else { gs.set(key,null); box.setIcon(gs.getInherited(key)?ion:ioff); }
+                if (old==null) {
+                    gs.set(key,Boolean.TRUE);
+                    box.setIcon(on);
+                } else if (old.booleanValue()) {
+                    gs.set(key,Boolean.FALSE);
+                    box.setIcon(off);
+                } else {
+                    gs.set(key,null);
+                    box.setIcon(gs.getInherited(key)?ion:ioff);
+                }
             }
         });
         box.setMaximumSize(box.getPreferredSize());
@@ -115,26 +122,35 @@ public final class OurTristateCheckbox extends JPanel {
 
     /** This method is called by Swing to enable/disable a component. */
     @Override public void setEnabled(boolean enabled) {
-        if (box!=null) box.setEnabled(enabled);
-        if (jlabel!=null) jlabel.setEnabled(enabled);
+        if (box!=null) {
+            box.setEnabled(enabled);
+        }
+        if (jlabel!=null) {
+            jlabel.setEnabled(enabled);
+        }
     }
 
     /** This method is called by Swing to change its background color. */
     @Override public void setBackground(Color color) {
         super.setBackground(color);
-        if (box!=null) box.setBackground(color);
-        if (jlabel!=null) jlabel.setBackground(color);
+        if (box!=null) {
+            box.setBackground(color);
+        }
+        if (jlabel!=null) {
+            jlabel.setBackground(color);
+        }
     }
 
     /** This method is called by Swing whenever this component needs to be painted. */
     @Override public void paint(Graphics p) {
-        Icon old=box.getIcon();
+        Icon newIcon;
         Boolean value=gs.get(key);
         if (value==null) {
-            if (gs.getInherited(key)) { if (old!=ion) box.setIcon(ion); } else { if (old!=ioff) box.setIcon(ioff); }
+            newIcon = gs.getInherited(key) ? ion : ioff;
         } else {
-            if (value.booleanValue()) { if (old!=on) box.setIcon(on); } else { if (old!=off) box.setIcon(off); }
+            newIcon = value.booleanValue() ? on : off;
         }
+        if (box.getIcon()!=newIcon) box.setIcon(newIcon);
         super.paint(p);
     }
 }

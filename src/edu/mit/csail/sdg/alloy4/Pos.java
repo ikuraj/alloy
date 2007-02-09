@@ -54,8 +54,18 @@ public final class Pos {
         this.filename=(filename==null?"":filename);
         this.x=(x>0?x:1);
         this.y=(y>0?y:1);
-        if (y2<(this.y)) y2=this.y;
-        if (y2==this.y) { if (x2<(this.x)) x2=this.x; } else { if (x2<1) x2=1; }
+        if (y2<(this.y)) {
+            y2=this.y;
+        }
+        if (y2==this.y) {
+            if (x2<(this.x)) {
+                x2=this.x;
+            }
+        } else {
+            if (x2<1) {
+                x2=1;
+            }
+        }
         this.x2=x2;
         this.y2=y2;
     }
@@ -65,11 +75,21 @@ public final class Pos {
      * @param that - the other position object
      */
     public Pos merge(Pos that) {
-        if (this==UNKNOWN) return that;
-        if (that==UNKNOWN) return this;
+        if (this==UNKNOWN) {
+            return that;
+        }
+        if (that==UNKNOWN) {
+            return this;
+        }
         int x=this.x, y=this.y, x2=that.x2, y2=that.y2;
-        if (that.y<y || (that.y==y && that.x<x)) { x=that.x; y=that.y; }
-        if (this.y2>y2 || (this.y2==y2 && this.x2>x2)) { x2=this.x2; y2=this.y2; }
+        if (that.y<y || (that.y==y && that.x<x)) {
+            x=that.x;
+            y=that.y;
+        }
+        if (this.y2>y2 || (this.y2==y2 && this.x2>x2)) {
+            x2=this.x2;
+            y2=this.y2;
+        }
         return new Pos(filename, x, y, x2, y2);
     }
 
@@ -80,15 +100,21 @@ public final class Pos {
      */
     public static Pos merge(Pos... pos) {
         Pos ans=null;
-        if (pos!=null) for(int i=0; i<pos.length; i++) if (pos[i]!=null && pos[i]!=UNKNOWN) {
-            if (ans==null) ans=pos[i]; else ans=ans.merge(pos[i]);
+        if (pos!=null) {
+            for(int i=0; i<pos.length; i++) {
+                if (pos[i]!=null && pos[i]!=UNKNOWN) {
+                   ans = (ans==null) ? pos[i] : ans.merge(pos[i]);
+                }
+            }
         }
         return ans==null ? UNKNOWN : ans;
     }
 
     /** Returns a String representation of this position value. */
     @Override public String toString() {
-        if (filename.length()==0) return "line "+y+", column "+x;
+        if (filename.length()==0) {
+            return "line "+y+", column "+x;
+        }
         return "line "+y+", column "+x+", filename="+filename;
     }
 }

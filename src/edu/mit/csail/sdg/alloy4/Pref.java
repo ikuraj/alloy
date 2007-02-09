@@ -20,7 +20,7 @@ public final class Pref {
                 printWriter.printf("%s = %s\n", key, value);
             }
         } catch(BackingStoreException ex) {
-            printWriter.println("** BackingStoreException: "+ex.getMessage()+"**");
+            // Not fatal
         }
     }
 
@@ -43,7 +43,8 @@ public final class Pref {
 
         /** Constructs a new SatSolver value with the given id and label. */
         private SatSolver(String id, String label) {
-            this.id=id; this.label=label;
+            this.id=id;
+            this.label=label;
         }
 
         /** Given an id, return the enum value corresponding to it (if there's no match, then return MiniSatJNI). */

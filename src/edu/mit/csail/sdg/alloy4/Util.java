@@ -48,8 +48,17 @@ public final class Util {
         Pair<char[],Integer> p = readEntireFile(filename);
         char[] a = p.a;
         int b = p.b;
-        while(b>0 && a[b-1]>=0 && a[b-1]<=32) b--; // Remove trailing whitespace
-        if (b==0) return ""; else if (b<a.length) { a[b]='\n'; return new String(a,0,b+1); } else return (new String(a,0,b))+"\n";
+        while(b>0 && a[b-1]>=0 && a[b-1]<=32) {
+            b--; // Remove trailing whitespace
+        }
+        if (b==0) {
+            return "";
+        }
+        if (b<a.length) {
+            a[b]='\n';
+            return new String(a,0,b+1);
+        }
+        return (new String(a,0,b))+"\n";
     }
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
@@ -61,7 +70,9 @@ public final class Util {
         while(true) {
             try {
                 String line=rd.readLine();
-                if (line==null) break;
+                if (line==null) {
+                    break;
+                }
                 out.println(line);
             } catch(IOException ex) {
                 out.close();
@@ -69,7 +80,10 @@ public final class Util {
                 break;
             }
         }
-        if (out!=null) { out.flush(); out.close(); }
+        if (out!=null) {
+            out.flush();
+            out.close();
+        }
         bw.close();
         fw.close();
         rd.close();
@@ -82,10 +96,16 @@ public final class Util {
      * <p> Note: if filename=="", we return "".
      */
     public static final String canon(String filename) {
-      if (filename.length()==0) return filename;
+      if (filename.length()==0) {
+          return filename;
+      }
       File file=new File(filename);
       String answer;
-      try { answer=file.getCanonicalPath(); } catch(IOException ex) { answer=file.getAbsolutePath(); }
+      try {
+          answer=file.getCanonicalPath();
+      } catch(IOException ex) {
+          answer=file.getAbsolutePath();
+      }
       return answer;
     }
 
@@ -100,17 +120,45 @@ public final class Util {
      */
     public static final Comparator<String> slashComparator = new Comparator<String>() {
         public final int compare(String a, String b) {
-            if (a==null) return (b==null)?0:-1;
-            if (b==null) return 1;
-            if (a.equals("extends")) { if (a.equals(b)) return 0; return -1; }
-            if (b.equals("extends")) return 1;
-            if (a.equals("in")) { if (a.equals(b)) return 0; return -1; }
-            if (b.equals("in")) return 1;
+            if (a==null) {
+                return (b==null)?0:-1;
+            }
+            if (b==null) {
+                return 1;
+            }
+            if (a.equals("extends")) {
+                return a.equals(b) ? 0 : -1;
+            }
+            if (b.equals("extends")) {
+                return 1;
+            }
+            if (a.equals("in")) {
+                return a.equals(b) ? 0 : -1;
+            }
+            if (b.equals("in")) {
+                return 1;
+            }
             int acount=0, bcount=0;
-            for(int i=0; i<a.length(); i++) if (a.charAt(i)=='/') acount++;
-            for(int i=0; i<b.length(); i++) if (b.charAt(i)=='/') bcount++;
-            if (acount!=bcount) return (acount<bcount)?-1:1;
-            if (a.startsWith("this/")) { if (!b.startsWith("this/")) return -1; } else if (b.startsWith("this/")) return 1;
+            for(int i=0; i<a.length(); i++) {
+                if (a.charAt(i)=='/') {
+                    acount++;
+                }
+            }
+            for(int i=0; i<b.length(); i++) {
+                if (b.charAt(i)=='/') {
+                    bcount++;
+                }
+            }
+            if (acount!=bcount) {
+                return (acount<bcount)?-1:1;
+            }
+            if (a.startsWith("this/")) {
+                if (!b.startsWith("this/")) {
+                    return -1;
+                }
+            } else if (b.startsWith("this/")) {
+                return 1;
+            }
             int result = a.compareToIgnoreCase(b);
             return result!=0 ? result : a.compareTo(b);
         }
