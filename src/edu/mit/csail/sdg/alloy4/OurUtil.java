@@ -5,6 +5,9 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -15,13 +18,18 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
-
 import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 
 /**
@@ -351,4 +359,139 @@ public final class OurUtil {
         }
         return x;
     }
+
+    /**
+     * Convenience method that recursively enables every JMenu and JMenuItem inside "menu".
+     * @param menu - the menu to start the recursive search
+     */
+    public static void enableAll (JMenu menu) {
+        for(int i=0; i<menu.getMenuComponentCount(); i++) {
+            Component obj=menu.getMenuComponent(i);
+            if (obj instanceof JMenuItem) {
+                ((JMenuItem)obj).setEnabled(true);
+            } else if (obj instanceof JMenu) {
+                enableAll((JMenu)obj);
+            }
+        }
+    }
+
+    /**
+     * Construct a new menu and add it to an existing JMenuBar.
+     *
+     * <p> Note: every time the user expands then collapses this menu,
+     * it will automatically enable all JMenu and JMenuItem objects inside it.
+     *
+     * @param parent - the JMenuBar to add this Menu into (or null if we don't want to add it to a JMenuBar yet)
+     * @param label - the label to show on screen
+     * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
+     * @param func - the function to call if the user expands this menu (or null if there is no function to call)
+     * @param key - the argument to pass to func() when the user expands this menu
+     */
+    public static JMenu makeMenu(JMenuBar parent, String label, int mnemonic, final MultiRunnable func, final int key) {
+        final JMenu x = new JMenu(label, false);
+        if (mnemonic!=-1 && !Util.onMac()) {
+            x.setMnemonic(mnemonic);
+        }
+        x.addMenuListener(new MenuListener() {
+            public final void menuSelected (MenuEvent e) {
+                if (func!=null) {
+                    func.run(key);
+                }
+            }
+            public final void menuDeselected (MenuEvent e) {
+                OurUtil.enableAll(x);
+            }
+            public final void menuCanceled (MenuEvent e) {
+                OurUtil.enableAll(x);
+            }
+        });
+        if (parent!=null) {
+            parent.add(x);
+        }
+        return x;
+    }
+
+    /**
+     * Construct a new MenuItem then add it to an existing Menu.
+     * @param parent - the Menu to add this MenuItem into (or null if you don't want to add it to any JMenu yet)
+     * @param label - the text to show on the menu
+     * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
+     * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
+     * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
+     */
+    public static JMenuItem makeMenuItem(JMenu parent, String label, int mnemonic, int accel, final Runnable func) {
+        JMenuItem x = new JMenuItem(label);
+        if (mnemonic!=-1) {
+            x.setMnemonic(mnemonic);
+        }
+        if (accel!=-1) {
+            int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+            x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
+        }
+        if (func!=null) {
+            x.addActionListener(new ActionListener() {
+                public final void actionPerformed(ActionEvent e) {
+                    func.run();
+                }
+            });
+        }
+        if (parent!=null) {
+            parent.add(x);
+        }
+        return x;
+    }
+
+    /**
+     * Construct a new MenuItem then add it to an existing Menu.
+     * @param parent - the Menu to add this MenuItem into (or null if you don't want to add it to any JMenu yet)
+     * @param label - the text to show on the menu
+     * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
+     * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
+     * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
+     */
+    public static JMenuItem makeMenuItem(JMenu parent, String label, boolean enabled, int mnemonic, int accel, final MultiRunnable func, final int key) {
+        JMenuItem x = new JMenuItem(label);
+        if (mnemonic!=-1) {
+            x.setMnemonic(mnemonic);
+        }
+        if (accel!=-1) {
+            int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+            x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
+        }
+        if (func!=null) {
+            x.addActionListener(new ActionListener() {
+                public final void actionPerformed(ActionEvent e) {
+                    func.run(key);
+                }
+            });
+        }
+        if (parent!=null) {
+            parent.add(x);
+        }
+        if (!enabled) {
+            x.setEnabled(false);
+        }
+        return x;
+    }
+
+    /**
+     * Construct a new MenuItem then add it to an existing Menu with SHIFT+accelerator.
+     * @param parent - the Menu to add this MenuItem into (or null if you don't want to add it to any JMenu yet)
+     * @param label - the text to show on the menu
+     * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the "SHIFT" mask on top of it
+     * @param func - the action listener to call if the user clicks this item (or null if there is no action to do)
+     */
+    public static JMenuItem makeMenuItemWithShift(JMenu parent, String label, int accel, ActionListener func) {
+        JMenuItem x = new JMenuItem(label);
+        int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+        x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.SHIFT_MASK));
+        if (func!=null) {
+            x.addActionListener(func);
+        }
+        if (parent!=null) {
+            parent.add(x);
+        }
+        return x;
+    }
+
 }
