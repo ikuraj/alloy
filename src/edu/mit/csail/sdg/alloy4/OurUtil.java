@@ -58,6 +58,8 @@ public final class OurUtil {
         if (func!=null) {
             button.addActionListener(new MultiRunner(func,key));
         }
+        Dimension d = new Dimension(150,100);
+        button.setMaximumSize(d);
         button.setVerticalTextPosition(JButton.BOTTOM);
         button.setHorizontalTextPosition(JButton.CENTER);
         button.setBorderPainted(false);
