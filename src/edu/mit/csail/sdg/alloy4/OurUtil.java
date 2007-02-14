@@ -58,11 +58,6 @@ public final class OurUtil {
         if (func!=null) {
             button.addActionListener(new MultiRunner(func,key));
         }
-        Dimension d = new Dimension(80,80);
-        if (label.indexOf('<')>=0) {
-            // If label has HTML, set the maximum size so that it doesn't take up the entire JPanel.
-            button.setMaximumSize(d);
-        }
         button.setVerticalTextPosition(JButton.BOTTOM);
         button.setHorizontalTextPosition(JButton.CENTER);
         button.setBorderPainted(false);
