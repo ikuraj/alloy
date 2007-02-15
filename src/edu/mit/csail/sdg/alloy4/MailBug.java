@@ -148,6 +148,7 @@ public final class MailBug implements UncaughtExceptionHandler {
         }
         pw.printf("\n\n========================= The End ==========================\n\n");
         pw.close();
+        // We intentionally don't call pw.checkErrors() since there's nothing we could have done
         sw.flush();
         System.err.println(sw.toString());
         System.err.flush();

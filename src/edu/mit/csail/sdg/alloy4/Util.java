@@ -63,30 +63,27 @@ public final class Util {
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
     public static void writeAll(String filename, String content) throws IOException {
-        FileWriter fw=new FileWriter(filename);
-        BufferedWriter bw=new BufferedWriter(fw);
-        PrintWriter out=new PrintWriter(bw);
-        BufferedReader rd=new BufferedReader(new StringReader(content));
-        while(true) {
-            try {
+        FileWriter fw=null;
+        BufferedWriter bw=null;
+        PrintWriter out=null;
+        BufferedReader rd=null;
+        try {
+            fw=new FileWriter(filename);
+            bw=new BufferedWriter(fw);
+            out=new PrintWriter(bw);
+            rd=new BufferedReader(new StringReader(content));
+            while(true) {
                 String line=rd.readLine();
-                if (line==null) {
-                    break;
-                }
+                if (line==null) break;
                 out.println(line);
-            } catch(IOException ex) {
-                out.close();
-                out=null;
-                break;
             }
+            if (out.checkError()) throw new IOException("PrintWriter failed to write to file \""+filename+"\"");
+        } finally {
+            if (out!=null) { out.flush(); out.close(); }
+            if (bw!=null) try {bw.close();} catch(IOException ex) {}
+            if (fw!=null) try {fw.close();} catch(IOException ex) {}
+            if (rd!=null) try {rd.close();} catch(IOException ex) {}
         }
-        if (out!=null) {
-            out.flush();
-            out.close();
-        }
-        bw.close();
-        fw.close();
-        rd.close();
     }
 
     /**
