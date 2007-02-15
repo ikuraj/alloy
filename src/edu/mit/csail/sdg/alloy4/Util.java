@@ -93,17 +93,17 @@ public final class Util {
      * <p> Note: if filename=="", we return "".
      */
     public static final String canon(String filename) {
-      if (filename.length()==0) {
-          return filename;
-      }
-      File file=new File(filename);
-      String answer;
-      try {
-          answer=file.getCanonicalPath();
-      } catch(IOException ex) {
-          answer=file.getAbsolutePath();
-      }
-      return answer;
+        if (filename.length()==0) {
+            return filename;
+        }
+        File file=new File(filename);
+        String answer;
+        try {
+            answer=file.getCanonicalPath();
+        } catch(IOException ex) {
+            answer=file.getAbsolutePath();
+        }
+        return answer;
     }
 
     /**
