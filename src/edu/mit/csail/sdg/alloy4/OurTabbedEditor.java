@@ -711,8 +711,8 @@ public final class OurTabbedEditor {
         }
         label.setToolTipText(x);
         x=getShorterTitle(x);
-        if (x.length()>12) {
-            x=x.substring(0,12)+"...";
+        if (x.length()>14) {
+            x=x.substring(0,14)+"...";
         }
         label.setText("  "+x+(modified?" *  ":"  "));
     }
