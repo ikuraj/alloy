@@ -39,7 +39,7 @@ public final class MailBug implements UncaughtExceptionHandler {
     /** The content of the main file being analyzed; "" if unknown. */
     private String mainfilecontent = "";
 
-    /** The list of additional files being included from the main file. */
+    /** The list of additional files and their contents. */
     private final Map<String,String> subfiles = new LinkedHashMap<String,String>();
 
     /** Removes all cached information. */
@@ -152,16 +152,15 @@ public final class MailBug implements UncaughtExceptionHandler {
         sw.flush();
         System.err.println(sw.toString());
         System.err.flush();
-        JTextArea status=null;
         try {
             final JFrame statusWindow=new JFrame();
             JButton done=new JButton("Close");
             done.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
-                    System.exit(0);
+                    System.exit(1);
                 }
             });
-            status=new JTextArea("Sending the bug report... please wait...");
+            final JTextArea status=new JTextArea("Sending the bug report... please wait...");
             status.setEditable(false);
             status.setLineWrap(true);
             status.setWrapStyleWord(true);
@@ -179,12 +178,9 @@ public final class MailBug implements UncaughtExceptionHandler {
             statusWindow.setSize(600,200);
             statusWindow.setLocation(w/2-300,h/2-100);
             statusWindow.setVisible(true);
+            status.setText(postBug(sw.toString()));
         } catch(Exception exception) {
-            // Not much we can do; we are already shutting down the Application already...
-        }
-        String result=postBug(sw.toString());
-        if (status!=null) {
-            status.setText(result);
+            System.exit(1);
         }
     }
 
@@ -211,7 +207,7 @@ public final class MailBug implements UncaughtExceptionHandler {
             return report.toString();
         } catch (Exception ex) {
             return "Sorry. An error has occurred in posting the bug report.\n\n"
-            +"Please email alloy.mit.edu directly and we will work to fix the problem.\n\n"
+            +"Please email alloy@mit.edu directly and we will work to fix the problem.\n\n"
             +"(Bug posting failed due to Java exception: "+ex.toString()+")";
         } finally {
             if (out != null) {
