@@ -30,8 +30,9 @@ public final class Pref {
     public enum SatSolver {
         /** BerkMin via pipe */               BerkMinPIPE("berkmin", "BerkMin"),
         /** MiniSat1 via pipe */              MiniSatPIPE("minisat", "MiniSat"),
-        /** MiniSat1 via JNI */               MiniSatJNI("minisat(jni)", "MiniSat using JNI"),
-        /** ZChaff via JNI */                 ZChaffJNI("zchaff(jni)", "ZChaff using JNI"),
+        /** MiniSat1 via JNI */               MiniSatJNI("minisat(jni)", "MiniSat with JNI"),
+        /** MiniSatProver1 via JNI */         MiniSatProverJNI("minisatprover(jni)", "MiniSat with JNI and Unsat Core"),
+        /** ZChaff via JNI */                 ZChaffJNI("zchaff(jni)", "ZChaff with JNI"),
         /** SAT4J using native Java */        SAT4J("sat4j", "SAT4J"),
         /** Outputs the raw CNF file only */  FILE("file", "Output to file");
 
@@ -62,7 +63,7 @@ public final class Pref {
         /** Saves this value into the Java preference object. */
         public void set() { Preferences.userNodeForPackage(Util.class).put("SatSolver",id); }
 
-        /** Reads the current value of the Java preference object (if it's not set, then return MiniSatPIPE). */
+        /** Reads the current value of the Java preference object (if it's not set, then return MiniSatJNI). */
         public static SatSolver get() { return parse(Preferences.userNodeForPackage(Util.class).get("SatSolver","")); }
     };
 
