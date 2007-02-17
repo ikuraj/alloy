@@ -160,6 +160,9 @@ public final class Pref {
     /** True if Alloy Analyzer should record the raw Kodkod input and output. */
     public static final BooleanPref RecordKodkod = new BooleanPref("RecordKodkod");
 
+    /** The latest welcome screen that the user has seen. */
+    public static final IntPref Welcome = new IntPref("Welcome",0,0,1000);
+
     /** The latest X corrdinate of the Alloy Analyzer's main window. */
     public static final IntPref AnalyzerX = new IntPref("AnalyzerX",0,-1,65535);
 
