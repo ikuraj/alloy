@@ -63,6 +63,7 @@ public final class MailBug implements UncaughtExceptionHandler {
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException(Thread thread, Throwable ex) {
         if (ex!=null) {
+            System.err.println("-------------------------------------");
             ex.printStackTrace(System.err);
             System.err.flush();
         }
