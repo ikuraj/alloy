@@ -56,8 +56,8 @@ public final class Subprocess extends TimerTask {
             return;
         }
         Thread thread0=new Thread(new InPipe(process.getOutputStream(), input));
-        Thread thread1=new Thread(new OutPipe(process.getInputStream(), !true));
-        Thread thread2=new Thread(new OutPipe(process.getErrorStream(), !false));
+        Thread thread1=new Thread(new OutPipe(process.getInputStream(), true));
+        Thread thread2=new Thread(new OutPipe(process.getErrorStream(), false));
         thread0.start();
         thread1.start();
         thread2.start();
