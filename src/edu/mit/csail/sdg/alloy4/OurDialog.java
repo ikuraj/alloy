@@ -32,6 +32,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
@@ -274,8 +275,8 @@ public final class OurDialog {
         return window;
     }
 
-    /** Returns a simple console that allows the user to interactively send queries and get answers from the "computer". */
-    public static JFrame showConsole(String title, String welcomeHtmlMessage, final Computer computer) {
+    // Returns a simple console that allows the user to interactively send queries and get answers from the "computer"
+    public static JTextComponent showConsole(String title, String welcomeHtmlMessage, final Computer computer) {
         final SimpleAttributeSet bold = new SimpleAttributeSet();
         StyleConstants.setBold(bold, true);
         final SimpleAttributeSet green = new SimpleAttributeSet();
@@ -284,13 +285,6 @@ public final class OurDialog {
         StyleConstants.setForeground(blue, Color.BLUE);
         final SimpleAttributeSet red = new SimpleAttributeSet();
         StyleConstants.setForeground(red, Color.RED);
-        final JFrame window = new JFrame(title);
-        final JButton done = new JButton("Close");
-        done.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) {
-                window.dispose();
-            }
-        });
         final JEditorPane textarea = new JEditorPane(
             "text/html",
             "<html><body style=\"font:14pt Verdana;\">"
@@ -316,9 +310,7 @@ public final class OurDialog {
                 }
                 // If the caret is before "Eval>", this will move the cursor to the end of the document before processing the key
                 int c=textarea.getCaretPosition(), b=box.get(), d=doc.getLength();
-                if (c<b) {
-                    textarea.setCaretPosition(d);
-                }
+                if (c<b) textarea.setCaretPosition(d);
                 // If the user hit ENTER, then...
                 if (e.getKeyChar()!='\n' && e.getKeyChar()!='\r') return;
                 try {
@@ -331,13 +323,9 @@ public final class OurDialog {
                     }
                     // Find out whether there was already a linebreak at the end of the user input or not
                     String n=doc.getText(d-1,1);
-                    n = (n.charAt(0)=='\r' || n.charAt(0)=='\n') ? "   " : "\n   ";
+                    n = (n.charAt(0)=='\r' || n.charAt(0)=='\n') ? "\n   " : "\n\n   ";
                     // Add a linebreak if needed, then add the answer, then add another "Eval> " prompt.
-                    if (err!=null) {
-                        doc.insertString(d, n+err+"\n", red);
-                    } else {
-                        doc.insertString(d, n+ans+"\n", blue);
-                    }
+                    if (err!=null) doc.insertString(d, n+err+"\n", red); else doc.insertString(d, n+ans+"\n", blue);
                     d=doc.getLength();
                     doc.insertString(d, "\nEval> ", null);
                     if (doc instanceof DefaultStyledDocument) {
@@ -346,46 +334,27 @@ public final class OurDialog {
                     d=doc.getLength();
                     textarea.setCaretPosition(d);
                     box.set(d);
-                } catch(Exception ex) {
-                    // Not fatal
-                }
+                } catch(Exception ex) { }
             }
             public final void keyPressed(KeyEvent e) { }
             public final void keyReleased(KeyEvent e) { }
         });
         textarea.setBackground(Color.WHITE);
         textarea.setEditable(true);
-        JScrollPane scrollPane = new JScrollPane(textarea, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        window.getContentPane().setLayout(new BorderLayout());
-        window.getContentPane().add(scrollPane, BorderLayout.CENTER);
-        window.getContentPane().add(done, BorderLayout.SOUTH);
-        window.pack();
-        window.setLocation(100,100);
-        window.setSize(700,500);
-        window.setVisible(true);
-        textarea.requestFocusInWindow();
-        return window;
+        return textarea;
     }
 
-    /** Try to wrap the input to about 70 characters per line; however, if a token is too longer, we won't break it. */
+    // Try to wrap the input (but if a token is too longer, we won't break it)
     private static String linewrap(String msg) {
         int lb=msg.indexOf('\n');
-        if (lb>=0) {
-            return linewrap(msg.substring(0,lb))+"\n   "+linewrap(msg.substring(lb+1));
-        }
+        if (lb>=0) return linewrap(msg.substring(0,lb))+"\n   "+linewrap(msg.substring(lb+1));
         StringBuilder sb=new StringBuilder();
         StringTokenizer tokenizer=new StringTokenizer(msg.trim(), "\r\n\t ");
-        int max=70, now=0;
+        int max=50, now=0;
         while(tokenizer.hasMoreTokens()) {
             String x=tokenizer.nextToken();
             if (now>0) {
-                if (now+1+x.length() > max) {
-                    now=0;
-                    sb.append("\n   ");
-                } else {
-                    now++;
-                    sb.append(' ');
-                }
+                if (now+1+x.length() > max) {now=0; sb.append("\n   ");} else {now++; sb.append(' ');}
             }
             now=now+x.length();
             sb.append(x);

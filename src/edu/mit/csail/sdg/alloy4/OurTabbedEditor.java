@@ -21,9 +21,9 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import javax.swing.AbstractAction;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -422,7 +422,7 @@ public final class OurTabbedEditor {
     }
 
     /**
-     * If allowIO==false, return an empty map; otherwise return a map from each tab's filename to the text content in that tab.
+     * If allowIO==false, return a new empty map; otherwise return a newly constructed map from each tab's filename to the text content in that tab.
      * Note: the returned map is modifiable, and the caller is free to do whatever with it
      * (the changes do NOT affect this OurTabbedEditor object)
      */
