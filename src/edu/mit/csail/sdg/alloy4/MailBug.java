@@ -43,54 +43,32 @@ public final class MailBug implements UncaughtExceptionHandler {
         final String yes="Send the Bug Report";
         final String no="Don't Send the Bug Report";
         final JTextField email = new JTextField(20);
-        final JTextArea comment = new JTextArea();
+        final JTextArea problem = new JTextArea();
         email.setBorder(new LineBorder(Color.DARK_GRAY));
-        comment.setBorder(null);
-        final JScrollPane scroll=OurUtil.scrollpane(comment);
+        problem.setBorder(null);
+        final JScrollPane scroll=OurUtil.scrollpane(problem);
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
-        if ((ex instanceof OutOfMemoryError) || (ex instanceof StackOverflowError)) {
-            if (JOptionPane.showOptionDialog(null, new Object[] {
-                "Sorry. Alloy Analyzer has run out of memory.",
-                " ",
-                "Your model may be too large to be analysed, or may",
-                "be using features that make the problem intractable.",
-                "Please visit http://alloy.mit.edu/",
-                "for tips on writing efficient Alloy models.",
-                " ",
-                "If you believe the model should be analyzable,",
-                "you may submit a bug report (via HTTP).",
-                "The error report will include your system",
-                "configuration, but no other information.",
-                " ",
-                "If you'd like to be notified about a fix,",
-                "please enter your email adress and optionally add a comment.",
-                " ",
-                OurUtil.makeHT("Email:",5,email,null),
-                OurUtil.makeHT("Comment:",5,scroll,null)
-            }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+        if (JOptionPane.showOptionDialog(null, new Object[] {
+            "Sorry. An internal error has occurred.",
+            " ",
+            "You may submit a bug report (via HTTP).",
+            "The error report will include your system",
+            "configuration, but no other information.",
+            " ",
+            "If you'd like to be notified about a fix,",
+            "please describe the problem, and enter your email address.",
+            " ",
+            OurUtil.makeHT("Email:",5,email,null),
+            OurUtil.makeHT("Problem:",5,scroll,null)
+            },
+            "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
             null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { System.exit(1); }
-        } else {
-            if (JOptionPane.showOptionDialog(null, new Object[] {
-                "Sorry. An internal error has occurred.",
-                " ",
-                "You may submit a bug report (via HTTP).",
-                "The error report will include your system",
-                "configuration, but no other information.",
-                " ",
-                "If you'd like to be notified about a fix,",
-                "please enter your email adress and optionally add a comment.",
-                " ",
-                OurUtil.makeHT("Email:",5,email,null),
-                OurUtil.makeHT("Comment:",5,scroll,null)
-            }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { System.exit(1); }
-        }
         final StringWriter sw = new StringWriter();
         final PrintWriter pw = new PrintWriter(sw);
         pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
         pw.printf("========================= Email ============================\n%s\n\n", email.getText());
-        pw.printf("========================= Comment ==========================\n%s\n\n", comment.getText());
+        pw.printf("========================= Problem ==========================\n%s\n\n", problem.getText());
         pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
         if (ex!=null) {
            pw.printf("========================= Exception ========================\n"+ex.getClass()+": "+ex+"\n\n");
