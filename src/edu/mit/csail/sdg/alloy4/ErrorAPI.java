@@ -32,7 +32,7 @@ public final class ErrorAPI extends Err {
 
     /**
      * Constructs a new ErrorAPI object with the same message, but with the new position.
-     * @param pos - the filename/line/row information (can be null if unknown)
+     * @param pos - the new filename/line/row information (can be null if unknown)
      */
     @Override public ErrorAPI changePosition(Pos pos) {
         return new ErrorAPI(pos, this.msg);
@@ -41,7 +41,7 @@ public final class ErrorAPI extends Err {
     /** Returns a textual description of the error. */
     @Override public String toString() {
         if (pos==Pos.UNKNOWN) {
-            return "API usage error: "+msg;
+            return "API usage error:\n"+msg;
         }
         if (pos.filename.length()>0) {
             return "API usage error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;

@@ -26,32 +26,25 @@ public final class DirectedGraph<N> {
 
     /**
      * Adds a directed edge from start node to end node (if there wasn't such an edge already).
-     *
-     * @return true if a new edge was added as a result, and false if such an edge already exists
      */
-    public synchronized boolean addEdge (N start, N end) {
+    public synchronized void addEdge (final N start, final N end) {
         List<N> targets = nodeToTargets.get(start);
         if (targets == null) {
             targets = new ArrayList<N>();
             nodeToTargets.put(start, targets);
         } else {
-            for (int i = targets.size()-1; i >= 0; i--) {
-                if (targets.get(i) == end) {
-                    return false;
-                }
+            for (int i=targets.size()-1; i>=0; i--) {
+                if (targets.get(i) == end) { return; }
             }
         }
         targets.add(end);
-        return true;
     }
 
     /**
      * Returns whether there is a directed path from start node to end node by following 0 or more directed edges.
      */
-    public synchronized boolean hasPath (N start, N end) {
-        if (start == end) {
-            return true;
-        }
+    public synchronized boolean hasPath (final N start, final N end) {
+        if (start == end) { return true; }
         List<N> todo = new ArrayList<N>();
         IdentityHashMap<N,Object> visited = new IdentityHashMap<N,Object>();
         // The correctness and guaranteed termination relies on four invariants:
@@ -59,7 +52,7 @@ public final class DirectedGraph<N> {
         // (2) Every time we add X to "visited", we also simultaneously add X to "todo".
         // (3) Every time we add X to "todo", we also simultaneously add X to "visited".
         // (4) Nothing is added to "todo" more than once
-        visited.put(start,null);
+        visited.put(start, null);
         todo.add(start);
         while(!todo.isEmpty()) {
             List<N> targets = nodeToTargets.get(todo.remove(todo.size()-1));
@@ -67,10 +60,11 @@ public final class DirectedGraph<N> {
                 for (int i=targets.size()-1; i>=0; i--) {
                     N next=targets.get(i);
                     if (next == end) {
+                        addEdge(start, end); // This caches the result, so that hasPath(start,end) will return true immediately
                         return true;
                     }
                     if (!visited.containsKey(next)) {
-                        visited.put(next,null);
+                        visited.put(next, null);
                         todo.add(next);
                     }
                 }

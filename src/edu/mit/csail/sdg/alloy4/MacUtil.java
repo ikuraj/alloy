@@ -24,14 +24,14 @@ public final class MacUtil {
     /** The cached Application object. */
     private static Application application=null;
 
-    /** The previous listener (null if there was none). */
+    /** The previous listener (or null if there was none). */
     private static ApplicationListener listener=null;
 
     /**
-     * Register a Mac OS X "ApplicationListener"; if there was a previous listener, it will be removed.
+     * Register a Mac OS X "ApplicationListener"; if there was a previous listener, it will be removed first.
      * @param handler - the application listener
      * @param reopen - when the user clicks on the Dock icon, we'll call handler.run(reopen)
-     * @param about - when the user clicks on About, we'll call handler.run(about)
+     * @param about - when the user clicks on About Alloy4, we'll call handler.run(about)
      * @param open - when a file needs to be opened, we'll call handler.run(open,filename)
      * @param quit - when the user clicks on Quit, we'll call handler.run(quit)
      */
@@ -55,7 +55,7 @@ public final class MacUtil {
                 SwingUtilities.invokeLater(new MultiRunner(handler, open, arg0.getFilename()));
             }
             @Override public void handleQuit (ApplicationEvent arg0) {
-                arg0.setHandled(false); // "false" is correct; some documentation on apple.com claims otherwise.
+                arg0.setHandled(false); // "false" is correct; some documentation on apple.com claimed otherwise.
                 SwingUtilities.invokeLater(new MultiRunner(handler, quit));
             }
         };

@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
 /**
- * Mutable; this implements a String-to-Value map that supports the undo operation; null key and value are allowed.
+ * Mutable; this implements a String-to-Value map that supports the undo operation; null key and null values are allowed.
  *
  * <p>   To be more precise, every key is internally mapped to a list of values.
  * <br>  The put(X,Y)  method appends Y onto the end of X's list.
@@ -29,14 +29,14 @@ public final class Env<V> {
     /**
      * If a key is bound to one or more values, this stores the first value.
      * <p>
-     * For example: if key K is bound to values (V1..Vn), then map1.get(K) returns V1
+     * For example: if key K is bound to values [V1..Vn], then map1.get(K) returns V1
      */
     private final Map<String,V> map1 = new LinkedHashMap<String,V>();
 
     /**
      * If a key is bound to more than one value, this stores every value except the first value.
      * <p>
-     * For example: if key K is bound to values (V1..Vn), then map2.get(K) returns the list (V2..Vn)
+     * For example: if key K is bound to values [V1..Vn], then map2.get(K) returns the list [V2..Vn]
      */
     private final Map<String,LinkedList<V>> map2=new LinkedHashMap<String,LinkedList<V>>();
 
@@ -65,10 +65,7 @@ public final class Env<V> {
      */
     public synchronized V get (String key) {
         LinkedList<V> list = map2.get(key);
-        if (list != null) {
-            return list.getLast();
-        }
-        return map1.get(key);
+        return (list != null) ? list.getLast() : map1.get(key);
     }
 
     /**
@@ -98,7 +95,7 @@ public final class Env<V> {
      * @param key - the key
      */
     public synchronized void remove(String key) {
-        LinkedList<V> list = map2.get(key);
+        final LinkedList<V> list = map2.get(key);
         if (list == null) {
             map1.remove(key);
         } else if (list.size() <= 1) {

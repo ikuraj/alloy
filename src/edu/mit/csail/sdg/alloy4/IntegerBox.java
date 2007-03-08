@@ -21,7 +21,7 @@ public final class IntegerBox {
         value=newValue;
     }
 
-    /** Reads the current value. */
+    /** Returns the current value. */
     public synchronized int get() {
         return value;
     }

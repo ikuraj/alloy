@@ -61,7 +61,7 @@ public final class IdentitySet<T> implements Iterable<T> {
     /** Adds the given element into the set if it's not in the set already. */
     public synchronized void add(T item) {
         if (!hashmap.containsKey(item)) {
-            hashmap.put(item,null);
+            hashmap.put(item, null);
             list.add(item);
         }
     }
@@ -76,8 +76,9 @@ public final class IdentitySet<T> implements Iterable<T> {
      * at the time that the iterator was created (even if the set is modified after that point).
      */
     public synchronized Iterator<T> iterator() {
+        final int listsize = list.size();
         return new Iterator<T>() {
-            private final int max = list.size();
+            private final int max = listsize;
             private int now = 0;
             public final boolean hasNext() {
                 return now < max;

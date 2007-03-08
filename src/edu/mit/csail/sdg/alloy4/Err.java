@@ -32,8 +32,8 @@ public abstract class Err extends Exception {
     }
 
     /**
-     * Constructs a new Err object with the same message, but with the new position.
-     * @param pos - the filename/line/row information (can be null if unknown)
+     * Constructs a new Err object with the same message, but with a new position.
+     * @param pos - the new filename/line/row information (can be null if unknown)
      */
     public abstract Err changePosition(Pos pos);
 }

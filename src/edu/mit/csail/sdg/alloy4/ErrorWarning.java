@@ -32,7 +32,7 @@ public final class ErrorWarning extends Err {
 
     /**
      * Constructs a new ErrorWarning object with the same message, but with the new position.
-     * @param pos - the filename/line/row information (can be null if unknown)
+     * @param pos - the new filename/line/row information (can be null if unknown)
      */
     @Override public ErrorWarning changePosition(Pos pos) {
         return new ErrorWarning(pos, this.msg);

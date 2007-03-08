@@ -8,7 +8,7 @@ public interface Computer {
 
     /**
      * This method takes a String input and produces a String output.
-     * @throws Exception if an error occurred.
+     * @throws Exception if an error occurred during the computation.
      */
     public String compute(String input) throws Exception;
 }
