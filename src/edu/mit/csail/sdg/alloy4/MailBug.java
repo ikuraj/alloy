@@ -33,6 +33,18 @@ public final class MailBug implements UncaughtExceptionHandler {
     /** Construct a new MailBug object. */
     public MailBug() { }
 
+    /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
+    private int latestAlloyVersion=(-1);
+
+    /** The name of the most recent Alloy version (as queried from alloy.mit.edu); "" if alloy.mit.edu has not replied yet. */
+    private String latestAlloyVersionName="";
+
+    /** Sets the most recent Alloy version (as queried from alloy.mit.edu) */
+    public synchronized void setLatestAlloyVersion(int version, String versionName) {
+        latestAlloyVersion=version;
+        latestAlloyVersionName=versionName;
+    }
+
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException(Thread thread, Throwable ex) {
         if (ex!=null) {
@@ -49,21 +61,35 @@ public final class MailBug implements UncaughtExceptionHandler {
         final JScrollPane scroll=OurUtil.scrollpane(problem);
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
-        if (JOptionPane.showOptionDialog(null, new Object[] {
-            "Sorry. An internal error has occurred.",
-            " ",
-            "You may submit a bug report (via HTTP).",
-            "The error report will include your system",
-            "configuration, but no other information.",
-            " ",
-            "If you'd like to be notified about a fix,",
-            "please describe the problem, and enter your email address.",
-            " ",
-            OurUtil.makeHT("Email:",5,email,null),
-            OurUtil.makeHT("Problem:",5,scroll,null)
+        if (latestAlloyVersion>Version.buildNumber()) {
+            JOptionPane.showMessageDialog(null, new Object[] {
+                    "Sorry. A fatal internal error has occurred.",
+                    " ",
+                    "You are running Alloy build#"+Version.buildNumber()+",",
+                    "but the most recent is Alloy build#"+latestAlloyVersion+":",
+                    "( version "+latestAlloyVersionName+" )",
+                    " ",
+                    "Please try to upgrade to the newest version.",
+                    "Email alloy@mit.edu if the upgrade does not solve the problem."
+            }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        } else {
+            if (JOptionPane.showOptionDialog(null, new Object[] {
+                    "Sorry. A fatal internal error has occurred.",
+                    " ",
+                    "You may submit a bug report (via HTTP).",
+                    "The error report will include your system",
+                    "configuration, but no other information.",
+                    " ",
+                    "If you'd like to be notified about a fix,",
+                    "please describe the problem, and enter your email address.",
+                    " ",
+                    OurUtil.makeHT("Email:",5,email,null),
+                    OurUtil.makeHT("Problem:",5,scroll,null)
             },
             "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
             null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { System.exit(1); }
+        }
         final StringWriter sw = new StringWriter();
         final PrintWriter pw = new PrintWriter(sw);
         pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
