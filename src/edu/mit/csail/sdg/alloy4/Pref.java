@@ -199,6 +199,9 @@ public final class Pref {
     /** The latest height of the Alloy Visualizer window. */
     public static final IntPref VizHeight = new IntPref("VizHeight",0,-1,65535);
 
+    /** The amount of memory (in M) to allocate for Kodkod and the SAT solvers. */
+    public static final IntPref SubMemory = new IntPref("SubMemory",16,768,65535);
+
     /** The default directory for AlloyAnalyzer and AlloyVisualizer's "open"/"save" command. */
     public static final StringPref Dir = new StringPref("Dir");
 
