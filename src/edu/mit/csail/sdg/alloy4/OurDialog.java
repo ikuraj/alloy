@@ -318,6 +318,8 @@ public final class OurDialog {
                     String ans=null, err=null;
                     try {
                         ans=linewrap(computer.compute(doc.getText(b,d-b)));
+                    } catch(RuntimeException ex) {
+                        err=linewrap("Error: "+ex.getMessage());
                     } catch(Exception ex) {
                         err=linewrap(ex.toString());
                     }

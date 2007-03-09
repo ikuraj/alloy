@@ -13,7 +13,7 @@ public interface Computer {
     public String compute(String input) throws Exception;
 
     /**
-     * Passes a String option to the computer.
+     * This method sets the filename associated with this Computer.
      */
-    public void setOptions(String option);
+    public void setSourceFile(String filename);
 }
