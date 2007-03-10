@@ -69,8 +69,8 @@ public final class MailBug implements UncaughtExceptionHandler {
                     "but the most recent is Alloy build#"+latestAlloyVersion+":",
                     "( version "+latestAlloyVersionName+" )",
                     " ",
-                    "Please try to upgrade to the newest version.",
-                    "Email alloy@mit.edu if the upgrade does not solve the problem."
+                    "Please try to upgrade to the newest version",
+                    "as the problem may have already been fixed."
             }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         } else {
