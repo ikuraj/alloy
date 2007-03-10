@@ -47,11 +47,11 @@ public final class MailBug implements UncaughtExceptionHandler {
 
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException(Thread thread, Throwable ex) {
-        if (ex!=null) {
-            System.err.println("-------------------------------------");
-            ex.printStackTrace(System.err);
-            System.err.flush();
-        }
+        //if (ex!=null) {
+        //    System.err.println("-------------------------------------");
+        //    ex.printStackTrace(System.err);
+        //    System.err.flush();
+        //}
         final String yes="Send the Bug Report";
         final String no="Don't Send the Bug Report";
         final JTextField email = new JTextField(20);
@@ -116,8 +116,8 @@ public final class MailBug implements UncaughtExceptionHandler {
         pw.printf("\n\n========================= The End ==========================\n\n");
         pw.close();
         sw.flush();
-        System.err.println(sw.toString());
-        System.err.flush();
+        //System.err.println(sw.toString());
+        //System.err.flush();
         try {
             final JFrame statusWindow=new JFrame();
             final JButton done=new JButton("Close");
