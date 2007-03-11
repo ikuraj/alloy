@@ -648,7 +648,7 @@ public final class OurTabbedEditor {
         }
         try {
             Util.writeAll(filename, text().getText());
-        } catch (IOException e) {
+        } catch (Err e) {
             OurDialog.alert(parentFrame, "Error writing to the file \""+filename+"\"", "Error");
             return false;
         }

@@ -127,7 +127,7 @@ public final class Util {
     }
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
-    public static void writeAll(String filename, String content) throws IOException {
+    public static void writeAll(String filename, String content) throws Err {
         FileWriter fw=null;
         BufferedWriter bw=null;
         PrintWriter out=null;
@@ -143,6 +143,8 @@ public final class Util {
                 out.println(line);
             }
             if (out.checkError()) throw new IOException("PrintWriter failed to write to file \""+filename+"\"");
+        } catch(IOException ex) {
+            throw new ErrorFatal("IOException: "+ex.getMessage());
         } finally {
             if (out!=null) { out.flush(); out.close(); }
             if (bw!=null) try {bw.close();} catch(IOException ex) {}

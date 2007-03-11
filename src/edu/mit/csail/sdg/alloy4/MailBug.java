@@ -183,7 +183,7 @@ public final class MailBug implements UncaughtExceptionHandler {
             return report.toString();
         } catch (Exception ex) {
             return "Sorry. An error has occurred in posting the bug report.\n\n"
-            +"Please email alloy@mit.edu directly and we will work to fix the problem.\n\n"
+            +"Please email alloy@mit.edu directly.\n\n"
             +"(Bug posting failed due to Java exception: "+ex.toString()+")";
         } finally {
             if (out != null) {

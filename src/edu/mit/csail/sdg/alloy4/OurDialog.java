@@ -321,7 +321,7 @@ public final class OurDialog {
                     } catch(RuntimeException ex) {
                         err=linewrap("Error: "+ex.getMessage());
                     } catch(Exception ex) {
-                        err=linewrap(ex.toString());
+                        err=linewrap("Error: "+ex.toString());
                     }
                     // Find out whether there was already a linebreak at the end of the user input or not
                     String n=doc.getText(d-1,1);
