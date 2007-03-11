@@ -19,9 +19,9 @@ public final class MultiRunner extends AbstractAction implements MenuListener, W
         /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
         public boolean run(int key);
         /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
-        public boolean run(int key, String arg);
-        /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
         public boolean run(int key, int arg);
+        /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
+        public boolean run(int key, String arg);
     }
 
     /** The runnable encapsulated inside this runner. */
