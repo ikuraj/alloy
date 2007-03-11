@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 /**
  * This provides useful static methods for I/O and XML operations.
@@ -28,6 +29,70 @@ public final class Util {
 
     /** This constructor is private, since this utility class never needs to be instantiated. */
     private Util() { }
+
+    /**
+     * This reads and writes String-valued Java persistent preferences.
+     * <p><b>Thread Safety:</b>  Safe.
+     */
+    public static final class StringPref {
+        /** The id associated with this preference. */
+        private final String id;
+        /** The default value for this preference. */
+        private final String defaultValue;
+        /** Constructs a new StringPref object with the given id. */
+        public StringPref(String id) {this.id=id; this.defaultValue="";}
+        /** Constructs a new StringPref object with the given id and the given default value. */
+        public StringPref(String id, String defaultValue) {this.id=id; this.defaultValue=defaultValue;}
+        /** Sets the value for this preference. */
+        public void set(String value) { Preferences.userNodeForPackage(Util.class).put(id,value); }
+        /** Reads the value for this preference; if not set or is empty, we return the default value. */
+        public String get() {
+            String ans=Preferences.userNodeForPackage(Util.class).get(id,"");
+            return (ans==null || ans.length()==0) ? defaultValue : ans;
+        }
+    }
+
+    /**
+     * This reads and writes boolean-valued Java persistent preferences.
+     * <p><b>Thread Safety:</b>  Safe.
+     */
+    public static final class BooleanPref {
+        /** The id associated with this preference. */
+        private final String id;
+        /** Constructurs a new BooleanPref object with the given id. */
+        public BooleanPref(String id) { this.id=id; }
+        /** Sets the value for this preference. */
+        public void set(boolean value) { Preferences.userNodeForPackage(Util.class).put(id, value?"y":""); }
+        /** Reads the value for this preference; if not set, we return false. */
+        public boolean get() { return Preferences.userNodeForPackage(Util.class).get(id,"").length()>0; }
+    }
+
+    /**
+     * This reads and writes integer-valued Java persistent preferences.
+     * <p><b>Thread Safety:</b>  Safe.
+     */
+    public static final class IntPref {
+        /** The id associated with this preference. */
+        private final String id;
+        /** The minimum value for this preference. */
+        private final int min;
+        /** The maximum value for this preference. */
+        private final int max;
+        /** The default value for this preference. */
+        private final int def;
+        /** If min>n, we return min; else if n>max, we return max; otherwise we return n. */
+        private int bound(int n) { return n<min ? min : (n>max? max : n); }
+        /** Constructs a new IntPref object with the given id; you must ensure max >= min */
+        public IntPref(String id, int min, int def, int max) {this.id=id; this.min=min; this.def=def; this.max=max;}
+        /** Sets the value for this preference. */
+        public void set(int value) { Preferences.userNodeForPackage(Util.class).putInt(id,bound(value)); }
+        /** Reads the value for this preference; if not set, we return the default value "def". */
+        public int get() {
+            if (Preferences.userNodeForPackage(Util.class).get(id,"").length()==0) return def;
+            return bound(Preferences.userNodeForPackage(Util.class).getInt(id,min));
+        }
+    }
+
 
     /** Copy the input list, append "element" to it, then return the result as a unmodifiable list. */
     public static<T> List<T> add(List<T> list, T element) {

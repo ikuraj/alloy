@@ -14,6 +14,8 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 import java.lang.Thread.UncaughtExceptionHandler;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -102,7 +104,14 @@ public final class MailBug implements UncaughtExceptionHandler {
            ex.printStackTrace(pw);
         }
         pw.printf("\n========================= Preferences ======================\n");
-        Pref.dump(pw);
+        try {
+            for(String key: Preferences.userNodeForPackage(Util.class).keys()) {
+                String value = Preferences.userNodeForPackage(Util.class).get(key,"");
+                pw.printf("%s = %s\n", key, value);
+            }
+        } catch(BackingStoreException ignore) {
+            // Not fatal
+        }
         pw.printf("\n========================= System Properties ================\n");
         pw.println("Runtime.freeMemory() = "+Runtime.getRuntime().freeMemory());
         pw.println("Runtime.totalMemory() = "+Runtime.getRuntime().totalMemory());

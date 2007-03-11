@@ -79,6 +79,15 @@ public final class OurTabbedEditor {
         public void notifyFocusGained();
     }
 
+    /** The default directory (for open and save) */
+    private String defaultDirectory;
+
+    /** Returns the default directory (for open and save) */
+    public String defaultDirectory() { return defaultDirectory; }
+
+    /** Changes the default directory (for open and save) */
+    public void setDefaultDirectory(String newDefaultDirectory) { defaultDirectory=newDefaultDirectory; }
+
     /** The font to use in the JTextArea */
     private Font font;
 
@@ -188,11 +197,12 @@ public final class OurTabbedEditor {
     };
 
     /** Constructs a tabbed editor pane. */
-    public OurTabbedEditor(final Parent parent, final JFrame parentFrame, final Font font, final int tabSize) {
+    public OurTabbedEditor(final Parent parent, final JFrame parentFrame, final Font font, final int tabSize, final String initialDirectory) {
         this.parent=parent;
         this.parentFrame=parentFrame;
         this.font=font;
         this.tabSize=tabSize;
+        this.defaultDirectory=initialDirectory;
         JPanel glue = OurUtil.makeHB(new Object[]{null});
         glue.setBorder(new OurBorder(null,null,border,null));
         content=OurUtil.makeHB(glue);
@@ -538,11 +548,11 @@ public final class OurTabbedEditor {
      * <p> If the user says to discard it, this method returns true.
      * <p> If the user says to cancel it, this method returns false.
      */
-    public boolean close(int i) {
+    private boolean close(int i) {
         String filename=list.get(i).filename;
         if (allowIO && list.get(i).modified) {
             Boolean ans=OurDialog.askSaveDiscardCancel(parentFrame, "The file \""+getShorterTitle(filename)+"\"");
-            if (ans==null || (ans.booleanValue() && !save(false))) {
+            if (ans==null || (ans.booleanValue() && save(false)==null)) {
                 return false;
             }
         }
@@ -590,31 +600,40 @@ public final class OurTabbedEditor {
         return true;
     }
 
-    /** Save the current tab to a file. */
-    public boolean save(boolean alwaysPickNewName) {
+    /**
+     * Save the current tab to a file.
+     *
+     * @param alwaysPickNewName - if true, it will always pop up a File Selection dialog box to ask for the filename
+     *
+     * @param currentDirectory - if alwaysPickNewName is true, or if there was no filename associated with the current tab,
+     * then this is the initial directory to display to the user.
+     *
+     * @return null if an error occurred (otherwise, return the filename)
+     */
+    public String save(final boolean alwaysPickNewName) {
         if (!allowIO || me<0 || me>=list.size()) {
-            return false;
+            return null;
         }
         String filename=list.get(me).filename;
         if (list.get(me).isFile==false || alwaysPickNewName) {
-            String start = Pref.Dir.get();
+            String start = defaultDirectory;
             if (!(new File(start)).isDirectory()) {
                 start=System.getProperty("user.home");
             }
             File file=OurDialog.askFile(parentFrame, false, start, ".als", ".als files");
             if (file==null) {
-                return false;
+                return null;
             }
             filename=Util.canon(file.getPath());
             if (file.exists() && !OurDialog.askOverwrite(parentFrame,filename)) {
-                return false;
+                return null;
             }
         }
         if (saveAs(filename)) {
-            Pref.Dir.set((new File(filename)).getParent());
-            return true;
+            defaultDirectory = (new File(filename)).getParent();
+            return Util.canon(filename);
         }
-        return false;
+        return null;
     }
 
     /** Save the current tab to a file. */

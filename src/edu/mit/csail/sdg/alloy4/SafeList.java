@@ -1,5 +1,6 @@
 package edu.mit.csail.sdg.alloy4;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -25,7 +26,10 @@ import java.util.NoSuchElementException;
  * @param <T> - the type of element
  */
 
-public final class SafeList<T> implements Collection<T> {
+public final class SafeList<T> implements Collection<T>, Serializable {
+
+    /** This ensures the class can be serialized reliably. */
+    private static final long serialVersionUID = 1L;
 
     /** The actual list of elements; it will be shared by an original SafeList and all its unmodifiable copies. */
     private final List<T> list;
