@@ -20,6 +20,8 @@ public final class MultiRunner extends AbstractAction implements MenuListener, W
         public boolean run(int key);
         /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
         public boolean run(int key, String arg);
+        /** Returns true if the method succeeds; you can call this method only from the AWT event thread. */
+        public boolean run(int key, int arg);
     }
 
     /** The runnable encapsulated inside this runner. */
@@ -28,29 +30,50 @@ public final class MultiRunner extends AbstractAction implements MenuListener, W
     /** The key to pass to the runnable. */
     private final int key;
 
-    /** The argument to pass to the runnable. */
-    private final String arg;
+    /** 0 if there is no argument; 1 if the argument is integer; 2 if the argument is String. */
+    private final int arg;
+
+    /** The integer argument to pass to the runnable. */
+    private final int intArg;
+
+    /** The String argument to pass to the runnable. */
+    private final String stringArg;
 
     /** Constructs a new runner to encapsulate the given runnable that takes an int argument. */
     public MultiRunner(MultiRunnable runnable, int key) {
         this.runnable=runnable;
         this.key=key;
-        this.arg=null;
+        this.arg=0;
+        this.intArg=0;
+        this.stringArg="";
+    }
+
+    /** Constructs a new runner to encapsulate the given runnable that takes two int arguments. */
+    public MultiRunner(MultiRunnable runnable, int key, int arg) {
+        this.runnable=runnable;
+        this.key=key;
+        this.arg=1;
+        this.intArg=arg;
+        this.stringArg="";
     }
 
     /** Constructs a new runner to encapsulate the given runnable that takes an int argument and a String argument. */
     public MultiRunner(MultiRunnable runnable, int key, String arg) {
         this.runnable=runnable;
         this.key=key;
-        this.arg=arg;
+        this.arg=2;
+        this.intArg=0;
+        this.stringArg=arg;
     }
 
     /** This method is defined in java.lang.Runnable */
     public void run() {
-        if (arg==null) {
+        if (arg==0) {
             runnable.run(key);
+        } else if (arg==1) {
+            runnable.run(key,intArg);
         } else {
-            runnable.run(key,arg);
+            runnable.run(key,stringArg);
         }
     }
 
