@@ -602,12 +602,7 @@ public final class OurTabbedEditor {
 
     /**
      * Save the current tab to a file.
-     *
      * @param alwaysPickNewName - if true, it will always pop up a File Selection dialog box to ask for the filename
-     *
-     * @param currentDirectory - if alwaysPickNewName is true, or if there was no filename associated with the current tab,
-     * then this is the initial directory to display to the user.
-     *
      * @return null if an error occurred (otherwise, return the filename)
      */
     public String save(final boolean alwaysPickNewName) {
