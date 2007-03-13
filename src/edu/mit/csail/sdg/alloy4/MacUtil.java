@@ -47,15 +47,15 @@ public final class MacUtil {
             @Override public void handleReOpenApplication (ApplicationEvent arg) {
                 SwingUtilities.invokeLater(new MultiRunner(handler, reopen));
             }
-            @Override public void handleAbout (ApplicationEvent arg0) {
-                arg0.setHandled(true);
+            @Override public void handleAbout (ApplicationEvent arg) {
+                arg.setHandled(true);
                 SwingUtilities.invokeLater(new MultiRunner(handler, about));
             }
-            @Override public void handleOpenFile (ApplicationEvent arg0) {
-                SwingUtilities.invokeLater(new MultiRunner(handler, open, arg0.getFilename()));
+            @Override public void handleOpenFile (ApplicationEvent arg) {
+                SwingUtilities.invokeLater(new MultiRunner(handler, open, arg.getFilename()));
             }
-            @Override public void handleQuit (ApplicationEvent arg0) {
-                arg0.setHandled(false); // "false" is correct; some documentation on apple.com claimed otherwise.
+            @Override public void handleQuit (ApplicationEvent arg) {
+                arg.setHandled(false); // "false" is correct; some documentation on apple.com claimed otherwise.
                 SwingUtilities.invokeLater(new MultiRunner(handler, quit));
             }
         };
