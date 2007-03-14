@@ -38,8 +38,8 @@ public final class MailBug implements UncaughtExceptionHandler {
     /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
     private int latestAlloyVersion=(-1);
 
-    /** The name of the most recent Alloy version (as queried from alloy.mit.edu); "" if alloy.mit.edu has not replied yet. */
-    private String latestAlloyVersionName="";
+    /** The name of the most recent Alloy version (as queried from alloy.mit.edu); "unknown" if alloy.mit.edu has not replied yet. */
+    private String latestAlloyVersionName="unknown";
 
     /** Sets the most recent Alloy version (as queried from alloy.mit.edu) */
     public synchronized void setLatestAlloyVersion(int version, String versionName) {
