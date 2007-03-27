@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -433,6 +434,15 @@ public final class Util {
             if (isr!=null) { try {isr.close();} catch(IOException ex2) {} }
             if (fis!=null) { try {fis.close();} catch(IOException ex2) {} }
         }
+    }
+
+    /** Extracts a stack trace from an Exception object. */
+    public static String getStackTrace(Exception ex) {
+        StringWriter sw=new StringWriter();
+        PrintWriter pw=new PrintWriter(sw);
+        ex.printStackTrace(pw);
+        pw.flush();
+        return sw.toString();
     }
 
     /** Returns true iff running on Windows **/
