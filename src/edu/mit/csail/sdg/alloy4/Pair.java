@@ -20,6 +20,22 @@ public final class Pair<A,B> {
         this.b=b;
     }
 
+    /** If either or both "a" and "b" are String, we'll return it as-is; otherwise, we call toString() on them. */
+    @Override public String toString() {
+        if (a instanceof String) {
+            if (b instanceof String) return ((String)a)+" "+((String)b);
+            return (String)a;
+        }
+        if (b instanceof String) {
+            return (String)b;
+        }
+        if (a==null) {
+            return (b!=null) ? b.toString() : "null";
+        } else {
+            return (b!=null) ? (a.toString()+" "+b.toString()) : a.toString();
+        }
+    }
+
     /** Returns a hashcode based on (a==null?0:a.hashCode()) and (b==null?0:b.hashCode()). */
     @Override public int hashCode() {
         int i = (a==null) ? 0 : a.hashCode();
