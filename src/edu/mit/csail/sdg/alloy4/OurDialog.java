@@ -48,12 +48,12 @@ public final class OurDialog {
     private OurDialog() { }
 
     /** Popup the given error message. */
-    public static void alert(JFrame parentFrame, Object message, String title) {
+    public static void alert(Frame parentFrame, Object message, String title) {
         JOptionPane.showMessageDialog(parentFrame, message, title, JOptionPane.PLAIN_MESSAGE);
     }
 
     /** Popup the given error message, then terminate the program. */
-    public static void fatal(JFrame parentFrame, Object message) {
+    public static void fatal(Frame parentFrame, Object message) {
         JOptionPane.showMessageDialog(parentFrame, message, "Fatal Error", JOptionPane.ERROR_MESSAGE);
         System.exit(1);
     }
@@ -62,7 +62,7 @@ public final class OurDialog {
      * Ask if the user wishes to save the file, discard the file, or cancel the entire operation (default==cancel).
      * @return null if cancel, true if save, false if discard
      */
-    public static Boolean askSaveDiscardCancel(JFrame parentFrame, String description) {
+    public static Boolean askSaveDiscardCancel(Frame parentFrame, String description) {
         String save="Save", discard="Don\'t Save", cancel="Cancel";
         int ans=JOptionPane.showOptionDialog(parentFrame,
                 new String[]{
@@ -84,7 +84,7 @@ public final class OurDialog {
     }
 
     /** Ask if the user really wishes to overwrite the file (default=no). */
-    public static boolean askOverwrite(JFrame parentFrame, String filename) {
+    public static boolean askOverwrite(Frame parentFrame, String filename) {
         String yes="Overwrite", no="Cancel";
         int ans=JOptionPane.showOptionDialog(parentFrame, new String[]{
                 "The file \""+filename+"\"",
@@ -120,7 +120,7 @@ public final class OurDialog {
     }
 
     /** Asks the user to choose a font; returns "" if the user cancels the request. */
-    public static String askFont(JFrame parentFrame) {
+    public static String askFont(Frame parentFrame) {
         String[] fonts;
         synchronized (OurDialog.class) {
             if (allFonts==null) {
@@ -197,7 +197,7 @@ public final class OurDialog {
     }
 
     /** Display "msg" in a dialogbox, and ask the user to choose yes versus no (default==no). */
-    public static boolean yesno(JFrame parentFrame, String msg, String yes, String no) {
+    public static boolean yesno(Frame parentFrame, String msg, String yes, String no) {
         return JOptionPane.showOptionDialog(parentFrame,
                 msg,
                 "Question",
@@ -209,12 +209,12 @@ public final class OurDialog {
     }
 
     /** Display "msg" in a dialogbox, and ask the user to choose "Yes" versus "No" (default==no). */
-    public static boolean yesno(JFrame parentFrame, String msg) {
+    public static boolean yesno(Frame parentFrame, String msg) {
         return yesno(parentFrame, msg, "Yes", "No");
     }
 
     /** Display a modal dialog window containing the "objects"; returns true iff the user clicks Ok. */
-    public static boolean getInput(JFrame parentFrame, String title, Object... objects) {
+    public static boolean getInput(Frame parentFrame, String title, Object... objects) {
         Object main="Ok";
         for(int i=0; i<objects.length; i++) {
             if (objects[i] instanceof JTextField || objects[i] instanceof JTextArea) {
