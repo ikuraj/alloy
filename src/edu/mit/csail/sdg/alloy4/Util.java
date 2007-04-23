@@ -442,7 +442,7 @@ public final class Util {
         PrintWriter pw=new PrintWriter(sw);
         ex.printStackTrace(pw);
         pw.flush();
-        return sw.toString();
+        return sw.toString().replace('\t',' ');
     }
 
     /** Returns true iff running on Windows **/
