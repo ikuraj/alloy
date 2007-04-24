@@ -18,7 +18,7 @@ public final class ErrorSyntax extends Err {
      * @param msg - the actual error message
      */
     public ErrorSyntax(String msg) {
-        super(null,msg);
+        super(null,msg,null);
     }
 
     /**
@@ -27,7 +27,7 @@ public final class ErrorSyntax extends Err {
      * @param msg - the actual error message
      */
     public ErrorSyntax(Pos pos, String msg) {
-        super(pos,msg);
+        super(pos,msg,null);
     }
 
     /**

@@ -18,7 +18,7 @@ public final class ErrorAPI extends Err {
      * @param msg - the actual error message
      */
     public ErrorAPI(String msg) {
-        super(null,msg);
+        super(null,msg,null);
     }
 
     /**
@@ -27,7 +27,7 @@ public final class ErrorAPI extends Err {
      * @param msg - the actual error message
      */
     public ErrorAPI(Pos pos, String msg) {
-        super(pos,msg);
+        super(pos,msg,null);
     }
 
     /**

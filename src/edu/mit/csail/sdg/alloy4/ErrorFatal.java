@@ -18,7 +18,15 @@ public final class ErrorFatal extends Err {
      * @param msg - the actual error message
      */
     public ErrorFatal(String msg) {
-        super(null,msg);
+        super(null,msg,null);
+    }
+
+    /**
+     * Constructs a new fatal error with the additional stacktrace entries from "ex" inserted
+     * @param msg - the actual error message
+     */
+    public ErrorFatal(String msg, Exception ex) {
+        super(null,msg,ex.getStackTrace());
     }
 
     /**
@@ -27,7 +35,7 @@ public final class ErrorFatal extends Err {
      * @param msg - the actual error message
      */
     public ErrorFatal(Pos pos, String msg) {
-        super(pos,msg);
+        super(pos,msg,null);
     }
 
     /**

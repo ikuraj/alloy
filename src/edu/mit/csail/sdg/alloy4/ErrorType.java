@@ -18,7 +18,7 @@ public final class ErrorType extends Err {
      * @param msg - the actual error message
      */
     public ErrorType(String msg) {
-        super(null,msg);
+        super(null,msg,null);
     }
 
     /**
@@ -27,7 +27,7 @@ public final class ErrorType extends Err {
      * @param msg - the actual error message
      */
     public ErrorType(Pos pos, String msg) {
-        super(pos,msg);
+        super(pos,msg,null);
     }
 
     /**
