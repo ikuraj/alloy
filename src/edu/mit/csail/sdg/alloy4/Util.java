@@ -435,6 +435,15 @@ public final class Util {
         }
     }
 
+    /** Returns an unmodifiable List with same elements as the array. */
+    public static<E> List<E> asList(E... array) {
+        List<E> list = new ArrayList<E>(array.length);
+        for(int i=0; i<array.length; i++) {
+            list.add(array[i]);
+        }
+        return Collections.unmodifiableList(list);
+    }
+
     /** Returns true iff running on Windows **/
     public static boolean onWindows() { return System.getProperty("os.name").toLowerCase().startsWith("windows"); };
 
