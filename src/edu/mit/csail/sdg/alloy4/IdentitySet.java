@@ -72,6 +72,11 @@ public final class IdentitySet<T> implements Iterable<T> {
         }
     }
 
+    /** Returns the number of elements currently in this set. */
+    public synchronized int size() {
+        return hashmap.size();
+    }
+
     /** Returns whether the given element is in the set. */
     public synchronized boolean contains(T item) {
         return hashmap.containsKey(item);

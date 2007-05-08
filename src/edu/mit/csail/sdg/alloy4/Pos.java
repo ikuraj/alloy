@@ -19,6 +19,8 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.io.Serializable;
+
 /**
  * Immutable; stores the filename and line/column position.
  *
@@ -27,13 +29,16 @@ package edu.mit.csail.sdg.alloy4;
  * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
 
-public final class Pos {
+public final class Pos implements Serializable {
+
+    /** To make sure the serialization form is stable. */
+    private static final long serialVersionUID = 1L;
 
     /** The filename (it can be an empty string if unknown) */
     public final String filename;
 
     /** Additional annotation about this position (if can be null if there are no additional annotation) */
-    public final Object comment;
+    public transient final Object comment;
 
     /** The starting column position (from 1..) */
     public final int x;
@@ -156,8 +161,8 @@ public final class Pos {
     /** Returns a String representation of this position value. */
     @Override public String toString() {
         if (filename.length()==0) {
-            return "line "+y+", column "+x;
+            return "line "+y+", column "+x+(comment==null?"":(" ["+comment+"]"));
         }
-        return "line "+y+", column "+x+", filename="+filename;
+        return "line "+y+", column "+x+", filename="+filename+(comment==null?"":(" ["+comment+"]"));
     }
 }

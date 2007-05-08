@@ -89,8 +89,8 @@ public class A4Reporter {
      *
      * @param command - this is the original Command used to generate this solution
      * @param solvingTime - this is the number of milliseconds
-     * @param filename - if not null, and its length>0,
-     * then it points to a file containing the original Kodkod formula in Java format.
+     * @param formula - if not null, and length()>0, then it's the original Kodkod formula in Java format
+     * @param core - if not null, and length()>0, then it is a unsat core
      */
-    public void resultUNSAT(Object command, long solvingTime, String filename) {}
+    public void resultUNSAT(Object command, long solvingTime, String formula, IdentitySet<Pos> core) {}
 }

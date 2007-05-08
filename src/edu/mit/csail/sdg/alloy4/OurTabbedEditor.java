@@ -500,9 +500,7 @@ public final class OurTabbedEditor {
 
     /** Removes all highlights from the current text buffer. */
     public void removeAllHighlights() {
-        if (me>=0 && me<list.size()) {
-            list.get(me).highlighter.removeAllHighlights();
-        }
+        for(Tab t:list) t.highlighter.removeAllHighlights();
     }
 
     /** Returne ths entire JPanel of this tabbed text editor. */
@@ -568,6 +566,7 @@ public final class OurTabbedEditor {
      * <p> If the user says to cancel it, this method returns false.
      */
     private boolean close(int i) {
+        removeAllHighlights();
         String filename=list.get(i).filename;
         if (allowIO && list.get(i).modified) {
             Boolean ans=OurDialog.askSaveDiscardCancel(parentFrame, "The file \""+getShorterTitle(filename)+"\"");
@@ -578,7 +577,6 @@ public final class OurTabbedEditor {
         list.get(i).body.setText("");
         if (list.size()==1) {
             list.get(i).undo.discardAllEdits();
-            list.get(i).highlighter.removeAllHighlights();
             list.get(i).modified=false;
             if (list.get(i).isFile) {
                 list.get(i).isFile=false;
@@ -676,6 +674,46 @@ public final class OurTabbedEditor {
     }
 
     /**
+     * Highlights the text editor, based on the location information in the Pos object.
+     * <p> Note: this method can be called by any thread (not just the AWT event thread)
+     */
+    public void highlight(final Pos p, final boolean clearOldHighlightsFirst) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() {
+                public final void run() {
+                    highlight(p, clearOldHighlightsFirst);
+                }
+            });
+            return;
+        }
+        if (clearOldHighlightsFirst) removeAllHighlights();
+        if (allowIO && p!=null && p.y>0 && p.x>0) {
+            try {
+                String f=Util.canon(p.filename);
+                if (!switchToFilename(f)) {
+                    String content;
+                    try {
+                        content=Util.readAll(f);
+                    } catch(IOException ex) {
+                        // Failure to highlight is not fatal
+                        return;
+                    }
+                    newTab(f, content, true);
+                }
+                int c=text().getLineStartOffset(p.y-1)+p.x-1;
+                int d=text().getLineStartOffset(p.y2-1)+p.x2-1;
+                list.get(me).highlighter.addHighlight(c, d+1, highlightPainter);
+                text().setSelectionStart(c);
+                text().setSelectionEnd(c);
+                text().requestFocusInWindow();
+                parent.notifyChange();
+            } catch(BadLocationException ex) {
+                // Failure to highlight is not fatal
+            }
+        }
+    }
+
+    /**
      * Highlights the text editor, based on the location information in the Err object.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
@@ -688,6 +726,7 @@ public final class OurTabbedEditor {
             });
             return;
         }
+        removeAllHighlights();
         if (allowIO && e.pos!=null && e.pos.y>0 && e.pos.x>0) {
             try {
                 String f=Util.canon(e.pos.filename);
@@ -703,7 +742,6 @@ public final class OurTabbedEditor {
                 }
                 int c=text().getLineStartOffset(e.pos.y-1)+e.pos.x-1;
                 int d=text().getLineStartOffset(e.pos.y2-1)+e.pos.x2-1;
-                list.get(me).highlighter.removeAllHighlights();
                 list.get(me).highlighter.addHighlight(c, d+1, highlightPainter);
                 text().setSelectionStart(c);
                 text().setSelectionEnd(c);
