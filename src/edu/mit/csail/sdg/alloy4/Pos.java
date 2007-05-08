@@ -32,8 +32,8 @@ public final class Pos {
     /** The filename (it can be an empty string if unknown) */
     public final String filename;
 
-    /** Additional comments about this position (if can be an empty string if there are no additional comments) */
-    public final String comment;
+    /** Additional annotation about this position (if can be null if there are no additional annotation) */
+    public final Object comment;
 
     /** The starting column position (from 1..) */
     public final int x;
@@ -57,7 +57,7 @@ public final class Pos {
      * @param y - the row position (from 1..)
      */
     public Pos(String filename, int x, int y) {
-        this.comment="";
+        this.comment=null;
         this.filename=(filename==null?"":filename);
         this.x=(x>0?x:1);
         this.y=(y>0?y:1);
@@ -84,7 +84,7 @@ public final class Pos {
      * @param y2 - the ending row position (from 1..)
      * @param comment - the comment
      */
-    public Pos(String filename, int x, int y, int x2, int y2, String comment) {
+    public Pos(String filename, int x, int y, int x2, int y2, Object comment) {
         this.comment=comment;
         this.filename=(filename==null?"":filename);
         this.x=(x>0?x:1);
@@ -109,8 +109,8 @@ public final class Pos {
      * Return a new position that is identical to the old position, except the comment is changed.
      * @param that - the other position object
      */
-    public Pos addComment(String comment) {
-        return new Pos(filename, x, y, x2, y2, comment);
+    public Pos addComment(Object newComment) {
+        return new Pos(filename, x, y, x2, y2, newComment);
     }
 
     /**
@@ -133,10 +133,7 @@ public final class Pos {
             x2=this.x2;
             y2=this.y2;
         }
-        String newcomment=comment;
-        if (newcomment.length()==0) newcomment=that.comment;
-        else if (that.comment.length()!=0) newcomment=comment+" "+that.comment;
-        return new Pos(filename, x, y, x2, y2, newcomment);
+        return new Pos(filename, x, y, x2, y2, (this.comment!=null ? this.comment : that.comment));
     }
 
     /**
