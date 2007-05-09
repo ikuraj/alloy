@@ -160,9 +160,10 @@ public final class Pos implements Serializable {
 
     /** Returns a String representation of this position value. */
     @Override public String toString() {
+        String comment=(this.comment==null?"":(this.comment.toString()));
         if (filename.length()==0) {
-            return "line "+y+", column "+x+(comment==null?"":(" ["+comment+"]"));
+            return "line "+y+", column "+x+(comment.length()==0?"":(" ["+comment+"]"));
         }
-        return "line "+y+", column "+x+", filename="+filename+(comment==null?"":(" ["+comment+"]"));
+        return "line "+y+", column "+x+", filename="+filename+(comment.length()==0?"":(" ["+comment+"]"));
     }
 }

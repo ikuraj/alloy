@@ -677,11 +677,11 @@ public final class OurTabbedEditor {
      * Highlights the text editor, based on the location information in the Pos object.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
-    public void highlight(final Pos p, final boolean clearOldHighlightsFirst) {
+    public void highlight(final Pos p, final boolean clearOldHighlightsFirst, final boolean loadMissingFile) {
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() {
                 public final void run() {
-                    highlight(p, clearOldHighlightsFirst);
+                    highlight(p, clearOldHighlightsFirst, loadMissingFile);
                 }
             });
             return;
@@ -691,6 +691,7 @@ public final class OurTabbedEditor {
             try {
                 String f=Util.canon(p.filename);
                 if (!switchToFilename(f)) {
+                    if (!loadMissingFile) return;
                     String content;
                     try {
                         content=Util.readAll(f);
@@ -703,6 +704,8 @@ public final class OurTabbedEditor {
                 int c=text().getLineStartOffset(p.y-1)+p.x-1;
                 int d=text().getLineStartOffset(p.y2-1)+p.x2-1;
                 list.get(me).highlighter.addHighlight(c, d+1, highlightPainter);
+                text().setSelectionStart(0);
+                text().setSelectionEnd(0);
                 text().setSelectionStart(c);
                 text().setSelectionEnd(c);
                 text().requestFocusInWindow();
@@ -743,6 +746,8 @@ public final class OurTabbedEditor {
                 int c=text().getLineStartOffset(e.pos.y-1)+e.pos.x-1;
                 int d=text().getLineStartOffset(e.pos.y2-1)+e.pos.x2-1;
                 list.get(me).highlighter.addHighlight(c, d+1, highlightPainter);
+                text().setSelectionStart(0);
+                text().setSelectionEnd(0);
                 text().setSelectionStart(c);
                 text().setSelectionEnd(c);
                 text().requestFocusInWindow();
