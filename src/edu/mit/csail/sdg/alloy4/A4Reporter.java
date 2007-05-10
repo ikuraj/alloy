@@ -93,4 +93,13 @@ public class A4Reporter {
      * @param core - if not null, and length()>0, then it is a unsat core
      */
     public void resultUNSAT(Object command, long solvingTime, String formula, IdentitySet<Pos> core) {}
+
+    /**
+     * This method is called at various points during the compilation and translation to report
+     * the current progress; it is only intended for developer during debugging; the messages will not be useful
+     * for users.
+     *
+     * @param msg - the debug message
+     */
+    public void debug(String msg) {}
 }
