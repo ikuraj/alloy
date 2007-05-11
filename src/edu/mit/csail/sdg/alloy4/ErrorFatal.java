@@ -57,14 +57,6 @@ public final class ErrorFatal extends Err {
         super(pos,msg,null);
     }
 
-    /**
-     * Constructs a new ErrorFatal object with the same message, but with the new position.
-     * @param pos - the new filename/line/row information (can be null if unknown)
-     */
-    @Override public ErrorFatal changePosition(Pos pos) {
-        return new ErrorFatal(pos, this.msg);
-    }
-
     /** Returns a textual description of the error. */
     @Override public String toString() {
         if (pos==Pos.UNKNOWN) {

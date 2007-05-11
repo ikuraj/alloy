@@ -87,6 +87,9 @@ public final class OurTabbedEditor {
     /** Background color for an inactive tab. */
     private static final Color inactive=new Color(.8f, .8f, .8f);
 
+    /** Background color for an inactive but highlighted tab. */
+    private static final Color inactiveHighlighted=new Color(.8f, .5f, .5f);
+
     /** Border color for each tab. */
     private static final Color border=Color.LIGHT_GRAY;
 
@@ -818,9 +821,14 @@ public final class OurTabbedEditor {
         frame.revalidate();
         me=i;
         for(int j=0; j<list.size(); j++) {
-            JLabel x=list.get(j).label;
+            Tab t=list.get(j);
+            JLabel x=t.label;
+            boolean hl=(t.highlighter.getHighlights().length>0);
             x.setBorder(new OurBorder(border,border, j!=i?border:WHITE,border));
-            x.setBackground(j!=i ? inactive : WHITE);
+            if (j==i)
+                x.setBackground(WHITE);
+            else
+                x.setBackground(hl ? inactiveHighlighted : inactive);
         }
         frame.removeAll();
         if (list.size()>1) {

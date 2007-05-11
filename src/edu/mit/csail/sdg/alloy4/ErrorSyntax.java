@@ -49,14 +49,6 @@ public final class ErrorSyntax extends Err {
         super(pos,msg,null);
     }
 
-    /**
-     * Constructs a new ErrorSyntax object with the same message, but with the new position.
-     * @param pos - the new filename/line/row information (can be null if unknown)
-     */
-    @Override public ErrorSyntax changePosition(Pos pos) {
-        return new ErrorSyntax(pos, this.msg);
-    }
-
     /** Returns a textual description of the error. */
     @Override public String toString() {
         if (pos==Pos.UNKNOWN) {

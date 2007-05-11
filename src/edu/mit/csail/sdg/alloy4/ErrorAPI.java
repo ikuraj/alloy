@@ -49,14 +49,6 @@ public final class ErrorAPI extends Err {
         super(pos,msg,null);
     }
 
-    /**
-     * Constructs a new ErrorAPI object with the same message, but with the new position.
-     * @param pos - the new filename/line/row information (can be null if unknown)
-     */
-    @Override public ErrorAPI changePosition(Pos pos) {
-        return new ErrorAPI(pos, this.msg);
-    }
-
     /** Returns a textual description of the error. */
     @Override public String toString() {
         if (pos==Pos.UNKNOWN) {

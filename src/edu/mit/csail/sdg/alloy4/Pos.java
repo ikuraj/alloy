@@ -89,7 +89,7 @@ public final class Pos implements Serializable {
      * @param y2 - the ending row position (from 1..)
      * @param comment - the comment
      */
-    public Pos(String filename, int x, int y, int x2, int y2, Object comment) {
+    private Pos(String filename, int x, int y, int x2, int y2, Object comment) {
         this.comment=comment;
         this.filename=(filename==null?"":filename);
         this.x=(x>0?x:1);

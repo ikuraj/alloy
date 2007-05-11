@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -42,6 +43,7 @@ public abstract class Err extends Exception {
      * Constructs a new Err object.
      * @param pos - the filename/line/row information (can be null if unknown)
      * @param msg - the actual error message
+     * @param trace - if nonnull, it is a list of additional StackTraceElement(s) to add into this Err object's StackTrace
      */
     public Err(Pos pos, String msg, StackTraceElement[] trace) {
         this.pos = (pos==null ? Pos.UNKNOWN : pos);
@@ -66,10 +68,4 @@ public abstract class Err extends Exception {
     @Override public final String getMessage() {
         return toString();
     }
-
-    /**
-     * Constructs a new Err object with the same message, but with a new position.
-     * @param pos - the new filename/line/row information (can be null if unknown)
-     */
-    public abstract Err changePosition(Pos pos);
 }
