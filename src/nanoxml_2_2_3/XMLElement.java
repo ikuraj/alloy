@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Locale;
 import java.util.Vector;
 
 
@@ -578,7 +579,7 @@ public class XMLElement
                              Object value)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         this.attributes.put(name, value.toString());
     }
@@ -641,7 +642,7 @@ public class XMLElement
                                 int    value)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         this.attributes.put(name, Integer.toString(value));
     }
@@ -704,7 +705,7 @@ public class XMLElement
                                    double value)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         this.attributes.put(name, Double.toString(value));
     }
@@ -972,7 +973,7 @@ public class XMLElement
                                Object defaultValue)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         Object value = this.attributes.get(name);
         if (value == null) {
@@ -1025,7 +1026,7 @@ public class XMLElement
                                boolean   allowLiterals)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         Object key = this.attributes.get(name);
         Object result;
@@ -1207,7 +1208,7 @@ public class XMLElement
                                int    defaultValue)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         String value = (String) this.attributes.get(name);
         if (value == null) {
@@ -1265,7 +1266,7 @@ public class XMLElement
                                boolean   allowLiteralNumbers)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         Object key = this.attributes.get(name);
         Integer result;
@@ -1344,7 +1345,7 @@ public class XMLElement
                                      double defaultValue)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         String value = (String) this.attributes.get(name);
         if (value == null) {
@@ -1403,7 +1404,7 @@ public class XMLElement
                                      boolean   allowLiteralNumbers)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         Object key = this.attributes.get(name);
         Double result;
@@ -1463,7 +1464,7 @@ public class XMLElement
                                        boolean defaultValue)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         Object value = this.attributes.get(name);
         if (value == null) {
@@ -2042,7 +2043,7 @@ public class XMLElement
     public void removeAttribute(String name)
     {
         if (this.ignoreCase) {
-            name = name.toUpperCase();
+            name = name.toUpperCase(Locale.US);
         }
         this.attributes.remove(name);
     }
@@ -2146,7 +2147,7 @@ public class XMLElement
     {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            OutputStreamWriter writer = new OutputStreamWriter(out);
+            OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
             this.write(writer);
             writer.flush();
             return new String(out.toByteArray());
