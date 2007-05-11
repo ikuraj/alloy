@@ -29,7 +29,7 @@ import javax.swing.event.MenuListener;
 
 /** This class encapsulates a Runnable. */
 
-public final class MultiRunner extends AbstractAction implements MenuListener, WindowListener, Runnable {
+public final class MultiRunner extends AbstractAction implements WindowListener, MenuListener, Runnable {
 
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;

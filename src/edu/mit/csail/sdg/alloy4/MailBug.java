@@ -46,7 +46,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 /**
- * This class asks for permission to email a bug report when an uncaught exception occurs.
+ * This class asks the user for permission to email a bug report when an uncaught exception occurs.
  */
 
 public final class MailBug implements UncaughtExceptionHandler {
