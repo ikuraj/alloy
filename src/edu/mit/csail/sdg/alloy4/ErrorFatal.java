@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -41,14 +42,6 @@ public final class ErrorFatal extends Err {
     }
 
     /**
-     * Constructs a new fatal error with the additional stacktrace entries from "ex" inserted
-     * @param msg - the actual error message
-     */
-    public ErrorFatal(String msg, Exception ex) {
-        super(null,msg,ex.getStackTrace());
-    }
-
-    /**
      * Constructs a new fatal error.
      * @param pos - the filename/line/row information (can be null if unknown)
      * @param msg - the actual error message
@@ -66,5 +59,14 @@ public final class ErrorFatal extends Err {
             return "Fatal error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
         }
         return "Fatal error at line "+pos.y+" column "+pos.x+":\n"+msg;
+    }
+
+    /**
+     * Constructs a new fatal error with the additional stacktrace entries from "ex" inserted
+     * @param msg - the actual error message
+     * @param ex - the underlying exception
+     */
+    public ErrorFatal(String msg, Exception ex) {
+        super(null,msg,ex.getStackTrace());
     }
 }
