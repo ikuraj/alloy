@@ -341,7 +341,7 @@ public final class OurTabbedEditor {
         xx.setAlignmentX(0.0f);
         xx.setAlignmentY(1.0f);
         // Make the JTextArea
-        fileContent = fileContent.replace("\r\n", "\n").replace('\r','\n');
+        fileContent=Util.convertLineBreak(fileContent);
         final JTextArea text=new JTextArea(fileContent);
         text.setBackground(Color.WHITE);
         text.setBorder(new EmptyBorder(1,1,1,1));

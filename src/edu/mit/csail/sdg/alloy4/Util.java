@@ -127,6 +127,11 @@ public final class Util {
         return Collections.unmodifiableList(list);
     }
 
+    /** Helper method that converts linebreaks into "\n" */
+    public static String convertLineBreak(String input) {
+        return input.replace("\r\n","\n").replace('\r','\n');
+    }
+
     /** Read everything into a String; throws IOException if an error occurred. */
     public static String readAll(String filename) throws IOException {
         Pair<char[],Integer> p = readEntireFile(filename);

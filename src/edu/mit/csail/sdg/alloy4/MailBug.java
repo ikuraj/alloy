@@ -109,8 +109,8 @@ public final class MailBug implements UncaughtExceptionHandler {
         final StringWriter sw = new StringWriter();
         final PrintWriter pw = new PrintWriter(sw);
         pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
-        pw.printf("========================= Email ============================\n%s\n\n", email.getText());
-        pw.printf("========================= Problem ==========================\n%s\n\n", problem.getText());
+        pw.printf("========================= Email ============================\n%s\n\n", Util.convertLineBreak(email.getText()));
+        pw.printf("========================= Problem ==========================\n%s\n\n", Util.convertLineBreak(problem.getText()));
         pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
         if (ex!=null) {
            pw.printf("========================= Exception ========================\n");
