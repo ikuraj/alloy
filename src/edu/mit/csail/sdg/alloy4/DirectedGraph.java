@@ -29,8 +29,6 @@ import java.util.IdentityHashMap;
  *
  * <p> Note: it uses n1==n2 for comparing nodes rather than using n1.equals(n2)
  *
- * <p><b>Invariant:</b>  nodeToTargets.containsKey(x) implies nodeToTargets.get(x)!=null
- *
  * <p><b>Thread Safety:</b>  Safe
  *
  * @param <N> - the node type

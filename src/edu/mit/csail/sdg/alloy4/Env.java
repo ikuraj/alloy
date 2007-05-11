@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -48,14 +49,14 @@ public final class Env<V> {
     /**
      * If a key is bound to one or more values, this stores the first value.
      * <p>
-     * For example: if key K is bound to values [V1..Vn], then map1.get(K) returns V1
+     * For example: if key K is bound to values V1..Vn, then map1.get(K) returns V1
      */
     private final Map<String,V> map1 = new LinkedHashMap<String,V>();
 
     /**
      * If a key is bound to more than one value, this stores every value except the first value.
      * <p>
-     * For example: if key K is bound to values [V1..Vn], then map2.get(K) returns the list [V2..Vn]
+     * For example: if key K is bound to values V1..Vn, then map2.get(K) returns the sublist V2..Vn
      */
     private final Map<String,LinkedList<V>> map2=new LinkedHashMap<String,LinkedList<V>>();
 
