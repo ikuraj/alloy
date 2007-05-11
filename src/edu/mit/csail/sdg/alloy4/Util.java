@@ -22,6 +22,7 @@ package edu.mit.csail.sdg.alloy4;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -132,6 +133,15 @@ public final class Util {
         return input.replace("\r\n","\n").replace('\r','\n');
     }
 
+    public static boolean close(Closeable object) {
+        try {
+            if (object!=null) object.close();
+            return true;
+        } catch(Exception ex) {
+            return false;
+        }
+    }
+
     /** Read everything into a String; throws IOException if an error occurred. */
     public static String readAll(String filename) throws IOException {
         Pair<char[],Integer> p = readEntireFile(filename);
@@ -170,10 +180,10 @@ public final class Util {
         } catch(IOException ex) {
             throw new ErrorFatal("IOException: "+ex.getMessage());
         } finally {
-            if (out!=null) { out.flush(); out.close(); }
-            if (bw!=null) try {bw.close();} catch(IOException ex) {}
-            if (fw!=null) try {fw.close();} catch(IOException ex) {}
-            if (rd!=null) try {rd.close();} catch(IOException ex) {}
+            close(out);
+            close(bw);
+            close(fw);
+            close(rd);
         }
     }
 
@@ -312,8 +322,8 @@ public final class Util {
             } catch(IOException e) { result=false; }
             try { tmpFileOutputStream.close(); } catch(IOException ex) { result=false; }
         }
-        try { binStream.close(); } catch(IOException ex) { result=false; }
-        try { resStream.close(); } catch(IOException ex) { result=false; }
+        if (!close(binStream)) result=false;
+        if (!close(resStream)) result=false;
         if (!result) OurDialog.fatal(null,"Error occurred in creating the file \""+destname+"\"");
         return true;
     }
@@ -333,9 +343,11 @@ public final class Util {
                 if (numRead == -1) break;
                 if (numRead > 0) for(int i=0;i<numRead;i++) result.append((char)(b[i]));
             }
-        } catch(IOException e) { result=null; }
-        try { binStream.close(); } catch(IOException ex) { result=null; }
-        try { resStream.close(); } catch(IOException ex) { result=null; }
+        } catch(IOException e) {
+           result=null;
+        }
+        if (!close(binStream)) result=null;
+        if (!close(resStream)) result=null;
         return result==null ? null : result.toString();
     }
 
@@ -454,8 +466,8 @@ public final class Util {
             }
             return new Pair<char[],Integer>(buf,now);
         } finally {
-            if (isr!=null) { try {isr.close();} catch(IOException ex2) {} }
-            if (fis!=null) { try {fis.close();} catch(IOException ex2) {} }
+            close(isr);
+            close(fis);
         }
     }
 

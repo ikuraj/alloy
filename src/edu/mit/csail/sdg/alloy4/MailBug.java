@@ -26,7 +26,6 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -199,20 +198,8 @@ public final class MailBug implements UncaughtExceptionHandler {
             +"Please email alloy@mit.edu directly.\n\n"
             +"(Bug posting failed due to Java exception: "+ex.toString()+")";
         } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch(IOException ignore) {
-                    // Nothing further we can do. We already tried closing it...
-                }
-            }
-            if (in != null) {
-                try {
-                    in.close();
-                } catch(IOException ignore) {
-                    // Nothing further we can do. We already tried closing it...
-                }
-            }
+            Util.close(out);
+            Util.close(in);
         }
     }
 }
