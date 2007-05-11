@@ -87,8 +87,11 @@ public final class OurTabbedEditor {
     /** Background color for an inactive tab. */
     private static final Color inactive=new Color(.8f, .8f, .8f);
 
-    /** Background color for an inactive but highlighted tab. */
-    private static final Color inactiveHighlighted=new Color(.8f, .5f, .5f);
+    /** Background color for a inactive and highlighted tab. */
+    private static final Color inactiveHighlighted=new Color(.7f, .5f, .5f);
+
+    /** Foreground color for a active and highlighted tab. */
+    private static final Color activeHighlighted=new Color(.5f, .2f, .2f);
 
     /** Border color for each tab. */
     private static final Color border=Color.LIGHT_GRAY;
@@ -422,7 +425,7 @@ public final class OurTabbedEditor {
         });
         text.getDocument().addDocumentListener(new DocumentListener() {
             public final void changedUpdate(DocumentEvent e) {
-                tab.highlighter.removeAllHighlights();
+                removeAllHighlights();
                 setTitle(tab.label, tab.filename+" *");
                 tab.modified=true;
                 parent.notifyChange();
@@ -504,6 +507,7 @@ public final class OurTabbedEditor {
     /** Removes all highlights from the current text buffer. */
     public void removeAllHighlights() {
         for(Tab t:list) t.highlighter.removeAllHighlights();
+        adjustLabelColor();
     }
 
     /** Returne ths entire JPanel of this tabbed text editor. */
@@ -716,6 +720,7 @@ public final class OurTabbedEditor {
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
             }
+            adjustLabelColor();
         }
     }
 
@@ -758,6 +763,7 @@ public final class OurTabbedEditor {
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
             }
+            adjustLabelColor();
         }
     }
 
@@ -813,23 +819,25 @@ public final class OurTabbedEditor {
         return me;
     }
 
-    /** Switch to the i-th tab (Note: if successful, it will then always call parent.notifyChange()) */
-    public void setSelectedIndex(final int i) {
-        if (i<0 || i>=list.size()) {
-            return;
-        }
-        frame.revalidate();
-        me=i;
+    /** Adjusts the background and foreground of all labels. */
+    private void adjustLabelColor() {
+        int i=me;
         for(int j=0; j<list.size(); j++) {
             Tab t=list.get(j);
             JLabel x=t.label;
             boolean hl=(t.highlighter.getHighlights().length>0);
-            x.setBorder(new OurBorder(border,border, j!=i?border:WHITE,border));
-            if (j==i)
-                x.setBackground(WHITE);
-            else
-                x.setBackground(hl ? inactiveHighlighted : inactive);
+            x.setBorder(new OurBorder(border,border, j!=i?border:WHITE, border));
+            x.setBackground(j!=i ? (hl ? inactiveHighlighted : inactive) : WHITE);
+            x.setForeground(hl ? (j!=i ? BLACK : activeHighlighted) : BLACK);
         }
+    }
+
+    /** Switch to the i-th tab (Note: if successful, it will then always call parent.notifyChange()) */
+    public void setSelectedIndex(final int i) {
+        if (i<0 || i>=list.size()) return;
+        me=i;
+        frame.revalidate();
+        adjustLabelColor();
         frame.removeAll();
         if (list.size()>1) {
             frame.add(scroller, BorderLayout.NORTH);
