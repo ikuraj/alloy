@@ -63,19 +63,19 @@ public final class MacUtil {
             application.removeApplicationListener(listener);
         }
         listener=new ApplicationAdapter() {
-            @Override public final void handleReOpenApplication (ApplicationEvent arg) {
+            @Override public final void handleReOpenApplication (final ApplicationEvent arg) {
                 SwingUtilities.invokeLater(new MultiRunner(handler, reopen));
             }
-            @Override public final void handleAbout (ApplicationEvent arg) {
+            @Override public final void handleAbout (final ApplicationEvent arg) {
                 arg.setHandled(true);
                 SwingUtilities.invokeLater(new MultiRunner(handler, about));
             }
-            @Override public final void handleOpenFile (ApplicationEvent arg) {
+            @Override public final void handleOpenFile (final ApplicationEvent arg) {
                 SwingUtilities.invokeLater(new MultiRunner(handler, open, arg.getFilename()));
             }
-            @Override public final void handleQuit (ApplicationEvent arg) {
+            @Override public final void handleQuit (final ApplicationEvent arg) {
+                OurUtil.invokeAndWait(new MultiRunner(handler,quit));
                 arg.setHandled(false); // "false" is correct; some documentation on apple.com claimed otherwise.
-                SwingUtilities.invokeLater(new MultiRunner(handler, quit));
             }
         };
         application.addApplicationListener(listener);

@@ -27,10 +27,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -163,12 +163,14 @@ public final class Util {
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
     public static void writeAll(String filename, String content) throws Err {
-        FileWriter fw=null;
+        FileOutputStream fos=null;
+        OutputStreamWriter fw=null;
         BufferedWriter bw=null;
         PrintWriter out=null;
         BufferedReader rd=null;
         try {
-            fw=new FileWriter(filename);
+            fos=new FileOutputStream(filename);
+            fw=new OutputStreamWriter(fos, "UTF-8");
             bw=new BufferedWriter(fw);
             out=new PrintWriter(bw);
             rd=new BufferedReader(new StringReader(content));
@@ -181,10 +183,11 @@ public final class Util {
         } catch(IOException ex) {
             throw new ErrorFatal("IOException: "+ex.getMessage());
         } finally {
+            close(rd);
             close(out);
             close(bw);
             close(fw);
-            close(rd);
+            close(fos);
         }
     }
 
