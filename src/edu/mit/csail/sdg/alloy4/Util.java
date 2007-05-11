@@ -145,19 +145,14 @@ public final class Util {
 
     /** Read everything into a String; throws IOException if an error occurred. */
     public static String readAll(String filename) throws IOException {
-        Pair<char[],Integer> p = readEntireFile(filename);
+        Pair<char[],Integer> p;
+        // We first try UTF-8, and if that fails, we try using the platform's default charset
+        try {p=readEntireFile(filename,"UTF-8");} catch(Exception ex) {p=readEntireFile(filename,null);}
         char[] a = p.a;
         int b = p.b;
-        while(b>0 && a[b-1]>=0 && a[b-1]<=32) {
-            b--; // Remove trailing whitespace
-        }
-        if (b==0) {
-            return "";
-        }
-        if (b<a.length) {
-            a[b]='\n';
-            return new String(a,0,b+1);
-        }
+        while(b>0 && a[b-1]>=0 && a[b-1]<=32) b--; // Remove trailing whitespace
+        if (b==0) return "";
+        if (b<a.length) { a[b]='\n'; return new String(a,0,b+1); }
         return (new String(a,0,b))+"\n";
     }
 
@@ -444,14 +439,14 @@ public final class Util {
     }
 
     /** Read the file then return file size and a char[] array (the array could be slightly bigger than file size) */
-    private static Pair<char[],Integer> readEntireFile(String filename) throws IOException {
+    private static Pair<char[],Integer> readEntireFile(String filename, String charset) throws IOException {
         FileInputStream fis=null;
         InputStreamReader isr=null;
         int now=0, max=0;
         char[] buf;
         try {
             fis=new FileInputStream(filename);
-            isr=new InputStreamReader(fis,"UTF-8");
+            if (charset!=null) isr=new InputStreamReader(fis,charset); else isr=new InputStreamReader(fis);
             buf=new char[max];
             while(true) {
                if (max<=now) {
