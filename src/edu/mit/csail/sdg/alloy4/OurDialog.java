@@ -344,7 +344,7 @@ public final class OurDialog {
                     }
                     // Find out whether there was already a linebreak at the end of the user input or not
                     String n=doc.getText(d-1,1);
-                    n = (n.charAt(0)=='\r' || n.charAt(0)=='\n') ? "\n   " : "\n\n   ";
+                    n = (n.charAt(0)=='\n' || n.charAt(0)=='\r') ? "\n   " : "\n\n   ";
                     // Add a linebreak if needed, then add the answer, then add another "Eval> " prompt.
                     if (err!=null) doc.insertString(d, n+err+"\n", red); else doc.insertString(d, n+ans+"\n", blue);
                     d=doc.getLength();
@@ -370,7 +370,7 @@ public final class OurDialog {
         int lb=msg.indexOf('\n');
         if (lb>=0) return linewrap(msg.substring(0,lb))+"\n   "+linewrap(msg.substring(lb+1));
         StringBuilder sb=new StringBuilder();
-        StringTokenizer tokenizer=new StringTokenizer(msg.trim(), "\r\n\t ");
+        StringTokenizer tokenizer=new StringTokenizer(msg.trim(), "\n\r\t ");
         int max=50, now=0;
         while(tokenizer.hasMoreTokens()) {
             String x=tokenizer.nextToken();

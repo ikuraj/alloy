@@ -159,7 +159,7 @@ public final class Util {
             while(true) {
                 String line=rd.readLine();
                 if (line==null) break;
-                out.println(line);
+                out.println(line); // This ensures we write the file using this platform's end-of-line convention
             }
             if (out.checkError()) throw new IOException("PrintWriter failed to write to file \""+filename+"\"");
         } catch(IOException ex) {

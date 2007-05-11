@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -54,29 +55,24 @@ public final class MailBug implements UncaughtExceptionHandler {
     /** Construct a new MailBug object. */
     public MailBug() { }
 
-    /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
+    /** The version number of the most recent Alloy4 (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
     private int latestAlloyVersion=(-1);
 
-    /** The name of the most recent Alloy version (as queried from alloy.mit.edu); "unknown" if alloy.mit.edu has not replied yet. */
+    /** The name of the most recent Alloy4 (as queried from alloy.mit.edu); "unknown" if alloy.mit.edu has not replied yet. */
     private String latestAlloyVersionName="unknown";
 
     /** Sets the most recent Alloy version (as queried from alloy.mit.edu) */
-    public synchronized void setLatestAlloyVersion(int version, String versionName) {
+    public synchronized void setLatestAlloyVersion (int version, String versionName) {
         latestAlloyVersion=version;
         latestAlloyVersionName=versionName;
     }
 
     /** This method is an exception handler for uncaught exceptions. */
-    public synchronized void uncaughtException(Thread thread, Throwable ex) {
-        //if (ex!=null) {
-        //    System.err.println("-------------------------------------");
-        //    ex.printStackTrace(System.err);
-        //    System.err.flush();
-        //}
+    public synchronized void uncaughtException (Thread thread, Throwable ex) {
         final String yes="Send the Bug Report";
         final String no="Don't Send the Bug Report";
-        final JTextField email = new JTextField(20);
-        final JTextArea problem = new JTextArea();
+        final JTextField email=new JTextField(20);
+        final JTextArea problem=new JTextArea();
         email.setBorder(new LineBorder(Color.DARK_GRAY));
         problem.setBorder(null);
         final JScrollPane scroll=OurUtil.scrollpane(problem);
@@ -107,8 +103,7 @@ public final class MailBug implements UncaughtExceptionHandler {
                     " ",
                     OurUtil.makeHT("Email:",5,email,null),
                     OurUtil.makeHT("Problem:",5,scroll,null)
-            },
-            "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+            }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
             null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { System.exit(1); }
         }
         final StringWriter sw = new StringWriter();
@@ -118,7 +113,8 @@ public final class MailBug implements UncaughtExceptionHandler {
         pw.printf("========================= Problem ==========================\n%s\n\n", problem.getText());
         pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
         if (ex!=null) {
-           pw.printf("========================= Exception ========================\n"+ex.getClass()+": "+ex+"\n\n");
+           pw.printf("========================= Exception ========================\n");
+           pw.printf("%s: %s\n\n", ex.getClass().toString(), ex.toString());
            pw.printf("========================= Stack Trace ======================\n");
            ex.printStackTrace(pw);
         }
@@ -131,21 +127,19 @@ public final class MailBug implements UncaughtExceptionHandler {
         } catch(BackingStoreException ignore) {
             // Not fatal
         }
-        pw.printf("\n========================= System Properties ================\n");
-        pw.println("Runtime.freeMemory() = "+Runtime.getRuntime().freeMemory());
-        pw.println("Runtime.totalMemory() = "+Runtime.getRuntime().totalMemory());
+        pw.printf("\n========================= System Properties ================");
+        pw.printf("\nRuntime.freeMemory() = "+Runtime.getRuntime().freeMemory());
+        pw.printf("\nRuntime.totalMemory() = "+Runtime.getRuntime().totalMemory());
         for(Map.Entry<Object,Object> e:System.getProperties().entrySet()) {
             Object k=e.getKey(), v=e.getValue();
             if (!"line.separator".equals(k)) {
                 // We are skipping "line.separator" since it's useless and it makes the resulting email harder to read
-                pw.printf("%s = %s\n", (k==null ? "null" : k.toString()), (v==null ? "null" : v.toString()));
+                pw.printf("\n%s = %s", (k==null ? "null" : k.toString()), (v==null ? "null" : v.toString()));
             }
         }
-        pw.printf("\n\n========================= The End ==========================\n\n");
+        pw.printf("\n\n\n========================= The End ==========================\n\n");
         pw.close();
         sw.flush();
-        //System.err.println(sw.toString());
-        //System.err.flush();
         try {
             final JFrame statusWindow=new JFrame();
             final JButton done=new JButton("Close");
