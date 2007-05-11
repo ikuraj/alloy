@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -58,22 +59,21 @@ public final class MacUtil {
     (final MultiRunnable handler, final int reopen, final int about, final int open, final int quit) {
         if (application==null) {
             application=new Application();
-        }
-        if (listener!=null) {
+        } else if (listener!=null) {
             application.removeApplicationListener(listener);
         }
         listener=new ApplicationAdapter() {
-            @Override public void handleReOpenApplication (ApplicationEvent arg) {
+            @Override public final void handleReOpenApplication (ApplicationEvent arg) {
                 SwingUtilities.invokeLater(new MultiRunner(handler, reopen));
             }
-            @Override public void handleAbout (ApplicationEvent arg) {
+            @Override public final void handleAbout (ApplicationEvent arg) {
                 arg.setHandled(true);
                 SwingUtilities.invokeLater(new MultiRunner(handler, about));
             }
-            @Override public void handleOpenFile (ApplicationEvent arg) {
+            @Override public final void handleOpenFile (ApplicationEvent arg) {
                 SwingUtilities.invokeLater(new MultiRunner(handler, open, arg.getFilename()));
             }
-            @Override public void handleQuit (ApplicationEvent arg) {
+            @Override public final void handleQuit (ApplicationEvent arg) {
                 arg.setHandled(false); // "false" is correct; some documentation on apple.com claimed otherwise.
                 SwingUtilities.invokeLater(new MultiRunner(handler, quit));
             }
