@@ -50,7 +50,7 @@ public final class MultiRunner extends AbstractAction implements MenuListener, W
     /** The key to pass to the runnable. */
     private final int key;
 
-    /** 0 if there is no argument; 1 if the argument is integer; 2 if the argument is String. */
+    /** 0 if there is no argument; 1 if the argument is an integer; 2 if the argument is a String. */
     private final int arg;
 
     /** The integer argument to pass to the runnable. */
