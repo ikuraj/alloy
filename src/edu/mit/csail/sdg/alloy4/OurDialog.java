@@ -21,6 +21,7 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.Locale;
 import java.util.StringTokenizer;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -184,7 +185,7 @@ public final class OurDialog {
             f.setDirectory(dir);
             if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
-                    return name.toLowerCase().endsWith(ext);
+                    return name.toLowerCase(Locale.US).endsWith(ext);
                 }
             });
             f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
@@ -198,7 +199,7 @@ public final class OurDialog {
             open.setApproveButtonText(isOpen?"Open":"Save");
             if (ext.length()>0) open.setFileFilter(new FileFilter() {
                 public boolean accept(File f) {
-                    return !f.isFile() || f.getPath().toLowerCase().endsWith(ext);
+                    return !f.isFile() || f.getPath().toLowerCase(Locale.US).endsWith(ext);
                 }
                 public String getDescription() {
                     return description;

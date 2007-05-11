@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.prefs.Preferences;
 
 /**
@@ -428,10 +429,10 @@ public final class Util {
         while(start>=0 && start<len) {
             for(int i=0;; i++) {
                 if (i>=slen) return start;
-                char b=big.charAt(start+i), s=small.charAt(i);
+                int b=big.charAt(start+i), s=small.charAt(i);
                 if (b==s) continue;
-                if (!caseSensitive && b>='A' && b<='Z') b=Character.toLowerCase(b);
-                if (!caseSensitive && s>='A' && s<='Z') s=Character.toLowerCase(s);
+                if (!caseSensitive && b>='A' && b<='Z') b=(b-'A')+'a';
+                if (!caseSensitive && s>='A' && s<='Z') s=(s-'A')+'a';
                 if (b!=s) break;
             }
             if (forward) start++; else start--;
@@ -481,7 +482,7 @@ public final class Util {
     }
 
     /** Returns true iff running on Windows **/
-    public static boolean onWindows() { return System.getProperty("os.name").toLowerCase().startsWith("windows"); };
+    public static boolean onWindows() { return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows"); };
 
     /** Returns true iff running on Mac OS X. **/
     public static boolean onMac() { return System.getProperty("mrj.version")!=null; }
