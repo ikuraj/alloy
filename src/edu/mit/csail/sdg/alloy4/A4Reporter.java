@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -26,11 +27,20 @@ package edu.mit.csail.sdg.alloy4;
 
 public class A4Reporter {
 
-    /** This is a read-only pre-constructed instance that simply ignores all calls. */
+    /** This is a pre-constructed instance that simply ignores all calls. */
     public static final A4Reporter NOP = new A4Reporter();
 
     /** Constructs a default A4Reporter object that does nothing. */
     public A4Reporter() {}
+
+    /**
+     * This method is called at various points to report the current progress;
+     * it is only intended as a debugging aid for the developers;
+     * the messages are generally not useful for end users.
+     *
+     * @param msg - the debug message
+     */
+    public void debug(String msg) {}
 
     /** This method is called by the parser to report parser events. */
     public void parse(String msg) {}
@@ -53,15 +63,15 @@ public class A4Reporter {
      * @param solver - the solver chosen by the user (eg. SAT4J, MiniSat...)
      * @param bitwidth - the integer bitwidth chosen by the user
      * @param maxseq - the scope on seq/Int chosen by the user
-     * @param skolemDepth - the skolem function depth chosen by the user
-     * @param symmetry - the amount of symmetry breaking chosen by the user
+     * @param skolemDepth - the skolem function depth chosen by the user (0, 1, 2...)
+     * @param symmetry - the amount of symmetry breaking chosen by the user (0...)
      */
     public void translate(String solver, int bitwidth, int maxseq, int skolemDepth, int symmetry) {}
 
     /**
      * This method is called by the translator just after it generated the CNF.
      *
-     * @param primaryVars - the number of primary variables
+     * @param primaryVars - the total number of primary variables
      * @param totalVars - the total number of variables
      * @param clauses - the total number of clauses
      */
@@ -78,9 +88,8 @@ public class A4Reporter {
      * If solver!=FILE, this method is called by the translator if the formula is satisfiable.
      *
      * @param command - this is the original Command used to generate this solution
-     * @param solvingTime - this is the number of milliseconds
-     * @param filename - if not null, and its length>0,
-     * then it points to a file containing the solution in XML format.
+     * @param solvingTime - this is the number of milliseconds the solver took to obtain this result
+     * @param filename - if not null, and length()>0, then it points to a file containing the solution in XML format
      */
     public void resultSAT(Object command, long solvingTime, String filename) {}
 
@@ -88,18 +97,9 @@ public class A4Reporter {
      * If solver!=FILE, this method is called by the translator if the formula is unsatisfiable.
      *
      * @param command - this is the original Command used to generate this solution
-     * @param solvingTime - this is the number of milliseconds
-     * @param formula - if not null, and length()>0, then it's the original Kodkod formula in Java format
+     * @param solvingTime - this is the number of milliseconds the solver took to obtain this result
+     * @param formula - if not null, and length()>0, then it's the original Kodkod formula expressed in Java format
      * @param core - if not null, and length()>0, then it is a unsat core
      */
     public void resultUNSAT(Object command, long solvingTime, String formula, IdentitySet<Pos> core) {}
-
-    /**
-     * This method is called at various points during the compilation and translation to report
-     * the current progress; it is only intended for developer during debugging; the messages will not be useful
-     * for users.
-     *
-     * @param msg - the debug message
-     */
-    public void debug(String msg) {}
 }

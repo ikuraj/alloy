@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -26,7 +27,7 @@ import java.util.IdentityHashMap;
 /**
  * Mutable; this implements a graph with nodes and directed edges; null node is allowed.
  *
- * <p> Note: it uses reference identity for comparing nodes rather than using N.equals()
+ * <p> Note: it uses n1==n2 for comparing nodes rather than using n1.equals(n2)
  *
  * <p><b>Invariant:</b>  nodeToTargets.containsKey(x) implies nodeToTargets.get(x)!=null
  *
@@ -37,7 +38,7 @@ import java.util.IdentityHashMap;
 
 public final class DirectedGraph<N> {
 
-    /** This field maps each node X to a list of "neighbor nodes" that X can reach by following a directed edge. */
+    /** This field maps each node X to a list of "neighbor nodes" that X can reach by following one or more directed edges. */
     private final IdentityHashMap<N,List<N>> nodeToTargets = new IdentityHashMap<N,List<N>>();
 
     /** Constructs an empty graph. */
