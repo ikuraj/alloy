@@ -170,7 +170,7 @@ public final class Util {
         BufferedReader rd=null;
         try {
             fos=new FileOutputStream(filename);
-            fw=new OutputStreamWriter(fos, "UTF-8");
+            fw=new OutputStreamWriter(fos,"UTF-8");
             bw=new BufferedWriter(fw);
             out=new PrintWriter(bw);
             rd=new BufferedReader(new StringReader(content));
@@ -451,7 +451,7 @@ public final class Util {
         char[] buf;
         try {
             fis=new FileInputStream(filename);
-            isr=new InputStreamReader(fis,"ISO8859_1");
+            isr=new InputStreamReader(fis,"UTF-8");
             buf=new char[max];
             while(true) {
                if (max<=now) {
