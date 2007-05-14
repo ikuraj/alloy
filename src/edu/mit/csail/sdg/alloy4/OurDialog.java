@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -184,7 +185,7 @@ public final class OurDialog {
             f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
             f.setDirectory(dir);
             if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
+                public final boolean accept(File dir, String name) {
                     return name.toLowerCase(Locale.US).endsWith(ext);
                 }
             });
@@ -198,10 +199,10 @@ public final class OurDialog {
             open.setDialogTitle(isOpen?"Open...":"Save...");
             open.setApproveButtonText(isOpen?"Open":"Save");
             if (ext.length()>0) open.setFileFilter(new FileFilter() {
-                public boolean accept(File f) {
+                public final boolean accept(File f) {
                     return !f.isFile() || f.getPath().toLowerCase(Locale.US).endsWith(ext);
                 }
-                public String getDescription() {
+                public final String getDescription() {
                     return description;
                 }
             });
@@ -329,8 +330,8 @@ public final class OurDialog {
                     }
                 }
                 // If the caret is before "Eval>", this will move the cursor to the end of the document before processing the key
-                int c=textarea.getCaretPosition(), b=box.get(), d=doc.getLength();
-                if (c<b) textarea.setCaretPosition(d);
+                int b=box.get(), d=doc.getLength();
+                if (textarea.getCaretPosition()<b) textarea.setCaretPosition(d);
                 // If the user hit ENTER, then...
                 if (e.getKeyChar()!='\n' && e.getKeyChar()!='\r') return;
                 try {
@@ -346,7 +347,7 @@ public final class OurDialog {
                     // Find out whether there was already a linebreak at the end of the user input or not
                     String n=doc.getText(d-1,1);
                     n = (n.charAt(0)=='\n' || n.charAt(0)=='\r') ? "\n   " : "\n\n   ";
-                    // Add a linebreak if needed, then add the answer, then add another "Eval> " prompt.
+                    // Add the answer, then add another "Eval> " prompt.
                     if (err!=null) doc.insertString(d, n+err+"\n", red); else doc.insertString(d, n+ans+"\n", blue);
                     d=doc.getLength();
                     doc.insertString(d, "\nEval> ", null);
