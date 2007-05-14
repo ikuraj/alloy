@@ -87,9 +87,9 @@ public final class OurBinaryCheckbox extends JPanel {
      * @param gs - the GetterSetter associated with this checkbox
      * @param key - the key associated with this checkbox
      * @param label - the label to display next to the checkbox
-     * @param tip - the tool tip to show when the mouse hovers over this check box
+     * @param tooltip - the tool tip to show when the mouse hovers over this check box
      */
-    public OurBinaryCheckbox(final BinaryGetterSetter gs, final Object key, String label, String tip) {
+    public OurBinaryCheckbox(final BinaryGetterSetter gs, final Object key, String label, String tooltip) {
         super();
         this.gs=gs;
         this.key=key;
@@ -103,9 +103,9 @@ public final class OurBinaryCheckbox extends JPanel {
             }
         });
         box.setMaximumSize(box.getPreferredSize());
-        box.setToolTipText(tip);
+        box.setToolTipText(tooltip);
         jlabel=new JLabel(label);
-        jlabel.setToolTipText(tip);
+        jlabel.setToolTipText(tooltip);
         jlabel.setFont(OurUtil.getVizFont());
         add(box);
         add(jlabel);
