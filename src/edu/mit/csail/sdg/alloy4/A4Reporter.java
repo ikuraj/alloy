@@ -102,11 +102,4 @@ public class A4Reporter {
      * @param core - if not null, and length()>0, then it is a unsat core
      */
     public void resultUNSAT(Object command, long solvingTime, String formula, IdentitySet<Pos> core) {}
-
-    /**
-     * If solver!=FILE, this method is called by the translator during unsat core minimization.
-     *
-     * @param command - this is the original Command used to generate this solution
-     */
-    public void minimizing(Object command) {}
 }
