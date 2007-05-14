@@ -340,7 +340,7 @@ public final class OurDialog {
                         ans=linewrap(computer.compute(doc.getText(b,d-b)));
                     } catch(RuntimeException ex) {
                         err=linewrap("Error: "+ex.getMessage());
-                    } catch(Exception ex) {
+                    } catch(Throwable ex) {
                         err=linewrap("Error: "+ex.toString());
                     }
                     // Find out whether there was already a linebreak at the end of the user input or not
@@ -356,7 +356,7 @@ public final class OurDialog {
                     d=doc.getLength();
                     textarea.setCaretPosition(d);
                     box.set(d);
-                } catch(Exception ex) { }
+                } catch(Throwable ex) { }
             }
             public final void keyPressed(KeyEvent e) { }
             public final void keyReleased(KeyEvent e) { }

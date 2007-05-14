@@ -167,7 +167,7 @@ public final class MailBug implements UncaughtExceptionHandler {
             statusWindow.setLocation(w/2-300,h/2-100);
             statusWindow.setVisible(true);
             status.setText(postBug(sw.toString()));
-        } catch(Exception exception) {
+        } catch(Throwable exception) {
             System.exit(1);
         }
     }
@@ -193,7 +193,7 @@ public final class MailBug implements UncaughtExceptionHandler {
                 report.append('\n');
             }
             return report.toString();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             return "Sorry. An error has occurred in posting the bug report.\n\n"
             +"Please email alloy@mit.edu directly.\n\n"
             +"(Bug posting failed due to Java exception: "+ex.toString()+")";

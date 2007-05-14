@@ -138,7 +138,7 @@ public final class Util {
         try {
             if (object!=null) object.close();
             return true;
-        } catch(Exception ex) {
+        } catch(Throwable ex) {
             return false;
         }
     }
@@ -147,7 +147,7 @@ public final class Util {
     public static String readAll(String filename) throws IOException {
         Pair<char[],Integer> p;
         // We first try UTF-8, and if that fails, we try using the platform's default charset
-        try {p=readEntireFile(filename,"UTF-8");} catch(Exception ex) {p=readEntireFile(filename,null);}
+        try {p=readEntireFile(filename,"UTF-8");} catch(Throwable ex) {p=readEntireFile(filename,null);}
         char[] a = p.a;
         int b = p.b;
         while(b>0 && a[b-1]>=0 && a[b-1]<=32) b--; // Remove trailing whitespace
@@ -288,7 +288,7 @@ public final class Util {
         for(int i=0; i<j; i++) realargs[i]=args[i];
         try {
             Runtime.getRuntime().exec(realargs).waitFor();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             // We only intend to make a best effort
         }
     }
