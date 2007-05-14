@@ -92,6 +92,13 @@ public class A4Reporter {
      * @param filename - if not null, and length()>0, then it points to a file containing the solution in XML format
      */
     public void resultSAT(Object command, long solvingTime, String filename) {}
+    
+    /**
+     * If solver!=FILE, this method is called by the translator during unsat core minimization.
+     *
+     * @param command - this is the original Command used to generate this solution
+     */
+    public void minimizing(Object command) {}
 
     /**
      * If solver!=FILE, this method is called by the translator if the formula is unsatisfiable.
