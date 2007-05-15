@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -64,31 +65,6 @@ public final class OurUtil {
     /** This constructor is private, since this utility class never needs to be instantiated. */
     private OurUtil() { }
 
-    /**
-     * Make a graphical button
-     * @param label - the text to show beneath the button
-     * @param tip - the tooltip to show when the mouse hovers over the button
-     * @param iconname - the filename of the icon to show (it will be loaded from an accompanying jar file)
-     * @param func - the function to call when the button is pressed (null if we don't want to call any function)
-     * @param key - the parameter to pass to func() when the button is pressed
-     */
-    public static JButton button(String label, String tip,String iconname, MultiRunnable func, int key) {
-        JButton button = new JButton(label,loadIcon(iconname));
-        if (func!=null) {
-            button.addActionListener(new MultiRunner(func,key));
-        }
-        button.setVerticalTextPosition(JButton.BOTTOM);
-        button.setHorizontalTextPosition(JButton.CENTER);
-        button.setBorderPainted(false);
-        button.setFocusable(false);
-        if (!Util.onMac()) {
-            button.setBackground(new Color(0.9f, 0.9f, 0.9f));
-        }
-        button.setFont(button.getFont().deriveFont(10.0f));
-        button.setToolTipText(tip);
-        return button;
-    }
-
     /** Returns the recommended font to use in the visualizer, based on the OS. */
     public static Font getVizFont() {
         return Util.onMac() ? new Font("Lucida Grande",Font.PLAIN,11) : new Font("Dialog",Font.PLAIN,12);
@@ -119,10 +95,35 @@ public final class OurUtil {
         }
     }
 
+    /**
+     * Make a graphical button
+     * @param label - the text to show beneath the button
+     * @param tip - the tooltip to show when the mouse hovers over the button
+     * @param iconname - the filename of the icon to show (it will be loaded from an accompanying jar file)
+     * @param func - the function to call when the button is pressed (null if we don't want to call any function)
+     * @param key - the parameter to pass to func() when the button is pressed
+     */
+    public static JButton button(String label, String tip, String iconname, MultiRunnable func, int key) {
+        JButton button = new JButton(label,loadIcon(iconname));
+        if (func!=null) {
+            button.addActionListener(new MultiRunner(func,key));
+        }
+        button.setVerticalTextPosition(JButton.BOTTOM);
+        button.setHorizontalTextPosition(JButton.CENTER);
+        button.setBorderPainted(false);
+        button.setFocusable(false);
+        if (!Util.onMac()) {
+            button.setBackground(new Color(0.9f, 0.9f, 0.9f));
+        }
+        button.setFont(button.getFont().deriveFont(10.0f));
+        button.setToolTipText(tip);
+        return button;
+    }
+
     /** Make a JLabel with the given color. */
     public static JLabel label(Color color, String label) {
         JLabel answer = new JLabel(label);
-        answer.setForeground(color==null ? Color.BLACK : color);
+        answer.setForeground(color);
         answer.setFont(getVizFont());
         return answer;
     }
@@ -130,9 +131,7 @@ public final class OurUtil {
     /** Make a JLabel with the given font. */
     public static JLabel label(Font font, String label) {
         JLabel answer = new JLabel(label);
-        if (font!=null) {
-            answer.setFont(font);
-        }
+        answer.setFont(font);
         return answer;
     }
 
@@ -158,7 +157,8 @@ public final class OurUtil {
      * Make a JPanel with the given dimension using BoxLayout, and add the components to it.
      * <br> It will have the X_AXIS layout (or Y_AXIS if h>w).
      * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
-     * <br> If a component is integer, we will insert an "n*1" rigid area (or "1*n" rigid area) instead.
+     * <br> If a component is Integer, we will insert an "n*1" rigid area (or "1*n" rigid area) instead.
+     * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be center-aligned.
      * <br> Note: if the first component is a Color, we will set everything's background color to that color.
      */
@@ -201,11 +201,12 @@ public final class OurUtil {
     /**
      * Make a JPanel using BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a horizontal (or vertical) glue instead.
-     * <br> If a component is integer, we will insert an "n*1" (or "1*n") rigid area instead.
+     * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
+     * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be aligned by xAlign and yAlign.
      * <br> Note: if the first component is a Color, we will set everything's background color to that color.
      */
-    private static JPanel makeArbitraryBox(boolean horizontal, float xAlign, float yAlign, Object[] a) {
+    private static JPanel makeBox(boolean horizontal, float xAlign, float yAlign, Object[] a) {
         JPanel ans=makeBox(horizontal ? BoxLayout.X_AXIS : BoxLayout.Y_AXIS);
         Color color=null;
         for(int i=0; i<a.length; i++) {
@@ -242,70 +243,64 @@ public final class OurUtil {
     /**
      * Make a JPanel using horizontal BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a horizontal glue instead.
-     * <br> If a component is integer, we will insert an "n*1" rigid area instead.
+     * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
+     * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be center-aligned.
      * <br> Note: if the first component is a Color, we will set everything's background color to that color.
      */
-    public static JPanel makeH(Object... a) {
-        return makeArbitraryBox(true, 0.5f, 0.5f, a);
-    }
+    public static JPanel makeH(Object... a) { return makeBox(true, 0.5f, 0.5f, a); }
 
     /**
      * Make a JPanel using horizontal BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a horizontal glue instead.
-     * <br> If a component is integer, we will insert an "n*1" rigid area instead.
+     * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
+     * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be top-aligned.
      * <br> Note: if the first component is a Color, we will set everything's background color to that color.
      */
-    public static JPanel makeHT(Object... a) {
-        return makeArbitraryBox(true, 0.5f, 0.0f, a);
-    }
+    public static JPanel makeHT(Object... a) { return makeBox(true, 0.5f, 0.0f, a); }
 
     /**
      * Make a JPanel using horizontal BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a horizontal glue instead.
-     * <br> If a component is integer, we will insert an "n*1" rigid area instead.
+     * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
+     * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be bottom-aligned.
      * <br> Note: if the first component is a Color, we will set everything's background color to that color.
      */
-    public static JPanel makeHB(Object... a) {
-        return makeArbitraryBox(true, 0.5f, 1.0f, a);
-    }
+    public static JPanel makeHB(Object... a) { return makeBox(true, 0.5f, 1.0f, a); }
 
     /**
      * Make a JPanel using vertical BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a vertical glue instead.
-     * <br> If a component is integer, we will insert an "1*n" rigid area instead.
+     * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
+     * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be center-aligned.
      * <br> Note: if the first component is a Color, we will set everything's background color to that color.
      */
-    public static JPanel makeV(Object... a) {
-        return makeArbitraryBox(false, 0.5f, 0.5f, a);
-    }
+    public static JPanel makeV(Object... a) { return makeBox(false, 0.5f, 0.5f, a); }
 
     /**
      * Make a JPanel using vertical BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a vertical glue instead.
-     * <br> If a component is integer, we will insert an "1*n" rigid area instead.
+     * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
+     * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be left-aligned.
      * <br> Note: if the first component is a Color, we will set everything's background color to that color.
      */
-    public static JPanel makeVL(Object... a) {
-        return makeArbitraryBox(false, 0.0f, 0.5f, a);
-    }
+    public static JPanel makeVL(Object... a) { return makeBox(false, 0.0f, 0.5f, a); }
 
     /**
      * Make a JPanel using vertical BoxLayout, and add the components to it.
      * <br> If a component is null, we will insert a vertical glue instead.
-     * <br> If a component is integer, we will insert an "1*n" rigid area instead.
+     * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
+     * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be right-aligned.
      * <br> Note: if the first component is a Color, we will set everything's background color to that color.
      */
-    public static JPanel makeVR(Object... a) {
-        return makeArbitraryBox(false, 1.0f, 0.5f, a);
-    }
+    public static JPanel makeVR(Object... a) { return makeBox(false, 1.0f, 0.5f, a); }
 
-    /** Make an empty JScrollPane; scrollbars will only show as needed. */
+    /** Make an empty JScrollPane; scrollbars will only show up as needed. */
     public static JScrollPane scrollpane() {
         JScrollPane ans = new JScrollPane(VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
         ans.setMinimumSize(new Dimension(50, 50));
@@ -336,10 +331,10 @@ public final class OurUtil {
         x.setDividerLocation(initialDividerLocation);
         x.setOneTouchExpandable(false);
         x.setResizeWeight(0.5);
-        if (Util.onMac()) {
+        if (Util.onMac() && (x.getUI() instanceof BasicSplitPaneUI)) {
             // This makes the border look nicer on Mac OS X
-            boolean h = (orientation == JSplitPane.HORIZONTAL_SPLIT);
-            ((BasicSplitPaneUI)(x.getUI())).getDivider().setBorder(new OurBorder(!h, h, !h, h));
+            boolean h = (orientation != JSplitPane.HORIZONTAL_SPLIT);
+            ((BasicSplitPaneUI)(x.getUI())).getDivider().setBorder(new OurBorder(h,h,h,h));
         }
         return x;
     }
@@ -360,9 +355,9 @@ public final class OurUtil {
     }
 
     /**
-     * Construct a new menu and add it to an existing JMenuBar.
+     * Construct a new JMenu and add it to an existing JMenuBar.
      *
-     * <p> Note: every time the user expands then collapses this menu,
+     * <p> Note: every time the user expands then collapses this JMenu,
      * it will automatically enable all JMenu and JMenuItem objects inside it.
      *
      * @param parent - the JMenuBar to add this Menu into (or null if we don't want to add it to a JMenuBar yet)
@@ -396,11 +391,11 @@ public final class OurUtil {
     }
 
     /**
-     * Construct a new MenuItem then add it to an existing Menu.
-     * @param parent - the Menu to add this MenuItem into (or null if you don't want to add it to any JMenu yet)
+     * Construct a new JMenuItem then add it to an existing JMenu.
+     * @param parent - the JMenu to add this JMenuItem into (or null if you don't want to add it to any JMenu yet)
      * @param label - the text to show on the menu
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
-     * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
+     * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want an accelerator
      * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
      */
     public static JMenuItem makeMenuItem(JMenu parent, String label, int mnemonic, int accel, final Runnable func) {
@@ -426,12 +421,14 @@ public final class OurUtil {
     }
 
     /**
-     * Construct a new MenuItem then add it to an existing Menu.
-     * @param parent - the Menu to add this MenuItem into (or null if you don't want to add it to any JMenu yet)
+     * Construct a new JMenuItem then add it to an existing JMenu.
+     * @param parent - the JMenu to add this JMenuItem into (or null if you don't want to add it to any JMenu yet)
      * @param label - the text to show on the menu
+     * @param enabled - true if this JMenuItem should be enabled initially; false if it should be disabled initially
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
-     * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want accelerator
+     * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want an accelerator
      * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
+     * @param key - the argument to pass to func() when the user clicks this item
      */
     public static JMenuItem makeMenuItem(JMenu parent, String label, boolean enabled, int mnemonic, int accel, final MultiRunnable func, final int key) {
         JMenuItem x = new JMenuItem(label);
@@ -459,8 +456,8 @@ public final class OurUtil {
     }
 
     /**
-     * Construct a new MenuItem then add it to an existing Menu with SHIFT+accelerator.
-     * @param parent - the Menu to add this MenuItem into (or null if you don't want to add it to any JMenu yet)
+     * Construct a new JMenuItem then add it to an existing JMenu with SHIFT+accelerator.
+     * @param parent - the JMenu to add this JMenuItem into (or null if you don't want to add it to any JMenu yet)
      * @param label - the text to show on the menu
      * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the "SHIFT" mask on top of it
      * @param func - the action listener to call if the user clicks this item (or null if there is no action to do)

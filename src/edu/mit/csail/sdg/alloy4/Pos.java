@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -24,7 +25,7 @@ import java.io.Serializable;
 /**
  * Immutable; stores the filename and line/column position.
  *
- * <p> <b>Invariant:</b>     filename!=null && x>0 && y>0
+ * <p> <b>Invariant:</b>     filename!=null && x>0 && y>0 && ((y2>y && x2>0) || (y2==y && x2>=x))
  *
  * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
@@ -112,7 +113,7 @@ public final class Pos implements Serializable {
 
     /**
      * Return a new position that is identical to the old position, except the comment is changed.
-     * @param that - the other position object
+     * @param newComment - the new comment value
      */
     public Pos addComment(Object newComment) {
         return new Pos(filename, x, y, x2, y2, newComment);
@@ -144,7 +145,7 @@ public final class Pos implements Serializable {
     /**
      * Return a new position that merges every Pos object in the array.
      * <p> (If pos[] contains null entries, those null entries are ignored.)
-     * <p> (If pos[] contains only null entries, or if the array is empty, or if pos==null, we return Pos.UNKNOWN)
+     * <p> (If pos[] contains only null entries, or if the array is empty, or if the array is null, we return Pos.UNKNOWN)
      */
     public static Pos merge(Pos... pos) {
         Pos ans=null;
