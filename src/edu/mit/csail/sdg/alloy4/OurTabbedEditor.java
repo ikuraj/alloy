@@ -720,7 +720,7 @@ public final class OurTabbedEditor {
             return;
         }
         if (clearOldHighlightsFirst) removeAllHighlights();
-        if (allowIO && p!=null && p.y>0 && p.x>0) {
+        if (allowIO && p!=null && p.filename!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
                 String f=Util.canon(p.filename);
                 if (!switchToFilename(f)) {
