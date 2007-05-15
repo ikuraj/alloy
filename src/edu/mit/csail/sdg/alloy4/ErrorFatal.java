@@ -66,7 +66,7 @@ public final class ErrorFatal extends Err {
      * @param msg - the actual error message
      * @param ex - the underlying exception
      */
-    public ErrorFatal(String msg, Exception ex) {
+    public ErrorFatal(String msg, Throwable ex) {
         super(null,msg,ex.getStackTrace());
     }
 }
