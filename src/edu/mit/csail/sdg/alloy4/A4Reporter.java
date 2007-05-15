@@ -89,9 +89,10 @@ public class A4Reporter {
      *
      * @param command - this is the original Command used to generate this solution
      * @param solvingTime - this is the number of milliseconds the solver took to obtain this result
+     * @param formula - if not null, and length()>0, then it's the original Kodkod formula expressed in Java format
      * @param filename - if not null, and length()>0, then it points to a file containing the solution in XML format
      */
-    public void resultSAT(Object command, long solvingTime, String filename) {}
+    public void resultSAT(Object command, long solvingTime, String formula, String filename) {}
 
     /**
      * If solver!=FILE, this method is called by the translator during unsat core minimization.
