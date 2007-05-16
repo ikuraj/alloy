@@ -79,7 +79,7 @@ public final class Pos implements Serializable {
      * @param x2 - the ending column position (from 1..)
      * @param y2 - the ending row position (from 1..)
      */
-    public Pos(String filename, int x, int y, int x2, int y2) { this(filename,x,y,x2,y2,""); }
+    public Pos(String filename, int x, int y, int x2, int y2) { this(filename,x,y,x2,y2,null); }
 
     /**
      * Constructs a new Pos object.
