@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
@@ -22,8 +23,7 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * This holds the buildDate String.
  *
- * The release build script
- * will generate a customized Version.java with the correct buildnumber and date.
+ * The release build script will generate a customized Version.java with the correct buildnumber and date.
  *
  * <p><b>Thread Safety:</b>  Safe.
  */
