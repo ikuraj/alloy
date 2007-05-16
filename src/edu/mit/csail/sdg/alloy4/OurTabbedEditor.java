@@ -235,7 +235,7 @@ public final class OurTabbedEditor {
         }
     }
 
-    /** Removes all highlights from the current text buffer. */
+    /** Removes all highlights from every text buffer. */
     public void removeAllHighlights() {
         for(Tab t:tabs) t.highlighter.removeAllHighlights();
         adjustLabelColor();
