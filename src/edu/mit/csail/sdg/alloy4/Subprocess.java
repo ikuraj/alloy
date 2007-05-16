@@ -93,7 +93,7 @@ public final class Subprocess {
                     p.destroy();
                 }
             };
-            synchronized(Subprocess.this) { stopper.schedule(stoptask,timeLimit); }
+            synchronized(Subprocess.class) { stopper.schedule(stoptask,timeLimit); }
         }
     }
 
@@ -101,31 +101,37 @@ public final class Subprocess {
     public String getStandardOutput() {
         Process p;
         int n;
-        synchronized(this) { p=process; process=null; if (p==null) return stdout; }
+        synchronized(this) { p=process; if (p==null) return stdout; }
         try {
             n=p.waitFor();
         } catch (InterruptedException e) {
-            synchronized(this) { stdout=""; stderr="Error: Timeout from the process.\n"; }
+            synchronized(this) { process=null; stdout=""; stderr="Error: Thread Interrupted"; }
             p.destroy();
             return "";
         }
         for(int i=0; ;i++) {
             synchronized(this) {
-                if (stdout!=null && stderr!=null) break;
-                if (i>10) { stdout=""; stderr="Error: Timeout from the process.\n"; break; }
+                if (stdout!=null && stderr!=null) {
+                    process=null;
+                    if (expect>=0 && expect!=n && stderr.length()==0) stderr="Error: Exit code="+n;
+                    return stdout;
+                }
+                if (i>10) {
+                    process=null;
+                    stdout="";
+                    stderr="Error: Thread Timeout";
+                    return "";
+                }
             }
             try {Thread.sleep(500);} catch(InterruptedException ex) {}
-        }
-        synchronized(this) {
-            if (expect>=0 && expect!=n) {stdout=""; if (stderr.length()==0) stderr="Error: Exit code="+n;}
-            return stdout;
         }
     }
 
     /** Wait for the process to finish and return its standard output + standard error */
     public String getStandardOutputAndError() {
         String a=getStandardOutput().trim(), b;
-        synchronized(this) { b=stderr.trim(); }
+        synchronized(this) { b=stderr; }
+        b=b.trim();
         if (a.length()!=0 && b.length()!=0) return a+"\n"+b; else return a+b;
     }
 
