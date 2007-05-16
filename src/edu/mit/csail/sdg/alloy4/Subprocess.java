@@ -14,40 +14,31 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4;
 
 import java.io.InputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
  * This provides a convenience wrapper around a Process object.
  *
- * <p>  To launch a subprocess, simply write Subprocess x=new Subprocess(args);
+ * <p>  To launch a subprocess, simply write Subprocess x=new Subprocess(0,args);
  * <br> The subprocess will run concurrently with your current JVM.
- *
- * <p>  When you call x.waitFor(), you will wait until the process terminates and get the return value;
- * <br> subsequent x.waitFor() calls will always return -1, and
- * <br> subsequent x.getOutput() will return either the program output, or an error message beginning with "Error"
  *
  * <p><b>Thread Safety:</b>  Safe.
  */
 
-public final class Subprocess extends TimerTask {
+public final class Subprocess {
 
-    /** The actual subprocess (null if the subprocess did not even start successfully). */
+    // Invariant: process==null => (stdout!=null && stderr!=null)
+
+    /** The actual subprocess (null if the subprocess never started, or if we detected it has terminated already) */
     private Process process=null;
-
-    /** This field will store the process termination status. */
-    private String result=null;
-
-    /** This field will store the result of sending stdin input to the program. */
-    private String stdin=null;
 
     /** This field will store the stdout output from the program. */
     private String stdout=null;
@@ -55,150 +46,94 @@ public final class Subprocess extends TimerTask {
     /** This field will store the stderr output from the program. */
     private String stderr=null;
 
+    /** If >= 0, that means we expect and demand it to be the process exit code. */
+    private final int expect;
+
+    /** Timer used to schedule a timeout for the process. */
+    private static final Timer stopper=new Timer();
+
     /**
-     * Synchronized method that reads the output from the process
-     * (Note: you must call waitFor() first)
+     * Executes the given command line, and returns a "Subprocess" object that allows us to query the subprocess.
+     * @param timeLimit - if timeLimit>0, we will attempt to terminate the process after that many milliseconds have passed
+     * @param commandline - the command line
      */
-    public synchronized String getOutput() {
-        return result==null ? "" : result;
-    }
+    public Subprocess(long timeLimit, String[] commandline) { this(timeLimit, commandline, -1); }
 
-    private static Timer stopper = new Timer();
-
-    /** Executes the given command line, and returns a "Subprocess" object that allows us to query the subprocess. */
-    public Subprocess(int timeLimit, String[] commandline, String input) {
+    /**
+     * Executes the given command line, and returns a "Subprocess" object that allows us to query the subprocess.
+     * @param timeLimit - if timeLimit>0, we will attempt to terminate the process after that many milliseconds have passed
+     * @param commandline - the command line
+     * @param expectedExitCode - if expectedExitCode>=0, we will expect it to be the process's exit code
+     */
+    public Subprocess(final long timeLimit, String[] commandline, int expectedExitCode) {
+        this.expect=expectedExitCode;
         try {
             process=Runtime.getRuntime().exec(commandline);
-        } catch (IOException ex) {
+        } catch (Throwable ex) {
             process=null;
-            result="Error: " + ex.getMessage();
+            stdout="";
+            stderr="Error: " + ex.getMessage();
             return;
         }
-        Thread thread0=new Thread(new InPipe(process.getOutputStream(), input));
         Thread thread1=new Thread(new OutPipe(process.getInputStream(), true));
         Thread thread2=new Thread(new OutPipe(process.getErrorStream(), false));
-        thread0.start();
         thread1.start();
         thread2.start();
         if (timeLimit>0) {
-            stopper.schedule(this, ((long)timeLimit)*1000L);
-        }
-    }
-
-    /** This method is called from a Timer when the allotted time has expired. */
-    public void run() {
-        Process p;
-        synchronized(this) {
-            p=process;
-            process=null;
-            if (result==null) {
-                result="Error: time out.";
-            }
-        }
-        if (p!=null) {
-            p.destroy();
-        }
-    }
-
-    /** Wait for the process to finish and return its exit code (if we detected an error, we will return -1). */
-    public int waitFor() {
-        Process p;
-        synchronized(this) {
-            p=process;
-        }
-        try {
-            if (p==null) {
-                return -1;
-            }
-            int i=0, n=p.waitFor();
-            synchronized(this) {
-                process=null;
-            }
-            while(true) {
-                synchronized(this) {
-                    if (stdin!=null && stdout!=null && stderr!=null) break;
-                }
-                i++;
-                if (i>10) {
-                    synchronized(this) {
-                        result="Error: Timeout from the process.\n";
-                        return -1;
+            TimerTask stoptask=new TimerTask() {
+                @Override public final void run() {
+                    Process p;
+                    synchronized(Subprocess.this) {
+                        if (process==null) return;
+                        p=process;
+                        process=null;
+                        stdout="";
+                        stderr="Error: time out after "+timeLimit+" milliseconds.";
                     }
+                    p.destroy();
                 }
-                Thread.sleep(500);
-            }
-            synchronized(this) {
-                if (result!=null && result.startsWith("Error")) {
-                    return -1;
-                }
-                stdin=stdin.trim();
-                if (stdin.length()>0) {
-                    stdin=stdin+"\n";
-                }
-                stdout=stdout.trim();
-                if (stdout.length()>0) {
-                    stdout=stdout+"\n";
-                }
-                result=stdin+stdout+stderr.trim();
-                if (stdin.startsWith("Error") || stdout.startsWith("Error") || stderr.startsWith("Error")) {
-                    return -1;
-                }
-            }
-            return n;
-        }
-        catch (InterruptedException e) {
-            synchronized(this) {
-                process=null;
-                if (result==null || !result.startsWith("Error")) {
-                    result="Error: "+e.getMessage();
-                }
-            }
-            p.destroy();
-            return -1;
+            };
+            synchronized(Subprocess.this) { stopper.schedule(stoptask,timeLimit); }
         }
     }
 
-    /** Helper class that shuttles text into the subprocess. */
-    private final class InPipe implements Runnable {
-        /** The output stream to write the text into. */
-        private final OutputStream stream;
-        /** The text to write. */
-        private final String text;
-        /** Constructs the object that shuttles bytes from "text" into the output stream "stream". */
-        public InPipe(OutputStream stream, String text) {
-            this.stream=stream;
-            this.text=text;
+    /** Wait for the process to finish and return its standard output */
+    public String getStandardOutput() {
+        Process p;
+        int n;
+        synchronized(this) { p=process; process=null; if (p==null) return stdout; }
+        try {
+            n=p.waitFor();
+        } catch (InterruptedException e) {
+            synchronized(this) { stdout=""; stderr="Error: Timeout from the process.\n"; }
+            p.destroy();
+            return "";
         }
-        /** This is the main run method that does the copying. */
-        public void run() {
-            String result="";
-            try {
-                byte[] bytes=text.getBytes("UTF-8");
-                for(int i=0, n=bytes.length; i<n;) {
-                    int len=((n-i)>1024) ? 1024 : (n-i); // Pick a small number to avoid platform-dependent overflows
-                    stream.write(bytes,i,len);
-                    i=i+len;
-                }
-                stream.flush();
-            } catch(IOException ex) {
-                result="Error: Input stream failure.";
+        for(int i=0; ;i++) {
+            synchronized(this) {
+                if (stdout!=null && stderr!=null) break;
+                if (i>10) { stdout=""; stderr="Error: Timeout from the process.\n"; break; }
             }
-            try {
-                stream.close();
-            } catch(IOException ex) {
-                result="Error: Input stream failure.";
-            }
-            synchronized(Subprocess.this) {
-                stdin=result;
-            }
+            try {Thread.sleep(500);} catch(InterruptedException ex) {}
         }
+        synchronized(this) {
+            if (expect>=0 && expect!=n) {stdout=""; if (stderr.length()==0) stderr="Error: Exit code="+n;}
+            return stdout;
+        }
+    }
+
+    /** Wait for the process to finish and return its standard output + standard error */
+    public String getStandardOutputAndError() {
+        String a=getStandardOutput().trim(), b;
+        synchronized(this) { b=stderr.trim(); }
+        if (a.length()!=0 && b.length()!=0) return a+"\n"+b; else return a+b;
     }
 
     /** Helper class that shuttles output from the subprocess into a StringBuilder. */
     private final class OutPipe implements Runnable {
         /** The input of the pipe comes from this InputStream. */
         private final InputStream input;
-        /** True if this one captures stdout; false if this one captures stderr. */
+        /** True if this is stdout; false if this is stderr. */
         private final boolean isStdout;
         /** Constructor that constructs a new pipe. */
         public OutPipe(InputStream input, boolean isStdout) {
@@ -207,38 +142,22 @@ public final class Subprocess extends TimerTask {
         }
         /** The run method that keeps reading from InputStream into StringBuilder until the input stream is closed. */
         public void run() {
-            StringBuilder output=new StringBuilder();
-            String text="";
-            byte[] buffer=new byte[8192];
+            String text;
             try {
+                StringBuilder output=new StringBuilder();
+                byte[] buffer=new byte[8192];
                 while(true) {
                     int n=input.read(buffer);
-                    if (n<=0) {
-                        break;
-                    }
-                    for(int i=0;i<n;i++) {
-                        output.append((char)(buffer[i]));
-                    }
+                    if (n<0) break;
+                    for(int i=0; i<n; i++) { output.append((char)(buffer[i])); }
                 }
-            } catch (IOException ex) {
-                text="Error: "+ex.getMessage()+"\n";
-            }
-            try {
-                input.close();
-            } catch(IOException ex) {
-                if (text.length()==0) {
-                    text="Error: "+ex.getMessage()+"\n";
-                }
-            }
-            if (text.length()==0) {
                 text=output.toString();
+            } catch (Throwable ex) {
+                text="Error: "+ex.getMessage();
             }
+            Util.close(input);
             synchronized(Subprocess.this) {
-                if (isStdout) {
-                    stdout=text;
-                } else {
-                    stderr=text;
-                }
+                if (isStdout) { if (stdout==null) stdout=text; } else { if (stderr==null) stderr=text; }
             }
         }
     }
