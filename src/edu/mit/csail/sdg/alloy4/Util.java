@@ -21,8 +21,6 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,9 +28,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -149,13 +146,17 @@ public final class Util {
     }
 
     /**
-     * Attempt to close the file/stream/reader/write and return true if and only if we successfully closed it.
+     * Attempt to close the file/stream/reader/write and return true if and only if we successfully flushed it and closed it.
      * (If object==null, we return true right away)
      */
     public static boolean close(Closeable object) {
+        if (object==null) return true;
+        boolean ans=true;
         try {
-            if (object!=null) object.close();
-            return true;
+            if (object instanceof PrintStream && ((PrintStream)object).checkError()) ans=false;
+            if (object instanceof PrintWriter && ((PrintWriter)object).checkError()) ans=false;
+            object.close();
+            return ans;
         } catch(Throwable ex) {
             return false;
         }
@@ -212,32 +213,32 @@ public final class Util {
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
     public static void writeAll(String filename, String content) throws Err {
-        FileOutputStream fos=null;
-        OutputStreamWriter fw=null;
-        BufferedWriter bw=null;
-        PrintWriter out=null;
-        BufferedReader rd=null;
-        try {
-            fos=new FileOutputStream(filename);
-            fw=new OutputStreamWriter(fos,"UTF-8");
-            bw=new BufferedWriter(fw);
-            out=new PrintWriter(bw);
-            rd=new BufferedReader(new StringReader(content));
-            while(true) {
-                String line=rd.readLine();
-                if (line==null) break;
-                out.println(line); // This ensures we write the file using this platform's end-of-line convention
-            }
-            if (out.checkError()) throw new IOException("PrintWriter failed to write to file \""+filename+"\"");
-        } catch(IOException ex) {
-            throw new ErrorFatal("IOException: "+ex.getMessage());
-        } finally {
-            close(rd);
-            close(out);
-            close(bw);
-            close(fw);
-            close(fos);
-        }
+//        FileOutputStream fos=null;
+//        OutputStreamWriter fw=null;
+//        BufferedWriter bw=null;
+//        PrintWriter out=null;
+//        BufferedReader rd=null;
+//        try {
+//            fos=new FileOutputStream(filename);
+//            fw=new OutputStreamWriter(fos,"UTF-8");
+//            bw=new BufferedWriter(fw);
+//            out=new PrintWriter(bw);
+//            rd=new BufferedReader(new StringReader(content));
+//            while(true) {
+//                String line=rd.readLine();
+//                if (line==null) break;
+//                out.println(line); // This ensures we write the file using this platform's end-of-line convention
+//            }
+//            if (out.checkError()) throw new IOException("PrintWriter failed to write to file \""+filename+"\"");
+//        } catch(IOException ex) {
+//            throw new ErrorFatal("IOException: "+ex.getMessage());
+//        } finally {
+//            close(rd);
+//            close(out);
+//            close(bw);
+//            close(fw);
+//            close(fos);
+//        }
     }
 
     /**

@@ -27,7 +27,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
@@ -175,16 +174,14 @@ public final class MailBug implements UncaughtExceptionHandler {
     /** Post the given string via POST HTTP request. */
     private static String postBug(String bugReport) {
         final String BUG_POST_URL = "http://alloy.mit.edu/postbug4.php";
-        OutputStreamWriter out = null;
         BufferedReader in = null;
         try {
             // open the URL connection
             URLConnection connection = (new URL(BUG_POST_URL)).openConnection();
             connection.setDoOutput(true);
             // write the bug report to the cgi script
-            out = new OutputStreamWriter(connection.getOutputStream(), "UTF-8");
-            out.write(bugReport);
-            out.flush();
+            connection.getOutputStream().write(bugReport.getBytes("UTF-8"));
+            connection.getOutputStream().flush();
             // read the response back from the cgi script
             in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
             StringBuilder report = new StringBuilder();
@@ -198,7 +195,6 @@ public final class MailBug implements UncaughtExceptionHandler {
             +"Please email alloy@mit.edu directly.\n\n"
             +"(Bug posting failed due to Java exception: "+ex.toString()+")";
         } finally {
-            Util.close(out);
             Util.close(in);
         }
     }
