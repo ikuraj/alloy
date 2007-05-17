@@ -173,7 +173,7 @@ public final class Util {
             fis=new FileInputStream(filename);
             while(true) {
                 if (now>=max) {
-                    max=now+1024;
+                    max=now+4096;
                     if (max<now) throw new IOException("File too big to fit in memory"); // since the new array size would exceed sizeof(int)
                     byte[] buf2=new byte[max];
                     if (now>0) System.arraycopy(buf, 0, buf2, 0, now);
@@ -194,51 +194,42 @@ public final class Util {
         final CodingErrorAction r=CodingErrorAction.REPORT;
         final Pair<byte[],Integer> p=readEntireFile(filename);
         ByteBuffer bbuf;
+        String ans;
         try {
             // We first try UTF-8;
             bbuf=ByteBuffer.wrap(p.a, 0, p.b);
-            return Charset.forName("UTF-8").newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
+            ans=Charset.forName("UTF-8").newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
         } catch(CharacterCodingException ex) {
             try {
                 // if that fails, we try using the platform's default charset
                 bbuf=ByteBuffer.wrap(p.a, 0, p.b);
-                return Charset.defaultCharset().newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
+                ans=Charset.defaultCharset().newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
             } catch(CharacterCodingException ex2) {
                 // if that also fails, we try using "ISO-8859-1" which should always succeed but may map characters wrong
                 bbuf=ByteBuffer.wrap(p.a, 0, p.b);
-                return Charset.forName("ISO-8859-1").newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
+                ans=Charset.forName("ISO-8859-1").newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
             }
         }
+        return ans;
     }
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
     public static void writeAll(String filename, String content) throws Err {
-//        FileOutputStream fos=null;
-//        OutputStreamWriter fw=null;
-//        BufferedWriter bw=null;
-//        PrintWriter out=null;
-//        BufferedReader rd=null;
-//        try {
-//            fos=new FileOutputStream(filename);
-//            fw=new OutputStreamWriter(fos,"UTF-8");
-//            bw=new BufferedWriter(fw);
-//            out=new PrintWriter(bw);
-//            rd=new BufferedReader(new StringReader(content));
-//            while(true) {
-//                String line=rd.readLine();
-//                if (line==null) break;
-//                out.println(line); // This ensures we write the file using this platform's end-of-line convention
-//            }
-//            if (out.checkError()) throw new IOException("PrintWriter failed to write to file \""+filename+"\"");
-//        } catch(IOException ex) {
-//            throw new ErrorFatal("IOException: "+ex.getMessage());
-//        } finally {
-//            close(rd);
-//            close(out);
-//            close(bw);
-//            close(fw);
-//            close(fos);
-//        }
+        final FileOutputStream fos;
+        try {
+            fos=new FileOutputStream(filename);
+        } catch(IOException ex) {
+            throw new ErrorFatal("Cannot write to the file "+filename, ex);
+        }
+        content = convertLineBreak(content);
+        if (content.length()>0 && content.charAt(content.length()-1)!='\n') content=content+"\n";
+        try {
+            final String NL=System.getProperty("line.separator");
+            fos.write(content.replace("\n",NL).getBytes("UTF-8"));
+            fos.close();
+        } catch(IOException ex) {
+            close(fos); throw new ErrorFatal("Cannot write to the file "+filename, ex);
+        }
     }
 
     /**
@@ -254,6 +245,7 @@ public final class Util {
         try {
             answer=file.getCanonicalPath();
         } catch(IOException ex) {
+            // Hopefully this shouldn't happen
             answer=file.getAbsolutePath();
         }
         return answer;
@@ -265,8 +257,7 @@ public final class Util {
      * <br> (2) Else, if one string has fewer '/' than the other, then it is considered smaller.
      * <br> (3) Else, if one string starts with "this/", then it is considered smaller
      * <br> (4) Else, we compare them lexically without case-sensitivity.
-     * <br> (5) Else, we compare them lexically with case-sensitivity.
-     * <br>
+     * <br> (5) Finally, we compare them lexically with case-sensitivity.
      */
     public static final Comparator<String> slashComparator = new Comparator<String>() {
         public final int compare(String a, String b) {
@@ -291,38 +282,6 @@ public final class Util {
     };
 
     /**
-     * Copy the list of files from JAR into the destination directory,
-     * then set the correct permissions on them if possible.
-     *
-     * @param keepPath - if true, the directory of each file will be created
-     * @param deleteOnExit - if true, each file will be deleted on exit
-     */
-    public static synchronized void copy(boolean executable, boolean keepPath, boolean deleteOnExit, String destdir, String... names) {
-        String[] args=new String[names.length+2];
-        args[0]="chmod"; // This does not work on Windows, but the "executable" bit is not needed on Windows anyway.
-        args[1]=(executable ? "700" : "600"); // 700 means read+write+executable; 600 means read+write.
-        int j=2;
-        for(int i=0; i<names.length; i++) {
-            String name=names[i];
-            String destname=name;
-            if (!keepPath) { int ii=destname.lastIndexOf('/'); if (ii>=0) destname=destname.substring(ii+1); }
-            destname=(destdir + File.separatorChar + destname).replace('/', File.separatorChar);
-            int last=destname.lastIndexOf(File.separatorChar);
-            new File(destname.substring(0,last+1)).mkdirs(); // Error will be caught later by the file copy
-            if (deleteOnExit) new File(destname).deleteOnExit();
-            if (copy(name, destname)) { args[j]=destname; j++; }
-        }
-        if (onWindows() || j<=2) return;
-        String[] realargs=new String[j];
-        for(int i=0; i<j; i++) realargs[i]=args[i];
-        try {
-            Runtime.getRuntime().exec(realargs).waitFor();
-        } catch (Throwable ex) {
-            // We only intend to make a best effort
-        }
-    }
-
-    /**
      * Copy the given file from JAR into the destination file; if the destination file exists, we then do nothing.
      * Returns true iff a file was created and written.
      */
@@ -344,7 +303,7 @@ public final class Util {
                 byte[] b = new byte[16384];
                 while(true) {
                     int numRead = binStream.read(b);
-                    if (numRead == -1) break;
+                    if (numRead < 0) break;
                     if (numRead > 0) tmpFileOutputStream.write(b, 0, numRead);
                 }
             } catch(IOException e) { result=false; }
@@ -357,37 +316,57 @@ public final class Util {
     }
 
     /**
-     * Return the given text file from JAR as a String (or null if the file doesn't exist)
+     * Copy the list of files from JAR into the destination directory,
+     * then set the correct permissions on them if possible.
+     *
+     * @param executable - if true, we will attempt to set the file's "executable" permission (failure to do this is ignored)
+     * @param keepPath - if true, the directory of each file will be created
+     * @param destdir - the destination directory
+     * @param names - the files to copy from the JAR
+     */
+    public static synchronized void copy(boolean executable, boolean keepPath, String destdir, String... names) {
+        String[] args=new String[names.length+2];
+        args[0]="chmod"; // This does not work on Windows, but the "executable" bit is not needed on Windows anyway.
+        args[1]=(executable ? "700" : "600"); // 700 means read+write+executable; 600 means read+write.
+        int j=2;
+        for(int i=0; i<names.length; i++) {
+            String name=names[i];
+            String destname=name;
+            if (!keepPath) { int ii=destname.lastIndexOf('/'); if (ii>=0) destname=destname.substring(ii+1); }
+            destname=(destdir + File.separatorChar + destname).replace('/', File.separatorChar);
+            int last=destname.lastIndexOf(File.separatorChar);
+            new File(destname.substring(0,last+1)).mkdirs(); // Error will be caught later by the file copy
+            if (copy(name, destname)) { args[j]=destname; j++; }
+        }
+        if (onWindows() || j<=2) return;
+        String[] realargs=new String[j];
+        for(int i=0; i<j; i++) realargs[i]=args[i];
+        try {
+            Runtime.getRuntime().exec(realargs).waitFor();
+        } catch (Throwable ex) {
+            // We only intend to make a best effort
+        }
+    }
+
+    /**
+     * Return the given text file from JAR as a String (or null if the file doesn't exist or an error occurred)
      */
     public static synchronized String readTextFromJAR(String sourcename) {
         InputStream resStream=Util.class.getClassLoader().getResourceAsStream(sourcename);
         if (resStream==null) return null;
-        StringBuilder result = new StringBuilder();
-        InputStream binStream=new BufferedInputStream(resStream);
+        StringBuilder result=new StringBuilder();
         try {
             byte[] b = new byte[16384];
             while(true) {
-                int numRead = binStream.read(b);
-                if (numRead == -1) break;
+                int numRead = resStream.read(b);
+                if (numRead < 0) break;
                 if (numRead > 0) for(int i=0;i<numRead;i++) result.append((char)(b[i]));
             }
         } catch(IOException e) {
            result=null;
         }
-        if (!close(binStream)) result=null;
         if (!close(resStream)) result=null;
         return result==null ? null : result.toString();
-    }
-
-    /** Appends "st", "nd", "rd", "th"... as appropriate; (for example, 21 becomes 21st, 22 becomes 22nd...) */
-    public static String th(int n) {
-        if (n==1) return "First";
-        if (n==2) return "Second";
-        if (n==3) return "Third";
-        if (n>0 && (n%10)==1 && (n%100)!=11) return n+"st";
-        if (n>0 && (n%10)==2 && (n%100)!=12) return n+"nd";
-        if (n>0 && (n%10)==3 && (n%100)!=13) return n+"rd";
-        return n+"th";
     }
 
     /**
