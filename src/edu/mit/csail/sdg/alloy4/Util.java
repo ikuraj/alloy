@@ -30,10 +30,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -108,33 +111,47 @@ public final class Util {
         public IntPref(String id, int min, int def, int max) {this.id=id; this.min=min; this.def=def; this.max=max;}
         /** Sets the value for this preference. */
         public void set(int value) { Preferences.userNodeForPackage(Util.class).putInt(id,bound(value)); }
-        /** Reads the value for this preference; if not set, we return the default value "def". */
+        /** Reads the value for this preference; if not set, we return the default value. */
         public int get() {
-            if (Preferences.userNodeForPackage(Util.class).get(id,"").length()==0) return def;
-            return bound(Preferences.userNodeForPackage(Util.class).getInt(id,min));
+            int n;
+            String t=Preferences.userNodeForPackage(Util.class).get(id,"");
+            if (t==null || t.length()==0) return def;
+            try { n=Integer.parseInt(t); } catch(NumberFormatException ex) { return def; }
+            return bound(n);
         }
     }
 
-
     /** Copy the input list, append "element" to it, then return the result as a unmodifiable list. */
     public static<T> List<T> add(List<T> list, T element) {
-        list=new ArrayList<T>(list);
-        list.add(element);
-        return Collections.unmodifiableList(list);
+        List<T> ans=new ArrayList<T>(list.size()+1);
+        ans.addAll(list);
+        ans.add(element);
+        return Collections.unmodifiableList(ans);
     }
 
-    /** Copy the input list, remove a single instance of "element", then return the result as a unmodifiable list. */
+    /** Copy the input list, remove a single instance of "element" if exists, then return the result as a unmodifiable list. */
     public static<T> List<T> remove(List<T> list, T element) {
         list=new ArrayList<T>(list);
         list.remove(element);
         return Collections.unmodifiableList(list);
     }
 
-    /** Helper method that converts linebreaks into "\n" */
+    /** Returns an unmodifiable List with same elements as the array. */
+    public static<T> List<T> asList(T... array) {
+        List<T> ans = new ArrayList<T>(array.length);
+        for(int i=0; i<array.length; i++) { ans.add(array[i]); }
+        return Collections.unmodifiableList(ans);
+    }
+
+    /** Helper method that converts Windows/Mac/Unix linebreaks into "\n" */
     public static String convertLineBreak(String input) {
         return input.replace("\r\n","\n").replace('\r','\n');
     }
 
+    /**
+     * Attempt to close the file/stream/reader/write and return true if and only if we successfully closed it.
+     * (If object==null, we return true right away)
+     */
     public static boolean close(Closeable object) {
         try {
             if (object!=null) object.close();
@@ -144,17 +161,53 @@ public final class Util {
         }
     }
 
+    /** Read the file then return the file size and a byte[] array (the array could be slightly bigger than file size) */
+    private static Pair<byte[],Integer> readEntireFile(String filename) throws IOException {
+        FileInputStream fis=null;
+        long maxL=new File(filename).length();
+        int now=0, max=(int)maxL;
+        if ((long)max != maxL) throw new IOException("File too big to fit in memory");
+        byte[] buf=new byte[max];
+        try {
+            fis=new FileInputStream(filename);
+            while(true) {
+                if (now>=max) {
+                    max=now+1024;
+                    if (max<now) throw new IOException("File too big to fit in memory"); // since the new array size would exceed sizeof(int)
+                    byte[] buf2=new byte[max];
+                    if (now>0) System.arraycopy(buf, 0, buf2, 0, now);
+                    buf=buf2;
+                }
+                int r = fis.read(buf, now, max-now);
+                if (r<0) break;
+                now=now+r;
+            }
+            return new Pair<byte[],Integer>(buf,now);
+        } finally {
+            close(fis);
+        }
+    }
+
     /** Read everything into a String; throws IOException if an error occurred. */
     public static String readAll(String filename) throws IOException {
-        Pair<char[],Integer> p;
-        // We first try UTF-8, and if that fails, we try using the platform's default charset
-        try {p=readEntireFile(filename,"UTF-8");} catch(Throwable ex) {p=readEntireFile(filename,null);}
-        char[] a = p.a;
-        int b = p.b;
-        while(b>0 && a[b-1]>=0 && a[b-1]<=32) b--; // Remove trailing whitespace
-        if (b==0) return "";
-        if (b<a.length) { a[b]='\n'; return new String(a,0,b+1); }
-        return (new String(a,0,b))+"\n";
+        final CodingErrorAction r=CodingErrorAction.REPORT;
+        final Pair<byte[],Integer> p=readEntireFile(filename);
+        ByteBuffer bbuf;
+        try {
+            // We first try UTF-8;
+            bbuf=ByteBuffer.wrap(p.a, 0, p.b);
+            return Charset.forName("UTF-8").newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
+        } catch(CharacterCodingException ex) {
+            try {
+                // if that fails, we try using the platform's default charset
+                bbuf=ByteBuffer.wrap(p.a, 0, p.b);
+                return Charset.defaultCharset().newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
+            } catch(CharacterCodingException ex2) {
+                // if that also fails, we try using "ISO-8859-1" which should always succeed but may map characters wrong
+                bbuf=ByteBuffer.wrap(p.a, 0, p.b);
+                return Charset.forName("ISO-8859-1").newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
+            }
+        }
     }
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
@@ -194,9 +247,7 @@ public final class Util {
      * <p> Note: if filename=="", we return "".
      */
     public static final String canon(String filename) {
-        if (filename.length()==0) {
-            return filename;
-        }
+        if (filename.length()==0) return filename;
         File file=new File(filename);
         String answer;
         try {
@@ -218,42 +269,18 @@ public final class Util {
      */
     public static final Comparator<String> slashComparator = new Comparator<String>() {
         public final int compare(String a, String b) {
-            if (a==null) {
-                return (b==null)?0:-1;
-            }
-            if (b==null) {
-                return 1;
-            }
-            if (a.equals("extends")) {
-                return a.equals(b) ? 0 : -1;
-            }
-            if (b.equals("extends")) {
-                return 1;
-            }
-            if (a.equals("in")) {
-                return a.equals(b) ? 0 : -1;
-            }
-            if (b.equals("in")) {
-                return 1;
-            }
+            if (a==null) return (b==null)?0:-1;
+            if (b==null) return 1;
+            if (a.equals("extends")) return a.equals(b) ? 0 : -1;
+            if (b.equals("extends")) return 1;
+            if (a.equals("in")) return a.equals(b) ? 0 : -1;
+            if (b.equals("in")) return 1;
             int acount=0, bcount=0;
-            for(int i=0; i<a.length(); i++) {
-                if (a.charAt(i)=='/') {
-                    acount++;
-                }
-            }
-            for(int i=0; i<b.length(); i++) {
-                if (b.charAt(i)=='/') {
-                    bcount++;
-                }
-            }
-            if (acount!=bcount) {
-                return (acount<bcount)?-1:1;
-            }
+            for(int i=0; i<a.length(); i++) { if (a.charAt(i)=='/') acount++; }
+            for(int i=0; i<b.length(); i++) { if (b.charAt(i)=='/') bcount++; }
+            if (acount!=bcount) return (acount<bcount)?-1:1;
             if (a.startsWith("this/")) {
-                if (!b.startsWith("this/")) {
-                    return -1;
-                }
+                if (!b.startsWith("this/")) return -1;
             } else if (b.startsWith("this/")) {
                 return 1;
             }
@@ -437,47 +464,6 @@ public final class Util {
             if (forward) start++; else start--;
         }
         return -1;
-    }
-
-    /** Read the file then return file size and a char[] array (the array could be slightly bigger than file size) */
-    private static Pair<char[],Integer> readEntireFile(String filename, String charset) throws IOException {
-        FileInputStream fis=null;
-        InputStreamReader isr=null;
-        int now=0, max=0;
-        char[] buf;
-        try {
-            fis=new FileInputStream(filename);
-            if (charset!=null) isr=new InputStreamReader(fis,charset); else isr=new InputStreamReader(fis);
-            buf=new char[max];
-            while(true) {
-               if (max<=now) {
-                    long fn=(new File(filename)).length();
-                    int max2=((int)fn)+16;
-                    if (max2<16 || ((long)(max2-16))!=fn) throw new IOException("File too big to fit in memory");
-                    if (max2<=now) throw new IOException("File shrunk during reading.");
-                    char[] buf2=new char[max2];
-                    if (now>0) System.arraycopy(buf, 0, buf2, 0, now);
-                    buf=buf2;
-                    max=max2;
-               }
-               int n=isr.read(buf, now, max-now);
-               if (n<=0) break;
-               now+=n;
-            }
-            return new Pair<char[],Integer>(buf,now);
-        } finally {
-            close(isr);
-            close(fis);
-        }
-    }
-
-    /** Returns an unmodifiable List with same elements as the array. */
-    public static<E> List<E> asList(E... array) {
-        List<E> list = new ArrayList<E>(array.length);
-        for(int i=0; i<array.length; i++) {
-            list.add(array[i]);
-        }
-        return Collections.unmodifiableList(list);
     }
 
     /** Returns true iff running on Windows **/
