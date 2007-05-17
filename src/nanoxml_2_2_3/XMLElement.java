@@ -30,12 +30,10 @@
 package nanoxml_2_2_3;
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.CharArrayReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -1870,85 +1868,6 @@ public class XMLElement
         }
     }
 
-
-    /**
-     * Reads one XML element from a char array and parses it.
-     *
-     * @param reader
-     *     The reader from which to retrieve the XML data.
-     * @param offset
-     *     The first character in <code>string</code> to scan.
-     * @param end
-     *     The character where to stop scanning.
-     *     This character is not scanned.
-     *
-     * </dl><dl><dt><b>Preconditions:</b></dt><dd>
-     * <ul><li><code>input != null</code>
-     *     <li><code>end &lt;= input.length</code>
-     *     <li><code>offset &lt; end</code>
-     *     <li><code>offset &gt;= 0</code>
-     * </ul></dd></dl>
-     *
-     * <dl><dt><b>Postconditions:</b></dt><dd>
-     * <ul><li>the state of the receiver is updated to reflect the XML element
-     *         parsed from the reader
-     * </ul></dd></dl><dl>
-     *
-     * @throws nanoxml_2_2_3.XMLParseException
-     *     If an error occured while parsing the string.
-     */
-    public void parseCharArray(char[] input,
-                               int    offset,
-                               int    end)
-        throws XMLParseException
-    {
-        this.parseCharArray(input, offset, end, /*startingLineNr*/ 1);
-    }
-
-
-    /**
-     * Reads one XML element from a char array and parses it.
-     *
-     * @param reader
-     *     The reader from which to retrieve the XML data.
-     * @param offset
-     *     The first character in <code>string</code> to scan.
-     * @param end
-     *     The character where to stop scanning.
-     *     This character is not scanned.
-     * @param startingLineNr
-     *     The line number of the first line in the data.
-     *
-     * </dl><dl><dt><b>Preconditions:</b></dt><dd>
-     * <ul><li><code>input != null</code>
-     *     <li><code>end &lt;= input.length</code>
-     *     <li><code>offset &lt; end</code>
-     *     <li><code>offset &gt;= 0</code>
-     * </ul></dd></dl>
-     *
-     * <dl><dt><b>Postconditions:</b></dt><dd>
-     * <ul><li>the state of the receiver is updated to reflect the XML element
-     *         parsed from the reader
-     * </ul></dd></dl><dl>
-     *
-     * @throws nanoxml_2_2_3.XMLParseException
-     *     If an error occured while parsing the string.
-     */
-    public void parseCharArray(char[] input,
-                               int    offset,
-                               int    end,
-                               int    startingLineNr)
-        throws XMLParseException
-    {
-        try {
-            Reader reader = new CharArrayReader(input, offset, end);
-            this.parseFromReader(reader, startingLineNr);
-        } catch (IOException e) {
-            // This exception will never happen.
-        }
-    }
-
-
     /**
      * Removes a child element.
      *
@@ -2146,11 +2065,9 @@ public class XMLElement
     public String toString()
     {
         try {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
-            this.write(writer);
-            writer.flush();
-            return new String(out.toByteArray());
+        	StringWriter sw = new StringWriter();
+            this.write(sw);
+            return sw.toString();
         } catch (IOException e) {
             // Java exception handling suxx
             return super.toString();
