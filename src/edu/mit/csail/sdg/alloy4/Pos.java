@@ -124,7 +124,7 @@ public final class Pos implements Serializable {
      * @param that - the other position object
      */
     public Pos merge(Pos that) {
-        if (this==UNKNOWN) {
+        if (this==UNKNOWN || this==that) {
             return that;
         }
         if (that==UNKNOWN) {
