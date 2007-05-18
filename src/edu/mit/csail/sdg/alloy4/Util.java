@@ -35,7 +35,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -119,25 +118,31 @@ public final class Util {
     }
 
     /** Copy the input list, append "element" to it, then return the result as a unmodifiable list. */
-    public static<T> List<T> add(List<T> list, T element) {
+    public static<T> ConstList<T> add(List<T> list, T element) {
         List<T> ans=new ArrayList<T>(list.size()+1);
         ans.addAll(list);
         ans.add(element);
-        return Collections.unmodifiableList(ans);
+        return new ConstList<T>(ans);
     }
 
     /** Copy the input list, remove a single instance of "element" if exists, then return the result as a unmodifiable list. */
-    public static<T> List<T> remove(List<T> list, T element) {
-        list=new ArrayList<T>(list);
-        list.remove(element);
-        return Collections.unmodifiableList(list);
+    public static<T> ConstList<T> remove(List<T> list, T element) {
+        for(int i=0, n=list.size(); i<n; i++) {
+            T x=list.get(i);
+            if (x==element || (x!=null && element!=null && x.equals(element))) {
+                list=new ArrayList<T>(list);
+                list.remove(i);
+                break;
+            }
+        }
+        return new ConstList<T>(list);
     }
 
     /** Returns an unmodifiable List with same elements as the array. */
-    public static<T> List<T> asList(T... array) {
+    public static<T> ConstList<T> asList(T... array) {
         List<T> ans = new ArrayList<T>(array.length);
         for(int i=0; i<array.length; i++) { ans.add(array[i]); }
-        return Collections.unmodifiableList(ans);
+        return new ConstList<T>(ans);
     }
 
     /** Helper method that converts Windows/Mac/Unix linebreaks into "\n" */
