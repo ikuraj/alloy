@@ -38,6 +38,46 @@ import java.util.Iterator;
 
 public final class ConstSet<K> implements Serializable, Set<K> {
 
+    /**
+     * This implements a modifiable set that can be used to construct a ConstSet.
+     *
+     * <p><b>Thread Safety:</b>  Not safe.
+     *
+     * @param <K> - the type of element
+     */
+    public static final class TempSet<K> implements Iterable<K> {
+        /** The underlying set. */
+        private final LinkedHashSet<K> set;
+        /** Nonnull iff this set is no longer modifiable; access to this field should be synchronized. */
+        private ConstSet<K> cset=null;
+        /** Construct a new empty modifiable TempSet. */
+        public TempSet()                     { this.set = new LinkedHashSet<K>(); }
+        /** Construct a new modifiable TempSet with the initial entries equal to the given set. */
+        public TempSet(Set<? extends K> set) { this.set = new LinkedHashSet<K>(set); }
+        /** Returns an iterator for this set. */
+        public Iterator<K> iterator() {
+            return new Iterator<K>() {
+                private final Iterator<K> it=set.iterator();
+                public final boolean hasNext() { return it.hasNext(); }
+                public final K next() { return it.next(); }
+                public final void remove() { synchronized(TempSet.this) { if (cset!=null) throw new UnsupportedOperationException(); it.remove(); } }
+            };
+        }
+        /** Returns the number of entries in this set. */
+        public int size()                     { return set.size(); }
+        /** Returns true if the given key is in the set. */
+        public boolean contains(Object k)     { return set.contains(k); }
+        /** Removes the element (if it exists). */
+        public synchronized void remove(K k)  { if (cset!=null) throw new UnsupportedOperationException(); set.remove(k); }
+        /** Removes every element that appears in the given collection. */
+        public synchronized void removeAll(Collection<? extends K> set) { if (cset!=null) throw new UnsupportedOperationException(); this.set.removeAll(set); }
+        /** Add the given element to the set. */
+        public synchronized void add(K k)     { if (cset!=null) throw new UnsupportedOperationException(); set.add(k); }
+        /** Turns this TempSet unmodifiable, then construct a ConstSet backed by this TempSet. */
+        @SuppressWarnings("unchecked")
+        public synchronized ConstSet<K> makeConst() { if (cset==null) cset=set.isEmpty()?(ConstSet<K>)emptyset:new ConstSet<K>(set); return cset; }
+    }
+
     /** This ensures the class can be serialized reliably. */
     private static final long serialVersionUID = 1L;
 
@@ -45,16 +85,11 @@ public final class ConstSet<K> implements Serializable, Set<K> {
     private final Set<K> set;
 
     /** This caches a readonly empty Set. */
-    private static final ConstSet<Object> emptyset = new ConstSet<Object>();
-
-    /** Construct an unmodifiable empty set. */
-    private ConstSet() {
-        this.set=Collections.unmodifiableSet(new HashSet<K>(1));
-    }
+    private static final ConstSet<Object> emptyset = new ConstSet<Object>(new HashSet<Object>(1));
 
     /** Construct an unmodifiable set containing the elements from the given set. */
     private ConstSet(Set<? extends K> set) {
-        this.set=Collections.unmodifiableSet(new LinkedHashSet<K>(set));
+        this.set=Collections.unmodifiableSet(set);
     }
 
     /** Return an unmodifiable empty set. */
@@ -71,7 +106,7 @@ public final class ConstSet<K> implements Serializable, Set<K> {
     public static<K> ConstSet<K> make(Set<? extends K> set) {
         if (set instanceof ConstSet) return (ConstSet<K>)set;
         if (set==null || set.isEmpty()) return (ConstSet<K>)emptyset;
-        return new ConstSet<K>(set);
+        return new ConstSet<K>(new LinkedHashSet<K>(set));
     }
 
     /** Returns true if that is a Set with the same elements as this set. */
