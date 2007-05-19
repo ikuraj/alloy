@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 
 /**
- * Immutable; this implements an unmodifiable list.
+ * This implements an unmodifiable list.
  *
  * <p><b>Thread Safety:</b>  Safe.
  *
@@ -39,7 +39,7 @@ import java.util.ListIterator;
 public final class ConstList<T> implements Serializable, List<T> {
 
     /**
-     * Mutable; this implements a modifiable list that can be used to construct a ConstList.
+     * This implements a modifiable list that can be used to construct a ConstList.
      *
      * <p><b>Thread Safety:</b>  Not safe.
      *
@@ -51,11 +51,11 @@ public final class ConstList<T> implements Serializable, List<T> {
         /** Nonnull iff this list is no longer modifiable. */
         private ConstList<T> clist=null;
         /** Construct a new empty modifiable TempList. */
-        public TempList()                     { this.list = new ArrayList<T>(); }
+        public TempList()                         { this.list = new ArrayList<T>(); }
         /** Construct a new empty modifiable TempList with an initial capacity of n. */
-        public TempList(int n)                { this.list = new ArrayList<T>(n); }
-        /** Construct a new modifiable TempList with the initial content being n references to the given elem. */
-        public TempList(int n, T elem)        { this.list = new ArrayList<T>(n); while(n>0) {list.add(elem); n--;} }
+        public TempList(int n)                    { this.list = new ArrayList<T>(n>0?n:0); }
+        /** Construct a new modifiable TempList with the initial content being n references to the given elem (if n<=0, the initial list is empty) */
+        public TempList(int n, T elem)            { this.list = new ArrayList<T>(n>0?n:0); while(n>0) {list.add(elem); n--;} }
         /** Construct a new modifiable TempList with the initial content equal to the given collection. */
         public TempList(Collection<T> collection) { this.list = new ArrayList<T>(collection); }
         /** Returns the size of the list. */
@@ -72,16 +72,17 @@ public final class ConstList<T> implements Serializable, List<T> {
         public void add(T elem)               { if (clist!=null) throw new UnsupportedOperationException(); list.add(elem); }
         /** Append the elements in the given collection to the list. */
         public void addAll(Collection<T> all) { if (clist!=null) throw new UnsupportedOperationException(); list.addAll(all); }
-        /** Changes the i-th element to be elem. */
+        /** Changes the i-th element to be the given element. */
         public void set(int index, T elem)    { if (clist!=null) throw new UnsupportedOperationException(); list.set(index,elem); }
         /** Turns this TempList unmodifiable, then construct a ConstList backed by this TempList. */
-        public ConstList<T> makeConst()       { if (clist==null) if (list.size()==0) clist=ConstList.make(); else clist=new ConstList<T>(list); return clist; }
+        @SuppressWarnings("unchecked")
+        public ConstList<T> makeConst()       { if (clist==null) clist=list.isEmpty()?(ConstList<T>)emptylist:new ConstList<T>(list); return clist; }
     }
 
     /** This ensures the class can be serialized reliably. */
     private static final long serialVersionUID = 1L;
 
-    /** The underlying Collections.unmodifiableList list. */
+    /** The underlying Collections.unmodifiableList. */
     private final List<T> list;
 
     /** This caches an unmodifiable empty list. */
@@ -98,7 +99,10 @@ public final class ConstList<T> implements Serializable, List<T> {
         return (ConstList<T>) emptylist;
     }
 
-    /** Return an unmodifiable list consisting of "n" references to "elem". */
+    /**
+     * Return an unmodifiable list consisting of "n" references to "elem".
+     * (If n<=0, we'll return an unmodifiable empty list)
+     */
     @SuppressWarnings("unchecked")
     public static<T> ConstList<T> make(int n, T elem) {
         if (n<=0) return (ConstList<T>) emptylist;
