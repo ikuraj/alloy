@@ -68,10 +68,10 @@ public final class ConstSet<K> implements Serializable, Set<K> {
      * (If set==null, we'll return an unmodifiable empty set)
      */
     @SuppressWarnings("unchecked")
-    public static<K> ConstSet<K> make(Set<K> set) {
+    public static<K> ConstSet<K> make(Set<? extends K> set) {
         if (set instanceof ConstSet) return (ConstSet<K>)set;
-        else if (set==null || set.isEmpty()) return (ConstSet<K>)emptyset;
-        else return new ConstSet<K>(set);
+        if (set==null || set.isEmpty()) return (ConstSet<K>)emptyset;
+        return new ConstSet<K>(set);
     }
 
     /** Returns true if that is a Set with the same elements as this set. */

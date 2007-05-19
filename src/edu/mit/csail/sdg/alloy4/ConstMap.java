@@ -54,7 +54,7 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
     }
 
     /** Construct an unmodifiable map containing the entries from the given map. */
-    private ConstMap(Map<K,V> map) {
+    private ConstMap(Map<? extends K,? extends V> map) {
         this.map=Collections.unmodifiableMap(new LinkedHashMap<K,V>(map));
     }
 
@@ -69,10 +69,10 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
      * (If map==null, we'll return an unmodifiable empty map)
      */
     @SuppressWarnings("unchecked")
-    public static<K,V> ConstMap<K,V> make(Map<K,V> map) {
+    public static<K,V> ConstMap<K,V> make(Map<? extends K,? extends V> map) {
         if (map instanceof ConstMap) return (ConstMap<K,V>)map;
-        else if (map==null || map.isEmpty()) return (ConstMap<K,V>)emptymap;
-        else return new ConstMap<K,V>(map);
+        if (map==null || map.isEmpty()) return (ConstMap<K,V>)emptymap;
+        return new ConstMap<K,V>(map);
     }
 
     /** Returns true if that is a Map with the same entries as this map. */

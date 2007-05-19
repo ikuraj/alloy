@@ -53,15 +53,15 @@ public final class ConstList<T> implements Serializable, List<T> {
     }
 
     /** Construct an unmodifiable list with the same elements as the given collection. */
+    private ConstList(Collection<? extends T> collection) {
+        this.list=Collections.unmodifiableList(new ArrayList<T>(collection));
+    }
+
+    /** Construct an unmodifiable list with the same elements as the given collection. */
     private ConstList(Iterable<? extends T> collection) {
         ArrayList<T> list=new ArrayList<T>();
         for(T elem:collection) list.add(elem);
         this.list=Collections.unmodifiableList(list);
-    }
-
-    /** Construct an unmodifiable list with the same elements as the given collection. */
-    private ConstList(Collection<? extends T> collection) {
-        this.list=Collections.unmodifiableList(new ArrayList<T>(collection));
     }
 
     /** Return an unmodifiable empty list. */
@@ -77,8 +77,8 @@ public final class ConstList<T> implements Serializable, List<T> {
     @SuppressWarnings("unchecked")
     public static<T> ConstList<T> make(Iterable<? extends T> collection) {
         if (collection instanceof ConstList) return (ConstList<T>)collection;
-        else if (collection==null || !collection.iterator().hasNext()) return (ConstList<T>)emptylist;
-        else return new ConstList<T>(collection);
+        if (collection==null || !collection.iterator().hasNext()) return (ConstList<T>)emptylist;
+        return new ConstList<T>(collection);
     }
 
     /**
@@ -88,8 +88,8 @@ public final class ConstList<T> implements Serializable, List<T> {
     @SuppressWarnings("unchecked")
     public static<T> ConstList<T> make(Collection<? extends T> collection) {
         if (collection instanceof ConstList) return (ConstList<T>)collection;
-        else if (collection==null || collection.isEmpty()) return (ConstList<T>)emptylist;
-        else return new ConstList<T>(collection);
+        if (collection==null || collection.isEmpty()) return (ConstList<T>)emptylist;
+        return new ConstList<T>(collection);
     }
 
     /** Returns true if that is a List with the same elements in the same order as this list. */
