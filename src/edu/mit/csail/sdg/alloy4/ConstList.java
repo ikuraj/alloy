@@ -38,6 +38,46 @@ import java.util.ListIterator;
 
 public final class ConstList<T> implements Serializable, List<T> {
 
+    /**
+     * Mutable; this implements a modifiable list that can be used to construct a ConstList.
+     *
+     * <p><b>Thread Safety:</b>  Not safe.
+     *
+     * @param <T> - the type of element
+     */
+    public static final class TempList<T> {
+        /** The underlying list. */
+        private final ArrayList<T> list;
+        /** Nonnull iff this list is no longer modifiable. */
+        private ConstList<T> clist=null;
+        /** Construct a new empty modifiable TempList. */
+        public TempList()                     { this.list = new ArrayList<T>(); }
+        /** Construct a new empty modifiable TempList with an initial capacity of n. */
+        public TempList(int n)                { this.list = new ArrayList<T>(n); }
+        /** Construct a new modifiable TempList with the initial content being n references to the given elem. */
+        public TempList(int n, T elem)        { this.list = new ArrayList<T>(n); while(n>0) {list.add(elem); n--;} }
+        /** Construct a new modifiable TempList with the initial content equal to the given collection. */
+        public TempList(Collection<T> collection) { this.list = new ArrayList<T>(collection); }
+        /** Returns the size of the list. */
+        public int size()                     { return list.size(); }
+        /** Returns the i-th element. */
+        public T get(int index)               { return list.get(index); }
+        /** Removes then returns the i-th element. */
+        public T remove(int index)            { if (clist!=null) throw new UnsupportedOperationException(); return list.remove(index); }
+        /** Removes the first occurrence of the element (if it exists). */
+        public boolean remove(T elem)         { if (clist!=null) throw new UnsupportedOperationException(); return list.remove(elem); }
+        /** Add the given element at the given index. */
+        public void add(int index, T elem)    { if (clist!=null) throw new UnsupportedOperationException(); list.add(index,elem); }
+        /** Append the given element to the list. */
+        public void add(T elem)               { if (clist!=null) throw new UnsupportedOperationException(); list.add(elem); }
+        /** Append the elements in the given collection to the list. */
+        public void addAll(Collection<T> all) { if (clist!=null) throw new UnsupportedOperationException(); list.addAll(all); }
+        /** Changes the i-th element to be elem. */
+        public void set(int index, T elem)    { if (clist!=null) throw new UnsupportedOperationException(); list.set(index,elem); }
+        /** Turns this TempList unmodifiable, then construct a ConstList backed by this TempList. */
+        public ConstList<T> makeConst()       { if (clist==null) if (list.size()==0) clist=ConstList.make(); else clist=new ConstList<T>(list); return clist; }
+    }
+
     /** This ensures the class can be serialized reliably. */
     private static final long serialVersionUID = 1L;
 
@@ -45,22 +85,10 @@ public final class ConstList<T> implements Serializable, List<T> {
     private final List<T> list;
 
     /** This caches an unmodifiable empty list. */
-    private static final ConstList<Object> emptylist = new ConstList<Object>();
+    private static final ConstList<Object> emptylist = new ConstList<Object>(new ArrayList<Object>(0));
 
-    /** Construct an unmodifiable empty list. */
-    private ConstList() {
-        this.list=Collections.unmodifiableList(new ArrayList<T>(0));
-    }
-
-    /** Construct an unmodifiable list with the same elements as the given collection. */
-    private ConstList(Collection<? extends T> collection) {
-        this.list=Collections.unmodifiableList(new ArrayList<T>(collection));
-    }
-
-    /** Construct an unmodifiable list with the same elements as the given collection. */
-    private ConstList(Iterable<? extends T> collection) {
-        ArrayList<T> list=new ArrayList<T>();
-        for(T elem:collection) list.add(elem);
+    /** Construct an unmodifiable list with the given arraylist as its backing store. */
+    private ConstList(List<? extends T> list) {
         this.list=Collections.unmodifiableList(list);
     }
 
@@ -68,6 +96,15 @@ public final class ConstList<T> implements Serializable, List<T> {
     @SuppressWarnings("unchecked")
     public static<T> ConstList<T> make() {
         return (ConstList<T>) emptylist;
+    }
+
+    /** Return an unmodifiable list consisting of "n" references to "elem". */
+    @SuppressWarnings("unchecked")
+    public static<T> ConstList<T> make(int n, T elem) {
+        if (n<=0) return (ConstList<T>) emptylist;
+        ArrayList<T> ans=new ArrayList<T>(n);
+        while(n>0) { ans.add(elem); n--; }
+        return new ConstList<T>(ans);
     }
 
     /**
@@ -78,7 +115,9 @@ public final class ConstList<T> implements Serializable, List<T> {
     public static<T> ConstList<T> make(Iterable<? extends T> collection) {
         if (collection instanceof ConstList) return (ConstList<T>)collection;
         if (collection==null || !collection.iterator().hasNext()) return (ConstList<T>)emptylist;
-        return new ConstList<T>(collection);
+        ArrayList<T> ans=new ArrayList<T>();
+        for(T elem:collection) ans.add(elem);
+        return new ConstList<T>(ans);
     }
 
     /**
@@ -89,7 +128,7 @@ public final class ConstList<T> implements Serializable, List<T> {
     public static<T> ConstList<T> make(Collection<? extends T> collection) {
         if (collection instanceof ConstList) return (ConstList<T>)collection;
         if (collection==null || collection.isEmpty()) return (ConstList<T>)emptylist;
-        return new ConstList<T>(collection);
+        return new ConstList<T>(new ArrayList<T>(collection));
     }
 
     /** Returns true if that is a List with the same elements in the same order as this list. */
