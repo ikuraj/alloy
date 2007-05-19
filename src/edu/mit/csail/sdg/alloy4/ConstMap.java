@@ -46,23 +46,33 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
     private final Map<K,V> map;
 
     /** This caches a readonly empty map. */
-    private static final Map<Object,Object> emptymap = Collections.unmodifiableMap(new HashMap<Object,Object>(1));
+    private static final ConstMap<Object,Object> emptymap = new ConstMap<Object,Object>();
 
     /** Construct an unmodifiable empty map. */
-    @SuppressWarnings("unchecked")
-    public ConstMap() {
-        this.map=(Map<K,V>)emptymap;
+    private ConstMap() {
+        this.map=Collections.unmodifiableMap(new HashMap<K,V>(1));
     }
 
     /** Construct an unmodifiable map containing the entries from the given map. */
+    private ConstMap(Map<K,V> map) {
+        this.map=Collections.unmodifiableMap(new LinkedHashMap<K,V>(map));
+    }
+
+    /** Return an unmodifiable empty map. */
     @SuppressWarnings("unchecked")
-    public ConstMap(Map<K,V> map) {
-        if (map.size()==0)
-            this.map=(Map<K,V>)emptymap;
-        else if (map instanceof ConstMap)
-            this.map=((ConstMap<K,V>)map).map;
-        else
-            this.map=Collections.unmodifiableMap(new LinkedHashMap<K,V>(map));
+    public static<K,V> ConstMap<K,V> make() {
+        return (ConstMap<K,V>) emptymap;
+    }
+
+    /**
+     * Return an unmodifiable map with the same entries as the given map.
+     * (If map==null, we'll return an unmodifiable empty map)
+     */
+    @SuppressWarnings("unchecked")
+    public static<K,V> ConstMap<K,V> make(Map<K,V> map) {
+        if (map instanceof ConstMap) return (ConstMap<K,V>)map;
+        else if (map==null || map.isEmpty()) return (ConstMap<K,V>)emptymap;
+        else return new ConstMap<K,V>(map);
     }
 
     /** Returns true if that is a Map with the same entries as this map. */

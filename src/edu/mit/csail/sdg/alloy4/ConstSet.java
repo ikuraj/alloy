@@ -45,23 +45,33 @@ public final class ConstSet<K> implements Serializable, Set<K> {
     private final Set<K> set;
 
     /** This caches a readonly empty Set. */
-    private static final Set<Object> emptyset = Collections.unmodifiableSet(new HashSet<Object>(1));
+    private static final ConstSet<Object> emptyset = new ConstSet<Object>();
 
     /** Construct an unmodifiable empty set. */
-    @SuppressWarnings("unchecked")
-    public ConstSet() {
-        this.set=(Set<K>)emptyset;
+    private ConstSet() {
+        this.set=Collections.unmodifiableSet(new HashSet<K>(1));
     }
 
     /** Construct an unmodifiable set containing the elements from the given set. */
+    private ConstSet(Set<? extends K> set) {
+        this.set=Collections.unmodifiableSet(new LinkedHashSet<K>(set));
+    }
+
+    /** Return an unmodifiable empty set. */
     @SuppressWarnings("unchecked")
-    public ConstSet(Set<? extends K> set) {
-        if (set.size()==0)
-            this.set=(Set<K>)emptyset;
-        else if (set instanceof ConstSet)
-            this.set=((ConstSet<K>)set).set;
-        else
-            this.set=Collections.unmodifiableSet(new LinkedHashSet<K>(set));
+    public static<K> ConstSet<K> make() {
+        return (ConstSet<K>) emptyset;
+    }
+
+    /**
+     * Return an unmodifiable set with the same elements as the given set.
+     * (If set==null, we'll return an unmodifiable empty set)
+     */
+    @SuppressWarnings("unchecked")
+    public static<K> ConstSet<K> make(Set<K> set) {
+        if (set instanceof ConstSet) return (ConstSet<K>)set;
+        else if (set==null || set.isEmpty()) return (ConstSet<K>)emptyset;
+        else return new ConstSet<K>(set);
     }
 
     /** Returns true if that is a Set with the same elements as this set. */

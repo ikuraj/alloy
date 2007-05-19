@@ -122,7 +122,7 @@ public final class Util {
         List<T> ans=new ArrayList<T>(list.size()+1);
         ans.addAll(list);
         ans.add(element);
-        return new ConstList<T>(ans);
+        return ConstList.make(ans);
     }
 
     /** Copy the input list, remove a single instance of "element" if exists, then return the result as a unmodifiable list. */
@@ -135,14 +135,14 @@ public final class Util {
                 break;
             }
         }
-        return new ConstList<T>(list);
+        return ConstList.make(list);
     }
 
     /** Returns an unmodifiable List with same elements as the array. */
     public static<T> ConstList<T> asList(T... array) {
         List<T> ans = new ArrayList<T>(array.length);
         for(int i=0; i<array.length; i++) { ans.add(array[i]); }
-        return new ConstList<T>(ans);
+        return ConstList.make(ans);
     }
 
     /** Helper method that converts Windows/Mac/Unix linebreaks into "\n" */

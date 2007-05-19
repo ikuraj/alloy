@@ -44,41 +44,52 @@ public final class ConstList<T> implements Serializable, List<T> {
     /** The underlying Collections.unmodifiableList list. */
     private final List<T> list;
 
-    /** This caches a readonly empty list. */
-    private static final List<Object> emptylist = Collections.unmodifiableList(new ArrayList<Object>(0));
+    /** This caches an unmodifiable empty list. */
+    private static final ConstList<Object> emptylist = new ConstList<Object>();
 
     /** Construct an unmodifiable empty list. */
-    @SuppressWarnings("unchecked")
-    public ConstList() {
-        this.list=(List<T>)emptylist;
+    private ConstList() {
+        this.list=Collections.unmodifiableList(new ArrayList<T>(0));
     }
 
     /** Construct an unmodifiable list with the same elements as the given collection. */
-    @SuppressWarnings("unchecked")
-    public ConstList(Iterable<? extends T> collection) {
-        if (!collection.iterator().hasNext()) {
-            this.list=(List<T>)emptylist;
-        } else if (collection instanceof ConstList) {
-            this.list=((ConstList<T>)collection).list;
-        } else {
-            ArrayList<T> list=new ArrayList<T>();
-            for(T elem:collection) list.add(elem);
-            this.list=Collections.unmodifiableList(list);
-        }
+    private ConstList(Iterable<? extends T> collection) {
+        ArrayList<T> list=new ArrayList<T>();
+        for(T elem:collection) list.add(elem);
+        this.list=Collections.unmodifiableList(list);
     }
 
     /** Construct an unmodifiable list with the same elements as the given collection. */
+    private ConstList(Collection<? extends T> collection) {
+        this.list=Collections.unmodifiableList(new ArrayList<T>(collection));
+    }
+
+    /** Return an unmodifiable empty list. */
     @SuppressWarnings("unchecked")
-    public ConstList(Collection<? extends T> collection) {
-        if (collection.size()==0) {
-            this.list=(List<T>)emptylist;
-        } else if (collection instanceof ConstList) {
-            this.list=((ConstList<T>)collection).list;
-        } else {
-            ArrayList<T> list=new ArrayList<T>(collection.size());
-            for(T elem:collection) list.add(elem);
-            this.list=Collections.unmodifiableList(list);
-        }
+    public static<T> ConstList<T> make() {
+        return (ConstList<T>) emptylist;
+    }
+
+    /**
+     * Return an unmodifiable list with the same elements as the given collection.
+     * (If collection==null, we'll return an unmodifiable empty list)
+     */
+    @SuppressWarnings("unchecked")
+    public static<T> ConstList<T> make(Iterable<? extends T> collection) {
+        if (collection instanceof ConstList) return (ConstList<T>)collection;
+        else if (collection==null || !collection.iterator().hasNext()) return (ConstList<T>)emptylist;
+        else return new ConstList<T>(collection);
+    }
+
+    /**
+     * Return an unmodifiable list with the same elements as the given collection.
+     * (If collection==null, we'll return an unmodifiable empty list)
+     */
+    @SuppressWarnings("unchecked")
+    public static<T> ConstList<T> make(Collection<? extends T> collection) {
+        if (collection instanceof ConstList) return (ConstList<T>)collection;
+        else if (collection==null || collection.isEmpty()) return (ConstList<T>)emptylist;
+        else return new ConstList<T>(collection);
     }
 
     /** Returns true if that is a List with the same elements in the same order as this list. */
