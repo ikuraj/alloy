@@ -23,6 +23,7 @@ package edu.mit.csail.sdg.alloy4;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -51,32 +52,34 @@ public final class ConstList<T> implements Serializable, List<T> {
         /** Nonnull iff this list is no longer modifiable. */
         private ConstList<T> clist=null;
         /** Construct a new empty modifiable TempList. */
-        public TempList()                         { this.list = new ArrayList<T>(); }
+        public TempList()                          { this.list = new ArrayList<T>(); }
         /** Construct a new empty modifiable TempList with an initial capacity of n. */
-        public TempList(int n)                    { this.list = new ArrayList<T>(n>0?n:0); }
+        public TempList(int n)                     { this.list = new ArrayList<T>(n>0?n:0); }
         /** Construct a new modifiable TempList with the initial content being n references to the given elem (if n<=0, the initial list is empty) */
-        public TempList(int n, T elem)            { this.list = new ArrayList<T>(n>0?n:0); while(n>0) {list.add(elem); n--;} }
+        public TempList(int n, T elem)             { this.list = new ArrayList<T>(n>0?n:0); while(n>0) {list.add(elem); n--;} }
         /** Construct a new modifiable TempList with the initial content equal to the given collection. */
-        public TempList(Collection<T> collection) { this.list = new ArrayList<T>(collection); }
+        public TempList(Collection<T> collection)  { this.list = new ArrayList<T>(collection); }
         /** Returns the size of the list. */
-        public int size()                     { return list.size(); }
+        public int size()                          { return list.size(); }
         /** Returns the i-th element. */
-        public T get(int index)               { return list.get(index); }
+        public T get(int index)                    { return list.get(index); }
+        /** Sort the list using the given comparator. */
+        public void sort(Comparator<T> comparator) { if (clist!=null) throw new UnsupportedOperationException(); Collections.sort(list,comparator); }
         /** Removes then returns the i-th element. */
-        public T remove(int index)            { if (clist!=null) throw new UnsupportedOperationException(); return list.remove(index); }
+        public T remove(int index)                 { if (clist!=null) throw new UnsupportedOperationException(); return list.remove(index); }
         /** Removes the first occurrence of the element (if it exists). */
-        public boolean remove(T elem)         { if (clist!=null) throw new UnsupportedOperationException(); return list.remove(elem); }
+        public boolean remove(T elem)              { if (clist!=null) throw new UnsupportedOperationException(); return list.remove(elem); }
         /** Add the given element at the given index. */
-        public void add(int index, T elem)    { if (clist!=null) throw new UnsupportedOperationException(); list.add(index,elem); }
+        public void add(int index, T elem)         { if (clist!=null) throw new UnsupportedOperationException(); list.add(index,elem); }
         /** Append the given element to the list. */
-        public void add(T elem)               { if (clist!=null) throw new UnsupportedOperationException(); list.add(elem); }
+        public void add(T elem)                    { if (clist!=null) throw new UnsupportedOperationException(); list.add(elem); }
         /** Append the elements in the given collection to the list. */
-        public void addAll(Collection<T> all) { if (clist!=null) throw new UnsupportedOperationException(); list.addAll(all); }
+        public void addAll(Collection<T> all)      { if (clist!=null) throw new UnsupportedOperationException(); list.addAll(all); }
         /** Changes the i-th element to be the given element. */
-        public void set(int index, T elem)    { if (clist!=null) throw new UnsupportedOperationException(); list.set(index,elem); }
+        public void set(int index, T elem)         { if (clist!=null) throw new UnsupportedOperationException(); list.set(index,elem); }
         /** Turns this TempList unmodifiable, then construct a ConstList backed by this TempList. */
         @SuppressWarnings("unchecked")
-        public ConstList<T> makeConst()       { if (clist==null) clist=list.isEmpty()?(ConstList<T>)emptylist:new ConstList<T>(list); return clist; }
+        public ConstList<T> makeConst() { if (clist==null) clist=list.isEmpty()?(ConstList<T>)emptylist:new ConstList<T>(list); return clist; }
     }
 
     /** This ensures the class can be serialized reliably. */
