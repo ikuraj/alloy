@@ -142,23 +142,6 @@ public final class Pos implements Serializable {
         return new Pos(filename, x, y, x2, y2, (this.comment!=null ? this.comment : that.comment));
     }
 
-    /**
-     * Return a new position that merges every Pos object in the array.
-     * <p> (If pos[] contains null entries, those null entries are ignored.)
-     * <p> (If pos[] contains only null entries, or if the array is empty, or if the array is null, we return Pos.UNKNOWN)
-     */
-    public static Pos merge(Pos... pos) {
-        Pos ans=null;
-        if (pos!=null) {
-            for(int i=0; i<pos.length; i++) {
-                if (pos[i]!=null && pos[i]!=UNKNOWN) {
-                   ans = (ans==null) ? pos[i] : ans.merge(pos[i]);
-                }
-            }
-        }
-        return ans==null ? UNKNOWN : ans;
-    }
-
     /** Returns a String representation of this position value. */
     @Override public String toString() {
         String comment=(this.comment==null?"":(this.comment.toString()));
