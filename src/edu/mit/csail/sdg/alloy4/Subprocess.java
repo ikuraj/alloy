@@ -20,7 +20,9 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -57,7 +59,7 @@ public final class Subprocess {
      * @param timeLimit - if timeLimit>0, we will attempt to terminate the process after that many milliseconds have passed
      * @param commandline - the command line
      */
-    public Subprocess(long timeLimit, String[] commandline) { this(timeLimit, commandline, -1); }
+    public Subprocess(long timeLimit, String[] commandline) { this(timeLimit, commandline, -1, ""); }
 
     /**
      * Executes the given command line, and returns a "Subprocess" object that allows us to query the subprocess.
@@ -65,18 +67,28 @@ public final class Subprocess {
      * @param commandline - the command line
      * @param expectedExitCode - if expectedExitCode>=0, we will expect it to be the process's exit code
      */
-    public Subprocess(final long timeLimit, String[] commandline, int expectedExitCode) {
+    public Subprocess(final long timeLimit, String[] commandline, int expectedExitCode) { this(timeLimit, commandline, expectedExitCode, ""); }
+
+    /**
+     * Executes the given command line, and returns a "Subprocess" object that allows us to query the subprocess.
+     * @param timeLimit - if timeLimit>0, we will attempt to terminate the process after that many milliseconds have passed
+     * @param commandline - the command line
+     * @param expectedExitCode - if expectedExitCode>=0, we will expect it to be the process's exit code
+     */
+    public Subprocess(final long timeLimit, String[] commandline, int expectedExitCode, String input) {
+        final Process p;
         this.expect=expectedExitCode;
         try {
-            process=Runtime.getRuntime().exec(commandline);
+            p=Runtime.getRuntime().exec(commandline);
+            process=p;
         } catch (Throwable ex) {
             process=null;
             stdout="";
             stderr="Error: " + ex.getMessage();
             return;
         }
-        Thread thread1=new Thread(new OutPipe(process.getInputStream(), true));
-        Thread thread2=new Thread(new OutPipe(process.getErrorStream(), false));
+        Thread thread1=new Thread(new OutPipe(p.getInputStream(), true));
+        Thread thread2=new Thread(new OutPipe(p.getErrorStream(), false));
         thread1.start();
         thread2.start();
         if (timeLimit>0) {
@@ -94,6 +106,20 @@ public final class Subprocess {
                 }
             };
             synchronized(Subprocess.class) { stopper.schedule(stoptask,timeLimit); }
+        }
+        if (input!=null && input.length()>0) {
+            byte[] bytes=null;
+            try {bytes=input.getBytes("UTF-8");} catch(UnsupportedEncodingException ex) {}
+            for(int i=0, n=bytes.length; i<n;) {
+                int len=((n-i)>1024) ? 1024 : (n-i); // Pick a small number to avoid platform-dependent overflows
+                try {p.getOutputStream().write(bytes,i,len);} catch(IOException ex) {bytes=null;break;}
+                i=i+len;
+            }
+            try {p.getOutputStream().close();} catch(IOException ex) {bytes=null;}
+            if (bytes==null) {
+                synchronized(this) { process=null; stdout=""; stderr="Error: Input Timeout"; }
+                p.destroy();
+            }
         }
     }
 
