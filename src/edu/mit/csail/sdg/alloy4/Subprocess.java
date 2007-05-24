@@ -74,7 +74,7 @@ public final class Subprocess {
      * @param timeLimit - if timeLimit>0, we will attempt to terminate the process after that many milliseconds have passed
      * @param commandline - the command line
      * @param expectedExitCode - if expectedExitCode>=0, we will expect it to be the process's exit code
-     * @param input - if input.length()>0, we will write it to the process as initial input 
+     * @param input - if input.length()>0, we will write it to the process as initial input
      */
     public Subprocess(final long timeLimit, String[] commandline, int expectedExitCode, String input) {
         final Process p;
