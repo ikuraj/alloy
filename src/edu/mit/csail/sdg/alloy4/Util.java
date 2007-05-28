@@ -38,7 +38,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.prefs.Preferences;
-
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /**
