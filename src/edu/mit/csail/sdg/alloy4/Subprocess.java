@@ -74,11 +74,12 @@ public final class Subprocess {
      * @param timeLimit - if timeLimit>0, we will attempt to terminate the process after that many milliseconds have passed
      * @param commandline - the command line
      * @param expectedExitCode - if expectedExitCode>=0, we will expect it to be the process's exit code
-     * @param input - if input.length()>0, we will write it to the process as initial input
+     * @param input - if input.length()>0, we will write it to the subprocess as initial input
+     * (note: the caller thread will wait until the entire input has been fed to the subprocess)
      */
     public Subprocess(final long timeLimit, String[] commandline, int expectedExitCode, String input) {
         final Process p;
-        this.expect=expectedExitCode;
+        expect=expectedExitCode;
         try {
             p=Runtime.getRuntime().exec(commandline);
             process=p;
@@ -112,7 +113,7 @@ public final class Subprocess {
             byte[] bytes=null;
             try {bytes=input.getBytes("UTF-8");} catch(UnsupportedEncodingException ex) {} // Should not happen
             for(int i=0, n=bytes.length; i<n;) {
-                int len=((n-i)>1024) ? 1024 : (n-i); // Pick a small number to avoid platform-dependent overflows
+                int len=((n-i)>1024) ? 1024 : (n-i); // Pick a small number to avoid overflow on some OS
                 try {p.getOutputStream().write(bytes,i,len);} catch(IOException ex) {bytes=null;break;}
                 i=i+len;
             }

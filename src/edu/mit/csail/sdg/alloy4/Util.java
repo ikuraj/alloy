@@ -24,7 +24,6 @@ import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -130,8 +129,8 @@ public final class Util {
         for(int i=0, n=list.size(); i<n; i++) {
             T x=list.get(i);
             if (x==element || (x!=null && x.equals(element))) {
-                TempList<T> newlist=new TempList<T>(list);
-                newlist.remove(i);
+                TempList<T> newlist=new TempList<T>(list.size()-1);
+                for(int j=0; j<n; j++) { if (i!=j) newlist.add(list.get(j)); }
                 return newlist.makeConst();
             }
         }
@@ -151,7 +150,7 @@ public final class Util {
     }
 
     /**
-     * Attempt to close the file/stream/reader/write and return true if and only if we successfully flushed it and closed it.
+     * Attempt to close the file/stream/reader/writer and return true if and only if we successfully closed it.
      * (If object==null, we return true right away)
      */
     public static boolean close(Closeable object) {
@@ -168,25 +167,29 @@ public final class Util {
     }
 
     /** Read the file then return the file size and a byte[] array (the array could be slightly bigger than file size) */
-    private static Pair<byte[],Integer> readEntireFile(String filename) throws IOException {
-        FileInputStream fis=null;
-        long maxL=new File(filename).length();
-        int now=0, max=(int)maxL;
-        if ((long)max != maxL) throw new IOException("File too big to fit in memory");
-        byte[] buf=new byte[max];
+    private static Pair<byte[],Integer> readEntireFile(boolean fromJar, String filename) throws IOException {
+        InputStream fis=null;
+        int now=0, max=4096;
+        if (!fromJar) {
+            long maxL=new File(filename).length();
+            max=(int)maxL;
+            if ((long)max != maxL) throw new IOException("File too big to fit in memory");
+        }
         try {
-            fis=new FileInputStream(filename);
+            byte[] buf=new byte[max];
+            fis = fromJar ? Util.class.getClassLoader().getResourceAsStream(filename) : new FileInputStream(filename);
+            if (fis==null) throw new IOException("File \""+filename+"\" cannot be found");
             while(true) {
-                if (now>=max) {
+                if (now >= max) {
                     max=now+4096;
-                    if (max<now) throw new IOException("File too big to fit in memory"); // since the new array size would exceed sizeof(int)
+                    if (max<now) throw new IOException("File too big to fit in memory"); // since the new array size cannot fit in an "int"
                     byte[] buf2=new byte[max];
                     if (now>0) System.arraycopy(buf, 0, buf2, 0, now);
                     buf=buf2;
                 }
                 int r = fis.read(buf, now, max-now);
                 if (r<0) break;
-                now=now+r;
+                now = now + r;
             }
             return new Pair<byte[],Integer>(buf,now);
         } finally {
@@ -195,11 +198,11 @@ public final class Util {
     }
 
     /** Read everything into a String; throws IOException if an error occurred. */
-    public static String readAll(String filename) throws IOException {
+    public static String readAll(boolean fromJar, String filename) throws IOException {
         final CodingErrorAction r=CodingErrorAction.REPORT;
-        final Pair<byte[],Integer> p=readEntireFile(filename);
+        final Pair<byte[],Integer> p=readEntireFile(fromJar,filename);
         ByteBuffer bbuf;
-        String ans;
+        String ans="";
         try {
             // We first try UTF-8;
             bbuf=ByteBuffer.wrap(p.a, 0, p.b);
@@ -218,22 +221,29 @@ public final class Util {
         return ans;
     }
 
+    /** Read everything into a String; throws IOException if an error occurred. */
+    public static String readAll(String filename) throws IOException { return readAll(false,filename); }
+
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
     public static void writeAll(String filename, String content) throws Err {
         final FileOutputStream fos;
         try {
             fos=new FileOutputStream(filename);
         } catch(IOException ex) {
-            throw new ErrorFatal("Cannot write to the file "+filename, ex);
+            throw new ErrorFatal("Cannot write to the file "+filename);
         }
+        // Convert the line break into the UNIX line break
         content = convertLineBreak(content);
+        // If the last line does not have a LINEBREAK, add it
         if (content.length()>0 && content.charAt(content.length()-1)!='\n') content=content+"\n";
+        // Now, convert the line break into the local platform's line break, then write it to the file
         try {
             final String NL=System.getProperty("line.separator");
             fos.write(content.replace("\n",NL).getBytes("UTF-8"));
             fos.close();
         } catch(IOException ex) {
-            close(fos); throw new ErrorFatal("Cannot write to the file "+filename, ex);
+            close(fos);
+            throw new ErrorFatal("Cannot write to the file "+filename);
         }
     }
 
@@ -244,7 +254,7 @@ public final class Util {
      * <p> Note: if filename=="", we return "".
      */
     public static final String canon(String filename) {
-        if (filename.length()==0) return filename;
+        if (filename.length()==0) return "";
         File file=new File(filename);
         String answer;
         try {
@@ -257,7 +267,7 @@ public final class Util {
     }
 
     /**
-     * Sorts two strings for optimum module order; we guarantee slashCompartor(a,b)==0 iff a.equals(b).
+     * Sorts two strings for optimum module order; we guarantee slashComparator(a,b)==0 iff a.equals(b).
      * <br> (1) First of all, the builtin names "extend" and "in" are sorted ahead of other names
      * <br> (2) Else, if one string has fewer '/' than the other, then it is considered smaller.
      * <br> (3) Else, if one string starts with "this/", then it is considered smaller
@@ -293,29 +303,27 @@ public final class Util {
     private static synchronized boolean copy(String sourcename, String destname) {
         File destfileobj=new File(destname);
         if (destfileobj.isFile() && destfileobj.length()>0) return false;
-        InputStream resStream=Util.class.getClassLoader().getResourceAsStream(sourcename);
-        if (resStream==null) return false;
         boolean result=true;
-        InputStream binStream=new BufferedInputStream(resStream);
-        FileOutputStream tmpFileOutputStream=null;
+        InputStream res=null;
+        InputStream in=null;
+        FileOutputStream out=null;
         try {
-            tmpFileOutputStream=new FileOutputStream(destname);
-        } catch (FileNotFoundException e) {
+            res=Util.class.getClassLoader().getResourceAsStream(sourcename);
+            if (res==null) return false; // This means the file is not relevant for this setup, so we don't pop up a fatal dialog
+            in=new BufferedInputStream(res);
+            out=new FileOutputStream(destname);
+            byte[] b=new byte[16384];
+            while(true) {
+                int numRead = in.read(b);
+                if (numRead < 0) break;
+                if (numRead > 0) out.write(b, 0, numRead);
+            }
+        } catch (IOException e) {
             result=false;
         }
-        if (tmpFileOutputStream!=null) {
-            try {
-                byte[] b = new byte[16384];
-                while(true) {
-                    int numRead = binStream.read(b);
-                    if (numRead < 0) break;
-                    if (numRead > 0) tmpFileOutputStream.write(b, 0, numRead);
-                }
-            } catch(IOException e) { result=false; }
-            try { tmpFileOutputStream.close(); } catch(IOException ex) { result=false; }
-        }
-        if (!close(binStream)) result=false;
-        if (!close(resStream)) result=false;
+        if (!close(out)) result=false;
+        if (!close(in)) result=false;
+        if (!close(res)) result=false;
         if (!result) OurDialog.fatal(null,"Error occurred in creating the file \""+destname+"\"");
         return true;
     }
@@ -325,13 +333,13 @@ public final class Util {
      * then set the correct permissions on them if possible.
      *
      * @param executable - if true, we will attempt to set the file's "executable" permission (failure to do this is ignored)
-     * @param keepPath - if true, the directory of each file will be created
+     * @param keepPath - if true, the full path will be created for the destination file
      * @param destdir - the destination directory
      * @param names - the files to copy from the JAR
      */
     public static synchronized void copy(boolean executable, boolean keepPath, String destdir, String... names) {
         String[] args=new String[names.length+2];
-        args[0]="chmod"; // This does not work on Windows, but the "executable" bit is not needed on Windows anyway.
+        args[0]="/bin/chmod"; // This does not work on Windows, but the "executable" bit is not needed on Windows anyway.
         args[1]=(executable ? "700" : "600"); // 700 means read+write+executable; 600 means read+write.
         int j=2;
         for(int i=0; i<names.length; i++) {
@@ -351,27 +359,6 @@ public final class Util {
         } catch (Throwable ex) {
             // We only intend to make a best effort
         }
-    }
-
-    /**
-     * Return the given text file from JAR as a String (or null if the file doesn't exist or an error occurred)
-     */
-    public static synchronized String readTextFromJAR(String sourcename) {
-        InputStream resStream=Util.class.getClassLoader().getResourceAsStream(sourcename);
-        if (resStream==null) return null;
-        StringBuilder result=new StringBuilder();
-        try {
-            byte[] b = new byte[16384];
-            while(true) {
-                int numRead = resStream.read(b);
-                if (numRead < 0) break;
-                if (numRead > 0) for(int i=0;i<numRead;i++) result.append((char)(b[i]));
-            }
-        } catch(IOException e) {
-           result=null;
-        }
-        if (!close(resStream)) result=null;
-        return result==null ? null : result.toString();
     }
 
     /**
@@ -395,7 +382,7 @@ public final class Util {
             if (c=='&') { out.write("&amp;"); continue; }
             if (c=='\'') { out.write("&apos;"); continue; }
             if (c=='\"') { out.write("&quot;"); continue; }
-            if (c>=32 && c<127) { out.write(c); continue; }
+            if (c>=32 && c<=126) { out.write(c); continue; }
             out.write("&#x");
             String v=Integer.toString((int)c, 16);
             for(int j=v.length(); j<4; j++) out.write('0');
@@ -438,10 +425,10 @@ public final class Util {
         int len=big.length(), slen=small.length();
         if (slen==0) return -1;
         while(start>=0 && start<len) {
-            for(int i=0;; i++) {
+            for(int i=0 ; ; i++) {
                 if (i>=slen) return start;
+                if (start+i>=len) break;
                 int b=big.charAt(start+i), s=small.charAt(i);
-                if (b==s) continue;
                 if (!caseSensitive && b>='A' && b<='Z') b=(b-'A')+'a';
                 if (!caseSensitive && s>='A' && s<='Z') s=(s-'A')+'a';
                 if (b!=s) break;
