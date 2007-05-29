@@ -35,8 +35,8 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
+import java.util.List;
 import java.util.prefs.Preferences;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
