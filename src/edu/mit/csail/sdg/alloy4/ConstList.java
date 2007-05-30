@@ -284,5 +284,5 @@ public final class ConstList<T> implements Serializable, List<T> {
      * Specified by java.util.List
      * @inheritDoc
      */
-    public List<T> subList(int fromIndex, int toIndex) { return list.subList(fromIndex,toIndex); }
+    public ConstList<T> subList(int from, int to) { return new ConstList<T>(list.subList(from,to)); }
 }
