@@ -37,29 +37,42 @@ public abstract class Err extends Exception {
     public final String msg;
 
     /** The additional stack trace information. */
-    private final StackTraceElement[] trace;
+    private final Throwable other;
 
     /**
      * Constructs a new Err object.
      * @param pos - the filename/line/row information (can be null if unknown)
      * @param msg - the actual error message
-     * @param trace - if nonnull, it is a list of additional StackTraceElement(s) to add into this Err object's StackTrace
+     * @param ex - if nonnull, its stack trace will be merged with this exception's stack trace
      */
-    public Err(Pos pos, String msg, StackTraceElement[] trace) {
+    public Err(Pos pos, String msg, Throwable ex) {
         this.pos = (pos==null ? Pos.UNKNOWN : pos);
         this.msg = (msg==null ? "" : msg);
-        if (trace==null || trace.length==0) {
-            this.trace=null;
-        } else {
-            this.trace = new StackTraceElement[trace.length];
-            for(int i=0; i<this.trace.length; i++) this.trace[i]=trace[i];
-        }
+        this.other = ex;
     }
 
-    /** Retrieves the complete stack trace as a String */
+    /** Returns a copy of the stack trace. */
+    @Override public StackTraceElement[] getStackTrace() {
+        if (other==null) return super.getStackTrace();
+        StackTraceElement[] that = other.getStackTrace();
+        StackTraceElement[] here = super.getStackTrace();
+        int same=0;
+        if (here.length>0 && that.length>0) {
+          while(same<here.length && same<that.length) {
+            if (!here[here.length-same-1].equals(that[that.length-same-1])) break;
+            same++;
+          }
+        }
+        StackTraceElement[] ans = new StackTraceElement[that.length + here.length - same];
+        int j=0;
+        for(int i=0; i<that.length-same; i++, j++) ans[j]=that[i];
+        for(int i=0; i<here.length; i++, j++) ans[j]=here[i];
+        return ans;
+    }
+
+    /** Returns the stack trace as a String. */
     public final String getTotalTrace() {
-        StringBuilder sb=new StringBuilder();
-        if (trace!=null) for(StackTraceElement st: trace) { sb.append(st.toString()); sb.append("\n"); }
+        final StringBuilder sb=new StringBuilder();
         for(StackTraceElement st: getStackTrace()) { sb.append(st.toString()); sb.append("\n"); }
         return sb.toString();
     }
