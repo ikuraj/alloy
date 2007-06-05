@@ -164,13 +164,13 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
      * Specified by java.util.Map
      * @inheritDoc
      */
-    public V put(K key, V value) { throw new UnsupportedOperationException(); }
+    public V remove(Object key) { throw new UnsupportedOperationException(); }
 
     /**
      * Specified by java.util.Map
      * @inheritDoc
      */
-    public V remove(Object key) { throw new UnsupportedOperationException(); }
+    public V put(K key, V value) { throw new UnsupportedOperationException(); }
 
     /**
      * Specified by java.util.Map
