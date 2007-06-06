@@ -61,6 +61,8 @@ public final class ConstList<T> implements Serializable, List<T> {
         public TempList(Collection<? extends T> collection)  { this.list = new ArrayList<T>(collection); }
         /** Returns the size of the list. */
         public int size()                          { return list.size(); }
+        /** Returns true if the element is in the list. */
+        public boolean contains(Object elem)       { return list.contains(elem); }
         /** Returns the i-th element. */
         public T get(int index)                    { return list.get(index); }
         /** Sort the list using the given comparator. */
