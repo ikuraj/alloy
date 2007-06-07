@@ -29,7 +29,7 @@ import java.util.LinkedHashSet;
 import java.util.Iterator;
 
 /**
- * Immutable; this implements an unmodifiable set.
+ * This implements an unmodifiable set.
  *
  * <p><b>Thread Safety:</b>  Safe.
  *
@@ -54,17 +54,17 @@ public final class ConstSet<K> implements Serializable, Set<K> {
         public TempSet()                     { this.set = new LinkedHashSet<K>(); }
         /** Construct a new modifiable TempSet with the initial entries equal to the given set. */
         public TempSet(Set<? extends K> set) { this.set = new LinkedHashSet<K>(set); }
-        /** Returns the number of entries in this set. */
+        /** Return the number of entries in this set. */
         public int size()                    { return set.size(); }
-        /** Returns true if the given key is in the set. */
+        /** Return true if the given key is in the set. */
         public boolean contains(Object k)    { return set.contains(k); }
-        /** Removes the element (if it exists). */
+        /** Remove the element (if it exists). */
         public void remove(K k)                            { if (cset!=null) throw new UnsupportedOperationException(); set.remove(k); }
-        /** Removes every element that appears in the given collection. */
+        /** Remove every element that appears in the given collection. */
         public void removeAll(Collection<? extends K> set) { if (cset!=null) throw new UnsupportedOperationException(); this.set.removeAll(set); }
         /** Add the given element to the set. */
         public void add(K k)                               { if (cset!=null) throw new UnsupportedOperationException(); set.add(k); }
-        /** Turns this TempSet unmodifiable, then construct a ConstSet backed by this TempSet. */
+        /** Turn this TempSet unmodifiable, then construct a ConstSet backed by this TempSet. */
         @SuppressWarnings("unchecked")
         public ConstSet<K> makeConst() { if (cset==null) cset=set.isEmpty()?(ConstSet<K>)emptyset:new ConstSet<K>(set); return cset; }
     }

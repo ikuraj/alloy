@@ -56,17 +56,17 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
         public TempMap()                                 { this.map = new LinkedHashMap<K,V>(); }
         /** Construct a new modifiable TempMap with the initial entries equal to the given map. */
         public TempMap(Map<? extends K,? extends V> map) { this.map = new LinkedHashMap<K,V>(map); }
-        /** Returns the number of entries in this map. */
+        /** Return the number of entries in this map. */
         public int size()                     { return map.size(); }
-        /** Returns true if the given key is in the map. */
+        /** Return true if the given key is in the map. */
         public boolean containsKey(Object k)  { return map.containsKey(k); }
-        /** Returns the value associated with the given key (or null if the key does not exist in the map) */
+        /** Return the value associated with the given key (or null if the key does not exist in the map) */
         public V get(Object k)                { return map.get(k); }
-        /** Removes the key (if it exists). */
+        /** Remove the key (if it exists). */
         public void remove(K k)               { if (cmap!=null) throw new UnsupportedOperationException(); map.remove(k); }
         /** Add the given key and value into the map. */
         public void put(K k, V v)             { if (cmap!=null) throw new UnsupportedOperationException(); map.put(k,v); }
-        /** Turns this TempMap unmodifiable, then construct a ConstMap backed by this TempMap. */
+        /** Turn this TempMap unmodifiable, then construct a ConstMap backed by this TempMap. */
         @SuppressWarnings("unchecked")
         public ConstMap<K,V> makeConst()      { if (cmap==null) cmap=map.isEmpty()?(ConstMap<K,V>)emptymap:new ConstMap<K,V>(map); return cmap; }
     }

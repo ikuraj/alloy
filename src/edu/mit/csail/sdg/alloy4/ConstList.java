@@ -77,7 +77,7 @@ public final class ConstList<T> implements Serializable, List<T> {
         public void add(T elem)                    { if (clist!=null) throw new UnsupportedOperationException(); list.add(elem); }
         /** Append the elements in the given collection to the list. */
         public void addAll(Collection<T> all)      { if (clist!=null) throw new UnsupportedOperationException(); list.addAll(all); }
-        /** Changes the i-th element to be the given element. */
+        /** Change the i-th element to be the given element. */
         public void set(int index, T elem)         { if (clist!=null) throw new UnsupportedOperationException(); list.set(index,elem); }
         /** Turns this TempList unmodifiable, then construct a ConstList backed by this TempList. */
         @SuppressWarnings("unchecked")
@@ -182,7 +182,7 @@ public final class ConstList<T> implements Serializable, List<T> {
      * Specified by java.util.List
      * @inheritDoc
      */
-    public boolean isEmpty() { return list.size()==0; }
+    public boolean isEmpty() { return list.isEmpty(); }
 
     /**
      * Specified by java.util.List
