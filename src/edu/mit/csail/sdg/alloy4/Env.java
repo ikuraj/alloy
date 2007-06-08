@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 
 /**
- * Mutable; this implements a String-to-Value map that supports the undo operation; null key and null values are allowed.
+ * Mutable; this implements a Key-to-Value map that supports the undo operation; null key and null values are allowed.
  *
  * <p>   To be more precise, every key is internally mapped to a list of values.
  * <br>  The put(X,Y)  method appends Y onto the end of X's list.
@@ -44,21 +44,21 @@ import java.util.LinkedList;
  * @param <V> - the type for Value
  */
 
-public final class Env<V> {
+public final class Env<K,V> {
 
     /**
      * If a key is bound to one or more values, this stores the first value.
      * <p>
      * For example: if key K is bound to values V1..Vn, then map1.get(K) returns V1
      */
-    private final Map<String,V> map1 = new LinkedHashMap<String,V>();
+    private final Map<K,V> map1 = new LinkedHashMap<K,V>();
 
     /**
      * If a key is bound to more than one value, this stores every value except the first value.
      * <p>
      * For example: if key K is bound to values V1..Vn, then map2.get(K) returns the sublist V2..Vn
      */
-    private final Map<String,LinkedList<V>> map2=new LinkedHashMap<String,LinkedList<V>>();
+    private final Map<K,LinkedList<V>> map2=new LinkedHashMap<K,LinkedList<V>>();
 
     /** Constructs an initially empty environment. */
     public Env () { }
@@ -69,7 +69,7 @@ public final class Env<V> {
      * @param key - the key
      * @return true if the key is mapped to one or more values
      */
-    public synchronized boolean has (String key) {
+    public synchronized boolean has (K key) {
         return map1.containsKey(key);
     }
 
@@ -83,7 +83,7 @@ public final class Env<V> {
      * @param key - the key
      * @return the latest value associated with the key (and returns null if none)
      */
-    public synchronized V get (String key) {
+    public synchronized V get (K key) {
         LinkedList<V> list = map2.get(key);
         return (list != null) ? list.getLast() : map1.get(key);
     }
@@ -94,7 +94,7 @@ public final class Env<V> {
      * @param key - the key
      * @param value - the value (which can be null)
      */
-    public synchronized void put (String key, V value) {
+    public synchronized void put (K key, V value) {
         LinkedList<V> list = map2.get(key);
         if (list != null) {
             list.add(value);
@@ -114,7 +114,7 @@ public final class Env<V> {
      *
      * @param key - the key
      */
-    public synchronized void remove(String key) {
+    public synchronized void remove(K key) {
         final LinkedList<V> list = map2.get(key);
         if (list == null) {
             map1.remove(key);
