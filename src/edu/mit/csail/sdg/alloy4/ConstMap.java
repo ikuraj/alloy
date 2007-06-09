@@ -56,6 +56,8 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
         public TempMap()                                 { this.map = new LinkedHashMap<K,V>(); }
         /** Construct a new modifiable TempMap with the initial entries equal to the given map. */
         public TempMap(Map<? extends K,? extends V> map) { this.map = new LinkedHashMap<K,V>(map); }
+        /** Returns a String representation. */
+        @Override public String toString()    { return map.toString(); }
         /** Return the number of entries in this map. */
         public int size()                     { return map.size(); }
         /** Return true if the given key is in the map. */
@@ -111,6 +113,9 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
 
     /** Computes a hash code that is consistent with equals(). */
     @Override public int hashCode() { return map.hashCode(); }
+
+    /** Returns a String representation. */
+    @Override public String toString() { return map.toString(); }
 
     /**
      * Specified by java.util.Map

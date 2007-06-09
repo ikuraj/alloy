@@ -54,6 +54,8 @@ public final class ConstSet<K> implements Serializable, Set<K> {
         public TempSet()                     { this.set = new LinkedHashSet<K>(); }
         /** Construct a new modifiable TempSet with the initial entries equal to the given set. */
         public TempSet(Set<? extends K> set) { this.set = new LinkedHashSet<K>(set); }
+        /** Returns a String representation. */
+        @Override public String toString()   { return set.toString(); }
         /** Return the number of entries in this set. */
         public int size()                    { return set.size(); }
         /** Return true if the given key is in the set. */
@@ -109,6 +111,9 @@ public final class ConstSet<K> implements Serializable, Set<K> {
 
     /** Computes a hash code that is consistent with equals(). */
     @Override public int hashCode() { return set.hashCode(); }
+
+    /** Returns a String representation. */
+    @Override public String toString() { return set.toString(); }
 
     /**
      * Specified by java.util.Set

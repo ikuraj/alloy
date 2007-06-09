@@ -59,6 +59,8 @@ public final class ConstList<T> implements Serializable, List<T> {
         public TempList(int n, T elem)             { this.list = new ArrayList<T>(n>0?n:0); while(n>0) {list.add(elem); n--;} }
         /** Construct a new modifiable TempList with the initial content equal to the given collection. */
         public TempList(Collection<? extends T> collection)  { this.list = new ArrayList<T>(collection); }
+        /** Returns a String representation. */
+        @Override public String toString()         { return list.toString(); }
         /** Returns the size of the list. */
         public int size()                          { return list.size(); }
         /** Returns true if the element is in the list. */
@@ -153,6 +155,9 @@ public final class ConstList<T> implements Serializable, List<T> {
 
     /** Computes a hash code that is consistent with equals() */
     @Override public int hashCode() { return list.hashCode(); }
+
+    /** Returns a String representation. */
+    @Override public String toString() { return list.toString(); }
 
     /**
      * Specified by java.util.List
