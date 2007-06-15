@@ -20,6 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.util.WeakHashMap;
+
 /**
  * This class receives diagnostic, progress, and warning messages from Alloy4.
  * (This default implementation ignores all calls; you should subclass it to do the appropriate screen output)
@@ -29,6 +31,19 @@ public class A4Reporter {
 
     /** This is a pre-constructed instance that simply ignores all calls. */
     public static final A4Reporter NOP = new A4Reporter();
+
+    /** This stores the mapping from a Thread to the current reporter associated with that thread. */
+    private static final WeakHashMap<Thread,A4Reporter> map = new WeakHashMap<Thread,A4Reporter>();
+
+    /** Sets the reporter for the current thread. */
+    public static final void setReporter(A4Reporter reporter) {
+        synchronized(A4Reporter.class) { map.put(Thread.currentThread(), reporter); }
+    }
+
+    /** Returns the reporter for the current thread. */
+    public static final A4Reporter getReporter() {
+        synchronized(A4Reporter.class) { A4Reporter x=map.get(Thread.currentThread()); return (x==null) ? NOP : x; }
+    }
 
     /** Constructs a default A4Reporter object that does nothing. */
     public A4Reporter() {}
