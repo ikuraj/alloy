@@ -35,20 +35,37 @@ public class A4Reporter {
     /** This stores the mapping from a Thread to the current reporter associated with that thread. */
     private static final WeakHashMap<Thread,A4Reporter> map = new WeakHashMap<Thread,A4Reporter>();
 
-    /** Sets the reporter for the current thread, and return the previous reporter. */
-    public static final A4Reporter setReporter(A4Reporter reporter) {
+    /** This caches the most recent A4Reporter's thread. */
+    private static Thread latestThread=null;
+
+    /** This caches the most recent A4Reporter. */
+    private static A4Reporter latestReporter=null;
+
+    /** Sets the reporter for the current thread. */
+    public static final void setReporter(A4Reporter reporter) {
         synchronized(A4Reporter.class) {
-            if (reporter==null || reporter==NOP)
-                reporter=map.remove(Thread.currentThread());
-            else
-                reporter=map.put(Thread.currentThread(), reporter);
-            return (reporter==null) ? NOP : reporter;
+            latestThread=Thread.currentThread();
+            if (reporter==null || reporter==NOP) {
+                latestReporter=NOP;
+                map.remove(latestThread);
+            } else {
+                latestReporter=reporter;
+                map.put(latestThread, reporter);
+            }
         }
     }
 
     /** Returns the reporter for the current thread. */
     public static final A4Reporter getReporter() {
-        synchronized(A4Reporter.class) { A4Reporter x=map.get(Thread.currentThread()); return (x==null) ? NOP : x; }
+        synchronized(A4Reporter.class) {
+            Thread t=Thread.currentThread();
+            if (t!=latestThread) {
+                latestThread=t;
+                latestReporter=map.get(t);
+                if (latestReporter==null) latestReporter=NOP;
+            }
+            return latestReporter;
+        }
     }
 
     /** Constructs a default A4Reporter object that does nothing. */
