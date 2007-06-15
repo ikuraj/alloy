@@ -35,9 +35,15 @@ public class A4Reporter {
     /** This stores the mapping from a Thread to the current reporter associated with that thread. */
     private static final WeakHashMap<Thread,A4Reporter> map = new WeakHashMap<Thread,A4Reporter>();
 
-    /** Sets the reporter for the current thread. */
-    public static final void setReporter(A4Reporter reporter) {
-        synchronized(A4Reporter.class) { map.put(Thread.currentThread(), reporter); }
+    /** Sets the reporter for the current thread, and return the previous reporter. */
+    public static final A4Reporter setReporter(A4Reporter reporter) {
+        synchronized(A4Reporter.class) {
+            if (reporter==null || reporter==NOP)
+                reporter=map.remove(Thread.currentThread());
+            else
+                reporter=map.put(Thread.currentThread(), reporter);
+            return (reporter==null) ? NOP : reporter;
+        }
     }
 
     /** Returns the reporter for the current thread. */
