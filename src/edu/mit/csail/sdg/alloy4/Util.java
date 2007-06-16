@@ -438,6 +438,12 @@ public final class Util {
         return -1;
     }
 
+    /** Returns the substring before the last "/" */
+    public static String head(String string) { int i=string.lastIndexOf('/'); return (i<0) ? string : string.substring(0,i); }
+
+    /** Returns the substring after the last "/" */
+    public static String tail(String string) { int i=string.lastIndexOf('/'); return (i<0) ? string : string.substring(i+1); }
+
     /** Returns true iff running on Windows **/
     public static boolean onWindows() { return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows"); };
 
