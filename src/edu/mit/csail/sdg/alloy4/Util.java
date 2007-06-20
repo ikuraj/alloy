@@ -117,10 +117,18 @@ public final class Util {
     }
 
     /** Copy the input list, append "element" to it, then return the result as a unmodifiable list. */
-    public static<T> ConstList<T> add(List<T> list, T element) {
+    public static<T> ConstList<T> append(List<T> list, T element) {
         TempList<T> ans=new TempList<T>(list.size()+1);
         ans.addAll(list);
         ans.add(element);
+        return ans.makeConst();
+    }
+
+    /** Copy the input list, prepend "element" to it, then return the result as a unmodifiable list. */
+    public static<T> ConstList<T> prepend(List<T> list, T element) {
+        TempList<T> ans=new TempList<T>(list.size()+1);
+        ans.add(element);
+        ans.addAll(list);
         return ans.makeConst();
     }
 
