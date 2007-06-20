@@ -296,6 +296,8 @@ public final class ConstList<T> implements Serializable, List<T> {
      * @inheritDoc
      */
     public ConstList<T> subList(int from, int to) {
+        if (from<0) from=0;
+        if (to>size()) to=size();
         if (from==0 && to==size()) return this;
         return new ConstList<T>(false, list.subList(from,to));
     }
