@@ -314,4 +314,17 @@ public final class SafeList<T> implements Collection<T>, Serializable {
     public void clear() {
         throw new UnsupportedOperationException();
     }
+
+    /** Returns a String representation of this list. */
+    @Override public String toString() {
+        StringBuilder sb=new StringBuilder("[");
+        boolean first=true;
+        for(Object x:this) {
+            if (first) { first=false; } else { sb.append(", "); }
+            if (x==null) sb.append("null");
+            else if (x==this) sb.append("(this collection)");
+            else sb.append(x.toString());
+        }
+        return sb.append(']').toString();
+    }
 }
