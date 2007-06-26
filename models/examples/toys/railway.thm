@@ -18,26 +18,29 @@
    <set name="$PolicyWorks_x&apos;" type="TrainState"/>
 </node>
 
-<node color="Black" label="">
-   <set name="occupied" type="Seg"/>
-</node>
-
-<node numberatoms="no" color="Gray" label="">
+<node color="Gray">
    <type name="Seg"/>
 </node>
 
-<node numberatoms="no" shape="Diamond" color="Yellow" label="">
-   <type name="GateState"/>
+<node color="Red" label="">
+   <set name="occupied" type="Seg"/>
 </node>
 
-<node shape="Trapezoid" color="Red" label="">
-   <type name="Train"/>
+<node label="safe">
+   <set name="$Safe_s" type="Seg"/>
+</node>
+
+<node numberatoms="no" shape="Diamond" color="Yellow" label="Gate">
+   <type name="GateState"/>
 </node>
 
 <node showlabel="no">
    <set name="$PolicyWorks_g" type="GateState"/>
    <set name="$PolicyWorks_ts" type="Train"/>
-   <set name="$Safe_s" type="Seg"/>
+</node>
+
+<node visible="no" shape="Trapezoid" color="Red">
+   <type name="Train"/>
 </node>
 
 <edge color="Gray" weight="10" label="">
@@ -52,7 +55,7 @@
    <relation name="closed"> <type name="GateState"/> <type name="Seg"/> </relation>
 </edge>
 
-<edge visible="no">
+<edge visible="no" attribute="yes" label="">
    <relation name="$contains"> <type name="Seg"/> <type name="Train"/> </relation>
 </edge>
 
