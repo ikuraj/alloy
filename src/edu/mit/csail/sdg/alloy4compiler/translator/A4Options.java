@@ -1,0 +1,158 @@
+/*
+ * Alloy Analyzer
+ * Copyright (c) 2007 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
+package edu.mit.csail.sdg.alloy4compiler.translator;
+
+import java.io.Serializable;
+import java.util.prefs.Preferences;
+import edu.mit.csail.sdg.alloy4.ErrorAPI;
+import edu.mit.csail.sdg.alloy4.SafeList;
+import edu.mit.csail.sdg.alloy4.Util;
+
+/** Mutable; this class encapsulates the customizable options of the Alloy-to-Kodkod translator. */
+
+public final class A4Options implements Serializable {
+
+    /** This enum defines the set of possible SAT solvers. */
+    public static final class SatSolver implements Serializable {
+        /** This ensures the class can be serialized reliably. */
+        private static final long serialVersionUID = 1L;
+        /** List of all existing SatSolver values. */
+        private static final SafeList<SatSolver> values = new SafeList<SatSolver>();
+        /** This is a unique String for this value; it should be kept consistent in future versions. */
+        private final String id;
+        /** This is the label that the toString() method will return. */
+        private final String toString;
+        /** If not null, this is the external command-line solver to use. */
+        private final String external;
+        /** Constructs a new SatSolver value. */
+        private SatSolver(String id, String toString, String external, boolean add) {
+            this.id=id;
+            this.toString=toString;
+            this.external=external;
+            if (add) { synchronized(SatSolver.class) { values.add(this); } }
+        }
+        /** Constructs a new SatSolver value that uses an external command-line solver; throws ErrorAPI if the ID is already in use. */
+        public static SatSolver make(String id, String toString, String external) throws ErrorAPI {
+            if (external==null) throw new ErrorAPI("NullPointerException in SatSolver.make()");
+            SatSolver ans = new SatSolver(id,toString,external,false);
+            synchronized(SatSolver.class) {
+                for(SatSolver x: values)
+                    if (x.id.equals(id))
+                        throw new ErrorAPI("The SatSolver id \""+id+"\" is already in use.");
+                values.add(ans);
+            }
+            return ans;
+        }
+        /** Returns the external command-line solver to use (or null if this solver does not use an external commandline solver) */
+        public String external() { return external; }
+        /** Returns the unique String for this value; it will be kept consistent in future versions. */
+        public String id() { return id; }
+        /** Returns the list of SatSolver values. */
+        public static SafeList<SatSolver> values() {
+            SafeList<SatSolver> ans;
+            synchronized(SatSolver.class) { ans=values.dup(); }
+            return ans;
+        }
+        /** Returns the human-readable label for this enum value. */
+        @Override public String toString() { return toString; }
+        /** Ensures we can use == to do comparison. */
+        private Object readResolve() {
+            synchronized(SatSolver.class) {
+                for(SatSolver x:values) if (x.id.equals(id)) return x;
+                values.add(this);
+            }
+            return this;
+        }
+        /** Given an id, return the enum value corresponding to it (if there's no match, then return SAT4J). */
+        public static SatSolver parse(String id) {
+            synchronized(SatSolver.class) { for(SatSolver x:values) if (x.id.equals(id)) return x; }
+            return SAT4J;
+        }
+        /** Saves this value into the Java preference object. */
+        public void set() { Preferences.userNodeForPackage(Util.class).put("SatSolver2",id); }
+        /** Reads the current value of the Java preference object (if it's not set, then return SAT4J). */
+        public static SatSolver get() { return parse(Preferences.userNodeForPackage(Util.class).get("SatSolver2","")); }
+        /** BerkMin via pipe */
+        public static final SatSolver BerkMinPIPE = new SatSolver("berkmin", "BerkMin", "berkmin", true);
+        /** MiniSat1 via pipe */
+        public static final SatSolver MiniSatPIPE = new SatSolver("minisat", "MiniSat", "minisat1", true);
+        /** MiniSat1 via JNI */
+        public static final SatSolver MiniSatJNI = new SatSolver("minisat(jni)", "MiniSat with JNI", null, true);
+        /** MiniSatProver1 via JNI */
+        public static final SatSolver MiniSatProverJNI = new SatSolver("minisatprover(jni)", "MiniSat with JNI and Unsat Core", null, true);
+        /** ZChaff via JNI */
+        public static final SatSolver ZChaffJNI = new SatSolver("zchaff(jni)", "ZChaff with JNI", null, true);
+        /** SAT4J using native Java */
+        public static final SatSolver SAT4J = new SatSolver("sat4j", "SAT4J", null, true);
+        /** Outputs the raw CNF file only */
+        public static final SatSolver FILE = new SatSolver("file", "Output to file", null, true);
+    }
+
+    /** This ensures the class can be serialized reliably. */
+    private static final long serialVersionUID = 1L;
+
+    /** Constructs an A4Options object with default values for everything. */
+    public A4Options() { }
+
+    /**
+     * This option specifies the amount of symmetry breaking to do (when symmetry breaking isn't explicitly disabled).
+     *
+     * <p> If a formula is unsatisfiable, then in general, the higher this value,
+     * the faster you finish the solving. But if this value is too high, it will instead slow down the solving.
+     *
+     * <p> If a formula is satisfiable, then in general, the lower this value, the faster you finish the solving.
+     * Setting this value to 0 usually gives the fastest solve.
+     *
+     * <p> Default value is 20.
+     */
+    public int symmetry=20;
+
+    /**
+     * This option specifies the maximum skolem-function depth.
+     * <p> Default value is 0, which means it will only generate skolem constants, and will not generate skolem functions.
+     */
+    public int skolemDepth=0;
+
+    /**
+     * This option specifies the SAT solver to use (SAT4J, MiniSatJNI, MiniSatProverJNI, ZChaffJNI...)
+     * <p> Default value is SAT4J.
+     */
+    public SatSolver solver=SatSolver.SAT4J;
+
+    /**
+     * When this.solver is external, and the solver filename is a relative filename, then this option specifies
+     * the directory that the solver filename is relative to.
+     */
+    public String solverDirectory="";
+
+    /**
+     * This option tells the compiler the "original filename" that these AST nodes came from;
+     * it is only used for generating comments and other diagnostic messages.
+     * <p> Default value is "".
+     */
+    public String originalFilename="";
+
+    /**
+     * This option specifies whether the compiler should record
+     * the original Kodkod formula being generated and the resulting Kodkod instances.
+     * <p> Default value is false.
+     */
+    public boolean recordKodkod=false;
+}
