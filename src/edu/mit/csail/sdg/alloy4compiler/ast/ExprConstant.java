@@ -71,19 +71,19 @@ public final class ExprConstant extends Expr {
     }
 
     /** The "TRUE" boolean value. */
-    public static Expr TRUE = new ExprConstant(null, Op.TRUE, 0);
+    public static final Expr TRUE = new ExprConstant(null, Op.TRUE, 0);
 
     /** The "FALSE" boolean value. */
-    public static Expr FALSE = new ExprConstant(null, Op.TRUE, 0);
+    public static final Expr FALSE = new ExprConstant(null, Op.TRUE, 0);
 
     /** The "iden" relation. */
-    public static Expr IDEN = new ExprConstant(null, Op.IDEN, 0);
+    public static final Expr IDEN = new ExprConstant(null, Op.IDEN, 0);
 
     /** The "0" integer. */
-    public static Expr ZERO = new ExprConstant(null, Op.NUMBER, 0);
+    public static final Expr ZERO = new ExprConstant(null, Op.NUMBER, 0);
 
     /** The "1" integer. */
-    public static Expr ONE = new ExprConstant(null, Op.NUMBER, 1);
+    public static final Expr ONE = new ExprConstant(null, Op.NUMBER, 1);
 
     /** Constructs the integer "n" */
     public static Expr makeNUMBER(int n) { return new ExprConstant(null, ExprConstant.Op.NUMBER, n); }

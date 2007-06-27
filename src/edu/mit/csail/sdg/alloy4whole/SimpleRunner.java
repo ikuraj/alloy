@@ -139,8 +139,8 @@ final class SimpleRunner implements Runnable {
             if (mode=='S') {
                 final String bundleName=tempdir+File.separatorChar+"cache";
                 final SimpleRunnerBundle bundle=SimpleRunnerBundle.read(bundleName);
-                verbosity = bundle.verbosity;
                 if (bundle==null) throw new IOException("Error reading from the file:\n"+bundleName);
+                verbosity = bundle.verbosity;
                 SimpleReporter.performRegularCommand(out, bundle.cache, bundle.index, bundle.options, bundle.warningNonFatal, tempdir, bundle.verbosity);
             } else {
                 String ans=SimpleReporter.performEnumeration(out,tempdir);
