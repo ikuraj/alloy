@@ -27,14 +27,12 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.prefs.Preferences;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
 
 /**
  * Mutable; this stores an unprojected model as well as the current theme customization.
@@ -47,11 +45,11 @@ public final class VizState {
     /**
      * Construct a new VizState (with default theme settings) for the given instance; if world!=null, it is the root of the AST.
      */
-    public VizState(AlloyInstance originalInstance, World world) {
+    public VizState(AlloyInstance originalInstance) {
         this.originalInstance=originalInstance;
         this.currentModel=originalInstance.model;
         resetTheme();
-        loadInstance(originalInstance, world);
+        loadInstance(originalInstance);
     }
 
     /** Make a copy of an existing VizState object. */
@@ -140,32 +138,27 @@ public final class VizState {
         changedSinceLastSave=false;
     }
 
-    private World world;
-    public World world() { return world; }
-
     /**
      * Load a new instance into this VizState object (the input argument is treated as a new unprojected instance);
      * if world!=null, it is the root of the AST
      */
-    public synchronized void loadInstance(AlloyInstance unprojectedInstance, World world) {
+    public synchronized void loadInstance(AlloyInstance unprojectedInstance) {
         this.originalInstance=unprojectedInstance;
-        this.world = world;
         for (AlloyType t:getProjectedTypes()) if (!unprojectedInstance.model.hasType(t)) projectedTypes.remove(t);
         currentModel = StaticProjector.project(unprojectedInstance.model, projectedTypes);
         cache.clear();
-
-        final int verbosity = Preferences.userNodeForPackage(Util.class).getInt("Verbosity",0);
-        if (verbosity == 3) {
-            // try to do something clever
-            try {
-                final VizStateSettingsInference inference = new VizStateSettingsInference(this);
-                inference.infer();
-            } catch (final Exception e) {
-                System.err.println("Exception thrown in Viz inference:");
-                System.err.println(e.getMessage());
-                e.printStackTrace();
-            }
-        }
+//        final int verbosity = Preferences.userNodeForPackage(Util.class).getInt("Verbosity",0);
+//        if (verbosity == 3) {
+//            // try to do something clever
+//            try {
+//                final VizStateSettingsInference inference = new VizStateSettingsInference(this);
+//                inference.infer();
+//            } catch (final Exception e) {
+//                System.err.println("Exception thrown in Viz inference:");
+//                System.err.println(e.getMessage());
+//                e.printStackTrace();
+//            }
+//        }
     }
 
     /**

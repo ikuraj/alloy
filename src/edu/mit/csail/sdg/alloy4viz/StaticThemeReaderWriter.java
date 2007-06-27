@@ -130,7 +130,7 @@ public final class StaticThemeReaderWriter {
     /** Writes nothing if the argument is null. */
     private static void writeView(PrintWriter out, VizState view) throws IOException {
         if (view==null) return;
-        VizState defaultView=new VizState(view.getOriginalInstance(), null);
+        VizState defaultView=new VizState(view.getOriginalInstance());
         out.write("<view");
         writeDotOrientation(out, view.getOrientation(), defaultView.getOrientation());
         writeDotPalette(out, "nodetheme", view.getNodePalette(), defaultView.getNodePalette());

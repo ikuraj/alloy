@@ -63,7 +63,6 @@ import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
-import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 
 /**
  * GUI main window for the visualizer.
@@ -714,13 +713,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                     kodInstButton.setVisible(false);
                     if (currentMode==VisualizerMode.KOutput) currentMode=VisualizerMode.Tree;
                 }
-                A4Solution a4sol;
-                try {
-                    a4sol=A4Solution.readXML(xmlFileName, System.getProperty("alloy.home"));
-                } catch(Throwable ex) {
-                    a4sol=null;
-                }
-                if (myState==null) myState=new VizState(myInstance, a4sol.getWorld()); else myState.loadInstance(myInstance, a4sol.getWorld());
+                if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
                 xml2title.put(xmlFileName, makeVizTitle());
                 this.xmlFileName = xmlFileName;
             }

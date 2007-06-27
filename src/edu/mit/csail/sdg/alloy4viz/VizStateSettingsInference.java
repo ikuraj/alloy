@@ -90,7 +90,7 @@ public class VizStateSettingsInference {
      */
     public VizStateSettingsInference(final VizState vizState) {
         this.vizState = vizState;
-        this.worldInfo = new WorldInfo(vizState.world());
+        this.worldInfo = new WorldInfo(null);
     }
 
     /**
