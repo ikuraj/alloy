@@ -798,7 +798,6 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                OurUtil.makeMenuItem(thememenu, "Load Sample Theme...",        true, KeyEvent.VK_B, -1, this, ev_loadProvidedTheme);
             OurUtil.makeMenuItem(thememenu, "Save Theme",                     true, KeyEvent.VK_S, -1, this, ev_saveTheme);
             OurUtil.makeMenuItem(thememenu, "Save Theme As...",               true, KeyEvent.VK_A, -1, this, ev_saveThemeAs);
-            OurUtil.makeMenuItem(thememenu, "Save Theme As Tab-Delimited...", true, KeyEvent.VK_A, -1, this, ev_saveThemeAsTS);
             OurUtil.makeMenuItem(thememenu, "Reset Theme",                    true, KeyEvent.VK_R, -1, this, ev_resetTheme);
         }
 
