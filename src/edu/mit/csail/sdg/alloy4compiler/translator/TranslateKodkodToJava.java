@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;

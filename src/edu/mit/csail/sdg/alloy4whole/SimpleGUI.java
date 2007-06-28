@@ -452,10 +452,10 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
            arch+"/libminisat.so", arch+"/libminisat.jnilib",
            arch+"/libminisatprover.so", arch+"/libminisatprover.jnilib",
            arch+"/libzchaff.so", arch+"/libzchaff.jnilib",
-           arch+"/minisat1", arch+"/berkmin", arch+"/dotbin");
+           arch+"/berkmin", arch+"/dotbin");
         Util.copy(false, false, platformBinary,
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
-           arch+"/minisat1.exe", arch+"/berkmin.exe",
+           arch+"/berkmin.exe",
            arch+"/dotbin.exe", arch+"/jpeg.dll", arch+"/libexpat.dll", arch+"/libexpatw.dll",
            arch+"/zlib1.dll", arch+"/z.dll", arch+"/freetype6.dll", arch+"/png.dll");
         // Copy the model files
@@ -1713,7 +1713,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             try { System.loadLibrary("zchaff"); } catch(UnsatisfiedLinkError e) {
                 satChoices.remove(SatSolver.ZChaffJNI);
             }
-            Subprocess test = new Subprocess(8000, new String[]{binary+fs+"minisat1", binary+fs+"tmp.cnf"});
+            Subprocess test = new Subprocess(8000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
             String output = test.getStandardOutput();
             if (!output.startsWith("s SATISFIABLE")) {
                 log.logBold("Warning: the platform-specific SAT solvers failed.\n");
@@ -1730,7 +1730,6 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 satChoices.add(SatSolver.FILE);
             }
             if (!satChoices.contains(now)) now=SatSolver.ZChaffJNI;
-            if (!satChoices.contains(now)) now=SatSolver.MiniSatPIPE;
             if (!satChoices.contains(now)) now=SatSolver.SAT4J;
             now.set();
         }

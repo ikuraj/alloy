@@ -91,14 +91,12 @@ public final class A4Options implements Serializable {
         public static SatSolver get() { return parse(Preferences.userNodeForPackage(Util.class).get("SatSolver2","")); }
         /** BerkMin via pipe */
         public static final SatSolver BerkMinPIPE = new SatSolver("berkmin", "BerkMin", "berkmin", true);
-        /** MiniSat1 via pipe */
-        public static final SatSolver MiniSatPIPE = new SatSolver("minisat", "MiniSat", "minisat1", true);
         /** MiniSat1 via JNI */
-        public static final SatSolver MiniSatJNI = new SatSolver("minisat(jni)", "MiniSat with JNI", null, true);
+        public static final SatSolver MiniSatJNI = new SatSolver("minisat(jni)", "MiniSat", null, true);
         /** MiniSatProver1 via JNI */
-        public static final SatSolver MiniSatProverJNI = new SatSolver("minisatprover(jni)", "MiniSat with JNI and Unsat Core", null, true);
+        public static final SatSolver MiniSatProverJNI = new SatSolver("minisatprover(jni)", "MiniSat with Unsat Core", null, true);
         /** ZChaff via JNI */
-        public static final SatSolver ZChaffJNI = new SatSolver("zchaff(jni)", "ZChaff with JNI", null, true);
+        public static final SatSolver ZChaffJNI = new SatSolver("zchaff(jni)", "ZChaff", null, true);
         /** SAT4J using native Java */
         public static final SatSolver SAT4J = new SatSolver("sat4j", "SAT4J", null, true);
         /** Outputs the raw CNF file only */

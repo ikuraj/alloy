@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry exported="true" kind="lib" path="src/icons-and-images.jar"/>
 	<classpathentry exported="true" kind="lib" path="src/apple-osx-ui.jar"/>
-	<classpathentry exported="true" kind="lib" path="src/binarysolver.jar"/>
-	<classpathentry exported="true" kind="lib" path="src/builtin-models.jar"/>
-	<classpathentry exported="true" kind="lib" path="src/dot.jar"/>
-	<classpathentry exported="true" kind="lib" path="src/help.jar"/>
-	<classpathentry exported="true" kind="lib" path="src/licenses.jar"/>
+	<classpathentry exported="true" kind="lib" path="src/binary.jar"/>
+	<classpathentry exported="true" kind="lib" path="src/text.jar"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/relations"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/relations"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
