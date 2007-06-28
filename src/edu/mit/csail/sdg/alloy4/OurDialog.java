@@ -306,7 +306,7 @@ public final class OurDialog {
         StyleConstants.setForeground(blue, Color.BLUE);
         final SimpleAttributeSet red = new SimpleAttributeSet();
         StyleConstants.setForeground(red, Color.RED);
-        final JEditorPane textarea = new JEditorPane(
+        final JEditorPane textarea = OurUtil.editorPane(
             "text/html",
             "<html><body style=\"font:14pt Verdana;\">"
             +(welcomeHtmlMessage.trim())+"<br><b>Eval&gt;</b>&nbsp;</body></html>");

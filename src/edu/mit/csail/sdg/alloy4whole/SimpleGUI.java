@@ -1214,8 +1214,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             final JFrame frame = new JFrame();
             URL url1=this.getClass().getResource("/help/Nav.html");
             URL url2=this.getClass().getResource("/help/index.html");
-            html1=new JEditorPane(url1);
-            html2=new JEditorPane(url2);
+            html1=OurUtil.editorPane(url1);
+            html2=OurUtil.editorPane(url2);
             HyperlinkListener hl=new HyperlinkListener() {
                 public final void hyperlinkUpdate(HyperlinkEvent e) {
                     try {

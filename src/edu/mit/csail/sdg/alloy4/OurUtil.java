@@ -32,6 +32,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import javax.swing.Box;
@@ -40,6 +41,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -143,6 +145,34 @@ public final class OurUtil {
             }
         };
         return answer;
+    }
+
+    /** Make a JEditorPane. */
+    public static JEditorPane editorPane(String type, String text) {
+        return new JEditorPane(type,text) {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
+    }
+
+    /** Make a JEditorPane. */
+    public static JEditorPane editorPane(URL url) throws IOException {
+        return new JEditorPane(url) {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
     }
 
     /** Make a JTextArea. */
