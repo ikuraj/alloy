@@ -1715,7 +1715,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             try { System.loadLibrary("zchaff"); } catch(UnsatisfiedLinkError e) {
                 satChoices.remove(SatSolver.ZChaffJNI);
             }
-            Subprocess test = new Subprocess(8000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
+            Subprocess test = new Subprocess(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
             String output = test.getStandardOutput();
             if (!output.startsWith("s SATISFIABLE")) {
                 log.logBold("Warning: the platform-specific SAT solvers failed.\n");
@@ -1739,7 +1739,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         // Testing the platform-dependent "dot" program
         do {
             if (!Util.onWindows()) {
-                Subprocess test1 = new Subprocess(8000, new String[]{"chmod","700",binary+fs+"dotbin"});
+                Subprocess test1 = new Subprocess(20000, new String[]{"chmod","700",binary+fs+"dotbin"});
                 String out = test1.getStandardOutputAndError();
                 if (out.length()>0) {
                     log.logBold("Warning: unable to install the platform-specific graph generator \"dot\".\n");
@@ -1754,10 +1754,10 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                     break;
                 }
             }
-            Subprocess test2 = new Subprocess(8000, new String[]{binary+fs+"dotbin", binary+fs+"tmp.dot"}, 0);
+            Subprocess test2 = new Subprocess(20000, new String[]{binary+fs+"dotbin", binary+fs+"tmp.dot"}, 0);
             String out2=test2.getStandardOutput().trim();
             if (!out2.startsWith("digraph")) {
-                Subprocess test3 = new Subprocess(8000, new String[]{"dot", binary+fs+"tmp.dot"}, 0);
+                Subprocess test3 = new Subprocess(20000, new String[]{"dot", binary+fs+"tmp.dot"}, 0);
                 String out3 = test3.getStandardOutput().trim();
                 if (!out3.startsWith("digraph")) {
                     log.logBold("Warning: the platform-specific graph generator \"dot\" failed.\n");
@@ -1813,7 +1813,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 String result=checkForUpdate();
                 if (System.currentTimeMillis()-now >= 5000 || !result.startsWith("Alloy Build ")) return;
                 // Now that we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 (which consists of Alloy4 BETA1..BETA7)
-                new Subprocess(10000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
+                new Subprocess(20000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
                 // Now, display the result of the alloy.mit.edu version polling
                 SwingUtilities.invokeLater(new MultiRunner(SimpleGUI.this, evs_update, result));
             }

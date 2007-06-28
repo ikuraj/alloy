@@ -321,7 +321,7 @@ public final class DotGraph {
             if (dotBinary==null || dotBinary.length()==0) { dotBinary="dot"; nomore=true; }
             String[] cmdArgs1={dotBinary};
             Subprocess process;
-            try {process=new Subprocess(10000,cmdArgs1,-1,dot);} catch (Exception x) {continue;}
+            try {process=new Subprocess(20000,cmdArgs1,-1,dot);} catch (Exception x) {continue;}
             result=process.getStandardOutput();
             if (result.startsWith("digraph")) break;
             result=process.getStandardOutputAndError();
