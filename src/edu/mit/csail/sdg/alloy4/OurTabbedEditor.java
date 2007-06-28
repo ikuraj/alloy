@@ -408,8 +408,7 @@ public final class OurTabbedEditor {
         // If exists, then switch to that tab directly
         if (switchToFilename(filename)) return;
         // Make the tab on top
-        final JLabel lb=new JLabel("");
-        lb.setFont(OurUtil.getVizFont().deriveFont(Font.BOLD));
+        final JLabel lb=OurUtil.label(OurUtil.getVizFont().deriveFont(Font.BOLD), "");
         lb.setOpaque(true);
         lb.setBorder(new OurBorder(BORDER, BORDER, WHITE, BORDER));
         lb.setBackground(WHITE);
@@ -435,7 +434,7 @@ public final class OurTabbedEditor {
         pan.setAlignmentX(0.0f);
         pan.setAlignmentY(1.0f);
         // Make the JTextArea
-        final JTextArea text=new JTextArea(Util.convertLineBreak(fileContent));
+        final JTextArea text=OurUtil.textarea(Util.convertLineBreak(fileContent), 10, 10);
         text.setBackground(Color.WHITE);
         text.setBorder(new EmptyBorder(1,1,1,1));
         text.setLineWrap(false);

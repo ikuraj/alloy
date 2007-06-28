@@ -22,6 +22,9 @@ package edu.mit.csail.sdg.alloy4whole;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
@@ -47,6 +50,7 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
+import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4viz.VizGUI;
 
 /** Only the AWT Event Thread may call methods in this class. */
@@ -279,14 +283,23 @@ final class SwingLogPanel {
      * @param viz - the VizGUI parent
      */
     public SwingLogPanel(
-            final JScrollPane parent, String fontName, int fontSize,
-            final Color background, final Color regular, final Color red,
-            final SimpleGUI handler, final VizGUI viz) {
+        final JScrollPane parent, String fontName, int fontSize,
+        final Color background, final Color regular, final Color red,
+        final SimpleGUI handler, final VizGUI viz) {
         this.handler=handler;
         this.viz=viz;
         this.fontName=fontName;
         this.fontSize=fontSize;
-        this.log=new JTextPane();
+        this.log=new JTextPane() {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
         this.log.setEditorKit(new StyledEditorKit() {
@@ -352,11 +365,10 @@ final class SwingLogPanel {
         clearError();
         StyledDocument doc=log.getStyledDocument();
         Style linkStyle=doc.addStyle("link", styleRegular);
-        final JLabel label=new JLabel(link);
+        final JLabel label=OurUtil.label(linkColor, link);
         label.setAlignmentY(0.8f);
         label.setMaximumSize(label.getPreferredSize());
         label.setFont(new Font(fontName, Font.BOLD, fontSize));
-        label.setForeground(linkColor);
         label.addMouseListener(new MouseListener(){
             public final void mousePressed(MouseEvent e) { if (handler!=null) handler.run(SimpleGUI.evs_visualize, linkDestination); }
             public final void mouseClicked(MouseEvent e) { }

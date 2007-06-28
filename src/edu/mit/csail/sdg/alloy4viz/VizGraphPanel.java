@@ -42,6 +42,7 @@ import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 import att_grappa_20060427.GrappaPanel;
 import edu.mit.csail.sdg.alloy4.OurBorder;
+import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
 /**
@@ -125,7 +126,7 @@ public final class VizGraphPanel extends JPanel {
             }
             add(left = new JButton("<<"));
             add(Box.createRigidArea(new Dimension(2,2)));
-            add(atomCombo = new JComboBox(atomnames.length<1 ? new String[]{" "} : atomnames));
+            add(atomCombo = new OurCombobox(atomnames.length<1 ? new String[]{" "} : atomnames));
             add(Box.createRigidArea(new Dimension(2,2)));
             add(right = new JButton(">>"));
             Dimension dim=atomCombo.getPreferredSize();
@@ -212,7 +213,7 @@ public final class VizGraphPanel extends JPanel {
         JPanel graph=vizState.getGraph(currentProjection).b;
         graph.setBackground(Color.WHITE);
         if (seeDot && (graph instanceof GrappaPanel)) {
-            final JTextArea t = new JTextArea(((GrappaPanel)graph).annotation);
+            final JTextArea t = OurUtil.textarea(((GrappaPanel)graph).annotation, 10, 10);
             t.setBackground(Color.WHITE);
             t.setEditable(false);
             t.setLineWrap(true);

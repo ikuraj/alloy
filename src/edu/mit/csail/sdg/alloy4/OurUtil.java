@@ -24,6 +24,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,6 +46,8 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import static javax.swing.JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED;
 import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED;
 import javax.swing.JSplitPane;
@@ -104,34 +109,77 @@ public final class OurUtil {
      * @param key - the parameter to pass to func() when the button is pressed
      */
     public static JButton button(String label, String tip, String iconname, MultiRunnable func, int key) {
-        JButton button = new JButton(label,loadIcon(iconname));
-        if (func!=null) {
-            button.addActionListener(new MultiRunner(func,key));
-        }
+        JButton button = new JButton(label, (iconname!=null && iconname.length()>0) ? loadIcon(iconname) : null) {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
+        if (func!=null) button.addActionListener(new MultiRunner(func,key));
         button.setVerticalTextPosition(JButton.BOTTOM);
         button.setHorizontalTextPosition(JButton.CENTER);
         button.setBorderPainted(false);
         button.setFocusable(false);
-        if (!Util.onMac()) {
-            button.setBackground(new Color(0.9f, 0.9f, 0.9f));
-        }
+        if (!Util.onMac()) button.setBackground(new Color(0.9f, 0.9f, 0.9f));
         button.setFont(button.getFont().deriveFont(10.0f));
-        button.setToolTipText(tip);
+        if (tip!=null && tip.length()>0) button.setToolTipText(tip);
         return button;
     }
 
-    /** Make a JLabel with the given color. */
-    public static JLabel label(Color color, String label) {
-        JLabel answer = new JLabel(label);
-        answer.setForeground(color);
-        answer.setFont(getVizFont());
+    /** Make a JTextField. */
+    public static JTextField textfield(String text, int columns) {
+        JTextField answer = new JTextField(text,columns) {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
+        return answer;
+    }
+
+    /** Make a JTextArea. */
+    public static JTextArea textarea(String text, int rows, int columns) {
+        JTextArea answer = new JTextArea(text,rows,columns) {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
         return answer;
     }
 
     /** Make a JLabel with the given font. */
     public static JLabel label(Font font, String label) {
-        JLabel answer = new JLabel(label);
+        JLabel answer = new JLabel(label) {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
         answer.setFont(font);
+        return answer;
+    }
+
+    /** Make a JLabel with the given color. */
+    public static JLabel label(Color color, String label) {
+        JLabel answer = label(getVizFont(), label);
+        answer.setForeground(color);
         return answer;
     }
 
@@ -354,6 +402,39 @@ public final class OurUtil {
         }
     }
 
+    /** Constructs a JMenuBar */
+    public static JMenuBar makeMenuBar() {
+        return new JMenuBar();
+    }
+
+    /** Constructs a JMenu */
+    public static JMenu makeMenu(String label) {
+        return new JMenu(label,false) {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
+    }
+
+    /** Constructs a JMenuItem */
+    public static JMenuItem makeMenuItem(String label) {
+        return new JMenuItem(label) {
+            private static final long serialVersionUID = 1L;
+            @Override public void paintComponent(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D)g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                }
+                super.paintComponent(g);
+            }
+        };
+    }
+
     /**
      * Construct a new JMenu and add it to an existing JMenuBar.
      *
@@ -367,7 +448,7 @@ public final class OurUtil {
      * @param key - the argument to pass to func() when the user expands this menu
      */
     public static JMenu makeMenu(JMenuBar parent, String label, int mnemonic, final MultiRunnable func, final int key) {
-        final JMenu x = new JMenu(label, false);
+        final JMenu x = makeMenu(label);
         if (mnemonic!=-1 && !Util.onMac()) {
             x.setMnemonic(mnemonic);
         }
@@ -399,7 +480,7 @@ public final class OurUtil {
      * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
      */
     public static JMenuItem makeMenuItem(JMenu parent, String label, int mnemonic, int accel, final Runnable func) {
-        JMenuItem x = new JMenuItem(label);
+        JMenuItem x = makeMenuItem(label);
         if (mnemonic!=-1) {
             x.setMnemonic(mnemonic);
         }
@@ -431,7 +512,7 @@ public final class OurUtil {
      * @param key - the argument to pass to func() when the user clicks this item
      */
     public static JMenuItem makeMenuItem(JMenu parent, String label, boolean enabled, int mnemonic, int accel, final MultiRunnable func, final int key) {
-        JMenuItem x = new JMenuItem(label);
+        JMenuItem x = makeMenuItem(label);
         if (mnemonic!=-1) {
             x.setMnemonic(mnemonic);
         }
@@ -463,7 +544,7 @@ public final class OurUtil {
      * @param func - the action listener to call if the user clicks this item (or null if there is no action to do)
      */
     public static JMenuItem makeMenuItemWithShift(JMenu parent, String label, int accel, ActionListener func) {
-        JMenuItem x = new JMenuItem(label);
+        JMenuItem x = makeMenuItem(label);
         int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
         x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.SHIFT_MASK));
         if (func!=null) {

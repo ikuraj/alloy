@@ -104,9 +104,8 @@ public final class OurBinaryCheckbox extends JPanel {
         });
         box.setMaximumSize(box.getPreferredSize());
         box.setToolTipText(tooltip);
-        jlabel=new JLabel(label);
+        jlabel=OurUtil.label(OurUtil.getVizFont(), label);
         jlabel.setToolTipText(tooltip);
-        jlabel.setFont(OurUtil.getVizFont());
         add(box);
         add(jlabel);
         setAlignmentX(RIGHT_ALIGNMENT);

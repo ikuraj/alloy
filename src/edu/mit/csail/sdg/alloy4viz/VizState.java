@@ -209,7 +209,7 @@ public final class VizState {
             StringBuilder sb=new StringBuilder("An error has occurred: ").append(ex.toString()).append("\n\nStackTrace:\n");
             for(StackTraceElement st:ex.getStackTrace()) sb.append("at ").append(st.toString()).append('\n');
             sb.append("\nRaw Dot:\n\n").append(graph.write());
-            JTextArea message = new JTextArea(sb.toString());
+            JTextArea message = OurUtil.textarea(sb.toString(), 0, 0);
             JScrollPane scroll = OurUtil.scrollpane(message);
             ans=new Pair<String,JPanel>("",new JPanel());
             ans.b.setLayout(new BorderLayout());

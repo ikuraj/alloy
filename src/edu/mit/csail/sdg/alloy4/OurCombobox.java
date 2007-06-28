@@ -22,8 +22,12 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import javax.swing.BorderFactory;
@@ -84,12 +88,19 @@ public final class OurCombobox extends JComboBox {
         /** This configures the JLabel with the appropriate icon and text, then return it to be displayed. */
         public Component getListCellRendererComponent(JList list,Object value,int i,boolean selected,boolean focused) {
             setOpaque(true);
-            setText(gs.getText(key,value));
-            setIcon(gs.getIcon(key,value));
+            setText(gs!=null ? gs.getText(key,value) : String.valueOf(value));
+            setIcon(gs!=null ? gs.getIcon(key,value) : null);
             setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 0));
             setBackground(selected ? list.getSelectionBackground() : list.getBackground());
             setForeground(selected ? list.getSelectionForeground() : list.getForeground());
             return this;
+        }
+        @Override public void paintComponent(Graphics g) {
+            if (g instanceof Graphics2D) {
+                Graphics2D g2 = (Graphics2D)g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            }
+            super.paintComponent(g);
         }
     }
 
@@ -105,11 +116,27 @@ public final class OurCombobox extends JComboBox {
 
     /**
      * Constructs a new OurCombobox object.
-     * @param gs - the GetterSetter associated with this combobox
+     * @param list - the list of allowed values
+     */
+    public OurCombobox (Vector<Object> list) {
+        this(null, false, new ArrayList<Object>(list), 0, 0, null);
+    }
+
+    /**
+     * Constructs a new OurCombobox object.
+     * @param list - the list of allowed values
+     */
+    public OurCombobox (Object[] list) {
+        this(null, false, Util.asList(list), 0, 0, null);
+    }
+
+    /**
+     * Constructs a new OurCombobox object.
+     * @param gs - the GetterSetter associated with this combobox (null if there is no need to call getter/setter)
      * @param addNull - whether we should prepend null onto the beginning of the list of allowed values
      * @param list - the list of allowed values
-     * @param width - the maximum width to use
-     * @param height - the maximum height to use
+     * @param width - the width to use (if width==0 && height==0, then we ignore it)
+     * @param height - the height to use (if width==0 && height==0, then we ignore it)
      * @param key - the key associated with this combobox
      */
     public OurCombobox
@@ -119,17 +146,21 @@ public final class OurCombobox extends JComboBox {
         this.key = key;
         setFont(OurUtil.getVizFont());
         setRenderer(new OurComboboxRenderer());
-        if (Util.onWindows() && height>25) height=25;
-        setPreferredSize(new Dimension(width,height));
-        setMaximumSize(new Dimension(width,height));
+        if (width>0 && height>0) {
+            if (Util.onWindows() && height>25) height=25;
+            setPreferredSize(new Dimension(width,height));
+            setMaximumSize(new Dimension(width,height));
+        }
         if (!Util.onWindows()) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
         // To avoid useless or harmful synchronization between this GUI and the underlying data,
         // we make sure we set the initial value before adding the ActionListener.
-        setSelectedItem(gs.getValue(key));
-        addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) {
-                gs.setValue(key, getSelectedItem());
-            }
-        });
+        if (gs!=null) {
+            setSelectedItem(gs.getValue(key));
+            addActionListener(new ActionListener() {
+                public final void actionPerformed(ActionEvent e) {
+                    gs.setValue(key, getSelectedItem());
+                }
+            });
+        }
     }
 }

@@ -149,7 +149,7 @@ public final class OurDialog {
             }
             fonts=allFonts;
         }
-        JComboBox jcombo = new JComboBox(fonts);
+        JComboBox jcombo = new OurCombobox(fonts);
         int ans=JOptionPane.showOptionDialog(parentFrame, new Object[]{
                 "Please choose the new font:",
                 jcombo
@@ -280,7 +280,7 @@ public final class OurDialog {
                 window.dispose();
             }
         });
-        JTextArea textarea = new JTextArea(text);
+        JTextArea textarea = OurUtil.textarea(text,20,60);
         textarea.setBackground(Color.WHITE);
         textarea.setEditable(false);
         textarea.setLineWrap(autoLineWrap);

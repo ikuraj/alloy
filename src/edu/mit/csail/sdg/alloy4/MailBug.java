@@ -69,14 +69,14 @@ public final class MailBug implements UncaughtExceptionHandler {
     public synchronized void uncaughtException (Thread thread, Throwable ex) {
         final String yes="Send the Bug Report";
         final String no="Don't Send the Bug Report";
-        final JTextField email=new JTextField(20);
-        final JTextArea problem=new JTextArea();
+        final JTextField email = OurUtil.textfield("",20);
+        final JTextArea problem = OurUtil.textarea("",50,50);
         email.setBorder(new LineBorder(Color.DARK_GRAY));
         problem.setBorder(null);
         final JScrollPane scroll=OurUtil.scrollpane(problem);
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
-        if (latestAlloyVersion>Version.buildNumber()) {
+        if (latestAlloyVersion>Version.buildNumber() && 1==0) {
             JOptionPane.showMessageDialog(null, new Object[] {
                     "Sorry. A fatal internal error has occurred.",
                     " ",
@@ -140,13 +140,13 @@ public final class MailBug implements UncaughtExceptionHandler {
         sw.flush();
         try {
             final JFrame statusWindow=new JFrame();
-            final JButton done=new JButton("Close");
+            final JButton done = new JButton("Close");
             done.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
                     System.exit(1);
                 }
             });
-            final JTextArea status=new JTextArea("Sending the bug report... please wait...");
+            final JTextArea status=OurUtil.textarea("Sending the bug report... please wait...",10,40);
             status.setEditable(false);
             status.setLineWrap(true);
             status.setWrapStyleWord(true);
@@ -165,6 +165,7 @@ public final class MailBug implements UncaughtExceptionHandler {
             statusWindow.setSize(600,200);
             statusWindow.setLocation(w/2-300,h/2-100);
             statusWindow.setVisible(true);
+            statusWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             status.setText(postBug(sw.toString()));
         } catch(Throwable exception) {
             System.exit(1);

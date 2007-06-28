@@ -93,6 +93,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.MacUtil;
 import edu.mit.csail.sdg.alloy4.MultiRunner;
 import edu.mit.csail.sdg.alloy4.OurBorder;
+import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.OurTabbedEditor;
 import edu.mit.csail.sdg.alloy4.OurUtil;
@@ -784,8 +785,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         }
 
         if (key==ev_goTo && !mode_externalEditor) {
-            JTextField y=new JTextField();
-            JTextField x=new JTextField();
+            JTextField y=OurUtil.textfield("",10);
+            JTextField x=OurUtil.textfield("",10);
             if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return false;
             try {
                 JTextArea t=text.text();
@@ -807,7 +808,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         }
 
         if (key==ev_find && !mode_externalEditor) {
-            JTextField x=new JTextField(lastFind);
+            JTextField x=OurUtil.textfield(lastFind,30);
             x.selectAll();
             JCheckBox c=new JCheckBox("Case Sensitive?",lastFindCaseSensitive);
             c.setMnemonic('c');
@@ -891,13 +892,13 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             runmenu.remove(0);
             for(int i=0; i<cp.size(); i++) {
-                JMenuItem y=new JMenuItem(cp.get(i).toString());
+                JMenuItem y = OurUtil.makeMenuItem(cp.get(i).toString());
                 y.addActionListener(new MultiRunner(this, evi_execute, i));
                 if (i==latestCommand) { y.setMnemonic(KeyEvent.VK_E); y.setAccelerator(ac); }
                 runmenu.add(y,i);
             }
             if (cp.size()>=2) {
-                JMenuItem y=new JMenuItem("Execute All");
+                JMenuItem y = OurUtil.makeMenuItem("Execute All");
                 y.setMnemonic(KeyEvent.VK_A);
                 y.addActionListener(new MultiRunner(this, evi_execute, -1));
                 runmenu.add(y,0);
@@ -965,7 +966,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             if (!mode_externalEditor) OurUtil.makeMenuItem(filemenu, "New", true,KeyEvent.VK_N,KeyEvent.VK_N, this, ev_new);
             OurUtil.makeMenuItem(filemenu, open+"...",               true,KeyEvent.VK_O,KeyEvent.VK_O, this, ev_open);
             OurUtil.makeMenuItem(filemenu, open+" Sample Models...", true,KeyEvent.VK_B,-1, this, ev_builtin);
-            filemenu.add(recentmenu = new JMenu(open+" Recent"));
+            filemenu.add(recentmenu = OurUtil.makeMenu(open+" Recent"));
             if (!mode_externalEditor) {
                 OurUtil.makeMenuItem(filemenu, "Save", true,KeyEvent.VK_S,KeyEvent.VK_S, this, ev_save);
                 if (Util.onMac())
@@ -1010,8 +1011,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 public void run() { Welcome.set(showWelcome ? welcomeLevel : 0); }
             });
             //
-            SatSolver now=SatSolver.get();
-            JMenu sat=new JMenu("SAT Solver: "+now);
+            SatSolver now = SatSolver.get();
+            JMenu sat = OurUtil.makeMenu("SAT Solver: "+now);
             for(final SatSolver sc:satChoices) {
                 (OurUtil.makeMenuItem(sat, ""+sc, -1, -1, new Runnable() {
                     public final void run() { sc.set(); }
@@ -1024,9 +1025,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 public final void run() { WarningNonfatal.set(mode_warningNonFatal=!mode_warningNonFatal); }
             });
             //
-            int mem=SubMemory.get();
-            boolean memfound=false;
-            JMenu subMemoryMenu=new JMenu("Maximum Memory to Use: "+mem+"M");
+            int mem = SubMemory.get();
+            boolean memfound = false;
+            JMenu subMemoryMenu = OurUtil.makeMenu("Maximum Memory to Use: "+mem+"M");
             for(final int n: new Integer[]{16,32,64,128,256,512,768,1024,2048,3072,4096}) {
                 (OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", -1, -1, new Runnable() {
                     public final void run() { SubMemory.set(SimpleGUI.this.subMemory = n); }
@@ -1038,6 +1039,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                     String ans;
                     while(true) {
                         ans=JOptionPane.showInputDialog(frame, "What amount of memory do you want to use for SAT solving?", "Maximum Memory", JOptionPane.PLAIN_MESSAGE);
+                        if (ans==null || ans.length()==0) return;
                         try {
                             int m=Integer.parseInt(ans);
                             SubMemory.set(SimpleGUI.this.subMemory = m);
@@ -1050,8 +1052,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             })).setIcon(memfound ? iconNo : iconYes);
             optmenu.add(subMemoryMenu);
             //
-            Verbosity vnow=Verbosity.get();
-            JMenu verb=new JMenu("Message Verbosity: "+vnow);
+            Verbosity vnow = Verbosity.get();
+            JMenu verb = OurUtil.makeMenu("Message Verbosity: "+vnow);
             for(final Verbosity vb:Verbosity.values()) {
                 (OurUtil.makeMenuItem(verb, ""+vb, -1, -1, new Runnable() {
                     public final void run() { vb.set(); }
@@ -1059,8 +1061,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             optmenu.add(verb);
             //
-            int fontSize=FontSize.get();
-            JMenu size=new JMenu("Font Size: "+fontSize);
+            int fontSize = FontSize.get();
+            JMenu size = OurUtil.makeMenu("Font Size: "+fontSize);
             for(final int n: new Integer[]{9,10,11,12,14,16,18,24}) {
                 (OurUtil.makeMenuItem(size, ""+n, -1, -1, new Runnable() {
                     public final void run() {
@@ -1074,8 +1076,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             optmenu.add(size);
             //
-            String fontname=FontName.get();
-            JMenuItem fontnameMenu=new JMenuItem("Font: "+fontname+"...");
+            String fontname = FontName.get();
+            JMenuItem fontnameMenu = OurUtil.makeMenuItem("Font: "+fontname+"...");
             fontnameMenu.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
                     int size=FontSize.get();
@@ -1089,8 +1091,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             });
             optmenu.add(fontnameMenu);
             //
-            int tabSize=TabSize.get();
-            JMenu tabSizeMenu=new JMenu("Tab Size: "+tabSize);
+            int tabSize = TabSize.get();
+            JMenu tabSizeMenu = OurUtil.makeMenu("Tab Size: "+tabSize);
             for(final int n: new Integer[]{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}) {
                 (OurUtil.makeMenuItem(tabSizeMenu, ""+n, -1, -1, new Runnable() {
                     public final void run() { TabSize.set(n); text.setTabSize(n); }
@@ -1098,8 +1100,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             optmenu.add(tabSizeMenu);
             //
-            int skDepth=SkolemDepth.get();
-            JMenu skDepthMenu=new JMenu("Skolem Depth: "+skDepth);
+            int skDepth = SkolemDepth.get();
+            JMenu skDepthMenu = OurUtil.makeMenu("Skolem Depth: "+skDepth);
             for(final int n: new Integer[]{0,1,2}) {
                 (OurUtil.makeMenuItem(skDepthMenu, ""+n, -1, -1, new Runnable() {
                     public final void run() { SkolemDepth.set(n); }
@@ -1183,9 +1185,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 String f=filenames.get(i);
                 JMenuItem it;
                 if (mode_externalEditor && !text.isFile(i))
-                    it = new JMenuItem("Alloy Analyzer");
+                    it = OurUtil.makeMenuItem("Alloy Analyzer");
                 else
-                    it = new JMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""));
+                    it = OurUtil.makeMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""));
                 it.setIcon((f.equals(text.getFilename()) && key==ev_refreshWindow) ? iconYes : iconNo);
                 if (f.equals(text.getFilename()))
                   it.addActionListener(new MultiRunner(this, ev_show));
@@ -1194,7 +1196,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 w.add(it);
             }
             if (viz!=null) for(String f:viz.getInstances()) {
-                JMenuItem it=new JMenuItem("Instance: "+viz.getInstanceTitle(f));
+                JMenuItem it = OurUtil.makeMenuItem("Instance: "+viz.getInstanceTitle(f));
                 it.setIcon( (key==ev_refreshWindow2 && f.equals(viz.getXMLfilename())) ? iconYes : iconNo);
                 it.addActionListener(new MultiRunner(this, evs_visualize, "XML: "+f));
                 w.add(it);
@@ -1244,12 +1246,12 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
             String alloytxt;
             try {alloytxt=Util.readAll(true,"LICENSES/Alloy.txt");} catch(IOException ex) {return false;}
-            final JTextArea text = new JTextArea(alloytxt,15,85);
+            final JTextArea text = OurUtil.textarea(alloytxt,15,85);
             text.setEditable(false);
             text.setLineWrap(false);
             text.setBorder(new EmptyBorder(2,2,2,2));
             text.setFont(new Font("Monospaced", Font.PLAIN, 12));
-            final JComboBox combo = new JComboBox(new Object[]{"Alloy","Kodkod","GraphViz","Grappa","NanoXML","JavaCup","SAT4J","ZChaff","MiniSat"});
+            final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","GraphViz","Grappa","NanoXML","JavaCup","SAT4J","ZChaff","MiniSat"});
             combo.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
                     Object value = combo.getSelectedItem();
@@ -1621,7 +1623,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         final String binary = Helper.alloyHome()+fs+"binary";
 
         // Create the menu bar
-        JMenuBar bar=new JMenuBar();
+        JMenuBar bar = OurUtil.makeMenuBar();
         filemenu = OurUtil.makeMenu(bar, "File", KeyEvent.VK_F, this, ev_refreshFile);
         editmenu = OurUtil.makeMenu(bar, "Edit", KeyEvent.VK_E, this, ev_refreshEdit);
         runmenu = OurUtil.makeMenu(bar, "Execute", KeyEvent.VK_X, this, ev_refreshRun);

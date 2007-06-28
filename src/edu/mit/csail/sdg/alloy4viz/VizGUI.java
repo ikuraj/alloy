@@ -358,7 +358,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         int y=VizY.get(); if (y<0 || y>screenHeight-10) y=0;
 
         // Create the menubar
-        JMenuBar mb=new JMenuBar();
+        JMenuBar mb = OurUtil.makeMenuBar();
         JMenu fileMenu = OurUtil.makeMenu(mb, "File", KeyEvent.VK_F, null, 0);
         OurUtil.makeMenuItem(fileMenu, "Open...", true, KeyEvent.VK_O, KeyEvent.VK_O, this, ev_loadInstance);
         OurUtil.makeMenuItem(fileMenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, this, ev_close);
@@ -570,7 +570,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
     /** Helper method that returns a JScrollPane containing the given string in a JTextArea. */
     private JScrollPane makeTextArea(final String text) {
-        final JTextArea t = new JTextArea(text);
+        final JTextArea t = OurUtil.textarea(text,10,10);
         t.setBackground(Color.WHITE);
         t.setEditable(false);
         t.setLineWrap(true);
@@ -847,7 +847,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         if (key==ev_window) {
             windowmenu.removeAll();
             for(final String f:getInstances()) {
-                JMenuItem it=new JMenuItem("Instance: "+getInstanceTitle(f));
+                JMenuItem it = OurUtil.makeMenuItem("Instance: "+getInstanceTitle(f));
                 it.setIcon(f.equals(getXMLfilename())?iconYes:iconNo);
                 it.addActionListener(new MultiRunner(this, evs_loadInstance, f));
                 windowmenu.add(it);
