@@ -643,8 +643,12 @@ public final class CompUtil {
             canon=f.getCanonicalPath();
         }
         if (!f.exists() && !fc.containsKey(canon)) {
-            String content = Util.readAll(true, "models/"+name+".als");
-            if (content==null) throw new ErrorSyntax(pos, "The module \""+name+"\" cannot be found.\nIt is not a built-in library module, and it cannot be found at \""+(new File(name)).getAbsolutePath()+"\".\n");
+            String content;
+            try {
+                content = Util.readAll(true, "models/"+name+".als");
+            } catch(IOException ex) {
+                throw new ErrorSyntax(pos, "The module \""+name+"\" cannot be found.\nIt is not a built-in library module, and it cannot be found at \""+(new File(name)).getAbsolutePath()+"\".\n");
+            }
             f=new File("/models/"+name+".als");
             canon=f.getCanonicalPath();
             fc.put(canon,content);
