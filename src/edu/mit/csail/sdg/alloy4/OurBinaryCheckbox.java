@@ -49,10 +49,10 @@ public final class OurBinaryCheckbox extends JPanel {
     private static final long serialVersionUID = 1;
 
     /** The icon to use when the checkbox is off. */
-    private static final Icon off = OurUtil.loadIcon("images/cb0.gif");
+    public static final Icon off = OurUtil.loadIcon("images/cb0.gif");
 
     /** The icon to use when the checkbox is on. */
-    private static final Icon on = OurUtil.loadIcon("images/cb1.gif");
+    public static final Icon on = OurUtil.loadIcon("images/cb1.gif");
 
     /** The underlying JCheckBox object. */
     private final JCheckBox box;

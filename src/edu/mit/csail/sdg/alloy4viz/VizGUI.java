@@ -23,6 +23,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
@@ -34,12 +36,14 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.prefs.Preferences;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JButton;
@@ -55,6 +59,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.text.JTextComponent;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.MultiRunner;
+import edu.mit.csail.sdg.alloy4.OurBinaryCheckbox;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -159,8 +164,11 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** The toolbar. */
     private final JToolBar toolbar;
 
-    /** The openSetting/closeSetting/updateSetting buttons. */
-    private final JButton openSettingsButton, closeSettingsButton, updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton;
+    /** The projection popup menu. */
+    private final JPopupMenu projectionPopup;
+
+    /** The other buttons. */
+    private final JButton projectionButton, openSettingsButton, closeSettingsButton, updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton;
 
     /** The buttons for switching the display modes. */
     private final JButton vizButton, xmlButton, treeButton, dotButton, kodSrcButton, kodInstButton, plugin0Button;
@@ -411,6 +419,16 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 "Close the evaluator", "images/24_settings_close2.gif", this, ev_toolbarCloseEvaluator));
         toolbar.add(enumerateButton=OurUtil.button("Next",
                 "Show the next solution", "images/24_history.gif", this, ev_toolbarEnumerate));
+        projectionPopup = new JPopupMenu();
+        projectionButton = new JButton("Projection: none");
+        projectionButton.addActionListener(new ActionListener() {
+            public final void actionPerformed(ActionEvent e) {
+                repopulateProjectionPopup();
+                projectionPopup.show(projectionButton, 10, 10);
+            }
+        });
+        repopulateProjectionPopup();
+        toolbar.add(projectionButton);
         settingsOpen=0;
 
         // Create the horizontal split pane
@@ -445,6 +463,28 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** Invoked when the Visualizationwindow is hidden. */
     public void componentHidden(ComponentEvent e) {}
 
+    /** Helper method that repopulates the Porjection popup menu. */
+    private void repopulateProjectionPopup() {
+        String first=null, second=null;
+        if (myState==null) {
+            projectionButton.setEnabled(false);
+            return;
+        }
+        projectionButton.setEnabled(true);
+        projectionPopup.removeAll();
+        Set<AlloyType> projected = myState.getProjectedTypes();
+        for(AlloyType t: projected) {
+            projectionPopup.add(new JMenuItem(t.getName(), OurBinaryCheckbox.on));
+            if (first==null) first=t.getName(); else second=t.getName();
+        }
+        for(AlloyType t: myState.getOriginalModel().getTypes()) if (myState.canProject(t) && !projected.contains(t)) {
+            projectionPopup.add(new JMenuItem(t.getName(), OurBinaryCheckbox.off));
+        }
+        if (first==null) projectionButton.setText("Projection: none");
+        else if (second==null) projectionButton.setText("Projected over "+first);
+        else projectionButton.setText("Projected over "+first+"...");
+    }
+
     /** Helper method that refreshes the right-side visualization panel with the latest settings. */
     private void updateDisplay() {
         if (myState==null) return;
@@ -460,6 +500,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             case Plugin0: plugin0Button.setEnabled(false); break;
             default: vizButton.setEnabled(false);
         }
+        projectionButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
         openSettingsButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
         closeSettingsButton.setVisible(settingsOpen==1);
         updateSettingsButton.setVisible(settingsOpen==1);
@@ -714,6 +755,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                     if (currentMode==VisualizerMode.KOutput) currentMode=VisualizerMode.Tree;
                 }
                 if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
+                repopulateProjectionPopup();
                 xml2title.put(xmlFileName, makeVizTitle());
                 this.xmlFileName = xmlFileName;
             }
@@ -739,6 +781,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 JOptionPane.showMessageDialog(null,"Exception: "+ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
+            repopulateProjectionPopup();
             if (myCustomPanel!=null) myCustomPanel.remakeAll();
             if (myGraphPanel!=null) myGraphPanel.remakeAll();
             addThemeHistory(filename);
@@ -838,6 +881,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             if (!OurDialog.yesno(frame, "Are you sure you wish to clear all your customizations?",
                     "Yes, clear them", "No, keep them")) return false;
             myState.resetTheme();
+            repopulateProjectionPopup();
             if (myCustomPanel!=null) myCustomPanel.remakeAll();
             if (myGraphPanel!=null) myGraphPanel.remakeAll();
             thmFileName="";
