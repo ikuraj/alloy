@@ -94,17 +94,18 @@ public final class StaticInstanceReader {
         String filename = x.getAttribute("filename");
         String commandname = x.getAttribute("command");
         // Generate "types"
-        Set<AlloyType> types=new LinkedHashSet<AlloyType>();
+        Map<String,AlloyType> types=new LinkedHashMap<String,AlloyType>();
         for(XMLElement sub:x.getChildren("sig")) {
             String name=sub.getAttribute("name");
             if (name.length()==0) throw new RuntimeException("<sig> name cannot be empty.");
-            if (!types.add(new AlloyType(name)))
+            AlloyType type=new AlloyType(name, false, false, false, false);// TODO put in the real flags!
+            if (types.put(name,type)!=null)
                 throw new RuntimeException("<sig name=\""+name+"\"> appeared more than once.");
         }
-        types.add(AlloyType.UNIV);
+        types.put("univ", AlloyType.UNIV);
         // Generate the extends relationship and all the atoms
         Map<AlloyType,AlloyType> ts = parseTypeStructure(x, types);
-        Map<String,AlloyAtom> atomname2atom = parseAllAtoms(x,ts);
+        Map<String,AlloyAtom> atomname2atom = parseAllAtoms(x, types, ts);
         // Generate "sets" and "atom2sets"
         Map<AlloyAtom,Set<AlloySet>> atom2sets = new LinkedHashMap<AlloyAtom,Set<AlloySet>>();
         for(Map.Entry<String,AlloyAtom> e:atomname2atom.entrySet()) {
@@ -116,9 +117,9 @@ public final class StaticInstanceReader {
             String name=sub.getAttribute("name");
             if (name.length()==0) throw new RuntimeException("<set> name cannot be empty.");
             String typename=sub.getAttribute("type");
-            AlloyType type=new AlloyType(typename.length()==0 ? "univ" : typename);
-            if (!types.contains(type)) throw new RuntimeException(
-                    "<set name=\""+name+"\"> cannot be a subset of a nonexisting type \""+type.getName()+"\"");
+            if (typename.length()==0) typename="univ";
+            AlloyType type=types.get(typename);
+            if (type==null) throw new RuntimeException("<set name=\""+name+"\"> cannot be a subset of a nonexisting type \""+type.getName()+"\"");
             Set<AlloyAtom> atoms=parseAlloyAtomS(sub, atomname2atom);
             AlloySet set=new AlloySet(name,type);
             sets.add(set);
@@ -139,14 +140,14 @@ public final class StaticInstanceReader {
             XMLElement sub1=sub.getChildren().get(0);
             if (!sub1.is("type"))
                 throw new RuntimeException("<field name=\""+name+"\"> must have <type> as its first subnode.");
-            AlloyRelation r=parseAlloyRelation(name, sub1);
+            AlloyRelation r=parseAlloyRelation(name, types, sub1);
             rels.add(r);
             Set<AlloyTuple> tuples=parseAlloyTupleS(sub, atomname2atom);
             Set<AlloyTuple> temp=rel2tuples.get(r);
             if (temp==null) { temp=new LinkedHashSet<AlloyTuple>(); rel2tuples.put(r,temp); }
             temp.addAll(tuples);
         }
-        AlloyModel model = new AlloyModel(types, sets, rels, ts);
+        AlloyModel model = new AlloyModel(types.values(), sets, rels, ts);
         return new AlloyInstance(filename, commandname, kinput, koutput, model, atom2sets, rel2tuples);
     }
 
@@ -155,12 +156,12 @@ public final class StaticInstanceReader {
      * @param xml - the XML node
      * @param ts - the "extends" relationship computed from parseTypeStructure()
      */
-    private static Map<String,AlloyAtom> parseAllAtoms(XMLElement xml, Map<AlloyType,AlloyType> ts) {
+    private static Map<String,AlloyAtom> parseAllAtoms(XMLElement xml, Map<String,AlloyType> types, Map<AlloyType,AlloyType> ts) {
         Map<String,AlloyType> atom2type=new LinkedHashMap<String,AlloyType>();
         Map<AlloyType,Set<String>> type2atoms=new LinkedHashMap<AlloyType,Set<String>>();
         // Compute the atom2type and type2atom maps
         for(XMLElement node:xml.getChildren("sig")) {
-            AlloyType sig=new AlloyType(node.getAttribute("name")); // We already know the name won't be empty
+            AlloyType sig = types.get(node.getAttribute("name")); // We already know this will not be null
             if (!type2atoms.containsKey(sig))
                 type2atoms.put(sig, new TreeSet<String>()); // Must be LinkedHashSet since we want atoms in order
             for(XMLElement atom:node.getChildren("atom")) {
@@ -212,17 +213,18 @@ public final class StaticInstanceReader {
      * <br> We throw an exception if a sig tries to extend an undeclared sig
      * <br> We throw an exception if there is a cycle in the extends relationship
      */
-    private static Map<AlloyType,AlloyType> parseTypeStructure (XMLElement xml, Set<AlloyType> allTypes) {
+    private static Map<AlloyType,AlloyType> parseTypeStructure (XMLElement xml, Map<String,AlloyType> allTypes) {
         Map<AlloyType,AlloyType> ts = new LinkedHashMap<AlloyType,AlloyType>();
         for(XMLElement sig:xml.getChildren("sig")) {
             String name = sig.getAttribute("name");
             String ext = sig.getAttribute("extends");
             if (name.equals("univ")) continue; // "univ" must not be in the keyset
             if (ext.length()==0) ext="univ";
-            AlloyType sup=new AlloyType(ext);
-            if (!allTypes.contains(sup)) throw new RuntimeException(
-                    "<sig name=\""+name+"\"> tries to extend an undeclared sig \""+ext+"\"");
-            ts.put(new AlloyType(name), sup);
+            AlloyType sup=allTypes.get(ext);
+            if (sup==null) throw new RuntimeException("<sig name=\""+name+"\"> tries to extend an undeclared sig \""+ext+"\"");
+            AlloyType me=allTypes.get(name);
+            if (me==null) throw new RuntimeException("<sig name=\""+name+"\"> does not exist");
+            ts.put(me, sup);
         }
         for(Map.Entry<AlloyType,AlloyType> e:ts.entrySet()) {
             AlloyType me=e.getKey();
@@ -233,13 +235,15 @@ public final class StaticInstanceReader {
     }
 
     /** Parses XML to generate an AlloyRelation object. */
-    private static AlloyRelation parseAlloyRelation(String relName, XMLElement xml) {
+    private static AlloyRelation parseAlloyRelation(String relName, Map<String,AlloyType> types, XMLElement xml) {
         // parses one or more <sig name=".."/>
         List<AlloyType> list=new ArrayList<AlloyType>();
         for(XMLElement type:xml.getChildren("sig")) {
             String name=type.getAttribute("name");
             if (name.length()==0) throw new RuntimeException("<sig> name cannot be empty.");
-            list.add(new AlloyType(name));
+            AlloyType t = types.get(name);
+            if (t==null) throw new RuntimeException("<field> cannot reference a non-existing sig \""+name+"\"");
+            list.add(t);
         }
         if (list.size()<2) throw new RuntimeException("<type> must contain at least two <sig> subnode.");
         return new AlloyRelation(relName, list);

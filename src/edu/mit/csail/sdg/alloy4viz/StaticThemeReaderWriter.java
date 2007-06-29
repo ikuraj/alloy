@@ -105,21 +105,21 @@ public final class StaticThemeReaderWriter {
         for(XMLElement xml:x.getChildren()) {
             if (xml.is("projection")) {
                 now.deprojectAll();
-                for(AlloyType t:parseProjectionList(xml)) now.project(t);
+                for(AlloyType t:parseProjectionList(now,xml)) now.project(t);
             }
             else if (xml.is("defaultnode")) parseNodeViz(xml, now, null);
             else if (xml.is("defaultedge")) parseEdgeViz(xml, now, null);
             else if (xml.is("node")) {
                 for(XMLElement sub:xml.getChildren("type")) {
-                    AlloyType t=parseAlloyType(sub); if (t!=null) parseNodeViz(xml, now, t);
+                    AlloyType t=parseAlloyType(now,sub); if (t!=null) parseNodeViz(xml, now, t);
                 }
                 for(XMLElement sub:xml.getChildren("set")) {
-                    AlloySet s=parseAlloySet(sub); if (s!=null) parseNodeViz(xml, now, s);
+                    AlloySet s=parseAlloySet(now,sub); if (s!=null) parseNodeViz(xml, now, s);
                 }
             }
             else if (xml.is("edge")) {
                 for(XMLElement sub:xml.getChildren("relation")) {
-                    AlloyRelation r=parseAlloyRelation(sub); if (r!=null) parseEdgeViz(xml, now, r);
+                    AlloyRelation r=parseAlloyRelation(now,sub); if (r!=null) parseEdgeViz(xml, now, r);
                 }
             }
         }
@@ -242,7 +242,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Return null if the element is malformed. */
-    private static AlloyType parseAlloyType(XMLElement x) {
+    private static AlloyType parseAlloyType(VizState now, XMLElement x) {
         /* class AlloyType implements AlloyNodeElement {
          *      String name;
          * }
@@ -250,7 +250,7 @@ public final class StaticThemeReaderWriter {
          */
         if (!x.is("type")) return null;
         String name=x.getAttribute("name");
-        if (name.length()==0) return null; else return new AlloyType(name);
+        if (name.length()==0) return null; else return now.getOriginalModel().hasType(name);
     }
 
     /** Writes nothing if the argument is null. */
@@ -266,7 +266,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Return null if the element is malformed. */
-    private static AlloySet parseAlloySet(XMLElement x) {
+    private static AlloySet parseAlloySet(VizState now, XMLElement x) {
         /* class AlloySet implements AlloyNodeElement {
          *   String name;
          *   AlloyType type;
@@ -275,7 +275,7 @@ public final class StaticThemeReaderWriter {
          */
         if (!x.is("set")) return null;
         String name=x.getAttribute("name"), type=x.getAttribute("type");
-        if (name.length()==0 || type.length()==0) return null; else return new AlloySet(name, new AlloyType(type));
+        if (name.length()==0 || type.length()==0) return null; else return new AlloySet(name, now.getOriginalModel().hasType(type));
     }
 
     /** Writes nothing if the argument is null. */
@@ -291,7 +291,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Return null if the element is malformed. */
-    private static AlloyRelation parseAlloyRelation(XMLElement x) {
+    private static AlloyRelation parseAlloyRelation(VizState now, XMLElement x) {
         /*
          * <relation name="name">
          *   2 or more <type name=".."/>
@@ -304,7 +304,9 @@ public final class StaticThemeReaderWriter {
         for(XMLElement sub:x.getChildren("type")) {
             String typename=sub.getAttribute("name");
             if (typename.length()==0) return null;
-            ans.add(new AlloyType(typename));
+            AlloyType t = now.getOriginalModel().hasType(typename);
+            if (t==null) return null;
+            ans.add(t);
         }
         if (ans.size()<2) return null; else return new AlloyRelation(name,ans);
     }
@@ -328,7 +330,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Always returns a nonnull (though possibly empty) set of AlloyType. */
-    private static Set<AlloyType> parseProjectionList(XMLElement x) {
+    private static Set<AlloyType> parseProjectionList(VizState now, XMLElement x) {
         /*
         * <projection>
         *   0 or more <type name=".."/>
@@ -337,7 +339,9 @@ public final class StaticThemeReaderWriter {
         Set<AlloyType> ans=new TreeSet<AlloyType>();
         if (x.is("projection")) for(XMLElement sub:x.getChildren("type")) {
             String name=sub.getAttribute("name");
-            if (name.length()>0) ans.add(new AlloyType(name));
+            if (name.length()==0) continue;
+            AlloyType t = now.getOriginalModel().hasType(name);
+            if (t!=null) ans.add(t);
         }
         return ans;
     }

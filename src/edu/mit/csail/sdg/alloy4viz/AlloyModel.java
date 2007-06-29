@@ -22,6 +22,7 @@ package edu.mit.csail.sdg.alloy4viz;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,12 @@ public final class AlloyModel {
      * <br> (5) there is no cycle in this relation
      */
     private final Map<AlloyType,AlloyType> hierarchy;
+
+    /**
+     * The map from name to AlloyType.
+     * <br> AlloyModel's constructor guarantees that this.name2types.values() has the same entries as this.types
+     */
+    private final Map<String,AlloyType> name2types = new HashMap<String,AlloyType>();
 
     /**
      * Returns true iff the nodes x, map.get(x), map.get(map.get(x))... form an infinite chain of nonnull objects.
@@ -105,6 +112,7 @@ public final class AlloyModel {
         }
         newmap.remove(AlloyType.UNIV); // This ensures univ is not in hierarchy's keySet
         this.hierarchy=Collections.unmodifiableMap(newmap);
+        for(AlloyType t: this.types) this.name2types.put(t.getName(), t);
     }
 
     /**
@@ -224,6 +232,9 @@ public final class AlloyModel {
 
     /** Returns true if this model contains the given type. */
     public boolean hasType(AlloyType type) { return types.contains(type); }
+
+    /** Returns the AlloyType object if this model contains the given type; or return null otherwise. */
+    public AlloyType hasType(String type) { return name2types.get(type); }
 
     /** Returns an unmodifiable sorted set of all AlloyType(s) in this model. */
     public Set<AlloyType> getTypes() { return types; }

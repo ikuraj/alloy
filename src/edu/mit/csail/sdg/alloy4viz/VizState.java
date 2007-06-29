@@ -115,16 +115,16 @@ public final class VizState {
         edgeVisible.clear(); edgeVisible.put(null, true);
         edgeSameRank.clear(); edgeSameRank.put(null, false);
         // Provide some nice defaults for "Int" and "seq/Int" type
-        AlloyType sigint=new AlloyType("Int");
+        AlloyType sigint=AlloyType.INT;
         label.put(sigint,"");
         number.put(sigint,true);
         hideUnconnected.put(sigint,true);
-        AlloyType seqidx=new AlloyType("seq/Int");
+        AlloyType seqidx=AlloyType.SEQINT;
         label.put(seqidx,"");
         number.put(seqidx,true);
         hideUnconnected.put(seqidx,true);
         // Provide some nice defaults for meta model stuff
-        AlloyType sig=new AlloyType("univ"), set=new AlloyType("set");
+        AlloyType sig=AlloyType.UNIV, set=AlloyType.SET;
         AlloyRelation ext=new AlloyRelation("extends", Util.asList(sig,sig));
         AlloyRelation in=new AlloyRelation("in", Util.asList(set,sig));
         shape.put(null,DotShape.BOX); nodeColor.put(null,DotColor.YELLOW); nodeStyle.put(null,DotStyle.SOLID);

@@ -30,10 +30,19 @@ import edu.mit.csail.sdg.alloy4.Util;
 public final class AlloyType extends AlloyNodeElement {
 
     /** This caches an instance of the "univ" AlloyType, so we don't have to keep re-constructing it. */
-    public static final AlloyType UNIV=new AlloyType("univ");
+    public static final AlloyType UNIV=new AlloyType("univ", false, false, true, false);
+
+    /** This caches an instance of the "Int" AlloyType, so we don't have to keep re-constructing it. */
+    public static final AlloyType INT=new AlloyType("Int", false, false, true, false);
+
+    /** This caches an instance of the "seq/Int" AlloyType, so we don't have to keep re-constructing it. */
+    public static final AlloyType SEQINT=new AlloyType("seq/Int", false, false, true, false);
+
+    /** This caches an instance of the "set" AlloyType, so we don't have to keep re-constructing it. */
+    public static final AlloyType SET=new AlloyType("set", false, false, false, false);
 
     /** Constructs an AlloyType object with that name. */
-    public AlloyType(String name) { super(name); }
+    public AlloyType(String name, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isOrdered) { super(name); }
 
     /**
      * When comparing two AlloyType objects, we compare their names.

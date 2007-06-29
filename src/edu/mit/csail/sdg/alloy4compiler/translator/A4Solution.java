@@ -444,10 +444,13 @@ public final class A4Solution {
             if (s instanceof SubsetSig) {
                 writeTS(new A4TupleSet(ts, map, map2sig), out, shorten(s), s.type, un);
             } else {
-                if (s.isTopLevel())
-                    Util.encodeXMLs(out, "\n<sig name=\"", un.seen(shorten(s)), "\">\n");
-                else
-                    Util.encodeXMLs(out, "\n<sig name=\"", un.seen(shorten(s)), "\" extends=\"", shorten(((PrimSig)s).parent), "\">\n");
+                Util.encodeXMLs(out, "\n<sig name=\"", un.seen(shorten(s)), "\"");
+                if (!s.isTopLevel()) Util.encodeXMLs(out, " extends=\"", shorten(((PrimSig)s).parent), "\"");
+                if (s.isOne) out.printf(" isOne=\"true\"");
+                if (s.isAbstract) out.printf(" isAbstract=\"true\"");
+                if (s.builtin) out.printf(" isBuiltin=\"true\"");
+                if (s.anno.get("ordering")!=null) out.printf(" isOrdered=\"true\"");
+                out.printf(">\n");
                 for(Tuple t:ts) Util.encodeXMLs(out, "  <atom name=\"", a2s(t.atom(0)), "\"/>\n");
                 out.printf("</sig>\n");
             }
@@ -583,12 +586,12 @@ public final class A4Solution {
             Integer.toString(parent.bitwidth), "\" command=\"", parent.originalCommand,"\">\n");
         for(Sig s:parent.world.getAllSigs()) process_each_sig(out, s, rels, un);
         // Write out SIGINT
-        out.print("\n<sig name=\"Int\">\n");
+        out.print("\n<sig name=\"Int\" isBuiltin=\"true\">\n");
         un.seen("Int");
         for(Tuple t:kEval.evaluate(Expression.INTS)) Util.encodeXMLs(out, "  <atom name=\"", a2s(t.atom(0)), "\"/>\n");
         out.print("</sig>\n");
         // Write out SEQIDX
-        out.print("\n<sig name=\"seq/Int\" extends=\"Int\">\n");
+        out.print("\n<sig name=\"seq/Int\" extends=\"Int\" isBuiltin=\"true\">\n");
         un.seen("seq/Int");
         for(Tuple t:kEval.evaluate(BoundsComputer.SEQ_SEQIDX)) Util.encodeXMLs(out, "  <atom name=\"", a2s(t.atom(0)), "\"/>\n");
         out.print("</sig>\n");
