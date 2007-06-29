@@ -25,16 +25,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import edu.mit.csail.sdg.alloy4.SafeList;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
 
 public class VizStateSettingsInference {
 
     /** The VizState object that we're going to configure. */
     private final VizState vizState;
 
-    private final WorldInfo worldInfo;
+    //private final WorldInfo worldInfoz;
 
     // results of inference
     private Set<AlloyType> enumerationTypes = new HashSet<AlloyType>();
@@ -44,62 +41,62 @@ public class VizStateSettingsInference {
 
     private Set<AlloyRelation> spineRelations = Collections.emptySet();
 
-    private static class WorldInfo {
-        //private final World world;
-        private final Set<String> abstractSigs = new HashSet<String>();
-        private final Set<String> oneSigs = new HashSet<String>();
-        private final Set<String> orderedSigs = new HashSet<String>();
-        private final Set<String> builtinSigs = new HashSet<String>();
-
-        WorldInfo(final World world) {
-            if (world != null) {
-                final SafeList<Sig> sigs = world.getAllSigs();
-                for (final Sig s : sigs) {
-                    if (s.builtin) builtinSigs.add(s.label);
-                    if (s.isAbstract) abstractSigs.add(s.label);
-                    if (s.isOne) oneSigs.add(s.label);
-                    if (s.anno.get("ordering") != null) orderedSigs.add(s.label);
-                }
-            }
-        }
-
-        public boolean isAbstract(final AlloyType t) {
-            return contains(abstractSigs, t.getName());
-        }
-
-        public boolean isOne(final AlloyType t) {
-            return contains(oneSigs, t.getName());
-        }
-
-        public boolean isBuiltin(final AlloyType t) {
-            if (contains(builtinSigs, t.getName())) {
-                return true;
-            } else {
-                // try harder
-                return NAMES_OF_ALLOY_SYSTEM_TYPES.contains(t.getName());
-            }
-        }
-
-        public boolean isOrdered(AlloyType t) {
-            return contains(orderedSigs, t.getName());
-        }
-
-        private static final Set<String> NAMES_OF_ALLOY_SYSTEM_TYPES;
-        static {
-            final Set<String> s = new HashSet<String>();
-            s.add("univ");
-            s.add("Int");
-            s.add("seq/Int");
-            NAMES_OF_ALLOY_SYSTEM_TYPES = Collections.unmodifiableSet(s);
-        }
-
-        private static boolean contains(final Set<String> set, final String s) {
-            if (set.contains(s)) return true;
-            if (set.contains("this/" + s)) return true;
-            return false;
-        }
-
-    }
+//    private static class WorldInfo {
+//        //private final World world;
+//        private final Set<String> abstractSigs = new HashSet<String>();
+//        private final Set<String> oneSigs = new HashSet<String>();
+//        private final Set<String> orderedSigs = new HashSet<String>();
+//        private final Set<String> builtinSigs = new HashSet<String>();
+//
+//        WorldInfo(final World world) {
+//            if (world != null) {
+//                final SafeList<Sig> sigs = world.getAllSigs();
+//                for (final Sig s : sigs) {
+//                    if (s.builtin) builtinSigs.add(s.label);
+//                    if (s.isAbstract) abstractSigs.add(s.label);
+//                    if (s.isOne) oneSigs.add(s.label);
+//                    if (s.anno.get("ordering") != null) orderedSigs.add(s.label);
+//                }
+//            }
+//        }
+//
+//        public boolean isAbstract(final AlloyType t) {
+//            return contains(abstractSigs, t.getName());
+//        }
+//
+//        public boolean isOne(final AlloyType t) {
+//            return contains(oneSigs, t.getName());
+//        }
+//
+//        public boolean isBuiltin(final AlloyType t) {
+//            if (contains(builtinSigs, t.getName())) {
+//                return true;
+//            } else {
+//                // try harder
+//                return NAMES_OF_ALLOY_SYSTEM_TYPES.contains(t.getName());
+//            }
+//        }
+//
+//        public boolean isOrdered(AlloyType t) {
+//            return contains(orderedSigs, t.getName());
+//        }
+//
+//        private static final Set<String> NAMES_OF_ALLOY_SYSTEM_TYPES;
+//        static {
+//            final Set<String> s = new HashSet<String>();
+//            s.add("univ");
+//            s.add("Int");
+//            s.add("seq/Int");
+//            NAMES_OF_ALLOY_SYSTEM_TYPES = Collections.unmodifiableSet(s);
+//        }
+//
+//        private static boolean contains(final Set<String> set, final String s) {
+//            if (set.contains(s)) return true;
+//            if (set.contains("this/" + s)) return true;
+//            return false;
+//        }
+//
+//    }
 
 
     /**
@@ -109,7 +106,6 @@ public class VizStateSettingsInference {
      */
     public VizStateSettingsInference(final VizState vizState) {
         this.vizState = vizState;
-        this.worldInfo = new WorldInfo(null);
     }
 
     /**
@@ -150,15 +146,15 @@ public class VizStateSettingsInference {
                 continue;
             }
             // start investigating
-            if (worldInfo.isOne(t)) {
+            if (t.isOne) {
                 singletonTypes.add(t);
                 //vizState.nodeVisible(t, false);
             }
-            if (!worldInfo.isBuiltin(t) && worldInfo.isAbstract(t)) {
+            if (!t.isBuiltin && t.isAbstract) {
                 final List<AlloyType> subTypes = model.getSubTypes(t);
                 int numberOfSingletonSubtypes = 0;
                 for (final AlloyType st : subTypes) {
-                    if (worldInfo.isOne(st)) {
+                    if (st.isOne) {
                         numberOfSingletonSubtypes++;
                         singletonTypes.add(st);
                         //vizState.nodeVisible(st, false);
@@ -229,7 +225,7 @@ public class VizStateSettingsInference {
                     }
                 }
                 // is it ordered?
-                if (worldInfo.isOrdered(t)) {
+                if (t.isOrdered) {
                     scores.put(t, scores.get(t)+1 );
                 }
             }
@@ -448,7 +444,7 @@ public class VizStateSettingsInference {
     private void nodeShape() {
         final AlloyModel model = vizState.getCurrentModel();
         for (final AlloyType t : model.getTypes()) {
-            if (!worldInfo.isBuiltin(t) && isActuallyVisible(t)) {
+            if (!t.isBuiltin && isActuallyVisible(t)) {
                 final String label = vizState.label(t);
                 if (label == null || label.length() == 0) {
                     // circles for unlabelled nodes
@@ -486,7 +482,7 @@ public class VizStateSettingsInference {
         final Set<AlloyType> types = model.getTypes();
 
         for (final AlloyType t : types) {
-            if (!worldInfo.isBuiltin(t) && isActuallyVisible(t)) {
+            if (!t.isBuiltin && isActuallyVisible(t)) {
                 if (t.getName().endsWith("/Ord")) {
                     vizState.nodeVisible(t, false);
                 }
@@ -524,7 +520,7 @@ public class VizStateSettingsInference {
         int visibleUserTypeCount = 0;
         AlloyType visibleUserType = null;
         for (final AlloyType t : types) {
-            if (!worldInfo.isBuiltin(t) && isActuallyVisible(t)) {
+            if (!t.isBuiltin && isActuallyVisible(t)) {
                 visibleUserTypeCount++;
                 visibleUserType = t;
                 System.err.println("VizInference: visible user type " + t);

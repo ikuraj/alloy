@@ -42,7 +42,25 @@ public final class AlloyType extends AlloyNodeElement {
     public static final AlloyType SET=new AlloyType("set", false, false, false, false);
 
     /** Constructs an AlloyType object with that name. */
-    public AlloyType(String name, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isOrdered) { super(name); }
+    public AlloyType(String name, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isOrdered) {
+        super(name);
+        this.isOne=isOne;
+        this.isAbstract=isAbstract;
+        this.isBuiltin=isBuiltin;
+        this.isOrdered=isOrdered;
+    }
+
+    /** Records whether this sig is known to be "one"; NOTE: this value is NOT USED during equals() comparison. */
+    public final boolean isOne;
+
+    /** Records whether this sig is known to be "abstract"; NOTE: this value is NOT USED during equals() comparison. */
+    public final boolean isAbstract;
+
+    /** Records whether this sig is known to be "builtin"; NOTE: this value is NOT USED during equals() comparison. */
+    public final boolean isBuiltin;
+
+    /** Records whether this sig is known to be "ordered"; NOTE: this value is NOT USED during equals() comparison. */
+    public final boolean isOrdered;
 
     /**
      * When comparing two AlloyType objects, we compare their names.

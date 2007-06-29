@@ -98,7 +98,11 @@ public final class StaticInstanceReader {
         for(XMLElement sub:x.getChildren("sig")) {
             String name=sub.getAttribute("name");
             if (name.length()==0) throw new RuntimeException("<sig> name cannot be empty.");
-            AlloyType type=new AlloyType(name, false, false, false, false);// TODO put in the real flags!
+            AlloyType type=new AlloyType(name,
+                    sub.getAttribute("isOne").length()>0,
+                    sub.getAttribute("isAbstract").length()>0,
+                    sub.getAttribute("isBuiltin").length()>0,
+                    sub.getAttribute("isOrdered").length()>0);
             if (types.put(name,type)!=null)
                 throw new RuntimeException("<sig name=\""+name+"\"> appeared more than once.");
         }
