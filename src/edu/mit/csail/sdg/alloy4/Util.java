@@ -24,6 +24,7 @@ import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -175,7 +176,7 @@ public final class Util {
     }
 
     /** Read the file then return the file size and a byte[] array (the array could be slightly bigger than file size) */
-    private static Pair<byte[],Integer> readEntireFile(boolean fromJar, String filename) throws IOException {
+    private static Pair<byte[],Integer> readEntireFile(boolean fromJar, String filename) throws FileNotFoundException, IOException {
         InputStream fis=null;
         int now=0, max=4096;
         if (!fromJar) {
@@ -186,7 +187,7 @@ public final class Util {
         try {
             byte[] buf=new byte[max];
             fis = fromJar ? Util.class.getClassLoader().getResourceAsStream(filename) : new FileInputStream(filename);
-            if (fis==null) throw new IOException("File \""+filename+"\" cannot be found");
+            if (fis==null) throw new FileNotFoundException("File \""+filename+"\" cannot be found");
             while(true) {
                 if (now >= max) {
                     max=now+4096;
@@ -206,7 +207,7 @@ public final class Util {
     }
 
     /** Read everything into a String; throws IOException if an error occurred. */
-    public static String readAll(boolean fromJar, String filename) throws IOException {
+    public static String readAll(boolean fromJar, String filename) throws FileNotFoundException, IOException {
         final CodingErrorAction r=CodingErrorAction.REPORT;
         final Pair<byte[],Integer> p=readEntireFile(fromJar,filename);
         ByteBuffer bbuf;
@@ -230,7 +231,7 @@ public final class Util {
     }
 
     /** Read everything into a String; throws IOException if an error occurred. */
-    public static String readAll(String filename) throws IOException { return readAll(false,filename); }
+    public static String readAll(String filename) throws FileNotFoundException, IOException { return readAll(false,filename); }
 
     /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
     public static void writeAll(String filename, String content) throws Err {

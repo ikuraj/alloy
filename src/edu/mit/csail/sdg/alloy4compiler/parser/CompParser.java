@@ -12,6 +12,7 @@ import java.util.TreeSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -2376,7 +2377,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
   }
 
   static CompModule alloy_parseStream(Map<String,String> fc, World world, int lineOffset, final String filename, final String prefix)
-  throws Err, IOException {
+  throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
         if (world==null) world=new World();

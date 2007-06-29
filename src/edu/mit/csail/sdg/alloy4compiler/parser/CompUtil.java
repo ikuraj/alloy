@@ -21,6 +21,7 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -584,8 +585,10 @@ public final class CompUtil {
             while(alloy_mergeModules(modules)) {}
             World ans=alloy_resolve(modules);
             return ans;
+        } catch(FileNotFoundException ex) {
+            throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());
         } catch(IOException ex) {
-            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
+            throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex;
             throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
@@ -614,6 +617,8 @@ public final class CompUtil {
             while(alloy_mergeModules(modules)) {}
             World ans=alloy_resolve(modules);
             return ans;
+        } catch(FileNotFoundException ex) {
+            throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
         } catch(Throwable ex) {
@@ -623,7 +628,8 @@ public final class CompUtil {
     }
 
     /** Helper method that recursively open more files. */
-    private static CompModule alloy_totalparseHelper(Map<String,String> fc, String rootdir,Pos pos,String name,CompModule parent,String parentFileName,String prefix,ArrayList<CompModule> modules,ArrayList<String> thispath) throws Err, IOException {
+    private static CompModule alloy_totalparseHelper(Map<String,String> fc, String rootdir,Pos pos,String name,CompModule parent,String parentFileName,String prefix,ArrayList<CompModule> modules,ArrayList<String> thispath)
+    throws Err, FileNotFoundException, IOException {
         // Figure out the exact filename
         File f=new File(name);
         String canon=f.getCanonicalPath();
