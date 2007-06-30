@@ -28,114 +28,50 @@ import java.util.Set;
 
 public class VizStateSettingsInference {
 
+    /** This method logs the progress */
+    private static final void log(String msg) {
+        System.err.println(msg);
+        System.err.flush();
+    }
+
     /** The VizState object that we're going to configure. */
     private final VizState vizState;
 
-    //private final WorldInfo worldInfoz;
-
-    // results of inference
     private Set<AlloyType> enumerationTypes = new HashSet<AlloyType>();
     private Set<AlloyType> singletonTypes = new HashSet<AlloyType>();
-
     private AlloyType projectionType = null;
-
     private Set<AlloyRelation> spineRelations = Collections.emptySet();
-
-//    private static class WorldInfo {
-//        //private final World world;
-//        private final Set<String> abstractSigs = new HashSet<String>();
-//        private final Set<String> oneSigs = new HashSet<String>();
-//        private final Set<String> orderedSigs = new HashSet<String>();
-//        private final Set<String> builtinSigs = new HashSet<String>();
-//
-//        WorldInfo(final World world) {
-//            if (world != null) {
-//                final SafeList<Sig> sigs = world.getAllSigs();
-//                for (final Sig s : sigs) {
-//                    if (s.builtin) builtinSigs.add(s.label);
-//                    if (s.isAbstract) abstractSigs.add(s.label);
-//                    if (s.isOne) oneSigs.add(s.label);
-//                    if (s.anno.get("ordering") != null) orderedSigs.add(s.label);
-//                }
-//            }
-//        }
-//
-//        public boolean isAbstract(final AlloyType t) {
-//            return contains(abstractSigs, t.getName());
-//        }
-//
-//        public boolean isOne(final AlloyType t) {
-//            return contains(oneSigs, t.getName());
-//        }
-//
-//        public boolean isBuiltin(final AlloyType t) {
-//            if (contains(builtinSigs, t.getName())) {
-//                return true;
-//            } else {
-//                // try harder
-//                return NAMES_OF_ALLOY_SYSTEM_TYPES.contains(t.getName());
-//            }
-//        }
-//
-//        public boolean isOrdered(AlloyType t) {
-//            return contains(orderedSigs, t.getName());
-//        }
-//
-//        private static final Set<String> NAMES_OF_ALLOY_SYSTEM_TYPES;
-//        static {
-//            final Set<String> s = new HashSet<String>();
-//            s.add("univ");
-//            s.add("Int");
-//            s.add("seq/Int");
-//            NAMES_OF_ALLOY_SYSTEM_TYPES = Collections.unmodifiableSet(s);
-//        }
-//
-//        private static boolean contains(final Set<String> set, final String s) {
-//            if (set.contains(s)) return true;
-//            if (set.contains("this/" + s)) return true;
-//            return false;
-//        }
-//
-//    }
-
 
     /**
      * Constructor.
-     *
-     * @param vizState
      */
-    public VizStateSettingsInference(final VizState vizState) {
+    private VizStateSettingsInference(final VizState vizState) {
         this.vizState = vizState;
     }
 
     /**
      * Main method to infer settings.
      */
-    public void infer() {
+    public static void infer(final VizState vizState) {
         vizState.resetTheme();
-
-        identifyEnumerationTypes();
-        projection();
-        nodeVisibility();
-        spine();
-        attributes();
-
-        edgeLabels();
-        hideImports();
-        hideUnconnectedNodes();
-        nodeNumbering();
-        nodeNames();
-        nodeShape();
-        nodeColour();
-        skolemColour();
-
+        final VizStateSettingsInference st = new VizStateSettingsInference(vizState);
+        st.identifyEnumerationTypes();
+        st.projection();
+        st.nodeVisibility();
+        st.spine();
+        st.attributes();
+        st.edgeLabels();
+        st.hideImports();
+        st.hideUnconnectedNodes();
+        st.nodeNumbering();
+        st.nodeNames();
+        st.nodeShape();
+        st.nodeColour();
+        st.skolemColour();
     }
 
-
     /**
-     * SYNTACTIC: An enumeration follows the pattern "abstract sig Colour; one
-     * sig Red; one sig Blue".
-     *
+     * SYNTACTIC: An enumeration follows the pattern "abstract sig Colour; one sig Red; one sig Blue".
      */
     private void identifyEnumerationTypes() {
         final AlloyModel model = vizState.getCurrentModel();
@@ -180,7 +116,7 @@ public class VizStateSettingsInference {
                             break;
                         }
                     }
-                    System.err.println("VizInference: visible status of enumeration type " + t + " " + visible);
+                    log("VizInference: visible status of enumeration type " + t + " " + visible);
                     vizState.nodeVisible(t, visible);
                 }
             }
@@ -190,7 +126,6 @@ public class VizStateSettingsInference {
 
     /**
      * SEMANTIC/LAYOUT: Determine at most one relation to project over.
-     *
      *
      * When do we project over a sig? Do we ever project over more than one?
      * <ul>
@@ -244,15 +179,15 @@ public class VizStateSettingsInference {
             }
             if (max < 2) {
                 // no winner, don't project
-                System.err.println("VizInference: no candidate type to project on.");
+                log("VizInference: no candidate type to project on.");
             } else {
                 if (winners.size() > 1) {
                     // we have a tie ... what to do?
-                    System.err.println("VizInference: projection tie. " + winners);
+                    log("VizInference: projection tie. " + winners);
                 }
                 // pick one arbitrarily for now ...
                 final AlloyType winner = winners.iterator().next();
-                System.err.println("VizInference: projecting on " + max + " " + winner);
+                log("VizInference: projecting on " + max + " " + winner);
 
                 projectionType = winner;
                 vizState.project(projectionType);
@@ -260,6 +195,7 @@ public class VizStateSettingsInference {
 
         }
     }
+
     private final boolean hasLikelyProjectionTypeName(final String n) {
         if (LIKELY_PROJECTION_TYPE_NAMES.contains(n)) {
             return true;
@@ -271,6 +207,7 @@ public class VizStateSettingsInference {
         }
         return false;
     }
+
     private final static Set<String> LIKELY_PROJECTION_TYPE_NAMES;
     static {
         final Set<String> s = new HashSet<String>();
@@ -397,6 +334,7 @@ public class VizStateSettingsInference {
     private void trimLabelBeforeLastSlash(final AlloyElement x) {
         vizState.label(x, trimBeforeLastSlash(vizState.label(x)));
     }
+
     private static String trimBeforeLastSlash(final String label) {
         final int lastSlash = label.lastIndexOf('/');
         if (lastSlash >= 0) {
@@ -523,7 +461,7 @@ public class VizStateSettingsInference {
             if (!t.isBuiltin && isActuallyVisible(t)) {
                 visibleUserTypeCount++;
                 visibleUserType = t;
-                System.err.println("VizInference: visible user type " + t);
+                log("VizInference: visible user type " + t);
                 // trim label before last slash
                 trimLabelBeforeLastSlash(t);
             }

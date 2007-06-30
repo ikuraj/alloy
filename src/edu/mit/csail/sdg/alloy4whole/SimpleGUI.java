@@ -892,13 +892,13 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             runmenu.remove(0);
             for(int i=0; i<cp.size(); i++) {
-                JMenuItem y = OurUtil.makeMenuItem(cp.get(i).toString());
+                JMenuItem y = OurUtil.makeMenuItem(cp.get(i).toString(), null);
                 y.addActionListener(new MultiRunner(this, evi_execute, i));
                 if (i==latestCommand) { y.setMnemonic(KeyEvent.VK_E); y.setAccelerator(ac); }
                 runmenu.add(y,i);
             }
             if (cp.size()>=2) {
-                JMenuItem y = OurUtil.makeMenuItem("Execute All");
+                JMenuItem y = OurUtil.makeMenuItem("Execute All", null);
                 y.setMnemonic(KeyEvent.VK_A);
                 y.addActionListener(new MultiRunner(this, evi_execute, -1));
                 runmenu.add(y,0);
@@ -1077,7 +1077,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             optmenu.add(size);
             //
             String fontname = FontName.get();
-            JMenuItem fontnameMenu = OurUtil.makeMenuItem("Font: "+fontname+"...");
+            JMenuItem fontnameMenu = OurUtil.makeMenuItem("Font: "+fontname+"...", null);
             fontnameMenu.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
                     int size=FontSize.get();
@@ -1185,9 +1185,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 String f=filenames.get(i);
                 JMenuItem it;
                 if (mode_externalEditor && !text.isFile(i))
-                    it = OurUtil.makeMenuItem("Alloy Analyzer");
+                    it = OurUtil.makeMenuItem("Alloy Analyzer", null);
                 else
-                    it = OurUtil.makeMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""));
+                    it = OurUtil.makeMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""), null);
                 it.setIcon((f.equals(text.getFilename()) && key==ev_refreshWindow) ? iconYes : iconNo);
                 if (f.equals(text.getFilename()))
                   it.addActionListener(new MultiRunner(this, ev_show));
@@ -1196,7 +1196,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 w.add(it);
             }
             if (viz!=null) for(String f:viz.getInstances()) {
-                JMenuItem it = OurUtil.makeMenuItem("Instance: "+viz.getInstanceTitle(f));
+                JMenuItem it = OurUtil.makeMenuItem("Instance: "+viz.getInstanceTitle(f), null);
                 it.setIcon( (key==ev_refreshWindow2 && f.equals(viz.getXMLfilename())) ? iconYes : iconNo);
                 it.addActionListener(new MultiRunner(this, evs_visualize, "XML: "+f));
                 w.add(it);

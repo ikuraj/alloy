@@ -77,7 +77,7 @@ public class TranslateAlloyToMetamodel {
         SafeList<Sig> sigs=world.getAllSigs();
         Util.encodeXMLs(output, "\n<alloy builddate=\"",
                 Version.buildDate(),
-                "\">\n\n<instance filename=\"",
+                "\">\n\n<instance isMetamodel=\"true\" filename=\"",
                 originalFilename,
                 "\" command=\"show metamodel\">\n\n");
         boolean hasSubset=false;

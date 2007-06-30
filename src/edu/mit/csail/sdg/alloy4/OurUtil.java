@@ -452,8 +452,8 @@ public final class OurUtil {
     }
 
     /** Constructs a JMenuItem */
-    public static JMenuItem makeMenuItem(String label) {
-        return new JMenuItem(label) {
+    public static JMenuItem makeMenuItem(String label, Icon icon) {
+        return new JMenuItem(label,icon) {
             private static final long serialVersionUID = 1L;
             @Override public void paintComponent(Graphics g) {
                 if (g instanceof Graphics2D) {
@@ -510,7 +510,7 @@ public final class OurUtil {
      * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
      */
     public static JMenuItem makeMenuItem(JMenu parent, String label, int mnemonic, int accel, final Runnable func) {
-        JMenuItem x = makeMenuItem(label);
+        JMenuItem x = makeMenuItem(label,null);
         if (mnemonic!=-1) {
             x.setMnemonic(mnemonic);
         }
@@ -542,7 +542,7 @@ public final class OurUtil {
      * @param key - the argument to pass to func() when the user clicks this item
      */
     public static JMenuItem makeMenuItem(JMenu parent, String label, boolean enabled, int mnemonic, int accel, final MultiRunnable func, final int key) {
-        JMenuItem x = makeMenuItem(label);
+        JMenuItem x = makeMenuItem(label,null);
         if (mnemonic!=-1) {
             x.setMnemonic(mnemonic);
         }
@@ -574,7 +574,7 @@ public final class OurUtil {
      * @param func - the action listener to call if the user clicks this item (or null if there is no action to do)
      */
     public static JMenuItem makeMenuItemWithShift(JMenu parent, String label, int accel, ActionListener func) {
-        JMenuItem x = makeMenuItem(label);
+        JMenuItem x = makeMenuItem(label,null);
         int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
         x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.SHIFT_MASK));
         if (func!=null) {

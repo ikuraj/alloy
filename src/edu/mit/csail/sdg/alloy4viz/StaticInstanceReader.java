@@ -91,6 +91,7 @@ public final class StaticInstanceReader {
      * @param koutput - the kodkod output we want to include with the AlloyInstance object
      */
     private static AlloyInstance parseInstance(XMLElement x, String kinput, String koutput) {
+        boolean isMetamodel = x.getAttribute("isMetamodel").length()>0;
         String filename = x.getAttribute("filename");
         String commandname = x.getAttribute("command");
         // Generate "types"
@@ -152,7 +153,7 @@ public final class StaticInstanceReader {
             temp.addAll(tuples);
         }
         AlloyModel model = new AlloyModel(types.values(), sets, rels, ts);
-        return new AlloyInstance(filename, commandname, kinput, koutput, model, atom2sets, rel2tuples);
+        return new AlloyInstance(filename, commandname, kinput, koutput, model, atom2sets, rel2tuples, isMetamodel);
     }
 
     /**

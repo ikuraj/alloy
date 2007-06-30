@@ -42,6 +42,9 @@ import edu.mit.csail.sdg.alloy4viz.AlloyType;
 
 public final class AlloyInstance {
 
+    /** If true, it is a metamodel, else it is not a metamodel. */
+    public final boolean isMetamodel;
+
     /** The original Kodkod input that generated this instance; can be "" if unknown. */
     public final String kodkod_input;
 
@@ -113,12 +116,13 @@ public final class AlloyInstance {
      */
     public AlloyInstance(String filename, String commandname,
             String kodkod_input, String kodkod_output, AlloyModel model,
-            Map<AlloyAtom,Set<AlloySet>> atom2sets, Map<AlloyRelation,Set<AlloyTuple>> rel2tuples) {
+            Map<AlloyAtom,Set<AlloySet>> atom2sets, Map<AlloyRelation,Set<AlloyTuple>> rel2tuples, boolean isMetamodel) {
         this.filename = filename;
         this.commandname = commandname;
         this.kodkod_input = kodkod_input;
         this.kodkod_output = kodkod_output;
         this.model = model;
+        this.isMetamodel=isMetamodel;
         // First, construct atom2sets (Use a treemap because we want its keyset to be sorted)
         {
         Map<AlloyAtom,List<AlloySet>> a2s = new TreeMap<AlloyAtom,List<AlloySet>>();

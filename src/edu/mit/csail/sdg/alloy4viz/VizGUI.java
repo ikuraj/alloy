@@ -167,8 +167,9 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** The projection popup menu. */
     private final JPopupMenu projectionPopup;
 
-    /** The other buttons. */
-    private final JButton projectionButton, openSettingsButton, closeSettingsButton, updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton;
+    private final JButton projectionButton, openSettingsButton, closeSettingsButton;
+    private final JButton updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton;
+    private final JButton magicLayout;
 
     /** The buttons for switching the display modes. */
     private final JButton vizButton, xmlButton, treeButton, dotButton, kodSrcButton, kodInstButton, plugin0Button;
@@ -413,6 +414,8 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 "Close the theme customization panel", "images/24_settings_close2.gif", this, ev_toolbarCloseTheme));
         toolbar.add(updateSettingsButton=OurUtil.button("Apply",
                 "Apply the changes to the current theme", "images/24_settings_apply2.gif", this, ev_toolbarApplyTheme));
+        toolbar.add(magicLayout=OurUtil.button("MagicLayout",
+                "Show the next solution", "images/24_settings_apply2.gif", this, ev_magicLayout));
         toolbar.add(openEvaluatorButton=OurUtil.button("Evaluator",
                 "Open the evaluator", "images/24_settings.gif", this, ev_toolbarOpenEvaluator));
         toolbar.add(closeEvaluatorButton=OurUtil.button("Close Evaluator",
@@ -465,24 +468,28 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
     /** Helper method that repopulates the Porjection popup menu. */
     private void repopulateProjectionPopup() {
-        String first=null, second=null;
+        int num=0;
+        String label="Projection: none";
         if (myState==null) {
             projectionButton.setEnabled(false);
             return;
         }
         projectionButton.setEnabled(true);
         projectionPopup.removeAll();
-        Set<AlloyType> projected = myState.getProjectedTypes();
-        for(AlloyType t: projected) {
-            projectionPopup.add(new JMenuItem(t.getName(), OurBinaryCheckbox.on));
-            if (first==null) first=t.getName(); else second=t.getName();
+        final Set<AlloyType> projected = myState.getProjectedTypes();
+        for(final AlloyType t: myState.getOriginalModel().getTypes()) if (myState.canProject(t)) {
+            final boolean on = projected.contains(t);
+            final JMenuItem m = OurUtil.makeMenuItem(t.getName(), on ? OurBinaryCheckbox.on : OurBinaryCheckbox.off);
+            m.addActionListener(new ActionListener() {
+                public final void actionPerformed(ActionEvent e) {
+                    if (on) myState.deproject(t); else myState.project(t);
+                    updateDisplay();
+                }
+            });
+            projectionPopup.add(m);
+            if (on) { num++; if (num==1) label="Projected over "+t.getName(); }
         }
-        for(AlloyType t: myState.getOriginalModel().getTypes()) if (myState.canProject(t) && !projected.contains(t)) {
-            projectionPopup.add(new JMenuItem(t.getName(), OurBinaryCheckbox.off));
-        }
-        if (first==null) projectionButton.setText("Projection: none");
-        else if (second==null) projectionButton.setText("Projected over "+first);
-        else projectionButton.setText("Projected over "+first+"...");
+        projectionButton.setText(num>1 ? ("Projected over "+num+" sigs") : label);
     }
 
     /** Helper method that refreshes the right-side visualization panel with the latest settings. */
@@ -500,14 +507,16 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             case Plugin0: plugin0Button.setEnabled(false); break;
             default: vizButton.setEnabled(false);
         }
+        final boolean isMeta = (myState!=null && myState.getOriginalInstance().isMetamodel);
+        magicLayout.setVisible(!isMeta && settingsOpen==0 && currentMode==VisualizerMode.Viz);
         projectionButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
         openSettingsButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
         closeSettingsButton.setVisible(settingsOpen==1);
         updateSettingsButton.setVisible(settingsOpen==1);
         openEvaluatorButton.setVisible(settingsOpen==0 && evaluator!=null);
         closeEvaluatorButton.setVisible(settingsOpen==2 && evaluator!=null);
-        enumerateMenu.setEnabled(settingsOpen==0 && enumerator!=null);
-        enumerateButton.setVisible(settingsOpen==0 && enumerator!=null);
+        enumerateMenu.setEnabled(!isMeta && settingsOpen==0 && enumerator!=null);
+        enumerateButton.setVisible(!isMeta && settingsOpen==0 && enumerator!=null);
         toolbar.setVisible(true);
         // Now, generate the graph or tree or textarea that we want to display on the right
         JComponent content;
@@ -566,6 +575,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             myEvaluatorPanel.requestFocusInWindow();
             myEvaluatorPanel.setCaretPosition(myEvaluatorPanel.getDocument().getLength());
         }
+        repopulateProjectionPopup();
         frame.validate();
     }
 
@@ -711,6 +721,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     private static final int ev_toolbarKodkodOut = 2005;
     private static final int ev_toolbarDot = 2006;
     private static final int ev_toolbarPlugin0 = 2007;
+    private static final int ev_magicLayout=2008;
 
     /** Performs the function given by "key" on the argument "arg"; returns true if it succeeds. */
     public boolean run(final int key, final int arg) {
@@ -876,22 +887,26 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             return run(evs_saveThemeTS, file.getPath());
         }
 
-        if (key==ev_resetTheme) {
-            if (myState==null) return false; // Can only reset if there is a VizState loaded
-            if (!OurDialog.yesno(frame, "Are you sure you wish to clear all your customizations?",
-                    "Yes, clear them", "No, keep them")) return false;
+        if (key==ev_resetTheme || key==ev_magicLayout) {
+            if (myState==null) return false;
+            if (key==ev_resetTheme) {
+                if (!OurDialog.yesno(frame, "Are you sure you wish to clear all your customizations?", "Yes, clear them", "No, keep them")) return false;
+            }
             myState.resetTheme();
+            if (key==ev_magicLayout) {
+                try { VizStateSettingsInference.infer(myState); } catch(Throwable ex) { }
+            }
             repopulateProjectionPopup();
             if (myCustomPanel!=null) myCustomPanel.remakeAll();
             if (myGraphPanel!=null) myGraphPanel.remakeAll();
-            thmFileName="";
+            if (key==ev_resetTheme) thmFileName="";
             updateDisplay();
         }
 
         if (key==ev_window) {
             windowmenu.removeAll();
             for(final String f:getInstances()) {
-                JMenuItem it = OurUtil.makeMenuItem("Instance: "+getInstanceTitle(f));
+                JMenuItem it = OurUtil.makeMenuItem("Instance: "+getInstanceTitle(f), null);
                 it.setIcon(f.equals(getXMLfilename())?iconYes:iconNo);
                 it.addActionListener(new MultiRunner(this, evs_loadInstance, f));
                 windowmenu.add(it);

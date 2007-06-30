@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.prefs.Preferences;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -148,13 +147,6 @@ public final class VizState {
         for (AlloyType t:getProjectedTypes()) if (!unprojectedInstance.model.hasType(t)) projectedTypes.remove(t);
         currentModel = StaticProjector.project(unprojectedInstance.model, projectedTypes);
         cache.clear();
-       final int verbosity = Preferences.userNodeForPackage(Util.class).getInt("Verbosity",0);
-       if (verbosity == 3) {
-           try {
-               final VizStateSettingsInference inference = new VizStateSettingsInference(this);
-               inference.infer();
-           } catch (Throwable ex) { }
-       }
     }
 
     /**
