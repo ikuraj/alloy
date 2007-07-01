@@ -69,15 +69,14 @@ public final class StaticTreeMaker {
             return ans;
         }
         private List<Object> blank = Util.asList();
-        @SuppressWarnings("unchecked")
-        private List getChildren(Object parent) {
+        private List<?> getChildren(Object parent) {
             if (parent instanceof AlloyInstance) return typesAndSets;
             if (parent instanceof AlloyType) return instance.type2atoms((AlloyType)parent);
             if (parent instanceof AlloySet) return instance.set2atoms((AlloySet)parent);
             if (parent instanceof AlloyAtom) return getFields((AlloyAtom)parent);
             if (parent instanceof Pair) {
-                Pair<AlloyAtom,AlloyRelation> p=(Pair)parent;
-                return getTuplesOrAtoms(p.b, p.a);
+                Pair<?,?> p=(Pair<?,?>)parent;
+                return getTuplesOrAtoms((AlloyRelation)p.b, (AlloyAtom)p.a);
             }
             if (parent instanceof AlloyTuple) {
                 List<AlloyAtom> x = new ArrayList<AlloyAtom>(((AlloyTuple)parent).getAtoms());
@@ -91,14 +90,12 @@ public final class StaticTreeMaker {
             }
             return blank;
         }
-        @SuppressWarnings("unchecked")
         public Object getChild(Object parent, int index) {
-            List ans = getChildren(parent);
+            List<?> ans = getChildren(parent);
             return (index>=0 && index<ans.size()) ? ans.get(index) : null;
         }
-        @SuppressWarnings("unchecked")
         public int getIndexOfChild(Object parent, Object child) {
-            List ans = getChildren(parent);
+            List<?> ans = getChildren(parent);
             for(int i=0; i<ans.size(); i++) if (ans.get(i).equals(child)) return i;
             return -1;
         }
@@ -122,7 +119,6 @@ public final class StaticTreeMaker {
             this.onWindows=Util.onWindows();
             setModel(new StaticTreeModel(instance));
         }
-        @SuppressWarnings("unchecked")
         @Override public String convertValueToText(Object val,boolean selected,boolean expanded,boolean leaf,int row,boolean focus) {
             String c = ">";
             if (onWindows) c = selected ? " style=\"color:#ffffff;\">" : " style=\"color:#000000;\">";
@@ -130,7 +126,7 @@ public final class StaticTreeMaker {
             if (val instanceof AlloyType) return "<html> <b"+c+"sig</b> <span"+c+encode(((AlloyType)val).getName())+"</span></html>";
             if (val instanceof AlloySet) return "<html> <b"+c+"set</b> <span"+c+encode(((AlloySet)val).getName())+"</span></html>";
             if (val instanceof AlloyAtom) return "<html> <span"+c+encode(((AlloyAtom)val).getVizName(theme,true))+"</span></html>";
-            if (val instanceof Pair) return "<html> <b"+c+"field</b> <span"+c+encode(((AlloyRelation)(((Pair)val).b)).getName())+"</span></html>";
+            if (val instanceof Pair) return "<html> <b"+c+"field</b> <span"+c+encode(((AlloyRelation)(((Pair<?,?>)val).b)).getName())+"</span></html>";
             if (val instanceof AlloyTuple) {
                 StringBuilder sb=new StringBuilder("<html> <span"+c);
                 List<AlloyAtom> atoms=((AlloyTuple)val).getAtoms();
