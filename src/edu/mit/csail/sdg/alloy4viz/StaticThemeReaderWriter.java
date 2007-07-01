@@ -55,7 +55,7 @@ public final class StaticThemeReaderWriter {
         try {
             fis = new FileInputStream(file);
             reader = new InputStreamReader(fis,"UTF-8");
-            XMLElement elem = new XMLElement(new Hashtable(), true, false);
+            XMLElement elem = new XMLElement(new Hashtable<Object,Object>(), true, false);
             try {
                 elem.parseFromReader(reader);
             } catch (XMLParseException e) {

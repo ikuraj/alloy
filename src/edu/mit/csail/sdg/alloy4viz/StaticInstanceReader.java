@@ -54,7 +54,7 @@ public final class StaticInstanceReader {
         try {
             fis = new FileInputStream(file);
             reader = new InputStreamReader(fis,"UTF-8");
-            XMLElement xml = new XMLElement(new Hashtable(),true,false);
+            XMLElement xml = new XMLElement(new Hashtable<Object,Object>(),true,false);
             xml.parseFromReader(reader);
             return xml;
         } catch(IOException ex) {

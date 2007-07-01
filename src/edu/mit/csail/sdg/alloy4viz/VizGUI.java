@@ -983,7 +983,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         try {
             String cname = System.getProperty("alloy.viz.plugin0");
             if (cname==null || cname.length()==0) return false;
-            Class c = Class.forName(cname);
+            Class<?> c = Class.forName(cname);
             Method m = c.getMethod("plugin", new Class[]{VizState.class});
             if (s==null) return true;
             m.invoke(null, new Object[]{s});
