@@ -19,6 +19,10 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 
 public final class MagicUtil {
 
@@ -79,4 +83,25 @@ public final class MagicUtil {
         return isActuallyVisible(vizState, s.getType());
     }
 
- }
+    static Set<AlloyType> visibleUserTypes(final VizState vizState) {
+    	final Set<AlloyType> result = new HashSet<AlloyType>();
+        final AlloyModel model = vizState.getCurrentModel();
+        for (final AlloyType t : model.getTypes()) {
+            if (!t.isBuiltin && MagicUtil.isActuallyVisible(vizState, t)) {
+            	result.add(t);
+            }
+        }
+        return Collections.unmodifiableSet(result);
+    }
+    
+    static Set<AlloyType> topLevelTypes(final VizState vizState, final Set<AlloyType> types) {
+    	final Set<AlloyType> result = new HashSet<AlloyType>();
+    	for (final AlloyType t : types) {
+    		if (vizState.isTopLevel(t)) {
+    			result.add(t);
+    		}
+    	}
+    	return Collections.unmodifiableSet(result);
+    }
+
+}
