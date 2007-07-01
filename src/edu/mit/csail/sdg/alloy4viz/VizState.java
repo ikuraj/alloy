@@ -266,7 +266,12 @@ public final class VizState {
     }
 
     /** Returns true iff the type is not univ, and it is a toplevel type. */
-    public synchronized boolean canProject(AlloyType type) {
+    public synchronized boolean canProject(final AlloyType type) {
+        return isTopLevel(type);
+    }
+
+    /** Returns true iff the type is not univ, and it is a toplevel type. */
+    public synchronized boolean isTopLevel(final AlloyType type) {
         return AlloyType.UNIV.equals(originalInstance.model.getSuperType(type));
     }
 
