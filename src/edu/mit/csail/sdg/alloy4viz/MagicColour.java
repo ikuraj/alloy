@@ -44,6 +44,7 @@ public class MagicColour {
      * Main method to infer settings.
      */
     public static void magic(final VizState vizState) {
+    	vizState.setNodePalette(DotPalette.MARTHA);
         final MagicColour st = new MagicColour(vizState);
         st.nodeNumbering();
         st.nodeNames();
@@ -65,6 +66,22 @@ public class MagicColour {
      * </ul>
      */
     private void nodeColour() {
+    	final Set<AlloyType> visibleUserTypes = MagicUtil.visibleUserTypes(vizState);
+    	final Set<AlloyType> uniqueColourTypes;
+    	
+    	if (visibleUserTypes.size() <= 5) {
+    		// can give every visible user type its own shape
+    		uniqueColourTypes = visibleUserTypes;
+    	} else {
+    		// give every top-level visible user type its own shape
+    		uniqueColourTypes = MagicUtil.topLevelTypes(vizState, visibleUserTypes);
+    	}
+
+    	int index = 0;
+    	for (final AlloyType t : uniqueColourTypes) {
+    		vizState.nodeColor(t, DotColor.values.get(index));
+    		index = (index + 1) % DotColor.values.size();
+    	}
     }
 
     /**
@@ -89,16 +106,34 @@ public class MagicColour {
      * </ul>
      */
     private void nodeShape() {
-        final AlloyModel model = vizState.getCurrentModel();
-        for (final AlloyType t : model.getTypes()) {
-            if (!t.isBuiltin && MagicUtil.isActuallyVisible(vizState, t)) {
-                final String label = vizState.label(t);
-                if (label == null || label.length() == 0) {
-                    // circles for unlabelled nodes
-                    vizState.shape(t, DotShape.CIRCLE);
-                }
-            }
-        }
+    	final Set<AlloyType> visibleUserTypes = MagicUtil.visibleUserTypes(vizState);
+    	final Set<AlloyType> uniqueShapeTypes;// = new HashSet<AlloyType>();
+    	
+    	if (visibleUserTypes.size() <= 5) {
+    		// can give every visible user type its own shape
+    		uniqueShapeTypes = visibleUserTypes;
+    	} else {
+    		// give every top-level visible user type its own shape
+    		uniqueShapeTypes = MagicUtil.topLevelTypes(vizState, visibleUserTypes);
+    	}
+
+    	int index = 0;
+    	for (final AlloyType t : uniqueShapeTypes) {
+    		vizState.shape(t, DotShape.values.get(index));
+    		index = (index + 1) % DotShape.values.size();
+    	}
+    	
+    	
+//        final AlloyModel model = vizState.getCurrentModel();
+//        for (final AlloyType t : model.getTypes()) {
+//            if (!t.isBuiltin && MagicUtil.isActuallyVisible(vizState, t)) {
+//                final String label = vizState.label(t);
+//                if (label == null || label.length() == 0) {
+//                    // circles for unlabelled nodes
+//                    vizState.shape(t, DotShape.CIRCLE);
+//                }
+//            }
+//        }
     }
 
     /**
@@ -136,23 +171,17 @@ public class MagicColour {
      *
      */
     private void nodeNames() {
-        final AlloyModel model = vizState.getCurrentModel();
-        final Set<AlloyType> types = model.getTypes();
-
-        int visibleUserTypeCount = 0;
-        AlloyType visibleUserType = null;
-        for (final AlloyType t : types) {
-            if (!t.isBuiltin && MagicUtil.isActuallyVisible(vizState, t)) {
-                visibleUserTypeCount++;
-                visibleUserType = t;
-                log("VizInference: visible user type " + t);
-                // trim label before last slash
-                MagicUtil.trimLabelBeforeLastSlash(vizState, t);
-            }
-        }
+    	final Set<AlloyType> visibleUserTypes = MagicUtil.visibleUserTypes(vizState);
+    	
+    	// trim names
+    	for (final AlloyType t : visibleUserTypes) {
+            // trim label before last slash
+            MagicUtil.trimLabelBeforeLastSlash(vizState, t);
+    	}
+    	
         // hide names if there's only one node type visible
-        if (1 == visibleUserTypeCount) {
-            vizState.label(visibleUserType, "");
+        if (1 == visibleUserTypes.size()) {
+            vizState.label(visibleUserTypes.iterator().next(), "");
         }
 
     }
