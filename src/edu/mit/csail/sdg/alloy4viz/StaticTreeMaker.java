@@ -68,7 +68,7 @@ public final class StaticTreeMaker {
                 if (tuple.getStart().equals(atom)) {if (tuple.getArity()==2) ans.add(tuple.getEnd()); else ans.add(tuple);}
             return ans;
         }
-        private List blank = Util.asList();
+        private List<Object> blank = Util.asList();
         @SuppressWarnings("unchecked")
         private List getChildren(Object parent) {
             if (parent instanceof AlloyInstance) return typesAndSets;
@@ -91,10 +91,12 @@ public final class StaticTreeMaker {
             }
             return blank;
         }
+        @SuppressWarnings("unchecked")
         public Object getChild(Object parent, int index) {
             List ans = getChildren(parent);
             return (index>=0 && index<ans.size()) ? ans.get(index) : null;
         }
+        @SuppressWarnings("unchecked")
         public int getIndexOfChild(Object parent, Object child) {
             List ans = getChildren(parent);
             for(int i=0; i<ans.size(); i++) if (ans.get(i).equals(child)) return i;
@@ -120,6 +122,7 @@ public final class StaticTreeMaker {
             this.onWindows=Util.onWindows();
             setModel(new StaticTreeModel(instance));
         }
+        @SuppressWarnings("unchecked")
         @Override public String convertValueToText(Object val,boolean selected,boolean expanded,boolean leaf,int row,boolean focus) {
             String c = ">";
             if (onWindows) c = selected ? " style=\"color:#ffffff;\">" : " style=\"color:#000000;\">";
