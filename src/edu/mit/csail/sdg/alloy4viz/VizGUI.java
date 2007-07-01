@@ -170,6 +170,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     private final JButton projectionButton, openSettingsButton, closeSettingsButton;
     private final JButton updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton;
     private final JButton magicLayout;
+    private final JButton magicColour;
 
     /** The buttons for switching the display modes. */
     private final JButton vizButton, xmlButton, treeButton, dotButton, kodSrcButton, kodInstButton, plugin0Button;
@@ -414,8 +415,10 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 "Close the theme customization panel", "images/24_settings_close2.gif", this, ev_toolbarCloseTheme));
         toolbar.add(updateSettingsButton=OurUtil.button("Apply",
                 "Apply the changes to the current theme", "images/24_settings_apply2.gif", this, ev_toolbarApplyTheme));
-        toolbar.add(magicLayout=OurUtil.button("MagicLayout",
-                "Show the next solution", "images/24_settings_apply2.gif", this, ev_magicLayout));
+        toolbar.add(magicLayout=OurUtil.button("Magic Layout",
+                "Automatic theme customization (will reset current theme)", "images/24_settings_apply2.gif", this, ev_magicLayout));
+        toolbar.add(magicColour=OurUtil.button("Magic Colour",
+                "Automatic theme colour and shape customization", "images/24_settings_apply2.gif", this, ev_magicColour));
         toolbar.add(openEvaluatorButton=OurUtil.button("Evaluator",
                 "Open the evaluator", "images/24_settings.gif", this, ev_toolbarOpenEvaluator));
         toolbar.add(closeEvaluatorButton=OurUtil.button("Close Evaluator",
@@ -509,6 +512,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         }
         final boolean isMeta = (myState!=null && myState.getOriginalInstance().isMetamodel);
         magicLayout.setVisible(!isMeta && settingsOpen==0 && currentMode==VisualizerMode.Viz);
+        magicColour.setVisible(magicLayout.isVisible());
         projectionButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
         openSettingsButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
         closeSettingsButton.setVisible(settingsOpen==1);
@@ -722,6 +726,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     private static final int ev_toolbarDot = 2006;
     private static final int ev_toolbarPlugin0 = 2007;
     private static final int ev_magicLayout=2008;
+    private static final int ev_magicColour=2009;
 
     /** Performs the function given by "key" on the argument "arg"; returns true if it succeeds. */
     public boolean run(final int key, final int arg) {
@@ -894,7 +899,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             }
             myState.resetTheme();
             if (key==ev_magicLayout) {
-                try { VizStateSettingsInference.infer(myState); } catch(Throwable ex) { }
+                try { MagicLayout.magic(myState);  MagicColour.magic(myState); } catch(Throwable ex) { }
             }
             repopulateProjectionPopup();
             if (myCustomPanel!=null) myCustomPanel.remakeAll();
@@ -903,6 +908,15 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             updateDisplay();
         }
 
+        if (key==ev_magicColour) {
+            try { MagicColour.magic(myState); } catch(Throwable ex) { }
+            // same as above for ev_magicLayout
+            repopulateProjectionPopup();
+            if (myCustomPanel!=null) myCustomPanel.remakeAll();
+            if (myGraphPanel!=null) myGraphPanel.remakeAll();
+            updateDisplay();
+        }
+        
         if (key==ev_window) {
             windowmenu.removeAll();
             for(final String f:getInstances()) {
