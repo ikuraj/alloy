@@ -34,7 +34,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 public final class DotColor extends DotAttribute {
 
     /** The list of values that the user can select from a combobox. */
-    private static final List<Object> values;
+    static final List<DotColor> values;
 
     public static final DotColor WHITE = new DotColor("White", "white");
     public static final DotColor GRAY = new DotColor("Gray", "lightgray");
@@ -45,14 +45,14 @@ public final class DotColor extends DotAttribute {
     public static final DotColor YELLOW = new DotColor("Yellow", "gold", "yellow", "lightgoldenrod", "yellow");
 
     static {
-        List<Object> list = new ArrayList<Object>();
-        list.add(WHITE);
-        list.add(GRAY);
-        list.add(BLACK);
-        list.add(RED);
+        List<DotColor> list = new ArrayList<DotColor>();
+        list.add(YELLOW);
         list.add(GREEN);
         list.add(BLUE);
-        list.add(YELLOW);
+        list.add(RED);
+        list.add(GRAY);
+        list.add(WHITE);
+        list.add(BLACK);
         values=Collections.unmodifiableList(list);
     }
 
@@ -84,7 +84,8 @@ public final class DotColor extends DotAttribute {
     }
 
     /** Returns the list of values that the user is allowed to select from. */
-    public static List<Object> values() { return values; }
+    @SuppressWarnings("unchecked")
+	public static List<Object> values() { List raw = values; return raw; }
 
     /** Returns the icon to use, based on the given palette. */
     @Override public Icon getIcon(DotPalette pal) {
