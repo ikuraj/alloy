@@ -33,14 +33,14 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 public final class DotShape extends DotAttribute {
 
     /** The list of values that the user can select from a combobox. */
-    private static final List<Object> values;
+    static final List<DotShape> values;
 
     public static final DotShape ELLIPSE = new DotShape("Ellipse", "ellipse");
     public static final DotShape BOX = new DotShape("Box", "box");
     public static final DotShape CIRCLE = new DotShape("Circle", "circle");
 
     static {
-        List<Object> list = new ArrayList<Object>();
+        List<DotShape> list = new ArrayList<DotShape>();
         list.add(ELLIPSE);
         list.add(BOX);
         list.add(CIRCLE);
@@ -77,7 +77,11 @@ public final class DotShape extends DotAttribute {
     public static DotShape getDefault() { return ELLIPSE; }
 
     /** Returns the list of values that the user is allowed to select from. */
-    public static List<Object> values() { return values; }
+    @SuppressWarnings("unchecked")
+	public static List<Object> values() { 
+    	final List raw = values;
+    	return raw; 
+    }
 
     /** This method is used in parsing the XML value into a valid DotShape; returns null if there is no match. */
     public static DotShape valueOf(String x) {
