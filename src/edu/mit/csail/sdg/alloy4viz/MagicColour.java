@@ -157,40 +157,4 @@ public class MagicColour {
 
     }
 
-
-    /**
-     * SYNTACTIC/VISUAL: Should nodes that are not connected to anything else be
-     * hidden?
-     * <ul>
-     * <li> don't see events that don't occur at this time
-     * <li> hide unless skolems or sets
-     * </ul>
-     *
-     */
-    private void hideUnconnectedNodes() {
-//      // set the default to be hidden
-//      vizState.hideUnconnected(null, true);
-//      // unhide skolems and sets
-//      final AlloyModel model = vizState.getCurrentModel();
-//      for (final AlloyType t : model.getTypes()) {
-//          if (isActuallyVisible(t)) {
-//              vizState.hideUnconnected(t, false);
-//          }
-//      }
-//      for (final AlloySet s : model.getSets()) {
-//          if (isActuallyVisible(s)) {
-//              vizState.hideUnconnected(s, false);
-//          }
-//      }
-    }
-
-    /**
-     * Should imports be hidden?
-     * <ul>
-     * <li> hide ord, not other imports
-     * <li> hide unconnected nodes for imports ?
-     * </ul>
-     */
-    private void hideImports() {
-    }
 }
