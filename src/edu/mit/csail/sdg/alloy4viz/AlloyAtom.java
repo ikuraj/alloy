@@ -85,7 +85,7 @@ public final class AlloyAtom implements Comparable<AlloyAtom> {
         if (otherAtom==null) return 1;
         if (type.equals(AlloyType.INT) || type.equals(AlloyType.SEQINT))
             if (otherAtom.type.equals(AlloyType.INT) || otherAtom.type.equals(AlloyType.SEQINT))
-                return (index < otherAtom.index)?-1:1;
+                return (index < otherAtom.index) ? -1 : (index > otherAtom.index ? 1 : 0);
         int result=type.compareTo(otherAtom.type);
         if (result!=0) return result;
         // We don't want to use the "return (index-otherAtom.index);" trick,
