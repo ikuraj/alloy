@@ -151,7 +151,7 @@ public final class OurCombobox extends JComboBox {
             setPreferredSize(new Dimension(width,height));
             setMaximumSize(new Dimension(width,height));
         }
-        if (!Util.onWindows() && width>0 && height>0) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
+        if (!Util.onWindows() && !Util.onMac() && width>0 && height>0) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
         // To avoid useless or harmful synchronization between this GUI and the underlying data,
         // we make sure we set the initial value before adding the ActionListener.
         if (gs!=null) {
