@@ -31,7 +31,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -139,7 +138,7 @@ public final class VizGraphPanel extends JPanel {
             left.setEnabled(initialIndex>0);
             right.setEnabled(initialIndex<atomnames.length-1);
             atomCombo.setSelectedIndex(initialIndex);
-            atomCombo.setBorder(BorderFactory.createEmptyBorder(4, 2, 2, 0));
+            atomCombo.setBorder(BorderFactory.createEmptyBorder(40, 2, 2, 0));
             left.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
                     int curIndex = atomCombo.getSelectedIndex();
