@@ -21,6 +21,7 @@ package edu.mit.csail.sdg.alloy4viz;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -48,11 +49,12 @@ public final class MagicUtil {
     
     /**
      * Determines whether a type is actually visible -- ie, if it has an inherited value,
-     * looks up the hierarchy until that is resolved.
+     * looks up the hierarchy until that is resolved. NB: abstract types are not actually visible.
      * @param t
      * @return true if this type will be shown to the user, false if this type will be hidden from the user
      */
     static boolean isActuallyVisible(final VizState vizState, final AlloyType t) {
+    	if (t.isAbstract) return false;
         final Boolean V = vizState.nodeVisible(t);
         if (V != null) return V.booleanValue();
 
@@ -83,6 +85,11 @@ public final class MagicUtil {
         return isActuallyVisible(vizState, s.getType());
     }
 
+    /**
+     * Returns all of the visible user-types in the current model.
+     * @param vizState
+     * @return
+     */
     static Set<AlloyType> visibleUserTypes(final VizState vizState) {
     	final Set<AlloyType> result = new HashSet<AlloyType>();
         final AlloyModel model = vizState.getCurrentModel();
@@ -94,14 +101,62 @@ public final class MagicUtil {
         return Collections.unmodifiableSet(result);
     }
     
-    static Set<AlloyType> topLevelTypes(final VizState vizState, final Set<AlloyType> types) {
+    /**
+     * Returns all of the top-level types in the original model.
+     * @param vizState
+     * @return
+     */
+    static Set<AlloyType> topLevelTypes(final VizState vizState) {
     	final Set<AlloyType> result = new HashSet<AlloyType>();
-    	for (final AlloyType t : types) {
-    		if (vizState.isTopLevel(t)) {
-    			result.add(t);
+        final AlloyModel model = vizState.getOriginalModel();
+        for (final AlloyType t : model.getTypes()) {
+            if (vizState.isTopLevel(t)) {
+            	result.add(t);
+            }
+        }
+        return Collections.unmodifiableSet(result);
+    }
+    
+    /**
+     * Returns every top-level user type that is itself visible or has a visible subtype.
+     * @param vizState
+     * @return
+     */
+    static Set<AlloyType> partiallyVisibleUserTopLevelTypes(final VizState vizState) {
+    	final AlloyModel model = vizState.getOriginalModel();
+    	final Set<AlloyType> visibleUserTypes = visibleUserTypes(vizState);
+    	//final Set<AlloyType> topLevelTypes = topLevelTypes(vizState);
+    	
+    	final Set<AlloyType> result = new HashSet<AlloyType>();
+
+    	for (final AlloyType t : visibleUserTypes) {
+    		if (visibleUserTypes.contains(t)) {
+    			result.add(model.getTopmostSuperType(t));
     		}
     	}
+    	
     	return Collections.unmodifiableSet(result);
     }
 
+    /**
+     * Returns the set of visible subtypes for the given type.
+     * @param vizState
+     * @param type
+     * @return
+     */
+    static Set<AlloyType> visibleSubTypes(final VizState vizState, final AlloyType type) {
+    	final AlloyModel model = vizState.getCurrentModel();
+    	final List<AlloyType> subTypes = model.getSubTypes(type);
+    	final Set<AlloyType> visibleUserTypes = visibleUserTypes(vizState);
+    	final Set<AlloyType> result = new HashSet<AlloyType>();
+
+    	for (final AlloyType st : subTypes) {
+    		if (visibleUserTypes.contains(st)) {
+    			result.add(st);
+    		}
+    	}
+    	
+    	return Collections.unmodifiableSet(result);
+    }
+    
 }
