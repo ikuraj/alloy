@@ -19,6 +19,8 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class MagicColour {
@@ -74,7 +76,7 @@ public class MagicColour {
     		uniqueColourTypes = visibleUserTypes;
     	} else {
     		// give every top-level visible user type its own shape
-    		uniqueColourTypes = MagicUtil.topLevelTypes(vizState, visibleUserTypes);
+    		uniqueColourTypes = MagicUtil.partiallyVisibleUserTopLevelTypes(vizState);
     	}
 
     	int index = 0;
@@ -106,22 +108,69 @@ public class MagicColour {
      * </ul>
      */
     private void nodeShape() {
-    	final Set<AlloyType> visibleUserTypes = MagicUtil.visibleUserTypes(vizState);
-    	final Set<AlloyType> uniqueShapeTypes;// = new HashSet<AlloyType>();
+    	final Set<List<DotShape>> usedShapeFamilies = new HashSet<List<DotShape>>();
+    	final Set<AlloyType> topLevelTypes = MagicUtil.partiallyVisibleUserTopLevelTypes(vizState);
     	
-    	if (visibleUserTypes.size() <= 5) {
-    		// can give every visible user type its own shape
-    		uniqueShapeTypes = visibleUserTypes;
-    	} else {
-    		// give every top-level visible user type its own shape
-    		uniqueShapeTypes = MagicUtil.topLevelTypes(vizState, visibleUserTypes);
+    	for (final AlloyType t : topLevelTypes) {
+    		
+    		// get the type family
+    		final Set<AlloyType> subTypes = MagicUtil.visibleSubTypes(vizState, t);
+    		final boolean isTvisible = MagicUtil.isActuallyVisible(vizState, t);
+    		final int size = subTypes.size() + (isTvisible ? 1 : 0);
+    		log("TopLevelType:  " + t + " -- " + subTypes + " " + size);
+    		
+    		// match it to a shape family
+    		// 1. look for exact match
+    		boolean foundExactMatch = false;
+    		for (final List<DotShape> shapeFamily : DotShape.families) {
+    			if (size == shapeFamily.size() && !usedShapeFamilies.contains(shapeFamily)) {
+    				// found a match!
+    				usedShapeFamilies.add(shapeFamily);
+    				assignNodeShape(t, subTypes, isTvisible, shapeFamily);
+    				foundExactMatch = true;
+    				break;
+    			}
+    		}
+    		if (foundExactMatch) continue;
+    		// 2. look for approximate match
+    		List<DotShape> approxShapeFamily = null;
+    		int approxShapeFamilyDistance = Integer.MAX_VALUE;
+    		for (final List<DotShape> shapeFamily : DotShape.families) {
+    			if (size <= shapeFamily.size() && !usedShapeFamilies.contains(shapeFamily)) {
+    				// found a potential match
+    				final int distance = shapeFamily.size() - size;
+    				if (distance < approxShapeFamilyDistance) {
+    					// it's a closer fit than the last match, keep it for now
+    					approxShapeFamily = shapeFamily;
+    					approxShapeFamilyDistance = distance;
+    				}
+    			}
+    		}
+    		if (approxShapeFamily != null) {
+    			// use the best approximate match that we just found
+				usedShapeFamilies.add(approxShapeFamily);
+				assignNodeShape(t, subTypes, isTvisible, approxShapeFamily);
+    		}
+    		// 3. re-use a shape family matched to something else -- just give up for now
     	}
-
-    	int index = 0;
-    	for (final AlloyType t : uniqueShapeTypes) {
-    		vizState.shape(t, DotShape.values.get(index));
-    		index = (index + 1) % DotShape.values.size();
-    	}
+    	
+    	
+//    	final Set<AlloyType> visibleUserTypes = MagicUtil.visibleUserTypes(vizState);
+//    	final Set<AlloyType> uniqueShapeTypes;// = new HashSet<AlloyType>();
+//    	
+//    	if (visibleUserTypes.size() <= 5) {
+//    		// can give every visible user type its own shape
+//    		uniqueShapeTypes = visibleUserTypes;
+//    	} else {
+//    		// give every top-level visible user type its own shape
+//    		uniqueShapeTypes = MagicUtil.topLevelTypes(vizState, visibleUserTypes);
+//    	}
+//
+//    	int index = 0;
+//    	for (final AlloyType t : uniqueShapeTypes) {
+//    		vizState.shape(t, DotShape.values.get(index));
+//    		index = (index + 1) % DotShape.values.size();
+//    	}
     	
     	
 //        final AlloyModel model = vizState.getCurrentModel();
@@ -136,7 +185,32 @@ public class MagicColour {
 //        }
     }
 
+    
     /**
+     * Helper for nodeShape().
+     * @param t
+     * @param subTypes
+     * @param isTvisible
+     * @param shapeFamily
+     */
+    private void assignNodeShape(final AlloyType t, final Set<AlloyType> subTypes,
+			final boolean isTvisible, final List<DotShape> shapeFamily) {
+    	int index = 0;
+    	// shape for t, if visible
+    	if (isTvisible) {
+    		final DotShape shape = shapeFamily.get(index++);
+    		log("AssignNodeShape " + t + " " + shape);
+    		vizState.shape(t, shape);
+    	}
+    	// shapes for visible subtypes
+    	for (final AlloyType subt : subTypes) {
+    		final DotShape shape = shapeFamily.get(index++);
+    		log("AssignNodeShape " + subt + " " + shape);
+    		vizState.shape(subt, shape);
+    	}
+	}
+
+	/**
      * SYNTACTIC/VISUAL: Should nodes of a given type be numbered?
      *
      * <ul>
