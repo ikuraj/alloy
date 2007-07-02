@@ -46,6 +46,7 @@ import att_grappa_20060427.GrappaPanel;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
+import edu.mit.csail.sdg.alloy4.Util;
 
 /**
  * GUI panel that houses the actual graph, as well as any projection comboboxes.
@@ -138,7 +139,7 @@ public final class VizGraphPanel extends JPanel {
             left.setEnabled(initialIndex>0);
             right.setEnabled(initialIndex<atomnames.length-1);
             atomCombo.setSelectedIndex(initialIndex);
-            atomCombo.setBorder(BorderFactory.createEmptyBorder(4, 2, 0, 2));
+            if (Util.onMac()) atomCombo.setBorder(BorderFactory.createEmptyBorder(4,1,0,1));
             left.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
                     int curIndex = atomCombo.getSelectedIndex();
