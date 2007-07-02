@@ -119,7 +119,7 @@ public final class OurCombobox extends JComboBox {
      * @param list - the list of allowed values
      */
     public OurCombobox (Vector<Object> list) {
-        this(null, false, new ArrayList<Object>(list), 0, 35, null);
+        this(null, false, new ArrayList<Object>(list), 0, 0, null);
     }
 
     /**
@@ -127,7 +127,7 @@ public final class OurCombobox extends JComboBox {
      * @param list - the list of allowed values
      */
     public OurCombobox (Object[] list) {
-        this(null, false, Util.asList(list), 0, 35, null);
+        this(null, false, Util.asList(list), 0, 0, null);
     }
 
     /**
@@ -146,13 +146,12 @@ public final class OurCombobox extends JComboBox {
         this.key = key;
         setFont(OurUtil.getVizFont());
         setRenderer(new OurComboboxRenderer());
-        Dimension d = getPreferredSize();
-        if (width>0) d.width=width; else width=width+(width/4);
-        if (height>0) d.height=height;
-        if (Util.onWindows() && height>25) height=25;
-        setPreferredSize(new Dimension(width,height));
-        setMaximumSize(new Dimension(width,height));
-        if (!Util.onWindows()) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
+        if (width>0 && height>0) {
+            if (Util.onWindows() && height>25) height=25;
+            setPreferredSize(new Dimension(width,height));
+            setMaximumSize(new Dimension(width,height));
+        }
+        if (!Util.onWindows() && width>0 && height>0) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
         // To avoid useless or harmful synchronization between this GUI and the underlying data,
         // we make sure we set the initial value before adding the ActionListener.
         if (gs!=null) {
