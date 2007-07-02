@@ -90,13 +90,13 @@ public final class DotShape extends DotAttribute {
     /** Initialize families. */
     static {
     	final List<List<DotShape>> f = new ArrayList<List<DotShape>>();
-    	f.add(ula(BOX, TRAPEZOID, PARALLELOGRAM, HOUSE));
+    	f.add(ula(BOX, TRAPEZOID, HOUSE));
     	f.add(ula(ELLIPSE, EGG));
     	f.add(ula(HEXAGON, OCTAGON, DOUBLE_OCTAGON, TRIPLE_OCTAGON));
     	f.add(ula(INV_TRIANGLE, INV_HOUSE, INV_TRAPEZOID));
     	f.add(ula(M_DIAMOND, M_SQUARE, M_CIRCLE));
-    	f.add(ula(DIAMOND));
-    	f.add(ula(CIRCLE, DOUBLE_CIRCLE));
+    	f.add(ula(PARALLELOGRAM, DIAMOND));
+    	//f.add(ula(CIRCLE, DOUBLE_CIRCLE));
     	families = Collections.unmodifiableList(f);
     }
 
