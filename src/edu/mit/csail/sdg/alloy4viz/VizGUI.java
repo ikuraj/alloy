@@ -430,7 +430,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         projectionButton.addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) {
                 repopulateProjectionPopup();
-                projectionPopup.show(projectionButton, 10, 10);
+                if (projectionPopup.getComponentCount()>0) projectionPopup.show(projectionButton, 10, 10);
             }
         });
         repopulateProjectionPopup();
