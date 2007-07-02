@@ -138,7 +138,7 @@ public final class VizGraphPanel extends JPanel {
             left.setEnabled(initialIndex>0);
             right.setEnabled(initialIndex<atomnames.length-1);
             atomCombo.setSelectedIndex(initialIndex);
-            atomCombo.setBorder(BorderFactory.createEmptyBorder(8, 2, 2, 0));
+            atomCombo.setBorder(BorderFactory.createEmptyBorder(7, 2, 2, 0));
             left.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
                     int curIndex = atomCombo.getSelectedIndex();
