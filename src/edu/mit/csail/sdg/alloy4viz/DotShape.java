@@ -19,9 +19,11 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
+
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
 /**
@@ -38,32 +40,70 @@ public final class DotShape extends DotAttribute {
     public static final DotShape ELLIPSE = new DotShape("Ellipse", "ellipse");
     public static final DotShape BOX = new DotShape("Box", "box");
     public static final DotShape CIRCLE = new DotShape("Circle", "circle");
+	private static final DotShape EGG = new DotShape("Egg", "egg");
+	private static final DotShape TRIANGLE = new DotShape("Triangle", "triangle");
+	private static final DotShape DIAMOND = new DotShape("Diamond", "diamond");
+	private static final DotShape TRAPEZOID = new DotShape("Trapezoid", "trapezium");
+	private static final DotShape PARALLELOGRAM = new DotShape("Parallelogram", "parallelogram");
+	private static final DotShape HOUSE = new DotShape("House", "house");
+    private static final DotShape HEXAGON = new DotShape("Hexagon", "hexagon");
+	private static final DotShape OCTAGON = new DotShape("Octagon", "octagon");
+	private static final DotShape DOUBLE_CIRCLE = new DotShape("Dbl Circle", "doublecircle");
+	private static final DotShape DOUBLE_OCTAGON = new DotShape("Dbl Octagon", "doubleoctagon");
+	private static final DotShape TRIPLE_OCTAGON = new DotShape("Tpl Octagon", "tripleoctagon");
+	private static final DotShape INV_TRIANGLE = new DotShape("Inv Triangle", "invtriangle");
+	private static final DotShape INV_TRAPEZOID = new DotShape("Inv Trapezoid", "invtrapezium");
+	private static final DotShape INV_HOUSE = new DotShape("Inv House", "invhouse");
+	private static final DotShape M_DIAMOND = new DotShape("Lined Diamond", "Mdiamond");
+	private static final DotShape M_SQUARE = new DotShape("Lined Square", "Msquare");
+	private static final DotShape M_CIRCLE = new DotShape("Lined Circle", "Mcircle");
 
-    static {
-        List<DotShape> list = new ArrayList<DotShape>();
+
+	/** Initialize values. */
+	static {
+        final List<DotShape> list = new ArrayList<DotShape>();
         list.add(ELLIPSE);
         list.add(BOX);
         list.add(CIRCLE);
-        list.add(new DotShape("Egg", "egg"));
-        list.add(new DotShape("Triangle", "triangle"));
-        list.add(new DotShape("Diamond", "diamond"));
-        list.add(new DotShape("Trapezoid", "trapezium"));
-        list.add(new DotShape("Parallelogram", "parallelogram"));
-        list.add(new DotShape("House", "house"));
-        list.add(new DotShape("Hexagon", "hexagon"));
-        list.add(new DotShape("Octagon", "octagon"));
-        list.add(new DotShape("Dbl Circle", "doublecircle"));
-        list.add(new DotShape("Dbl Octagon", "doubleoctagon"));
-        list.add(new DotShape("Tpl Octagon", "tripleoctagon"));
-        list.add(new DotShape("Inv Triangle", "invtriangle"));
-        list.add(new DotShape("Inv Trapezoid", "invtrapezium"));
-        list.add(new DotShape("Inv House", "invhouse"));
-        list.add(new DotShape("Lined Diamond", "Mdiamond"));
-        list.add(new DotShape("Lined Square", "Msquare"));
-        list.add(new DotShape("Lined Circle", "Mcircle"));
+        list.add(EGG);
+        list.add(TRIANGLE);
+        list.add(DIAMOND);
+        list.add(TRAPEZOID);
+        list.add(PARALLELOGRAM);
+        list.add(HOUSE);
+        list.add(HEXAGON);
+        list.add(OCTAGON);
+        list.add(DOUBLE_CIRCLE);
+        list.add(DOUBLE_OCTAGON);
+        list.add(TRIPLE_OCTAGON);
+        list.add(INV_TRIANGLE);
+        list.add(INV_HOUSE);
+        list.add(INV_TRAPEZOID);
+        list.add(M_DIAMOND);
+        list.add(M_SQUARE);
+        list.add(M_CIRCLE);
         values=Collections.unmodifiableList(list);
     }
 
+    static final List<List<DotShape>> families;
+    
+    /** Initialize families. */
+    static {
+    	final List<List<DotShape>> f = new ArrayList<List<DotShape>>();
+    	f.add(ula(BOX, TRAPEZOID, PARALLELOGRAM, HOUSE));
+    	f.add(ula(ELLIPSE, EGG));
+    	f.add(ula(HEXAGON, OCTAGON, DOUBLE_OCTAGON, TRIPLE_OCTAGON));
+    	f.add(ula(INV_TRIANGLE, INV_HOUSE, INV_TRAPEZOID));
+    	f.add(ula(M_DIAMOND, M_SQUARE, M_CIRCLE));
+    	f.add(ula(DIAMOND));
+    	f.add(ula(CIRCLE, DOUBLE_CIRCLE));
+    	families = Collections.unmodifiableList(f);
+    }
+
+    private static List<DotShape> ula(DotShape... shapes) {
+    	return Collections.unmodifiableList(Arrays.asList(shapes));
+    }
+    
     /**
      * Construct a new DotShape.
      * @param displayedText - the label to show when the user selects a style from a combobox
