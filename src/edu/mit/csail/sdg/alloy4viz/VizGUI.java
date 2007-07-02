@@ -558,7 +558,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 }
                 evaluator.setSourceFile(xmlFileName);
                 left = new JScrollPane(myEvaluatorPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-                left.setBorder(new EmptyBorder(0,0,0,0));
+                left.setBorder(new OurBorder(false,false,false,true));
                 myEvaluatorPanel.setCaretPosition(0);
                 myEvaluatorPanel.setCaretPosition(myEvaluatorPanel.getDocument().getLength());
             }
