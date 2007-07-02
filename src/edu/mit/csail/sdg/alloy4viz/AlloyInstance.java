@@ -149,7 +149,9 @@ public final class AlloyInstance {
         }
         for(AlloySet set:model.getSets()) {
             List<AlloyAtom> atoms=s2a.get(set);
-            if (atoms!=null) s2a.put(set, Collections.unmodifiableList(atoms)); // "atoms" will already be sorted
+            if (atoms==null) continue;
+            Collections.sort(atoms);
+            s2a.put(set, Collections.unmodifiableList(atoms));
         }
         this.set2atoms = Collections.unmodifiableMap(s2a);
         }
@@ -166,7 +168,9 @@ public final class AlloyInstance {
         }
         for(AlloyType t:model.getTypes()) {
             List<AlloyAtom> atoms=t2a.get(t);
-            if (atoms!=null) t2a.put(t, Collections.unmodifiableList(atoms)); // "atoms" will already be sorted
+            if (atoms==null) continue;
+            Collections.sort(atoms);
+            t2a.put(t, Collections.unmodifiableList(atoms));
         }
         this.type2atoms = Collections.unmodifiableMap(t2a);
         }
