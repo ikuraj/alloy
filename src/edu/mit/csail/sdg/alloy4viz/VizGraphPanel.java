@@ -39,6 +39,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import att_grappa_20060427.GrappaPanel;
 import edu.mit.csail.sdg.alloy4.OurBorder;
@@ -129,8 +130,9 @@ public final class VizGraphPanel extends JPanel {
             add(atomCombo = new OurCombobox(atomnames.length<1 ? new String[]{" "} : atomnames));
             add(Box.createRigidArea(new Dimension(2,2)));
             add(right = new JButton(">>"));
-            left.setBorder(new EmptyBorder(0,5,0,5));
-            right.setBorder(new EmptyBorder(0,5,0,5));
+            atomCombo.setAlignmentY(0);
+            left.setVerticalAlignment(SwingConstants.TOP);
+            right.setVerticalAlignment(SwingConstants.TOP);
             Dimension dim=atomCombo.getPreferredSize();
             if (dim.width<80) { dim.width=100; atomCombo.setMinimumSize(dim); atomCombo.setPreferredSize(dim); }
             left.setEnabled(initialIndex>0);
