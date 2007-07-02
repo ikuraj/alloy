@@ -50,6 +50,23 @@ public final class ErrorSyntax extends Err {
         super(pos,msg,null);
     }
 
+    /**
+     * Two Err objects are equal if the type, position, and message are the same; the "Throwable other" field is not considered.
+     */
+    @Override public boolean equals(Object other) {
+        if (this==other) return true;
+        if (!(other instanceof ErrorSyntax)) return false;
+        Err that = (Err) other;
+        return pos.equals(that.pos) && msg.equals(that.msg);
+    }
+
+    /**
+     * Returns a hash code consistent with equals()
+     */
+    @Override public int hashCode() {
+        return msg.hashCode();
+    }
+
     /** Returns a textual description of the error. */
     @Override public String toString() {
         if (pos==Pos.UNKNOWN) {

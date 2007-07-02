@@ -142,6 +142,23 @@ public final class Pos implements Serializable {
         return new Pos(filename, x, y, x2, y2, (this.comment!=null ? this.comment : that.comment));
     }
 
+    /**
+     * Two Pos objects are equal if the filename x y x2 y2 are the same; the "Object comment" field is not considered.
+     */
+    @Override public boolean equals(Object other) {
+        if (this==other) return true;
+        if (!(other instanceof Pos)) return false;
+        Pos that = (Pos) other;
+        return x==that.x && y==that.y && x2==that.x2 && y2==that.y2 && filename.equals(that.filename);
+    }
+
+    /**
+     * Returns a hash code consistent with equals()
+     */
+    @Override public int hashCode() {
+        return x*111 + y*171 + x2*1731 + y2*2117;
+    }
+
     /** Returns a String representation of this position value. */
     @Override public String toString() {
         String comment=(this.comment==null?"":(this.comment.toString()));

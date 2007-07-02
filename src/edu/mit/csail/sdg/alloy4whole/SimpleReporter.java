@@ -39,6 +39,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
@@ -115,11 +116,8 @@ final class SimpleReporter extends A4Reporter {
     /** The time that the last action began; we subtract it from System.currentTimeMillis() to determine the elapsed time. */
     private long lastTime=0;
 
-    /** The number of warnings (since the start of the current command execution) */
-    private int warningCount=0;
-
-    /** The first warning (since the start of the current command execution) */
-    private ErrorWarning firstWarning=null;
+    /** The set of warnings */
+    private final LinkedHashSet<ErrorWarning> warnings=new LinkedHashSet<ErrorWarning>();
 
     /** The filename where we can write a temporary Java file or Core file. */
     private String tempfile=null;
@@ -200,13 +198,13 @@ final class SimpleReporter extends A4Reporter {
         rep.logBold("Starting the solver...\n\n");
         final World world = CompUtil.parseEverything_fromFile(bundleCache, Helper.alloyHome(), rep.mainAlloyFileName);
         final SafeList<Command> cmds = world.getRootModule().getAllCommands();
-        if (rep.warningCount>0) {
-            if (rep.warningCount>1)
-                rep.logBold("Note: There were "+rep.warningCount+" compilation warnings. Please scroll up to see them.\n\n");
+        if (rep.warnings.size()>0) {
+            if (rep.warnings.size()>1)
+                rep.logBold("Note: There were "+rep.warnings.size()+" compilation warnings. Please scroll up to see them.\n\n");
             else
                 rep.logBold("Note: There was 1 compilation warning. Please scroll up to see them.\n\n");
             if (!bundleWarningNonFatal) {
-                rep.highlight(rep.firstWarning.pos);
+                rep.highlight(rep.warnings.iterator().next().pos);
                 rep.logBold("Warnings often indicate error in the model.\n"
                         +"Some warnings can affect the correctness of the analysis.\n"
                         +"Please check over these warnings first.\n"
@@ -275,16 +273,15 @@ final class SimpleReporter extends A4Reporter {
             }
             rep.log("\n");
         }
-        if (rep.warningCount>1) rep.logBold("Note: There were "+rep.warningCount+" compilation warnings. Please scroll up to see them.\n");
-        if (rep.warningCount==1) rep.logBold("Note: There was 1 compilation warning. Please scroll up to see it.\n");
+        if (rep.warnings.size()>1) rep.logBold("Note: There were "+rep.warnings.size()+" compilation warnings. Please scroll up to see them.\n");
+        if (rep.warnings.size()==1) rep.logBold("Note: There was 1 compilation warning. Please scroll up to see it.\n");
     }
 
     /** @inheritDoc */
     @Override public void warning(final ErrorWarning e) {
-        warningCount++;
-        if (warningCount==1) firstWarning=e;
+        if (!warnings.add(e)) return;
         Pos p=e.pos;
-        logLink("Warning #"+warningCount, "POS: "+p.x+" "+p.y+" "+p.x2+" "+p.y2+" "+p.filename);
+        logLink("Warning #"+warnings.size(), "POS: "+p.x+" "+p.y+" "+p.x2+" "+p.y2+" "+p.filename);
         log("\n");
         logIndented(e.toString().trim(), e.msg.trim());
         log("\n\n");
