@@ -1843,9 +1843,6 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 "* The Alloy Analyzer comes with a variety of sample models.",
                 "  To see them, go to the File menu and click Open Sample Models.",
                 " ",
-                "* To project over a signature in the visualizer, open the themes",
-                "  panel, click on the signature you want, then click \"project\".",
-                " ",
                 again
             },"Welcome", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]{dismiss}, dismiss);
             if (!again.isSelected()) Welcome.set(welcomeLevel);
