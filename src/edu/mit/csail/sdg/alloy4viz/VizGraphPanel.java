@@ -130,9 +130,8 @@ public final class VizGraphPanel extends JPanel {
             add(atomCombo = new OurCombobox(atomnames.length<1 ? new String[]{" "} : atomnames));
             add(Box.createRigidArea(new Dimension(2,2)));
             add(right = new JButton(">>"));
-            atomCombo.setAlignmentY(0);
-            left.setVerticalAlignment(SwingConstants.TOP);
-            right.setVerticalAlignment(SwingConstants.TOP);
+            left.setVerticalAlignment(SwingConstants.CENTER);
+            right.setVerticalAlignment(SwingConstants.CENTER);
             Dimension dim=atomCombo.getPreferredSize();
             if (dim.width<80) { dim.width=100; atomCombo.setMinimumSize(dim); atomCombo.setPreferredSize(dim); }
             left.setEnabled(initialIndex>0);
