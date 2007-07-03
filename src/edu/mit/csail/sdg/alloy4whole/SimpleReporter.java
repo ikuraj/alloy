@@ -205,9 +205,8 @@ final class SimpleReporter extends A4Reporter {
                 rep.logBold("Note: There was 1 compilation warning. Please scroll up to see them.\n\n");
             if (!bundleWarningNonFatal) {
                 rep.highlight(rep.warnings.iterator().next().pos);
-                rep.logBold("Warnings often indicate error in the model.\n"
-                        +"Some warnings can affect the correctness of the analysis.\n"
-                        +"Please check over these warnings first.\n"
+                rep.logBold("Warnings often indicate errors in the model.\n"
+                        +"Some warnings can affect the soundness of the analysis.\n"
                         +"To proceed despite the warnings, go to the Options menu.\n");
                 return;
             }
