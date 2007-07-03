@@ -129,7 +129,7 @@ public class MagicColour {
     		final Set<AlloyType> subTypes = MagicUtil.visibleSubTypes(vizState, t);
     		final boolean isTvisible = MagicUtil.isActuallyVisible(vizState, t);
     		final int size = subTypes.size() + (isTvisible ? 1 : 0);
-    		log("TopLevelType:  " + t + " -- " + subTypes + " " + size);
+    		//log("TopLevelType:  " + t + " -- " + subTypes + " " + size);
     		
     		// match it to a shape family
     		// 1. look for exact match
@@ -211,13 +211,13 @@ public class MagicColour {
     	// shape for t, if visible
     	if (isTvisible) {
     		final DotShape shape = shapeFamily.get(index++);
-    		log("AssignNodeShape " + t + " " + shape);
+    		//log("AssignNodeShape " + t + " " + shape);
     		vizState.shape(t, shape);
     	}
     	// shapes for visible subtypes
     	for (final AlloyType subt : subTypes) {
     		final DotShape shape = shapeFamily.get(index++);
-    		log("AssignNodeShape " + subt + " " + shape);
+    		//log("AssignNodeShape " + subt + " " + shape);
     		vizState.shape(subt, shape);
     	}
 	}
