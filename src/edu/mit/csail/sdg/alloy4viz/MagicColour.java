@@ -91,6 +91,18 @@ public class MagicColour {
      *
      */
     private void skolemColour() {
+    	final Set<AlloySet> sets = vizState.getCurrentModel().getSets();
+    	for (final AlloySet s : sets) {
+    		// change the style
+    		vizState.nodeStyle(s, DotStyle.BOLD);
+    		// change the label
+    		String label = vizState.label(s);
+    		final int lastUnderscore = label.lastIndexOf('_');
+    		if (lastUnderscore >= 0) {
+    			label = label.substring(lastUnderscore+1);
+    		}
+    		vizState.label(s, label);
+    	}
     }
 
     /**
