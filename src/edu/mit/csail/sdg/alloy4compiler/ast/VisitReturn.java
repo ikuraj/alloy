@@ -65,12 +65,6 @@ public abstract class VisitReturn {
     /** Visits an ExprVar node. */
     public abstract Object visit(ExprVar x) throws Err;
 
-    /** Visits an ExprSig node. */
-    public abstract Object visit(ExprSig x) throws Err;
-
-    /** Visits an ExprField node. */
-    public abstract Object visit(ExprField x) throws Err;
-
     /** Visits a Sig node. */
     public abstract Object visit(Sig x) throws Err;
 

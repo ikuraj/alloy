@@ -38,8 +38,7 @@ import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprField;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -531,14 +530,14 @@ public final class Module {
             // And You can refer to field in this sig (defined earlier than you) and fields in a visible ancestor sig
             ans=lookupSigOrParameterOrFunctionOrPredicate(name, false);
             Field f=lookupField(rootsig, rootsig, name);
-            if (f!=null) { Expr ff=new ExprField(pos,f,0); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
+            if (f!=null) { Expr ff=ExprUnary.Op.NOOP.make(pos,f); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
         }
         else if (rootsig!=null) {
             // Within an appended facts, you can refer to any visible sig/param/func/predicate
             ans=lookupSigOrParameterOrFunctionOrPredicate(name, true);
             Field f=lookupField(rootsig, rootsig, name);
-            if (f!=null) { Expr ff=new ExprField(pos,f,0); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
-            for(Field ff:lookupField(name)) if (f!=ff) ans.add(new ExprField(pos,ff,1));
+            if (f!=null) { Expr ff=ExprUnary.Op.NOOP.make(pos,f); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
+            for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos,ff,1));
         }
         else {
             // If Within a function paramDecl/returnDecl
@@ -546,15 +545,13 @@ public final class Module {
             // Else
             //    we can call, and can refer to anything visible.
             ans=lookupSigOrParameterOrFunctionOrPredicate(name, !rootfun);
-            for(Field ff:lookupField(name)) ans.add(new ExprField(pos,ff,0));
+            for(Field ff:lookupField(name)) ans.add(ExprUnary.Op.NOOP.make(pos,ff));
         }
         // Convert Sig/Field/Func0 into references
         Set<Object> realAns=new LinkedHashSet<Object>();
         for(Object x:ans) {
-            if (x instanceof Sig)
-                realAns.add(new ExprSig(pos, (Sig)x, 0));
-            else if (x instanceof Field)
-                realAns.add(new ExprField(pos, (Field)x, 0));
+            if (x instanceof Sig || x instanceof Field)
+                realAns.add(ExprUnary.Op.NOOP.make(pos, (Expr)x));
             else if (x instanceof Func && ((Func)x).params.size()==0)
                 realAns.add(ExprCall.make(pos, (Func)x, null, 0));
             else if (x instanceof Func || x instanceof Expr)

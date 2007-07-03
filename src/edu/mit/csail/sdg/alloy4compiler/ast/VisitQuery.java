@@ -99,16 +99,6 @@ public abstract class VisitQuery extends VisitReturn {
         return null;
     }
 
-    /** Visits an ExprSig node (this default implementation simply returns null) */
-    @Override public Object visit(ExprSig x) throws Err {
-        return null;
-    }
-
-    /** Visits an ExprField node (this default implementation simply returns null) */
-    @Override public Object visit(ExprField x) throws Err {
-        return null;
-    }
-
     /** Visits a Sig node (this default implementation simply returns null) */
     @Override public Object visit(Sig x) throws Err {
         return null;

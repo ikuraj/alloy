@@ -26,6 +26,8 @@ import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
@@ -69,10 +71,15 @@ public final class Context extends TypeCheckContext {
     private final Env<String,Expr> env=new Env<String,Expr>();
 
     /** Returns true if the name is in the current lexical scope. */
-    public final boolean has(String name) { return env.has(name); }
+    public final boolean has(String name) {
+        return env.has(name);
+    }
 
     /** Returns the expression corresbonding to the given name, or returns null if the name is not in the current lexical scope. */
-    public final Expr get(String name) { return env.get(name); }
+    public final Expr get(String name, Pos pos) throws Err {
+        Expr ans = env.get(name);
+        if (ans instanceof ExprVar) return ExprUnary.Op.NOOP.make(pos,ans); else return ans;
+    }
 
     /** Associates the given name with the given expression in the current lexical scope. */
     public final void put(String name, Expr value) { env.put(name,value); }
@@ -90,7 +97,7 @@ public final class Context extends TypeCheckContext {
 
     public Set<Object> resolve(Pos pos, String name) throws Err {
         if (rootmodule==null) return new HashSet<Object>(1);
-        return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this"));
+        return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
     }
 
     public Context dupWithEmptyEnvironment() {

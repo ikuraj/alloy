@@ -23,7 +23,6 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprAnd;
@@ -2558,7 +2557,7 @@ class CUP$CompParser$actions {
             {
               Expr RESULT =null;
         Pos x = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExprSig(x, Sig.NONE, 0);
+         RESULT=ExprUnary.Op.NOOP.make(x, Sig.NONE);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$CompParser$result;
@@ -2569,7 +2568,7 @@ class CUP$CompParser$actions {
               Expr RESULT =null;
         Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Pos b = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExprSig(a.merge(b), Sig.SEQIDX, 0);
+         RESULT=ExprUnary.Op.NOOP.make(a.merge(b), Sig.SEQIDX);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$CompParser$result;
@@ -2579,7 +2578,7 @@ class CUP$CompParser$actions {
             {
               Expr RESULT =null;
         Pos x = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExprSig(x, Sig.SIGINT, 0);
+         RESULT=ExprUnary.Op.NOOP.make(x, Sig.SIGINT);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$CompParser$result;
@@ -2589,7 +2588,7 @@ class CUP$CompParser$actions {
             {
               Expr RESULT =null;
         Pos x = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExprSig(x, Sig.UNIV, 0);
+         RESULT=ExprUnary.Op.NOOP.make(x, Sig.UNIV);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",1, RESULT);
             }
           return CUP$CompParser$result;
@@ -4435,7 +4434,7 @@ class CUP$CompParser$actions {
             {
               Expr RESULT =null;
         Pos x = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExprSig(x, Sig.NONE, 0);
+         RESULT=ExprUnary.Op.NOOP.make(x, Sig.NONE);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("First",20, RESULT);
             }
           return CUP$CompParser$result;
@@ -4445,7 +4444,7 @@ class CUP$CompParser$actions {
             {
               Expr RESULT =null;
         Pos x = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExprSig(x, Sig.SIGINT, 0);
+         RESULT=ExprUnary.Op.NOOP.make(x, Sig.SIGINT);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("First",20, RESULT);
             }
           return CUP$CompParser$result;
@@ -4455,7 +4454,7 @@ class CUP$CompParser$actions {
             {
               Expr RESULT =null;
         Pos x = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExprSig(x, Sig.UNIV, 0);
+         RESULT=ExprUnary.Op.NOOP.make(x, Sig.UNIV);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("First",20, RESULT);
             }
           return CUP$CompParser$result;

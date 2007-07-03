@@ -116,7 +116,7 @@ final class EName extends ExprCustom {
         Type t=null;
         if (cx.has(name)) {
             // This handles an EName that represents a LetVar/QuantVar/FunctionParameter
-            Expr ex=cx.get(name);
+            Expr ex=cx.get(name,pos);
             t=ex.type;
             objects.add(ex);
         } else {
@@ -126,7 +126,7 @@ final class EName extends ExprCustom {
             ConstList<Expr> args=ConstList.make();
             // If we're inside a sig, and there is a unary variable bound to "this", we should
             // consider it as a possible FIRST ARGUMENT of a fun/pred call
-            Expr THIS = (cx.rootsig!=null) ? cx.get("this") : null;
+            Expr THIS = (cx.rootsig!=null) ? cx.get("this",null) : null;
             for(Object ch:choices) {
                 Expr x=EBadCall.make(pos, ch, args, THIS);
                 if (x!=null) { objects.add(x); if (x.type!=null) t=x.type.merge(t); }

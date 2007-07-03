@@ -42,11 +42,9 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprField;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
@@ -484,6 +482,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     @Override public Object visit(ExprUnary x) throws Err {
         switch(x.op) {
+            case NOOP:
+                return visit(x.sub);
             case SOMEOF: case LONEOF: case ONEOF: case SETOF:
                 if (demul) return cset(x.sub);
                 throw new ErrorType(x.sub.span(), "Multiplicity symbols are not allowed here.");
@@ -532,10 +532,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates a Field node or an ExprField node. */
     /*==============================================*/
 
-    @Override public Object visit(ExprField x) throws Err {
-        if (bc!=null) return bc.expr(x.field); else return bcc.get(x.field);
-    }
-
     @Override public Object visit(Field x) throws Err {
         if (bc!=null) return bc.expr(x); else return bcc.get(x);
     }
@@ -543,10 +539,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /*==========================================*/
     /* Evaluates a Sig node or an ExprSig node. */
     /*==========================================*/
-
-    @Override public Object visit(ExprSig x) throws Err {
-        if (bc!=null) return bc.expr(x.sig); else return bcc.get(x.sig);
-    }
 
     @Override public Object visit(Sig x) throws Err {
         if (bc!=null) return bc.expr(x); else return bcc.get(x);

@@ -56,13 +56,13 @@ public final class ExprUnary extends Expr {
     /** Returns a Pos object spanning the entire expression. */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = pos.merge(sub.span()));
+        if (p==null) { if (op==Op.NOOP) span=(p=pos); else span=(p=pos.merge(sub.span())); }
         return p;
     }
 
     /** Constructs an unary expression. */
-    private ExprUnary(Pos pos, Op op, Expr sub, Type type) throws Err {
-        super( pos , type , (op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0 , sub.weight);
+    private ExprUnary(Pos pos, Op op, Expr sub, Type type, long weight) throws Err {
+        super( pos , type , (op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0 , weight + sub.weight);
         this.op=op;
         this.sub=sub;
     }
@@ -77,6 +77,7 @@ public final class ExprUnary extends Expr {
               case SETOF: out.append("set"); break;
               case CAST2INT: out.append("int["); sub.toString(out,-1); out.append(']'); return;
               case CAST2SIGINT: out.append("Int["); sub.toString(out,-1); out.append(']'); return;
+              default: out.append(op);
             }
             out.append(' ');
             sub.toString(out,-1);
@@ -103,7 +104,8 @@ public final class ExprUnary extends Expr {
         /** closure                                                      */  CLOSURE("^"),
         /** cardinality of x (truncated to the current integer bitwidth) */  CARDINALITY("#"),
         /** IntAtom-to-integer                                           */  CAST2INT("Int->int"),
-        /** integer-to-IntAtom                                           */  CAST2SIGINT("int->Int");
+        /** integer-to-IntAtom                                           */  CAST2SIGINT("int->Int"),
+        /** No-Op                                                        */  NOOP("NOOP");
 
         /** The constructor */
         private Op(String label) {this.label=label;}
@@ -122,13 +124,29 @@ public final class ExprUnary extends Expr {
          * <br> Alloy4 does allow "variable : set (X lone-> Y)", where we ignore the word "set".
          * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary constructor never sees it)
          */
-        public final Expr make(Pos pos, Expr sub) throws Err {
+        public final Expr make(Pos pos, Expr sub) throws Err { return make(pos,sub,0); }
+
+        /**
+         * Construct an ExprUnary node.
+         * @param pos - the original position of the "unary operator" in the file (can be null if unknown)
+         * @param sub - the subexpression
+         * @throws ErrorSyntax if (this!=SETOF) and (sub.mult!=0)
+         *
+         * <p>  Alloy4 disallows multiplicity like this:   "variable : one (X lone-> Y)",
+         * <br> that is, a some/lone/one in front of an arrow multiplicity declaration.
+         * <br> Alloy4 does allow "variable : set (X lone-> Y)", where we ignore the word "set".
+         * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary constructor never sees it)
+         */
+        public final Expr make(Pos pos, Expr sub, long weight) throws Err {
             if (sub.mult!=0) {
                if (this==SETOF) return sub;
                throw new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here.");
             }
             Type type=null;
             if (sub.type!=null) switch(this) {
+              case NOOP:
+                type=sub.type;
+                break;
               case NOT:
                 cform(sub);
                 type=Type.FORMULA;
@@ -167,7 +185,7 @@ public final class ExprUnary extends Expr {
                 if (type.size()>0) break;
                 throw new ErrorType(sub.span(), "~ can be used only with a binary relation.\nInstead, its possible type(s) are:\n"+sub.type);
             }
-            return new ExprUnary(pos, this, sub, type);
+            return new ExprUnary(pos, this, sub, type, weight);
         }
 
         /** Returns the human readable label for this operator */
@@ -195,7 +213,7 @@ public final class ExprUnary extends Expr {
             if (p.hasTuple() && s.hasNoTuple())
                A4Reporter.getReporter().warning(new ErrorWarning(sub.span(), "The value of this expression does not contribute to the value of the parent."));
             break;
-          case SOMEOF: case LONEOF: case ONEOF: case SETOF:
+          case NOOP: case SOMEOF: case LONEOF: case ONEOF: case SETOF:
             s = p;
             break;
           case CAST2SIGINT:

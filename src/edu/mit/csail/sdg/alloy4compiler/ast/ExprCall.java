@@ -77,8 +77,6 @@ public final class ExprCall extends Expr {
         private final Env<ExprVar,Type> env=new Env<ExprVar,Type>();
         private DeduceType() { }
         @Override public Object visit(ExprVar x)     { Type t=env.get(x); return t!=null ? t : x.type; }
-        @Override public Object visit(ExprSig x)     { return x.type; }
-        @Override public Object visit(ExprField x)   { return x.type; }
         @Override public Object visit(Sig x)         { return x.type; }
         @Override public Object visit(Field x)       { return x.type; }
         @Override public Object visit(ExprAnd x)     { return Type.FORMULA; }
@@ -107,10 +105,10 @@ public final class ExprCall extends Expr {
         }
         @Override public Object visit(ExprUnary x) throws Err {
             Type t=(Type)(x.sub.accept(this));
-              switch(x.op) {
+            switch(x.op) {
+              case NOOP: case LONEOF: case ONEOF: case SETOF: case SOMEOF: return t;
               case CARDINALITY: case CAST2INT: return Type.INT;
               case CAST2SIGINT: return Sig.SIGINT.type;
-              case LONEOF: case ONEOF: case SETOF: case SOMEOF: return t;
               case TRANSPOSE: return t.transpose();
               case CLOSURE: return t.closure();
               case RCLOSURE: return Type.make2(Sig.UNIV);

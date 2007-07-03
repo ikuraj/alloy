@@ -30,7 +30,7 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
@@ -126,7 +126,7 @@ final class EJoin extends ExprCustom {
             ConstList<Expr> args=tempargs.makeConst();
             // If we're inside a sig, and there is a unary variable bound to "this", we should
             // consider it as a possible FIRST ARGUMENT of a fun/pred call
-            Expr THIS = (cx.rootsig!=null) ? cx.get("this") : null;
+            Expr THIS = (cx.rootsig!=null) ? cx.get("this",null) : null;
             boolean hasValidBound=false;
             for(Object ch:choices) {
                 Expr x = EBadCall.make(ptr.pos, ch, args, THIS);
@@ -139,7 +139,7 @@ final class EJoin extends ExprCustom {
             // Next, check to see if it is the special builtin function "Int[]"
             Expr left=cx.check(this.left);
             Expr right=cx.check(this.right);
-            if (left.type.is_int && right instanceof ExprSig && ((ExprSig)right).sig==Sig.SIGINT)
+            if (left.type.is_int && right instanceof ExprUnary && ((ExprUnary)right).op==ExprUnary.Op.NOOP && ((ExprUnary)right).sub==Sig.SIGINT)
                 return left.cast2sigint();
             if (left.type.is_int && right instanceof Sig && ((Sig)right)==Sig.SIGINT)
                 return left.cast2sigint();
