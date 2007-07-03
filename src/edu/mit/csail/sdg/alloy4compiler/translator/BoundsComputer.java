@@ -51,6 +51,7 @@ import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
@@ -69,8 +70,12 @@ final class BoundsComputer {
     //==============================================================================================================//
 
     /** The Kodkod-to-Alloy map. */
-    private final Map<Formula,List<Pos>> core;
-    private Formula core(Formula f, Object x) { if (core!=null && x instanceof Pos) core(f,(Pos)x); return f; }
+    private final Map<Formula,List<Object>> core;
+    private Formula core(Formula f, Object x) {
+        if (x instanceof Pos) core(f,(Pos)x);
+        if (x instanceof Expr) core(f,(Expr)x);
+        return f;
+    }
     private Formula core(Formula f, Pos x) {
         if (core==null || x==null) return f;
         if (f instanceof BinaryFormula && ((BinaryFormula)f).op()==BinaryFormula.Operator.AND) {
@@ -78,8 +83,20 @@ final class BoundsComputer {
             core(((BinaryFormula)f).right(), x);
             return f;
         }
-        List<Pos> list=core.get(f);
-        if (list==null) { list=new ArrayList<Pos>(3); core.put(f,list); }
+        List<Object> list=core.get(f);
+        if (list==null) { list=new ArrayList<Object>(3); core.put(f,list); }
+        list.add(x);
+        return f;
+    }
+    private Formula core(Formula f, Expr x) {
+        if (core==null || x==null) return f;
+        if (f instanceof BinaryFormula && ((BinaryFormula)f).op()==BinaryFormula.Operator.AND) {
+            core(((BinaryFormula)f).left(), x);
+            core(((BinaryFormula)f).right(), x);
+            return f;
+        }
+        List<Object> list=core.get(f);
+        if (list==null) { list=new ArrayList<Object>(3); core.put(f,list); }
         list.add(x);
         return f;
     }
@@ -507,7 +524,7 @@ final class BoundsComputer {
     //==============================================================================================================//
 
     /** This method computes the bounds for sigs/fields, then return a BoundsComputer object that you can query. */
-    BoundsComputer(World world, A4Options options, final Command cmd, final Map<Formula,List<Pos>> core) throws Err {
+    BoundsComputer(World world, A4Options options, final Command cmd, final Map<Formula,List<Object>> core) throws Err {
         this.core=core;
         final A4Reporter rep=A4Reporter.getReporter();
         final SafeList<Sig> sigs=world.getAllSigs();

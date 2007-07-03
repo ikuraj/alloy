@@ -101,16 +101,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private final Map<Relation,Type> skolemRelType=new IdentityHashMap<Relation,Type>();
 
     /** The Kodkod-to-Alloy map. */
-    final Map<Formula,List<Pos>> core;
-    private Formula core(Formula f, Pos x) {
+    final Map<Formula,List<Object>> core;
+    private Formula core(Formula f, Expr x) {
         if (core==null || x==null) return f;
         if (f instanceof BinaryFormula && ((BinaryFormula)f).op()==BinaryFormula.Operator.AND) {
             core(((BinaryFormula)f).left(), x);
             core(((BinaryFormula)f).right(), x);
             return f;
         }
-        List<Pos> list=core.get(f);
-        if (list==null) { list=new ArrayList<Pos>(3); core.put(f,list); }
+        List<Object> list=core.get(f);
+        if (list==null) { list=new ArrayList<Object>(3); core.put(f,list); }
         list.add(x);
         return f;
     }
@@ -136,13 +136,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private final Map<Object,Expression> bcc;
 
     /** Constructs a TranslateAlloyKodkod object based on the BoundsComputer object. */
-    TranslateAlloyToKodkod(BoundsComputer bc, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Pos>> core) {
+    TranslateAlloyToKodkod(BoundsComputer bc, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Object>> core) {
         if (skolemType==null) skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
         this.skolemType=skolemType; this.bc=bc; this.bcc=null; this.bitwidth=bc.getBitwidth(); this.core=core;
     }
 
     /** Constructs a TranslateAlloyKodkod object. */
-    TranslateAlloyToKodkod(Map<Object,Expression> bcc, int bitwidth, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Pos>> core) {
+    TranslateAlloyToKodkod(Map<Object,Expression> bcc, int bitwidth, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Object>> core) {
         if (skolemType==null) skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
         this.skolemType=skolemType; this.bc=null; this.bcc=bcc; this.bitwidth=bitwidth; this.core=core;
     }
@@ -154,7 +154,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     Map<String,String> originalSources, String xmlFileName, String tempFileName, boolean tryBookExamples)
     throws Err {
         SafeList<Sig> sigs = world.getAllSigs();
-        final Map<Formula,List<Pos>> core=new LinkedHashMap<Formula,List<Pos>>();
+        final Map<Formula,List<Object>> core=new LinkedHashMap<Formula,List<Object>>();
         final A4Reporter rep=A4Reporter.getReporter();
         rep.debug("Generating bounds...");
         final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(world, opt, cmd, core), skolemType, core);
@@ -163,14 +163,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         for(Sig s:sigs) kfact = tr.makeFieldAndAppendedConstraints(world,s,kfact);
         for(Module u:world.getAllModules())
             for(Pair<String,Expr> e:u.getAllFacts())
-                kfact = tr.core(tr.cform(e.b), e.b.span().addComment("fact["+e.a+"]")).and(kfact);
+                kfact = tr.core(tr.cform(e.b), e.b).and(kfact);
         Formula mainformula;
         tr.current_command=cmd.label;
         tr.current_function.clear();
         if (cmd.check) {
-            mainformula = tr.core(tr.cform(cmd.formula.not()), cmd.formula.span().addComment("assert["+cmd.label+"]")).and(kfact);
+            mainformula = tr.core(tr.cform(cmd.formula.not()), cmd.formula).and(kfact);
         } else {
-            mainformula=tr.core(tr.cform(cmd.formula), cmd.formula.span().addComment("run["+cmd.label+"]")).and(kfact);
+            mainformula=tr.core(tr.cform(cmd.formula), cmd.formula).and(kfact);
         }
         tr.current_command="";
         tr.current_function.clear();
@@ -414,12 +414,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (World.is_alloy3ord(sig) != null) return kfact;
         for(Field f:sig.getFields()) {
             // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
-            kfact=core(cform(f.boundingFormula), f.span()).and(kfact);
+            kfact=core(cform(f.boundingFormula), f).and(kfact);
             // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
             // Thus, we need to add a bound that the first column is a subset of s.
             Expression sr=bc.expr(sig), fr=bc.expr(f);
             for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
-            kfact=core(fr.in(sr), f.span()).and(kfact);
+            kfact=core(fr.in(sr), f).and(kfact);
         }
         return kfact;
     }
@@ -434,10 +434,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Formula c=cform(x.cond);
         Object l=visit(x.left);
         if (l instanceof Formula) {
-            Pos span=x.span();
-            Formula c1=core( c.implies((Formula)l) , span );
-            Formula c2=core( c.not().implies(cform(x.right)) , span );
-            return core(c1.and(c2) , span);
+            Formula c1=core( c.implies((Formula)l) , x );
+            Formula c2=core( c.not().implies(cform(x.right)) , x );
+            return core(c1.and(c2) , x );
         }
         if (l instanceof Expression)
             return c.thenElse((Expression)l,cset(x.right));
@@ -493,9 +492,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                     // This transformation is not required; but it should give you better precision unsat core
                     Expr left=((ExprBinary)(x.sub)).left;
                     Expr right=((ExprBinary)(x.sub)).right;
-                    Formula leftF = core( cform(left.not()) , left.span() );
-                    Formula rightF = core( cform(right.not()) , right.span() );
-                    return core( leftF.and(rightF) , x.span() );
+                    Formula leftF = core( cform(left.not()) , left );
+                    Formula rightF = core( cform(right.not()) , right );
+                    return core( leftF.and(rightF) , x );
                 }
                 return cform(x.sub).not();
             case SOME: return cset(x.sub).some();
@@ -574,7 +573,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Object ans=visit(y.getBody());
         env=oldenv;
         while(current_function.size()>oldfunc) current_function.remove(current_function.size()-1);
-        if (ans instanceof Formula) core((Formula)ans, x.span().addComment("pred["+tail(y.label)+"]"));
+        if (ans instanceof Formula) core((Formula)ans, x);
         return ans;
     }
 
@@ -605,7 +604,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     @Override public Object visit(ExprAnd x) throws Err {
         Formula answer=null;
         for(Expr arg:x.list) {
-            Formula value=core(cform(arg), arg.span());
+            Formula value=core(cform(arg), arg);
             if (answer==null) answer=value; else answer=answer.and(value);
         }
         return answer==null ? Formula.TRUE : answer;

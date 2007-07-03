@@ -20,9 +20,12 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -163,6 +166,20 @@ public abstract class Expr {
 
     /** Returns true if the node (or a subnode) references a Func; can only be called on a typechecked node. */
     final boolean hasCall() throws Err { return accept(hasCall)!=null; }
+
+    /** Transitively returns a set that contains all functions that this expression calls directly or indirectly. */
+    public Iterable<Func> findAllFunctions() {
+        final IdentitySet<Func> seen = new IdentitySet<Func>();
+        final List<Func> todo = new ArrayList<Func>();
+        final VisitQuery q = new VisitQuery() {
+            @Override public final Object visit(ExprCall x) { if (seen.add(x.fun)) todo.add(x.fun); return null; }
+        };
+        try {
+            q.visit(this);
+            while(!todo.isEmpty()) { q.visit(todo.remove(todo.size()-1).getBody()); }
+        } catch(Err ex) { } // Exception should not occur
+        return seen;
+    }
 
     //================================================================================//
     // Below are convenience methods for building up expressions from subexpressions. //

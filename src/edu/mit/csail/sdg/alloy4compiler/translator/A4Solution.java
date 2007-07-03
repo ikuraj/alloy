@@ -140,7 +140,7 @@ public final class A4Solution {
     private final Instance kInstance;
 
     /** The map from kodkod unsat core back to Alloy AST (or null if the map is unavailable) */
-    private final Map<Formula,List<Pos>> core;
+    private final Map<Formula,List<Object>> core;
 
     /** The kodkod unsat core if unsatisfiable (or null if satisfiable, or the unsat core is unavailable). */
     private final IdentitySet<Formula> proof;
@@ -277,7 +277,7 @@ public final class A4Solution {
     }
 
     /** Private constructor to ensure TranslateAlloyToKodkod is the only one who can construct this. */
-    private A4Solution(Parent parent, long solvingTime, Instance originalKodkodInstance, Map<Relation,Type> skolem2type, Map<Formula,List<Pos>> core, IdentitySet<Formula> proof) throws Err {
+    private A4Solution(Parent parent, long solvingTime, Instance originalKodkodInstance, Map<Relation,Type> skolem2type, Map<Formula,List<Object>> core, IdentitySet<Formula> proof) throws Err {
         final A4Reporter rep=A4Reporter.getReporter();
         rep.debug("A4Solution() #1...");
         TempMap<Object,String> m1=new TempMap<Object,String>();
@@ -384,8 +384,16 @@ public final class A4Solution {
         IdentitySet<Pos> ans = new IdentitySet<Pos>();
         if (proof!=null) {
             for(Formula f: proof) {
-                List<Pos> x = core.get(f);
-                if (x!=null) for(Pos y:x) ans.add(y);
+                List<Object> x = core.get(f);
+                if (x==null) continue;
+                for(Object y:x) {
+                    if (y instanceof Pos) ans.add( (Pos)y );
+                    if (y instanceof Expr) {
+                        Expr expr = (Expr)y;
+                        ans.add(expr.span());
+                        for(Func func:expr.findAllFunctions()) ans.add(func.getBody().span());
+                    }
+                }
             }
         }
         return ans;
