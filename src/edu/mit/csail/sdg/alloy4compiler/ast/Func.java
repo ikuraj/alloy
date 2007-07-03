@@ -20,8 +20,10 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
@@ -141,6 +143,23 @@ public final class Func {
         Pos p=Pos.UNKNOWN;
         for(Expr a:args) p=p.merge(a.span());
         return ExprCall.make(p, this, Util.asList(args), 0);
+    }
+
+    /**
+     * Transitively returns a set that contains this function and all functions that it calls directly or indirectly.
+     */
+    public Iterable<Func> findAllFunctions() {
+        final IdentitySet<Func> seen = new IdentitySet<Func>();
+        final List<Func> todo = new ArrayList<Func>();
+        final VisitQuery q = new VisitQuery() {
+            @Override public Object visit(ExprCall x) { if (seen.add(x.fun)) todo.add(x.fun); return null; }
+        };
+        seen.add(this);
+        todo.add(this);
+        while(!todo.isEmpty()) {
+            try { q.visit(todo.remove(todo.size()-1).body); } catch(Err ex) { } // Exception should not occur
+        }
+        return seen;
     }
 
     /** Returns a human-readable description for this predicate/function */
