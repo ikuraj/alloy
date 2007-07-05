@@ -236,8 +236,7 @@ final class SimpleRunner implements Runnable {
                 // of the newer Java features
                 String a = System.getProperty("java.vm.name");
                 String b = System.getProperty("java.vm.info");
-                a="libgcj";
-                if ((a!=null && a.indexOf("libgcj")>=0) || (b!=null && b.indexOf("libgcj")>=0)) {
+                if ((a!=null && a.indexOf("gcj")>=0) || (b!=null && b.indexOf("gcj")>=0)) {
                     logBold("Fatal Error: GNU gij/gcj/classpath is currently unsupported.\nPlease make sure your default Java is the Sun JDK 1.5\nor Sun JRE 1.5 or newer.\n\n");
                 }
                 Runtime.getRuntime().halt(EXIT_UNKNOWN);
