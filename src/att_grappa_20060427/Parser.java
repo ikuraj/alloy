@@ -294,38 +294,6 @@ public class Parser extends java_cup_0_10k.runtime.lr_parser {
   }
 
   /**
-   * Create an instance of <code>Parser</code> with input, error output and
-   * a supplied <code>Graph</code> object.  The input stream is converted to
-   * a <code>Reader</code> and the error stream is converted to a <code>Writer</code>.
-   *
-   * @param inputStream input <code>InputStream</code> object
-   * @param errorStream error output <code>OutputStream</code> object (or null to suppress error output)
-   * @param graph <code>Graph</code> object for storing parsed graph information (or null to create a new object)
-   */
-  public Parser (InputStream inputStream, OutputStream errorStream, Graph graph) {
-    this(new InputStreamReader(inputStream),new PrintWriter(errorStream,true),graph);
-  }
-
-  /**
-   * A convenience constructor equivalent to <code>Parser(inputStream,errorStream,null)</code>.
-   *
-   * @param inputStream input <code>InputStream</code> object
-   * @param errorStream error output <code>OutputStream</code> object
-   */
-  public Parser (InputStream inputStream, OutputStream errorStream) {
-    this(new InputStreamReader(inputStream),new PrintWriter(errorStream,true),null);
-  }
-
-  /**
-   * A convenience constructor equivalent to <code>Parser(inputStream,null,null)</code>.
-   *
-   * @param inputStream input <code>InputStream</code> object
-   */
-  public Parser (InputStream inputStream) {
-    this(new InputStreamReader(inputStream),(PrintWriter)null,null);
-  }
-
-  /**
    * Get the <code>Lexer</code> object associated with this parser.
    *
    * @return the associated lexical analyzer.
