@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="lib" path="src/apple-osx-ui.jar"/>
 	<classpathentry exported="true" kind="lib" path="src/binary.jar"/>
 	<classpathentry exported="true" kind="lib" path="src/text.jar"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/relations"/>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
