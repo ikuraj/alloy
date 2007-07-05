@@ -73,7 +73,7 @@ final class SimpleRunner implements Runnable {
 
     /** Emit one of the action code (SAVE1, RESTORE1, FLUSH...) */
     private static void log(byte code) {
-        if (out!=null) { out.printf("%c",code); out.flush(); }
+        if (out!=null) { out.print((char)code); out.flush(); }
     }
 
     /** Emit the given message. */
@@ -90,7 +90,7 @@ final class SimpleRunner implements Runnable {
     /** Emit the given message using bold font. */
     private static void logBold(String msg) {
         if (out==null) System.err.print(msg);
-        else { out.printf("%c%s%c", FLUSH, msg, BOLD); out.flush(); }
+        else { out.print((char)FLUSH); out.print(msg); out.print((char)BOLD); out.flush(); }
     }
 
     /** Emit the given hyperlink (with msg as the hyperlink label) (with target as the hyperlink destination) */
@@ -231,6 +231,15 @@ final class SimpleRunner implements Runnable {
         boolean fail=false;
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             public final void uncaughtException(Thread t, Throwable e) {
+                // The code here should avoid using new features (eg. Java 1.5)
+                // since GNU gij, GNU gcj, and GNU classpath historically have incomplete implementation
+                // of the newer Java features
+                String a = System.getProperty("java.vm.name");
+                String b = System.getProperty("java.vm.info");
+                a="libgcj";
+                if ((a!=null && a.indexOf("libgcj")>=0) || (b!=null && b.indexOf("libgcj")>=0)) {
+                    logBold("Fatal Error: GNU gij/gcj/classpath is currently unsupported.\nPlease make sure your default Java is the Sun JDK 1.5\nor Sun JRE 1.5 or newer.\n\n");
+                }
                 Runtime.getRuntime().halt(EXIT_UNKNOWN);
             }
         });
