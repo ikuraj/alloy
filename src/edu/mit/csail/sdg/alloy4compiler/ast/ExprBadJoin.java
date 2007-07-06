@@ -18,15 +18,12 @@
  * 02110-1301, USA
  */
 
-package edu.mit.csail.sdg.alloy4compiler.parser;
+package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
 
 /**
  * Immutable; represents an illegal relation join.
@@ -36,7 +33,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
  * <p> <b>Invariant:</b>  right.type.is_int || right.type.is_bool || right.type.size()>0
  */
 
-final class EBadJoin extends ExprCustom {
+final class ExprBadJoin extends Expr {
 
     /** The left-hand-side expression. */
     final Expr left;
@@ -73,19 +70,27 @@ final class EBadJoin extends ExprCustom {
      * <p> <b>Precondition:</b>  left.type.is_int || left.type.is_bool || left.type.size()>0
      * <p> <b>Precondition:</b>  right.type.is_int || right.type.is_bool || right.type.size()>0
      */
-    EBadJoin(Pos pos, Expr left, Expr right) throws Err {
+    ExprBadJoin(Pos pos, Expr left, Expr right) throws Err {
         super(pos, null, 0, 0); // weight can be set to anything (such as 0), since a EBadJoin will never be in the ultimate Expr
         this.left=left;
         this.right=right;
     }
 
     /** Typechecks an EBadJoin object (first pass). */
-    public Expr check(final TypeCheckContext cx) throws Err {
+    @Override public Expr check(final TypeCheckContext cx) throws Err {
         throw new ErrorFatal("Internal typechecker invariant violated.");
     }
 
     /** Typechecks an EBadJoin object (second pass). */
-    public Expr check(final TypeCheckContext cx, Type t) throws Err {
+    @Override public Expr check(final TypeCheckContext cx, Type t) throws Err {
         throw new ErrorFatal("Internal typechecker invariant violated.");
+    }
+
+    /**
+     * Accepts the return visitor by immediately throwing an exception.
+     * This is because the typechecker should have replaced/removed this node.
+     */
+    @Override final Object accept(VisitReturn visitor) throws Err {
+        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
     }
 }

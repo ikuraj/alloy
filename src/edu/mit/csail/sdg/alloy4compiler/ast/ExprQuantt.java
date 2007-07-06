@@ -18,7 +18,7 @@
  * 02110-1301, USA
  */
 
-package edu.mit.csail.sdg.alloy4compiler.parser;
+package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,16 +31,8 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant.Op;
 import edu.mit.csail.sdg.alloy4compiler.parser.Context;
-import edu.mit.csail.sdg.alloy4compiler.parser.EDecl;
 
 /**
  * Immutable; represents a quantified expression.
@@ -62,7 +54,7 @@ import edu.mit.csail.sdg.alloy4compiler.parser.EDecl;
  * <br> <b>Invariant:</b> decls.size()>0
  */
 
-final class EQuant extends ExprCustom {
+public final class ExprQuantt extends Expr {
 
     /** The operator (ALL, NO, LONE, ONE, SOME, SUM, or COMPREHENSION) */
     final Op op;
@@ -118,7 +110,7 @@ final class EQuant extends ExprCustom {
     }
 
     /** Constructs a new quantified expression. */
-    private EQuant(Pos pos, Pos close, Op op, Type type, List<EDecl> decls, Expr sub, long weight) throws Err {
+    private ExprQuantt(Pos pos, Pos close, Op op, Type type, List<EDecl> decls, Expr sub, long weight) throws Err {
         super(pos, type, 0, weight);
         this.closingBracket=close;
         this.op=op;
@@ -132,10 +124,10 @@ final class EQuant extends ExprCustom {
     }
 
     /** Constructs a new quantified expression. */
-    static final Expr make(Pos pos, Pos closingBracket, Op op, List<EDecl> decls, Expr sub) throws Err {
+    public static final Expr make(Pos pos, Pos closingBracket, Op op, List<EDecl> decls, Expr sub) throws Err {
         long weight=sub.weight;
         if (decls!=null) for(EDecl d:decls) weight += d.value.weight;
-        return new EQuant(pos, closingBracket, op, null, decls, sub, weight);
+        return new ExprQuantt(pos, closingBracket, op, null, decls, sub, weight);
     }
 
     /** Typechecks an EQuant object (first pass). */
@@ -173,5 +165,15 @@ final class EQuant extends ExprCustom {
     /** Typechecks an EQuant object (second pass). */
     @Override public Expr check(final TypeCheckContext cx, Type p) throws Err {
         throw new ErrorFatal("Internal typechecker invariant violated.");
+    }
+
+    //=============================================================================================================//
+
+    /**
+     * Accepts the return visitor by immediately throwing an exception.
+     * This is because the typechecker should have replaced/removed this node.
+     */
+    @Override final Object accept(VisitReturn visitor) throws Err {
+        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
     }
 }

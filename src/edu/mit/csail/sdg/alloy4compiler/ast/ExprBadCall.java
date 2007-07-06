@@ -18,22 +18,15 @@
  * 02110-1301, USA
  */
 
-package edu.mit.csail.sdg.alloy4compiler.parser;
+package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.ast.Func;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
 
 /**
  * Immutable; represents an illegal pred/fun call.
@@ -41,7 +34,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
  * <p> <b>Invariant:</b>  this.type==null && this.fun!=null && this.args!=null
  */
 
-final class EBadCall extends ExprCustom {
+final class ExprBadCall extends Expr {
 
     /** The function. */
     final Func fun;
@@ -115,8 +108,8 @@ final class EBadCall extends ExprCustom {
                 ConstList<Expr> args2=Util.prepend(args, THISorNULL);
                 if (applicable(f,args2)) return ExprCall.make(pos, f, args2, 1);
             }
-            if (i>n) return new EBadCall(pos, f, args);
-            if (!applicable(f,args)) return new EBadCall(pos, f, args.subList(0,i));
+            if (i>n) return new ExprBadCall(pos, f, args);
+            if (!applicable(f,args)) return new ExprBadCall(pos, f, args.subList(0,i));
             ans = ExprCall.make(pos, f, args.subList(0,i), 0);
         }
         if (ans.type==null || (!ans.type.is_int && !ans.type.is_bool && ans.type.size()==0))
@@ -125,31 +118,39 @@ final class EBadCall extends ExprCustom {
             Expr x = args.get(i);
             // TODO: you lost the original JOIN's pos
             try {
-              if (x.type.join(ans.type).size()==0) return new EBadJoin(x.span().merge(ans.span()), x, ans);
+              if (x.type.join(ans.type).size()==0) return new ExprBadJoin(x.span().merge(ans.span()), x, ans);
               // The line above is not STRICTLY necessary, since the "catch Err" below will occur.
               // But this allows us to avoid paying the runtime penalty of throwing an exception and then catching it
               ans = ExprBinary.Op.JOIN.make(x.span().merge(ans.span()), x, ans);
             } catch(Err ex) {
-              return new EBadJoin(x.span().merge(ans.span()), x, ans);
+              return new ExprBadJoin(x.span().merge(ans.span()), x, ans);
             }
         }
         return ans;
     }
 
-    /** Constructs an EChoice node. */
-    private EBadCall(Pos pos, Func fun, ConstList<Expr> args) throws Err {
+    /** Constructs an ExprBadCall object. */
+    private ExprBadCall(Pos pos, Func fun, ConstList<Expr> args) throws Err {
         super(pos, null, 0, 0); // weight can be set to anything (such as 0), since a EBadCall will never be in the ultimate Expr
         this.fun=fun;
         this.args=args;
     }
 
-    /** Typechecks an EBadCall object (first pass). */
-    public Expr check(final TypeCheckContext cx) throws Err {
+    /** Typechecks an ExprBadCall object (first pass). */
+    @Override public Expr check(final TypeCheckContext cx) throws Err {
         throw new ErrorFatal("Internal typechecker invariant violated.");
     }
 
-    /** Typechecks an EBadCall object (second pass). */
-    public Expr check(final TypeCheckContext cx, Type t) throws Err {
+    /** Typechecks an ExprBadCall object (second pass). */
+    @Override public Expr check(final TypeCheckContext cx, Type t) throws Err {
         throw new ErrorFatal("Internal typechecker invariant violated.");
+    }
+
+    /**
+     * Accepts the return visitor by immediately throwing an exception.
+     * This is because the typechecker should have replaced/removed this node.
+     */
+    @Override final Object accept(VisitReturn visitor) throws Err {
+        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
     }
 }

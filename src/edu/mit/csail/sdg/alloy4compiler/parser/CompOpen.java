@@ -26,6 +26,7 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 
 /**
  * Immutable; reresents an "open" declaration.
@@ -69,7 +70,7 @@ final class CompOpen {
      * @throws ErrorSyntax if alias is "" and filename does not match the regular expression [A-Za-z][A-Za-z0-9_'"]*
      * @throws ErrorSyntax if at least one argument is "" or contains '@'
      */
-    public CompOpen(Pos pos, String alias, List<EName> args, String filename) throws Err {
+    public CompOpen(Pos pos, String alias, List<ExprVar> args, String filename) throws Err {
         if (pos==null) pos=Pos.UNKNOWN;
         if (filename.length()==0) throw new ErrorSyntax(pos,"The filename cannot be \"\"");
         if (alias.indexOf('@')>=0) throw new ErrorSyntax(pos,"Alias \""+alias+"\" must not contain \'@\'");
@@ -95,7 +96,7 @@ final class CompOpen {
         this.filename=filename;
         List<String> newlist=new ArrayList<String>(args.size());
         for(int i=0; i<args.size(); i++) {
-            String arg=args.get(i).name;
+            String arg=args.get(i).label;
             if (arg.length()==0)
                 throw new ErrorSyntax(pos, "Module \""+filename+"\"\'s instantiation argument cannot be empty");
             if (arg.indexOf('@')>=0)

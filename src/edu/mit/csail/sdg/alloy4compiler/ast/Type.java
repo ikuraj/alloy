@@ -24,16 +24,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorFatal;
-import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 /**
  * Immutable; represents the type of an expression.
+ *
+ * <p> <b>Invariant:</b>  all x:entries | x.arity()>0
  *
  * <p> Note: except for "toString()" and "fold()", the return value of every method is always valid for all time;
  * for example, given types A and B, and you call C=A.intersect(B), then the result C will always be
@@ -42,13 +42,9 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 public final class Type implements Iterable<Type.ProductType> {
 
-    /** The maximum allowed arity; due to the way we represent arities, this must be between 2 and 30. */
-    private static final int MAXARITY = 30;
-
     /**
      * Immutable; represents a list of PrimSig objects.
      *
-     * <p> <b>Invariant:</b>  0 < types.length <= MAXARITY
      * <p> <b>Invariant:</b>  "one of the sig in the list is NONE" iff "every sig in the list is NONE".
      *
      * <p> Note: the return value of every method is always valid for all time;
@@ -60,12 +56,12 @@ public final class Type implements Iterable<Type.ProductType> {
         /** The array of PrimSig objects. */
         private final PrimSig[] types;
 
+        /** The ProductType with arity==0 */
+        private static final ProductType zero = new ProductType(new PrimSig[0]);
+
         /**
          * Constructs a new ProductType object consisting of the given array of PrimSig objects.
-         *
-         * <p> Precondition:  0 < types.length <= MAXARITY
          * <p> Precondition:  "one of the sig in the list is NONE" iff "every sig in the list is NONE"
-         *
          * <p> Note: it will use the array as-is, so the caller should give up the reference to the array.
          */
         private ProductType(PrimSig[] array) {
@@ -77,17 +73,14 @@ public final class Type implements Iterable<Type.ProductType> {
             types = new PrimSig[]{sig};
         }
 
-        /**
-         * Constructs a new ProductType made of exactly N references to the same PrimSig object.
-         * <p> Precondition: n > 0
-         */
+        /** Constructs a new ProductType made of exactly n references to the same PrimSig object. */
         private ProductType(int n, PrimSig sig) {
             types = new PrimSig[n];
             for(int i=0; i<n; i++) { types[i] = sig; }
         }
 
         /** Returns a hash code consistent with equals() */
-        @Override public int hashCode() { return types[0].hashCode(); }
+        @Override public int hashCode() { return types.length==0 ? 0 : (types[0].hashCode()); }
 
         /** Returns true if this.arity==that.arity and this.types[i]==that.types[i] for each i */
         @Override public boolean equals(Object that) {
@@ -117,28 +110,23 @@ public final class Type implements Iterable<Type.ProductType> {
          */
         PrimSig get(int i) { return types[i]; }
 
-        /** Returns true if this == NONE->..->NONE */
-        public boolean isEmpty() { return types[0]==Sig.NONE; }
+        /** Returns true if this.arity==0  or  this==NONE->..->NONE */
+        public boolean isEmpty() { return types.length==0 || types[0]==Sig.NONE; }
 
         /**
          * Returns the tranpose of this
          * <p> Precondition: this.arity()==2
          */
-        private ProductType transpose() {
-            return new ProductType(new PrimSig[]{types[1], types[0]});
-        }
+        private ProductType transpose() { return new ProductType(new PrimSig[]{types[1], types[0]}); }
 
         /**
          * Returns the cross product of this and that.
-         *
          * <p> Note: If either or both is NONE->..->NONE, then we return NONE->..->NONE instead.
-         *
-         * @throws ErrorType if this.arity + that.arity > MAXARITY
          */
-        ProductType product(ProductType that) throws ErrorType {
+        ProductType product(ProductType that) {
             final int n = types.length + that.types.length;
-            if (n > MAXARITY) throw new ErrorType("Relation of arity > "+MAXARITY+" is unsupported.");
-            if (isEmpty() || that.isEmpty()) return new ProductType(n, Sig.NONE);
+            if (this.isEmpty()) return (n==this.types.length) ? this : (new ProductType(n, Sig.NONE));
+            if (that.isEmpty()) return (n==that.types.length) ? that : (new ProductType(n, Sig.NONE));
             final PrimSig[] ans = new PrimSig[n];
             int j=0;
             for(int i=0; i<this.types.length; i++, j++) { ans[j]=this.types[i]; }
@@ -155,6 +143,7 @@ public final class Type implements Iterable<Type.ProductType> {
          */
         private ProductType intersect(ProductType that) {
             final int n = types.length;
+            if (n==0) return this;
             final PrimSig[] ans = new PrimSig[n];
             for(int i=0; i<n; i++) {
                 PrimSig c = this.types[i].intersect(that.types[i]);
@@ -177,15 +166,12 @@ public final class Type implements Iterable<Type.ProductType> {
         /**
          * Returns the relational join of this and that.
          *
-         * <p> Note: If (this.rightmost & that.leftmost) is empty, we return NONE->..->NONE instead.
-         *
-         * @throws ErrorType if this.arity()==1 and that.arity()==1, or this.arity()+that.arity()-2 > MAXARITY
+         * <p> Note: if (this.arity()==1 and that.arity()==1), we return a ProductType object with arity==0 instead.
+         * <p> Note: if (this.rightmost() & that.leftmost()) is empty, we return NONE->..->NONE instead.
          */
-        ProductType join(ProductType that) throws ErrorType {
-            int left=types.length, right=that.types.length;
-            if (left<=1 && right<=1) throw new ErrorType("You cannot perform relational join between two unary sets.");
-            final int n=left+right-2;
-            if (n > MAXARITY) throw new ErrorType("Relation of arity > "+MAXARITY+" is unsupported.");
+        ProductType join(ProductType that) {
+            int left=types.length, right=that.types.length, n=left+right-2;
+            if (left==0 || right==0 || n<=0) return zero;
             final PrimSig a=types[left-1], b=that.types[0], c=a.intersect(b);
             if (c==Sig.NONE) return new ProductType(n, c);
             final PrimSig[] types = new PrimSig[n];
@@ -214,6 +200,7 @@ public final class Type implements Iterable<Type.ProductType> {
 
         /** Returns the String representation of this ProductType object. */
         @Override public String toString() {
+            if (types.length==0) return "";
             StringBuilder ans=new StringBuilder();
             for(int i=0; i<types.length; i++) { if (i!=0) ans.append("->"); ans.append(types[i]); }
             return ans.toString();
@@ -245,6 +232,7 @@ public final class Type implements Iterable<Type.ProductType> {
      * <br> The (1<<2) bitmask is nonzero iff arity 2 exists
      * <br> The (1<<3) bitmask is nonzero iff arity 3 exists
      * <br> ...
+     * <br> Note: The (1<<0) bitmask is nonzero iff arity X exists for some X>30
      */
     private final int arities;
 
@@ -259,11 +247,10 @@ public final class Type implements Iterable<Type.ProductType> {
 
     /**
      * Merge "x" into the set of entries, then return the new arity bitmask.
-     * <br> Precondition: 0 < entries.size() <= MAXARITY
      * <br> Precondition: entries and arities are consistent
      */
     private static int add(TempList<ProductType> entries, int arities, ProductType x) {
-        if (x==null) return arities;
+        if (x==null || x.types.length==0) return arities;
         final int arity=x.types.length;
         // If x is subsumed by a ProductType in this, return. Likewise, remove all entries in this that are subsumed by x.
         for(int n=entries.size(), i=n-1; i>=0; i--) {
@@ -272,7 +259,7 @@ public final class Type implements Iterable<Type.ProductType> {
             if (x.isSubtypeOf(y)) return arities;
             if (y.isSubtypeOf(x)) {n--; entries.set(i, entries.get(n)); entries.remove(n);}
         }
-        arities = arities | (1 << arity);
+        if (arity>30) arities = arities | 1; else arities = arities | (1 << arity);
         entries.add(x);
         return arities;
     }
@@ -308,18 +295,17 @@ public final class Type implements Iterable<Type.ProductType> {
      * Create the type consisting of the given ProductType entry.
      */
     static Type make(ProductType productType) {
-        return make(false, false, ConstList.make(1,productType), 1 << productType.arity());
+        int ar=productType.types.length;
+        if (ar==0) return EMPTY;
+        return make(false, false, ConstList.make(1,productType), (ar>30) ? 1 : (1<<ar));
     }
 
     /**
      * Create the type list[start]->list[start+1]->..->list[end-1]
-     *
-     * @throws ErrorFatal if start<0, end<0, start>=end
-     * @throws ErrorType if the resulting relation arity is > MAXARITY
+     * (If start<0, end<0, end>list.size(), or start>=end, this method will return EMPTY)
      */
-    static Type make(List<PrimSig> list, int start, int end) throws ErrorType, ErrorFatal {
-        if (start<0 || end<0 || end>list.size() || start>=end) throw new ErrorFatal("Illegal arity.");
-        if (end-start > MAXARITY) throw new ErrorType("Relation of arity > "+MAXARITY+" is unsupported.");
+    static Type make(List<PrimSig> list, int start, int end) {
+        if (start<0 || end<0 || end>list.size() || start>=end) return EMPTY;
         PrimSig[] newlist = new PrimSig[end-start];
         int j=0;
         for(int i=start; i<end; i++) {
@@ -334,37 +320,27 @@ public final class Type implements Iterable<Type.ProductType> {
         return make(new ProductType(newlist));
     }
 
-    /**
-     * Create the type "sig"; it promises it will not call any method or read anything from "sig".
-     */
+    /** Create the type "sig"; it promises it will not call any method or read anything from "sig". */
     static Type make(PrimSig sig) {
         return make(new ProductType(sig));
     }
 
-    /**
-     * Create the type "sig->sig".
-     */
+    /** Create the type "sig->sig". */
     static Type make2(PrimSig sig) {
         return make(new ProductType(2,sig));
     }
 
-    /**
-     * Create a new type that is the same as "old", except the "is_int" flag is set to true.
-     */
+    /** Create a new type that is the same as "old", except the "is_int" flag is set to true. */
     static Type makeInt(Type old) {
         if (old.is_int) return old; else return make(true, old.is_bool, old.entries, old.arities);
     }
 
-    /**
-     * Create a new type that is the same as "old", except the "is_bool" flag is set to true.
-     */
+    /** Create a new type that is the same as "old", except the "is_bool" flag is set to true. */
     static Type makeBool(Type old) {
         if (old.is_bool) return old; else return make(old.is_int, true, old.entries, old.arities);
     }
 
-    /**
-     * Create a new type that is the same as "old", except the "is_bool" and "is_int" flags are both set to false.
-     */
+    /** Create a new type that is the same as "old", except the "is_bool" and "is_int" flags are both set to false. */
     static Type removesBoolAndInt(Type old) {
         if (!old.is_bool && !old.is_int) return old; else return make(false, false, old.entries, old.arities);
     }
@@ -409,7 +385,11 @@ public final class Type implements Iterable<Type.ProductType> {
     public int size() { return entries.size(); }
 
     /** Returns true iff this contains an entry of the given arity. */
-    public boolean hasArity(int arity) { return arity>0 && arity<=MAXARITY && ((arities & (1<<arity)) != 0); }
+    public boolean hasArity(int arity) {
+        if (arity<=30) return arity>0 && ((arities & (1<<arity)) != 0);
+        if ((arities & 1)!=0) for(int i=entries.size()-1; i>=0; i--) if (entries.get(i).types.length==arity) return true;
+        return false;
+    }
 
     /**
      *      If all entries have the same arity, that arity is returned;
@@ -419,8 +399,13 @@ public final class Type implements Iterable<Type.ProductType> {
     public int arity() {
         if (arities==0) return 0;
         int ans=0;
-        for(int i=1; i<=MAXARITY; i++) {
-            if ((arities & (1<<i))!=0) { if (ans==0) ans=i; else return -1; }
+        if ((arities & 1)==0) {
+            for(int i=1; i<=30; i++) if ((arities & (1<<i))!=0) { if (ans==0) ans=i; else return -1; }
+        } else {
+            for(int j=entries.size()-1; j>=0; j--) {
+                int i=entries.get(j).types.length;
+                if (ans==0) ans=i; else if (ans!=i) return -1;
+            }
         }
         return ans;
     }
@@ -431,9 +416,9 @@ public final class Type implements Iterable<Type.ProductType> {
      */
     public boolean firstColumnOverlaps(Type that) {
         for (ProductType a:this)
-            for (ProductType b:that)
-              if (a.types[0].intersects(b.types[0]))
-                return true;
+          for (ProductType b:that)
+            if (a.types[0].intersects(b.types[0]))
+              return true;
         return false;
     }
 
@@ -444,15 +429,19 @@ public final class Type implements Iterable<Type.ProductType> {
     public boolean canOverride(Type that) {
         if ((arities & that.arities)!=0)
           for (ProductType a:this)
-            if ((that.arities & (1 << a.types.length))!=0)
-              for (ProductType b:that)
-                if (a.types.length==b.types.length && a.types[0].intersects(b.types[0]))
-                   return true;
+            for (ProductType b:that)
+              if (a.types.length==b.types.length && a.types[0].intersects(b.types[0]))
+                return true;
         return false;
     }
 
     /** Returns true iff exists some A in this, some B in that, where A.arity==B.arity */
     public boolean hasCommonArity(Type that) {
+        if ((arities & 1)!=0 && (that.arities & 1)!=0) {
+            if (((arities-1) & (that.arities-1))!=0) return true;
+            for (ProductType a:this) for (ProductType b:that) if (a.types.length==b.types.length) return true;
+            return false;
+        }
         return (arities & that.arities)!=0;
     }
 
@@ -463,10 +452,8 @@ public final class Type implements Iterable<Type.ProductType> {
      * <br> ReturnValue.is_bool == false
      *
      * <p> If this.size()==0, or that.size()==0, then result.size()==0
-     *
-     * @throws ErrorType if at least one A->B has arity > MAXARITY
      */
-    public Type product(Type that) throws ErrorType {
+    public Type product(Type that) {
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
         for (ProductType a:this) for (ProductType b:that) aa=add(ee, aa, a.product(b));
@@ -478,7 +465,7 @@ public final class Type implements Iterable<Type.ProductType> {
      */
     public boolean intersects(Type that) {
         if ((arities & that.arities)!=0)
-          for (ProductType a:this) if (!a.isEmpty() && (that.arities & (1 << a.types.length))!=0)
+          for (ProductType a:this) if (!a.isEmpty())
              for (ProductType b:that) if (!b.isEmpty() && a.types.length==b.types.length && a.intersects(b))
                  return true;
         return false;
@@ -496,9 +483,10 @@ public final class Type implements Iterable<Type.ProductType> {
         if ((arities & that.arities)==0) return EMPTY;
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
-        for (ProductType a:this) if ((that.arities & (1 << a.types.length))!=0)
-          for (ProductType b:that) if (a.types.length==b.types.length)
-            aa=add(ee, aa, a.intersect(b));
+        for (ProductType a:this)
+          for (ProductType b:that)
+            if (a.types.length==b.types.length)
+               aa=add(ee, aa, a.intersect(b));
         return make(false, false, ee.makeConst(), aa);
     }
 
@@ -511,7 +499,7 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> If (this.size()==0), or (that.arity is not in this), then result.size()==0
      */
     public Type intersect(ProductType that) {
-        if ((arities & (1 << that.types.length))==0) return EMPTY;
+        if (!hasArity(that.types.length)) return EMPTY;
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
         for (ProductType a:this) if (a.types.length==that.types.length) aa=add(ee, aa, a.intersect(that));
@@ -554,11 +542,9 @@ public final class Type implements Iterable<Type.ProductType> {
      *
      * <p>  ReturnValue.is_int  == this.is_int
      * <br> ReturnValue.is_bool == this.is_bool
-     *
-     * @throws ErrorFatal if (0 <= begin < end <= that.arity) is not true
      */
-    public Type merge(ProductType that, int begin, int end) throws ErrorFatal {
-        if (!(0<=begin && begin<end && end<=that.types.length)) throw new ErrorFatal("Illegal index range.");
+    public Type merge(ProductType that, int begin, int end) {
+        if (!(0<=begin && begin<end && end<=that.types.length)) return this;
         PrimSig[] array = new PrimSig[end-begin];
         for(int i=0; i < array.length; i++) { array[i]=that.types[begin+i]; }
         TempList<ProductType> ee=new TempList<ProductType>(entries);
@@ -571,18 +557,14 @@ public final class Type implements Iterable<Type.ProductType> {
      *
      * <p>  ReturnValue.is_int  == this.is_int
      * <br> ReturnValue.is_bool == this.is_bool
-     *
-     * @throws ErrorFatal if that.size()==0
-     * @throws ErrorType if that.size()>MAXARITY
      */
-    public Type merge(List<PrimSig> that) throws ErrorType, ErrorFatal {
-        if (that.size() == 0) throw new ErrorFatal("Relation arity cannot be zero.");
-        if (that.size() > MAXARITY) throw new ErrorType("Relation of arity > "+MAXARITY+" is unsupported.");
+    public Type merge(List<PrimSig> that) {
+        if (that.size() == 0) return this;
         PrimSig[] array=new PrimSig[that.size()];
         for(int i=0; i < array.length; i++) {
             array[i] = that.get(i);
             if (array[i]==Sig.NONE) {
-                if ((arities & (1 << array.length))!=0) return this;
+                if (hasArity(array.length)) return this;
                 for(i=0; i<array.length; i++) array[i]=Sig.NONE;
                 break;
             }
@@ -607,16 +589,9 @@ public final class Type implements Iterable<Type.ProductType> {
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
         if (this.size()>0 && that.size()>0) {
-            for(ProductType x:this) {
-                int ar = 1 << x.types.length;
-                if ((that.arities & ar) != 0) { aa=(aa|ar); ee.add(x); }
-                // This ensures the entries in "ee" will be in the same order as the entries in "this.entries"
-            }
-            for(ProductType x:that) {
-                int ar = 1 << x.types.length;
-                if ((this.arities & ar) != 0) aa=add(ee,aa,x);
-                // add() ensures that if x doesn't need to change "ee", then "ee" will stay unchanged
-            }
+            // add() ensures that if x doesn't need to change "ee", then "ee" will stay unchanged
+            for(ProductType x:this) if (that.hasArity(x.types.length)) aa=add(ee,aa,x);
+            for(ProductType x:that) if (this.hasArity(x.types.length)) aa=add(ee,aa,x);
         }
         // So now, if nothing changed, we want to return "this" as-is
         if (!is_int && !is_bool && ee.size()==this.entries.size() && aa==this.arities) {
@@ -637,12 +612,16 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> If this.size()==0 or that.size()==0, then result.size()==0
      */
     public Type pickCommonArity(Type that) {
-        if (!is_int && !is_bool && (arities & that.arities)==arities) return this;
+        if (!is_int && !is_bool && (arities & 1)==0 && (arities & that.arities)==arities) return this;
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
-        for(ProductType x:entries) {
-            int xa = 1 << x.types.length;
-            if ((that.arities & xa)!=0) { aa=(aa|xa); ee.add(x); }
+        if ((arities & 1)==0) {
+            for(ProductType x:entries) {
+                int xa = 1 << x.types.length;
+                if ((that.arities & xa)!=0) { aa=(aa|xa); ee.add(x); }
+            }
+        } else {
+            for(ProductType x:entries) if (that.hasArity(x.types.length)) aa=add(ee,aa,x);
         }
         return make(false, false, ee.makeConst(), aa);
     }
@@ -669,10 +648,8 @@ public final class Type implements Iterable<Type.ProductType> {
      *
      * <p>  ReturnValue.is_int  == false
      * <br> ReturnValue.is_bool == false
-     *
-     * @throws ErrorType if at least one combination A.B has arity > MAXARITY
      */
-    public Type join(Type that) throws ErrorType {
+    public Type join(Type that) {
         if (size()==0 || that.size()==0) return EMPTY;
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
@@ -725,9 +702,9 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> If it does not contain any entry with the given arity, then result.size()==0
      */
     public Type extract(int arity) {
-        final int aa = (1<<arity);
-        if (arity<=0 || arity>MAXARITY || (arities & aa)==0) return EMPTY;
-        if (!is_bool && !is_int && arities==aa) return this;
+        final int aa = (arity>30 ? 1 : (1<<arity));
+        if (!is_bool && !is_int && arity<=30 && arities==aa) return this;
+        if (!hasArity(arity)) return EMPTY;
         final TempList<ProductType> ee=new TempList<ProductType>();
         for(ProductType x:entries) if (x.types.length==arity) ee.add(x);
         return make(false, false, ee.makeConst(), aa);
@@ -742,18 +719,14 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> If it does not contain any binary entries, then result.size()==0
      */
     public Type closure() {
-        try {
-            Type ans=extract(2), u=ans, uu=u.join(u);
-            while(uu.hasTuple()) {
-                Type oldans=ans, olduu=uu;
-                ans=ans.unionWithCommonArity(uu);
-                uu=uu.join(u);
-                if (oldans==ans && olduu.equals(uu)) break;
-            }
-            return ans;
-        } catch(ErrorType ex) {
-            return extract(2); // This is impossible, but we catch it any way
+        Type ans=extract(2), u=ans, uu=u.join(u);
+        while(uu.hasTuple()) {
+            Type oldans=ans, olduu=uu;
+            ans=ans.unionWithCommonArity(uu);
+            uu=uu.join(u);
+            if (oldans==ans && olduu.equals(uu)) break;
         }
+        return ans;
     }
 
     /**

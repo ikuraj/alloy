@@ -18,24 +18,17 @@
  * 02110-1301, USA
  */
 
-package edu.mit.csail.sdg.alloy4compiler.parser;
+package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
-import edu.mit.csail.sdg.alloy4compiler.parser.EChoice;
-import edu.mit.csail.sdg.alloy4compiler.parser.EName;
+import edu.mit.csail.sdg.alloy4compiler.parser.Context;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
 
 /**
@@ -43,7 +36,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
  *
  * <p>
  * Note: Before typechecking, it's not easy to tell if expressions like "a[b]" or "b.a" are joins or calls,
- * so the parser will generate "EJoin" nodes instead. During typechecking, EJoin nodes will be replaced
+ * so the parser will generate "ExprCallOrJoin" nodes instead. During typechecking, these nodes will be replaced
  * with the correct ExprCall or ExprBinary.Op.JOIN nodes.
  *
  * <p>
@@ -53,13 +46,13 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
  * <p> <b>Invariant:</b>  left.mult==0 && right.mult==0
  */
 
-final class EJoin extends ExprCustom {
+public final class ExprCallOrJoin extends Expr {
 
     /** The left-hand-side expression. */
-    final Expr left;
+    public final Expr left;
 
     /** The right-hand-side expression. */
-    final Expr right;
+    public final Expr right;
 
     /** Caches the span() result. */
     private Pos span=null;
@@ -86,7 +79,7 @@ final class EJoin extends ExprCustom {
     }
 
     /** Constructs a new EJoin expression. */
-    private EJoin (Pos pos, Type type, Expr left, Expr right) throws Err {
+    private ExprCallOrJoin (Pos pos, Type type, Expr left, Expr right) throws Err {
         super(pos, type, 0, left.weight+right.weight);
         if (left.mult != 0) throw new ErrorSyntax(left.span(), "Multiplicity expression not allowed here.");
         if (right.mult != 0) throw new ErrorSyntax(right.span(), "Multiplicity expression not allowed here.");
@@ -103,8 +96,8 @@ final class EJoin extends ExprCustom {
      *
      * @throws ErrorSyntax if left.mult!=0 or right.mult!=0
      */
-    static Expr make(Pos pos, Expr left, Expr right) throws Err {
-        return new EJoin(pos, null, left, right);
+    public static Expr make(Pos pos, Expr left, Expr right) throws Err {
+        return new ExprCallOrJoin(pos, null, left, right);
     }
 
     /** Typechecks an EJoin object (first pass). */
@@ -114,12 +107,12 @@ final class EJoin extends ExprCustom {
         TempList<Expr> objects=new TempList<Expr>();
         int n=1;
         Expr ptr=right;
-        while (ptr instanceof EJoin) { n++; ptr=((EJoin)ptr).right; }
-        if (ptr instanceof EName && !cx.has(((EName)ptr).name)) {
-            Set<Object> choices = cx.resolve(ptr.pos, ((EName)ptr).name);
+        while (ptr instanceof ExprCallOrJoin) { n++; ptr=((ExprCallOrJoin)ptr).right; }
+        if (ptr instanceof ExprVar && !cx.has(((ExprVar)ptr).label)) {
+            Set<Object> choices = cx.resolve(ptr.pos, ((ExprVar)ptr).label);
             TempList<Expr> tempargs=new TempList<Expr>();
-            for(Expr temp=this; temp instanceof EJoin; temp=((EJoin)temp).right) {
-                Expr temp2=((EJoin)temp).left;
+            for(Expr temp=this; temp instanceof ExprCallOrJoin; temp=((ExprCallOrJoin)temp).right) {
+                Expr temp2=((ExprCallOrJoin)temp).left;
                 temp2=cset(cx.check(temp2));
                 tempargs.add(0,temp2);
             }
@@ -129,11 +122,11 @@ final class EJoin extends ExprCustom {
             Expr THIS = (cx.rootsig!=null) ? cx.get("this",null) : null;
             boolean hasValidBound=false;
             for(Object ch:choices) {
-                Expr x = EBadCall.make(ptr.pos, ch, args, THIS);
+                Expr x = ExprBadCall.make(ptr.pos, ch, args, THIS);
                 if (x.type!=null) if (x.type.is_int || x.type.is_bool || x.type.size()>0) hasValidBound=true;
                 objects.add(x);
             }
-            if (hasValidBound) return EChoice.make(ptr.pos, objects.makeConst());
+            if (hasValidBound) return ExprChoice.make(ptr.pos, objects.makeConst());
         }
         try {
             // Next, check to see if it is the special builtin function "Int[]"
@@ -148,11 +141,19 @@ final class EJoin extends ExprCustom {
             if (test.type!=null && test.type.size()>0) objects.add(test);
         } catch(Err ex) {
         }
-        return EChoice.make(ptr.pos, objects.makeConst());
+        return ExprChoice.make(ptr.pos, objects.makeConst());
     }
 
     /** Typechecks an EJoin object (second pass). */
     @Override public Expr check(TypeCheckContext cx, Type p) throws Err {
         throw new ErrorFatal("Internal typechecker invariant violated.");
+    }
+
+    /**
+     * Accepts the return visitor by immediately throwing an exception.
+     * This is because the typechecker should have replaced/removed this node.
+     */
+    @Override final Object accept(VisitReturn visitor) throws Err {
+        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
     }
 }

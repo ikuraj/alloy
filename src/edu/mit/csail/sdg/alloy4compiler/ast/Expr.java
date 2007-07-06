@@ -27,6 +27,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 
@@ -76,6 +77,15 @@ public abstract class Expr {
     /** The type for this node; null if it is not well-typed. */
     public final Type type;
 
+    /** The list of errors on this node. */
+    public final SafeList<Err> errors;
+
+    /** The list of warnings on this node. */
+    public final SafeList<Err> warnings;
+
+    /** This is a pre-made empty list. */
+    private static final SafeList<Err> emptylist = (new SafeList<Err>()).dup();
+
     /**
      * This field records whether the node is a multiplicity constraint.
      *
@@ -115,6 +125,8 @@ public abstract class Expr {
         this.type=type;
         this.weight=weight;
         if (type!=null && type.size()==0 && !type.is_int && !type.is_bool) throw new ErrorType(span(), "This expression failed to be typechecked");
+        this.errors=emptylist;
+        this.warnings=emptylist;
     }
 
     /**
@@ -126,6 +138,8 @@ public abstract class Expr {
         this.mult=0;
         this.type=type;
         this.weight=0;
+        this.errors=emptylist;
+        this.warnings=emptylist;
     }
 
     /**
@@ -145,6 +159,8 @@ public abstract class Expr {
         this.mult=0;
         this.type=(type==null ? Type.make((PrimSig)this) : type);
         this.weight=0;
+        this.errors=emptylist;
+        this.warnings=emptylist;
     }
 
     /** Returns a Pos object representing the entire span of this Expr and all its subexpressions. */

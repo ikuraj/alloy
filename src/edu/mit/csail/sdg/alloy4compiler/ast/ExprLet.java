@@ -20,12 +20,13 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
+import edu.mit.csail.sdg.alloy4compiler.parser.Context;
 
 /**
  * Immutable; represents an expression of the form (let a=b | x).
@@ -86,16 +87,18 @@ public final class ExprLet extends Expr {
      * @throws ErrorType if sub.type==null or (sub.type.size()==0 && !sub.type.is_int && !sub.type.is_bool)
      */
     private ExprLet(Pos pos, ExprVar left, Expr right, Expr sub) throws Err {
-        super(pos, sub.type, 0, left.weight+right.weight+sub.weight);
+        super(pos, (left.type==null || right.type==null) ? null : sub.type, 0, left.weight+right.weight+sub.weight);
         this.left=left;
         this.right=right;
         this.sub=sub;
-        if (left.expr != null)
+        if (left.type!=null && left.expr!=null)
             throw new ErrorAPI(sub.span(), "This variable must be a substitution variable rather than a quantification variable.");
         if (sub.mult != 0)
             throw new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here.");
         if (right.mult != 0)
             throw new ErrorSyntax(right.span(), "Multiplicity expression not allowed here.");
+        if (this.type==null)
+            return;
         if (sub.type==null || (sub.type.size()==0 && !sub.type.is_int && !sub.type.is_bool))
             throw new ErrorType(sub.span(), "This expression failed to be typechecked.");
         if (right.type==null || (right.type.size()==0 && !right.type.is_int && !right.type.is_bool))
@@ -124,14 +127,24 @@ public final class ExprLet extends Expr {
     }
 
     /** Typechecks an ExprLet object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) throws Err {
-        Expr right=cx.check(this.right);
-        Expr sub=cx.check(this.sub);
+    @Override Expr check(final TypeCheckContext cxx) throws Err {
+        if (left.type==null) {
+            Context cx=((Context)cxx);
+            Expr right=cx.resolve(this.right);
+            ExprVar var=new ExprVar(pos, left.label, right.type);
+            cx.put(left.label, var);
+            Expr sub=cx.check(this.sub);
+            cx.remove(left.label);
+            return new ExprLet(pos, var, right, sub);
+        }
+        Expr right=cxx.check(this.right);
+        Expr sub=cxx.check(this.sub);
         if (right==this.right && sub==this.sub) return this; else return new ExprLet(pos, left, right, sub);
     }
 
     /** Typechecks an ExprLet object (second pass). */
     @Override Expr check(final TypeCheckContext cx, final Type p) throws Err {
+        if (left.type==null) throw new ErrorFatal("Internal typechecker invariant violated.");
         Expr right=cx.check(this.right, this.right.type);
         Expr sub=cx.check(this.sub, p);
         if (right==this.right && sub==this.sub) return this; else return new ExprLet(pos, left, right, sub);

@@ -18,7 +18,7 @@
  * 02110-1301, USA
  */
 
-package edu.mit.csail.sdg.alloy4compiler.parser;
+package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -26,7 +26,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 
 /**
  * Immutable; represents a field/variable/parameter declaration such as "a,b,c: X".
@@ -35,25 +34,25 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
  * <p> <b>Invariant:</b>  all n:names | n is not "", and doesn't contain '/' or '@'
  */
 
-final class EDecl {
+public final class EDecl {
 
     /** The filename, line, and column position in the original Alloy model file; never null. */
-    final Pos pos;
+    public final Pos pos;
 
     /** Caches the span() result. */
     private Pos span=null;
 
     /** Whether this is a "disjoint" declaration; NOTE: if names.size()==1, then this flag is always false. */
-    final boolean disjoint;
+    public final boolean disjoint;
 
     /** If disjoint is true, then this records the location of the "disjoint" keyword in the original source. */
-    final Pos disjointPosition;
+    public final Pos disjointPosition;
 
     /** The unmodifiable list of names. */
-    final ConstList<String> names;
+    public final ConstList<String> names;
 
     /** The expression that these names are quantified over. */
-    final Expr value;
+    public final Expr value;
 
     /** Returns a human-readable String representation. */
     @Override public String toString() {
@@ -80,7 +79,7 @@ final class EDecl {
      * @throws ErrorSyntax if any of the name is ""
      * @throws ErrorSyntax if any of the name contains '/' or '@'
      */
-    EDecl (Pos pos, List<String> names, Pos disjoint, Expr value) throws Err {
+    public EDecl (Pos pos, List<String> names, Pos disjoint, Expr value) throws Err {
         if (pos==null) pos=Pos.UNKNOWN;
         if (disjoint!=null) pos=pos.merge(disjoint);
         this.pos=pos;
@@ -107,7 +106,7 @@ final class EDecl {
      * @throws ErrorSyntax if name is equal to ""
      * @throws ErrorSyntax if name contains '/' or '@'
      */
-    EDecl (Pos pos, String name, Expr value) throws Err {
+    public EDecl (Pos pos, String name, Expr value) throws Err {
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
         this.names=ConstList.make(1,name);
         this.disjoint=false;
@@ -119,7 +118,7 @@ final class EDecl {
     }
 
     /** Returns a Pos object representing the entire span of this EDecl and all its subexpressions. */
-    Pos span() {
+    public Pos span() {
         Pos p=span;
         if (p==null) {
             p=pos.merge(value.span());
@@ -133,7 +132,7 @@ final class EDecl {
      * Convenience method that checks if there are duplicate names in a EDecl list.
      * @return the first duplicate name if duplicates exist, and returns null otherwise
      */
-    static String findDuplicateName (List<EDecl> list) {
+    public static String findDuplicateName (List<EDecl> list) {
         for(int i=0; i<list.size(); i++) {
             EDecl d=list.get(i);
             for(int j=0; j<d.names.size(); j++) {

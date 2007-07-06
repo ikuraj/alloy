@@ -18,7 +18,7 @@
  * 02110-1301, USA
  */
 
-package edu.mit.csail.sdg.alloy4compiler.parser;
+package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,18 +29,13 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 
 /**
  * Immutable; represents an unresolved node that has several possibilities.
  */
 
-final class EChoice extends ExprCustom {
+public final class ExprChoice extends Expr {
 
     /** The unmodifiable list of object(s) that this name can refer to; this list is never empty. */
     final ConstList<Expr> choices;
@@ -73,7 +68,7 @@ final class EChoice extends ExprCustom {
      * Construct an EChoice node.
      * <br> Precondition: this method must only be called by the typechecker during first pass
      */
-    static Expr make(Pos pos, ConstList<Expr> choices) throws Err {
+    public static Expr make(Pos pos, ConstList<Expr> choices) throws Err {
         if (choices.size()==0) throw new ErrorAPI("EChoice cannot start with an empty list.");
         TempList<Expr> nonemptychoices = new TempList<Expr>(choices.size());
         Type type=null;
@@ -87,14 +82,14 @@ final class EChoice extends ExprCustom {
         if (choices.size()==1 && type!=null) return choices.get(0);
         long weight=choices.get(0).weight;
         for(int i=1; i<choices.size(); i++) if (weight > choices.get(i).weight) weight = choices.get(i).weight;
-        return new EChoice(pos, choices, type, weight);
+        return new ExprChoice(pos, choices, type, weight);
     }
 
     private void complain() throws Err {
         StringBuilder sb=new StringBuilder("Name cannot be resolved; possible incorrect function/predicate call; perhaps you used ( ) when you should have used [ ]\n");
         for(Expr x:choices) {
-          if (x instanceof EBadCall) {
-            EBadCall xx=(EBadCall)x;
+          if (x instanceof ExprBadCall) {
+            ExprBadCall xx=(ExprBadCall)x;
             sb.append("\nThis cannot be a correct call to ").append(xx.fun);
             sb.append(xx.fun.params.size()==0 ? ".\nIt has no parameters,\n" : ".\nThe parameters are\n");
             for(ExprVar v:xx.fun.params) {
@@ -107,8 +102,8 @@ final class EChoice extends ExprCustom {
               sb.append(" (type = ").append(v.type).append(")\n");
             }
           }
-          else if (x instanceof EBadJoin) {
-            EBadJoin xx=(EBadJoin)x;
+          else if (x instanceof ExprBadJoin) {
+            ExprBadJoin xx=(ExprBadJoin)x;
             sb.append("\nThis cannot be a legal relational join where\nleft hand side is ");
             xx.left.toString(sb,-1);
             sb.append(" (type = ").append(xx.left.type).append(")\nright hand side is ");
@@ -120,7 +115,7 @@ final class EChoice extends ExprCustom {
     }
 
     /** Constructs an EChoice node. */
-    private EChoice(Pos pos, ConstList<Expr> choices, Type type, long weight) throws Err {
+    private ExprChoice(Pos pos, ConstList<Expr> choices, Type type, long weight) throws Err {
         super(pos, type, 0, weight);
         this.choices=ConstList.make(choices);
         if (type==null) complain();
@@ -170,5 +165,13 @@ final class EChoice extends ExprCustom {
             msg=new StringBuilder("\nThe expression cannot be resolved; its relevant type does not intersect with any of the following candidates:");
         for(Expr ch:match) { msg.append("\n\n"); ch.toString(msg,-1); msg.append(" (type: ").append(ch.type).append(")"); }
         throw new ErrorType(span(), msg.toString());
+    }
+
+    /**
+     * Accepts the return visitor by immediately throwing an exception.
+     * This is because the typechecker should have replaced/removed this node.
+     */
+    @Override final Object accept(VisitReturn visitor) throws Err {
+        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
     }
 }

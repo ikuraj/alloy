@@ -47,11 +47,13 @@ import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4compiler.ast.EDecl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprAnd;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuantt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -530,7 +532,7 @@ public final class CompUtil {
                 Expr f=e.getValue().appendedFact;
                 if (f==null) continue;
                 EDecl vd=new EDecl(f.span(), "this", s);
-                f=EQuant.make(f.span(), null, ExprQuant.Op.ALL, Util.asList(vd), f);
+                f=ExprQuantt.make(f.span(), null, ExprQuant.Op.ALL, Util.asList(vd), f);
                 cx.rootsig=s;
                 y.addFact(""+s+"#fact", f, cx);
             }

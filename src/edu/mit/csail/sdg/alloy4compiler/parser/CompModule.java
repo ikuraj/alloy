@@ -31,8 +31,10 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4compiler.ast.EDecl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
@@ -58,11 +60,11 @@ final class CompModule { // Comparison is by identity
         paths.add(path);
     }
 
-    void makeModule(Pos pos, String moduleName, List<EName> list) throws Err {
+    void makeModule(Pos pos, String moduleName, List<ExprVar> list) throws Err {
         this.moduleName=moduleName;
         this.pos=pos;
-        for(EName expr:list) {
-            String name=expr.name;
+        for(ExprVar expr:list) {
+            String name=expr.label;
             paramNames.add(name);
             if (params.containsKey(name))
                 throw new ErrorSyntax(pos, "You cannot use the same name for more than 1 instantiating parameter.");
@@ -77,7 +79,7 @@ final class CompModule { // Comparison is by identity
 
     final Map<String,CompOpen> opencmds=new LinkedHashMap<String,CompOpen>();
 
-    void addOpen(Pos pos, String name, List<EName> args, String alias) throws Err {
+    void addOpen(Pos pos, String name, List<ExprVar> args, String alias) throws Err {
         CompOpen x=new CompOpen(pos, alias, args, name);
         CompOpen y=opencmds.get(x.alias);
         // Special case, especially needed for auto-import of "util/sequniv"
@@ -112,7 +114,7 @@ final class CompModule { // Comparison is by identity
 
     final Map<String,SigAST> sigs = new LinkedHashMap<String,SigAST>();
 
-    SigAST addSig(List<EName> hints, Pos p,String n,
+    SigAST addSig(List<ExprVar> hints, Pos p,String n,
         boolean fa,boolean fl,boolean fo,boolean fs,List<String> i,String e,List<EDecl> d,Expr f) throws Err {
         SigAST obj;
         String fullname = (path.length()==0) ? "this/"+n : path+"/"+n;
@@ -120,8 +122,8 @@ final class CompModule { // Comparison is by identity
             obj=new SigAST(p,fullname,n,fa,fl,fo,fs,true,i,d,f,null);
         else
             obj=new SigAST(p,fullname,n,fa,fl,fo,fs,false,Util.asList(e),d,f,null);
-        if (hints!=null) for(EName hint:hints) {
-           if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
+        if (hints!=null) for(ExprVar hint:hints) {
+           if (hint.label.equals("leaf")) {obj.hint_isLeaf=true; break;}
         }
         if (sigs.containsKey(n)) throw new ErrorSyntax(p, "sig \""+n+"\" is already declared in this module.");
         sigs.put(n,obj);
@@ -186,22 +188,22 @@ final class CompModule { // Comparison is by identity
 
     final List<Pair<String,Command>> commands=new ArrayList<Pair<String,Command>>();
 
-    void addCommand(Pos p,String n,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<EName> opts) throws Err {
+    void addCommand(Pos p,String n,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExprVar> opts) throws Err {
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         List<String> options=new ArrayList<String>(opts.size());
-        for(EName opt:opts) options.add(opt.name);
+        for(ExprVar opt:opts) options.add(opt.label);
         if (label==null || label.length()==0) label=n;
         commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
     }
 
-    void addCommand(Pos p,Expr e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<EName> opts) throws Err {
+    void addCommand(Pos p,Expr e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExprVar> opts) throws Err {
         String n;
         if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run#"+(1+commands.size()),null,new ArrayList<EDecl>(),null,e);
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         List<String> options=new ArrayList<String>(opts.size());
-        for(EName opt:opts) options.add(opt.name);
+        for(ExprVar opt:opts) options.add(opt.label);
         if (label==null || label.length()==0) label=n;
         commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
     }
