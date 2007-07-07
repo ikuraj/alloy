@@ -42,12 +42,6 @@ public abstract class VisitQuery extends VisitReturn {
         return x.sub.accept(this);
     }
 
-    /** Visits an ExprAnd node by calling accept() on each subnode. */
-    @Override public Object visit(ExprAnd x) throws Err {
-        for(Expr y:x.list) { Object ans=y.accept(this); if (ans!=null) return ans; }
-        return null;
-    }
-
     /** Visits an ExprBuiltin node F[X1,X2,X3..] by calling accept() on X1, X2, X3... */
     @Override public Object visit(ExprBuiltin x) throws Err {
         for(Expr y:x.args) { Object ans=y.accept(this); if (ans!=null) return ans; }

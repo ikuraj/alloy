@@ -26,7 +26,6 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.EDecl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprAnd;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -3395,7 +3394,7 @@ class CUP$CompParser$actions {
         Expr a = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Expr b = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=ExprAnd.make(o,a,b);
+         RESULT=ExprBinary.Op.AND.make(o,a,b);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("AndExpr",0, RESULT);
             }
           return CUP$CompParser$result;

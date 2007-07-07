@@ -43,22 +43,32 @@ public final class JoinableList<E> implements Iterable<E> {
         return emptylist;
     }
 
-    /** Returns a list that represents the concatenation of a and b. */
+    /** Returns a list that represents the concatenation of this and that. */
     @SuppressWarnings("unchecked")
-    public static<E> JoinableList<E> join(JoinableList<E> a, JoinableList<E> b) {
-        if (b==null || b.count==0) return (a==null ? emptylist : a);
-        if (a.count==0) return b;
-        if (a.post!=null && a.post.count>0) return new JoinableList<E>(a.count + b.count, a, null, b);
-        return new JoinableList<E>(a.count + b.count, a.pre, a.item, b);
+    public JoinableList<E> join(JoinableList<E> that) {
+        if (that==null || that.count==0) return this;
+        if (count==0) return that;
+        if (post!=null && post.count>0) return new JoinableList<E>(count + that.count, this, null, that);
+        return new JoinableList<E>(count + that.count, pre, item, that);
     }
 
-    /** Returns a list that represenxts the result of appending the given item onto the end of the given list. */
-    public static<E> JoinableList<E> append(JoinableList<E> list, E item) {
-        if (list==null || list.count==0) return new JoinableList<E>(item);
-        if (list.post!=null && list.post.count>0) return new JoinableList<E>(list.count+1, list, item, null);
-        int preCount = (list.pre==null) ? 0 : (list.pre.count);
-        if (list.count==preCount) return new JoinableList<E>(list.count+1, list.pre, item, null);
-        return new JoinableList<E>(list.count+1, list.pre, list.item, new JoinableList<E>(item));
+    /** Returns a list that represenxts the result of appending the given item onto the end of the this list. */
+    public JoinableList<E> append(E newItem) {
+        if (count==0) return new JoinableList<E>(newItem);
+        if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);
+        int preCount = (pre==null) ? 0 : (pre.count);
+        if (count==preCount) return new JoinableList<E>(count+1, pre, newItem, null);
+        return new JoinableList<E>(count+1, pre, item, new JoinableList<E>(newItem));
+    }
+
+    /** Returns a list that represenxts the result of appending the given item onto the end of the this list if newItem!=null. */
+    public JoinableList<E> appendIfNotNull(E newItem) {
+        if (newItem==null) return this;
+        if (count==0) return new JoinableList<E>(newItem);
+        if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);
+        int preCount = (pre==null) ? 0 : (pre.count);
+        if (count==preCount) return new JoinableList<E>(count+1, pre, newItem, null);
+        return new JoinableList<E>(count+1, pre, item, new JoinableList<E>(newItem));
     }
 
     /**

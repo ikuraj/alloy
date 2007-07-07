@@ -154,6 +154,7 @@ public final class ExprBinary extends Expr {
         /** &gt;            */  GT(">",false),
         /** &gt;=           */  GTE(">=",false),
         /** in              */  IN("in",false),
+        /** &amp;&amp;      */  AND("&&",false),
         /** ||              */  OR("||",false),
         /** &lt;=&gt;       */  IFF("<=>",false);
 
@@ -190,7 +191,7 @@ public final class ExprBinary extends Expr {
                   right = cint(right);
                   type = Type.FORMULA;
                   break;
-              case OR: case IFF:
+              case AND: case OR: case IFF:
                   cform(left);
                   cform(right);
                   type = Type.FORMULA;
@@ -271,7 +272,7 @@ public final class ExprBinary extends Expr {
             a=(b=Type.INT);
             break;
           }
-          case OR: case IFF: {
+          case AND: case OR: case IFF: {
             a=(b=Type.FORMULA);
             break;
           }

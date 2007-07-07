@@ -79,7 +79,6 @@ public final class ExprCall extends Expr {
         @Override public Object visit(ExprVar x)     { Type t=env.get(x); return t!=null ? t : x.type; }
         @Override public Object visit(Sig x)         { return x.type; }
         @Override public Object visit(Field x)       { return x.type; }
-        @Override public Object visit(ExprAnd x)     { return Type.FORMULA; }
         @Override public Object visit(ExprBuiltin x) { return Type.FORMULA; }
         @Override public Object visit(ExprITE x) throws Err {
             Type t=(Type)x.left.accept(this);
@@ -88,7 +87,7 @@ public final class ExprCall extends Expr {
         }
         @Override public Object visit(ExprBinary x) throws Err {
             switch(x.op) {
-              case GT: case GTE: case LT: case LTE: case IFF: case EQUALS: case IN: case OR: return Type.FORMULA;
+              case GT: case GTE: case LT: case LTE: case IFF: case EQUALS: case IN: case OR: case AND: return Type.FORMULA;
             }
             Type a=(Type)(x.left.accept(this));
             Type b=(Type)(x.right.accept(this));

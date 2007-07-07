@@ -37,7 +37,6 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprAnd;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
@@ -589,19 +588,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         return answer==null ? Formula.TRUE : answer;
     }
 
-    /*============================*/
-    /* Evaluates an ExprAnd node. */
-    /*============================*/
-
-    @Override public Object visit(ExprAnd x) throws Err {
-        Formula answer=null;
-        for(Expr arg:x.list) {
-            Formula value=core(cform(arg), arg);
-            if (answer==null) answer=value; else answer=answer.and(value);
-        }
-        return answer==null ? Formula.TRUE : answer;
-    }
-
     /*===============================*/
     /* Evaluates an ExprBinary node. */
     /*===============================*/
@@ -615,6 +601,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case LTE: i=cint(a); return i.lte(cint(b));
             case GT: i=cint(a); return i.gt(cint(b));
             case GTE: i=cint(a); return i.gte(cint(b));
+            case AND: f=cform(a); return f.and(cform(b));
             case OR: f=cform(a); return f.or(cform(b));
             case IFF: f=cform(a); return f.iff(cform(b));
             case PLUSPLUS: s=cset(a); return s.override(cset(b));

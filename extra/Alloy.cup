@@ -19,7 +19,6 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.EDecl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprAnd;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -743,8 +742,8 @@ ImpliesExprClose ::= AndExpr:a IMPLIES   ImpliesExprClose:b ELSE ImpliesExprClos
 ImpliesExprOpen  ::= AndExpr:a IMPLIES   ImpliesExprClose:b ELSE ImpliesExprOpen:c  {: RESULT=a.ite(b,c);                         :};
 ImpliesExprOpen  ::= AndExpr:a IMPLIES:o ImpliesExpr:b                              {: RESULT=ExprBinary.Op.OR.make(o,a.not(),b); :};
 
-AndExpr ::=                 NegExpr:b   {: RESULT=b;                   :};
-AndExpr ::= AndExpr:a AND:o NegExpr:b   {: RESULT=ExprAnd.make(o,a,b); :};
+AndExpr ::=                 NegExpr:b   {: RESULT=b;                             :};
+AndExpr ::= AndExpr:a AND:o NegExpr:b   {: RESULT=ExprBinary.Op.AND.make(o,a,b); :};
 
 NegExpr ::=       CompareExpr:b         {: RESULT=b;                          :};
 NegExpr ::= NOT:o NegExpr:b             {: RESULT=ExprUnary.Op.NOT.make(o,b); :};

@@ -111,6 +111,20 @@ public class TypeCheckContext {
     }
 
     /**
+     * Helper method that throws a type error if x cannot possibly have formula type.
+     * <p> <b>Return</b> x if it can have formula type
+     *
+     * @throws ErrorType if x does not have formula type
+     */
+    public static final Err isForm(Expr x) {
+        if (x.type==null)
+            return new ErrorType(x.span(), "This expression failed to be typechecked.");
+        if (!x.type.is_bool)
+            return new ErrorType(x.span(), "This must be a formula expression.\nInstead, it has the following possible type(s):\n"+x.type);
+        return null;
+    }
+
+    /**
      * Helper method that throws a type error if x cannot possibly have integer type.
      *
      * <p>  <b>Return</b> x if it can have integer type

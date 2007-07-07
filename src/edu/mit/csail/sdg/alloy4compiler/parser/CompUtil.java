@@ -49,7 +49,7 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.EDecl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprAnd;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
@@ -422,7 +422,7 @@ public final class CompUtil {
                     final Field f=s.addTrickyField(d.pos, n, THIS, bound);
                     rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                     if (s.anno.get("orderingSIG") instanceof Sig) continue;
-                    if (d.disjoint) { if (disjA==null) disjA=f; else disjF = ExprAnd.make(d.disjointPosition, disjA.intersect(f).no(), disjF); disjA=disjA.plus(f); }
+                    if (d.disjoint) { if (disjA==null) disjA=f; else disjF = ExprBinary.Op.AND.make(d.disjointPosition, disjA.intersect(f).no(), disjF); disjA=disjA.plus(f); }
                 }
                 if (d.disjoint && !(disjF instanceof ExprConstant)) y.addFact(""+s+"#disjoint", disjF, null);
             }
