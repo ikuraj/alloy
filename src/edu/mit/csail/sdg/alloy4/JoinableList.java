@@ -43,20 +43,22 @@ public final class JoinableList<E> implements Iterable<E> {
         return emptylist;
     }
 
-    /** Returns a list that represents the concatenation of this and that. */
-    public JoinableList<E> join(JoinableList<E> that) {
-        if (that==null || that.count==0) return this;
-        if (count==0) return that;
-        if (post!=null && post.count>0) return new JoinableList<E>(count + that.count, this, null, that);
-        return new JoinableList<E>(count + that.count, this.pre, this.item, that);
+    /** Returns a list that represents the concatenation of a and b. */
+    @SuppressWarnings("unchecked")
+    public static<E> JoinableList<E> join(JoinableList<E> a, JoinableList<E> b) {
+        if (b==null || b.count==0) return (a==null ? emptylist : a);
+        if (a.count==0) return b;
+        if (a.post!=null && a.post.count>0) return new JoinableList<E>(a.count + b.count, a, null, b);
+        return new JoinableList<E>(a.count + b.count, a.pre, a.item, b);
     }
 
-    /** Returns a list that represents the result of appending the given item onto the end of this list. */
-    public JoinableList<E> append(E item) {
-        if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, item, null);
-        int preCount = (this.pre==null) ? 0 : (this.pre.count);
-        if (count==preCount) return new JoinableList<E>(count+1, this.pre, item, null);
-        return new JoinableList<E>(count+1, this.pre, this.item, new JoinableList<E>(item));
+    /** Returns a list that represenxts the result of appending the given item onto the end of the given list. */
+    public static<E> JoinableList<E> append(JoinableList<E> list, E item) {
+        if (list==null || list.count==0) return new JoinableList<E>(item);
+        if (list.post!=null && list.post.count>0) return new JoinableList<E>(list.count+1, list, item, null);
+        int preCount = (list.pre==null) ? 0 : (list.pre.count);
+        if (list.count==preCount) return new JoinableList<E>(list.count+1, list.pre, item, null);
+        return new JoinableList<E>(list.count+1, list.pre, list.item, new JoinableList<E>(item));
     }
 
     /**
@@ -109,10 +111,9 @@ public final class JoinableList<E> implements Iterable<E> {
         if (this==that) return true;
         if (!(that instanceof JoinableList)) return false;
         JoinableList x=(JoinableList)that;
-        int n=count;
         if (count!=x.count) return false;
         Iterator a=iterator(), b=x.iterator();
-        for(int i=0; i<n; i++) {
+        for(int i=0; i<count; i++) {
             Object aa=a.next(), bb=b.next();
             if (aa==null) {
                 if (bb!=null) return false;
@@ -124,7 +125,7 @@ public final class JoinableList<E> implements Iterable<E> {
     }
 
     /** Returns true if the list contains the given element. */
-    public boolean contains(Object item) {
+    public boolean contains(E item) {
         for(E entry:this) {
             if (entry==null) {
                 if (item==null) return true;
@@ -139,7 +140,6 @@ public final class JoinableList<E> implements Iterable<E> {
     public Iterator<E> iterator() {
         return new Iterator<E>() {
             private int i=0;
-            @SuppressWarnings("unchecked")
             public final E next() { i++; return get(i-1); }
             public final boolean hasNext() { return i < count; }
             public final void remove() { throw new UnsupportedOperationException(); }
