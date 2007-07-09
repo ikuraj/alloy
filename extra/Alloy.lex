@@ -56,7 +56,7 @@ import java_cup_11a.runtime.*;
     Pos p=alloy_here(txt); return new Symbol(type, p, p);
  }
  private final Symbol alloy_id(String txt) throws Err {
-    Pos p=alloy_here(txt); return new Symbol(CompSym.ID, p, new ExprVar(p,txt));
+    Pos p=alloy_here(txt); return new Symbol(CompSym.ID, p, ExprVar.make(p,txt));
  }
  private final Symbol alloy_num(String txt) throws Err {
     Pos p=alloy_here(txt);

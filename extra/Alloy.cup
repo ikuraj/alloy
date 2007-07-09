@@ -27,7 +27,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCallOrJoin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuantt;
 
 //===========================================================================//
 
@@ -278,7 +277,7 @@ action code {:
          if (n.equals("int"))  return ExprUnary.Op.CAST2INT.make(x.pos, j.left);
          if (n.equals("disj")) return ExprBuiltin.makeDISJOINT(x.pos, Util.asList(j.left));
       }
-      if (j.right instanceof ExprBuiltin && ((ExprBuiltin)(j.right)).op==ExprBuiltin.Op.DISJOINT) {
+      if (j.right instanceof ExprBuiltin) {
          ExprBuiltin n=((ExprBuiltin)(j.right));
          List<Expr> args=new ArrayList<Expr>(n.args);
          args.add(j.left);
@@ -638,9 +637,9 @@ SigIn    ::= IN:a SigRefu:b           {: RESULT=new Pair<Pos,List<String>>(a.mer
 SigIn    ::=                          {: RESULT=null;                                                                                                           :};
 
 SigRef   ::= Name:x                   {: RESULT=x;                     :};
-SigRef   ::= UNIV:x                   {: RESULT=new ExprVar(x,"univ"); :};
-SigRef   ::= SIGINT:x                 {: RESULT=new ExprVar(x,"Int");  :};
-SigRef   ::= NONE:x                   {: RESULT=new ExprVar(x,"none"); :};
+SigRef   ::= UNIV:x                   {: RESULT=ExprVar.make(x,"univ"); :};
+SigRef   ::= SIGINT:x                 {: RESULT=ExprVar.make(x,"Int");  :};
+SigRef   ::= NONE:x                   {: RESULT=ExprVar.make(x,"none"); :};
 
 SigRefs  ::=                          {: RESULT=new ArrayList<ExprVar>(); :};
 SigRefs  ::= SigRefp:x                {: RESULT=x;                      :};
@@ -658,18 +657,18 @@ SigRefu  ::= SigRefu:a PLUS SIGINT:b  {: RESULT=new Pair<Pos,List<String>>(a.a.m
 SigRefu  ::= SigRefu:a PLUS NONE:b    {: RESULT=new Pair<Pos,List<String>>(a.a.merge(b),     a.b); RESULT.b.add("none");                      :};
 
 Name ::= NameHelper:x              {: RESULT=x;                                            :};
-Name ::= THIS:a SLASH NameHelper:b {: RESULT=new ExprVar(a.merge(b.pos), "this/"+b.label); :};
-Name ::= SEQ:a  SLASH NameHelper:b {: RESULT=new ExprVar(a.merge(b.pos), "seq/"+b.label);  :};
+Name ::= THIS:a SLASH NameHelper:b {: RESULT=ExprVar.make(a.merge(b.pos), "this/"+b.label); :};
+Name ::= SEQ:a  SLASH NameHelper:b {: RESULT=ExprVar.make(a.merge(b.pos), "seq/"+b.label);  :};
 
 NameHelper ::= ID:x                     {: RESULT=x;                                                    :};
-NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=new ExprVar(a.pos.merge(b.pos), a.label+"/"+b.label); :};
+NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=ExprVar.make(a.pos.merge(b.pos), a.label+"/"+b.label); :};
 
 Names ::= Name:x                   {: RESULT=new ArrayList<ExprVar>(); RESULT.add(x);  :};
 Names ::= Names:a COMMA Name:b     {: a.add(b); RESULT=a;                            :};
 
-Decla ::= PART:k Names COLON Expr {: ExprVar.hint(k,"part"); :};
+Decla ::= PART:k Names COLON Expr {: if (1==1) throw ExprVar.hint(k,"part"); :};
 
-Decla ::= EXH:k Names COLON Expr {: ExprVar.hint(k,"exh"); :};
+Decla ::= EXH:k Names COLON Expr {: if (1==1) throw ExprVar.hint(k,"exh"); :};
 
 Decla ::= DISJ:k Names:a COLON Expr:b {:
   List<String> aa = new ArrayList<String>();
@@ -694,13 +693,13 @@ Decls ::=         COMMA Decls:y  {: RESULT=y;                                   
 Let ::= Name:a EQUALS:o Expr:b SuperOrBar:x {:
   if (a.label.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
   if (a.label.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
-  RESULT=ExprLet.make(a.pos.merge(o), a, b, x);
+  RESULT=ExprLet.make(a.pos.merge(o), ExprVar.make(a.pos, a.label, b), x);
 :};
 
 Let ::= Name:a EQUALS:o Expr:b COMMA Let:x {:
   if (a.label.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
   if (a.label.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
-  RESULT=ExprLet.make(a.pos.merge(o), a, b, x);
+  RESULT=ExprLet.make(a.pos.merge(o), ExprVar.make(a.pos, a.label, b), x);
 :};
 
 SuperOpt ::=                               {: RESULT=null;          :};
@@ -722,12 +721,12 @@ Exprp ::= Exprp:a COMMA Expr:b  {: a.add(b); RESULT=a;                          
 
 Expr ::= OrExpr:x                      {: RESULT=x;                                             :};
 Expr ::= LET     Let:x                 {: RESULT=x;                                             :};
-Expr ::= ALL2:o  Declp:a SuperOrBar:b  {: RESULT=ExprQuantt.make(o, null, ExprQuant.Op.ALL,  a, b); :};
-Expr ::= NO2:o   Declp:a SuperOrBar:b  {: RESULT=ExprQuantt.make(o, null, ExprQuant.Op.NO,   a, b); :};
-Expr ::= SOME2:o Declp:a SuperOrBar:b  {: RESULT=ExprQuantt.make(o, null, ExprQuant.Op.SOME, a, b); :};
-Expr ::= LONE2:o Declp:a SuperOrBar:b  {: RESULT=ExprQuantt.make(o, null, ExprQuant.Op.LONE, a, b); :};
-Expr ::= ONE2:o  Declp:a SuperOrBar:b  {: RESULT=ExprQuantt.make(o, null, ExprQuant.Op.ONE,  a, b); :};
-Expr ::= SUM2:o  Declp:a SuperOrBar:b  {: RESULT=ExprQuantt.make(o, null, ExprQuant.Op.SUM,  a, b); :};
+Expr ::= ALL2:o  Declp:a SuperOrBar:b  {: RESULT=CompUtil.makeQuant(o, null, ExprQuant.Op.ALL,  a, b); :};
+Expr ::= NO2:o   Declp:a SuperOrBar:b  {: RESULT=CompUtil.makeQuant(o, null, ExprQuant.Op.NO,   a, b); :};
+Expr ::= SOME2:o Declp:a SuperOrBar:b  {: RESULT=CompUtil.makeQuant(o, null, ExprQuant.Op.SOME, a, b); :};
+Expr ::= LONE2:o Declp:a SuperOrBar:b  {: RESULT=CompUtil.makeQuant(o, null, ExprQuant.Op.LONE, a, b); :};
+Expr ::= ONE2:o  Declp:a SuperOrBar:b  {: RESULT=CompUtil.makeQuant(o, null, ExprQuant.Op.ONE,  a, b); :};
+Expr ::= SUM2:o  Declp:a SuperOrBar:b  {: RESULT=CompUtil.makeQuant(o, null, ExprQuant.Op.SUM,  a, b); :};
 
 OrExpr  ::=               EquivExpr:b              {: RESULT=b;                            :};
 OrExpr  ::= OrExpr:a OR:o EquivExpr:b              {: RESULT=ExprBinary.Op.OR.make(o,a,b); :};
@@ -810,13 +809,13 @@ RangeExpr ::= RangeExpr:a RANGE:o BracketExpr:b   {: RESULT=ExprBinary.Op.RANGE.
 
 BracketExpr ::= DotExpr:b                               {: RESULT=b;                                                                                                     :};
 BracketExpr ::= BracketExpr:a LBRACKET Exprs:b RBRACKET {: Expr aa=a;                     for(Expr bb:b) aa=t(ExprCallOrJoin.make(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
-BracketExpr ::= DISJ:a        LBRACKET Exprs:b RBRACKET {: Expr aa=new ExprVar(a,"disj"); for(Expr bb:b) aa=t(ExprCallOrJoin.make(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
-BracketExpr ::= INT:a         LBRACKET Exprs:b RBRACKET {: Expr aa=new ExprVar(a,"int");  for(Expr bb:b) aa=t(ExprCallOrJoin.make(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
-BracketExpr ::= SUM:a         LBRACKET Exprs:b RBRACKET {: Expr aa=new ExprVar(a,"int");  for(Expr bb:b) aa=t(ExprCallOrJoin.make(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
+BracketExpr ::= DISJ:a        LBRACKET Exprs:b RBRACKET {: Expr aa=ExprVar.make(a,"disj"); for(Expr bb:b) aa=t(ExprCallOrJoin.make(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
+BracketExpr ::= INT:a         LBRACKET Exprs:b RBRACKET {: Expr aa=ExprVar.make(a,"int");  for(Expr bb:b) aa=t(ExprCallOrJoin.make(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
+BracketExpr ::= SUM:a         LBRACKET Exprs:b RBRACKET {: Expr aa=ExprVar.make(a,"int");  for(Expr bb:b) aa=t(ExprCallOrJoin.make(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
 
 DotExpr ::=                     UnopExpr:b {: RESULT=b;                                        :};
 DotExpr ::= BracketExpr:a DOT:o UnopExpr:b {: RESULT=t(ExprCallOrJoin.make(o,a,b));                     :};
-DotExpr ::= BracketExpr:a DOT:o DISJ:b     {: RESULT=t(ExprCallOrJoin.make(o,a,new ExprVar(b,"disj"))); :};
+DotExpr ::= BracketExpr:a DOT:o DISJ:b     {: RESULT=t(ExprCallOrJoin.make(o,a,ExprVar.make(b,"disj"))); :};
 DotExpr ::= BracketExpr:a DOT:o INT        {: RESULT=ExprUnary.Op.CAST2INT.make(o,a);          :};
 DotExpr ::= BracketExpr:a DOT:o SUM        {: RESULT=ExprUnary.Op.CAST2INT.make(o,a);          :};
 
@@ -833,12 +832,12 @@ BaseExpr ::= UNIV:x                                 {: RESULT=ExprUnary.Op.NOOP.
 BaseExpr ::= SIGINT:x                               {: RESULT=ExprUnary.Op.NOOP.make(x, Sig.SIGINT); :};
 BaseExpr ::= SEQ:a SLASH SIGINT:b                   {: RESULT=ExprUnary.Op.NOOP.make(a.merge(b), Sig.SEQIDX); :};
 BaseExpr ::= NONE:x                                 {: RESULT=ExprUnary.Op.NOOP.make(x, Sig.NONE);  :};
-BaseExpr ::= THIS:o                                 {: RESULT=new ExprVar(o,"this");                :};
+BaseExpr ::= THIS:o                                 {: RESULT=ExprVar.make(o,"this");                :};
 BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT=x;                                    :};
-BaseExpr ::= AT:o Name:x                            {: RESULT=new ExprVar(o, "@"+x.label);          :};
+BaseExpr ::= AT:o Name:x                            {: RESULT=ExprVar.make(o, "@"+x.label);          :};
 BaseExpr ::= Name:x                                 {: RESULT=x;                                                              :};
 BaseExpr ::= Super:x                                {: RESULT=x;                                                              :};
-BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT=ExprQuantt.make(o, c, ExprQuant.Op.COMPREHENSION, a, b);            :};
-BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT=ExprQuantt.make(o, c, ExprQuant.Op.COMPREHENSION, a, alloyTrue(c)); :};
+BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT=CompUtil.makeQuant(o, c, ExprQuant.Op.COMPREHENSION, a, b);            :};
+BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT=CompUtil.makeQuant(o, c, ExprQuant.Op.COMPREHENSION, a, alloyTrue(c)); :};
 
 //=============================================================================
