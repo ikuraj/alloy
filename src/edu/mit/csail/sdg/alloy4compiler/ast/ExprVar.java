@@ -101,25 +101,6 @@ public final class ExprVar extends Expr {
         return new ExprVar(pos, label, expr, (e==null ? expr.type : null), e);
     }
 
-    /**
-     * Constructs an ExprVar variable where the resulting node will be untyped
-     * @param pos - the original position in the source file (can be null if unknown)
-     * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
-     * @param expr - the quantification/substitution expression for this variable
-     */
-    public static ExprVar makeUntyped(Pos pos, String label, Expr expr) {
-        return new ExprVar(pos, label, expr, null, null);
-    }
-
-    /**
-     * Constructs a placeholder ExprVar variable where we don't know what it refers to
-     * @param pos - the original position in the source file (can be null if unknown)
-     * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
-     */
-    public static ExprVar make(Pos pos, String label) {
-        return new ExprVar(pos, label, null, null, null);
-    }
-
     /** Typechecks an ExprName object (first pass). */
     @Override Expr check(final TypeCheckContext cxx) throws Err {
         if (this.type!=null /*TODO*/ && this.type!=EMPTY) return this;
