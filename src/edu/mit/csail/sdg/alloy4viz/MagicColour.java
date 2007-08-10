@@ -26,7 +26,7 @@ import java.util.Set;
 public class MagicColour {
 
     /** This method logs the progress */
-    private static final void log(String msg) {
+    static final void log(String msg) {
         System.err.println(msg);
         System.err.flush();
     }
