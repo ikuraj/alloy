@@ -20,8 +20,11 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -30,11 +33,13 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
  * Immutable; represents a call.
  *
- * <p> <b>Invariant:</b>  all x:args | x.mult==0
+ * <p> <b>Invariant:</b>  type!=EMPTY => (all x:args | x.mult==0)
  */
 
 public final class ExprCall extends Expr {
@@ -80,10 +85,13 @@ public final class ExprCall extends Expr {
         @Override public Object visit(Sig x)         { return x.type; }
         @Override public Object visit(Field x)       { return x.type; }
         @Override public Object visit(ExprBuiltin x) { return Type.FORMULA; }
+        @Override public Object visit(ExprDecl x) throws Err {
+            return x.expr.accept(this);
+        }
         @Override public Object visit(ExprITE x) throws Err {
             Type t=(Type)x.left.accept(this);
             if (t.size()==0) return t; // This means x.left is either a formula, or an integer expression
-            return t.unionWithCommonArity((Type)x.right.accept(this));
+            return t.unionWithCommonArity((Type)(x.right.accept(this)));
         }
         @Override public Object visit(ExprBinary x) throws Err {
             switch(x.op) {
@@ -114,7 +122,7 @@ public final class ExprCall extends Expr {
               default: return Type.FORMULA;
             }
         }
-        @Override public Object visit(ExprConstant x) throws Err {
+        @Override public Object visit(ExprConstant x) {
             switch(x.op) {
               case IDEN: return Type.make2(Sig.UNIV);
               case NUMBER: return Type.INT;
@@ -134,51 +142,52 @@ public final class ExprCall extends Expr {
             return ans;
         }
         @Override public Object visit(ExprLet x) throws Err {
-            env.put(x.left, (Type)(x.right.accept(this)));
+            env.put(x.var, (Type)(x.var.expr.accept(this)));
             Object ans=x.sub.accept(this);
-            env.remove(x.left);
+            env.remove(x.var);
             return ans;
         }
-        @Override public Object visit(ExprCall x) throws Err {
+        @Override public Object visit(ExprCall x) {
             return x.fun.returnDecl.type;
         }
     }
 
     /** Constructs an ExprCall node with the given function "pred/fun" and the list of arguments "args". */
-    private ExprCall(Pos pos, Type type, Func fun, ConstList<Expr> args, long weight) throws Err {
-        super(pos, type, 0, weight);
+    private ExprCall(Pos pos, Type type, Func fun, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+        super(pos, type, 0, weight, errs);
         this.fun = fun;
         this.args = args;
     }
 
-    /**
-     * Constructs an ExprCall node with the given predicate/function "fun" and the list of arguments "args".
-     * @throws ErrorSyntax - if the number of arguments does not match the number of parameters
-     * @throws ErrorSyntax - if one or more argument is a multiplicity expression
-     * @throws ErrorType   - if one or more argument cannot possibly have the correct legal type
-     */
-    public static Expr make(Pos pos, Func fun, List<Expr> args, long extraWeight) throws Err {
+    /** Constructs an ExprCall node with the given predicate/function "fun" and the list of arguments "args". */
+    public static Expr make(Pos pos, Func fun, List<Expr> args, long extraWeight) {
+        JoinableList<Err> errs=JoinableList.emptylist();
         if (extraWeight<0) extraWeight=0;
         if (args==null) args=ConstList.make();
-        if (args.size() != fun.params.size())
-            throw new ErrorSyntax(pos, ""+fun+" has "+fun.params.size()+" parameters but is called with "+args.size()+" arguments.");
         final TempList<Expr> newargs=new TempList<Expr>(args.size());
-        final Type t0=fun.returnDecl.type;
-        Type t=t0;
+        Type t=fun.returnDecl.type;
+        if (args.size() != fun.params.size()) {
+            errs = errs.append(
+                 new ErrorSyntax(pos, ""+fun+" has "+fun.params.size()+" parameters but is called with "+args.size()+" arguments."));
+        }
         for(int i=0; i<args.size(); i++) {
-            int a = fun.params.get(i).type.arity();
-            Expr x = args.get(i);
-            if (x.mult!=0) throw new ErrorSyntax(x.span(), "Multiplicity expression not allowed here.");
-            if (x.type==null) {
-                t=null;
-            } else {
-                x=cset(x);
-                if (!x.type.hasArity(a)) throw new ErrorType(x.span(), "This should have arity "+a+" but instead its possible type(s) are "+x.type);
+            final int a = (i<fun.params.size()) ? fun.params.get(i).type.arity() : 0;
+            final Expr x = cset(args.get(i));
+            errs = errs.join(x.errors);
+            extraWeight = extraWeight + x.weight;
+            if (x.mult!=0) errs = errs.append(new ErrorSyntax(x.span(), "Multiplicity expression not allowed here."));
+            if (x.type==null /* TODO */|| x.type==EMPTY) {
+                t=EMPTY;
+            } else if (x.type.size()==0) {
+                errs = errs.append(ccset(x));
+            } else if (a>0 && !x.type.hasArity(a)) {
+                errs = errs.append(new ErrorType(x.span(),
+                       "This should have arity "+a+" but instead its possible type(s) are "+x.type));
             }
             newargs.add(x);
-            extraWeight += x.weight;
         }
-        if (t!=null && !fun.isPred) {
+        if (t!=EMPTY && errs.size()==0 && !fun.isPred) {
+            final Type tt = fun.returnDecl.type;
             try {
                 // This provides a limited form of polymorphic function,
                 // by using actual arguments at each call site to derive a tighter bound on the return value.
@@ -188,12 +197,12 @@ public final class ExprCall extends Expr {
                     d.env.put(param, newargs.get(i).type.extract(param.type.arity()));
                 }
                 t = (Type) (fun.returnDecl.accept(d));
-                if (t==null || t.is_int || t.is_bool || t.arity()!=t0.arity()) t=t0; // Sanity check
+                if (t==null || t.is_int || t.is_bool || t.arity()!=tt.arity()) t=tt; // Sanity check
             } catch(Throwable ex) {
-                t = t0;
+                t=tt;
             }
         }
-        return new ExprCall(pos, t, fun, newargs.makeConst(), extraWeight);
+        return new ExprCall(pos, t, fun, newargs.makeConst(), extraWeight, errs);
     }
 
     /** Typechecks an ExprCall object (first pass). */
@@ -207,21 +216,18 @@ public final class ExprCall extends Expr {
             w=w+res.weight;
             args.add(res);
             if (arg!=res) changed=true;
-            int ar=fun.params.get(i).type.arity();
-            if (!res.type.hasArity(ar))
-                throw new ErrorType(arg.span(), "This expression should have arity "+ar+" but instead has type "+res.type);
         }
         return changed ? make(pos, fun, args.makeConst(), weight-w) : this;
     }
 
     /** Typechecks an ExprCall object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type t) throws Err {
+    @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) throws Err {
         boolean changed=false;
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         long w=0;
         for(int i=0; i<this.args.size(); i++) {
             Expr arg=this.args.get(i);
-            Expr res=cset(arg.check(cx, fun.params.get(i).type)); // Use the function's param type to narrow down choices
+            Expr res=cset(arg.check(cx, fun.params.get(i).type, warns)); // Use the function's param type to narrow down choices
             w=w+res.weight;
             args.add(res);
             if (arg!=res) changed=true;

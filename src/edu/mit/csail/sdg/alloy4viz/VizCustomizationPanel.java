@@ -24,8 +24,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -230,10 +228,6 @@ public final class VizCustomizationPanel extends JPanel {
         }
         /** We override the paint() method to avoid drawing the box around the "extra space" above sig and univ. */
         @Override public void paint(Graphics g) {
-            if (g instanceof Graphics2D) {
-                Graphics2D g2 = (Graphics2D)g;
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            }
             int w=getWidth(), h=getHeight(), y=h-height;
             Color background = isSelected ? UIManager.getColor("Tree.selectionBackground") : Color.WHITE;
             Color border = isFocused ? UIManager.getColor("Tree.selectionBorderColor") : null;

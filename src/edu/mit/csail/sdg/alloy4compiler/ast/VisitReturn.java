@@ -33,10 +33,13 @@ public abstract class VisitReturn {
     public VisitReturn() { }
 
     /** This is the start method that begins a traversal over the given expression. */
-    public final Object visit(Expr x) throws Err { return x.accept(this); }
+    public final Object visitThis(Expr x) throws Err { return x.accept(this); }
 
     /** Visits an ExprBinary node. */
     public abstract Object visit(ExprBinary x) throws Err;
+
+    /** Visits an ExprDecl node. */
+    public abstract Object visit(ExprDecl x) throws Err;
 
     /** Visits an ExprBuiltin node. */
     public abstract Object visit(ExprBuiltin x) throws Err;

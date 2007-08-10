@@ -20,27 +20,29 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import java.util.List;
+import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
-import edu.mit.csail.sdg.alloy4.ErrorFatal;
+import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.Util;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
  * Immutable; represents an illegal pred/fun call.
  *
- * <p> <b>Invariant:</b>  this.type==null && this.fun!=null && this.args!=null
+ * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()==1
  */
 
-final class ExprBadCall extends Expr {
+public final class ExprBadCall extends Expr {
 
     /** The function. */
-    final Func fun;
+    private final Func fun;
 
     /** The unmodifiable list of arguments. */
-    final ConstList<Expr> args;
+    private final ConstList<Expr> args;
 
     /** Caches the span() result. */
     private Pos span=null;
@@ -69,88 +71,40 @@ final class ExprBadCall extends Expr {
         }
     }
 
-    /**
-     * Returns true if the function's parameters have reasonable intersection with the list of arguments.
-     * <br> If args.length() > f.params.size(), the extra arguments are ignored by this check
-     * <br> <b>Precondition</b>: args.length() >= f.params.size()
-     */
-    private static boolean applicable(Func f, List<Expr> args) throws Err {
-        int i=0;
-        for(ExprVar d:f.params) {
-            Type dt=d.type;
-            Type arg=args.get(i).type;
-            i++;
-            // The reason we don't say (arg.arity()!=d.value.type.arity())
-            // is because the arguments may not be fully resolved yet.
-            if (!arg.hasCommonArity(dt)) return false;
-            if (arg.hasTuple() && dt.hasTuple() && !arg.intersects(dt)) return false;
+    /** Construct the appropriate error message for this node. */
+    private static ErrorType complain(Pos pos, Func fun, ConstList<Expr> args) {
+        StringBuilder sb=new StringBuilder("This cannot be a correct call to ").append(fun);
+        sb.append(fun.params.size()==0 ? ".\nIt has no parameters,\n" : ".\nThe parameters are\n");
+        for(ExprVar v:fun.params) {
+            sb.append("  ").append(v.label).append(": ").append(v.type).append('\n');
         }
-        return true;
-    }
-
-    /**
-     * Construct the result of calling "ch" with the given list of arguments
-     * <br> <b>Precondition</b>: (ch instanceof Expr) or (ch instanceof Func)
-     * <br> <b>Precondition</b>: cset(args[i]) for all i
-     * @return EBadCall, or EBadJoin, or a possibly well-typed Expr
-     */
-    static Expr make(Pos pos, Object ch, ConstList<Expr> args, Expr THISorNULL) throws Err {
-        Expr ans;
-        int i=0, n=args.size();
-        if (ch instanceof Expr) {
-            ans = (Expr)ch;
-        } else {
-            Func f = (Func)ch;
-            i = f.params.size();
-            if (i==n+1 && THISorNULL!=null && THISorNULL.type!=null && THISorNULL.type.hasArity(1)) {
-                // If we're inside a sig, and there is a unary variable bound to "this",
-                // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
-                ConstList<Expr> args2=Util.prepend(args, THISorNULL);
-                if (applicable(f,args2)) return ExprCall.make(pos, f, args2, 1);
-            }
-            if (i>n) return new ExprBadCall(pos, f, args);
-            if (!applicable(f,args)) return new ExprBadCall(pos, f, args.subList(0,i));
-            ans = ExprCall.make(pos, f, args.subList(0,i), 0);
+        sb.append(args.size()==0 || fun.params.size()==0 ? "so the arguments cannot be empty.\n" : "so the arguments cannot be\n");
+        for(Expr v:args.subList(0, fun.params.size())) {
+            sb.append("  ");
+            v.toString(sb,-1);
+            sb.append(" (type = ").append(v.type).append(")\n");
         }
-        if (ans.type==null || (!ans.type.is_int && !ans.type.is_bool && ans.type.size()==0))
-            throw new ErrorFatal("Internal typechecker invariant violated.");
-        for(; i<n; i++) {
-            Expr x = args.get(i);
-            // TODO: you lost the original JOIN's pos
-            try {
-              if (x.type.join(ans.type).size()==0) return new ExprBadJoin(x.span().merge(ans.span()), x, ans);
-              // The line above is not STRICTLY necessary, since the "catch Err" below will occur.
-              // But this allows us to avoid paying the runtime penalty of throwing an exception and then catching it
-              ans = ExprBinary.Op.JOIN.make(x.span().merge(ans.span()), x, ans);
-            } catch(Err ex) {
-              return new ExprBadJoin(x.span().merge(ans.span()), x, ans);
-            }
-        }
-        return ans;
+        return new ErrorType(pos, sb.toString());
     }
 
     /** Constructs an ExprBadCall object. */
-    private ExprBadCall(Pos pos, Func fun, ConstList<Expr> args) throws Err {
-        super(pos, null, 0, 0); // weight can be set to anything (such as 0), since a EBadCall will never be in the ultimate Expr
+    public ExprBadCall(Pos pos, Func fun, ConstList<Expr> args) {
+        super(pos, EMPTY, 0, 0, new JoinableList<Err>(complain(pos, fun, args)));
         this.fun=fun;
         this.args=args;
     }
 
     /** Typechecks an ExprBadCall object (first pass). */
-    @Override public Expr check(final TypeCheckContext cx) throws Err {
-        throw new ErrorFatal("Internal typechecker invariant violated.");
-    }
+    @Override Expr check(final TypeCheckContext cx) { return this; }
 
     /** Typechecks an ExprBadCall object (second pass). */
-    @Override public Expr check(final TypeCheckContext cx, Type t) throws Err {
-        throw new ErrorFatal("Internal typechecker invariant violated.");
-    }
+    @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**
      * Accepts the return visitor by immediately throwing an exception.
      * This is because the typechecker should have replaced/removed this node.
      */
-    @Override final Object accept(VisitReturn visitor) throws Err {
+    @Override Object accept(VisitReturn visitor) throws Err {
         throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
     }
 }

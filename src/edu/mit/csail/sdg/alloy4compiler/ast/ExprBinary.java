@@ -21,29 +21,33 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccint;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
  * Immutable; represents an expression of the form (x OP y).
  *
- * <p> <b>Invariant:</b>  this.mult!=1
- * <p> <b>Invariant:</b>  this.mult==2 => this.op is one of the 17 arrow operators
- * <p> <b>Invariant:</b>  left.mult!=1
- * <p> <b>Invariant:</b>  left.mult==2 => this.op is one of the 17 arrow operators
- * <p> <b>Invariant:</b>  right.mult==1 => this.op==IN
- * <p> <b>Invariant:</b>  right.mult==2 => (this.op==IN || this.op is one of the 17 arrow operators)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (this.mult!=1)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (this.mult==2 => this.op is one of the 17 arrow operators)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (left.mult!=1)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (left.mult==2 => this.op is one of the 17 arrow operators)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (right.mult==1 => this.op==IN)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (right.mult==2 => (this.op==IN || this.op is one of the 17 arrow operators))
  */
 
 public final class ExprBinary extends Expr {
@@ -61,42 +65,40 @@ public final class ExprBinary extends Expr {
     private Pos span=null;
 
     /** Constructs a new ExprBinary node. */
-    private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type) throws Err {
-        super( pos , type , (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0 , left.weight+right.weight);
+    private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type, JoinableList<Err> err) {
+        super(pos, type, (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0, left.weight+right.weight, err);
         this.op=op;
         this.left=left;
         this.right=right;
-        if (op.isArrow) {
-           if (left.mult==1) throw new ErrorSyntax(left.span(), "Multiplicity expression not allowed here.");
-           if (right.mult==1) throw new ErrorSyntax(right.span(), "Multiplicity expression not allowed here.");
-        } else {
-           if (left.mult!=0) throw new ErrorSyntax(left.span(), "Multiplicity expression not allowed here.");
-           if (op!=Op.IN && right.mult!=0) throw new ErrorSyntax(right.span(), "Multiplicity expression not allowed here.");
-        }
     }
 
     /**
      * Convenience method that generates a type error exception with "msg" as the message,
      * and includes the left and right bounding types in the message.
      */
-    private static ErrorType boundingTypeError(Pos pos, String msg, Type leftType, Type rightType) {
-        return new ErrorType(pos, msg+"\nLeft bounding type = "+leftType+"\nRight bounding type = "+rightType);
+    private static ErrorType error(Pos pos, String msg, Expr left, Expr right) {
+        return new ErrorType(pos, msg+"\nLeft type = "+left.type+"\nRight type = "+right.type);
     }
 
     /**
-     * Convenience method that issues a warning message to the current reporter, with "msg" as the message,
+     * Convenience method that generates a warning message to the current reporter, with "msg" as the message,
      * and includes the left and right bounding types in the message.
      */
-    private static void boundingTypeWarning(Pos pos, String msg, Type leftType, Type rightType) {
-        A4Reporter.getReporter().warning(new ErrorWarning(pos, msg+"\nLeft bounding type = "+leftType+"\nRight bounding type = "+rightType));
+    private ErrorWarning warn(String msg) {
+        return new ErrorWarning(pos, msg
+        +"\nLeft type = " + Type.removesBoolAndInt(left.type)
+        +"\nRight type = " + Type.removesBoolAndInt(right.type));
     }
 
     /**
-     * Convenience method that issues a warning message to the current reporter, with "msg" as the message,
-     * and includes the left and right relevance types in the message.
+     * Convenience method that generates a warning message to the current reporter, with "msg" as the message,
+     * and includes the parent's relevance type, as well as the left and right bounding types in the message.
      */
-    private static void relevanceWarning(Pos pos, String msg, Type leftType, Type rightType) {
-        A4Reporter.getReporter().warning(new ErrorWarning(pos, msg+"\nLeft relevant type = "+leftType+"\nRight relevant type = "+rightType));
+    private ErrorWarning warn(String msg, Type parent) {
+        return new ErrorWarning(pos, msg
+        +"\nParent's relevant type = " + Type.removesBoolAndInt(parent)
+        +"\nLeft type = " + Type.removesBoolAndInt(left.type)
+        +"\nRight type = " + Type.removesBoolAndInt(right.type));
     }
 
     /** Returns a Pos object spanning the entire expression. */
@@ -109,8 +111,7 @@ public final class ExprBinary extends Expr {
     /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            left.toString(out,-1);
-            out.append(' ').append(op).append(' ');
+            if (op==Op.ISSEQ_ARROW_LONE) out.append("seq "); else { left.toString(out,-1); out.append(' ').append(op).append(' '); }
             right.toString(out,-1);
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
@@ -183,32 +184,33 @@ public final class ExprBinary extends Expr {
          * @param left - the left hand side expression
          * @param right - the right hand side expression
          */
-        public final Expr make(Pos pos, Expr left, Expr right) throws Err {
-            Type a=left.type, b=right.type, type=null;
-            if (a!=null && b!=null) switch(this) {
+        public final Expr make(Pos pos, Expr left, Expr right) {
+            Type a=left.type, b=right.type, type=EMPTY;
+            ErrorType e1=null, e2=null;
+            if (a!=null && b!=null) // TODO
+            if (a!=EMPTY && b!=EMPTY) switch(this) {
               case LT: case LTE: case GT: case GTE:
-                  left = cint(left);
-                  right = cint(right);
+                  left = cint(left);   e1 = ccint(left);
+                  right = cint(right); e2 = ccint(right);
                   type = Type.FORMULA;
                   break;
               case AND: case OR: case IFF:
-                  cform(left);
-                  cform(right);
+                  e1 = ccform(left);
+                  e2 = ccform(right);
                   type = Type.FORMULA;
                   break;
               case PLUSPLUS:
-                  left = cset(left);
-                  right = cset(right);
-                  type = left.type.unionWithCommonArity(right.type);
-                  if (type.size()==0) throw boundingTypeError(pos, "++ can be used only between two expressions of the same arity.", left.type, right.type);
+                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
+                  type=left.type.unionWithCommonArity(right.type);
+                  if (type==EMPTY) e1=error(pos, "++ can be used only between two expressions of the same arity.", left, right);
                   break;
               case PLUS: case MINUS: case EQUALS:
                   if (this==EQUALS) {
                       if (a.hasCommonArity(b) || (a.is_int && b.is_int)) { type=Type.FORMULA; break; }
                   } else {
                       type = (this==PLUS ? a.unionWithCommonArity(b) : a.pickCommonArity(b));
-                      if (a.is_int && b.is_int) { type=Type.makeInt(type); break; }
-                      if (type.size()>0) break;
+                      if (a.is_int && b.is_int) type=Type.makeInt(type);
+                      if (type!=EMPTY) break;
                   }
                   if (TypeCheckContext.auto_sigint2int) {
                       if (a.is_int && b.intersects(SIGINT.type)) return make(pos, left, right.cast2int());
@@ -218,32 +220,46 @@ public final class ExprBinary extends Expr {
                       if (a.is_int && b.hasArity(1)) return make(pos, left.cast2sigint(), right);
                       if (b.is_int && a.hasArity(1)) return make(pos, left, right.cast2sigint());
                   }
-                  throw boundingTypeError(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions.",a,b);
+                  e1=error(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions."
+                    , left, right);
+                  break;
               case IN:
-                  left=cset(left);
-                  right=cset(right);
-                  if (left.type.hasCommonArity(right.type)) { type=Type.FORMULA; break; }
-                  throw boundingTypeError(pos, this+" can be used only between 2 expressions of the same arity.", left.type, right.type);
+                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
+                  type=(left.type.hasCommonArity(right.type)) ? Type.FORMULA : EMPTY;
+                  if (type==EMPTY) e1=error(pos,this+" can be used only between 2 expressions of the same arity.", left, right);
+                  break;
               case JOIN:
-                  left=cset(left); right=cset(right); type=left.type.join(right.type);
-                  if (type.size()==0) throw boundingTypeError(pos, "You cannot perform relational join between two unary sets.", left.type, right.type);
+                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
+                  type=left.type.join(right.type);
+                  if (type==EMPTY) e1=error(pos, "You cannot perform relational join between two unary sets.", left, right);
                   break;
               case DOMAIN:
-                  left=cset(left); right=cset(right); type=right.type.domainRestrict(left.type);
-                  if (type.size()==0) throw new ErrorType(left.span(), "This must be a unary set, but instead it has the following possible type(s):\n"+left.type);
+                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
+                  type=right.type.domainRestrict(left.type);
+                  if (type==EMPTY) e1=new ErrorType(left.span(),
+                     "This must be a unary set, but instead it has the following possible type(s):\n"+left.type);
                   break;
               case RANGE:
-                  left=cset(left); right=cset(right); type=left.type.rangeRestrict(right.type);
-                  if (type.size()==0) throw new ErrorType(right.span(), "This must be a unary set, but instead it has the following possible type(s):\n"+right.type);
+                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
+                  type=left.type.rangeRestrict(right.type);
+                  if (type==EMPTY) e1=new ErrorType(right.span(),
+                     "This must be a unary set, but instead it has the following possible type(s):\n"+right.type);
                   break;
               case INTERSECT:
-                  left=cset(left); right=cset(right); type=left.type.intersect(right.type);
-                  if (type.size()==0) throw boundingTypeError(pos, "& can be used only between 2 expressions of the same arity.", left.type, right.type);
+                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
+                  type=left.type.intersect(right.type);
+                  if (type==EMPTY) e1=error(pos,"& can be used only between 2 expressions of the same arity.", left, right);
                   break;
               default:
-                  left=cset(left); right=cset(right); type=left.type.product(right.type);
+                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
+                  type=left.type.product(right.type);
             }
-            return new ExprBinary(pos, this, left, right, type);
+            JoinableList<Err> errors = left.errors.join(right.errors).appendIfNotNull(e1).appendIfNotNull(e2);
+            if ((isArrow && left.mult==1) || (!isArrow && left.mult!=0))
+                errors=errors.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
+            if ((isArrow && right.mult==1) || (!isArrow && this!=Op.IN && right.mult!=0))
+                errors=errors.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
+            return new ExprBinary(pos, this, left, right, type, errors);
         }
 
         /** Returns the human readable label for this operator. */
@@ -254,19 +270,17 @@ public final class ExprBinary extends Expr {
 
     /** Typechecks an ExprBinary object (first pass). */
     @Override Expr check(final TypeCheckContext cx) throws Err {
-        Expr a=left.check(cx);
-        Expr b=right.check(cx);
-        if (a.type==null) throw new ErrorType(a.span(), "This expression failed to be typechecked.");
-        if (b.type==null) throw new ErrorType(b.span(), "This expression failed to be typechecked.");
-        return (a==left && b==right) ? this : op.make(pos, a, b);
+        Expr left=this.left.check(cx);
+        Expr right=this.right.check(cx);
+        return (left==this.left && right==this.right) ? this : op.make(pos, left, right);
     }
 
     //============================================================================================================//
 
     /** Typechecks an ExprBinary object (second pass). */
-    @Override Expr check(TypeCheckContext cx, Type p) throws Err {
+    @Override Expr check(TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
+        ErrorWarning w=null;
         Type a=left.type, b=right.type;
-        bigbreak:
         switch(op) {
           case LT: case LTE: case GT: case GTE: {
             a=(b=Type.INT);
@@ -277,86 +291,94 @@ public final class ExprBinary extends Expr {
             break;
           }
           case EQUALS: {
-            a=a.intersect(b);
-            if (left.type.is_int && right.type.is_int) a=Type.makeInt(a);
-            if (left.type.hasTuple() && right.type.hasTuple() && a.hasNoTuple())
-                boundingTypeWarning(pos, "== is redundant, because the left and right expressions are always disjoint.", left.type, right.type);
-            b=a;
+            a=a.pickCommonArity(b);
+            b=b.pickCommonArity(a);
+            if (left.type.is_int && right.type.is_int) {
+               a=Type.makeInt(a); b=Type.makeInt(b);
+            } else if (left.type.hasTuple() && right.type.hasTuple() && !(left.type.intersects(right.type))) {
+               w=warn("== is redundant, because the left and right expressions are always disjoint.");
+            }
             break;
           }
           case IN: {
             a=a.pickCommonArity(b);
-            b=b.intersect(a);
-            if (left.type.hasNoTuple())
-                boundingTypeWarning(pos, "Subset operator is redundant, because the left expression is always empty.", left.type, right.type);
+            b=a.intersect(b);
+            if (left.type.hasNoTuple() && right.type.hasNoTuple())
+               w=warn("Subset operator is redundant, because both subexpressions are always empty.");
+            else if (left.type.hasNoTuple())
+               w=warn("Subset operator is redundant, because the left subexpression is always empty.");
             else if (right.type.hasNoTuple())
-                boundingTypeWarning(pos, "Subset operator is redundant, because the right expression is always empty.", left.type, right.type);
+               w=warn("Subset operator is redundant, because the right subexpression is always empty.");
             else if (b.hasNoTuple())
-                boundingTypeWarning(pos, "Subset operator is redundant, because the left and right expressions are always disjoint.", left.type, right.type);
+               w=warn("Subset operator is redundant, because the left and right subexpressions are always disjoint.");
             break;
           }
           case INTERSECT: {
-            if (type.hasNoTuple()) boundingTypeWarning(pos, "& is irrelevant because the 2 expressions are always disjoint.",a,b);
             a=p.intersect(a);
             b=p.intersect(b);
+            if (type.hasNoTuple()) w=warn("& is irrelevant because the two subexpressions are always disjoint.");
             break;
           }
           case PLUSPLUS: case PLUS: {
-            if (op==Op.PLUS && p.is_int) { a=Type.INT; b=Type.INT; break; }
             a=p.intersect(a);
             b=p.intersect(b);
-            if (a.hasNoTuple()) relevanceWarning(pos, this+" is irrelevant since the left expression is redundant.",a,b);
-            if (b.hasNoTuple()) relevanceWarning(pos, this+" is irrelevant since the right expression is redundant.",a,b);
-            if (op==Op.PLUSPLUS && !b.canOverride(a)) relevanceWarning(pos, "++ is irrelevant since the right expression can never override the left expression.",a,b);
+            if (op==Op.PLUS && p.is_int) { a=Type.makeInt(a); b=Type.makeInt(b); }
+            if (a==EMPTY && b==EMPTY)
+               w=warn(this+" is irrelevant since both subexpressions are redundant.", p);
+            else if (a==EMPTY)
+               w=warn(this+" is irrelevant since the left subexpression is redundant.", p);
+            else if (b==EMPTY || (op==Op.PLUSPLUS && !b.canOverride(a)))
+               w=warn(this+" is irrelevant since the right subexpression is redundant.", p);
             break;
           }
           case MINUS: {
-            if (p.is_int) { a=Type.INT; b=Type.INT; break; }
-            if (type.hasNoTuple()) boundingTypeWarning(pos, "- is irrelevant since the left and right expressions are always disjoint.",a,b);
             a=p;
             b=p.intersect(b);
-            if (b.hasNoTuple()) relevanceWarning(pos, "- is irrelevant since the right expression is redundant.",a,b);
+            if (p.is_int) {
+                a=Type.makeInt(a); b=Type.makeInt(b);
+            } else if (type.hasNoTuple() || b==EMPTY) {
+                w=warn("- is irrelevant since the right expression is redundant.", p);
+            }
             break;
           }
           case JOIN: {
-            if (type.hasNoTuple()) boundingTypeWarning(pos, "The join operation here always yields an empty set.", a, b);
-            a=(b=Type.EMPTY);
+            if (type.hasNoTuple()) w=warn("The join operation here always yields an empty set.");
+            a=(b=EMPTY);
             for (ProductType aa: left.type) for (ProductType bb: right.type) if (p.hasArity(aa.arity()+bb.arity()-2)) {
               PrimSig j = aa.get(aa.arity()-1).intersect(bb.get(0));
-              if (j!=Sig.NONE) {
-                 for (ProductType cc:p.intersect(aa.join(bb))) if (!cc.isEmpty()) {
-                   List<PrimSig> bts = new ArrayList<PrimSig>(cc.arity() + 1);
-                   for(int i=0; i<cc.arity(); i++) bts.add(cc.get(i));
-                   bts.add(aa.arity()-1, j);
-                   a = a.merge(Type.make(bts, 0, aa.arity()));
-                   b = b.merge(Type.make(bts, aa.arity()-1, bts.size()));
-                 }
+              if (j != Sig.NONE) for (ProductType cc:p.intersect(aa.join(bb))) if (!cc.isEmpty()) {
+                 List<PrimSig> v = new ArrayList<PrimSig>(cc.arity() + 1);
+                 for(int i=0; i<cc.arity(); i++) v.add(cc.get(i));
+                 v.add(aa.arity()-1, j);
+                 a = a.merge(Type.make(v, 0, aa.arity()));
+                 b = b.merge(Type.make(v, aa.arity()-1, v.size()));
               }
             }
-            if (a.size()==0 || b.size()==0) { // We try to continue the best we can; we should have issued a relevance warning already.
-              a=(b=Type.EMPTY);
+            if (a==EMPTY || b==EMPTY) { // We try to continue the best we can; we should have issued a relevance warning already.
+              a=(b=EMPTY);
               for (ProductType aa: left.type) for (ProductType bb: right.type)
-                if (p.hasArity(aa.arity()+bb.arity()-2) && aa.get(aa.arity()-1).intersects(bb.get(0))) {a=a.merge(aa); b=b.merge(bb);}
+                if (p.hasArity(aa.arity()+bb.arity()-2) && aa.get(aa.arity()-1).intersects(bb.get(0)))
+                   {a=a.merge(aa); b=b.merge(bb);}
             }
-            if (a.size()==0 || b.size()==0) { // We try to continue the best we can; we should have issued a relevance warning already.
-              a=(b=Type.EMPTY);
+            if (a==EMPTY || b==EMPTY) { // We try to continue the best we can; we should have issued a relevance warning already.
+              a=(b=EMPTY);
               for (ProductType aa: left.type) for (ProductType bb: right.type)
-                if (p.hasArity(aa.arity()+bb.arity()-2)) {a=a.merge(aa); b=b.merge(bb); }
+                if (p.hasArity(aa.arity()+bb.arity()-2))
+                   {a=a.merge(aa); b=b.merge(bb);}
             }
             break;
           }
           case DOMAIN: {
             // leftType' = {r1 | r1 in leftType and there exists r2 in rightType such that r1<:r2 in parentType}
             // rightType' = {r2 | r2 in rightType and there exists r1 in leftType such that r1<:r2 in parentType}
-            if (type.hasNoTuple()) boundingTypeWarning(pos, "<: is irrelevant because the result is always empty.", a, b);
-            Type leftType=Type.EMPTY, rightType=Type.EMPTY;
+            if (type.hasNoTuple()) w=warn("<: is irrelevant because the result is always empty.");
+            Type leftType=EMPTY, rightType=EMPTY;
             for (ProductType aa:a) if (aa.arity()==1) for (ProductType bb:b) if (p.hasArity(bb.arity()))
                 for (ProductType cc:p.intersect(bb.columnRestrict(aa.get(0), 0))) if (!cc.isEmpty()) {
                     leftType  = leftType.merge(cc, 0, 1);
                     rightType = rightType.merge(cc);
                 }
-            if (leftType.size()==0 || rightType.size()==0) {
-                // We try to proceed the best we can; we would have issued a relevance warning already.
+            if (leftType==EMPTY || rightType==EMPTY) { // We try to proceed the best we can
                 leftType = a.extract(1);
                 rightType = b.pickCommonArity(p);
             }
@@ -365,15 +387,14 @@ public final class ExprBinary extends Expr {
           case RANGE: {
             // leftType' = {r1 | r1 in leftType and there exists r2 in rightType such that r1:>r2 in parentType}
             // rightType' = {r2 | r2 in rightType and there exists r1 in leftType such that r1:>r2 in parentType}
-            if (type.hasNoTuple()) boundingTypeWarning(pos, ":> is irrelevant because the result is always empty.", a, b);
-            Type leftType=Type.EMPTY, rightType=Type.EMPTY;
+            if (type.hasNoTuple()) w=warn(":> is irrelevant because the result is always empty.");
+            Type leftType=EMPTY, rightType=EMPTY;
             for(ProductType bb:b) if (bb.arity()==1) for(ProductType aa:a) if (p.hasArity(aa.arity()))
                 for (ProductType cc:p.intersect(aa.columnRestrict(bb.get(0), aa.arity()-1))) if (!cc.isEmpty()) {
-                  leftType  = leftType.merge(cc);
-                  rightType = rightType.merge(cc, aa.arity()-1, aa.arity());
+                    leftType  = leftType.merge(cc);
+                    rightType = rightType.merge(cc, aa.arity()-1, aa.arity());
                 }
-            if (leftType.size()==0 || rightType.size()==0) {
-               // We try to proceed the best we can; we would have issued a relevance warning already.
+            if (leftType==EMPTY || rightType==EMPTY) { // We try to proceed the best we can
                leftType = a.pickCommonArity(p);
                rightType = b.extract(1);
             }
@@ -383,26 +404,24 @@ public final class ExprBinary extends Expr {
             // leftType'  == {r1 | r1 in leftType and there exists r2 in rightType such that r1->r2 in parentType}
             // rightType' == {r2 | r2 in rightType and there exists r1 in leftType such that r1->r2 in parentType}
             if (a.hasTuple()) {
-                if (b.hasNoTuple()) boundingTypeWarning(pos, "The left expression of -> is irrelevant because the right expression is always empty.", a, b);
+                if (b.hasNoTuple()) w=warn("The left expression of -> is irrelevant because the right expression is always empty.");
             } else {
-                if (b.hasTuple()) boundingTypeWarning(pos, "The right expression of -> is irrelevant because the left expression is always empty.", a, b);
+                if (b.hasTuple()) w=warn("The right expression of -> is irrelevant because the left expression is always empty.");
             }
-            Type leftType=Type.EMPTY, rightType=Type.EMPTY;
+            Type leftType=EMPTY, rightType=EMPTY;
             for (ProductType aa:a) if (!aa.isEmpty())
               for (ProductType bb:b) if (!bb.isEmpty() && p.hasArity(aa.arity()+bb.arity()))
                 for (ProductType cc:p.intersect(aa.product(bb))) if (!cc.isEmpty()) {
                    leftType  = leftType.merge(cc, 0, aa.arity());
                    rightType = rightType.merge(cc, aa.arity(), cc.arity());
                 }
-            // We try to proceed the best we can; we would have issued a relevance warning already.
-            if (leftType.size()==0 || rightType.size()==0) break;
-            a=leftType; b=rightType;
+            // We try to proceed the best we can; we should have issued a relevance warning already.
+            if (leftType!=EMPTY && rightType!=EMPTY) { a=leftType; b=rightType; }
           }
         }
-        Expr left=this.left.check(cx,a);
-        Expr right=this.right.check(cx,b);
-        if (left.type==null) throw new ErrorType(left.span(), "This expression failed to be typechecked.");
-        if (right.type==null) throw new ErrorType(right.span(), "This expression failed to be typechecked.");
+        Expr left = this.left.check(cx, a, warns);
+        Expr right = this.right.check(cx ,b, warns);
+        if (w!=null) warns.add(w);
         return (left==this.left && right==this.right) ? this : op.make(pos, left, right);
     }
 

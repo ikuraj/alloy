@@ -23,70 +23,34 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
-import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
- * Immutable; represents an illegal relation join.
+ * Immutable; represents an illegal pred/fun call.
  *
  * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()==1
  */
 
-public final class ExprBadJoin extends Expr {
-
-    /** The left-hand-side expression. */
-    private final Expr left;
-
-    /** The right-hand-side expression. */
-    private final Expr right;
-
-    /** Caches the span() result. */
-    private Pos span=null;
+public final class ExprBad extends Expr {
 
     /** Returns a Pos object spanning the entire expression. */
-    @Override public Pos span() {
-        Pos p=span;
-        if (p==null) span = (p = pos.merge(left.span()).merge(right.span()));
-        return p;
+    @Override public Pos span() { return pos; }
+
+    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    @Override public void toString(StringBuilder out, int indent) { }
+
+    /** Constructs an ExprBad object. */
+    public ExprBad(Pos pos, Err error) {
+        super(pos, EMPTY, 0, 0, new JoinableList<Err>(error));
     }
 
-    /** Produce a String representation with the given level of indentation. */
-    @Override public void toString(StringBuilder out, int indent) {
-        if (indent<0) {
-            left.toString(out,-1);
-            out.append('.');
-            right.toString(out,-1);
-        } else {
-            for(int i=0; i<indent; i++) { out.append(' '); }
-            out.append("BadJoin with type=").append(type).append('\n');
-            left.toString(out, indent+2);
-            right.toString(out, indent+2);
-        }
-    }
-
-    private static ErrorType complain(Pos pos, Expr left, Expr right) {
-        StringBuilder sb=new StringBuilder("This cannot be a legal relational join where\nleft hand side is ");
-        left.toString(sb,-1);
-        sb.append(" (type = ").append(left.type).append(")\nright hand side is ");
-        right.toString(sb,-1);
-        sb.append(" (type = ").append(right.type).append(")\n");
-        return new ErrorType(pos, sb.toString());
-    }
-
-    /** Constructs an ExprBadJoin node. */
-    public ExprBadJoin(Pos pos, Expr left, Expr right) {
-        super(pos, EMPTY, 0, 0, new JoinableList<Err>(complain(pos, left, right)));
-        this.left=left;
-        this.right=right;
-    }
-
-    /** Typechecks an EBadJoin object (first pass). */
+    /** Typechecks an ExprBadCall object (first pass). */
     @Override Expr check(final TypeCheckContext cx) { return this; }
 
-    /** Typechecks an EBadJoin object (second pass). */
+    /** Typechecks an ExprBadCall object (second pass). */
     @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**

@@ -22,9 +22,6 @@ package edu.mit.csail.sdg.alloy4whole;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
@@ -290,16 +287,7 @@ final class SwingLogPanel {
         this.viz=viz;
         this.fontName=fontName;
         this.fontSize=fontSize;
-        this.log=new JTextPane() {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        this.log=new JTextPane();
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
         this.log.setEditorKit(new StyledEditorKit() {

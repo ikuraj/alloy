@@ -27,6 +27,7 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
@@ -73,7 +74,7 @@ public abstract class Sig extends Expr {
     @Override final Expr check(final TypeCheckContext cx) { return this; }
 
     /** Typechecks a Sig object (second pass). */
-    @Override final Expr check(final TypeCheckContext cx, Type t) { return this; }
+    @Override final Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** Accepts the return visitor. */
     @Override final Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
@@ -339,7 +340,7 @@ public abstract class Sig extends Expr {
         @Override Expr check(final TypeCheckContext cx) { return this; }
 
         /** Typechecks a Field object (second pass). */
-        @Override Expr check(final TypeCheckContext cx, Type t) { return this; }
+        @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
 
         /** Accepts the return visitor. */
         @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }

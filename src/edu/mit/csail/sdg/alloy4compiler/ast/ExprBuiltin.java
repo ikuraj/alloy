@@ -20,7 +20,10 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.Collection;
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
@@ -28,31 +31,16 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
- * Immutable; represents a builtin predicate or function.
+ * Immutable; represents the builtin disjoint[] predicate.
  *
- * <p> <b>Invariant:</b>  all x:args | x.mult==0
+ * <p> <b>Invariant:</b>  type!=EMPTY => (all x:args | x.mult==0)
  */
 
 public final class ExprBuiltin extends Expr {
-
-    /** This class contains all possible constant types. */
-    public enum Op {
-        /** the builtin "disjoint" predicate */  DISJOINT("disjoint[]");
-
-        /** The constructor. */
-        private Op(String label) {this.label=label;}
-
-        /** The human readable label for this operator. */
-        private final String label;
-
-        /** Returns the human readable label for this operator. */
-        @Override public final String toString() { return label; }
-    }
-
-    /** The type of constant. */
-    public final Op op;
 
     /** The unmodifiable list of arguments. */
     public final ConstList<Expr> args;
@@ -79,51 +67,52 @@ public final class ExprBuiltin extends Expr {
             out.append(']');
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            out.append("builtin ").append(op).append(" with type=").append(type).append('\n');
+            out.append("disjoint[] with type=").append(type).append('\n');
             for(Expr a:args) { a.toString(out, indent+2); }
         }
     }
 
     /** Constructs an ExprBuiltin node. */
-    private ExprBuiltin(Pos pos, Type type, Op op, ConstList<Expr> args, long weight) throws Err {
-        super(pos, type, 0, weight);
-        this.op = op;
+    private ExprBuiltin(Pos pos, Type type, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+        super(pos, type, 0, weight, errs);
         this.args = args;
-        if (args.size()<1) throw new ErrorSyntax(span(), "The builtin disjoint[] predicate must be called with at least one argument.");
-        if (type==null) return;
-        Type commonArity=null;
-        for(Expr a:args) {
-            if (commonArity==null) commonArity=a.type; else commonArity=commonArity.intersect(a.type);
-        }
-        if (commonArity.size()==0) throw new ErrorType(span(), "The builtin predicate disjoint[] cannot be used among expressions of different arities.");
     }
 
-    /**
-     * Generates the expression disj[arg1, args2, arg3...].
-     * <p> If args.size()<1, we will throw a SyntaxError immediately.
-     * <p> If args.size()<2, we will throw a SyntaxError during the typechecking phase.
-     */
-    public static Expr makeDISJOINT(Pos pos, List<Expr> args) throws Err {
+    /** Generates the expression disj[arg1, args2, arg3...] */
+    public static Expr makeDISJOINT(Pos pos, List<Expr> args) {
+        JoinableList<Err> errs=JoinableList.emptylist();
         TempList<Expr> newargs=new TempList<Expr>(args.size());
-        Type type=Type.FORMULA;
+        Type type=Type.FORMULA, commonArity=null;
         long weight=0;
+        if (args.size()<2)
+            errs=errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
         for(Expr a:args) {
-            if (a.mult!=0) throw new ErrorSyntax(a.span(), "Multiplicity expression not allowed here.");
+            errs = errs.join(a.errors);
+            weight = weight + a.weight;
+            if (a.mult!=0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
             Expr b=a;
-            if (b.type==null) type=null; else b=cset(b);
+            if (b.type==EMPTY) {
+                type=EMPTY;
+            } else {
+                b=cset(b);
+                Err berr=ccset(b);
+                if (berr!=null) { errs=errs.append(berr); type=EMPTY; }
+                else if (commonArity==null) commonArity=b.type;
+                else commonArity=commonArity.intersect(b.type);
+            }
             newargs.add(b);
-            weight += b.weight;
         }
-        return new ExprBuiltin(pos, type, ExprBuiltin.Op.DISJOINT, newargs.makeConst(), weight);
+        if (commonArity!=null && commonArity==EMPTY) errs=errs.append(new ErrorType(pos,
+           "The builtin predicate disjoint[] cannot be used among expressions of different arities."));
+        return new ExprBuiltin(pos, type, newargs.makeConst(), weight, errs);
     }
 
     /** Typechecks an ExprBuiltin object (first pass). */
     @Override Expr check(final TypeCheckContext cx) throws Err {
-        if (args.size()<2) throw new ErrorSyntax(span(), "The builtin predicate disjoint[] must be called with 2 or more arguments.");
         TempList<Expr> args = new TempList<Expr>(this.args.size());
-        boolean changed=false;
+        boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
-            Expr x=this.args.get(i), y=cset(cx.check(x));
+            Expr x=this.args.get(i), y=cset(x.check(cx));
             if (x!=y) changed=true;
             args.add(y);
         }
@@ -131,24 +120,17 @@ public final class ExprBuiltin extends Expr {
     }
 
     /** Typechecks an ExprBuiltin object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type p) throws Err {
-        if (args.size()<2) throw new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with 2 or more arguments.");
-        for(int i=0; i<args.size(); i++) {
-            if (i==0) p=args.get(i).type; else p=p.intersect(args.get(i).type);
+    @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
+        p=EMPTY;
+        for(int i=0; i<this.args.size(); i++) {
+            if (i==0) p=this.args.get(i).type; else p=p.unionWithCommonArity(this.args.get(i).type);
         }
         TempList<Expr> args = new TempList<Expr>(this.args.size());
-        boolean changed=false;
-        int arity=0;
+        boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
-            Expr x=this.args.get(i), y=cset(cx.check(x,p));
+            Expr x=this.args.get(i), y=cset(x.check(cx, p, warns));
             if (x!=y) changed=true;
             args.add(y);
-            int newArity=y.type.arity();
-            if (newArity<0) throw new ErrorType(y.span(), "This expression is ambiguous. Its possible types are:\n" + y.type);
-            if (i==0)
-              arity=newArity;
-            else if (arity!=newArity)
-              throw new ErrorType(span(), "The builtin predicate disjoint[] cannot be used among expressions of different arities.");
         }
         if (changed) return makeDISJOINT(pos, args.makeConst()); else return this;
     }

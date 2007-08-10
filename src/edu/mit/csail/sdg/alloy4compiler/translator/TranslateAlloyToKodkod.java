@@ -41,6 +41,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprDecl;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
@@ -70,6 +71,7 @@ import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.addOne;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 
 /** Given a World object, solve one or more commands using Kodkod. */
@@ -348,7 +350,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @throws ErrorFatal - if x does not evaluate to a Formula
      */
     private final Formula cform(Expr x) throws Err {
-        Object y=visit(x);
+        Object y=visitThis(x);
         if (y instanceof Formula) return (Formula)y;
         throw new ErrorFatal(x.span(), "This should have been a formula.\nInstead it is "+y);
     }
@@ -359,7 +361,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @throws ErrorFatal - if x does not evaluate to an IntExpression
      */
     private final IntExpression cint(Expr x) throws Err {
-        Object y=visit(x);
+        Object y=visitThis(x);
         if (y instanceof IntExpression) return (IntExpression)y;
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
@@ -370,7 +372,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @throws ErrorFatal - if x does not evaluate to an Expression
      */
     private final Expression cset(Expr x) throws Err {
-        Object y=visit(x);
+        Object y=visitThis(x);
         if (y instanceof Expression) return (Expression)y;
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
     }
@@ -383,7 +385,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private final Expression csetIgnoreMultiplicity(Expr x) throws Err {
         boolean old=demul;
         demul=true;
-        Object y=visit(x);
+        Object y=visitThis(x);
         demul=old;
         if (y instanceof Expression) return (Expression)y;
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
@@ -429,7 +431,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     @Override public Object visit(ExprITE x) throws Err {
         Formula c=cform(x.cond);
-        Object l=visit(x.left);
+        Object l=visitThis(x.left);
         if (l instanceof Formula) {
             Formula c1=core( c.implies((Formula)l) , x );
             Formula c2=core( c.not().implies(cform(x.right)) , x );
@@ -445,10 +447,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /*============================*/
 
     @Override public Object visit(ExprLet x) throws Err {
-        Object r=visit(x.right);
-        env.put(x.left, r);
-        Object ans=visit(x.sub);
-        env.remove(x.left);
+        Object r=visitThis(x.var.expr);
+        env.put(x.var, r);
+        Object ans=visitThis(x.sub);
+        env.remove(x.var);
         return ans;
     }
 
@@ -482,7 +484,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     @Override public Object visit(ExprUnary x) throws Err {
         switch(x.op) {
             case NOOP:
-                return visit(x.sub);
+                return visitThis(x.sub);
             case SOMEOF: case LONEOF: case ONEOF: case SETOF:
                 if (demul) return cset(x.sub);
                 throw new ErrorType(x.sub.span(), "Multiplicity symbols are not allowed here.");
@@ -515,6 +517,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case CARDINALITY: return cset(x.sub).count();
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprUnary.visit()");
+    }
+
+    /*=============================*/
+    /* Evaluates an ExprDecl node. */
+    /*=============================*/
+
+    @Override public Object visit(ExprDecl x) throws Err {
+        Object ans=env.get(x.var);
+        if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x.var+"\" cannot be resolved during translation.\n");
+        return ans;
     }
 
     /*============================*/
@@ -561,7 +573,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         env=newenv;
         int oldfunc=current_function.size();
         current_function.add(y);
-        Object ans=visit(y.getBody());
+        Object ans=visitThis(y.getBody());
         env=oldenv;
         while(current_function.size()>oldfunc) current_function.remove(current_function.size()-1);
         if (ans instanceof Formula) core((Formula)ans, x);
@@ -573,8 +585,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /*================================*/
 
     @Override public Object visit(ExprBuiltin x) throws Err {
-        if (x.op!=ExprBuiltin.Op.DISJOINT)
-            throw new ErrorFatal(x.span(), "Unknown builtin operator \""+x.op+"\" encountered during translation.");
         // This says  no(a&b) and no((a+b)&c) and no((a+b+c)&d)
         // Emperically this seems to be more efficient than "no(a&b) and no(a&c) and no(b&c)"
         Formula answer=null;
@@ -606,11 +616,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case IFF: f=cform(a); return f.iff(cform(b));
             case PLUSPLUS: s=cset(a); return s.override(cset(b));
             case PLUS:
-                obj=visit(a);
+                obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.plus(cint(b)); }
                 s=(Expression)obj; return s.union(cset(b));
             case MINUS:
-                obj=visit(a);
+                obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.minus(cint(b));}
                 s=(Expression)obj; return s.difference(cset(b));
             case INTERSECT:
@@ -627,7 +637,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case JOIN:
                 s=cset(a); return s.join(cset(b));
             case EQUALS:
-                obj=visit(a);
+                obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.eq(cint(b));}
                 s=(Expression)obj; return s.eq(cset(b));
             case DOMAIN:
@@ -719,7 +729,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             for(int i=0; ;i++) {
                 if (i>=xvars.size() && op==ExprQuant.Op.ONE) return ((Expression) visit_qt(ExprQuant.Op.COMPREHENSION, xvars, sub, false)).one();
                 if (i>=xvars.size() && op==ExprQuant.Op.LONE) return ((Expression) visit_qt(ExprQuant.Op.COMPREHENSION, xvars, sub, false)).lone();
-                Expr v=xvars.get(i).expr;
+                Expr v=addOne(xvars.get(i).expr);
                 if (v.type.arity()>1) break;
                 if (v.mult!=1) break;
                 if (!(v instanceof ExprUnary)) break;
@@ -752,20 +762,17 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         for(ExprVar dex:xvars) {
             final Variable v=var(dex.type.arity(), skolem(dex.label), dex.type);
             final Decl newd;
-            final Expression dv;
-            if (dex.expr==lastExpr)
-                dv=lastValue;
-            else
-                dv=csetIgnoreMultiplicity(dex.expr);
+            final Expression dv = (dex.expr==lastExpr) ? lastValue : csetIgnoreMultiplicity(dex.expr);
             env.put(dex, v);
             lastExpr=dex.expr;
             lastValue=dv;
+            final Expr dexexpr=addOne(lastExpr);
             if (dex.type.arity()==1) {
                 ExprUnary.Op mt=ExprUnary.Op.ONEOF;
-                if (dex.expr instanceof ExprUnary) {
-                    if (((ExprUnary)(dex.expr)).op==ExprUnary.Op.SETOF) mt=ExprUnary.Op.SETOF;
-                    else if (((ExprUnary)(dex.expr)).op==ExprUnary.Op.SOMEOF) mt=ExprUnary.Op.SOMEOF;
-                    else if (((ExprUnary)(dex.expr)).op==ExprUnary.Op.LONEOF) mt=ExprUnary.Op.LONEOF;
+                if (dexexpr instanceof ExprUnary) {
+                    if (((ExprUnary)dexexpr).op==ExprUnary.Op.SETOF) mt=ExprUnary.Op.SETOF;
+                    else if (((ExprUnary)dexexpr).op==ExprUnary.Op.SOMEOF) mt=ExprUnary.Op.SOMEOF;
+                    else if (((ExprUnary)dexexpr).op==ExprUnary.Op.LONEOF) mt=ExprUnary.Op.LONEOF;
                 }
                 switch(mt) {
                   case SETOF: newd=v.setOf(dv); break;
@@ -774,7 +781,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                   default: newd=v.oneOf(dv);
                 }
             } else {
-                guard=isIn(v, dex.expr).and(guard);
+                guard=isIn(v, dexexpr).and(guard);
                 newd=v.setOf(dv);
             }
             skolemType.put(newd, new Pair<Type,Pos>(dex.type, dex.pos));

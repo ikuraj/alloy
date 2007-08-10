@@ -23,9 +23,9 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.util.HashSet;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Env;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -76,7 +76,7 @@ public final class Context extends TypeCheckContext {
     }
 
     /** Returns the expression corresbonding to the given name, or returns null if the name is not in the current lexical scope. */
-    public final Expr get(String name, Pos pos) throws Err {
+    public final Expr get(String name, Pos pos) {
         Expr ans = env.get(name);
         if (ans instanceof ExprVar) return ExprUnary.Op.NOOP.make(pos,ans); else return ans;
     }
@@ -95,7 +95,18 @@ public final class Context extends TypeCheckContext {
         this.rootmodule = rootModule;
     }
 
-    public Set<Object> resolve(Pos pos, String name) throws Err {
+    public Set<Object> resolve(Pos pos, String name) {
+        Expr match = env.get(name);
+        if (match!=null || name.equals("Int") || name.equals("univ") || name.equals("seq/Int") || name.equals("none") || name.equals("iden")) {
+            HashSet<Object> ans = new HashSet<Object>(1);
+            if (match!=null) ans.add(ExprUnary.Op.NOOP.make(pos, match));
+            else if (name.charAt(0)=='I') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.SIGINT));
+            else if (name.charAt(0)=='u') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.UNIV));
+            else if (name.charAt(0)=='s') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.SEQIDX));
+            else if (name.charAt(0)=='n') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.NONE));
+            else if (name.charAt(0)=='i') ans.add(ExprUnary.Op.NOOP.make(pos, ExprConstant.IDEN));
+            return ans;
+        }
         if (rootmodule==null) return new HashSet<Object>(1);
         return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
     }

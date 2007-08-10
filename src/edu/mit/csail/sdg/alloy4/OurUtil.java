@@ -24,9 +24,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -111,16 +108,7 @@ public final class OurUtil {
      * @param key - the parameter to pass to func() when the button is pressed
      */
     public static JButton button(String label, String tip, String iconname, MultiRunnable func, int key) {
-        JButton button = new JButton(label, (iconname!=null && iconname.length()>0) ? loadIcon(iconname) : null) {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        JButton button = new JButton(label, (iconname!=null && iconname.length()>0) ? loadIcon(iconname) : null);
         if (func!=null) button.addActionListener(new MultiRunner(func,key));
         button.setVerticalTextPosition(JButton.BOTTOM);
         button.setHorizontalTextPosition(JButton.CENTER);
@@ -134,74 +122,29 @@ public final class OurUtil {
 
     /** Make a JTextField. */
     public static JTextField textfield(String text, int columns) {
-        JTextField answer = new JTextField(text,columns) {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        JTextField answer = new JTextField(text, columns);
         return answer;
     }
 
     /** Make a JEditorPane. */
     public static JEditorPane editorPane(String type, String text) {
-        return new JEditorPane(type,text) {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        return new JEditorPane(type, text);
     }
 
     /** Make a JEditorPane. */
     public static JEditorPane editorPane(URL url) throws IOException {
-        return new JEditorPane(url) {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        return new JEditorPane(url);
     }
 
     /** Make a JTextArea. */
     public static JTextArea textarea(String text, int rows, int columns) {
-        JTextArea answer = new JTextArea(text,rows,columns) {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        JTextArea answer = new JTextArea(text,rows,columns);
         return answer;
     }
 
     /** Make a JLabel with the given font. */
     public static JLabel label(Font font, String label) {
-        JLabel answer = new JLabel(label) {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        JLabel answer = new JLabel(label);
         answer.setFont(font);
         return answer;
     }
@@ -439,30 +382,12 @@ public final class OurUtil {
 
     /** Constructs a JMenu */
     public static JMenu makeMenu(String label) {
-        return new JMenu(label,false) {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        return new JMenu(label, false);
     }
 
     /** Constructs a JMenuItem */
     public static JMenuItem makeMenuItem(String label, Icon icon) {
-        return new JMenuItem(label,icon) {
-            private static final long serialVersionUID = 1L;
-            @Override public void paintComponent(Graphics g) {
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                }
-                super.paintComponent(g);
-            }
-        };
+        return new JMenuItem(label, icon);
     }
 
     /**

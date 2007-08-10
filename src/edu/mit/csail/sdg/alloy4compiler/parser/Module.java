@@ -44,7 +44,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
@@ -258,11 +257,9 @@ public final class Module {
      *
      * @throws ErrorType if formula fails to be typechecked
      */
-    public void addFact (String name, Expr formula, Context cx) throws Err {
+    public void addFact (String name, Expr formula) throws Err {
         if (name==null || name.length()==0) name="fact#"+(1+facts.size());
         //
-        if (cx==null) cx=new Context(this); else cx=cx.dupWithEmptyEnvironment();
-        formula=cx.resolve_formula(formula);
         A4Reporter.getReporter().typecheck("Fact "+name+": "+formula.type+"\n");
         //
         facts.add(new Pair<String,Expr>(name,formula));
@@ -294,8 +291,6 @@ public final class Module {
         if (name.indexOf('@')>=0) throw new ErrorSyntax(formula.span(), "Asserition name \""+name+"\" cannot contain \'@\'");
         if (assertions.containsKey(name)) throw new ErrorSyntax(formula.span(), "Within the same module, two assertions cannot have the same name.");
         //
-        TypeCheckContext cx=new Context(this);
-        formula=cx.resolve_formula(formula);
         A4Reporter.getReporter().typecheck("Assertion "+name+": "+formula.type+"\n");
         //
         assertions.put(name,formula);
@@ -471,7 +466,7 @@ public final class Module {
      * But, by having the check here, we can report an error sooner than later (so that the error message
      * will be less confusing to the user hopefully)
      */
-    private Field lookupField(Sig origin, Sig current, String name) throws Err {
+    private Field lookupField(Sig origin, Sig current, String name) {
         Field ans=null;
         if (!origin.builtin && !current.builtin && canSee(origin.label, current.label))
             for(Field f:current.getFields())
@@ -482,14 +477,14 @@ public final class Module {
             if (s.parent==null || s.parent.builtin) return ans;
             Field ans2=lookupField(origin, s.parent, name);
             if (ans==null) return ans2;
-            if (ans2!=null) throw new ErrorSyntax(current.pos, "This signature's \""
-                    +name+"\" field conflicts with a parent signature's field with the same name.");
+            //if (ans2!=null) throw new ErrorSyntax(current.pos, "This signature's \""
+            //        +name+"\" field conflicts with a parent signature's field with the same name.");
         }
         if (current instanceof SubsetSig) for(Sig p:((SubsetSig)current).parents) {
             Field ans2=lookupField(origin, p, name);
             if (ans==null) ans=ans2;
-            else if (ans2!=null) throw new ErrorSyntax(current.pos, "This signature's \""
-                    +name+"\" field conflicts with a parent signature's field with the same name.");
+            //else if (ans2!=null) throw new ErrorSyntax(current.pos, "This signature's \""
+            //        +name+"\" field conflicts with a parent signature's field with the same name.");
         }
         return ans;
     }
@@ -520,7 +515,7 @@ public final class Module {
     //=============================================================================================================//
 
     /** Resolve the name based on the current context. */
-    public Set<Object> populate(boolean rootfield, Sig rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) throws Err {
+    public Set<Object> populate(boolean rootfield, Sig rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
         // Return object can be FuncN or Expr
         Set<Object> ans;
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
@@ -537,7 +532,7 @@ public final class Module {
             ans=lookupSigOrParameterOrFunctionOrPredicate(name, true);
             Field f=lookupField(rootsig, rootsig, name);
             if (f!=null) { Expr ff=ExprUnary.Op.NOOP.make(pos,f); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
-            for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos,ff,1));
+            for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos, ff, ff.weight+1));
         }
         else {
             // If Within a function paramDecl/returnDecl
@@ -556,7 +551,6 @@ public final class Module {
                 realAns.add(ExprCall.make(pos, (Func)x, null, 0));
             else if (x instanceof Func || x instanceof Expr)
                 realAns.add(x);
-            else throw new ErrorAPI(pos,"populuate() encountered unknown object "+x);
         }
         return realAns;
     }

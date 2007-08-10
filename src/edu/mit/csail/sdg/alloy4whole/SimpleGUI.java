@@ -870,7 +870,6 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                     commands = null;
                     runmenu.getItem(0).setEnabled(false);
                     runmenu.getItem(3).setEnabled(false);
-                    //e.printStackTrace(System.err); System.err.flush();
                     log.logRed("Cannot parse the model.\n"+e.toString()+"\n\n");
                     return true;
                 }

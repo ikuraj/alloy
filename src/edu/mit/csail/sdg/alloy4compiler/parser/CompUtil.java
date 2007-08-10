@@ -41,6 +41,7 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
@@ -53,7 +54,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuantt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -86,8 +86,12 @@ public final class CompUtil {
             Map<String,String> fc=new LinkedHashMap<String,String>();
             fc.put("", "run{\n"+input+"}"); // We prepend the line "run{"
             CompModule u=CompParser.alloy_parseStream(fc, world, -1, "", "");
-            if (u.funs.size()>0) return u.funs.get(0).body;
-            throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
+            if (u.funs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
+            Exp body = u.funs.get(0).body;
+            Context cx = new Context(world.getRootModule());
+            Expr ans = cx.resolveExp(body.check(cx), new ArrayList<ErrorWarning>());
+            if (ans.errors.size()>0) throw ans.errors.get(0);
+            return ans;
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
         } catch(Throwable ex) {
@@ -361,8 +365,34 @@ public final class CompUtil {
         return s;
     }
 
+    /** This convenience method converts a "list of EDecl with quantification" into "list of Var" */
+    public static Expr makeQuant(Pos pos, Pos closingBracket, ExprQuant.Op op, List<EDecl> decls, Expr sub) throws Err {
+        TempList<ExprVar> vars=new TempList<ExprVar>();
+        Expr guard=null;
+        for(EDecl d:decls) {
+            final Expr v=d.value;
+            List<Expr> disjoints = (d.disjoint && d.names.size()>1) ? (new ArrayList<Expr>(d.names.size())) : null;
+            for(String n: d.names) {
+                ExprVar var = ExprVar.makeUntyped(d.pos, n, v);
+                vars.add(var);
+                if (disjoints!=null) disjoints.add(var);
+            }
+            if (disjoints!=null) guard=ExprBuiltin.makeDISJOINT(d.disjointPosition, disjoints).and(guard);
+        }
+        if (guard!=null) {
+            switch(op) {
+              case SUM: sub=guard.ite(sub, ExprConstant.ZERO); break;
+              case ALL: sub=guard.implies(sub); break;
+              default: sub=guard.and(sub);
+            }
+        }
+        return op.make(pos, closingBracket, vars.makeConst(), sub);
+    }
+
     /** This performs the postprocessing, converting from "List of CompModule" to "List of Module" */
     private static World alloy_resolve(final ArrayList<CompModule> modules) throws Err {
+        JoinableList<Err> errors = JoinableList.emptylist();
+        List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
         final A4Reporter rep=A4Reporter.getReporter();
         final World world=modules.get(0).world;
         final LinkedHashMap<String,CompModule> path2module=new LinkedHashMap<String,CompModule>();
@@ -408,23 +438,24 @@ public final class CompUtil {
             final SigAST oldS=entry.getValue();
             final Sig s=oldS.topoSig;
             final Context cx = new Context(y);
-            for(final EDecl d:oldS.fields) {
+            for(final ExpDecl d:oldS.fields) {
                 cx.rootfield=true;
                 cx.rootsig=s;
                 // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
                 final ExprVar THIS = s.oneOf("this");
                 cx.put("this", THIS);
-                Expr bound=cx.resolve_set(d.value), disjA=null, disjF=ExprConstant.TRUE;
-                for(final String n:d.names) {
+                Expr bound=cx.resolveExpSet(d.expr.check(cx), warns), disjA=null, disjF=ExprConstant.TRUE;
+                cx.remove("this");
+                for(final ExpName n:d.names) {
                     for(Field f:s.getFields())
-                        if (f.label.equals(n))
-                          throw new ErrorSyntax(d.pos, "Sig \""+s+"\" cannot have 2 fields named \""+n+"\"");
-                    final Field f=s.addTrickyField(d.pos, n, THIS, bound);
+                        if (f.label.equals(n.name))
+                          throw new ErrorSyntax(d.span(), "Sig \""+s+"\" cannot have 2 fields named \""+n.name+"\"");
+                    final Field f=s.addTrickyField(d.span(), n.name, THIS, bound);
                     rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                     if (s.anno.get("orderingSIG") instanceof Sig) continue;
-                    if (d.disjoint) { if (disjA==null) disjA=f; else disjF = ExprBinary.Op.AND.make(d.disjointPosition, disjA.intersect(f).no(), disjF); disjA=disjA.plus(f); }
+                    if (d.disjoint!=null) { if (disjA==null) disjA=f; else disjF = ExprBinary.Op.AND.make(d.disjoint, disjA.intersect(f).no(), disjF); disjA=disjA.plus(f); }
                 }
-                if (d.disjoint && !(disjF instanceof ExprConstant)) y.addFact(""+s+"#disjoint", disjF, null);
+                if (d.disjoint!=null && disjF!=ExprConstant.TRUE) y.addFact(""+s+"#disjoint", disjF);
             }
         }
 
@@ -454,23 +485,25 @@ public final class CompUtil {
                 String fullname = (y.path.length()==0 ? "this/" : (y.path+"/")) + f.name;
                 Context cx = new Context(y);
                 cx.rootfun=true;
-                String dup = f.args==null ? null : EDecl.findDuplicateName(f.args);
+                String dup = f.args==null ? null : ExpDecl.findDuplicateName(f.args);
                 if (dup!=null) throw new ErrorSyntax(f.pos, "The parameter name \""+dup+"\" cannot appear more than once in this predicate/function declaration.");
                 // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
                 // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
                 TempList<ExprVar> tmpvars=new TempList<ExprVar>();
                 if (f.args!=null) {
-                  for(EDecl d:f.args) {
-                    ExprVar template=new ExprVar(d.pos, d.names.get(0), cx.resolve_set(d.value));
-                    for(String n: d.names) {
-                        ExprVar v=new ExprVar(d.pos, n, template.expr);
-                        cx.put(n, v);
+                  for(ExpDecl d:f.args) {
+                    Expr val = cx.resolveExpSet(d.expr.check(cx), warns);
+                    errors=errors.join(val.errors);
+                    for(ExpName n: d.names) {
+                        ExprVar v=ExprVar.makeTyped(n.span(), n.name, val);
+                        cx.put(n.name, v);
                         tmpvars.add(v);
-                        rep.typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n+": "+v.type+"\n");
+                        rep.typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.name+": "+v.type+"\n");
                     }
                   }
                 }
-                Expr ret = f.returnType==null ? null : cx.resolve_set(f.returnType);
+                Expr ret = f.returnType==null ? null : cx.resolveExpSet(f.returnType.check(cx), warns);
+                if (ret!=null) errors=errors.join(ret.errors);
                 Func ff = y.addFun(f.pos, f.name, tmpvars.makeConst(), ret);
                 rep.typecheck(""+ff+", RETURN: "+ff.returnDecl.type+"\n");
                 funast2fun.put(f, ff);
@@ -484,23 +517,24 @@ public final class CompUtil {
                 Expr disj=ExprConstant.TRUE;
                 Context cx=new Context(x.topoModule);
                 Iterator<ExprVar> vv=ff.params.iterator();
-                for(EDecl d:f.args) {
-                    List<Expr> disjvars = (d.disjoint && d.names.size()>0) ? (new ArrayList<Expr>()) : null;
-                    for(String n:d.names) {
+                for(ExpDecl d:f.args) {
+                    List<Expr> disjvars = (d.disjoint!=null && d.names.size()>0) ? (new ArrayList<Expr>()) : null;
+                    for(ExpName n:d.names) {
                         ExprVar newvar=vv.next();
-                        cx.put(n, newvar);
+                        cx.put(n.name, newvar);
                         if (disjvars!=null) disjvars.add(newvar);
                     }
-                    if (disjvars!=null) disj=disj.and(ExprBuiltin.makeDISJOINT(d.disjointPosition, disjvars));
+                    if (disjvars!=null) disj=disj.and(ExprBuiltin.makeDISJOINT(d.disjoint, disjvars));
                 }
-                Expr newBody=f.body;
+                Expr newBody;
                 if (ff.isPred) {
-                    newBody = cx.resolve_formula(newBody);
+                    newBody = cx.resolveExpFormula(f.body.check(cx), warns);
                 } else {
-                    newBody = cx.resolve_set(newBody);
+                    newBody = cx.resolveExpSet(f.body.check(cx), warns);
                 }
+                errors = errors.join(newBody.errors);
                 ff.setBody(newBody);
-                for(EDecl d:f.args) for(String n:d.names) cx.remove(n);
+                for(ExpDecl d:f.args) for(ExpName n:d.names) cx.remove(n.name);
                 if (ff.isPred) {
                     rep.typecheck(""+ff+", BODY:"+ff.getBody().type+"\n");
                 } else {
@@ -520,21 +554,29 @@ public final class CompUtil {
         for(CompModule x:modules) {
             Module y=x.topoModule;
             Context cx = new Context(y);
-            for(Map.Entry<String,Expr> e:x.asserts.entrySet()) {
-                y.addAssertion(e.getKey(), e.getValue());
+            for(Map.Entry<String,Exp> e:x.asserts.entrySet()) {
+                Expr formula = cx.resolveExpFormula(e.getValue().check(cx), warns);
+                if (formula.errors.size()>0) errors=errors.join(formula.errors);
+                else y.addAssertion(e.getKey(), formula);
             }
-            for(Map.Entry<String,Expr> e:x.facts.entrySet()) {
-                y.addFact(e.getKey(), e.getValue(), cx);
+            for(Map.Entry<String,Exp> e:x.facts.entrySet()) {
+                Expr formula = cx.resolveExpFormula(e.getValue().check(cx), warns);
+                if (formula.errors.size()>0) errors=errors.join(formula.errors);
+                else y.addFact(e.getKey(), formula);
             }
             for(Map.Entry<String,SigAST> e:x.sigs.entrySet()) {
                 Sig s=e.getValue().topoSig;
                 if (s.anno.get("orderingSIG") instanceof Sig) continue;
-                Expr f=e.getValue().appendedFact;
+                Exp f=e.getValue().appendedFact;
                 if (f==null) continue;
-                EDecl vd=new EDecl(f.span(), "this", s);
-                f=ExprQuantt.make(f.span(), null, ExprQuant.Op.ALL, Util.asList(vd), f);
+                ExprVar THIS = s.oneOf("this");
                 cx.rootsig=s;
-                y.addFact(""+s+"#fact", f, cx);
+                cx.put("this", THIS);
+                Expr formula = cx.resolveExpFormula(f.check(cx), warns);
+                cx.remove("this");
+                formula = formula.forAll(THIS);
+                if (formula.errors.size()>0) errors=errors.join(formula.errors);
+                else y.addFact(""+s+"#fact", formula);
             }
         }
 

@@ -20,21 +20,21 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.Collection;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.A4Reporter;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
  * Immutable; represents an if-then-else expression.
  *
- * <p> <b>Invariant:</b>  cond.mult==0
- * <p> <b>Invariant:</b>  left.mult==0
- * <p> <b>Invariant:</b>  right.mult==0
+ * <p> <b>Invariant:</b>  type!=EMPTY => (cond.mult==0 && left.mult==0 && right.mult==0)
  */
 
 public final class ExprITE extends Expr {
@@ -78,14 +78,11 @@ public final class ExprITE extends Expr {
     }
 
     /** Constructs a ExprITE expression. */
-    private ExprITE(Expr cond, Expr left, Expr right, Type type) throws Err {
-        super(null, type, 0, cond.weight+left.weight+right.weight);
+    private ExprITE(Expr cond, Expr left, Expr right, Type type, JoinableList<Err> errs) {
+        super(null, type, 0, cond.weight+left.weight+right.weight, errs);
         this.cond=cond;
         this.left=left;
         this.right=right;
-        if (cond.mult != 0) throw new ErrorSyntax(cond.span(), "Multiplicity expression not allowed here.");
-        if (left.mult != 0) throw new ErrorSyntax(left.span(), "Multiplicity expression not allowed here.");
-        if (right.mult != 0) throw new ErrorSyntax(right.span(), "Multiplicity expression not allowed here.");
     }
 
     /**
@@ -94,59 +91,66 @@ public final class ExprITE extends Expr {
      * @param cond - the condition formula
      * @param left - the then-clause
      * @param right - the else-clause
-     *
-     * @throws ErrorSyntax if cond.mult!=0, left.mult!=0, or right.mult!=0
-     * @throws ErrorType if cond.type!=null && left.type!=null && right.type!=null && the types cannot possibly be legal together
      */
-    public static Expr make(Expr cond, Expr left, Expr right) throws Err {
-        if (cond.type==null || left.type==null || right.type==null) return new ExprITE(cond,left,right,null);
-        cform(cond);
-        Type a=left.type, b=right.type, c=a.unionWithCommonArity(b);
-        if (a.is_int && b.is_int) c=Type.makeInt(c);
-        if (a.is_bool && b.is_bool) c=Type.makeBool(c);
-        if (c.size()>0 || c.is_bool || c.is_int) return new ExprITE(cond,left,right,c);
-        if (TypeCheckContext.auto_sigint2int) {
-            if (a.is_int && b.intersects(SIGINT.type)) return make(cond, left, right.cast2int());
-            if (b.is_int && a.intersects(SIGINT.type)) return make(cond, left.cast2int(), right);
+    public static Expr make(Expr cond, Expr left, Expr right) {
+        JoinableList<Err> errs = cond.errors.join(left.errors).join(right.errors);
+        if (cond.mult != 0) errs = errs.append(new ErrorSyntax(cond.span(), "Multiplicity expression not allowed here."));
+        if (left.mult != 0) errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
+        if (right.mult != 0) errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
+        Type c=EMPTY;
+        // TODO
+        while(cond.type!=null && left.type!=null && right.type!=null && cond.type!=EMPTY && left.type!=EMPTY && right.type!=EMPTY) {
+            Type a=left.type, b=right.type;
+            c = a.unionWithCommonArity(b);
+            if (a.is_int && b.is_int) c=Type.makeInt(c);
+            if (a.is_bool && b.is_bool) c=Type.makeBool(c);
+            if (c==EMPTY) {
+                if (TypeCheckContext.auto_sigint2int) {
+                    if (a.is_int && b.intersects(SIGINT.type)) { right=right.cast2int(); continue; }
+                    if (b.is_int && a.intersects(SIGINT.type)) { left=left.cast2int(); continue; }
+                }
+                if (TypeCheckContext.auto_int2sigint) {
+                    if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); continue; }
+                    if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); continue; }
+                }
+            }
+            errs = errs.appendIfNotNull(ccform(cond));
+            if (c==EMPTY) {
+                Pos pos = cond.span().merge(left.span()).merge(right.span());
+                errs = errs.append(new ErrorType(pos,
+                     "The then-clause and the else-clause must match.\nIts then-clause has type(s) "
+                     + a + "\nand the else-clause has type(s) " + b));
+            }
+            break;
         }
-        if (TypeCheckContext.auto_int2sigint) {
-            if (a.is_int && b.hasArity(1)) return make(cond, left.cast2sigint(), right);
-            if (b.is_int && a.hasArity(1)) return make(cond, left, right.cast2sigint());
-        }
-        Pos pos = cond.span().merge(left.span()).merge(right.span());
-        throw new ErrorType(pos, "The then-clause and the else-clause must match.\nIts then-clause has type(s) "+a+"\nand the else-clause has type(s) "+b);
+        return new ExprITE(cond, left, right, c, errs);
     }
 
     /** Typechecks an ExprITE object (first pass). */
     @Override Expr check(final TypeCheckContext cx) throws Err {
-        Expr cond=this.cond.check(cx); cform(cond);
-        Expr left=this.left.check(cx); if (left.type==null) throw new ErrorType(left.span(), "This expression fails to be typechecked.");
-        Expr right=this.right.check(cx); if (right.type==null) throw new ErrorType(right.span(), "This expression fails to be typechecked.");
+        Expr cond=this.cond.check(cx);
+        Expr left=this.left.check(cx);
+        Expr right=this.right.check(cx);
         if (cond==this.cond && left==this.left && right==this.right) return this; else return make(cond,left,right);
     }
 
     /** Typechecks an ExprITE object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type p) throws Err {
+    @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
         Type a=left.type, b=right.type;
         if (p.size()>0) {
-          if (a.hasTuple()) {
             a=a.intersect(p);
-            if (a.hasNoTuple()) A4Reporter.getReporter().warning(new ErrorWarning(left.span(), "This expression is redundant in its parent if-then-else expression."));
-          } else {
-            a=Type.EMPTY;
-          }
-          if (b.hasTuple()) {
             b=b.intersect(p);
-            if (b.hasNoTuple()) A4Reporter.getReporter().warning(new ErrorWarning(right.span(), "This expression is redundant in its parent if-then-else expression."));
-          } else {
-            b=Type.EMPTY;
-          }
+            if (p.is_int) { a=Type.makeInt(a); b=Type.makeInt(b); }
+            if (p.is_bool) { a=Type.makeBool(a); b=Type.makeBool(b); }
+            if (left.type.hasTuple() && !a.hasTuple()) warns.add(new ErrorWarning(left.span(),"This subexpression is redundant."));
+            if (right.type.hasTuple() && !b.hasTuple()) warns.add(new ErrorWarning(right.span(),"This subexpression is redundant."));
         } else {
-          a=(b=p);
+            a=p;
+            b=p;
         }
-        Expr cond=this.cond.check(cx, Type.FORMULA);
-        Expr left=this.left.check(cx, a);
-        Expr right=this.right.check(cx, b);
+        Expr cond = this.cond.check(cx, Type.FORMULA, warns);
+        Expr left = this.left.check(cx, a, warns);
+        Expr right = this.right.check(cx, b, warns);
         if (cond==this.cond && left==this.left && right==this.right) return this; else return make(cond,left,right);
     }
 

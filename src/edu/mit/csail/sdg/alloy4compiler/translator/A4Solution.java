@@ -410,9 +410,9 @@ public final class A4Solution {
         expr=parent.world.typecheck(expr);
         Object result;
         if (parent.bc!=null)
-            result=(new TranslateAlloyToKodkod(parent.bc, null, null)).visit(expr);
+            result=(new TranslateAlloyToKodkod(parent.bc, null, null)).visitThis(expr);
         else
-            result=(new TranslateAlloyToKodkod(parent.bcc, parent.bitwidth, null, null)).visit(expr);
+            result=(new TranslateAlloyToKodkod(parent.bcc, parent.bitwidth, null, null)).visitThis(expr);
         if (result instanceof IntExpression) return kEval.evaluate((IntExpression)result);
         if (result instanceof Formula) return kEval.evaluate((Formula)result);
         if (result instanceof Expression) {

@@ -46,6 +46,7 @@ public final class JoinableList<E> implements Iterable<E> {
     /** Returns a list that represents the concatenation of this and that. */
     @SuppressWarnings("unchecked")
     public JoinableList<E> join(JoinableList<E> that) {
+        // TODO: make sure callers never discard the return value
         if (that==null || that.count==0) return this;
         if (count==0) return that;
         if (post!=null && post.count>0) return new JoinableList<E>(count + that.count, this, null, that);
@@ -54,6 +55,7 @@ public final class JoinableList<E> implements Iterable<E> {
 
     /** Returns a list that represenxts the result of appending the given item onto the end of the this list. */
     public JoinableList<E> append(E newItem) {
+        // TODO: make sure callers never discard the return value
         if (count==0) return new JoinableList<E>(newItem);
         if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);
         int preCount = (pre==null) ? 0 : (pre.count);
@@ -63,6 +65,7 @@ public final class JoinableList<E> implements Iterable<E> {
 
     /** Returns a list that represenxts the result of appending the given item onto the end of the this list if newItem!=null. */
     public JoinableList<E> appendIfNotNull(E newItem) {
+        // TODO: make sure callers never discard the return value
         if (newItem==null) return this;
         if (count==0) return new JoinableList<E>(newItem);
         if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);

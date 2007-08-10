@@ -20,27 +20,31 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
-import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4compiler.parser.Context;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
  * Immutable; represents an expression of the form (let a=b | x).
  *
- * <p> <b>Invariant:</b>  right.mult==0 && sub.mult==0
+ * <p> <b>Invariant:</b>  type!=null => (var.mult==0 && var.expr.mult==0 && sub.mult==0)
  */
 
 public final class ExprLet extends Expr {
 
-    /** The LET variable. */
-    public final ExprVar left;
+    /** The list of warnings. */
+    private final ConstList<ErrorWarning> warnings;
 
-    /** The value for the LET variable. */
-    public final Expr right;
+    /** The LET variable. */
+    public final ExprVar var;
 
     /** The body of the LET expression. */
     public final Expr sub;
@@ -51,103 +55,80 @@ public final class ExprLet extends Expr {
     /** Returns a Pos object spanning the entire expression. */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = pos.merge(left.span()).merge(right.span()).merge(sub.span()));
+        if (p==null) span = (p = pos.merge(var.span()).merge(sub.span()));
         return p;
     }
 
     /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            out.append("(let ");
-            left.toString(out,-1);
-            out.append("=... in ");
+            out.append("(let ").append(var.label).append("=... in ");
             sub.toString(out,-1);
             out.append(')');
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
             out.append("let with type=").append(type).append('\n');
-            left.toString(out, indent+2);
-            right.toString(out, indent+2);
+            var.toString(out, indent+2);
             sub.toString(out, indent+2);
         }
     }
 
-    /**
-     * Constructs a LET expression.
-     *
-     * @param pos - the original position in the file (corresponding to the lexical tokens "left=")
-     * @param left - the LET variable
-     * @param right - the value for the LET variable
-     * @param sub - the body of the LET expression (which may or may not contain "left" as a free variable)
-     *
-     * @throws ErrorSyntax if right.mult!=0 or sub.mult!=0
-     * @throws ErrorAPI if left.expr!=null (since the variable must be a "substitution var" rather than a "quantified var"
-     * @throws ErrorType if left.type.equals(right.type) is false
-     * @throws ErrorType if right.type==null or (right.type.size()==0 && !right.type.is_int && !right.type.is_bool)
-     * @throws ErrorType if sub.type==null or (sub.type.size()==0 && !sub.type.is_int && !sub.type.is_bool)
-     */
-    private ExprLet(Pos pos, ExprVar left, Expr right, Expr sub) throws Err {
-        super(pos, (left.type==null || right.type==null) ? null : sub.type, 0, left.weight+right.weight+sub.weight);
-        this.left=left;
-        this.right=right;
+    /** Constructs a LET expression. */
+    private ExprLet(Pos pos, Type t, ExprVar var, Expr sub, JoinableList<Err> errs, Collection<ErrorWarning> warnings) {
+        super(pos, t, 0, var.weight+sub.weight, errs);
+        this.var=var;
         this.sub=sub;
-        if (left.type!=null && left.expr!=null)
-            throw new ErrorAPI(sub.span(), "This variable must be a substitution variable rather than a quantification variable.");
-        if (sub.mult != 0)
-            throw new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here.");
-        if (right.mult != 0)
-            throw new ErrorSyntax(right.span(), "Multiplicity expression not allowed here.");
-        if (this.type==null)
-            return;
-        if (sub.type==null || (sub.type.size()==0 && !sub.type.is_int && !sub.type.is_bool))
-            throw new ErrorType(sub.span(), "This expression failed to be typechecked.");
-        if (right.type==null || (right.type.size()==0 && !right.type.is_int && !right.type.is_bool))
-            throw new ErrorType(right.span(), "This expression failed to be typechecked.");
-        if (!right.type.equals(left.type))
-            throw new ErrorType(pos,
-            "The substitution variable's type must match the substitution expression.\nThe variable's type is "
-            +left.type+"\nBut the substitution expression's type is "+right.type);
+        this.warnings=ConstList.make(warnings);
     }
 
     /**
      * Constructs a LET expression.
      *
-     * @param pos - the original position in the file (can be null if unknown)
-     * @param left - the LET variable
-     * @param right - the value for the LET variable
-     * @param sub - the body of the LET expression (which may or may not contain "left" as a free variable)
-     *
-     * @throws ErrorSyntax if right.mult!=0 or sub.mult!=0
-     * @throws ErrorType if left.type.equals(right.type) is false
-     * @throws ErrorType if right.type==null or (right.type.size()==0 && !right.type.is_int && !right.type.is_bool)
-     * @throws ErrorType if sub.type==null or (sub.type.size()==0 && !sub.type.is_int && !sub.type.is_bool)
+     * @param pos - the original position in the file corresponding to the tokens "var=" (can be null if unknown)
+     * @param var - the LET variable
+     * @param sub - the body of the LET expression (which may or may not contain "var" as a free variable)
      */
-    public static Expr make(Pos pos, ExprVar left, Expr right, Expr sub) throws Err {
-        return new ExprLet(pos, left, right, sub);
+    public static Expr make(Pos pos, ExprVar var, Expr sub) { return make(pos,var,sub,null); }
+
+    /**
+     * Constructs a LET expression.
+     *
+     * @param pos - the original position in the file corresponding to the tokens "var=" (can be null if unknown)
+     * @param var - the LET variable
+     * @param sub - the body of the LET expression (which may or may not contain "var" as a free variable)
+     */
+    public static Expr make(Pos pos, ExprVar var, Expr sub, Collection<ErrorWarning> warnings) {
+        JoinableList<Err> errs = var.errors.join(sub.errors);
+        Type t = (var.type!=null && var.type!=EMPTY) ? sub.type : null;
+        if (sub.mult != 0)
+            errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
+        if (var.expr!=null && var.expr.mult!=0)
+            errs = errs.append(new ErrorSyntax(var.expr.span(), "Multiplicity expression not allowed here."));
+        return new ExprLet(pos, t, var, sub, errs, warnings);
     }
 
     /** Typechecks an ExprLet object (first pass). */
     @Override Expr check(final TypeCheckContext cxx) throws Err {
-        if (left.type==null) {
-            Context cx=((Context)cxx);
-            Expr right=cx.resolve(this.right);
-            ExprVar var=new ExprVar(pos, left.label, right.type);
-            cx.put(left.label, var);
-            Expr sub=cx.check(this.sub);
-            cx.remove(left.label);
-            return new ExprLet(pos, var, right, sub);
+        if (var.type==null || var.type==EMPTY) {
+            ArrayList<ErrorWarning> warnings=new ArrayList<ErrorWarning>();
+            Context cx = ((Context)cxx);
+            ExprVar var = ExprVar.makeTyped(this.var.pos, this.var.label, cx.resolveAny(this.var.expr, warnings));
+            if (var.type==null || var.type==EMPTY) return make(pos, var, this.sub, warnings);
+            cx.put(var.label, var);
+            Expr sub = this.sub.check(cx);
+            cx.remove(var.label);
+            return make(pos, var, sub, warnings);
         }
-        Expr right=cxx.check(this.right);
-        Expr sub=cxx.check(this.sub);
-        if (right==this.right && sub==this.sub) return this; else return new ExprLet(pos, left, right, sub);
+        Expr sub = this.sub.check(cxx);
+        if (sub==this.sub) return this; else return make(pos, var, sub, null);
     }
 
     /** Typechecks an ExprLet object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, final Type p) throws Err {
-        if (left.type==null) throw new ErrorFatal("Internal typechecker invariant violated.");
-        Expr right=cx.check(this.right, this.right.type);
-        Expr sub=cx.check(this.sub, p);
-        if (right==this.right && sub==this.sub) return this; else return new ExprLet(pos, left, right, sub);
+    @Override Expr check(final TypeCheckContext cx, final Type p, Collection<ErrorWarning> warns) throws Err {
+        if (var.type==null || var.type==EMPTY) throw new ErrorFatal("Internal typechecker invariant violated.");
+        Expr sub = this.sub.check(cx, p, warns);
+        if (warnings.size()>0) warns.addAll(warnings);
+        if (sub==this.sub) return this; else return make(pos, var, sub, null);
     }
 
     /** Accepts the return visitor. */

@@ -127,7 +127,7 @@ public final class Pos implements Serializable {
         if (this==UNKNOWN || this==that) {
             return that;
         }
-        if (that==UNKNOWN) {
+        if (that==null || that==UNKNOWN) {
             return this;
         }
         int x=this.x, y=this.y, x2=that.x2, y2=that.y2;

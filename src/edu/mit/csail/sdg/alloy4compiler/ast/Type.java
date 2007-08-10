@@ -341,7 +341,7 @@ public final class Type implements Iterable<Type.ProductType> {
     }
 
     /** Create a new type that is the same as "old", except the "is_bool" and "is_int" flags are both set to false. */
-    static Type removesBoolAndInt(Type old) {
+    public static Type removesBoolAndInt(Type old) {
         if (!old.is_bool && !old.is_int) return old; else return make(false, false, old.entries, old.arities);
     }
 

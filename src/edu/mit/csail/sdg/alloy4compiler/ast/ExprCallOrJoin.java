@@ -20,13 +20,17 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.parser.Context;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
@@ -78,6 +82,58 @@ public final class ExprCallOrJoin extends Expr {
         }
     }
 
+    /**
+     * Returns true if the function's parameters have reasonable intersection with the list of arguments.
+     * <br> If args.length() > f.params.size(), the extra arguments are ignored by this check
+     * <br> <b>Precondition</b>: args.length() >= f.params.size()
+     */
+    private static boolean applicable(Func f, List<Expr> args) {
+        int i=0;
+        for(ExprVar d:f.params) {
+            Type dt=d.type;
+            Type arg=args.get(i).type;
+            i++;
+            // The reason we don't say (arg.arity()!=d.value.type.arity())
+            // is because the arguments may not be fully resolved yet.
+            if (!arg.hasCommonArity(dt)) return false;
+            if (arg.hasTuple() && dt.hasTuple() && !arg.intersects(dt)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Construct the result of calling "ch" with the given list of arguments
+     * <br> <b>Precondition</b>: (ch instanceof Expr) or (ch instanceof Func)
+     * <br> <b>Precondition</b>: cset(args[i]) for all i
+     * @return EBadCall, or EBadJoin, or a possibly well-typed Expr
+     */
+    static Expr makeCallOrJoin(Pos pos, Object ch, ConstList<Expr> args, Expr THISorNULL) {
+        Expr ans;
+        int i=0, n=args.size();
+        if (ch instanceof Expr) {
+            ans = (Expr)ch;
+        } else {
+            Func f = (Func)ch;
+            i = f.params.size();
+            if (i==n+1 && THISorNULL!=null && THISorNULL.type!=null && THISorNULL.type.hasArity(1)) {
+                // If we're inside a sig, and there is a unary variable bound to "this",
+                // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
+                ConstList<Expr> args2=Util.prepend(args, THISorNULL);
+                if (applicable(f,args2)) return ExprCall.make(pos, f, args2, 1);
+            }
+            if (i>n) return new ExprBadCall(pos, f, args);
+            if (!applicable(f,args)) return new ExprBadCall(pos, f, args.subList(0,i));
+            ans = ExprCall.make(pos, f, args.subList(0,i), 0);
+        }
+        for(; i<n; i++) {
+            Expr x = args.get(i);
+            // TODO: you lost the original JOIN's pos
+            if (x.type.join(ans.type).size()==0) return new ExprBadJoin(x.span().merge(ans.span()), x, ans);
+            ans = ExprBinary.Op.JOIN.make(x.span().merge(ans.span()), x, ans);
+        }
+        return ans;
+    }
+
     /** Constructs a new EJoin expression. */
     private ExprCallOrJoin (Pos pos, Type type, Expr left, Expr right) throws Err {
         super(pos, type, 0, left.weight+right.weight);
@@ -113,7 +169,7 @@ public final class ExprCallOrJoin extends Expr {
             TempList<Expr> tempargs=new TempList<Expr>();
             for(Expr temp=this; temp instanceof ExprCallOrJoin; temp=((ExprCallOrJoin)temp).right) {
                 Expr temp2=((ExprCallOrJoin)temp).left;
-                temp2=cset(cx.check(temp2));
+                temp2=cset(temp2.check(cx));
                 tempargs.add(0,temp2);
             }
             ConstList<Expr> args=tempargs.makeConst();
@@ -122,30 +178,28 @@ public final class ExprCallOrJoin extends Expr {
             Expr THIS = (cx.rootsig!=null) ? cx.get("this",null) : null;
             boolean hasValidBound=false;
             for(Object ch:choices) {
-                Expr x = ExprBadCall.make(ptr.pos, ch, args, THIS);
+                Expr x = makeCallOrJoin(ptr.pos, ch, args, THIS);
                 if (x.type!=null) if (x.type.is_int || x.type.is_bool || x.type.size()>0) hasValidBound=true;
                 objects.add(x);
             }
             if (hasValidBound) return ExprChoice.make(ptr.pos, objects.makeConst());
         }
-        try {
-            // Next, check to see if it is the special builtin function "Int[]"
-            Expr left=cx.check(this.left);
-            Expr right=cx.check(this.right);
-            if (left.type.is_int && right instanceof ExprUnary && ((ExprUnary)right).op==ExprUnary.Op.NOOP && ((ExprUnary)right).sub==Sig.SIGINT)
-                return left.cast2sigint();
-            if (left.type.is_int && right instanceof Sig && ((Sig)right)==Sig.SIGINT)
-                return left.cast2sigint();
-            // All else, we treat it as a relational join
-            Expr test = cx.check(ExprBinary.Op.JOIN.make(pos, this.left, this.right));
-            if (test.type!=null && test.type.size()>0) objects.add(test);
-        } catch(Err ex) {
-        }
+        // Next, check to see if it is the special builtin function "Int[]"
+        Expr left = this.left.check(cx);
+        Expr right = this.right.check(cx);
+        if (left.type.is_int && right instanceof ExprUnary && ((ExprUnary)right).op==ExprUnary.Op.NOOP && ((ExprUnary)right).sub==Sig.SIGINT)
+            return left.cast2sigint();
+        if (left.type.is_int && right instanceof Sig && ((Sig)right)==Sig.SIGINT)
+            return left.cast2sigint();
+        // All else, we treat it as a relational join
+        Expr test = ExprBinary.Op.JOIN.make(pos, this.left, this.right).check(cx);
+        if (objects.size()==0) return test;
+        if (test.type!=null && test.type.size()>0) objects.add(test);
         return ExprChoice.make(ptr.pos, objects.makeConst());
     }
 
     /** Typechecks an EJoin object (second pass). */
-    @Override public Expr check(TypeCheckContext cx, Type p) throws Err {
+    @Override public Expr check(TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
         throw new ErrorFatal("Internal typechecker invariant violated.");
     }
 

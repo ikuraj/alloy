@@ -30,7 +30,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.addOne;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.unambiguous;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
 
 /**
  * Mutable; represents a predicate or function.
@@ -112,7 +112,8 @@ public final class Func {
      */
     public void setBody(Expr newBody) throws Err {
         if (isPred) {
-            cform(unambiguous(newBody));
+            Err err = ccform(unambiguous(newBody));
+            if (err!=null) throw err;
         } else {
             newBody = unambiguous(cset(newBody));
             if (newBody.type.arity() != returnDecl.type.arity())

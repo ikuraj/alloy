@@ -20,6 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.Collection;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
@@ -66,8 +68,8 @@ public final class ExprConstant extends Expr {
      */
     private ExprConstant(Pos pos, Op op, int num) {
         super(pos, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NUMBER ? Type.INT : Type.FORMULA)));
-        this.op=op;
-        this.num=num;
+        this.op = op;
+        this.num = num;
     }
 
     /** The "TRUE" boolean value. */
@@ -86,7 +88,11 @@ public final class ExprConstant extends Expr {
     public static final Expr ONE = new ExprConstant(null, Op.NUMBER, 1);
 
     /** Constructs the integer "n" */
-    public static Expr makeNUMBER(int n) { return new ExprConstant(null, ExprConstant.Op.NUMBER, n); }
+    public static Expr makeNUMBER(int n) {
+        if (n==0) return ZERO;
+        if (n==1) return ONE;
+        return new ExprConstant(null, ExprConstant.Op.NUMBER, n);
+    }
 
     /** This class contains all possible constant types. */
     public enum Op {
@@ -106,9 +112,7 @@ public final class ExprConstant extends Expr {
          * @param pos - the original position in the source file (can be null if unknown)
          * @param num - the number (this number is ignored if op!=NUMBER)
          */
-        public final Expr make(Pos pos, int num) {
-            return new ExprConstant(pos, this, (this==NUMBER ? num : 0));
-        }
+        public final Expr make(Pos pos, int num) { return new ExprConstant(pos, this, (this==NUMBER ? num : 0)); }
 
         /** Returns the human readable label for this operator. */
         @Override public final String toString() { return label; }
@@ -118,7 +122,7 @@ public final class ExprConstant extends Expr {
     @Override Expr check(final TypeCheckContext cx) { return this; }
 
     /** Typechecks an ExprConstant object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type p) { return this; }
+    @Override Expr check(final TypeCheckContext cx, Type type, Collection<ErrorWarning> warns) { return this; }
 
     /** Accepts the return visitor. */
     @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }

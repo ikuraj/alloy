@@ -20,15 +20,23 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4compiler.parser.Context;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccint;
+import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
  * Immutable; represents a quantified expression.
@@ -46,12 +54,13 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cform;
  * <br>  {a,b:t, &nbsp; c,d:v}
  * <br>
  *
- * <br> <b>Invariant:</b> sub.mult==0
- * <br> <b>Invariant:</b> vars.size()>0
- * <br> <b>Invariant:</b> all v:vars | v.expr!=null (meaning each is a "quantified var" rather than a "substitution var")
+ * <br> <b>Invariant:</b> type!=null => (sub.mult==0 && vars.size()>0 && (all v:vars | v.expr!=null))
  */
 
 public final class ExprQuant extends Expr {
+
+    /** The list of warnings. */
+    private final ConstList<ErrorWarning> warnings;
 
     /** The operator (ALL, NO, LONE, ONE, SOME, SUM, or COMPREHENSION) */
     public final Op op;
@@ -59,7 +68,7 @@ public final class ExprQuant extends Expr {
     /** If nonnull, it is the closing curly bracket's position. */
     public final Pos closingBracket;
 
-    /** The unmodifiable list of typechecked variable declarations; always nonempty. */
+    /** The unmodifiable list of variables. */
     public final ConstList<ExprVar> vars;
 
     /** The body of the quantified expression. */
@@ -98,12 +107,13 @@ public final class ExprQuant extends Expr {
     }
 
     /** Constructs a new quantified expression. */
-    private ExprQuant(Pos pos, Pos close, Op op, Type type, ConstList<ExprVar> vars, Expr sub, long weight) throws Err {
+    private ExprQuant(Pos pos, Pos closingBracket, Op op, Type type, ConstList<ExprVar> vars, Expr sub, long weight, Collection<ErrorWarning> warnings) {
         super(pos, type, 0, weight);
-        this.closingBracket=close;
+        this.closingBracket=closingBracket;
         this.op=op;
         this.vars=vars;
         this.sub=sub;
+        this.warnings=ConstList.make(warnings);
     }
 
     //=============================================================================================================//
@@ -129,34 +139,48 @@ public final class ExprQuant extends Expr {
          *
          * @param pos - the position of the "quantifier" in the source file (or null if unknown)
          * @param closingBracket - the position of the "closing bracket" in the source file (or null if unknown)
-         * @param vars - the list of variables (which must not be empty, and must not contain duplicates)
+         * @param vars - the list of variables
          * @param sub - the body of the expression
-         *
-         * @throws ErrorAPI if one or more variable is a "substitution variable" rather than a "quantified variable"
-         * @throws ErrorAPI if the list of variables is empty, or the list contains duplicate variables
-         * @throws ErrorSyntax if sub.mult!=0
          */
-        public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) throws Err {
-            if (vars.size()==0) throw new ErrorAPI("List of variables cannot be empty.");
-            if (sub.mult!=0) throw new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here.");
-            if (sub.type!=null) { if (this==SUM) sub=cint(sub); else cform(sub); }
+        public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) {
+            return make(pos, closingBracket, vars, sub, null);
+        }
+
+        /**
+         * Constructs a quantification expression with "this" as the operator.
+         *
+         * @param pos - the position of the "quantifier" in the source file (or null if unknown)
+         * @param closingBracket - the position of the "closing bracket" in the source file (or null if unknown)
+         * @param vars - the list of variables
+         * @param sub - the body of the expression
+         */
+        public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub, Collection<ErrorWarning> warnings) {
+            JoinableList<Err> errs=sub.errors;
             Type t = (this==SUM) ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
             long weight = sub.weight;
+            if (vars.size()==0) errs=errs.append(new ErrorAPI(pos, "List of variables cannot be empty."));
             for(ExprVar v:vars) {
+                errs = errs.join(v.errors);
                 weight += v.weight;
-                if (v.expr==null) throw new ErrorAPI(v.span(), "This must be a quantified variable rather than a substitution variable.");
-                int a=v.type.arity();
-                if (a==0) throw new ErrorType(v.expr.span(), "This must be a set or relation. Instead, its type is "+v.type);
+                if (v.expr==null) { errs=errs.append(new ErrorAPI(v.span(), "This must be a quantified variable.")); continue; }
+                if (v.type==null || v.type==EMPTY) { t=null; continue; }
+                if (v.type.size()==0) { errs=errs.append(new ErrorType(v.expr.span(), "This must be a set or relation. Instead, its type is "+v.type)); continue; }
                 if (this!=SUM && this!=COMPREHENSION) continue;
-                if (a>1) throw new ErrorType(v.expr.span(), "This must be a unary set. Instead, its type is "+v.type);
+                if (!v.type.hasArity(1)) { errs=errs.append(new ErrorType(v.expr.span(), "This must be a unary set. Instead, its type is "+v.type)); continue; }
+                Type t1 = v.type.extract(1);
                 if (v.expr.mult==1 && v.expr instanceof ExprUnary) {
-                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.SETOF) throw new ErrorType(v.expr.span(), "This cannot be a set-of expression.");
-                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.SOMEOF) throw new ErrorType(v.expr.span(), "This cannot be a some-of expression.");
-                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.LONEOF) throw new ErrorType(v.expr.span(), "This cannot be a lone-of expression.");
+                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.SETOF) errs=errs.append(new ErrorType(v.expr.span(), "This cannot be a set-of expression."));
+                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.SOMEOF) errs=errs.append(new ErrorType(v.expr.span(), "This cannot be a some-of expression."));
+                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.LONEOF) errs=errs.append(new ErrorType(v.expr.span(), "This cannot be a lone-of expression."));
                 }
-                if (this==COMPREHENSION) { if (t.size()==0) t=v.type; else t=t.product(v.type); }
+                if (t!=null && this==COMPREHENSION) { if (t.size()==0) t=t1; else t=t.product(t1); }
             }
-            return new ExprQuant(pos, closingBracket, this, t, ConstList.make(vars), sub, weight);
+            if (sub.mult!=0) errs=errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
+            if (sub.type!=null && sub.type!=EMPTY) {
+                if (this==SUM) { sub=cint(sub); errs=errs.appendIfNotNull(ccint(sub)); }
+                else { errs=errs.appendIfNotNull(ccform(sub)); }
+            }
+            return new ExprQuant(pos, closingBracket, this, ((sub.type==null || sub.type==EMPTY) ? null : t), ConstList.make(vars), sub, weight, warnings);
         }
 
         /** Returns the human readable label for this operator */
@@ -167,18 +191,28 @@ public final class ExprQuant extends Expr {
 
     /** Typechecks an ExprQuant object (first pass). */
     @Override Expr check(final TypeCheckContext cx) throws Err {
-        Expr sub=this.sub.check(cx);
-        if (op==Op.SUM) sub=cint(sub); else cform(sub);
-        if (sub==this.sub) return this; else return op.make(pos, closingBracket, vars, sub);
+        ArrayList<ErrorWarning> warns=new ArrayList<ErrorWarning>();
+        boolean same=true;
+        final Context cxx=(Context)cx;
+        final TempList<ExprVar> tempvars=new TempList<ExprVar>(vars.size());
+        for(int i=0; i<vars.size(); i++) {
+            ExprVar v=vars.get(i);
+            if (v.type==null || v.type==EMPTY) { v=ExprVar.makeTyped(v.pos, v.label, TypeCheckContext.addOne(cx.resolveSet(v.expr, warns))); same=false; }
+            cxx.put(v.label, v);
+            tempvars.add(v);
+        }
+        final Expr sub = (op==Op.SUM) ? cx.resolveInt(this.sub, warns) : cx.resolveFormula(this.sub, warns);
+        for(ExprVar v:vars) cxx.remove(v.label);
+        if (same && sub==this.sub && warns.size()==0 && this.warnings.size()==0) return this;
+        return op.make(pos, closingBracket, tempvars.makeConst(), sub, warns);
     }
 
     //=============================================================================================================//
 
     /** Typechecks an ExprQuant object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type p) throws Err {
-        Expr sub=this.sub.check(cx, (op==Op.SUM ? Type.INT : Type.FORMULA));
-        if (op==Op.SUM) sub=cint(sub); else cform(sub);
-        if (sub==this.sub) return this; else return op.make(pos, closingBracket, vars, sub);
+    @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) {
+        if (this.warnings.size()>0) warns.addAll(this.warnings);
+        return this;
     }
 
     //=============================================================================================================//
