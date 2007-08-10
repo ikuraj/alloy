@@ -48,7 +48,6 @@ import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import edu.mit.csail.sdg.alloy4compiler.ast.EDecl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
@@ -363,30 +362,6 @@ public final class CompUtil {
         if (oldS.inPosition!=null) s.anno.put("in", oldS.inPosition);
         if (oldS.orderingPosition!=null) s.anno.put("ordering", oldS.orderingPosition);
         return s;
-    }
-
-    /** This convenience method converts a "list of EDecl with quantification" into "list of Var" */
-    public static Expr makeQuant(Pos pos, Pos closingBracket, ExprQuant.Op op, List<EDecl> decls, Expr sub) throws Err {
-        TempList<ExprVar> vars=new TempList<ExprVar>();
-        Expr guard=null;
-        for(EDecl d:decls) {
-            final Expr v=d.value;
-            List<Expr> disjoints = (d.disjoint && d.names.size()>1) ? (new ArrayList<Expr>(d.names.size())) : null;
-            for(String n: d.names) {
-                ExprVar var = ExprVar.makeUntyped(d.pos, n, v);
-                vars.add(var);
-                if (disjoints!=null) disjoints.add(var);
-            }
-            if (disjoints!=null) guard=ExprBuiltin.makeDISJOINT(d.disjointPosition, disjoints).and(guard);
-        }
-        if (guard!=null) {
-            switch(op) {
-              case SUM: sub=guard.ite(sub, ExprConstant.ZERO); break;
-              case ALL: sub=guard.implies(sub); break;
-              default: sub=guard.and(sub);
-            }
-        }
-        return op.make(pos, closingBracket, vars.makeConst(), sub);
     }
 
     /** This performs the postprocessing, converting from "List of CompModule" to "List of Module" */
