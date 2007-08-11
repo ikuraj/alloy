@@ -49,13 +49,8 @@ public final class ExprConstant extends Expr {
         if (indent<0) {
             if (op==Op.NUMBER) out.append(num); else out.append(op);
         } else {
-            for(int i=0; i<indent; i++) out.append(' ');
-            switch(op) {
-              case TRUE: out.append("true\n"); return;
-              case FALSE: out.append("false\n"); return;
-              case IDEN: out.append("iden\n"); return;
-            }
-            out.append(num).append('\n');
+            for(int i=0; i<indent; i++) { out.append(' '); }
+            if (op==Op.NUMBER) out.append(num).append('\n'); else out.append(op).append('\n');
         }
     }
 
@@ -76,7 +71,7 @@ public final class ExprConstant extends Expr {
     public static final Expr TRUE = new ExprConstant(null, Op.TRUE, 0);
 
     /** The "FALSE" boolean value. */
-    public static final Expr FALSE = new ExprConstant(null, Op.TRUE, 0);
+    public static final Expr FALSE = new ExprConstant(null, Op.FALSE, 0);
 
     /** The "iden" relation. */
     public static final Expr IDEN = new ExprConstant(null, Op.IDEN, 0);
@@ -91,7 +86,7 @@ public final class ExprConstant extends Expr {
     public static Expr makeNUMBER(int n) {
         if (n==0) return ZERO;
         if (n==1) return ONE;
-        return new ExprConstant(null, ExprConstant.Op.NUMBER, n);
+        return new ExprConstant(null, Op.NUMBER, n);
     }
 
     /** This class contains all possible constant types. */

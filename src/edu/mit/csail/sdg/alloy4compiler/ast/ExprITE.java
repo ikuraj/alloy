@@ -54,7 +54,7 @@ public final class ExprITE extends Expr {
     /** Returns a Pos object spanning the entire expression. */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = cond.span().merge(left.span()).merge(right.span()));
+        if (p==null) span = (p = cond.span().merge(right.span()).merge(left.span()));
         return p;
     }
 
@@ -98,8 +98,7 @@ public final class ExprITE extends Expr {
         if (left.mult != 0) errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
         if (right.mult != 0) errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
         Type c=EMPTY;
-        // TODO
-        while(cond.type!=null && left.type!=null && right.type!=null && cond.type!=EMPTY && left.type!=EMPTY && right.type!=EMPTY) {
+        while(cond.type!=EMPTY && left.type!=EMPTY && right.type!=EMPTY) {
             Type a=left.type, b=right.type;
             c = a.unionWithCommonArity(b);
             if (a.is_int && b.is_int) c=Type.makeInt(c);
@@ -113,14 +112,11 @@ public final class ExprITE extends Expr {
                     if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); continue; }
                     if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); continue; }
                 }
+                errs = errs.append(new ErrorType(cond.span().merge(right.span()).merge(left.span()),
+                    "The then-clause and the else-clause must match.\nIts then-clause has type: "
+                    + a + "\nand the else-clause has type: " + b));
             }
             errs = errs.appendIfNotNull(ccform(cond));
-            if (c==EMPTY) {
-                Pos pos = cond.span().merge(left.span()).merge(right.span());
-                errs = errs.append(new ErrorType(pos,
-                     "The then-clause and the else-clause must match.\nIts then-clause has type(s) "
-                     + a + "\nand the else-clause has type(s) " + b));
-            }
             break;
         }
         return new ExprITE(cond, left, right, c, errs);
@@ -143,7 +139,7 @@ public final class ExprITE extends Expr {
         Expr cond = this.cond.resolve(Type.FORMULA, warns);
         Expr left = this.left.resolve(a, warns);
         Expr right = this.right.resolve(b, warns);
-        if (cond==this.cond && left==this.left && right==this.right) return this; else return make(cond,left,right);
+        return (cond==this.cond && left==this.left && right==this.right) ? this : make(cond,left,right);
     }
 
     /** Accepts the return visitor. */
