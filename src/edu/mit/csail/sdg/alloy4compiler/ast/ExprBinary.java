@@ -101,14 +101,14 @@ public final class ExprBinary extends Expr {
         +"\nRight type = " + Type.removesBoolAndInt(right.type));
     }
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) span = (p = pos.merge(left.span()).merge(right.span()));
         return p;
     }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             if (op==Op.ISSEQ_ARROW_LONE) out.append("seq "); else { left.toString(out,-1); out.append(' ').append(op).append(' '); }
@@ -268,7 +268,7 @@ public final class ExprBinary extends Expr {
 
     //============================================================================================================//
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         ErrorWarning w=null;
         Type a=left.type, b=right.type;

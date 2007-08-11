@@ -44,14 +44,14 @@ public final class ExprLet extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) span = (p = var.span().merge(sub.span()));
         return p;
     }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append("(let ").append(var.label).append("=... | ");
@@ -87,7 +87,7 @@ public final class ExprLet extends Expr {
         return new ExprLet(var, sub, errs);
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
         if (errors.size()>0) return this; // If there is already fatal error, then there's no need to proceed further
         ExprVar newVar = var.resolve(var.type, warnings);

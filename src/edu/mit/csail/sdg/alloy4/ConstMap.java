@@ -104,88 +104,52 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
         return new ConstMap<K,V>(new LinkedHashMap<K,V>(map));
     }
 
-    /** Returns true if that is a Map with the same entries as this map. */
+    /** {@inheritDoc} */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof Map)) return false;
         return map.equals(that);
     }
 
-    /** Computes a hash code that is consistent with equals(). */
+    /** {@inheritDoc} */
     @Override public int hashCode() { return map.hashCode(); }
 
-    /** Returns a String representation. */
+    /** {@inheritDoc} */
     @Override public String toString() { return map.toString(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public int size() { return map.size(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean isEmpty() { return map.isEmpty(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public Set<Map.Entry<K,V>> entrySet() { return map.entrySet(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public Set<K> keySet() { return map.keySet(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public Collection<V> values() { return map.values(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean containsKey(Object key) { return map.containsKey(key); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean containsValue(Object value) { return map.containsValue(value); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public V get(Object key) { return map.get(key); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** This map is readonly, so this method always throws UnsupportedOperationException. */
     public V remove(Object key) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** This map is readonly, so this method always throws UnsupportedOperationException. */
     public V put(K key, V value) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** This map is readonly, so this method always throws UnsupportedOperationException. */
     public void putAll(Map<? extends K, ? extends V> t) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.Map
-     * @inheritDoc
-     */
+    /** This map is readonly, so this method always throws UnsupportedOperationException. */
     public void clear() { throw new UnsupportedOperationException(); }
 }

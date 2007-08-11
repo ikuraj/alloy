@@ -45,7 +45,7 @@ public final class ExprChoice extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) {
@@ -56,7 +56,7 @@ public final class ExprChoice extends Expr {
         return p;
     }
 
-    /** Produce a String representation with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             choices.get(0).toString(out,indent); // Each choice's textual form is probably similar, so the first one would do
@@ -74,7 +74,6 @@ public final class ExprChoice extends Expr {
     }
 
     /** Constructs an EChoice node. */
-    @SuppressWarnings("unchecked")
     private ExprChoice(Pos pos, ConstList<Expr> choices, Type type, long weight, JoinableList<Err> errors) {
         super(pos, type, 0, weight, errors);
         this.choices = choices;
@@ -101,7 +100,7 @@ public final class ExprChoice extends Expr {
         return new ExprChoice(pos, choices, type, weight, errors);
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
         List<Expr> match=new ArrayList<Expr>(choices.size());
         // We first prefer exact matches

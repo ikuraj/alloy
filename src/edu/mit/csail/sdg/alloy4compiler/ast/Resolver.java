@@ -20,11 +20,24 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 
 public final class Resolver {
+
+    /**
+     * Resolves the expression "expr".
+     * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
+     * (Note: it's possible for t to be EMPTY, or even ambiguous!)
+     *
+     * <p> Postcondition: RESULT.errors.size()>0  or  "RESULT and all its subnodes are fully resolved and unambiguous"
+     */
+    public static Expr resolve(Expr expr, Type t, Collection<ErrorWarning> warnings) {
+        return expr.resolve(t, warnings);
+    }
 
     /**
      * Helper method that throws a type error if x cannot possibly have any legal type or if x is ambiguous.
@@ -32,7 +45,7 @@ public final class Resolver {
      *
      * @throws ErrorType if X is not already unambiguously typechecked
      */
-    static final Expr unambiguous(final Expr x) throws Err {
+    static Expr unambiguous(final Expr x) throws Err {
         if (x.errors.size()>0) throw x.errors.get(0);
         final Type t=x.type;
         if (t==null || (!t.is_bool && !t.is_int && t.size()==0)) {
@@ -56,7 +69,7 @@ public final class Resolver {
      *
      * @throws ErrorType if X is not already unambiguously typechecked
      */
-    public static final Expr addOne(Expr x) {
+    public static Expr addOne(Expr x) {
         //unambiguous(x);
         if (x instanceof ExprUnary) switch(((ExprUnary)x).op) {
             case SETOF: case ONEOF: case LONEOF: case SOMEOF: return x;
@@ -70,7 +83,7 @@ public final class Resolver {
      *
      * @throws ErrorType if x does not have formula type
      */
-    static final ErrorType ccform(Expr x) {
+    static ErrorType ccform(Expr x) {
         if (x.type==null)
             return new ErrorType(x.span(), "This expression failed to be typechecked.");
         if (!x.type.is_bool)
@@ -86,12 +99,12 @@ public final class Resolver {
      *
      * @throws ErrorType if x does not and cannot be casted to have integer type
      */
-    public static final Expr cint(Expr x) {
+    public static Expr cint(Expr x) {
         if (x.type!=null && !x.type.is_int && Type.SIGINT2INT && x.type.intersects(SIGINT.type)) return x.cast2int();
         return x;
     }
 
-    static final ErrorType ccint(Expr x) {
+    static ErrorType ccint(Expr x) {
         if (x.type==null)
             return new ErrorType(x.span(), "This expression failed to be typechecked.");
         if (!x.type.is_int)
@@ -107,12 +120,12 @@ public final class Resolver {
      *
      * @throws ErrorType if x does not and cannot be casted to have set/relation type
      */
-    public static final Expr cset(Expr x) {
+    public static Expr cset(Expr x) {
         if (x.type!=null && x.type.size()==0 && Type.INT2SIGINT && x.type.is_int) return x.cast2sigint();
         return x;
     }
 
-    static final ErrorType ccset(Expr x) {
+    static ErrorType ccset(Expr x) {
         if (x.type==null)
             return new ErrorType(x.span(), "This expression failed to be typechecked.");
         if (x.type.size()==0)

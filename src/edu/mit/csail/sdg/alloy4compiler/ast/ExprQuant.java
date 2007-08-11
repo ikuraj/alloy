@@ -74,7 +74,7 @@ public final class ExprQuant extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) {
@@ -85,7 +85,7 @@ public final class ExprQuant extends Expr {
         return p;
     }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             if (op==Op.COMPREHENSION) out.append('{'); else out.append('(').append(op).append(' ');
@@ -180,7 +180,7 @@ public final class ExprQuant extends Expr {
 
     //=============================================================================================================//
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
         if (errors.size()==0) return this; // If there is already fatal error, then there's no need to proceed further
         boolean changed=false;

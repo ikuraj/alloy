@@ -146,155 +146,86 @@ public final class ConstList<T> implements Serializable, List<T> {
         return new ConstList<T>(true, new ArrayList<T>(collection));
     }
 
-    /** Returns true if that is a List with the same elements in the same order as this list. */
+    /** {@inheritDoc} */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof List)) return false;
         return list.equals(that);
     }
 
-    /** Computes a hash code that is consistent with equals() */
+    /** {@inheritDoc} */
     @Override public int hashCode() { return list.hashCode(); }
 
-    /** Returns a String representation. */
+    /** {@inheritDoc} */
     @Override public String toString() { return list.toString(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean contains(Object item) { return list.contains(item); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean containsAll(Collection<?> collection) { return list.containsAll(collection); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public T get(int i) { return list.get(i); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public int size() { return list.size(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean isEmpty() { return list.isEmpty(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public Iterator<T> iterator() { return list.iterator(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public Object[] toArray() { return list.toArray(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public <E> E[] toArray(E[] a) { return list.toArray(a); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public boolean add(T o) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public boolean remove(Object o) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public boolean addAll(Collection<? extends T> c) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public boolean addAll(int index, Collection<? extends T> c) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public boolean removeAll(Collection<?> c) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public boolean retainAll(Collection<?> c) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public void clear() { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public T set(int index, T element) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public void add(int index, T element) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** This list is readonly, so this method always throws UnsupportedOperationException. */
     public T remove(int index) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public int indexOf(Object o) { return list.indexOf(o); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public int lastIndexOf(Object o) { return list.lastIndexOf(o); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public ListIterator<T> listIterator() { return list.listIterator(); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public ListIterator<T> listIterator(int index) { return list.listIterator(index); }
 
-    /**
-     * Specified by java.util.List
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public ConstList<T> subList(int from, int to) {
         if (from<0) from=0;
         if (to>size()) to=size();

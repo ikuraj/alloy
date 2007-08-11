@@ -102,94 +102,55 @@ public final class ConstSet<K> implements Serializable, Set<K> {
         return new ConstSet<K>(new LinkedHashSet<K>(set));
     }
 
-    /** Returns true if that is a Set with the same elements as this set. */
+    /** {@inheritDoc} */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof Set)) return false;
         return set.equals(that);
     }
 
-    /** Computes a hash code that is consistent with equals(). */
+    /** {@inheritDoc} */
     @Override public int hashCode() { return set.hashCode(); }
 
-    /** Returns a String representation. */
+    /** {@inheritDoc} */
     @Override public String toString() { return set.toString(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean contains(Object o) { return set.contains(o); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public Iterator<K> iterator() { return set.iterator(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public Object[] toArray() { return set.toArray(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public <T> T[] toArray(T[] a) { return set.toArray(a); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean containsAll(Collection<?> c) { return set.containsAll(c); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public int size() { return set.size(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** {@inheritDoc} */
     public boolean isEmpty() { return set.isEmpty(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** This set is readonly, so this method always throws UnsupportedOperationException. */
     public boolean add(K o) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** This set is readonly, so this method always throws UnsupportedOperationException. */
     public boolean addAll(Collection<? extends K> c) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** This set is readonly, so this method always throws UnsupportedOperationException. */
     public boolean remove(Object o) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** This set is readonly, so this method always throws UnsupportedOperationException. */
     public boolean removeAll(Collection<?> c) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** This set is readonly, so this method always throws UnsupportedOperationException. */
     public boolean retainAll(Collection<?> c) { throw new UnsupportedOperationException(); }
 
-    /**
-     * Specified by java.util.Set
-     * @inheritDoc
-     */
+    /** This set is readonly, so this method always throws UnsupportedOperationException. */
     public void clear() { throw new UnsupportedOperationException(); }
 }

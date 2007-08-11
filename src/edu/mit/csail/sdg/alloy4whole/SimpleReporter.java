@@ -276,7 +276,7 @@ final class SimpleReporter extends A4Reporter {
         if (rep.warnings.size()==1) rep.logBold("Note: There was 1 compilation warning. Please scroll up to see it.\n");
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void warning(final ErrorWarning e) {
         if (!warnings.add(e)) return;
         Pos p=e.pos;
@@ -287,17 +287,17 @@ final class SimpleReporter extends A4Reporter {
         log(FLUSH);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void scope(final String msg) {
         if (verbosity>0) log("   "+msg);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void bound(final String msg) {
         if (verbosity>1) log("   "+msg);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void translate (String solver, int bitwidth, int maxseq, int skolemDepth, int symmetry) {
         log("   Solver="+solver+" Bitwidth="+bitwidth+" MaxSeq="+maxseq
                 +(skolemDepth==0?"":" SkolemDepth="+skolemDepth)
@@ -309,7 +309,7 @@ final class SimpleReporter extends A4Reporter {
         log(FLUSH);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void solve(final int primaryVars, final int totalVars, final int clauses) {
         log(RESTORE3);
         log("   "+totalVars+" vars. "+primaryVars+" primary vars. "+clauses+" clauses. "
@@ -320,12 +320,12 @@ final class SimpleReporter extends A4Reporter {
         log(FLUSH);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void debug(final String msg) {
         if (verbosity>2) { log("   "+(msg.trim())+"\n"); log(SAVE1); log(SAVE2); log(SAVE3); log(FLUSH); }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void resultSAT(Object command, long solvingTime, String formula, String filename) {
         if (!(command instanceof Command)) return;
         Command cmd = (Command)command;
@@ -343,7 +343,7 @@ final class SimpleReporter extends A4Reporter {
         log("\n\n");
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void minimizing(Object command) {
         if (!(command instanceof Command)) return;
         Command cmd = (Command)command;
@@ -357,7 +357,7 @@ final class SimpleReporter extends A4Reporter {
         log(FLUSH);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void resultUNSAT(Object command, long solvingTime, String formula, IdentitySet<Pos> core) {
         if (!(command instanceof Command)) return;
         Command cmd = (Command)command;
@@ -396,7 +396,7 @@ final class SimpleReporter extends A4Reporter {
         log("\n\n");
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override public void resultCNF(final String filename) {
         log(RESTORE3);
         log("   CNF file written to "+filename+"\n\n");

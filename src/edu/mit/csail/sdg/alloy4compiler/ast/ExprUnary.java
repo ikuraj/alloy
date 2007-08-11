@@ -57,21 +57,14 @@ public final class ExprUnary extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) { if (op==Op.NOOP) span=(p=pos); else span=(p=pos.merge(sub.span())); }
         return p;
     }
 
-    /** Constructs an unary expression. */
-    private ExprUnary(Pos pos, Op op, Expr sub, Type type, long weight, JoinableList<Err> errors) {
-        super(pos, type, (op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0, weight, errors);
-        this.op = op;
-        this.sub = sub;
-    }
-
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             switch(op) {
@@ -90,6 +83,13 @@ public final class ExprUnary extends Expr {
             out.append(op).append(" with type=").append(type).append('\n');
             sub.toString(out, indent+2);
         }
+    }
+
+    /** Constructs an unary expression. */
+    private ExprUnary(Pos pos, Op op, Expr sub, Type type, long weight, JoinableList<Err> errors) {
+        super(pos, type, (op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0, weight, errors);
+        this.op = op;
+        this.sub = sub;
     }
 
     /** This class contains all possible unary operators. */
@@ -201,7 +201,7 @@ public final class ExprUnary extends Expr {
 
     //============================================================================================================//
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         ErrorWarning w1=null, w2=null;
         Type s=p;

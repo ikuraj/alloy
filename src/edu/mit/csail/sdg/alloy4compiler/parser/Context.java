@@ -198,7 +198,7 @@ public final class Context {
                 for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
                 if (tt.size()>0) t=tt;
             }
-            x=x.resolve(t, warns);
+            x=Resolver.resolve(x, t, warns);
         }
         return x;
     }
@@ -219,7 +219,7 @@ public final class Context {
                 for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
                 if (tt.size()>0) t=tt;
             }
-            x=x.resolve(t, warns);
+            x=Resolver.resolve(x, t, warns);
         }
         return x;
     }
@@ -232,7 +232,7 @@ public final class Context {
      */
     public static final Expr resolveExpInt(Expr x, Collection<ErrorWarning> warns) throws Err {
         x=Resolver.cint(x);
-        if (x.type!=null) x=x.resolve(Type.INT, warns);
+        if (x.type!=null) x=Resolver.resolve(x, Type.INT, warns);
         return x;
     }
 
@@ -243,7 +243,7 @@ public final class Context {
      * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
      */
     public static final Expr resolveExpFormula(Expr x, Collection<ErrorWarning> warns) throws Err {
-        if (x.type!=null) x=x.resolve(Type.FORMULA, warns);
+        if (x.type!=null) x=Resolver.resolve(x, Type.FORMULA, warns);
         return x;
     }
 

@@ -53,7 +53,7 @@ public final class ExprCall extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) {
@@ -64,7 +64,7 @@ public final class ExprCall extends Expr {
         return p;
     }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append(fun.label).append('[');
@@ -201,7 +201,7 @@ public final class ExprCall extends Expr {
         return new ExprCall(pos, t, fun, newargs.makeConst(), extraWeight, errs);
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
         boolean changed=false;
         TempList<Expr> args = new TempList<Expr>(this.args.size());

@@ -51,14 +51,14 @@ public final class ExprITE extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) span = (p = cond.span().merge(right.span()).merge(left.span()));
         return p;
     }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append('(');
@@ -121,7 +121,7 @@ public final class ExprITE extends Expr {
         return new ExprITE(cond, left, right, c, errs.appendIfNotNull(ccform(cond)));
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         Type a=left.type, b=right.type;
         if (p.size()>0) {

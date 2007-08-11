@@ -38,8 +38,9 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
  *
  * <p>  <b>Invariant:</b>  pos!=null
  * <br> <b>Invariant:</b>  type!=null
- * <br> <b>Invariant:</b>  type==EMPTY <=> errors.size()>0
+ * <br> <b>Invariant:</b>  type==EMPTY iff errors.size()>0
  * <br> <b>Invariant:</b>  mult==0 || mult==1 || mult==2
+ * <br> <b>Invariant:</b>  weight>0
  */
 
 public abstract class Expr {
@@ -48,11 +49,12 @@ public abstract class Expr {
     abstract Object accept(VisitReturn visitor) throws Err;
 
     /**
-     * Resolves this expression.
+     * Resolves any ambiguous subexpressions, then return an unambiguous copy of this node.
      * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
      * (Note: it's possible for t to be EMPTY, or even ambiguous!)
      *
-     * <p> Postcondition: RESULT.errors.size()>0  or  "RESULT and all its subnodes are fully resolved and unambiguous"
+     * <p> On success: the return value (and all its subnodes) will be well-typed and unambiguous
+     * <p> On failure: the return value's "errors" list will be nonempty
      */
     public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings);
 
@@ -85,7 +87,7 @@ public abstract class Expr {
 
     /** This is an unmodifiable empty list of Err objects. */
     static final JoinableList<Err> emptyListOfErrors = new JoinableList<Err>();
-    
+
     /**
      * Constructs a new expression node
      *
@@ -98,14 +100,18 @@ public abstract class Expr {
      *     or has the form (A -> B) where A and/or B is a multiplicity constraint.
      * <br>If it's 1, that means it is a multiplicity constraint of the form (? X)
      * <br>If it's 0, that means it does not have either form.
+     *
+     * @param weight - the weight of this node and all subnodes
+     *
+     * @param errors - the list of errors associated with this Expr node
      */
     Expr (Pos pos, Type type, int mult, long weight, JoinableList<Err> errors) {
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
         if (errors==null) errors=emptyListOfErrors;
         if (type==EMPTY && errors.size()==0) errors=errors.append(new ErrorType(pos, "This expression failed to be typechecked"));
         this.mult=(mult<0 || mult>2) ? 0 : mult;
-        this.type=(errors.isEmpty() ? type : EMPTY);
-        this.weight=weight;
+        this.type=(errors.size()>0 || type==null) ? EMPTY : type;
+        this.weight=(weight>0) ? weight : 0;
         this.errors=errors;
     }
 
@@ -123,8 +129,8 @@ public abstract class Expr {
             search=search.parent;
         }
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
+        this.type=(type==null || type==EMPTY) ? Type.make((PrimSig)this) : type;
         this.mult=0;
-        this.type=(type==null ? Type.make((PrimSig)this) : type);
         this.weight=0;
         this.errors=emptyListOfErrors;
     }
@@ -143,14 +149,14 @@ public abstract class Expr {
 
     /** A return visitor that determines whether the node (or a subnode) contains a predicate/function call. */
     private static final VisitQuery hasCall = new VisitQuery() {
-        @Override public Object visit(ExprCall x) { return this; }
+        @Override public final Object visit(ExprCall x) { return this; }
     };
 
-    /** Returns true if the node (or a subnode) references a Func; can only be called on a typechecked node. */
+    /** Returns true if the node (or a subnode) is a predicate/function call. */
     final boolean hasCall() throws Err { return accept(hasCall)!=null; }
 
-    /** Transitively returns a set that contains all functions that this expression calls directly or indirectly. */
-    public Iterable<Func> findAllFunctions() {
+    /** Transitively returns a set that contains all predicates/functions that this expression calls directly or indirectly. */
+    public final Iterable<Func> findAllFunctions() {
         final IdentitySet<Func> seen = new IdentitySet<Func>();
         final List<Func> todo = new ArrayList<Func>();
         final VisitQuery q = new VisitQuery() {
@@ -277,7 +283,7 @@ public abstract class Expr {
     public final Expr in(Expr x) { return ExprBinary.Op.IN.make(span().merge(x.span()), this, x); }
 
     /**
-     * Returns the expression (this -> x) which can also be a multiplicity constraint (this set->set x)
+     * Returns the expression (this -> x) which can also be regarded as a multiplicity constraint (this set->set x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
@@ -573,13 +579,13 @@ public abstract class Expr {
     public final Expr cardinality() { return ExprUnary.Op.CARDINALITY.make(span(), this); }
 
     /**
-     * Returns the integer int[this]
+     * Returns the integer expression "int[this]"
      * <p> this must be a unary set
      */
     public final Expr cast2int() { return ExprUnary.Op.CAST2INT.make(span(), this); }
 
     /**
-     * Returns the expression Int[this]
+     * Returns the singleton set "Int[this]"
      * <p> this must be an integer expression
      */
     public final Expr cast2sigint() { return ExprUnary.Op.CAST2SIGINT.make(span(), this); }

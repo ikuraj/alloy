@@ -48,7 +48,7 @@ public final class ExprBuiltin extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) {
@@ -59,7 +59,7 @@ public final class ExprBuiltin extends Expr {
         return p;
     }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append("disjoint[");
@@ -105,7 +105,7 @@ public final class ExprBuiltin extends Expr {
         return new ExprBuiltin(pos, type, newargs.makeConst(), weight, errs);
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         p=EMPTY;
         for(int i=0; i<this.args.size(); i++) {

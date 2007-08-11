@@ -46,14 +46,14 @@ public final class ExprBadJoin extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) span = (p = pos.merge(left.span()).merge(right.span()));
         return p;
     }
 
-    /** Produce a String representation with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             left.toString(out,-1);
@@ -83,7 +83,7 @@ public final class ExprBadJoin extends Expr {
         this.right=right;
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**

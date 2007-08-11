@@ -44,14 +44,14 @@ public final class ExprVar extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) span = (p = pos.merge(expr.span()));
         return p;
     }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append(label);
@@ -85,7 +85,7 @@ public final class ExprVar extends Expr {
         return new ExprVar(pos, label, expr, e);
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public ExprVar resolve(Type p, Collection<ErrorWarning> warns) {
         Expr newExpr = expr.resolve(p, warns);
         if (expr==newExpr) return this;

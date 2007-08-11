@@ -57,7 +57,7 @@ public abstract class Sig extends Expr {
     /** Returns the name for this sig; this name need not be unique. */
     @Override public final String toString() { return label; }
 
-    /** Print a text description of it and all its subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public final void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append(label);
@@ -67,13 +67,13 @@ public abstract class Sig extends Expr {
         }
     }
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public final Pos span() { return pos; }
 
-    /** Typechecks a Sig object (second pass). */
-    @Override final public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
+    /** {@inheritDoc} */
+    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
-    /** Accepts the return visitor. */
+    /** {@inheritDoc} */
     @Override final Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
 
     /** Set of annotations; mutable. */
@@ -320,7 +320,7 @@ public abstract class Sig extends Expr {
         /** Returns a human-readable description of this field's name. */
         @Override public String toString() { return "field ("+sig+" <: "+label+")"; }
 
-        /** Print a text description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+        /** {@inheritDoc} */
         @Override public void toString(StringBuilder out, int indent) {
             if (indent<0) {
                 out.append(label);
@@ -330,13 +330,13 @@ public abstract class Sig extends Expr {
             }
         }
 
-        /** Returns a Pos object spanning the entire expression. */
+        /** {@inheritDoc} */
         @Override public Pos span() { return pos; }
 
-        /** Typechecks a Field object (second pass). */
+        /** {@inheritDoc} */
         @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
-        /** Accepts the return visitor. */
+        /** {@inheritDoc} */
         @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
     }
 

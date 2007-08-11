@@ -41,10 +41,10 @@ public final class ExprConstant extends Expr {
     /** Return the actual number if this node is a number constant (and returns 0 if it is not). */
     public int num() { return num; }
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() { return pos; }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             if (op==Op.NUMBER) out.append(num); else out.append(op);
@@ -113,7 +113,7 @@ public final class ExprConstant extends Expr {
         @Override public final String toString() { return label; }
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type type, Collection<ErrorWarning> warns) { return this; }
 
     /** Accepts the return visitor. */

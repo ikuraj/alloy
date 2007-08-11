@@ -29,7 +29,7 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
- * Immutable; represents an illegal pred/fun call.
+ * Immutable; represents an illegal node.
  *
  * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()==1
  */
@@ -39,10 +39,10 @@ public final class ExprBad extends Expr {
     /** The original source text that caused the error. */
     public final String originalText;
 
-    /** Returns a Pos object spanning the entire expression. */
+    /** {@inheritDoc} */
     @Override public Pos span() { return pos; }
 
-    /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
+    /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append(originalText);
@@ -58,7 +58,7 @@ public final class ExprBad extends Expr {
         this.originalText = originalText;
     }
 
-    /** Resolves this expression. */
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**
