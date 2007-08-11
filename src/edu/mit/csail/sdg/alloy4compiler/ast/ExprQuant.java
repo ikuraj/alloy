@@ -22,14 +22,15 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.JoinableList;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
@@ -41,23 +42,22 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccint;
  * It can have one of the following forms:
  *
  * <br>
- * <br>  (all    &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br>  (no     &nbsp;&nbsp; a,b:t, c,d:v &nbsp; | formula)
- * <br>  (lone   &nbsp;       a,b:t, c,d:v &nbsp; | formula)
- * <br>  (one    &nbsp;       a,b:t, c,d:v &nbsp; | formula)
- * <br>  (some   &nbsp;       a,b:t, c,d:v &nbsp; | formula)
- * <br>  (sum    &nbsp;       a,b:t, c,d:v &nbsp; | integer expression)
- * <br>  {a,b:t, &nbsp; c,d:v &nbsp; | &nbsp; formula}
- * <br>  {a,b:t, &nbsp; c,d:v}
+ * <br>  (all  a,b:t | formula)
+ * <br>  (no   a,b:t | formula)
+ * <br>  (lone a,b:t | formula)
+ * <br>  (one  a,b:t | formula)
+ * <br>  (some a,b:t | formula)
+ * <br>  (sum  a,b:t | integer expression)
+ * <br>  {a,b:t | formula}
+ * <br>  {a,b:t }
  * <br>
  *
- * <br> <b>Invariant:</b> type!=null => (sub.mult==0 && vars.size()>0 && (all v:vars | v.expr!=null))
+ * <br> <b>Invariant:</b> type!=EMPTY => sub.mult==0
+ * <br> <b>Invariant:</b> type!=EMPTY => vars.size()>0
+ * <br> <b>Invariant:</b> type!=EMPTY => (all v:vars | v.type.unambiguous() && v.type.size()>0)
  */
 
 public final class ExprQuant extends Expr {
-
-    /** The list of warnings. */
-    private final ConstList<ErrorWarning> warnings;
 
     /** The operator (ALL, NO, LONE, ONE, SOME, SUM, or COMPREHENSION) */
     public final Op op;
@@ -78,9 +78,8 @@ public final class ExprQuant extends Expr {
     @Override public Pos span() {
         Pos p=span;
         if (p==null) {
-            p=pos.merge(sub.span());
+            p=pos.merge(closingBracket).merge(sub.span());
             for(Expr v:vars) p=p.merge(v.span());
-            if (closingBracket!=null) p=p.merge(closingBracket);
             span=p;
         }
         return p;
@@ -90,7 +89,7 @@ public final class ExprQuant extends Expr {
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             if (op==Op.COMPREHENSION) out.append('{'); else out.append('(').append(op).append(' ');
-            for(int i=0; i<vars.size(); i++) { if (i>0) out.append(','); out.append(vars.get(i)); }
+            for(int i=0; i<vars.size(); i++) { if (i>0) out.append(','); out.append(vars.get(i).label); }
             if (op!=Op.COMPREHENSION || !(sub instanceof ExprConstant) || ((ExprConstant)sub).op!=ExprConstant.Op.TRUE)
                {out.append(" | "); sub.toString(out,-1);}
             if (op==Op.COMPREHENSION) out.append('}'); else out.append(')');
@@ -104,26 +103,25 @@ public final class ExprQuant extends Expr {
     }
 
     /** Constructs a new quantified expression. */
-    private ExprQuant(Pos pos, Pos closingBracket, Op op, Type type, ConstList<ExprVar> vars, Expr sub, long weight, Collection<ErrorWarning> warnings) {
-        super(pos, type, 0, weight);
-        this.closingBracket=closingBracket;
+    private ExprQuant(Pos pos, Pos close, Op op, Type type, ConstList<ExprVar> vars, Expr sub, long weight, JoinableList<Err> errs) {
+        super(pos, type, 0, weight, errs);
+        this.closingBracket=close;
         this.op=op;
         this.vars=vars;
         this.sub=sub;
-        this.warnings=ConstList.make(warnings);
     }
 
     //=============================================================================================================//
 
     /** This class contains all possible quantification operators. */
     public enum Op {
-        /** all  a,b:x, c,d:y | formula       */  ALL("all"),
-        /** no   a,b:x, c,d:y | formula       */  NO("no"),
-        /** lone a,b:x, c,d:y | formula       */  LONE("lone"),
-        /** one  a,b:x, c,d:y | formula       */  ONE("one"),
-        /** some a,b:x, c,d:y | formula       */  SOME("some"),
-        /** sum  a,b:x, c,d:y | intExpression */  SUM("sum"),
-        /** { a,b:x,    c,d:y | formula }     */  COMPREHENSION("comprehension");
+        /** all  a,b:x | formula       */  ALL("all"),
+        /** no   a,b:x | formula       */  NO("no"),
+        /** lone a,b:x | formula       */  LONE("lone"),
+        /** one  a,b:x | formula       */  ONE("one"),
+        /** some a,b:x | formula       */  SOME("some"),
+        /** sum  a,b:x | intExpression */  SUM("sum"),
+        /** { a,b:x | formula }        */  COMPREHENSION("comprehension");
 
         /** The constructor. */
         private Op(String label) {this.label=label;}
@@ -136,48 +134,44 @@ public final class ExprQuant extends Expr {
          *
          * @param pos - the position of the "quantifier" in the source file (or null if unknown)
          * @param closingBracket - the position of the "closing bracket" in the source file (or null if unknown)
-         * @param vars - the list of variables
+         * @param vars - the list of variables (each must be a variable over a set or relation)
          * @param sub - the body of the expression
          */
         public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) {
-            return make(pos, closingBracket, vars, sub, null);
-        }
-
-        /**
-         * Constructs a quantification expression with "this" as the operator.
-         *
-         * @param pos - the position of the "quantifier" in the source file (or null if unknown)
-         * @param closingBracket - the position of the "closing bracket" in the source file (or null if unknown)
-         * @param vars - the list of variables
-         * @param sub - the body of the expression
-         */
-        public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub, Collection<ErrorWarning> warnings) {
-            JoinableList<Err> errs=sub.errors;
             Type t = (this==SUM) ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
+            JoinableList<Err> errs = sub.errors;
+            if (errs.size()==0) {
+                if (this!=SUM) errs=errs.appendIfNotNull(ccform(sub)); else { sub=cint(sub); errs=errs.appendIfNotNull(ccint(sub)); }
+            }
+            if (sub.mult!=0) errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             long weight = sub.weight;
-            if (vars.size()==0) errs=errs.append(new ErrorAPI(pos, "List of variables cannot be empty."));
-            for(ExprVar v:vars) {
+            if (vars.size()==0) errs = errs.append(new ErrorAPI(pos, "List of variables cannot be empty."));
+            for(ExprVar v: vars) {
+                weight = weight + v.weight;
                 errs = errs.join(v.errors);
-                weight += v.weight;
-                if (v.expr==null) { errs=errs.append(new ErrorAPI(v.span(), "This must be a quantified variable.")); continue; }
-                if (v.type==null || v.type==EMPTY) { t=null; continue; }
-                if (v.type.size()==0) { errs=errs.append(new ErrorType(v.expr.span(), "This must be a set or relation. Instead, its type is "+v.type)); continue; }
-                if (this!=SUM && this!=COMPREHENSION) continue;
-                if (!v.type.hasArity(1)) { errs=errs.append(new ErrorType(v.expr.span(), "This must be a unary set. Instead, its type is "+v.type)); continue; }
-                Type t1 = v.type.extract(1);
-                if (v.expr.mult==1 && v.expr instanceof ExprUnary) {
-                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.SETOF) errs=errs.append(new ErrorType(v.expr.span(), "This cannot be a set-of expression."));
-                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.SOMEOF) errs=errs.append(new ErrorType(v.expr.span(), "This cannot be a some-of expression."));
-                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.LONEOF) errs=errs.append(new ErrorType(v.expr.span(), "This cannot be a lone-of expression."));
+                if (v.errors.size()>0) {
+                    continue;
                 }
-                if (t!=null && this==COMPREHENSION) { if (t.size()==0) t=t1; else t=t.product(t1); }
+                if (v.type.size()==0) {
+                    errs = errs.append(new ErrorType(v.expr.span(), "This must be a set or relation. Instead, its type is "+v.type));
+                    continue;
+                }
+                if (this!=SUM && this!=COMPREHENSION) continue;
+                if (!v.type.hasArity(1)) {
+                    errs = errs.append(new ErrorType(v.expr.span(), "This must be a unary set. Instead, its type is "+v.type));
+                    continue;
+                }
+                if (v.expr.mult==1 && v.expr instanceof ExprUnary) {
+                    if (((ExprUnary)(v.expr)).op == ExprUnary.Op.SETOF)
+                        errs = errs.append(new ErrorType(v.expr.span(), "This cannot be a set-of expression."));
+                    else if (((ExprUnary)(v.expr)).op == ExprUnary.Op.SOMEOF)
+                        errs = errs.append(new ErrorType(v.expr.span(), "This cannot be a some-of expression."));
+                    else if (((ExprUnary)(v.expr)).op == ExprUnary.Op.LONEOF)
+                        errs = errs.append(new ErrorType(v.expr.span(), "This cannot be a lone-of expression."));
+                }
+                if (this==COMPREHENSION) { Type t1=v.type.extract(1); if (t==EMPTY) t=t1; else t=t.product(t1); }
             }
-            if (sub.mult!=0) errs=errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
-            if (sub.type!=null && sub.type!=EMPTY) {
-                if (this==SUM) { sub=cint(sub); errs=errs.appendIfNotNull(ccint(sub)); }
-                else { errs=errs.appendIfNotNull(ccform(sub)); }
-            }
-            return new ExprQuant(pos, closingBracket, this, ((sub.type==null || sub.type==EMPTY) ? null : t), ConstList.make(vars), sub, weight, warnings);
+            return new ExprQuant(pos, closingBracket, this, t, ConstList.make(vars), sub, weight, errs);
         }
 
         /** Returns the human readable label for this operator */
@@ -186,10 +180,22 @@ public final class ExprQuant extends Expr {
 
     //=============================================================================================================//
 
-    /** Typechecks an ExprQuant object (second pass). */
-    @Override public Expr check(Type p, Collection<ErrorWarning> warns) {
-        if (this.warnings.size()>0) warns.addAll(this.warnings);
-        return this;
+    /** Resolves this expression. */
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) throws Err {
+        if (errors.size()==0) return this; // If there is already fatal error, then there's no need to proceed further
+        boolean changed=false;
+        TempList<ExprVar> newVars = new TempList<ExprVar>(vars.size());
+        for(ExprVar v: vars) {
+            ExprVar newV = v.resolve(v.type, warnings);
+            if (v!=newV) changed=true;
+            newVars.add(newV);
+        }
+        Expr newSub = sub.resolve((op==Op.SUM ? Type.INT : Type.FORMULA), warnings);
+        // If at least one variable changed,
+        // Then newSub will still contain only the old variables, and yet we are generating an ExprQuant node with the new variables.
+        // This is bad! However, due to ExprVar's properties, that means at least one of the newVar has errors.size()>0
+        // so it already means a fatal error has occurred, so the resulting ExprQuant node will also have errors.size()>0
+        return (!changed && sub==newSub) ? this : op.make(pos, closingBracket, newVars.makeConst(), newSub);
     }
 
     //=============================================================================================================//

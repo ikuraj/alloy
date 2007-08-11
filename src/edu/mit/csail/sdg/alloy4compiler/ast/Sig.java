@@ -71,7 +71,7 @@ public abstract class Sig extends Expr {
     @Override public final Pos span() { return pos; }
 
     /** Typechecks a Sig object (second pass). */
-    @Override final public Expr check(Type t, Collection<ErrorWarning> warns) { return this; }
+    @Override final public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** Accepts the return visitor. */
     @Override final Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
@@ -334,7 +334,7 @@ public abstract class Sig extends Expr {
         @Override public Pos span() { return pos; }
 
         /** Typechecks a Field object (second pass). */
-        @Override public Expr check(Type t, Collection<ErrorWarning> warns) { return this; }
+        @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
         /** Accepts the return visitor. */
         @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }

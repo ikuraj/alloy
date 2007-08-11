@@ -1,3 +1,23 @@
+/*
+ * Alloy Analyzer
+ * Copyright (c) 2007 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
+ */
+
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.ArrayList;
@@ -36,12 +56,11 @@ public final class ExpQuant extends Exp {
         return p;
     }
 
-    public Expr check(Context cx) throws Err {
+    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr guard=null;
-        ArrayList<ErrorWarning> warns=new ArrayList<ErrorWarning>();
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
         for(ExpDecl d: decls) {
-            Expr v = Resolver.addOne(Context.resolveExpSet(d.expr.check(cx), warns));
+            Expr v = Resolver.addOne(Context.resolveExpSet(d.expr.check(cx, warnings), warnings));
             List<Expr> disjoints = (d.disjoint!=null && d.names.size()>1) ? (new ArrayList<Expr>(d.names.size())) : null;
             for(ExpName n: d.names) {
                 ExprVar var = ExprVar.make(n.pos, n.name, v);
@@ -52,8 +71,8 @@ public final class ExpQuant extends Exp {
             if (disjoints!=null) guard=ExprBuiltin.makeDISJOINT(d.disjoint, disjoints).and(guard);
         }
         Expr sub = (op==Op.SUM)
-            ? Context.resolveExpInt(this.sub.check(cx), warns)
-            : Context.resolveExpFormula(this.sub.check(cx), warns);
+            ? Context.resolveExpInt(this.sub.check(cx, warnings), warnings)
+            : Context.resolveExpFormula(this.sub.check(cx, warnings), warnings);
         for(ExpDecl d: decls) for(ExpName n: d.names) cx.remove(n.name);
         if (guard!=null) {
             switch(op) {
@@ -62,6 +81,6 @@ public final class ExpQuant extends Exp {
               default: sub=guard.and(sub);
             }
         }
-        return op.make(pos, closingBracket, tempvars.makeConst(), sub, warns);
+        return op.make(pos, closingBracket, tempvars.makeConst(), sub);
     }
 }

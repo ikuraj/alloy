@@ -21,7 +21,6 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -126,8 +125,8 @@ public final class Context {
         cx.rootfun = rootfun;
         return cx;
     }
-    
-    
+
+
     /**
      * Helper method that throws a type error if x cannot possibly have formula type.
      * <p> <b>Return</b> x if it can have formula type
@@ -199,7 +198,7 @@ public final class Context {
                 for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
                 if (tt.size()>0) t=tt;
             }
-            x=x.check(t, warns);
+            x=x.resolve(t, warns);
         }
         return x;
     }
@@ -220,7 +219,7 @@ public final class Context {
                 for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
                 if (tt.size()>0) t=tt;
             }
-            x=x.check(t, warns);
+            x=x.resolve(t, warns);
         }
         return x;
     }
@@ -233,7 +232,7 @@ public final class Context {
      */
     public static final Expr resolveExpInt(Expr x, Collection<ErrorWarning> warns) throws Err {
         x=Resolver.cint(x);
-        if (x.type!=null) x=x.check(Type.INT, warns);
+        if (x.type!=null) x=x.resolve(Type.INT, warns);
         return x;
     }
 
@@ -244,7 +243,7 @@ public final class Context {
      * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
      */
     public static final Expr resolveExpFormula(Expr x, Collection<ErrorWarning> warns) throws Err {
-        if (x.type!=null) x=x.check(Type.FORMULA, warns);
+        if (x.type!=null) x=x.resolve(Type.FORMULA, warns);
         return x;
     }
 

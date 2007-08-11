@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
@@ -374,6 +374,12 @@ public final class Type implements Iterable<Type.ProductType> {
 
     /** Returns a hash code consistent with equals() */
     @Override public int hashCode() { return arities * (is_int?1732051:1) * (is_bool?314157:1); }
+
+    /** Returns true if this type is unambiguous. */
+    public boolean unambiguous() {
+        if (size()==0) return (is_int && !is_bool) || (!is_int && is_bool);
+        return (!is_bool && !is_int && arity()>0);
+    }
 
     /** Returns true if this.size()==0 or every entry consists only of "none". */
     public boolean hasNoTuple() {

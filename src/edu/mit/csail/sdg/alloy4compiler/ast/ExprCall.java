@@ -203,13 +203,13 @@ public final class ExprCall extends Expr {
     }
 
     /** Typechecks an ExprCall object (second pass). */
-    @Override public Expr check(Type t, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) throws Err {
         boolean changed=false;
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         long w=0;
         for(int i=0; i<this.args.size(); i++) {
             Expr arg=this.args.get(i);
-            Expr res=cset(arg.check(fun.params.get(i).type, warns)); // Use the function's param type to narrow down choices
+            Expr res=cset(arg.resolve(fun.params.get(i).type, warns)); // Use the function's param type to narrow down choices
             w=w+res.weight;
             args.add(res);
             if (arg!=res) changed=true;

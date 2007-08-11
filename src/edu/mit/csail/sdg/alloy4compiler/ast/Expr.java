@@ -63,7 +63,7 @@ public abstract class Expr {
      *
      * <p> Postcondition: RESULT.errors.size()>0  or  (RESULT.type!=EMPTY and is unambiguous)
      */
-    public abstract Expr check(Type t, Collection<ErrorWarning> warnings) throws Err;
+    public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings) throws Err;
 
     /** The filename, line, and column position in the original Alloy model file (cannot be null). */
     public final Pos pos;

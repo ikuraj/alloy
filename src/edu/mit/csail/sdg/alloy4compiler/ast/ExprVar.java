@@ -21,30 +21,24 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorFatal;
-import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.JoinableList;
-import edu.mit.csail.sdg.alloy4.Pos;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
- * Immutable; represents a variable in the AST.
+ * Immutable; represents a LET or QUANTIFICATION variable in the AST.
  *
- * <p> It can be one of three possibilities:
- * <br> (1) It is a typechecked variable (this.type!=EMPTY && this.expr!=null)
- * <br> (2) It is a not-yet-typechecked variable (this.type==EMPTY && this.expr!=null)
- * <br> (3) It is a placeholder variable where we haven't resolved what it refers to yet (this.type==EMPTY && this.expr==null)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (type.unambiguous() && type==expr.type)
  */
 
 public final class ExprVar extends Expr {
 
-    /** Stores a String label associated with this variable; it's used for pretty-printing and does not have to be unique. */
+    /** The label associated with this variable; it's used for pretty-printing and does not have to be unique. */
     public final String label;
 
-    /** The expression that this variable is quantified or substituted by; can be null if this is a placeholder variable. */
+    /** The expression that this variable is quantified over or substituted by; always nonnull. */
     public final Expr expr;
 
     /** Caches the span() result. */
@@ -53,7 +47,7 @@ public final class ExprVar extends Expr {
     /** Returns a Pos object spanning the entire expression. */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = (expr==null ? pos : pos.merge(expr.span())));
+        if (p==null) span = (p = pos.merge(expr.span()));
         return p;
     }
 
@@ -68,14 +62,8 @@ public final class ExprVar extends Expr {
     }
 
     /** Constructs an ExprVar object */
-    @SuppressWarnings("unchecked")
-    private ExprVar(Pos pos, String label, Expr expr, Type type, Err err) {
-        super(pos,
-          type,
-          0,
-          (expr!=null ? expr.weight : 0),
-          (expr!=null ? expr.errors : JoinableList.emptylist).appendIfNotNull(err)
-        );
+    private ExprVar(Pos pos, String label, Expr expr, Err extraError) {
+        super(pos, expr.type, 0, expr.weight, expr.errors.appendIfNotNull(extraError));
         this.label = (label==null ? "" : label);
         this.expr = expr;
     }
@@ -84,44 +72,26 @@ public final class ExprVar extends Expr {
      * Constructs an ExprVar variable whose expr is well-typed (if not, the resulting node's error list will be nonempty)
      * @param pos - the original position in the source file (can be null if unknown)
      * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
-     * @param expr - the quantification/substitution expression for this variable
+     * @param expr - the quantification/substitution expression for this variable; <b> it must already be fully resolved </b>
      */
     public static ExprVar make(Pos pos, String label, Expr expr) {
         ErrorType e=null;
-        if (expr.type==null /*TODO*/ || expr.type==EMPTY)
-            e=new ErrorType(expr.span(), "This expression failed to be typechecked.");
-        else if (expr.type.is_int && expr.type.is_bool)
-            e=new ErrorType(expr.span(), "This expression is ambiguous. Its possible types include "+expr.type);
-        else if (expr.type.size()>0 && (expr.type.arity()<0 || expr.type.is_int || expr.type.is_bool))
-            e=new ErrorType(expr.span(), "This expression is ambiguous. Its possible types include "+expr.type);
-        return new ExprVar(pos, label, expr, (e==null ? expr.type : null), e);
+        if (expr.errors.size()==0) {
+            if (expr.type==EMPTY)
+                e=new ErrorType(expr.span(), "This expression failed to be typechecked.");
+            else if (!expr.type.unambiguous())
+                e=new ErrorType(expr.span(), "This expression is ambiguous. Its possible types are:\n"+expr.type);
+        }
+        return new ExprVar(pos, label, expr, e);
     }
 
-    /** Typechecks an ExprVar object (second pass). */
-    @Override public Expr check(Type type, Collection<ErrorWarning> warns) throws Err {
-        if (this.type!=null /*TODO*/ && this.type!=EMPTY) return this;
-        throw new ErrorFatal("Internal typechecker invariant violated.");
+    /** Resolves this expression. */
+    @Override public ExprVar resolve(Type p, Collection<ErrorWarning> warns) throws Err {
+        Expr newExpr = expr.resolve(p, warns);
+        if (expr==newExpr) return this;
+        return new ExprVar(pos, label, newExpr, new ErrorType(newExpr.span(), "This expression was not fully resolved."));
     }
 
     /** Accepts the return visitor. */
-    @Override Object accept(VisitReturn visitor) throws Err {
-        if (this.type!=null) return visitor.visit(this);
-        throw new ErrorFatal("Internal typechecker invariant violated.");
-    }
-
-    /**
-     * Convenience method that returns a syntax error exception saying the name "n" can't be found.
-     * (In particular, if n is an old Alloy3 keyword, then the message will tell the user to consult
-     * the documentation on how to migrate old models to use the new syntax.)
-     *
-     * @param pos - the original position in the file that triggered the error
-     * @param name - the identifier
-     */
-    public static ErrorSyntax hint (Pos pos, String name) {
-        String msg="The name \""+name+"\" cannot be found.";
-        if ("exh".equals(name) || "exhaustive".equals(name) || "part".equals(name) || "partition".equals(name))
-            msg=msg+" If you are migrating from Alloy 3, please see Help->QuickGuide on how to translate models that use the \""
-            +name+"\" keyword.";
-        return new ErrorSyntax(pos, msg);
-    }
+    @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
 }

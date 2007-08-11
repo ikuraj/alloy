@@ -1,9 +1,30 @@
+/*
+ * Alloy Analyzer
+ * Copyright (c) 2007 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
+ */
+
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
@@ -90,7 +111,8 @@ public final class ExpDot extends Exp {
         return ans;
     }
 
-    public Expr check(Context cx) throws Err {
+    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
+        int warningSize = warnings.size();
         // First, check whether it could be a legal function/predicate call
         TempList<Expr> objects=new TempList<Expr>();
         int n=1;
@@ -100,7 +122,7 @@ public final class ExpDot extends Exp {
             Set<Object> choices = cx.resolve(ptr.pos, ((ExpName)ptr).name);
             TempList<Expr> tempargs=new TempList<Expr>();
             for(Exp temp=this; temp instanceof ExpDot; temp=((ExpDot)temp).right) {
-                Expr temp2 = ((ExpDot)temp).left.check(cx);
+                Expr temp2 = ((ExpDot)temp).left.check(cx, warnings);
                 temp2 = Resolver.cset(temp2);
                 tempargs.add(0, temp2);
             }
@@ -117,8 +139,9 @@ public final class ExpDot extends Exp {
             if (hasValidBound) return ExprChoice.make(ptr.pos, objects.makeConst());
         }
         // Next, check to see if it is the special builtin function "Int[]"
-        Expr left = this.left.check(cx);
-        Expr right = this.right.check(cx);
+        while(warnings.size() > warningSize) warnings.remove(warnings.size()-1);
+        Expr left = this.left.check(cx, warnings);
+        Expr right = this.right.check(cx, warnings);
         if (left.type!=null && left.type.is_int && right instanceof ExprUnary && ((ExprUnary)right).op==ExprUnary.Op.NOOP && ((ExprUnary)right).sub==Sig.SIGINT)
             return left.cast2sigint();
         if (left.type!=null && left.type.is_int && right instanceof Sig && ((Sig)right)==Sig.SIGINT)

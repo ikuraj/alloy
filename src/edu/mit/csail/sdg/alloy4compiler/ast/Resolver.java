@@ -1,3 +1,23 @@
+/*
+ * Alloy Analyzer
+ * Copyright (c) 2007 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
+ */
+
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
@@ -12,7 +32,7 @@ public final class Resolver {
      *
      * @throws ErrorType if X is not already unambiguously typechecked
      */
-    public static final Expr unambiguous(final Expr x) throws Err {
+    static final Expr unambiguous(final Expr x) throws Err {
         if (x.errors.size()>0) throw x.errors.get(0);
         final Type t=x.type;
         if (t==null || (!t.is_bool && !t.is_int && t.size()==0)) {
@@ -50,7 +70,7 @@ public final class Resolver {
      *
      * @throws ErrorType if x does not have formula type
      */
-    public static final ErrorType ccform(Expr x) {
+    static final ErrorType ccform(Expr x) {
         if (x.type==null)
             return new ErrorType(x.span(), "This expression failed to be typechecked.");
         if (!x.type.is_bool)
@@ -71,7 +91,7 @@ public final class Resolver {
         return x;
     }
 
-    public static final ErrorType ccint(Expr x) {
+    static final ErrorType ccint(Expr x) {
         if (x.type==null)
             return new ErrorType(x.span(), "This expression failed to be typechecked.");
         if (!x.type.is_int)
@@ -92,12 +112,11 @@ public final class Resolver {
         return x;
     }
 
-    public static final ErrorType ccset(Expr x) {
+    static final ErrorType ccset(Expr x) {
         if (x.type==null)
             return new ErrorType(x.span(), "This expression failed to be typechecked.");
         if (x.type.size()==0)
             return new ErrorType(x.span(), "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+x.type);
         return null;
     }
-
 }

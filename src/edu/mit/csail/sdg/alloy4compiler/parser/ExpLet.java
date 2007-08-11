@@ -1,7 +1,26 @@
+/*
+ * Alloy Analyzer
+ * Copyright (c) 2007 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
+ */
+
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import java.util.ArrayList;
-
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -29,12 +48,12 @@ public final class ExpLet extends Exp {
         return p;
     }
 
-    public Expr check(Context cx) throws Err {
-        Expr right = Context.resolveExp(this.right.check(cx), new ArrayList<ErrorWarning>()); // TODO: warnings are discarded!
+    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
+        Expr right = Context.resolveExp(this.right.check(cx, warnings), warnings);
         ExprVar left = ExprVar.make(this.left.pos, this.left.name, right);
         cx.put(this.left.name, left);
-        Expr sub = this.sub.check(cx);
+        Expr sub = this.sub.check(cx, warnings);
         cx.remove(this.left.name);
-        return ExprLet.make(pos, left, sub);
+        return ExprLet.make(left, sub);
     }
 }

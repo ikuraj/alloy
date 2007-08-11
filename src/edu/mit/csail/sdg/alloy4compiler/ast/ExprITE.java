@@ -127,7 +127,7 @@ public final class ExprITE extends Expr {
     }
 
     /** Typechecks an ExprITE object (second pass). */
-    @Override public Expr check(Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) throws Err {
         Type a=left.type, b=right.type;
         if (p.size()>0) {
             a=a.intersect(p);
@@ -140,9 +140,9 @@ public final class ExprITE extends Expr {
             a=p;
             b=p;
         }
-        Expr cond = this.cond.check(Type.FORMULA, warns);
-        Expr left = this.left.check(a, warns);
-        Expr right = this.right.check(b, warns);
+        Expr cond = this.cond.resolve(Type.FORMULA, warns);
+        Expr left = this.left.resolve(a, warns);
+        Expr right = this.right.resolve(b, warns);
         if (cond==this.cond && left==this.left && right==this.right) return this; else return make(cond,left,right);
     }
 

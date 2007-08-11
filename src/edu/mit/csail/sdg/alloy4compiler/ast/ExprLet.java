@@ -21,25 +21,19 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
-import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.ErrorFatal;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 
 /**
  * Immutable; represents an expression of the form (let a=b | x).
  *
- * <p> <b>Invariant:</b>  type!=null => (var.mult==0 && var.expr.mult==0 && sub.mult==0)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (var.type.unambiguos() && sub.mult==0)
  */
 
 public final class ExprLet extends Expr {
-
-    /** The list of warnings. */
-    private final ConstList<ErrorWarning> warnings;
 
     /** The LET variable. */
     public final ExprVar var;
@@ -53,14 +47,14 @@ public final class ExprLet extends Expr {
     /** Returns a Pos object spanning the entire expression. */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = pos.merge(var.span()).merge(sub.span()));
+        if (p==null) span = (p = var.span().merge(sub.span()));
         return p;
     }
 
     /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            out.append("(let ").append(var.label).append("=... in ");
+            out.append("(let ").append(var.label).append("=... | ");
             sub.toString(out,-1);
             out.append(')');
         } else {
@@ -72,45 +66,37 @@ public final class ExprLet extends Expr {
     }
 
     /** Constructs a LET expression. */
-    private ExprLet(Pos pos, Type t, ExprVar var, Expr sub, JoinableList<Err> errs, Collection<ErrorWarning> warnings) {
-        super(pos, t, 0, var.weight+sub.weight, errs);
+    private ExprLet(ExprVar var, Expr sub, JoinableList<Err> errs) {
+        super(Pos.UNKNOWN, sub.type, 0, var.weight+sub.weight, errs);
         this.var=var;
         this.sub=sub;
-        this.warnings=ConstList.make(warnings);
     }
 
     /**
      * Constructs a LET expression.
      *
-     * @param pos - the original position in the file corresponding to the tokens "var=" (can be null if unknown)
      * @param var - the LET variable
      * @param sub - the body of the LET expression (which may or may not contain "var" as a free variable)
      */
-    public static Expr make(Pos pos, ExprVar var, Expr sub) { return make(pos,var,sub,null); }
-
-    /**
-     * Constructs a LET expression.
-     *
-     * @param pos - the original position in the file corresponding to the tokens "var=" (can be null if unknown)
-     * @param var - the LET variable
-     * @param sub - the body of the LET expression (which may or may not contain "var" as a free variable)
-     */
-    public static Expr make(Pos pos, ExprVar var, Expr sub, Collection<ErrorWarning> warnings) {
+    public static Expr make(ExprVar var, Expr sub) {
         JoinableList<Err> errs = var.errors.join(sub.errors);
-        Type t = (var.type!=null && var.type!=EMPTY) ? sub.type : null;
         if (sub.mult != 0)
             errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
-        if (var.expr!=null && var.expr.mult!=0)
+        if (var.expr.mult!=0)
             errs = errs.append(new ErrorSyntax(var.expr.span(), "Multiplicity expression not allowed here."));
-        return new ExprLet(pos, t, var, sub, errs, warnings);
+        return new ExprLet(var, sub, errs);
     }
 
-    /** Typechecks an ExprLet object (second pass). */
-    @Override public Expr check(final Type p, Collection<ErrorWarning> warns) throws Err {
-        if (var.type==null || var.type==EMPTY) throw new ErrorFatal("Internal typechecker invariant violated.");
-        Expr sub = this.sub.check(p, warns);
-        if (warnings.size()>0) warns.addAll(warnings);
-        if (sub==this.sub) return this; else return make(pos, var, sub, null);
+    /** Resolves this expression. */
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) throws Err {
+        if (errors.size()>0) return this; // If there is already fatal error, then there's no need to proceed further
+        ExprVar newVar = var.resolve(var.type, warnings);
+        Expr newSub = sub.resolve(p, warnings);
+        // If the variable changed,
+        // Then newSub will still contain only the old variable, and yet we are generating an ExprLet node with the new variable.
+        // This is bad! However, due to ExprVar's properties, that means the newVar has errors.size()>0
+        // so it already means a fatal error has occurred, so the resulting ExprLet node will also have errors.size()>0
+        return (var==newVar && sub==newSub) ? this : make(newVar, newSub);
     }
 
     /** Accepts the return visitor. */

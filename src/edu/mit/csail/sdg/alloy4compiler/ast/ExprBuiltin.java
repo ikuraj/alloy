@@ -108,7 +108,7 @@ public final class ExprBuiltin extends Expr {
     }
 
     /** Typechecks an ExprBuiltin object (second pass). */
-    @Override public Expr check(Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) throws Err {
         p=EMPTY;
         for(int i=0; i<this.args.size(); i++) {
             if (i==0) p=this.args.get(i).type; else p=p.unionWithCommonArity(this.args.get(i).type);
@@ -116,7 +116,7 @@ public final class ExprBuiltin extends Expr {
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
-            Expr x=this.args.get(i), y=cset(x.check(p, warns));
+            Expr x=this.args.get(i), y=cset(x.resolve(p, warns));
             if (x!=y) changed=true;
             args.add(y);
         }

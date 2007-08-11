@@ -102,7 +102,7 @@ public final class ExprChoice extends Expr {
     }
 
     /** Typechecks an EChoice object (second pass). */
-    @Override public Expr check(Type t, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) throws Err {
         List<Expr> match=new ArrayList<Expr>(choices.size());
         // We first prefer exact matches
         for(Expr ch:choices) {
@@ -132,7 +132,7 @@ public final class ExprChoice extends Expr {
             match=newmatch;
         }
         // Finally, complain if there are more than one match, or zero match
-        if (match.size()==1) return match.get(0).check(t, warns);
+        if (match.size()==1) return match.get(0).resolve(t, warns);
         StringBuilder msg=null;
         if (match.size()>1)
             msg=new StringBuilder("\nThe expression is ambiguous due to multiple matches:");

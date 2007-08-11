@@ -88,7 +88,6 @@ public final class MagicUtil {
     /**
      * Returns all of the visible user-types in the current model.
      * @param vizState
-     * @return
      */
     static Set<AlloyType> visibleUserTypes(final VizState vizState) {
     	final Set<AlloyType> result = new HashSet<AlloyType>();
@@ -104,7 +103,6 @@ public final class MagicUtil {
     /**
      * Returns all of the top-level types in the original model.
      * @param vizState
-     * @return
      */
     static Set<AlloyType> topLevelTypes(final VizState vizState) {
     	final Set<AlloyType> result = new HashSet<AlloyType>();
@@ -120,7 +118,6 @@ public final class MagicUtil {
     /**
      * Returns every top-level user type that is itself visible or has a visible subtype.
      * @param vizState
-     * @return
      */
     static Set<AlloyType> partiallyVisibleUserTopLevelTypes(final VizState vizState) {
     	final AlloyModel model = vizState.getOriginalModel();
@@ -142,7 +139,6 @@ public final class MagicUtil {
      * Returns the set of visible subtypes for the given type.
      * @param vizState
      * @param type
-     * @return
      */
     static Set<AlloyType> visibleSubTypes(final VizState vizState, final AlloyType type) {
     	final AlloyModel model = vizState.getCurrentModel();

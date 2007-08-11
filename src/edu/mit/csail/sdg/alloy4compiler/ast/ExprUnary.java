@@ -43,7 +43,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccset;
 /**
  * Immutable; represents a unary expression of the form "(OP subexpression)"
  *
- * <p> <b>Invariant:</b>  type!=EMPTY => (sub.mult==0)
+ * <p> <b>Invariant:</b>  type!=EMPTY => sub.mult==0
  */
 
 public final class ExprUnary extends Expr {
@@ -182,8 +182,7 @@ public final class ExprUnary extends Expr {
                 type=Type.INT;
                 break;
               case CAST2INT:
-                // Shortcut if it can only be an integer anyway
-                if (sub.type==Type.INT) return sub;
+                if (sub.type==Type.INT) return sub; // Shortcut if it can only be an integer anyway
                 sub=cset(sub); e=ccset(sub); if (e!=null) break;
                 if (!sub.type.hasArity(1)) e=new ErrorType(sub.span(), "int[] can be used only with a unary set.\n" +
                    "Instead, its possible type(s) are:\n"+sub.type);
@@ -194,7 +193,7 @@ public final class ExprUnary extends Expr {
                 type=SIGINT.type;
                 break;
             }
-            return new ExprUnary(pos, this, sub, type, weight, errors.appendIfNotNull(e));
+            return new ExprUnary(pos, this, sub, type, ((weight<sub.weight) ? sub.weight : weight), errors.appendIfNotNull(e));
         }
 
         /** Returns the human readable label for this operator */
@@ -204,13 +203,13 @@ public final class ExprUnary extends Expr {
     //============================================================================================================//
 
     /** Typechecks an ExprUnary object (second pass). */
-    @Override public Expr check(Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) throws Err {
         ErrorWarning w1=null, w2=null;
         Type s=p;
         switch(op) {
           case TRANSPOSE: case RCLOSURE: case CLOSURE:
             if (op!=Op.TRANSPOSE && type.join(type).hasNoTuple())
-               w1=new ErrorWarning(pos, this+" is redundant since the domain and range are disjoint: "+sub.type.extract(2));
+               w1=new ErrorWarning(pos, this+" is redundant since its domain and range are disjoint: "+sub.type.extract(2));
             s = (op!=Op.TRANSPOSE) ? resolveClosure(p, sub.type) : sub.type.transpose().intersect(p).transpose() ;
             if (p.hasTuple() && s==EMPTY)
                w2=new ErrorWarning(sub.span(),
@@ -233,7 +232,7 @@ public final class ExprUnary extends Expr {
                "This expression should contain integer atoms.\nInstead, its possible type(s) are:\n"+sub.type.extract(1));
             break;
         }
-        Expr sub = this.sub.check(s, warns);
+        Expr sub = this.sub.resolve(s, warns);
         if (w1!=null) warns.add(w1);
         if (w2!=null) warns.add(w2);
         return (sub==this.sub) ? this : op.make(pos, sub, weight-(this.sub.weight)+sub.weight);
@@ -260,7 +259,9 @@ public final class ExprUnary extends Expr {
         // For each (v1->v2) in childType, add (v1->v2) into the graph.
         for (ProductType c:child) if (c.arity()==2) {
             PrimSig a=c.get(0), b=c.get(1);
-            nodes.add(a); nodes.add(b); graph.addEdge(a,b);
+            nodes.add(a);
+            nodes.add(b);
+            graph.addEdge(a,b);
         }
         // For each distinct v1 and v2 in the graph where v1&v2!=empty, add the edges v1->v2 and v2->v1.
         for (PrimSig a:nodes) for (PrimSig b:nodes) if (a!=b && a.intersects(b)) graph.addEdge(a,b);

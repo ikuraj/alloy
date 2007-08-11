@@ -20,8 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
+import edu.mit.csail.sdg.alloy4.Err;
 
 /**
  * This abstract class defines what a Return Visitor's interface should be.

@@ -20,8 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
+import edu.mit.csail.sdg.alloy4.Err;
 
 /**
  * This abstract class implements a Query visitor that walks over an Expr and its subnodes.

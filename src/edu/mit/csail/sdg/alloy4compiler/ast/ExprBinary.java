@@ -269,7 +269,7 @@ public final class ExprBinary extends Expr {
     //============================================================================================================//
 
     /** Typechecks an ExprBinary object (second pass). */
-    @Override public Expr check(Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) throws Err {
         ErrorWarning w=null;
         Type a=left.type, b=right.type;
         switch(op) {
@@ -410,8 +410,8 @@ public final class ExprBinary extends Expr {
             if (leftType!=EMPTY && rightType!=EMPTY) { a=leftType; b=rightType; }
           }
         }
-        Expr left = this.left.check(a, warns);
-        Expr right = this.right.check(b, warns);
+        Expr left = this.left.resolve(a, warns);
+        Expr right = this.right.resolve(b, warns);
         if (w!=null) warns.add(w);
         return (left==this.left && right==this.right) ? this : op.make(pos, left, right);
     }

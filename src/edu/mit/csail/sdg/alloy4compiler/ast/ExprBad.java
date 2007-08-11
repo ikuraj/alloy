@@ -48,7 +48,7 @@ public final class ExprBad extends Expr {
     }
 
     /** Typechecks an ExprBadCall object (second pass). */
-    @Override public Expr check(Type t, Collection<ErrorWarning> warns) { return this; }
+    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**
      * Accepts the return visitor by immediately throwing an exception.
