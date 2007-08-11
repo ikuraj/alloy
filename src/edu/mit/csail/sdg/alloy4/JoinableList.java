@@ -54,8 +54,8 @@ public final class JoinableList<E> implements Iterable<E> {
         this.post = null;
     }
 
-    /** The empty list. */
-    public static final JoinableList emptylist = new JoinableList<Object>(0,null,null,null);
+    /** The pre-cached empty list. */
+    private static final JoinableList emptylist = new JoinableList<Object>(0,null,null,null);
 
     /** Returns the empty list. */
     @SuppressWarnings("unchecked")
