@@ -170,7 +170,7 @@ public final class JoinableList<E> implements Iterable<E> {
     public Iterator<E> iterator() {
         return new Iterator<E>() {
             private int i=0;
-            public final E next() { i++; return get(i-1); }
+            public final E next() { if (i>=count) throw new ArrayIndexOutOfBoundsException(); i++; return get(i-1); }
             public final boolean hasNext() { return i < count; }
             public final void remove() { throw new UnsupportedOperationException(); }
         };
