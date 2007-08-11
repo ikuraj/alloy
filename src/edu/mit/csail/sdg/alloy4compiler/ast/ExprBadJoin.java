@@ -83,7 +83,7 @@ public final class ExprBadJoin extends Expr {
         this.right=right;
     }
 
-    /** Typechecks an EBadJoin object (second pass). */
+    /** Resolves this expression. */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**

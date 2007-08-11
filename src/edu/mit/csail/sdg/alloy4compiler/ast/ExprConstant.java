@@ -62,7 +62,7 @@ public final class ExprConstant extends Expr {
      * @param num - the number (if this is a number constant); it should be 0 if this is not a number constant
      */
     private ExprConstant(Pos pos, Op op, int num) {
-        super(pos, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NUMBER ? Type.INT : Type.FORMULA)));
+        super(pos, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NUMBER ? Type.INT : Type.FORMULA)), 0, 0, null);
         this.op = op;
         this.num = num;
     }
@@ -113,7 +113,7 @@ public final class ExprConstant extends Expr {
         @Override public final String toString() { return label; }
     }
 
-    /** Typechecks an ExprConstant object (second pass). */
+    /** Resolves this expression. */
     @Override public Expr resolve(Type type, Collection<ErrorWarning> warns) { return this; }
 
     /** Accepts the return visitor. */

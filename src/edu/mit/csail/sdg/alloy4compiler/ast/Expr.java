@@ -31,22 +31,15 @@ import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
  * Immutable; represents a formula or expression.
  *
  * <p>  <b>Invariant:</b>  pos!=null
- * <p>  <b>Invariant:</b>  type!=null
+ * <br> <b>Invariant:</b>  type!=null
+ * <br> <b>Invariant:</b>  type==EMPTY <=> errors.size()>0
  * <br> <b>Invariant:</b>  mult==0 || mult==1 || mult==2
- *
- * errors.size()>0 => type==EMPTY
- *
- * if at least one subnode is EMPTY
- *     { this node's type == EMPTY; this node's errorlist = (union of subnode's errorlist) + (zero or more errors) }
- * else if the subnodes's types are not legal for this node
- *     { this node's type == EMPTY; this node's errorlist will contain at least the reason for the error }
- * else
- *     { this node's type != EMPTY; this node's errorlist will be empty; }
  */
 
 public abstract class Expr {
@@ -55,23 +48,21 @@ public abstract class Expr {
     abstract Object accept(VisitReturn visitor) throws Err;
 
     /**
-     * Accepts the typecheck visitor for the second pass.
+     * Resolves this expression.
      * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
      * (Note: it's possible for t to be EMPTY, or even ambiguous!)
      *
-     * <p> Precondition: type!=Type.EMPTY
-     *
-     * <p> Postcondition: RESULT.errors.size()>0  or  (RESULT.type!=EMPTY and is unambiguous)
+     * <p> Postcondition: RESULT.errors.size()>0  or  "RESULT and all its subnodes are fully resolved and unambiguous"
      */
-    public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings) throws Err;
+    public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings);
 
     /** The filename, line, and column position in the original Alloy model file (cannot be null). */
     public final Pos pos;
 
-    /** The type for this node; null if it is not well-typed. */
+    /** The type for this node; EMPTY if it is not well-typed. */
     public final Type type;
 
-    /** The list of errors on this node. */
+    /** The list of errors on this node; nonempty iff this.type==EMPTY */
     public final JoinableList<Err> errors;
 
     /**
@@ -88,10 +79,13 @@ public abstract class Expr {
 
     /**
      * Each leaf Expr has a weight value (which can be 0 or higher);
-     * by default, each nonleaf Expr's weight is the sum of its children.
+     * by default, each nonleaf Expr's weight is the sum of its children's weights.
      */
     public final long weight;
 
+    /** This is an unmodifiable empty list of Err objects. */
+    static final JoinableList<Err> emptyListOfErrors = new JoinableList<Err>();
+    
     /**
      * Constructs a new expression node
      *
@@ -107,50 +101,12 @@ public abstract class Expr {
      */
     Expr (Pos pos, Type type, int mult, long weight, JoinableList<Err> errors) {
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
-        //if (type!=null && type.size()==0 && !type.is_int && !type.is_bool)
-        //    errors=errors.append(new ErrorType(span(), "This expression failed to be typechecked"));
+        if (errors==null) errors=emptyListOfErrors;
+        if (type==EMPTY && errors.size()==0) errors=errors.append(new ErrorType(pos, "This expression failed to be typechecked"));
         this.mult=(mult<0 || mult>2) ? 0 : mult;
-        this.type=(errors.isEmpty() ? type : null);
+        this.type=(errors.isEmpty() ? type : EMPTY);
         this.weight=weight;
         this.errors=errors;
-    }
-
-    /**
-     * Constructs a new expression node
-     *
-     * @param pos - the original position in the file (null if unknown)
-     *
-     * @param type - the type (null if this expression has not been typechecked)
-     *
-     * @param mult - the multiplicity (which must be 0, 1, or 2)
-     * <br>If it's 2, that means it is a multiplicity constraint (X ?->? X),
-     *     or has the form (A -> B) where A and/or B is a multiplicity constraint.
-     * <br>If it's 1, that means it is a multiplicity constraint of the form (? X)
-     * <br>If it's 0, that means it does not have either form.
-     */
-    @SuppressWarnings("unchecked")
-    Expr (Pos pos, Type type, int mult, long weight) {
-        JoinableList<Err> errors=JoinableList.emptylist;
-        this.pos=(pos==null ? Pos.UNKNOWN : pos);
-        if (type!=null && type.size()==0 && !type.is_int && !type.is_bool)
-            errors=errors.append(new ErrorType(span(), "This expression failed to be typechecked"));
-        this.mult=(mult<0 || mult>2) ? 0 : mult;
-        this.type=(errors.isEmpty() ? type : null);
-        this.weight=weight;
-        this.errors=errors;
-    }
-
-    /**
-     * This must only be called by ExprConstant's constructor.
-     * <p> precondition: type is unambiguous
-     */
-    @SuppressWarnings("unchecked")
-    Expr (Pos pos, Type type) {
-        this.pos=(pos==null ? Pos.UNKNOWN : pos);
-        this.mult=0;
-        this.type=type;
-        this.weight=0;
-        this.errors=JoinableList.emptylist;
     }
 
     /**
@@ -158,7 +114,6 @@ public abstract class Expr {
      * <p> if search!=null, we will look at "search", "search.parent()", "search.parent().parent()"... to try to find
      * the oldest parent whose "hint_isLeaf" flag is true (and if so, we'll use that node's type as the type)
      */
-    @SuppressWarnings("unchecked")
     Expr (Pos pos, Type type, PrimSig search) {
         while (search!=null) {
             if (search.hint_isLeaf) {
@@ -171,7 +126,7 @@ public abstract class Expr {
         this.mult=0;
         this.type=(type==null ? Type.make((PrimSig)this) : type);
         this.weight=0;
-        this.errors=JoinableList.emptylist;
+        this.errors=emptyListOfErrors;
     }
 
     /** Returns a Pos object representing the entire span of this Expr and all its subexpressions. */

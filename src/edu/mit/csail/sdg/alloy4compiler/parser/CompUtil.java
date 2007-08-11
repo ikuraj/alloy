@@ -367,7 +367,7 @@ public final class CompUtil {
 
     /** This performs the postprocessing, converting from "List of CompModule" to "List of Module" */
     private static World alloy_resolve(final ArrayList<CompModule> modules) throws Err {
-        JoinableList<Err> errors = JoinableList.emptylist();
+        JoinableList<Err> errors = new JoinableList<Err>();
         List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
         final A4Reporter rep=A4Reporter.getReporter();
         final World world=modules.get(0).world;

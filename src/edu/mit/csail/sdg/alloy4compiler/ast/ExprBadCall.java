@@ -94,7 +94,7 @@ public final class ExprBadCall extends Expr {
         this.args=args;
     }
 
-    /** Typechecks an ExprBadCall object (second pass). */
+    /** Resolves this expression. */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**

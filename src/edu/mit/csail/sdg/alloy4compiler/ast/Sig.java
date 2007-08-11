@@ -308,7 +308,7 @@ public abstract class Sig extends Expr {
 
         /** Constructs a new Field object. */
         private Field(Pos pos, Sig sig, String label, ExprVar var, Expr bound) throws Err {
-            super(pos, sig.type.product(unambiguous(cset(bound)).type), 0, 0);
+            super(pos, sig.type.product(unambiguous(cset(bound)).type), 0, 0, null);
             if (bound.hasCall())
                 throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             this.sig=sig;

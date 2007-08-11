@@ -268,8 +268,8 @@ public final class ExprBinary extends Expr {
 
     //============================================================================================================//
 
-    /** Typechecks an ExprBinary object (second pass). */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) throws Err {
+    /** Resolves this expression. */
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         ErrorWarning w=null;
         Type a=left.type, b=right.type;
         switch(op) {

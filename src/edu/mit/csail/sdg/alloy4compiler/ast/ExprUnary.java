@@ -148,7 +148,7 @@ public final class ExprUnary extends Expr {
                errors=errors.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             }
             Type type=sub.type;
-            if (type!=EMPTY) switch(this) {
+            if (sub.errors.size()==0) switch(this) {
               case SOMEOF: case LONEOF: case ONEOF: case SETOF:
                 sub=cset(sub); e=ccset(sub); if (e!=null) break;
                 if (this==SETOF) type=Type.removesBoolAndInt(sub.type); else type=sub.type.extract(1);
@@ -201,8 +201,8 @@ public final class ExprUnary extends Expr {
 
     //============================================================================================================//
 
-    /** Typechecks an ExprUnary object (second pass). */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) throws Err {
+    /** Resolves this expression. */
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         ErrorWarning w1=null, w2=null;
         Type s=p;
         switch(op) {

@@ -68,7 +68,7 @@ public final class ExprCall extends Expr {
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append(fun.label).append('[');
-            for(int i=0; i<args.size(); i++) { if (i>0) out.append(", "); out.append(args.get(i)); }
+            for(int i=0; i<args.size(); i++) { if (i>0) out.append(", "); args.get(i).toString(out,-1); }
             out.append(']');
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
@@ -81,14 +81,11 @@ public final class ExprCall extends Expr {
     private static class DeduceType extends VisitReturn {
         private final Env<ExprVar,Type> env=new Env<ExprVar,Type>();
         private DeduceType() { }
-        @Override public Object visit(ExprVar x)     { Type t=env.get(x); return t!=null ? t : x.type; }
-        @Override public Object visit(Sig x)         { return x.type; }
-        @Override public Object visit(Field x)       { return x.type; }
-        @Override public Object visit(ExprBuiltin x) { return Type.FORMULA; }
         @Override public Object visit(ExprITE x) throws Err {
-            Type t=(Type)x.left.accept(this);
+            Type t = (Type) (x.left.accept(this));
             if (t.size()==0) return t; // This means x.left is either a formula, or an integer expression
-            return t.unionWithCommonArity((Type)(x.right.accept(this)));
+            Type t2 = (Type) (x.right.accept(this));
+            return t.unionWithCommonArity(t2);
         }
         @Override public Object visit(ExprBinary x) throws Err {
             switch(x.op) {
@@ -129,14 +126,14 @@ public final class ExprCall extends Expr {
         @Override public Object visit(ExprQuant x) throws Err {
             if (x.op == ExprQuant.Op.SUM) return Type.INT;
             if (x.op != ExprQuant.Op.COMPREHENSION) return Type.FORMULA;
-            Type ans=Type.EMPTY;
+            Type ans=null;
             for(ExprVar v:x.vars) {
                 Type t=(Type)(v.expr.accept(this));
                 env.put(v, t);
-                if (ans==Type.EMPTY) ans=t; else ans=ans.product(t);
+                if (ans==null) ans=t; else ans=ans.product(t);
             }
             for(ExprVar v:x.vars) env.remove(v);
-            return ans;
+            return (ans==null) ? EMPTY : ans;
         }
         @Override public Object visit(ExprLet x) throws Err {
             env.put(x.var, (Type)(x.var.expr.accept(this)));
@@ -144,9 +141,11 @@ public final class ExprCall extends Expr {
             env.remove(x.var);
             return ans;
         }
-        @Override public Object visit(ExprCall x) {
-            return x.fun.returnDecl.type;
-        }
+        @Override public Object visit(ExprCall x)    { return x.fun.returnDecl.type; }
+        @Override public Object visit(ExprVar x)     { Type t=env.get(x); return (t!=null && t!=EMPTY) ? t : x.type; }
+        @Override public Object visit(Sig x)         { return x.type; }
+        @Override public Object visit(Field x)       { return x.type; }
+        @Override public Object visit(ExprBuiltin x) { return Type.FORMULA; }
     }
 
     /** Constructs an ExprCall node with the given function "pred/fun" and the list of arguments "args". */
@@ -158,11 +157,10 @@ public final class ExprCall extends Expr {
 
     /** Constructs an ExprCall node with the given predicate/function "fun" and the list of arguments "args". */
     public static Expr make(Pos pos, Func fun, List<Expr> args, long extraWeight) {
-        JoinableList<Err> errs=JoinableList.emptylist();
+        JoinableList<Err> errs = emptyListOfErrors;
         if (extraWeight<0) extraWeight=0;
         if (args==null) args=ConstList.make();
         final TempList<Expr> newargs=new TempList<Expr>(args.size());
-        Type t=fun.returnDecl.type;
         if (args.size() != fun.params.size()) {
             errs = errs.append(
                  new ErrorSyntax(pos, ""+fun+" has "+fun.params.size()+" parameters but is called with "+args.size()+" arguments."));
@@ -173,9 +171,7 @@ public final class ExprCall extends Expr {
             errs = errs.join(x.errors);
             extraWeight = extraWeight + x.weight;
             if (x.mult!=0) errs = errs.append(new ErrorSyntax(x.span(), "Multiplicity expression not allowed here."));
-            if (x.type==null /* TODO */|| x.type==EMPTY) {
-                t=EMPTY;
-            } else if (x.type.size()==0) {
+            if (x.type.size()==0) {
                 errs = errs.append(ccset(x));
             } else if (a>0 && !x.type.hasArity(a)) {
                 errs = errs.append(new ErrorType(x.span(),
@@ -183,7 +179,10 @@ public final class ExprCall extends Expr {
             }
             newargs.add(x);
         }
-        if (t!=EMPTY && errs.size()==0 && !fun.isPred) {
+        Type t=EMPTY;
+        if (fun.isPred && errs.size()==0) {
+            t=Type.FORMULA;
+        } else if (!fun.isPred && errs.size()==0) {
             final Type tt = fun.returnDecl.type;
             try {
                 // This provides a limited form of polymorphic function,
@@ -202,8 +201,8 @@ public final class ExprCall extends Expr {
         return new ExprCall(pos, t, fun, newargs.makeConst(), extraWeight, errs);
     }
 
-    /** Typechecks an ExprCall object (second pass). */
-    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) throws Err {
+    /** Resolves this expression. */
+    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
         boolean changed=false;
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         long w=0;

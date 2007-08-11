@@ -96,13 +96,13 @@ public final class ExprChoice extends Expr {
         if (choices.size()==1 && type!=null) return choices.get(0);
         long weight=choices.get(0).weight;
         for(int i=1; i<choices.size(); i++) if (weight > choices.get(i).weight) weight = choices.get(i).weight;
-        JoinableList<Err> errors = JoinableList.emptylist();
+        JoinableList<Err> errors = emptyListOfErrors;
         if (type==null) errors = errors.append(complain(pos, choices));
         return new ExprChoice(pos, choices, type, weight, errors);
     }
 
-    /** Typechecks an EChoice object (second pass). */
-    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) throws Err {
+    /** Resolves this expression. */
+    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
         List<Expr> match=new ArrayList<Expr>(choices.size());
         // We first prefer exact matches
         for(Expr ch:choices) {
@@ -139,7 +139,8 @@ public final class ExprChoice extends Expr {
         else
             msg=new StringBuilder("\nThe expression cannot be resolved; its relevant type does not intersect with any of the following candidates:");
         for(Expr ch:match) { msg.append("\n\n"); ch.toString(msg,-1); msg.append(" (type: ").append(ch.type).append(")"); }
-        throw new ErrorType(span(), msg.toString());
+        Pos span = span();
+        return new ExprBad(span, toString(), new ErrorType(span, msg.toString()));
     }
 
     /**

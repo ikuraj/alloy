@@ -86,7 +86,7 @@ public final class ExprVar extends Expr {
     }
 
     /** Resolves this expression. */
-    @Override public ExprVar resolve(Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public ExprVar resolve(Type p, Collection<ErrorWarning> warns) {
         Expr newExpr = expr.resolve(p, warns);
         if (expr==newExpr) return this;
         return new ExprVar(pos, label, newExpr, new ErrorType(newExpr.span(), "This expression was not fully resolved."));

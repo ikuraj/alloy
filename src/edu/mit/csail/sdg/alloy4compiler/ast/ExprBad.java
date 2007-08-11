@@ -36,18 +36,29 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 public final class ExprBad extends Expr {
 
+    /** The original source text that caused the error. */
+    public final String originalText;
+
     /** Returns a Pos object spanning the entire expression. */
     @Override public Pos span() { return pos; }
 
     /** Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation. */
-    @Override public void toString(StringBuilder out, int indent) { }
-
-    /** Constructs an ExprBad object. */
-    public ExprBad(Pos pos, Err error) {
-        super(pos, EMPTY, 0, 0, new JoinableList<Err>(error));
+    @Override public void toString(StringBuilder out, int indent) {
+        if (indent<0) {
+            out.append(originalText);
+        } else {
+            for(int i=0; i<indent; i++) { out.append(' '); }
+            out.append("ExprBad: ").append(originalText).append('\n');
+        }
     }
 
-    /** Typechecks an ExprBadCall object (second pass). */
+    /** Constructs an ExprBad object. */
+    public ExprBad(Pos pos, String originalText, Err error) {
+        super(pos, EMPTY, 0, 0, new JoinableList<Err>(error));
+        this.originalText = originalText;
+    }
+
+    /** Resolves this expression. */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**

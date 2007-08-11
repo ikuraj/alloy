@@ -105,7 +105,7 @@ public final class ExpName extends Exp {
         TempList<Expr> objects = new TempList<Expr>();
         Set<Object> choices = cx.resolve(pos, name);
         if (choices.size()==0) {
-            return new ExprBad(pos, hint(pos, name));
+            return new ExprBad(pos, name, hint(pos, name));
         }
         // If we're inside a sig, and there is a unary variable bound to "this", we should
         // consider it as a possible FIRST ARGUMENT of a fun/pred call

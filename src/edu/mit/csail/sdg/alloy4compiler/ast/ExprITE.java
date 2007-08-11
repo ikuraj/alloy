@@ -98,7 +98,7 @@ public final class ExprITE extends Expr {
         if (left.mult != 0) errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
         if (right.mult != 0) errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
         Type c=EMPTY;
-        while(cond.type!=EMPTY && left.type!=EMPTY && right.type!=EMPTY) {
+        while(left.errors.isEmpty() && right.errors.isEmpty()) {
             Type a=left.type, b=right.type;
             c = a.unionWithCommonArity(b);
             if (a.is_int && b.is_int) c=Type.makeInt(c);
@@ -116,14 +116,13 @@ public final class ExprITE extends Expr {
                     "The then-clause and the else-clause must match.\nIts then-clause has type: "
                     + a + "\nand the else-clause has type: " + b));
             }
-            errs = errs.appendIfNotNull(ccform(cond));
             break;
         }
-        return new ExprITE(cond, left, right, c, errs);
+        return new ExprITE(cond, left, right, c, errs.appendIfNotNull(ccform(cond)));
     }
 
-    /** Typechecks an ExprITE object (second pass). */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) throws Err {
+    /** Resolves this expression. */
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         Type a=left.type, b=right.type;
         if (p.size()>0) {
             a=a.intersect(p);

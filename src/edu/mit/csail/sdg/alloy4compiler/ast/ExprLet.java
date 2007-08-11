@@ -88,7 +88,7 @@ public final class ExprLet extends Expr {
     }
 
     /** Resolves this expression. */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) throws Err {
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
         if (errors.size()>0) return this; // If there is already fatal error, then there's no need to proceed further
         ExprVar newVar = var.resolve(var.type, warnings);
         Expr newSub = sub.resolve(p, warnings);

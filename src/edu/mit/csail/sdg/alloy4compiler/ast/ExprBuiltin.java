@@ -80,8 +80,8 @@ public final class ExprBuiltin extends Expr {
 
     /** Generates the expression disj[arg1, args2, arg3...] */
     public static Expr makeDISJOINT(Pos pos, List<Expr> args) {
-        JoinableList<Err> errs=JoinableList.emptylist();
-        TempList<Expr> newargs=new TempList<Expr>(args.size());
+        JoinableList<Err> errs = emptyListOfErrors;
+        TempList<Expr> newargs = new TempList<Expr>(args.size());
         Type type=Type.FORMULA, commonArity=null;
         long weight=0;
         if (args.size()<2)
@@ -91,9 +91,7 @@ public final class ExprBuiltin extends Expr {
             weight = weight + a.weight;
             if (a.mult!=0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
             Expr b=a;
-            if (b.type==EMPTY) {
-                type=EMPTY;
-            } else {
+            if (b.errors.size()==0) {
                 b=cset(b);
                 Err berr=ccset(b);
                 if (berr!=null) { errs=errs.append(berr); type=EMPTY; }
@@ -107,8 +105,8 @@ public final class ExprBuiltin extends Expr {
         return new ExprBuiltin(pos, type, newargs.makeConst(), weight, errs);
     }
 
-    /** Typechecks an ExprBuiltin object (second pass). */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) throws Err {
+    /** Resolves this expression. */
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         p=EMPTY;
         for(int i=0; i<this.args.size(); i++) {
             if (i==0) p=this.args.get(i).type; else p=p.unionWithCommonArity(this.args.get(i).type);

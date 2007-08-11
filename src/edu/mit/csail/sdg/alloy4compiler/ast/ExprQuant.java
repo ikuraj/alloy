@@ -181,7 +181,7 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** Resolves this expression. */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) throws Err {
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
         if (errors.size()==0) return this; // If there is already fatal error, then there's no need to proceed further
         boolean changed=false;
         TempList<ExprVar> newVars = new TempList<ExprVar>(vars.size());
