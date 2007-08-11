@@ -70,9 +70,6 @@ public abstract class Sig extends Expr {
     /** Returns a Pos object spanning the entire expression. */
     @Override public final Pos span() { return pos; }
 
-    /** Typechecks a Sig object (first pass). */
-    @Override final Expr check(final TypeCheckContext cx) { return this; }
-
     /** Typechecks a Sig object (second pass). */
     @Override final Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
 
@@ -335,9 +332,6 @@ public abstract class Sig extends Expr {
 
         /** Returns a Pos object spanning the entire expression. */
         @Override public Pos span() { return pos; }
-
-        /** Typechecks a Field object (first pass). */
-        @Override Expr check(final TypeCheckContext cx) { return this; }
 
         /** Typechecks a Field object (second pass). */
         @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }

@@ -126,14 +126,6 @@ public final class ExprITE extends Expr {
         return new ExprITE(cond, left, right, c, errs);
     }
 
-    /** Typechecks an ExprITE object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) throws Err {
-        Expr cond=this.cond.check(cx);
-        Expr left=this.left.check(cx);
-        Expr right=this.right.check(cx);
-        if (cond==this.cond && left==this.left && right==this.right) return this; else return make(cond,left,right);
-    }
-
     /** Typechecks an ExprITE object (second pass). */
     @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
         Type a=left.type, b=right.type;

@@ -61,13 +61,6 @@ public abstract class VisitQuery extends VisitReturn {
         return ans;
     }
 
-    /** Visits an ExprDecl node (v:e) by calling accept() on v then e */
-    @Override public Object visit(ExprDecl x) throws Err {
-        Object ans=x.var.accept(this);
-        if (ans==null) ans=x.expr.accept(this);
-        return ans;
-    }
-
     /** Visits an ExprLet node (let A=B | F) by calling accept() on A, B, then F. */
     @Override public Object visit(ExprLet x) throws Err {
         Object ans=x.var.accept(this);

@@ -77,7 +77,7 @@ public final class CompUtil {
     /**
      * Parses the input as an Alloy expression from that world
      * @throws Err if world==null or if any error occurred
-     * @return the expression if no error occurred
+     * @return the expression if no error occurred (it will be fully typechecked)
      */
     public static Expr parseOneExpression_fromString(World world, String input) throws Err {
         try {

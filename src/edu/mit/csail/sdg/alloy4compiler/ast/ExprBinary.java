@@ -268,15 +268,6 @@ public final class ExprBinary extends Expr {
 
     //============================================================================================================//
 
-    /** Typechecks an ExprBinary object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) throws Err {
-        Expr left=this.left.check(cx);
-        Expr right=this.right.check(cx);
-        return (left==this.left && right==this.right) ? this : op.make(pos, left, right);
-    }
-
-    //============================================================================================================//
-
     /** Typechecks an ExprBinary object (second pass). */
     @Override Expr check(TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
         ErrorWarning w=null;

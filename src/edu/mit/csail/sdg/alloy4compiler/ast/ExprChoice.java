@@ -101,9 +101,6 @@ public final class ExprChoice extends Expr {
         return new ExprChoice(pos, choices, type, weight, errors);
     }
 
-    /** Typechecks an EChoice object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) { return this; }
-
     /** Typechecks an EChoice object (second pass). */
     @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) throws Err {
         List<Expr> match=new ArrayList<Expr>(choices.size());

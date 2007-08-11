@@ -20,7 +20,6 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -31,8 +30,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import edu.mit.csail.sdg.alloy4compiler.parser.Context;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cint;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccint;
 import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
@@ -185,26 +182,6 @@ public final class ExprQuant extends Expr {
 
         /** Returns the human readable label for this operator */
         @Override public final String toString() { return label; }
-    }
-
-    //=============================================================================================================//
-
-    /** Typechecks an ExprQuant object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) throws Err {
-        ArrayList<ErrorWarning> warns=new ArrayList<ErrorWarning>();
-        boolean same=true;
-        final Context cxx=(Context)cx;
-        final TempList<ExprVar> tempvars=new TempList<ExprVar>(vars.size());
-        for(int i=0; i<vars.size(); i++) {
-            ExprVar v=vars.get(i);
-            if (v.type==null || v.type==EMPTY) { v=ExprVar.makeTyped(v.pos, v.label, TypeCheckContext.addOne(cx.resolveSet(v.expr, warns))); same=false; }
-            cxx.put(v.label, v);
-            tempvars.add(v);
-        }
-        final Expr sub = (op==Op.SUM) ? cx.resolveInt(this.sub, warns) : cx.resolveFormula(this.sub, warns);
-        for(ExprVar v:vars) cxx.remove(v.label);
-        if (same && sub==this.sub && warns.size()==0 && this.warnings.size()==0) return this;
-        return op.make(pos, closingBracket, tempvars.makeConst(), sub, warns);
     }
 
     //=============================================================================================================//

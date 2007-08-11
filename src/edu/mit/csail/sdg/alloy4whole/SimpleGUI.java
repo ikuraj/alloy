@@ -1544,7 +1544,6 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 instance=A4Solution.readXML(filename, Helper.alloyHome());
                 if (input.trim().length()==0) return ""; // Empty line
                 Expr e=CompUtil.parseOneExpression_fromString(instance.getWorld(), input);
-                e=instance.getWorld().typecheck(e);
                 return instance.eval(e).toString();
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");

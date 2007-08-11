@@ -20,7 +20,6 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -29,7 +28,6 @@ import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4compiler.parser.Context;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
@@ -105,22 +103,6 @@ public final class ExprLet extends Expr {
         if (var.expr!=null && var.expr.mult!=0)
             errs = errs.append(new ErrorSyntax(var.expr.span(), "Multiplicity expression not allowed here."));
         return new ExprLet(pos, t, var, sub, errs, warnings);
-    }
-
-    /** Typechecks an ExprLet object (first pass). */
-    @Override Expr check(final TypeCheckContext cxx) throws Err {
-        if (var.type==null || var.type==EMPTY) {
-            ArrayList<ErrorWarning> warnings=new ArrayList<ErrorWarning>();
-            Context cx = ((Context)cxx);
-            ExprVar var = ExprVar.makeTyped(this.var.pos, this.var.label, cx.resolveAny(this.var.expr, warnings));
-            if (var.type==null || var.type==EMPTY) return make(pos, var, this.sub, warnings);
-            cx.put(var.label, var);
-            Expr sub = this.sub.check(cx);
-            cx.remove(var.label);
-            return make(pos, var, sub, warnings);
-        }
-        Expr sub = this.sub.check(cxx);
-        if (sub==this.sub) return this; else return make(pos, var, sub, null);
     }
 
     /** Typechecks an ExprLet object (second pass). */

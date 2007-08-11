@@ -83,9 +83,6 @@ public final class ExprBadJoin extends Expr {
         this.right=right;
     }
 
-    /** Typechecks an EBadJoin object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) { return this; }
-
     /** Typechecks an EBadJoin object (second pass). */
     @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
 

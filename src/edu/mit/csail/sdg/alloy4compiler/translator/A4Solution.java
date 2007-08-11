@@ -401,13 +401,12 @@ public final class A4Solution {
 
     /**
      * Evaluates the given expression based on the solution, and returns an A4TupleSet, a java Integer, or a java Boolean.
-     * @throws Err if the expression has syntax error, type error, or other errors
+     * @throws Err if the expression has syntax error, type error, or other errors, or is not fully typechecked
      * @throws ErrorAPI if the expression is not from the same world
      * @throws ErrorAPI if this solution is not a satisfiable solution
      */
     public synchronized Object eval(Expr expr) throws Err {
         if (!satisfiable()) throw new ErrorAPI("This solution is unsatisfiable, so no eval() is allowed.");
-        expr=parent.world.typecheck(expr);
         Object result;
         if (parent.bc!=null)
             result=(new TranslateAlloyToKodkod(parent.bc, null, null)).visitThis(expr);

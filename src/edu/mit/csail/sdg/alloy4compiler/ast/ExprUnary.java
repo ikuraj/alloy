@@ -203,14 +203,6 @@ public final class ExprUnary extends Expr {
 
     //============================================================================================================//
 
-    /** Typechecks an ExprUnary object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) throws Err {
-        Expr sub = this.sub.check(cx);
-        return (sub==this.sub) ? this : op.make(pos, sub, weight-(this.sub.weight)+sub.weight);
-    }
-
-    //============================================================================================================//
-
     /** Typechecks an ExprUnary object (second pass). */
     @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
         ErrorWarning w1=null, w2=null;

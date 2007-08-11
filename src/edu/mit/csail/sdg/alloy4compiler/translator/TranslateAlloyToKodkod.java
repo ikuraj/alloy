@@ -41,7 +41,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprDecl;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
@@ -517,16 +516,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case CARDINALITY: return cset(x.sub).count();
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprUnary.visit()");
-    }
-
-    /*=============================*/
-    /* Evaluates an ExprDecl node. */
-    /*=============================*/
-
-    @Override public Object visit(ExprDecl x) throws Err {
-        Object ans=env.get(x.var);
-        if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x.var+"\" cannot be resolved during translation.\n");
-        return ans;
     }
 
     /*============================*/

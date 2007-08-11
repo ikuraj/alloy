@@ -94,9 +94,6 @@ public final class ExprBadCall extends Expr {
         this.args=args;
     }
 
-    /** Typechecks an ExprBadCall object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) { return this; }
-
     /** Typechecks an ExprBadCall object (second pass). */
     @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
 

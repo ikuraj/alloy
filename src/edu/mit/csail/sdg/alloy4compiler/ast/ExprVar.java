@@ -21,8 +21,6 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
-import java.util.Set;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
@@ -30,8 +28,6 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import edu.mit.csail.sdg.alloy4compiler.parser.Context;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
@@ -99,34 +95,6 @@ public final class ExprVar extends Expr {
         else if (expr.type.size()>0 && (expr.type.arity()<0 || expr.type.is_int || expr.type.is_bool))
             e=new ErrorType(expr.span(), "This expression is ambiguous. Its possible types include "+expr.type);
         return new ExprVar(pos, label, expr, (e==null ? expr.type : null), e);
-    }
-
-    /** Typechecks an ExprName object (first pass). */
-    @Override Expr check(final TypeCheckContext cxx) throws Err {
-        if (this.type!=null /*TODO*/ && this.type!=EMPTY) return this;
-        Context cx=(Context)cxx;
-        TempList<Expr> objects=new TempList<Expr>();
-        Type t=null;
-        if (cx.has(label)) {
-            // This handles an ExprVar that represents a LetVar/QuantVar/FunctionParameter
-            Expr ex=cx.get(label, pos);
-            t=ex.type;
-            objects.add(ex);
-        } else {
-            // This handles an ExprVar that needs to be resolved
-            Set<Object> choices = cx.resolve(pos, label);
-            if (choices.size()==0) return new ExprVar(pos, label, expr, EMPTY, hint(pos, label));
-            ConstList<Expr> args = ConstList.make();
-            // If we're inside a sig, and there is a unary variable bound to "this", we should
-            // consider it as a possible FIRST ARGUMENT of a fun/pred call
-            Expr THIS = (cx.rootsig!=null) ? cx.get("this",null) : null;
-            for(Object ch:choices) {
-                Expr x=ExprCallOrJoin.makeCallOrJoin(pos, ch, args, THIS);
-                objects.add(x);
-                if (x.type!=null) t=x.type.merge(t);
-            }
-        }
-        return ExprChoice.make(pos, objects.makeConst());
     }
 
     /** Typechecks an ExprVar object (second pass). */

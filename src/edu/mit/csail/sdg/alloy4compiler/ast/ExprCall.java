@@ -85,9 +85,6 @@ public final class ExprCall extends Expr {
         @Override public Object visit(Sig x)         { return x.type; }
         @Override public Object visit(Field x)       { return x.type; }
         @Override public Object visit(ExprBuiltin x) { return Type.FORMULA; }
-        @Override public Object visit(ExprDecl x) throws Err {
-            return x.expr.accept(this);
-        }
         @Override public Object visit(ExprITE x) throws Err {
             Type t=(Type)x.left.accept(this);
             if (t.size()==0) return t; // This means x.left is either a formula, or an integer expression
@@ -203,21 +200,6 @@ public final class ExprCall extends Expr {
             }
         }
         return new ExprCall(pos, t, fun, newargs.makeConst(), extraWeight, errs);
-    }
-
-    /** Typechecks an ExprCall object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) throws Err {
-        boolean changed=false;
-        TempList<Expr> args = new TempList<Expr>(this.args.size());
-        long w=0;
-        for(int i=0; i<this.args.size(); i++) {
-            Expr arg=this.args.get(i);
-            Expr res=cset(arg.check(cx));
-            w=w+res.weight;
-            args.add(res);
-            if (arg!=res) changed=true;
-        }
-        return changed ? make(pos, fun, args.makeConst(), weight-w) : this;
     }
 
     /** Typechecks an ExprCall object (second pass). */

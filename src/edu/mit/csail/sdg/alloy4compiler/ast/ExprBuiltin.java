@@ -107,18 +107,6 @@ public final class ExprBuiltin extends Expr {
         return new ExprBuiltin(pos, type, newargs.makeConst(), weight, errs);
     }
 
-    /** Typechecks an ExprBuiltin object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) throws Err {
-        TempList<Expr> args = new TempList<Expr>(this.args.size());
-        boolean changed = false;
-        for(int i=0; i<this.args.size(); i++) {
-            Expr x=this.args.get(i), y=cset(x.check(cx));
-            if (x!=y) changed=true;
-            args.add(y);
-        }
-        if (changed) return makeDISJOINT(pos, args.makeConst()); else return this;
-    }
-
     /** Typechecks an ExprBuiltin object (second pass). */
     @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
         p=EMPTY;

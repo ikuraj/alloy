@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -40,7 +39,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
@@ -170,18 +168,5 @@ public final class World {
         for(int i=0; i<n; i++) { path2module.put(temp.get(i), u); }
         modules.add(u);
         return u;
-    }
-
-    /**
-     * Typechecks the given expression with respect to the root module,
-     * and return the typechecked deep-copy of that expression
-     * (if it was already typechecked, we might return the original expression you provided)
-     */
-    public Expr typecheck(Expr expr) throws Err {
-        if (getRootModule()==null) throw new ErrorAPI("No module has been created to be the root module yet.");
-        if (expr.type!=null) return expr;
-        TypeCheckContext cx=new Context(getRootModule());
-        expr=cx.resolve(expr);
-        return expr;
     }
 }

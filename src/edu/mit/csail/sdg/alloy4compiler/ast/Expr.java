@@ -61,7 +61,7 @@ public abstract class Expr {
      *
      * <p> Postcondition: RESULT.errors.size()>0  or  (RESULT.type!=EMPTY)
      */
-    abstract Expr check(TypeCheckContext ct) throws Err;
+    //abstract Expr check(TypeCheckContext ct) throws Err;
 
     /**
      * Accepts the typecheck visitor for the second pass.

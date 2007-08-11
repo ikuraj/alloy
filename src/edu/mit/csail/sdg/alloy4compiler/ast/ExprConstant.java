@@ -118,9 +118,6 @@ public final class ExprConstant extends Expr {
         @Override public final String toString() { return label; }
     }
 
-    /** Typechecks an ExprConstant object (first pass). */
-    @Override Expr check(final TypeCheckContext cx) { return this; }
-
     /** Typechecks an ExprConstant object (second pass). */
     @Override Expr check(final TypeCheckContext cx, Type type, Collection<ErrorWarning> warns) { return this; }
 
