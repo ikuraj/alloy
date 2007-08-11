@@ -119,7 +119,7 @@ public final class ExprConstant extends Expr {
     }
 
     /** Typechecks an ExprConstant object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type type, Collection<ErrorWarning> warns) { return this; }
+    @Override public Expr check(Type type, Collection<ErrorWarning> warns) { return this; }
 
     /** Accepts the return visitor. */
     @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }

@@ -84,7 +84,7 @@ public final class ExprBadJoin extends Expr {
     }
 
     /** Typechecks an EBadJoin object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
+    @Override public Expr check(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /**
      * Accepts the return visitor by immediately throwing an exception.

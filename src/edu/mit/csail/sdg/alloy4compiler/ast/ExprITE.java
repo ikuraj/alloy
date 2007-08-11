@@ -28,8 +28,8 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
 
 /**
  * Immutable; represents an if-then-else expression.
@@ -105,11 +105,11 @@ public final class ExprITE extends Expr {
             if (a.is_int && b.is_int) c=Type.makeInt(c);
             if (a.is_bool && b.is_bool) c=Type.makeBool(c);
             if (c==EMPTY) {
-                if (TypeCheckContext.auto_sigint2int) {
+                if (Type.SIGINT2INT) {
                     if (a.is_int && b.intersects(SIGINT.type)) { right=right.cast2int(); continue; }
                     if (b.is_int && a.intersects(SIGINT.type)) { left=left.cast2int(); continue; }
                 }
-                if (TypeCheckContext.auto_int2sigint) {
+                if (Type.INT2SIGINT) {
                     if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); continue; }
                     if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); continue; }
                 }
@@ -127,7 +127,7 @@ public final class ExprITE extends Expr {
     }
 
     /** Typechecks an ExprITE object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr check(Type p, Collection<ErrorWarning> warns) throws Err {
         Type a=left.type, b=right.type;
         if (p.size()>0) {
             a=a.intersect(p);
@@ -140,9 +140,9 @@ public final class ExprITE extends Expr {
             a=p;
             b=p;
         }
-        Expr cond = this.cond.check(cx, Type.FORMULA, warns);
-        Expr left = this.left.check(cx, a, warns);
-        Expr right = this.right.check(cx, b, warns);
+        Expr cond = this.cond.check(Type.FORMULA, warns);
+        Expr left = this.left.check(a, warns);
+        Expr right = this.right.check(b, warns);
         if (cond==this.cond && left==this.left && right==this.right) return this; else return make(cond,left,right);
     }
 

@@ -27,10 +27,10 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Util;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.addOne;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.unambiguous;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.addOne;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.unambiguous;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /**
  * Mutable; represents a predicate or function.

@@ -1,10 +1,7 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
-
 import java.util.List;
 import java.util.Set;
-
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -19,6 +16,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
+import edu.mit.csail.sdg.alloy4compiler.ast.Resolver;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 
@@ -102,8 +100,9 @@ public final class ExpDot extends Exp {
             Set<Object> choices = cx.resolve(ptr.pos, ((ExpName)ptr).name);
             TempList<Expr> tempargs=new TempList<Expr>();
             for(Exp temp=this; temp instanceof ExpDot; temp=((ExpDot)temp).right) {
-                Exp temp2=((ExpDot)temp).left;
-                tempargs.add(0, cset(temp2.check(cx)));
+                Expr temp2 = ((ExpDot)temp).left.check(cx);
+                temp2 = Resolver.cset(temp2);
+                tempargs.add(0, temp2);
             }
             ConstList<Expr> args=tempargs.makeConst();
             // If we're inside a sig, and there is a unary variable bound to "this", we should

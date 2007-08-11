@@ -55,15 +55,6 @@ public abstract class Expr {
     abstract Object accept(VisitReturn visitor) throws Err;
 
     /**
-     * Accepts the typecheck visitor for the first pass.
-     *
-     * <p> Precondition: None
-     *
-     * <p> Postcondition: RESULT.errors.size()>0  or  (RESULT.type!=EMPTY)
-     */
-    //abstract Expr check(TypeCheckContext ct) throws Err;
-
-    /**
      * Accepts the typecheck visitor for the second pass.
      * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
      * (Note: it's possible for t to be EMPTY, or even ambiguous!)
@@ -72,7 +63,7 @@ public abstract class Expr {
      *
      * <p> Postcondition: RESULT.errors.size()>0  or  (RESULT.type!=EMPTY and is unambiguous)
      */
-    abstract Expr check(TypeCheckContext ct, Type t, Collection<ErrorWarning> warnings) throws Err;
+    public abstract Expr check(Type t, Collection<ErrorWarning> warnings) throws Err;
 
     /** The filename, line, and column position in the original Alloy model file (cannot be null). */
     public final Pos pos;
@@ -534,9 +525,9 @@ public abstract class Expr {
      * <p> the label is only used for pretty-printing, and does not need to be unique
      */
     public final ExprVar someOf(String label) {
-        Expr x = TypeCheckContext.cset(this);
+        Expr x = Resolver.cset(this);
         x = ExprUnary.Op.SOMEOF.make(span(), x);
-        return ExprVar.makeTyped(span(), label, x);
+        return ExprVar.make(span(), label, x);
     }
 
     /**
@@ -545,9 +536,9 @@ public abstract class Expr {
      * <p> the label is only used for pretty-printing, and does not need to be unique
      */
     public final ExprVar loneOf(String label) {
-        Expr x = TypeCheckContext.cset(this);
+        Expr x = Resolver.cset(this);
         x = ExprUnary.Op.LONEOF.make(span(), x);
-        return ExprVar.makeTyped(span(), label, x);
+        return ExprVar.make(span(), label, x);
     }
 
     /**
@@ -556,9 +547,9 @@ public abstract class Expr {
      * <p> the label is only used for pretty-printing, and does not need to be unique
      */
     public final ExprVar oneOf(String label) {
-        Expr x = TypeCheckContext.cset(this);
+        Expr x = Resolver.cset(this);
         x = ExprUnary.Op.ONEOF.make(span(), x);
-        return ExprVar.makeTyped(span(), label, x);
+        return ExprVar.make(span(), label, x);
     }
 
     /**
@@ -567,9 +558,9 @@ public abstract class Expr {
      * <p> the label is only used for pretty-printing, and does not need to be unique
      */
     public final ExprVar setOf(String label) {
-        Expr x = TypeCheckContext.cset(this);
+        Expr x = Resolver.cset(this);
         x = ExprUnary.Op.SETOF.make(span(), x);
-        return ExprVar.makeTyped(span(), label, x);
+        return ExprVar.make(span(), label, x);
     }
 
     /**

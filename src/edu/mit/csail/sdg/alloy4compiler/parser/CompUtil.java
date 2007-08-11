@@ -88,7 +88,7 @@ public final class CompUtil {
             if (u.funs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
             Exp body = u.funs.get(0).body;
             Context cx = new Context(world.getRootModule());
-            Expr ans = cx.resolveExp(body.check(cx), new ArrayList<ErrorWarning>());
+            Expr ans = Context.resolveExp(body.check(cx), new ArrayList<ErrorWarning>());
             if (ans.errors.size()>0) throw ans.errors.get(0);
             return ans;
         } catch(IOException ex) {
@@ -419,7 +419,7 @@ public final class CompUtil {
                 // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
                 final ExprVar THIS = s.oneOf("this");
                 cx.put("this", THIS);
-                Expr bound=cx.resolveExpSet(d.expr.check(cx), warns), disjA=null, disjF=ExprConstant.TRUE;
+                Expr bound=Context.resolveExpSet(d.expr.check(cx), warns), disjA=null, disjF=ExprConstant.TRUE;
                 cx.remove("this");
                 for(final ExpName n:d.names) {
                     for(Field f:s.getFields())
@@ -467,17 +467,17 @@ public final class CompUtil {
                 TempList<ExprVar> tmpvars=new TempList<ExprVar>();
                 if (f.args!=null) {
                   for(ExpDecl d:f.args) {
-                    Expr val = cx.resolveExpSet(d.expr.check(cx), warns);
+                    Expr val = Context.resolveExpSet(d.expr.check(cx), warns);
                     errors=errors.join(val.errors);
                     for(ExpName n: d.names) {
-                        ExprVar v=ExprVar.makeTyped(n.span(), n.name, val);
+                        ExprVar v=ExprVar.make(n.span(), n.name, val);
                         cx.put(n.name, v);
                         tmpvars.add(v);
                         rep.typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.name+": "+v.type+"\n");
                     }
                   }
                 }
-                Expr ret = f.returnType==null ? null : cx.resolveExpSet(f.returnType.check(cx), warns);
+                Expr ret = f.returnType==null ? null : Context.resolveExpSet(f.returnType.check(cx), warns);
                 if (ret!=null) errors=errors.join(ret.errors);
                 Func ff = y.addFun(f.pos, f.name, tmpvars.makeConst(), ret);
                 rep.typecheck(""+ff+", RETURN: "+ff.returnDecl.type+"\n");
@@ -503,9 +503,9 @@ public final class CompUtil {
                 }
                 Expr newBody;
                 if (ff.isPred) {
-                    newBody = cx.resolveExpFormula(f.body.check(cx), warns);
+                    newBody = Context.resolveExpFormula(f.body.check(cx), warns);
                 } else {
-                    newBody = cx.resolveExpSet(f.body.check(cx), warns);
+                    newBody = Context.resolveExpSet(f.body.check(cx), warns);
                 }
                 errors = errors.join(newBody.errors);
                 ff.setBody(newBody);
@@ -530,12 +530,12 @@ public final class CompUtil {
             Module y=x.topoModule;
             Context cx = new Context(y);
             for(Map.Entry<String,Exp> e:x.asserts.entrySet()) {
-                Expr formula = cx.resolveExpFormula(e.getValue().check(cx), warns);
+                Expr formula = Context.resolveExpFormula(e.getValue().check(cx), warns);
                 if (formula.errors.size()>0) errors=errors.join(formula.errors);
                 else y.addAssertion(e.getKey(), formula);
             }
             for(Map.Entry<String,Exp> e:x.facts.entrySet()) {
-                Expr formula = cx.resolveExpFormula(e.getValue().check(cx), warns);
+                Expr formula = Context.resolveExpFormula(e.getValue().check(cx), warns);
                 if (formula.errors.size()>0) errors=errors.join(formula.errors);
                 else y.addFact(e.getKey(), formula);
             }
@@ -547,7 +547,7 @@ public final class CompUtil {
                 ExprVar THIS = s.oneOf("this");
                 cx.rootsig=s;
                 cx.put("this", THIS);
-                Expr formula = cx.resolveExpFormula(f.check(cx), warns);
+                Expr formula = Context.resolveExpFormula(f.check(cx), warns);
                 cx.remove("this");
                 formula = formula.forAll(THIS);
                 if (formula.errors.size()>0) errors=errors.join(formula.errors);

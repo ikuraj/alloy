@@ -34,9 +34,9 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.addOne;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.unambiguous;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.addOne;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.unambiguous;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /** Mutable; reresents a signature. */
 
@@ -71,7 +71,7 @@ public abstract class Sig extends Expr {
     @Override public final Pos span() { return pos; }
 
     /** Typechecks a Sig object (second pass). */
-    @Override final Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
+    @Override final public Expr check(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** Accepts the return visitor. */
     @Override final Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
@@ -334,7 +334,7 @@ public abstract class Sig extends Expr {
         @Override public Pos span() { return pos; }
 
         /** Typechecks a Field object (second pass). */
-        @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) { return this; }
+        @Override public Expr check(Type t, Collection<ErrorWarning> warns) { return this; }
 
         /** Accepts the return visitor. */
         @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }

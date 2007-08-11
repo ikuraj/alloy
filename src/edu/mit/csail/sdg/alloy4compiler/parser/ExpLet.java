@@ -30,8 +30,8 @@ public final class ExpLet extends Exp {
     }
 
     public Expr check(Context cx) throws Err {
-        Expr right = cx.resolveExp(this.right.check(cx), new ArrayList<ErrorWarning>()); // TODO: warnings are discarded!
-        ExprVar left = ExprVar.makeTyped(this.left.pos, this.left.name, right);
+        Expr right = Context.resolveExp(this.right.check(cx), new ArrayList<ErrorWarning>()); // TODO: warnings are discarded!
+        ExprVar left = ExprVar.make(this.left.pos, this.left.name, right);
         cx.put(this.left.name, left);
         Expr sub = this.sub.check(cx);
         cx.remove(this.left.name);

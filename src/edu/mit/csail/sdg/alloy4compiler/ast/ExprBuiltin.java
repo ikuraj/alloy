@@ -30,9 +30,9 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccset;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccset;
 
 /**
  * Immutable; represents the builtin disjoint[] predicate.
@@ -108,7 +108,7 @@ public final class ExprBuiltin extends Expr {
     }
 
     /** Typechecks an ExprBuiltin object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr check(Type p, Collection<ErrorWarning> warns) throws Err {
         p=EMPTY;
         for(int i=0; i<this.args.size(); i++) {
             if (i==0) p=this.args.get(i).type; else p=p.unionWithCommonArity(this.args.get(i).type);
@@ -116,7 +116,7 @@ public final class ExprBuiltin extends Expr {
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
-            Expr x=this.args.get(i), y=cset(x.check(cx, p, warns));
+            Expr x=this.args.get(i), y=cset(x.check(p, warns));
             if (x!=y) changed=true;
             args.add(y);
         }

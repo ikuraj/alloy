@@ -11,7 +11,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext;
+import edu.mit.csail.sdg.alloy4compiler.ast.Resolver;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant.Op;
 
 public final class ExpQuant extends Exp {
@@ -41,10 +41,10 @@ public final class ExpQuant extends Exp {
         ArrayList<ErrorWarning> warns=new ArrayList<ErrorWarning>();
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
         for(ExpDecl d: decls) {
-            Expr v = TypeCheckContext.addOne(cx.resolveExpSet(d.expr.check(cx), warns));
+            Expr v = Resolver.addOne(Context.resolveExpSet(d.expr.check(cx), warns));
             List<Expr> disjoints = (d.disjoint!=null && d.names.size()>1) ? (new ArrayList<Expr>(d.names.size())) : null;
             for(ExpName n: d.names) {
-                ExprVar var = ExprVar.makeTyped(n.pos, n.name, v);
+                ExprVar var = ExprVar.make(n.pos, n.name, v);
                 cx.put(n.name, var);
                 tempvars.add(var);
                 if (disjoints!=null) disjoints.add(var);
@@ -52,8 +52,8 @@ public final class ExpQuant extends Exp {
             if (disjoints!=null) guard=ExprBuiltin.makeDISJOINT(d.disjoint, disjoints).and(guard);
         }
         Expr sub = (op==Op.SUM)
-            ? cx.resolveExpInt(this.sub.check(cx), warns)
-            : cx.resolveExpFormula(this.sub.check(cx), warns);
+            ? Context.resolveExpInt(this.sub.check(cx), warns)
+            : Context.resolveExpFormula(this.sub.check(cx), warns);
         for(ExpDecl d: decls) for(ExpName n: d.names) cx.remove(n.name);
         if (guard!=null) {
             switch(op) {

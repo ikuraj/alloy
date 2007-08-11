@@ -42,6 +42,12 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 public final class Type implements Iterable<Type.ProductType> {
 
+    /** This configuration option is true if we want to automatically cast from int to Int when necessary. */
+    public static final boolean INT2SIGINT=true;
+
+    /** This configuration option is true if we want to automatically cast from Int to int when necessary. */
+    public static final boolean SIGINT2INT=true;
+
     /**
      * Immutable; represents a list of PrimSig objects.
      *

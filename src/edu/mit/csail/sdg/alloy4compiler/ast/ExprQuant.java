@@ -30,10 +30,10 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccint;
 
 /**
  * Immutable; represents a quantified expression.
@@ -187,7 +187,7 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** Typechecks an ExprQuant object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) {
+    @Override public Expr check(Type p, Collection<ErrorWarning> warns) {
         if (this.warnings.size()>0) warns.addAll(this.warnings);
         return this;
     }

@@ -102,7 +102,7 @@ public final class ExprChoice extends Expr {
     }
 
     /** Typechecks an EChoice object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type t, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr check(Type t, Collection<ErrorWarning> warns) throws Err {
         List<Expr> match=new ArrayList<Expr>(choices.size());
         // We first prefer exact matches
         for(Expr ch:choices) {
@@ -114,11 +114,11 @@ public final class ExprChoice extends Expr {
             if (ch.type!=null) if (ch.type.hasCommonArity(t)) match.add(ch);
         }
         // If none, we try sigint->int
-        if (match.size()==0 && TypeCheckContext.auto_sigint2int && t.is_int) for(Expr ch:choices) {
+        if (match.size()==0 && Type.SIGINT2INT && t.is_int) for(Expr ch:choices) {
             if (ch.type!=null) if (ch.type.intersects(SIGINT.type)) match.add(ch.cast2int());
         }
         // If none, we try int->sigint
-        if (match.size()==0 && TypeCheckContext.auto_int2sigint && t.arity()==1) for(Expr ch:choices) {
+        if (match.size()==0 && Type.INT2SIGINT && t.arity()==1) for(Expr ch:choices) {
             if (ch.type!=null) if (ch.type.is_int) match.add(ch.cast2sigint());
         }
         // If there are multiple matches, then keep only the ones with the smallest weight
@@ -132,7 +132,7 @@ public final class ExprChoice extends Expr {
             match=newmatch;
         }
         // Finally, complain if there are more than one match, or zero match
-        if (match.size()==1) return match.get(0).check(cx, t, warns);
+        if (match.size()==1) return match.get(0).check(t, warns);
         StringBuilder msg=null;
         if (match.size()>1)
             msg=new StringBuilder("\nThe expression is ambiguous due to multiple matches:");

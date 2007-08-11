@@ -33,12 +33,12 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccset;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccint;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccset;
 
 /**
  * Immutable; represents a unary expression of the form "(OP subexpression)"
@@ -204,7 +204,7 @@ public final class ExprUnary extends Expr {
     //============================================================================================================//
 
     /** Typechecks an ExprUnary object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr check(Type p, Collection<ErrorWarning> warns) throws Err {
         ErrorWarning w1=null, w2=null;
         Type s=p;
         switch(op) {
@@ -233,7 +233,7 @@ public final class ExprUnary extends Expr {
                "This expression should contain integer atoms.\nInstead, its possible type(s) are:\n"+sub.type.extract(1));
             break;
         }
-        Expr sub = this.sub.check(cx, s, warns);
+        Expr sub = this.sub.check(s, warns);
         if (w1!=null) warns.add(w1);
         if (w2!=null) warns.add(w2);
         return (sub==this.sub) ? this : op.make(pos, sub, weight-(this.sub.weight)+sub.weight);

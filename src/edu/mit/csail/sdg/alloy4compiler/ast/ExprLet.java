@@ -106,9 +106,9 @@ public final class ExprLet extends Expr {
     }
 
     /** Typechecks an ExprLet object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, final Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr check(final Type p, Collection<ErrorWarning> warns) throws Err {
         if (var.type==null || var.type==EMPTY) throw new ErrorFatal("Internal typechecker invariant violated.");
-        Expr sub = this.sub.check(cx, p, warns);
+        Expr sub = this.sub.check(p, warns);
         if (warnings.size()>0) warns.addAll(warnings);
         if (sub==this.sub) return this; else return make(pos, var, sub, null);
     }

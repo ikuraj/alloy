@@ -32,12 +32,12 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccform;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.TypeCheckContext.ccset;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccint;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccset;
 
 /**
  * Immutable; represents an expression of the form (x OP y).
@@ -212,11 +212,11 @@ public final class ExprBinary extends Expr {
                       if (a.is_int && b.is_int) type=Type.makeInt(type);
                       if (type!=EMPTY) break;
                   }
-                  if (TypeCheckContext.auto_sigint2int) {
+                  if (Type.SIGINT2INT) {
                       if (a.is_int && b.intersects(SIGINT.type)) return make(pos, left, right.cast2int());
                       if (b.is_int && a.intersects(SIGINT.type)) return make(pos, left.cast2int(), right);
                   }
-                  if (TypeCheckContext.auto_int2sigint) {
+                  if (Type.INT2SIGINT) {
                       if (a.is_int && b.hasArity(1)) return make(pos, left.cast2sigint(), right);
                       if (b.is_int && a.hasArity(1)) return make(pos, left, right.cast2sigint());
                   }
@@ -269,7 +269,7 @@ public final class ExprBinary extends Expr {
     //============================================================================================================//
 
     /** Typechecks an ExprBinary object (second pass). */
-    @Override Expr check(TypeCheckContext cx, Type p, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr check(Type p, Collection<ErrorWarning> warns) throws Err {
         ErrorWarning w=null;
         Type a=left.type, b=right.type;
         switch(op) {
@@ -410,8 +410,8 @@ public final class ExprBinary extends Expr {
             if (leftType!=EMPTY && rightType!=EMPTY) { a=leftType; b=rightType; }
           }
         }
-        Expr left = this.left.check(cx, a, warns);
-        Expr right = this.right.check(cx ,b, warns);
+        Expr left = this.left.check(a, warns);
+        Expr right = this.right.check(b, warns);
         if (w!=null) warns.add(w);
         return (left==this.left && right==this.right) ? this : op.make(pos, left, right);
     }

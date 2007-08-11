@@ -86,7 +86,7 @@ public final class ExprVar extends Expr {
      * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
      * @param expr - the quantification/substitution expression for this variable
      */
-    public static ExprVar makeTyped(Pos pos, String label, Expr expr) {
+    public static ExprVar make(Pos pos, String label, Expr expr) {
         ErrorType e=null;
         if (expr.type==null /*TODO*/ || expr.type==EMPTY)
             e=new ErrorType(expr.span(), "This expression failed to be typechecked.");
@@ -98,7 +98,7 @@ public final class ExprVar extends Expr {
     }
 
     /** Typechecks an ExprVar object (second pass). */
-    @Override Expr check(final TypeCheckContext cx, Type type, Collection<ErrorWarning> warns) throws Err {
+    @Override public Expr check(Type type, Collection<ErrorWarning> warns) throws Err {
         if (this.type!=null /*TODO*/ && this.type!=EMPTY) return this;
         throw new ErrorFatal("Internal typechecker invariant violated.");
     }
