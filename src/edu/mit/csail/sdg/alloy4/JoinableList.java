@@ -54,13 +54,12 @@ public final class JoinableList<E> implements Iterable<E> {
         this.post = null;
     }
 
-    /** The pre-cached empty list. */
-    private static final JoinableList emptylist = new JoinableList<Object>(0,null,null,null);
-
-    /** Returns the empty list. */
-    @SuppressWarnings("unchecked")
-    public static<E> JoinableList<E> emptylist() {
-        return emptylist;
+    /** Construct an empty list. */
+    public JoinableList() {
+        this.count = 0;
+        this.item = null;
+        this.pre = null;
+        this.post = null;
     }
 
     /** Returns a list that represents the concatenation of this and that. */
