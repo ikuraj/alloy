@@ -1,3 +1,23 @@
+/*
+ * Alloy Analyzer
+ * Copyright (c) 2007 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
+ */
+
 package edu.mit.csail.sdg.alloy4;
 
 import java.util.Iterator;
@@ -46,7 +66,6 @@ public final class JoinableList<E> implements Iterable<E> {
     /** Returns a list that represents the concatenation of this and that. */
     @SuppressWarnings("unchecked")
     public JoinableList<E> join(JoinableList<E> that) {
-        // TODO: make sure callers never discard the return value
         if (that==null || that.count==0) return this;
         if (count==0) return that;
         if (post!=null && post.count>0) return new JoinableList<E>(count + that.count, this, null, that);
@@ -55,7 +74,6 @@ public final class JoinableList<E> implements Iterable<E> {
 
     /** Returns a list that represenxts the result of appending the given item onto the end of the this list. */
     public JoinableList<E> append(E newItem) {
-        // TODO: make sure callers never discard the return value
         if (count==0) return new JoinableList<E>(newItem);
         if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);
         int preCount = (pre==null) ? 0 : (pre.count);
@@ -65,7 +83,6 @@ public final class JoinableList<E> implements Iterable<E> {
 
     /** Returns a list that represenxts the result of appending the given item onto the end of the this list if newItem!=null. */
     public JoinableList<E> appendIfNotNull(E newItem) {
-        // TODO: make sure callers never discard the return value
         if (newItem==null) return this;
         if (count==0) return new JoinableList<E>(newItem);
         if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);

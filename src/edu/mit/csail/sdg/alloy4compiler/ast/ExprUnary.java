@@ -148,7 +148,6 @@ public final class ExprUnary extends Expr {
                errors=errors.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             }
             Type type=sub.type;
-            if (type!=null) // TODO
             if (type!=EMPTY) switch(this) {
               case SOMEOF: case LONEOF: case ONEOF: case SETOF:
                 sub=cset(sub); e=ccset(sub); if (e!=null) break;
