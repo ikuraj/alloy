@@ -22,7 +22,6 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
@@ -49,7 +48,7 @@ public final class ExprBadJoin extends Expr {
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = pos.merge(left.span()).merge(right.span()));
+        if (p==null) span = (p = pos.merge(right.span()).merge(left.span()));
         return p;
     }
 
@@ -61,12 +60,13 @@ public final class ExprBadJoin extends Expr {
             right.toString(out,-1);
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            out.append("BadJoin with type=").append(type).append('\n');
+            out.append("ExprBadJoin:\n");
             left.toString(out, indent+2);
             right.toString(out, indent+2);
         }
     }
 
+    /** Construct the appropriate error message for this node. */
     private static ErrorType complain(Pos pos, Expr left, Expr right) {
         StringBuilder sb=new StringBuilder("This cannot be a legal relational join where\nleft hand side is ");
         left.toString(sb,-1);
@@ -86,11 +86,6 @@ public final class ExprBadJoin extends Expr {
     /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
-    /**
-     * Accepts the return visitor by immediately throwing an exception.
-     * This is because the typechecker should have replaced/removed this node.
-     */
-    @Override Object accept(VisitReturn visitor) throws Err {
-        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
-    }
+    /** {@inheritDoc} */
+    @Override Object accept(VisitReturn visitor) throws Err { throw errors.get(0); }
 }

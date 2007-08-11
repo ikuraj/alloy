@@ -23,7 +23,6 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
@@ -62,18 +61,18 @@ public final class ExprBadCall extends Expr {
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
             out.append(fun.label).append('[');
-            for(int i=0; i<args.size(); i++) { if (i>0) out.append(", "); out.append(args.get(i)); }
+            for(int i=0; i<args.size(); i++) { if (i>0) out.append(", "); args.get(i).toString(out,-1); }
             out.append(']');
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            out.append("bad call to \"").append(fun).append("\"\n");
+            out.append("ExprBadCall: ").append(fun).append('\n');
             for(Expr a:args) { a.toString(out, indent+2); }
         }
     }
 
     /** Construct the appropriate error message for this node. */
     private static ErrorType complain(Pos pos, Func fun, ConstList<Expr> args) {
-        StringBuilder sb=new StringBuilder("This cannot be a correct call to ").append(fun);
+        StringBuilder sb=new StringBuilder("This cannot be a correct call to ").append(fun.isPred?"pred ":"fun ").append(fun.label);
         sb.append(fun.params.size()==0 ? ".\nIt has no parameters,\n" : ".\nThe parameters are\n");
         for(ExprVar v:fun.params) {
             sb.append("  ").append(v.label).append(": ").append(v.type).append('\n');
@@ -81,7 +80,7 @@ public final class ExprBadCall extends Expr {
         sb.append(args.size()==0 || fun.params.size()==0 ? "so the arguments cannot be empty.\n" : "so the arguments cannot be\n");
         for(Expr v:args.subList(0, fun.params.size())) {
             sb.append("  ");
-            v.toString(sb,-1);
+            v.toString(sb, -1);
             sb.append(" (type = ").append(v.type).append(")\n");
         }
         return new ErrorType(pos, sb.toString());
@@ -97,11 +96,6 @@ public final class ExprBadCall extends Expr {
     /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
-    /**
-     * Accepts the return visitor by immediately throwing an exception.
-     * This is because the typechecker should have replaced/removed this node.
-     */
-    @Override Object accept(VisitReturn visitor) throws Err {
-        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
-    }
+    /** {@inheritDoc} */
+    @Override Object accept(VisitReturn visitor) throws Err { throw errors.get(0); }
 }

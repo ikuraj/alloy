@@ -29,7 +29,6 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -356,12 +355,12 @@ public abstract class Sig extends Expr {
      * @param label - the name of this field (it does not need to be unique)
      * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
      *
-     * @throws ErrorAPI     if the sig is one of the builtin sig
+     * @throws ErrorSyntax  if the sig is one of the builtin sig
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      */
     public final Field addField(Pos pos, String label, Expr bound) throws Err {
-        if (builtin) throw new ErrorAPI("Builtin sig \""+this+"\" cannot have fields.");
+        if (builtin) throw new ErrorSyntax("Builtin sig \""+this+"\" cannot have fields.");
         bound=unambiguous(cset(bound));
         final Field f=new Field(pos, this, label, null, bound);
         fields.add(f);
@@ -377,12 +376,12 @@ public abstract class Sig extends Expr {
      * @param x - a quantified variable "x: one ThisSig"
      * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
      *
-     * @throws ErrorAPI     if the sig is one of the builtin sig
+     * @throws ErrorSyntax  if the sig is one of the builtin sig
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      */
     public final Field addTrickyField(Pos pos, String label, ExprVar x, Expr bound) throws Err {
-        if (builtin) throw new ErrorAPI("Builtin sig \""+this+"\" cannot have fields.");
+        if (builtin) throw new ErrorSyntax("Builtin sig \""+this+"\" cannot have fields.");
         bound=unambiguous(cset(bound));
         final Field f=new Field(pos, this, label, x, bound);
         fields.add(f);

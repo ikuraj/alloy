@@ -22,7 +22,6 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -61,11 +60,6 @@ public final class ExprBad extends Expr {
     /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
-    /**
-     * Accepts the return visitor by immediately throwing an exception.
-     * This is because the typechecker should have replaced/removed this node.
-     */
-    @Override Object accept(VisitReturn visitor) throws Err {
-        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
-    }
+    /** {@inheritDoc} */
+    @Override Object accept(VisitReturn visitor) throws Err { throw errors.get(0); }
 }

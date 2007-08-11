@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ErrorType;
@@ -145,7 +144,7 @@ public final class ExprQuant extends Expr {
             }
             if (sub.mult!=0) errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             long weight = sub.weight;
-            if (vars.size()==0) errs = errs.append(new ErrorAPI(pos, "List of variables cannot be empty."));
+            if (vars.size()==0) errs = errs.append(new ErrorSyntax(pos, "List of variables cannot be empty."));
             for(ExprVar v: vars) {
                 weight = weight + v.weight;
                 errs = errs.join(v.errors);

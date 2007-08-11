@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
@@ -147,6 +146,6 @@ public final class ExprChoice extends Expr {
      * This is because the typechecker should have replaced/removed this node.
      */
     @Override final Object accept(VisitReturn visitor) throws Err {
-        throw new ErrorAPI("The internal typechecker failed to simplify custom expressions:\n"+this);
+        if (errors.size()>0) throw errors.get(0); else throw new ErrorType(span(), "This expression failed to be resolved.");
     }
 }
