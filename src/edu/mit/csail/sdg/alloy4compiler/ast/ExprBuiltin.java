@@ -32,7 +32,6 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccset;
 
 /**
  * Immutable; represents the builtin disjoint[] predicate.
@@ -89,17 +88,12 @@ public final class ExprBuiltin extends Expr {
             errs=errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
         for(Expr a:args) {
             ambiguous = ambiguous || a.ambiguous;
-            errs = errs.join(a.errors);
             weight = weight + a.weight;
             if (a.mult!=0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
-            Expr b=a;
-            if (b.errors.size()==0) {
-                b=cset(b);
-                Err berr=ccset(b);
-                if (berr!=null) { errs=errs.append(berr); type=EMPTY; }
-                else if (commonArity==null) commonArity=b.type;
-                else commonArity=commonArity.intersect(b.type);
-            }
+            Expr b=cset(a);
+            if (!b.errors.isEmpty()) { type=EMPTY; errs = errs.join(b.errors); }
+            else if (commonArity==null) commonArity=b.type;
+            else commonArity=commonArity.intersect(b.type);
             newargs.add(b);
         }
         if (commonArity!=null && commonArity==EMPTY) errs=errs.append(new ErrorType(pos,

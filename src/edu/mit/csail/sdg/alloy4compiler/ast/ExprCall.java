@@ -34,7 +34,6 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccset;
 
 /**
  * Immutable; represents a call.
@@ -173,12 +172,8 @@ public final class ExprCall extends Expr {
             errs = errs.join(x.errors);
             extraWeight = extraWeight + x.weight;
             if (x.mult!=0) errs = errs.append(new ErrorSyntax(x.span(), "Multiplicity expression not allowed here."));
-            if (x.type.size()==0) {
-                errs = errs.append(ccset(x));
-            } else if (a>0 && !x.type.hasArity(a)) {
-                errs = errs.append(new ErrorType(x.span(),
-                       "This should have arity "+a+" but instead its possible type(s) are "+x.type));
-            }
+            if (x.errors.isEmpty() && a>0 && !x.type.hasArity(a))
+              errs=errs.append(new ErrorType(x.span(), "This should have arity "+a+" but instead its possible type(s) are "+x.type));
             newargs.add(x);
         }
         Type t=EMPTY;

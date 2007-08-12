@@ -29,7 +29,7 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Util;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.unambiguous;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.addOne;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /**
@@ -112,8 +112,8 @@ public final class Func {
      */
     public void setBody(Expr newBody) throws Err {
         if (isPred) {
-            Err err = ccform(unambiguous(newBody));
-            if (err!=null) throw err;
+            newBody = cform(unambiguous(newBody));
+            if (newBody.errors.size()>0) throw newBody.errors.get(0);
         } else {
             newBody = unambiguous(cset(newBody));
             if (newBody.type.arity() != returnDecl.type.arity())

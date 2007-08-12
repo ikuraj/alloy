@@ -34,11 +34,9 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccint;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccset;
 
 /**
  * Immutable; represents a unary expression of the form "(OP subexpression)"
@@ -60,7 +58,7 @@ public final class ExprUnary extends Expr {
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) { if (op==Op.NOOP) span=(p=pos); else span=(p=pos.merge(sub.span())); }
+        if (p==null) { if (op==Op.NOOP && pos!=Pos.UNKNOWN) span=(p=pos); else span=(p=pos.merge(sub.span())); }
         return p;
     }
 
@@ -127,68 +125,64 @@ public final class ExprUnary extends Expr {
          * <br> Alloy4 does allow "variable : set (X lone-> Y)", where we ignore the word "set".
          * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary's constructor never sees it)
          */
-        public final Expr make(Pos pos, Expr sub) { return make(pos, sub, sub.weight); }
+        public final Expr make(Pos pos, Expr sub) { return make(pos, sub, sub.weight, null); }
 
         /**
          * Construct an ExprUnary node.
          * @param pos - the original position of the "unary operator" in the file (can be null if unknown)
          * @param sub - the subexpression
          * @param weight - the weight
+         * @param extraError - if nonnull, it will be appended as an extra error
          *
          * <p>  Alloy4 disallows multiplicity like this:   "variable : one (X lone-> Y)",
          * <br> that is, a some/lone/one in front of an arrow multiplicity declaration.
          * <br> Alloy4 does allow "variable : set (X lone-> Y)", where we ignore the word "set".
          * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary's constructor never sees it)
          */
-        public final Expr make(Pos pos, Expr sub, long weight) {
+        public final Expr make(Pos pos, Expr sub, long weight, Err extraError) {
             Err e=null;
-            JoinableList<Err> errors=sub.errors;
+            JoinableList<Err> errors = sub.errors.appendIfNotNull(extraError);
             if (sub.mult!=0) {
                if (this==SETOF) return sub;
                errors=errors.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             }
+            switch(this) {
+               case NOOP: break;
+               case NOT: sub=cform(sub); break;
+               case CAST2SIGINT: sub=cint(sub); break;
+               case CAST2INT: if (sub.type==Type.INT) return sub; else {sub=cset(sub); break;} // Shortcut if it can only be integer
+               default: sub=cset(sub);
+            }
             Type type=sub.type;
             if (sub.errors.size()==0) switch(this) {
               case SOMEOF: case LONEOF: case ONEOF: case SETOF:
-                sub=cset(sub); e=ccset(sub); if (e!=null) break;
                 if (this==SETOF) type=Type.removesBoolAndInt(sub.type); else type=sub.type.extract(1);
                 if (type==EMPTY) e=new ErrorType(sub.span(), "After the some/lone/one multiplicity symbol, " +
                    "this expression must be a unary set.\nInstead, its possible type(s) are:\n" + sub.type);
                 break;
-              case NOT:
-                e=ccform(sub);
-                type=Type.FORMULA;
-                break;
-              case NO: case SOME: case LONE: case ONE:
-                sub=cset(sub); e=ccset(sub); if (e!=null) break;
+              case NOT: case NO: case SOME: case LONE: case ONE:
                 type=Type.FORMULA;
                 break;
               case TRANSPOSE:
-                sub=cset(sub); e=ccset(sub); if (e!=null) break;
                 type=sub.type.transpose();
                 if (type==EMPTY) e=new ErrorType(sub.span(), "~ can be used only with a binary relation.\n" +
                    "Instead, its possible type(s) are:\n"+sub.type);
                 break;
               case RCLOSURE: case CLOSURE:
-                sub=cset(sub); e=ccset(sub); if (e!=null) break;
                 type=sub.type.closure();
                 if (type==EMPTY) e=new ErrorType(sub.span(), label+" can be used only with a binary relation.\n" +
                    "Instead, its possible type(s) are:\n"+sub.type);
                 if (this==RCLOSURE) type=Type.make2(UNIV);
                 break;
               case CARDINALITY:
-                sub=cset(sub); e=ccset(sub); if (e!=null) break;
                 type=Type.INT;
                 break;
               case CAST2INT:
-                if (sub.type==Type.INT) return sub; // Shortcut if it can only be an integer anyway
-                sub=cset(sub); e=ccset(sub); if (e!=null) break;
                 if (!sub.type.hasArity(1)) e=new ErrorType(sub.span(), "int[] can be used only with a unary set.\n" +
                    "Instead, its possible type(s) are:\n"+sub.type);
                 type=Type.INT;
                 break;
               case CAST2SIGINT:
-                sub=cint(sub); e=ccint(sub); if (e!=null) break;
                 type=SIGINT.type;
                 break;
             }
@@ -203,6 +197,7 @@ public final class ExprUnary extends Expr {
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
+        if (errors.size()>0) return this;
         ErrorWarning w1=null, w2=null;
         Type s=p;
         switch(op) {
@@ -234,7 +229,7 @@ public final class ExprUnary extends Expr {
         Expr sub = this.sub.resolve(s, warns);
         if (w1!=null) warns.add(w1);
         if (w2!=null) warns.add(w2);
-        return (sub==this.sub) ? this : op.make(pos, sub, weight-(this.sub.weight)+sub.weight);
+        return (sub==this.sub) ? this : op.make(pos, sub, weight-(this.sub.weight)+sub.weight, null);
     }
 
     //============================================================================================================//

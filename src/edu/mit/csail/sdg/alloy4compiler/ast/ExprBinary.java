@@ -33,11 +33,9 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccint;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccset;
 
 /**
  * Immutable; represents an expression of the form (x OP y).
@@ -109,7 +107,7 @@ public final class ExprBinary extends Expr {
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = pos.merge(left.span()).merge(right.span()));
+        if (p==null) span = (p = pos.merge(right.span()).merge(left.span()));
         return p;
     }
 
@@ -190,81 +188,88 @@ public final class ExprBinary extends Expr {
          * @param right - the right hand side expression
          */
         public final Expr make(Pos pos, Expr left, Expr right) {
-            Type a=left.type, b=right.type, type=EMPTY;
-            ErrorType e1=null, e2=null;
-            if (a!=null && b!=null) // TODO
-            if (a!=EMPTY && b!=EMPTY) switch(this) {
-              case LT: case LTE: case GT: case GTE:
-                  left = cint(left);   e1 = ccint(left);
-                  right = cint(right); e2 = ccint(right);
-                  type = Type.FORMULA;
-                  break;
-              case AND: case OR: case IFF:
-                  e1 = ccform(left);
-                  e2 = ccform(right);
+            Err e=null;
+            Type type=EMPTY;
+            switch(this) {
+              case LT: case LTE: case GT: case GTE: {
+                left = cint(left);
+                right = cint(right);
+                break;
+              }
+              case AND: case OR: case IFF: {
+                left = cform(left);
+                right = cform(right);
+                break;
+              }
+              case PLUS: case MINUS: case EQUALS: {
+                Type a=left.type, b=right.type;
+                if (a.hasCommonArity(b) || (a.is_int && b.is_int)) break;
+                if (Type.SIGINT2INT) {
+                    if (a.is_int && b.intersects(SIGINT.type)) { right=right.cast2int(); break; }
+                    if (b.is_int && a.intersects(SIGINT.type)) { left=left.cast2int(); break; }
+                }
+                if (Type.INT2SIGINT) {
+                    if (a.is_int && b.hasArity(1)) { left=left.cast2sigint(); break; }
+                    if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); break; }
+                }
+                break;
+              }
+              default: {
+                left=cset(left);
+                right=cset(right);
+              }
+            }
+            JoinableList<Err> aa=left.errors, bb=right.errors;
+            if (aa.isEmpty() && bb.isEmpty())
+            switch(this) {
+              case LT: case LTE: case GT: case GTE: case AND: case OR: case IFF:
                   type = Type.FORMULA;
                   break;
               case PLUSPLUS:
-                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
                   type=left.type.unionWithCommonArity(right.type);
-                  if (type==EMPTY) e1=error(pos, "++ can be used only between two expressions of the same arity.", left, right);
+                  if (type==EMPTY) e=error(pos, "++ can be used only between two expressions of the same arity.", left, right);
                   break;
               case PLUS: case MINUS: case EQUALS:
                   if (this==EQUALS) {
-                      if (a.hasCommonArity(b) || (a.is_int && b.is_int)) { type=Type.FORMULA; break; }
+                     if (left.type.hasCommonArity(right.type) || (left.type.is_int && right.type.is_int)) {type=Type.FORMULA; break;}
                   } else {
-                      type = (this==PLUS ? a.unionWithCommonArity(b) : a.pickCommonArity(b));
-                      if (a.is_int && b.is_int) type=Type.makeInt(type);
-                      if (type!=EMPTY) break;
+                     type = (this==PLUS ? left.type.unionWithCommonArity(right.type) : left.type.pickCommonArity(right.type));
+                     if (left.type.is_int && right.type.is_int) type=Type.makeInt(type);
+                     if (type!=EMPTY) break;
                   }
-                  if (Type.SIGINT2INT) {
-                      if (a.is_int && b.intersects(SIGINT.type)) return make(pos, left, right.cast2int());
-                      if (b.is_int && a.intersects(SIGINT.type)) return make(pos, left.cast2int(), right);
-                  }
-                  if (Type.INT2SIGINT) {
-                      if (a.is_int && b.hasArity(1)) return make(pos, left.cast2sigint(), right);
-                      if (b.is_int && a.hasArity(1)) return make(pos, left, right.cast2sigint());
-                  }
-                  e1=error(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions."
+                  e=error(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions."
                     , left, right);
                   break;
               case IN:
-                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
                   type=(left.type.hasCommonArity(right.type)) ? Type.FORMULA : EMPTY;
-                  if (type==EMPTY) e1=error(pos,this+" can be used only between 2 expressions of the same arity.", left, right);
+                  if (type==EMPTY) e=error(pos,this+" can be used only between 2 expressions of the same arity.", left, right);
                   break;
               case JOIN:
-                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
                   type=left.type.join(right.type);
-                  if (type==EMPTY) e1=error(pos, "You cannot perform relational join between two unary sets.", left, right);
+                  if (type==EMPTY) e=error(pos, "You cannot perform relational join between two unary sets.", left, right);
                   break;
               case DOMAIN:
-                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
                   type=right.type.domainRestrict(left.type);
-                  if (type==EMPTY) e1=new ErrorType(left.span(),
+                  if (type==EMPTY) e=new ErrorType(left.span(),
                      "This must be a unary set, but instead it has the following possible type(s):\n"+left.type);
                   break;
               case RANGE:
-                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
                   type=left.type.rangeRestrict(right.type);
-                  if (type==EMPTY) e1=new ErrorType(right.span(),
+                  if (type==EMPTY) e=new ErrorType(right.span(),
                      "This must be a unary set, but instead it has the following possible type(s):\n"+right.type);
                   break;
               case INTERSECT:
-                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
                   type=left.type.intersect(right.type);
-                  if (type==EMPTY) e1=error(pos,"& can be used only between 2 expressions of the same arity.", left, right);
+                  if (type==EMPTY) e=error(pos,"& can be used only between 2 expressions of the same arity.", left, right);
                   break;
               default:
-                  left=cset(left); e1=ccset(left); right=cset(right); e2=ccset(right); if (e1!=null || e2!=null) break;
                   type=left.type.product(right.type);
             }
-            JoinableList<Err> errors = left.errors.join(right.errors).appendIfNotNull(e1).appendIfNotNull(e2);
             if ((isArrow && left.mult==1) || (!isArrow && left.mult!=0))
-                errors=errors.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
+                aa = aa.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
             if ((isArrow && right.mult==1) || (!isArrow && this!=Op.IN && right.mult!=0))
-                errors=errors.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
-            return new ExprBinary(pos, this, left, right, type, errors);
+                bb = bb.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
+            return new ExprBinary(pos, this, left, right, type, aa.join(bb).appendIfNotNull(e));
         }
 
         /** Returns the human readable label for this operator. */

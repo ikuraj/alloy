@@ -532,7 +532,7 @@ public final class Module {
             ans=lookupSigOrParameterOrFunctionOrPredicate(name, true);
             Field f=lookupField(rootsig, rootsig, name);
             if (f!=null) { Expr ff=ExprUnary.Op.NOOP.make(pos,f); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
-            for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos, ff, ff.weight+1));
+            for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos, ff, ff.weight+1, null));
         }
         else {
             // If Within a function paramDecl/returnDecl

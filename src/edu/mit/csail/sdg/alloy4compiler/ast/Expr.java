@@ -493,8 +493,7 @@ public abstract class Expr {
      * <p> the label is only used for pretty-printing, and does not need to be unique
      */
     public final ExprVar someOf(String label) {
-        Expr x = Resolver.cset(this);
-        x = ExprUnary.Op.SOMEOF.make(span(), x);
+        Expr x = ExprUnary.Op.SOMEOF.make(span(), this);
         return ExprVar.make(span(), label, x);
     }
 
@@ -504,8 +503,7 @@ public abstract class Expr {
      * <p> the label is only used for pretty-printing, and does not need to be unique
      */
     public final ExprVar loneOf(String label) {
-        Expr x = Resolver.cset(this);
-        x = ExprUnary.Op.LONEOF.make(span(), x);
+        Expr x = ExprUnary.Op.LONEOF.make(span(), this);
         return ExprVar.make(span(), label, x);
     }
 
@@ -515,8 +513,7 @@ public abstract class Expr {
      * <p> the label is only used for pretty-printing, and does not need to be unique
      */
     public final ExprVar oneOf(String label) {
-        Expr x = Resolver.cset(this);
-        x = ExprUnary.Op.ONEOF.make(span(), x);
+        Expr x = ExprUnary.Op.ONEOF.make(span(), this);
         return ExprVar.make(span(), label, x);
     }
 
@@ -526,8 +523,7 @@ public abstract class Expr {
      * <p> the label is only used for pretty-printing, and does not need to be unique
      */
     public final ExprVar setOf(String label) {
-        Expr x = Resolver.cset(this);
-        x = ExprUnary.Op.SETOF.make(span(), x);
+        Expr x = ExprUnary.Op.SETOF.make(span(), this);
         return ExprVar.make(span(), label, x);
     }
 

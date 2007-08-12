@@ -30,9 +30,8 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccint;
 
 /**
  * Immutable; represents a quantified expression.
@@ -143,10 +142,8 @@ public final class ExprQuant extends Expr {
          */
         public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) {
             Type t = (this==SUM) ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
+            if (this!=SUM) sub=cform(sub); else sub=cint(sub);
             JoinableList<Err> errs = sub.errors;
-            if (errs.size()==0) {
-                if (this!=SUM) errs=errs.appendIfNotNull(ccform(sub)); else { sub=cint(sub); errs=errs.appendIfNotNull(ccint(sub)); }
-            }
             if (sub.mult!=0) errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             long weight = sub.weight;
             if (vars.size()==0) errs = errs.append(new ErrorSyntax(pos, "List of variables cannot be empty."));
