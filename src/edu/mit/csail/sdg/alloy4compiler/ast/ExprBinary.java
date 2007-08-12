@@ -66,7 +66,12 @@ public final class ExprBinary extends Expr {
 
     /** Constructs a new ExprBinary node. */
     private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type, JoinableList<Err> errors) {
-        super(pos, type, (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0, left.weight+right.weight, errors);
+        super(pos,
+            left.ambiguous || right.ambiguous,
+            type,
+            (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0,
+            left.weight+right.weight,
+            errors);
         this.op=op;
         this.left=left;
         this.right=right;

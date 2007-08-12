@@ -80,8 +80,8 @@ public final class ExpDot extends Exp {
 
     /**
      * Construct the result of calling "ch" with the given list of arguments
-     * <br> <b>Precondition</b>: (ch instanceof Expr) or (ch instanceof Func)
-     * <br> <b>Precondition</b>: cset(args[i]) for all i
+     * <br> <b>Precondition</b>: (ch instanceof Expr && ch.type!=EMPTY) or (ch instanceof Func)
+     * <br> <b>Precondition</b>: all i: args[i].type!=EMPTY
      * @return EBadCall, or EBadJoin, or a possibly well-typed Expr
      */
     static Expr makeCallOrJoin(Pos pos, Object ch, ConstList<Expr> args, Expr THISorNULL) {
@@ -98,14 +98,14 @@ public final class ExpDot extends Exp {
                 ConstList<Expr> args2=Util.prepend(args, THISorNULL);
                 if (applicable(f,args2)) return ExprCall.make(pos, f, args2, 1);
             }
-            if (i>n) return new ExprBadCall(pos, f, args);
-            if (!applicable(f,args)) return new ExprBadCall(pos, f, args.subList(0,i));
+            if (i>n) return ExprBadCall.make(pos, f, args);
+            if (!applicable(f,args)) return ExprBadCall.make(pos, f, args.subList(0,i));
             ans = ExprCall.make(pos, f, args.subList(0,i), 0);
         }
         for(; i<n; i++) {
             Expr x = args.get(i);
             // TODO: you lost the original JOIN's pos
-            if (x.type.join(ans.type).size()==0) return new ExprBadJoin(x.span().merge(ans.span()), x, ans);
+            if (x.type.join(ans.type).size()==0) return ExprBadJoin.make(x.span().merge(ans.span()), x, ans);
             ans = ExprBinary.Op.JOIN.make(x.span().merge(ans.span()), x, ans);
         }
         return ans;

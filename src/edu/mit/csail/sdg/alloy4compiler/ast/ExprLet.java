@@ -44,12 +44,16 @@ public final class ExprLet extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
+    //=============================================================================================================//
+
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) span = (p = var.span().merge(sub.span()));
         return p;
     }
+
+    //=============================================================================================================//
 
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
@@ -65,12 +69,16 @@ public final class ExprLet extends Expr {
         }
     }
 
+    //=============================================================================================================//
+
     /** Constructs a LET expression. */
     private ExprLet(ExprVar var, Expr sub, JoinableList<Err> errs) {
-        super(Pos.UNKNOWN, sub.type, 0, var.weight+sub.weight, errs);
+        super(Pos.UNKNOWN, sub.ambiguous, sub.type, 0, var.weight+sub.weight, errs);
         this.var=var;
         this.sub=sub;
     }
+
+    //=============================================================================================================//
 
     /**
      * Constructs a LET expression.
@@ -87,17 +95,17 @@ public final class ExprLet extends Expr {
         return new ExprLet(var, sub, errs);
     }
 
+    //=============================================================================================================//
+
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
         if (errors.size()>0) return this; // If there is already fatal error, then there's no need to proceed further
-        ExprVar newVar = var.resolve(var.type, warnings);
+        // If errors.size()==0, then the variable is always already fully resolved, so we only need to resolve sub
         Expr newSub = sub.resolve(p, warnings);
-        // If the variable changed,
-        // Then newSub will still contain only the old variable, and yet we are generating an ExprLet node with the new variable.
-        // This is bad! However, due to ExprVar's properties, that means the newVar has errors.size()>0
-        // so it already means a fatal error has occurred, so the resulting ExprLet node will also have errors.size()>0
-        return (var==newVar && sub==newSub) ? this : make(newVar, newSub);
+        return (sub==newSub) ? this : make(var, newSub);
     }
+
+    //=============================================================================================================//
 
     /** Accepts the return visitor. */
     @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }

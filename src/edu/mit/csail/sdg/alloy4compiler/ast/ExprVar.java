@@ -30,7 +30,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 /**
  * Immutable; represents a LET or QUANTIFICATION variable in the AST.
  *
- * <p> <b>Invariant:</b>  type!=EMPTY => (type.unambiguous() && type==expr.type)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (type.unambiguous() && type==expr.type && !expr.ambiguous)
  */
 
 public final class ExprVar extends Expr {
@@ -63,7 +63,7 @@ public final class ExprVar extends Expr {
 
     /** Constructs an ExprVar object */
     private ExprVar(Pos pos, String label, Expr expr, Err extraError) {
-        super(pos, expr.type, 0, expr.weight, expr.errors.appendIfNotNull(extraError));
+        super(pos, false, expr.type, 0, expr.weight, expr.errors.appendIfNotNull(extraError));
         this.label = (label==null ? "" : label);
         this.expr = expr;
     }
@@ -81,6 +81,8 @@ public final class ExprVar extends Expr {
                 e=new ErrorType(expr.span(), "This expression failed to be typechecked.");
             else if (!expr.type.unambiguous())
                 e=new ErrorType(expr.span(), "This expression is ambiguous. Its possible types are:\n"+expr.type);
+            else if (expr.ambiguous)
+                e=new ErrorType(expr.span(), "This expression is ambiguous.");
         }
         return new ExprVar(pos, label, expr, e);
     }

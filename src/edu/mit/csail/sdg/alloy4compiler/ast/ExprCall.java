@@ -149,25 +149,27 @@ public final class ExprCall extends Expr {
     }
 
     /** Constructs an ExprCall node with the given function "pred/fun" and the list of arguments "args". */
-    private ExprCall(Pos pos, Type type, Func fun, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
-        super(pos, type, 0, weight, errs);
+    private ExprCall(Pos pos, boolean ambiguous, Type type, Func fun, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+        super(pos, ambiguous, type, 0, weight, errs);
         this.fun = fun;
         this.args = args;
     }
 
     /** Constructs an ExprCall node with the given predicate/function "fun" and the list of arguments "args". */
     public static Expr make(Pos pos, Func fun, List<Expr> args, long extraWeight) {
+        boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         if (extraWeight<0) extraWeight=0;
         if (args==null) args=ConstList.make();
         final TempList<Expr> newargs=new TempList<Expr>(args.size());
         if (args.size() != fun.params.size()) {
             errs = errs.append(
-                 new ErrorSyntax(pos, ""+fun+" has "+fun.params.size()+" parameters but is called with "+args.size()+" arguments."));
+              new ErrorSyntax(pos, ""+fun+" has "+fun.params.size()+" parameters but is called with "+args.size()+" arguments."));
         }
         for(int i=0; i<args.size(); i++) {
             final int a = (i<fun.params.size()) ? fun.params.get(i).type.arity() : 0;
             final Expr x = cset(args.get(i));
+            ambiguous = ambiguous || x.ambiguous;
             errs = errs.join(x.errors);
             extraWeight = extraWeight + x.weight;
             if (x.mult!=0) errs = errs.append(new ErrorSyntax(x.span(), "Multiplicity expression not allowed here."));
@@ -198,7 +200,7 @@ public final class ExprCall extends Expr {
                 t=tt;
             }
         }
-        return new ExprCall(pos, t, fun, newargs.makeConst(), extraWeight, errs);
+        return new ExprCall(pos, ambiguous, t, fun, newargs.makeConst(), extraWeight, errs);
     }
 
     /** {@inheritDoc} */

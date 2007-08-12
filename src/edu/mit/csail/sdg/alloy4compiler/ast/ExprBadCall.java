@@ -32,7 +32,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 /**
  * Immutable; represents an illegal pred/fun call.
  *
- * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()==1
+ * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()>0
  */
 
 public final class ExprBadCall extends Expr {
@@ -70,27 +70,34 @@ public final class ExprBadCall extends Expr {
         }
     }
 
-    /** Construct the appropriate error message for this node. */
-    private static ErrorType complain(Pos pos, Func fun, ConstList<Expr> args) {
-        StringBuilder sb=new StringBuilder("This cannot be a correct call to ").append(fun.isPred?"pred ":"fun ").append(fun.label);
-        sb.append(fun.params.size()==0 ? ".\nIt has no parameters,\n" : ".\nThe parameters are\n");
-        for(ExprVar v:fun.params) {
-            sb.append("  ").append(v.label).append(": ").append(v.type).append('\n');
-        }
-        sb.append(args.size()==0 || fun.params.size()==0 ? "so the arguments cannot be empty.\n" : "so the arguments cannot be\n");
-        for(Expr v:args.subList(0, fun.params.size())) {
-            sb.append("  ");
-            v.toString(sb, -1);
-            sb.append(" (type = ").append(v.type).append(")\n");
-        }
-        return new ErrorType(pos, sb.toString());
+    /** Constructs an ExprBadCall object. */
+    private ExprBadCall(final Pos pos, final Func fun, final ConstList<Expr> args, final JoinableList<Err> errors) {
+        super(pos, false, EMPTY, 0, 0, errors);
+        this.fun=fun;
+        this.args=args;
     }
 
     /** Constructs an ExprBadCall object. */
-    public ExprBadCall(Pos pos, Func fun, ConstList<Expr> args) {
-        super(pos, EMPTY, 0, 0, new JoinableList<Err>(complain(pos, fun, args)));
-        this.fun=fun;
-        this.args=args;
+    public static Expr make(final Pos pos, final Func fun, final ConstList<Expr> args) {
+        JoinableList<Err> errors = emptyListOfErrors;
+        for(Expr x:args) errors = errors.join(x.errors);
+        if (errors.isEmpty()) {
+            StringBuilder sb=new StringBuilder("This cannot be a correct call to ");
+            sb.append(fun.isPred?"pred ":"fun ");
+            sb.append(fun.label);
+            sb.append(fun.params.size()==0 ? ".\nIt has no parameters,\n" : ".\nThe parameters are\n");
+            for(ExprVar v:fun.params) {
+                sb.append("  ").append(v.label).append(": ").append(v.type).append('\n');
+            }
+            sb.append(args.size()==0||fun.params.size()==0 ? "so the arguments cannot be empty.\n" : "so the arguments cannot be\n");
+            for(Expr v:args.subList(0, fun.params.size())) {
+                sb.append("  ");
+                v.toString(sb, -1);
+                sb.append(" (type = ").append(v.type).append(")\n");
+            }
+            errors = errors.append(new ErrorType(pos, sb.toString()));
+        }
+        return new ExprBadCall(pos, fun, args, errors);
     }
 
     /** {@inheritDoc} */

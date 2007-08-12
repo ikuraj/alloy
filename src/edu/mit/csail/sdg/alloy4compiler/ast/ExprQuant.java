@@ -29,7 +29,6 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.JoinableList;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.ccform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
@@ -73,6 +72,8 @@ public final class ExprQuant extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
+    //=============================================================================================================//
+
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
@@ -83,6 +84,8 @@ public final class ExprQuant extends Expr {
         }
         return p;
     }
+
+    //=============================================================================================================//
 
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
@@ -101,9 +104,11 @@ public final class ExprQuant extends Expr {
         }
     }
 
+    //=============================================================================================================//
+
     /** Constructs a new quantified expression. */
     private ExprQuant(Pos pos, Pos close, Op op, Type type, ConstList<ExprVar> vars, Expr sub, long weight, JoinableList<Err> errs) {
-        super(pos, type, 0, weight, errs);
+        super(pos, sub.ambiguous, type, 0, weight, errs);
         this.closingBracket=close;
         this.op=op;
         this.vars=vars;
@@ -182,19 +187,9 @@ public final class ExprQuant extends Expr {
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
         if (errors.size()==0) return this; // If there is already fatal error, then there's no need to proceed further
-        boolean changed=false;
-        TempList<ExprVar> newVars = new TempList<ExprVar>(vars.size());
-        for(ExprVar v: vars) {
-            ExprVar newV = v.resolve(v.type, warnings);
-            if (v!=newV) changed=true;
-            newVars.add(newV);
-        }
+        // If errors.size()==0, then the variable is always already fully resolved, so we only need to resolve sub
         Expr newSub = sub.resolve((op==Op.SUM ? Type.INT : Type.FORMULA), warnings);
-        // If at least one variable changed,
-        // Then newSub will still contain only the old variables, and yet we are generating an ExprQuant node with the new variables.
-        // This is bad! However, due to ExprVar's properties, that means at least one of the newVar has errors.size()>0
-        // so it already means a fatal error has occurred, so the resulting ExprQuant node will also have errors.size()>0
-        return (!changed && sub==newSub) ? this : op.make(pos, closingBracket, newVars.makeConst(), newSub);
+        return (sub==newSub) ? this : op.make(pos, closingBracket, vars, newSub);
     }
 
     //=============================================================================================================//

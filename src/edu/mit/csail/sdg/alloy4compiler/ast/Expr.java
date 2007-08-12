@@ -49,7 +49,7 @@ public abstract class Expr {
     abstract Object accept(VisitReturn visitor) throws Err;
 
     /**
-     * Resolves any ambiguous subexpressions, then return an unambiguous copy of this node.
+     * If this expression is ambiguous, resolve it and return an unambiguous copy of this Expr, else return the Expr as-is.
      * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
      * (Note: it's possible for t to be EMPTY, or even ambiguous!)
      *
@@ -85,6 +85,9 @@ public abstract class Expr {
      */
     public final long weight;
 
+    /** True if this expression is ExprChoice, or this expression contains an ExprChoice subexpression. */
+    final boolean ambiguous;
+
     /** This is an unmodifiable empty list of Err objects. */
     static final JoinableList<Err> emptyListOfErrors = new JoinableList<Err>();
 
@@ -92,6 +95,8 @@ public abstract class Expr {
      * Constructs a new expression node
      *
      * @param pos - the original position in the file (null if unknown)
+     *
+     * @param ambiguous - true if this node is ExprChoice or it contains an ExprChoice subnode
      *
      * @param type - the type (null if this expression has not been typechecked)
      *
@@ -105,8 +110,9 @@ public abstract class Expr {
      *
      * @param errors - the list of errors associated with this Expr node
      */
-    Expr (Pos pos, Type type, int mult, long weight, JoinableList<Err> errors) {
+    Expr (Pos pos, boolean ambiguous, Type type, int mult, long weight, JoinableList<Err> errors) {
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
+        this.ambiguous=ambiguous;
         if (errors==null) errors=emptyListOfErrors;
         if (type==EMPTY && errors.size()==0) errors=errors.append(new ErrorType(pos, "This expression failed to be typechecked"));
         this.mult=(mult<0 || mult>2) ? 0 : mult;
@@ -129,6 +135,7 @@ public abstract class Expr {
             search=search.parent;
         }
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
+        this.ambiguous=false;
         this.type=(type==null || type==EMPTY) ? Type.make((PrimSig)this) : type;
         this.mult=0;
         this.weight=0;

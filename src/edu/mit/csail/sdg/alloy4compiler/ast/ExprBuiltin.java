@@ -73,13 +73,14 @@ public final class ExprBuiltin extends Expr {
     }
 
     /** Constructs an ExprBuiltin node. */
-    private ExprBuiltin(Pos pos, Type type, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
-        super(pos, type, 0, weight, errs);
+    private ExprBuiltin(Pos pos, boolean ambiguous, Type type, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+        super(pos, ambiguous, type, 0, weight, errs);
         this.args = args;
     }
 
     /** Generates the expression disj[arg1, args2, arg3...] */
     public static Expr makeDISJOINT(Pos pos, List<Expr> args) {
+        boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         TempList<Expr> newargs = new TempList<Expr>(args.size());
         Type type=Type.FORMULA, commonArity=null;
@@ -87,6 +88,7 @@ public final class ExprBuiltin extends Expr {
         if (args.size()<2)
             errs=errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
         for(Expr a:args) {
+            ambiguous = ambiguous || a.ambiguous;
             errs = errs.join(a.errors);
             weight = weight + a.weight;
             if (a.mult!=0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
@@ -102,7 +104,7 @@ public final class ExprBuiltin extends Expr {
         }
         if (commonArity!=null && commonArity==EMPTY) errs=errs.append(new ErrorType(pos,
            "The builtin predicate disjoint[] cannot be used among expressions of different arities."));
-        return new ExprBuiltin(pos, type, newargs.makeConst(), weight, errs);
+        return new ExprBuiltin(pos, ambiguous, type, newargs.makeConst(), weight, errs);
     }
 
     /** {@inheritDoc} */

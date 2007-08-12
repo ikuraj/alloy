@@ -31,7 +31,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 /**
  * Immutable; represents an illegal relation join.
  *
- * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()==1
+ * <p> <b>Invariant:</b>  this.type==EMPTY && this.errors.size()>0
  */
 
 public final class ExprBadJoin extends Expr {
@@ -66,21 +66,25 @@ public final class ExprBadJoin extends Expr {
         }
     }
 
-    /** Construct the appropriate error message for this node. */
-    private static ErrorType complain(Pos pos, Expr left, Expr right) {
-        StringBuilder sb=new StringBuilder("This cannot be a legal relational join where\nleft hand side is ");
-        left.toString(sb,-1);
-        sb.append(" (type = ").append(left.type).append(")\nright hand side is ");
-        right.toString(sb,-1);
-        sb.append(" (type = ").append(right.type).append(")\n");
-        return new ErrorType(pos, sb.toString());
+    /** Constructs an ExprBadJoin node. */
+    private ExprBadJoin(Pos pos, Expr left, Expr right, JoinableList<Err> errors) {
+        super(pos, false, EMPTY, 0, 0, errors);
+        this.left=left;
+        this.right=right;
     }
 
     /** Constructs an ExprBadJoin node. */
-    public ExprBadJoin(Pos pos, Expr left, Expr right) {
-        super(pos, EMPTY, 0, 0, new JoinableList<Err>(complain(pos, left, right)));
-        this.left=left;
-        this.right=right;
+    public static Expr make(Pos pos, Expr left, Expr right) {
+        JoinableList<Err> errors = left.errors.join(right.errors);
+        if (errors.isEmpty()) {
+            StringBuilder sb=new StringBuilder("This cannot be a legal relational join where\nleft hand side is ");
+            left.toString(sb,-1);
+            sb.append(" (type = ").append(left.type).append(")\nright hand side is ");
+            right.toString(sb,-1);
+            sb.append(" (type = ").append(right.type).append(")\n");
+            errors = errors.append(new ErrorType(pos, sb.toString()));
+        }
+        return new ExprBadJoin(pos, left, right, errors);
     }
 
     /** {@inheritDoc} */
