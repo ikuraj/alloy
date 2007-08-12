@@ -70,7 +70,7 @@ public final class ExprBinary extends Expr {
             left.ambiguous || right.ambiguous,
             type,
             (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0,
-            left.weight+right.weight,
+            left.weight + right.weight,
             errors);
         this.op=op;
         this.left=left;
