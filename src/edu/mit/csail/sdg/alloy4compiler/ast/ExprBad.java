@@ -36,7 +36,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 public final class ExprBad extends Expr {
 
     /** The original source text that caused the error. */
-    public final String originalText;
+    private final String originalText;
 
     /** {@inheritDoc} */
     @Override public Pos span() { return pos; }
