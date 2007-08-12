@@ -65,22 +65,26 @@ public final class ExprBadCall extends Expr {
             out.append(']');
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            out.append("ExprBadCall: ").append(fun).append('\n');
+            out.append("ExprBadCall: ").append(fun.isPred?"pred ":"fun ").append(fun.label).append('\n');
             for(Expr a:args) { a.toString(out, indent+2); }
         }
     }
 
     /** Constructs an ExprBadCall object. */
-    private ExprBadCall(final Pos pos, final Func fun, final ConstList<Expr> args, final JoinableList<Err> errors) {
-        super(pos, false, EMPTY, 0, 0, errors);
+    private ExprBadCall(Pos pos, boolean ambiguous, Func fun, ConstList<Expr> args, JoinableList<Err> errors) {
+        super(pos, ambiguous, EMPTY, 0, 0, errors);
         this.fun=fun;
         this.args=args;
     }
 
     /** Constructs an ExprBadCall object. */
     public static Expr make(final Pos pos, final Func fun, final ConstList<Expr> args) {
+        boolean ambiguous = false;
         JoinableList<Err> errors = emptyListOfErrors;
-        for(Expr x:args) errors = errors.join(x.errors);
+        for(Expr x:args) {
+            ambiguous = ambiguous || x.ambiguous;
+            errors = errors.join(x.errors);
+        }
         if (errors.isEmpty()) {
             StringBuilder sb=new StringBuilder("This cannot be a correct call to ");
             sb.append(fun.isPred?"pred ":"fun ");
@@ -97,7 +101,7 @@ public final class ExprBadCall extends Expr {
             }
             errors = errors.append(new ErrorType(pos, sb.toString()));
         }
-        return new ExprBadCall(pos, fun, args, errors);
+        return new ExprBadCall(pos, ambiguous, fun, args, errors);
     }
 
     /** {@inheritDoc} */

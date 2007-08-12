@@ -68,7 +68,7 @@ public final class ExprBadJoin extends Expr {
 
     /** Constructs an ExprBadJoin node. */
     private ExprBadJoin(Pos pos, Expr left, Expr right, JoinableList<Err> errors) {
-        super(pos, false, EMPTY, 0, 0, errors);
+        super(pos, (left.ambiguous || right.ambiguous), EMPTY, 0, 0, errors);
         this.left=left;
         this.right=right;
     }
