@@ -65,15 +65,15 @@ public final class ExprBinary extends Expr {
     private Pos span=null;
 
     /** Constructs a new ExprBinary node. */
-    private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type, JoinableList<Err> err) {
-        super(pos, type, (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0, left.weight+right.weight, err);
+    private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type, JoinableList<Err> errors) {
+        super(pos, type, (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0, left.weight+right.weight, errors);
         this.op=op;
         this.left=left;
         this.right=right;
     }
 
     /**
-     * Convenience method that generates a type error exception with "msg" as the message,
+     * Convenience method that generates a type error with "msg" as the message,
      * and includes the left and right bounding types in the message.
      */
     private static ErrorType error(Pos pos, String msg, Expr left, Expr right) {
@@ -81,7 +81,7 @@ public final class ExprBinary extends Expr {
     }
 
     /**
-     * Convenience method that generates a warning message to the current reporter, with "msg" as the message,
+     * Convenience method that generates a type warning with "msg" as the message,
      * and includes the left and right bounding types in the message.
      */
     private ErrorWarning warn(String msg) {
@@ -91,7 +91,7 @@ public final class ExprBinary extends Expr {
     }
 
     /**
-     * Convenience method that generates a warning message to the current reporter, with "msg" as the message,
+     * Convenience method that generates a type warning with "msg" as the message,
      * and includes the parent's relevance type, as well as the left and right bounding types in the message.
      */
     private ErrorWarning warn(String msg, Type parent) {
