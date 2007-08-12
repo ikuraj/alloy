@@ -62,6 +62,8 @@ public final class ExprBinary extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
+    //============================================================================================================//
+
     /** Constructs a new ExprBinary node. */
     private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type, JoinableList<Err> errors) {
         super(pos,
@@ -75,6 +77,8 @@ public final class ExprBinary extends Expr {
         this.right=right;
     }
 
+    //============================================================================================================//
+
     /**
      * Convenience method that generates a type error with "msg" as the message,
      * and includes the left and right bounding types in the message.
@@ -82,6 +86,8 @@ public final class ExprBinary extends Expr {
     private static ErrorType error(Pos pos, String msg, Expr left, Expr right) {
         return new ErrorType(pos, msg+"\nLeft type = "+left.type+"\nRight type = "+right.type);
     }
+
+    //============================================================================================================//
 
     /**
      * Convenience method that generates a type warning with "msg" as the message,
@@ -92,6 +98,8 @@ public final class ExprBinary extends Expr {
         +"\nLeft type = " + Type.removesBoolAndInt(left.type)
         +"\nRight type = " + Type.removesBoolAndInt(right.type));
     }
+
+    //============================================================================================================//
 
     /**
      * Convenience method that generates a type warning with "msg" as the message,
@@ -104,12 +112,16 @@ public final class ExprBinary extends Expr {
         +"\nRight type = " + Type.removesBoolAndInt(right.type));
     }
 
+    //============================================================================================================//
+
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) span = (p = pos.merge(right.span()).merge(left.span()));
         return p;
     }
+
+    //============================================================================================================//
 
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
@@ -188,8 +200,6 @@ public final class ExprBinary extends Expr {
          * @param right - the right hand side expression
          */
         public final Expr make(Pos pos, Expr left, Expr right) {
-            Err e=null;
-            Type type=EMPTY;
             switch(this) {
               case LT: case LTE: case GT: case GTE: {
                 left = cint(left);
@@ -219,14 +229,15 @@ public final class ExprBinary extends Expr {
                 right=cset(right);
               }
             }
-            JoinableList<Err> aa=left.errors, bb=right.errors;
-            if (aa.isEmpty() && bb.isEmpty())
-            switch(this) {
+            Err e=null;
+            Type type=EMPTY;
+            JoinableList<Err> errs = left.errors.join(right.errors);
+            if (errs.isEmpty()) switch(this) {
               case LT: case LTE: case GT: case GTE: case AND: case OR: case IFF:
                   type = Type.FORMULA;
                   break;
               case PLUSPLUS:
-                  type=left.type.unionWithCommonArity(right.type);
+                  type = left.type.unionWithCommonArity(right.type);
                   if (type==EMPTY) e=error(pos, "++ can be used only between two expressions of the same arity.", left, right);
                   break;
               case PLUS: case MINUS: case EQUALS:
@@ -266,10 +277,10 @@ public final class ExprBinary extends Expr {
                   type=left.type.product(right.type);
             }
             if ((isArrow && left.mult==1) || (!isArrow && left.mult!=0))
-                aa = aa.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
+                errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
             if ((isArrow && right.mult==1) || (!isArrow && this!=Op.IN && right.mult!=0))
-                bb = bb.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
-            return new ExprBinary(pos, this, left, right, type, aa.join(bb).appendIfNotNull(e));
+                errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
+            return new ExprBinary(pos, this, left, right, type, errs.appendIfNotNull(e));
         }
 
         /** Returns the human readable label for this operator. */
@@ -280,6 +291,7 @@ public final class ExprBinary extends Expr {
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
+        if (errors.size()>0) return this;
         ErrorWarning w=null;
         Type a=left.type, b=right.type;
         switch(op) {
@@ -303,7 +315,7 @@ public final class ExprBinary extends Expr {
           }
           case IN: {
             a=a.pickCommonArity(b);
-            b=a.intersect(b);
+            b=b.intersect(a);
             if (left.type.hasNoTuple() && right.type.hasNoTuple())
                w=warn("Subset operator is redundant, because both subexpressions are always empty.");
             else if (left.type.hasNoTuple())
@@ -315,20 +327,20 @@ public final class ExprBinary extends Expr {
             break;
           }
           case INTERSECT: {
-            a=p.intersect(a);
-            b=p.intersect(b);
+            a=a.intersect(p);
+            b=b.intersect(p);
             if (type.hasNoTuple()) w=warn("& is irrelevant because the two subexpressions are always disjoint.");
             break;
           }
           case PLUSPLUS: case PLUS: {
-            a=p.intersect(a);
-            b=p.intersect(b);
+            a=a.intersect(p);
+            b=b.intersect(p);
             if (op==Op.PLUS && p.is_int) { a=Type.makeInt(a); b=Type.makeInt(b); }
             if (a==EMPTY && b==EMPTY)
                w=warn(this+" is irrelevant since both subexpressions are redundant.", p);
             else if (a==EMPTY)
                w=warn(this+" is irrelevant since the left subexpression is redundant.", p);
-            else if (b==EMPTY || (op==Op.PLUSPLUS && !b.canOverride(a)))
+            else if (b==EMPTY || (op==Op.PLUSPLUS && !right.type.canOverride(left.type)))
                w=warn(this+" is irrelevant since the right subexpression is redundant.", p);
             break;
           }
@@ -355,13 +367,13 @@ public final class ExprBinary extends Expr {
                  b = b.merge(Type.make(v, aa.arity()-1, v.size()));
               }
             }
-            if (a==EMPTY || b==EMPTY) { // We try to continue the best we can; we should have issued a relevance warning already.
+            if (a==EMPTY || b==EMPTY) { // Continue the best we can; we should have issued a relevance warning elsewhere already.
               a=(b=EMPTY);
               for (ProductType aa: left.type) for (ProductType bb: right.type)
                 if (p.hasArity(aa.arity()+bb.arity()-2) && aa.get(aa.arity()-1).intersects(bb.get(0)))
                    {a=a.merge(aa); b=b.merge(bb);}
             }
-            if (a==EMPTY || b==EMPTY) { // We try to continue the best we can; we should have issued a relevance warning already.
+            if (a==EMPTY || b==EMPTY) { // Continue the best we can; we should have issued a relevance warning elsewhere already.
               a=(b=EMPTY);
               for (ProductType aa: left.type) for (ProductType bb: right.type)
                 if (p.hasArity(aa.arity()+bb.arity()-2))
@@ -393,7 +405,7 @@ public final class ExprBinary extends Expr {
             for(ProductType bb:b) if (bb.arity()==1) for(ProductType aa:a) if (p.hasArity(aa.arity()))
                 for (ProductType cc:p.intersect(aa.columnRestrict(bb.get(0), aa.arity()-1))) if (!cc.isEmpty()) {
                     leftType  = leftType.merge(cc);
-                    rightType = rightType.merge(cc, aa.arity()-1, aa.arity());
+                    rightType = rightType.merge(cc, cc.arity()-1, cc.arity());
                 }
             if (leftType==EMPTY || rightType==EMPTY) { // We try to proceed the best we can
                leftType = a.pickCommonArity(p);
@@ -417,7 +429,9 @@ public final class ExprBinary extends Expr {
                    rightType = rightType.merge(cc, aa.arity(), cc.arity());
                 }
             // We try to proceed the best we can; we should have issued a relevance warning already.
-            if (leftType!=EMPTY && rightType!=EMPTY) { a=leftType; b=rightType; }
+            if (leftType==EMPTY || rightType==EMPTY) { leftType=a; rightType=b; }
+            a=leftType;
+            b=rightType;
           }
         }
         Expr left = this.left.resolve(a, warns);
@@ -429,5 +443,8 @@ public final class ExprBinary extends Expr {
     //============================================================================================================//
 
     /** Accepts the return visitor. */
-    @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
+    @Override Object accept(VisitReturn visitor) throws Err {
+        if (!errors.isEmpty()) throw errors.get(0);
+        return visitor.visit(this);
+    }
 }
