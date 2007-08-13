@@ -306,6 +306,7 @@ public abstract class Sig extends Expr {
         /** Constructs a new Field object. */
         private Field(Pos pos, Sig sig, String label, ExprVar var, Expr bound) throws Err {
             super(pos, false, sig.type.product(bound.type), 0, 0, null);
+            if (sig.builtin) throw new ErrorSyntax("Builtin sig \""+sig+"\" cannot have fields.");
             if (!bound.errors.isEmpty())
                 throw bound.errors.get(0);
             if (bound.hasCall())
@@ -362,15 +363,7 @@ public abstract class Sig extends Expr {
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field addField(Pos pos, String label, Expr bound) throws Err {
-        if (builtin) throw new ErrorSyntax("Builtin sig \""+label+"\" cannot have fields.");
-        bound=bound.typecheck_as_set();
-        if (bound.ambiguous) {
-            bound=bound.resolve(Type.removesBoolAndInt(bound.type));
-            bound=bound.typecheck_as_set();
-        }
-        final Field f=new Field(pos, this, label, null, bound);
-        fields.add(f);
-        return f;
+    	return addTrickyField(pos, label, null, bound);
     }
 
     /**
@@ -380,14 +373,13 @@ public abstract class Sig extends Expr {
      * @param pos - the position in the original file where this field was defined (can be null if unknown)
      * @param label - the name of this field (it does not need to be unique)
      * @param x - a quantified variable "x: one ThisSig"
-     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
+     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in bound"
      *
      * @throws ErrorSyntax  if the sig is one of the builtin sig
-     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      * @throws ErrorSyntax  if the bound contains a predicate/function call
+     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field addTrickyField(Pos pos, String label, ExprVar x, Expr bound) throws Err {
-        if (builtin) throw new ErrorSyntax("Builtin sig \""+label+"\" cannot have fields.");
         bound=bound.typecheck_as_set();
         if (bound.ambiguous) {
             bound=bound.resolve(Type.removesBoolAndInt(bound.type));
