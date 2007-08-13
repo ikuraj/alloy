@@ -33,7 +33,6 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /** Mutable; reresents a signature. */
 
@@ -360,7 +359,7 @@ public abstract class Sig extends Expr {
      */
     public final Field addField(Pos pos, String label, Expr bound) throws Err {
         if (builtin) throw new ErrorSyntax("Builtin sig \""+this+"\" cannot have fields.");
-        bound=cset(bound);
+        bound=bound.cset();
         if (bound.ambiguous) bound=bound.resolve(Type.removesBoolAndInt(bound.type));
         if (!bound.errors.isEmpty()) throw bound.errors.get(0);
         final Field f=new Field(pos, this, label, null, bound);
@@ -383,7 +382,7 @@ public abstract class Sig extends Expr {
      */
     public final Field addTrickyField(Pos pos, String label, ExprVar x, Expr bound) throws Err {
         if (builtin) throw new ErrorSyntax("Builtin sig \""+this+"\" cannot have fields.");
-        bound=cset(bound);
+        bound=bound.cset();
         if (bound.ambiguous) bound=bound.resolve(Type.removesBoolAndInt(bound.type));
         if (!bound.errors.isEmpty()) throw bound.errors.get(0);
         final Field f=new Field(pos, this, label, x, bound);

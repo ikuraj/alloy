@@ -34,6 +34,8 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
@@ -207,6 +209,28 @@ public abstract class Expr {
     //================================================================================//
     // Below are convenience methods for building up expressions from subexpressions. //
     //================================================================================//
+
+    final Expr cform() {
+        if (!errors.isEmpty() || type.is_bool) return this;
+        String msg = "This must be a formula expression.\nInstead, it has the following possible type(s):\n" + type;
+        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+    }
+
+    /** Converts x into an "integer expression" if possible; otherwise, returns an Expr with a nonempty error list */
+    final Expr cint() {
+        if (!errors.isEmpty() || type.is_int) return this;
+        if (Type.SIGINT2INT && type.intersects(SIGINT.type)) return cast2int();
+        String msg = "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+type;
+        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+    }
+
+    /** Converts x into a "set or relation" if possible; otherwise, returns an Expr with a nonempty error list */
+    final Expr cset() {
+        if (!errors.isEmpty() || type.size()>0) return this;
+        if (Type.INT2SIGINT && type.is_int) return cast2sigint();
+        String msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+type;
+        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+    }
 
     /**
      * Returns the formula (this and x)

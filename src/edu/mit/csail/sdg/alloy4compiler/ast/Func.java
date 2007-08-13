@@ -27,8 +27,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Util;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /**
  * Mutable; represents a predicate or function.
@@ -82,7 +80,7 @@ public final class Func {
             this.body = (this.returnDecl = ExprConstant.FALSE);
         }
         else {
-            returnDecl=cset(returnDecl);
+            returnDecl = returnDecl.cset();
             if (returnDecl.ambiguous) returnDecl=returnDecl.resolve(Type.removesBoolAndInt(returnDecl.type));
             if (!returnDecl.errors.isEmpty()) throw returnDecl.errors.get(0);
             if (returnDecl.mult==0 && returnDecl.type.arity()==1) returnDecl=ExprUnary.Op.ONEOF.make(null, returnDecl);
@@ -114,11 +112,11 @@ public final class Func {
      */
     public void setBody(Expr newBody) throws Err {
         if (isPred) {
-            newBody = cform(newBody);
+            newBody = newBody.cform();
             if (newBody.ambiguous) newBody=newBody.resolve(Type.FORMULA);
             if (newBody.errors.size()>0) throw newBody.errors.get(0);
         } else {
-            newBody = cset(newBody);
+            newBody = newBody.cset();
             if (newBody.ambiguous) newBody=newBody.resolve(Type.removesBoolAndInt(newBody.type));
             if (newBody.errors.size()>0) throw newBody.errors.get(0);
             if (newBody.type.arity() != returnDecl.type.arity())

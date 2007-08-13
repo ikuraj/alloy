@@ -33,9 +33,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /**
  * Immutable; represents an expression of the form (x OP y).
@@ -202,13 +199,13 @@ public final class ExprBinary extends Expr {
         public final Expr make(Pos pos, Expr left, Expr right) {
             switch(this) {
               case LT: case LTE: case GT: case GTE: {
-                left = cint(left);
-                right = cint(right);
+                left = left.cint();
+                right = right.cint();
                 break;
               }
               case AND: case OR: case IFF: {
-                left = cform(left);
-                right = cform(right);
+                left = left.cform();
+                right = right.cform();
                 break;
               }
               case PLUS: case MINUS: case EQUALS: {
@@ -225,8 +222,8 @@ public final class ExprBinary extends Expr {
                 break;
               }
               default: {
-                left=cset(left);
-                right=cset(right);
+                left=left.cset();
+                right=right.cset();
               }
             }
             Err e=null;

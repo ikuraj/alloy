@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -37,7 +38,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
-import edu.mit.csail.sdg.alloy4compiler.ast.Resolver;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 
@@ -123,7 +123,13 @@ public final class ExpDot extends Exp {
             TempList<Expr> tempargs=new TempList<Expr>();
             for(Exp temp=this; temp instanceof ExpDot; temp=((ExpDot)temp).right) {
                 Expr temp2 = ((ExpDot)temp).left.check(cx, warnings);
-                temp2 = Resolver.cset(temp2);
+                if (temp2.errors.isEmpty() && temp2.type.size()==0) {
+                   if (!Type.INT2SIGINT || !temp2.type.is_int)
+                      temp2=ExprUnary.Op.NOOP.make(null, temp2, 0, new ErrorType(temp2.span(),
+                        "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+temp2.type));
+                   else
+                      temp2=temp2.cast2sigint();
+                }
                 tempargs.add(0, temp2);
             }
             ConstList<Expr> args=tempargs.makeConst();

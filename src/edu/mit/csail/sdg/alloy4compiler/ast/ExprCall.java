@@ -33,7 +33,6 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /**
  * Immutable; represents a call.
@@ -177,7 +176,7 @@ public final class ExprCall extends Expr {
         }
         for(int i=0; i<args.size(); i++) {
             final int a = (i<fun.params.size()) ? fun.params.get(i).type.arity() : 0;
-            final Expr x = cset(args.get(i));
+            final Expr x = args.get(i).cset();
             ambiguous = ambiguous || x.ambiguous;
             errs = errs.join(x.errors);
             extraWeight = extraWeight + x.weight;
@@ -216,7 +215,7 @@ public final class ExprCall extends Expr {
         long w=0;
         for(int i=0; i<this.args.size(); i++) {
             Expr x=this.args.get(i);
-            Expr y=cset(x.resolve(fun.params.get(i).type, warns)); // Use the function's param type to narrow down the choices
+            Expr y=x.resolve(fun.params.get(i).type, warns).cset(); // Use the function's param type to narrow down the choices
             if (x!=y) changed=true;
             args.add(y);
             w = w + y.weight;

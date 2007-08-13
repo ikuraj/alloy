@@ -31,7 +31,6 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /**
  * Immutable; represents the builtin disjoint[] predicate.
@@ -95,7 +94,7 @@ public final class ExprBuiltin extends Expr {
         if (args.size()<2)
             errs=errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
         for(int i=0; i<args.size(); i++) {
-            Expr a = cset(args.get(i));
+            Expr a = args.get(i).cset();
             ambiguous = ambiguous || a.ambiguous;
             weight = weight + a.weight;
             if (a.mult!=0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
@@ -122,7 +121,7 @@ public final class ExprBuiltin extends Expr {
         boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
             Expr x=this.args.get(i);
-            Expr y=cset(x.resolve(p, warns));
+            Expr y=x.resolve(p, warns).cset();
             if (x!=y) changed=true;
             args.add(y);
         }

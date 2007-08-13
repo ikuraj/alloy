@@ -29,7 +29,6 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
 
 /**
  * Immutable; represents an if-then-else expression.
@@ -118,7 +117,7 @@ public final class ExprITE extends Expr {
             }
             break;
         }
-        cond = cform(cond);
+        cond = cond.cform();
         return new ExprITE(cond, left, right, c, errs.join(cond.errors).join(left.errors).join(right.errors));
     }
 

@@ -32,8 +32,8 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
+import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.ast.Resolver;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
@@ -191,15 +191,13 @@ public final class Context {
      */
     public static final Expr resolveExp(Expr x, Collection<ErrorWarning> warns) throws Err {
         Type t=x.type;
-        if (t!=null) {
-            if (t.arity()<0) {
-                // If we can have multiple arities, but some of them are empty, then remove the empty ones.
-                Type tt=(t.is_bool ? (t.is_int ? Type.INTANDFORMULA: Type.FORMULA) : (t.is_int ? Type.INT : Type.EMPTY));
-                for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
-                if (tt.size()>0) t=tt;
-            }
-            x=x.resolve(t, warns);
+        if (t.arity()<0) {
+            // If we can have multiple arities, but some of them are empty, then remove the empty ones.
+            Type tt=(t.is_bool ? (t.is_int ? Type.INTANDFORMULA: Type.FORMULA) : (t.is_int ? Type.INT : Type.EMPTY));
+            for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
+            if (tt.size()>0) t=tt;
         }
+        x=x.resolve(t, warns);
         return x;
     }
 
@@ -210,17 +208,20 @@ public final class Context {
      * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
      */
     public static final Expr resolveExpSet(Expr x, Collection<ErrorWarning> warns) throws Err {
-        x=Resolver.cset(x);
-        if (x.type!=null) {
-            Type t=Type.removesBoolAndInt(x.type);
-            if (t.arity()<0) {
-                // If we can have multiple arities, but some of them are empty, then remove the empty ones.
-                Type tt=Type.EMPTY;
-                for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
-                if (tt.size()>0) t=tt;
-            }
-            x=x.resolve(t, warns);
+        if (x.errors.isEmpty() && x.type.size()==0) {
+            if (!Type.INT2SIGINT || !x.type.is_int)
+                return NOOP.make(null, x, 0, new ErrorType(x.span(),
+                        "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+x.type));
+            x=x.cast2sigint();
         }
+        Type t=Type.removesBoolAndInt(x.type);
+        if (t.arity()<0) {
+            // If we can have multiple arities, but some of them are empty, then remove the empty ones.
+            Type tt=Type.EMPTY;
+            for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
+            if (tt.size()>0) t=tt;
+        }
+        x=x.resolve(t, warns);
         return x;
     }
 
@@ -231,8 +232,13 @@ public final class Context {
      * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
      */
     public static final Expr resolveExpInt(Expr x, Collection<ErrorWarning> warns) throws Err {
-        x=Resolver.cint(x);
-        if (x.type!=null) x=x.resolve(Type.INT, warns);
+        if (x.errors.isEmpty() && !x.type.is_int) {
+           if (!Type.SIGINT2INT || !x.type.intersects(SIGINT.type))
+               return NOOP.make(null, x, 0, new ErrorType(x.span(),
+                  "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+x.type));
+           x=x.cast2int();
+        }
+        x=x.resolve(Type.INT, warns);
         return x;
     }
 
@@ -243,8 +249,7 @@ public final class Context {
      * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
      */
     public static final Expr resolveExpFormula(Expr x, Collection<ErrorWarning> warns) throws Err {
-        if (x.type!=null) x=x.resolve(Type.FORMULA, warns);
-        return x;
+        return x.resolve(Type.FORMULA, warns);
     }
 
 }

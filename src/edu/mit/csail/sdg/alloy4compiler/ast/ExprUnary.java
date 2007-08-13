@@ -34,9 +34,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
 /**
  * Immutable; represents a unary expression of the form "(OP subexpression)"
@@ -161,10 +158,10 @@ public final class ExprUnary extends Expr {
             extraError=null;
             switch(this) {
                case NOOP: break;
-               case NOT: sub=cform(sub); break;
-               case CAST2SIGINT: sub=cint(sub); break;
-               case CAST2INT: if (sub.type==Type.INT) return sub; else {sub=cset(sub); break;} // Shortcut if it is already integer
-               default: sub=cset(sub);
+               case NOT: sub=sub.cform(); break;
+               case CAST2SIGINT: sub=sub.cint(); break;
+               case CAST2INT: if (sub.type==Type.INT) return sub; else {sub=sub.cset(); break;} // Shortcut if it is already integer
+               default: sub=sub.cset();
             }
             Type type=sub.type;
             if (sub.errors.isEmpty()) switch(this) {
