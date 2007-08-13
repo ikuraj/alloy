@@ -30,6 +30,7 @@ import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 /**
  * Immutable; represents the type of an expression.
@@ -125,13 +126,15 @@ public final class Type implements Iterable<Type.ProductType> {
         PrimSig get(int i) { return types[i]; }
 
         /** Returns true if this.arity==0  or  this==NONE->..->NONE */
-        public boolean isEmpty() { return types.length==0 || types[0]==Sig.NONE; }
+        public boolean isEmpty() { return types.length==0 || types[0]==NONE; }
 
         /**
          * Returns the tranpose of this
          * <p> Precondition: this.arity()==2
          */
-        private ProductType transpose() { return new ProductType(new PrimSig[]{types[1], types[0]}); }
+        private ProductType transpose() {
+            if (types[0]==types[1]) return this; else return new ProductType(new PrimSig[]{types[1], types[0]});
+        }
 
         /**
          * Returns the cross product of this and that.
@@ -140,8 +143,8 @@ public final class Type implements Iterable<Type.ProductType> {
         ProductType product(ProductType that) {
             final int n = types.length + that.types.length;
             if (n<0) throw new OutOfMemoryError(); // This means the addition overflowed!
-            if (this.isEmpty()) return (n==this.types.length) ? this : (new ProductType(n, Sig.NONE));
-            if (that.isEmpty()) return (n==that.types.length) ? that : (new ProductType(n, Sig.NONE));
+            if (this.isEmpty()) return (n==this.types.length) ? this : (new ProductType(n, NONE));
+            if (that.isEmpty()) return (n==that.types.length) ? that : (new ProductType(n, NONE));
             final PrimSig[] ans = new PrimSig[n];
             int j=0;
             for(int i=0; i<this.types.length; i++, j++) { ans[j]=this.types[i]; }
@@ -163,7 +166,7 @@ public final class Type implements Iterable<Type.ProductType> {
             final PrimSig[] ans = new PrimSig[n];
             for(int i=0; i<n; i++) {
                 PrimSig c = this.types[i].intersect(that.types[i]);
-                if (c==Sig.NONE) { for(i=0; i<n; i++) { ans[i]=c; } break; }
+                if (c==NONE) { for(i=0; i<n; i++) { ans[i]=c; } break; }
                 ans[i]=c;
             }
             return new ProductType(ans);
@@ -191,7 +194,7 @@ public final class Type implements Iterable<Type.ProductType> {
             if (left<=1 && right<=1) return zero; // We try to do the best we can, in the face of precondition violation
             if (n<0) throw new OutOfMemoryError(); // This means the addition overflowed!
             final PrimSig a=types[left-1], b=that.types[0], c=a.intersect(b);
-            if (c==Sig.NONE) return new ProductType(n, c);
+            if (c==NONE) return new ProductType(n, c);
             final PrimSig[] types = new PrimSig[n];
             int j=0;
             for(int i=0; i<left-1; i++, j++) { types[j]=this.types[i]; }
@@ -209,7 +212,7 @@ public final class Type implements Iterable<Type.ProductType> {
             if (i<0 || i>=types.length || isEmpty()) return this;
             that = types[i].intersect(that);
             if (that==types[i]) return this;
-            if (that==Sig.NONE) return new ProductType(types.length, that);
+            if (that==NONE) return new ProductType(types.length, that);
             final PrimSig[] newlist = new PrimSig[types.length];
             for(int j=0; j<types.length; j++) { newlist[j]=types[j]; }
             newlist[i] = that;
@@ -331,7 +334,7 @@ public final class Type implements Iterable<Type.ProductType> {
         PrimSig[] newlist = new PrimSig[end-start];
         for(int i=start, j=0; i<end; i++, j++) {
             PrimSig x=list.get(i);
-            if (x==Sig.NONE) {
+            if (x==NONE) {
                 for(i=0; i<newlist.length; i++) newlist[i]=x;
                 break;
             }
@@ -387,13 +390,13 @@ public final class Type implements Iterable<Type.ProductType> {
     /** Returns a hash code consistent with equals() */
     @Override public int hashCode() { return arities * (is_int?1732051:1) * (is_bool?314157:1); }
 
-    /** Returns true if this.size()==0 or every entry consists only of "none". */
+    /** Returns true if this.size()==0 or every entry consists only of NONE. */
     public boolean hasNoTuple() {
         for(int i=entries.size()-1; i>=0; i--) if (!entries.get(i).isEmpty()) return false;
         return true;
     }
 
-    /** Returns true if this.size()>0 and at least one entry consists of something other than "none". */
+    /** Returns true if this.size()>0 and at least one entry consists of something other than NONE. */
     public boolean hasTuple() {
         for(int i=entries.size()-1; i>=0; i--) if (!entries.get(i).isEmpty()) return true;
         return false;
@@ -586,9 +589,9 @@ public final class Type implements Iterable<Type.ProductType> {
         PrimSig[] array=new PrimSig[that.size()];
         for(int i=0; i < array.length; i++) {
             array[i] = that.get(i);
-            if (array[i]==Sig.NONE) {
+            if (array[i]==NONE) {
                 if (hasArity(array.length)) return this;
-                for(i=0; i<array.length; i++) array[i]=Sig.NONE;
+                for(i=0; i<array.length; i++) array[i]=NONE;
                 break;
             }
         }
@@ -769,7 +772,7 @@ public final class Type implements Iterable<Type.ProductType> {
      * <br> ELSE
      * <br>   we change nothing, and simply return null
      *
-     * <p><b>Precondition:</b> a[i] is not "none", and a[i].parent is abstract, and a[i].parent!=UNIV
+     * <p><b>Precondition:</b> a[i] is not NONE, and a[i].parent is abstract, and a[i].parent!=UNIV
      */
     private static List<PrimSig> fold(ArrayList<List<PrimSig>> entries, List<PrimSig> a, int i) {
         PrimSig parent = a.get(i).parent;
