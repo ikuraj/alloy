@@ -25,7 +25,6 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
  * Immutable; represents a LET or QUANTIFICATION variable in the AST.
@@ -69,17 +68,15 @@ public final class ExprVar extends Expr {
     }
 
     /**
-     * Constructs an ExprVar variable whose expr is well-typed (if not, the resulting node's error list will be nonempty)
+     * Constructs an ExprVar variable
      * @param pos - the original position in the source file (can be null if unknown)
      * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
      * @param expr - the quantification/substitution expression for this variable; <b> it must already be fully resolved </b>
      */
     public static ExprVar make(Pos pos, String label, Expr expr) {
         ErrorType e=null;
-        if (expr.errors.size()==0) {
-            if (expr.type==EMPTY)
-                e=new ErrorType(expr.span(), "This expression failed to be typechecked.");
-            else if (!expr.type.unambiguous())
+        if (expr.errors.size()>0) {
+            if (!expr.type.unambiguous())
                 e=new ErrorType(expr.span(), "This expression is ambiguous. Its possible types are:\n"+expr.type);
             else if (expr.ambiguous)
                 e=new ErrorType(expr.span(), "This expression is ambiguous.");
@@ -88,12 +85,7 @@ public final class ExprVar extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override public ExprVar resolve(Type p, Collection<ErrorWarning> warns) {
-        if (errors.size()>0) return this;
-        Expr newExpr = expr.resolve(p, warns);
-        if (expr==newExpr) return this;
-        return new ExprVar(pos, label, newExpr, new ErrorType(newExpr.span(), "This expression was not fully resolved."));
-    }
+    @Override public ExprVar resolve(Type p, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
     @Override Object accept(VisitReturn visitor) throws Err {

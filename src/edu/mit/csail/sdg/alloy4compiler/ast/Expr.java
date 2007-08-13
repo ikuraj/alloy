@@ -94,11 +94,11 @@ public abstract class Expr {
     /**
      * Constructs a new expression node
      *
-     * @param pos - the original position in the file (null if unknown)
+     * @param pos - the original position in the file (can be null if unknown)
      *
      * @param ambiguous - true if this node is ExprChoice or it contains an ExprChoice subnode
      *
-     * @param type - the type (null if this expression has not been typechecked)
+     * @param type - the type
      *
      * @param mult - the multiplicity (which must be 0, 1, or 2)
      * <br>If it's 2, that means it is a multiplicity constraint (X ?->? X),
@@ -108,7 +108,7 @@ public abstract class Expr {
      *
      * @param weight - the weight of this node and all subnodes
      *
-     * @param errors - the list of errors associated with this Expr node
+     * @param errors - the list of errors associated with this Expr node (can be null if there are none)
      */
     Expr (Pos pos, boolean ambiguous, Type type, int mult, long weight, JoinableList<Err> errors) {
         this.pos=(pos==null ? Pos.UNKNOWN : pos);

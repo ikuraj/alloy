@@ -51,7 +51,6 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cint;
  *
  * <br> <b>Invariant:</b> type!=EMPTY => sub.mult==0
  * <br> <b>Invariant:</b> type!=EMPTY => vars.size()>0
- * <br> <b>Invariant:</b> type!=EMPTY => (all v:vars | v.type.unambiguous() && v.type.size()>0)
  */
 
 public final class ExprQuant extends Expr {
@@ -89,11 +88,11 @@ public final class ExprQuant extends Expr {
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            if (op==Op.COMPREHENSION) out.append('{'); else out.append('(').append(op).append(' ');
+            if (op!=Op.COMPREHENSION) out.append('(').append(op).append(' '); else out.append('{');
             for(int i=0; i<vars.size(); i++) { if (i>0) out.append(','); out.append(vars.get(i).label); }
             if (op!=Op.COMPREHENSION || !(sub instanceof ExprConstant) || ((ExprConstant)sub).op!=ExprConstant.Op.TRUE)
                {out.append(" | "); sub.toString(out,-1);}
-            if (op==Op.COMPREHENSION) out.append('}'); else out.append(')');
+            if (op!=Op.COMPREHENSION) out.append(')'); else out.append('}');
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
             out.append("Quantification(").append(op).append(") of ");
@@ -141,7 +140,7 @@ public final class ExprQuant extends Expr {
          * @param sub - the body of the expression
          */
         public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) {
-            Type t = (this==SUM) ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
+            Type t = this==SUM ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
             if (this!=SUM) sub=cform(sub); else sub=cint(sub);
             JoinableList<Err> errs = sub.errors;
             if (sub.mult!=0) errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
@@ -184,7 +183,7 @@ public final class ExprQuant extends Expr {
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
         if (errors.size()>0) return this;
-        // If errors.size()==0, then the variable is always already fully resolved, so we only need to resolve sub
+        // If errors.size()==0, then the variables are always already fully resolved, so we only need to resolve sub
         Expr newSub = sub.resolve((op==Op.SUM ? Type.INT : Type.FORMULA), warnings);
         return (sub==newSub) ? this : op.make(pos, closingBracket, vars, newSub);
     }

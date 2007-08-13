@@ -49,7 +49,7 @@ public final class Resolver {
     static Expr unambiguous(final Expr x) throws Err {
         if (x.errors.size()>0) throw x.errors.get(0);
         final Type t=x.type;
-        if (t==null || (!t.is_bool && !t.is_int && t.size()==0))
+        if (!t.is_bool && !t.is_int && t.size()==0)
             throw new ErrorType(x.span(), "This expression fails to be typechecked.");
         if (t.size()==0) {
             if (!t.is_bool || !t.is_int) return x;
@@ -69,7 +69,7 @@ public final class Resolver {
         if (x instanceof ExprUnary) switch(((ExprUnary)x).op) {
             case SETOF: case ONEOF: case LONEOF: case SOMEOF: return x;
         }
-        return (x.type==null || x.type.arity()!=1) ? x : ExprUnary.Op.ONEOF.make(x.span(), x);
+        return (x.type.arity()!=1) ? x : ExprUnary.Op.ONEOF.make(x.span(), x);
     }
 
     /** Converts x into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */

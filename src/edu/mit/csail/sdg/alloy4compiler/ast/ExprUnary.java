@@ -21,14 +21,14 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
-import edu.mit.csail.sdg.alloy4.DirectedGraph;
-import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
+import edu.mit.csail.sdg.alloy4.DirectedGraph;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
@@ -55,12 +55,16 @@ public final class ExprUnary extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
+    //============================================================================================================//
+
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
         if (p==null) { if (op==Op.NOOP && pos!=Pos.UNKNOWN) span=(p=pos); else span=(p=pos.merge(sub.span())); }
         return p;
     }
+
+    //============================================================================================================//
 
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
@@ -83,12 +87,16 @@ public final class ExprUnary extends Expr {
         }
     }
 
+    //============================================================================================================//
+
     /** Constructs an unary expression. */
     private ExprUnary(Pos pos, Op op, Expr sub, Type type, long weight, JoinableList<Err> errors) {
         super(pos, sub.ambiguous, type, (op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0, weight, errors);
         this.op = op;
         this.sub = sub;
     }
+
+    //============================================================================================================//
 
     /** This class contains all possible unary operators. */
     public enum Op {
@@ -107,7 +115,7 @@ public final class ExprUnary extends Expr {
         /** cardinality of x (truncated to the current integer bitwidth) */  CARDINALITY("#"),
         /** IntAtom-to-integer                                           */  CAST2INT("Int->int"),
         /** integer-to-IntAtom                                           */  CAST2SIGINT("int->Int"),
-        /** No-Op                                                        */  NOOP("NOOP");
+        /** No-Operation                                                 */  NOOP("NOOP");
 
         /** The constructor */
         private Op(String label) {this.label=label;}
@@ -140,24 +148,29 @@ public final class ExprUnary extends Expr {
          * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary's constructor never sees it)
          */
         public final Expr make(Pos pos, Expr sub, long weight, Err extraError) {
-            Err e=null;
             JoinableList<Err> errors = sub.errors.appendIfNotNull(extraError);
             if (sub.mult!=0) {
                if (this==SETOF) return sub;
-               errors=errors.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
+               if (this!=NOOP && extraError==null)
+                  errors=errors.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
+               // When you have a multiplicity expression like (A one->one B), and you call cint() on it,
+               // cint() will try to compose a NOOP node around the (A one->one B) with the error message "This must be an integer!"
+               // So in such a case, we will have a "NOOP" in front of a "MULTIPLICITY", and we don't want
+               // to clutter the output window with an extra useless report of "Multiplicity expression not allowed here!"
             }
+            extraError=null;
             switch(this) {
                case NOOP: break;
                case NOT: sub=cform(sub); break;
                case CAST2SIGINT: sub=cint(sub); break;
-               case CAST2INT: if (sub.type==Type.INT) return sub; else {sub=cset(sub); break;} // Shortcut if it can only be integer
+               case CAST2INT: if (sub.type==Type.INT) return sub; else {sub=cset(sub); break;} // Shortcut if it is already integer
                default: sub=cset(sub);
             }
             Type type=sub.type;
-            if (sub.errors.size()==0) switch(this) {
+            if (sub.errors.isEmpty()) switch(this) {
               case SOMEOF: case LONEOF: case ONEOF: case SETOF:
                 if (this==SETOF) type=Type.removesBoolAndInt(sub.type); else type=sub.type.extract(1);
-                if (type==EMPTY) e=new ErrorType(sub.span(), "After the some/lone/one multiplicity symbol, " +
+                if (type==EMPTY) extraError=new ErrorType(sub.span(), "After the some/lone/one multiplicity symbol, " +
                    "this expression must be a unary set.\nInstead, its possible type(s) are:\n" + sub.type);
                 break;
               case NOT: case NO: case SOME: case LONE: case ONE:
@@ -165,12 +178,12 @@ public final class ExprUnary extends Expr {
                 break;
               case TRANSPOSE:
                 type=sub.type.transpose();
-                if (type==EMPTY) e=new ErrorType(sub.span(), "~ can be used only with a binary relation.\n" +
+                if (type==EMPTY) extraError=new ErrorType(sub.span(), "~ can be used only with a binary relation.\n" +
                    "Instead, its possible type(s) are:\n"+sub.type);
                 break;
               case RCLOSURE: case CLOSURE:
                 type=sub.type.closure();
-                if (type==EMPTY) e=new ErrorType(sub.span(), label+" can be used only with a binary relation.\n" +
+                if (type==EMPTY) extraError=new ErrorType(sub.span(), label+" can be used only with a binary relation.\n" +
                    "Instead, its possible type(s) are:\n"+sub.type);
                 if (this==RCLOSURE) type=Type.make2(UNIV);
                 break;
@@ -178,7 +191,7 @@ public final class ExprUnary extends Expr {
                 type=Type.INT;
                 break;
               case CAST2INT:
-                if (!sub.type.hasArity(1)) e=new ErrorType(sub.span(), "int[] can be used only with a unary set.\n" +
+                if (!sub.type.hasArity(1)) extraError=new ErrorType(sub.span(), "int[] can be used only with a unary set.\n" +
                    "Instead, its possible type(s) are:\n"+sub.type);
                 type=Type.INT;
                 break;
@@ -186,7 +199,7 @@ public final class ExprUnary extends Expr {
                 type=SIGINT.type;
                 break;
             }
-            return new ExprUnary(pos, this, sub, type, ((weight<sub.weight) ? sub.weight : weight), errors.appendIfNotNull(e));
+            return new ExprUnary(pos, this, sub, type, ((weight<sub.weight)?sub.weight:weight), errors.appendIfNotNull(extraError));
         }
 
         /** Returns the human readable label for this operator */
@@ -201,6 +214,9 @@ public final class ExprUnary extends Expr {
         ErrorWarning w1=null, w2=null;
         Type s=p;
         switch(op) {
+          case NOT:
+            s=Type.FORMULA;
+            break;
           case TRANSPOSE: case RCLOSURE: case CLOSURE:
             if (op!=Op.TRANSPOSE && type.join(type).hasNoTuple())
                w1=new ErrorWarning(pos, this+" is redundant since its domain and range are disjoint: "+sub.type.extract(2));
@@ -216,14 +232,11 @@ public final class ExprUnary extends Expr {
           case CAST2SIGINT:
             s=Type.INT;
             break;
-          case NOT:
-            s=Type.FORMULA;
-            break;
           case CAST2INT:
             s=sub.type.intersect(SIGINT.type);
             if (s.hasNoTuple())
                w1=new ErrorWarning(sub.span(),
-               "This expression should contain integer atoms.\nInstead, its possible type(s) are:\n"+sub.type.extract(1));
+               "This expression should contain Int atoms.\nInstead, its possible type(s) are:\n"+sub.type.extract(1));
             break;
         }
         Expr sub = this.sub.resolve(s, warns);
