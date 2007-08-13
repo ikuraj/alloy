@@ -61,6 +61,7 @@ public final class ExpQuant extends Exp {
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
         for(ExpDecl d: decls) {
             Expr v = Context.resolveExpSet(d.expr.check(cx, warnings), warnings);
+            // If the variable declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (v.mult==0 && v.type.arity()==1) v=ExprUnary.Op.ONEOF.make(null, v);
             List<Expr> disjoints = (d.disjoint!=null && d.names.size()>1) ? (new ArrayList<Expr>(d.names.size())) : null;
             for(ExpName n: d.names) {

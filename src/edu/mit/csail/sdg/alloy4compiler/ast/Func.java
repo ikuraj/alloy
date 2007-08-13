@@ -83,6 +83,7 @@ public final class Func {
             returnDecl = returnDecl.cset();
             if (returnDecl.ambiguous) returnDecl=returnDecl.resolve(Type.removesBoolAndInt(returnDecl.type));
             if (!returnDecl.errors.isEmpty()) throw returnDecl.errors.get(0);
+            // If the return declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (returnDecl.mult==0 && returnDecl.type.arity()==1) returnDecl=ExprUnary.Op.ONEOF.make(null, returnDecl);
             this.returnDecl = returnDecl;
             Expr none = Sig.NONE;
