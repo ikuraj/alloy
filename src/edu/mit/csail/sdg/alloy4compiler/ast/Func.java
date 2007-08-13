@@ -132,20 +132,9 @@ public final class Func {
      */
     public Expr getBody() { return body; }
 
-    /**
-     * Convenience method that constructs an ExprCall object representing "this[args...]"
-     * @throws ErrorSyntax if the number of arguments does not match the number of parameters
-     * @throws ErrorSyntax if one or more argument is a multiplicity expression
-     * @throws ErrorType   if one or more argument cannot possibly have the correct legal type
-     */
-    public Expr call(Expr... args) throws Err {
-        Pos p=Pos.UNKNOWN;
-        for(Expr a:args) p=p.merge(a.span());
-        return ExprCall.make(p, this, Util.asList(args), 0);
-    }
+    /** Convenience method that calls this function with the given list of arguments. */
+    public Expr call(Expr... args) { return ExprCall.make(null, this, Util.asList(args), 0); }
 
     /** Returns a human-readable description for this predicate/function */
-    @Override public final String toString() {
-        return (isPred ? "pred " : "fun ") + label;
-    }
+    @Override public final String toString() { return (isPred ? "pred " : "fun ") + label; }
 }
