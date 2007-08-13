@@ -20,16 +20,19 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.JoinableList;
-import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
@@ -45,6 +48,19 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 public abstract class Expr {
 
+    /** This is an empty collection which ignores all modification attempts. */
+    private static final Collection<ErrorWarning> sink = new AbstractCollection<ErrorWarning>() {
+        @Override public final int size() { return 0; }
+        @Override public final boolean add(ErrorWarning x) { return true; } // This class pretends add() succeeds
+        @Override public final Iterator<ErrorWarning> iterator() {
+            return new Iterator<ErrorWarning>() {
+                public final boolean hasNext() { return false; }
+                public final ErrorWarning next() { throw new NoSuchElementException(); }
+                public final void remove() { throw new UnsupportedOperationException(); }
+            };
+        }
+    };
+
     /** Accepts the return visitor. */
     abstract Object accept(VisitReturn visitor) throws Err;
 
@@ -55,8 +71,20 @@ public abstract class Expr {
      *
      * <p> On success: the return value (and all its subnodes) will be well-typed and unambiguous
      * <p> On failure: the return value's "errors" list will be nonempty
+     *
+     * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
      */
     public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings);
+
+    /**
+     * If this expression is ambiguous, resolve it and return an unambiguous copy of this Expr, else return the Expr as-is.
+     * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
+     * (Note: it's possible for t to be EMPTY, or even ambiguous!)
+     *
+     * <p> On success: the return value (and all its subnodes) will be well-typed and unambiguous
+     * <p> On failure: the return value's "errors" list will be nonempty
+     */
+    public final Expr resolve(Type t) { return resolve(t, sink); }
 
     /** The filename, line, and column position in the original Alloy model file (cannot be null). */
     public final Pos pos;

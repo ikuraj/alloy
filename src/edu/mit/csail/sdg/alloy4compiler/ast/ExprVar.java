@@ -23,7 +23,6 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 
 /**
@@ -61,8 +60,8 @@ public final class ExprVar extends Expr {
     }
 
     /** Constructs an ExprVar object */
-    private ExprVar(Pos pos, String label, Expr expr, Err extraError) {
-        super(pos, false, expr.type, 0, expr.weight, expr.errors.appendIfNotNull(extraError));
+    private ExprVar(Pos pos, String label, Expr expr) {
+        super(pos, false, expr.type, 0, expr.weight, expr.errors);
         this.label = (label==null ? "" : label);
         this.expr = expr;
     }
@@ -74,9 +73,8 @@ public final class ExprVar extends Expr {
      * @param expr - the quantification/substitution expression for this variable; <b> it must already be fully resolved </b>
      */
     public static ExprVar make(Pos pos, String label, Expr expr) {
-        ErrorType e=null;
-        if (expr.errors.isEmpty() && expr.ambiguous) e=new ErrorType(expr.span(), "This expression is ambiguous.");
-        return new ExprVar(pos, label, expr, e);
+        if (expr.ambiguous) expr=expr.resolve(expr.type);
+        return new ExprVar(pos, label, expr);
     }
 
     /** {@inheritDoc} */

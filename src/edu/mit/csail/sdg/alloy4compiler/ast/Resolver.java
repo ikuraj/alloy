@@ -20,44 +20,11 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import java.util.Collection;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
 
 public final class Resolver {
-
-    /**
-     * Resolves the expression "expr".
-     * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
-     * (Note: it's possible for t to be EMPTY, or even ambiguous!)
-     *
-     * <p> Postcondition: RESULT.errors.size()>0  or  "RESULT and all its subnodes are fully resolved and unambiguous"
-     */
-    public static Expr resolve(Expr expr, Type t, Collection<ErrorWarning> warnings) {
-        return expr.resolve(t, warnings);
-    }
-
-    /**
-     * Helper method that throws a type error if x cannot possibly have any legal type or if x is ambiguous.
-     * Otherwise it returns x.
-     *
-     * @throws ErrorType if X is not already unambiguously typechecked
-     */
-    static Expr unambiguous(final Expr x) throws Err {
-        if (x.errors.size()>0) throw x.errors.get(0);
-        final Type t=x.type;
-        if (!t.is_bool && !t.is_int && t.size()==0)
-            throw new ErrorType(x.span(), "This expression fails to be typechecked.");
-        if (t.size()==0) {
-            if (!t.is_bool || !t.is_int) return x;
-        } else {
-            if (!t.is_bool && !t.is_int && t.arity()>0) return x;
-        }
-        throw new ErrorType(x.span(), "This expression is ambiguous.\nIt has the following possible types:\n"+t);
-    }
 
     /**
      * Helper method that adds a "one of" in front of the expression X if X is unary and is not already a multiplicity constraint.
