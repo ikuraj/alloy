@@ -94,7 +94,7 @@ public final class ExprBuiltin extends Expr {
         if (args.size()<2)
             errs=errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
         for(int i=0; i<args.size(); i++) {
-            Expr a = args.get(i).cset();
+            Expr a = args.get(i).typecheck_as_set();
             ambiguous = ambiguous || a.ambiguous;
             weight = weight + a.weight;
             if (a.mult!=0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
@@ -121,7 +121,7 @@ public final class ExprBuiltin extends Expr {
         boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
             Expr x=this.args.get(i);
-            Expr y=x.resolve(p, warns).cset();
+            Expr y=x.resolve(p, warns).typecheck_as_set();
             if (x!=y) changed=true;
             args.add(y);
         }

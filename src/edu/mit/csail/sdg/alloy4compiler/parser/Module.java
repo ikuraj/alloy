@@ -343,6 +343,11 @@ public final class Module {
             "Within the same file, a function/predicate cannot have the same name as a polymorphic type.");
         if (this.sigs.containsKey(name)) throw new ErrorSyntax(pos,
             "Within the same file, a function/predicate cannot have the same name as another signature.");
+        for(int i=0; i<params.size(); i++)
+          for(int j=0; j<params.size(); j++)
+            if (i!=j && params.get(i).label.equals(params.get(j).label))
+               throw new ErrorSyntax(params.get(j).span(), "The variable \""+params.get(i).label
+               +"\" cannot appear more than once in a predicate/function's parameter list.");
         String fullname = (path.length()==0 ? "this/" : path+"/") + name;
         Func func=new Func(pos, fullname, params, returnType);
         SafeList<Func> list=funs.get(name);

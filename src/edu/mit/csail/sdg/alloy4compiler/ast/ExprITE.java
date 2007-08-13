@@ -117,7 +117,7 @@ public final class ExprITE extends Expr {
             }
             break;
         }
-        cond = cond.cform();
+        cond = cond.typecheck_as_formula();
         return new ExprITE(cond, left, right, c, errs.join(cond.errors).join(left.errors).join(right.errors));
     }
 

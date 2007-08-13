@@ -176,7 +176,7 @@ public final class ExprCall extends Expr {
         }
         for(int i=0; i<args.size(); i++) {
             final int a = (i<fun.params.size()) ? fun.params.get(i).type.arity() : 0;
-            final Expr x = args.get(i).cset();
+            final Expr x = args.get(i).typecheck_as_set();
             ambiguous = ambiguous || x.ambiguous;
             errs = errs.join(x.errors);
             extraWeight = extraWeight + x.weight;
@@ -215,7 +215,8 @@ public final class ExprCall extends Expr {
         long w=0;
         for(int i=0; i<this.args.size(); i++) {
             Expr x=this.args.get(i);
-            Expr y=x.resolve(fun.params.get(i).type, warns).cset(); // Use the function's param type to narrow down the choices
+            // Use the function's param type to narrow down the choices
+            Expr y=x.resolve(fun.params.get(i).type, warns).typecheck_as_set();
             if (x!=y) changed=true;
             args.add(y);
             w = w + y.weight;

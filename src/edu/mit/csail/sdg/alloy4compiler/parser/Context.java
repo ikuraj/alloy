@@ -25,14 +25,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Env;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
-import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
@@ -184,12 +182,11 @@ public final class Context {
     }
 
     /**
-     * Typecheck a node bottom-up and then top-down in order to fully resolve it to be a set/relation expression
-     * NOTE: result may have type==null or even type!=SET
-     * @return a possibly-copied version of X that is identical to X, except that all the type information are filled in
-     * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
+     * Fully resolve a node.
+     * <p> On success: a possibly-copied version of X that is identical to X, except that all the type information are filled in
+     * <p> On failure: the return value will have a nonempty error list
      */
-    public static final Expr resolveExp(Expr x, Collection<ErrorWarning> warns) throws Err {
+    public static final Expr resolveExp(Expr x, Collection<ErrorWarning> warns) {
         Type t=x.type;
         if (t.arity()<0) {
             // If we can have multiple arities, but some of them are empty, then remove the empty ones.
@@ -202,18 +199,12 @@ public final class Context {
     }
 
     /**
-     * Typecheck a node bottom-up and then top-down in order to fully resolve it to be a set/relation expression
-     * NOTE: result may have type==null or even type!=SET
-     * @return a possibly-copied version of X that is identical to X, except that all the type information are filled in
-     * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
+     * Fully resolve a node to be a set or relation
+     * <p> On success: a possibly-copied version of X that is identical to X, except that all the type information are filled in
+     * <p> On failure: the return value will have a nonempty error list
      */
-    public static final Expr resolveExpSet(Expr x, Collection<ErrorWarning> warns) throws Err {
-        if (x.errors.isEmpty() && x.type.size()==0) {
-            if (!Type.INT2SIGINT || !x.type.is_int)
-                return NOOP.make(null, x, 0, new ErrorType(x.span(),
-                        "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+x.type));
-            x=x.cast2sigint();
-        }
+    public static final Expr resolveExpSet(Expr x, Collection<ErrorWarning> warns) {
+        x=x.typecheck_as_set();
         Type t=Type.removesBoolAndInt(x.type);
         if (t.arity()<0) {
             // If we can have multiple arities, but some of them are empty, then remove the empty ones.
@@ -222,34 +213,25 @@ public final class Context {
             if (tt.size()>0) t=tt;
         }
         x=x.resolve(t, warns);
-        return x;
+        return x.typecheck_as_set();
     }
 
     /**
-     * Typecheck a node bottom-up and then top-down in order to fully resolve it to be an integer expression
-     * NOTE: result may have type==null or even type!=INT
-     * @return a possibly-copied version of X that is identical to X, except that all the type information are filled in
-     * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
+     * Fully resolve a node to be an integer expression
+     * <p> On success: a possibly-copied version of X that is identical to X, except that all the type information are filled in
+     * <p> On failure: the return value will have a nonempty error list
      */
-    public static final Expr resolveExpInt(Expr x, Collection<ErrorWarning> warns) throws Err {
-        if (x.errors.isEmpty() && !x.type.is_int) {
-           if (!Type.SIGINT2INT || !x.type.intersects(SIGINT.type))
-               return NOOP.make(null, x, 0, new ErrorType(x.span(),
-                  "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+x.type));
-           x=x.cast2int();
-        }
-        x=x.resolve(Type.INT, warns);
-        return x;
+    public static final Expr resolveExpInt(Expr x, Collection<ErrorWarning> warns) {
+        return x.typecheck_as_int().resolve(Type.INT, warns).typecheck_as_int();
     }
 
     /**
-     * Typecheck a node bottom-up and then top-down in order to fully resolve it to be a formula
-     * NOTE: result may have type==null or even type!=FORMULA
-     * @return a possibly-copied version of X that is identical to X, except that all the type information are filled in
-     * @throws ErrorType if the node or any of its subnodes cannot be fully resolved unambiguously
+     * Fully resolve a node to be a formula
+     * <p> On success: a possibly-copied version of X that is identical to X, except that all the type information are filled in
+     * <p> On failure: the return value will have a nonempty error list
      */
-    public static final Expr resolveExpFormula(Expr x, Collection<ErrorWarning> warns) throws Err {
-        return x.resolve(Type.FORMULA, warns);
+    public static final Expr resolveExpFormula(Expr x, Collection<ErrorWarning> warns) {
+        return x.typecheck_as_formula().resolve(Type.FORMULA, warns).typecheck_as_formula();
     }
 
 }

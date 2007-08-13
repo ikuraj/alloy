@@ -21,18 +21,18 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import edu.mit.csail.sdg.alloy4.ConstList;
+import java.util.LinkedHashMap;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /** Mutable; reresents a signature. */
 
@@ -114,7 +114,7 @@ public abstract class Sig extends Expr {
 
     /** Constructs a new builtin PrimSig. */
     private Sig(String label) {
-        super(Pos.UNKNOWN, null, null);
+        super(Pos.UNKNOWN, null);
         this.builtin=true;
         this.isAbstract=false;
         this.isLone=false;
@@ -124,8 +124,8 @@ public abstract class Sig extends Expr {
     }
 
     /** Constructs a new PrimSig or SubsetSig. */
-    private Sig(Pos pos, Type type, String label, boolean abs, boolean lone, boolean one, boolean some, PrimSig search) throws ErrorSyntax {
-        super(pos, type, search);
+    private Sig(Pos pos, Type type, String label, boolean abs, boolean lone, boolean one, boolean some) throws Err {
+        super(pos, type);
         if ((lone && one) || (lone && some) || (one && some))
             throw new ErrorSyntax(this.pos, "Sig \""+label+"\" can include at most one of the three multiplicities: lone, one, and some.");
         this.builtin=false;
@@ -149,17 +149,17 @@ public abstract class Sig extends Expr {
     public static final class PrimSig extends Sig {
 
         /**
-         * Stores its immediate children sigs (not including "none")
+         * Stores its immediate children sigs (not including NONE)
          * <p> Note: if this==UNIV, then this list will always be empty, since we don't keep track of UNIV's children
          */
         private final SafeList<PrimSig> children = new SafeList<PrimSig>();
 
         /**
-         * Returns its immediate children sigs (not including "none")
+         * Returns its immediate children sigs (not including NONE)
          * <p> Note: if this==UNIV, then this method will throw an exception, since we don't keep track of UNIV's children
          */
         public SafeList<PrimSig> children() throws Err {
-            if (this==UNIV) throw new ErrorFatal("UNIV.children() cannot be called");
+            if (this==UNIV) throw new ErrorFatal("Internal error (cannot enumerate the subsigs of UNIV)");
             return children.dup();
         }
 
@@ -187,16 +187,17 @@ public abstract class Sig extends Expr {
          * @param lone - true iff this sig has the "lone" multiplicity
          * @param one - true iff this sig has the "one" multiplicity
          * @param some - true iff this sig has the "some" multiplicity
-         * @param isLeaf - true if all future subsigs shall have the same "type" as this sig
+         * @param isLeaf - true if all its future subsigs shall have the same "type" as this sig
          *
          * @throws ErrorSyntax  if the signature has two or more multiplicities
-         * @throws ErrorType if you attempt to extend the builtin sig "NONE"
+         * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
          */
-        public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws ErrorType, ErrorSyntax {
-            super(pos, null, label, isAbstract, lone, one, some, parent);
-            if (parent==null) parent=UNIV;
+        public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws Err {
+            super(pos, (parent!=null && parent.hint_isLeaf) ? parent.type : null, label, isAbstract, lone, one, some);
             if (parent==NONE) throw new ErrorType(pos,"sig \""+this+"\" cannot extend the builtin sig \"none\"");
-            if (parent!=UNIV) parent.children.add(this);
+            if (parent==SIGINT) throw new ErrorType(pos,"sig \""+this+"\" cannot extend the builtin sig \"Int\"");
+            if (parent==SEQIDX) throw new ErrorType(pos,"sig \""+this+"\" cannot extend the builtin sig \"seq/Int\"");
+            if (parent==null) parent=UNIV; else if (parent!=UNIV) parent.children.add(this);
             this.parent = parent;
             this.hint_isLeaf = isLeaf || (parent.hint_isLeaf);
         }
@@ -234,8 +235,8 @@ public abstract class Sig extends Expr {
          * In particular, if this extends that, then return that.
          */
         public PrimSig leastParent(PrimSig that) {
+            if (isSubtypeOf(that)) return that;
             PrimSig me=this;
-            if (me.isSubtypeOf(that)) return that;
             while(true) {
                 if (that.isSubtypeOf(me)) return me;
                 me=me.parent;
@@ -254,11 +255,11 @@ public abstract class Sig extends Expr {
         public final ConstList<Sig> parents;
 
         /** Computes the type for this sig. */
-        private static Type getType(Pos pos, String label, Iterable<Sig> parents) throws ErrorType {
+        private static Type getType(Pos pos, String label, Iterable<Sig> parents) throws Err {
             Type ans=null;
             if (parents!=null) {
                 for(Sig parent: parents) {
-                    if (parent==NONE) throw new ErrorType(pos,"Sig \""+label+"\" cannot be declared to have builtin sig \"none\" as its parent.");
+                    if (parent==NONE) throw new ErrorType(pos, "Sig \""+label+"\" cannot be declared to have builtin sig \"none\" as its parent.");
                     if (ans==null) ans=parent.type; else ans=ans.unionWithCommonArity(parent.type);
                 }
             }
@@ -275,11 +276,11 @@ public abstract class Sig extends Expr {
          * @param one - true iff this sig has the "one" multiplicity
          * @param some - true iff this sig has the "some" multiplicity
          *
-         * @throws ErrorSyntax  if the signature has two or more multiplicities
-         * @throws ErrorType if you attempt to extend the builtin sig NONE
+         * @throws ErrorSyntax if the signature has two or more multiplicities
+         * @throws ErrorType if parents.contains(NONE)
          */
-        public SubsetSig(Pos pos, Collection<Sig> parents, String label, boolean lone, boolean one, boolean some) throws ErrorSyntax, ErrorType {
-            super(pos, getType(pos,label,parents), label, false, lone, one, some, null);
+        public SubsetSig(Pos pos, Collection<Sig> parents, String label, boolean lone, boolean one, boolean some) throws Err {
+            super(pos, getType(pos,label,parents), label, false, lone, one, some);
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
             if (parents!=null) for(Sig parent:parents) if (!temp.contains(parent)) temp.add(parent);
             if (temp.size()==0) temp.add(UNIV);
@@ -305,6 +306,8 @@ public abstract class Sig extends Expr {
         /** Constructs a new Field object. */
         private Field(Pos pos, Sig sig, String label, ExprVar var, Expr bound) throws Err {
             super(pos, false, sig.type.product(bound.type), 0, 0, null);
+            if (!bound.errors.isEmpty())
+                throw bound.errors.get(0);
             if (bound.hasCall())
                 throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             this.sig=sig;
@@ -324,7 +327,7 @@ public abstract class Sig extends Expr {
                 out.append(label);
             } else {
                 for(int i=0; i<indent; i++) { out.append(' '); }
-                out.append(toString()).append(" with type=").append(type).append('\n');
+                out.append("field ").append(sig).append(" <: ").append(label).append(" with type=").append(type).append('\n');
             }
         }
 
@@ -355,14 +358,16 @@ public abstract class Sig extends Expr {
      * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
      *
      * @throws ErrorSyntax  if the sig is one of the builtin sig
-     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      * @throws ErrorSyntax  if the bound contains a predicate/function call
+     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field addField(Pos pos, String label, Expr bound) throws Err {
-        if (builtin) throw new ErrorSyntax("Builtin sig \""+this+"\" cannot have fields.");
-        bound=bound.cset();
-        if (bound.ambiguous) bound=bound.resolve(Type.removesBoolAndInt(bound.type));
-        if (!bound.errors.isEmpty()) throw bound.errors.get(0);
+        if (builtin) throw new ErrorSyntax("Builtin sig \""+label+"\" cannot have fields.");
+        bound=bound.typecheck_as_set();
+        if (bound.ambiguous) {
+            bound=bound.resolve(Type.removesBoolAndInt(bound.type));
+            bound=bound.typecheck_as_set();
+        }
         final Field f=new Field(pos, this, label, null, bound);
         fields.add(f);
         return f;
@@ -382,10 +387,12 @@ public abstract class Sig extends Expr {
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      */
     public final Field addTrickyField(Pos pos, String label, ExprVar x, Expr bound) throws Err {
-        if (builtin) throw new ErrorSyntax("Builtin sig \""+this+"\" cannot have fields.");
-        bound=bound.cset();
-        if (bound.ambiguous) bound=bound.resolve(Type.removesBoolAndInt(bound.type));
-        if (!bound.errors.isEmpty()) throw bound.errors.get(0);
+        if (builtin) throw new ErrorSyntax("Builtin sig \""+label+"\" cannot have fields.");
+        bound=bound.typecheck_as_set();
+        if (bound.ambiguous) {
+            bound=bound.resolve(Type.removesBoolAndInt(bound.type));
+            bound=bound.typecheck_as_set();
+        }
         final Field f=new Field(pos, this, label, x, bound);
         fields.add(f);
         return f;

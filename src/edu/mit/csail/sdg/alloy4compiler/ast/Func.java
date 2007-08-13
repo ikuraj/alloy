@@ -31,6 +31,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 /**
  * Mutable; represents a predicate or function.
  *
+ * <p> <b>Invariant:</b>  the list of parameters do not contain duplicates
  * <p> <b>Invariant:</b>  none of the parameter declaration contains a predicate/function call
  * <p> <b>Invariant:</b>  the return type declaration does not contain a predicate/function call
  */
@@ -66,7 +67,7 @@ public final class Func {
      * @param vars - the list of parameters (can be null or an empty list if this predicate/function has no parameters)
      * @param returnDecl - the return declaration (null if this is a predicate rather than a function)
      *
-     * @throws ErrorType if returnType!=null and returnType is not already unambiguously typechecked to be a set/relation
+     * @throws ErrorType if returnType!=null and returnType cannot be unambiguously typechecked to be a set/relation
      * @throws ErrorSyntax if the list of parameters contain duplicates
      * @throws ErrorSyntax if at least one of the parameter declaration contains a predicate/function call
      * @throws ErrorSyntax if this function's return type declaration contains a predicate/function call
@@ -80,8 +81,11 @@ public final class Func {
             this.body = (this.returnDecl = ExprConstant.FALSE);
         }
         else {
-            returnDecl = returnDecl.cset();
-            if (returnDecl.ambiguous) returnDecl=returnDecl.resolve(Type.removesBoolAndInt(returnDecl.type));
+            returnDecl = returnDecl.typecheck_as_set();
+            if (returnDecl.ambiguous) {
+                returnDecl = returnDecl.resolve(Type.removesBoolAndInt(returnDecl.type));
+                returnDecl = returnDecl.typecheck_as_set();
+            }
             if (!returnDecl.errors.isEmpty()) throw returnDecl.errors.get(0);
             // If the return declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (returnDecl.mult==0 && returnDecl.type.arity()==1) returnDecl=ExprUnary.Op.ONEOF.make(null, returnDecl);
@@ -94,31 +98,43 @@ public final class Func {
         for(int i=0; i<this.params.size(); i++)
           for(int j=i+1; j<this.params.size(); j++)
             if (this.params.get(i)==this.params.get(j))
-              throw new ErrorSyntax(pos, "The same variable cannot appear more than once in a predicate/function's parameter list.");
+              throw new ErrorSyntax(this.params.get(j).span(),
+                "The same variable cannot appear more than once in a predicate/function's parameter list.");
         for(int i=0; i<this.params.size(); i++)
            if (this.params.get(i).expr.hasCall())
-              throw new ErrorSyntax(this.params.get(i).expr.span(), "Parameter declaration cannot contain predicate/function calls.");
+              throw new ErrorSyntax(this.params.get(i).expr.span(),
+                "Parameter declaration cannot contain predicate/function calls.");
         if (this.returnDecl.hasCall())
-            throw new ErrorSyntax(returnDecl.span(), "Return type declaration cannot contain predicate/function calls.");
+            throw new ErrorSyntax(returnDecl.span(),
+                "Return type declaration cannot contain predicate/function calls.");
     }
 
     /** The predicate/function body; never null. */
     private Expr body;
 
     /**
-     * Changes the method body; "newBody" must already be fully typechecked.
-     * The expression should have no free variables, except possibly the list of function parameters.
+     * Changes the method body.
      *
-     * @throws ErrorType if the newBody's type is incompatible with the original declared type of this predicate/function
+     * <b>Precondition:</b> The expression should have no free variables,
+     * except possibly the list of function parameters.
+     *
+     * @throws ErrorType if newBody cannot be unambiguously resolved
+     * @throws ErrorType if newBody's type is incompatible with the original declared type of this predicate/function
      */
     public void setBody(Expr newBody) throws Err {
         if (isPred) {
-            newBody = newBody.cform();
-            if (newBody.ambiguous) newBody=newBody.resolve(Type.FORMULA);
+            newBody = newBody.typecheck_as_formula();
+            if (newBody.ambiguous) {
+                newBody = newBody.resolve(Type.FORMULA);
+                newBody = newBody.typecheck_as_formula();
+            }
             if (newBody.errors.size()>0) throw newBody.errors.get(0);
         } else {
-            newBody = newBody.cset();
-            if (newBody.ambiguous) newBody=newBody.resolve(Type.removesBoolAndInt(newBody.type));
+            newBody = newBody.typecheck_as_set();
+            if (newBody.ambiguous) {
+                newBody = newBody.resolve(Type.removesBoolAndInt(newBody.type));
+                newBody = newBody.typecheck_as_set();
+            }
             if (newBody.errors.size()>0) throw newBody.errors.get(0);
             if (newBody.type.arity() != returnDecl.type.arity())
                 throw new ErrorType(newBody.span(),

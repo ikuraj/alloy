@@ -151,19 +151,8 @@ public abstract class Expr {
         this.errors=errors;
     }
 
-    /**
-     * This must only be called by Sig's constructor.
-     * <p> if search!=null, we will look at "search", "search.parent()", "search.parent().parent()"... to try to find
-     * the oldest parent whose "hint_isLeaf" flag is true (and if so, we'll use that node's type as the type)
-     */
-    Expr (Pos pos, Type type, PrimSig search) {
-        while (search!=null) {
-            if (search.hint_isLeaf) {
-                type=search.type;
-                break; // We can break early, because if an older node is also leaf, then this node would have inherited it too
-            }
-            search=search.parent;
-        }
+    /** This must only be called by Sig's constructor. */
+    Expr (Pos pos, Type type) {
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
         this.ambiguous=false;
         this.type=(type==null || type==EMPTY) ? Type.make((PrimSig)this) : type;
@@ -210,14 +199,15 @@ public abstract class Expr {
     // Below are convenience methods for building up expressions from subexpressions. //
     //================================================================================//
 
-    final Expr cform() {
+    /** Converts x into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */
+    public final Expr typecheck_as_formula() {
         if (!errors.isEmpty() || type.is_bool) return this;
         String msg = "This must be a formula expression.\nInstead, it has the following possible type(s):\n" + type;
         return NOOP.make(null, this, 0, new ErrorType(span(), msg));
     }
 
     /** Converts x into an "integer expression" if possible; otherwise, returns an Expr with a nonempty error list */
-    final Expr cint() {
+    public final Expr typecheck_as_int() {
         if (!errors.isEmpty() || type.is_int) return this;
         if (Type.SIGINT2INT && type.intersects(SIGINT.type)) return cast2int();
         String msg = "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+type;
@@ -225,7 +215,7 @@ public abstract class Expr {
     }
 
     /** Converts x into a "set or relation" if possible; otherwise, returns an Expr with a nonempty error list */
-    final Expr cset() {
+    public final Expr typecheck_as_set() {
         if (!errors.isEmpty() || type.size()>0) return this;
         if (Type.INT2SIGINT && type.is_int) return cast2sigint();
         String msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+type;

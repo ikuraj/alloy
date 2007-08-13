@@ -158,10 +158,10 @@ public final class ExprUnary extends Expr {
             extraError=null;
             switch(this) {
                case NOOP: break;
-               case NOT: sub=sub.cform(); break;
-               case CAST2SIGINT: sub=sub.cint(); break;
-               case CAST2INT: if (sub.type==Type.INT) return sub; else {sub=sub.cset(); break;} // Shortcut if it is already integer
-               default: sub=sub.cset();
+               case NOT: sub=sub.typecheck_as_formula(); break;
+               case CAST2SIGINT: sub=sub.typecheck_as_int(); break;
+               case CAST2INT: if (sub.type==Type.INT) return sub; else {sub=sub.typecheck_as_set(); break;} // Shortcut if already integer
+               default: sub=sub.typecheck_as_set();
             }
             Type type=sub.type;
             if (sub.errors.isEmpty()) switch(this) {

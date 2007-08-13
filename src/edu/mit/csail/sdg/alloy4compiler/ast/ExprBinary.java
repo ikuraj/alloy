@@ -199,13 +199,13 @@ public final class ExprBinary extends Expr {
         public final Expr make(Pos pos, Expr left, Expr right) {
             switch(this) {
               case LT: case LTE: case GT: case GTE: {
-                left = left.cint();
-                right = right.cint();
+                left = left.typecheck_as_int();
+                right = right.typecheck_as_int();
                 break;
               }
               case AND: case OR: case IFF: {
-                left = left.cform();
-                right = right.cform();
+                left = left.typecheck_as_formula();
+                right = right.typecheck_as_formula();
                 break;
               }
               case PLUS: case MINUS: case EQUALS: {
@@ -222,8 +222,8 @@ public final class ExprBinary extends Expr {
                 break;
               }
               default: {
-                left=left.cset();
-                right=right.cset();
+                left=left.typecheck_as_set();
+                right=right.typecheck_as_set();
               }
             }
             Err e=null;

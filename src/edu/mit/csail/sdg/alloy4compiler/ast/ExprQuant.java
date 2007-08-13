@@ -139,7 +139,7 @@ public final class ExprQuant extends Expr {
          */
         public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) {
             Type t = this==SUM ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
-            if (this!=SUM) sub=sub.cform(); else sub=sub.cint();
+            if (this!=SUM) sub=sub.typecheck_as_formula(); else sub=sub.typecheck_as_int();
             JoinableList<Err> errs = sub.errors;
             if (sub.mult!=0) errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             long weight = sub.weight;
