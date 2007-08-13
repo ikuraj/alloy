@@ -26,13 +26,8 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
 
 public final class Resolver {
 
-    /**
-     * Helper method that adds a "one of" in front of the expression X if X is unary and is not already a multiplicity constraint.
-     *
-     * @throws ErrorType if X is not already unambiguously typechecked
-     */
+    /** Adds a "one of" in front of the expression X if X is unary and is not already a multiplicity constraint. */
     public static Expr addOne(Expr x) {
-        //unambiguous(x);
         if (x instanceof ExprUnary) switch(((ExprUnary)x).op) {
             case SETOF: case ONEOF: case LONEOF: case SOMEOF: return x;
         }
@@ -41,45 +36,24 @@ public final class Resolver {
 
     /** Converts x into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */
     public static Expr cform(Expr x) {
-        String msg;
-        if (!x.errors.isEmpty())
-            return x;
-        else if (x.type==Type.EMPTY)
-            msg = "This expression failed to be typechecked.";
-        else if (!x.type.is_bool)
-            msg = "This must be a formula expression.\nInstead, it has the following possible type(s):\n" + x.type;
-        else
-            return x;
+        if (!x.errors.isEmpty() || x.type.is_bool) return x;
+        String msg = "This must be a formula expression.\nInstead, it has the following possible type(s):\n" + x.type;
         return NOOP.make(null, x, 0, new ErrorType(x.span(), msg));
     }
 
-    /** Converts x into a "integer expression" if possible; otherwise, returns an Expr with a nonempty error list */
+    /** Converts x into an "integer expression" if possible; otherwise, returns an Expr with a nonempty error list */
     public static Expr cint(Expr x) {
-        if (!x.type.is_int && Type.SIGINT2INT && x.type.intersects(SIGINT.type)) return x.cast2int();
-        String msg;
-        if (!x.errors.isEmpty())
-            return x;
-        else if (x.type==Type.EMPTY)
-            msg = "This expression failed to be typechecked.";
-        else if (!x.type.is_int)
-            msg = "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+x.type;
-        else
-            return x;
+        if (!x.errors.isEmpty() || x.type.is_int) return x;
+        if (Type.SIGINT2INT && x.type.intersects(SIGINT.type)) return x.cast2int();
+        String msg = "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+x.type;
         return NOOP.make(null, x, 0, new ErrorType(x.span(), msg));
     }
 
     /** Converts x into a "set or relation" if possible; otherwise, returns an Expr with a nonempty error list */
     public static Expr cset(Expr x) {
-        if (x.type.size()==0 && Type.INT2SIGINT && x.type.is_int) return x.cast2sigint();
-        String msg;
-        if (!x.errors.isEmpty())
-            return x;
-        else if (x.type==Type.EMPTY)
-            msg = "This expression failed to be typechecked.";
-        else if (x.type.size()==0)
-            msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+x.type;
-        else
-            return x;
+        if (!x.errors.isEmpty() || x.type.size()>0) return x;
+        if (Type.INT2SIGINT && x.type.is_int) return x.cast2sigint();
+        String msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+x.type;
         return NOOP.make(null, x, 0, new ErrorType(x.span(), msg));
     }
 }
