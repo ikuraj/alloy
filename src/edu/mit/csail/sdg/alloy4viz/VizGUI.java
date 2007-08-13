@@ -917,7 +917,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             if (myGraphPanel!=null) myGraphPanel.remakeAll();
             updateDisplay();
         }
-        
+
         if (key==ev_window) {
             windowmenu.removeAll();
             for(final String f:getInstances()) {

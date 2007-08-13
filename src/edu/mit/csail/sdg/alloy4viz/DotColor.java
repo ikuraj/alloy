@@ -85,7 +85,7 @@ public final class DotColor extends DotAttribute {
 
     /** Returns the list of values that the user is allowed to select from. */
     @SuppressWarnings("unchecked")
-	public static List<Object> values() { List raw = values; return raw; }
+    public static List<Object> values() { List raw = values; return raw; }
 
     /** Returns the icon to use, based on the given palette. */
     @Override public Icon getIcon(DotPalette pal) {

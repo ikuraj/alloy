@@ -326,7 +326,7 @@ public class MagicLayout {
         }
     }
 
-    
+
     /**
      * SYNTACTIC/VISUAL: Hide some things.
      */
