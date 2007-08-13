@@ -197,6 +197,12 @@ public final class StaticThemeReaderWriter {
     public static String dumpView(VizState view) throws IOException {
         StringWriter sw=new StringWriter();
         PrintWriter out=new PrintWriter(sw);
+        out.write("#default");
+        saveDotOrientation(out, view.getOrientation());
+        saveDotPalette(out, "nodetheme", view.getNodePalette());
+        saveDotPalette(out, "edgetheme", view.getEdgePalette());
+        out.write("\n");
+        out.write("#defaultnode" + saveNodeViz(view,null) + "\tprojected=\"no\"\n");
         Set<AlloyElement> types = new TreeSet<AlloyElement>();
         types.addAll(view.getOriginalModel().getTypes());
         types.addAll(view.getCurrentModel().getTypes());
@@ -217,6 +223,7 @@ public final class StaticThemeReaderWriter {
                 out.write("\tprojected=\"no\"\n");
             }
         }
+        out.write("#defaultedge" + saveEdgeViz(view,null) + "\n");
         types.clear();
         types.addAll(view.getOriginalModel().getRelations());
         types.addAll(view.getCurrentModel().getRelations());
@@ -500,6 +507,11 @@ public final class StaticThemeReaderWriter {
         if (value!=defaultValue) Util.encodeXMLs(out, " "+key+"=\"", value==null?"inherit":value.toString(), "\"");
     }
 
+    /** Writes regardless. */
+    private static void saveDotPalette(PrintWriter out, String key, DotPalette value) throws IOException {
+        Util.encodeXMLs(out, "\t"+key+"=\"", value.toString(), "\"");
+    }
+
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
@@ -510,6 +522,11 @@ public final class StaticThemeReaderWriter {
     /** Writes nothing if value==defaultValue. */
     private static void writeDotOrientation(PrintWriter out, DotOrientation value, DotOrientation defaultValue) throws IOException {
         if (value!=defaultValue) Util.encodeXMLs(out," orientation=\"",value==null?"inherit":value.toString(), "\"");
+    }
+
+    /** Writes regardless. */
+    private static void saveDotOrientation(PrintWriter out, DotOrientation value) throws IOException {
+        Util.encodeXMLs(out,"\torientation=\"", value.toString(), "\"");
     }
 
     /*============================================================================================*/
