@@ -79,7 +79,7 @@ public final class ExprITE extends Expr {
 
     /** Constructs a ExprITE expression. */
     private ExprITE(Expr cond, Expr left, Expr right, Type type, JoinableList<Err> errs) {
-        super(null, (left.ambiguous || right.ambiguous || cond.ambiguous), type, 0, cond.weight+left.weight+right.weight, errs);
+        super(null, (cond.ambiguous || left.ambiguous || right.ambiguous), type, 0, cond.weight+left.weight+right.weight, errs);
         this.cond=cond;
         this.left=left;
         this.right=right;
@@ -93,7 +93,7 @@ public final class ExprITE extends Expr {
      * @param right - the else-clause
      */
     public static Expr make(Expr cond, Expr left, Expr right) {
-        JoinableList<Err> errs = cond.errors.join(left.errors).join(right.errors);
+        JoinableList<Err> errs = emptyListOfErrors;
         if (cond.mult != 0) errs = errs.append(new ErrorSyntax(cond.span(), "Multiplicity expression not allowed here."));
         if (left.mult != 0) errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
         if (right.mult != 0) errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
@@ -113,13 +113,13 @@ public final class ExprITE extends Expr {
                     if (b.is_int && a.hasArity(1)) { right=right.cast2sigint(); continue; }
                 }
                 errs = errs.append(new ErrorType(cond.span().merge(right.span()).merge(left.span()),
-                    "The then-clause and the else-clause must match.\nIts then-clause has type: "
+                    "The then-clause and the else-clause must match.\nThe then-clause has type: "
                     + a + "\nand the else-clause has type: " + b));
             }
             break;
         }
         cond = cform(cond);
-        return new ExprITE(cond, left, right, c, errs);
+        return new ExprITE(cond, left, right, c, errs.join(cond.errors).join(left.errors).join(right.errors));
     }
 
     /** {@inheritDoc} */
