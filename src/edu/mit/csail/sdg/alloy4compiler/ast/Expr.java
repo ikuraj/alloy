@@ -90,27 +90,51 @@ public abstract class Expr {
     }
 
     /**
-     * If this expression is ambiguous, resolve it and return an unambiguous copy of this Expr, else return the Expr as-is.
+     * Resolve this expression if ambiguous.
      * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
      * (Note: it's possible for t to be EMPTY, or even ambiguous!)
      *
-     * <p> On success: the return value (and all its subnodes) will be well-typed and unambiguous
+     * <p> On success: the return value will be well-typed and unambiguous
      * <p> On failure: the return value's "errors" list will be nonempty
      *
      * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
      */
     public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings);
 
+    /**
+     * Convert the expression into a formula, then resolve it if ambiguous.
+     *
+     * <p> On success: the return value will be a well-typed unambiguous formula expression
+     * <p> On failure: the return value's "errors" list will be nonempty
+     *
+     * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
+     */
     public final Expr resolve_as_formula(Collection<ErrorWarning> warnings) {
         if (warnings==null) warnings=sink;
         return typecheck_as_formula().resolve(Type.FORMULA, warnings).typecheck_as_formula();
     }
 
+    /**
+     * Convert the expression into an integer, then resolve it if ambiguous.
+     *
+     * <p> On success: the return value will be a well-typed unambiguous integer expression
+     * <p> On failure: the return value's "errors" list will be nonempty
+     *
+     * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
+     */
     public final Expr resolve_as_int(Collection<ErrorWarning> warnings) {
         if (warnings==null) warnings=sink;
         return typecheck_as_int().resolve(Type.INT, warnings).typecheck_as_int();
     }
 
+    /**
+     * Convert the expression into a set or relation, then resolve it if ambiguous.
+     *
+     * <p> On success: the return value will be a well-typed unambiguous set or relation expression
+     * <p> On failure: the return value's "errors" list will be nonempty
+     *
+     * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
+     */
     public final Expr resolve_as_set(Collection<ErrorWarning> warnings) {
         if (warnings==null) warnings=sink;
         Expr x = typecheck_as_set();
