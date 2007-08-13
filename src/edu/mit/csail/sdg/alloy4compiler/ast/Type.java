@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
@@ -68,18 +69,25 @@ public final class Type implements Iterable<Type.ProductType> {
         /**
          * Constructs a new ProductType object consisting of the given array of PrimSig objects.
          * <p> Precondition:  "one of the sig in the list is NONE" iff "every sig in the list is NONE"
-         * <p> Note: it will use the array as-is, so the caller should give up the reference to the array.
+         * <p> Note: it will use the array as-is, so the caller should give up its reference to the array.
+         * <p> Note: this constructor promises it won't call any method or read anything from any of the sig(s).
          */
         private ProductType(PrimSig[] array) {
             types = array;
         }
 
-        /** Constructs a new ProductType made of exactly 1 PrimSig; it promises it will not call any method or read anything from "sig". */
+        /**
+         * Constructs a new ProductType made of exactly 1 PrimSig;
+         * <p> Note: this constructor promises it won't call any method or read anything from the sig.
+         */
         private ProductType(PrimSig sig) {
             types = new PrimSig[]{sig};
         }
 
-        /** Constructs a new ProductType made of exactly n references to the same PrimSig object. */
+        /**
+         * Constructs a new ProductType made of exactly n references to the same PrimSig object.
+         * <p> Note: this constructor promises it won't call any method or read anything from the sig.
+         */
         private ProductType(int n, PrimSig sig) {
             types = new PrimSig[n];
             for(int i=0; i<n; i++) { types[i] = sig; }
@@ -131,6 +139,7 @@ public final class Type implements Iterable<Type.ProductType> {
          */
         ProductType product(ProductType that) {
             final int n = types.length + that.types.length;
+            if (n<0) throw new OutOfMemoryError(); // This means the addition overflowed!
             if (this.isEmpty()) return (n==this.types.length) ? this : (new ProductType(n, Sig.NONE));
             if (that.isEmpty()) return (n==that.types.length) ? that : (new ProductType(n, Sig.NONE));
             final PrimSig[] ans = new PrimSig[n];
@@ -148,12 +157,13 @@ public final class Type implements Iterable<Type.ProductType> {
          * <p> Precondition: this.arity == that.arity
          */
         private ProductType intersect(ProductType that) {
+            if (isEmpty()) return this;
+            if (that.isEmpty()) return that;
             final int n = types.length;
-            if (n==0) return this;
             final PrimSig[] ans = new PrimSig[n];
             for(int i=0; i<n; i++) {
                 PrimSig c = this.types[i].intersect(that.types[i]);
-                if (c==Sig.NONE) { for(i=0; i<n; i++) ans[i]=c; break; }
+                if (c==Sig.NONE) { for(i=0; i<n; i++) { ans[i]=c; } break; }
                 ans[i]=c;
             }
             return new ProductType(ans);
@@ -172,12 +182,14 @@ public final class Type implements Iterable<Type.ProductType> {
         /**
          * Returns the relational join of this and that.
          *
-         * <p> Note: if (this.arity()==1 and that.arity()==1), we return a ProductType object with arity==0 instead.
          * <p> Note: if (this.rightmost() & that.leftmost()) is empty, we return NONE->..->NONE instead.
+         *
+         * <p> Precondition: (this.arity > 0) && (that.arity > 0) && (this.arity!=1 || that.arity!=1)
          */
         ProductType join(ProductType that) {
             int left=types.length, right=that.types.length, n=left+right-2;
-            if (left==0 || right==0 || n<=0) return zero;
+            if (left<=1 && right<=1) return zero; // We try to do the best we can, in the face of precondition violation
+            if (n<0) throw new OutOfMemoryError(); // This means the addition overflowed!
             final PrimSig a=types[left-1], b=that.types[0], c=a.intersect(b);
             if (c==Sig.NONE) return new ProductType(n, c);
             final PrimSig[] types = new PrimSig[n];
@@ -194,7 +206,7 @@ public final class Type implements Iterable<Type.ProductType> {
          * <p> Otherwise, this method returns NONE->..->NONE
          */
         ProductType columnRestrict(PrimSig that, int i) {
-            if (i<0 || i>=types.length) return this;
+            if (i<0 || i>=types.length || isEmpty()) return this;
             that = types[i].intersect(that);
             if (that==types[i]) return this;
             if (that==Sig.NONE) return new ProductType(types.length, that);
@@ -208,7 +220,10 @@ public final class Type implements Iterable<Type.ProductType> {
         @Override public String toString() {
             if (types.length==0) return "";
             StringBuilder ans=new StringBuilder();
-            for(int i=0; i<types.length; i++) { if (i!=0) ans.append("->"); ans.append(types[i]); }
+            for(int i=0; i<types.length; i++) {
+                if (i!=0) ans.append("->");
+                ans.append(types[i]);
+            }
             return ans.toString();
         }
     }
@@ -232,13 +247,14 @@ public final class Type implements Iterable<Type.ProductType> {
     public final boolean is_bool;
 
     /**
-     * Contains the set of arities in this type.
-     * <br> Each possible arity corresponds to one of the bit.
+     * Contains a summary of the arities in this type.
+     *
+     * <br> The (1<<0) bitmask is nonzero iff arity X exists for some X>30
      * <br> The (1<<1) bitmask is nonzero iff arity 1 exists
      * <br> The (1<<2) bitmask is nonzero iff arity 2 exists
      * <br> The (1<<3) bitmask is nonzero iff arity 3 exists
      * <br> ...
-     * <br> Note: The (1<<0) bitmask is nonzero iff arity X exists for some X>30
+     * <br> The (1<<30) bitmask is nonzero iff arity 30 exists
      */
     private final int arities;
 
@@ -311,22 +327,20 @@ public final class Type implements Iterable<Type.ProductType> {
      * (If start<0, end<0, end>list.size(), or start>=end, this method will return EMPTY)
      */
     static Type make(List<PrimSig> list, int start, int end) {
-        if (start<0 || end<0 || end>list.size() || start>=end) return EMPTY;
+        if (start<0 || end<0 || start>=end || end>list.size()) return EMPTY;
         PrimSig[] newlist = new PrimSig[end-start];
-        int j=0;
-        for(int i=start; i<end; i++) {
+        for(int i=start, j=0; i<end; i++, j++) {
             PrimSig x=list.get(i);
             if (x==Sig.NONE) {
-                for(j=0; j<newlist.length; j++) newlist[j]=x;
+                for(i=0; i<newlist.length; i++) newlist[i]=x;
                 break;
             }
             newlist[j]=x;
-            j++;
         }
         return make(new ProductType(newlist));
     }
 
-    /** Create the type "sig"; it promises it will not call any method or read anything from "sig". */
+    /** Create the type "sig"; this method promises it will not call any method or read anything from "sig". */
     static Type make(PrimSig sig) {
         return make(new ProductType(sig));
     }
@@ -351,9 +365,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if (!old.is_bool && !old.is_int) return old; else return make(false, false, old.entries, old.arities);
     }
 
-    /**
-     * Returns true iff ((this subsumes that) and (that subsumes this))
-     */
+    /** Returns true iff ((this subsumes that) and (that subsumes this)) */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof Type)) return false;
@@ -374,12 +386,6 @@ public final class Type implements Iterable<Type.ProductType> {
 
     /** Returns a hash code consistent with equals() */
     @Override public int hashCode() { return arities * (is_int?1732051:1) * (is_bool?314157:1); }
-
-    /** Returns true if this type is unambiguous. */
-    public boolean unambiguous() {
-        if (size()==0) return (is_int && !is_bool) || (!is_int && is_bool);
-        return (!is_bool && !is_int && arity()>0);
-    }
 
     /** Returns true if this.size()==0 or every entry consists only of "none". */
     public boolean hasNoTuple() {
@@ -404,7 +410,7 @@ public final class Type implements Iterable<Type.ProductType> {
     }
 
     /**
-     *      If all entries have the same arity, that arity is returned;
+     *      If every entry has the same arity, that arity is returned;
      * <br> else if some entries have different arities, we return -1;
      * <br> else we return 0 (which only happens when there are no entries at all).
      */
@@ -427,10 +433,11 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> This method ignores the "is_int" and "is_bool" flags.
      */
     public boolean firstColumnOverlaps(Type that) {
-        for (ProductType a:this)
-          for (ProductType b:that)
-            if (a.types[0].intersects(b.types[0]))
-              return true;
+        if ((arities | that.arities)!=0)
+          for (ProductType a:this)
+            for (ProductType b:that)
+              if (a.types[0].intersects(b.types[0]))
+                return true;
         return false;
     }
 
@@ -466,6 +473,7 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> If this.size()==0, or that.size()==0, then result.size()==0
      */
     public Type product(Type that) {
+        if ((arities | that.arities)==0) return EMPTY;
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
         for (ProductType a:this) for (ProductType b:that) aa=add(ee, aa, a.product(b));
@@ -478,7 +486,7 @@ public final class Type implements Iterable<Type.ProductType> {
     public boolean intersects(Type that) {
         if ((arities & that.arities)!=0)
           for (ProductType a:this) if (!a.isEmpty())
-             for (ProductType b:that) if (!b.isEmpty() && a.types.length==b.types.length && a.intersects(b))
+             for (ProductType b:that) if (a.types.length==b.types.length && !b.isEmpty() && a.intersects(b))
                  return true;
         return false;
     }
@@ -530,7 +538,10 @@ public final class Type implements Iterable<Type.ProductType> {
      */
     public Type merge(Type that) {
         if (that==null) return this;
-        if (that.size()==0 && is_int==that.is_int && is_bool==that.is_bool) return this;
+        if (is_int==that.is_int && is_bool==that.is_bool) {
+            if (this.size()==0) return that;
+            if (that.size()==0) return this;
+        }
         TempList<ProductType> ee=new TempList<ProductType>(entries);
         int aa=arities;
         for(ProductType x:that) aa=add(ee,aa,x);
@@ -665,7 +676,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if (size()==0 || that.size()==0) return EMPTY;
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
-        for (ProductType a:this) for (ProductType b:that) if (a.types.length + b.types.length > 2) aa=add(ee, aa, a.join(b));
+        for (ProductType a:this) for (ProductType b:that) if (a.types.length>1 || b.types.length>1) aa=add(ee, aa, a.join(b));
         return make(false, false, ee.makeConst(), aa);
     }
 
@@ -679,11 +690,13 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> If this.size()==0, or that does not contain any unary entry, then result.size()==0
      */
     public Type domainRestrict(Type that) {
+        if (size()==0 || (that.arities & (1<<1))==0) return EMPTY;
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
-        if (size()>0 && (that.arities & (1<<1))!=0) for (ProductType b:that)
-          if (b.types.length==1) for (ProductType a:this)
-            aa = add(ee, aa, a.columnRestrict(b.types[0], 0));
+        for (ProductType b:that)
+          if (b.types.length==1)
+            for (ProductType a:this)
+                aa = add(ee, aa, a.columnRestrict(b.types[0], 0));
         return make(false, false, ee.makeConst(), aa);
     }
 
@@ -697,11 +710,13 @@ public final class Type implements Iterable<Type.ProductType> {
      * <p> If this.size()==0, or that does not contain any unary entry, then result.size()==0
      */
     public Type rangeRestrict(Type that) {
+        if (size()==0 || (that.arities & (1<<1))==0) return EMPTY;
         TempList<ProductType> ee=new TempList<ProductType>();
         int aa=0;
-        if (size()>0 && (that.arities & (1<<1))!=0) for (ProductType b:that)
-          if (b.types.length==1) for (ProductType a:this)
-            aa = add(ee, aa, a.columnRestrict(b.types[0], a.types.length-1));
+        for (ProductType b:that)
+          if (b.types.length==1)
+            for (ProductType a:this)
+                aa = add(ee, aa, a.columnRestrict(b.types[0], a.types.length-1));
         return make(false, false, ee.makeConst(), aa);
     }
 
@@ -716,7 +731,7 @@ public final class Type implements Iterable<Type.ProductType> {
     public Type extract(int arity) {
         final int aa = (arity>30 ? 1 : (1<<arity));
         if (!is_bool && !is_int && arity<=30 && arities==aa) return this;
-        if (!hasArity(arity)) return EMPTY;
+        if ((arities & aa)==0) return EMPTY;
         final TempList<ProductType> ee=new TempList<ProductType>();
         for(ProductType x:entries) if (x.types.length==arity) ee.add(x);
         return make(false, false, ee.makeConst(), aa);
@@ -737,6 +752,8 @@ public final class Type implements Iterable<Type.ProductType> {
             ans=ans.unionWithCommonArity(uu);
             uu=uu.join(u);
             if (oldans==ans && olduu.equals(uu)) break;
+            // The special guarantee of unionWithCommonArity() allows us to use the cheaper "oldans==ans" here
+            // instead of doing the more expensive "oldans.equals(ans)"
         }
         return ans;
     }
@@ -748,21 +765,23 @@ public final class Type implements Iterable<Type.ProductType> {
      * <br>   (1) For each X:  X[j]==a[j] for i!=j, and X[i].super==a[i].super
      * <br>   (2) X1[i]..Xn[i] exhaust all the direct subsignatures of an abstract parent sig
      * <br> THEN:
-     * <br>   we removeAll(X), then return the merged result of X1..Xn
+     * <br>   we remove X1..Xn, then return the merged result of X1..Xn
      * <br> ELSE
      * <br>   we change nothing, and simply return null
      *
      * <p><b>Precondition:</b> a[i] is not "none", and a[i].parent is abstract, and a[i].parent!=UNIV
      */
-    private static List<PrimSig> fold(ArrayList<List<PrimSig>> entries, List<PrimSig> a, int i) throws Err {
+    private static List<PrimSig> fold(ArrayList<List<PrimSig>> entries, List<PrimSig> a, int i) {
         PrimSig parent = a.get(i).parent;
-        ArrayList<PrimSig> subs = new ArrayList<PrimSig>(parent.children());
-        ArrayList<List<PrimSig>> ret = new ArrayList<List<PrimSig>>();
+        SafeList<PrimSig> children;
+        try { children=parent.children(); } catch(Err ex) { return null; } // Exception only occurs if a[i].parent==UNIV
+        ArrayList<PrimSig> subs = new ArrayList<PrimSig>(children);
+        ArrayList<List<PrimSig>> toDelete = new ArrayList<List<PrimSig>>();
         for(int bi=entries.size()-1; bi>=0; bi--) {
             List<PrimSig> b=entries.get(bi);
             if (b.size() == a.size()) {
                 for(int j=0; ;j++) {
-                    if (j>=b.size()) {ret.add(b); subs.remove(b.get(i)); break;}
+                    if (j>=b.size()) {toDelete.add(b); subs.remove(b.get(i)); break;}
                     PrimSig bt1=a.get(j), bt2=b.get(j);
                     if (i==j && bt2.parent!=parent) break;
                     if (i!=j && bt2!=bt1) break;
@@ -771,7 +790,7 @@ public final class Type implements Iterable<Type.ProductType> {
         }
         subs.remove(a.get(i));
         if (subs.size()!=0) return null;
-        entries.removeAll(ret);
+        entries.removeAll(toDelete);
         entries.remove(a);
         a=new ArrayList<PrimSig>(a);
         a.set(i, parent);
@@ -783,7 +802,7 @@ public final class Type implements Iterable<Type.ProductType> {
      * except for 1 position, where together they comprise of all direct subsigs of an abstract sig,
      * then we merge them)
      *
-     * <p> Note: the result is only current with respect to the current sig relations
+     * <p> Note: the result is only current with respect to the current existing sig objects
      */
     public Iterable<List<PrimSig>> fold() {
         ArrayList<List<PrimSig>> e = new ArrayList<List<PrimSig>>();
@@ -795,8 +814,7 @@ public final class Type implements Iterable<Type.ProductType> {
                 for(int i=0; i<n; i++) {
                     PrimSig bt=x.get(i);
                     if (bt.parent!=null && bt.parent!=UNIV && bt.parent.isAbstract) {
-                        List<PrimSig> folded;
-                        try { folded=fold(e,x,i); } catch(Err ex) { folded=null;}
+                        List<PrimSig> folded=fold(e,x,i);
                         if (folded!=null) {x=folded; changed=true; i--;}
                     }
                 }

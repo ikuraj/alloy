@@ -20,12 +20,12 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
 /**
  * This abstract class implements a Query visitor that walks over an Expr and its subnodes.
- * <br> As soon as one of the node returns a nonnull value, the nonnull value will be propagated to be the output of this visitor.
+ * <br> As soon as one of the node returns a nonnull value,the nonnull value will be propagated to be the output of this visitor.
  *
  * <p> This default implementation will return null on all the leaf Expr nodes and thus the final answer will be null.
  * <br> To implement a particular query, you need to extend this class.
@@ -36,10 +36,11 @@ public abstract class VisitQuery extends VisitReturn {
     /** Constructs a VisitQuery object. */
     public VisitQuery() { }
 
-    /** Visits an ExprQuant node (all a:X1, b:X2... | F) by calling accept() on a:X1, b:X2... and then on F. */
-    @Override public Object visit(ExprQuant x) throws Err {
-        for(Expr y:x.vars) { Object ans=y.accept(this); if (ans!=null) return ans; }
-        return x.sub.accept(this);
+    /** Visits an ExprBinary node (A OP B) by calling accept() on A then B. */
+    @Override public Object visit(ExprBinary x) throws Err {
+        Object ans=x.left.accept(this);
+        if (ans==null) ans=x.right.accept(this);
+        return ans;
     }
 
     /** Visits an ExprBuiltin node F[X1,X2,X3..] by calling accept() on X1, X2, X3... */
@@ -54,18 +55,9 @@ public abstract class VisitQuery extends VisitReturn {
         return null;
     }
 
-    /** Visits an ExprBinary node (A OP B) by calling accept() on A then B. */
-    @Override public Object visit(ExprBinary x) throws Err {
-        Object ans=x.left.accept(this);
-        if (ans==null) ans=x.right.accept(this);
-        return ans;
-    }
-
-    /** Visits an ExprLet node (let A=B | F) by calling accept() on A, B, then F. */
-    @Override public Object visit(ExprLet x) throws Err {
-        Object ans=x.var.accept(this);
-        if (ans==null) ans=x.sub.accept(this);
-        return ans;
+    /** Visits an ExprConstant node (this default implementation simply returns null) */
+    @Override public Object visit(ExprConstant x) throws Err {
+        return null;
     }
 
     /** Visits an ExprITE node (C => X else Y) by calling accept() on C, X, then Y. */
@@ -76,20 +68,27 @@ public abstract class VisitQuery extends VisitReturn {
         return ans;
     }
 
+    /** Visits an ExprLet node (let a=x | y) by calling accept() on "a=x" then "y". */
+    @Override public Object visit(ExprLet x) throws Err {
+        Object ans=x.var.accept(this);
+        if (ans==null) ans=x.sub.accept(this);
+        return ans;
+    }
+
+    /** Visits an ExprQuant node (all a:X1, b:X2... | F) by calling accept() on a:X1, b:X2... and then on F. */
+    @Override public Object visit(ExprQuant x) throws Err {
+        for(Expr y:x.vars) { Object ans=y.accept(this); if (ans!=null) return ans; }
+        return x.sub.accept(this);
+    }
+
     /** Visits an ExprUnary node (OP X) by calling accept() on X. */
     @Override public Object visit(ExprUnary x) throws Err {
         return x.sub.accept(this);
     }
 
-    /** Visits an ExprVar node by calling accept on its bounding expression (and return null if the ExprVar does not have a bounding expression) */
+    /** Visits an ExprVar node by calling accept on its associated subexpression. */
     @Override public Object visit(ExprVar x) throws Err {
-        if (x.expr==null) return null;
         return x.expr.accept(this);
-    }
-
-    /** Visits an ExprConstant node (this default implementation simply returns null) */
-    @Override public Object visit(ExprConstant x) throws Err {
-        return null;
     }
 
     /** Visits a Sig node (this default implementation simply returns null) */

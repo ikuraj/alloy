@@ -73,7 +73,7 @@ public final class Resolver {
     }
 
     /** Converts x into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */
-    static Expr cform(Expr x) {
+    public static Expr cform(Expr x) {
         String msg;
         if (!x.errors.isEmpty())
             return x;

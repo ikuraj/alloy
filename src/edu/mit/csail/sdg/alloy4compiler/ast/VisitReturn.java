@@ -20,12 +20,10 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
-/**
- * This abstract class defines what a Return Visitor's interface should be.
- */
+/** This abstract class defines what a Return Visitor's interface needs to be. */
 
 public abstract class VisitReturn {
 
@@ -44,14 +42,14 @@ public abstract class VisitReturn {
     /** Visits an ExprCall node. */
     public abstract Object visit(ExprCall x) throws Err;
 
+    /** Visits an ExprConstant node. */
+    public abstract Object visit(ExprConstant x) throws Err;
+
     /** Visits an ExprITE node. */
     public abstract Object visit(ExprITE x) throws Err;
 
     /** Visits an ExprLet node. */
     public abstract Object visit(ExprLet x) throws Err;
-
-    /** Visits an ExprConstant node. */
-    public abstract Object visit(ExprConstant x) throws Err;
 
     /** Visits an ExprQuant node. */
     public abstract Object visit(ExprQuant x) throws Err;

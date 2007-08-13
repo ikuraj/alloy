@@ -29,7 +29,7 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 /**
  * Immutable; represents a LET or QUANTIFICATION variable in the AST.
  *
- * <p> <b>Invariant:</b>  type!=EMPTY => (type.unambiguous() && type==expr.type && !expr.ambiguous)
+ * <p> <b>Invariant:</b>  type!=EMPTY => (type==expr.type && !expr.ambiguous)
  */
 
 public final class ExprVar extends Expr {
@@ -75,12 +75,7 @@ public final class ExprVar extends Expr {
      */
     public static ExprVar make(Pos pos, String label, Expr expr) {
         ErrorType e=null;
-        if (expr.errors.size()>0) {
-            if (!expr.type.unambiguous())
-                e=new ErrorType(expr.span(), "This expression is ambiguous. Its possible types are:\n"+expr.type);
-            else if (expr.ambiguous)
-                e=new ErrorType(expr.span(), "This expression is ambiguous.");
-        }
+        if (expr.errors.isEmpty() && expr.ambiguous) e=new ErrorType(expr.span(), "This expression is ambiguous.");
         return new ExprVar(pos, label, expr, e);
     }
 
