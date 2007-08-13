@@ -90,7 +90,7 @@ public final class ExprBuiltin extends Expr {
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         TempList<Expr> newargs = new TempList<Expr>(args.size());
-        Type type=Type.FORMULA, commonArity=null;
+        Type commonArity=null;
         long weight=0;
         if (args.size()<2)
             errs=errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
@@ -99,14 +99,14 @@ public final class ExprBuiltin extends Expr {
             ambiguous = ambiguous || a.ambiguous;
             weight = weight + a.weight;
             if (a.mult!=0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
-            if (!a.errors.isEmpty()) { type=EMPTY; errs=errs.join(a.errors); }
+            if (!a.errors.isEmpty()) errs=errs.join(a.errors);
                else if (commonArity==null) commonArity=a.type;
                else commonArity=commonArity.pickCommonArity(a.type);
             newargs.add(a);
         }
         if (commonArity==EMPTY) errs=errs.append(new ErrorType(pos,
            "The builtin predicate disjoint[] cannot be used among expressions of different arities."));
-        return new ExprBuiltin(pos, ambiguous, type, newargs.makeConst(), weight, errs);
+        return new ExprBuiltin(pos, ambiguous, Type.FORMULA, newargs.makeConst(), weight, errs);
     }
 
     //============================================================================================================//
@@ -121,7 +121,8 @@ public final class ExprBuiltin extends Expr {
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
-            Expr x=this.args.get(i), y=cset(x.resolve(p, warns));
+            Expr x=this.args.get(i);
+            Expr y=cset(x.resolve(p, warns));
             if (x!=y) changed=true;
             args.add(y);
         }

@@ -52,6 +52,8 @@ public final class ExprCall extends Expr {
     /** Caches the span() result. */
     private Pos span=null;
 
+    //============================================================================================================//
+
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
@@ -62,6 +64,8 @@ public final class ExprCall extends Expr {
         }
         return p;
     }
+
+    //============================================================================================================//
 
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
@@ -75,6 +79,8 @@ public final class ExprCall extends Expr {
             for(Expr a:args) { a.toString(out, indent+2); }
         }
     }
+
+    //============================================================================================================//
 
     /** This visitor assumes the input expression is already fully typechecked, and derive a tight bound on the return type. */
     private static class DeduceType extends VisitReturn {
@@ -98,8 +104,8 @@ public final class ExprCall extends Expr {
               case RANGE: return a.rangeRestrict(b);
               case INTERSECT: return a.intersect(b);
               case PLUSPLUS: return a.unionWithCommonArity(b);
-              case PLUS: if (a.is_int) return Type.INT; else return a.unionWithCommonArity(b);
-              case MINUS: if (a.is_int) return Type.INT; else return a.pickCommonArity(b);
+              case PLUS: return (a.is_int && b.is_int) ? Type.makeInt(a.unionWithCommonArity(b)) : a.unionWithCommonArity(b);
+              case MINUS: return (a.is_int && b.is_int) ? Type.makeInt(a.pickCommonArity(b)) : a.pickCommonArity(b);
               default: return a.product(b);
             }
         }
@@ -126,12 +132,12 @@ public final class ExprCall extends Expr {
             if (x.op == ExprQuant.Op.SUM) return Type.INT;
             if (x.op != ExprQuant.Op.COMPREHENSION) return Type.FORMULA;
             Type ans=null;
-            for(ExprVar v:x.vars) {
+            for(ExprVar v: x.vars) {
                 Type t=(Type)(v.expr.accept(this));
                 env.put(v, t);
                 if (ans==null) ans=t; else ans=ans.product(t);
             }
-            for(ExprVar v:x.vars) env.remove(v);
+            for(ExprVar v: x.vars) env.remove(v);
             return (ans==null) ? EMPTY : ans;
         }
         @Override public Object visit(ExprLet x) throws Err {
@@ -147,6 +153,8 @@ public final class ExprCall extends Expr {
         @Override public Object visit(ExprBuiltin x) { return Type.FORMULA; }
     }
 
+    //============================================================================================================//
+
     /** Constructs an ExprCall node with the given function "pred/fun" and the list of arguments "args". */
     private ExprCall(Pos pos, boolean ambiguous, Type type, Func fun, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
         super(pos, ambiguous, type, 0, weight, errs);
@@ -154,13 +162,15 @@ public final class ExprCall extends Expr {
         this.args = args;
     }
 
+    //============================================================================================================//
+
     /** Constructs an ExprCall node with the given predicate/function "fun" and the list of arguments "args". */
     public static Expr make(Pos pos, Func fun, List<Expr> args, long extraWeight) {
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         if (extraWeight<0) extraWeight=0;
         if (args==null) args=ConstList.make();
-        final TempList<Expr> newargs=new TempList<Expr>(args.size());
+        TempList<Expr> newargs=new TempList<Expr>(args.size());
         if (args.size() != fun.params.size()) {
             errs = errs.append(
               new ErrorSyntax(pos, ""+fun+" has "+fun.params.size()+" parameters but is called with "+args.size()+" arguments."));
@@ -172,14 +182,12 @@ public final class ExprCall extends Expr {
             errs = errs.join(x.errors);
             extraWeight = extraWeight + x.weight;
             if (x.mult!=0) errs = errs.append(new ErrorSyntax(x.span(), "Multiplicity expression not allowed here."));
-            if (x.errors.isEmpty() && a>0 && !x.type.hasArity(a))
+            if (a>0 && x.errors.isEmpty() && !x.type.hasArity(a))
               errs=errs.append(new ErrorType(x.span(), "This should have arity "+a+" but instead its possible type(s) are "+x.type));
             newargs.add(x);
         }
-        Type t=EMPTY;
-        if (fun.isPred && errs.size()==0) {
-            t=Type.FORMULA;
-        } else if (!fun.isPred && errs.size()==0) {
+        Type t=Type.FORMULA;
+        if (!fun.isPred && errs.size()==0) {
             final Type tt = fun.returnDecl.type;
             try {
                 // This provides a limited form of polymorphic function,
@@ -190,29 +198,37 @@ public final class ExprCall extends Expr {
                     d.env.put(param, newargs.get(i).type.extract(param.type.arity()));
                 }
                 t = (Type) (fun.returnDecl.accept(d));
-                if (t==null || t.is_int || t.is_bool || t.arity()!=tt.arity()) t=tt; // Sanity check
+                if (t==null || t.is_int || t.is_bool || t.arity()!=tt.arity()) t=tt; // Just in case an error occurred...
             } catch(Throwable ex) {
-                t=tt;
+                t=tt; // Just in case an error occurred...
             }
         }
         return new ExprCall(pos, ambiguous, t, fun, newargs.makeConst(), extraWeight, errs);
     }
 
+    //============================================================================================================//
+
     /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
-        boolean changed=false;
+        if (errors.size()>0) return this;
         TempList<Expr> args = new TempList<Expr>(this.args.size());
+        boolean changed=false;
         long w=0;
         for(int i=0; i<this.args.size(); i++) {
-            Expr arg=this.args.get(i);
-            Expr res=cset(arg.resolve(fun.params.get(i).type, warns)); // Use the function's param type to narrow down choices
-            w=w+res.weight;
-            args.add(res);
-            if (arg!=res) changed=true;
+            Expr x=this.args.get(i);
+            Expr y=cset(x.resolve(fun.params.get(i).type, warns)); // Use the function's param type to narrow down the choices
+            if (x!=y) changed=true;
+            args.add(y);
+            w = w + y.weight;
         }
         return changed ? make(pos, fun, args.makeConst(), weight-w) : this;
     }
 
+    //============================================================================================================//
+
     /** Accepts the return visitor. */
-    @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
+    @Override Object accept(VisitReturn visitor) throws Err {
+        if (!errors.isEmpty()) throw errors.get(0);
+        return visitor.visit(this);
+    }
 }
