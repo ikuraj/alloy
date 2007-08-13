@@ -27,7 +27,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Util;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.addOne;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cform;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.cset;
 
@@ -83,10 +82,11 @@ public final class Func {
             this.body = (this.returnDecl = ExprConstant.FALSE);
         }
         else {
-            if (returnDecl.ambiguous) returnDecl=returnDecl.resolve(Type.removesBoolAndInt(returnDecl.type));
             returnDecl=cset(returnDecl);
+            if (returnDecl.ambiguous) returnDecl=returnDecl.resolve(Type.removesBoolAndInt(returnDecl.type));
             if (!returnDecl.errors.isEmpty()) throw returnDecl.errors.get(0);
-            this.returnDecl = addOne(returnDecl);
+            if (returnDecl.mult==0 && returnDecl.type.arity()==1) returnDecl=ExprUnary.Op.ONEOF.make(null, returnDecl);
+            this.returnDecl = returnDecl;
             Expr none = Sig.NONE;
             for(int i = this.returnDecl.type.arity(); i>1; i--) none=none.product(Sig.NONE);
             this.body = none;
@@ -114,12 +114,12 @@ public final class Func {
      */
     public void setBody(Expr newBody) throws Err {
         if (isPred) {
-            if (newBody.ambiguous) newBody=newBody.resolve(Type.FORMULA);
             newBody = cform(newBody);
+            if (newBody.ambiguous) newBody=newBody.resolve(Type.FORMULA);
             if (newBody.errors.size()>0) throw newBody.errors.get(0);
         } else {
-            if (newBody.ambiguous) newBody=newBody.resolve(Type.removesBoolAndInt(newBody.type));
             newBody = cset(newBody);
+            if (newBody.ambiguous) newBody=newBody.resolve(Type.removesBoolAndInt(newBody.type));
             if (newBody.errors.size()>0) throw newBody.errors.get(0);
             if (newBody.type.arity() != returnDecl.type.arity())
                 throw new ErrorType(newBody.span(),

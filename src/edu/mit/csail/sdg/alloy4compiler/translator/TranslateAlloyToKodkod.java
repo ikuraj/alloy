@@ -70,7 +70,6 @@ import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Resolver.addOne;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 
 /** Given a World object, solve one or more commands using Kodkod. */
@@ -709,6 +708,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /*==============================*/
     /* Evaluates an ExprQuant node. */
     /*==============================*/
+
+    private static Expr addOne(Expr x) {
+        if (x instanceof ExprUnary) switch(((ExprUnary)x).op) {
+            case SETOF: case ONEOF: case LONEOF: case SOMEOF: return x;
+        }
+        return (x.type.arity()!=1) ? x : ExprUnary.Op.ONEOF.make(x.span(), x);
+    }
 
     private Object visit_qt(final ExprQuant.Op op, final ConstList<ExprVar> xvars, final Expr sub, final boolean split) throws Err {
         if (op == ExprQuant.Op.NO) {

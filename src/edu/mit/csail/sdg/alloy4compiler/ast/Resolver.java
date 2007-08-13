@@ -26,14 +26,6 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
 
 public final class Resolver {
 
-    /** Adds a "one of" in front of the expression X if X is unary and is not already a multiplicity constraint. */
-    public static Expr addOne(Expr x) {
-        if (x instanceof ExprUnary) switch(((ExprUnary)x).op) {
-            case SETOF: case ONEOF: case LONEOF: case SOMEOF: return x;
-        }
-        return (x.type.arity()!=1) ? x : ExprUnary.Op.ONEOF.make(x.span(), x);
-    }
-
     /** Converts x into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */
     public static Expr cform(Expr x) {
         if (!x.errors.isEmpty() || x.type.is_bool) return x;

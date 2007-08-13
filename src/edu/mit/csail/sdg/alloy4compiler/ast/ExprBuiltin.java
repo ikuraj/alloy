@@ -116,7 +116,7 @@ public final class ExprBuiltin extends Expr {
         if (errors.size()>0) return this;
         p=EMPTY;
         for(int i=0; i<args.size(); i++) {
-            if (i==0) p=args.get(i).type; else p=p.unionWithCommonArity(args.get(i).type);
+            if (i==0) p=Type.removesBoolAndInt(args.get(i).type); else p=p.unionWithCommonArity(args.get(i).type);
         }
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         boolean changed = false;

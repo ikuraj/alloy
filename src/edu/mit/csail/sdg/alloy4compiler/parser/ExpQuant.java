@@ -30,8 +30,8 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.ast.Resolver;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant.Op;
 
 public final class ExpQuant extends Exp {
@@ -60,7 +60,8 @@ public final class ExpQuant extends Exp {
         Expr guard=null;
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
         for(ExpDecl d: decls) {
-            Expr v = Resolver.addOne(Context.resolveExpSet(d.expr.check(cx, warnings), warnings));
+            Expr v = Context.resolveExpSet(d.expr.check(cx, warnings), warnings);
+            if (v.mult==0 && v.type.arity()==1) v=ExprUnary.Op.ONEOF.make(null, v);
             List<Expr> disjoints = (d.disjoint!=null && d.names.size()>1) ? (new ArrayList<Expr>(d.names.size())) : null;
             for(ExpName n: d.names) {
                 ExprVar var = ExprVar.make(n.pos, n.name, v);
