@@ -59,12 +59,12 @@ public final class ExprConstant extends Expr {
      *
      * @param pos - the original position in the file
      * @param op - the choice of which constant it is
-     * @param num - the number (if this is a number constant); it should be 0 if this is not a number constant
+     * @param num - the number (this number is ignored if op!=NUMBER)
      */
     private ExprConstant(Pos pos, Op op, int num) {
         super(pos, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NUMBER ? Type.INT : Type.FORMULA)), 0, 0, null);
         this.op = op;
-        this.num = num;
+        this.num = (op==Op.NUMBER) ? num : 0;
     }
 
     /** The "TRUE" boolean value. */
@@ -105,9 +105,9 @@ public final class ExprConstant extends Expr {
         /**
          * Makes an ExprConstant node
          * @param pos - the original position in the source file (can be null if unknown)
-         * @param num - the number (this number is ignored if op!=NUMBER)
+         * @param number - the number if op==NUMBER (this number is ignored if op!=NUMBER)
          */
-        public final Expr make(Pos pos, int num) { return new ExprConstant(pos, this, (this==NUMBER ? num : 0)); }
+        public final Expr make(Pos pos, int number) { return new ExprConstant(pos, this, number); }
 
         /** Returns the human readable label for this operator. */
         @Override public final String toString() { return label; }
