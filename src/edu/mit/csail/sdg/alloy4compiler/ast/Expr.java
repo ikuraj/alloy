@@ -232,8 +232,12 @@ public abstract class Expr {
         @Override public final Object visit(ExprCall x) { return this; }
     };
 
-    /** Returns true if the node (or a subnode) is a predicate/function call. */
-    final boolean hasCall() throws Err { return accept(hasCall)!=null; }
+    /** Returns true if the node is well-typed, unambiguous, and contains a predicate/function call. */
+    final boolean hasCall() {
+        boolean ans=errors.isEmpty() && !ambiguous;
+        if (ans) { try { ans=accept(hasCall)!=null; } catch(Err ex) { ans=false; } } // This exception should not occur
+        return ans;
+    }
 
     /** Transitively returns a set that contains all predicates/functions that this expression calls directly or indirectly. */
     public final Iterable<Func> findAllFunctions() {
