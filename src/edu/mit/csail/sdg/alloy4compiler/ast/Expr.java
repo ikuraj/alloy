@@ -90,7 +90,7 @@ public abstract class Expr {
     }
 
     /**
-     * Resolve this expression if ambiguous.
+     * Resolves this expression if ambiguous.
      * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
      * (Note: it's possible for t to be EMPTY, or even ambiguous!)
      *
@@ -102,7 +102,7 @@ public abstract class Expr {
     public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings);
 
     /**
-     * Convert the expression into a formula, then resolve it if ambiguous.
+     * Converts this into a "formula" if possible, then resolves it if ambiguous.
      *
      * <p> On success: the return value will be a well-typed unambiguous formula expression
      * <p> On failure: the return value's "errors" list will be nonempty
@@ -115,7 +115,7 @@ public abstract class Expr {
     }
 
     /**
-     * Convert the expression into an integer, then resolve it if ambiguous.
+     * Converts this into an "integer expression" if possible, then resolves it if ambiguous.
      *
      * <p> On success: the return value will be a well-typed unambiguous integer expression
      * <p> On failure: the return value's "errors" list will be nonempty
@@ -128,7 +128,7 @@ public abstract class Expr {
     }
 
     /**
-     * Convert the expression into a set or relation, then resolve it if ambiguous.
+     * Converts this into a "set or relation" if possible, then resolves it if ambiguous.
      *
      * <p> On success: the return value will be a well-typed unambiguous set or relation expression
      * <p> On failure: the return value's "errors" list will be nonempty
