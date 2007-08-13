@@ -116,6 +116,6 @@ public final class ExprConstant extends Expr {
     /** {@inheritDoc} */
     @Override public Expr resolve(Type type, Collection<ErrorWarning> warns) { return this; }
 
-    /** Accepts the return visitor. */
+    /** {@inheritDoc} */
     @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
 }

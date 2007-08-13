@@ -183,7 +183,7 @@ public final class ExprQuant extends Expr {
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
-        if (errors.size()==0) return this; // If there is already fatal error, then there's no need to proceed further
+        if (errors.size()>0) return this;
         // If errors.size()==0, then the variable is always already fully resolved, so we only need to resolve sub
         Expr newSub = sub.resolve((op==Op.SUM ? Type.INT : Type.FORMULA), warnings);
         return (sub==newSub) ? this : op.make(pos, closingBracket, vars, newSub);
@@ -191,6 +191,9 @@ public final class ExprQuant extends Expr {
 
     //=============================================================================================================//
 
-    /** Accepts the return visitor. */
-    @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
+    /** {@inheritDoc} */
+    @Override Object accept(VisitReturn visitor) throws Err {
+        if (!errors.isEmpty()) throw errors.get(0);
+        return visitor.visit(this);
+    }
 }

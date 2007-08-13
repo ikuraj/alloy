@@ -131,7 +131,7 @@ public final class ExprBuiltin extends Expr {
 
     //============================================================================================================//
 
-    /** Accepts the return visitor. */
+    /** {@inheritDoc} */
     @Override Object accept(VisitReturn visitor) throws Err {
         if (!errors.isEmpty()) throw errors.get(0);
         return visitor.visit(this);

@@ -292,6 +292,9 @@ public final class ExprUnary extends Expr {
 
     //============================================================================================================//
 
-    /** Accepts the return visitor. */
-    @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
+    /** {@inheritDoc} */
+    @Override Object accept(VisitReturn visitor) throws Err {
+        if (!errors.isEmpty()) throw errors.get(0);
+        return visitor.visit(this);
+    }
 }

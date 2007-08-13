@@ -124,6 +124,7 @@ public final class ExprITE extends Expr {
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
+        if (errors.size()>0) return this;
         Type a=left.type, b=right.type;
         if (p.size()>0) {
             a=a.intersect(p);
@@ -142,6 +143,9 @@ public final class ExprITE extends Expr {
         return (cond==this.cond && left==this.left && right==this.right) ? this : make(cond,left,right);
     }
 
-    /** Accepts the return visitor. */
-    @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
+    /** {@inheritDoc} */
+    @Override Object accept(VisitReturn visitor) throws Err {
+        if (!errors.isEmpty()) throw errors.get(0);
+        return visitor.visit(this);
+    }
 }

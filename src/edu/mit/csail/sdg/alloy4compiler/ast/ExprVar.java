@@ -89,11 +89,15 @@ public final class ExprVar extends Expr {
 
     /** {@inheritDoc} */
     @Override public ExprVar resolve(Type p, Collection<ErrorWarning> warns) {
+        if (errors.size()>0) return this;
         Expr newExpr = expr.resolve(p, warns);
         if (expr==newExpr) return this;
         return new ExprVar(pos, label, newExpr, new ErrorType(newExpr.span(), "This expression was not fully resolved."));
     }
 
-    /** Accepts the return visitor. */
-    @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
+    /** {@inheritDoc} */
+    @Override Object accept(VisitReturn visitor) throws Err {
+        if (!errors.isEmpty()) throw errors.get(0);
+        return visitor.visit(this);
+    }
 }
