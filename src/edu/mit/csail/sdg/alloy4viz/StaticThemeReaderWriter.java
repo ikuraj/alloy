@@ -194,15 +194,9 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Writes nothing if the argument is null. */
-    public static String dumpView( VizState view) throws IOException {
+    public static String dumpView(VizState view) throws IOException {
         StringWriter sw=new StringWriter();
         PrintWriter out=new PrintWriter(sw);
-        out.write("#default");
-        dumpDotOrientation(out, view.getOrientation());
-        dumpDotPalette(out, "nodetheme", view.getNodePalette());
-        dumpDotPalette(out, "edgetheme", view.getEdgePalette());
-        out.write("\n");
-        out.write("#defaultnode" + dumpNodeViz(view,null) + "\tprojected=\"no\"\n");
         Set<AlloyElement> types = new TreeSet<AlloyElement>();
         types.addAll(view.getOriginalModel().getTypes());
         types.addAll(view.getCurrentModel().getTypes());
@@ -211,27 +205,26 @@ public final class StaticThemeReaderWriter {
         for(AlloyElement x:types) {
             if (x instanceof AlloyType) {
                 AlloyType t=(AlloyType)x;
-                dumpAlloyType(out,t);
-                out.write(dumpNodeViz(view,t));
+                saveAlloyType(out,t);
+                out.write(saveNodeViz(view,t));
                 if (view.getProjectedTypes().contains(t)) out.write("\tprojected=\"yes\""); else out.write("\tprojected=\"no\"");
                 out.write("\n");
             }
             else if (x instanceof AlloySet) {
                 AlloySet s=(AlloySet)x;
-                dumpAlloySet(out,s);
-                out.write(dumpNodeViz(view,s));
+                saveAlloySet(out,s);
+                out.write(saveNodeViz(view,s));
                 out.write("\tprojected=\"no\"\n");
             }
         }
-        out.write("#defaultedge" + dumpEdgeViz(view,null) + "\n");
         types.clear();
         types.addAll(view.getOriginalModel().getRelations());
         types.addAll(view.getCurrentModel().getRelations());
         for(AlloyElement x:types) {
             if (x instanceof AlloyRelation) {
                 AlloyRelation r=(AlloyRelation)x;
-                dumpAlloyRelation(out,r);
-                out.write(dumpEdgeViz(view,r));
+                saveAlloyRelation(out,r);
+                out.write(saveEdgeViz(view,r));
                 out.write("\n");
             }
         }
@@ -259,7 +252,7 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Writes nothing if the argument is null. */
-    private static void dumpAlloyType(PrintWriter out, AlloyType x) throws IOException {
+    private static void saveAlloyType(PrintWriter out, AlloyType x) throws IOException {
         if (x!=null) Util.encodeXMLs(out, "sig(", x.getName(), ")");
     }
 
@@ -284,7 +277,7 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Writes nothing if the argument is null. */
-    private static void dumpAlloySet(PrintWriter out, AlloySet x) throws IOException {
+    private static void saveAlloySet(PrintWriter out, AlloySet x) throws IOException {
         if (x!=null) Util.encodeXMLs(out, "set(", x.getName(), ".", x.getType().getName(), ")");
     }
 
@@ -320,7 +313,7 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Writes nothing if the argument is null. */
-    private static void dumpAlloyRelation(PrintWriter out, AlloyRelation x) throws IOException {
+    private static void saveAlloyRelation(PrintWriter out, AlloyRelation x) throws IOException {
         if (x==null) return;
         Util.encodeXMLs(out, "rel(", x.getName());
         for(AlloyType t:x.getTypes()) Util.encodeXMLs(out, ".", t.getName());
@@ -412,20 +405,21 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Returns the String representation of an AlloyNodeElement's settings. */
-    private static String dumpNodeViz(VizState view, AlloyNodeElement x) throws IOException {
+    private static String saveNodeViz(VizState view, AlloyNodeElement x) throws IOException {
+        AlloyModel am = view.getCurrentModel();
         AlloySet s = (x instanceof AlloySet) ? ((AlloySet)x) : null;
         AlloyType t = (x instanceof AlloyType) ? ((AlloyType)x): null;
         StringWriter sw=new StringWriter();
         PrintWriter out=new PrintWriter(sw);
-        dumpBool(out, "visible",   view.nodeVisible(x));
-        dumpBool(out, "samerank",  view.nodeSameRank(x));
-        dumpBool(out, "hideunconnected", view.hideUnconnected(x));
-        dumpBool(out, "showlabel",  view.showAsLabel(s));
-        dumpBool(out, "showinattr", view.showAsAttr(s));
-        dumpBool(out, "numberatoms", view.number(t));
-        dumpDotStyle(out, view.nodeStyle(x));
-        dumpDotShape(out, view.shape(x));
-        dumpDotColor(out, view.nodeColor(x));
+        saveBool(out, "visible",   view.nodeVisible(x,am));
+        saveBool(out, "samerank",  view.nodeSameRank(x,am));
+        saveBool(out, "hideunconnected", view.hideUnconnected(x,am));
+        saveBool(out, "showlabel",  view.showAsLabel(s,am));
+        saveBool(out, "showinattr", view.showAsAttr(s,am));
+        saveBool(out, "numberatoms", view.number(t,am));
+        saveDotStyle(out, view.nodeStyle(x,am));
+        saveDotShape(out, view.shape(x,am));
+        saveDotColor(out, view.nodeColor(x,am));
         Util.encodeXMLs(out, "\tlabel=\"", x==null ? "" : view.label(x), "\"");
         if (out.checkError()) throw new IOException("PrintWriter IO Exception!");
         return sw.toString();
@@ -476,17 +470,18 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Returns the String representation of an AlloyRelation's settings. */
-    private static String dumpEdgeViz(VizState view, AlloyRelation x) throws IOException {
+    private static String saveEdgeViz(VizState view, AlloyRelation x) throws IOException {
+        AlloyModel am=view.getCurrentModel();
         StringWriter sw=new StringWriter();
         PrintWriter out=new PrintWriter(sw);
-        dumpDotColor(out, view.edgeColor(x));
-        dumpDotStyle(out, view.edgeStyle(x));
-        dumpBool(out, "samerank",  view.edgeSameRank(x));
-        dumpBool(out, "visible",   view.edgeVisible(x));
-        dumpBool(out, "merge",     view.mergeArrows(x));
-        dumpBool(out, "layout",    view.layoutBack(x));
-        dumpBool(out, "attribute", view.attribute(x));
-        dumpBool(out, "constraint",view.constraint(x));
+        saveDotColor(out, view.edgeColor(x,am));
+        saveDotStyle(out, view.edgeStyle(x,am));
+        saveBool(out, "samerank",  view.edgeSameRank(x,am));
+        saveBool(out, "visible",   view.edgeVisible(x,am));
+        saveBool(out, "merge",     view.mergeArrows(x,am));
+        saveBool(out, "layout",    view.layoutBack(x,am));
+        saveBool(out, "attribute", view.attribute(x,am));
+        saveBool(out, "constraint",view.constraint(x,am));
         out.write("\tweight=\"" + view.weight(x) + "\"");
         Util.encodeXMLs(out, "\tlabel=\"", x==null ? "" : view.label(x), "\"");
         if (out.checkError()) throw new IOException("PrintWriter IO Exception!");
@@ -505,11 +500,6 @@ public final class StaticThemeReaderWriter {
         if (value!=defaultValue) Util.encodeXMLs(out, " "+key+"=\"", value==null?"inherit":value.toString(), "\"");
     }
 
-    /** Writes regardless. */
-    private static void dumpDotPalette(PrintWriter out, String key, DotPalette value) throws IOException {
-        Util.encodeXMLs(out, "\t"+key+"=\"", value==null?"inherit":value.toString(), "\"");
-    }
-
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
@@ -520,11 +510,6 @@ public final class StaticThemeReaderWriter {
     /** Writes nothing if value==defaultValue. */
     private static void writeDotOrientation(PrintWriter out, DotOrientation value, DotOrientation defaultValue) throws IOException {
         if (value!=defaultValue) Util.encodeXMLs(out," orientation=\"",value==null?"inherit":value.toString(), "\"");
-    }
-
-    /** Writes regardless. */
-    private static void dumpDotOrientation(PrintWriter out, DotOrientation value) throws IOException {
-        Util.encodeXMLs(out,"\torientation=\"",value==null?"inherit":value.toString(), "\"");
     }
 
     /*============================================================================================*/
@@ -538,8 +523,8 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Writes regardless. */
-    private static void dumpDotColor(PrintWriter out, DotColor value) throws IOException {
-        Util.encodeXMLs(out, "\tcolor=\"", value==null?"inherit":value.toString(), "\"");
+    private static void saveDotColor(PrintWriter out, DotColor value) throws IOException {
+        Util.encodeXMLs(out, "\tcolor=\"", value.toString(), "\"");
     }
 
     /*============================================================================================*/
@@ -553,8 +538,8 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Writes regardless. */
-    private static void dumpDotShape(PrintWriter out, DotShape value) throws IOException {
-        Util.encodeXMLs(out, "\tshape=\"", value==null?"inherit":value.toString(), "\"");
+    private static void saveDotShape(PrintWriter out, DotShape value) throws IOException {
+        Util.encodeXMLs(out, "\tshape=\"", value.toString(), "\"");
     }
 
     /*============================================================================================*/
@@ -568,8 +553,8 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Writes regardless. */
-    private static void dumpDotStyle(PrintWriter out, DotStyle value) throws IOException {
-        Util.encodeXMLs(out, "\tstyle=\"", value==null?"inherit":value.toString(), "\"");
+    private static void saveDotStyle(PrintWriter out, DotStyle value) throws IOException {
+        Util.encodeXMLs(out, "\tstyle=\"", value.toString(), "\"");
     }
 
     /*============================================================================================*/
@@ -592,10 +577,10 @@ public final class StaticThemeReaderWriter {
     }
 
     /** Writes regardless. */
-    private static void dumpBool(PrintWriter out, String key, Boolean value) throws IOException {
+    private static void saveBool(PrintWriter out, String key, boolean value) throws IOException {
         out.write('\t');
         out.write(key);
-        if (value==null) out.write("=\"inherit\""); else out.write(value ? "=\"yes\"":"=\"no\"");
+        out.write(value ? "=\"yes\"":"=\"no\"");
     }
 
     /*============================================================================================*/
