@@ -19,7 +19,7 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -120,7 +120,7 @@ public class MagicColour {
      * </ul>
      */
     private void nodeShape() {
-        final Set<List<DotShape>> usedShapeFamilies = new HashSet<List<DotShape>>();
+        final Set<List<DotShape>> usedShapeFamilies = new LinkedHashSet<List<DotShape>>();
         final Set<AlloyType> topLevelTypes = MagicUtil.partiallyVisibleUserTopLevelTypes(vizState);
 
         for (final AlloyType t : topLevelTypes) {

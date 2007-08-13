@@ -20,8 +20,8 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,8 +37,8 @@ public class MagicLayout {
     /** The VizState object that we're going to configure. */
     private final VizState vizState;
 
-    private Set<AlloyType> enumerationTypes = new HashSet<AlloyType>();
-    private Set<AlloyType> singletonTypes = new HashSet<AlloyType>();
+    private Set<AlloyType> enumerationTypes = new LinkedHashSet<AlloyType>();
+    private Set<AlloyType> singletonTypes = new LinkedHashSet<AlloyType>();
     private AlloyType projectionType = null;
     private Set<AlloyRelation> spineRelations = Collections.emptySet();
 
@@ -141,7 +141,7 @@ public class MagicLayout {
         if (projectionType == null && vizState.getProjectedTypes().isEmpty()) {
             final AlloyModel model = vizState.getCurrentModel();
             //final Set<AlloyType> candidateTypes = new HashSet<AlloyType>();
-            final Map<AlloyType,Integer> scores = new HashMap<AlloyType,Integer>();
+            final Map<AlloyType,Integer> scores = new LinkedHashMap<AlloyType,Integer>();
             for (final AlloyType t : model.getTypes()) {
                 scores.put(t, 0);
                 // does it have a name like State, Time, etc
@@ -161,7 +161,7 @@ public class MagicLayout {
             }
             // now we have the scores, see who the winners are:
             int max = 0;
-            final Set<AlloyType> winners = new HashSet<AlloyType>();
+            final Set<AlloyType> winners = new LinkedHashSet<AlloyType>();
             for (final Map.Entry<AlloyType,Integer> e : scores.entrySet()) {
                 if (e.getValue() == max) {
                     winners.add(e.getKey());
@@ -205,7 +205,7 @@ public class MagicLayout {
 
     private final static Set<String> LIKELY_PROJECTION_TYPE_NAMES;
     static {
-        final Set<String> s = new HashSet<String>();
+        final Set<String> s = new LinkedHashSet<String>();
         s.add("State");
         s.add("TrainState");
         s.add("Time");
@@ -235,7 +235,7 @@ public class MagicLayout {
             // only mess with the relations if there are some
 
             // only binary relations are candidates
-            final Set<AlloyRelation> spines = new HashSet<AlloyRelation>();
+            final Set<AlloyRelation> spines = new LinkedHashSet<AlloyRelation>();
             for (final AlloyRelation r : relations) {
                 if (r.getArity() == 2) {
                     final List<AlloyType> rtypes = r.getTypes();

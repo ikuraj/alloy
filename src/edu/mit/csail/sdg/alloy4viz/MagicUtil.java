@@ -20,7 +20,7 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -90,7 +90,7 @@ public final class MagicUtil {
      * @param vizState
      */
     static Set<AlloyType> visibleUserTypes(final VizState vizState) {
-        final Set<AlloyType> result = new HashSet<AlloyType>();
+        final Set<AlloyType> result = new LinkedHashSet<AlloyType>();
         final AlloyModel model = vizState.getCurrentModel();
         for (final AlloyType t : model.getTypes()) {
             if (!t.isBuiltin && MagicUtil.isActuallyVisible(vizState, t)) {
@@ -105,7 +105,7 @@ public final class MagicUtil {
      * @param vizState
      */
     static Set<AlloyType> topLevelTypes(final VizState vizState) {
-        final Set<AlloyType> result = new HashSet<AlloyType>();
+        final Set<AlloyType> result = new LinkedHashSet<AlloyType>();
         final AlloyModel model = vizState.getOriginalModel();
         for (final AlloyType t : model.getTypes()) {
             if (vizState.isTopLevel(t)) {
@@ -124,7 +124,7 @@ public final class MagicUtil {
         final Set<AlloyType> visibleUserTypes = visibleUserTypes(vizState);
         //final Set<AlloyType> topLevelTypes = topLevelTypes(vizState);
 
-        final Set<AlloyType> result = new HashSet<AlloyType>();
+        final Set<AlloyType> result = new LinkedHashSet<AlloyType>();
 
         for (final AlloyType t : visibleUserTypes) {
             if (visibleUserTypes.contains(t)) {
@@ -144,7 +144,7 @@ public final class MagicUtil {
         final AlloyModel model = vizState.getCurrentModel();
         final List<AlloyType> subTypes = model.getSubTypes(type);
         final Set<AlloyType> visibleUserTypes = visibleUserTypes(vizState);
-        final Set<AlloyType> result = new HashSet<AlloyType>();
+        final Set<AlloyType> result = new LinkedHashSet<AlloyType>();
 
         for (final AlloyType st : subTypes) {
             if (visibleUserTypes.contains(st)) {
