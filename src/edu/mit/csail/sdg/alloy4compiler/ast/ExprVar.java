@@ -73,7 +73,7 @@ public final class ExprVar extends Expr {
      * @param expr - the quantification/substitution expression for this variable; <b> it must already be fully resolved </b>
      */
     public static ExprVar make(Pos pos, String label, Expr expr) {
-        if (expr.ambiguous) expr=expr.resolve(expr.type);
+        if (expr.ambiguous) expr=expr.resolve(expr.type, sink);
         return new ExprVar(pos, label, expr);
     }
 

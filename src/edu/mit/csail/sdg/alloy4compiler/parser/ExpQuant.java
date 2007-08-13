@@ -60,7 +60,7 @@ public final class ExpQuant extends Exp {
         Expr guard=null;
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
         for(ExpDecl d: decls) {
-            Expr v = Context.resolveExpSet(d.expr.check(cx, warnings), warnings);
+            Expr v = d.expr.check(cx, warnings).resolve_as_set(warnings);
             // If the variable declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (v.mult==0 && v.type.arity()==1) v=ExprUnary.Op.ONEOF.make(null, v);
             List<Expr> disjoints = (d.disjoint!=null && d.names.size()>1) ? (new ArrayList<Expr>(d.names.size())) : null;
@@ -72,9 +72,8 @@ public final class ExpQuant extends Exp {
             }
             if (disjoints!=null) guard=ExprBuiltin.makeDISJOINT(d.disjoint, disjoints).and(guard);
         }
-        Expr sub = (op==Op.SUM)
-            ? Context.resolveExpInt(this.sub.check(cx, warnings), warnings)
-            : Context.resolveExpFormula(this.sub.check(cx, warnings), warnings);
+        Expr sub = this.sub.check(cx, warnings);
+        if (op==Op.SUM) sub=sub.resolve_as_int(warnings); else sub=sub.resolve_as_formula(warnings);
         for(ExpDecl d: decls) for(ExpName n: d.names) cx.remove(n.name);
         if (guard!=null) {
             switch(op) {

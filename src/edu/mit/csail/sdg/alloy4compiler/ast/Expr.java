@@ -51,7 +51,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 public abstract class Expr {
 
     /** This is an empty collection which ignores all modification attempts. */
-    private static final Collection<ErrorWarning> sink = new AbstractCollection<ErrorWarning>() {
+    static final Collection<ErrorWarning> sink = new AbstractCollection<ErrorWarning>() {
         @Override public final int size() { return 0; }
         @Override public final boolean add(ErrorWarning x) { return true; } // This class pretends add() succeeds
         @Override public final Iterator<ErrorWarning> iterator() {
@@ -66,6 +66,29 @@ public abstract class Expr {
     /** Accepts the return visitor. */
     abstract Object accept(VisitReturn visitor) throws Err;
 
+    /** Converts this into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */
+    public final Expr typecheck_as_formula() {
+        if (!errors.isEmpty() || type.is_bool) return this;
+        String msg = "This must be a formula expression.\nInstead, it has the following possible type(s):\n" + type;
+        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+    }
+
+    /** Converts this into an "integer expression" if possible; otherwise, returns an Expr with a nonempty error list */
+    public final Expr typecheck_as_int() {
+        if (!errors.isEmpty() || type.is_int) return this;
+        if (Type.SIGINT2INT && type.intersects(SIGINT.type)) return cast2int();
+        String msg = "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+type;
+        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+    }
+
+    /** Converts this into a "set or relation" if possible; otherwise, returns an Expr with a nonempty error list */
+    public final Expr typecheck_as_set() {
+        if (!errors.isEmpty() || type.size()>0) return this;
+        if (Type.INT2SIGINT && type.is_int) return cast2sigint();
+        String msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+type;
+        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+    }
+
     /**
      * If this expression is ambiguous, resolve it and return an unambiguous copy of this Expr, else return the Expr as-is.
      * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
@@ -78,15 +101,22 @@ public abstract class Expr {
      */
     public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings);
 
-    /**
-     * If this expression is ambiguous, resolve it and return an unambiguous copy of this Expr, else return the Expr as-is.
-     * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
-     * (Note: it's possible for t to be EMPTY, or even ambiguous!)
-     *
-     * <p> On success: the return value (and all its subnodes) will be well-typed and unambiguous
-     * <p> On failure: the return value's "errors" list will be nonempty
-     */
-    public final Expr resolve(Type t) { return resolve(t, sink); }
+    public final Expr resolve_as_formula(Collection<ErrorWarning> warnings) {
+        if (warnings==null) warnings=sink;
+        return typecheck_as_formula().resolve(Type.FORMULA, warnings).typecheck_as_formula();
+    }
+
+    public final Expr resolve_as_int(Collection<ErrorWarning> warnings) {
+        if (warnings==null) warnings=sink;
+        return typecheck_as_int().resolve(Type.INT, warnings).typecheck_as_int();
+    }
+
+    public final Expr resolve_as_set(Collection<ErrorWarning> warnings) {
+        if (warnings==null) warnings=sink;
+        Expr x = typecheck_as_set();
+        Type t = x.type;
+        return x.resolve(Type.removesBoolAndInt(t), warnings).typecheck_as_set();
+    }
 
     /** The filename, line, and column position in the original Alloy model file (cannot be null). */
     public final Pos pos;
@@ -198,29 +228,6 @@ public abstract class Expr {
     //================================================================================//
     // Below are convenience methods for building up expressions from subexpressions. //
     //================================================================================//
-
-    /** Converts this into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */
-    public final Expr typecheck_as_formula() {
-        if (!errors.isEmpty() || type.is_bool) return this;
-        String msg = "This must be a formula expression.\nInstead, it has the following possible type(s):\n" + type;
-        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
-    }
-
-    /** Converts this into an "integer expression" if possible; otherwise, returns an Expr with a nonempty error list */
-    public final Expr typecheck_as_int() {
-        if (!errors.isEmpty() || type.is_int) return this;
-        if (Type.SIGINT2INT && type.intersects(SIGINT.type)) return cast2int();
-        String msg = "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+type;
-        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
-    }
-
-    /** Converts this into a "set or relation" if possible; otherwise, returns an Expr with a nonempty error list */
-    public final Expr typecheck_as_set() {
-        if (!errors.isEmpty() || type.size()>0) return this;
-        if (Type.INT2SIGINT && type.is_int) return cast2sigint();
-        String msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+type;
-        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
-    }
 
     /**
      * Returns the formula (this and x)

@@ -381,10 +381,7 @@ public abstract class Sig extends Expr {
      */
     public final Field addTrickyField(Pos pos, String label, ExprVar x, Expr bound) throws Err {
         bound=bound.typecheck_as_set();
-        if (bound.ambiguous) {
-            bound=bound.resolve(Type.removesBoolAndInt(bound.type));
-            bound=bound.typecheck_as_set();
-        }
+        if (bound.ambiguous) bound=bound.resolve_as_set(Expr.sink);
         final Field f=new Field(pos, this, label, x, bound);
         fields.add(f);
         return f;

@@ -89,7 +89,8 @@ public final class CompUtil {
             Exp body = u.funs.get(0).body;
             Context cx = new Context(world.getRootModule());
             ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
-            Expr ans = Context.resolveExp(body.check(cx, warnings), warnings);
+            Expr ans = body.check(cx, warnings);
+            ans = ans.resolve(ans.type, warnings);
             if (ans.errors.size()>0) throw ans.errors.get(0);
             return ans;
         } catch(IOException ex) {
@@ -420,7 +421,7 @@ public final class CompUtil {
                 // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
                 final ExprVar THIS = s.oneOf("this");
                 cx.put("this", THIS);
-                Expr bound=Context.resolveExpSet(d.expr.check(cx, warns), warns), disjA=null, disjF=ExprConstant.TRUE;
+                Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
                 cx.remove("this");
                 for(final ExpName n:d.names) {
                     for(Field f:s.getFields())
@@ -465,11 +466,11 @@ public final class CompUtil {
                 if (dup!=null) throw new ErrorSyntax(f.pos, "The parameter name \""+dup+"\" cannot appear more than once in this predicate/function declaration.");
                 // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
                 // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
-                TempList<ExprVar> tmpvars=new TempList<ExprVar>();
+                TempList<ExprVar> tmpvars = new TempList<ExprVar>();
                 if (f.args!=null) {
                   for(ExpDecl d:f.args) {
-                    Expr val = Context.resolveExpSet(d.expr.check(cx, warns), warns);
-                    errors=errors.join(val.errors);
+                    Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
+                    errors = errors.join(val.errors);
                     for(ExpName n: d.names) {
                         ExprVar v=ExprVar.make(n.span(), n.name, val);
                         cx.put(n.name, v);
@@ -478,8 +479,11 @@ public final class CompUtil {
                     }
                   }
                 }
-                Expr ret = f.returnType==null ? null : Context.resolveExpSet(f.returnType.check(cx, warns), warns);
-                if (ret!=null) errors=errors.join(ret.errors);
+                Expr ret = null;
+                if (f.returnType!=null) {
+                    ret = f.returnType.check(cx, warns).resolve_as_set(warns);
+                    errors = errors.join(ret.errors);
+                }
                 Func ff = y.addFun(f.pos, f.name, tmpvars.makeConst(), ret);
                 rep.typecheck(""+ff+", RETURN: "+ff.returnDecl.type+"\n");
                 funast2fun.put(f, ff);
@@ -502,12 +506,8 @@ public final class CompUtil {
                     }
                     if (disjvars!=null) disj=disj.and(ExprBuiltin.makeDISJOINT(d.disjoint, disjvars));
                 }
-                Expr newBody;
-                if (ff.isPred) {
-                    newBody = Context.resolveExpFormula(f.body.check(cx, warns), warns);
-                } else {
-                    newBody = Context.resolveExpSet(f.body.check(cx, warns), warns);
-                }
+                Expr newBody = f.body.check(cx, warns);
+                if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
                 errors = errors.join(newBody.errors);
                 ff.setBody(newBody);
                 for(ExpDecl d:f.args) for(ExpName n:d.names) cx.remove(n.name);
@@ -531,12 +531,12 @@ public final class CompUtil {
             Module y=x.topoModule;
             Context cx = new Context(y);
             for(Map.Entry<String,Exp> e:x.asserts.entrySet()) {
-                Expr formula = Context.resolveExpFormula(e.getValue().check(cx, warns), warns);
+                Expr formula = e.getValue().check(cx, warns).resolve_as_formula(warns);
                 if (formula.errors.size()>0) errors=errors.join(formula.errors);
                 else y.addAssertion(e.getKey(), formula);
             }
             for(Map.Entry<String,Exp> e:x.facts.entrySet()) {
-                Expr formula = Context.resolveExpFormula(e.getValue().check(cx, warns), warns);
+                Expr formula = e.getValue().check(cx, warns).resolve_as_formula(warns);
                 if (formula.errors.size()>0) errors=errors.join(formula.errors);
                 else y.addFact(e.getKey(), formula);
             }
@@ -548,7 +548,7 @@ public final class CompUtil {
                 ExprVar THIS = s.oneOf("this");
                 cx.rootsig=s;
                 cx.put("this", THIS);
-                Expr formula = Context.resolveExpFormula(f.check(cx, warns), warns);
+                Expr formula = f.check(cx, warns).resolve_as_formula(warns);
                 cx.remove("this");
                 formula = formula.forAll(THIS);
                 if (formula.errors.size()>0) errors=errors.join(formula.errors);

@@ -21,12 +21,10 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.ErrorType;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -34,7 +32,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
 /**
@@ -180,58 +177,4 @@ public final class Context {
             return new ErrorType(x.span(), "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+x.type);
         return null;
     }
-
-    /**
-     * Fully resolve a node.
-     * <p> On success: a possibly-copied version of X that is identical to X, except that all the type information are filled in
-     * <p> On failure: the return value will have a nonempty error list
-     */
-    public static final Expr resolveExp(Expr x, Collection<ErrorWarning> warns) {
-        Type t=x.type;
-        if (t.arity()<0) {
-            // If we can have multiple arities, but some of them are empty, then remove the empty ones.
-            Type tt=(t.is_bool ? (t.is_int ? Type.INTANDFORMULA: Type.FORMULA) : (t.is_int ? Type.INT : Type.EMPTY));
-            for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
-            if (tt.size()>0) t=tt;
-        }
-        x=x.resolve(t, warns);
-        return x;
-    }
-
-    /**
-     * Fully resolve a node to be a set or relation
-     * <p> On success: a possibly-copied version of X that is identical to X, except that all the type information are filled in
-     * <p> On failure: the return value will have a nonempty error list
-     */
-    public static final Expr resolveExpSet(Expr x, Collection<ErrorWarning> warns) {
-        x=x.typecheck_as_set();
-        Type t=Type.removesBoolAndInt(x.type);
-        if (t.arity()<0) {
-            // If we can have multiple arities, but some of them are empty, then remove the empty ones.
-            Type tt=Type.EMPTY;
-            for(ProductType r:t) if (!r.isEmpty()) tt=tt.merge(r);
-            if (tt.size()>0) t=tt;
-        }
-        x=x.resolve(t, warns);
-        return x.typecheck_as_set();
-    }
-
-    /**
-     * Fully resolve a node to be an integer expression
-     * <p> On success: a possibly-copied version of X that is identical to X, except that all the type information are filled in
-     * <p> On failure: the return value will have a nonempty error list
-     */
-    public static final Expr resolveExpInt(Expr x, Collection<ErrorWarning> warns) {
-        return x.typecheck_as_int().resolve(Type.INT, warns).typecheck_as_int();
-    }
-
-    /**
-     * Fully resolve a node to be a formula
-     * <p> On success: a possibly-copied version of X that is identical to X, except that all the type information are filled in
-     * <p> On failure: the return value will have a nonempty error list
-     */
-    public static final Expr resolveExpFormula(Expr x, Collection<ErrorWarning> warns) {
-        return x.typecheck_as_formula().resolve(Type.FORMULA, warns).typecheck_as_formula();
-    }
-
 }
