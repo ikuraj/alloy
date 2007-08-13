@@ -363,7 +363,7 @@ public abstract class Sig extends Expr {
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field addField(Pos pos, String label, Expr bound) throws Err {
-    	return addTrickyField(pos, label, null, bound);
+        return addTrickyField(pos, label, null, bound);
     }
 
     /**
