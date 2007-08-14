@@ -23,7 +23,6 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.util.List;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -120,7 +119,7 @@ final class ExpDot extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
+    public Expr check(Context cx, List<ErrorWarning> warnings) {
         int warningSize = warnings.size();
         // First, check whether it could be a legal function/predicate call
         TempList<Expr> objects=new TempList<Expr>();

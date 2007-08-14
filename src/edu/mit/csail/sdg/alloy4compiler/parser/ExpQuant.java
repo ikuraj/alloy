@@ -23,7 +23,6 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
@@ -84,7 +83,7 @@ final class ExpQuant extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
+    public Expr check(Context cx, List<ErrorWarning> warnings) {
         Expr guard=null;
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
         for(Decl d: decls) {
