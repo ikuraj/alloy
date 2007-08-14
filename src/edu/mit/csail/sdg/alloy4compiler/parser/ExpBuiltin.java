@@ -52,7 +52,7 @@ final class ExpBuiltin extends Exp {
     public Pos span() {
         Pos p=span;
         if (p==null) {
-            p=pos;
+            p=pos.merge(closingBracket);
             for(Exp a:args) p=p.merge(a.span());
             span=p;
         }

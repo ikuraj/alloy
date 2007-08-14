@@ -176,12 +176,7 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
-        if (errors.size()>0) return this;
-        // If errors.size()==0, then the variables are always already fully resolved, so we only need to resolve sub
-        Expr newSub = sub.resolve((op==Op.SUM ? Type.INT : Type.FORMULA), warnings);
-        return (sub==newSub) ? this : op.make(pos, closingBracket, vars, newSub);
-    }
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) { return this; }
 
     //=============================================================================================================//
 

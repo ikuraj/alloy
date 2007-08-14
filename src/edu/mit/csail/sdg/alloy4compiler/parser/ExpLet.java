@@ -57,7 +57,7 @@ final class ExpLet extends Exp {
     /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=pos.merge(left.span()).merge(right.span()).merge(sub.span()); span=p; }
+        if (p==null) { p=pos.merge(sub.span()).merge(left.span()).merge(right.span()); span=p; }
         return p;
     }
 

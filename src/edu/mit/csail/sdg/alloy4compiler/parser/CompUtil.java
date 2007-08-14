@@ -581,6 +581,7 @@ public final class CompUtil {
             }
         }
 
+        for(ErrorWarning w:warns) rep.warning(w);
         if (!errors.isEmpty()) throw errors.get(0); else return world;
     }
 

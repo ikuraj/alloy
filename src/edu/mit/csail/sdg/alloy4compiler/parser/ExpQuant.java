@@ -78,7 +78,11 @@ final class ExpQuant extends Exp {
     /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=pos.merge(closingBracket).merge(sub.span()); for(Decl d:decls) p=p.merge(d.span()); span=p; }
+        if (p==null) {
+            p=pos.merge(closingBracket).merge(sub.span());
+            for(Decl d:decls) p=p.merge(d.span());
+            span=p;
+        }
         return p;
     }
 
