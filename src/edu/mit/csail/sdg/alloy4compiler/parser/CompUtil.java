@@ -68,8 +68,6 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 public final class CompUtil {
 
-    private int z;
-
     //=============================================================================================================//
 
     /** Constructor is private, since this class never needs to be instantiated. */
@@ -230,7 +228,7 @@ public final class CompUtil {
                 //if (vv==vv.world.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument.");
                 chg=true;
                 uu.params.put(kn,vv);
-                if (uu.pos!=null && uu.pos.filename!=null && f.getValue().pos!=null && World.is_alloy3ord(kn, uu.pos.filename))
+                if (uu.pos!=null && uu.pos.filename!=null && f.getValue().pos!=null && Module.is_alloy3ord(kn, uu.pos.filename))
                     vv.orderingPosition=f.getValue().pos;
                 A4Reporter.getReporter().parse("RESOLVE: "+f.getKey()+"/"+kn+" := "+vv+"\n");
             }
@@ -505,32 +503,8 @@ public final class CompUtil {
         }
 
         for(CompModule x:modules) {
-            Module y=x.topoModule;
-            Context cx = new Context(y);
-            for(Map.Entry<String,Exp> e:x.asserts.entrySet()) {
-                Expr formula = e.getValue().check(cx, warns).resolve_as_formula(warns);
-                if (formula.errors.size()>0) errors=errors.join(formula.errors);
-                else y.addAssertion(e.getKey(), formula);
-            }
-            for(Map.Entry<String,Exp> e:x.facts.entrySet()) {
-                Expr formula = e.getValue().check(cx, warns).resolve_as_formula(warns);
-                if (formula.errors.size()>0) errors=errors.join(formula.errors);
-                else y.addFact(e.getKey(), formula);
-            }
-            for(Map.Entry<String,SigAST> e:x.sigs.entrySet()) {
-                Sig s=e.getValue().topoSig;
-                if (s.anno.get("orderingSIG") instanceof Sig) continue;
-                Exp f=e.getValue().appendedFact;
-                if (f==null) continue;
-                ExprVar THIS = s.oneOf("this");
-                cx.rootsig=s;
-                cx.put("this", THIS);
-                Expr formula = f.check(cx, warns).resolve_as_formula(warns);
-                cx.remove("this");
-                formula = formula.forAll(THIS);
-                if (formula.errors.size()>0) errors=errors.join(formula.errors);
-                else y.addFact(""+s+"#fact", formula);
-            }
+            errors = x.checkAssertions(errors, warns);
+            errors = x.checkFacts(errors, warns);
         }
 
         for(CompModule x:modules) if (x.paths.contains("")) {

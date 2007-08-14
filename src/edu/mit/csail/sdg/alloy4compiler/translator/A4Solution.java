@@ -297,7 +297,7 @@ public final class A4Solution {
             rep.debug("A4Solution() #4...");
             if (parent.bc!=null) {
                 rep.debug("A4Solution() #5...");
-                for(Sig s:parent.world.getAllSigs()) if (!s.builtin && s.isTopLevel()) rename((PrimSig)s,m1,m2);
+                for(Sig s:parent.world.all()) if (!s.builtin && s.isTopLevel()) rename((PrimSig)s,m1,m2);
                 rep.debug("A4Solution() #6...");
                 int unused=0;
                 for(Object atom: parent.bc.factory().universe()) {
@@ -591,7 +591,7 @@ public final class A4Solution {
             Version.buildDate(), "\">\n\n<instance filename=\"",
             parent.originalFileName, "\" bitwidth=\"",
             Integer.toString(parent.bitwidth), "\" command=\"", parent.originalCommand,"\">\n");
-        for(Sig s:parent.world.getAllSigs()) process_each_sig(out, s, rels, un);
+        for(Sig s:parent.world.all()) process_each_sig(out, s, rels, un);
         // Write out SIGINT
         out.print("\n<sig name=\"Int\" isBuiltin=\"true\">\n");
         un.seen("Int");
@@ -723,7 +723,7 @@ public final class A4Solution {
         obj2expr.put(UNIV, Relation.UNIV);
         obj2expr.put(SIGINT, Relation.INTS);
         obj2expr.put(NONE, Relation.NONE);
-        for(Sig s:world.getAllSigs()) if (s!=NONE && s!=UNIV) {
+        for(Sig s:world.all()) if (s!=NONE && s!=UNIV) {
             List<String> atms = (s instanceof PrimSig) ? sig2atoms.remove(s.label) : set2atoms.remove(s.label);
             TupleSet ts=tf.noneOf(1);
             if (atms!=null) for(String a:atms) {
@@ -761,7 +761,7 @@ public final class A4Solution {
             }
             field2expr.put(fn, ts);
         }
-        for(Sig s:world.getAllSigs()) if (!s.builtin) {
+        for(Sig s:world.all()) if (!s.builtin) {
             for(Field f:s.getFields()) {
                 TupleSet ts=tf.noneOf(f.type.arity());
                 getField(s, f.label, field2expr, ts);

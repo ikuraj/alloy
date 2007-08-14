@@ -60,8 +60,6 @@ import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
 public final class Context {
 
-    private int z;
-
     // field&sig!=null    else if sig!=null     else if fun!=null     allelse
     public boolean rootfield=false;
     public Sig rootsig=null;

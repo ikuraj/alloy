@@ -72,8 +72,16 @@ public abstract class Sig extends Expr {
     /** {@inheritDoc} */
     @Override final Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
 
+    // TODO
     /** Set of annotations; mutable. */
-    public final Map<Object,Object> anno=new LinkedHashMap<Object,Object>(); // TODO
+    public final Map<Object,Object> anno=new LinkedHashMap<Object,Object>();
+
+    // TODO
+    /** This helper function determines whether this is an instance of the util/ordering "Ord" sig; if so, return the "elem" */
+    public Sig isOrd() {
+        Object x = anno.get("orderingSIG");
+        if (x instanceof Sig) return (Sig)x; else return null;
+    }
 
     /**
      * True if this sig is one of the built-in sig.

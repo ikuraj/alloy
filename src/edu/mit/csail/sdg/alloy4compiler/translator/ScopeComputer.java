@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.SafeList;
@@ -130,7 +131,7 @@ final class ScopeComputer {
 
     // If A is abstract, unscoped, and all children are scoped, then we can derive A' scope.
     // If A is abstract, scoped, and every child is scoped except one, then we can derive that child's scope.
-    private boolean derive_abstract_scope (SafeList<Sig> sigs) throws Err {
+    private boolean derive_abstract_scope (Iterable<Sig> sigs) throws Err {
         boolean changed=false;
         again:
         for(Sig s:sigs) if (!s.builtin && (s instanceof PrimSig) && s.isAbstract) {
@@ -158,7 +159,7 @@ final class ScopeComputer {
     //
     // After 1 or more execution of this method, every toplevel sig will be scoped
     // (Or else this method would have thrown an exception)
-    private boolean derive_overall_scope(SafeList<Sig> sigs) throws Err {
+    private boolean derive_overall_scope(Iterable<Sig> sigs) throws Err {
         boolean changed=false;
         final int overall;
         if (cmd.overall<0 && cmd.scope.size()==0) overall=3; else overall=cmd.overall;
@@ -176,7 +177,7 @@ final class ScopeComputer {
     //
     // After 1 execution of this method, every subsig will be scoped.
     // (Or else this method would have thrown an exception)
-    private void derive_scope_from_parent(SafeList<Sig> sigs) throws Err {
+    private void derive_scope_from_parent(Iterable<Sig> sigs) throws Err {
         while(true) {
             boolean changed=false;
             Sig trouble=null;
@@ -199,7 +200,7 @@ final class ScopeComputer {
         this.rep=A4Reporter.getReporter();
         this.cmd=cmd;
         final Module root=world.getRootModule();
-        final SafeList<Sig> sigs=world.getAllSigs();
+        final ConstList<Sig> sigs=world.all();
         // Resolve each name listed in the command
         for(Map.Entry<String,Integer> entry:cmd.scope.entrySet()) {
             String name=entry.getKey();
@@ -267,7 +268,7 @@ final class ScopeComputer {
         }
         // Add special overrides for util/ordering
         for(final Sig s:sigs) {
-            final Sig s2 = World.is_alloy3ord(s);
+            final Sig s2 = s.isOrd();
             if (s2!=null) {
                 if (sig2scope(s2)<=0)
                     throw new ErrorSyntax(cmd.pos, "Sig "+s2

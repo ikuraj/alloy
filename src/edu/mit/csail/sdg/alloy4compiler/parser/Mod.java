@@ -28,10 +28,14 @@ import java.util.Map;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
@@ -42,16 +46,18 @@ final class CompModule { // Comparison is by identity
 
     //=============================================================================================================//
 
-    private int z;
-
     String moduleName="unknown";
     Pos pos=Pos.UNKNOWN;
     final World world;
     final String path;
     List<String> paths=new ArrayList<String>();
-    final Map<String,SigAST> params=new LinkedHashMap<String,SigAST>();
-    final List<String> paramNames=new ArrayList<String>();
     Module topoModule=null; // This flag is set to its corresponding Module during topological sort
+
+    //=============================================================================================================//
+
+    final Map<String,SigAST> params=new LinkedHashMap<String,SigAST>();
+
+    final List<String> paramNames=new ArrayList<String>();
 
     CompModule(World world, String path) {
         this.world=world;
@@ -74,6 +80,32 @@ final class CompModule { // Comparison is by identity
         if (path.length()==0) {params.clear(); paramNames.clear();}
     }
 
+    //=============================================================================================================//
+
+    final List<Pair<String,Command>> commands=new ArrayList<Pair<String,Command>>();
+
+    void addCommand(Pos p,String n,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
+        if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
+        if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
+        List<String> options=new ArrayList<String>(opts.size());
+        for(ExpName opt:opts) options.add(opt.name);
+        if (label==null || label.length()==0) label=n;
+        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
+    }
+
+    void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
+        String n;
+        if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run#"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
+        if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
+        if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
+        List<String> options=new ArrayList<String>(opts.size());
+        for(ExpName opt:opts) options.add(opt.name);
+        if (label==null || label.length()==0) label=n;
+        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
+    }
+
+    //=============================================================================================================//
+
     final Map<String,CompModule> opens=new LinkedHashMap<String,CompModule>();
 
     final Map<String,Open> opencmds=new LinkedHashMap<String,Open>();
@@ -86,27 +118,6 @@ final class CompModule { // Comparison is by identity
         if (opencmds.containsKey(x.alias))
             throw new ErrorSyntax(pos, "You cannot import more than 1 module using the same alias.");
         opencmds.put(x.alias, x);
-    }
-
-    //=============================================================================================================//
-
-    final List<FunAST> funs = new ArrayList<FunAST>();
-
-    void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
-        d=new ArrayList<Decl>(d);
-        if (f!=null) d.add(0, new Decl(null, Util.asList(new ExpName(f.span(), "this")), f));
-        funs.add(new FunAST(p, n, d, t, v));
-    }
-
-    static final class FunAST {
-        final Pos pos;
-        final String name;
-        final List<Decl> args;
-        final Exp returnType;
-        final Exp body;
-        FunAST(Pos p, String n, List<Decl> a, Exp r, Exp b) {
-            pos=p; name=n; args=a; returnType=r; body=b;
-        }
     }
 
     //=============================================================================================================//
@@ -164,7 +175,7 @@ final class CompModule { // Comparison is by identity
 
     //=============================================================================================================//
 
-    final Map<String,Exp> facts = new LinkedHashMap<String,Exp>();
+    private final Map<String,Object> facts = new LinkedHashMap<String,Object>();
 
     void addFact(Pos pos, String name, Exp value) throws Err {
         if (name==null || name.length()==0) name="fact#"+(1+facts.size());
@@ -172,39 +183,92 @@ final class CompModule { // Comparison is by identity
         facts.put(name,value);
     }
 
+    void addFact(Pos pos, String name, Expr value) throws Err {
+        if (name==null || name.length()==0) name="fact#"+(1+facts.size());
+        if (facts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same file, a fact cannot have the same name as another fact.");
+        facts.put(name,value);
+    }
+
+    JoinableList<Err> checkFacts(JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+        Context cx = new Context(topoModule);
+        for(Map.Entry<String,Object> e:facts.entrySet()) {
+            Object x = e.getValue();
+            Expr expr = null;
+            if (x instanceof Expr) expr=(Expr)x;
+            if (x instanceof Exp) {
+                expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
+                e.setValue(expr);
+                topoModule.addFact(e.getKey(), expr); // TODO
+            }
+            if (expr.errors.size()>0) errors=errors.join(expr.errors);
+            //else A4Reporter.getReporter().typecheck("Fact " + e.getKey() + ": " + expr.type+"\n"); TODO
+        }
+        for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
+            Sig s=e.getValue().topoSig;
+            if (s.anno.get("orderingSIG") instanceof Sig) continue;
+            Exp f=e.getValue().appendedFact;
+            if (f==null) continue;
+            ExprVar THIS = s.oneOf("this");
+            cx.rootsig=s;
+            cx.put("this", THIS);
+            Expr formula = f.check(cx, warns).resolve_as_formula(warns);
+            cx.remove("this");
+            formula = formula.forAll(THIS);
+            if (formula.errors.size()>0) errors=errors.join(formula.errors);
+            else topoModule.addFact(""+s+"#fact", formula);
+        }
+        return errors;
+    }
+
     //=============================================================================================================//
 
-    final Map<String,Exp> asserts=new LinkedHashMap<String,Exp>();
+    private final Map<String,Object> asserts = new LinkedHashMap<String,Object>();
 
     String addAssertion(Pos pos, String name, Exp value) throws Err {
         if (name==null || name.length()==0) name="assert#"+(1+asserts.size());
-        if (asserts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same file, an assertion cannot have the same name as another assertion.");
+        if (name.indexOf('/')>=0) throw new ErrorSyntax(pos, "Assertion name \""+name+"\" cannot contain \'/\'");
+        if (name.indexOf('@')>=0) throw new ErrorSyntax(pos, "Asserition name \""+name+"\" cannot contain \'@\'");
+        if (asserts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same module, two assertions cannot have the same name.");
         asserts.put(name, value);
         return name;
     }
 
-    //=============================================================================================================//
-
-    final List<Pair<String,Command>> commands=new ArrayList<Pair<String,Command>>();
-
-    void addCommand(Pos p,String n,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
-        if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
-        if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
-        List<String> options=new ArrayList<String>(opts.size());
-        for(ExpName opt:opts) options.add(opt.name);
-        if (label==null || label.length()==0) label=n;
-        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
+    JoinableList<Err> checkAssertions(JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+        Context cx = new Context(topoModule);
+        for(Map.Entry<String,Object> e:asserts.entrySet()) {
+            Object x = e.getValue();
+            Expr expr = null;
+            if (x instanceof Expr) expr=(Expr)x;
+            if (x instanceof Exp) {
+                expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
+                e.setValue(expr);
+                topoModule.addAssertion(e.getKey(), expr); // TODO
+            }
+            if (expr.errors.size()>0) errors=errors.join(expr.errors);
+            //else A4Reporter.getReporter().typecheck("Assertion " + e.getKey() + ": " + expr.type+"\n"); TODO
+        }
+        return errors;
     }
 
-    void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
-        String n;
-        if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run#"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
-        if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
-        if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
-        List<String> options=new ArrayList<String>(opts.size());
-        for(ExpName opt:opts) options.add(opt.name);
-        if (label==null || label.length()==0) label=n;
-        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
+    //=============================================================================================================//
+
+    final List<FunAST> funs = new ArrayList<FunAST>();
+
+    void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
+        d=new ArrayList<Decl>(d);
+        if (f!=null) d.add(0, new Decl(null, Util.asList(new ExpName(f.span(), "this")), f));
+        funs.add(new FunAST(p, n, d, t, v));
+    }
+
+    static final class FunAST {
+        final Pos pos;
+        final String name;
+        final List<Decl> args;
+        final Exp returnType;
+        final Exp body;
+        FunAST(Pos p, String n, List<Decl> a, Exp r, Exp b) {
+            pos=p; name=n; args=a; returnType=r; body=b;
+        }
     }
 
     //=============================================================================================================//
@@ -246,8 +310,8 @@ final class CompModule { // Comparison is by identity
         return ans;
     }
 
-    static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, UNIV);
-    static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, SIGINT);
-    static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, SEQIDX);
-    static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, NONE);
+    private static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, UNIV);
+    private static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, SIGINT);
+    private static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, SEQIDX);
+    private static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, NONE);
 }

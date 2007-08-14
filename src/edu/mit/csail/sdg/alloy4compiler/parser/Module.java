@@ -20,7 +20,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import java.io.File;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -35,6 +37,8 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
+import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
@@ -45,18 +49,98 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 /** Mutable; this class represents one Alloy module; equals() uses object identity. */
 
-public final class Module {
+public final class Module implements World {
 
-    private int z;
+    /** This helper function determines whether "s" is an instance of the util/ordering "Ord" sig. */
+    public static boolean is_alloy3ord(String paramname, String filename) {
+        return paramname.equals("elem") && filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als");
+    }
 
+    //======== ROOT ONLY =====
+
+    /** IF ROOT: This lists all modules in this world; it must be consistent with this.path2module */
+    private SafeList<Module> modules = new SafeList<Module>();
+
+    /** IF ROOT: This maps pathname to the Module it refers to; it must be consistent with this.modules */
+    private Map<String,Module> path2module = new LinkedHashMap<String,Module>();
+
+    /** Returns an unmodifiable list of all modules. */
+    public SafeList<Module> getAllModules() { return modules.dup(); }
+
+    /**
+     * Returns the module with the given path; returns null if there is no module with that path.
+     *
+     * <p> Note: a module can have more than 1 valid paths to it;
+     * thus, calling lookupModule() with different arguments may return the same Module.
+     * <br> To avoid receiving duplicates, call world.getAllModules() to get the list of all modules.
+     */
+    public Module lookupModule(String path) { return path2module.get(path); }
+
+    /**
+     * Find the module with the given path, then return it and all its descendent modules.
+     * (it will return an empty list if there are no modules matching this criteria)
+     *
+     * <p>   For example, suppose you have the following modules "", "A", "A/SUB1", "A/SUB2", "ANOTHER".
+     * <br>  Then "" will return every module.
+     * <br>  But "A" will only return "A", "A/SUB1", and "A/SUB2" (it will NOT return "ANOTHER")
+     * <br>  And "A/SUB1" will only return "A/SUB1"
+     * <br>  And "A/SUB" will return an empty list.
+     *
+     * <p>   Let's take another example, suppose you have the following modules "", "A/SUB1", "A/SUB2".
+     * <br>  Then "A" will return "A/SUB1" and "A/SUB2" (even though there is no module called "A")
+     */
+    SafeList<Module> lookupModuleAndSubmodules(String path) {
+        if (path.length()==0) return modules.dup();
+        SafeList<Module> ans=new SafeList<Module>();
+        Module top=path2module.get(path);
+        if (top!=null) ans.add(top);
+        path=path+"/";
+        again: for(Module u:modules) for(String n:u.paths) if (n.startsWith(path)) {ans.add(u); continue again;}
+        return ans.dup();
+    }
+
+    /** Returns an unmodifiable list of all signatures. */
+    public ConstList<Sig> all() {
+    	TempList<Sig> x = new TempList<Sig>();
+    	x.add(UNIV);
+    	x.add(SIGINT);
+    	x.add(SEQIDX);
+    	x.add(NONE);
+    	for(Module m:modules.dup()) x.addAll(m.getAllSigs());
+    	return x.makeConst();
+    }
+
+    /** Create a new module with the given list of paths. */
+    public Module establishModule(Pos pos, List<String> paths) throws Err {
+        if (paths.size()==0) throw new ErrorSyntax("A module must have at least 1 path pointing to it.");
+        TempList<String> temp=new TempList<String>(paths);
+        temp.sort(Util.slashComparator);
+        int n=temp.size();
+        for(int i=0; i<n; i++)
+          if (path2module.containsKey(temp.get(i)))
+            return path2module.get(temp.get(i));
+            //throw new ErrorSyntax("A module with the path \""+temp.get(i)+"\" already exists.");
+        Module u=new Module(world, pos, temp.makeConst());
+        for(int i=0; i<n; i++) { path2module.put(temp.get(i), u); }
+        modules.add(u);
+        return u;
+    }
+
+    //======== ROOT ONLY =====
+	
     /** The position of the "MODULE" line at the top of the file; never null. */
     public final Pos pos;
 
     /** The world that this Module belongs to. */
-    public final World world;
+    public final Module world;
+
+    public Module getRootModule() { return world; }
 
     /** The simplest path pointing to this Module; it is always equal to this.paths.get(0) */
     public final String path;
@@ -71,6 +155,8 @@ public final class Module {
         return answer+"}";
     }
 
+    //=============================================================================================================//
+
     /**
      * Constructs a new Module object
      *
@@ -78,31 +164,18 @@ public final class Module {
      * @param pos - the position of the "module" line at the top of the file (it can be null if unknown)
      * @param paths - the list of paths pointing to this module (it must be pre-sorted using Util.slashComparator)
      */
-    Module(World world, Pos pos, List<String> paths) throws Err {
-        if (world==null) throw new ErrorAPI(pos, "Module() constructor cannot be called with null World.");
+    Module(Module world, Pos pos, List<String> paths) throws Err {
         if (paths.size()==0) throw new ErrorAPI(pos, "Module must have at least 1 path pointing to it.");
+        if (world==null) {
+        	world=this;
+        	modules.add(this);
+        	for(String p:paths) path2module.put(p,this);
+        }
         this.world=world;
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
         this.paths=ConstList.make(paths);
         this.path=this.paths.get(0);
     }
-
-    //=============================================================================================================//
-
-    /** This stores the list of run/check commands in the order they were inserted. */
-    private final SafeList<Command> commands=new SafeList<Command>();
-
-    /** Add a new command; if this module is not the main module, then this request is silently ignored and returns null. */
-    public Command addCommand(Command c) {
-        if (path.length()!=0) return null;
-        commands.add(c);
-        return c;
-    }
-
-    /** Return an unmodifiable list of commands in this module. */
-    public SafeList<Command> getAllCommands() { return commands.dup(); }
-
-    //=============================================================================================================//
 
     /**
      * This maps each module parameter to the Sig object that it refers to.
@@ -159,6 +232,21 @@ public final class Module {
 
     //=============================================================================================================//
 
+    /** This stores the list of run/check commands in the order they were inserted. */
+    private final SafeList<Command> commands=new SafeList<Command>();
+
+    /** Add a new command; if this module is not the main module, then this request is silently ignored and returns null. */
+    public Command addCommand(Command c) {
+        if (path.length()!=0) return null;
+        commands.add(c);
+        return c;
+    }
+
+    /** Return an unmodifiable list of commands in this module. */
+    public SafeList<Command> getAllCommands() { return commands.dup(); }
+
+    //=============================================================================================================//
+
     /**
      * This maps each signature declared in this file to its Sig object.
      * <p> Each Sig object must be originally and solely declared within this module.
@@ -199,19 +287,24 @@ public final class Module {
                 "A module cannot have two signatures with the same name: \""+name+"\"");
         if (funs.containsKey(name)) throw new ErrorSyntax(pos,
                 "A module cannot have a signature and a function/predicate with the same name: \""+name+"\"");
-        Sig x=world.makeSIG(pos, this, parent, name, isAbstract, lone, one, some, isLeaf);
+        String fullname = paths.contains("") ? "this/"+name : (paths.get(0)+"/"+name);
+        Sig x = new PrimSig(pos, parent, fullname, isAbstract, lone, one, some, isLeaf);
         sigs.put(name, x);
         list_of_all_sigs.add(x);
         return x;
     }
+    
     public Sig addSubsetSig (Pos pos, String name, Collection<Sig> parents, boolean isAbstract, boolean lone, boolean one, boolean some) throws Err {
+        if (isAbstract) throw new ErrorSyntax(pos,
+        		"Subset signature \""+name+"\" cannot be abstract.");
         if (params.containsKey(name)) throw new ErrorSyntax(pos,
                 "A module cannot have a signature and a parameter with the same name: \""+name+"\"");
         if (sigs.containsKey(name)) throw new ErrorSyntax(pos,
                 "A module cannot have two signatures with the same name: \""+name+"\"");
         if (funs.containsKey(name)) throw new ErrorSyntax(pos,
                 "A module cannot have a signature and a function/predicate with the same name: \""+name+"\"");
-        Sig x=world.makeSUBSETSIG(pos, this, parents, name, isAbstract, lone, one, some, false);
+        String fullname = paths.contains("") ? "this/"+name : (paths.get(0)+"/"+name);
+        Sig x = new SubsetSig(pos, parents, fullname, lone, one, some);
         sigs.put(name, x);
         list_of_all_sigs.add(x);
         return x;
@@ -231,6 +324,7 @@ public final class Module {
      * @throws ErrorSyntax  if the signature name contains '[' or ']'
      * @throws ErrorSyntax  if the signature has two or more multiplicities
      */
+    /*
     public PrimSig addSig (String name, PrimSig parent, boolean isAbstract, boolean lone, boolean one, boolean some) throws Err {
         if (params.containsKey(name)) throw new ErrorSyntax(pos,
             "A module cannot have a signature and a parameter with the same name: \""+name+"\"");
@@ -243,6 +337,7 @@ public final class Module {
         list_of_all_sigs.add(x);
         return (PrimSig)x;
     }
+    */
 
     //=============================================================================================================//
 
@@ -287,13 +382,7 @@ public final class Module {
      * @throws ErrorSyntax if this module already has an assertion with the same name
      */
     public String addAssertion (String name, Expr formula) throws Err {
-        if (name==null || name.length()==0) name="assert#"+(1+assertions.size());
-        if (name.indexOf('/')>=0) throw new ErrorSyntax(formula.span(), "Assertion name \""+name+"\" cannot contain \'/\'");
-        if (name.indexOf('@')>=0) throw new ErrorSyntax(formula.span(), "Asserition name \""+name+"\" cannot contain \'@\'");
-        if (assertions.containsKey(name)) throw new ErrorSyntax(formula.span(), "Within the same module, two assertions cannot have the same name.");
-        //
         A4Reporter.getReporter().typecheck("Assertion "+name+": "+formula.type+"\n");
-        //
         assertions.put(name,formula);
         return name;
     }
@@ -377,7 +466,7 @@ public final class Module {
         if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
         if (name.indexOf('/')<0) {
             for(String p:paths) {
-                for(Module u:world.lookupModuleAndSubmodules(p)) {
+                for(Module u:getRootModule().lookupModuleAndSubmodules(p)) {
                     if ((s=u.assertions.get(name))!=null) ans.add(s);
                 }
             }
@@ -407,7 +496,7 @@ public final class Module {
         if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
         if (name.indexOf('/')<0) {
             for(String p:paths) {
-                for(Module u:world.lookupModuleAndSubmodules(p)) {
+                for(Module u:getRootModule().lookupModuleAndSubmodules(p)) {
                     if ((s=u.sigs.get(name))!=null) ans.add(s);
                     if (look_for_function_and_predicate) if ((f=u.funs.get(name))!=null) ans.addAll(f);
                 }
@@ -485,7 +574,7 @@ public final class Module {
     private Set<Field> lookupField(String name) {
         Set<Field> ans=new LinkedHashSet<Field>();
         for(String p:paths)
-          for(Module u:world.lookupModuleAndSubmodules(p))
+          for(Module u:getRootModule().lookupModuleAndSubmodules(p))
             for(Sig s:u.list_of_all_sigs)
               for(Field f:s.getFields())
                 if (f.label.equals(name))

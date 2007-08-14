@@ -34,7 +34,6 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
@@ -150,7 +149,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     (final Map<Decl,Pair<Type,Pos>> skolemType, final World world, Command cmd, final A4Options opt,
     Map<String,String> originalSources, String xmlFileName, String tempFileName, boolean tryBookExamples)
     throws Err {
-        SafeList<Sig> sigs = world.getAllSigs();
+        ConstList<Sig> sigs = world.all();
         final Map<Formula,List<Object>> core=new LinkedHashMap<Formula,List<Object>>();
         final A4Reporter rep=A4Reporter.getReporter();
         rep.debug("Generating bounds...");
@@ -408,7 +407,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     /** Construct the constraints for "field declarations" and "appended fact paragraphs" for the given sig. */
     private Formula makeFieldAndAppendedConstraints(World world, final Sig sig, Formula kfact) throws Err {
-        if (World.is_alloy3ord(sig) != null) return kfact;
+        if (sig.isOrd() != null) return kfact;
         for(Field f:sig.getFields()) {
             // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
             kfact=core(cform(f.boundingFormula), f).and(kfact);

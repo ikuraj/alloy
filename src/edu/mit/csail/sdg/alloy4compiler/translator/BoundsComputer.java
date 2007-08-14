@@ -42,6 +42,7 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -527,7 +528,7 @@ final class BoundsComputer {
     BoundsComputer(World world, A4Options options, final Command cmd, final Map<Formula,List<Object>> core) throws Err {
         this.core=core;
         final A4Reporter rep=A4Reporter.getReporter();
-        final SafeList<Sig> sigs=world.getAllSigs();
+        final ConstList<Sig> sigs=world.all();
         final Set<String> atoms=new LinkedHashSet<String>();
         // Determine the scope and bitwidth
         final ScopeComputer sc=new ScopeComputer(world, cmd);
@@ -614,7 +615,7 @@ final class BoundsComputer {
         }
         // Bound the fields. Must do this AFTER sigs due to util/ordering special encoding.
         for(Sig s:sigs) if (!s.builtin) {
-            final Sig elem = World.is_alloy3ord(s);
+            final Sig elem = s.isOrd();
             if (elem!=null) {
                 Relation first=Relation.unary("First"), last=Relation.unary("Last"), next=Relation.binary("Next");
                 discard.add(first);

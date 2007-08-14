@@ -2374,7 +2374,9 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
   throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
-        if (world==null) world=new World();
+    	ArrayList<String> pathz = new ArrayList<String>();
+    	pathz.add("");
+        if (world==null) world=new Module(null, Pos.UNKNOWN, pathz);
         String content=fc.get(filename);
         if (content==null) { content=Util.readAll(filename); fc.put(filename,content); }
         isr=new StringReader(content);

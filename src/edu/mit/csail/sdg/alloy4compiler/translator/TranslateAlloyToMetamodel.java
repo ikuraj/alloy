@@ -23,9 +23,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -74,7 +74,7 @@ public class TranslateAlloyToMetamodel {
      */
     private static void make(World world, String originalFilename, PrintWriter output) throws Err {
         TranslateAlloyToMetamodel ta=new TranslateAlloyToMetamodel();
-        SafeList<Sig> sigs=world.getAllSigs();
+        ConstList<Sig> sigs=world.all();
         Util.encodeXMLs(output, "\n<alloy builddate=\"",
                 Version.buildDate(),
                 "\">\n\n<instance isMetamodel=\"true\" filename=\"",
