@@ -77,11 +77,10 @@ final class ExpDot extends Exp {
      * <br> If args.length() > f.params.size(), the extra arguments are ignored by this check
      */
     private static boolean applicable(Func f, List<Expr> args) {
+        if (f.params.size() > args.size()) return false;
         int i=0;
-        for(ExprVar d:f.params) {
-            Type param=d.type;
-            if (i>=args.size()) return false;
-            Type arg=args.get(i).type;
+        for(ExprVar d: f.params) {
+            Type param=d.type, arg=args.get(i).type;
             i++;
             // The reason we don't directly compare "arg.arity()" with "param.arity()"
             // is because the arguments may not be fully resolved yet.
@@ -93,56 +92,50 @@ final class ExpDot extends Exp {
 
     /**
      * Construct the result of calling "ch" with the given list of arguments
-     * <br> <b>Precondition</b>: (ch instanceof Expr && ch.type!=EMPTY) or (ch instanceof Func)
-     * <br> <b>Precondition</b>: all i: args[i].type!=EMPTY
-     * @return EBadCall, or EBadJoin, or a possibly well-typed Expr
+     * <br> <b>Precondition</b>: (ch instanceof Expr) or (ch instanceof Func)
+     * <br> <b>Postcondition:</b>: returns either "null" or an "Expr"
      */
-    static Expr makeCallOrJoin(Pos pos, Object ch, ConstList<Expr> args, Expr THISorNULL) {
-        Expr ans;
-        int i=0, n=args.size();
+    static Expr makeCallIfPossible(Pos pos, Object ch, ConstList<Expr> args, Expr THISorNULL) {
+        final int argN = args.size();
         if (ch instanceof Expr) {
-            ans = (Expr)ch;
+            if (argN>0) return null; else return (Expr)ch;
         } else {
-            Func f = (Func)ch;
-            i = f.params.size();
-            if (i==n+1 && THISorNULL!=null && THISorNULL.type.hasArity(1)) {
+            final Func f = (Func)ch;
+            final int paramN = f.params.size();
+            if (paramN==argN+1 && THISorNULL!=null && THISorNULL.type.hasArity(1)) {
                 // If we're inside a sig, and there is a unary variable bound to "this",
                 // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                 ConstList<Expr> args2 = Util.prepend(args, THISorNULL);
-                if (applicable(f,args2)) return ExprCall.make(pos, null, f, args2, 1);
+                if (applicable(f,args2)) return ExprCall.make(pos,null,f,args2,1);
             }
-            if (i>n) return ExprBadCall.make(pos, null, f, args);
-            if (!applicable(f,args)) return ExprBadCall.make(pos, null, f, args.subList(0,i));
-            ans = ExprCall.make(pos, null, f, args.subList(0,i), 0);
+            if (paramN < argN) return null;
+            return applicable(f,args) ? ExprCall.make(pos,null,f,args,0) : ExprBadCall.make(pos,null,f,args);
         }
-        if (i<n) return null; else return ans;
     }
 
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
-        int warningSize = warnings.size();
         // First, check whether it could be a legal function/predicate call
-        TempList<Expr> objects=new TempList<Expr>();
+        final int warningSize = warnings.size();
+        final TempList<Expr> objects = new TempList<Expr>();
         int n=1;
         Exp ptr=right;
         while (ptr instanceof ExpDot) { n++; ptr=((ExpDot)ptr).right; }
         if (ptr instanceof ExpName && !cx.has(((ExpName)ptr).name)) {
             Set<Object> choices = cx.resolve(ptr.pos, ((ExpName)ptr).name);
-            TempList<Expr> tempargs=new TempList<Expr>();
+            TempList<Expr> tempargs = new TempList<Expr>(n);
             for(Exp x=this; x instanceof ExpDot; x=((ExpDot)x).right) {
                 Expr y = ((ExpDot)x).left.check(cx, warnings).typecheck_as_set();
                 tempargs.add(0, y);
             }
-            ConstList<Expr> args=tempargs.makeConst();
+            ConstList<Expr> args = tempargs.makeConst();
             // If we're inside a sig, and there is a unary variable bound to "this", we should
             // consider it as a possible FIRST ARGUMENT of a fun/pred call
-            Expr THIS = (cx.rootsig!=null) ? cx.get("this", ptr.pos) : null;
+            Expr THISorNULL = (cx.rootsig!=null) ? cx.get("this", ptr.pos) : null;
             boolean hasValidBound=false;
             for(Object ch:choices) {
-                Expr x = makeCallOrJoin(ptr.pos, ch, args, THIS);
-                if (x==null) continue;
-                if (x.type!=Type.EMPTY) hasValidBound=true;
-                objects.add(x);
+                Expr x=makeCallIfPossible(ptr.pos, ch, args, THISorNULL);
+                if (x!=null) { objects.add(x); if (x.type!=Type.EMPTY) hasValidBound=true; }
             }
             if (hasValidBound) return ExprChoice.make(ptr.pos, objects.makeConst());
         }
@@ -156,6 +149,8 @@ final class ExpDot extends Exp {
         if (left.type.is_int && right instanceof Sig && ((Sig)right)==Sig.SIGINT)
             return left.cast2sigint();
         // All else, we treat it as a relational join
+        if (left  instanceof ExprBadCall) return left;  // This hopefully gives better error message
+        if (right instanceof ExprBadCall) return right; // This hopefully gives better error message
         objects.add(ExprBinary.Op.JOIN.make(pos, closingBracket, left, right));
         return ExprChoice.make(ptr.pos, objects.makeConst());
     }

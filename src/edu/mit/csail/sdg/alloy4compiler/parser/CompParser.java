@@ -2433,21 +2433,19 @@ class CUP$CompParser$actions {
     }
     private Exp alloyTrue(Pos pos) throws Err { return new ExpConstant(pos, ExprConstant.Op.TRUE, 0); }
 
-    private Exp t(Exp x, Pos close) throws Err {
-      if (!(x instanceof ExpDot)) return x;
-      ExpDot j=(ExpDot)x;
+    private Exp t(ExpDot j, Pos close) throws Err {
       if (j.right instanceof ExpName) {
          String n=((ExpName)(j.right)).name;
-         if (n.equals("int"))  return new ExpUnary(x.pos, ExprUnary.Op.CAST2INT, j.left);
-         if (n.equals("disj")) return new ExpBuiltin(x.pos, close, Util.asList(j.left));
+         if (n.equals("int"))  return new ExpUnary(j.pos, ExprUnary.Op.CAST2INT, j.left);
+         if (n.equals("disj")) return new ExpBuiltin(j.pos, close, Util.asList(j.left));
       }
-      if (j.right instanceof ExpBuiltin) {
+      else if (j.right instanceof ExpBuiltin) {
          ExpBuiltin n=((ExpBuiltin)(j.right));
          List<Exp> args=new ArrayList<Exp>(n.args);
          args.add(j.left);
-         return new ExpBuiltin(x.pos, n.closingBracket, args);
+         return new ExpBuiltin(j.pos, n.closingBracket, args);
       }
-      return x;
+      return j;
     }
 
   private final CompParser parser;

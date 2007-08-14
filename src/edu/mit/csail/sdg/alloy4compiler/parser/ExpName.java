@@ -60,7 +60,7 @@ final class ExpName extends Exp {
         // consider it as a possible additional FIRST ARGUMENT of a fun/pred call
         Expr THIS = (choices.size()>0 && cx.rootsig!=null) ? cx.get("this",pos) : null;
         for(Object ch:choices) {
-            Expr ans = ExpDot.makeCallOrJoin(pos, ch, emptyList, THIS);
+            Expr ans = ExpDot.makeCallIfPossible(pos, ch, emptyList, THIS);
             if (ans==null) continue;
             objects.add(ans);
         }
