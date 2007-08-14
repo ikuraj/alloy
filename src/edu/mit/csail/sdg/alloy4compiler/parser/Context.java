@@ -20,18 +20,15 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import java.util.HashSet;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Env;
-import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
 /**
@@ -89,13 +86,7 @@ public final class Context {
     /** Removes the latest binding for the given name from the current lexical scope. */
     public final void remove(String name) { env.remove(name); }
 
-    public Context() {
-        this.rootmodule = null;
-    }
-
-    public Context(Module rootModule) {
-        this.rootmodule = rootModule;
-    }
+    public Context(Module rootModule) { this.rootmodule=rootModule; }
 
     public Set<Object> resolve(Pos pos, String name) {
         Expr match = env.get(name);
@@ -111,70 +102,5 @@ public final class Context {
         }
         if (rootmodule==null) return new HashSet<Object>(1);
         return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
-    }
-
-    public Context dupWithEmptyEnvironment() {
-        Context cx = new Context(rootmodule);
-        cx.rootfield = rootfield;
-        cx.rootsig = rootsig;
-        cx.rootfun = rootfun;
-        return cx;
-    }
-
-
-    /**
-     * Helper method that throws a type error if x cannot possibly have formula type.
-     * <p> <b>Return</b> x if it can have formula type
-     *
-     * @throws ErrorType if x does not have formula type
-     */
-    static final ErrorType ccform(Expr x) {
-        if (x.type==null)
-            return new ErrorType(x.span(), "This expression failed to be typechecked.");
-        if (!x.type.is_bool)
-            return new ErrorType(x.span(), "This must be a formula expression.\nInstead, it has the following possible type(s):\n"+x.type);
-        return null;
-    }
-
-    /**
-     * Helper method that throws a type error if x cannot possibly have integer type.
-     *
-     * <p>  <b>Return</b> x if it can have integer type
-     * <br> <b>Return</b> x.cast2int() if x can be casted to an integer type, and auto casting is enabled
-     *
-     * @throws ErrorType if x does not and cannot be casted to have integer type
-     */
-    static final Expr cint(Expr x) {
-        if (x.type!=null && !x.type.is_int && Type.SIGINT2INT && x.type.intersects(SIGINT.type)) return x.cast2int();
-        return x;
-    }
-
-    static final ErrorType ccint(Expr x) {
-        if (x.type==null)
-            return new ErrorType(x.span(), "This expression failed to be typechecked.");
-        if (!x.type.is_int)
-            return new ErrorType(x.span(), "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+x.type);
-        return null;
-    }
-
-    /**
-     * Helper method that throws a type error if x cannot possibly have set/relation type.
-     *
-     * <p>  <b>Return</b> x if it can have set/relation type
-     * <br> <b>Return</b> x.cast2sigint() if x can be casted to a set/relation type, and auto casting is enabled
-     *
-     * @throws ErrorType if x does not and cannot be casted to have set/relation type
-     */
-    static final Expr cset(Expr x) {
-        if (x.type!=null && x.type.size()==0 && Type.INT2SIGINT && x.type.is_int) return x.cast2sigint();
-        return x;
-    }
-
-    static final ErrorType ccset(Expr x) {
-        if (x.type==null)
-            return new ErrorType(x.span(), "This expression failed to be typechecked.");
-        if (x.type.size()==0)
-            return new ErrorType(x.span(), "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+x.type);
-        return null;
     }
 }
