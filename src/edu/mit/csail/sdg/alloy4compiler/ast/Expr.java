@@ -262,25 +262,25 @@ public abstract class Expr {
      * <p> this and x must both be formulas
      * <p> Note: as a special guarantee, if x==null, then the method will return this Expr object as-is.
      */
-    public final Expr and(Expr x) { return (x==null) ? this : ExprBinary.Op.AND.make(span().merge(x.span()), this, x); }
+    public final Expr and(Expr x) { return (x==null) ? this : ExprBinary.Op.AND.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this or x)
      * <p> this and x must both be formulas
      */
-    public final Expr or(Expr x) { return ExprBinary.Op.OR.make(span().merge(x.span()), this, x); }
+    public final Expr or(Expr x) { return ExprBinary.Op.OR.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this iff x)
      * <p> this and x must both be formulas
      */
-    public final Expr iff(Expr x) { return ExprBinary.Op.IFF.make(span().merge(x.span()), this, x); }
+    public final Expr iff(Expr x) { return ExprBinary.Op.IFF.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this implies x)
      * <p> this and x must both be formulas
      */
-    public final Expr implies(Expr x) { return ExprBinary.Op.OR.make(span().merge(x.span()), not(), x); }
+    public final Expr implies(Expr x) { return ExprBinary.Op.OR.make(span().merge(x.span()), null, not(), x); }
 
     /**
      * Returns the expression (this.x)
@@ -288,75 +288,75 @@ public abstract class Expr {
      * <p> 2. x must be a set or relation
      * <p> 3. at most one of them can be a unary set
      */
-    public final Expr join(Expr x) { return ExprBinary.Op.JOIN.make(span().merge(x.span()), this, x); }
+    public final Expr join(Expr x) { return ExprBinary.Op.JOIN.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this <: x)
      * <p> this must be a unary set
      * <p> x must be a set or relation
      */
-    public final Expr domain(Expr x) { return ExprBinary.Op.DOMAIN.make(span().merge(x.span()), this, x); }
+    public final Expr domain(Expr x) { return ExprBinary.Op.DOMAIN.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this :> x)
      * <p> this must be a set or relation
      * <p> x must be a unary set
      */
-    public final Expr range(Expr x) { return ExprBinary.Op.RANGE.make(span().merge(x.span()), this, x); }
+    public final Expr range(Expr x) { return ExprBinary.Op.RANGE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this intersects x)
      * <p> this and x must be expressions with the same arity
      */
-    public final Expr intersect(Expr x) { return ExprBinary.Op.INTERSECT.make(span().merge(x.span()), this, x); }
+    public final Expr intersect(Expr x) { return ExprBinary.Op.INTERSECT.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this++x)
      * <p> this and x must be expressions with the same arity
      */
-    public final Expr override(Expr x) { return ExprBinary.Op.PLUSPLUS.make(span().merge(x.span()), this, x); }
+    public final Expr override(Expr x) { return ExprBinary.Op.PLUSPLUS.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this+x)
      * <p> this and x must be expressions with the same arity, or both be integer expressions
      */
-    public final Expr plus(Expr x) { return ExprBinary.Op.PLUS.make(span().merge(x.span()), this, x); }
+    public final Expr plus(Expr x) { return ExprBinary.Op.PLUS.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this-x)
      * <p> this and x must be expressions with the same arity, or both be integer expressions
      */
-    public final Expr minus(Expr x) { return ExprBinary.Op.MINUS.make(span().merge(x.span()), this, x); }
+    public final Expr minus(Expr x) { return ExprBinary.Op.MINUS.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this==x)
      * <p> this and x must be expressions with the same arity, or both be integer expressions
      */
-    public final Expr equal(Expr x) { return ExprBinary.Op.EQUALS.make(span().merge(x.span()), this, x); }
+    public final Expr equal(Expr x) { return ExprBinary.Op.EQUALS.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this &lt; x)
      * <p> this and x must both be integer expressions
      */
-    public final Expr lt(Expr x) { return ExprBinary.Op.LT.make(span().merge(x.span()), this, x); }
+    public final Expr lt(Expr x) { return ExprBinary.Op.LT.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this &lt;= x)
      * <p> this and x must both be integer expressions
      */
-    public final Expr lte(Expr x) { return ExprBinary.Op.LTE.make(span().merge(x.span()), this, x); }
+    public final Expr lte(Expr x) { return ExprBinary.Op.LTE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this &gt; x)
      * <p> this and x must both be integer expressions
      */
-    public final Expr gt(Expr x) { return ExprBinary.Op.GT.make(span().merge(x.span()), this, x); }
+    public final Expr gt(Expr x) { return ExprBinary.Op.GT.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this &gt;= x)
      * <p> this and x must both be integer expressions
      */
-    public final Expr gte(Expr x) { return ExprBinary.Op.GTE.make(span().merge(x.span()), this, x); }
+    public final Expr gte(Expr x) { return ExprBinary.Op.GTE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this in x)
@@ -364,126 +364,126 @@ public abstract class Expr {
      * <p> x must be a set or relation or multiplicity constraint
      * <p> this and x must have the same arity
      */
-    public final Expr in(Expr x) { return ExprBinary.Op.IN.make(span().merge(x.span()), this, x); }
+    public final Expr in(Expr x) { return ExprBinary.Op.IN.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this -> x) which can also be regarded as a multiplicity constraint (this set->set x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr product(Expr x) { return ExprBinary.Op.ARROW.make(span().merge(x.span()), this, x); }
+    public final Expr product(Expr x) { return ExprBinary.Op.ARROW.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this set->some x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr any_arrow_some(Expr x) { return ExprBinary.Op.ANY_ARROW_SOME.make(span().merge(x.span()), this, x); }
+    public final Expr any_arrow_some(Expr x) { return ExprBinary.Op.ANY_ARROW_SOME.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this set->one x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr any_arrow_one(Expr x) { return ExprBinary.Op.ANY_ARROW_ONE.make(span().merge(x.span()), this, x); }
+    public final Expr any_arrow_one(Expr x) { return ExprBinary.Op.ANY_ARROW_ONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this set->lone x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr any_arrow_lone(Expr x) { return ExprBinary.Op.ANY_ARROW_LONE.make(span().merge(x.span()), this, x); }
+    public final Expr any_arrow_lone(Expr x) { return ExprBinary.Op.ANY_ARROW_LONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this some->set x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr some_arrow_any(Expr x) { return ExprBinary.Op.SOME_ARROW_ANY.make(span().merge(x.span()), this, x); }
+    public final Expr some_arrow_any(Expr x) { return ExprBinary.Op.SOME_ARROW_ANY.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this some->some x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr some_arrow_some(Expr x) { return ExprBinary.Op.SOME_ARROW_SOME.make(span().merge(x.span()), this, x); }
+    public final Expr some_arrow_some(Expr x) { return ExprBinary.Op.SOME_ARROW_SOME.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this some->one x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr some_arrow_one(Expr x) { return ExprBinary.Op.SOME_ARROW_ONE.make(span().merge(x.span()), this, x); }
+    public final Expr some_arrow_one(Expr x) { return ExprBinary.Op.SOME_ARROW_ONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this some->lone x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr some_arrow_lone(Expr x) { return ExprBinary.Op.SOME_ARROW_LONE.make(span().merge(x.span()), this, x); }
+    public final Expr some_arrow_lone(Expr x) { return ExprBinary.Op.SOME_ARROW_LONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this one->set x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr one_arrow_any(Expr x) { return ExprBinary.Op.ONE_ARROW_ANY.make(span().merge(x.span()), this, x); }
+    public final Expr one_arrow_any(Expr x) { return ExprBinary.Op.ONE_ARROW_ANY.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this one->some x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr one_arrow_some(Expr x) { return ExprBinary.Op.ONE_ARROW_SOME.make(span().merge(x.span()), this, x); }
+    public final Expr one_arrow_some(Expr x) { return ExprBinary.Op.ONE_ARROW_SOME.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this one->one x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr one_arrow_one(Expr x) { return ExprBinary.Op.ONE_ARROW_ONE.make(span().merge(x.span()), this, x); }
+    public final Expr one_arrow_one(Expr x) { return ExprBinary.Op.ONE_ARROW_ONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this one->lone x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr one_arrow_lone(Expr x) { return ExprBinary.Op.ONE_ARROW_LONE.make(span().merge(x.span()), this, x); }
+    public final Expr one_arrow_lone(Expr x) { return ExprBinary.Op.ONE_ARROW_LONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this lone->set x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr lone_arrow_any(Expr x) { return ExprBinary.Op.LONE_ARROW_ANY.make(span().merge(x.span()), this, x); }
+    public final Expr lone_arrow_any(Expr x) { return ExprBinary.Op.LONE_ARROW_ANY.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this lone->some x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr lone_arrow_some(Expr x) { return ExprBinary.Op.LONE_ARROW_SOME.make(span().merge(x.span()), this, x); }
+    public final Expr lone_arrow_some(Expr x) { return ExprBinary.Op.LONE_ARROW_SOME.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this lone->one x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr lone_arrow_one(Expr x) { return ExprBinary.Op.LONE_ARROW_ONE.make(span().merge(x.span()), this, x); }
+    public final Expr lone_arrow_one(Expr x) { return ExprBinary.Op.LONE_ARROW_ONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this lone->lone x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr lone_arrow_lone(Expr x) { return ExprBinary.Op.LONE_ARROW_LONE.make(span().merge(x.span()), this, x); }
+    public final Expr lone_arrow_lone(Expr x) { return ExprBinary.Op.LONE_ARROW_LONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the multiplicity constraint (this isSeq->lone x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation
      */
-    public final Expr isSeq_arrow_lone(Expr x) { return ExprBinary.Op.ISSEQ_ARROW_LONE.make(span().merge(x.span()), this, x); }
+    public final Expr isSeq_arrow_lone(Expr x) { return ExprBinary.Op.ISSEQ_ARROW_LONE.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression/integer/formula (this =&gt; x else y)

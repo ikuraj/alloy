@@ -21,8 +21,8 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op;
 
@@ -49,13 +49,16 @@ final class ExpUnary extends Exp {
     /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=pos.merge(sub.span()); span=p; }
+        if (p==null) {
+            p=pos.merge(sub.span());
+            span=p;
+        }
         return p;
     }
 
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
-        Expr sub = this.sub.check(cx, warnings);
-        return op.make(pos, sub);
+        Expr newSub = sub.check(cx, warnings);
+        return op.make(pos, newSub);
     }
 }

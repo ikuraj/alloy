@@ -22,11 +22,11 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
 import java.util.Set;
-import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadJoin;
@@ -43,6 +43,9 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 
 final class ExpDot extends Exp {
 
+    /** If nonnull, it is the closing bracket. */
+    public final Pos closingBracket;
+
     /** The left-hand side of the DOT operator. */
     public final Exp left;
 
@@ -50,10 +53,11 @@ final class ExpDot extends Exp {
     public final Exp right;
 
     /** Constructs a call or a relational join expression. */
-    public ExpDot(Pos pos, Exp left, Exp right) {
+    public ExpDot(Pos pos, Exp left, Exp right, Pos closingBracket) {
         super(pos);
-        this.left=left;
-        this.right=right;
+        this.closingBracket = closingBracket;
+        this.left = left;
+        this.right = right;
     }
 
     /** Caches the span() result. */
@@ -62,25 +66,28 @@ final class ExpDot extends Exp {
     /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=pos.merge(left.span()).merge(right.span()); span=p; }
+        if (p==null) {
+            p=left.span().merge(closingBracket).merge(right.span()).merge(pos);
+            span=p;
+        }
         return p;
     }
 
     /**
      * Returns true if the function's parameters have reasonable intersection with the list of arguments.
      * <br> If args.length() > f.params.size(), the extra arguments are ignored by this check
-     * <br> <b>Precondition</b>: args.length() >= f.params.size()
      */
     private static boolean applicable(Func f, List<Expr> args) {
         int i=0;
         for(ExprVar d:f.params) {
-            Type dt=d.type;
+            Type param=d.type;
+            if (i>=args.size()) return false;
             Type arg=args.get(i).type;
             i++;
-            // The reason we don't say (arg.arity()!=d.value.type.arity())
+            // The reason we don't directly compare "arg.arity()" with "param.arity()"
             // is because the arguments may not be fully resolved yet.
-            if (!arg.hasCommonArity(dt)) return false;
-            if (arg.hasTuple() && dt.hasTuple() && !arg.intersects(dt)) return false;
+            if (!arg.hasCommonArity(param)) return false;
+            if (arg.hasTuple() && param.hasTuple() && !arg.intersects(param)) return false;
         }
         return true;
     }
@@ -99,10 +106,10 @@ final class ExpDot extends Exp {
         } else {
             Func f = (Func)ch;
             i = f.params.size();
-            if (i==n+1 && THISorNULL!=null && THISorNULL.type!=null && THISorNULL.type.hasArity(1)) {
+            if (i==n+1 && THISorNULL!=null && THISorNULL.type.hasArity(1)) {
                 // If we're inside a sig, and there is a unary variable bound to "this",
                 // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
-                ConstList<Expr> args2=Util.prepend(args, THISorNULL);
+                ConstList<Expr> args2 = Util.prepend(args, THISorNULL);
                 if (applicable(f,args2)) return ExprCall.make(pos, f, args2, 1);
             }
             if (i>n) return ExprBadCall.make(pos, f, args);
@@ -111,9 +118,10 @@ final class ExpDot extends Exp {
         }
         for(; i<n; i++) {
             Expr x = args.get(i);
+            // TODO: also, we should highlight also the "]" part of "[]"
             // TODO: you lost the original JOIN's pos
-            if (x.type.join(ans.type).size()==0) return ExprBadJoin.make(x.span().merge(ans.span()), x, ans);
-            ans = ExprBinary.Op.JOIN.make(x.span().merge(ans.span()), x, ans);
+            if (x.type.join(ans.type)==Type.EMPTY) return ExprBadJoin.make(x.span().merge(ans.span()), null, x, ans);
+            ans = ExprBinary.Op.JOIN.make(x.span().merge(ans.span()), null, x, ans);
         }
         return ans;
     }
@@ -129,34 +137,33 @@ final class ExpDot extends Exp {
         if (ptr instanceof ExpName && !cx.has(((ExpName)ptr).name)) {
             Set<Object> choices = cx.resolve(ptr.pos, ((ExpName)ptr).name);
             TempList<Expr> tempargs=new TempList<Expr>();
-            for(Exp temp=this; temp instanceof ExpDot; temp=((ExpDot)temp).right) {
-                Expr temp2 = ((ExpDot)temp).left.check(cx, warnings).typecheck_as_set();
-                tempargs.add(0, temp2);
+            for(Exp x=this; x instanceof ExpDot; x=((ExpDot)x).right) {
+                Expr y = ((ExpDot)x).left.check(cx, warnings).typecheck_as_set();
+                tempargs.add(0, y);
             }
             ConstList<Expr> args=tempargs.makeConst();
             // If we're inside a sig, and there is a unary variable bound to "this", we should
             // consider it as a possible FIRST ARGUMENT of a fun/pred call
-            Expr THIS = (cx.rootsig!=null) ? cx.get("this",null) : null;
+            Expr THIS = (cx.rootsig!=null) ? cx.get("this", ptr.pos) : null;
             boolean hasValidBound=false;
             for(Object ch:choices) {
                 Expr x = makeCallOrJoin(ptr.pos, ch, args, THIS);
-                if (x.type!=null) if (x.type.is_int || x.type.is_bool || x.type.size()>0) hasValidBound=true;
+                if (x.type!=Type.EMPTY) hasValidBound=true;
                 objects.add(x);
             }
             if (hasValidBound) return ExprChoice.make(ptr.pos, objects.makeConst());
         }
-        // Next, check to see if it is the special builtin function "Int[]"
+        // Now, since we'll re-typecheck the args, let's undo any changes to the Warning List
         while(warnings.size() > warningSize) warnings.remove(warnings.size()-1);
+        // Next, check to see if it is the special builtin function "Int[]"
         Expr left = this.left.check(cx, warnings);
         Expr right = this.right.check(cx, warnings);
-        if (left.type!=null && left.type.is_int && right instanceof ExprUnary && ((ExprUnary)right).op==ExprUnary.Op.NOOP && ((ExprUnary)right).sub==Sig.SIGINT)
+        if (left.type.is_int && right instanceof ExprUnary && ((ExprUnary)right).op==ExprUnary.Op.NOOP && ((ExprUnary)right).sub==Sig.SIGINT)
             return left.cast2sigint();
-        if (left.type!=null && left.type.is_int && right instanceof Sig && ((Sig)right)==Sig.SIGINT)
+        if (left.type.is_int && right instanceof Sig && ((Sig)right)==Sig.SIGINT)
             return left.cast2sigint();
         // All else, we treat it as a relational join
-        Expr test = ExprBinary.Op.JOIN.make(pos, left, right);
-        if (objects.size()==0) return test;
-        if (test.type!=null && test.type.size()>0) objects.add(test);
+        objects.add(ExprBinary.Op.JOIN.make(pos, closingBracket, left, right));
         return ExprChoice.make(ptr.pos, objects.makeConst());
     }
 }

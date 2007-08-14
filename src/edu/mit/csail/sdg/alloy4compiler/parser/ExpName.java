@@ -22,10 +22,10 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
 import java.util.Set;
-import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
@@ -39,10 +39,15 @@ final class ExpName extends Exp {
     public final String name;
 
     /** Constructs an ExpName object. */
-    public ExpName(Pos pos, String name) { super(pos); this.name=name; }
+    public ExpName(Pos pos, String name) {
+        super(pos);
+        this.name=name;
+    }
 
     /** {@inheritDoc} */
-    public Pos span() { return pos; }
+    public Pos span() {
+        return pos;
+    }
 
     /** This caches an unmodifiable empty list of Expr objects. */
     private final ConstList<Expr> emptyList = ConstList.make();
@@ -55,11 +60,10 @@ final class ExpName extends Exp {
             return new ExprBad(pos, name, hint(pos, name));
         }
         // If we're inside a sig, and there is a unary variable bound to "this", we should
-        // consider it as a possible FIRST ARGUMENT of a fun/pred call
-        Expr THIS = (cx.rootsig!=null) ? cx.get("this",null) : null;
+        // consider it as a possible additional FIRST ARGUMENT of a fun/pred call
+        Expr THIS = (cx.rootsig!=null) ? cx.get("this",pos) : null;
         for(Object ch:choices) {
-            Expr x = ExpDot.makeCallOrJoin(pos, ch, emptyList, THIS);
-            objects.add(x);
+            objects.add(ExpDot.makeCallOrJoin(pos, ch, emptyList, THIS));
         }
         return ExprChoice.make(pos, objects.makeConst());
     }

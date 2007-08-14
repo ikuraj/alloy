@@ -430,7 +430,7 @@ public final class CompUtil {
                     final Field f=s.addTrickyField(d.span(), n.name, THIS, bound);
                     rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                     if (s.anno.get("orderingSIG") instanceof Sig) continue;
-                    if (d.disjoint!=null) { if (disjA==null) disjA=f; else disjF = ExprBinary.Op.AND.make(d.disjoint, disjA.intersect(f).no(), disjF); disjA=disjA.plus(f); }
+                    if (d.disjoint!=null) { if (disjA==null) disjA=f; else disjF = ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF); disjA=disjA.plus(f); }
                 }
                 if (d.disjoint!=null && disjF!=ExprConstant.TRUE) y.addFact(""+s+"#disjoint", disjF);
             }
@@ -581,7 +581,7 @@ public final class CompUtil {
             }
         }
 
-        return world;
+        if (!errors.isEmpty()) throw errors.get(0); else return world;
     }
 
     /**

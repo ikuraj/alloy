@@ -42,13 +42,16 @@ public final class ExprBadJoin extends Expr {
     /** The right-hand-side expression. */
     private final Expr right;
 
+    /** If nonnull, it is the location of the closing bracket. */
+    public final Pos closingBracket;
+
     /** Caches the span() result. */
     private Pos span=null;
 
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = pos.merge(right.span()).merge(left.span()));
+        if (p==null) span = (p = pos.merge(closingBracket).merge(right.span()).merge(left.span()));
         return p;
     }
 
@@ -67,14 +70,15 @@ public final class ExprBadJoin extends Expr {
     }
 
     /** Constructs an ExprBadJoin node. */
-    private ExprBadJoin(Pos pos, Expr left, Expr right, JoinableList<Err> errors) {
+    private ExprBadJoin(Pos pos, Pos closingBracket, Expr left, Expr right, JoinableList<Err> errors) {
         super(pos, (left.ambiguous || right.ambiguous), EMPTY, 0, 0, errors);
         this.left=left;
         this.right=right;
+        this.closingBracket=closingBracket;
     }
 
     /** Constructs an ExprBadJoin node. */
-    public static Expr make(Pos pos, Expr left, Expr right) {
+    public static Expr make(Pos pos, Pos closingBracket, Expr left, Expr right) {
         JoinableList<Err> errors = left.errors.join(right.errors);
         if (errors.isEmpty()) {
             StringBuilder sb=new StringBuilder("This cannot be a legal relational join where\nleft hand side is ");
@@ -84,7 +88,7 @@ public final class ExprBadJoin extends Expr {
             sb.append(" (type = ").append(right.type).append(")\n");
             errors = errors.append(new ErrorType(pos, sb.toString()));
         }
-        return new ExprBadJoin(pos, left, right, errors);
+        return new ExprBadJoin(pos, closingBracket, left, right, errors);
     }
 
     /** {@inheritDoc} */

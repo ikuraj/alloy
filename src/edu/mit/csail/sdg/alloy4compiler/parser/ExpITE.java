@@ -21,8 +21,8 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 
@@ -53,7 +53,10 @@ final class ExpITE extends Exp {
     /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=pos.merge(formula.span()).merge(left.span()).merge(right.span()); span=p; }
+        if (p==null) {
+            p=formula.span().merge(right.span()).merge(left.span());
+            span=p;
+        }
         return p;
     }
 

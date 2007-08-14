@@ -56,19 +56,23 @@ public final class ExprBinary extends Expr {
     /** The right-hand-side expression. */
     public final Expr right;
 
+    /** If nonnull, it is the location of the closing bracket. */
+    public final Pos closingBracket;
+
     /** Caches the span() result. */
     private Pos span=null;
 
     //============================================================================================================//
 
     /** Constructs a new ExprBinary node. */
-    private ExprBinary(Pos pos, Op op, Expr left, Expr right, Type type, JoinableList<Err> errors) {
+    private ExprBinary(Pos pos, Pos closingBracket, Op op, Expr left, Expr right, Type type, JoinableList<Err> errors) {
         super(pos,
             left.ambiguous || right.ambiguous,
             type,
             (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0,
             left.weight + right.weight,
             errors);
+        this.closingBracket=closingBracket;
         this.op=op;
         this.left=left;
         this.right=right;
@@ -114,7 +118,7 @@ public final class ExprBinary extends Expr {
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = pos.merge(right.span()).merge(left.span()));
+        if (p==null) span = (p = pos.merge(closingBracket).merge(right.span()).merge(left.span()));
         return p;
     }
 
@@ -196,7 +200,7 @@ public final class ExprBinary extends Expr {
          * @param left - the left hand side expression
          * @param right - the right hand side expression
          */
-        public final Expr make(Pos pos, Expr left, Expr right) {
+        public final Expr make(Pos pos, Pos closingBracket, Expr left, Expr right) {
             switch(this) {
               case LT: case LTE: case GT: case GTE: {
                 left = left.typecheck_as_int();
@@ -277,7 +281,7 @@ public final class ExprBinary extends Expr {
                 errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
             if ((isArrow && right.mult==1) || (!isArrow && this!=Op.IN && right.mult!=0))
                 errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
-            return new ExprBinary(pos, this, left, right, type, errs.appendIfNotNull(e));
+            return new ExprBinary(pos, closingBracket, this, left, right, type, errs.appendIfNotNull(e));
         }
 
         /** Returns the human readable label for this operator. */
@@ -434,7 +438,7 @@ public final class ExprBinary extends Expr {
         Expr left = this.left.resolve(a, warns);
         Expr right = this.right.resolve(b, warns);
         if (w!=null) warns.add(w);
-        return (left==this.left && right==this.right) ? this : op.make(pos, left, right);
+        return (left==this.left && right==this.right) ? this : op.make(pos, closingBracket, left, right);
     }
 
     //============================================================================================================//

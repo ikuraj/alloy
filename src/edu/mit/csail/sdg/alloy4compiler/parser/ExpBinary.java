@@ -21,8 +21,8 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary.Op;
 
@@ -53,7 +53,10 @@ final class ExpBinary extends Exp {
     /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=pos.merge(left.span()).merge(right.span()); span=p; }
+        if (p==null) {
+            p=left.span().merge(right.span()).merge(pos);
+            span=p;
+        }
         return p;
     }
 
@@ -61,6 +64,6 @@ final class ExpBinary extends Exp {
     public Expr check(Context cx, List<ErrorWarning> warnings) {
         Expr a=left.check(cx, warnings);
         Expr b=right.check(cx, warnings);
-        return op.make(pos, a, b);
+        return op.make(pos, null, a, b);
     }
 }

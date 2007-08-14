@@ -21,8 +21,8 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 
@@ -35,7 +35,12 @@ abstract class Exp {
 
     /** Constructs an Exp node. */
     public Exp(Pos pos) {
-        this.pos=(pos==null ? Pos.UNKNOWN : pos);
+        this.pos = (pos==null ? Pos.UNKNOWN : pos);
+    }
+
+    /** Convenience method that constructs the expression "not this" */
+    public final Exp not() {
+        return new ExpUnary(null, ExprUnary.Op.NOT, this);
     }
 
     /** Returns a Pos object representing the entire span of this Exp and all its subexpressions. */
@@ -46,7 +51,4 @@ abstract class Exp {
      * (along the way, if we detect any type warnings, add them to the listOfWarnings)
      */
     public abstract Expr check(Context cx, List<ErrorWarning> listOfWarnings);
-
-    /** Convenience method that constructs the expression "not this" */
-    public final Exp not() { return new ExpUnary(null, ExprUnary.Op.NOT, this); }
 }
