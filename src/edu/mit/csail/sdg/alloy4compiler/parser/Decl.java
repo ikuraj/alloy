@@ -21,36 +21,44 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.ConstList;
+
+/** Immutable; this declaration binds a list of names to an expression. */
 
 final class Decl {
 
-    /** If nonnull, then this Decl is disjoint */
+    /** If nonnull, then this Decl is disjoint (and this.disjoint is the location of the "disjoint" keyword) */
     public final Pos disjoint;
 
+    /** The list of names. */
     public final ConstList<ExpName> names;
 
+    /** The value that the list of names are bound to. */
     public final Exp expr;
 
+    /** Caches the span() result. */
     private Pos span=null;
+
+    /** Returns a Pos object representing the entire span of this expression and all its subexpressions. */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=expr.span().merge(disjoint); for(ExpName n:names) p=p.merge(n.span()); span=p; }
+        if (p==null) {
+            p=expr.span().merge(disjoint);
+            for(ExpName n:names) p=p.merge(n.span());
+            span=p;
+        }
         return p;
     }
 
+    /** This constructs a declaration. */
     public Decl(Pos disjoint, List<ExpName> names, Exp expr) {
-        this.disjoint=disjoint;
-        this.names=ConstList.make(names);
-        this.expr=expr;
+        this.disjoint = disjoint;
+        this.names = ConstList.make(names);
+        this.expr = expr;
     }
 
-    public boolean hasName(String name) {
-        for(int i=0; i<names.size(); i++) if (names.get(i).name.equals(name)) return true;
-        return false;
-    }
-
+    /** If the list of declaration contains a duplicate name, return one such duplicate name, else return null. */
     public static String findDuplicateName (List<Decl> list) {
         for(int i=0; i<list.size(); i++) {
             Decl d=list.get(i);
@@ -63,4 +71,9 @@ final class Decl {
         return null;
     }
 
+    /** Returns true if this declaration contains the given name. */
+    public boolean hasName(String name) {
+        for(int i=0; i<names.size(); i++) if (names.get(i).name.equals(name)) return true;
+        return false;
+    }
 }
