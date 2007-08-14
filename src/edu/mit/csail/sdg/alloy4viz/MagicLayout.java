@@ -291,9 +291,11 @@ public class MagicLayout {
     private void attributes() {
         final AlloyModel model = vizState.getCurrentModel();
         for (final AlloyRelation r : model.getRelations()) {
-            if (r.getArity()==2 && !r.equals(projectionType) && !spineRelations.contains(r)) {
+            final List<AlloyType> rTypes = r.getTypes();
+            if (r.getArity()==2 && !rTypes.contains(projectionType) && !spineRelations.contains(r)) {
                 // it's binary, non-projection and non-spine
-                if (enumerationTypes.contains(r.getTypes().get(1))) {
+				final AlloyType targetType = rTypes.get(1);
+				if (enumerationTypes.contains(targetType)) {
                     // target is an enumeration: we have an attribute
                     vizState.attribute(r, true);
                     vizState.edgeVisible(r, false);
