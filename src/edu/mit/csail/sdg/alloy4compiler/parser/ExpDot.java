@@ -95,7 +95,7 @@ final class ExpDot extends Exp {
      * <br> <b>Precondition</b>: (ch instanceof Expr) or (ch instanceof Func)
      * <br> <b>Postcondition:</b>: returns either "null" or an "Expr"
      */
-    static Expr makeCallIfPossible(Pos pos, Object ch, ConstList<Expr> args, Expr THISorNULL) {
+    private static Expr makeCallIfPossible(Pos pos, Object ch, ConstList<Expr> args, Expr THISorNULL) {
         final int argN = args.size();
         if (ch instanceof Expr) {
             if (argN>0) return null; else return (Expr)ch;

@@ -166,10 +166,10 @@ public final class ExprCall extends Expr {
 
     /** Constructs an ExprCall node with the given predicate/function "fun" and the list of arguments "args". */
     public static Expr make(Pos pos, Pos closingBracket, Func fun, List<Expr> args, long extraWeight) {
+        if (args==null) args=ConstList.make();
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         if (extraWeight<0) extraWeight=0;
-        if (args==null) args=ConstList.make();
         TempList<Expr> newargs=new TempList<Expr>(args.size());
         if (args.size() != fun.params.size()) {
             errs = errs.append(

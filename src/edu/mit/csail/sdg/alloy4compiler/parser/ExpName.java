@@ -26,10 +26,14 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
+import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 
 /** Immutable; represents an unresolved name in the AST. */
 
@@ -50,19 +54,27 @@ final class ExpName extends Exp {
     }
 
     /** This caches an unmodifiable empty list of Expr objects. */
-    private final ConstList<Expr> emptyList = ConstList.make();
+    private static final ConstList<Expr> emptyList = ConstList.make();
 
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
         Set<Object> choices = cx.resolve(pos, name);
         TempList<Expr> objects = new TempList<Expr>(choices.size());
-        // If we're inside a sig, and there is a unary variable bound to "this", we should
-        // consider it as a possible additional FIRST ARGUMENT of a fun/pred call
-        Expr THIS = (choices.size()>0 && cx.rootsig!=null) ? cx.get("this",pos) : null;
+        Expr THIS = (cx.rootsig!=null) ? cx.get("this",pos) : null;
         for(Object ch:choices) {
-            Expr ans = ExpDot.makeCallIfPossible(pos, ch, emptyList, THIS);
-            if (ans==null) continue;
-            objects.add(ans);
+            if (ch instanceof Expr) {
+                objects.add((Expr)ch);
+            } else if (ch instanceof Func) {
+                Func f = (Func)ch;
+                int fn = f.params.size();
+                if (fn==1 && THIS!=null && THIS.type.hasArity(1) && f.params.get(0).type.intersects(THIS.type)) {
+                    // If we're inside a sig, and there is a unary variable bound to "this",
+                    // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
+                    objects.add(ExprCall.make(pos, null, f, Util.asList(THIS), 1));
+                    continue;
+                }
+                objects.add(fn==0 ? ExprCall.make(pos,null,f,emptyList,0) : ExprBadCall.make(pos,null,f,emptyList));
+            }
         }
         if (objects.size()==0) return new ExprBad(pos, name, hint(pos, name));
         return ExprChoice.make(pos, objects.makeConst());

@@ -78,7 +78,8 @@ public final class ExprBadCall extends Expr {
     }
 
     /** Constructs an ExprBadCall object. */
-    public static Expr make(final Pos pos, final Pos closingBracket, final Func fun, final ConstList<Expr> args) {
+    public static Expr make(final Pos pos, final Pos closingBracket, final Func fun, ConstList<Expr> args) {
+        if (args==null) args=ConstList.make();
         boolean ambiguous = false;
         JoinableList<Err> errors = emptyListOfErrors;
         for(Expr x:args) {
