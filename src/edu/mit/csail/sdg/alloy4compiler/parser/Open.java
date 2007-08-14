@@ -35,7 +35,9 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
  * <p> <b>Invariant:</b>  list!=null     and (all x:list | x is not null nor "")
  */
 
-final class CompOpen {
+final class Open {
+
+	private int z;
 
     /** The position in the original model where this Sig was declared; never null. */
     public final Pos pos;
@@ -69,7 +71,7 @@ final class CompOpen {
      * @throws ErrorSyntax if alias is "" and filename does not match the regular expression [A-Za-z][A-Za-z0-9_'"]*
      * @throws ErrorSyntax if at least one argument is "" or contains '@'
      */
-    public CompOpen(Pos pos, String alias, List<ExpName> args, String filename) throws Err {
+    public Open(Pos pos, String alias, List<ExpName> args, String filename) throws Err {
         if (pos==null) pos=Pos.UNKNOWN;
         if (filename.length()==0) throw new ErrorSyntax(pos,"The filename cannot be \"\"");
         if (alias.indexOf('@')>=0) throw new ErrorSyntax(pos,"Alias \""+alias+"\" must not contain \'@\'");

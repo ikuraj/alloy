@@ -42,6 +42,8 @@ final class CompModule { // Comparison is by identity
 
     //=============================================================================================================//
 
+	private int z;
+
     String moduleName="unknown";
     Pos pos=Pos.UNKNOWN;
     final World world;
@@ -74,11 +76,11 @@ final class CompModule { // Comparison is by identity
 
     final Map<String,CompModule> opens=new LinkedHashMap<String,CompModule>();
 
-    final Map<String,CompOpen> opencmds=new LinkedHashMap<String,CompOpen>();
+    final Map<String,Open> opencmds=new LinkedHashMap<String,Open>();
 
     void addOpen(Pos pos, String name, List<ExpName> args, String alias) throws Err {
-        CompOpen x=new CompOpen(pos, alias, args, name);
-        CompOpen y=opencmds.get(x.alias);
+        Open x=new Open(pos, alias, args, name);
+        Open y=opencmds.get(x.alias);
         // Special case, especially needed for auto-import of "util/sequniv"
         if (y!=null && x.alias.equals(y.alias) && x.args.equals(y.args) && x.filename.equals(y.filename)) return;
         if (opencmds.containsKey(x.alias))

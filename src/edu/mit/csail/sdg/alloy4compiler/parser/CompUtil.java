@@ -71,6 +71,8 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 public final class CompUtil {
 
+	private int z;
+
     /** Constructor is private, since this class never needs to be instantiated. */
     private CompUtil() { }
 
@@ -206,8 +208,8 @@ public final class CompUtil {
     /** This is step 1 of the postprocessing: figure out the instantiating parameters of each module. */
     private static boolean alloy_fillParams(ArrayList<CompModule> modules) throws Err {
         boolean chg=false;
-        CompOpen missing=null;
-        for(CompModule u:modules) for(Map.Entry<String, CompOpen> f:u.opencmds.entrySet()) {
+        Open missing=null;
+        for(CompModule u:modules) for(Map.Entry<String, Open> f:u.opencmds.entrySet()) {
             CompModule uu=u.opens.get(f.getKey());
             int j=uu.params.size();
             if (f.getValue().args.size() != j)
@@ -692,9 +694,9 @@ public final class CompUtil {
         // * Sig.{type,sup,sups,subs}
         // * Field.halftype, Field.Full.fulltype, Expr*.type, and ExprName.resolved
         // Also, there will not be any ExprCall. Only ExprJoin.
-        for(Map.Entry<String, CompOpen> opens:u.opencmds.entrySet()) {
+        for(Map.Entry<String, Open> opens:u.opencmds.entrySet()) {
             // Here, we recursively open the included files (to fill out the "Module.opens" field)
-            CompOpen y=opens.getValue();
+            Open y=opens.getValue();
             CompModule uu=alloy_totalparseHelper(fc, rootdir, y.pos, y.filename, u, name, prefix.length()==0 ? y.alias : prefix+"/"+y.alias, modules, thispath);
             if (y.args.size() != uu.params.size()) throw new ErrorSyntax(y.pos, "You supplied "+y.args.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments.");
             u.opens.put(y.alias, uu);
