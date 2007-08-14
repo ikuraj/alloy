@@ -790,17 +790,17 @@ DomainExpr ::= DomainExpr:a DOMAIN:o RangeExpr:b  {: RESULT=new ExpBinary(o, Exp
 RangeExpr ::=                     BracketExpr:b   {: RESULT=b;                                           :};
 RangeExpr ::= RangeExpr:a RANGE:o BracketExpr:b   {: RESULT=new ExpBinary(o, ExprBinary.Op.RANGE, a, b); :};
 
-BracketExpr ::= DotExpr:b                               {: RESULT=b;                                                                                                    :};
-BracketExpr ::= BracketExpr:a LBRACKET Exprs:b RBRACKET {: Exp aa=a;                     for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
-BracketExpr ::= DISJ:a        LBRACKET Exprs:b RBRACKET {: Exp aa=new ExpName(a,"disj"); for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
-BracketExpr ::= INT:a         LBRACKET Exprs:b RBRACKET {: Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
-BracketExpr ::= SUM:a         LBRACKET Exprs:b RBRACKET {: Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa)); RESULT=aa; :};
+BracketExpr ::= DotExpr:b                                 {: RESULT=b;                                                                                                       :};
+BracketExpr ::= BracketExpr:a LBRACKET Exprs:b RBRACKET:c {: Exp aa=a;                     for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa, c)); RESULT=aa; :};
+BracketExpr ::= DISJ:a        LBRACKET Exprs:b RBRACKET:c {: Exp aa=new ExpName(a,"disj"); for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa, c)); RESULT=aa; :};
+BracketExpr ::= INT:a         LBRACKET Exprs:b RBRACKET:c {: Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa, c)); RESULT=aa; :};
+BracketExpr ::= SUM:a         LBRACKET Exprs:b RBRACKET:c {: Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa, c)); RESULT=aa; :};
 
-DotExpr ::=                     UnopExpr:b {: RESULT=b;                                           :};
-DotExpr ::= BracketExpr:a DOT:o UnopExpr:b {: RESULT=t(new ExpDot(o, a, b));                      :};
-DotExpr ::= BracketExpr:a DOT:o DISJ:b     {: RESULT=t(new ExpDot(o, a, new ExpName(b,"disj")));  :};
-DotExpr ::= BracketExpr:a DOT:o INT        {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT, a);   :};
-DotExpr ::= BracketExpr:a DOT:o SUM        {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT, a);   :};
+DotExpr ::=                     UnopExpr:b {: RESULT=b;                                                :};
+DotExpr ::= BracketExpr:a DOT:o UnopExpr:b {: RESULT=t(new ExpDot(o, a, b, null));                     :};
+DotExpr ::= BracketExpr:a DOT:o DISJ:b     {: RESULT=t(new ExpDot(o, a, new ExpName(b,"disj"), null)); :};
+DotExpr ::= BracketExpr:a DOT:o INT        {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT, a);        :};
+DotExpr ::= BracketExpr:a DOT:o SUM        {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT, a);        :};
 
 UnopExpr ::=          BaseExpr:b  {: RESULT=b;                                          :};
 UnopExpr ::= TILDE:o  UnopExpr:b  {: RESULT=new ExpUnary(o, ExprUnary.Op.TRANSPOSE, b); :};
