@@ -720,8 +720,8 @@ EquivExpr ::= EquivExpr:a IFF:o ImpliesExpr:b      {: RESULT=new ExpBinary(o, Ex
 ImpliesExpr      ::= ImpliesExprClose:a            {: RESULT=a; :};
 ImpliesExpr      ::= ImpliesExprOpen:a             {: RESULT=a; :};
 ImpliesExprClose ::= AndExpr:a                     {: RESULT=a; :};
-ImpliesExprClose ::= AndExpr:a IMPLIES   ImpliesExprClose:b ELSE ImpliesExprClose:c {: RESULT=a.ite(b,c);                                     :};
-ImpliesExprOpen  ::= AndExpr:a IMPLIES   ImpliesExprClose:b ELSE ImpliesExprOpen:c  {: RESULT=a.ite(b,c);                                     :};
+ImpliesExprClose ::= AndExpr:a IMPLIES   ImpliesExprClose:b ELSE ImpliesExprClose:c {: RESULT=new ExpITE(a,b,c);                              :};
+ImpliesExprOpen  ::= AndExpr:a IMPLIES   ImpliesExprClose:b ELSE ImpliesExprOpen:c  {: RESULT=new ExpITE(a,b,c);                              :};
 ImpliesExprOpen  ::= AndExpr:a IMPLIES:o ImpliesExpr:b                              {: RESULT=new ExpBinary(o, ExprBinary.Op.OR, a.not(), b); :};
 
 AndExpr ::=                 NegExpr:b   {: RESULT=b;                                         :};
