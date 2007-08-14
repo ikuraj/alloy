@@ -415,7 +415,7 @@ public final class CompUtil {
             final SigAST oldS=entry.getValue();
             final Sig s=oldS.topoSig;
             final Context cx = new Context(y);
-            for(final ExpDecl d:oldS.fields) {
+            for(final Decl d:oldS.fields) {
                 cx.rootfield=true;
                 cx.rootsig=s;
                 // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
@@ -462,13 +462,13 @@ public final class CompUtil {
                 String fullname = (y.path.length()==0 ? "this/" : (y.path+"/")) + f.name;
                 Context cx = new Context(y);
                 cx.rootfun=true;
-                String dup = f.args==null ? null : ExpDecl.findDuplicateName(f.args);
+                String dup = f.args==null ? null : Decl.findDuplicateName(f.args);
                 if (dup!=null) throw new ErrorSyntax(f.pos, "The parameter name \""+dup+"\" cannot appear more than once in this predicate/function declaration.");
                 // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
                 // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
                 TempList<ExprVar> tmpvars = new TempList<ExprVar>();
                 if (f.args!=null) {
-                  for(ExpDecl d:f.args) {
+                  for(Decl d:f.args) {
                     Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
                     errors = errors.join(val.errors);
                     for(ExpName n: d.names) {
@@ -497,7 +497,7 @@ public final class CompUtil {
                 Expr disj=ExprConstant.TRUE;
                 Context cx=new Context(x.topoModule);
                 Iterator<ExprVar> vv=ff.params.iterator();
-                for(ExpDecl d:f.args) {
+                for(Decl d:f.args) {
                     List<Expr> disjvars = (d.disjoint!=null && d.names.size()>0) ? (new ArrayList<Expr>()) : null;
                     for(ExpName n:d.names) {
                         ExprVar newvar=vv.next();
@@ -510,7 +510,7 @@ public final class CompUtil {
                 if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
                 errors = errors.join(newBody.errors);
                 ff.setBody(newBody);
-                for(ExpDecl d:f.args) for(ExpName n:d.names) cx.remove(n.name);
+                for(Decl d:f.args) for(ExpName n:d.names) cx.remove(n.name);
                 if (ff.isPred) {
                     rep.typecheck(""+ff+", BODY:"+ff.getBody().type+"\n");
                 } else {

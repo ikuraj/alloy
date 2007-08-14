@@ -24,7 +24,7 @@ import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Pos;
 
-final class ExpDecl {
+final class Decl {
 
     /** If nonnull, then this Decl is disjoint */
     public final Pos disjoint;
@@ -40,7 +40,7 @@ final class ExpDecl {
         return p;
     }
 
-    public ExpDecl(Pos disjoint, List<ExpName> names, Exp expr) {
+    public Decl(Pos disjoint, List<ExpName> names, Exp expr) {
         this.disjoint=disjoint;
         this.names=ConstList.make(names);
         this.expr=expr;
@@ -51,9 +51,9 @@ final class ExpDecl {
         return false;
     }
 
-    public static String findDuplicateName (List<ExpDecl> list) {
+    public static String findDuplicateName (List<Decl> list) {
         for(int i=0; i<list.size(); i++) {
-            ExpDecl d=list.get(i);
+            Decl d=list.get(i);
             for(int j=0; j<d.names.size(); j++) {
                 String n=d.names.get(j).name;
                 for(int k=j+1; k<d.names.size(); k++) if (d.names.get(k).name.equals(n)) return n;

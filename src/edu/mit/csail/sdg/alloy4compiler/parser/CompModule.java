@@ -67,7 +67,7 @@ final class CompModule { // Comparison is by identity
                 throw new ErrorSyntax(pos, "You cannot use the same name for more than 1 instantiating parameter.");
             params.put(name, null);
             if (path.length()==0)
-                addSig(null, pos, name, false, false, false, false, null, null, new ArrayList<ExpDecl>(), null);
+                addSig(null, pos, name, false, false, false, false, null, null, new ArrayList<Decl>(), null);
         }
         if (path.length()==0) {params.clear(); paramNames.clear();}
     }
@@ -90,19 +90,19 @@ final class CompModule { // Comparison is by identity
 
     final List<FunAST> funs = new ArrayList<FunAST>();
 
-    void addFunc(Pos p, String n, Exp f, List<ExpDecl> d, Exp t, Exp v) throws Err {
-        d=new ArrayList<ExpDecl>(d);
-        if (f!=null) d.add(0, new ExpDecl(null, Util.asList(new ExpName(f.span(), "this")), f));
+    void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
+        d=new ArrayList<Decl>(d);
+        if (f!=null) d.add(0, new Decl(null, Util.asList(new ExpName(f.span(), "this")), f));
         funs.add(new FunAST(p, n, d, t, v));
     }
 
     static final class FunAST {
         final Pos pos;
         final String name;
-        final List<ExpDecl> args;
+        final List<Decl> args;
         final Exp returnType;
         final Exp body;
-        FunAST(Pos p, String n, List<ExpDecl> a, Exp r, Exp b) {
+        FunAST(Pos p, String n, List<Decl> a, Exp r, Exp b) {
             pos=p; name=n; args=a; returnType=r; body=b;
         }
     }
@@ -112,7 +112,7 @@ final class CompModule { // Comparison is by identity
     final Map<String,SigAST> sigs = new LinkedHashMap<String,SigAST>();
 
     SigAST addSig(List<ExpName> hints, Pos p,String n,
-        boolean fa,boolean fl,boolean fo,boolean fs,List<String> i,String e,List<ExpDecl> d,Exp f) throws Err {
+        boolean fa,boolean fl,boolean fo,boolean fs,List<String> i,String e,List<Decl> d,Exp f) throws Err {
         SigAST obj;
         String fullname = (path.length()==0) ? "this/"+n : path+"/"+n;
         if (i!=null && i.size()>0)
@@ -138,12 +138,12 @@ final class CompModule { // Comparison is by identity
         final String fullname;
         final boolean abs,lone,one,some,subset;
         final List<String> parents;
-        final List<ExpDecl> fields;
+        final List<Decl> fields;
         final Exp appendedFact;
         Pos orderingPosition;
         Pos absPosition, lonePosition, onePosition, somePosition, extendsPosition, inPosition;
         SigAST(Pos pos, String fullname, String name, boolean abs, boolean lone, boolean one, boolean some, boolean subset,
-            List<String> parents, List<ExpDecl> fields, Exp appendedFacts, Sig topoSig) {
+            List<String> parents, List<Decl> fields, Exp appendedFacts, Sig topoSig) {
             this.pos=pos;
             this.fullname=fullname;
             this.name=name;
@@ -196,7 +196,7 @@ final class CompModule { // Comparison is by identity
 
     void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
         String n;
-        if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run#"+(1+commands.size()),null,new ArrayList<ExpDecl>(),null,e);
+        if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run#"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         List<String> options=new ArrayList<String>(opts.size());
@@ -244,8 +244,8 @@ final class CompModule { // Comparison is by identity
         return ans;
     }
 
-    static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<ExpDecl>(), null, UNIV);
-    static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<ExpDecl>(), null, SIGINT);
-    static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<ExpDecl>(), null, SEQIDX);
-    static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<ExpDecl>(), null, NONE);
+    static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, UNIV);
+    static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, SIGINT);
+    static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, SEQIDX);
+    static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, NONE);
 }

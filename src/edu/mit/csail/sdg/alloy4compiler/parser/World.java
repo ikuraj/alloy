@@ -44,7 +44,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
-/** This stores the sig/field/fun/pred configuration. */
+/** Mutable; this stores the sig/field/fun/pred configuration. */
 public final class World {
 
     /**

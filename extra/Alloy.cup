@@ -392,9 +392,9 @@ nonterminal Exp                        BracketExpr;
 nonterminal Exp                        CompareExpr;
 nonterminal String                     CmdLabel;
 nonterminal List<ExpName>              CmdOpt;
-nonterminal ExpDecl                    Decla;
-nonterminal List<ExpDecl>              Declp;
-nonterminal List<ExpDecl>              Decls;
+nonterminal Decl                       Decla;
+nonterminal List<Decl>                 Declp;
+nonterminal List<Decl>                 Decls;
 nonterminal Exp                        DomainExpr;
 nonterminal Exp                        DotExpr;
 nonterminal Exp                        EquivExpr;
@@ -575,19 +575,19 @@ First ::= UNIV:x   {: RESULT=new ExpName(x, "univ"); :};
 First ::= SIGINT:x {: RESULT=new ExpName(x, "Int");  :};
 First ::= NONE:x   {: RESULT=new ExpName(x, "none"); :};
 
-Function ::=             Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                       , mult(r), v); :};
-Function ::=             Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                       , mult(r), v); :};
-Function ::=             Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<ExpDecl>(), mult(r), v); :};
-Function ::= First:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                       , mult(r), v); :};
-Function ::= First:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                       , mult(r), v); :};
-Function ::= First:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<ExpDecl>(), mult(r), v); :};
+Function ::=             Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v); :};
+Function ::=             Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v); :};
+Function ::=             Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<Decl>(), mult(r), v); :};
+Function ::= First:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , mult(r), v); :};
+Function ::= First:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , mult(r), v); :};
+Function ::= First:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<Decl>(), mult(r), v); :};
 
-Predicate ::=             Name:n LPAREN   Decls:d RPAREN   Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                       , null, v); :};
-Predicate ::=             Name:n LBRACKET Decls:d RBRACKET Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                       , null, v); :};
-Predicate ::=             Name:n                           Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<ExpDecl>(), null, v); :};
-Predicate ::= First:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                       , null, v); :};
-Predicate ::= First:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                       , null, v); :};
-Predicate ::= First:f DOT Name:n                           Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<ExpDecl>(), null, v); :};
+Predicate ::=             Name:n LPAREN   Decls:d RPAREN   Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , null, v); :};
+Predicate ::=             Name:n LBRACKET Decls:d RBRACKET Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , null, v); :};
+Predicate ::=             Name:n                           Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<Decl>(), null, v); :};
+Predicate ::= First:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , null, v); :};
+Predicate ::= First:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , null, v); :};
+Predicate ::= First:f DOT Name:n                           Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<Decl>(), null, v); :};
 
 Hint ::=             {: RESULT=null;           :};
 Hint ::= HASH Name:e {: RESULT=Util.asList(e); :};
@@ -662,16 +662,16 @@ Names ::= Names:a COMMA Name:b     {: a.add(b); RESULT=a;                       
 Decla ::= PART:k Names   COLON Expr   {: if (1==1) throw ExpName.hint(k,"part"); :};
 Decla ::= EXH:k  Names   COLON Expr   {: if (1==1) throw ExpName.hint(k,"exh");  :};
 
-Decla ::= DISJ:k Names:a COLON Expr:b {: RESULT=new ExpDecl(k,    a, mult(b)); :};
-Decla ::=        Names:a COLON Expr:b {: RESULT=new ExpDecl(null, a, mult(b)); :};
+Decla ::= DISJ:k Names:a COLON Expr:b {: RESULT=new Decl(k,    a, mult(b)); :};
+Decla ::=        Names:a COLON Expr:b {: RESULT=new Decl(null, a, mult(b)); :};
 
-Declp ::= Declp:x COMMA Decla:y {: RESULT=x; RESULT.add(y);                         :};
-Declp ::=               Decla:y {: RESULT=new ArrayList<ExpDecl>(); RESULT.add(y);  :};
+Declp ::= Declp:x COMMA Decla:y {: RESULT=x; RESULT.add(y);                      :};
+Declp ::=               Decla:y {: RESULT=new ArrayList<Decl>(); RESULT.add(y);  :};
 
-Decls ::=                        {: RESULT=new ArrayList<ExpDecl>();                :};
-Decls ::= Decla:x                {: RESULT=new ArrayList<ExpDecl>(); RESULT.add(x); :};
-Decls ::= Decla:x COMMA Decls:y  {: RESULT=y; RESULT.add(0,x);                      :};
-Decls ::=         COMMA Decls:y  {: RESULT=y;                                       :};
+Decls ::=                        {: RESULT=new ArrayList<Decl>();                :};
+Decls ::= Decla:x                {: RESULT=new ArrayList<Decl>(); RESULT.add(x); :};
+Decls ::= Decla:x COMMA Decls:y  {: RESULT=y; RESULT.add(0,x);                   :};
+Decls ::=         COMMA Decls:y  {: RESULT=y;                                    :};
 
 Let ::= Name:a EQUALS:o Expr:b SuperOrBar:x {:
   if (a.name.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");

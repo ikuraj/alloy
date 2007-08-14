@@ -59,13 +59,13 @@ final class ExpQuant extends Exp {
     public final Op op;
 
     /** The unmodifiable list of variables. */
-    public final ConstList<ExpDecl> decls;
+    public final ConstList<Decl> decls;
 
     /** The body of the quantified expression. */
     public final Exp sub;
 
     /** Constructs a new quantified expression. */
-    public ExpQuant(Pos pos, Pos closingBracket, Op op, List<ExpDecl> decls, Exp sub) {
+    public ExpQuant(Pos pos, Pos closingBracket, Op op, List<Decl> decls, Exp sub) {
         super(pos);
         this.closingBracket=closingBracket;
         this.op=op;
@@ -79,7 +79,7 @@ final class ExpQuant extends Exp {
     /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=pos.merge(closingBracket).merge(sub.span()); for(ExpDecl d:decls) p=p.merge(d.span()); span=p; }
+        if (p==null) { p=pos.merge(closingBracket).merge(sub.span()); for(Decl d:decls) p=p.merge(d.span()); span=p; }
         return p;
     }
 
@@ -87,7 +87,7 @@ final class ExpQuant extends Exp {
     public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr guard=null;
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
-        for(ExpDecl d: decls) {
+        for(Decl d: decls) {
             Expr v = d.expr.check(cx, warnings).resolve_as_set(warnings);
             // If the variable declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (v.mult==0 && v.type.arity()==1) v=ExprUnary.Op.ONEOF.make(null, v);
@@ -102,7 +102,7 @@ final class ExpQuant extends Exp {
         }
         Expr sub = this.sub.check(cx, warnings);
         if (op==Op.SUM) sub=sub.resolve_as_int(warnings); else sub=sub.resolve_as_formula(warnings);
-        for(ExpDecl d: decls) for(ExpName n: d.names) cx.remove(n.name);
+        for(Decl d: decls) for(ExpName n: d.names) cx.remove(n.name);
         if (guard!=null) {
             switch(op) {
               case SUM: sub=guard.ite(sub, ExprConstant.ZERO); break;
