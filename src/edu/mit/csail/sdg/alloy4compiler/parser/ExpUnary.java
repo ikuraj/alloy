@@ -21,31 +21,40 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op;
 
-public final class ExpUnary extends Exp {
+/** Immutable; represents a unary expression of the form "(OP subexpression)" */
 
+final class ExpUnary extends Exp {
+
+    /** The unary operator. */
     public final Op op;
+
+    /** The subexpression. */
     public final Exp sub;
 
+    /** Constructs an ExpUnary object. */
     public ExpUnary(Pos pos, Op op, Exp sub) {
         super(pos);
         this.op=op;
         this.sub=sub;
     }
 
+    /** Caches the span() result. */
     private Pos span=null;
+
+    /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
         if (p==null) { p=pos.merge(sub.span()); span=p; }
         return p;
     }
 
+    /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr sub = this.sub.check(cx, warnings);
         return op.make(pos, sub);

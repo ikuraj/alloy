@@ -31,16 +31,23 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
 
-public final class ExpName extends Exp {
+/** Immutable; represents an unresolved name in the AST. */
 
+final class ExpName extends Exp {
+
+    /** The name. */
     public final String name;
 
+    /** Constructs an ExpName object. */
     public ExpName(Pos pos, String name) { super(pos); this.name=name; }
 
+    /** {@inheritDoc} */
     public Pos span() { return pos; }
 
+    /** This caches an unmodifiable empty list of Expr objects. */
     private final ConstList<Expr> emptyList = ConstList.make();
 
+    /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
         TempList<Expr> objects = new TempList<Expr>();
         Set<Object> choices = cx.resolve(pos, name);

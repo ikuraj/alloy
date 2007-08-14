@@ -40,18 +40,27 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 
-public final class ExpDot extends Exp {
+/** Immutable; represents a function/predicate call or a relational join. */
 
+final class ExpDot extends Exp {
+
+    /** The left-hand side of the DOT operator. */
     public final Exp left;
+
+    /** The right-hand side of the DOT operator. */
     public final Exp right;
 
+    /** Constructs a call or a relational join expression. */
     public ExpDot(Pos pos, Exp left, Exp right) {
         super(pos);
         this.left=left;
         this.right=right;
     }
 
+    /** Caches the span() result. */
     private Pos span=null;
+
+    /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
         if (p==null) { p=pos.merge(left.span()).merge(right.span()); span=p; }
@@ -110,6 +119,7 @@ public final class ExpDot extends Exp {
         return ans;
     }
 
+    /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         int warningSize = warnings.size();
         // First, check whether it could be a legal function/predicate call

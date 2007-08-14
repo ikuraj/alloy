@@ -21,33 +21,44 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 
-public final class ExpITE extends Exp {
+/** Immutable; represents an if-then-else expression. */
 
+final class ExpITE extends Exp {
+
+    /** The condition formula. */
     public final Exp formula;
+
+    /** The then-clause. */
     public final Exp left;
+
+    /** The else-clause. */
     public final Exp right;
 
-    public ExpITE(Pos pos, Exp formula, Exp left, Exp right) {
-        super(pos);
+    /** Constructs a ExpITE expression. */
+    public ExpITE(Exp formula, Exp left, Exp right) {
+        super(null);
         this.formula=formula;
         this.left=left;
         this.right=right;
     }
 
+    /** Caches the span() result. */
     private Pos span=null;
+
+    /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
         if (p==null) { p=pos.merge(formula.span()).merge(left.span()).merge(right.span()); span=p; }
         return p;
     }
 
+    /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr f = formula.check(cx, warnings);
         Expr a = left.check(cx, warnings);

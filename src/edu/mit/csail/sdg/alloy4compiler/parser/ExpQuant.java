@@ -34,13 +34,37 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant.Op;
 
-public final class ExpQuant extends Exp {
+/**
+ * Immutable; represents a quantified expression.
+ *
+ * It can have one of the following forms:
+ *
+ * <br>
+ * <br>  (all  a,b:t | formula)
+ * <br>  (no   a,b:t | formula)
+ * <br>  (lone a,b:t | formula)
+ * <br>  (one  a,b:t | formula)
+ * <br>  (some a,b:t | formula)
+ * <br>  (sum  a,b:t | integer expression)
+ * <br>  {a,b:t | formula}
+ * <br>  {a,b:t }
+ */
 
+final class ExpQuant extends Exp {
+
+    /** If nonnull, it is the closing curly bracket's position. */
     public final Pos closingBracket;
+
+    /** The operator (ALL, NO, LONE, ONE, SOME, SUM, or COMPREHENSION) */
     public final Op op;
+
+    /** The unmodifiable list of variables. */
     public final ConstList<ExpDecl> decls;
+
+    /** The body of the quantified expression. */
     public final Exp sub;
 
+    /** Constructs a new quantified expression. */
     public ExpQuant(Pos pos, Pos closingBracket, Op op, List<ExpDecl> decls, Exp sub) {
         super(pos);
         this.closingBracket=closingBracket;
@@ -49,13 +73,17 @@ public final class ExpQuant extends Exp {
         this.sub=sub;
     }
 
+    /** Caches the span() result. */
     private Pos span=null;
+
+    /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
         if (p==null) { p=pos.merge(closingBracket).merge(sub.span()); for(ExpDecl d:decls) p=p.merge(d.span()); span=p; }
         return p;
     }
 
+    /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr guard=null;
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();

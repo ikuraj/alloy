@@ -28,12 +28,20 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 
-public final class ExpLet extends Exp {
+/** Immutable; represents an expression of the form (let a=b | x). */
 
+final class ExpLet extends Exp {
+
+    /** The LET variable. */
     public final ExpName left;
+
+    /** The value bound to the LET variable. */
     public final Exp right;
+
+    /** The body of the LET expression. */
     public final Exp sub;
 
+    /** Constructs a LET expression. */
     public ExpLet(Pos pos, ExpName left, Exp right, Exp sub) {
         super(pos);
         this.left=left;
@@ -41,13 +49,17 @@ public final class ExpLet extends Exp {
         this.sub=sub;
     }
 
+    /** Caches the span() result. */
     private Pos span=null;
+
+    /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
         if (p==null) { p=pos.merge(left.span()).merge(right.span()).merge(sub.span()); span=p; }
         return p;
     }
 
+    /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr right = this.right.check(cx, warnings);
         right = right.resolve(right.type, warnings);

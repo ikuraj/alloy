@@ -26,14 +26,26 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.Op;
 
-public final class ExpConstant extends Exp {
+/** Immutable; represents a constant in the AST. */
 
+final class ExpConstant extends Exp {
+
+    /** The type of constant. */
     public final Op op;
+
+    /** If this node is a number constant, then this field stores the number, else this field stores 0. */
     public final int num;
 
-    public ExpConstant(Pos pos, Op op, int num) { super(pos); this.op=op; this.num=num; }
+    /** Constructs a constant. */
+    public ExpConstant(Pos pos, Op op, int num) {
+        super(pos);
+        this.op=op;
+        this.num=(op==Op.NUMBER ? num : 0);
+    }
 
+    /** {@inheritDoc} */
     public Pos span() { return pos; }
 
+    /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) { return op.make(pos, num); }
 }

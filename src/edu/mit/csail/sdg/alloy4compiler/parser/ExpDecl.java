@@ -24,7 +24,7 @@ import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Pos;
 
-public final class ExpDecl {
+final class ExpDecl {
 
     /** If nonnull, then this Decl is disjoint */
     public final Pos disjoint;

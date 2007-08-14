@@ -27,21 +27,27 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 
-public abstract class Exp {
+/** Immutable; this is the super class of all untypechecked AST nodes. */
 
+abstract class Exp {
+
+    /** The filename, line, and column position in the original Alloy model file (cannot be null). */
     public final Pos pos;
 
-    public Exp(Pos pos) { this.pos=(pos==null ? Pos.UNKNOWN : pos); }
+    /** Constructs an Exp node. */
+    public Exp(Pos pos) {
+        this.pos=(pos==null ? Pos.UNKNOWN : pos);
+    }
 
+    /** Returns a Pos object representing the entire span of this Exp and all its subexpressions. */
     public abstract Pos span();
 
-    public abstract Expr check(Context cx, List<ErrorWarning> warnings) throws Err ;
+    /**
+     * Consults the current lexical context, and converts this Exp node into an equivalent Expr node
+     * (along the way, if we detect any type warnings, add them to the listOfWarnings)
+     */
+    public abstract Expr check(Context cx, List<ErrorWarning> listOfWarnings) throws Err ;
 
-    public final Exp not() {
-        return new ExpUnary(null, ExprUnary.Op.NOT, this);
-    }
-
-    public final Exp ite(Exp left, Exp right) {
-        return new ExpITE(null, this, left, right);
-    }
+    /** Convenience method that constructs the expression "not this" */
+    public final Exp not() { return new ExpUnary(null, ExprUnary.Op.NOT, this); }
 }
