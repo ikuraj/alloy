@@ -35,7 +35,6 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
@@ -302,15 +301,6 @@ public final class Module {
         return assertions.get(name);
     }
 
-    /** Typecheck if necessary, then returns an unmodifiable list of all assertions in this module. */
-    public ConstList<Pair<String,Expr>> getAllAssertions() throws Err {
-        TempList<Pair<String,Expr>> ans = new TempList<Pair<String,Expr>>(assertions.size());
-        for(Map.Entry<String,Expr> e:assertions.entrySet()) {
-            ans.add(new Pair<String,Expr>(e.getKey(), e.getValue()));
-        }
-        return ans.makeConst();
-    }
-
     //=============================================================================================================//
 
     /** This lists all the functions and predicates defined in this module. */
@@ -370,11 +360,6 @@ public final class Module {
     /** Typecheck if necessary, then return an unmodifiable list of all parameter-less predicates/functions. */
     public SafeList<Func> getAllFunc0() throws Err {
         return list_of_func0.dup();
-    }
-
-    /** Typecheck if necessary, then return an unmodifiable list of all predicates/functions. */
-    public SafeList<Func> getAllFunc() throws Err {
-        return list_of_func.dup();
     }
 
     //=============================================================================================================//

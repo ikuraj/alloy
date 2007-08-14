@@ -33,9 +33,6 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
-import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
@@ -63,27 +60,7 @@ public final class World {
         return null;
     }
 
-    /**
-     * This helper function determines whether "s" is a function in the util/integer module
-     */
-    public static boolean is_alloy3int(Func y) {
-        return y.pos!=null && y.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"integer.als");
-    }
-
-    /**
-     * Generates the expression disj[arg1, args2, arg3...].
-     * <p> If args.size()<1, we will throw a SyntaxError immediately.
-     * <p> If args.size()<2, we will throw a TypeError during the typechecking phase.
-     */
-    public Expr makeDISJOINT(List<Expr> args) throws Err {
-        Pos p=Pos.UNKNOWN;
-        for(Expr a:args) p=p.merge(a.span());
-        return ExprBuiltin.makeDISJOINT(p, null, args);
-    }
-
-    /**
-     * Generates a new signature.
-     */
+    /** Generates a new signature. */
     PrimSig makeSIG(Pos pos, Module module, PrimSig parent, String name, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws Err {
         String fullname = module.paths.contains("") ? "this/"+name : (module.paths.get(0)+"/"+name);
         PrimSig x=new PrimSig(pos, parent, fullname, isAbstract, lone, one, some, isLeaf);
@@ -91,9 +68,7 @@ public final class World {
         return x;
     }
 
-    /**
-     * Generates a new signature.
-     */
+    /** Generates a new signature. */
     SubsetSig makeSUBSETSIG(Pos pos, Module module, Collection<Sig> parents, String name, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws Err {
         if (isAbstract) throw new ErrorType(pos, "Subset signature \""+name+"\" cannot be abstract.");
         String fullname = module.paths.contains("") ? "this/"+name : (module.paths.get(0)+"/"+name);
