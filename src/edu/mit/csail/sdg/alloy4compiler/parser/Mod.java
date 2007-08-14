@@ -42,7 +42,7 @@ final class CompModule { // Comparison is by identity
 
     //=============================================================================================================//
 
-	private int z;
+    private int z;
 
     String moduleName="unknown";
     Pos pos=Pos.UNKNOWN;

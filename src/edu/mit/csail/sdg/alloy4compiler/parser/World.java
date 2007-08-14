@@ -44,7 +44,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 /** Mutable; this stores the sig/field/fun/pred configuration. */
 public final class World {
 
-	private int z;
+    private int z;
 
     /**
      * This helper function determines whether "s" is an instance of the util/ordering "Ord" sig.

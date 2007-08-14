@@ -50,8 +50,8 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 public final class Module {
 
-	private int z;
-	
+    private int z;
+
     /** The position of the "MODULE" line at the top of the file; never null. */
     public final Pos pos;
 

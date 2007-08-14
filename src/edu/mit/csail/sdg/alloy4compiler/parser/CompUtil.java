@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -65,84 +64,26 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
-/**
- * This class provides convenience methods for calling the parser and the compiler
- */
+/** This class provides convenience methods for calling the parser and the compiler. */
 
 public final class CompUtil {
 
-	private int z;
+    private int z;
+
+    //=============================================================================================================//
 
     /** Constructor is private, since this class never needs to be instantiated. */
     private CompUtil() { }
 
-    /**
-     * Parses the input as an Alloy expression from that world
-     * @throws Err if world==null or if any error occurred
-     * @return the expression if no error occurred (it will be fully typechecked)
-     */
-    public static Expr parseOneExpression_fromString(World world, String input) throws Err {
-        try {
-            if (world==null) throw new ErrorAPI("parseOneExpression() cannot be called with null World");
-            Map<String,String> fc=new LinkedHashMap<String,String>();
-            fc.put("", "run{\n"+input+"}"); // We prepend the line "run{"
-            CompModule u=CompParser.alloy_parseStream(fc, world, -1, "", "");
-            if (u.funs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
-            Exp body = u.funs.get(0).body;
-            Context cx = new Context(world.getRootModule());
-            ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
-            Expr ans = body.check(cx, warnings);
-            ans = ans.resolve(ans.type, warnings);
-            if (ans.errors.size()>0) throw ans.errors.get(0);
-            return ans;
-        } catch(IOException ex) {
-            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
-        } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
-        }
+    //=============================================================================================================//
+
+    /** Returns true if exists some entry (a,b) in the map, such that b==value (using object identity as the comparison) */
+    private static<V> boolean isin(V value, Map<String,V> map) {
+        for(Map.Entry<String,V> e:map.entrySet()) if (e.getValue()==value) return true;
+        return false;
     }
 
-    /**
-     * Parses 1 module from the input stream (without loading any subfiles)
-     * @throws Err if any error occurred
-     * @return an array of 0 or more Command if no error occurred
-     */
-    public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
-        try {
-            Map<String,String> fc=new LinkedHashMap<String,String>();
-            fc.put("",content);
-            CompModule u=CompParser.alloy_parseStream(fc, null, 0, "", "");
-            TempList<Command> ans=new TempList<Command>(u.commands.size());
-            for(Pair<String,Command> x: u.commands) ans.add(x.b);
-            return ans.makeConst();
-        } catch(IOException ex) {
-            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
-        } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
-        }
-    }
-
-    /**
-     * Parses 1 module from the file (without loading any subfiles)
-     * @throws Err if any error occurred
-     * @return an array of 0 or more Command if no error occurred
-     */
-    public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
-        try {
-            Map<String,String> fc=new LinkedHashMap<String,String>();
-            CompModule u=CompParser.alloy_parseStream(fc, null, 0, filename, "");
-            TempList<Command> ans=new TempList<Command>(u.commands.size());
-            for(Pair<String,Command> x: u.commands) ans.add(x.b);
-            return ans.makeConst();
-        } catch(IOException ex) {
-            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
-        } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
-        }
-    }
+    //=============================================================================================================//
 
     /**
      * Go up the directory hierachy 0 or more times.
@@ -160,6 +101,8 @@ public final class CompUtil {
         }
         return filepath;
     }
+
+    //=============================================================================================================//
 
     /**
      * Given the name of a module, and the filename for that module, compute the filename for another module
@@ -205,6 +148,65 @@ public final class CompUtil {
         return ""; // This shouldn't happen, since there should always be some character after '/' in the module name
     }
 
+    //=============================================================================================================//
+
+    /** Helper method that recursively open more files. */
+    private static CompModule parseRecursively(Map<String,String> fc, String rootdir,Pos pos,String name,CompModule parent,String parentFileName,String prefix,ArrayList<CompModule> modules,ArrayList<String> thispath)
+    throws Err, FileNotFoundException, IOException {
+        // Figure out the exact filename
+        File f=new File(name);
+        String canon=f.getCanonicalPath();
+        if (!f.exists() && !fc.containsKey(canon) && parent!=null) {
+            String parentPath = (parent.moduleName.length()>0) ? parent.moduleName : "anything";
+            f=new File(CompUtil.computeModulePath(parentPath, parentFileName, name));
+            canon=f.getCanonicalPath();
+        }
+        if (!f.exists() && !fc.containsKey(canon) && rootdir!=null && rootdir.length()>0) {
+            f=new File((rootdir+"/models/"+name+".als").replace('/',File.separatorChar));
+            canon=f.getCanonicalPath();
+        }
+        if (!f.exists() && !fc.containsKey(canon)) {
+            String content;
+            try {
+                content = Util.readAll(true, "models/"+name+".als");
+            } catch(IOException ex) {
+                throw new ErrorSyntax(pos, "The module \""+name+"\" cannot be found.\nIt is not a built-in library module, and it cannot be found at \""+(new File(name)).getAbsolutePath()+"\".\n");
+            }
+            f=new File("/models/"+name+".als");
+            canon=f.getCanonicalPath();
+            fc.put(canon,content);
+        }
+        name=canon;
+        // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
+        // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
+        // => As you descend down the chain via OPEN, if you see the same FILE twice, then
+        //    you will go into an infinite loop (since, regardless of the instantiating parameter,
+        //    that file will attempt to OPEN the exact same set of files. leading back to itself, etc. etc.)
+        // <= If there is an infinite loop, that means there is at least 1 infinite chain of OPEN (from root).
+        //    Since the number of files is finite, at least 1 filename will be repeated.
+        if (thispath.contains(name)) throw new ErrorSyntax(pos,"Circular dependency in module import. The file \""+name+"\" is imported infinitely often.");
+        thispath.add(name);
+        // No cycle detected so far. So now we parse the file.
+        CompModule u=CompParser.alloy_parseStream(fc, parent==null?null:parent.world, 0, name, prefix);
+        modules.add(u);
+        // The returned Module object is fully-filled-in except
+        // * Module.{opens,params}
+        // * Sig.{type,sup,sups,subs}
+        // * Field.halftype, Field.Full.fulltype, Expr*.type, and ExprName.resolved
+        // Also, there will not be any ExprCall. Only ExprJoin.
+        for(Map.Entry<String, Open> opens:u.opencmds.entrySet()) {
+            // Here, we recursively open the included files (to fill out the "Module.opens" field)
+            Open y=opens.getValue();
+            CompModule uu=parseRecursively(fc, rootdir, y.pos, y.filename, u, name, prefix.length()==0 ? y.alias : prefix+"/"+y.alias, modules, thispath);
+            if (y.args.size() != uu.params.size()) throw new ErrorSyntax(y.pos, "You supplied "+y.args.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments.");
+            u.opens.put(y.alias, uu);
+        }
+        thispath.remove(thispath.size()-1); // Remove this file from the CYCLE DETECTION LIST.
+        return u;
+    }
+
+    //=============================================================================================================//
+
     /** This is step 1 of the postprocessing: figure out the instantiating parameters of each module. */
     private static boolean alloy_fillParams(ArrayList<CompModule> modules) throws Err {
         boolean chg=false;
@@ -236,6 +238,8 @@ public final class CompUtil {
         if (chg==false && missing!=null) throw new ErrorSyntax(missing.pos, "Failed to import the module, because one of the instantiating signature cannot be found");
         return chg;
     }
+
+    //=============================================================================================================//
 
     /** This is step 2 of the postprocessing: merging modules that have same filename and instantiating arguments. */
     private static boolean alloy_mergeModules(ArrayList<CompModule> modules) {
@@ -276,40 +280,9 @@ public final class CompUtil {
         return chg;
     }
 
-    private static<V> boolean isin(V x, Map<String,V> y) {
-        for(Map.Entry<String,V> e:y.entrySet()) if (e.getValue()==x) return true;
-        return false;
-    }
+    //=============================================================================================================//
 
-    private static Set<SigAST> lookupSigOrParameterOrFunctionOrPredicate (Map<String,CompModule> path2module, CompModule u, String name) {
-        SigAST s;
-        Set<SigAST> ans=new LinkedHashSet<SigAST>();
-        if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
-        if (name.indexOf('/')<0) {
-            for(String p:u.paths) {
-                if (p.length()==0) {
-                    for(CompModule uu:path2module.values()) if ((s=uu.sigs.get(name))!=null) ans.add(s);
-                } else {
-                    for(Map.Entry<String,CompModule> uu:path2module.entrySet())
-                      if (uu.getKey().equals(p) || uu.getKey().startsWith(p+"/"))
-                        if ((s=uu.getValue().sigs.get(name))!=null)
-                          ans.add(s);
-                }
-            }
-            s=u.params.get(name); if (s!=null) ans.add(s);
-            return ans;
-        }
-        if (name.startsWith("this/")) name=name.substring(5);
-        s=u.params.get(name); if (s!=null) ans.add(s);
-        int i=name.lastIndexOf('/');
-        if (i>=0) u = path2module.get((u.path.length()==0?"":(u.path+"/"))+name.substring(0,i));
-        if (u!=null) {
-            if (i>=0) name=name.substring(i+1);
-            if ((s=u.sigs.get(name))!=null) ans.add(s);
-        }
-        return ans;
-    }
-
+    /** This helper method helps step 3 */
     private static Sig xfill(World world, Map<String,CompModule> path2module, SigAST oldS) throws Err {
         if (oldS.topoSig!=null) return oldS.topoSig;
         if (oldS.topo) throw new ErrorType("Sig "+oldS+" is involved in a cyclic inheritance.");
@@ -325,7 +298,7 @@ public final class CompUtil {
                 else if (n.equals("seq/Int")) parent=SEQIDX;
                 else if (n.equals("none")) parent=NONE;
                 else {
-                  Set<SigAST> anss=lookupSigOrParameterOrFunctionOrPredicate(path2module,u,n);
+                  Set<SigAST> anss=u.lookup_sigORparam(n); // lookupSigOrParam(path2module,u,n);
                   if (anss.size()>1) throw new ErrorSyntax(oldS.pos, "Sig "+oldS+" tries to be a subset of \""+n+"\", but the name \""+n+"\" is ambiguous.");
                   if (anss.size()<1) throw new ErrorSyntax(oldS.pos, "Sig "+oldS+" tries to be a subset of a non-existent signature \""+n+"\"");
                   parent = xfill(world, path2module, anss.iterator().next());
@@ -346,7 +319,7 @@ public final class CompUtil {
             else if (sup.equals("seq/Int")) parent=SEQIDX;
             else if (sup.equals("none")) parent=NONE;
             else {
-                Set<SigAST> anss=lookupSigOrParameterOrFunctionOrPredicate(path2module,u,sup);
+                Set<SigAST> anss=u.lookup_sigORparam(sup); // lookupSigOrParam(path2module,u,sup);
                 if (anss.size()>1) throw new ErrorSyntax(oldS.pos, "Sig "+oldS+" tries to extend \""+sup+"\", but that name is ambiguous.");
                 if (anss.size()<1) throw new ErrorSyntax(oldS.pos, "Sig "+oldS+" tries to extend a non-existent signature \""+sup+"\"");
                 parent = xfill(world, path2module, anss.iterator().next());
@@ -368,7 +341,9 @@ public final class CompUtil {
         return s;
     }
 
-    /** This performs the postprocessing, converting from "List of CompModule" to "List of Module" */
+    //=============================================================================================================//
+
+    /** This is step 3 of the postprocessing: converting from "List of CompModule" to "List of Module" */
     private static World alloy_resolve(final ArrayList<CompModule> modules) throws Err {
         JoinableList<Err> errors = new JoinableList<Err>();
         List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
@@ -587,6 +562,77 @@ public final class CompUtil {
         if (!errors.isEmpty()) throw errors.get(0); else return world;
     }
 
+
+    //=============================================================================================================//
+
+    /**
+     * Parses 1 module from the input stream (without loading any subfiles)
+     * @throws Err if any error occurred
+     * @return an array of 0 or more Command if no error occurred
+     */
+    public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
+        try {
+            Map<String,String> fc=new LinkedHashMap<String,String>();
+            fc.put("",content);
+            CompModule u=CompParser.alloy_parseStream(fc, null, 0, "", "");
+            TempList<Command> ans=new TempList<Command>(u.commands.size());
+            for(Pair<String,Command> x: u.commands) ans.add(x.b);
+            return ans.makeConst();
+        } catch(IOException ex) {
+            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
+        } catch(Throwable ex) {
+            if (ex instanceof Err) throw (Err)ex;
+            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+        }
+    }
+
+    /**
+     * Parses 1 module from the file (without loading any subfiles)
+     * @throws Err if any error occurred
+     * @return an array of 0 or more Command if no error occurred
+     */
+    public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
+        try {
+            Map<String,String> fc=new LinkedHashMap<String,String>();
+            CompModule u=CompParser.alloy_parseStream(fc, null, 0, filename, "");
+            TempList<Command> ans=new TempList<Command>(u.commands.size());
+            for(Pair<String,Command> x: u.commands) ans.add(x.b);
+            return ans.makeConst();
+        } catch(IOException ex) {
+            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
+        } catch(Throwable ex) {
+            if (ex instanceof Err) throw (Err)ex;
+            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+        }
+    }
+
+    /**
+     * Parses the input as an Alloy expression from that world
+     * @throws Err if world==null or if any error occurred
+     * @return the expression if no error occurred (it will be fully typechecked)
+     */
+    public static Expr parseOneExpression_fromString(World world, String input) throws Err {
+        try {
+            if (world==null) throw new ErrorAPI("parseOneExpression() cannot be called with null World");
+            Map<String,String> fc=new LinkedHashMap<String,String>();
+            fc.put("", "run{\n"+input+"}"); // We prepend the line "run{"
+            CompModule u=CompParser.alloy_parseStream(fc, world, -1, "", "");
+            if (u.funs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
+            Exp body = u.funs.get(0).body;
+            Context cx = new Context(world.getRootModule());
+            ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
+            Expr ans = body.check(cx, warnings);
+            ans = ans.resolve(ans.type, warnings);
+            if (ans.errors.size()>0) throw ans.errors.get(0);
+            return ans;
+        } catch(IOException ex) {
+            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
+        } catch(Throwable ex) {
+            if (ex instanceof Err) throw (Err)ex;
+            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+        }
+    }
+
     /**
      * Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
      * @param fc - a cache of files that have been pre-fetched (can be null if there were no prefetching)
@@ -596,18 +642,16 @@ public final class CompUtil {
      * @throws Err if an error occurred
      * <p>Note: if we read more files, these will be stored into "fc" (if fc is nonnull)
      */
-    public static World parseEverything_fromFile(Map<String,String> fc, String rootdir, String filename)
-    throws Err {
+    public static World parseEverything_fromFile(Map<String,String> fc, String rootdir, String filename) throws Err {
         try {
             filename=Util.canon(filename);
             if (fc==null) fc=new LinkedHashMap<String,String>();
             ArrayList<CompModule> modules=new ArrayList<CompModule>();
             ArrayList<String> thispath=new ArrayList<String>();
-            alloy_totalparseHelper(fc, rootdir, Pos.UNKNOWN, filename, null, null, "", modules, thispath);
+            parseRecursively(fc, rootdir, Pos.UNKNOWN, filename, null, null, "", modules, thispath);
             while(alloy_fillParams(modules)) {}
             while(alloy_mergeModules(modules)) {}
-            World ans=alloy_resolve(modules);
-            return ans;
+            return alloy_resolve(modules);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());
         } catch(IOException ex) {
@@ -616,92 +660,5 @@ public final class CompUtil {
             if (ex instanceof Err) throw (Err)ex;
             throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
-    }
-
-    /**
-     * Read everything from "reader" and parse it; if it mentions submodules, open them and parse them too.
-     * @param rootdir - the directory for Alloy's builtin modules (eg. uti/ordering.als, util/integer.als, ...) (can be null)
-     * @param filename - the location in the file system that the main module represents; (this file does not
-     *        need to actually exist; it is given as a hint for deriving the other modules' locations)
-     * @param filecontent - this contains the main module we are parsing
-     * @return the fully parsed World object (if no error occurred)
-     * @throws Err if an error occurred
-     */
-    public static World parseEverything_fromString(String rootdir, String filename, String filecontent)
-    throws Err {
-        try {
-            filename=Util.canon(filename);
-            LinkedHashMap<String,String> fc=new LinkedHashMap<String,String>();
-            fc.put(filename,filecontent);
-            ArrayList<CompModule> modules=new ArrayList<CompModule>();
-            ArrayList<String> thispath=new ArrayList<String>();
-            alloy_totalparseHelper(fc, rootdir, Pos.UNKNOWN, filename, null, null, "", modules, thispath);
-            while(alloy_fillParams(modules)) {}
-            while(alloy_mergeModules(modules)) {}
-            World ans=alloy_resolve(modules);
-            return ans;
-        } catch(FileNotFoundException ex) {
-            throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());
-        } catch(IOException ex) {
-            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
-        } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
-        }
-    }
-
-    /** Helper method that recursively open more files. */
-    private static CompModule alloy_totalparseHelper(Map<String,String> fc, String rootdir,Pos pos,String name,CompModule parent,String parentFileName,String prefix,ArrayList<CompModule> modules,ArrayList<String> thispath)
-    throws Err, FileNotFoundException, IOException {
-        // Figure out the exact filename
-        File f=new File(name);
-        String canon=f.getCanonicalPath();
-        if (!f.exists() && !fc.containsKey(canon) && parent!=null) {
-            String parentPath = (parent.moduleName.length()>0) ? parent.moduleName : "anything";
-            f=new File(CompUtil.computeModulePath(parentPath, parentFileName, name));
-            canon=f.getCanonicalPath();
-        }
-        if (!f.exists() && !fc.containsKey(canon) && rootdir!=null && rootdir.length()>0) {
-            f=new File((rootdir+"/models/"+name+".als").replace('/',File.separatorChar));
-            canon=f.getCanonicalPath();
-        }
-        if (!f.exists() && !fc.containsKey(canon)) {
-            String content;
-            try {
-                content = Util.readAll(true, "models/"+name+".als");
-            } catch(IOException ex) {
-                throw new ErrorSyntax(pos, "The module \""+name+"\" cannot be found.\nIt is not a built-in library module, and it cannot be found at \""+(new File(name)).getAbsolutePath()+"\".\n");
-            }
-            f=new File("/models/"+name+".als");
-            canon=f.getCanonicalPath();
-            fc.put(canon,content);
-        }
-        name=canon;
-        // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
-        // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
-        // => As you descend down the chain via OPEN, if you see the same FILE twice, then
-        //    you will go into an infinite loop (since, regardless of the instantiating parameter,
-        //    that file will attempt to OPEN the exact same set of files. leading back to itself, etc. etc.)
-        // <= If there is an infinite loop, that means there is at least 1 infinite chain of OPEN (from root).
-        //    Since the number of files is finite, at least 1 filename will be repeated.
-        if (thispath.contains(name)) throw new ErrorSyntax(pos,"Circular dependency in module import. The file \""+name+"\" is imported infinitely often.");
-        thispath.add(name);
-        // No cycle detected so far. So now we parse the file.
-        CompModule u=CompParser.alloy_parseStream(fc, parent==null?null:parent.world, 0, name, prefix);
-        modules.add(u);
-        // The returned Module object is fully-filled-in except
-        // * Module.{opens,params}
-        // * Sig.{type,sup,sups,subs}
-        // * Field.halftype, Field.Full.fulltype, Expr*.type, and ExprName.resolved
-        // Also, there will not be any ExprCall. Only ExprJoin.
-        for(Map.Entry<String, Open> opens:u.opencmds.entrySet()) {
-            // Here, we recursively open the included files (to fill out the "Module.opens" field)
-            Open y=opens.getValue();
-            CompModule uu=alloy_totalparseHelper(fc, rootdir, y.pos, y.filename, u, name, prefix.length()==0 ? y.alias : prefix+"/"+y.alias, modules, thispath);
-            if (y.args.size() != uu.params.size()) throw new ErrorSyntax(y.pos, "You supplied "+y.args.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments.");
-            u.opens.put(y.alias, uu);
-        }
-        thispath.remove(thispath.size()-1); // Remove this file from the CYCLE DETECTION LIST.
-        return u;
     }
 }

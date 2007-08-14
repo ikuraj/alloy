@@ -21,25 +21,23 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import java.util.ArrayList;
-import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /**
  * Immutable; reresents an "open" declaration.
  *
  * <p> <b>Invariant:</b>  filename!=null and filename is not ""
- * <p> <b>Invariant:</b>  alias!=null    and alias    is not ""
- * <p> <b>Invariant:</b>  list!=null     and (all x:list | x is not null nor "")
+ * <p> <b>Invariant:</b>  alias!=null    and alias    is not "" (and does not contain '/' nor '@')
+ * <p> <b>Invariant:</b>  list!=null     and (all x:list | x!=null && x is not "" && x does not contain '@')
  */
 
 final class Open {
 
-	private int z;
-
-    /** The position in the original model where this Sig was declared; never null. */
+    /** The position in the original model where this "open" statement was declared; never null. */
     public final Pos pos;
 
     /** The alias for this open declaration; always a nonempty string. */
@@ -49,7 +47,7 @@ final class Open {
     public final ConstList<String> args;
 
     /**
-     * The relative filename for the file being imported, without final ".als" part
+     * The relative filename for the file being imported, without the final ".als" part
      * (thus this must be a nonempty string).
      *
      * <br> eg. "util/ordering"
@@ -67,7 +65,7 @@ final class Open {
      *
      * @throws ErrorSyntax if filename is ""
      * @throws ErrorSyntax if alias contains '@' or '/'
-     * @throws ErrorSyntax if alias is "" and list.size()!=0
+     * @throws ErrorSyntax if alias is "" and args.size()!=0
      * @throws ErrorSyntax if alias is "" and filename does not match the regular expression [A-Za-z][A-Za-z0-9_'"]*
      * @throws ErrorSyntax if at least one argument is "" or contains '@'
      */
@@ -92,18 +90,18 @@ final class Open {
             }
             alias=filename;
         }
-        this.alias=alias;
-        this.pos=pos;
-        this.filename=filename;
-        List<String> newlist=new ArrayList<String>(args.size());
+        final TempList<String> newlist = new TempList<String>(args.size());
         for(int i=0; i<args.size(); i++) {
-            String arg=args.get(i).name;
-            if (arg.length()==0)
-                throw new ErrorSyntax(pos, "Module \""+filename+"\"\'s instantiation argument cannot be empty");
-            if (arg.indexOf('@')>=0)
-                throw new ErrorSyntax(pos, "Module \""+filename+"\"\'s instantiation argument cannot contain \'@\'");
-            newlist.add(arg);
+            ExpName arg=args.get(i);
+            if (arg.name.length()==0)
+                throw new ErrorSyntax(arg.span(), "Module \""+filename+"\"\'s instantiation argument cannot be empty");
+            if (arg.name.indexOf('@')>=0)
+                throw new ErrorSyntax(arg.span(), "Module \""+filename+"\"\'s instantiation argument cannot contain \'@\'");
+            newlist.add(arg.name);
         }
-        this.args=ConstList.make(newlist);
+        this.args = newlist.makeConst();
+        this.alias = alias;
+        this.pos = pos;
+        this.filename = filename;
     }
 }
