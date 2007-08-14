@@ -32,12 +32,16 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 
 final class ExpBuiltin extends Exp {
 
+    /** If nonnull, it is the closing bracket. */
+    public final Pos closingBracket;
+
     /** The unmodifiable list of arguments. */
     public ConstList<Exp> args;
 
     /** Constructs an ExpBuiltin node. */
-    public ExpBuiltin(Pos pos, List<Exp> args) {
+    public ExpBuiltin(Pos pos, Pos closingBracket, List<Exp> args) {
         super(pos);
+        this.closingBracket = closingBracket;
         this.args = ConstList.make(args);
     }
 
@@ -62,6 +66,6 @@ final class ExpBuiltin extends Exp {
             Expr x = args.get(i).check(cx, warnings);
             temp.add(x);
         }
-        return ExprBuiltin.makeDISJOINT(pos, temp.makeConst());
+        return ExprBuiltin.makeDISJOINT(pos, closingBracket, temp.makeConst());
     }
 }

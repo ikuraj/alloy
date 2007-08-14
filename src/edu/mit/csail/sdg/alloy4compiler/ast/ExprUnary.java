@@ -88,7 +88,7 @@ public final class ExprUnary extends Expr {
 
     /** Constructs an unary expression. */
     private ExprUnary(Pos pos, Op op, Expr sub, Type type, long weight, JoinableList<Err> errors) {
-        super(pos, sub.ambiguous, type, (op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0, weight, errors);
+        super(pos, null, sub.ambiguous, type, (op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0, weight, errors);
         this.op = op;
         this.sub = sub;
     }

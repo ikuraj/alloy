@@ -52,7 +52,7 @@ public final class ExprBuiltin extends Expr {
     @Override public Pos span() {
         Pos p=span;
         if (p==null) {
-            p=pos;
+            p=pos.merge(closingBracket);
             for(Expr a:args) p=p.merge(a.span());
             span=p;
         }
@@ -77,15 +77,16 @@ public final class ExprBuiltin extends Expr {
     //============================================================================================================//
 
     /** Constructs an ExprBuiltin node. */
-    private ExprBuiltin(Pos pos, boolean ambiguous, Type type, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
-        super(pos, ambiguous, type, 0, weight, errs);
+    private ExprBuiltin
+        (Pos pos, Pos closingBracket, boolean ambiguous, Type type, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+        super(pos, closingBracket, ambiguous, type, 0, weight, errs);
         this.args = args;
     }
 
     //============================================================================================================//
 
     /** Generates the expression disj[arg1, args2, arg3...] */
-    public static Expr makeDISJOINT(Pos pos, List<Expr> args) {
+    public static Expr makeDISJOINT(Pos pos, Pos closingBracket, List<Expr> args) {
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         TempList<Expr> newargs = new TempList<Expr>(args.size());
@@ -105,7 +106,7 @@ public final class ExprBuiltin extends Expr {
         }
         if (commonArity==EMPTY) errs=errs.append(new ErrorType(pos,
            "The builtin predicate disjoint[] cannot be used among expressions of different arities."));
-        return new ExprBuiltin(pos, ambiguous, Type.FORMULA, newargs.makeConst(), weight, errs);
+        return new ExprBuiltin(pos, closingBracket, ambiguous, Type.FORMULA, newargs.makeConst(), weight, errs);
     }
 
     //============================================================================================================//
@@ -125,7 +126,7 @@ public final class ExprBuiltin extends Expr {
             if (x!=y) changed=true;
             args.add(y);
         }
-        return changed ? makeDISJOINT(pos, args.makeConst()) : this;
+        return changed ? makeDISJOINT(pos, closingBracket, args.makeConst()) : this;
     }
 
     //============================================================================================================//

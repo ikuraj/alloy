@@ -504,7 +504,7 @@ public final class CompUtil {
                         cx.put(n.name, newvar);
                         if (disjvars!=null) disjvars.add(newvar);
                     }
-                    if (disjvars!=null) disj=disj.and(ExprBuiltin.makeDISJOINT(d.disjoint, disjvars));
+                    if (disjvars!=null) disj=disj.and(ExprBuiltin.makeDISJOINT(d.disjoint, null, disjvars));
                 }
                 Expr newBody = f.body.check(cx, warns);
                 if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);

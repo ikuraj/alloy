@@ -110,11 +110,11 @@ final class ExpDot extends Exp {
                 // If we're inside a sig, and there is a unary variable bound to "this",
                 // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                 ConstList<Expr> args2 = Util.prepend(args, THISorNULL);
-                if (applicable(f,args2)) return ExprCall.make(pos, f, args2, 1);
+                if (applicable(f,args2)) return ExprCall.make(pos, null, f, args2, 1);
             }
-            if (i>n) return ExprBadCall.make(pos, f, args);
-            if (!applicable(f,args)) return ExprBadCall.make(pos, f, args.subList(0,i));
-            ans = ExprCall.make(pos, f, args.subList(0,i), 0);
+            if (i>n) return ExprBadCall.make(pos, null, f, args);
+            if (!applicable(f,args)) return ExprBadCall.make(pos, null, f, args.subList(0,i));
+            ans = ExprCall.make(pos, null, f, args.subList(0,i), 0);
         }
         for(; i<n; i++) {
             Expr x = args.get(i);

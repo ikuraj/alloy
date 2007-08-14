@@ -145,6 +145,9 @@ public abstract class Expr {
     /** The filename, line, and column position in the original Alloy model file (cannot be null). */
     public final Pos pos;
 
+    /** The filename, line, and column position in the original Alloy model file of the closing bracket). */
+    public final Pos closingBracket;
+
     /** The type for this node; EMPTY if it is not well-typed. */
     public final Type type;
 
@@ -180,6 +183,8 @@ public abstract class Expr {
      *
      * @param pos - the original position in the file (can be null if unknown)
      *
+     * @param closingBracket - the original position of the closing bracket (can be null if unknown)
+     *
      * @param ambiguous - true if this node is ExprChoice or it contains an ExprChoice subnode
      *
      * @param type - the type
@@ -194,8 +199,9 @@ public abstract class Expr {
      *
      * @param errors - the list of errors associated with this Expr node (can be null if there are none)
      */
-    Expr (Pos pos, boolean ambiguous, Type type, int mult, long weight, JoinableList<Err> errors) {
-        this.pos=(pos==null ? Pos.UNKNOWN : pos);
+    Expr (Pos pos, Pos closingBracket, boolean ambiguous, Type type, int mult, long weight, JoinableList<Err> errors) {
+        this.pos = (pos==null ? Pos.UNKNOWN : pos);
+        this.closingBracket = (closingBracket==null ? Pos.UNKNOWN : closingBracket);
         this.ambiguous=ambiguous;
         if (errors==null) errors=emptyListOfErrors;
         if (type==EMPTY && errors.size()==0) errors=errors.append(new ErrorType(pos, "This expression failed to be typechecked"));
@@ -208,6 +214,7 @@ public abstract class Expr {
     /** This must only be called by Sig's constructor. */
     Expr (Pos pos, Type type) {
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
+        this.closingBracket=Pos.UNKNOWN;
         this.ambiguous=false;
         this.type=(type==null || type==EMPTY) ? Type.make((PrimSig)this) : type;
         this.mult=0;

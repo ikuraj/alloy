@@ -72,8 +72,8 @@ public final class ExprLet extends Expr {
     //=============================================================================================================//
 
     /** Constructs a LET expression. */
-    private ExprLet(ExprVar var, Expr sub, JoinableList<Err> errs) {
-        super(Pos.UNKNOWN, sub.ambiguous, sub.type, 0, var.weight+sub.weight, errs);
+    private ExprLet(Pos pos, ExprVar var, Expr sub, JoinableList<Err> errs) {
+        super(pos, null, sub.ambiguous, sub.type, 0, var.weight+sub.weight, errs);
         this.var=var;
         this.sub=sub;
     }
@@ -83,16 +83,17 @@ public final class ExprLet extends Expr {
     /**
      * Constructs a LET expression.
      *
+     * @param pos - the position of the '=' token in the original Alloy model (or null if unknown)
      * @param var - the LET variable
      * @param sub - the body of the LET expression (which may or may not contain "var" as a free variable)
      */
-    public static Expr make(ExprVar var, Expr sub) {
+    public static Expr make(Pos pos, ExprVar var, Expr sub) {
         JoinableList<Err> errs = var.errors.join(sub.errors);
         if (sub.mult != 0)
             errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
         if (var.expr.mult!=0)
             errs = errs.append(new ErrorSyntax(var.expr.span(), "Multiplicity expression not allowed here."));
-        return new ExprLet(var, sub, errs);
+        return new ExprLet(pos, var, sub, errs);
     }
 
     //=============================================================================================================//
@@ -102,7 +103,7 @@ public final class ExprLet extends Expr {
         if (errors.size()>0) return this;
         // If errors.size()==0, then the variable is always already fully resolved, so we only need to resolve sub
         Expr newSub = sub.resolve(p, warnings);
-        return (sub==newSub) ? this : make(var, newSub);
+        return (sub==newSub) ? this : make(pos, var, newSub);
     }
 
     //=============================================================================================================//

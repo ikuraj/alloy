@@ -78,7 +78,7 @@ public final class ExprITE extends Expr {
 
     /** Constructs a ExprITE expression. */
     private ExprITE(Expr cond, Expr left, Expr right, Type type, JoinableList<Err> errs) {
-        super(null, (cond.ambiguous || left.ambiguous || right.ambiguous), type, 0, cond.weight+left.weight+right.weight, errs);
+        super(null,null, (cond.ambiguous || left.ambiguous || right.ambiguous), type, 0, cond.weight+left.weight+right.weight, errs);
         this.cond=cond;
         this.left=left;
         this.right=right;

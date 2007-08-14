@@ -78,7 +78,7 @@ public final class World {
     public Expr makeDISJOINT(List<Expr> args) throws Err {
         Pos p=Pos.UNKNOWN;
         for(Expr a:args) p=p.merge(a.span());
-        return ExprBuiltin.makeDISJOINT(p, args);
+        return ExprBuiltin.makeDISJOINT(p, null, args);
     }
 
     /**

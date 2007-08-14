@@ -61,7 +61,7 @@ public final class ExprVar extends Expr {
 
     /** Constructs an ExprVar object */
     private ExprVar(Pos pos, String label, Expr expr) {
-        super(pos, false, expr.type, 0, expr.weight, expr.errors);
+        super(pos, null, false, expr.type, 0, expr.weight, expr.errors);
         this.label = (label==null ? "" : label);
         this.expr = expr;
     }

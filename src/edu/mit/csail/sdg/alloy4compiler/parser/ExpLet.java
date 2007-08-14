@@ -40,7 +40,10 @@ final class ExpLet extends Exp {
     /** The body of the LET expression. */
     public final Exp sub;
 
-    /** Constructs a LET expression. */
+    /**
+     * Constructs a LET expression.
+     * @param pos - the position of the original '=' token in the text file (or null if unknown)
+     */
     public ExpLet(Pos pos, ExpName left, Exp right, Exp sub) {
         super(pos);
         this.left=left;
@@ -66,6 +69,6 @@ final class ExpLet extends Exp {
         cx.put(this.left.name, left);
         Expr sub = this.sub.check(cx, warnings);
         cx.remove(this.left.name);
-        return ExprLet.make(left, sub);
+        return ExprLet.make(pos, left, sub);
     }
 }

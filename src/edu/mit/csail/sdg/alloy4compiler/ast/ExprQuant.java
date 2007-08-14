@@ -56,9 +56,6 @@ public final class ExprQuant extends Expr {
     /** The operator (ALL, NO, LONE, ONE, SOME, SUM, or COMPREHENSION) */
     public final Op op;
 
-    /** If nonnull, it is the closing curly bracket's position. */
-    public final Pos closingBracket;
-
     /** The unmodifiable list of variables. */
     public final ConstList<ExprVar> vars;
 
@@ -103,9 +100,9 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** Constructs a new quantified expression. */
-    private ExprQuant(Pos pos, Pos close, Op op, Type type, ConstList<ExprVar> vars, Expr sub, long weight, JoinableList<Err> errs) {
-        super(pos, sub.ambiguous, type, 0, weight, errs);
-        this.closingBracket=close;
+    private ExprQuant
+        (Pos pos, Pos closingBracket, Op op, Type type, ConstList<ExprVar> vars, Expr sub, long weight, JoinableList<Err> errs) {
+        super(pos, closingBracket, sub.ambiguous, type, 0, weight, errs);
         this.op=op;
         this.vars=vars;
         this.sub=sub;

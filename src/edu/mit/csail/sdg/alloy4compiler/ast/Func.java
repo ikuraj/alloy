@@ -144,7 +144,7 @@ public final class Func {
     public Expr getBody() { return body; }
 
     /** Convenience method that calls this function with the given list of arguments. */
-    public Expr call(Expr... args) { return ExprCall.make(null, this, Util.asList(args), 0); }
+    public Expr call(Expr... args) { return ExprCall.make(null, null, this, Util.asList(args), 0); }
 
     /** Returns a human-readable description for this predicate/function */
     @Override public final String toString() { return (isPred ? "pred " : "fun ") + label; }

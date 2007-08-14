@@ -53,7 +53,7 @@ public final class ExprBad extends Expr {
 
     /** Constructs an ExprBad object. */
     public ExprBad(Pos pos, String originalText, Err error) {
-        super(pos, false, EMPTY, 0, 0, new JoinableList<Err>(error));
+        super(pos, null, false, EMPTY, 0, 0, new JoinableList<Err>(error));
         this.originalText = originalText;
     }
 

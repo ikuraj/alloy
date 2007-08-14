@@ -305,7 +305,7 @@ public abstract class Sig extends Expr {
 
         /** Constructs a new Field object. */
         private Field(Pos pos, Sig sig, String label, ExprVar var, Expr bound) throws Err {
-            super(pos, false, sig.type.product(bound.type), 0, 0, null);
+            super(pos, null, false, sig.type.product(bound.type), 0, 0, null);
             if (sig.builtin) throw new ErrorSyntax("Builtin sig \""+sig+"\" cannot have fields.");
             if (!bound.errors.isEmpty())
                 throw bound.errors.get(0);

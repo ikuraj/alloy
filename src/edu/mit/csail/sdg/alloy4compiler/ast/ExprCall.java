@@ -57,7 +57,7 @@ public final class ExprCall extends Expr {
     @Override public Pos span() {
         Pos p=span;
         if (p==null) {
-            p=pos;
+            p=pos.merge(closingBracket);
             for(Expr a:args) p=p.merge(a.span());
             span=p;
         }
@@ -155,8 +155,9 @@ public final class ExprCall extends Expr {
     //============================================================================================================//
 
     /** Constructs an ExprCall node with the given function "pred/fun" and the list of arguments "args". */
-    private ExprCall(Pos pos, boolean ambiguous, Type type, Func fun, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
-        super(pos, ambiguous, type, 0, weight, errs);
+    private ExprCall (Pos pos, Pos closingBracket, boolean ambiguous, Type type,
+        Func fun, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+        super(pos, closingBracket, ambiguous, type, 0, weight, errs);
         this.fun = fun;
         this.args = args;
     }
@@ -164,7 +165,7 @@ public final class ExprCall extends Expr {
     //============================================================================================================//
 
     /** Constructs an ExprCall node with the given predicate/function "fun" and the list of arguments "args". */
-    public static Expr make(Pos pos, Func fun, List<Expr> args, long extraWeight) {
+    public static Expr make(Pos pos, Pos closingBracket, Func fun, List<Expr> args, long extraWeight) {
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         if (extraWeight<0) extraWeight=0;
@@ -202,7 +203,7 @@ public final class ExprCall extends Expr {
                 t=tt; // Just in case an error occurred...
             }
         }
-        return new ExprCall(pos, ambiguous, t, fun, newargs.makeConst(), extraWeight, errs);
+        return new ExprCall(pos, closingBracket, ambiguous, t, fun, newargs.makeConst(), extraWeight, errs);
     }
 
     //============================================================================================================//
@@ -221,7 +222,7 @@ public final class ExprCall extends Expr {
             args.add(y);
             w = w + y.weight;
         }
-        return changed ? make(pos, fun, args.makeConst(), weight-w) : this;
+        return changed ? make(pos, closingBracket, fun, args.makeConst(), weight-w) : this;
     }
 
     //============================================================================================================//

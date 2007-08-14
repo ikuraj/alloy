@@ -553,7 +553,7 @@ public final class Module {
             if (x instanceof Sig || x instanceof Field)
                 realAns.add(ExprUnary.Op.NOOP.make(pos, (Expr)x));
             else if (x instanceof Func && ((Func)x).params.size()==0)
-                realAns.add(ExprCall.make(pos, (Func)x, null, 0));
+                realAns.add(ExprCall.make(pos, null, (Func)x, null, 0));
             else if (x instanceof Func || x instanceof Expr)
                 realAns.add(x);
         }

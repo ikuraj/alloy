@@ -97,7 +97,7 @@ final class ExpQuant extends Exp {
                 tempvars.add(var);
                 if (disjoints!=null) disjoints.add(var);
             }
-            if (disjoints!=null) guard=ExprBuiltin.makeDISJOINT(d.disjoint, disjoints).and(guard);
+            if (disjoints!=null) guard=ExprBuiltin.makeDISJOINT(d.disjoint, null, disjoints).and(guard);
         }
         Expr sub = this.sub.check(cx, warnings);
         if (op==Op.SUM) sub=sub.resolve_as_int(warnings); else sub=sub.resolve_as_formula(warnings);

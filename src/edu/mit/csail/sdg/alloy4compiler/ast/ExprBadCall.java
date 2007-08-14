@@ -50,7 +50,7 @@ public final class ExprBadCall extends Expr {
     @Override public Pos span() {
         Pos p=span;
         if (p==null) {
-            p=pos;
+            p=pos.merge(closingBracket);
             for(Expr a:args) p=p.merge(a.span());
             span=p;
         }
@@ -71,14 +71,14 @@ public final class ExprBadCall extends Expr {
     }
 
     /** Constructs an ExprBadCall object. */
-    private ExprBadCall(Pos pos, boolean ambiguous, Func fun, ConstList<Expr> args, JoinableList<Err> errors) {
-        super(pos, ambiguous, EMPTY, 0, 0, errors);
+    private ExprBadCall(Pos pos, Pos closingBracket, boolean ambiguous, Func fun, ConstList<Expr> args, JoinableList<Err> errors) {
+        super(pos, closingBracket, ambiguous, EMPTY, 0, 0, errors);
         this.fun=fun;
         this.args=args;
     }
 
     /** Constructs an ExprBadCall object. */
-    public static Expr make(final Pos pos, final Func fun, final ConstList<Expr> args) {
+    public static Expr make(final Pos pos, final Pos closingBracket, final Func fun, final ConstList<Expr> args) {
         boolean ambiguous = false;
         JoinableList<Err> errors = emptyListOfErrors;
         for(Expr x:args) {
@@ -101,7 +101,7 @@ public final class ExprBadCall extends Expr {
             }
             errors = errors.append(new ErrorType(pos, sb.toString()));
         }
-        return new ExprBadCall(pos, ambiguous, fun, args, errors);
+        return new ExprBadCall(pos, closingBracket, ambiguous, fun, args, errors);
     }
 
     /** {@inheritDoc} */

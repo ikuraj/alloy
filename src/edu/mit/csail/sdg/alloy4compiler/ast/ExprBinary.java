@@ -56,9 +56,6 @@ public final class ExprBinary extends Expr {
     /** The right-hand-side expression. */
     public final Expr right;
 
-    /** If nonnull, it is the location of the closing bracket. */
-    public final Pos closingBracket;
-
     /** Caches the span() result. */
     private Pos span=null;
 
@@ -67,12 +64,12 @@ public final class ExprBinary extends Expr {
     /** Constructs a new ExprBinary node. */
     private ExprBinary(Pos pos, Pos closingBracket, Op op, Expr left, Expr right, Type type, JoinableList<Err> errors) {
         super(pos,
+            closingBracket,
             left.ambiguous || right.ambiguous,
             type,
             (op.isArrow && (left.mult==2 || right.mult==2 || op!=Op.ARROW))?2:0,
             left.weight + right.weight,
             errors);
-        this.closingBracket=closingBracket;
         this.op=op;
         this.left=left;
         this.right=right;

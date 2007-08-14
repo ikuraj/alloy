@@ -42,9 +42,6 @@ public final class ExprBadJoin extends Expr {
     /** The right-hand-side expression. */
     private final Expr right;
 
-    /** If nonnull, it is the location of the closing bracket. */
-    public final Pos closingBracket;
-
     /** Caches the span() result. */
     private Pos span=null;
 
@@ -71,10 +68,9 @@ public final class ExprBadJoin extends Expr {
 
     /** Constructs an ExprBadJoin node. */
     private ExprBadJoin(Pos pos, Pos closingBracket, Expr left, Expr right, JoinableList<Err> errors) {
-        super(pos, (left.ambiguous || right.ambiguous), EMPTY, 0, 0, errors);
+        super(pos, closingBracket, (left.ambiguous || right.ambiguous), EMPTY, 0, 0, errors);
         this.left=left;
         this.right=right;
-        this.closingBracket=closingBracket;
     }
 
     /** Constructs an ExprBadJoin node. */

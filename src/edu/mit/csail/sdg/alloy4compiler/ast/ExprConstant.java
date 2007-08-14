@@ -62,7 +62,7 @@ public final class ExprConstant extends Expr {
      * @param num - the number (this number is ignored if op!=NUMBER)
      */
     private ExprConstant(Pos pos, Op op, int num) {
-        super(pos, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NUMBER ? Type.INT : Type.FORMULA)), 0, 0, null);
+        super(pos, null, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NUMBER ? Type.INT : Type.FORMULA)), 0, 0, null);
         this.op = op;
         this.num = (op==Op.NUMBER) ? num : 0;
     }

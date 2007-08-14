@@ -86,7 +86,7 @@ public final class ExprChoice extends Expr {
 
     /** Constructs an ExprChoice node. */
     private ExprChoice(Pos pos, ConstList<Expr> choices, Type type, long weight) {
-        super(pos, true, type, 0, weight, emptyListOfErrors.appendIfNotNull(type==EMPTY ? complain(pos,choices) : null));
+        super(pos, null, true, type, 0, weight, emptyListOfErrors.appendIfNotNull(type==EMPTY ? complain(pos,choices) : null));
         this.choices = choices;
     }
 
