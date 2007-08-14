@@ -42,7 +42,7 @@ abstract class Exp {
     public abstract Pos span();
 
     /**
-     * Consults the current lexical context, and converts this Exp node into an equivalent Expr node
+     * Consults the current lexical context, and converts this Exp node into a corresponding Expr node
      * (along the way, if we detect any type warnings, add them to the listOfWarnings)
      */
     public abstract Expr check(Context cx, List<ErrorWarning> listOfWarnings);
