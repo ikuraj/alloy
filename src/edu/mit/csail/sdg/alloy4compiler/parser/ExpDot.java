@@ -29,7 +29,6 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadJoin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
@@ -53,7 +52,7 @@ final class ExpDot extends Exp {
     public final Exp right;
 
     /** Constructs a call or a relational join expression. */
-    public ExpDot(Pos pos, Exp left, Exp right, Pos closingBracket) {
+    public ExpDot(Pos pos, Pos closingBracket, Exp left, Exp right) {
         super(pos);
         this.closingBracket = closingBracket;
         this.left = left;
@@ -116,14 +115,7 @@ final class ExpDot extends Exp {
             if (!applicable(f,args)) return ExprBadCall.make(pos, null, f, args.subList(0,i));
             ans = ExprCall.make(pos, null, f, args.subList(0,i), 0);
         }
-        for(; i<n; i++) {
-            Expr x = args.get(i);
-            // TODO: also, we should highlight also the "]" part of "[]"
-            // TODO: you lost the original JOIN's pos
-            if (x.type.join(ans.type)==Type.EMPTY) return ExprBadJoin.make(x.span().merge(ans.span()), null, x, ans);
-            ans = ExprBinary.Op.JOIN.make(x.span().merge(ans.span()), null, x, ans);
-        }
-        return ans;
+        if (i<n) return null; else return ans;
     }
 
     /** {@inheritDoc} */
@@ -148,6 +140,7 @@ final class ExpDot extends Exp {
             boolean hasValidBound=false;
             for(Object ch:choices) {
                 Expr x = makeCallOrJoin(ptr.pos, ch, args, THIS);
+                if (x==null) continue;
                 if (x.type!=Type.EMPTY) hasValidBound=true;
                 objects.add(x);
             }

@@ -2680,7 +2680,7 @@ class CUP$CompParser$actions {
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Pos b = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=t(new ExpDot(o, a, new ExpName(b,"disj"), null), null);
+         RESULT=t(new ExpDot(o, null, a, new ExpName(b,"disj")), null);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("DotExpr",10, RESULT);
             }
           return CUP$CompParser$result;
@@ -2692,7 +2692,7 @@ class CUP$CompParser$actions {
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=t(new ExpDot(o, a, b, null), null);
+         RESULT=t(new ExpDot(o, null, a, b),                     null);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("DotExpr",10, RESULT);
             }
           return CUP$CompParser$result;
@@ -2714,7 +2714,7 @@ class CUP$CompParser$actions {
         Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         List<Exp> b = (List<Exp>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Pos c = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa, c), c); RESULT=aa;
+         Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), c, bb, aa), c); RESULT=aa;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BracketExpr",2, RESULT);
             }
           return CUP$CompParser$result;
@@ -2726,7 +2726,7 @@ class CUP$CompParser$actions {
         Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         List<Exp> b = (List<Exp>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Pos c = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa, c), c); RESULT=aa;
+         Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), c, bb, aa), c); RESULT=aa;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BracketExpr",2, RESULT);
             }
           return CUP$CompParser$result;
@@ -2738,7 +2738,7 @@ class CUP$CompParser$actions {
         Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         List<Exp> b = (List<Exp>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Pos c = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         Exp aa=new ExpName(a,"disj"); for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa, c), c); RESULT=aa;
+         Exp aa=new ExpName(a,"disj"); for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), c, bb, aa), c); RESULT=aa;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BracketExpr",2, RESULT);
             }
           return CUP$CompParser$result;
@@ -2750,7 +2750,7 @@ class CUP$CompParser$actions {
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         List<Exp> b = (List<Exp>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Pos c = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         Exp aa=a;                     for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), bb, aa, c), c); RESULT=aa;
+         Exp aa=a;                     for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), c, bb, aa), c); RESULT=aa;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BracketExpr",2, RESULT);
             }
           return CUP$CompParser$result;

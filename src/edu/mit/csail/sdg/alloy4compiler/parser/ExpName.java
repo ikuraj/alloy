@@ -54,17 +54,17 @@ final class ExpName extends Exp {
 
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
-        TempList<Expr> objects = new TempList<Expr>();
         Set<Object> choices = cx.resolve(pos, name);
-        if (choices.size()==0) {
-            return new ExprBad(pos, name, hint(pos, name));
-        }
+        TempList<Expr> objects = new TempList<Expr>(choices.size());
         // If we're inside a sig, and there is a unary variable bound to "this", we should
         // consider it as a possible additional FIRST ARGUMENT of a fun/pred call
-        Expr THIS = (cx.rootsig!=null) ? cx.get("this",pos) : null;
+        Expr THIS = (choices.size()>0 && cx.rootsig!=null) ? cx.get("this",pos) : null;
         for(Object ch:choices) {
-            objects.add(ExpDot.makeCallOrJoin(pos, ch, emptyList, THIS));
+            Expr ans = ExpDot.makeCallOrJoin(pos, ch, emptyList, THIS);
+            if (ans==null) continue;
+            objects.add(ans);
         }
+        if (objects.size()==0) return new ExprBad(pos, name, hint(pos, name));
         return ExprChoice.make(pos, objects.makeConst());
     }
 
