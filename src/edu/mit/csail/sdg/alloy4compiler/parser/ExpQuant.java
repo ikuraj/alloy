@@ -94,7 +94,8 @@ final class ExpQuant extends Exp {
             Expr v = d.expr.check(cx, warnings).resolve_as_set(warnings);
             // If the variable declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (v.mult==0 && v.type.arity()==1) v=ExprUnary.Op.ONEOF.make(null, v);
-            List<Expr> disjoints = (d.disjoint!=null && d.names.size()>1) ? (new ArrayList<Expr>(d.names.size())) : null;
+            int num = d.names.size();
+            List<Expr> disjoints = (num>1 && d.disjoint!=null) ? (new ArrayList<Expr>(num)) : null;
             for(ExpName n: d.names) {
                 ExprVar var = ExprVar.make(n.pos, n.name, v);
                 cx.put(n.name, var);

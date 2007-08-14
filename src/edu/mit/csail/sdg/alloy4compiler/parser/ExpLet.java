@@ -43,12 +43,15 @@ final class ExpLet extends Exp {
     /**
      * Constructs a LET expression.
      * @param pos - the position of the original '=' token in the text file (or null if unknown)
+     * @param left - the LET variable name
+     * @param right - the LET variable's value
+     * @param sub - the subexpression
      */
     public ExpLet(Pos pos, ExpName left, Exp right, Exp sub) {
         super(pos);
-        this.left=left;
-        this.right=right;
-        this.sub=sub;
+        this.left = left;
+        this.right = right;
+        this.sub = sub;
     }
 
     /** Caches the span() result. */
@@ -57,7 +60,10 @@ final class ExpLet extends Exp {
     /** {@inheritDoc} */
     public Pos span() {
         Pos p=span;
-        if (p==null) { p=pos.merge(sub.span()).merge(left.span()).merge(right.span()); span=p; }
+        if (p==null) {
+            p=left.span().merge(sub.span()).merge(right.span()).merge(pos);
+            span=p;
+        }
         return p;
     }
 
