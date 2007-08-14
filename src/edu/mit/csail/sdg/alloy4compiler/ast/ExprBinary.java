@@ -255,7 +255,7 @@ public final class ExprBinary extends Expr {
                   break;
               case JOIN:
                   type=left.type.join(right.type);
-                  if (type==EMPTY) e=error(pos, "You cannot perform relational join between two unary sets.", left, right);
+                  if (type==EMPTY) return ExprBadJoin.make(pos, closingBracket, left, right);
                   break;
               case DOMAIN:
                   type=right.type.domainRestrict(left.type);
