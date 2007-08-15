@@ -59,13 +59,13 @@ final class Decl {
     }
 
     /** If the list of declaration contains a duplicate name, return one such duplicate name, else return null. */
-    public static String findDuplicateName (List<Decl> list) {
+    public static ExpName findDuplicateName (List<Decl> list) {
         for(int i=0; i<list.size(); i++) {
             Decl d=list.get(i);
             for(int j=0; j<d.names.size(); j++) {
-                String n=d.names.get(j).name;
-                for(int k=j+1; k<d.names.size(); k++) if (d.names.get(k).name.equals(n)) return n;
-                for(int k=i+1; k<list.size(); k++) if (list.get(k).hasName(n)) return n;
+                ExpName n=d.names.get(j);
+                for(int k=j+1; k<d.names.size(); k++) if (d.names.get(k).name.equals(n.name)) return n;
+                for(int k=i+1; k<list.size(); k++) if (list.get(k).hasName(n.name)) return n;
             }
         }
         return null;

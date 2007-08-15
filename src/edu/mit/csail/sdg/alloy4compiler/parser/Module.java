@@ -34,10 +34,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -129,11 +127,6 @@ public final class Module {
             this.realSig=realSig;
         }
         @Override public String toString() { return fullname; }
-    }
-
-    /** This helper function determines whether "s" is an instance of the util/ordering "Ord" sig. */
-    public static boolean is_alloy3ord(String paramname, String filename) {
-        return paramname.equals("elem") && filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als");
     }
 
     //======== ROOT ONLY =====
@@ -231,6 +224,7 @@ public final class Module {
         this.paths.add(path);
     }
 
+    /** This must be a LinkedHashMap since the order must be preserved. */
     final Map<String,SigAST> params=new LinkedHashMap<String,SigAST>();
 
     void addModelLine(Pos pos, String moduleName, List<ExpName> list) throws Err {
@@ -414,8 +408,8 @@ public final class Module {
             String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.name;
             Context cx = new Context(this);
             cx.rootfun=true;
-            String dup = f.args==null ? null : Decl.findDuplicateName(f.args);
-            if (dup!=null) throw new ErrorSyntax(f.pos, "The parameter name \""+dup+"\" cannot appear more than once in this predicate/function declaration.");
+            ExpName dup = f.args==null ? null : Decl.findDuplicateName(f.args);
+            if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
             // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
             // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
             TempList<ExprVar> tmpvars = new TempList<ExprVar>();
@@ -751,10 +745,10 @@ public final class Module {
         return ans;
     }
 
-    private static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, UNIV);
-    private static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, null, SIGINT);
-    private static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, null, SEQIDX);
-    private static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, NONE);
+    static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, UNIV);
+    static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, null, SIGINT);
+    static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, null, SEQIDX);
+    static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, NONE);
 
     /**
      * Look up a parameter, or a signature/function/predicate visible from this module.
