@@ -27,7 +27,7 @@
 // sigs
 // imports
 // params
-// _funs    ---VS---   funs+fun_2_formula
+// funs
 // commands
 // facts
 // asserts
@@ -86,7 +86,8 @@ public final class Module {
 
     /** Mutable; this class represents an untypechecked Alloy function; equals() uses object identity. */
     private static final class FunAST {
-        Func realFunc=null; // This value is set to its corresponding Func during typechecking
+        Func realFunc=null;    // This value is set to its corresponding Func during typechecking
+        Expr realFormula=null; // This value is set to its corresponding "run" formula
         final Pos pos;
         final String name;
         final ConstList<Decl> args;
@@ -101,7 +102,7 @@ public final class Module {
     /** Mutable; this class represents an untypechecked Alloy signature; equals() uses object identity. */
     static final class SigAST {
         boolean topo=false;     // This flag is set to "true" during topological sort
-        Module realModule=null; // This value is set to its Module during topological sort
+        final Module realModule; // This value is set to its Module during topological sort
         Sig realSig=null;       // This value is set to its corresponding Sig during topological sort
         boolean hint_isLeaf=false;
         final Pos pos;
@@ -112,7 +113,7 @@ public final class Module {
         final Exp appendedFact;
         Pos orderingPosition, absPosition, lonePosition, onePosition, somePosition, extendsPosition, inPosition;
         SigAST(Pos pos, String fullname, String name, boolean abs, boolean lone, boolean one, boolean some, boolean subset,
-            List<String> parents, List<Decl> fields, Exp appendedFacts, Sig topoSig) {
+            List<String> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=pos;
             this.fullname=fullname;
             this.name=name;
@@ -124,7 +125,8 @@ public final class Module {
             this.parents=ConstList.make(parents);
             this.fields=ConstList.make(fields);
             this.appendedFact=appendedFacts;
-            this.realSig=topoSig;
+            this.realModule=realModule;
+            this.realSig=realSig;
         }
         @Override public String toString() { return fullname; }
     }
@@ -319,9 +321,9 @@ public final class Module {
         SigAST obj;
         String fullname = (path.length()==0) ? "this/"+n : path+"/"+n;
         if (i!=null && i.size()>0)
-            obj=new SigAST(p, fullname, n, fa, fl, fo, fs, true, i, d, f, null);
+            obj=new SigAST(p, fullname, n, fa, fl, fo, fs, true, i, d, f, this, null);
         else
-            obj=new SigAST(p, fullname, n, fa, fl, fo, fs, false, Util.asList(e), d, f, null);
+            obj=new SigAST(p, fullname, n, fa, fl, fo, fs, false, Util.asList(e), d, f, this, null);
         if (hints!=null) for(ExpName hint:hints) {
            if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         }
@@ -390,8 +392,6 @@ public final class Module {
     //=============================================================================================================//
 
     private final Map<String,List<MPair<FunAST,Func>>> funs = new LinkedHashMap<String,List<MPair<FunAST,Func>>>();
-
-    private static final Map<Func,Expr> fun_2_formula = new LinkedHashMap<Func,Expr>(); // TODO
 
     void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
         d=new ArrayList<Decl>(d);
@@ -472,7 +472,7 @@ public final class Module {
             //
             if (!ff.isPred) newBody=newBody.in(ff.returnDecl);
             if (ff.params.size()>0) newBody=ExprQuant.Op.SOME.make(null, null, ff.params, newBody.and(disj));
-            fun_2_formula.put(ff, newBody);
+            f.realFormula=newBody;
         }
         return errors;
     }
@@ -489,12 +489,31 @@ public final class Module {
         return ans.dup();
     }
 
+    /** Typecheck if necessary, then return an unmodifiable list of all predicates/functions with that name. */
+    private SafeList<FunAST> getFunAST(String name) {
+        List<MPair<FunAST,Func>> list = funs.get(name);
+        SafeList<FunAST> ans = new SafeList<FunAST>(list==null ? 0 : list.size());
+        if (list!=null) for(MPair<FunAST,Func> entry: list) ans.add(entry.a);
+        return ans.dup();
+    }
+
     /** Typecheck if necessary, then return an unmodifiable list of all parameter-less predicates/functions. */
     public SafeList<Func> getAllFunc0() {
         SafeList<Func> ans = new SafeList<Func>();
         for(List<MPair<FunAST,Func>> list: funs.values()) {
             for(MPair<FunAST,Func> func: list) {
                 if (func.b.params.size()==0) ans.add(func.b);
+            }
+        }
+        return ans.dup();
+    }
+
+    /** Typecheck if necessary, then return an unmodifiable list of all parameter-less predicates/functions. */
+    public SafeList<Func> getAllFunc() {
+        SafeList<Func> ans = new SafeList<Func>();
+        for(List<MPair<FunAST,Func>> list: funs.values()) {
+            for(MPair<FunAST,Func> func: list) {
+                ans.add(func.b);
             }
         }
         return ans.dup();
@@ -641,9 +660,20 @@ public final class Module {
         return ans;
     }
 
-    private SafeList<Func> lookupFunctionOrPredicate(String name) {
-        SafeList<Func> ans=new SafeList<Func>();
-        for(Object x: lookupSigOrParameterOrFunctionOrPredicate(name,true)) if (x instanceof Func) ans.add((Func)x);
+    private SafeList<FunAST> lookupFunctionOrPredicate(String name) {
+        SafeList<FunAST> ans=new SafeList<FunAST>();
+        if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
+        if (name.indexOf('/')<0) {
+            for(String p:paths) for(Module u:world.lookupModuleAndSubmodules(p)) ans.addAll(u.getFunAST(name));
+            return ans;
+        }
+        if (name.startsWith("this/")) name=name.substring(5);
+        int i=name.lastIndexOf('/');
+        Module u=(i<0) ? this : world.path2module.get((path.length()==0?"":path+"/")+name.substring(0,i));
+        if (u!=null) {
+            if (i>=0) name=name.substring(i+1);
+            ans.addAll(u.getFunAST(name));
+        }
         return ans;
     }
 
@@ -661,11 +691,12 @@ public final class Module {
                     e=ee.iterator().next();
                 }
             } else {
-                SafeList<Func> ee=getFunc(cname);
-                if (ee.size()<1) ee=lookupFunctionOrPredicate(cname);
+                SafeList<FunAST> ee=null;
+                if (cname.indexOf('/')<0) ee=lookupFunctionOrPredicate("this/"+cname);
+                if (ee==null || ee.size()<1) ee=lookupFunctionOrPredicate(cname);
                 if (ee.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
                 if (ee.size()>1) throw new ErrorSyntax(cmd.pos, "There are more than 1 predicate/function with the name \""+cname+"\".");
-                e=fun_2_formula.get(ee.get(0));
+                e=ee.get(0).realFormula;
             }
             et.b = cmd.changeFormula(e);
         }
@@ -720,10 +751,10 @@ public final class Module {
         return ans;
     }
 
-    private static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, UNIV);
-    private static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, SIGINT);
-    private static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, SEQIDX);
-    private static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, NONE);
+    private static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, UNIV);
+    private static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, null, SIGINT);
+    private static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, null, SEQIDX);
+    private static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, NONE);
 
     /**
      * Look up a parameter, or a signature/function/predicate visible from this module.

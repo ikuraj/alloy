@@ -116,34 +116,45 @@ public final class CompUtil {
 
     //=============================================================================================================//
 
-    /** Helper method that recursively open more files. */
+    /**
+     * Helper method that recursively open more files.
+     * @param fc - this caches previously loaded text file
+     * @param rootdir - the root directory where we look for imported text files
+     * @param pos - the position
+     * @param name -
+     * @param parent -
+     * @param parentFileName -
+     * @param prefix -
+     * @param thispath -
+     */
     private static Module parseRecursively (
-            Map<String,String> fc, String rootdir,
-            Pos pos, String name, Module parent, String parentFileName, String prefix,
-            ArrayList<Module> modules,
-            ArrayList<String> thispath) throws Err, FileNotFoundException, IOException {
+    Map<String,String> fc, String rootdir, Pos pos, String name, Module parent,
+    String parentFileName, String prefix, ArrayList<String> thispath)
+    throws Err, FileNotFoundException, IOException {
         // Figure out the exact filename
-        File f=new File(name);
-        String canon=f.getCanonicalPath();
+        File f = new File(name);
+        String canon = f.getCanonicalPath();
         if (!f.exists() && !fc.containsKey(canon) && parent!=null) {
             String parentPath = (parent.moduleName.length()>0) ? parent.moduleName : "anything";
-            f=new File(CompUtil.computeModulePath(parentPath, parentFileName, name));
-            canon=f.getCanonicalPath();
+            f = new File(CompUtil.computeModulePath(parentPath, parentFileName, name));
+            canon = f.getCanonicalPath();
         }
         if (!f.exists() && !fc.containsKey(canon) && rootdir!=null && rootdir.length()>0) {
-            f=new File((rootdir+"/models/"+name+".als").replace('/',File.separatorChar));
-            canon=f.getCanonicalPath();
+            f = new File((rootdir+"/models/"+name+".als").replace('/',File.separatorChar));
+            canon = f.getCanonicalPath();
         }
         if (!f.exists() && !fc.containsKey(canon)) {
             String content;
             try {
                 content = Util.readAll(true, "models/"+name+".als");
             } catch(IOException ex) {
-                throw new ErrorSyntax(pos, "The module \""+name+"\" cannot be found.\nIt is not a built-in library module, and it cannot be found at \""+(new File(name)).getAbsolutePath()+"\".\n");
+                throw new ErrorSyntax(pos, "The module \""+name
+                   +"\" cannot be found.\nIt is not a built-in library module, and it cannot be found at \""
+                   +(new File(name)).getAbsolutePath()+"\".\n");
             }
-            f=new File("/models/"+name+".als");
-            canon=f.getCanonicalPath();
-            fc.put(canon,content);
+            f = new File("/models/"+name+".als");
+            canon = f.getCanonicalPath();
+            fc.put(canon, content);
         }
         name=canon;
         // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
@@ -153,21 +164,24 @@ public final class CompUtil {
         //    that file will attempt to OPEN the exact same set of files. leading back to itself, etc. etc.)
         // <= If there is an infinite loop, that means there is at least 1 infinite chain of OPEN (from root).
         //    Since the number of files is finite, at least 1 filename will be repeated.
-        if (thispath.contains(name)) throw new ErrorSyntax(pos,"Circular dependency in module import. The file \""+name+"\" is imported infinitely often.");
+        if (thispath.contains(name))
+           throw new ErrorSyntax(pos, "Circular dependency in module import. The file \""+name+"\" is imported infinitely often.");
         thispath.add(name);
         // No cycle detected so far. So now we parse the file.
-        Module u=CompParser.alloy_parseStream(fc, parent==null?null:parent.world, 0, name, prefix);
-        modules.add(u);
+        Module u = CompParser.alloy_parseStream(fc, (parent==null ? null : parent.world), 0, name, prefix);
         // The returned Module object is fully-filled-in except
         // * Module.{opens,params}
         // * Sig.{type,sup,sups,subs}
         // * Field.halftype, Field.Full.fulltype, Expr*.type, and ExprName.resolved
         // Also, there will not be any ExprCall. Only ExprJoin.
-        for(Map.Entry<Open,Module> e:u.imports.entrySet()) {
+        for(Map.Entry<Open,Module> e: u.imports.entrySet()) {
             // Here, we recursively open the included files (to fill out the "Module.opens" field)
             Open x=e.getKey();
-            Module y=parseRecursively(fc, rootdir, x.pos, x.filename, u, name, prefix.length()==0 ? x.alias : prefix+"/"+x.alias, modules, thispath);
-            if (x.args.size() != y.params.size()) throw new ErrorSyntax(x.pos, "You supplied "+x.args.size()+" arguments to the import statement, but the imported module requires "+y.params.size()+" arguments.");
+            Module y=parseRecursively(fc, rootdir, x.pos, x.filename, u, name, prefix.length()==0 ? x.alias : prefix+"/"+x.alias, thispath);
+            if (x.args.size() != y.params.size())
+                throw new ErrorSyntax(x.pos,
+                   "You supplied "+x.args.size()+" arguments to the import statement, but the imported module requires "
+                   +y.params.size()+" arguments.");
             e.setValue(y);
         }
         thispath.remove(thispath.size()-1); // Remove this file from the CYCLE DETECTION LIST.
@@ -253,25 +267,17 @@ public final class CompUtil {
         final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
         final A4Reporter rep = A4Reporter.getReporter();
         final List<Module> modules = world.modules;
-
-        for(Module x:modules) for(Map.Entry<String,SigAST> e:x.sigs.entrySet()) e.getValue().realModule=x;
-
+        // Resolves SigAST -> Sig
         for(Module x:modules) for(Map.Entry<String,SigAST> e:x.sigs.entrySet()) Module.checkSig(e.getValue());
-
+        // Label any Sig that are used in util/ordering
         for(Module x:modules) {
-            SigAST elemX=x.params.get("elem");
-            if (elemX==null) continue;
-            Sig elem=elemX.realSig;
-            if (!elem.builtin && x.getAllSigs().size()==1) {
-                Sig ord=x.getAllSigs().get(0);
-                if (!ord.builtin && ord.label.endsWith("/Ord")) {
-                    if (ord.pos!=null && ord.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) {
-                        ord.anno.put("orderingSIG", elem);
-                    }
-                }
-            }
+            SigAST elemX=x.params.get("elem"); if (elemX==null) continue;
+            Sig elem=elemX.realSig;            if (elem.builtin || x.getAllSigs().size()!=1) continue;
+            Sig ord=x.getAllSigs().get(0);     if (ord.builtin  || !ord.label.endsWith("/Ord")) continue;
+            if (!ord.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) continue;
+            ord.anno.put("orderingSIG", elem);
         }
-
+        // Add the fields
         for(Module uu:modules) for(SigAST oldS:uu.sigs.values()) {
             // When typechecking the fields:
             // * each field is allowed to refer to earlier fields in the same SIG,
@@ -296,13 +302,11 @@ public final class CompUtil {
                           throw new ErrorSyntax(d.span(), "Sig \""+s+"\" cannot have 2 fields named \""+n.name+"\"");
                     final Field f=s.addTrickyField(d.span(), n.name, THIS, bound);
                     rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
-                    //if (s.anno.get("orderingSIG") instanceof Sig) continue;
                     if (d.disjoint!=null) { if (disjA==null) disjA=f; else disjF = ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF); disjA=disjA.plus(f); }
                 }
                 if (d.disjoint!=null && disjF!=ExprConstant.TRUE) uu.addFact(Pos.UNKNOWN, ""+s+"#disjoint", disjF);
             }
         }
-
         // The Alloy language forbids two overlapping sigs from having fields with the same name.
         // In other words: if 2 fields have the same name, then their type's first column must not intersect.
         final Map<String,List<Field>> fieldname2fields=new LinkedHashMap<String,List<Field>>();
@@ -320,15 +324,16 @@ public final class CompUtil {
                 peers.add(field);
             }
         }
-
+        // Typecheck the function declarations and function bodies
         for(Module x:modules) errors = x.checkFunctionDecls(errors, warns);
         for(Module x:modules) errors = x.checkFunctionBodies(errors, warns);
+        // Typecheck the assertions, facts, and run/check commands
         for(Module x:modules) {
             errors = x.checkAssertions(errors, warns);
             errors = x.checkFacts(errors, warns);
             if (x.paths.contains("")) errors = x.checkCommands(errors, warns);
         }
-
+        // Issue the warnings, and generate the errors if there are any
         for(ErrorWarning w:warns) rep.warning(w);
         if (!errors.isEmpty()) throw errors.get(0); else return world;
     }
@@ -354,6 +359,8 @@ public final class CompUtil {
         }
     }
 
+    //=============================================================================================================//
+
     /**
      * Parses 1 module from the file (without loading any subfiles)
      * @throws Err if any error occurred
@@ -372,6 +379,8 @@ public final class CompUtil {
         }
     }
 
+    //=============================================================================================================//
+
     /**
      * Parses the input as an Alloy expression from that world
      * @throws Err if world==null or if any error occurred
@@ -382,8 +391,7 @@ public final class CompUtil {
             if (world==null) throw new ErrorAPI("parseOneExpression() cannot be called with null World");
             Map<String,String> fc=new LinkedHashMap<String,String>();
             fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-            Module u = CompParser.alloy_parseStream(fc, world, -1, "", "");
-            Exp body = u.getFirstFunc();
+            Exp body = CompParser.alloy_parseStream(fc, null, -1, "", "").getFirstFunc();
             if (body == null) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
             Context cx = new Context(world);
             ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
@@ -399,6 +407,8 @@ public final class CompUtil {
         }
     }
 
+    //=============================================================================================================//
+
     /**
      * Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
      * @param fc - a cache of files that have been pre-fetched (can be null if there were no prefetching)
@@ -412,10 +422,8 @@ public final class CompUtil {
         try {
             filename=Util.canon(filename);
             if (fc==null) fc=new LinkedHashMap<String,String>();
-            ArrayList<Module> modules=new ArrayList<Module>();
             ArrayList<String> thispath=new ArrayList<String>();
-            parseRecursively(fc, rootdir, Pos.UNKNOWN, filename, null, null, "", modules, thispath);
-            Module root = modules.get(0);
+            Module root = parseRecursively(fc, rootdir, Pos.UNKNOWN, filename, null, null, "", thispath);
             while(alloy_fillParams(root)) {}
             while(alloy_mergeModules(root)) {}
             return alloy_resolve(root);
