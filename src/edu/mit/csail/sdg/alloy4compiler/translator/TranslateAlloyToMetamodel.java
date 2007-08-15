@@ -32,7 +32,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
@@ -72,7 +72,7 @@ public class TranslateAlloyToMetamodel {
      * @param originalFilename - the original filename where the world came from (this is written to XML file as a comment)
      * @param output - the PrintWriter that will receive the XML output
      */
-    private static void make(World world, String originalFilename, PrintWriter output) throws Err {
+    private static void make(Module world, String originalFilename, PrintWriter output) throws Err {
         TranslateAlloyToMetamodel ta=new TranslateAlloyToMetamodel();
         ConstList<Sig> sigs=world.all();
         Util.encodeXMLs(output, "\n<alloy builddate=\"",
@@ -147,7 +147,7 @@ public class TranslateAlloyToMetamodel {
      * @param originalFilename - the original filename where the world came from (this is written to XML file as a comment)
      * @param outputFileName - the file receiving the output (it will be overwritten if it already exists)
      */
-    public static void make(World world, String originalFilename, String outputFileName) throws Err {
+    public static void make(Module world, String originalFilename, String outputFileName) throws Err {
         PrintWriter out;
         try {
             out=new PrintWriter(outputFileName,"UTF-8");

@@ -320,7 +320,7 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
   private boolean zzEOFDone;
 
   /* user code: */
- public World world=null;
+ public Module world=null;
  public String alloy_filename="";
  public int alloy_lineoffset=0; // If not zero, it is added to the current LINE NUMBER
  private final Pos alloy_here(String txt) {

@@ -76,7 +76,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 /** Mutable; this class represents one Alloy module; equals() uses object identity. */
 
-public final class Module implements World {
+public final class Module {
 
     private static final class FunAST {
         Func realFunc=null; // This value is set to its corresponding Func during typechecking
@@ -207,7 +207,7 @@ public final class Module implements World {
      *
      * @param world - the world that this Module belongs to (it must be nonnull)
      * @param pos - the position of the "module" line at the top of the file (it can be null if unknown)
-     * @param paths - the list of paths pointing to this module (it must be pre-sorted using Util.slashComparator)
+     * @param path - one of the path pointing to this module
      */
     Module(Module world, Pos pos, String path) throws Err {
         if (world==null) { if (path.length()>0) throw new ErrorAPI(pos, "Root module misparsed."); else world=this; }

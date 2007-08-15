@@ -2370,7 +2370,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
     }
   }
 
-  static Module alloy_parseStream(Map<String,String> fc, World world, int lineOffset, final String filename, final String prefix)
+  static Module alloy_parseStream(Map<String,String> fc, Module world, int lineOffset, final String filename, final String prefix)
   throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {

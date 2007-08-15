@@ -203,7 +203,7 @@ parser code {:
     }
   }
 
-  static Module alloy_parseStream(Map<String,String> fc, World world, int lineOffset, final String filename, final String prefix)
+  static Module alloy_parseStream(Map<String,String> fc, Module world, int lineOffset, final String filename, final String prefix)
   throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {

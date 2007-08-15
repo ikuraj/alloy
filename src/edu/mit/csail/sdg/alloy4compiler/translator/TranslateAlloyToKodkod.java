@@ -52,7 +52,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.IntExpression;
@@ -406,7 +405,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     //==============================================================================================================//
 
     /** Construct the constraints for "field declarations" and "appended fact paragraphs" for the given sig. */
-    private Formula makeFieldAndAppendedConstraints(World world, final Sig sig, Formula kfact) throws Err {
+    private Formula makeFieldAndAppendedConstraints(Module world, final Sig sig, Formula kfact) throws Err {
         if (sig.isOrd() != null) return kfact;
         for(Field f:sig.getFields()) {
             // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";

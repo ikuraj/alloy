@@ -58,7 +58,7 @@ import edu.mit.csail.sdg.alloy4compiler.parser.Module;
  * <br> (3) quantifer x:a|b (here we first fully resolve a, and then fully resolve b)
  */
 
-public final class Context {
+final class Context {
 
     // field&sig!=null    else if sig!=null     else if fun!=null     allelse
     public boolean rootfield=false;

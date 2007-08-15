@@ -45,7 +45,7 @@ import java_cup_11a.runtime.*;
 %pack
 
 %{
- public World world=null;
+ public Module world=null;
  public String alloy_filename="";
  public int alloy_lineoffset=0; // If not zero, it is added to the current LINE NUMBER
  private final Pos alloy_here(String txt) {

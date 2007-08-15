@@ -204,7 +204,7 @@ final class CompFilter implements Scanner {
     private PList list=null;
 
     /** Reads every token from filename into an internal list. */
-    public CompFilter(World world, final String filename, int lineOffset, Reader i) throws Err {
+    public CompFilter(Module world, final String filename, int lineOffset, Reader i) throws Err {
         try {
             PList ptr=null;
             r=new CompLexer(i);

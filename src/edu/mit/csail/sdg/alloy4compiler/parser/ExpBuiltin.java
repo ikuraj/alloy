@@ -36,7 +36,7 @@ final class ExpBuiltin extends Exp {
     public final Pos closingBracket;
 
     /** The unmodifiable list of arguments. */
-    public ConstList<Exp> args;
+    public final ConstList<Exp> args;
 
     /** Constructs an ExpBuiltin node. */
     public ExpBuiltin(Pos pos, Pos closingBracket, List<Exp> args) {
