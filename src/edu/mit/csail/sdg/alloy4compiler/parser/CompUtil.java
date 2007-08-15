@@ -135,7 +135,7 @@ public final class CompUtil {
         // Figure out the exact filename
         File f = new File(name);
         String canon = f.getCanonicalPath();
-        if (!f.exists() && !fc.containsKey(canon) && parent!=null) {
+        if (!f.exists() && !fc.containsKey(canon) && parent!=null && parentFileName!=null) {
             f = new File(CompUtil.computeModulePath(parent.moduleName, parentFileName, name));
             canon = f.getCanonicalPath();
         }
@@ -342,8 +342,7 @@ public final class CompUtil {
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
         } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
     }
 
@@ -362,8 +361,7 @@ public final class CompUtil {
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
         } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
     }
 
@@ -390,8 +388,7 @@ public final class CompUtil {
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
         } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
     }
 
@@ -402,9 +399,9 @@ public final class CompUtil {
      * @param fc - a cache of files that have been pre-fetched (can be null if there were no prefetching)
      * @param rootdir - the directory for Alloy's builtin modules (eg. util/ordering.als, util/integer.als, ...); can be null.
      * @param filename - the main module we are parsing
-     * @return the fully parsed World object (if no error occurred)
+     * @return the root Module which contains pointers to all submodules
      * @throws Err if an error occurred
-     * <p>Note: if we read more files, these will be stored into "fc" (if fc is nonnull)
+     * <p>Note: if fc!=null and during parsing we read more files, these additional file contents will be stored into fc
      */
     public static Module parseEverything_fromFile(Map<String,String> fc, String rootdir, String filename) throws Err {
         try {
@@ -420,8 +417,7 @@ public final class CompUtil {
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
     }
 }
