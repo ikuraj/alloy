@@ -43,13 +43,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
@@ -196,8 +196,8 @@ final class SimpleReporter extends A4Reporter {
         rep.mainAlloyFileName = Util.canon(options.originalFilename);
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
-        final World world = CompUtil.parseEverything_fromFile(bundleCache, Helper.alloyHome(), rep.mainAlloyFileName);
-        final SafeList<Command> cmds = world.getRootModule().getAllCommands();
+        final Module world = CompUtil.parseEverything_fromFile(bundleCache, Helper.alloyHome(), rep.mainAlloyFileName);
+        final ConstList<Command> cmds = world.getAllCommands();
         if (rep.warnings.size()>0) {
             if (rep.warnings.size()>1)
                 rep.logBold("Note: There were "+rep.warnings.size()+" compilation warnings. Please scroll up to see them.\n\n");
@@ -248,7 +248,7 @@ final class SimpleReporter extends A4Reporter {
         if (result.size()>1) {
             rep.logBold("" + result.size() + " commands were executed. The results are:\n");
             for(int i=0; i<result.size(); i++) {
-                Command r=world.getRootModule().getAllCommands().get(i);
+                Command r=world.getAllCommands().get(i);
                 if (result.get(i)==null) { rep.log("   #"+(i+1)+": Unknown.\n"); continue; }
                 if (result.get(i).endsWith(".xml")) {
                     rep.log("   #"+(i+1)+": ");

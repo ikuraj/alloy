@@ -73,7 +73,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
@@ -89,8 +89,8 @@ import static edu.mit.csail.sdg.alloy4.Util.tail;
 public final class A4Solution {
 
     private static final class Parent {
-        /** It's the World that these solutions belong to. */
-        private final World world;
+        /** It's the root module that these solutions belong to. */
+        private final Module world;
         /** If not null, it's the original BoundsComputer that maps Alloy sigs/fields to Kodkod expressions. NOTE: bc==null iff bcc!=null. */
         private final BoundsComputer bc;
         /** If not null, it's a map from Sig/Field/String to Kodkod expressions. NOTE: bc==null iff bcc!=null. */
@@ -112,7 +112,7 @@ public final class A4Solution {
         /** The bitwidth. */
         private final int bitwidth;
         /** Constructor is private. */
-        private Parent(World world, BoundsComputer bc, Map<Object,Expression> bcc, String originalFileName,
+        private Parent(Module world, BoundsComputer bc, Map<Object,Expression> bcc, String originalFileName,
         Map<String,String> originalSources, String originalCommand,
         Iterator<Solution> moreSolutions, Formula originalFormula, Bounds originalBounds,
         boolean canEnumerate, int bitwidth) {
@@ -185,7 +185,7 @@ public final class A4Solution {
     private static AbstractReporter blankReporter = new AbstractReporter(){};
 
     /** Construct the first solution from a formula; after this, user would call A4Solution.next() to get the next solution. */
-    static A4Solution make (TranslateAlloyToKodkod tr, World world, A4Options opt, Map<Relation,Type> skolem2type, Solver solver, Formula formula,
+    static A4Solution make (TranslateAlloyToKodkod tr, Module world, A4Options opt, Map<Relation,Type> skolem2type, Solver solver, Formula formula,
     Map<String,String> originalSources, Command originalCommand, boolean tryBookExamples) throws Err, SaveToFileException {
         final A4Reporter rep=A4Reporter.getReporter();
         final BoundsComputer bc=tr.bc;
@@ -378,7 +378,7 @@ public final class A4Solution {
     public synchronized long solvingTime() { return solvingTime; }
 
     /** Returns the World that this solution is from. */
-    public synchronized World getWorld() { return parent.world; }
+    public synchronized Module getWorld() { return parent.world; }
 
     public synchronized IdentitySet<Pos> core() {
         IdentitySet<Pos> ans = new IdentitySet<Pos>();
@@ -613,7 +613,7 @@ public final class A4Solution {
             writeTS(new A4TupleSet(inst.tuples(r),map,map2sig), out, un.make("$"+rn), t, un);
         }
         // Write out all parameter-less Function in the main module
-        for(final Func pf:parent.world.getRootModule().getAllFunc0()) if (!pf.isPred) {
+        for(final Func pf:parent.world.getAllFunc0()) if (!pf.isPred) {
             A4TupleSet ts;
             try {
                 final Object obj=eval(pf.getBody());
@@ -695,7 +695,7 @@ public final class A4Solution {
     private static A4Solution parseInstance(final String alloyHome, final ConstMap<String,String> fc, XMLElement x, String kinput, String koutput) throws Err {
         final String filename = x.getAttribute("filename");
         final String command = x.getAttribute("command");
-        World world;
+        Module world;
         try {
             world = CompUtil.parseEverything_fromFile(fc, alloyHome, filename);
         } catch(Throwable ex) {

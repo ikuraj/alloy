@@ -146,7 +146,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     //==============================================================================================================//
 
     private static A4Solution helper
-    (final Map<Decl,Pair<Type,Pos>> skolemType, final World world, Command cmd, final A4Options opt,
+    (final Map<Decl,Pair<Type,Pos>> skolemType, final Module world, Command cmd, final A4Options opt,
     Map<String,String> originalSources, String xmlFileName, String tempFileName, boolean tryBookExamples)
     throws Err {
         ConstList<Sig> sigs = world.all();
@@ -283,7 +283,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
     public static A4Solution execute_command
-    (World world, Command cmd, A4Options opt, String xmlFileName, String tempFileName)
+    (Module world, Command cmd, A4Options opt, String xmlFileName, String tempFileName)
     throws Err {
         Map<Decl,Pair<Type,Pos>> skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
         try {
@@ -321,7 +321,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
     public static A4Solution execute_commandFromBook
-    (World world, Command cmd, A4Options opt, Map<String,String> originalSources, String xmlFileName, String tempFileName)
+    (Module world, Command cmd, A4Options opt, Map<String,String> originalSources, String xmlFileName, String tempFileName)
     throws Err {
         Map<Decl,Pair<Type,Pos>> skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
         try {

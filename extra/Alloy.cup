@@ -25,7 +25,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 
 parser code {:
 
-  public CompModule alloymodule=null;
+  public Module alloymodule=null;
   public String alloyfile="";
 
   @SuppressWarnings("unchecked")
@@ -203,15 +203,15 @@ parser code {:
     }
   }
 
-  static CompModule alloy_parseStream(Map<String,String> fc, World world, int lineOffset, final String filename, final String prefix)
+  static Module alloy_parseStream(Map<String,String> fc, World world, int lineOffset, final String filename, final String prefix)
   throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
-        if (world==null) world=new World();
+        if (world==null) world=new Module(null, Pos.UNKNOWN, "");
         String content=fc.get(filename);
         if (content==null) { content=Util.readAll(filename); fc.put(filename,content); }
         isr=new StringReader(content);
-        CompModule u=new CompModule(world,prefix);
+        Module u = world.lookupOrCreateModule(Pos.UNKNOWN, prefix);
         CompFilter s=new CompFilter(world,filename,lineOffset,new BufferedReader(isr));
         CompParser p=new CompParser(s);
         p.alloymodule=u;
@@ -445,9 +445,9 @@ nonterminal Exp                        UnopExpr;
 
 Specification ::= Module Opens Paragraphs ;
 
-Module ::= MODULE:o Name:n                           {: parser.alloymodule.makeModule(o                            , n.name , new ArrayList<ExpName>()); :};
-Module ::= MODULE:o Name:n LBRACKET Names:b RBRACKET {: parser.alloymodule.makeModule(o                            , n.name , b                       ); :};
-Module ::=                                           {: parser.alloymodule.makeModule(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>()); :};
+Module ::= MODULE:o Name:n                           {: parser.alloymodule.addModelLine(o                            , n.name , new ArrayList<ExpName>()); :};
+Module ::= MODULE:o Name:n LBRACKET Names:b RBRACKET {: parser.alloymodule.addModelLine(o                            , n.name , b                       ); :};
+Module ::=                                           {: parser.alloymodule.addModelLine(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>()); :};
 
 Open ::= OPEN:o Name:a                                         {: parser.alloymodule.addOpen(o.merge(a.pos), a.name, new ArrayList<ExpName>(), "");      :};
 Open ::= OPEN:o Name:a                               AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a.name, new ArrayList<ExpName>(), c.name);  :};
@@ -592,7 +592,7 @@ Hint ::= HASH Name:e {: RESULT=Util.asList(e); :};
 
 Sig ::= Hint:h SigQuals:a SIG Names:b SigIn:c LBRACE Decls:d RBRACE SuperOpt:e
  {:
-   CompModule.SigAST s;
+   Module.SigAST s;
    for(ExpName bbb:b) {
      String bb=bbb.name;
      if (c==null)

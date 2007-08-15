@@ -51,12 +51,12 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
@@ -525,7 +525,7 @@ final class BoundsComputer {
     //==============================================================================================================//
 
     /** This method computes the bounds for sigs/fields, then return a BoundsComputer object that you can query. */
-    BoundsComputer(World world, A4Options options, final Command cmd, final Map<Formula,List<Object>> core) throws Err {
+    BoundsComputer(Module world, A4Options options, final Command cmd, final Map<Formula,List<Object>> core) throws Err {
         this.core=core;
         final A4Reporter rep=A4Reporter.getReporter();
         final ConstList<Sig> sigs=world.all();

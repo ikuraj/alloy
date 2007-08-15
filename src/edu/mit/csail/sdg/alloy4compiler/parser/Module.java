@@ -18,10 +18,26 @@
  * 02110-1301, USA
  */
 
+// moduleline
+// pos
+// world
+// path
+// paths
+//
+// sigs
+// open opencmds
+// params
+//
+// commands
+// facts
+// asserts
+// _funs    ---VS---   funs+fun_2_formula
+
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.io.File;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 import java.util.LinkedHashSet;
@@ -31,16 +47,21 @@ import java.util.List;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
@@ -57,6 +78,49 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
 public final class Module implements World {
 
+    private static final class FunAST {
+        Func realFunc=null; // This value is set to its corresponding Func during typechecking
+        final Pos pos;
+        final String name;
+        final ConstList<Decl> args;
+        final Exp returnType;
+        final Exp body;
+        FunAST(Pos p, String n, List<Decl> a, Exp r, Exp b) {
+            pos=p; name=n; args=ConstList.make(a); returnType=r; body=b;
+        }
+        @Override public String toString() { return name; }
+    }
+
+    static final class SigAST {
+        boolean topo=false; // This flag is set to "true" during topological sort
+        Module realModule=null; // This value is set to its Module during topological sort
+        Sig realSig=null; // This value is set to its corresponding Sig during topological sort
+        boolean hint_isLeaf=false;
+        final Pos pos;
+        final String name,fullname;
+        final boolean abs,lone,one,some,subset;
+        final ConstList<String> parents;
+        final ConstList<Decl> fields;
+        final Exp appendedFact;
+        Pos orderingPosition, absPosition, lonePosition, onePosition, somePosition, extendsPosition, inPosition;
+        SigAST(Pos pos, String fullname, String name, boolean abs, boolean lone, boolean one, boolean some, boolean subset,
+            List<String> parents, List<Decl> fields, Exp appendedFacts, Sig topoSig) {
+            this.pos=pos;
+            this.fullname=fullname;
+            this.name=name;
+            this.abs=abs;
+            this.lone=lone;
+            this.one=one;
+            this.some=some;
+            this.subset=subset;
+            this.parents=ConstList.make(parents);
+            this.fields=ConstList.make(fields);
+            this.appendedFact=appendedFacts;
+            this.realSig=topoSig;
+        }
+        @Override public String toString() { return fullname; }
+    }
+
     /** This helper function determines whether "s" is an instance of the util/ordering "Ord" sig. */
     public static boolean is_alloy3ord(String paramname, String filename) {
         return paramname.equals("elem") && filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als");
@@ -65,22 +129,17 @@ public final class Module implements World {
     //======== ROOT ONLY =====
 
     /** IF ROOT: This lists all modules in this world; it must be consistent with this.path2module */
-    private SafeList<Module> modules = new SafeList<Module>();
+    final ArrayList<Module> modules = new ArrayList<Module>();
 
     /** IF ROOT: This maps pathname to the Module it refers to; it must be consistent with this.modules */
-    private Map<String,Module> path2module = new LinkedHashMap<String,Module>();
+    final Map<String,Module> path2module = new LinkedHashMap<String,Module>();
 
-    /** Returns an unmodifiable list of all modules. */
-    public SafeList<Module> getAllModules() { return modules.dup(); }
-
-    /**
-     * Returns the module with the given path; returns null if there is no module with that path.
-     *
-     * <p> Note: a module can have more than 1 valid paths to it;
-     * thus, calling lookupModule() with different arguments may return the same Module.
-     * <br> To avoid receiving duplicates, call world.getAllModules() to get the list of all modules.
-     */
-    public Module lookupModule(String path) { return path2module.get(path); }
+    /** Create a new module with the given list of paths. */
+    public Module lookupOrCreateModule(Pos pos, String path) throws Err {
+        Module u=path2module.get(path);
+        if (u==null) u=new Module(world, pos, path); // The constructor will automatically add it to path2module if not there already
+        return u;
+    }
 
     /**
      * Find the module with the given path, then return it and all its descendent modules.
@@ -95,58 +154,46 @@ public final class Module implements World {
      * <p>   Let's take another example, suppose you have the following modules "", "A/SUB1", "A/SUB2".
      * <br>  Then "A" will return "A/SUB1" and "A/SUB2" (even though there is no module called "A")
      */
-    SafeList<Module> lookupModuleAndSubmodules(String path) {
-        if (path.length()==0) return modules.dup();
+    private SafeList<Module> lookupModuleAndSubmodules(String path) {
+        if (path.length()==0) return getAllModules();
         SafeList<Module> ans=new SafeList<Module>();
         Module top=path2module.get(path);
         if (top!=null) ans.add(top);
         path=path+"/";
-        again: for(Module u:modules) for(String n:u.paths) if (n.startsWith(path)) {ans.add(u); continue again;}
+        again: for(Module u:modules) if (u!=top) for(String n:u.paths) if (n.startsWith(path)) {ans.add(u); continue again;}
         return ans.dup();
     }
 
+    /** Returns an unmodifiable list of all modules. */
+    public SafeList<Module> getAllModules() { return (new SafeList<Module>(modules)).dup(); }
+
     /** Returns an unmodifiable list of all signatures. */
     public ConstList<Sig> all() {
-    	TempList<Sig> x = new TempList<Sig>();
-    	x.add(UNIV);
-    	x.add(SIGINT);
-    	x.add(SEQIDX);
-    	x.add(NONE);
-    	for(Module m:modules.dup()) x.addAll(m.getAllSigs());
-    	return x.makeConst();
+        TempList<Sig> x = new TempList<Sig>();
+        x.add(UNIV);
+        x.add(SIGINT);
+        x.add(SEQIDX);
+        x.add(NONE);
+        for(Module m:modules) x.addAll(m.getAllSigs());
+        return x.makeConst();
     }
 
-    /** Create a new module with the given list of paths. */
-    public Module establishModule(Pos pos, List<String> paths) throws Err {
-        if (paths.size()==0) throw new ErrorSyntax("A module must have at least 1 path pointing to it.");
-        TempList<String> temp=new TempList<String>(paths);
-        temp.sort(Util.slashComparator);
-        int n=temp.size();
-        for(int i=0; i<n; i++)
-          if (path2module.containsKey(temp.get(i)))
-            return path2module.get(temp.get(i));
-            //throw new ErrorSyntax("A module with the path \""+temp.get(i)+"\" already exists.");
-        Module u=new Module(world, pos, temp.makeConst());
-        for(int i=0; i<n; i++) { path2module.put(temp.get(i), u); }
-        modules.add(u);
-        return u;
-    }
+    //===============================================================================================================
 
-    //======== ROOT ONLY =====
-	
     /** The position of the "MODULE" line at the top of the file; never null. */
-    public final Pos pos;
+    public Pos pos = Pos.UNKNOWN;
+
+    /** The text of the "MODULE" line at the top of the file; "unknown" if the line is missing from the file. */
+    String moduleName="unknown";
 
     /** The world that this Module belongs to. */
     public final Module world;
 
-    public Module getRootModule() { return world; }
-
     /** The simplest path pointing to this Module; it is always equal to this.paths.get(0) */
     public final String path;
 
-    /** The unmodifiable list of paths pointing to this Module; it is always already sorted by Util.slashComparator */
-    public final ConstList<String> paths;
+    /** The list of paths pointing to this Module; it is always nonempty and already sorted by Util.slashComparator */
+    public final List<String> paths;
 
     /** Returns a short description for the Module. */
     @Override public String toString() {
@@ -155,8 +202,6 @@ public final class Module implements World {
         return answer+"}";
     }
 
-    //=============================================================================================================//
-
     /**
      * Constructs a new Module object
      *
@@ -164,86 +209,85 @@ public final class Module implements World {
      * @param pos - the position of the "module" line at the top of the file (it can be null if unknown)
      * @param paths - the list of paths pointing to this module (it must be pre-sorted using Util.slashComparator)
      */
-    Module(Module world, Pos pos, List<String> paths) throws Err {
-        if (paths.size()==0) throw new ErrorAPI(pos, "Module must have at least 1 path pointing to it.");
-        if (world==null) {
-        	world=this;
-        	modules.add(this);
-        	for(String p:paths) path2module.put(p,this);
-        }
+    Module(Module world, Pos pos, String path) throws Err {
+        if (world==null) { if (path.length()>0) throw new ErrorAPI(pos, "Root module misparsed."); else world=this; }
+        if (world.path2module.containsKey(path)) throw new ErrorSyntax("A module with the path \""+path+"\" already exists.");
+        world.path2module.put(path,this);
+        world.modules.add(this);
         this.world=world;
         this.pos=(pos==null ? Pos.UNKNOWN : pos);
-        this.paths=ConstList.make(paths);
-        this.path=this.paths.get(0);
+        this.path=path;
+        this.paths=new ArrayList<String>(1);
+        this.paths.add(path);
     }
 
-    /**
-     * This maps each module parameter to the Sig object that it refers to.
-     * <p> Each Sig object could have been defined in any module.
-     * <p> Each name cannot be empty, and cannot have "/" or "@".
-     */
-    private final Map<String,Sig> params=new LinkedHashMap<String,Sig>();
+    final Map<String,SigAST> params=new LinkedHashMap<String,SigAST>();
 
-    /**
-     * Add a new parameter to a module
-     *
-     * @param name - the name of the parameter
-     * @param target - the sig that this name will refer to
-     *
-     * @throws ErrorSyntax  if the module already has a parameter, sig, or function/predicate with that name
-     *
-     * @throws ErrorSyntax if this is the main module
-     * @throws ErrorSyntax if the name is "", or if the name contains '/' or '@' or '[' or ']'
-     * @throws ErrorSyntax if the module already has a signature or parameter or function/predicate with that name
-     */
-    public void addParameter(String name, Sig target) throws Err {
-        Pos p = this.pos;
-        if (target==null) throw new ErrorAPI(p,
-            "addParam() encountered a NullPointerException");
-        if (target==NONE) throw new ErrorSyntax(p,
-            "You cannot instantiate a module using \"none\"");
-        if (path.length()==0) throw new ErrorSyntax(p,
-            "The main module cannot have parameters.");
-        if (name.length()==0) throw new ErrorSyntax(p,
-            "Module parameter name cannot be empty.");
-        if (name.indexOf('/')>=0) throw new ErrorSyntax(p,
-            "Module parameter name \""+name+"\" cannot contain \'/\'");
-        if (name.indexOf('@')>=0) throw new ErrorSyntax(p,
-            "Module parameter name \""+name+"\" cannot contain \'@\'");
-        if (name.indexOf('[')>=0) throw new ErrorSyntax(p,
-            "Module parameter name \""+name+"\" cannot contain \'[\'");
-        if (name.indexOf(']')>=0) throw new ErrorSyntax(p,
-            "Module parameter name \""+name+"\" cannot contain \']\'");
-        if (params.containsKey(name)) throw new ErrorSyntax(p,
-            "A module cannot have two parameters with the same name: \""+name+"\"");
-        if (sigs.containsKey(name)) throw new ErrorSyntax(p,
-            "A module cannot have a parameter and a signature with the same name: \""+name+"\"");
-        if (funs.containsKey(name)) throw new ErrorSyntax(p,
-            "A module cannot have a parameter and a function/predicate with the same name: \""+name+"\"");
-        this.params.put(name, target);
+    void addModelLine(Pos pos, String moduleName, List<ExpName> list) throws Err {
+        this.moduleName=moduleName;
+        this.pos=pos;
+        for(ExpName expr:list) {
+            String name=expr.name;
+            //if (paramNames.contains(name)) throw new ErrorSyntax(expr.span(), "You cannot use the same name for more than 1 instantiating parameter.");
+            if (path.length()==0)
+                addSig(null, pos, name, false, false, false, false, null, null, new ArrayList<Decl>(), null);
+            else
+                params.put(name, null);
+        }
     }
 
-    /**
-     * Look up a parameter.
-     * @param name - the name
-     * @return null if the name contains '/', or if there is no such parameter in this module
-     */
-    public Sig getParameter(String name) { return params.get(name); }
+//    /**
+//     * Add a new parameter to a module
+//     *
+//     * @param name - the name of the parameter
+//     * @param target - the sig that this name will refer to
+//     *
+//     * @throws ErrorSyntax  if the module already has a parameter, sig, or function/predicate with that name
+//     *
+//     * @throws ErrorSyntax if this is the main module
+//     * @throws ErrorSyntax if the name is "", or if the name contains '/' or '@' or '[' or ']'
+//     * @throws ErrorSyntax if the module already has a signature or parameter or function/predicate with that name
+//     */
+//    void addParameter(String name, Sig target) throws Err {
+//        Pos p = this.pos;
+//        if (target==NONE) throw new ErrorSyntax(p,
+//            "You cannot instantiate a module using \"none\"");
+//        if (path.length()==0) throw new ErrorSyntax(p,
+//            "The main module cannot have parameters.");
+//        if (name.length()==0) throw new ErrorSyntax(p,
+//            "Module parameter name cannot be empty.");
+//        if (name.indexOf('/')>=0) throw new ErrorSyntax(p,
+//            "Module parameter name \""+name+"\" cannot contain \'/\'");
+//        if (name.indexOf('@')>=0) throw new ErrorSyntax(p,
+//            "Module parameter name \""+name+"\" cannot contain \'@\'");
+//        if (name.indexOf('[')>=0) throw new ErrorSyntax(p,
+//            "Module parameter name \""+name+"\" cannot contain \'[\'");
+//        if (name.indexOf(']')>=0) throw new ErrorSyntax(p,
+//            "Module parameter name \""+name+"\" cannot contain \']\'");
+//        if (params.containsKey(name)) throw new ErrorSyntax(p,
+//            "A module cannot have two parameters with the same name: \""+name+"\"");
+//        if (sigs.containsKey(name)) throw new ErrorSyntax(p,
+//            "A module cannot have a parameter and a signature with the same name: \""+name+"\"");
+//        if (funs.containsKey(name)) throw new ErrorSyntax(p,
+//            "A module cannot have a parameter and a function/predicate with the same name: \""+name+"\"");
+//        this.params.put(name, target);
+//    }
 
     //=============================================================================================================//
 
-    /** This stores the list of run/check commands in the order they were inserted. */
-    private final SafeList<Command> commands=new SafeList<Command>();
+    final Map<String,Module> opens=new LinkedHashMap<String,Module>();
 
-    /** Add a new command; if this module is not the main module, then this request is silently ignored and returns null. */
-    public Command addCommand(Command c) {
-        if (path.length()!=0) return null;
-        commands.add(c);
-        return c;
+    final Map<String,Open> opencmds=new LinkedHashMap<String,Open>();
+
+    void addOpen(Pos pos, String name, List<ExpName> args, String alias) throws Err {
+        Open x=new Open(pos, alias, args, name);
+        Open y=opencmds.get(x.alias);
+        // Special case, especially needed for auto-import of "util/sequniv"
+        if (y!=null && x.alias.equals(y.alias) && x.args.equals(y.args) && x.filename.equals(y.filename)) return;
+        if (opencmds.containsKey(x.alias))
+            throw new ErrorSyntax(pos, "You cannot import more than 1 module using the same alias.");
+        opencmds.put(x.alias, x);
     }
-
-    /** Return an unmodifiable list of commands in this module. */
-    public SafeList<Command> getAllCommands() { return commands.dup(); }
 
     //=============================================================================================================//
 
@@ -252,235 +296,424 @@ public final class Module implements World {
      * <p> Each Sig object must be originally and solely declared within this module.
      * <p> Each name cannot be empty, and cannot have "/" or "@".
      */
-    private final Map<String,Sig> sigs=new LinkedHashMap<String,Sig>();
-
-    /** This stores the same values as this.sigs, but as a list. */
-    private final SafeList<Sig> list_of_all_sigs=new SafeList<Sig>();
+    final Map<String,SigAST> sigs = new LinkedHashMap<String,SigAST>();
 
     /** Returns a unmodifiable list of Sig objects declared originally and solely within this module. */
-    public SafeList<Sig> getAllSigs() { return list_of_all_sigs.dup(); }
-
-    /**
-     * Create then return a new Sig in this module.
-     * @param pos - the position in the original source file
-     * @param name - the name of the Sig
-     * @param isAbstract - true if the Sig is abstract
-     * @param lone - true if the Sig has the "lone" multiplicity
-     * @param one - true if the Sig has the "one" multiplicity
-     * @param some - true if the Sig has the "some" multiplicity
-     *
-     * @throws ErrorSyntax  if the module already has a parameter, sig, or function/predicate with that name
-     *
-     * @throws ErrorType    if isAbstract and isSubset are both true
-     * @throws ErrorAPI     if the signature name, or at least one of the field name is empty
-     * @throws ErrorSyntax  if the signature name, or at least one of the field name contains '/' or '@'
-     * @throws ErrorSyntax  if the signature name contains '[' or ']'
-     * @throws ErrorSyntax  if the signature has two or more multiplicities
-     * @throws ErrorSyntax  if more than one field has the same name
-     */
-    public Sig addSig (Pos pos, String name, PrimSig parent,
-            boolean isAbstract, boolean lone, boolean one, boolean some,
-            boolean isLeaf) throws Err {
-        if (params.containsKey(name)) throw new ErrorSyntax(pos,
-                "A module cannot have a signature and a parameter with the same name: \""+name+"\"");
-        if (sigs.containsKey(name)) throw new ErrorSyntax(pos,
-                "A module cannot have two signatures with the same name: \""+name+"\"");
-        if (funs.containsKey(name)) throw new ErrorSyntax(pos,
-                "A module cannot have a signature and a function/predicate with the same name: \""+name+"\"");
-        String fullname = paths.contains("") ? "this/"+name : (paths.get(0)+"/"+name);
-        Sig x = new PrimSig(pos, parent, fullname, isAbstract, lone, one, some, isLeaf);
-        sigs.put(name, x);
-        list_of_all_sigs.add(x);
-        return x;
-    }
-    
-    public Sig addSubsetSig (Pos pos, String name, Collection<Sig> parents, boolean isAbstract, boolean lone, boolean one, boolean some) throws Err {
-        if (isAbstract) throw new ErrorSyntax(pos,
-        		"Subset signature \""+name+"\" cannot be abstract.");
-        if (params.containsKey(name)) throw new ErrorSyntax(pos,
-                "A module cannot have a signature and a parameter with the same name: \""+name+"\"");
-        if (sigs.containsKey(name)) throw new ErrorSyntax(pos,
-                "A module cannot have two signatures with the same name: \""+name+"\"");
-        if (funs.containsKey(name)) throw new ErrorSyntax(pos,
-                "A module cannot have a signature and a function/predicate with the same name: \""+name+"\"");
-        String fullname = paths.contains("") ? "this/"+name : (paths.get(0)+"/"+name);
-        Sig x = new SubsetSig(pos, parents, fullname, lone, one, some);
-        sigs.put(name, x);
-        list_of_all_sigs.add(x);
-        return x;
+    SafeList<Sig> getAllSigs() {
+        SafeList<Sig> ans=new SafeList<Sig>(sigs.size());
+        for(Map.Entry<String,SigAST> e:sigs.entrySet()) ans.add(e.getValue().realSig);
+        return ans.dup();
     }
 
-    /**
-     * Create and return a new Sig in this module.
-     * @param name - the name of the Sig
-     * @param isAbstract - true if the Sig is abstract
-     * @param lone - true if the Sig has the "lone" multiplicity
-     * @param one - true if the Sig has the "one" multiplicity
-     * @param some - true if the Sig has the "some" multiplicity
-     *
-     * @throws ErrorSyntax  if the module already has a parameter, sig, or function/predicate with that name
-     * @throws ErrorAPI     if the signature name is empty
-     * @throws ErrorSyntax  if the signature name contains '/' or '@'
-     * @throws ErrorSyntax  if the signature name contains '[' or ']'
-     * @throws ErrorSyntax  if the signature has two or more multiplicities
-     */
-    /*
-    public PrimSig addSig (String name, PrimSig parent, boolean isAbstract, boolean lone, boolean one, boolean some) throws Err {
-        if (params.containsKey(name)) throw new ErrorSyntax(pos,
-            "A module cannot have a signature and a parameter with the same name: \""+name+"\"");
-        if (sigs.containsKey(name)) throw new ErrorSyntax(pos,
-            "A module cannot have two signatures with the same name: \""+name+"\"");
-        if (funs.containsKey(name)) throw new ErrorSyntax(pos,
-            "A module cannot have a signature and a function/predicate with the same name: \""+name+"\"");
-        Sig x=world.makeSIG(null, this, parent, name, isAbstract, lone, one, some, false);
-        sigs.put(name, x);
-        list_of_all_sigs.add(x);
-        return (PrimSig)x;
-    }
-    */
-
-    //=============================================================================================================//
-
-    /** This lists all the facts defined inside this file. */
-    private SafeList<Pair<String,Expr>> facts = new SafeList<Pair<String,Expr>>();
-
-    /**
-     * Add a new fact.
-     * <p> Note: the name does not have to be unique; it is okay for 2 facts to have the same name.
-     *
-     * @param name - if name==null or name=="", we will automatically pick a new name for it.
-     * @param formula - the new fact
-     *
-     * @throws ErrorType if formula fails to be typechecked
-     */
-    public void addFact (String name, Expr formula) throws Err {
-        if (name==null || name.length()==0) name="fact#"+(1+facts.size());
-        //
-        A4Reporter.getReporter().typecheck("Fact "+name+": "+formula.type+"\n");
-        //
-        facts.add(new Pair<String,Expr>(name,formula));
+    SigAST addSig(List<ExpName> hints, Pos p,String n,
+        boolean fa,boolean fl,boolean fo,boolean fs,List<String> i,String e,List<Decl> d,Exp f) throws Err {
+        SigAST obj;
+        String fullname = (path.length()==0) ? "this/"+n : path+"/"+n;
+        if (i!=null && i.size()>0)
+            obj=new SigAST(p, fullname, n, fa, fl, fo, fs, true, i, d, f, null);
+        else
+            obj=new SigAST(p, fullname, n, fa, fl, fo, fs, false, Util.asList(e), d, f, null);
+        if (hints!=null) for(ExpName hint:hints) {
+           if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
+        }
+        if (sigs.containsKey(n)) throw new ErrorSyntax(p, "sig \""+n+"\" is already declared in this module.");
+        sigs.put(n,obj);
+        return obj;
     }
 
-    /** Typecheck if necessary, then return an unmodifiable list of all facts in this module. */
-    public SafeList<Pair<String,Expr>> getAllFacts() throws Err {
-        return facts.dup();
+    static Sig checkSig(SigAST oldS) throws Err {
+        if (oldS.realSig!=null) return oldS.realSig;
+        if (oldS.topo) throw new ErrorType("Sig "+oldS+" is involved in a cyclic inheritance.");
+        oldS.topo=true;
+        final Pos pos=oldS.pos;
+        final Module u=oldS.realModule;
+        final String name=oldS.name;
+        if (u.params.containsKey(name)) throw new ErrorSyntax(pos, "A module cannot have a signature and a parameter with the same name: \""+name+"\"");
+        if (u.funs.containsKey(name)) throw new ErrorSyntax(pos, "A module cannot have a signature and a function/predicate with the same name: \""+name+"\"");
+        final String fullname = u.paths.contains("") ? "this/"+name : (u.paths.get(0)+"/"+name);
+        final Sig s;
+        if (oldS.subset)  {
+            if (oldS.abs) throw new ErrorSyntax(pos, "Subset signature \""+name+"\" cannot be abstract.");
+            ArrayList<Sig> parents = new ArrayList<Sig>();
+            for(String n:oldS.parents) {
+                Sig parent;
+                if (n.equals("univ")) parent=UNIV;
+                else if (n.equals("Int")) parent=SIGINT;
+                else if (n.equals("seq/Int")) parent=SEQIDX;
+                else if (n.equals("none")) parent=NONE;
+                else {
+                  Set<SigAST> anss=u._lookup_sigORparam(n);
+                  if (anss.size()>1) throw new ErrorSyntax(pos, "Sig "+oldS+" tries to be a subset of \""+n+"\", but the name \""+n+"\" is ambiguous.");
+                  if (anss.size()<1) throw new ErrorSyntax(pos, "Sig "+oldS+" tries to be a subset of a non-existent signature \""+n+"\"");
+                  parent = checkSig(anss.iterator().next());
+                }
+                parents.add(parent);
+            }
+            s = new SubsetSig(pos, parents, fullname, oldS.lone, oldS.one, oldS.some);
+        } else {
+            Sig parent;
+            String sup="univ";
+            if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup==null || sup.length()==0) sup="univ";}
+            if (sup.equals("univ")) parent=UNIV;
+            else if (sup.equals("Int")) parent=SIGINT;
+            else if (sup.equals("seq/Int")) parent=SEQIDX;
+            else if (sup.equals("none")) parent=NONE;
+            else {
+                Set<SigAST> anss=u._lookup_sigORparam(sup);
+                if (anss.size()>1) throw new ErrorSyntax(pos, "Sig "+oldS+" tries to extend \""+sup+"\", but that name is ambiguous.");
+                if (anss.size()<1) throw new ErrorSyntax(pos, "Sig "+oldS+" tries to extend a non-existent signature \""+sup+"\"");
+                parent = checkSig(anss.iterator().next());
+            }
+            if (!(parent instanceof PrimSig)) throw new ErrorSyntax(pos, "Sig "+oldS+" cannot extend a subset signature "+parent+"\".\nA signature can only extend a toplevel signature or a subsignature.");
+            s = new PrimSig(pos, (PrimSig)parent, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.hint_isLeaf);
+        }
+        oldS.realSig=s;
+        if (oldS.absPosition!=null) s.anno.put("abstract", oldS.absPosition);
+        if (oldS.lonePosition!=null) s.anno.put("lone", oldS.lonePosition);
+        if (oldS.onePosition!=null) s.anno.put("one", oldS.onePosition);
+        if (oldS.somePosition!=null) s.anno.put("some", oldS.somePosition);
+        if (oldS.extendsPosition!=null) s.anno.put("extends", oldS.extendsPosition);
+        if (oldS.inPosition!=null) s.anno.put("in", oldS.inPosition);
+        if (oldS.orderingPosition!=null) s.anno.put("ordering", oldS.orderingPosition);
+        return s;
     }
 
     //=============================================================================================================//
-
-    /** This lists all the asseritions defined inside this file. */
-    private final Map<String,Expr> assertions=new LinkedHashMap<String,Expr>();
-
-    /**
-     * Add a new assertion.
-     *
-     * @param name - if name==null or name=="", this method pick a new unique name for it, and return the new name.
-     * @param formula - the new assertion
-     *
-     * @throws ErrorType if formula fails to be typechecked
-     * @throws ErrorSyntax if the name contains '/' or '@'
-     * @throws ErrorSyntax if this module already has an assertion with the same name
-     */
-    public String addAssertion (String name, Expr formula) throws Err {
-        A4Reporter.getReporter().typecheck("Assertion "+name+": "+formula.type+"\n");
-        assertions.put(name,formula);
-        return name;
-    }
-
-    /** Typecheck if necessary, then return the assertion with that name (it returns null if there's no match) */
-    public Expr getAssertion(String name) throws Err {
-        return assertions.get(name);
-    }
-
-    //=============================================================================================================//
-
-    /** This lists all the functions and predicates defined in this module. */
-    private final Map<String,SafeList<Func>> funs=new LinkedHashMap<String,SafeList<Func>>();
-
-    /** This stores the list of all parameter-less functions and predicates defined in this module. */
-    private final SafeList<Func> list_of_func0=new SafeList<Func>();
-
-    /** This stores the list of all functions and predicates defined in this module. */
-    private final SafeList<Func> list_of_func=new SafeList<Func>();
-
-    /**
-     * Constructs a new predicate/function.
-     *
-     * @param pos - the original position in the file
-     * @param name - the name of the predicate/function (it cannot be "", and cannot contain '@' or '/')
-     * @param params - the list of parameters (can be null or even an empty list)
-     * @param returnType - the return type (null if this is a predicate rather than a function)
-     *
-     * @throws ErrorSyntax if the module already has a parameter or signature with that name
-     *
-     * @throws ErrorSyntax if the name is "", or if the name contains '@' or '/'
-     * @throws ErrorSyntax if the list of parameters contain duplicate names
-     * @throws ErrorSyntax if at least one of the parameter declaration contains a predicate/function call
-     * @throws ErrorSyntax if this function's  return type  declaration contains a predicate/function call
-     * @throws ErrorAPI    if this is called by the FuncN constructor, but the list of parameter is empty
-     */
-    public Func addFun(Pos pos, String name, List<ExprVar> params, Expr returnType) throws Err {
-        if (this.params.containsKey(name)) throw new ErrorSyntax(pos,
-            "Within the same file, a function/predicate cannot have the same name as a polymorphic type.");
-        if (this.sigs.containsKey(name)) throw new ErrorSyntax(pos,
-            "Within the same file, a function/predicate cannot have the same name as another signature.");
-        for(int i=0; i<params.size(); i++)
-          for(int j=0; j<params.size(); j++)
-            if (i!=j && params.get(i).label.equals(params.get(j).label))
-               throw new ErrorSyntax(params.get(j).span(), "The variable \""+params.get(i).label
-               +"\" cannot appear more than once in a predicate/function's parameter list.");
-        String fullname = (path.length()==0 ? "this/" : path+"/") + name;
-        Func func=new Func(pos, fullname, params, returnType);
-        SafeList<Func> list=funs.get(name);
-        if (list==null) { list=new SafeList<Func>(); funs.put(name, list); }
-        list.add(func);
-        list_of_func.add(func);
-        if (func.params.size()==0) list_of_func0.add(func);
-        return func;
-    }
 
     /** Caches an unmodifiable empty list of functions. */
     private static final SafeList<Func> empty_list_of_func = (new SafeList<Func>(0)).dup();
 
+    private final List<FunAST> _funs = new ArrayList<FunAST>();
+    private final Map<String,SafeList<Func>> funs = new LinkedHashMap<String,SafeList<Func>>();
+    private static final Map<Func,Expr> fun_2_formula = new LinkedHashMap<Func,Expr>(); // TODO: static since Command lookup may cross Module boundaries
+
+    void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
+        d=new ArrayList<Decl>(d);
+        if (f!=null) d.add(0, new Decl(null, Util.asList(new ExpName(f.span(), "this")), f));
+        _funs.add(new FunAST(p, n, d, t, v));
+    }
+
+    JoinableList<Err> checkFunctionDecls(JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+        for(FunAST f: _funs) {
+            /*
+            if (this.params.containsKey(name)) throw new ErrorSyntax(pos,
+                "Within the same file, a function/predicate cannot have the same name as a polymorphic type.");
+            if (this.sigs.containsKey(name)) throw new ErrorSyntax(pos,
+                "Within the same file, a function/predicate cannot have the same name as another signature.");
+            */
+            String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.name;
+            Context cx = new Context(this);
+            cx.rootfun=true;
+            String dup = f.args==null ? null : Decl.findDuplicateName(f.args);
+            if (dup!=null) throw new ErrorSyntax(f.pos, "The parameter name \""+dup+"\" cannot appear more than once in this predicate/function declaration.");
+            // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
+            // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
+            TempList<ExprVar> tmpvars = new TempList<ExprVar>();
+            if (f.args!=null) {
+              for(Decl d:f.args) {
+                Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
+                errors = errors.join(val.errors);
+                for(ExpName n: d.names) {
+                    ExprVar v=ExprVar.make(n.span(), n.name, val);
+                    cx.put(n.name, v);
+                    tmpvars.add(v);
+                    A4Reporter.getReporter().typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.name+": "+v.type+"\n");
+                }
+              }
+            }
+            Expr ret = null;
+            if (f.returnType!=null) {
+                ret = f.returnType.check(cx, warns).resolve_as_set(warns);
+                errors = errors.join(ret.errors);
+            }
+            f.realFunc = new Func(f.pos, fullname, tmpvars.makeConst(), ret);
+            SafeList<Func> list=funs.get(f.name);
+            if (list==null) { list=new SafeList<Func>(); funs.put(f.name, list); }
+            list.add(f.realFunc);
+            A4Reporter.getReporter().typecheck(""+f.realFunc+", RETURN: "+f.realFunc.returnDecl.type+"\n");
+        }
+        return errors;
+    }
+
+    JoinableList<Err> checkFunctionBodies(JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+        A4Reporter rep = A4Reporter.getReporter();
+        for(FunAST f: _funs) {
+            Func ff = f.realFunc;
+            Expr disj = ExprConstant.TRUE;
+            Context cx=new Context(this);
+            Iterator<ExprVar> vv=ff.params.iterator();
+            for(Decl d:f.args) {
+                List<Expr> disjvars = (d.disjoint!=null && d.names.size()>0) ? (new ArrayList<Expr>()) : null;
+                for(ExpName n:d.names) {
+                    ExprVar newvar=vv.next();
+                    cx.put(n.name, newvar);
+                    if (disjvars!=null) disjvars.add(newvar);
+                }
+                if (disjvars!=null) disj=disj.and(ExprBuiltin.makeDISJOINT(d.disjoint, null, disjvars));
+            }
+            Expr newBody = f.body.check(cx, warns);
+            if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
+            errors = errors.join(newBody.errors);
+            ff.setBody(newBody);
+            for(Decl d:f.args) for(ExpName n:d.names) cx.remove(n.name);
+            if (!ff.isPred && newBody.type.hasTuple() && ff.returnDecl.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
+                warns.add(new ErrorWarning(ff.getBody().span(),
+                    "Function return value is disjoint from its return type.\n"
+                    +"Function body has type "+ff.getBody().type+"\nbut the return type is "+ff.returnDecl.type));
+            rep.typecheck(""+ff+", BODY:"+ff.getBody().type+"\n");
+            //
+            if (!ff.isPred) newBody=newBody.in(ff.returnDecl);
+            if (ff.params.size()>0) newBody=ExprQuant.Op.SOME.make(null, null, ff.params, newBody.and(disj));
+            fun_2_formula.put(ff, newBody);
+        }
+        return errors;
+    }
+
+    public Exp getFirstFunc() {
+        if (_funs.size()==0) return null; else return _funs.get(0).body;
+    }
+
     /** Typecheck if necessary, then return an unmodifiable list of all predicates/functions with that name. */
-    public SafeList<Func> getFunc(String name) throws Err {
+    public SafeList<Func> getFunc(String name) {
         SafeList<Func> answer = funs.get(name);
         return answer==null ? empty_list_of_func : answer.dup();
     }
 
     /** Typecheck if necessary, then return an unmodifiable list of all parameter-less predicates/functions. */
-    public SafeList<Func> getAllFunc0() throws Err {
-        return list_of_func0.dup();
+    public SafeList<Func> getAllFunc0() {
+        SafeList<Func> ans = new SafeList<Func>();
+        for(Map.Entry<String,SafeList<Func>> e:funs.entrySet()) {
+            for(Func f:e.getValue()) if (f.params.size()==0) ans.add(f);
+        }
+        return ans.dup();
     }
 
     //=============================================================================================================//
 
-    /**
-     * Look up an assertion visible from this module.
-     * @param name - the name which can either be fully-qualified (eg. "alias/alias/somename") or not
-     * @return an empty set if there is no match
-     */
-    public Set<Expr> lookupAssertion(String name) {
+    private final Map<String,Object> asserts = new LinkedHashMap<String,Object>();
+
+    String addAssertion(Pos pos, String name, Exp value) throws Err {
+        if (name==null || name.length()==0) name="assert#"+(1+asserts.size());
+        if (name.indexOf('/')>=0) throw new ErrorSyntax(pos, "Assertion name \""+name+"\" cannot contain \'/\'");
+        if (name.indexOf('@')>=0) throw new ErrorSyntax(pos, "Asserition name \""+name+"\" cannot contain \'@\'");
+        if (asserts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same module, two assertions cannot have the same name.");
+        asserts.put(name, value);
+        return name;
+    }
+
+    JoinableList<Err> checkAssertions(JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+        Context cx = new Context(this);
+        for(Map.Entry<String,Object> e:asserts.entrySet()) {
+            Object x = e.getValue();
+            Expr expr = null;
+            if (x instanceof Expr) expr=(Expr)x;
+            if (x instanceof Exp) {
+                expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
+                if (expr.errors.isEmpty()) e.setValue(expr);
+            }
+            if (expr.errors.size()>0) errors=errors.join(expr.errors);
+            else A4Reporter.getReporter().typecheck("Assertion " + e.getKey() + ": " + expr.type+"\n");
+        }
+        return errors;
+    }
+
+    /** If typecheck was successful, return the assertion with that name (it returns null if there's no match) */
+    Expr getAssertion(String name) {
+        Object ans = asserts.get(name);
+        return (ans instanceof Expr) ? ((Expr)ans) : null;
+    }
+
+    //=============================================================================================================//
+
+    private final Map<String,Object> facts = new LinkedHashMap<String,Object>();
+
+    void addFact(Pos pos, String name, Exp value) throws Err {
+        if (name==null || name.length()==0) name="fact#"+(1+facts.size());
+        if (facts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same file, a fact cannot have the same name as another fact.");
+        facts.put(name,value);
+    }
+
+    void addFact(Pos pos, String name, Expr value) throws Err { // It must be unambiguous formula
+        if (!value.errors.isEmpty()) throw value.errors.get(0);
+        if (name==null || name.length()==0) name="fact#"+(1+facts.size());
+        if (facts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same file, a fact cannot have the same name as another fact.");
+        facts.put(name,value);
+        A4Reporter.getReporter().typecheck("Fact " + name + ": " + value.type+"\n");
+    }
+
+    JoinableList<Err> checkFacts(JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+        Context cx = new Context(this);
+        for(Map.Entry<String,Object> e:facts.entrySet()) {
+            Object x = e.getValue();
+            Expr expr = null;
+            if (x instanceof Expr) expr=(Expr)x;
+            if (x instanceof Exp) {
+                expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
+                if (expr.errors.isEmpty()) e.setValue(expr);
+            }
+            if (expr.errors.size()>0) errors=errors.join(expr.errors);
+            else A4Reporter.getReporter().typecheck("Fact " + e.getKey() + ": " + expr.type+"\n");
+        }
+        for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
+            Sig s=e.getValue().realSig;
+            if (s.anno.get("orderingSIG") instanceof Sig) continue;
+            Exp f=e.getValue().appendedFact;
+            if (f==null) continue;
+            ExprVar THIS = s.oneOf("this");
+            cx.rootsig=s;
+            cx.put("this", THIS);
+            Expr formula = f.check(cx, warns).resolve_as_formula(warns);
+            cx.remove("this");
+            formula = formula.forAll(THIS);
+            if (formula.errors.size()>0) errors=errors.join(formula.errors);
+            else {
+                facts.put(""+s+"#fact", formula);
+                A4Reporter.getReporter().typecheck("Fact "+s+"#fact: " + formula.type+"\n");
+            }
+        }
+        return errors;
+    }
+
+    /** If typecheck was successful, return an unmodifiable list of all facts in this module. */
+    public SafeList<Pair<String,Expr>> getAllFacts() {
+        SafeList<Pair<String,Expr>> ans = new SafeList<Pair<String,Expr>>();
+        for(Map.Entry<String,Object> e:facts.entrySet()) {
+            String a=e.getKey();
+            Object b=e.getValue();
+            if (b instanceof Expr) ans.add(new Pair<String,Expr>(a, (Expr)b));
+        }
+        return ans.dup();
+    }
+
+    //=============================================================================================================//
+
+    final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
+
+    void addCommand(Pos p,String n,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
+        if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
+        if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
+        List<String> options=new ArrayList<String>(opts.size());
+        for(ExpName opt:opts) options.add(opt.name);
+        if (label==null || label.length()==0) label=n;
+        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
+    }
+
+    void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
+        String n;
+        if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run#"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
+        if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
+        if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
+        List<String> options=new ArrayList<String>(opts.size());
+        for(ExpName opt:opts) options.add(opt.name);
+        if (label==null || label.length()==0) label=n;
+        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
+    }
+
+    private Set<Expr> lookupAssertion(String name) {
+        // Look up an assertion visible from this module.
+        // The name can either be fully-qualified (eg. "alias/alias/somename") or not
         Expr s;
         Set<Expr> ans=new LinkedHashSet<Expr>();
         if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
         if (name.indexOf('/')<0) {
             for(String p:paths) {
-                for(Module u:getRootModule().lookupModuleAndSubmodules(p)) {
-                    if ((s=u.assertions.get(name))!=null) ans.add(s);
+                for(Module u:world.lookupModuleAndSubmodules(p)) {
+                    if ((s=u.getAssertion(name))!=null) ans.add(s);
                 }
             }
             return ans;
         }
         if (name.startsWith("this/")) name=name.substring(5);
         int i=name.lastIndexOf('/');
-        Module u=(i<0) ? this : world.lookupModule((path.length()==0?"":path+"/")+name.substring(0,i));
+        Module u=(i<0) ? this : world.path2module.get((path.length()==0?"":path+"/")+name.substring(0,i));
         if (u!=null) {
             if (i>=0) name=name.substring(i+1);
-            if ((s=u.assertions.get(name))!=null) ans.add(s);
+            if ((s=u.getAssertion(name))!=null) ans.add(s);
         }
         return ans;
     }
+
+    private SafeList<Func> lookupFunctionOrPredicate(String name) {
+        SafeList<Func> ans=new SafeList<Func>();
+        for(Object x: lookupSigOrParameterOrFunctionOrPredicate(name,true)) if (x instanceof Func) ans.add((Func)x);
+        return ans;
+    }
+
+    JoinableList<Err> checkCommands(JoinableList<Err> errors, List<ErrorWarning> warnings) throws Err {
+        for(int i=0; i<commands.size(); i++) {
+            String cname = commands.get(i).a;
+            Command cmd = commands.get(i).b;
+            Expr e=null;
+            if (cmd.check) {
+                e=getAssertion(cname);
+                if (e==null) {
+                    Set<Expr> ee=lookupAssertion(cname);
+                    if (ee.size()>1) throw new ErrorSyntax(cmd.pos, "There are more than 1 assertion with the name \""+cname+"\".");
+                    if (ee.size()<1) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
+                    e=ee.iterator().next();
+                }
+            } else {
+                SafeList<Func> ee=getFunc(cname);
+                if (ee.size()<1) ee=lookupFunctionOrPredicate(cname);
+                if (ee.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
+                if (ee.size()>1) throw new ErrorSyntax(cmd.pos, "There are more than 1 predicate/function with the name \""+cname+"\".");
+                e=fun_2_formula.get(ee.get(0));
+            }
+            cmd = cmd.make(e);
+            commands.set(i, new Pair<String,Command>(cname,cmd));
+        }
+        return errors;
+    }
+
+    public ConstList<Command> getAllCommands() {
+        TempList<Command> ans = new TempList<Command>(commands.size());
+        for(Pair<String,Command> e:commands) ans.add(e.b);
+        return ans.makeConst();
+    }
+
+    //=============================================================================================================//
+
+    private void _lookupNQsig_noparam (String name, Set<SigAST> ans) { // It ignores "params"
+        SigAST x=sigs.get(name);
+        if (x!=null) ans.add(x);
+        for(Map.Entry<String,Module> i:opens.entrySet()) i.getValue()._lookupNQsig_noparam(name,ans);
+    }
+
+    private SigAST _lookupQsig_noparam (String name) { // It ignores "params"
+        Module u=this;
+        if (name.startsWith("this/")) name=name.substring(5);
+        while(true) {
+            int i=name.indexOf('/');
+            if (i<0) return u.sigs.get(name);
+            u=u.opens.get(name.substring(0,i));
+            if (u==null) return null;
+            name=name.substring(i+1,name.length());
+        }
+    }
+
+    Set<SigAST> _lookup_sigORparam (String name) { // Will search "params" too, if at the CURRENT LEVEL
+        SigAST s;
+        Set<SigAST> ans=new LinkedHashSet<SigAST>();
+        if (name.equals("seq/Int")) { ans.add(SEQIDXast); return ans; }
+        if (name.equals("Int"))     { ans.add(SIGINTast); return ans; }
+        if (name.equals("univ"))    { ans.add(UNIVast); return ans; }
+        if (name.equals("none"))    { ans.add(NONEast); return ans; }
+        if (name.indexOf('/')<0) {
+            _lookupNQsig_noparam(name,ans); s=params.get(name); if (s!=null) ans.add(s);
+            return ans;
+        }
+        if (name.startsWith("this/")) {
+            String temp=name.substring(5);
+            if (temp.indexOf('/')<0) { s=params.get(temp); if (s!=null) {ans.add(s); return ans;} }
+        }
+        s=_lookupQsig_noparam(name); if (s!=null) ans.add(s);
+        return ans;
+    }
+
+    private static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, UNIV);
+    private static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, SIGINT);
+    private static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, SEQIDX);
+    private static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, NONE);
 
     /**
      * Look up a parameter, or a signature/function/predicate visible from this module.
@@ -488,29 +721,27 @@ public final class Module implements World {
      * @param look_for_function_and_predicate - true if we want to include functions and predicates as well
      * @return an empty set if there is no match
      */
-    public Set<Object> lookupSigOrParameterOrFunctionOrPredicate
-    (String name, boolean look_for_function_and_predicate) {
-        Sig s;
+    public Set<Object> lookupSigOrParameterOrFunctionOrPredicate (String name, boolean look_for_function_and_predicate) {
         SafeList<Func> f;
         Set<Object> ans=new LinkedHashSet<Object>();
         if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
         if (name.indexOf('/')<0) {
             for(String p:paths) {
-                for(Module u:getRootModule().lookupModuleAndSubmodules(p)) {
-                    if ((s=u.sigs.get(name))!=null) ans.add(s);
+                for(Module u:world.lookupModuleAndSubmodules(p)) {
+                    {SigAST ss=u.sigs.get(name); if (ss!=null) ans.add(ss.realSig);}
                     if (look_for_function_and_predicate) if ((f=u.funs.get(name))!=null) ans.addAll(f);
                 }
             }
-            s=params.get(name); if (s!=null) ans.add(s);
+            SigAST ss=params.get(name); if (ss!=null) ans.add(ss.realSig);
             return ans;
         }
         if (name.startsWith("this/")) name=name.substring(5);
-        s=params.get(name); if (s!=null) ans.add(s);
+        {SigAST ss=params.get(name); if (ss!=null) ans.add(ss.realSig);}
         int i=name.lastIndexOf('/');
-        Module u=(i<0) ? this : world.lookupModule((path.length()==0?"":path+"/")+name.substring(0,i));
+        Module u=(i<0) ? this : world.path2module.get((path.length()==0?"":path+"/")+name.substring(0,i));
         if (u!=null) {
             if (i>=0) name=name.substring(i+1);
-            if ((s=u.sigs.get(name))!=null) ans.add(s);
+            {SigAST ss=u.sigs.get(name); if (ss!=null) ans.add(ss.realSig);}
             if (look_for_function_and_predicate) if ((f=u.funs.get(name))!=null) ans.addAll(f);
         }
         return ans;
@@ -558,14 +789,10 @@ public final class Module implements World {
             if (s.parent==null || s.parent.builtin) return ans;
             Field ans2=lookupField(origin, s.parent, name);
             if (ans==null) return ans2;
-            //if (ans2!=null) throw new ErrorSyntax(current.pos, "This signature's \""
-            //        +name+"\" field conflicts with a parent signature's field with the same name.");
         }
         if (current instanceof SubsetSig) for(Sig p:((SubsetSig)current).parents) {
             Field ans2=lookupField(origin, p, name);
             if (ans==null) ans=ans2;
-            //else if (ans2!=null) throw new ErrorSyntax(current.pos, "This signature's \""
-            //        +name+"\" field conflicts with a parent signature's field with the same name.");
         }
         return ans;
     }
@@ -574,8 +801,8 @@ public final class Module implements World {
     private Set<Field> lookupField(String name) {
         Set<Field> ans=new LinkedHashSet<Field>();
         for(String p:paths)
-          for(Module u:getRootModule().lookupModuleAndSubmodules(p))
-            for(Sig s:u.list_of_all_sigs)
+          for(Module u:world.lookupModuleAndSubmodules(p))
+            for(Sig s:u.getAllSigs())
               for(Field f:s.getFields())
                 if (f.label.equals(name))
                   ans.add(f);
@@ -584,18 +811,7 @@ public final class Module implements World {
 
     //=============================================================================================================//
 
-    public SafeList<Func> lookupFunctionOrPredicate(String name) {
-        SafeList<Func> ans=new SafeList<Func>();
-        for(Object x: lookupSigOrParameterOrFunctionOrPredicate(name,true)) {
-            if (x instanceof Func)
-                ans.add((Func)x);
-        }
-        return ans;
-    }
-
-    //=============================================================================================================//
-
-    /** Resolve the name based on the current context. */
+    /** Resolve the name based on the current context and this module. */
     public Set<Object> populate(boolean rootfield, Sig rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
         // Return object can be FuncN or Expr
         Set<Object> ans;

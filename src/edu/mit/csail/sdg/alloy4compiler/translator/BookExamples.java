@@ -23,7 +23,7 @@ import static kodkod.engine.Solution.Outcome.SATISFIABLE;
 import static kodkod.engine.Solution.Outcome.TRIVIALLY_SATISFIABLE;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -43,13 +43,13 @@ class BookExamples {
     private static AbstractReporter blankReporter = new AbstractReporter(){};
 
     static Solution trial
-    (World world, BoundsComputer bc, Bounds bounds, Formula formula, Solver solver, String originalCommand, String originalFileName) {
+    (Module world, BoundsComputer bc, Bounds bounds, Formula formula, Solver solver, String originalCommand, String originalFileName) {
         Solution sol=null;
         // int i=originalFileName.lastIndexOf('/');
         // int j=originalFileName.lastIndexOf('\\');
         // String basename = (i>=0 && i>j) ? originalFileName.substring(i+1) :
         //                  ((j>=0 && j>i) ? originalFileName.substring(j+1) : originalFileName);
-        if (world.getRootModule().lookupSigOrParameterOrFunctionOrPredicate("this/Book",false).size()>0) {
+        if (world.lookupSigOrParameterOrFunctionOrPredicate("this/Book",false).size()>0) {
             Tuple B0N0A0 = t_tuple(bc, "Book[0]", "Name[0]", "Addr[0]");
             Tuple B0N1A0 = t_tuple(bc, "Book[0]", "Name[1]", "Addr[0]");
             Tuple B0N2A0 = t_tuple(bc, "Book[0]", "Name[2]", "Addr[0]");
@@ -192,7 +192,7 @@ class BookExamples {
                     B010, B110, B102, "", "this/Book", "addr",
             });
         }
-        else if (world.getRootModule().lookupSigOrParameterOrFunctionOrPredicate("this/Woman",false).size()>0) {
+        else if (world.lookupSigOrParameterOrFunctionOrPredicate("this/Woman",false).size()>0) {
             Tuple man0_woman0 = t_tuple(bc, "Person[1]", "Person[0]");
             Tuple man1_woman0 = t_tuple(bc, "Person[2]", "Person[0]");
             Tuple man0_woman1 = t_tuple(bc, "Person[1]", "Person[3]");
@@ -214,7 +214,7 @@ class BookExamples {
                     "", "this/Person", "father",
             });
         }
-        else if (world.getRootModule().lookupSigOrParameterOrFunctionOrPredicate("this/Process",false).size()>0) {
+        else if (world.lookupSigOrParameterOrFunctionOrPredicate("this/Process",false).size()>0) {
             String p0="Process[0]", p1="Process[1]", p2="Process[2]";
             String t0="Time[0]", t1="Time[1]", t2="Time[2]", t3="Time[3]";
             Tuple s20=t_tuple(bc,p2,p0), s01=t_tuple(bc,p0,p1), s12=t_tuple(bc,p1,p2);
@@ -229,7 +229,7 @@ class BookExamples {
                 t_tuple(bc,p2,t3),"","this/Process","elected",
             });
         }
-        else if (world.getRootModule().lookupSigOrParameterOrFunctionOrPredicate("this/Desk",false).size()>0) {
+        else if (world.lookupSigOrParameterOrFunctionOrPredicate("this/Desk",false).size()>0) {
             String f="Desk[0]", g0="Guest[0]", g1="Guest[1]", r="Room[0]", k0="Key[0]", k1="Key[1]";
             String t0="Time[0]", t1="Time[1]", t2="Time[2]", t3="Time[3]", t4="Time[4]", t5="Time[5]";
             String c0="Card[0]", c1="Card[1]";
@@ -253,7 +253,7 @@ class BookExamples {
                 t_tuple(bc,f,r,k0,t3), t_tuple(bc,f,r,k0,t4), t_tuple(bc,f,r,k0,t5), "", "this/Desk", "prev"
             });
         }
-        else if (world.getRootModule().lookupSigOrParameterOrFunctionOrPredicate("this/FrontDesk",false).size()>0) {
+        else if (world.lookupSigOrParameterOrFunctionOrPredicate("this/FrontDesk",false).size()>0) {
             String f="FrontDesk[0]", g0="Guest[0]", g1="Guest[1]", r="Room[0]", k0="Key[0]", k1="Key[1]", k2="Key[2]";
             String t0="Time[0]", t1="Time[1]", t2="Time[2]", t3="Time[3]", t4="Time[4]";
             Tuple G0=t_tuple(bc,g0), G1=t_tuple(bc,g1);
@@ -294,7 +294,7 @@ class BookExamples {
         return sol;
     }
 
-    private static Solution trial(Solver solver, World world, BoundsComputer bc, Formula f, final Bounds bb, Object[] t) {
+    private static Solution trial(Solver solver, Module world, BoundsComputer bc, Formula f, final Bounds bb, Object[] t) {
         try {
             // String figure = (String)(t[0]);
             Bounds b = null;
@@ -320,7 +320,7 @@ class BookExamples {
                     String sigName = (String)(t[i]);
                     i++;
                     String fieldName = (String)(t[i]);
-                    Set<Object> ans = world.getRootModule().lookupSigOrParameterOrFunctionOrPredicate(sigName, false);
+                    Set<Object> ans = world.lookupSigOrParameterOrFunctionOrPredicate(sigName, false);
                     if (ans.size()!=1) return null;
                     Object first = ans.iterator().next();
                     if (!(first instanceof Sig)) return null;

@@ -23,12 +23,12 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
@@ -101,9 +101,9 @@ public final class SimpleCLI {
             try {
                 rep.sb.append("\n\nMain file = "+filename+"\n");
                 if (db) db("Parsing+Typechecking...");
-                World world = CompUtil.parseEverything_fromFile(null, null, filename);
+                Module world = CompUtil.parseEverything_fromFile(null, null, filename);
                 if (db) db(" ok\n");
-                SafeList<Command> cmds=world.getRootModule().getAllCommands();
+                ConstList<Command> cmds=world.getAllCommands();
                 for(ErrorWarning msg: rep.warnings) rep.sb.append("Relevance Warning:\n" + (msg.toString().trim()) + "\n\n");
                 rep.warnings.clear();
                 A4Options options = new A4Options();

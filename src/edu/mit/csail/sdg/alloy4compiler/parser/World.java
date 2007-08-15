@@ -20,7 +20,6 @@
 //
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -28,9 +27,7 @@ import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 
 public interface World {
+    public Module lookupOrCreateModule(Pos pos, String path) throws Err;
     public SafeList<Module> getAllModules();
-    public Module lookupModule(String path);
     public ConstList<Sig> all();
-    public Module getRootModule();
-    public Module establishModule(Pos pos, List<String> paths) throws Err;
 }

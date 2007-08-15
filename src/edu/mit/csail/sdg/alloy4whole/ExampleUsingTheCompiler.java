@@ -23,7 +23,7 @@ import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
@@ -62,13 +62,13 @@ public final class ExampleUsingTheCompiler {
 
             // Parse+typecheck the model
             System.out.println("=========== Parsing+Typechecking "+filename+" =============");
-            World world = CompUtil.parseEverything_fromFile(null, null, filename);
+            Module world = CompUtil.parseEverything_fromFile(null, null, filename);
 
             // Choose some default options for how you want to execute the commands
             A4Options options = new A4Options();
             options.solver = A4Options.SatSolver.SAT4J;
 
-            for (Command cmd: world.getRootModule().getAllCommands()) {
+            for (Command cmd: world.getAllCommands()) {
                 // Execute the command
                 System.out.println("============ Command "+cmd+": ============");
                 A4Solution ans = TranslateAlloyToKodkod.execute_command(world, cmd, options, null, null);

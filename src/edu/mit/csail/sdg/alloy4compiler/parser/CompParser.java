@@ -2192,7 +2192,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
 
 
 
-  public CompModule alloymodule=null;
+  public Module alloymodule=null;
   public String alloyfile="";
 
   @SuppressWarnings("unchecked")
@@ -2370,17 +2370,15 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
     }
   }
 
-  static CompModule alloy_parseStream(Map<String,String> fc, World world, int lineOffset, final String filename, final String prefix)
+  static Module alloy_parseStream(Map<String,String> fc, World world, int lineOffset, final String filename, final String prefix)
   throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
-    	ArrayList<String> pathz = new ArrayList<String>();
-    	pathz.add("");
-        if (world==null) world=new Module(null, Pos.UNKNOWN, pathz);
+        if (world==null) world=new Module(null, Pos.UNKNOWN, "");
         String content=fc.get(filename);
         if (content==null) { content=Util.readAll(filename); fc.put(filename,content); }
         isr=new StringReader(content);
-        CompModule u=new CompModule(world,prefix);
+        Module u = world.lookupOrCreateModule(Pos.UNKNOWN, prefix);
         CompFilter s=new CompFilter(world,filename,lineOffset,new BufferedReader(isr));
         CompParser p=new CompParser(s);
         p.alloymodule=u;
@@ -4238,7 +4236,7 @@ class CUP$CompParser$actions {
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
-   CompModule.SigAST s;
+   Module.SigAST s;
    for(ExpName bbb:b) {
      String bb=bbb.name;
      if (c==null)
@@ -4989,7 +4987,7 @@ class CUP$CompParser$actions {
           case 4: // Module ::=
             {
               Object RESULT =null;
-         parser.alloymodule.makeModule(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>());
+         parser.alloymodule.addModelLine(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>());
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Module",28, RESULT);
             }
           return CUP$CompParser$result;
@@ -5001,7 +4999,7 @@ class CUP$CompParser$actions {
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         List<ExpName> b = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
-         parser.alloymodule.makeModule(o                            , n.name , b                       );
+         parser.alloymodule.addModelLine(o                            , n.name , b                       );
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Module",28, RESULT);
             }
           return CUP$CompParser$result;
@@ -5012,7 +5010,7 @@ class CUP$CompParser$actions {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.makeModule(o                            , n.name , new ArrayList<ExpName>());
+         parser.alloymodule.addModelLine(o                            , n.name , new ArrayList<ExpName>());
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Module",28, RESULT);
             }
           return CUP$CompParser$result;

@@ -202,9 +202,9 @@ public abstract class Sig extends Expr {
          */
         public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws Err {
             super(pos, (parent!=null && parent.hint_isLeaf) ? parent.type : null, label, isAbstract, lone, one, some);
-            if (parent==NONE) throw new ErrorType(pos,"sig \""+this+"\" cannot extend the builtin sig \"none\"");
-            if (parent==SIGINT) throw new ErrorType(pos,"sig \""+this+"\" cannot extend the builtin sig \"Int\"");
-            if (parent==SEQIDX) throw new ErrorType(pos,"sig \""+this+"\" cannot extend the builtin sig \"seq/Int\"");
+            if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
+            if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
+            if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"none\" signature");
             if (parent==null) parent=UNIV; else if (parent!=UNIV) parent.children.add(this);
             this.parent = parent;
             this.hint_isLeaf = isLeaf || (parent.hint_isLeaf);
@@ -267,7 +267,10 @@ public abstract class Sig extends Expr {
             Type ans=null;
             if (parents!=null) {
                 for(Sig parent: parents) {
-                    if (parent==NONE) throw new ErrorType(pos, "Sig \""+label+"\" cannot be declared to have builtin sig \"none\" as its parent.");
+                    if (parent==UNIV)   throw new ErrorSyntax(pos, "sig "+label+" is already implicitly a subset of the builtin \"univ\" signature");
+                    if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"Int\" signature");
+                    if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"seq/Int\" signature");
+                    if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"none\" signature");
                     if (ans==null) ans=parent.type; else ans=ans.unionWithCommonArity(parent.type);
                 }
             }

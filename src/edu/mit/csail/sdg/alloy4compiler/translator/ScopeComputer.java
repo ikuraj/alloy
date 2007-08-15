@@ -34,7 +34,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
-import edu.mit.csail.sdg.alloy4compiler.parser.World;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
@@ -196,11 +195,10 @@ final class ScopeComputer {
     //==============================================================================================================//
 
     /** Compute the scopes of "world", based on the settings in the "cmd", then log messages into "options.logger". */
-    ScopeComputer(World world, Command cmd) throws Err {
+    ScopeComputer(Module root, Command cmd) throws Err {
         this.rep=A4Reporter.getReporter();
         this.cmd=cmd;
-        final Module root=world.getRootModule();
-        final ConstList<Sig> sigs=world.all();
+        final ConstList<Sig> sigs = root.all();
         // Resolve each name listed in the command
         for(Map.Entry<String,Integer> entry:cmd.scope.entrySet()) {
             String name=entry.getKey();
