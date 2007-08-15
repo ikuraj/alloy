@@ -163,12 +163,12 @@ public final class CompUtil {
         // * Sig.{type,sup,sups,subs}
         // * Field.halftype, Field.Full.fulltype, Expr*.type, and ExprName.resolved
         // Also, there will not be any ExprCall. Only ExprJoin.
-        for(Map.Entry<String, Open> opens:u.opencmds.entrySet()) {
+        for(Map.Entry<Open,Module> e:u.imports.entrySet()) {
             // Here, we recursively open the included files (to fill out the "Module.opens" field)
-            Open y=opens.getValue();
-            Module uu=parseRecursively(fc, rootdir, y.pos, y.filename, u, name, prefix.length()==0 ? y.alias : prefix+"/"+y.alias, modules, thispath);
-            if (y.args.size() != uu.params.size()) throw new ErrorSyntax(y.pos, "You supplied "+y.args.size()+" arguments to the import statement, but the imported module requires "+uu.params.size()+" arguments.");
-            u.opens.put(y.alias, uu);
+            Open x=e.getKey();
+            Module y=parseRecursively(fc, rootdir, x.pos, x.filename, u, name, prefix.length()==0 ? x.alias : prefix+"/"+x.alias, modules, thispath);
+            if (x.args.size() != y.params.size()) throw new ErrorSyntax(x.pos, "You supplied "+x.args.size()+" arguments to the import statement, but the imported module requires "+y.params.size()+" arguments.");
+            e.setValue(y);
         }
         thispath.remove(thispath.size()-1); // Remove this file from the CYCLE DETECTION LIST.
         return u;
@@ -180,18 +180,18 @@ public final class CompUtil {
     private static boolean alloy_fillParams(Module root) throws Err {
         boolean chg=false;
         Open missing=null;
-        for(Module u:root.modules) for(Map.Entry<String, Open> f:u.opencmds.entrySet()) {
-            Module uu=u.opens.get(f.getKey());
+        for(Module u:root.modules) for(Map.Entry<Open,Module> f:u.imports.entrySet()) {
+            Module uu=f.getValue();
             int j=uu.params.size();
-            if (f.getValue().args.size() != j)
+            if (f.getKey().args.size() != j)
                 throw new ErrorSyntax(u.pos, "To import the \""+uu.pos.filename+"\" module, you must provide exactly "+j+" parameters.");
             int i=0;
             for(Map.Entry<String,SigAST> pp:uu.params.entrySet()) {
                 String kn=pp.getKey();
                 SigAST old=pp.getValue();
-                String vn=f.getValue().args.get(i); i++;
+                String vn=f.getKey().args.get(i); i++;
                 Set<SigAST> v=u._lookup_sigORparam(vn);
-                if (v.size()<1) {if (old==null) missing=f.getValue(); continue;}
+                if (v.size()<1) {if (old==null) missing=f.getKey(); continue;}
                 if (v.size()>1) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because the signature named \""+vn+"\" is ambiguous");
                 SigAST vv=v.iterator().next();
                 if (old==vv) continue;
@@ -199,9 +199,9 @@ public final class CompUtil {
                 //if (vv==vv.world.NONE) throw new ErrorSyntax(u.pos, "Failed to import the \""+uu.pos.filename+"\" module, because you cannot use \"none\" as an instantiating argument.");
                 chg=true;
                 pp.setValue(vv);
-                if (uu.pos!=null && uu.pos.filename!=null && f.getValue().pos!=null && Module.is_alloy3ord(kn, uu.pos.filename))
-                    vv.orderingPosition=f.getValue().pos;
-                A4Reporter.getReporter().parse("RESOLVE: "+f.getKey()+"/"+kn+" := "+vv+"\n");
+                if (uu.pos!=null && uu.pos.filename!=null && f.getKey().pos!=null && Module.is_alloy3ord(kn, uu.pos.filename))
+                    vv.orderingPosition=f.getKey().pos;
+                A4Reporter.getReporter().parse("RESOLVE: "+f.getKey().alias+"/"+kn+" := "+vv+"\n");
             }
         }
         if (chg==false && missing!=null) throw new ErrorSyntax(missing.pos, "Failed to import the module, because one of the instantiating signature cannot be found");
@@ -236,7 +236,7 @@ public final class CompUtil {
                     for(Module c:modules) {
                       for(Map.Entry<String,SigAST> p:c.params.entrySet())
                          if (isin(p.getValue(), b.sigs)) p.setValue(a.sigs.get(p.getValue().name));
-                      for(Map.Entry<String,Module> p:c.opens.entrySet())
+                      for(Map.Entry<Open,Module> p:c.imports.entrySet())
                          if (p.getValue()==b) p.setValue(a);
                     }
                 }

@@ -29,26 +29,33 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import static edu.mit.csail.sdg.alloy4compiler.parser.CompSym.*;
 
-// There are 3 sets of "special tokens" that the lexer will not output.
-// But the Parser expects them.
-// So a special Filter class is written that sits between Lexer and Parser.
-// The Filter class observes the stream of tokens, and intelligently
-// merges or changes some primitive tokens into special tokens.
-// For more details, refer to the main documentation.
-//
-// But, very briefly, here are the 3 groups:
-//
-// (1) The lexer will generate only ALL, NO, LONE, ONE, SUM, SOME.
-// It will not output ALL2, NO2, LONE2, ONE2, SUM2, SOME2.
-// (The Filter class will change some ONE into ONE2, etc)
-//
-// (2) The lexer won't output NOTEQUALS, NOTIN, NOTLT, NOTLTE, NOTGT, NOTGTE.
-// Instead it outputs them as separate tokens (eg. "NOT" "EQUALS").
-// (The Filter class is used to merge them into a single "NOTEQUALS" token)
-//
-// (3) The lexer willn't output the 15 special arrows (eg. ONE_ARROW_ONE)
-// Instead it outputs them as separate tokens (eg. "ONE", "ARROW", "ONE")
-// (The Filter class is used to merge them into a single "ONE_ARROW_ONE" token)
+/**
+ * This class sits between the lexer and the parser.
+ *
+ * <p>
+ * Reason: there are 3 sets of "special tokens" that the lexer will not output.
+ * But the Parser expects them. So this filter class observes the stream of
+ * tokens, and intelligently merges or changes some primitive tokens into special tokens.
+ *
+ * <p>
+ * For more details, refer to the main documentation.
+ * But, very briefly, here are the 3 groups:
+ *
+ * <p>
+ * (1) The lexer will generate only ALL, NO, LONE, ONE, SUM, SOME.
+ * It will not output ALL2, NO2, LONE2, ONE2, SUM2, SOME2.
+ * (The Filter class will change ONE into ONE2 when appropriate)
+ *
+ * <p>
+ * (2) The lexer won't output NOTEQUALS, NOTIN, NOTLT, NOTLTE, NOTGT, NOTGTE.
+ * Instead it outputs them as separate tokens (eg. "NOT" "EQUALS").
+ * (The Filter class is used to merge them into a single "NOTEQUALS" token)
+ *
+ * <p>
+ * (3) The lexer willn't output the 15 special arrows (eg. ONE_ARROW_ONE)
+ * Instead it outputs them as separate tokens (eg. "ONE", "ARROW", "ONE")
+ * (The Filter class is used to merge them into a single "ONE_ARROW_ONE" token)
+ */
 
 final class CompFilter implements Scanner {
 
@@ -168,6 +175,7 @@ final class CompFilter implements Scanner {
 
     //===================== PHASE 2 ==================================================================================
 
+    /** This class represents a list of Symbol objects. */
     private static final class PList {
         private final Symbol object;
         private PList prev,next;

@@ -25,13 +25,12 @@
 // paths
 //
 // sigs
-// open opencmds
+// imports
 // params
-//
+// _funs    ---VS---   funs+fun_2_formula
 // commands
 // facts
 // asserts
-// _funs    ---VS---   funs+fun_2_formula
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
@@ -77,6 +76,13 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 /** Mutable; this class represents an Alloy module; equals() uses object identity. */
 
 public final class Module {
+
+    /** Mutable; this class represents a mutable pair of objects. */
+    private static final class MPair<A,B> {
+        A a = null;
+        B b = null;
+        MPair(A a, B b) { this.a=a; this.b=b; }
+    }
 
     /** Mutable; this class represents an untypechecked Alloy function; equals() uses object identity. */
     private static final class FunAST {
@@ -277,18 +283,19 @@ public final class Module {
 
     //=============================================================================================================//
 
-    final Map<String,Module> opens=new LinkedHashMap<String,Module>();
-
-    final Map<String,Open> opencmds=new LinkedHashMap<String,Open>();
+    final Map<Open,Module> imports=new LinkedHashMap<Open,Module>();
 
     void addOpen(Pos pos, String name, List<ExpName> args, String alias) throws Err {
         Open x=new Open(pos, alias, args, name);
-        Open y=opencmds.get(x.alias);
-        // Special case, especially needed for auto-import of "util/sequniv"
-        if (y!=null && x.alias.equals(y.alias) && x.args.equals(y.args) && x.filename.equals(y.filename)) return;
-        if (opencmds.containsKey(x.alias))
-            throw new ErrorSyntax(pos, "You cannot import more than 1 module using the same alias.");
-        opencmds.put(x.alias, x);
+        for(Map.Entry<Open,Module> e:imports.entrySet()) {
+            Open y=e.getKey();
+            if (x.alias.equals(y.alias)) {
+                // Special case, especially needed for auto-import of "util/sequniv"
+                if (x.args.equals(y.args) && x.filename.equals(y.filename)) return;
+                throw new ErrorSyntax(pos, "You cannot import more than 1 module using the same alias.");
+            }
+        }
+        imports.put(x,null);
     }
 
     //=============================================================================================================//
@@ -382,27 +389,28 @@ public final class Module {
 
     //=============================================================================================================//
 
-    /** Caches an unmodifiable empty list of functions. */
-    private static final SafeList<Func> empty_list_of_func = (new SafeList<Func>(0)).dup();
+    private final Map<String,List<MPair<FunAST,Func>>> funs = new LinkedHashMap<String,List<MPair<FunAST,Func>>>();
 
-    private final List<FunAST> _funs = new ArrayList<FunAST>();
-    private final Map<String,SafeList<Func>> funs = new LinkedHashMap<String,SafeList<Func>>();
-    private static final Map<Func,Expr> fun_2_formula = new LinkedHashMap<Func,Expr>(); // TODO: static since Command lookup may cross Module boundaries
+    private static final Map<Func,Expr> fun_2_formula = new LinkedHashMap<Func,Expr>(); // TODO
 
     void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
         d=new ArrayList<Decl>(d);
         if (f!=null) d.add(0, new Decl(null, Util.asList(new ExpName(f.span(), "this")), f));
-        _funs.add(new FunAST(p, n, d, t, v));
+        FunAST ans = new FunAST(p, n, d, t, v);
+        List<MPair<FunAST,Func>> list = funs.get(n);
+        if (list==null) { list = new ArrayList<MPair<FunAST,Func>>(); funs.put(n, list); }
+        list.add(new MPair<FunAST,Func>(ans,null));
     }
 
     JoinableList<Err> checkFunctionDecls(JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
-        for(FunAST f: _funs) {
+        for(List<MPair<FunAST,Func>> entry:funs.values()) for(MPair<FunAST,Func> pair:entry) {
             /*
             if (this.params.containsKey(name)) throw new ErrorSyntax(pos,
                 "Within the same file, a function/predicate cannot have the same name as a polymorphic type.");
             if (this.sigs.containsKey(name)) throw new ErrorSyntax(pos,
                 "Within the same file, a function/predicate cannot have the same name as another signature.");
             */
+            FunAST f = pair.a;
             String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.name;
             Context cx = new Context(this);
             cx.rootfun=true;
@@ -428,19 +436,17 @@ public final class Module {
                 ret = f.returnType.check(cx, warns).resolve_as_set(warns);
                 errors = errors.join(ret.errors);
             }
-            f.realFunc = new Func(f.pos, fullname, tmpvars.makeConst(), ret);
-            SafeList<Func> list=funs.get(f.name);
-            if (list==null) { list=new SafeList<Func>(); funs.put(f.name, list); }
-            list.add(f.realFunc);
-            A4Reporter.getReporter().typecheck(""+f.realFunc+", RETURN: "+f.realFunc.returnDecl.type+"\n");
+            pair.b = (f.realFunc = new Func(f.pos, fullname, tmpvars.makeConst(), ret));
+            A4Reporter.getReporter().typecheck(""+pair.b+", RETURN: "+pair.b.returnDecl.type+"\n");
         }
         return errors;
     }
 
     JoinableList<Err> checkFunctionBodies(JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
         A4Reporter rep = A4Reporter.getReporter();
-        for(FunAST f: _funs) {
-            Func ff = f.realFunc;
+        for(List<MPair<FunAST,Func>> entry:funs.values()) for(MPair<FunAST,Func> pair:entry) {
+            FunAST f = pair.a;
+            Func ff = pair.b;
             Expr disj = ExprConstant.TRUE;
             Context cx=new Context(this);
             Iterator<ExprVar> vv=ff.params.iterator();
@@ -472,20 +478,24 @@ public final class Module {
     }
 
     public Exp getFirstFunc() {
-        if (_funs.size()==0) return null; else return _funs.get(0).body;
+        if (funs.size()==0) return null; else return funs.entrySet().iterator().next().getValue().get(0).a.body;
     }
 
     /** Typecheck if necessary, then return an unmodifiable list of all predicates/functions with that name. */
     public SafeList<Func> getFunc(String name) {
-        SafeList<Func> answer = funs.get(name);
-        return answer==null ? empty_list_of_func : answer.dup();
+        List<MPair<FunAST,Func>> list = funs.get(name);
+        SafeList<Func> ans = new SafeList<Func>(list==null ? 0 : list.size());
+        if (list!=null) for(MPair<FunAST,Func> entry: list) ans.add(entry.b);
+        return ans.dup();
     }
 
     /** Typecheck if necessary, then return an unmodifiable list of all parameter-less predicates/functions. */
     public SafeList<Func> getAllFunc0() {
         SafeList<Func> ans = new SafeList<Func>();
-        for(Map.Entry<String,SafeList<Func>> e:funs.entrySet()) {
-            for(Func f:e.getValue()) if (f.params.size()==0) ans.add(f);
+        for(List<MPair<FunAST,Func>> list: funs.values()) {
+            for(MPair<FunAST,Func> func: list) {
+                if (func.b.params.size()==0) ans.add(func.b);
+            }
         }
         return ans.dup();
     }
@@ -589,13 +599,13 @@ public final class Module {
 
     //=============================================================================================================//
 
-    final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
+    final List<MPair<String,Command>> commands = new ArrayList<MPair<String,Command>>();
 
     void addCommand(Pos p,String n,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label) throws Err {
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         if (label==null || label.length()==0) label=n;
-        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
+        commands.add(new MPair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
     }
 
     void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label) throws Err {
@@ -604,7 +614,7 @@ public final class Module {
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         if (label==null || label.length()==0) label=n;
-        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
+        commands.add(new MPair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
     }
 
     private Set<Expr> lookupAssertion(String name) {
@@ -638,9 +648,9 @@ public final class Module {
     }
 
     JoinableList<Err> checkCommands(JoinableList<Err> errors, List<ErrorWarning> warnings) throws Err {
-        for(int i=0; i<commands.size(); i++) {
-            String cname = commands.get(i).a;
-            Command cmd = commands.get(i).b;
+        for(MPair<String,Command> et:commands) {
+            String cname = et.a;
+            Command cmd = et.b;
             Expr e=null;
             if (cmd.check) {
                 e=getAssertion(cname);
@@ -657,15 +667,14 @@ public final class Module {
                 if (ee.size()>1) throw new ErrorSyntax(cmd.pos, "There are more than 1 predicate/function with the name \""+cname+"\".");
                 e=fun_2_formula.get(ee.get(0));
             }
-            cmd = cmd.changeFormula(e);
-            commands.set(i, new Pair<String,Command>(cname,cmd));
+            et.b = cmd.changeFormula(e);
         }
         return errors;
     }
 
     public ConstList<Command> getAllCommands() {
         TempList<Command> ans = new TempList<Command>(commands.size());
-        for(Pair<String,Command> e:commands) ans.add(e.b);
+        for(MPair<String,Command> e:commands) ans.add(e.b);
         return ans.makeConst();
     }
 
@@ -674,7 +683,7 @@ public final class Module {
     private void _lookupNQsig_noparam (String name, Set<SigAST> ans) { // It ignores "params"
         SigAST x=sigs.get(name);
         if (x!=null) ans.add(x);
-        for(Map.Entry<String,Module> i:opens.entrySet()) i.getValue()._lookupNQsig_noparam(name,ans);
+        for(Map.Entry<Open,Module> i:imports.entrySet()) i.getValue()._lookupNQsig_noparam(name,ans);
     }
 
     private SigAST _lookupQsig_noparam (String name) { // It ignores "params"
@@ -683,8 +692,11 @@ public final class Module {
         while(true) {
             int i=name.indexOf('/');
             if (i<0) return u.sigs.get(name);
-            u=u.opens.get(name.substring(0,i));
-            if (u==null) return null;
+            Module uu=null;
+            String alias=name.substring(0,i);
+            for(Map.Entry<Open,Module> e:u.imports.entrySet()) if (e.getKey().alias.equals(alias)) {uu=e.getValue(); break;}
+            if (uu==null) return null;
+            u=uu;
             name=name.substring(i+1,name.length());
         }
     }
@@ -720,27 +732,27 @@ public final class Module {
      * @return an empty set if there is no match
      */
     public Set<Object> lookupSigOrParameterOrFunctionOrPredicate (String name, boolean look_for_function_and_predicate) {
-        SafeList<Func> f;
+        SigAST s;
         Set<Object> ans=new LinkedHashSet<Object>();
         if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
         if (name.indexOf('/')<0) {
             for(String p:paths) {
                 for(Module u:world.lookupModuleAndSubmodules(p)) {
-                    {SigAST ss=u.sigs.get(name); if (ss!=null) ans.add(ss.realSig);}
-                    if (look_for_function_and_predicate) if ((f=u.funs.get(name))!=null) ans.addAll(f);
+                    s=u.sigs.get(name); if (s!=null) ans.add(s.realSig);
+                    if (look_for_function_and_predicate) ans.addAll(u.getFunc(name));
                 }
             }
-            SigAST ss=params.get(name); if (ss!=null) ans.add(ss.realSig);
+            s=params.get(name); if (s!=null) ans.add(s.realSig);
             return ans;
         }
         if (name.startsWith("this/")) name=name.substring(5);
-        {SigAST ss=params.get(name); if (ss!=null) ans.add(ss.realSig);}
+        s=params.get(name); if (s!=null) ans.add(s.realSig);
         int i=name.lastIndexOf('/');
         Module u=(i<0) ? this : world.path2module.get((path.length()==0?"":path+"/")+name.substring(0,i));
         if (u!=null) {
             if (i>=0) name=name.substring(i+1);
-            {SigAST ss=u.sigs.get(name); if (ss!=null) ans.add(ss.realSig);}
-            if (look_for_function_and_predicate) if ((f=u.funs.get(name))!=null) ans.addAll(f);
+            s=u.sigs.get(name); if (s!=null) ans.add(s.realSig);
+            if (look_for_function_and_predicate) ans.addAll(u.getFunc(name));
         }
         return ans;
     }
