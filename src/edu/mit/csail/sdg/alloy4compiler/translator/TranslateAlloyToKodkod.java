@@ -192,8 +192,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         int sym=1;
         int skolemDepth=opt.skolemDepth;
         if (cmd.expects==1) sym=0;
-        if (cmd.options.contains("nosym")) sym=0;
-        if (cmd.options.contains("sym")) sym=1;
         sym = sym * opt.symmetry;
         if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
             sym=20;

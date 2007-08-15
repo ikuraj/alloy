@@ -20,9 +20,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import java.util.List;
 import java.util.Map;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
@@ -33,12 +31,12 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 /**
  * Immutable; reresents a "run" or "check" command.
  *
- * <p> <b>Invariant:</b>  the predicate/assertion name is not "", nor does it contain '@'
- * <p> <b>Invariant:</b>  none of the signature name is "" or contains '@'
+ * <p> <b>Invariant:</b>  formula is fully typechecked and unambiguous
  * <p> <b>Invariant:</b>  expects == -1, 0, or 1
  * <p> <b>Invariant:</b>  overall >= -1
  * <p> <b>Invariant:</b>  bitwidth >= -1
  * <p> <b>Invariant:</b>  maxseq >= -1
+ * <p> <b>Invariant:</b>  none of the signature name is "" or contains '@'
  */
 
 public final class Command {
@@ -46,7 +44,7 @@ public final class Command {
     /** The position in the original file where this command was declared; never null. */
     public final Pos pos;
 
-    /** The formula associated with this command; always fully-typechecked. */
+    /** The formula associated with this command; always fully-typechecked and unambiguous. */
     public final Expr formula;
 
     /** The label for the command; it is just for pretty-printing and does not have to be unique. */
@@ -74,25 +72,23 @@ public final class Command {
      */
     public final ConstMap<String,Integer> scope;
 
-    /** The unmodifiable list of options given for the command; can be an empty list. */
-    public final ConstList<String> options;
-
     /** Returns a human-readable string that summarizes this Run or Check command. */
     @Override public final String toString() {
-        StringBuilder sb=new StringBuilder(check?"Check ":"Run ").append(label);
-        if (overall>=0 && (bitwidth>=0 || scope.size()>0)) sb.append(" for ").append(overall).append(" but");
-           else if (overall>=0) sb.append(" for ").append(overall);
-           else if (bitwidth>=0 || scope.size()>0) sb.append(" for");
         boolean first=true;
-        if (bitwidth>=0) {
-            sb.append(" ").append(bitwidth).append(" int");
-            first=false;
-        }
+        StringBuilder sb=new StringBuilder(check?"Check ":"Run ").append(label);
+        if (overall>=0 && (bitwidth>=0 || maxseq>=0 || scope.size()>0))
+            sb.append(" for ").append(overall).append(" but");
+        else if (overall>=0)
+            sb.append(" for ").append(overall);
+        else if (bitwidth>=0 || maxseq>=0 || scope.size()>0)
+            sb.append(" for");
+        if (bitwidth>=0) { sb.append(" ").append(bitwidth).append(" int"); first=false; }
+        if (maxseq>=0) { sb.append(first?" ":", ").append(maxseq).append(" seq"); first=false; }
         for(Map.Entry<String,Integer> e:scope.entrySet()) {
             sb.append(first?" ":", ");
             int num=e.getValue();
             if (num<0) { sb.append("exactly "); num=0-(num+1); }
-            sb.append(num).append(" ").append(e.getKey());
+            sb.append(num).append(' ').append(e.getKey());
             first=false;
         }
         if (expects>=0) sb.append(" expects ").append(expects);
@@ -104,23 +100,26 @@ public final class Command {
      *
      * @param pos - the original position in the file (must not be null)
      * @param label - the label for this command (it is only for pretty-printing and does not have to be unique)
+     * @param formula - the formula associated with this command (it must be fully typechecked and unambiguous)
      * @param check - true if this is a "check"; false if this is a "run"
      * @param overall - the overall scope (0 or higher) (-1 if no overall scope was specified)
      * @param bitwidth - the integer bitwidth (0 or higher) (-1 if it was not specified)
      * @param maxseq - the maximum sequence length (0 or higher) (-1 if it was not specified)
      * @param expects - the expected value (0 or 1) (-1 if no expectation was specified)
      * @param scope - String-to-Integer map (see the "scope" field of the Command class for its meaning)
-     * @param options - a list of String, specifying command-specific options
      *
-     * @throws ErrorSyntax if the predicate/assertion name is "", or contains '@'
-     * @throws ErrorSyntax if one of the signature name    is "", or contains '@'
+     * @throws Err if the formula is not already fully-typechecked to be a formula, or is unambiguous
+     * @throws Err if at least one of the signature name is "", or contains '@'
      */
-    public Command(Pos pos, String label, Expr formula, boolean check, int overall, int bitwidth, int maxseq, int expects,
-    Map<String,Integer> scope, List<String> options) throws Err {
+    public Command(Pos pos, String label, Expr formula, boolean check, int overall, int bitwidth,
+    int maxseq, int expects, Map<String,Integer> scope)
+    throws Err {
         if (pos==null) pos = Pos.UNKNOWN;
-        this.formula = formula;
-        if (formula==null || formula.type==null || !formula.type.is_bool) throw new ErrorType(pos, "The associated expression must be a typechecked formula");
+        formula = formula.typecheck_as_formula();
+        if (!formula.errors.isEmpty()) throw formula.errors.get(0);
+        if (formula.ambiguous) throw new ErrorType(formula.span(), "This expression is ambiguous.");
         this.pos = pos;
+        this.formula = formula;
         this.label = (label==null ? "" : label);
         this.check = check;
         this.overall = (overall<0 ? -1 : overall);
@@ -132,10 +131,9 @@ public final class Command {
             if (e.getKey().length()==0) throw new ErrorSyntax(pos, "Signature name cannot be empty.");
             if (e.getKey().indexOf('@')>=0) throw new ErrorSyntax(pos, "Signature name cannot contain \'@\'");
         }
-        this.options = ConstList.make(options);
     }
 
-    public Command make(Expr newFormula) throws Err {
-        return new Command(pos, label, newFormula, check, overall, bitwidth, maxseq, expects, scope, options);
+    Command changeFormula(Expr newFormula) throws Err {
+        return new Command(pos, label, newFormula, check, overall, bitwidth, maxseq, expects, scope);
     }
 }

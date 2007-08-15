@@ -472,7 +472,7 @@ CmdLabel ::= DOT ID:i  {: RESULT=i.name; :};
 CmdOpt ::=                               {: RESULT=new ArrayList<ExpName>(); :};
 CmdOpt ::= LBRACKET SigRefp:o RBRACKET   {: RESULT=o;                        :};
 
-Paragraphs ::= Paragraphs CHECK:o CmdLabel:x CmdOpt:y Super:e  Scope:s  {:
+Paragraphs ::= Paragraphs CHECK:o CmdLabel:x CmdOpt Super:e  Scope:s  {: // Current, CmdOpt are unused
   int bitwidth = -1 , maxseq = -1;
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
@@ -487,10 +487,10 @@ Paragraphs ::= Paragraphs CHECK:o CmdLabel:x CmdOpt:y Super:e  Scope:s  {:
   }
   if (scope.containsKey("int")) bitwidth=scope.remove("int");
   if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, e, true, overall, bitwidth, maxseq, expects, scope, x, y);
+  parser.alloymodule.addCommand(o, e, true, overall, bitwidth, maxseq, expects, scope, x);
 :};
 
-Paragraphs ::= Paragraphs CHECK:o CmdLabel:x CmdOpt:y Name:n  Scope:s  {:
+Paragraphs ::= Paragraphs CHECK:o CmdLabel:x CmdOpt Name:n  Scope:s  {: // Current, CmdOpt are unused
   int bitwidth = -1 , maxseq = -1;
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
@@ -505,10 +505,10 @@ Paragraphs ::= Paragraphs CHECK:o CmdLabel:x CmdOpt:y Name:n  Scope:s  {:
   }
   if (scope.containsKey("int")) bitwidth=scope.remove("int");
   if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, n.name, true, overall, bitwidth, maxseq, expects, scope, x, y);
+  parser.alloymodule.addCommand(o, n.name, true, overall, bitwidth, maxseq, expects, scope, x);
 :};
 
-Paragraphs ::= Paragraphs RUN:o CmdLabel:x CmdOpt:y Name:n  Scope:s  {:
+Paragraphs ::= Paragraphs RUN:o CmdLabel:x CmdOpt Name:n  Scope:s  {: // Current, CmdOpt are unused
   int bitwidth = -1 , maxseq = -1;
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
@@ -523,10 +523,10 @@ Paragraphs ::= Paragraphs RUN:o CmdLabel:x CmdOpt:y Name:n  Scope:s  {:
   }
   if (scope.containsKey("int")) bitwidth=scope.remove("int");
   if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, n.name, false, overall, bitwidth, maxseq, expects, scope, x, y);
+  parser.alloymodule.addCommand(o, n.name, false, overall, bitwidth, maxseq, expects, scope, x);
 :};
 
-Paragraphs ::= Paragraphs RUN:o CmdLabel:x CmdOpt:y Super:e  Scope:s  {:
+Paragraphs ::= Paragraphs RUN:o CmdLabel:x CmdOpt Super:e  Scope:s  {: // Current, CmdOpt are unused
   int bitwidth = -1 , maxseq = -1;
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
@@ -541,7 +541,7 @@ Paragraphs ::= Paragraphs RUN:o CmdLabel:x CmdOpt:y Super:e  Scope:s  {:
   }
   if (scope.containsKey("int")) bitwidth=scope.remove("int");
   if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, e, false, overall, bitwidth, maxseq, expects, scope, x, y);
+  parser.alloymodule.addCommand(o, e, false, overall, bitwidth, maxseq, expects, scope, x);
 :};
 
 Expects    ::=                 {: RESULT="";                      :};

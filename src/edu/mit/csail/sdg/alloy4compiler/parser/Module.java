@@ -74,10 +74,11 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
-/** Mutable; this class represents one Alloy module; equals() uses object identity. */
+/** Mutable; this class represents an Alloy module; equals() uses object identity. */
 
 public final class Module {
 
+    /** Mutable; this class represents an untypechecked Alloy function; equals() uses object identity. */
     private static final class FunAST {
         Func realFunc=null; // This value is set to its corresponding Func during typechecking
         final Pos pos;
@@ -91,10 +92,11 @@ public final class Module {
         @Override public String toString() { return name; }
     }
 
+    /** Mutable; this class represents an untypechecked Alloy signature; equals() uses object identity. */
     static final class SigAST {
-        boolean topo=false; // This flag is set to "true" during topological sort
+        boolean topo=false;     // This flag is set to "true" during topological sort
         Module realModule=null; // This value is set to its Module during topological sort
-        Sig realSig=null; // This value is set to its corresponding Sig during topological sort
+        Sig realSig=null;       // This value is set to its corresponding Sig during topological sort
         boolean hint_isLeaf=false;
         final Pos pos;
         final String name,fullname;
@@ -589,24 +591,20 @@ public final class Module {
 
     final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
 
-    void addCommand(Pos p,String n,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
+    void addCommand(Pos p,String n,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label) throws Err {
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
-        List<String> options=new ArrayList<String>(opts.size());
-        for(ExpName opt:opts) options.add(opt.name);
         if (label==null || label.length()==0) label=n;
-        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
+        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
     }
 
-    void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label, List<ExpName> opts) throws Err {
+    void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label) throws Err {
         String n;
         if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run#"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
-        List<String> options=new ArrayList<String>(opts.size());
-        for(ExpName opt:opts) options.add(opt.name);
         if (label==null || label.length()==0) label=n;
-        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s, options)));
+        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
     }
 
     private Set<Expr> lookupAssertion(String name) {
@@ -659,7 +657,7 @@ public final class Module {
                 if (ee.size()>1) throw new ErrorSyntax(cmd.pos, "There are more than 1 predicate/function with the name \""+cname+"\".");
                 e=fun_2_formula.get(ee.get(0));
             }
-            cmd = cmd.make(e);
+            cmd = cmd.changeFormula(e);
             commands.set(i, new Pair<String,Command>(cname,cmd));
         }
         return errors;

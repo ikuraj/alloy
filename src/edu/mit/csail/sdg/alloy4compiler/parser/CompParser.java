@@ -4682,10 +4682,9 @@ class CUP$CompParser$actions {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         String x = (String)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
-        List<ExpName> y = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         List<String> s = (List<String>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-
+         // Current, CmdOpt are unused
   int bitwidth = -1 , maxseq = -1;
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
@@ -4700,7 +4699,7 @@ class CUP$CompParser$actions {
   }
   if (scope.containsKey("int")) bitwidth=scope.remove("int");
   if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, e, false, overall, bitwidth, maxseq, expects, scope, x, y);
+  parser.alloymodule.addCommand(o, e, false, overall, bitwidth, maxseq, expects, scope, x);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",38, RESULT);
             }
@@ -4712,10 +4711,9 @@ class CUP$CompParser$actions {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         String x = (String)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
-        List<ExpName> y = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         List<String> s = (List<String>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-
+         // Current, CmdOpt are unused
   int bitwidth = -1 , maxseq = -1;
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
@@ -4730,7 +4728,7 @@ class CUP$CompParser$actions {
   }
   if (scope.containsKey("int")) bitwidth=scope.remove("int");
   if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, n.name, false, overall, bitwidth, maxseq, expects, scope, x, y);
+  parser.alloymodule.addCommand(o, n.name, false, overall, bitwidth, maxseq, expects, scope, x);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",38, RESULT);
             }
@@ -4742,10 +4740,9 @@ class CUP$CompParser$actions {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         String x = (String)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
-        List<ExpName> y = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         List<String> s = (List<String>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-
+         // Current, CmdOpt are unused
   int bitwidth = -1 , maxseq = -1;
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
@@ -4760,7 +4757,7 @@ class CUP$CompParser$actions {
   }
   if (scope.containsKey("int")) bitwidth=scope.remove("int");
   if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, n.name, true, overall, bitwidth, maxseq, expects, scope, x, y);
+  parser.alloymodule.addCommand(o, n.name, true, overall, bitwidth, maxseq, expects, scope, x);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",38, RESULT);
             }
@@ -4772,10 +4769,9 @@ class CUP$CompParser$actions {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         String x = (String)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
-        List<ExpName> y = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         List<String> s = (List<String>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-
+         // Current, CmdOpt are unused
   int bitwidth = -1 , maxseq = -1;
   int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
   int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
@@ -4790,7 +4786,7 @@ class CUP$CompParser$actions {
   }
   if (scope.containsKey("int")) bitwidth=scope.remove("int");
   if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, e, true, overall, bitwidth, maxseq, expects, scope, x, y);
+  parser.alloymodule.addCommand(o, e, true, overall, bitwidth, maxseq, expects, scope, x);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Paragraphs",38, RESULT);
             }

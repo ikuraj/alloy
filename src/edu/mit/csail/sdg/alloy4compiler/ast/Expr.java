@@ -172,8 +172,8 @@ public abstract class Expr {
      */
     public final long weight;
 
-    /** True if this expression is ExprChoice, or this expression contains an ExprChoice subexpression. */
-    final boolean ambiguous;
+    /** True if this expression is not fully resolved. */
+    public final boolean ambiguous;
 
     /** This is an unmodifiable empty list of Err objects. */
     static final JoinableList<Err> emptyListOfErrors = new JoinableList<Err>();

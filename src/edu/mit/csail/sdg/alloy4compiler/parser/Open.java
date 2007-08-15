@@ -31,7 +31,7 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
  * Immutable; reresents an "open" declaration.
  *
  * <p> <b>Invariant:</b>  filename!=null and filename is not ""
- * <p> <b>Invariant:</b>  alias!=null    and alias    is not "" (and does not contain '/' nor '@')
+ * <p> <b>Invariant:</b>  alias!=null    and alias    is not "" and does not contain '/' nor '@'
  * <p> <b>Invariant:</b>  list!=null     and (all x:list | x!=null && x is not "" && x does not contain '@')
  */
 
@@ -64,7 +64,7 @@ final class Open {
      * @param filename - the relative filename of the file being imported (without final ".als" part)
      *
      * @throws ErrorSyntax if filename is ""
-     * @throws ErrorSyntax if alias contains '@' or '/'
+     * @throws ErrorSyntax if alias contains '/' or '@'
      * @throws ErrorSyntax if alias is "" and args.size()!=0
      * @throws ErrorSyntax if alias is "" and filename does not match the regular expression [A-Za-z][A-Za-z0-9_'"]*
      * @throws ErrorSyntax if at least one argument is "" or contains '@'
