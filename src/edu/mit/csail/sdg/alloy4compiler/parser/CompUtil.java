@@ -26,9 +26,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -170,12 +171,12 @@ public final class CompUtil {
      * @throws Err if any error occurred
      * @return an array of 0 or more Command if no error occurred
      */
-    public static List<Command> parseOneModule_fromString(String content) throws Err {
+    public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
         try {
             Map<String,String> fc=new LinkedHashMap<String,String>();
             fc.put("",content);
             Module u=CompParser.alloy_parseStream(fc, null, 0, "", "");
-            return u.getAllCommands();
+            return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
         } catch(Throwable ex) {
@@ -190,11 +191,11 @@ public final class CompUtil {
      * @throws Err if any error occurred
      * @return an array of 0 or more Command if no error occurred
      */
-    public static List<Command> parseOneModule_fromFile(String filename) throws Err {
+    public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
         try {
             Map<String,String> fc=new LinkedHashMap<String,String>();
             Module u=CompParser.alloy_parseStream(fc, null, 0, filename, "");
-            return u.getAllCommands();
+            return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
         } catch(Throwable ex) {

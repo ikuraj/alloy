@@ -25,7 +25,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.SafeList;
@@ -198,7 +197,7 @@ final class ScopeComputer {
     ScopeComputer(Module root, Command cmd) throws Err {
         this.rep=A4Reporter.getReporter();
         this.cmd=cmd;
-        final ConstList<Sig> sigs = root.all();
+        final SafeList<Sig> sigs = root.getAllSigsInTheWorld();
         // Resolve each name listed in the command
         for(Map.Entry<String,Integer> entry:cmd.scope.entrySet()) {
             String name=entry.getKey();

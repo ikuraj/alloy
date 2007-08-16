@@ -26,6 +26,7 @@ import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
@@ -102,7 +103,7 @@ public final class SimpleCLI {
                 if (db) db("Parsing+Typechecking...");
                 Module world = CompUtil.parseEverything_fromFile(null, null, filename);
                 if (db) db(" ok\n");
-                List<Command> cmds=world.getAllCommands();
+                SafeList<Command> cmds=world.getAllCommands();
                 for(ErrorWarning msg: rep.warnings) rep.sb.append("Relevance Warning:\n" + (msg.toString().trim()) + "\n\n");
                 rep.warnings.clear();
                 A4Options options = new A4Options();

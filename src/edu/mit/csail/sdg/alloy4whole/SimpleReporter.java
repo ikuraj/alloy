@@ -46,6 +46,7 @@ import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
@@ -196,7 +197,7 @@ final class SimpleReporter extends A4Reporter {
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
         final Module world = CompUtil.parseEverything_fromFile(bundleCache, Helper.alloyHome(), rep.mainAlloyFileName);
-        final List<Command> cmds = world.getAllCommands();
+        final SafeList<Command> cmds = world.getAllCommands();
         if (rep.warnings.size()>0) {
             if (rep.warnings.size()>1)
                 rep.logBold("Note: There were "+rep.warnings.size()+" compilation warnings. Please scroll up to see them.\n\n");

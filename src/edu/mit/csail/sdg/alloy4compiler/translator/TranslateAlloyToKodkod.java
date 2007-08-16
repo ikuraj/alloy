@@ -34,6 +34,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
@@ -148,7 +149,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     (final Map<Decl,Pair<Type,Pos>> skolemType, final Module world, Command cmd, final A4Options opt,
     Map<String,String> originalSources, String xmlFileName, String tempFileName, boolean tryBookExamples)
     throws Err {
-        ConstList<Sig> sigs = world.all();
+        SafeList<Sig> sigs = world.getAllSigsInTheWorld();
         final Map<Formula,List<Object>> core=new LinkedHashMap<Formula,List<Object>>();
         final A4Reporter rep=A4Reporter.getReporter();
         rep.debug("Generating bounds...");

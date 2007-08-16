@@ -69,36 +69,36 @@ public final class Module {
     //============================================================================================================================//
 
     /** Mutable; this class represents an untypechecked Alloy module import statement; equals() uses object identity. */
-	static final class Open {
-	    /** The position in the original model where this "open" statement was declared; never null. */
-	    public final Pos pos;
-	    /** The alias for this open declaration; always a nonempty string. */
-	    public final String alias;
-	    /** The unmodifiable list of instantiating arguments. */
-	    public final ConstList<String> args;
-	    /** The relative filename for the file being imported, without the final ".als" part; always a nonempty string. */
-	    public final String filename;
-	    /** The actual Module object that it points to; null until we resolve it. */
-	    Module realModule=null;
-	    /** Constructs an Open object. */
-	    private Open(Pos pos, String alias, ConstList<String> args, String filename) {
-	    	this.pos=pos; this.alias=alias; this.args=args; this.filename=filename;
-	    }
-	}
+    static final class Open {
+        /** The position in the original model where this "open" statement was declared; never null. */
+        public final Pos pos;
+        /** The alias for this open declaration; always a nonempty string. */
+        public final String alias;
+        /** The unmodifiable list of instantiating arguments. */
+        public final ConstList<String> args;
+        /** The relative filename for the file being imported, without the final ".als" part; always a nonempty string. */
+        public final String filename;
+        /** The actual Module object that it points to; null until we resolve it. */
+        Module realModule=null;
+        /** Constructs an Open object. */
+        private Open(Pos pos, String alias, ConstList<String> args, String filename) {
+            this.pos=pos; this.alias=alias; this.args=args; this.filename=filename;
+        }
+    }
 
     //============================================================================================================================//
 
     /** Mutable; this class represents an untypechecked Alloy function; equals() uses object identity. */
     private static final class FunAST {
-        Func realFunc=null;    // This value is set to its corresponding Func during typechecking
-        Expr realFormula=null; // This value is set to its corresponding "run" formula
-        final Pos pos;
-        final String name;
-        final ConstList<Decl> args;
-        final Exp returnType;
-        final Exp body;
-        FunAST(Pos p, String n, List<Decl> a, Exp r, Exp b) {
-            pos=p; name=n; args=ConstList.make(a); returnType=r; body=b;
+        /** Initialized by typechecker. */ Func realFunc=null;
+        /** Initialized by typechecker. */ Expr realFormula=null;
+        /** The original position.      */ final Pos pos;
+        /** The short name.             */ final String name;
+        /** The parameters.             */ final ConstList<Decl> params;
+        /** The return type.            */ final Exp returnType;
+        /** The body.                   */ final Exp body;
+        FunAST(Pos pos, String name, List<Decl> params, Exp returnType, Exp body) {
+            this.pos=pos; this.name=name; this.params=ConstList.make(params); this.returnType=returnType; this.body=body;
         }
         @Override public String toString() { return name; }
     }
@@ -175,30 +175,25 @@ public final class Module {
         return ans.dup();
     }
 
-    /** Returns an unmodifiable list of all modules. */
+    /** Returns the root module in this world. */
+    public Module getRootModule() { return this; }
+
+    /** Returns an unmodifiable list of all modules in this world. */
     public SafeList<Module> getAllModules() { return (new SafeList<Module>(modules)).dup(); }
 
-    /** Returns an unmodifiable list of all signatures. */
-    public ConstList<Sig> all() {
-        TempList<Sig> x = new TempList<Sig>();
+    /** Returns an unmodifiable list of all signatures in this world. */
+    public SafeList<Sig> getAllSigsInTheWorld() {
+        SafeList<Sig> x = new SafeList<Sig>();
         x.add(UNIV);
         x.add(SIGINT);
         x.add(SEQIDX);
         x.add(NONE);
         for(Module m:modules) for(SigAST s:m.sigs.values()) x.add(s.realSig);
-        return x.makeConst();
+        return x.dup();
     }
 
     //============================================================================================================================//
 
-    /** The world that this Module belongs to. */
-    public final Module world;
-
-    /** The simplest path pointing to this Module; it is always equal to this.paths.get(0) */
-    public final String path;
-
-    /** The list of paths pointing to this Module; it is always nonempty and already sorted by Util.slashComparator */
-    public final List<String> paths;
 
     /** Returns a short description for the Module. */
     @Override public String toString() {
@@ -228,8 +223,17 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /** The world that this Module belongs to. */
+    final Module world;
+
+    /** The simplest path pointing to this Module; it is always equal to this.paths.get(0) */
+    private final String path;
+
+    /** The list of paths pointing to this Module; it is always nonempty and already sorted by Util.slashComparator */
+    private final List<String> paths;
+
     /** The position of the "MODULE" line at the top of the file; Pos.UNKNOWN if the line has not been parsed from the file yet. */
-    public Pos pos = Pos.UNKNOWN;
+    private Pos pos = Pos.UNKNOWN;
 
     /** The text of the "MODULE" line at the top of the file; "unknown" if the line has not be parsed from the file yet. */
     String moduleName="unknown";
@@ -240,10 +244,10 @@ public final class Module {
     /** Each alias is mapped to its corresponding "open" statement. */
     final Map<String,Open> opens=new LinkedHashMap<String,Open>();
 
-    /** Each sig name is mapped to its corresponding SigAST object. */
-    final Map<String,SigAST> sigs = new LinkedHashMap<String,SigAST>();
+    /** Each sig name is mapped to its corresponding SigAST. */
+    private final Map<String,SigAST> sigs = new LinkedHashMap<String,SigAST>();
 
-    /** Each func name is mapped to a list of FunAST objects. */
+    /** Each func name is mapped to a nonempty list of FunAST objects. */
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
 
     /** Each assertion name is mapped to either an untypechecked Exp or a typechecked Expr. */
@@ -252,12 +256,9 @@ public final class Module {
     /** Each fact name is mapped to either an untypechecked Exp or a typechecked Expr. */
     private final Map<String,Object> facts = new LinkedHashMap<String,Object>();
 
-    /** The list of command names; it must be consistent with this.commands. NOTE: duplicate names are allowed. */
-    final List<String> commandNames = new ArrayList<String>(); // We don't use a Map since duplicate names are allowed 
-
-    /** The list of commands; it must be consistent with this.commandNames. */
-    final List<Command> commands = new ArrayList<Command>(); // We don't use a Map since duplicate names are allowed
-
+    /** The list of (CommandName,Command) pairs; NOTE: duplicate command names are allowed. */
+    private final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
+    
     //============================================================================================================================//
 
     void addModelLine(Pos pos, String moduleName, List<ExpName> list) throws Err {
@@ -272,9 +273,9 @@ public final class Module {
             if (name.equals("Int"))        throw new ErrorSyntax(expr.span(), "\'Int\' is a builtin keyword.");
             if (name.equals("none"))       throw new ErrorSyntax(expr.span(), "\'none\' is a builtin keyword.");
             if (params.containsKey(name) || sigs.containsKey(name))
-            	throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as another sig or param in the same module.");
+                throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as another sig or param in the same module.");
             if (funcs.containsKey(name))
-            	throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as a function/predicate in the same module.");
+                throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as a function/predicate in the same module.");
             if (path.length()==0) addSig(null, pos, name, false, false, false, false, null, null, new ArrayList<Decl>(), null);
             else params.put(name, null);
         }
@@ -326,27 +327,27 @@ public final class Module {
          boolean chg=false;
          Open missing=null;
          for(Module mod:root.modules) for(Map.Entry<String,Open> entry:mod.opens.entrySet()) {
-        	Open open=entry.getValue();
-        	Module sub=open.realModule;
-        	int i=0;
-        	for(Map.Entry<String,SigAST> p:sub.params.entrySet()) {
-        	   SigAST old=p.getValue();
-        	   String kn=p.getKey(), vn=open.args.get(i);
-        	   i++;
-        	   Set<SigAST> v=mod._lookup_sigORparam(vn);
-        	   if (v.size()<1) {if (old==null) missing=open; continue;}
-        	   if (v.size()>1) throw new ErrorSyntax(open.pos, "The signature name \""+vn+"\" is ambiguous");
-        	   SigAST vv=v.iterator().next();
-        	   if (old==vv) continue;
-        	   if (old!=null) throw new ErrorFatal(open.pos, "Internal error (module re-instantiated with different argument)");
-        	   if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
-        	   chg=true;
-        	   p.setValue(vv);
-        	   if (kn.equals("elem"))
-        	      if (sub.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als"))
-        			 vv.orderingPosition = open.pos; // This detects for the Alloy3 behavior of util/ordering
-        	   A4Reporter.getReporter().parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
-        	}
+            Open open=entry.getValue();
+            Module sub=open.realModule;
+            int i=0;
+            for(Map.Entry<String,SigAST> p:sub.params.entrySet()) {
+               SigAST old=p.getValue();
+               String kn=p.getKey(), vn=open.args.get(i);
+               i++;
+               Set<SigAST> v=mod._lookup_sigORparam(vn);
+               if (v.size()<1) {if (old==null) missing=open; continue;}
+               if (v.size()>1) throw new ErrorSyntax(open.pos, "The signature name \""+vn+"\" is ambiguous");
+               SigAST vv=v.iterator().next();
+               if (old==vv) continue;
+               if (old!=null) throw new ErrorFatal(open.pos, "Internal error (module re-instantiated with different argument)");
+               if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
+               chg=true;
+               p.setValue(vv);
+               if (kn.equals("elem"))
+                  if (sub.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als"))
+                     vv.orderingPosition = open.pos; // This detects for the Alloy3 behavior of util/ordering
+               A4Reporter.getReporter().parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
+            }
          }
          if (chg==false && missing==null) return;
          if (chg==false) throw new ErrorSyntax(missing.pos, "One of the instantiating signature cannot be found");
@@ -428,6 +429,13 @@ public final class Module {
         return s;
     }
 
+    /** Returns an unmodifiable list of all signatures defined inside this module. */
+    public SafeList<Sig> getAllSigs() {
+        SafeList<Sig> x = new SafeList<Sig>(sigs.size());
+        for(SigAST s:sigs.values()) x.add(s.realSig);
+        return x.dup();
+    }
+
     //============================================================================================================================//
 
     void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
@@ -450,22 +458,20 @@ public final class Module {
             String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.name;
             Context cx = new Context(this);
             cx.rootfun=true;
-            ExpName dup = f.args==null ? null : Decl.findDuplicateName(f.args);
+            ExpName dup = Decl.findDuplicateName(f.params);
             if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
             // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
             // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
             TempList<ExprVar> tmpvars = new TempList<ExprVar>();
-            if (f.args!=null) {
-              for(Decl d:f.args) {
-                Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
-                errors = errors.join(val.errors);
-                for(ExpName n: d.names) {
-                    ExprVar v=ExprVar.make(n.span(), n.name, val);
-                    cx.put(n.name, v);
-                    tmpvars.add(v);
-                    A4Reporter.getReporter().typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.name+": "+v.type+"\n");
-                }
-              }
+            for(Decl d:f.params) {
+            	Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
+            	errors = errors.join(val.errors);
+            	for(ExpName n: d.names) {
+            		ExprVar v=ExprVar.make(n.span(), n.name, val);
+            		cx.put(n.name, v);
+            		tmpvars.add(v);
+            		A4Reporter.getReporter().typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.name+": "+v.type+"\n");
+            	}
             }
             Expr ret = null;
             if (f.returnType!=null) {
@@ -485,7 +491,7 @@ public final class Module {
             Expr disj = ExprConstant.TRUE;
             Context cx=new Context(this);
             Iterator<ExprVar> vv=ff.params.iterator();
-            for(Decl d:f.args) {
+            for(Decl d:f.params) {
                 List<Expr> disjvars = (d.disjoint!=null && d.names.size()>0) ? (new ArrayList<Expr>()) : null;
                 for(ExpName n:d.names) {
                     ExprVar newvar=vv.next();
@@ -498,7 +504,7 @@ public final class Module {
             if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
             errors = errors.join(newBody.errors);
             ff.setBody(newBody);
-            for(Decl d:f.args) for(ExpName n:d.names) cx.remove(n.name);
+            for(Decl d:f.params) for(ExpName n:d.names) cx.remove(n.name);
             if (!ff.isPred && newBody.type.hasTuple() && ff.returnDecl.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
                 warns.add(new ErrorWarning(ff.getBody().span(),
                     "Function return value is disjoint from its return type.\n"
@@ -554,14 +560,14 @@ public final class Module {
     }
 
     /** If typecheck was successful, return an unmodifiable list of all facts in this module. */
-    public SafeList<Pair<String,Expr>> getAllAssertions() {
-        SafeList<Pair<String,Expr>> ans = new SafeList<Pair<String,Expr>>(asserts.size());
+    public ConstList<Pair<String,Expr>> getAllAssertions() {
+        TempList<Pair<String,Expr>> ans = new TempList<Pair<String,Expr>>(asserts.size());
         for(Map.Entry<String,Object> e:asserts.entrySet()) {
             String a=e.getKey();
             Object b=e.getValue();
             if (b instanceof Expr) ans.add(new Pair<String,Expr>(a, (Expr)b));
         }
-        return ans.dup();
+        return ans.makeConst();
     }
 
     /** If typecheck was successful, return the assertion with that name (it returns null if there's no match) */
@@ -636,8 +642,7 @@ public final class Module {
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         if (label==null || label.length()==0) label=n;
-        commandNames.add(n);
-        commands.add(new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s));
+        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
     }
 
     void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label) throws Err {
@@ -646,8 +651,7 @@ public final class Module {
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         if (label==null || label.length()==0) label=n;
-        commandNames.add(n);
-        commands.add(new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s));
+        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
     }
 
     private Set<Expr> lookupAssertion(String name) {
@@ -679,9 +683,9 @@ public final class Module {
         if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
         if (name.indexOf('/')<0) {
             for(String p:paths) for(Module u:world.lookupModuleAndSubmodules(p)) {
-            	SafeList<FunAST> list=u.funcs.get(name);
-            	if (list!=null) ans.addAll(list);
-            } 
+                SafeList<FunAST> list=u.funcs.get(name);
+                if (list!=null) ans.addAll(list);
+            }
             return ans;
         }
         if (name.startsWith("this/")) name=name.substring(5);
@@ -696,9 +700,9 @@ public final class Module {
     }
 
     private JoinableList<Err> resolveCommands(JoinableList<Err> errors, List<ErrorWarning> warnings) throws Err {
-    	for(int i=0; i<commandNames.size(); i++) {
-            String cname = commandNames.get(i);
-            Command cmd = commands.get(i);
+        for(int i=0; i<commands.size(); i++) {
+            String cname = commands.get(i).a;
+            Command cmd = commands.get(i).b;
             Expr e=null;
             if (cmd.check) {
                 e=getAssertion(cname);
@@ -716,12 +720,17 @@ public final class Module {
                 if (ee.size()>1) throw new ErrorSyntax(cmd.pos, "There are more than 1 predicate/function with the name \""+cname+"\".");
                 e=ee.get(0).realFormula;
             }
-            commands.set(i, cmd.changeFormula(e));
+            commands.set(i, new Pair<String,Command>(cname, cmd.changeFormula(e)));
         }
         return errors;
     }
 
-    public List<Command> getAllCommands() { return new ArrayList<Command>(commands); }
+    /** Return an unmodifiable list of commands in this module. */
+    public SafeList<Command> getAllCommands() {
+    	SafeList<Command> ans = new SafeList<Command>(commands.size());
+    	for(Pair<String,Command> c:commands) ans.add(c.b);
+    	return ans.dup();
+    }
 
     //============================================================================================================================//
 
@@ -768,7 +777,7 @@ public final class Module {
 
     /** This is step 3 of the postprocessing: converting from "Exp" to "Expr" */
     static Module resolveAll(final Module root) throws Err {
-    	resolveParams(root);
+        resolveParams(root);
         while(alloy_mergeModules(root)) {}
         JoinableList<Err> errors = new JoinableList<Err>();
         final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
