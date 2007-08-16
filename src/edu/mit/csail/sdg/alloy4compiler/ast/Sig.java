@@ -90,6 +90,11 @@ public abstract class Sig extends Expr {
 
     /**
      * Nonnull if this sig is ordered.
+     *
+     * <p> Note: this field is always null for builtin sigs, since they are never ordered;
+     * instead, if the user tries to open util/ordering[] on it, the explicit facts in that module
+     * will be translated verbatim so that it produces the "effect" of ordering; but as far as
+     * the translation engine is concerned, the builtin sigs are never ordered.
      */
     public final Pos isOrdered;
 
