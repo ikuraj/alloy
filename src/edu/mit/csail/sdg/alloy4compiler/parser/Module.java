@@ -282,13 +282,11 @@ public final class Module {
         }
     }
 
-    //TODO
-
     void addOpen(Pos pos, ExpName filename, List<ExpName> args, ExpName alias) throws Err {
         String name=filename.name, as=(alias==null ? "" : alias.name);
-        if (name.length()==0) throw new ErrorSyntax(filename.span(), "The filename cannot be \"\"");
-        if (as.indexOf('@')>=0) throw new ErrorSyntax(alias.span(), "Alias \""+as+"\" must not contain \'@\'");
-        if (as.indexOf('/')>=0) throw new ErrorSyntax(alias.span(), "Alias \""+as+"\" must not contain \'/\'");
+        if (name.length()==0) throw new ErrorSyntax(filename.span(), "The filename cannot be empty.");
+        if (as.indexOf('@')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'@\' character");
+        if (as.indexOf('/')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'/\' character");
         if (as.length()==0) {
             if (args!=null && args.size()!=0)
                 throw new ErrorSyntax(pos,
@@ -296,32 +294,24 @@ public final class Module {
             for(int i=0; i<name.length(); i++) {
                 char c=name.charAt(i);
                 if ((c>='a' && c<='z') || (c>='A' && c<='Z')) continue;
-                if (i==0)
-                   throw new ErrorSyntax(pos,
-                   "This filename does not start with a-z or A-Z, so you must supply an alias using the AS keyword.");
-                if (!(c>='0' && c<='9') && c!='_' && c!='\'' && c!='\"')
-                   throw new ErrorSyntax(pos, "Filename contains \'"+c
-                   +"\' which is illegal in an alias, so you must supply an alias using the AS keyword.");
+                if (i==0) throw new ErrorSyntax(pos, "This filename does not start with a-z or A-Z,\n"
+                   + "so you must supply an alias using the AS keyword.");
+                if (!(c>='0' && c<='9') && c!='_' && c!='\'' && c!='\"') throw new ErrorSyntax(pos, "Filename contains \'"
+                   + c + "\' which is illegal in an alias,\n" + "so you must supply an alias using the AS keyword.");
             }
             as=name;
         }
         final TempList<String> newlist = new TempList<String>(args==null ? 0 : args.size());
         if (args!=null) for(int i=0; i<args.size(); i++) {
             ExpName arg=args.get(i);
-            if (arg.name.length()==0)
-                throw new ErrorSyntax(arg.span(), "Module \""+name+"\"\'s instantiation argument cannot be empty");
-            if (arg.name.indexOf('@')>=0)
-                throw new ErrorSyntax(arg.span(), "Module \""+name+"\"\'s instantiation argument cannot contain \'@\'");
+            if (arg.name.length()==0)      throw new ErrorSyntax(arg.span(), "This argument cannot be empty.");
+            if (arg.name.indexOf('@')>=0)  throw new ErrorSyntax(arg.span(), "This argument cannot contain the \'@\' chracter.");
             newlist.add(arg.name);
         }
-        Open x=new Open(pos, as, newlist.makeConst(), name);
-        Open y=opens.get(as);
-        if (y!=null) {
-            // Special case, especially needed for auto-import of "util/sequniv"
-            if (x.args.equals(y.args) && x.filename.equals(y.filename)) return;
-            throw new ErrorSyntax(pos, "You cannot import more than 1 module using the same alias.");
-        }
-        opens.put(as,x);
+        Open y=opens.get(as), x=new Open(pos, as, newlist.makeConst(), name);
+        if (y==null) { opens.put(as,x); return; }
+        if (x.args.equals(y.args) && x.filename.equals(y.filename)) return; // we allow this, especially because of util/sequniv
+        throw new ErrorSyntax(pos, "You cannot import more than one module using the same alias.");
     }
 
     /** Each param will now point to a nonnull SigAST. */
