@@ -194,6 +194,26 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /**
+     * Constructs a new Module object
+     * @param world - the world that this Module belongs to (null if this is the beginning of a new World)
+     * @param pos - the position of the "module" line at the top of the file (it can be null if unknown)
+     * @param path - one of the path pointing to this module
+     */
+    Module(Module world, Pos pos, String path) throws Err {
+        if (world==null) { if (path.length()>0) throw new ErrorAPI(pos, "Root module misparsed."); else world=this; }
+        if (world.path2module.containsKey(path)) throw new ErrorSyntax("A module with the path \""+path+"\" already exists.");
+        world.path2module.put(path,this);
+        world.modules.add(this);
+        this.world=world;
+        this.pos=(pos==null ? Pos.UNKNOWN : pos);
+        this.path=path;
+        this.paths=new ArrayList<String>(1);
+        this.paths.add(path);
+    }
+
+    //=======GOOD BELOW===========================================================================================================//
+
     /** The world that this Module belongs to. */
     final Module world;
 
@@ -237,22 +257,50 @@ public final class Module {
         return answer+"}";
     }
 
-    /**
-     * Constructs a new Module object
-     * @param world - the world that this Module belongs to (null if this is the beginning of a new World)
-     * @param pos - the position of the "module" line at the top of the file (it can be null if unknown)
-     * @param path - one of the path pointing to this module
-     */
-    Module(Module world, Pos pos, String path) throws Err {
-        if (world==null) { if (path.length()>0) throw new ErrorAPI(pos, "Root module misparsed."); else world=this; }
-        if (world.path2module.containsKey(path)) throw new ErrorSyntax("A module with the path \""+path+"\" already exists.");
-        world.path2module.put(path,this);
-        world.modules.add(this);
-        this.world=world;
-        this.pos=(pos==null ? Pos.UNKNOWN : pos);
-        this.path=path;
-        this.paths=new ArrayList<String>(1);
-        this.paths.add(path);
+    //============================================================================================================================//
+
+    /** Helper method for getRawSIG; it looks up non-fully-qualified SigAST from the current module; it skips PARAMs. */
+    private SigAST getRawNQSIG (Pos pos, String name) throws Err {
+        SigAST x=sigs.get(name);
+        for(Map.Entry<String,Open> i:opens.entrySet()) {
+            SigAST y=i.getValue().realModule.getRawNQSIG(pos, name);
+            if (y==null || x==y) continue;
+            if (x==null) x=y; else throw new ErrorSyntax(pos, "The signature name \""+name+"\" is ambiguous.");
+        }
+        return x;
+    }
+
+    /** Helper method for getRawSIG; it looks up fully-qualified SigAST from the current module; it skips PARAMs. */
+    private SigAST getRawQSIG (Pos pos, String name) { // It ignores "params"
+        Module u=this;
+        if (name.startsWith("this/")) name=name.substring(5);
+        while(true) {
+            int i=name.indexOf('/');
+            if (i<0) return u.sigs.get(name);
+            String alias=name.substring(0,i);
+            Open uu=u.opens.get(alias);
+            if (uu==null) return null;
+            u=uu.realModule;
+            name=name.substring(i+1,name.length());
+        }
+    }
+
+    /** Looks up a SigAST from the current module (and it will also search this.params) */
+    private SigAST getRawSIG (Pos pos, String name) throws Err {
+        SigAST s=null, s2=null;
+        if (name.equals("seq/Int")) return SEQIDXast;
+        if (name.equals("Int"))     return SIGINTast;
+        if (name.equals("univ"))    return UNIVast;
+        if (name.equals("none"))    return NONEast;
+        if (name.indexOf('/')<0) {
+            s2=params.get(name);
+            s=getRawNQSIG(pos, name);
+        } else {
+            if (name.startsWith("this/")) { name=name.substring(5); s2=params.get(name); }
+            s=getRawQSIG(pos, name);
+        }
+        if (s!=null && s2!=null && s!=s2) throw new ErrorSyntax(pos, "The signature name \""+name+"\" is ambiguous.");
+        return (s!=null) ? s : s2;
     }
 
     //============================================================================================================================//
@@ -304,21 +352,22 @@ public final class Module {
         final TempList<String> newlist = new TempList<String>(args==null ? 0 : args.size());
         if (args!=null) for(int i=0; i<args.size(); i++) {
             ExpName arg=args.get(i);
-            if (arg.name.length()==0)      throw new ErrorSyntax(arg.span(), "This argument cannot be empty.");
-            if (arg.name.indexOf('@')>=0)  throw new ErrorSyntax(arg.span(), "This argument cannot contain the \'@\' chracter.");
+            if (arg.name.length()==0)      throw new ErrorSyntax(arg.span(), "Argument cannot be empty.");
+            if (arg.name.indexOf('@')>=0)  throw new ErrorSyntax(arg.span(), "Argument cannot contain the \'@\' chracter.");
             newlist.add(arg.name);
         }
         Open y=opens.get(as), x=new Open(pos, as, newlist.makeConst(), name);
         if (y==null) { opens.put(as,x); return; }
         if (x.args.equals(y.args) && x.filename.equals(y.filename)) return; // we allow this, especially because of util/sequniv
-        throw new ErrorSyntax(pos, "You cannot import more than one module using the same alias.");
+        throw new ErrorSyntax(pos, "You cannot import two different modules using the same alias.");
     }
 
-    /** Each param will now point to a nonnull SigAST. */
+    /** Every param in every module will now point to a nonnull SigAST. */
     private static void resolveParams(Module root) throws Err {
       while(true) {
          boolean chg=false;
          Open missing=null;
+         String missingName="";
          for(Module mod:root.modules) for(Map.Entry<String,Open> entry:mod.opens.entrySet()) {
             Open open=entry.getValue();
             Module sub=open.realModule;
@@ -327,10 +376,8 @@ public final class Module {
                SigAST old=p.getValue();
                String kn=p.getKey(), vn=open.args.get(i);
                i++;
-               Set<SigAST> v=mod._lookup_sigORparam(vn);
-               if (v.size()<1) {if (old==null) missing=open; continue;}
-               if (v.size()>1) throw new ErrorSyntax(open.pos, "The signature name \""+vn+"\" is ambiguous");
-               SigAST vv=v.iterator().next();
+               SigAST vv=mod.getRawSIG(open.pos, vn); //TODO
+               if (vv==null) {if (old==null) {missing=open; missingName=vn;} continue;}
                if (old==vv) continue;
                if (old!=null) throw new ErrorFatal(open.pos, "Internal error (module re-instantiated with different argument)");
                if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
@@ -343,70 +390,58 @@ public final class Module {
             }
          }
          if (chg==false && missing==null) return;
-         if (chg==false) throw new ErrorSyntax(missing.pos, "One of the instantiating signature cannot be found");
+         if (chg==false) throw new ErrorSyntax(missing.pos, "The signature name \""+missingName+"\" cannot be found.");
       }
     }
 
     //============================================================================================================================//
 
-    SigAST addSig(List<ExpName> hints, Pos p,String n,
-        boolean fa,boolean fl,boolean fo,boolean fs,List<String> i,String e,List<Decl> d,Exp f) throws Err {
-        SigAST obj;
-        String fullname = (path.length()==0) ? "this/"+n : path+"/"+n;
-        if (i!=null && i.size()>0)
-            obj=new SigAST(p, fullname, n, fa, fl, fo, fs, true, i, d, f, this, null);
-        else
-            obj=new SigAST(p, fullname, n, fa, fl, fo, fs, false, Util.asList(e), d, f, this, null);
+    SigAST addSig(List<ExpName> hints, Pos pos, String name,
+    boolean isAbstract, boolean isLone, boolean isOne, boolean isSome,
+    List<String> in, String extend, List<Decl> fields, Exp fact) throws Err {
+        String full=(path.length()==0) ? "this/"+name : path+"/"+name;
+        boolean s=(in!=null && in.size()>0);
+        SigAST obj=new SigAST(pos, full, name, isAbstract,isLone,isOne,isSome, s, s?in:Util.asList(extend), fields,fact,this,null);
         if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
-        if (sigs.containsKey(n)) throw new ErrorSyntax(p, "sig \""+n+"\" is already declared in this module.");
-        sigs.put(n,obj);
+        if (params.containsKey(name) || sigs.containsKey(name))
+            throw new ErrorSyntax(pos, "Sig name \""+name+"\" cannot be the same as another sig or param in the same module.");
+        if (funcs.containsKey(name))
+            throw new ErrorSyntax(pos, "Sig name \""+name+"\" cannot be the same as a function/predicate in the same module.");
+        if (facts.containsKey(name))
+            throw new ErrorSyntax(pos, "Sig name \""+name+"\" cannot be the same as a fact in the same module.");
+        if (asserts.containsKey(name))
+            throw new ErrorSyntax(pos, "Sig name \""+name+"\" cannot be the same as a function/predicate in the same module.");
+        sigs.put(name, obj);
         return obj;
     }
 
+    /** The given SigAST will now point to a nonnull Sig. */
     private static Sig resolveSig(SigAST oldS) throws Err {
         if (oldS.realSig!=null) return oldS.realSig;
         if (oldS.topo) throw new ErrorType("Sig "+oldS+" is involved in a cyclic inheritance.");
         oldS.topo=true;
-        final Pos pos=oldS.pos;
-        final Module u=oldS.realModule;
-        final String name=oldS.name;
-        if (u.params.containsKey(name)) throw new ErrorSyntax(pos, "A module cannot have a signature and a parameter with the same name: \""+name+"\"");
-        if (u.funcs.containsKey(name)) throw new ErrorSyntax(pos, "A module cannot have a signature and a function/predicate with the same name: \""+name+"\"");
+        final Pos pos = oldS.pos;
+        final Module u = oldS.realModule;
+        final String name = oldS.name;
         final String fullname = u.paths.contains("") ? "this/"+name : (u.paths.get(0)+"/"+name);
         final Sig s;
         if (oldS.subset)  {
             if (oldS.abs) throw new ErrorSyntax(pos, "Subset signature \""+name+"\" cannot be abstract.");
             ArrayList<Sig> parents = new ArrayList<Sig>();
             for(String n:oldS.parents) {
-                Sig parent;
-                if (n.equals("univ")) parent=UNIV;
-                else if (n.equals("Int")) parent=SIGINT;
-                else if (n.equals("seq/Int")) parent=SEQIDX;
-                else if (n.equals("none")) parent=NONE;
-                else {
-                  Set<SigAST> anss=u._lookup_sigORparam(n);
-                  if (anss.size()>1) throw new ErrorSyntax(pos, "Sig "+oldS+" tries to be a subset of \""+n+"\", but the name \""+n+"\" is ambiguous.");
-                  if (anss.size()<1) throw new ErrorSyntax(pos, "Sig "+oldS+" tries to be a subset of a non-existent signature \""+n+"\"");
-                  parent = resolveSig(anss.iterator().next());
-                }
-                parents.add(parent);
+                SigAST parentAST = u.getRawSIG(pos, n);
+                if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+n+"\" cannot be found.");
+                parents.add(resolveSig(parentAST));
             }
             s = new SubsetSig(pos, parents, fullname, oldS.lone, oldS.one, oldS.some);
         } else {
-            Sig parent;
             String sup="univ";
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup==null || sup.length()==0) sup="univ";}
-            if (sup.equals("univ")) parent=UNIV;
-            else if (sup.equals("Int")) parent=SIGINT;
-            else if (sup.equals("seq/Int")) parent=SEQIDX;
-            else if (sup.equals("none")) parent=NONE;
-            else {
-                Set<SigAST> anss=u._lookup_sigORparam(sup);
-                if (anss.size()>1) throw new ErrorSyntax(pos, "Sig "+oldS+" tries to extend \""+sup+"\", but that name is ambiguous.");
-                if (anss.size()<1) throw new ErrorSyntax(pos, "Sig "+oldS+" tries to extend a non-existent signature \""+sup+"\"");
-                parent = resolveSig(anss.iterator().next());
-            }
-            if (!(parent instanceof PrimSig)) throw new ErrorSyntax(pos, "Sig "+oldS+" cannot extend a subset signature "+parent+"\".\nA signature can only extend a toplevel signature or a subsignature.");
+            SigAST parentAST = u.getRawSIG(pos, sup);
+            if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+sup+"\" cannot be found.");
+            Sig parent = resolveSig(parentAST);
+            if (!(parent instanceof PrimSig)) throw new ErrorSyntax(pos, "Cannot extend a subset signature "+parent
+               +"\".\nA signature can only extend a toplevel signature or a subsignature.");
             s = new PrimSig(pos, (PrimSig)parent, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.hint_isLeaf);
         }
         oldS.realSig=s;
@@ -598,7 +633,7 @@ public final class Module {
         }
         for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
             Sig s=e.getValue().realSig;
-            if (s.anno.get("orderingSIG") instanceof Sig) continue;
+            if (s.isOrd()!=null) continue;
             Exp f=e.getValue().appendedFact;
             if (f==null) continue;
             ExprVar THIS = s.oneOf("this");
@@ -845,45 +880,6 @@ public final class Module {
     }
 
     //============================================================================================================================//
-
-    private void _lookupNQsig_noparam (String name, Set<SigAST> ans) { // It ignores "params"
-        SigAST x=sigs.get(name);
-        if (x!=null) ans.add(x);
-        for(Map.Entry<String,Open> i:opens.entrySet()) i.getValue().realModule._lookupNQsig_noparam(name,ans);
-    }
-
-    private SigAST _lookupQsig_noparam (String name) { // It ignores "params"
-        Module u=this;
-        if (name.startsWith("this/")) name=name.substring(5);
-        while(true) {
-            int i=name.indexOf('/');
-            if (i<0) return u.sigs.get(name);
-            String alias=name.substring(0,i);
-            Open uu=u.opens.get(alias);
-            if (uu==null) return null;
-            u=uu.realModule;
-            name=name.substring(i+1,name.length());
-        }
-    }
-
-    private Set<SigAST> _lookup_sigORparam (String name) { // Will search "params" too, if at the CURRENT LEVEL
-        SigAST s;
-        Set<SigAST> ans=new LinkedHashSet<SigAST>();
-        if (name.equals("seq/Int")) { ans.add(SEQIDXast); return ans; }
-        if (name.equals("Int"))     { ans.add(SIGINTast); return ans; }
-        if (name.equals("univ"))    { ans.add(UNIVast); return ans; }
-        if (name.equals("none"))    { ans.add(NONEast); return ans; }
-        if (name.indexOf('/')<0) {
-            _lookupNQsig_noparam(name,ans); s=params.get(name); if (s!=null) ans.add(s);
-            return ans;
-        }
-        if (name.startsWith("this/")) {
-            String temp=name.substring(5);
-            if (temp.indexOf('/')<0) { s=params.get(temp); if (s!=null) {ans.add(s); return ans;} }
-        }
-        s=_lookupQsig_noparam(name); if (s!=null) ans.add(s);
-        return ans;
-    }
 
     private static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, UNIV);
     private static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, null, SIGINT);
