@@ -263,7 +263,7 @@ final class ScopeComputer {
                 rep.scope("Sig "+s+" scope raised from <="+old+" to be <="+min+"\n");
             }
         }
-        // Add special overrides for util/ordering
+        // Add special overrides for util/ordering.als
         for(final Sig s:sigs) {
             final Sig s2 = s.getOrderingTarget();
             if (s2!=null) {

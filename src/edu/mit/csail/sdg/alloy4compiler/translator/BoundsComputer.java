@@ -594,7 +594,7 @@ final class BoundsComputer {
                 sizeLTE(s,n);
             }
         }
-        // Bound the fields. Must do this AFTER sigs due to util/ordering special encoding.
+        // Bound the fields. Must do this AFTER sigs due to util/ordering.als special encoding.
         for(Sig s:sigs) if (!s.builtin) {
             final Sig elem = s.getOrderingTarget();
             if (elem!=null) {

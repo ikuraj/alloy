@@ -82,8 +82,8 @@ public final class CompUtil {
             String headOfA = (a>=0) ? moduleA.substring(0,a) : moduleA;
             String headOfB = (b>=0) ? moduleB.substring(0,b) : moduleB;
             if (!headOfA.equals(headOfB) || a<0 || b<0) {
-                // eg. util/ordering==/home/models/util/ordering.als, then test=>/home/models/test.als"
-                // eg. util/ordering==/home/models/util/ordering.als, then sub/test=>/home/models/sub/test.als
+                // eg. util/boolean==/home/models/util/boolean.als, then test=>/home/models/test.als"
+                // eg. util/boolean==/home/models/util/boolean.als, then sub/test=>/home/models/sub/test.als
                 // eg. main==/home/models/main.als, then test=>/home/models/test.als
                 // eg. main==/home/models/main.als, then sub/test=>/home/models/sub/test.als"
                 int numberOfSlash=0;
@@ -234,7 +234,7 @@ public final class CompUtil {
     /**
      * Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
      * @param fc - a cache of files that have been pre-fetched (can be null if there were no prefetching)
-     * @param rootdir - the directory for Alloy's builtin modules (eg. util/ordering.als, util/integer.als, ...); can be null.
+     * @param rootdir - the directory for Alloy's builtin modules (eg. util/boolean.als, util/integer.als, ...); can be null.
      * @param filename - the main module we are parsing
      * @return the root Module which contains pointers to all submodules
      * @throws Err if an error occurred

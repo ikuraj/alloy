@@ -385,7 +385,7 @@ public final class Module {
                p.setValue(vv);
                if (kn.equals("elem"))
                   if (sub.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als"))
-                     vv.isOrdered = open.pos; // This detects for the Alloy3 behavior of util/ordering
+                     vv.isOrdered = open.pos; // This detects for the Alloy3 behavior of util/ordering.als
                A4Reporter.getReporter().parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
             }
          }
@@ -805,7 +805,7 @@ public final class Module {
         final List<Module> modules = root.modules;
         // Resolves SigAST -> Sig
         for(Module m:modules) for(Map.Entry<String,SigAST> e:m.sigs.entrySet()) Module.resolveSig(e.getValue());
-        // Label any Sig that are used in util/ordering
+        // Label any Sig that are used in util/ordering.als
         for(Module m:modules) {
            SigAST elemX=m.params.get("elem");                 if (elemX==null) continue;
            Sig elem=elemX.realSig;                            if (elem.builtin || m.sigs.size()!=1) continue;
