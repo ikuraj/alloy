@@ -386,16 +386,13 @@ public abstract class Sig extends Expr {
     public final SafeList<Field> getFields() { return fields.dup(); }
 
     //TODO
-    private Pos orderingPos=Pos.UNKNOWN;
     private Sig orderingTarget=null;
-    public final void addOrderfields(Pos orderingPos, Sig orderingTarget) throws Err {
+    public final void addOrderfields(Sig orderingTarget) throws Err {
         if (this.orderingTarget==orderingTarget) return;
-        if (this.orderingTarget!=null) throw new ErrorFatal(orderingPos, "Internal error (Same Ord is used on two different sigs)");
-        this.orderingPos=orderingPos;
+        if (this.orderingTarget!=null) throw new ErrorFatal("Internal error (Same Ord is used on two different sigs)");
         this.orderingTarget=orderingTarget;
     }
     public final Sig getOrderingTarget() { return orderingTarget; }
-    public final Pos getOrdingerPos() { return orderingPos; }
 
     /**
      * Add then return a new field F, where "all x: ThisSig | x.F in bound"

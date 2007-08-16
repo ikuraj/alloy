@@ -118,6 +118,7 @@ public final class Module {
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
         Pos isOrdered=null;
+        boolean isOrd=false;
         SigAST(Pos pos, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subset,
             List<String> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=pos;
@@ -383,9 +384,14 @@ public final class Module {
                if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
                chg=true;
                p.setValue(vv);
-               if (kn.equals("elem"))
-                  if (sub.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als"))
-                     vv.isOrdered = open.pos; // This detects for the Alloy3 behavior of util/ordering.als
+               // This detects for the Alloy3 behavior of util/ordering.als
+               // This is the only place where the exact name "util/ordering.als" matters
+               if (kn.equals("elem") && sub.sigs.size()==1
+                  && vv!=Module.UNIVast && vv!=Module.SIGINTast && vv!=Module.SEQIDXast && vv!=Module.NONEast
+                  && sub.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) {
+                     vv.isOrdered = open.pos;
+                     sub.sigs.entrySet().iterator().next().getValue().isOrd=true;
+                  }
                A4Reporter.getReporter().parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
             }
          }
@@ -626,8 +632,8 @@ public final class Module {
             else A4Reporter.getReporter().typecheck("Fact " + e.getKey() + ": " + expr.type+"\n");
         }
         for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
+            if (e.getValue().isOrd) continue;
             Sig s=e.getValue().realSig;
-            if (s.getOrderingTarget()!=null) continue;
             Exp f=e.getValue().appendedFact;
             if (f==null) continue;
             ExprVar THIS = s.oneOf("this");
@@ -809,9 +815,7 @@ public final class Module {
         for(Module m:modules) {
            SigAST elemX=m.params.get("elem");                 if (elemX==null) continue;
            Sig elem=elemX.realSig;                            if (elem.builtin || m.sigs.size()!=1) continue;
-           Sig ord=m.sigs.values().iterator().next().realSig; if (ord.builtin  || !ord.label.endsWith("/Ord")) continue;
-           if (!ord.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) continue;
-           ord.addOrderfields(null, elem);
+           SigAST ord=m.sigs.values().iterator().next();      if (ord.isOrd) ord.realSig.addOrderfields(elem);
         }
         // Add the fields
         for(Module m:modules) for(SigAST oldS:m.sigs.values()) {
