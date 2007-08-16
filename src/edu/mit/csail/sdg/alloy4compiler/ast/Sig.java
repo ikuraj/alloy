@@ -72,6 +72,7 @@ public abstract class Sig extends Expr {
 
     /**
      * True if this sig is one of the built-in sig.
+     * <p> Note: if builtin==true, then we ensure it is not abstract, and it is not ordered
      */
     public final boolean builtin;
 

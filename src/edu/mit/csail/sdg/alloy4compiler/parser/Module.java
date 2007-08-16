@@ -117,7 +117,7 @@ public final class Module {
         private final ConstList<String> parents;
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
-        Pos orderingPosition;
+        Pos isOrdered=null;
         SigAST(Pos pos, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subset,
             List<String> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=pos;
@@ -385,7 +385,7 @@ public final class Module {
                p.setValue(vv);
                if (kn.equals("elem"))
                   if (sub.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als"))
-                     vv.orderingPosition = open.pos; // This detects for the Alloy3 behavior of util/ordering
+                     vv.isOrdered = open.pos; // This detects for the Alloy3 behavior of util/ordering
                A4Reporter.getReporter().parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
             }
          }
@@ -434,7 +434,7 @@ public final class Module {
                 if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+n+"\" cannot be found.");
                 parents.add(resolveSig(parentAST));
             }
-            s = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.orderingPosition);
+            s = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered);
         } else {
             String sup="univ";
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup==null || sup.length()==0) sup="univ";}
@@ -443,7 +443,7 @@ public final class Module {
             Sig parent = resolveSig(parentAST);
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(pos, "Cannot extend a subset signature "+parent
                +"\".\nA signature can only extend a toplevel signature or a subsignature.");
-            s = new PrimSig(pos, (PrimSig)parent, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.orderingPosition, oldS.hint_isLeaf);
+            s = new PrimSig(pos, (PrimSig)parent, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.hint_isLeaf);
         }
         oldS.realSig=s;
         return s;
