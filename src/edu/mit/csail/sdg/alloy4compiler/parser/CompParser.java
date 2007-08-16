@@ -4127,23 +4127,16 @@ class CUP$CompParser$actions {
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
-   Module.SigAST s;
    for(ExpName bbb:b) {
      String bb=bbb.name;
      if (c==null)
-       s=parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0)!=null, a.get(1)!=null, a.get(2)!=null, a.get(3)!=null, null,null,d,e);
+       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), null, null,null,d,e);
      else if (c.b.get(0)==null) {
-       s=parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0)!=null, a.get(1)!=null, a.get(2)!=null, a.get(3)!=null, null,(String)(c.b.get(1)),d,e);
-       s.extendsPosition=c.a;
+       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), null, null,(String)(c.b.get(1)),d,e);
        }
      else {
-       s=parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0)!=null, a.get(1)!=null, a.get(2)!=null, a.get(3)!=null, c.b, null, d, e);
-       s.inPosition=c.a;
+       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), c.a,  c.b, null, d, e);
        }
-     s.absPosition=a.get(0);
-     s.lonePosition=a.get(1);
-     s.onePosition=a.get(2);
-     s.somePosition=a.get(3);
    }
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Sig",44, RESULT);

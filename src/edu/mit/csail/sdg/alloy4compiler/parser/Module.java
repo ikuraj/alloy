@@ -113,12 +113,12 @@ public final class Module {
         private boolean hint_isLeaf=false;
         private final Pos pos;
         private final String name,fullname;
-        private final boolean abs,lone,one,some,subset;
+        private final Pos abs,lone,one,some,subset;
         private final ConstList<String> parents;
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
-        Pos orderingPosition, absPosition, lonePosition, onePosition, somePosition, extendsPosition, inPosition;
-        SigAST(Pos pos, String fullname, String name, boolean abs, boolean lone, boolean one, boolean some, boolean subset,
+        Pos orderingPosition;
+        SigAST(Pos pos, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subset,
             List<String> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=pos;
             this.fullname=fullname;
@@ -325,7 +325,7 @@ public final class Module {
                 throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as a fact in the same module.");
             if (asserts.containsKey(name))
                 throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as a function/predicate in the same module.");
-            if (path.length()==0) addSig(null, expr.span(), name, false, false, false, false, null, null, null, null);
+            if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null);
             else params.put(name, null);
         }
     }
@@ -397,11 +397,12 @@ public final class Module {
     //============================================================================================================================//
 
     SigAST addSig(List<ExpName> hints, Pos pos, String name,
-    boolean isAbstract, boolean isLone, boolean isOne, boolean isSome,
+    Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos subSet,
     List<String> in, String extend, List<Decl> fields, Exp fact) throws Err {
         String full=(path.length()==0) ? "this/"+name : path+"/"+name;
         boolean s=(in!=null && in.size()>0);
-        SigAST obj=new SigAST(pos, full, name, isAbstract,isLone,isOne,isSome, s, s?in:Util.asList(extend), fields,fact,this,null);
+        if (s && subSet==null) subSet=Pos.UNKNOWN;
+        SigAST obj=new SigAST(pos, full, name, isAbstract,isLone,isOne,isSome, subSet, s?in:Util.asList(extend), fields,fact,this,null);
         if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         if (params.containsKey(name) || sigs.containsKey(name))
             throw new ErrorSyntax(pos, "Sig name \""+name+"\" cannot be the same as another sig or param in the same module.");
@@ -425,15 +426,15 @@ public final class Module {
         final String name = oldS.name;
         final String fullname = u.paths.contains("") ? "this/"+name : (u.paths.get(0)+"/"+name);
         final Sig s;
-        if (oldS.subset)  {
-            if (oldS.abs) throw new ErrorSyntax(pos, "Subset signature \""+name+"\" cannot be abstract.");
+        if (oldS.subset!=null)  {
+            if (oldS.abs!=null) throw new ErrorSyntax(pos, "Subset signature \""+name+"\" cannot be abstract.");
             ArrayList<Sig> parents = new ArrayList<Sig>();
             for(String n:oldS.parents) {
                 SigAST parentAST = u.getRawSIG(pos, n);
                 if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+n+"\" cannot be found.");
                 parents.add(resolveSig(parentAST));
             }
-            s = new SubsetSig(pos, parents, fullname, oldS.lone, oldS.one, oldS.some);
+            s = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.orderingPosition);
         } else {
             String sup="univ";
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup==null || sup.length()==0) sup="univ";}
@@ -442,16 +443,9 @@ public final class Module {
             Sig parent = resolveSig(parentAST);
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(pos, "Cannot extend a subset signature "+parent
                +"\".\nA signature can only extend a toplevel signature or a subsignature.");
-            s = new PrimSig(pos, (PrimSig)parent, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.hint_isLeaf);
+            s = new PrimSig(pos, (PrimSig)parent, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.orderingPosition, oldS.hint_isLeaf);
         }
         oldS.realSig=s;
-        if (oldS.absPosition!=null) s.anno.put("abstract", oldS.absPosition);
-        if (oldS.lonePosition!=null) s.anno.put("lone", oldS.lonePosition);
-        if (oldS.onePosition!=null) s.anno.put("one", oldS.onePosition);
-        if (oldS.somePosition!=null) s.anno.put("some", oldS.somePosition);
-        if (oldS.extendsPosition!=null) s.anno.put("extends", oldS.extendsPosition);
-        if (oldS.inPosition!=null) s.anno.put("in", oldS.inPosition);
-        if (oldS.orderingPosition!=null) s.anno.put("ordering", oldS.orderingPosition);
         return s;
     }
 
@@ -633,7 +627,7 @@ public final class Module {
         }
         for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
             Sig s=e.getValue().realSig;
-            if (s.isOrd()!=null) continue;
+            if (s.getOrderingTarget()!=null) continue;
             Exp f=e.getValue().appendedFact;
             if (f==null) continue;
             ExprVar THIS = s.oneOf("this");
@@ -817,7 +811,7 @@ public final class Module {
            Sig elem=elemX.realSig;                            if (elem.builtin || m.sigs.size()!=1) continue;
            Sig ord=m.sigs.values().iterator().next().realSig; if (ord.builtin  || !ord.label.endsWith("/Ord")) continue;
            if (!ord.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) continue;
-           ord.anno.put("orderingSIG", elem);
+           ord.addOrderfields(null, elem);
         }
         // Add the fields
         for(Module m:modules) for(SigAST oldS:m.sigs.values()) {
@@ -881,10 +875,10 @@ public final class Module {
 
     //============================================================================================================================//
 
-    private static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", true,  false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, UNIV);
-    private static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  false, false,false,false,false, Util.asList("univ"),     new ArrayList<Decl>(), null, null, SIGINT);
-    private static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  false, false,false,false,false, Util.asList("Int"),      new ArrayList<Decl>(), null, null, SEQIDX);
-    private static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", false, false,false,false,false, new ArrayList<String>(), new ArrayList<Decl>(), null, null, NONE);
+    private static final SigAST UNIVast   = new SigAST(Pos.UNKNOWN, "univ",    "univ", null,null,null,null,null, new ArrayList<String>(), new ArrayList<Decl>(), null, null, UNIV);
+    private static final SigAST SIGINTast = new SigAST(Pos.UNKNOWN, "Int",     "Int",  null,null,null,null,null, Util.asList("univ"),     new ArrayList<Decl>(), null, null, SIGINT);
+    private static final SigAST SEQIDXast = new SigAST(Pos.UNKNOWN, "seq/Int", "Int",  null,null,null,null,null, Util.asList("Int"),      new ArrayList<Decl>(), null, null, SEQIDX);
+    private static final SigAST NONEast   = new SigAST(Pos.UNKNOWN, "none",    "none", null,null,null,null,null, new ArrayList<String>(), new ArrayList<Decl>(), null, null, NONE);
 
     /**
      * Look up a parameter, or a signature/function/predicate visible from this module.

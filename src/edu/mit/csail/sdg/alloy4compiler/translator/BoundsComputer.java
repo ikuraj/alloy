@@ -52,7 +52,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
@@ -71,24 +70,7 @@ final class BoundsComputer {
 
     /** The Kodkod-to-Alloy map. */
     private final Map<Formula,List<Object>> core;
-    private Formula core(Formula f, Object x) {
-        if (x instanceof Pos) core(f,(Pos)x);
-        if (x instanceof Expr) core(f,(Expr)x);
-        return f;
-    }
     private Formula core(Formula f, Pos x) {
-        if (core==null || x==null) return f;
-        if (f instanceof BinaryFormula && ((BinaryFormula)f).op()==BinaryFormula.Operator.AND) {
-            core(((BinaryFormula)f).left(), x);
-            core(((BinaryFormula)f).right(), x);
-            return f;
-        }
-        List<Object> list=core.get(f);
-        if (list==null) { list=new ArrayList<Object>(3); core.put(f,list); }
-        list.add(x);
-        return f;
-    }
-    private Formula core(Formula f, Expr x) {
         if (core==null || x==null) return f;
         if (f instanceof BinaryFormula && ((BinaryFormula)f).op()==BinaryFormula.Operator.AND) {
             core(((BinaryFormula)f).left(), x);
@@ -462,7 +444,7 @@ final class BoundsComputer {
             return r;
         }
         // If sig is abstract with children, then sig == union of them
-        if (sig.isAbstract) { sig2expr.put(sig,sum); return sum; }
+        if (sig.isAbstract!=null) { sig2expr.put(sig,sum); return sum; }
         // All else: declare a new relation to act as the remainder.
         Relation r=Relation.unary(sig.toString());
         discard.add(r);
@@ -580,23 +562,23 @@ final class BoundsComputer {
             sig2expr.put(s,r);
             TupleSet ts=sig2ub(s);
             rep.bound("Sig "+s+" in "+ts.toString()+"\n");
-            if (s.isSome) kfact=core(r.some(), s.anno.get("some")).and(kfact);
-            if (s.isOne) kfact=core(r.one(), s.anno.get("one")).and(kfact);
-            if (s.isLone && ts.size()>1) kfact=core(r.lone(), s.anno.get("lone")).and(kfact);
+            if (s.isSome!=null) kfact=core(r.some(), s.isSome).and(kfact);
+            if (s.isOne!=null) kfact=core(r.one(), s.isOne).and(kfact);
+            if (s.isLone!=null && ts.size()>1) kfact=core(r.lone(), s.isLone).and(kfact);
             bounds.bound(r, ts);
             // If X in Y1+..+Yn, then X in Y1+..+Yn
             Expression sum=null;
             for (Sig parent:((SubsetSig)s).parents) sum = (sum==null) ? expr(parent) : sum.union(expr(parent));
-            if (sum!=null) kfact=core(r.in(sum), s.anno.get("in")).and(kfact);
+            if (sum!=null) kfact=core(r.in(sum), s.isSubset).and(kfact);
         }
         // Add extra cardinality constraints for PrimSig(s)
         for(Sig s:sigs) if (!s.builtin && s instanceof PrimSig) {
             Expression exp=expr(s);
             TupleSet upper=queryUpper(bounds,exp,false), lower=queryLower(bounds,exp,false);
             final int n=sc.sig2scope(s);
-            if (s.isSome && (lower==null || lower.size()<1)) kfact=core(exp.some(), s.anno.get("some")).and(kfact);
-            if (s.isOne && (lower==null || lower.size()!=1 || upper==null || upper.size()!=1)) kfact=core(exp.one(), s.anno.get("one")).and(kfact);
-            if (s.isLone && (upper==null || upper.size()>1)) kfact=core(exp.lone(), s.anno.get("lone")).and(kfact);
+            if (s.isSome!=null && (lower==null || lower.size()<1)) kfact=core(exp.some(), s.isSome).and(kfact);
+            if (s.isOne!=null && (lower==null || lower.size()!=1 || upper==null || upper.size()!=1)) kfact=core(exp.one(), s.isOne).and(kfact);
+            if (s.isLone!=null && (upper==null || upper.size()>1)) kfact=core(exp.lone(), s.isLone).and(kfact);
             if (sc.isExact(s) && lower!=null && lower.size()==n && upper!=null && upper.size()==n) {
                 rep.bound("Sig "+s+" == "+upper+"\n");
             }
@@ -614,7 +596,7 @@ final class BoundsComputer {
         }
         // Bound the fields. Must do this AFTER sigs due to util/ordering special encoding.
         for(Sig s:sigs) if (!s.builtin) {
-            final Sig elem = s.isOrd();
+            final Sig elem = s.getOrderingTarget();
             if (elem!=null) {
                 Relation first=Relation.unary("First"), last=Relation.unary("Last"), next=Relation.binary("Next");
                 discard.add(first);
@@ -634,9 +616,9 @@ final class BoundsComputer {
                     ee=Relation.unary(elem.toString());
                     discard.add(ee);
                     bounds.bound(ee, sig2lb(elem), sig2ub(elem));
-                    kfact = core(e.eq(ee), elem.anno.get("ordering")).and(kfact);
+                    kfact = core(e.eq(ee), elem.isOrdered).and(kfact);
                 }
-                kfact = core(next.totalOrder(ee,first,last), elem.anno.get("ordering")).and(kfact);
+                kfact = core(next.totalOrder(ee,first,last), elem.isOrdered).and(kfact);
                 continue;
             }
             for(Field f:s.getFields()) {

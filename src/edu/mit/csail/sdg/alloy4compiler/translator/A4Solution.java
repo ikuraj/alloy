@@ -453,10 +453,10 @@ public final class A4Solution {
             } else {
                 Util.encodeXMLs(out, "\n<sig name=\"", un.seen(shorten(s)), "\"");
                 if (!s.isTopLevel()) Util.encodeXMLs(out, " extends=\"", shorten(((PrimSig)s).parent), "\"");
-                if (s.isOne) out.printf(" isOne=\"true\"");
-                if (s.isAbstract) out.printf(" isAbstract=\"true\"");
+                if (s.isOne!=null) out.printf(" isOne=\"true\"");
+                if (s.isAbstract!=null) out.printf(" isAbstract=\"true\"");
                 if (s.builtin) out.printf(" isBuiltin=\"true\"");
-                if (s.anno.get("ordering")!=null) out.printf(" isOrdered=\"true\"");
+                if (s.isOrdered!=null) out.printf(" isOrdered=\"true\"");
                 out.printf(">\n");
                 for(Tuple t:ts) Util.encodeXMLs(out, "  <atom name=\"", a2s(t.atom(0)), "\"/>\n");
                 out.printf("</sig>\n");

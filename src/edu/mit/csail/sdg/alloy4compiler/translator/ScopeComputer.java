@@ -132,7 +132,7 @@ final class ScopeComputer {
     private boolean derive_abstract_scope (Iterable<Sig> sigs) throws Err {
         boolean changed=false;
         again:
-        for(Sig s:sigs) if (!s.builtin && (s instanceof PrimSig) && s.isAbstract) {
+        for(Sig s:sigs) if (!s.builtin && (s instanceof PrimSig) && s.isAbstract!=null) {
             SafeList<PrimSig> subs = ((PrimSig)s).children();
             if (subs.size()==0) continue;
             int sn=sig2scope(s);
@@ -220,17 +220,17 @@ final class ScopeComputer {
                     +"The number of atoms in Int is always exactly equal to 2^(integer bitwidth).\n");
             if (s==NONE) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on \"none\".");
             if (exact) makeExact(s);
-            if (s.isOne && scope!=1) throw new ErrorSyntax(cmd.pos,
+            if (s.isOne!=null && scope!=1) throw new ErrorSyntax(cmd.pos,
                 "Sig \""+s+"\" has the multiplicity of \"one\", so its scope must be 1, and cannot be "+scope);
-            if (s.isLone && scope>1) throw new ErrorSyntax(cmd.pos,
+            if (s.isLone!=null && scope>1) throw new ErrorSyntax(cmd.pos,
                 "Sig \""+s+"\" has the multiplicity of \"lone\", so its scope must 0 or 1, and cannot be "+scope);
-            if (s.isSome && scope<1) throw new ErrorSyntax(cmd.pos,
+            if (s.isSome!=null && scope<1) throw new ErrorSyntax(cmd.pos,
                 "Sig \""+s+"\" has the multiplicity of \"some\", so its scope must 1 or above, and cannot be "+scope);
             sig2scope(s, scope);
         }
         // Force "one" sigs to be exactly one, and "lone" to be at most one
         for(Sig s:sigs) if (s instanceof PrimSig) {
-            if (s.isOne) { makeExact(s); sig2scope(s,1); } else if (s.isLone && sig2scope(s)!=0) sig2scope(s,1);
+            if (s.isOne!=null) { makeExact(s); sig2scope(s,1); } else if (s.isLone!=null && sig2scope(s)!=0) sig2scope(s,1);
         }
         // Derive the implicit scopes
         while(true) {
@@ -265,7 +265,7 @@ final class ScopeComputer {
         }
         // Add special overrides for util/ordering
         for(final Sig s:sigs) {
-            final Sig s2 = s.isOrd();
+            final Sig s2 = s.getOrderingTarget();
             if (s2!=null) {
                 if (sig2scope(s2)<=0)
                     throw new ErrorSyntax(cmd.pos, "Sig "+s2

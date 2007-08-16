@@ -816,7 +816,7 @@ public final class Type implements Iterable<Type.ProductType> {
                 boolean changed=false;
                 for(int i=0; i<n; i++) {
                     PrimSig bt=x.get(i);
-                    if (bt.parent!=null && bt.parent!=UNIV && bt.parent.isAbstract) {
+                    if (bt.parent!=null && bt.parent!=UNIV && bt.parent.isAbstract!=null) {
                         List<PrimSig> folded=fold(e,x,i);
                         if (folded!=null) {x=folded; changed=true; i--;}
                     }

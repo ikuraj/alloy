@@ -21,8 +21,6 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.LinkedHashMap;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -72,45 +70,45 @@ public abstract class Sig extends Expr {
     /** {@inheritDoc} */
     @Override final Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
 
-    // TODO
-    /** Set of annotations; mutable. */
-    public final Map<Object,Object> anno=new LinkedHashMap<Object,Object>();
-
-    // TODO
-    /** This helper function determines whether this is an instance of the util/ordering "Ord" sig; if so, return the "elem" */
-    public Sig isOrd() {
-        Object x = anno.get("orderingSIG");
-        if (x instanceof Sig) return (Sig)x; else return null;
-    }
-
     /**
      * True if this sig is one of the built-in sig.
      */
     public final boolean builtin;
 
     /**
-     * True if this sig is abstract.
-     * <p> Note: if a sig is abstract, it cannot and will not be a subset sig.
+     * Nonnull if this sig is abstract.
+     * <p> Note: if a sig is abstract, then it cannot and will not be a subset sig.
      */
-    public final boolean isAbstract;
+    public final Pos isAbstract;
 
     /**
-     * True if this sig's multiplicity is declared to be lone.
-     * <p> Note: at most one of "lone", "one", "some" can be true for each sig.
+     * Nonnull if this sig is a subset sig.
+     * <p> Note: if a sig is a subset sig, then it cannot and will not be abstract.
      */
-    public final boolean isLone;
+    public final Pos isSubset;
 
     /**
-     * True if this sig's multiplicity is declared to be one.
-     * <p> Note: at most one of "lone", "one", "some" can be true for each sig.
+     * Nonnull if this sig is ordered.
      */
-    public final boolean isOne;
+    public final Pos isOrdered;
 
     /**
-     * True if this sig's multiplicity is declared to be some.
-     * <p> Note: at most one of "lone", "one", "some" can be true for each sig.
+     * Nonnull if this sig's multiplicity is declared to be lone.
+     * <p> Note: at most one of "lone", "one", "some" can be nonnull for each sig.
      */
-    public final boolean isSome;
+    public final Pos isLone;
+
+    /**
+     * Nonnull if this sig's multiplicity is declared to be one.
+     * <p> Note: at most one of "lone", "one", "some" can be nonnull for each sig.
+     */
+    public final Pos isOne;
+
+    /**
+     * Nonnull if this sig's multiplicity is declared to be some.
+     * <p> Note: at most one of "lone", "one", "some" can be nonnull for each sig.
+     */
+    public final Pos isSome;
 
     /** The label for this sig; this name does not need to be unique. */
     public final String label;
@@ -124,24 +122,29 @@ public abstract class Sig extends Expr {
     private Sig(String label) {
         super(Pos.UNKNOWN, null);
         this.builtin=true;
-        this.isAbstract=false;
-        this.isLone=false;
-        this.isOne=false;
-        this.isSome=false;
+        this.isAbstract=null;
+        this.isLone=null;
+        this.isOne=null;
+        this.isSome=null;
         this.label=label;
+        this.isSubset=null;
+        this.isOrdered=null;
     }
 
     /** Constructs a new PrimSig or SubsetSig. */
-    private Sig(Pos pos, Type type, String label, boolean abs, boolean lone, boolean one, boolean some) throws Err {
+    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subset, Pos isOrdered) throws Err {
         super(pos, type);
-        if ((lone && one) || (lone && some) || (one && some))
-            throw new ErrorSyntax(this.pos, "Sig \""+label+"\" can include at most one of the three multiplicities: lone, one, and some.");
+        if (lone!=null && one!=null)  throw new ErrorSyntax(lone.merge(one),  "You cannot delcare a sig to be both lone and one.");
+        if (lone!=null && some!=null) throw new ErrorSyntax(lone.merge(some), "You cannot delcare a sig to be both lone and some.");
+        if (one!=null  && some!=null) throw new ErrorSyntax(one.merge(some),  "You cannot delcare a sig to be both one and some.");
         this.builtin=false;
+        this.isOrdered=isOrdered;
         this.isAbstract=abs;
         this.isLone=lone;
         this.isOne=one;
         this.isSome=some;
         this.label=label;
+        this.isSubset=subset;
     }
 
     //==============================================================================================================//
@@ -191,23 +194,42 @@ public abstract class Sig extends Expr {
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param parent - the parent (must not be null, and must not be NONE)
          * @param label - the name of this sig (it does not need to be unique)
-         * @param isAbstract - true iff this sig should be abstract
-         * @param lone - true iff this sig has the "lone" multiplicity
-         * @param one - true iff this sig has the "one" multiplicity
-         * @param some - true iff this sig has the "some" multiplicity
+         * @param isAbstract - nonnull iff this sig should be abstract
+         * @param lone - nonnull iff this sig has the "lone" multiplicity
+         * @param one - nonnull iff this sig has the "one" multiplicity
+         * @param some - nonnull iff this sig has the "some" multiplicity
          * @param isLeaf - true if all its future subsigs shall have the same "type" as this sig
          *
-         * @throws ErrorSyntax  if the signature has two or more multiplicities
+         * @throws ErrorSyntax if the signature has two or more multiplicities
          * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
          */
-        public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws Err {
-            super(pos, (parent!=null && parent.hint_isLeaf) ? parent.type : null, label, isAbstract, lone, one, some);
+        public PrimSig(Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos ordered, boolean isLeaf) throws Err {
+            super(pos, (parent!=null && parent.hint_isLeaf) ? parent.type : null, label, isAbstract, lone, one, some, null, ordered);
             if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
             if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
             if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"none\" signature");
             if (parent==null) parent=UNIV; else if (parent!=UNIV) parent.children.add(this);
             this.parent = parent;
             this.hint_isLeaf = isLeaf || (parent.hint_isLeaf);
+        }
+
+        /**
+         * Constructs a non-builtin sig.
+         *
+         * @param pos - the position in the original file where this sig was defined (can be null if unknown)
+         * @param parent - the parent (must not be null, and must not be NONE)
+         * @param label - the name of this sig (it does not need to be unique)
+         * @param isAbstract - true iff this sig should be abstract
+         * @param lone - true iff this sig has the "lone" multiplicity
+         * @param one - true iff this sig has the "one" multiplicity
+         * @param some - true iff this sig has the "some" multiplicity
+         * @param isLeaf - true if all its future subsigs shall have the same "type" as this sig
+         *
+         * @throws ErrorSyntax if the signature has two or more multiplicities
+         * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
+         */
+        public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws Err {
+            this(pos, parent, label, isAbstract?Pos.UNKNOWN:null, lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, isLeaf);
         }
 
         /**
@@ -283,15 +305,16 @@ public abstract class Sig extends Expr {
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param parents - the list of parents (if this list is null or empty, we assume the caller means UNIV)
          * @param label - the name of this sig (it does not need to be unique)
-         * @param lone - true iff this sig has the "lone" multiplicity
-         * @param one - true iff this sig has the "one" multiplicity
-         * @param some - true iff this sig has the "some" multiplicity
+         * @param subsetPosition - if nonnull, it denotes the location of the "subset" token in the input file
+         * @param lone - nonnull iff this sig has the "lone" multiplicity
+         * @param one - nonnull iff this sig has the "one" multiplicity
+         * @param some - nonnull iff this sig has the "some" multiplicity
          *
          * @throws ErrorSyntax if the signature has two or more multiplicities
-         * @throws ErrorType if parents.contains(NONE)
+         * @throws ErrorType if parents contains NONE or SIGINT or SEQIDX
          */
-        public SubsetSig(Pos pos, Collection<Sig> parents, String label, boolean lone, boolean one, boolean some) throws Err {
-            super(pos, getType(pos,label,parents), label, false, lone, one, some);
+        public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos ordered) throws Err {
+            super(pos, getType(pos,label,parents), label, null, lone, one, some, Pos.UNKNOWN.merge(subsetPosition), ordered);
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
             if (parents!=null) for(Sig parent:parents) if (!temp.contains(parent)) temp.add(parent);
             if (temp.size()==0) temp.add(UNIV);
@@ -360,6 +383,18 @@ public abstract class Sig extends Expr {
 
     /** Returns the list of fields (as an unmodifiable list). */
     public final SafeList<Field> getFields() { return fields.dup(); }
+
+    //TODO
+    private Pos orderingPos=Pos.UNKNOWN;
+    private Sig orderingTarget=null;
+    public final void addOrderfields(Pos orderingPos, Sig orderingTarget) throws Err {
+        if (this.orderingTarget==orderingTarget) return;
+        if (this.orderingTarget!=null) throw new ErrorFatal(orderingPos, "Internal error (Same Ord is used on two different sigs)");
+        this.orderingPos=orderingPos;
+        this.orderingTarget=orderingTarget;
+    }
+    public final Sig getOrderingTarget() { return orderingTarget; }
+    public final Pos getOrdingerPos() { return orderingPos; }
 
     /**
      * Add then return a new field F, where "all x: ThisSig | x.F in bound"

@@ -24,6 +24,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -405,7 +406,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     /** Construct the constraints for "field declarations" and "appended fact paragraphs" for the given sig. */
     private Formula makeFieldAndAppendedConstraints(Module world, final Sig sig, Formula kfact) throws Err {
-        if (sig.isOrd() != null) return kfact;
+        if (sig.getOrderingTarget() != null) return kfact;
         for(Field f:sig.getFields()) {
             // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
             kfact=core(cform(f.boundingFormula), f).and(kfact);
@@ -546,6 +547,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     @Override public Object visit(ExprCall x) throws Err {
         Func y=x.fun;
+        // TODO: Special translation for util/integer.als
+        if (y.params.size()==0 && y.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"integer.als")) {
+            String lb=y.label;
+            if (lb.equals("max") || lb.endsWith("/max")) return BoundsComputer.SIGINT_MAX;
+            if (lb.equals("min") || lb.endsWith("/min")) return BoundsComputer.SIGINT_MIN;
+            if (lb.equals("next") || lb.endsWith("/next")) return BoundsComputer.SIGINT_NEXT;
+        }
         if (current_function.contains(y))
             throw new ErrorSyntax(x.span(), ""+y+" cannot call itself recursively!");
         Env<ExprVar,Object> newenv=new Env<ExprVar,Object>();
