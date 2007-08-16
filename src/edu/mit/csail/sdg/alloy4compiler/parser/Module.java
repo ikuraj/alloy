@@ -71,13 +71,13 @@ public final class Module {
     /** Mutable; this class represents an untypechecked Alloy module import statement; equals() uses object identity. */
     static final class Open {
         /** The position in the original model where this "open" statement was declared; never null. */
-        public final Pos pos;
+        final Pos pos;
         /** The alias for this open declaration; always a nonempty string. */
-        public final String alias;
+        final String alias;
         /** The unmodifiable list of instantiating arguments. */
-        public final ConstList<String> args;
+        final ConstList<String> args;
         /** The relative filename for the file being imported, without the final ".als" part; always a nonempty string. */
-        public final String filename;
+        final String filename;
         /** The actual Module object that it points to; null until we resolve it. */
         Module realModule=null;
         /** Constructs an Open object. */
@@ -90,13 +90,13 @@ public final class Module {
 
     /** Mutable; this class represents an untypechecked Alloy function; equals() uses object identity. */
     private static final class FunAST {
-        /** Initialized by typechecker. */ Func realFunc=null;
-        /** Initialized by typechecker. */ Expr realFormula=null;
-        /** The original position.      */ final Pos pos;
-        /** The short name.             */ final String name;
-        /** The parameters.             */ final ConstList<Decl> params;
-        /** The return type.            */ final Exp returnType;
-        /** The body.                   */ final Exp body;
+        /** Only initialized by typechecker. */ private Func realFunc=null;
+        /** Only initialized by typechecker. */ private Expr realFormula=null;
+        /** The original position.           */ private final Pos pos;
+        /** The short name.                  */ private final String name;
+        /** The parameters.                  */ private final ConstList<Decl> params;
+        /** The return type.                 */ private final Exp returnType;
+        /** The body.                        */ private final Exp body;
         FunAST(Pos pos, String name, List<Decl> params, Exp returnType, Exp body) {
             this.pos=pos; this.name=name; this.params=ConstList.make(params); this.returnType=returnType; this.body=body;
         }
@@ -194,35 +194,6 @@ public final class Module {
 
     //============================================================================================================================//
 
-
-    /** Returns a short description for the Module. */
-    @Override public String toString() {
-        String answer=null;
-        for(String x:paths) { if (answer==null) answer="module{"+x; else answer=answer+", "+x; }
-        return answer+"}";
-    }
-
-    /**
-     * Constructs a new Module object
-     *
-     * @param world - the world that this Module belongs to (it must be nonnull)
-     * @param pos - the position of the "module" line at the top of the file (it can be null if unknown)
-     * @param path - one of the path pointing to this module
-     */
-    Module(Module world, Pos pos, String path) throws Err {
-        if (world==null) { if (path.length()>0) throw new ErrorAPI(pos, "Root module misparsed."); else world=this; }
-        if (world.path2module.containsKey(path)) throw new ErrorSyntax("A module with the path \""+path+"\" already exists.");
-        world.path2module.put(path,this);
-        world.modules.add(this);
-        this.world=world;
-        this.pos=(pos==null ? Pos.UNKNOWN : pos);
-        this.path=path;
-        this.paths=new ArrayList<String>(1);
-        this.paths.add(path);
-    }
-
-    //============================================================================================================================//
-
     /** The world that this Module belongs to. */
     final Module world;
 
@@ -258,10 +229,36 @@ public final class Module {
 
     /** The list of (CommandName,Command) pairs; NOTE: duplicate command names are allowed. */
     private final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
-    
+
+    /** Returns a short description for the Module. */
+    @Override public String toString() {
+        String answer=null;
+        for(String x:paths) { if (answer==null) answer="module{"+x; else answer=answer+", "+x; }
+        return answer+"}";
+    }
+
+    /**
+     * Constructs a new Module object
+     * @param world - the world that this Module belongs to (null if this is the beginning of a new World)
+     * @param pos - the position of the "module" line at the top of the file (it can be null if unknown)
+     * @param path - one of the path pointing to this module
+     */
+    Module(Module world, Pos pos, String path) throws Err {
+        if (world==null) { if (path.length()>0) throw new ErrorAPI(pos, "Root module misparsed."); else world=this; }
+        if (world.path2module.containsKey(path)) throw new ErrorSyntax("A module with the path \""+path+"\" already exists.");
+        world.path2module.put(path,this);
+        world.modules.add(this);
+        this.world=world;
+        this.pos=(pos==null ? Pos.UNKNOWN : pos);
+        this.path=path;
+        this.paths=new ArrayList<String>(1);
+        this.paths.add(path);
+    }
+
     //============================================================================================================================//
 
     void addModelLine(Pos pos, String moduleName, List<ExpName> list) throws Err {
+        if (this.pos!=Pos.UNKNOWN) throw new ErrorSyntax(pos,"The \"module\" declaration can not occur more than once in the file.");
         this.moduleName=moduleName;
         this.pos=pos;
         for(ExpName expr:list) {
@@ -276,18 +273,24 @@ public final class Module {
                 throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as another sig or param in the same module.");
             if (funcs.containsKey(name))
                 throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as a function/predicate in the same module.");
-            if (path.length()==0) addSig(null, pos, name, false, false, false, false, null, null, new ArrayList<Decl>(), null);
+            if (facts.containsKey(name))
+                throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as a fact in the same module.");
+            if (asserts.containsKey(name))
+                throw new ErrorSyntax(expr.span(), "Parameter name cannot be the same as a function/predicate in the same module.");
+            if (path.length()==0) addSig(null, expr.span(), name, false, false, false, false, null, null, null, null);
             else params.put(name, null);
         }
     }
 
-    void addOpen(Pos pos, String name, List<ExpName> args, String alias) throws Err {
-        if (pos==null) pos=Pos.UNKNOWN;
-        if (name.length()==0) throw new ErrorSyntax(pos,"The filename cannot be \"\"");
-        if (alias.indexOf('@')>=0) throw new ErrorSyntax(pos,"Alias \""+alias+"\" must not contain \'@\'");
-        if (alias.indexOf('/')>=0) throw new ErrorSyntax(pos,"Alias \""+alias+"\" must not contain \'/\'");
-        if (alias.length()==0) {
-            if (args.size()!=0)
+    //TODO
+
+    void addOpen(Pos pos, ExpName filename, List<ExpName> args, ExpName alias) throws Err {
+        String name=filename.name, as=(alias==null ? "" : alias.name);
+        if (name.length()==0) throw new ErrorSyntax(filename.span(), "The filename cannot be \"\"");
+        if (as.indexOf('@')>=0) throw new ErrorSyntax(alias.span(), "Alias \""+as+"\" must not contain \'@\'");
+        if (as.indexOf('/')>=0) throw new ErrorSyntax(alias.span(), "Alias \""+as+"\" must not contain \'/\'");
+        if (as.length()==0) {
+            if (args!=null && args.size()!=0)
                 throw new ErrorSyntax(pos,
                 "The module being imported has parameters, so you must supply an alias using the AS keyword.");
             for(int i=0; i<name.length(); i++) {
@@ -300,10 +303,10 @@ public final class Module {
                    throw new ErrorSyntax(pos, "Filename contains \'"+c
                    +"\' which is illegal in an alias, so you must supply an alias using the AS keyword.");
             }
-            alias=name;
+            as=name;
         }
-        final TempList<String> newlist = new TempList<String>(args.size());
-        for(int i=0; i<args.size(); i++) {
+        final TempList<String> newlist = new TempList<String>(args==null ? 0 : args.size());
+        if (args!=null) for(int i=0; i<args.size(); i++) {
             ExpName arg=args.get(i);
             if (arg.name.length()==0)
                 throw new ErrorSyntax(arg.span(), "Module \""+name+"\"\'s instantiation argument cannot be empty");
@@ -311,14 +314,14 @@ public final class Module {
                 throw new ErrorSyntax(arg.span(), "Module \""+name+"\"\'s instantiation argument cannot contain \'@\'");
             newlist.add(arg.name);
         }
-        Open x=new Open(pos, alias, newlist.makeConst(), name);
-        Open y=opens.get(alias);
+        Open x=new Open(pos, as, newlist.makeConst(), name);
+        Open y=opens.get(as);
         if (y!=null) {
             // Special case, especially needed for auto-import of "util/sequniv"
             if (x.args.equals(y.args) && x.filename.equals(y.filename)) return;
             throw new ErrorSyntax(pos, "You cannot import more than 1 module using the same alias.");
         }
-        opens.put(alias,x);
+        opens.put(as,x);
     }
 
     /** Each param will now point to a nonnull SigAST. */
@@ -364,9 +367,7 @@ public final class Module {
             obj=new SigAST(p, fullname, n, fa, fl, fo, fs, true, i, d, f, this, null);
         else
             obj=new SigAST(p, fullname, n, fa, fl, fo, fs, false, Util.asList(e), d, f, this, null);
-        if (hints!=null) for(ExpName hint:hints) {
-           if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
-        }
+        if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         if (sigs.containsKey(n)) throw new ErrorSyntax(p, "sig \""+n+"\" is already declared in this module.");
         sigs.put(n,obj);
         return obj;
@@ -464,14 +465,14 @@ public final class Module {
             // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
             TempList<ExprVar> tmpvars = new TempList<ExprVar>();
             for(Decl d:f.params) {
-            	Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
-            	errors = errors.join(val.errors);
-            	for(ExpName n: d.names) {
-            		ExprVar v=ExprVar.make(n.span(), n.name, val);
-            		cx.put(n.name, v);
-            		tmpvars.add(v);
-            		A4Reporter.getReporter().typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.name+": "+v.type+"\n");
-            	}
+                Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
+                errors = errors.join(val.errors);
+                for(ExpName n: d.names) {
+                    ExprVar v=ExprVar.make(n.span(), n.name, val);
+                    cx.put(n.name, v);
+                    tmpvars.add(v);
+                    A4Reporter.getReporter().typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.name+": "+v.type+"\n");
+                }
             }
             Expr ret = null;
             if (f.returnType!=null) {
@@ -727,9 +728,9 @@ public final class Module {
 
     /** Return an unmodifiable list of commands in this module. */
     public SafeList<Command> getAllCommands() {
-    	SafeList<Command> ans = new SafeList<Command>(commands.size());
-    	for(Pair<String,Command> c:commands) ans.add(c.b);
-    	return ans.dup();
+        SafeList<Command> ans = new SafeList<Command>(commands.size());
+        for(Pair<String,Command> c:commands) ans.add(c.b);
+        return ans.dup();
     }
 
     //============================================================================================================================//

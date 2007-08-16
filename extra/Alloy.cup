@@ -412,6 +412,8 @@ nonterminal Exp                        ImpliesExprOpen;
 nonterminal Exp                        IntersectExpr;
 nonterminal Exp                        Let;
 nonterminal                            Module;
+nonterminal                            Modules;
+nonterminal                            Modulep;
 nonterminal ExpName                    Name;
 nonterminal ExpName                    NameHelper;
 nonterminal List<ExpName>              Names;
@@ -442,16 +444,19 @@ nonterminal Exp                        UnopExpr;
 
 //===========================================================================//
 
-Specification ::= Module Opens Paragraphs ;
+Specification ::= Modules Opens Paragraphs ;
 
-Module ::= MODULE:o Name:n                           {: parser.alloymodule.addModelLine(o                            , n.name , new ArrayList<ExpName>()); :};
-Module ::= MODULE:o Name:n LBRACKET Names:b RBRACKET {: parser.alloymodule.addModelLine(o                            , n.name , b                       ); :};
-Module ::=                                           {: parser.alloymodule.addModelLine(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>()); :};
+Modulep ::= Module                                       ;
+Modulep ::= Modulep Module                               ;
+Modules ::= Modulep                                      ;
+Modules ::=                                              {: parser.alloymodule.addModelLine(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>()); :};
+Module ::= MODULE:o Name:n                               {: parser.alloymodule.addModelLine(o.merge(n.pos)               , n.name , new ArrayList<ExpName>()); :};
+Module ::= MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r {: parser.alloymodule.addModelLine(o.merge(r)                   , n.name , b                       ); :};
 
-Open ::= OPEN:o Name:a                                         {: parser.alloymodule.addOpen(o.merge(a.pos), a.name, new ArrayList<ExpName>(), "");      :};
-Open ::= OPEN:o Name:a                               AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a.name, new ArrayList<ExpName>(), c.name);  :};
-Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c           {: parser.alloymodule.addOpen(o.merge(c),     a.name, b, "");                             :};
-Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a.name, b, c.name);                         :};
+Open ::= OPEN:o Name:a                                         {: parser.alloymodule.addOpen(o.merge(a.pos), a, null, null); :};
+Open ::= OPEN:o Name:a                               AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, null, c);    :};
+Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c           {: parser.alloymodule.addOpen(o.merge(c),     a, b,    null); :};
+Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, b,    c);    :};
 
 Opens ::=            ;
 Opens ::= Opens Open ;
@@ -732,7 +737,7 @@ CompareExpr ::= SOME:o UnionDiffExpr:b                       {: RESULT=new ExpUn
 CompareExpr ::= LONE:o UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
 CompareExpr ::= ONE:o  UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
 CompareExpr ::= SET:o  UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
-CompareExpr ::= SEQ:o  UnionDiffExpr:b                       {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(null,"seq/Int"), b); parser.alloymodule.addOpen(o, "util/sequniv", new ArrayList<ExpName>(), "seq"); :};
+CompareExpr ::= SEQ:o  UnionDiffExpr:b                       {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(null,"seq/Int"), b); parser.alloymodule.addOpen(o, new ExpName(o,"util/sequniv"), null, new ExpName(o,"seq")); :};
 CompareExpr ::=        UnionDiffExpr:b                       {: RESULT=b;                                        :};
 
 UnionDiffExpr ::=                         NumUnopExpr:b  {: RESULT=b;                                           :};
