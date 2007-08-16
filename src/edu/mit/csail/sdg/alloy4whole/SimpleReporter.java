@@ -43,7 +43,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -197,7 +196,7 @@ final class SimpleReporter extends A4Reporter {
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
         final Module world = CompUtil.parseEverything_fromFile(bundleCache, Helper.alloyHome(), rep.mainAlloyFileName);
-        final ConstList<Command> cmds = world.getAllCommands();
+        final List<Command> cmds = world.getAllCommands();
         if (rep.warnings.size()>0) {
             if (rep.warnings.size()>1)
                 rep.logBold("Note: There were "+rep.warnings.size()+" compilation warnings. Please scroll up to see them.\n\n");

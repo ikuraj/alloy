@@ -24,31 +24,20 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module.SigAST;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module.Open;
 
 /** This class provides convenience methods for calling the parser and the compiler. */
 
@@ -56,14 +45,6 @@ public final class CompUtil {
 
     /** Constructor is private, since this class never needs to be instantiated. */
     private CompUtil() { }
-
-    //=============================================================================================================//
-
-    /** Returns true if exists some entry (a,b) in the map, such that b==value (using object identity as the comparison) */
-    private static<V> boolean isin(V value, Map<String,V> map) {
-        for(Map.Entry<String,V> e:map.entrySet()) if (e.getValue()==value) return true;
-        return false;
-    }
 
     //=============================================================================================================//
 
@@ -169,161 +150,17 @@ public final class CompUtil {
         // No cycle detected so far. So now we parse the file.
         Module u = CompParser.alloy_parseStream(fc, (parent==null ? null : parent.world), 0, canon, prefix);
         // Here, we recursively open the included files
-        for(Map.Entry<Open,Module> e: u.imports.entrySet()) {
-            Open x=e.getKey();
+        for(Map.Entry<String,Open> e: u.opens.entrySet()) {
+            Open x=e.getValue();
             Module y=parseRecursively(fc, rootdir, x.pos, x.filename, u, canon, prefix.length()==0 ? x.alias : prefix+"/"+x.alias, thispath);
             if (x.args.size() != y.params.size())
                throw new ErrorSyntax(x.pos,
                   "You supplied "+x.args.size()+" arguments to the open statement, but the imported module requires "
                   +y.params.size()+" arguments.");
-            e.setValue(y);
+            x.realModule=y;
         }
         thispath.remove(canon); // Remove this file from the CYCLE DETECTION LIST.
         return u;
-    }
-
-    //=============================================================================================================//
-
-    /** This is step 1 of the postprocessing: figure out the instantiating parameters of each module. */
-    private static boolean alloy_fillParams(Module root) throws Err {
-       boolean chg=false;
-       Open missing=null;
-       for(Module mod:root.modules) for(Map.Entry<Open,Module> entry:mod.imports.entrySet()) {
-          Open open=entry.getKey();
-          Module sub=entry.getValue();
-          int i=0;
-          for(Map.Entry<String,SigAST> p:sub.params.entrySet()) {
-             SigAST old=p.getValue();
-             String kn=p.getKey(), vn=open.args.get(i);
-             i++;
-             Set<SigAST> v=mod._lookup_sigORparam(vn);
-             if (v.size()<1) {if (old==null) missing=open; continue;}
-             if (v.size()>1) throw new ErrorSyntax(open.pos, "The signature name \""+vn+"\" is ambiguous");
-             SigAST vv=v.iterator().next();
-             if (old==vv) continue;
-             if (old!=null) throw new ErrorFatal(open.pos, "Internal error (module re-instantiated with different argument)");
-             if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
-             chg=true;
-             p.setValue(vv);
-             if (kn.equals("elem"))
-               if (sub.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als"))
-                 vv.orderingPosition = open.pos; // This detects for the Alloy3 behavior of util/ordering
-             A4Reporter.getReporter().parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
-           }
-       }
-       if (chg==false && missing!=null) throw new ErrorSyntax(missing.pos, "Failed to import the module, because one of the instantiating signature cannot be found");
-       return chg;
-    }
-
-    //=============================================================================================================//
-
-    /** This is step 2 of the postprocessing: merging modules that have same filename and instantiating arguments. */
-    private static boolean alloy_mergeModules(Module root) {
-       // Before merging, the only pointers that go between Module objects are
-       // (1) a module's "params" may point to a sig in another module
-       // (2) a module's "imports" may point to another module
-       // So when we find that two modules A and B should be merged,
-       // we go through every module and replace "pointers into B" with equivalent "pointers into A".
-       boolean chg=false;
-       List<Module> modules=root.modules;
-       for(int i=0; i<modules.size(); i++) {
-          Module a=modules.get(i);
-          for(int j=i+1; j<modules.size(); j++) {
-             Module b=modules.get(j);
-             if (!a.pos.filename.equals(b.pos.filename) || !a.params.equals(b.params)) continue;
-             chg=true;
-             A4Reporter.getReporter().parse("MATCH FOUND ON "+a.pos.filename+"\n");
-             if (i!=0 && Util.slashComparator.compare(a.path, b.path)>0) { a=b; b=modules.get(i); modules.set(i,a); }
-             modules.remove(j);
-             j--;
-             for(String c:b.paths) root.path2module.put(c,a); // This ensures root.modules and root.path2module are consistent
-             a.paths.addAll(b.paths);
-             Collections.sort(a.paths, Util.slashComparator);
-             for(Module c:modules) {
-                for(Map.Entry<String,SigAST> p:c.params.entrySet()) if (isin(p.getValue(), b.sigs)) p.setValue(a.sigs.get(p.getValue().name));
-                for(Map.Entry<Open,Module> p:c.imports.entrySet()) if (p.getValue()==b) p.setValue(a);
-             }
-          }
-       }
-       return chg;
-    }
-
-    //=============================================================================================================//
-
-    /** This is step 3 of the postprocessing: converting from "Exp" to "Expr" */
-    private static Module alloy_resolve(final Module root) throws Err {
-        JoinableList<Err> errors = new JoinableList<Err>();
-        final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
-        final A4Reporter rep = A4Reporter.getReporter();
-        final List<Module> modules = root.modules;
-        // Resolves SigAST -> Sig
-        for(Module m:modules) for(Map.Entry<String,SigAST> e:m.sigs.entrySet()) Module.checkSig(e.getValue());
-        // Label any Sig that are used in util/ordering
-        for(Module m:modules) {
-           SigAST elemX=m.params.get("elem"); if (elemX==null) continue;
-           Sig elem=elemX.realSig;            if (elem.builtin || m.getAllSigs().size()!=1) continue;
-           Sig ord=m.getAllSigs().get(0);     if (ord.builtin  || !ord.label.endsWith("/Ord")) continue;
-           if (!ord.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) continue;
-           ord.anno.put("orderingSIG", elem);
-        }
-        // Add the fields
-        for(Module m:modules) for(SigAST oldS:m.sigs.values()) {
-           // When typechecking each field:
-           // * it is allowed to refer to earlier fields in the same SIG or in any visible ancestor sig
-           // * it is allowed to refer to visible sigs
-           // * it is NOT allowed to refer to any predicate or function
-           // For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
-           // then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
-           final Sig s=oldS.realSig;
-           final Context cx=new Context(m);
-           final ExpName dup=Decl.findDuplicateName(oldS.fields);
-           if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.name+"\"");
-           for(final Decl d:oldS.fields) {
-              // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
-              final ExprVar THIS = s.oneOf("this");
-              cx.rootfield=true;
-              cx.rootsig=s;
-              cx.put("this", THIS);
-              Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
-              cx.remove("this");
-              for(final ExpName n:d.names) {
-                 final Field f=s.addTrickyField(d.span(), n.name, THIS, bound);
-                 rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
-                 if (d.disjoint==null) continue;
-                 if (disjA==null) disjA=f; else disjF=ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
-                 disjA=disjA.plus(f);
-              }
-              if (d.disjoint!=null && disjF!=ExprConstant.TRUE) m.addFact(Pos.UNKNOWN, ""+s+"#disjoint", disjF);
-          }
-        }
-        // The Alloy language forbids two overlapping sigs from having fields with the same name.
-        // In other words: if 2 fields have the same name, then their type's first column must not intersect.
-        final Map<String,List<Field>> fieldname2fields=new LinkedHashMap<String,List<Field>>();
-        for(Module m:modules) {
-          for(Map.Entry<String,SigAST> sig: m.sigs.entrySet()) {
-            for(Field field: sig.getValue().realSig.getFields()) {
-               List<Field> peers=fieldname2fields.get(field.label);
-               if (peers==null) { peers=new ArrayList<Field>(); fieldname2fields.put(field.label, peers); }
-               for(Field field2: peers)
-                  if (field.type.firstColumnOverlaps(field2.type))
-                     throw new ErrorType(field.pos,
-                     "Two overlapping signatures cannot have\ntwo fields with the same name \""+field.label
-                     +"\":\n\n1) one is in sig \""+field.sig+"\"\n"+field.pos
-                     +"\n\n2) the other is in sig \""+field2.sig+"\"\n"+field2.pos);
-               peers.add(field);
-            }
-          }
-        }
-        // Typecheck the function declarations and function bodies
-        for(Module x:modules) errors = x.checkFunctionDecls(errors, warns);
-        for(Module x:modules) errors = x.checkFunctionBodies(errors, warns);
-        // Typecheck the assertions and facts
-        for(Module x:modules) { errors = x.checkAssertions(errors,warns); errors = x.checkFacts(errors,warns); }
-        // Typecheck the run/check commands
-        errors = root.checkCommands(errors, warns);
-        // Issue the warnings, and generate the errors if there are any
-        for(ErrorWarning w:warns) rep.warning(w);
-        if (!errors.isEmpty()) throw errors.get(0); else return root;
     }
 
     //=============================================================================================================//
@@ -333,7 +170,7 @@ public final class CompUtil {
      * @throws Err if any error occurred
      * @return an array of 0 or more Command if no error occurred
      */
-    public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
+    public static List<Command> parseOneModule_fromString(String content) throws Err {
         try {
             Map<String,String> fc=new LinkedHashMap<String,String>();
             fc.put("",content);
@@ -353,7 +190,7 @@ public final class CompUtil {
      * @throws Err if any error occurred
      * @return an array of 0 or more Command if no error occurred
      */
-    public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
+    public static List<Command> parseOneModule_fromFile(String filename) throws Err {
         try {
             Map<String,String> fc=new LinkedHashMap<String,String>();
             Module u=CompParser.alloy_parseStream(fc, null, 0, filename, "");
@@ -377,7 +214,7 @@ public final class CompUtil {
             if (world==null) throw new ErrorAPI("parseOneExpression() cannot be called with null World");
             Map<String,String> fc=new LinkedHashMap<String,String>();
             fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-            Exp body = CompParser.alloy_parseStream(fc, null, -1, "", "").getFirstFunc();
+            Exp body = CompParser.alloy_parseStream(fc, null, -1, "", "").getFirstFunAST();
             if (body == null) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
             Context cx = new Context(world);
             ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
@@ -409,9 +246,7 @@ public final class CompUtil {
             if (fc==null) fc=new LinkedHashMap<String,String>();
             Set<String> thispath=new LinkedHashSet<String>();
             Module root = parseRecursively(fc, rootdir, Pos.UNKNOWN, filename, null, null, "", thispath);
-            while(alloy_fillParams(root)) {}
-            while(alloy_mergeModules(root)) {}
-            return alloy_resolve(root);
+            return Module.resolveAll(root);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());
         } catch(IOException ex) {

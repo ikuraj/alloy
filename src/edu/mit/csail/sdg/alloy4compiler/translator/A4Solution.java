@@ -613,7 +613,7 @@ public final class A4Solution {
             writeTS(new A4TupleSet(inst.tuples(r),map,map2sig), out, un.make("$"+rn), t, un);
         }
         // Write out all parameter-less Function in the main module
-        for(final Func pf:parent.world.getAllFunc0()) if (!pf.isPred) {
+        for(final Func pf:parent.world.getAllFunc()) if (!pf.isPred && pf.params.size()==0) {
             A4TupleSet ts;
             try {
                 final Object obj=eval(pf.getBody());
