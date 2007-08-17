@@ -44,6 +44,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprSelect;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
@@ -620,6 +621,24 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Object ans=env.get(x);
         if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" cannot be resolved during translation.\n");
         return ans;
+    }
+
+    /*==============================================*/
+    /* Evaluates an ExprSelect node.                */
+    /*==============================================*/
+
+    @Override public Object visit(ExprSelect x) throws Err {
+        if (bcc!=null) {
+            String label = x.expr.label+"["+x.index+"]";
+            if (label.startsWith("this/")) label=label.substring(5);
+            Object ans = bcc.get(label);
+            if (ans!=null) return ans;
+        }
+        StringBuilder sb=new StringBuilder("This cannot be a legal relational join between two unary sets:\nleft hand side is ");
+        sb.append(x.index).append(" (type = {Int})\nright hand side is ");
+        x.expr.toString(sb,-1);
+        sb.append(" (type = ").append(x.expr.type).append(")\n");
+        throw new ErrorType(x.span(), sb.toString());
     }
 
     /*==============================================*/

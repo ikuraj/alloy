@@ -40,7 +40,7 @@ final class Helper {
         if (temp==null || temp.length()==0)
             OurDialog.fatal(null,"Error. JVM need to specify a temporary directory using java.io.tmpdir property.");
         String username=System.getProperty("user.name");
-        File tempfile=new File(temp+File.separatorChar+"alloy4tmp24-"+(username==null?"":username));
+        File tempfile=new File(temp+File.separatorChar+"alloy4tmp25-"+(username==null?"":username));
         tempfile.mkdirs();
         String ans=Util.canon(tempfile.getPath());
         if (!tempfile.isDirectory()) {
@@ -85,7 +85,7 @@ final class Helper {
         if (temp==null || temp.length()==0) return;
         String username=System.getProperty("user.name");
         if (username==null) username="";
-        for(int i=1; i<24; i++) iterateTemp(temp+File.separatorChar+"alloy4tmp"+i+"-"+username, true);
+        for(int i=1; i<25; i++) iterateTemp(temp+File.separatorChar+"alloy4tmp"+i+"-"+username, true);
     }
 
     private static long iterateTemp(String filename, boolean delete) {

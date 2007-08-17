@@ -145,6 +145,9 @@ public final class ExprCall extends Expr {
             env.remove(x.var);
             return ans;
         }
+        @Override public Object visit(ExprSelect x) throws Err {
+            return x.expr.accept(this);
+        }
         @Override public Object visit(ExprCall x)    { return x.fun.returnDecl.type; }
         @Override public Object visit(ExprVar x)     { Type t=env.get(x); return (t!=null && t!=EMPTY) ? t : x.type; }
         @Override public Object visit(Sig x)         { return x.type; }

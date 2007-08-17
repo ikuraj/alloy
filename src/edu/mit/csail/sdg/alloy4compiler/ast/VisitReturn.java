@@ -54,6 +54,9 @@ public abstract class VisitReturn {
     /** Visits an ExprQuant node. */
     public abstract Object visit(ExprQuant x) throws Err;
 
+    /** Visits an ExprSelect node. */
+    public abstract Object visit(ExprSelect x) throws Err;
+
     /** Visits an ExprUnary node. */
     public abstract Object visit(ExprUnary x) throws Err;
 

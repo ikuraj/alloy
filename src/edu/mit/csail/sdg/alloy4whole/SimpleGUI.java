@@ -1354,7 +1354,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         opt.originalFilename = Util.canon(text.getFilename());
         opt.solver = sc;
         opt.solverDirectory = Helper.alloyHome()+fs+"binary";
-        if (1==0 && Verbosity.get()==Verbosity.FULLDEBUG) {
+        if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
             try {
                 final String tempdir = Helper.maketemp();
                 SimpleReporter.performRegularCommand(null, text.takeSnapshot(), i, opt, WarningNonfatal.get(), tempdir, Verbosity.get().ordinal());

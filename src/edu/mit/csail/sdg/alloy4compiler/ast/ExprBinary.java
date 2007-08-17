@@ -271,7 +271,17 @@ public final class ExprBinary extends Expr {
                   break;
               case JOIN:
                   type=left.type.join(right.type);
-                  if (type==EMPTY) return ExprBadJoin.make(pos, closingBracket, left, right);
+                  if (type==EMPTY) {
+                     if (left instanceof ExprUnary && ((ExprUnary)left).op==ExprUnary.Op.CAST2SIGINT)
+                      if (((ExprUnary)left).sub instanceof ExprConstant) // due to CAST2SIGINT, we know it's an int
+                       if (right instanceof ExprUnary && ((ExprUnary)right).op==ExprUnary.Op.NOOP)
+                        if (((ExprUnary)right).sub instanceof Sig) {
+                          int num = ((ExprConstant) (((ExprUnary)left).sub)).num();
+                          Sig sig = (Sig) (((ExprUnary)right).sub);
+                          return new ExprSelect(left.span().merge(right.span()), sig, num, 0);
+                        }
+                     return ExprBadJoin.make(pos, closingBracket, left, right);
+                  }
                   break;
               case DOMAIN:
                   type=right.type.domainRestrict(left.type);

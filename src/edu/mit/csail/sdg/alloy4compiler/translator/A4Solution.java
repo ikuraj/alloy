@@ -781,6 +781,15 @@ public final class A4Solution {
         i.add(BoundsComputer.SIGINT_MAX, tf.range(tf.tuple(""+max), tf.tuple(""+max)));
         i.add(BoundsComputer.SIGINT_ZERO, tf.range(tf.tuple("0"), tf.tuple("0")));
         i.add(BoundsComputer.SIGINT_MIN, tf.range(tf.tuple(""+min), tf.tuple(""+min)));
+        // Add each atom so that you can refer to them in the evaluator
+        for(String a:atoms) if (a.indexOf('[')>=0) {
+            if (a.startsWith("this/")) a=a.substring(5);
+            TupleSet ts=tf.noneOf(1);
+            ts.add(tf.tuple(a));
+            Relation r=Relation.unary(a);
+            obj2expr.put(a,r);
+            i.add(r, ts);
+        }
         // Add the skolem sets
         for(Map.Entry<String,List<String>> e: set2atoms.entrySet()) {
             TupleSet ts=tf.noneOf(1);
