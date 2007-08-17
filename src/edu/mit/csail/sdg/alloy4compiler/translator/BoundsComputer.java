@@ -100,7 +100,7 @@ final class BoundsComputer {
     private Bounds bounds=null;
 
     /** Returns an unmodifiable view of the resulting Bounds object. */
-    Bounds getBounds() { return bounds.unmodifiableView(); }
+    Bounds getBounds() { return bounds; } // TODO .unmodifiableView(); }
 
     static final Relation SIGINT_MIN = Relation.unary("[discard] util/integer min");
     static final Relation SIGINT_ZERO = Relation.unary("[discard] util/integer zero");
@@ -607,7 +607,7 @@ final class BoundsComputer {
         for(Sig s:sigs) if (!s.builtin) {
             // *
             final Sig elem = s.getOrderingTarget();
-            if (elem!=null) { // TODO: THiS LINE is the problem!
+            if (elem!=null && 1==2) { // TODO: THiS LINE is the problem!
                 Relation first=Relation.unary("First"), last=Relation.unary("Last"), next=Relation.binary("Next");
                 discard.add(first);
                 discard.add(last);

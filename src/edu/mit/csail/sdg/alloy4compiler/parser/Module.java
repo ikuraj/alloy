@@ -632,7 +632,6 @@ public final class Module {
             else A4Reporter.getReporter().typecheck("Fact " + e.getKey() + ": " + expr.type+"\n");
         }
         for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
-            if (e.getValue().isOrd) continue;
             Sig s=e.getValue().realSig;
             Exp f=e.getValue().appendedFact;
             if (f==null) continue;
