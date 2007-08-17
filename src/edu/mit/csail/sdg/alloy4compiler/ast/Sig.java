@@ -89,12 +89,8 @@ public abstract class Sig extends Expr {
     public final Pos isSubset;
 
     /**
-     * Nonnull if this sig is ordered.
-     *
-     * <p> Note: this field is always null for builtin sigs, since they are never ordered;
-     * instead, if the user tries to open util/ordering[] on it, the explicit facts in that module
-     * will be translated verbatim so that it produces the "effect" of ordering; but as far as
-     * the translation engine is concerned, the builtin sigs are never ordered.
+     * Nonnull if the user wanted this sig to be ordered.
+     * <p> Note: this value is always null for builtin sigs.
      */
     public final Pos isOrdered;
 
@@ -152,6 +148,15 @@ public abstract class Sig extends Expr {
         this.label=label;
         this.isSubset=subset;
     }
+
+    /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
+    @Override public boolean equals(Object obj) {
+        while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
+        return (obj==this);
+    }
+
+    /** Due to the conservative nature of Expr.equals(), we just return 0 as the safe hashcode. */
+    @Override public int hashCode() { return 0; }
 
     //==============================================================================================================//
 
@@ -351,13 +356,6 @@ public abstract class Sig extends Expr {
             this.label=label;
             // If the field declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (bound.mult==0 && bound.type.arity()==1) bound=ExprUnary.Op.ONEOF.make(null, bound);
-            /*
-             * Possible optimization if the sig is "one", we can do something much more clever here:
-             *
-             * if (sig.isOne!=null && var!=null && var.expr.mult==0 && var.expr.equals(sig)) {
-             *    boundingFormula=ExprLet.make(pos, var, sig.join(this).in(bound));
-             * }
-             */
             if (var==null) var = sig.oneOf("this");
             boundingFormula=ExprQuant.Op.ALL.make(pos, null, Util.asList(var), var.join(this).in(bound));
             if (!boundingFormula.errors.isEmpty())
@@ -365,6 +363,15 @@ public abstract class Sig extends Expr {
             if (boundingFormula.hasCall())
                 throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
         }
+
+        /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
+        @Override public boolean equals(Object obj) {
+            while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
+            return (obj==this);
+        }
+
+        /** Due to the conservative nature of Expr.equals(), we just return 0 as the safe hashcode. */
+        @Override public int hashCode() { return 0; }
 
         /** Returns a human-readable description of this field's name. */
         @Override public String toString() { return "field ("+sig+" <: "+label+")"; }
@@ -397,31 +404,6 @@ public abstract class Sig extends Expr {
     /** Returns the list of fields (as an unmodifiable list). */
     public final SafeList<Field> getFields() { return fields.dup(); }
 
-    //TODO
-    private Sig orderingTarget=null;
-    public final void addOrderfields(Sig orderingTarget) throws Err {
-        if (this.orderingTarget==orderingTarget) return;
-        if (this.orderingTarget!=null) throw new ErrorFatal("Internal error (Same Ord is used on two different sigs)");
-        this.orderingTarget=orderingTarget;
-    }
-    public final Sig getOrderingTarget() { return orderingTarget; }
-
-    /**
-     * Add then return a new field F, where "all x: ThisSig | x.F in bound"
-     * <p> Note: the bound must be fully-typechecked and have exactly 0 free variables.
-     *
-     * @param pos - the position in the original file where this field was defined (can be null if unknown)
-     * @param label - the name of this field (it does not need to be unique)
-     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
-     *
-     * @throws ErrorSyntax  if the sig is one of the builtin sig
-     * @throws ErrorSyntax  if the bound contains a predicate/function call
-     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
-     */
-    public final Field addField(Pos pos, String label, Expr bound) throws Err {
-        return addTrickyField(pos, label, null, bound);
-    }
-
     /**
      * Add then return a new field, where "all x: ThisSig | x.F in bound"
      * <p> Note: the bound must be fully-typechecked and have exactly 0 free variable, or have "x" as its sole free variable.
@@ -441,5 +423,21 @@ public abstract class Sig extends Expr {
         final Field f=new Field(pos, this, label, x, bound);
         fields.add(f);
         return f;
+    }
+
+    /**
+     * Add then return a new field F, where "all x: ThisSig | x.F in bound"
+     * <p> Note: the bound must be fully-typechecked and have exactly 0 free variables.
+     *
+     * @param pos - the position in the original file where this field was defined (can be null if unknown)
+     * @param label - the name of this field (it does not need to be unique)
+     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
+     *
+     * @throws ErrorSyntax  if the sig is one of the builtin sig
+     * @throws ErrorSyntax  if the bound contains a predicate/function call
+     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
+     */
+    public final Field addField(Pos pos, String label, Expr bound) throws Err {
+        return addTrickyField(pos, label, null, bound);
     }
 }

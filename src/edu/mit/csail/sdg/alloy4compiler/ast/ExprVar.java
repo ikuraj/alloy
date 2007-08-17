@@ -49,6 +49,15 @@ public final class ExprVar extends Expr {
         return p;
     }
 
+    /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
+    @Override public boolean equals(Object obj) {
+        while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
+        return this==obj;
+    }
+
+    /** Due to the conservative nature of Expr.equals(), we just return 0 as the safe hashcode. */
+    @Override public int hashCode() { return 0; }
+
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {

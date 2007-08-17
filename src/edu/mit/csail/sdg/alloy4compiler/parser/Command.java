@@ -20,11 +20,12 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import java.util.ArrayList;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 
@@ -116,8 +117,8 @@ public final class Command {
     throws Err {
         if (pos==null) pos = Pos.UNKNOWN;
         formula = formula.typecheck_as_formula();
+        if (formula.ambiguous) formula=formula.resolve_as_formula(new ArrayList<ErrorWarning>());
         if (!formula.errors.isEmpty()) throw formula.errors.get(0);
-        if (formula.ambiguous) throw new ErrorType(formula.span(), "This expression is ambiguous.");
         this.pos = pos;
         this.formula = formula;
         this.label = (label==null ? "" : label);

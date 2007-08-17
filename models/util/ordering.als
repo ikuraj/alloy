@@ -26,27 +26,20 @@ one sig Ord {
    First, Last: set elem,
    Next: elem -> elem
 }{
-  // constraints that actually define the total order
-  one First
-  one Last
-  no First.(~Next)
-  no Last.Next
-  (
-   // either elem has exactly one atom,
-   // which has no predecessor or successor...
-   (one elem && no elem.(~Next) && no elem.Next) ||
-   // or...
-    (all e: elem | {
-      // ...each element (except the first) has one predecessor, and...
-      (e = First || one e.(~Next))
-      // ...each element (except the last) has one successor, and...
-      (e = Last || one e.Next)
-      // ...there are no cycles
-      (e !in e.^Next)
-    })
-  )
-  // all elements of elem are totally ordered
+  // every element is in the total order
   elem in First.*Next
+  // first element has no predecessor
+  no First.(~Next)
+  // last element has no successor
+  no Last.Next
+  (all e: elem | {
+    // each element (except the first) has one predecessor
+    (e = First || one e.(~Next))
+    // each element (except the last) has one successor
+    (e = Last || one e.Next)
+    // there are no cycles
+    (e !in e.^Next)
+  })
 }
 
 // first
@@ -92,3 +85,28 @@ fun max [es: set elem]: lone elem { es - es.^(~(Ord.Next)) }
 // returns the smallest element in es
 // or the empty set if es is empty
 fun min [es: set elem]: lone elem { es - es.^(Ord.Next) }
+
+assert correct {
+  let mynext = Ord.Next |
+  let myprev = ~mynext | {
+     ( all b:elem | (lone b.next) && (lone b.prev) && (b !in b.^mynext) )
+     ( (no first.prev) && (no last.next) )
+     ( all b:elem | (b!=first && b!=last) => (one b.prev && one b.next) )
+     ( (!(lone elem)) => (one first && one last && first!=last && one first.next && one last.prev) )
+     ( one elem => (first=last && no myprev && no mynext) )
+     ( no elem => (no first && no last && no myprev && no mynext) )
+     ( myprev=~mynext )
+     ( elem = first.*mynext )
+     (all disj a,b:elem | a in b.^mynext or a in b.^myprev)
+     (no disj a,b:elem | a in b.^mynext and a in b.^myprev)
+     (all disj a,b,c:elem | (b in a.^mynext and c in b.^mynext) =>(c in a.^mynext))
+     (all disj a,b,c:elem | (b in a.^myprev and c in b.^myprev) =>(c in a.^myprev))
+  }
+}
+
+check correct for exactly 0 elem
+check correct for exactly 1 elem
+check correct for exactly 2 elem
+check correct for exactly 3 elem
+check correct for exactly 4 elem
+check correct for exactly 5 elem

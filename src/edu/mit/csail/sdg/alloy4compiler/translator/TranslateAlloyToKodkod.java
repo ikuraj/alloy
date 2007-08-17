@@ -34,6 +34,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
@@ -99,6 +100,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     /** The Kodkod-to-Alloy map. */
     final Map<Formula,List<Object>> core;
+    private Formula core(Formula f, Pos x) {
+        if (core==null || x==null) return f;
+        List<Object> list=core.get(f);
+        if (list==null) { list=new ArrayList<Object>(3); core.put(f,list); }
+        list.add(x);
+        return f;
+    }
     private Formula core(Formula f, Expr x) {
         if (core==null || x==null) return f;
         if (f instanceof BinaryFormula && ((BinaryFormula)f).op()==BinaryFormula.Operator.AND) {
@@ -400,20 +408,95 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     //==============================================================================================================//
 
+    /** Remove the NOOP in front of an expression. */
+    private static Expr deNOP(Expr x) {
+        while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
+        return x;
+    }
+
+    /** Returns y if f.boundingFormula is of the form "all SomeVar: one s | SomeVar.f in y" */
+    private static Expr findY(Sig s, Field f) {
+        Expr x=f.boundingFormula;
+        if (!(x instanceof ExprQuant)) return null;
+        final ExprQuant q=(ExprQuant)x;
+        if (q.op!=ExprQuant.Op.ALL || q.vars.size()!=1) return null;
+        final ExprVar v=q.vars.get(0);
+        x=deNOP(v.expr);
+        if (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.ONEOF) x=((ExprUnary)x).sub;
+        if (!x.equals(s)) return null;
+        if (!(q.sub instanceof ExprBinary)) return null;
+        ExprBinary in=(ExprBinary)(q.sub);
+        if (in.op!=ExprBinary.Op.IN) return null;
+        if (!in.left.equals(v.join(f))) return null;
+        x=deNOP(in.right);
+        if (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.SETOF) x=deNOP(((ExprUnary)x).sub);
+        return x;
+    }
+
+    /** Returns the sig "elem" if field1="all this:s | s.f1 in set elem", field2=same, field3="... in elem->elem" */
+    private static Sig findElem(Sig s, Field field1, Field field2, Field field3) {
+        Expr b1=findY(s,field1), b2=findY(s,field2), b3=findY(s,field3);
+        if (!(b1 instanceof Sig) || b1!=b2 || b3==null) return null;
+        if (!(b3.equals(b1.product(b1)))) return null;
+        return (Sig)b1;
+    }
+
+    /**
+     * Returns true if we can determine that "fact" says "total order on elem".
+     *
+     * <p> In particular, that means fact == e1 && (e2 && (e3 && (all e: one elem | (e4 && (e5 && e6))))) where
+     * <br> e1 = elem in First.*Next
+     * <br> e2 = no First.(~Next)
+     * <br> e3 = no Last.Next
+     * <br> e4 = (e = First || one e.(~Next))
+     * <br> e5 = (e = Last || one e.Next)
+     * <br> e6 = (e !in e.^Next)
+     */
+    private static boolean chkFact(Sig elem, Sig ord, Expr first, Expr last, Expr next, Expr fact) {
+        Expr prev;
+        ExprBinary bin;
+        first = ord.join(first);
+        last = ord.join(last);
+        next = ord.join(next);
+        prev = next.transpose();
+        if (!(fact instanceof ExprBinary)) return false;
+        bin=(ExprBinary)fact;
+        if (!(bin.right instanceof ExprBinary)) return false;
+        if (!elem.in(first.join(next.reflexiveClosure())).equals(bin.left)) return false;
+        bin=(ExprBinary)(bin.right);
+        if (!(bin.right instanceof ExprBinary)) return false;
+        if (!first.join(prev).no().equals(bin.left)) return false;
+        bin=(ExprBinary)(bin.right);
+        if (!(bin.right instanceof ExprQuant)) return false;
+        if (!last.join(next).no().equals(bin.left)) return false;
+        ExprQuant qt=(ExprQuant)(bin.right);
+        if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1 || !(qt.sub instanceof ExprBinary)) return false;
+        ExprVar e=qt.vars.get(0);
+        if (!e.expr.equals(ExprUnary.Op.ONEOF.make(null,elem))) return false;
+        bin=(ExprBinary)(qt.sub);
+        if (!(bin.right instanceof ExprBinary)) return false;
+        if (!e.equal(first).or(e.join(prev).one()).equals(bin.left)) return false;
+        bin=(ExprBinary)(bin.right);
+        if (!e.equal(last).or(e.join(next).one()).equals(bin.left)) return false;
+        if (!e.in(e.join(next.closure())).not().equals(bin.right)) return false;
+        return true;
+    }
+
     /** Construct the constraints for "field declarations" and "appended fact paragraphs" and "fact" paragraphs */
     private Formula makeFacts(Module module, Formula kfact) throws Err {
-        for(Sig sig: module.getAllSigs()) {
-            Sig elem = sig.getOrderingTarget();
-            if (elem != null) {
-                Field f1=sig.getFields().get(0); Expression first=bc.exprWithoutFirst(f1), e=bc.expr(elem);
-                Field f2=sig.getFields().get(1); Expression last=bc.exprWithoutFirst(f2);
-                Field f3=sig.getFields().get(2); Expression next=bc.exprWithoutFirst(f3);
-                if (first instanceof Relation && last instanceof Relation && next instanceof Relation) {
-                    Relation ee=null;
-                    if (e instanceof Relation) {
-                        ee=(Relation)e;
-                        kfact = (((Relation)next).totalOrder(ee, (Relation)first, (Relation)last)).and(kfact);
-                        return kfact; // TODO: add the ordering Pos!
+        SafeList<Sig> sigs = module.getAllSigs();
+        SafeList<Pair<String,Expr>> facts = module.getAllFacts();
+        for(Sig sig: sigs) {
+            if (sig.isOne!=null && sigs.size()==1 && sig.getFields().size()==3 && facts.size()==1) {
+                Field f1 = sig.getFields().get(0); Expression fst = bc.exprWithoutFirst(f1);
+                Field f2 = sig.getFields().get(1); Expression lst = bc.exprWithoutFirst(f2);
+                Field f3 = sig.getFields().get(2); Expression nxt = bc.exprWithoutFirst(f3);
+                Sig e = findElem(sig,f1,f2,f3);
+                if (e!=null && e.isOrdered!=null && fst instanceof Relation && lst instanceof Relation && nxt instanceof Relation) {
+                    Expression ee = bc.expr(e);
+                    if (ee instanceof Relation && chkFact(e, sig, f1, f2, f3, facts.get(0).b)) {
+                        Formula f = ((Relation)nxt).totalOrder((Relation)ee, (Relation)fst, (Relation)lst);
+                        return core(f, e.isOrdered).and(kfact);
                     }
                 }
             }

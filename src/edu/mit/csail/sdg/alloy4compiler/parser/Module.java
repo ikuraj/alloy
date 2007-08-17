@@ -118,7 +118,6 @@ public final class Module {
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
         Pos isOrdered=null;
-        boolean isOrd=false;
         SigAST(Pos pos, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subset,
             List<String> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=pos;
@@ -390,7 +389,6 @@ public final class Module {
                   && vv!=Module.UNIVast && vv!=Module.SIGINTast && vv!=Module.SEQIDXast && vv!=Module.NONEast
                   && sub.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) {
                      vv.isOrdered = open.pos;
-                     sub.sigs.entrySet().iterator().next().getValue().isOrd=true;
                   }
                A4Reporter.getReporter().parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
             }
@@ -817,12 +815,6 @@ public final class Module {
         final List<Module> modules = root.modules;
         // Resolves SigAST -> Sig
         for(Module m:modules) for(Map.Entry<String,SigAST> e:m.sigs.entrySet()) Module.resolveSig(e.getValue());
-        // Label any Sig that are used in util/ordering.als
-        for(Module m:modules) {
-           SigAST elemX=m.params.get("elem");                 if (elemX==null) continue;
-           Sig elem=elemX.realSig;                            if (elem.builtin || m.sigs.size()!=1) continue;
-           SigAST ord=m.sigs.values().iterator().next();      if (ord.isOrd) ord.realSig.addOrderfields(elem);
-        }
         // Add the fields
         for(Module m:modules) for(SigAST oldS:m.sigs.values()) {
            // When typechecking each field:

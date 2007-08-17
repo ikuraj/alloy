@@ -263,11 +263,11 @@ final class ScopeComputer {
                 rep.scope("Sig "+s+" scope raised from <="+old+" to be <="+min+"\n");
             }
         }
-        // Add special overrides for util/ordering.als
+        // Add special overrides for ordered sigs
         for(final Sig s2:sigs) if (s2.isOrdered!=null) {
             if (sig2scope(s2)<=0)
                 throw new ErrorSyntax(cmd.pos, "Sig "+s2
-                    +" must have a scope of 1 or above, since it is used to instantiate the util/ordering.als module");
+                    +" must have a scope of 1 or above, since it is used to instantiate the util/ordering module");
             if (isExact(s2)) continue;
             rep.scope("Sig "+s2+" forced to have exactly "+sig2scope(s2)+" atoms.\n");
             makeExact(s2);

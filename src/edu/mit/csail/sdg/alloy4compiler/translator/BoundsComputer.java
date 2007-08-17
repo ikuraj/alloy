@@ -603,7 +603,7 @@ final class BoundsComputer {
                 sizeLTE(s,n);
             }
         }
-        // Bound the fields. Must do this AFTER sigs due to util/ordering.als special encoding.
+        // Bound the fields
         for(Sig s:sigs) for(Field f:s.getFields()) {
             if (s.isOne==null) {
                 Relation r=Relation.nary(s.toString()+"."+f.label, f.type.arity());
