@@ -100,7 +100,7 @@ final class BoundsComputer {
     private Bounds bounds=null;
 
     /** Returns an unmodifiable view of the resulting Bounds object. */
-    Bounds getBounds() { return bounds; } // TODO .unmodifiableView(); }
+    Bounds getBounds() { return bounds.unmodifiableView(); }
 
     static final Relation SIGINT_MIN = Relation.unary("[discard] util/integer min");
     static final Relation SIGINT_ZERO = Relation.unary("[discard] util/integer zero");
@@ -604,45 +604,17 @@ final class BoundsComputer {
             }
         }
         // Bound the fields. Must do this AFTER sigs due to util/ordering.als special encoding.
-        for(Sig s:sigs) if (!s.builtin) {
-            // *
-            final Sig elem = s.getOrderingTarget();
-            if (elem!=null && 1==2) { // TODO: THiS LINE is the problem!
-                Relation first=Relation.unary("First"), last=Relation.unary("Last"), next=Relation.binary("Next");
-                discard.add(first);
-                discard.add(last);
-                discard.add(next);
-                field2expr.put(s.getFields().get(0), (first));
-                field2expr.put(s.getFields().get(1), (last));
-                field2expr.put(s.getFields().get(2), (next));
-                TupleSet ts=sig2ub(elem);
-                bounds.bound(first,ts);
-                bounds.bound(last,ts);
-                bounds.bound(next,ts.product(ts));
-                Expression e=expr(elem);
-                Relation ee=null;
-                if (e instanceof Relation) ee=(Relation)e; else {
-                    ee=Relation.unary(elem.toString());
-                    discard.add(ee);
-                    bounds.bound(ee, sig2lb(elem), sig2ub(elem));
-                    kfact = core(e.eq(ee), elem.isOrdered).and(kfact);
-                }
-                kfact = core(next.totalOrder(ee,first,last), elem.isOrdered).and(kfact);
-                continue;
-            }
-            // */
-            for(Field f:s.getFields()) {
-                if (s.isOne==null) {
-                    Relation r=Relation.nary(s.toString()+"."+f.label, f.type.arity());
-                    discard.add(r);
-                    field2expr.put(f,r);
-                    bounds.bound(r, comp(f));
-                } else {
-                    Relation r=Relation.nary(s.toString()+"."+f.label, f.type.arity()-1);
-                    discard.add(r);
-                    field2expr.put(f,r);
-                    bounds.bound(r, comp(UNIV.join(f)));
-                }
+        for(Sig s:sigs) for(Field f:s.getFields()) {
+            if (s.isOne==null) {
+                Relation r=Relation.nary(s.toString()+"."+f.label, f.type.arity());
+                discard.add(r);
+                field2expr.put(f,r);
+                bounds.bound(r, comp(f));
+            } else {
+                Relation r=Relation.nary(s.toString()+"."+f.label, f.type.arity()-1);
+                discard.add(r);
+                field2expr.put(f,r);
+                bounds.bound(r, comp(UNIV.join(f)));
             }
         }
     }

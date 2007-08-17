@@ -52,7 +52,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
-import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.IntExpression;
@@ -68,8 +67,6 @@ import kodkod.engine.satlab.SATFactory;
 import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
-import kodkod.instance.Bounds;
-import kodkod.instance.TupleSet;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
@@ -403,23 +400,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     //==============================================================================================================//
 
-    private boolean findUpperBound(Bounds bounds, TupleSet ts, Expression exp) {
-        if (exp instanceof BinaryExpression) {
-            BinaryExpression b=(BinaryExpression)exp;
-            if (b.op()==BinaryExpression.Operator.UNION) {
-                if (findUpperBound(bounds, ts, b.left()) == false) return false;
-                if (findUpperBound(bounds, ts, b.right()) == false) return false;
-                return true;
-            }
-        }
-        if (exp instanceof Relation) {
-            ts.addAll(bounds.upperBound((Relation)exp));
-            return true;
-        }
-        return false;
-    }
-
-
     /** Construct the constraints for "field declarations" and "appended fact paragraphs" and "fact" paragraphs */
     private Formula makeFacts(Module module, Formula kfact) throws Err {
         for(Sig sig: module.getAllSigs()) {
@@ -434,15 +414,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                         ee=(Relation)e;
                         kfact = (((Relation)next).totalOrder(ee, (Relation)first, (Relation)last)).and(kfact);
                         return kfact; // TODO: add the ordering Pos!
-                    } else {
-                        TupleSet ts=bc.factory().noneOf(1);
-                        if (findUpperBound(bc.getBounds(), ts, e)) {
-                            ee=Relation.unary("[discard] elem");
-                            bc.getBounds().boundExactly(ee,ts);
-                            kfact = e.eq(ee).and(kfact);
-                            kfact = (((Relation)next).totalOrder(ee, (Relation)first, (Relation)last)).and(kfact);
-                            return kfact;
-                        }
                     }
                 }
             }
