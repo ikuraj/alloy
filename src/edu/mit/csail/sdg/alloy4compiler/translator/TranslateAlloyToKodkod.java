@@ -34,7 +34,6 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
@@ -151,17 +150,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     (final Map<Decl,Pair<Type,Pos>> skolemType, final Module world, Command cmd, final A4Options opt,
     Map<String,String> originalSources, String xmlFileName, String tempFileName, boolean tryBookExamples)
     throws Err {
-        SafeList<Sig> sigs = world.getAllSigsInTheWorld();
         final Map<Formula,List<Object>> core=new LinkedHashMap<Formula,List<Object>>();
         final A4Reporter rep=A4Reporter.getReporter();
         rep.debug("Generating bounds...");
         final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(world, opt, cmd, core), skolemType, core);
         Formula kfact = tr.bc.getFacts();
         rep.debug("Generating facts...");
-        for(Sig s:sigs) kfact = tr.makeFieldAndAppendedConstraints(world,s,kfact);
-        for(Module u:world.getAllModules())
-            for(Pair<String,Expr> e:u.getAllFacts())
-                kfact = tr.core(tr.cform(e.b), e.b).and(kfact);
+        for(Module u:world.getAllModules()) kfact=tr.makeFacts(u,kfact);
         Formula mainformula;
         tr.current_command=cmd.label;
         tr.current_function.clear();
@@ -405,18 +400,32 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     //==============================================================================================================//
 
-    /** Construct the constraints for "field declarations" and "appended fact paragraphs" for the given sig. */
-    private Formula makeFieldAndAppendedConstraints(Module world, final Sig sig, Formula kfact) throws Err {
-        if (sig.getOrderingTarget() != null) return kfact;
-        for(Field f:sig.getFields()) {
-            // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
-            kfact=core(cform(f.boundingFormula), f).and(kfact);
-            // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
-            // Thus, we need to add a bound that the first column is a subset of s.
-            Expression sr=bc.expr(sig), fr=bc.expr(f);
-            for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
-            kfact=core(fr.in(sr), f).and(kfact);
+    /** Construct the constraints for "field declarations" and "appended fact paragraphs" and "fact" paragraphs */
+    private Formula makeFacts(Module module, Formula kfact) throws Err {
+        for(Sig sig: module.getAllSigs()) {
+            Sig elem = sig.getOrderingTarget();
+            if (elem != null) {
+                Field f1=sig.getFields().get(0); Expression first=bc.exprWithoutFirst(f1), e=bc.expr(elem);
+                Field f2=sig.getFields().get(1); Expression last=bc.exprWithoutFirst(f2);
+                Field f3=sig.getFields().get(2); Expression next=bc.exprWithoutFirst(f3);
+                if (e instanceof Relation && first instanceof Relation && last instanceof Relation && next instanceof Relation) {
+                    kfact = (((Relation)next).totalOrder((Relation)e,(Relation)first,(Relation)last)).and(kfact);
+                    return kfact; // TODO: add the ordering Pos!
+                }
+            }
+            for(Field f:sig.getFields()) {
+                // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
+                kfact=core(cform(f.boundingFormula), f).and(kfact);
+                // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
+                // Thus, we need to add a bound that the first column is a subset of s.
+                if (sig.isOne==null) {
+                    Expression sr=bc.expr(sig), fr=bc.expr(f);
+                    for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
+                    kfact=core(fr.in(sr), f).and(kfact);
+                }
+            }
         }
+        for(Pair<String,Expr> e:module.getAllFacts()) kfact = core(cform(e.b), e.b).and(kfact);
         return kfact;
     }
 

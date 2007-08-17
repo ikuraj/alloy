@@ -636,12 +636,19 @@ public final class Module {
             Sig s=e.getValue().realSig;
             Exp f=e.getValue().appendedFact;
             if (f==null) continue;
-            ExprVar THIS = s.oneOf("this");
+            Expr formula;
             cx.rootsig=s;
-            cx.put("this", THIS);
-            Expr formula = f.check(cx, warns).resolve_as_formula(warns);
-            cx.remove("this");
-            formula = formula.forAll(THIS);
+            if (s.isOne==null) {
+                ExprVar THIS = s.oneOf("this");
+                cx.put("this", THIS);
+                formula = f.check(cx, warns).resolve_as_formula(warns);
+                cx.remove("this");
+                formula = formula.forAll(THIS);
+            } else {
+                cx.put("this", s);
+                formula = f.check(cx, warns).resolve_as_formula(warns);
+                cx.remove("this");
+            }
             if (formula.errors.size()>0) errors=errors.join(formula.errors);
             else {
                 facts.put(""+s+"#fact", formula);
@@ -831,7 +838,7 @@ public final class Module {
            if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.name+"\"");
            for(final Decl d:oldS.fields) {
               // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
-              final ExprVar THIS = s.oneOf("this");
+              final ExprVar THIS = (s.isOne==null) ? s.oneOf("this") : ExprVar.make(null,"this",s);
               cx.rootfield=true;
               cx.rootsig=s;
               cx.put("this", THIS);

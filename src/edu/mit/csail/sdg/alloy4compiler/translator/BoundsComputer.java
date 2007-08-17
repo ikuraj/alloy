@@ -264,6 +264,12 @@ final class BoundsComputer {
         return ans;
     }
 
+    /** Given a field, return its associated Kodkod expression (null if no expression was assigned for it) */
+    Expression exprWithoutFirst(Field x) {
+        Expression ans = field2expr.get(x);
+        return ans;
+    }
+
     //==============================================================================================================//
 
     /** The integer bitwidth. */
@@ -601,7 +607,7 @@ final class BoundsComputer {
         for(Sig s:sigs) if (!s.builtin) {
             // *
             final Sig elem = s.getOrderingTarget();
-            if (elem!=null) {
+            if (elem!=null) { // TODO: THiS LINE is the problem!
                 Relation first=Relation.unary("First"), last=Relation.unary("Last"), next=Relation.binary("Next");
                 discard.add(first);
                 discard.add(last);
@@ -609,7 +615,6 @@ final class BoundsComputer {
                 field2expr.put(s.getFields().get(0), (first));
                 field2expr.put(s.getFields().get(1), (last));
                 field2expr.put(s.getFields().get(2), (next));
-                //field2expr.put(s.getFields().get(3), expr(s).product(next.transpose()));
                 TupleSet ts=sig2ub(elem);
                 bounds.bound(first,ts);
                 bounds.bound(last,ts);

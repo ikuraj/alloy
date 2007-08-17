@@ -345,18 +345,25 @@ public abstract class Sig extends Expr {
 
         /** Constructs a new Field object. */
         private Field(Pos pos, Sig sig, String label, ExprVar var, Expr bound) throws Err {
-            super(pos, null, false, sig.type.product(bound.type), 0, 0, null);
+            super(pos, null, false, sig.type.product(bound.type), 0, 0, bound.errors);
             if (sig.builtin) throw new ErrorSyntax("Builtin sig \""+sig+"\" cannot have fields.");
-            if (!bound.errors.isEmpty())
-                throw bound.errors.get(0);
-            if (bound.hasCall())
-                throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             this.sig=sig;
             this.label=label;
-            if (var==null) var = sig.oneOf("this");
             // If the field declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (bound.mult==0 && bound.type.arity()==1) bound=ExprUnary.Op.ONEOF.make(null, bound);
+            /*
+             * Possible optimization if the sig is "one", we can do something much more clever here:
+             *
+             * if (sig.isOne!=null && var!=null && var.expr.mult==0 && var.expr.equals(sig)) {
+             *    boundingFormula=ExprLet.make(pos, var, sig.join(this).in(bound));
+             * }
+             */
+            if (var==null) var = sig.oneOf("this");
             boundingFormula=ExprQuant.Op.ALL.make(pos, null, Util.asList(var), var.join(this).in(bound));
+            if (!boundingFormula.errors.isEmpty())
+                throw boundingFormula.errors.get(0);
+            if (boundingFormula.hasCall())
+                throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
         }
 
         /** Returns a human-readable description of this field's name. */
