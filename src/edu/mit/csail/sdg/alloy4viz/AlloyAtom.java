@@ -83,10 +83,16 @@ public final class AlloyAtom implements Comparable<AlloyAtom> {
      */
     public int compareTo(AlloyAtom otherAtom) {
         if (otherAtom==null) return 1;
-          if (type.equals(AlloyType.INT) || type.equals(AlloyType.SEQINT))
-            if (otherAtom.type.equals(AlloyType.INT) || otherAtom.type.equals(AlloyType.SEQINT))
-                return (index < otherAtom.index) ? -1 : ((index > otherAtom.index) ? 1 : 0);
-        int result=type.compareTo(otherAtom.type);
+        AlloyType at = type;           if (at.equals(AlloyType.SEQINT)) at=AlloyType.INT;
+        AlloyType bt = otherAtom.type; if (bt.equals(AlloyType.SEQINT)) bt=AlloyType.INT;
+        // This renaming is necessary in order to make sure the comparison is transitive.
+        // For example, assuming seq/Int comprises 0..3, then we want atom0 < atom5,
+        // even though atom0's TYPENAME > atom5's TYPENAME.
+        // On the other hand, if you have an atom X with type X, then we want to make sure X>5 just like X>0
+        // (even though lexically, the type name "X" < the type name "seq/Int"
+        if (at.equals(AlloyType.INT) && bt.equals(AlloyType.INT))
+           return (index < otherAtom.index) ? -1 : ((index > otherAtom.index) ? 1 : 0);
+        int result=at.compareTo(bt);
         if (result!=0) return result;
         // We don't want to use the "return (index-otherAtom.index);" trick,
         // especially since singleton sets will have index of Integer.MAX_VALUE.

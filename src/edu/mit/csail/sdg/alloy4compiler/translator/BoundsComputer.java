@@ -52,6 +52,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
@@ -258,7 +259,9 @@ final class BoundsComputer {
 
     /** Given a field, return its associated Kodkod expression (null if no expression was assigned for it) */
     Expression expr(Field x) {
-        return field2expr.get(x);
+        Expression ans = field2expr.get(x);
+        if (x.sig.isOne!=null && ans!=null) ans = expr(x.sig).product(ans);
+        return ans;
     }
 
     //==============================================================================================================//
@@ -596,16 +599,17 @@ final class BoundsComputer {
         }
         // Bound the fields. Must do this AFTER sigs due to util/ordering.als special encoding.
         for(Sig s:sigs) if (!s.builtin) {
+            // *
             final Sig elem = s.getOrderingTarget();
             if (elem!=null) {
                 Relation first=Relation.unary("First"), last=Relation.unary("Last"), next=Relation.binary("Next");
                 discard.add(first);
                 discard.add(last);
                 discard.add(next);
-                field2expr.put(s.getFields().get(0), expr(s).product(first));
-                field2expr.put(s.getFields().get(1), expr(s).product(last));
-                field2expr.put(s.getFields().get(2), expr(s).product(next));
-                field2expr.put(s.getFields().get(3), expr(s).product(next.transpose()));
+                field2expr.put(s.getFields().get(0), (first));
+                field2expr.put(s.getFields().get(1), (last));
+                field2expr.put(s.getFields().get(2), (next));
+                //field2expr.put(s.getFields().get(3), expr(s).product(next.transpose()));
                 TupleSet ts=sig2ub(elem);
                 bounds.bound(first,ts);
                 bounds.bound(last,ts);
@@ -621,17 +625,25 @@ final class BoundsComputer {
                 kfact = core(next.totalOrder(ee,first,last), elem.isOrdered).and(kfact);
                 continue;
             }
+            // */
             for(Field f:s.getFields()) {
-                Relation r=Relation.nary(s.toString()+"."+f.label, f.type.arity());
-                discard.add(r);
-                field2expr.put(f,r);
-                bounds.bound(r, comp(f));
+                if (s.isOne==null) {
+                    Relation r=Relation.nary(s.toString()+"."+f.label, f.type.arity());
+                    discard.add(r);
+                    field2expr.put(f,r);
+                    bounds.bound(r, comp(f));
+                } else {
+                    Relation r=Relation.nary(s.toString()+"."+f.label, f.type.arity()-1);
+                    discard.add(r);
+                    field2expr.put(f,r);
+                    bounds.bound(r, comp(UNIV.join(f)));
+                }
             }
         }
     }
 
     /** Compute the upperbound for a field. */
-    private TupleSet comp(Field f) throws Err {
+    private TupleSet comp(Expr f) throws Err {
         Type t=f.type;
         int a=t.arity(); if (a<1) throw new ErrorFatal("Attempting to create a 0-arity TupleSet.");
         TupleSet ans=factory.noneOf(a);
@@ -654,7 +666,6 @@ final class BoundsComputer {
             TupleSet t=factory.setOf(b.arity(), Translator.approximate(b,bounds,opt).denseIndices());
             t.retainAll(u);
             if (!t.containsAll(l)) return false; // This means the upperbound is shrunk BELOW the lowerbound.
-            // if (u.size()!=t.size()) System.out.println("R "+r.name()+" shrunk from "+u.size()+" to "+t.size());
             bounds.bound(r,l,t);
         }
         return true;

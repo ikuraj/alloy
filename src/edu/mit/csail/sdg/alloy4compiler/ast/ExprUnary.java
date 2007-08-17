@@ -95,6 +95,23 @@ public final class ExprUnary extends Expr {
 
     //============================================================================================================//
 
+    /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
+    @Override public boolean equals(Object obj) {
+        if (op==Op.NOOP) return sub.equals(obj);
+        while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
+        if (obj==this) return true;
+        if (!(obj instanceof ExprUnary)) return false;
+        ExprUnary x=(ExprUnary)obj;
+        return op==x.op && sub.equals(x.sub);
+    }
+
+    //============================================================================================================//
+
+    /** Due to the conservative nature of Expr.equals(), we just return 0 as the safe hashcode. */
+    @Override public int hashCode() { return 0; }
+
+    //============================================================================================================//
+
     /** This class contains all possible unary operators. */
     public enum Op {
         /** :some x (where x is a unary set)                             */  SOMEOF("some of"),

@@ -23,23 +23,22 @@ module util/ordering[elem]
  */
 
 one sig Ord {
-   First, Last: elem,
-   Next, Prev: elem -> lone elem
+   First, Last: set elem,
+   Next: elem -> elem
 }{
   // constraints that actually define the total order
-  Prev = ~Next
   one First
   one Last
-  no First.Prev
+  no First.(~Next)
   no Last.Next
   (
    // either elem has exactly one atom,
    // which has no predecessor or successor...
-   (one elem && no elem.Prev && no elem.Next) ||
+   (one elem && no elem.(~Next) && no elem.Next) ||
    // or...
     (all e: elem | {
       // ...each element (except the first) has one predecessor, and...
-      (e = First || one e.Prev)
+      (e = First || one e.(~Next))
       // ...each element (except the last) has one successor, and...
       (e = Last || one e.Next)
       // ...there are no cycles
@@ -57,13 +56,13 @@ fun first: elem { Ord.First }
 fun last: elem { Ord.Last }
 
 // return the predecessor of e, or empty set if e is the first element
-fun prev [e: elem]: lone elem { e.(Ord.Prev) }
+fun prev [e: elem]: lone elem { e.~(Ord.Next) }
 
 // return the successor of e, or empty set of e is the last element
 fun next [e: elem]: lone elem { e.(Ord.Next) }
 
 // return elements prior to e in the ordering
-fun prevs [e: elem]: set elem { e.^(Ord.Prev) }
+fun prevs [e: elem]: set elem { e.^(~(Ord.Next)) }
 
 // return elements following e in the ordering
 fun nexts [e: elem]: set elem { e.^(Ord.Next) }
@@ -88,7 +87,7 @@ fun smaller [e1, e2: elem]: elem { lt[e1,e2] => e1 else e2 }
 
 // returns the largest element in es
 // or the empty set if es is empty
-fun max [es: set elem]: lone elem { es - es.^(Ord.Prev) }
+fun max [es: set elem]: lone elem { es - es.^(~(Ord.Next)) }
 
 // returns the smallest element in es
 // or the empty set if es is empty

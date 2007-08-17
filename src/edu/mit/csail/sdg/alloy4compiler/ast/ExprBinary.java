@@ -77,6 +77,22 @@ public final class ExprBinary extends Expr {
 
     //============================================================================================================//
 
+    /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
+    @Override public boolean equals(Object obj) {
+        while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
+        if (obj==this) return true;
+        if (!(obj instanceof ExprBinary)) return false;
+        ExprBinary x=(ExprBinary)obj;
+        return op==x.op && left.equals(x.left) && right.equals(x.right);
+    }
+
+    //============================================================================================================//
+
+    /** Due to the conservative nature of Expr.equals(), we just return 0 as the safe hashcode. */
+    @Override public int hashCode() { return 0; }
+
+    //============================================================================================================//
+
     /**
      * Convenience method that generates a type error with "msg" as the message,
      * and includes the left and right bounding types in the message.
@@ -302,8 +318,8 @@ public final class ExprBinary extends Expr {
             break;
           }
           case EQUALS: {
-            a=a.pickCommonArity(b);
-            b=b.pickCommonArity(a);
+            p=a.intersect(b);
+            if (p.hasTuple()) {a=p; b=p;} else {a=a.pickCommonArity(b); b=b.pickCommonArity(a);}
             if (left.type.is_int && right.type.is_int) {
                a=Type.makeInt(a); b=Type.makeInt(b);
             } else if (left.type.hasTuple() && right.type.hasTuple() && !(left.type.intersects(right.type))) {

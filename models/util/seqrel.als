@@ -82,7 +82,7 @@ fun setAt [s: SeqIdx -> elem, i: SeqIdx, e: elem] : SeqIdx -> elem {
 
 /* returns the result of inserting value e at index i */
 fun insert [s: SeqIdx -> elem, i: SeqIdx, e: elem] : SeqIdx -> elem {
-  (ord/prevs[i] <: s) + (i->e) + (ord/Ord.Prev).((ord/nexts[i] + i) <: s)
+  (ord/prevs[i] <: s) + (i->e) + (~(ord/Ord.Next)).((ord/nexts[i] + i) <: s)
 }
 
 /* returns the result of deleting the value at index i */

@@ -107,9 +107,9 @@ public final class Module {
 
     /** Mutable; this class represents an untypechecked Alloy signature; equals() uses object identity. */
     static final class SigAST {
-        private boolean topo=false;     // This flag is set to "true" during topological sort
+        private boolean topo=false;      // This flag is set to "true" during topological sort
         private final Module realModule; // This value is set to its Module during topological sort
-        private Sig realSig=null;       // This value is set to its corresponding Sig during topological sort
+        private Sig realSig=null;        // This value is set to its corresponding Sig during topological sort
         private boolean hint_isLeaf=false;
         private final Pos pos;
         private final String name,fullname;

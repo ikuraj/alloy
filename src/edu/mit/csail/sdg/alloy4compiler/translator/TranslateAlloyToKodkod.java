@@ -24,7 +24,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -71,6 +70,8 @@ import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
+import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
+import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ONE;
 
 /** Given a World object, solve one or more commands using Kodkod. */
 
@@ -547,15 +548,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     @Override public Object visit(ExprCall x) throws Err {
         Func y=x.fun;
-        // TODO: Special translation for util/integer.als
-        if (y.params.size()==0 && y.pos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"integer.als")) {
-            String lb=y.label;
-            if (lb.equals("max") || lb.endsWith("/max")) return BoundsComputer.SIGINT_MAX;
-            if (lb.equals("min") || lb.endsWith("/min")) return BoundsComputer.SIGINT_MIN;
-            if (lb.equals("next") || lb.endsWith("/next")) return BoundsComputer.SIGINT_NEXT;
-        }
-        if (current_function.contains(y))
-            throw new ErrorSyntax(x.span(), ""+y+" cannot call itself recursively!");
+        if (current_function.contains(y)) throw new ErrorSyntax(x.span(), ""+y+" cannot call itself recursively!");
         Env<ExprVar,Object> newenv=new Env<ExprVar,Object>();
         int r=0;
         for(ExprVar d:y.params) {
@@ -798,6 +791,19 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     }
 
     @Override public Object visit(ExprQuant x) throws Err {
+        // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
+        if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==1) {
+            ExprVar a=x.vars.get(0);
+            Expr max=a.gte(ZERO).and(a.plus(ONE).lt(ZERO));
+            Expr min=a.lt(ZERO).and(a.minus(ONE).gte(ZERO));
+            if (x.sub.equals(max)) return BoundsComputer.SIGINT_MAX;
+            if (x.sub.equals(min)) return BoundsComputer.SIGINT_MIN;
+        }
+        if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==2) {
+            ExprVar a=x.vars.get(0), b=x.vars.get(1);
+            Expr next=b.gt(a).and(b.equal(a.plus(ONE)));
+            if (x.sub.equals(next)) return BoundsComputer.SIGINT_NEXT;
+        }
         return visit_qt(x.op, x.vars, x.sub, false);
     }
 }
