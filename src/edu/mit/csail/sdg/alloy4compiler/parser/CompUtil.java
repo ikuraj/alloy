@@ -152,7 +152,8 @@ public final class CompUtil {
         Module u = CompParser.alloy_parseStream(false, fc, (parent==null ? null : parent.getRootModule()), 0, canon, prefix);
         // Here, we recursively open the included files
         for(Open x: u.getOpens()) {
-            Module y=parseRecursively(fc, rootdir, x.pos, x.filename, u, canon, prefix.length()==0 ? x.alias : prefix+"/"+x.alias, thispath);
+            Module y = parseRecursively(fc, rootdir, x.pos, x.filename, u, canon,
+                       (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath);
             x.connect(y);
         }
         thispath.remove(canon); // Remove this file from the CYCLE DETECTION LIST.
@@ -162,8 +163,7 @@ public final class CompUtil {
     //=============================================================================================================//
 
     /**
-     * Parses 1 module from the input stream (without loading any subfiles)
-     * @throws Err if any error occurred
+     * Parses 1 module from the input string (without loading any subfiles)
      * @return an array of 0 or more Command if no error occurred
      */
     public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
@@ -173,7 +173,7 @@ public final class CompUtil {
             Module u=CompParser.alloy_parseStream(false, fc, null, 0, "", "");
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
-            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
+            throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
@@ -183,7 +183,6 @@ public final class CompUtil {
 
     /**
      * Parses 1 module from the file (without loading any subfiles)
-     * @throws Err if any error occurred
      * @return an array of 0 or more Command if no error occurred
      */
     public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
@@ -192,7 +191,7 @@ public final class CompUtil {
             Module u=CompParser.alloy_parseStream(false, fc, null, 0, filename, "");
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
-            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
+            throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
@@ -202,10 +201,10 @@ public final class CompUtil {
 
     /**
      * Parses the input as an Alloy expression from that world
-     * @throws Err if world==null or if any error occurred
-     * @return the expression if no error occurred (it will be fully typechecked)
+     * @return the fully-typechecked expression if no error occurred
+     * @throws Err if world==null or if any other error occurred
      */
-    public static Expr parseOneExpression_fromString(Module world, String input) throws Err {
+    public static Expr parseOneExpression_fromString (Module world, String input) throws Err {
         try {
             if (world==null) throw new ErrorAPI("parseOneExpression() cannot be called with null World");
             Map<String,String> fc=new LinkedHashMap<String,String>();
@@ -219,7 +218,7 @@ public final class CompUtil {
             if (ans.errors.size()>0) throw ans.errors.get(0);
             return ans;
         } catch(IOException ex) {
-            throw new ErrorFatal("IOException occurred: "+ex.getMessage());
+            throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
@@ -236,7 +235,7 @@ public final class CompUtil {
      * @throws Err if an error occurred
      * <p>Note: if fc!=null and during parsing we read more files, these additional file contents will be stored into fc
      */
-    public static Module parseEverything_fromFile(Map<String,String> fc, String rootdir, String filename) throws Err {
+    public static Module parseEverything_fromFile (Map<String,String> fc, String rootdir, String filename) throws Err {
         try {
             filename=Util.canon(filename);
             if (fc==null) fc=new LinkedHashMap<String,String>();

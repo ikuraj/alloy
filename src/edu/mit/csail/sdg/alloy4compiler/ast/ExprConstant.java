@@ -35,7 +35,7 @@ public final class ExprConstant extends Expr {
     /** The type of constant. */
     public final Op op;
 
-    /** If this node is an atom or a number constant, then this field stores the index or the number, else this field stores 0. */
+    /** If this node is a number constant, then this field stores the index or the number, else this field stores 0. */
     private final int num;
 
     /** Return the number if this node is a number constant, otherwise return 0. */
@@ -59,8 +59,7 @@ public final class ExprConstant extends Expr {
      *
      * @param pos - the original position in the file
      * @param op - the choice of which constant it is
-     * @param sig - the sig (this argument is ignored if op!=ATOM)
-     * @param num - the number (this argument is ignored if op!=NUMBER and op!=ATOM)
+     * @param num - the number (this argument is ignored if op!=NUMBER)
      */
     private ExprConstant(Pos pos, Op op, int num) {
         super(pos, null, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NUMBER ? Type.INT : Type.FORMULA)), 0, 0, null);
@@ -118,7 +117,7 @@ public final class ExprConstant extends Expr {
         /**
          * Makes an ExprConstant node
          * @param pos - the original position in the source file (can be null if unknown)
-         * @param num - the number (this argument is ignored if op!=NUMBER and op!=ATOM)
+         * @param number - the number (this argument is ignored if op!=NUMBER)
          */
         public final Expr make(Pos pos, int number) { return new ExprConstant(pos, this, number); }
 
