@@ -130,12 +130,6 @@ public final class ExprChoice extends Expr {
         if (match.size()==0 && Type.INT2SIGINT && t.hasArity(1)) {
             for(Expr ch:choices) if (ch.type.is_int) match.add(ch.cast2sigint());
         }
-        // If there are multiple choices, then we first remove ExprSelect from consideration
-        if (match.size()>1) {
-            List<Expr> newmatch=new ArrayList<Expr>(match.size());
-            for(Expr x:match) if (!(x instanceof ExprSelect)) newmatch.add(x);
-            if (newmatch.size()>0) match=newmatch;
-        }
         // If there are multiple choices, then keep the choices with the smallest weight
         if (match.size()>1) {
             List<Expr> newmatch=new ArrayList<Expr>(match.size());

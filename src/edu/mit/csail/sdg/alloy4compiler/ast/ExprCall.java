@@ -120,13 +120,6 @@ public final class ExprCall extends Expr {
               default: return Type.FORMULA;
             }
         }
-        @Override public Object visit(ExprConstant x) {
-            switch(x.op) {
-              case IDEN: return Type.make2(Sig.UNIV);
-              case NUMBER: return Type.INT;
-              default: return Type.FORMULA;
-            }
-        }
         @Override public Object visit(ExprQuant x) throws Err {
             if (x.op == ExprQuant.Op.SUM) return Type.INT;
             if (x.op != ExprQuant.Op.COMPREHENSION) return Type.FORMULA;
@@ -145,14 +138,12 @@ public final class ExprCall extends Expr {
             env.remove(x.var);
             return ans;
         }
-        @Override public Object visit(ExprSelect x) throws Err {
-            return x.expr.accept(this);
-        }
-        @Override public Object visit(ExprCall x)    { return x.fun.returnDecl.type; }
-        @Override public Object visit(ExprVar x)     { Type t=env.get(x); return (t!=null && t!=EMPTY) ? t : x.type; }
-        @Override public Object visit(Sig x)         { return x.type; }
-        @Override public Object visit(Field x)       { return x.type; }
-        @Override public Object visit(ExprBuiltin x) { return Type.FORMULA; }
+        @Override public Object visit(ExprCall x)     { return x.fun.returnDecl.type; }
+        @Override public Object visit(ExprVar x)      { Type t=env.get(x); return (t!=null && t!=EMPTY) ? t : x.type; }
+        @Override public Object visit(ExprConstant x) { return x.type; }
+        @Override public Object visit(Sig x)          { return x.type; }
+        @Override public Object visit(Field x)        { return x.type; }
+        @Override public Object visit(ExprBuiltin x)  { return Type.FORMULA; }
     }
 
     //============================================================================================================//
