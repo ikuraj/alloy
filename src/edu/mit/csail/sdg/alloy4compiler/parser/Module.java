@@ -161,7 +161,7 @@ public final class Module {
 
     // TODO: check this section
 
-    /* IF ROOT: This lists all modules in this world; it must be consistent with this.path2module */
+    /** IF ROOT: This lists all modules in this world; it must be consistent with this.path2module */
     private final ArrayList<Module> modules = new ArrayList<Module>();
 
     /** IF ROOT: This maps pathname to the Module it refers to; it must be consistent with this.modules */
@@ -207,7 +207,7 @@ public final class Module {
         x.add(SIGINT);
         x.add(SEQIDX);
         x.add(NONE);
-        for(Module m:modules) for(SigAST s:m.sigs.values()) x.add(s.realSig);
+        for(Module m: modules) for(Map.Entry<String,SigAST> s: m.sigs.entrySet()) x.add(s.getValue().realSig);
         return x.dup();
     }
 
@@ -515,7 +515,7 @@ public final class Module {
     }
 
     /** The given SigAST will now point to a nonnull Sig. */
-    private static Sig resolveSig(SigAST oldS) throws Err {
+    private static Sig resolveSig(List<SigAST> sorted, SigAST oldS) throws Err {
         if (oldS.realSig != null) return oldS.realSig;
         final Pos pos = oldS.pos;
         final Module u = oldS.realModule;
@@ -528,7 +528,7 @@ public final class Module {
             for(String n: oldS.parents) {
                SigAST parentAST = u.getRawSIG(pos, n);
                if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+n+"\" cannot be found.");
-               parents.add(resolveSig(parentAST));
+               parents.add(resolveSig(sorted, parentAST));
             }
             oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered);
         } else {
@@ -536,12 +536,13 @@ public final class Module {
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup==null || sup.length()==0) sup="univ";}
             SigAST parentAST = u.getRawSIG(pos, sup);
             if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+sup+"\" cannot be found.");
-            Sig parent = resolveSig(parentAST);
+            Sig parent = resolveSig(sorted, parentAST);
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(pos, "Cannot extend the subset signature \"" + parent
                + "\".\nA signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
             oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.hint_isLeaf);
         }
+        sorted.add(oldS);
         return oldS.realSig;
     }
 
@@ -569,7 +570,7 @@ public final class Module {
 
     /** Each FunAST will now point to a bodyless Func object. */
     private JoinableList<Err> resolveFuncDecls(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) {
-        for(SafeList<FunAST> list:funcs.values()) for(FunAST f:list) {
+        for(Map.Entry<String,SafeList<FunAST>> entry:funcs.entrySet()) for(FunAST f:entry.getValue()) {
             String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.name;
             // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
             // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
@@ -603,7 +604,7 @@ public final class Module {
 
     /** Each Func's body will now be typechecked Expr object. */
     private JoinableList<Err> resolveFuncBodys(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) {
-        for(SafeList<FunAST> list:funcs.values()) for(FunAST f:list) {
+        for(Map.Entry<String,SafeList<FunAST>> entry:funcs.entrySet()) for(FunAST f:entry.getValue()) {
             Func ff = f.realFunc;
             Expr disj = null;
             Context cx = new Context(this);
@@ -794,7 +795,21 @@ public final class Module {
 
     //============================================================================================================================//
 
-    // TODO: check below here...
+    /** Returns true if sig A can see sig B. */
+    private static boolean canSee(Sig a, Sig b) {
+        String aa=a.label, bb=b.label; // Due to the way we resolved the sigs, these will be A's and B's simplest canonical names
+        if (aa.startsWith("this/")) aa=aa.substring(5);
+        if (bb.startsWith("this/")) bb=bb.substring(5);
+        int ai=aa.lastIndexOf('/');
+        int bi=bb.lastIndexOf('/');
+        if (ai<0) return true;  // That means a is in the root module
+        if (bi<0) return false; // That means a is not in the root module, but b is in the root module
+        aa = aa.substring(0, ai);
+        bb = bb.substring(0, bi);
+        return (bb.startsWith(aa+"/") || bb.equals(aa));
+    }
+
+    //============================================================================================================================//
 
     /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
     static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
@@ -803,10 +818,15 @@ public final class Module {
         JoinableList<Err> errors = new JoinableList<Err>();
         final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
         final List<Module> modules = root.modules;
-        // Resolves SigAST -> Sig
-        for(Module m:modules) for(Map.Entry<String,SigAST> e:m.sigs.entrySet()) Module.resolveSig(e.getValue());
-        // Add the fields
-        for(Module m:modules) for(SigAST oldS:m.sigs.values()) {
+        // Resolves SigAST -> Sig, and topologically sort the sigs into the "sorted" array
+        List<SigAST> sorted = new ArrayList<SigAST>();
+        sorted.add(UNIVast);
+        sorted.add(SIGINTast);
+        sorted.add(SEQIDXast);
+        sorted.add(NONEast);
+        for(final Module m:modules) for(final Map.Entry<String,SigAST> e:m.sigs.entrySet()) Module.resolveSig(sorted, e.getValue());
+        // Add the fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
+        for(final SigAST oldS:sorted) {
            // When typechecking each field:
            // * it is allowed to refer to earlier fields in the same SIG or in any visible ancestor sig
            // * it is allowed to refer to visible sigs
@@ -814,12 +834,13 @@ public final class Module {
            // For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
            // then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
            final Sig s=oldS.realSig;
+           final Module m=oldS.realModule;
            final Context cx=new Context(m);
            final ExpName dup=Decl.findDuplicateName(oldS.fields);
            if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.name+"\"");
            for(final Decl d:oldS.fields) {
               // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
-              final ExprVar THIS = (s.isOne==null) ? s.oneOf("this") : ExprVar.make(null,"this",s);
+              final ExprVar THIS = s.oneOf("this");
               cx.rootfield=true;
               cx.rootsig=s;
               cx.put("this", THIS);
@@ -829,7 +850,8 @@ public final class Module {
                  final Field f=s.addTrickyField(d.span(), n.name, THIS, bound);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint==null) continue;
-                 if (disjA==null) disjA=f; else disjF=ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
+                 if (disjA==null) { disjA=f; continue; }
+                 disjF=ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
                  disjA=disjA.plus(f);
               }
               if (d.disjoint==null || disjF==ExprConstant.TRUE) continue;
@@ -857,12 +879,15 @@ public final class Module {
             }
           }
         }
-        // Typecheck the function declarations and function bodies
+        // Typecheck the function declarations
         for(Module x:modules) errors=x.resolveFuncDecls(rep, errors, warns);
-        for(Module x:modules) errors=x.resolveFuncBodys(rep, errors, warns);
-        // Typecheck the assertions and facts
-        for(Module x:modules) { errors=x.resolveAssertions(rep,errors,warns); errors=x.resolveFacts(rep,errors,warns); }
-        // Typecheck the run/check commands
+        // Typecheck the function bodies, assertions, and facts (which can refer to function declarations)
+        for(Module x:modules) {
+            errors=x.resolveFuncBodys(rep,errors,warns);
+            errors=x.resolveAssertions(rep,errors,warns);
+            errors=x.resolveFacts(rep,errors,warns);
+        }
+        // Typecheck the run/check commands (which can refer to function bodies and assertions)
         root.resolveCommands();
         // Issue the warnings, and generate the errors if there are any
         for(ErrorWarning w:warns) rep.warning(w);
@@ -905,22 +930,6 @@ public final class Module {
         return ans;
     }
 
-    //============================================================================================================================//
-
-    /** Returns true if this module can see that module. */
-    private static boolean canSee(String a, String b) {
-        // We assume "a" and "b" are the canonical minimum fullname for sig a and sig b, respectively.
-        if (a.startsWith("this/")) a=a.substring(5);
-        if (b.startsWith("this/")) b=b.substring(5);
-        int ai=a.lastIndexOf('/');
-        int bi=b.lastIndexOf('/');
-        if (ai<0) return true; // That means a is in the root module
-        if (bi<0) return false; // That means a is not in the root module, but b is in the root module
-        a = a.substring(0, ai);
-        b = b.substring(0, bi);
-        return (b.startsWith(a+"/") || b.equals(a));
-    }
-
     /**
      * Look up a visible ancestor field (and returns null if there is no match).
      *
@@ -938,7 +947,7 @@ public final class Module {
      */
     private Field lookupField(Sig origin, Sig current, String name) {
         Field ans=null;
-        if (!origin.builtin && !current.builtin && canSee(origin.label, current.label))
+        if (!origin.builtin && !current.builtin && canSee(origin, current))
             for(Field f:current.getFields())
                 if (f.label.equals(name))
                     {ans=f; break;}
@@ -960,14 +969,12 @@ public final class Module {
         Set<Field> ans=new LinkedHashSet<Field>();
         for(String p:paths)
           for(Module u:world.lookupModuleAndSubmodules(p))
-            for(SigAST s:u.sigs.values())
-              for(Field f:s.realSig.getFields())
+            for(Map.Entry<String,SigAST> s:u.sigs.entrySet())
+              for(Field f:s.getValue().realSig.getFields())
                 if (f.label.equals(name))
-                  ans.add(f);
+                   ans.add(f);
         return ans;
     }
-
-    //============================================================================================================================//
 
     /** Resolve the name based on the current context and this module. */
     public Set<Object> populate(boolean rootfield, Sig rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
