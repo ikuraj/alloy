@@ -2387,7 +2387,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
     }
   }
 
-  static Module alloy_parseStream(Map<String,String> fc, Module world, int lineOffset, final String filename, final String prefix)
+  static Module alloy_parseStream(boolean allowDollar, Map<String,String> fc, Module world, int lineOffset, String filename, String prefix)
   throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
@@ -2396,7 +2396,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
         if (content==null) { content=Util.readAll(filename); fc.put(filename,content); }
         isr=new StringReader(content);
         Module u = world.lookupOrCreateModule(Pos.UNKNOWN, prefix);
-        CompFilter s=new CompFilter(world,filename,lineOffset,new BufferedReader(isr));
+        CompFilter s=new CompFilter(allowDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p=new CompParser(s);
         p.alloymodule=u;
         p.alloyfile=filename;
