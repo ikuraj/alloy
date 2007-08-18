@@ -33,7 +33,7 @@ final class ExpConstant extends Exp {
     /** The type of constant. */
     public final Op op;
 
-    /** If this node is a number constant, then this field stores the number, else this field stores 0. */
+    /** If this node is a number constant, then this field stores the number or index, else this field stores 0. */
     public final int num;
 
     /** Constructs a constant. */

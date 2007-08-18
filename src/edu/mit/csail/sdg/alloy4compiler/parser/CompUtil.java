@@ -148,7 +148,7 @@ public final class CompUtil {
            throw new ErrorSyntax(pos, "Circular dependency in module import. The file \""+name+"\" is imported infinitely often.");
         thispath.add(canon);
         // No cycle detected so far. So now we parse the file.
-        Module u = CompParser.alloy_parseStream(fc, (parent==null ? null : parent.world), 0, canon, prefix);
+        Module u = CompParser.alloy_parseStream(false, fc, (parent==null ? null : parent.world), 0, canon, prefix);
         // Here, we recursively open the included files
         for(Map.Entry<String,Open> e: u.opens.entrySet()) {
             Open x=e.getValue();
@@ -174,7 +174,7 @@ public final class CompUtil {
         try {
             Map<String,String> fc=new LinkedHashMap<String,String>();
             fc.put("",content);
-            Module u=CompParser.alloy_parseStream(fc, null, 0, "", "");
+            Module u=CompParser.alloy_parseStream(false, fc, null, 0, "", "");
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
@@ -193,7 +193,7 @@ public final class CompUtil {
     public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
         try {
             Map<String,String> fc=new LinkedHashMap<String,String>();
-            Module u=CompParser.alloy_parseStream(fc, null, 0, filename, "");
+            Module u=CompParser.alloy_parseStream(false, fc, null, 0, filename, "");
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage());
@@ -214,7 +214,7 @@ public final class CompUtil {
             if (world==null) throw new ErrorAPI("parseOneExpression() cannot be called with null World");
             Map<String,String> fc=new LinkedHashMap<String,String>();
             fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-            Exp body = CompParser.alloy_parseStream(fc, null, -1, "", "").getFirstFunAST();
+            Exp body = CompParser.alloy_parseStream(true, fc, null, -1, "", "").getFirstFunAST();
             if (body == null) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
             Context cx = new Context(world);
             ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
