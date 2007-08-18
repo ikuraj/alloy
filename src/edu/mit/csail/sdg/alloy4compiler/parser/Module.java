@@ -139,6 +139,9 @@ public final class Module {
 
     //======== ROOT ONLY =========================================================================================================//
 
+    /** IF ROOT: this maps SKOLEMNAMES and ATOMNAMES to their actual type. */
+    //public final Map<String,Type> evalMap = new LinkedHashMap<String,Type>();
+
     /** IF ROOT: This lists all modules in this world; it must be consistent with this.path2module */
     private final ArrayList<Module> modules = new ArrayList<Module>();
 
@@ -559,7 +562,7 @@ public final class Module {
     //============================================================================================================================//
 
     String addAssertion(Pos pos, String name, Exp value) throws Err {
-        if (name==null || name.length()==0) name="assert#"+(1+asserts.size());
+        if (name==null || name.length()==0) name="assert$"+(1+asserts.size());
         if (name.indexOf('/')>=0) throw new ErrorSyntax(pos, "Assertion name \""+name+"\" cannot contain \'/\'");
         if (name.indexOf('@')>=0) throw new ErrorSyntax(pos, "Asserition name \""+name+"\" cannot contain \'@\'");
         if (asserts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same module, two assertions cannot have the same name.");
@@ -603,14 +606,14 @@ public final class Module {
     //============================================================================================================================//
 
     void addFact(Pos pos, String name, Exp value) throws Err {
-        if (name==null || name.length()==0) name="fact#"+(1+facts.size());
+        if (name==null || name.length()==0) name="fact$"+(1+facts.size());
         if (facts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same file, a fact cannot have the same name as another fact.");
         facts.put(name,value);
     }
 
     void addFact(Pos pos, String name, Expr value) throws Err { // It must be unambiguous formula
         if (!value.errors.isEmpty()) throw value.errors.get(0);
-        if (name==null || name.length()==0) name="fact#"+(1+facts.size());
+        if (name==null || name.length()==0) name="fact$"+(1+facts.size());
         if (facts.containsKey(name)) throw new ErrorSyntax(pos, "Within the same file, a fact cannot have the same name as another fact.");
         facts.put(name,value);
         A4Reporter.getReporter().typecheck("Fact " + name + ": " + value.type+"\n");
@@ -648,8 +651,8 @@ public final class Module {
             }
             if (formula.errors.size()>0) errors=errors.join(formula.errors);
             else {
-                facts.put(""+s+"#fact", formula);
-                A4Reporter.getReporter().typecheck("Fact "+s+"#fact: " + formula.type+"\n");
+                facts.put(""+s+"$fact", formula);
+                A4Reporter.getReporter().typecheck("Fact "+s+"$fact: " + formula.type+"\n");
             }
         }
         return errors;
@@ -677,7 +680,7 @@ public final class Module {
 
     void addCommand(Pos p,Exp e,boolean c,int o,int b,int seq,int exp,Map<String,Integer> s, String label) throws Err {
         String n;
-        if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run#"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
+        if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run$"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         if (label==null || label.length()==0) label=n;
@@ -842,7 +845,7 @@ public final class Module {
                  if (disjA==null) disjA=f; else disjF=ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
                  disjA=disjA.plus(f);
               }
-              if (d.disjoint!=null && disjF!=ExprConstant.TRUE) m.addFact(Pos.UNKNOWN, ""+s+"#disjoint", disjF);
+              if (d.disjoint!=null && disjF!=ExprConstant.TRUE) m.addFact(Pos.UNKNOWN, ""+s+"$disjoint", disjF);
           }
         }
         // The Alloy language forbids two overlapping sigs from having fields with the same name.
