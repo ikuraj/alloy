@@ -81,11 +81,6 @@ public abstract class VisitQuery extends VisitReturn {
         return x.sub.accept(this);
     }
 
-    /** Visits an ExprSelect node A[i] by calling accept() on A. */
-    @Override public Object visit(ExprSelect x) throws Err {
-        return x.expr.accept(this);
-    }
-
     /** Visits an ExprUnary node (OP X) by calling accept() on X. */
     @Override public Object visit(ExprUnary x) throws Err {
         return x.sub.accept(this);
