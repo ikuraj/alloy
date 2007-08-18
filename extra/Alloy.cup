@@ -449,9 +449,9 @@ Specification ::= Modules Opens Paragraphs ;
 Modulep ::= Module                                       ;
 Modulep ::= Modulep Module                               ;
 Modules ::= Modulep                                      ;
-Modules ::=                                              {: parser.alloymodule.addModelLine(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>()); :};
-Module ::= MODULE:o Name:n                               {: parser.alloymodule.addModelLine(o.merge(n.pos)               , n.name , new ArrayList<ExpName>()); :};
-Module ::= MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r {: parser.alloymodule.addModelLine(o.merge(r)                   , n.name , b                       ); :};
+Modules ::=                                              {: parser.alloymodule.addModelName(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>()); :};
+Module ::= MODULE:o Name:n                               {: parser.alloymodule.addModelName(o.merge(n.pos)               , n.name , new ArrayList<ExpName>()); :};
+Module ::= MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r {: parser.alloymodule.addModelName(o.merge(r)                   , n.name , b                       ); :};
 
 Open ::= OPEN:o Name:a                                         {: parser.alloymodule.addOpen(o.merge(a.pos), a, null, null); :};
 Open ::= OPEN:o Name:a                               AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, null, c);    :};

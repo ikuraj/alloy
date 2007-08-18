@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -117,7 +118,7 @@ public final class CompUtil {
         File f = new File(name);
         String canon = f.getCanonicalPath();
         if (!f.exists() && !fc.containsKey(canon) && parent!=null && parentFileName!=null) {
-            f = new File(CompUtil.computeModulePath(parent.moduleName, parentFileName, name));
+            f = new File(CompUtil.computeModulePath(parent.getModelName(), parentFileName, name));
             canon = f.getCanonicalPath();
         }
         if (!f.exists() && !fc.containsKey(canon) && rootdir!=null && rootdir.length()>0) {
@@ -148,16 +149,11 @@ public final class CompUtil {
            throw new ErrorSyntax(pos, "Circular dependency in module import. The file \""+name+"\" is imported infinitely often.");
         thispath.add(canon);
         // No cycle detected so far. So now we parse the file.
-        Module u = CompParser.alloy_parseStream(false, fc, (parent==null ? null : parent.world), 0, canon, prefix);
+        Module u = CompParser.alloy_parseStream(false, fc, (parent==null ? null : parent.getRootModule()), 0, canon, prefix);
         // Here, we recursively open the included files
-        for(Map.Entry<String,Open> e: u.opens.entrySet()) {
-            Open x=e.getValue();
+        for(Open x: u.getOpens()) {
             Module y=parseRecursively(fc, rootdir, x.pos, x.filename, u, canon, prefix.length()==0 ? x.alias : prefix+"/"+x.alias, thispath);
-            if (x.args.size() != y.params.size())
-               throw new ErrorSyntax(x.pos,
-                  "You supplied "+x.args.size()+" arguments to the open statement, but the imported module requires "
-                  +y.params.size()+" arguments.");
-            x.realModule=y;
+            x.connect(y);
         }
         thispath.remove(canon); // Remove this file from the CYCLE DETECTION LIST.
         return u;
@@ -246,7 +242,8 @@ public final class CompUtil {
             if (fc==null) fc=new LinkedHashMap<String,String>();
             Set<String> thispath=new LinkedHashSet<String>();
             Module root = parseRecursively(fc, rootdir, Pos.UNKNOWN, filename, null, null, "", thispath);
-            return Module.resolveAll(root);
+            A4Reporter rep = A4Reporter.getReporter();
+            return Module.resolveAll(rep, root);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());
         } catch(IOException ex) {

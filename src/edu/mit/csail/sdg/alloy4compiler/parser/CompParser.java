@@ -4831,7 +4831,7 @@ class CUP$CompParser$actions {
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         List<ExpName> b = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Pos r = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addModelLine(o.merge(r)                   , n.name , b                       );
+         parser.alloymodule.addModelName(o.merge(r)                   , n.name , b                       );
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Module",27, RESULT);
             }
           return CUP$CompParser$result;
@@ -4842,7 +4842,7 @@ class CUP$CompParser$actions {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addModelLine(o.merge(n.pos)               , n.name , new ArrayList<ExpName>());
+         parser.alloymodule.addModelName(o.merge(n.pos)               , n.name , new ArrayList<ExpName>());
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Module",27, RESULT);
             }
           return CUP$CompParser$result;
@@ -4851,7 +4851,7 @@ class CUP$CompParser$actions {
           case 5: // Modules ::=
             {
               Object RESULT =null;
-         parser.alloymodule.addModelLine(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>());
+         parser.alloymodule.addModelName(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>());
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Modules",28, RESULT);
             }
           return CUP$CompParser$result;
