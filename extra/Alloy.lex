@@ -45,9 +45,9 @@ import java_cup_11a.runtime.*;
 %pack
 
 %{
- public Module world=null;
  public String alloy_filename="";
  public int alloy_lineoffset=0; // If not zero, it is added to the current LINE NUMBER
+ public boolean alloy_dollar=false; // If true, we allow DOLLAR sign in identifiers
  private final Pos alloy_here(String txt) {
     return new Pos(alloy_filename,yycolumn+1,yyline+1+alloy_lineoffset,yycolumn+txt.length(),yyline+1);
  }
@@ -55,7 +55,9 @@ import java_cup_11a.runtime.*;
     Pos p=alloy_here(txt); return new Symbol(type, p, p);
  }
  private final Symbol alloy_id(String txt) throws Err {
-    Pos p=alloy_here(txt); return new Symbol(CompSym.ID, p, new ExpName(p,txt));
+    Pos p=alloy_here(txt);
+    if (!alloy_dollar && txt.indexOf('$')>=0) throw new ErrorSyntax(p,"The name cannot contain the $ symbol.");
+    return new Symbol(CompSym.ID, p, new ExpName(p,txt));
  }
  private final Symbol alloy_num(String txt) throws Err {
     Pos p=alloy_here(txt);
@@ -154,9 +156,9 @@ import java_cup_11a.runtime.*;
 "this"                { return alloy_sym(yytext(), CompSym.THIS        );}
 "univ"                { return alloy_sym(yytext(), CompSym.UNIV        );}
 
-[0-9][0-9]*[a-zA-Z_\'\"\u0019\u001d]   { throw new ErrorSyntax(alloy_here(yytext()),"An identifier cannot start with a digit."); }
-[0-9][0-9]*                            { return alloy_num (yytext()); }
-[a-zA-Z][0-9a-zA-Z_\'\"\u0019\u001d]*  { return alloy_id  (yytext()); }
+[0-9][0-9]*[a-zA-Z_\'\"\u0019\u001d]       { throw new ErrorSyntax(alloy_here(yytext()),"An identifier cannot start with a digit."); }
+[0-9][0-9]*                                { return alloy_num (yytext()); }
+[\$a-zA-Z][\$0-9a-zA-Z_\'\"\u0019\u001d]*  { return alloy_id  (yytext()); }
 
 "/*" ~"*/"            { }
 
