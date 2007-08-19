@@ -111,10 +111,11 @@ public final class Module {
     //============================================================================================================================//
 
     /** Mutable; this class represents an untypechecked Alloy signature; equals() uses object identity. */
-    private static final class SigAST {
-        private boolean topo=false;      // This flag is set to "true" during topological sort
-        private final Module realModule; // This value is set to its Module during topological sort
-        private Sig realSig=null;        // This value is set to its corresponding Sig during topological sort
+    static final class SigAST {
+        private boolean topo=false;             // This flag is set to "true" during resolving
+        private final Module realModule;        // This value is set to its Module during resolving
+        private Sig realSig=null;               // This value is set to its corresponding Sig during resolving
+        private final List<SigAST> realParents; // This value is set to its corresponding Sig during resolving
         private boolean hint_isLeaf=false;
         private final Pos pos;
         private final String name,fullname;
@@ -138,6 +139,7 @@ public final class Module {
             this.appendedFact=appendedFacts;
             this.realModule=realModule;
             this.realSig=realSig;
+            this.realParents=new ArrayList<SigAST>();
         }
         private SigAST(String fullname, String name, List<String> parents, Sig realSig) {
             this(null, fullname, name, null, null, null, null, null, parents, null, null, null, realSig);
@@ -528,6 +530,7 @@ public final class Module {
             for(String n: oldS.parents) {
                SigAST parentAST = u.getRawSIG(pos, n);
                if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+n+"\" cannot be found.");
+               oldS.realParents.add(parentAST);
                parents.add(resolveSig(sorted, parentAST));
             }
             oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered);
@@ -536,6 +539,7 @@ public final class Module {
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup==null || sup.length()==0) sup="univ";}
             SigAST parentAST = u.getRawSIG(pos, sup);
             if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+sup+"\" cannot be found.");
+            oldS.realParents.add(parentAST);
             Sig parent = resolveSig(sorted, parentAST);
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(pos, "Cannot extend the subset signature \"" + parent
                + "\".\nA signature can only extend a toplevel signature or a subsignature.");
@@ -712,7 +716,7 @@ public final class Module {
             Exp f=e.getValue().appendedFact;
             if (f==null) continue;
             Expr formula;
-            cx.rootsig=s;
+            cx.rootsig=e.getValue();
             if (s.isOne==null) {
                 ExprVar THIS = s.oneOf("this");
                 cx.put("this", THIS);
@@ -795,22 +799,6 @@ public final class Module {
 
     //============================================================================================================================//
 
-    /** Returns true if sig A can see sig B. */
-    private static boolean canSee(Sig a, Sig b) {
-        String aa=a.label, bb=b.label; // Due to the way we resolved the sigs, these will be A's and B's simplest canonical names
-        if (aa.startsWith("this/")) aa=aa.substring(5);
-        if (bb.startsWith("this/")) bb=bb.substring(5);
-        int ai=aa.lastIndexOf('/');
-        int bi=bb.lastIndexOf('/');
-        if (ai<0) return true;  // That means a is in the root module
-        if (bi<0) return false; // That means a is not in the root module, but b is in the root module
-        aa = aa.substring(0, ai);
-        bb = bb.substring(0, bi);
-        return (bb.startsWith(aa+"/") || bb.equals(aa));
-    }
-
-    //============================================================================================================================//
-
     /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
     static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
         resolveParams(rep, root);
@@ -842,7 +830,7 @@ public final class Module {
               // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
               final ExprVar THIS = s.oneOf("this");
               cx.rootfield=true;
-              cx.rootsig=s;
+              cx.rootsig=oldS;
               cx.put("this", THIS);
               Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
@@ -896,6 +884,20 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /** Returns true if sig A can see sig B. */
+    private static boolean canSee(SigAST a, SigAST b) {
+        Module am=a.realModule, bm=b.realModule;
+        if (am.path.length()==0) return true; // Root module sees all
+        for(String ap: am.paths) {
+            String apSLASH=ap+"/";
+            for(String bp: bm.paths) {
+                if (ap.equals(bp)) return true;
+                if (bp.startsWith(apSLASH)) return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Look up a parameter, or a signature/function/predicate visible from this module.
      * @param name - the name which can either be fully-qualified (eg. "alias/alias/somename") or not
@@ -945,20 +947,22 @@ public final class Module {
      * But, by having the check here, we can report an error sooner than later (so that the error message
      * will be less confusing to the user hopefully)
      */
-    private Field lookupField(Sig origin, Sig current, String name) {
-        Field ans=null;
-        if (!origin.builtin && !current.builtin && canSee(origin, current))
+    private Field lookupField(SigAST originAST, SigAST currentAST, String name) {
+        Sig origin = originAST.realSig;
+        Sig current = currentAST.realSig;
+        Field ans = null;
+        if (!origin.builtin && !current.builtin && canSee(originAST, currentAST))
             for(Field f:current.getFields())
                 if (f.label.equals(name))
                     {ans=f; break;}
         if (current instanceof PrimSig) {
             PrimSig s=(PrimSig)current;
             if (s.parent==null || s.parent.builtin) return ans;
-            Field ans2=lookupField(origin, s.parent, name);
+            Field ans2=lookupField(originAST, currentAST.realParents.get(0), name);
             if (ans==null) return ans2;
         }
-        if (current instanceof SubsetSig) for(Sig p:((SubsetSig)current).parents) {
-            Field ans2=lookupField(origin, p, name);
+        if (current instanceof SubsetSig) for(SigAST p:currentAST.realParents) {
+            Field ans2=lookupField(originAST, p, name);
             if (ans==null) ans=ans2;
         }
         return ans;
@@ -977,27 +981,24 @@ public final class Module {
     }
 
     /** Resolve the name based on the current context and this module. */
-    public Set<Object> populate(boolean rootfield, Sig rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
+    public Set<Object> populate(boolean rootfield, SigAST rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
         // Return object can be FuncN or Expr
         Set<Object> ans;
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
-        if (rootfield) {
+        if (rootsig!=null) {
             // Within a field decl
-            // You cannot call function or predicates
-            // And You can refer to field in this sig (defined earlier than you) and fields in a visible ancestor sig
-            ans=lookupSigOrParameterOrFunctionOrPredicate(name, false);
+            // (1) You can refer to any visible sig/param (but you cannot call any function or predicates)
+            // (2) You can refer to field in this sig (defined earlier than you), and fields in any visible ancestor sig
+            // Within an appended facts
+            // (1) you can refer to any visible sig/param/func/predicate
+            // (2) You can refer to any visible field (though if it is in this sig or in a parent sig, then we'll prepend "this." unless it has '@')
+            ans=lookupSigOrParameterOrFunctionOrPredicate(name, !rootfield);
             Field f=lookupField(rootsig, rootsig, name);
             if (f!=null) { Expr ff=ExprUnary.Op.NOOP.make(pos,f); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
-        }
-        else if (rootsig!=null) {
-            // Within an appended facts, you can refer to any visible sig/param/func/predicate
-            ans=lookupSigOrParameterOrFunctionOrPredicate(name, true);
-            Field f=lookupField(rootsig, rootsig, name);
-            if (f!=null) { Expr ff=ExprUnary.Op.NOOP.make(pos,f); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
-            for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos, ff, ff.weight+1, null));
+            if (!rootfield) for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos, ff, ff.weight+1, null));
         }
         else {
-            // If Within a function paramDecl/returnDecl
+            // If within a function paramDecl/returnDecl
             //    we cannot call, but can refer to anything else visible.
             // Else
             //    we can call, and can refer to anything visible.

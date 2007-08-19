@@ -30,6 +30,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module.SigAST;
 
 /**
  * This class computes both the bounding type and the relevant type.
@@ -62,7 +63,7 @@ final class Context {
 
     // field&sig!=null    else if sig!=null     else if fun!=null     allelse
     public boolean rootfield=false;
-    public Sig rootsig=null;
+    public SigAST rootsig=null;
     public boolean rootfun=false;
     private Module rootmodule=null;
 
