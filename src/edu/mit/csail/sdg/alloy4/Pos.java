@@ -159,12 +159,20 @@ public final class Pos implements Serializable {
         return x*111 + y*171 + x2*1731 + y2*2117;
     }
 
+    /** Returns a short String representation of this position value. */
+    public String toShortString() {
+        String f=filename;
+        int a=f.lastIndexOf('/'), b=f.lastIndexOf('\\');
+        if (a<b) a=b;
+        if (a>=0) f=f.substring(a+1);
+        if (f.length()==0) return "line "+y+", column "+x;
+        return "line "+y+", column "+x+", filename="+f;
+    }
+
     /** Returns a String representation of this position value. */
     @Override public String toString() {
         String comment=(this.comment==null?"":(this.comment.toString()));
-        if (filename.length()==0) {
-            return "line "+y+", column "+x+(comment.length()==0?"":(" ["+comment+"]"));
-        }
+        if (filename.length()==0) return "line "+y+", column "+x+(comment.length()==0?"":(" ["+comment+"]"));
         return "line "+y+", column "+x+", filename="+filename+(comment.length()==0?"":(" ["+comment+"]"));
     }
 }

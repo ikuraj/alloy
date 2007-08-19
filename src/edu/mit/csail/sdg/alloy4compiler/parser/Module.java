@@ -120,12 +120,12 @@ public final class Module {
         private final Pos pos;
         private final String name,fullname;
         private final Pos abs,lone,one,some,subset;
-        private final ConstList<String> parents;
+        private final ConstList<ExpName> parents;
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
         private Pos isOrdered=null;
         private SigAST(Pos pos, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subset,
-            List<String> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
+            List<ExpName> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
             this.fullname=fullname;
             this.name=name;
@@ -141,23 +141,23 @@ public final class Module {
             this.realSig=realSig;
             this.realParents=new ArrayList<SigAST>();
         }
-        private SigAST(String fullname, String name, List<String> parents, Sig realSig) {
+        private SigAST(String fullname, String name, List<ExpName> parents, Sig realSig) {
             this(null, fullname, name, null, null, null, null, null, parents, null, null, null, realSig);
         }
         @Override public String toString() { return fullname; }
     }
 
     /** The builtin sig "univ" */
-    private static final SigAST UNIVast   = new SigAST("univ", "univ", new ArrayList<String>(), UNIV);
+    private static final SigAST UNIVast = new SigAST("univ", "univ", null, UNIV);
 
     /** The builtin sig "Int" */
-    private static final SigAST SIGINTast = new SigAST("Int", "Int",  Util.asList("univ"), SIGINT);
+    private static final SigAST SIGINTast = new SigAST("Int", "Int", Util.asList(new ExpName(null,"univ")), SIGINT);
 
     /** The builtin sig "seq/Int" */
-    private static final SigAST SEQIDXast = new SigAST("seq/Int", "Int",  Util.asList("Int"), SEQIDX);
+    private static final SigAST SEQIDXast = new SigAST("seq/Int", "Int", Util.asList(new ExpName(null,"Int")), SEQIDX);
 
     /** The builtin sig "none" */
-    private static final SigAST NONEast   = new SigAST("none", "none", new ArrayList<String>(), NONE);
+    private static final SigAST NONEast = new SigAST("none", "none", null, NONE);
 
     //======== ROOT ONLY =========================================================================================================//
 
@@ -233,6 +233,9 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /** This field is used during a depth-first search of the dag-of-module(s) to mark which module has been visited. */
+    private Object visitedBy=null;
+
     /** The world that this Module belongs to. */
     private final Module world;
 
@@ -263,84 +266,16 @@ public final class Module {
     /** Each func name is mapped to a nonempty list of FunAST objects. */
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
 
-    /** Each assertion name is mapped to either an untypechecked Exp or a typechecked Expr. */
+    /** Each assertion name is mapped to either an untypechecked Exp, or a typechecked ExprVar with its value==the assertion. */
     private final Map<String,Object> asserts = new LinkedHashMap<String,Object>();
 
-    /** Each fact name is mapped to either an untypechecked Exp or a typechecked Expr. */
+    /** Each fact name is mapped to either an untypechecked Exp, or a typechecked Expr. */
     private final Map<String,Object> facts = new LinkedHashMap<String,Object>();
 
     /** The list of (CommandName,Command) pairs; NOTE: duplicate command names are allowed. */
     private final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
 
     //============================================================================================================================//
-
-    /** It looks up non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
-    private Object getRawNQ (int r, Pos pos, String name) throws Err {
-        // 0=sig 1=funs 2=assert
-        Object x=null;
-        SafeList<FunAST> xx;
-        if (r==0) x=sigs.get(name);
-        else if (r==2) x=asserts.get(name);
-        else if ((xx=funcs.get(name))!=null) { if (xx.size()>1) throw new ErrorSyntax(pos, "The name \""+name+"\" is ambiguous"); x=xx.get(0); }
-        for(Map.Entry<String,Open> i:opens.entrySet()) {
-            Module m=i.getValue().realModule;
-            if (m==null) continue;
-            Object y=m.getRawNQ(r, pos, name);
-            if (y==null || x==y) continue;
-            if (x==null) x=y; else throw new ErrorSyntax(pos, "The name \""+name+"\" is ambiguous.");
-        }
-        return x;
-    }
-
-    /** It looks up fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
-    private Object getRawQ (int r, Pos pos, String name) throws Err { // It ignores "params"
-        // 0=sig 1=funs 2=assert
-        Module u=this;
-        if (name.startsWith("this/")) name=name.substring(5);
-        while(true) {
-            int i=name.indexOf('/');
-            if (i<0) {
-                if (r==0) return u.sigs.get(name);
-                else if (r==2) return u.asserts.get(name);
-                SafeList<FunAST> xx=u.funcs.get(name);
-                if (xx==null) return null;
-                if (xx.size()>1) throw new ErrorSyntax(pos, "The name \""+name+"\" is ambiguous");
-                return xx.get(0);
-            }
-            String alias=name.substring(0,i);
-            Open uu=u.opens.get(alias);
-            if (uu==null || uu.realModule==null) return null;
-            u=uu.realModule;
-            name=name.substring(i+1);
-        }
-    }
-
-    /** Looks up a SigAST from the current module (and it will also search this.params) */
-    private SigAST getRawSIG (Pos pos, String name) throws Err {
-        Object s=null;
-        SigAST s2=null;
-        if (name.equals("univ"))    return UNIVast;
-        if (name.equals("Int"))     return SIGINTast;
-        if (name.equals("seq/Int")) return SEQIDXast;
-        if (name.equals("none"))    return NONEast;
-        if (name.indexOf('/')<0) {
-            s2=params.get(name);
-            s=getRawNQ(0, pos, name);
-        } else {
-            if (name.startsWith("this/")) { name=name.substring(5); s2=params.get(name); }
-            s=getRawQ(0, pos, name);
-        }
-        if (s!=null && s2!=null && s!=s2)
-           throw new ErrorSyntax(pos, "The signature name \""+name+"\" is ambiguous.");
-        if (s instanceof SigAST) return (SigAST)s; else return s2;
-    }
-
-    /** Returns a short description for this module. */
-    @Override public String toString() {
-        String answer=null;
-        for(String x:paths) { if (answer==null) answer="module{"+x; else answer=answer+", "+x; }
-        return answer+"}";
-    }
 
     /** Throw an exception if the name is already used, or has @ or /, or is univ/Int/none. */
     private void dup(Pos pos, String name, boolean checkFunctions) throws Err {
@@ -358,6 +293,93 @@ public final class Module {
             throw new ErrorSyntax(pos, "\""+name+"\" is already the name of a fact paragraph in this module.");
         if (asserts.containsKey(name))
             throw new ErrorSyntax(pos, "\""+name+"\" is already the name of an assertion in this module.");
+    }
+
+    /** Throw an exception if there are more than 1 match; return nonnull if only one match; return null if no match. */
+    private Object unique (Pos pos, String name, List<Object> objs) throws Err {
+        if (objs.size()==0) return null;
+        if (objs.size()==1) return objs.get(0);
+        StringBuilder msg = new StringBuilder("The name \"").append(name);
+        msg.append("\" is ambiguous.\nThere are ").append(objs.size()).append(" choices:");
+        for(int i=0; i<objs.size(); i++) {
+            msg.append("\n\n#").append(i+1).append(": ");
+            Object x=objs.get(i);
+            if (x instanceof SigAST) {
+                SigAST y=(SigAST)x; msg.append("sig ").append(y.fullname).append("\nat ").append(y.pos.toShortString());
+            }
+            else if (x instanceof FunAST) {
+                FunAST y=(FunAST)x;
+                msg.append(y.returnType==null?"pred ":"fun ").append(y.realFunc.label).append("\nat ").append(y.pos.toShortString());
+            }
+            else if (x instanceof ExprVar) {
+                ExprVar y=(ExprVar)x; msg.append("assert ").append(y.label).append("\nat ").append(y.pos.toShortString());
+            }
+        }
+        throw new ErrorSyntax(pos, msg.toString());
+    }
+
+    /** It looks up non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
+    private List<Object> getRawNQS (List<Object> ans, int r, String name) {
+        // r: 1=sig 2=assert 4=func/pred
+        if (ans==null) ans=new ArrayList<Object>();
+        if (visitedBy==ans) return ans; else visitedBy=ans; // This optimization is not strictly needed, but it avoids repeat visits
+        if ((r&1)!=0) { SigAST x=sigs.get(name); if (x!=null) ans.add(x); }
+        if ((r&2)!=0) { Object x=asserts.get(name); if (x instanceof Expr) ans.add(x); }
+        if ((r&4)!=0) { SafeList<FunAST> x=funcs.get(name); if (x!=null) ans.addAll(x); }
+        for(Map.Entry<String,Open> i:opens.entrySet()) {
+            Module m=i.getValue().realModule;
+            if (m==null) continue;
+            m.getRawNQS(ans, r, name);
+        }
+        return ans;
+    }
+
+    /** It looks up fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
+    private List<Object> getRawQS (int r, String name) {
+        // r: 1=sig 2=assert 4=func/pred
+        List<Object> ans=new ArrayList<Object>();
+        Module u=this;
+        if (name.startsWith("this/")) name=name.substring(5);
+        while(true) {
+            int i=name.indexOf('/');
+            if (i<0) {
+                if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) ans.add(x); }
+                if ((r&2)!=0) { Object x=u.asserts.get(name); if (x instanceof Expr) ans.add(x); }
+                if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) ans.addAll(x); }
+                return ans;
+            }
+            String alias=name.substring(0,i);
+            Open uu=u.opens.get(alias);
+            if (uu==null || uu.realModule==null) return ans;
+            u=uu.realModule;
+            name=name.substring(i+1);
+        }
+    }
+
+    /** Looks up a SigAST from the current module (and it will also search this.params) */
+    private SigAST getRawSIG (Pos pos, String name) throws Err {
+        List<Object> s;
+        SigAST s2=null;
+        if (name.equals("univ"))    return UNIVast;
+        if (name.equals("Int"))     return SIGINTast;
+        if (name.equals("seq/Int")) return SEQIDXast;
+        if (name.equals("none"))    return NONEast;
+        if (name.indexOf('/')<0) {
+            s=getRawNQS(null, 1, name);
+            s2=params.get(name);
+        } else {
+            if (name.startsWith("this/")) { name=name.substring(5); s2=params.get(name); }
+            s=getRawQS(1, name);
+        }
+        if (s2!=null && !s.contains(s2)) s.add(s2);
+        return (SigAST) (unique(pos, name, s));
+    }
+
+    /** Returns a short description for this module. */
+    @Override public String toString() {
+        String answer=null;
+        for(String x:paths) { if (answer==null) answer="module{"+x; else answer=answer+", "+x; }
+        return answer+"}";
     }
 
     //============================================================================================================================//
@@ -384,7 +406,7 @@ public final class Module {
         if (list!=null) for(ExpName expr: list) {
             String name=expr.name;
             dup(expr.span(), name, true);
-            if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null);
+            if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null);
             else params.put(name, null);
         }
     }
@@ -504,13 +526,16 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a sig declaration. */
-    SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos subSet,
-    List<String> in, String extend, List<Decl> fields, Exp fact) throws Err {
+    SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome,
+    List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
-        boolean s = (in!=null && in.size()>0);
-        if (s && subSet==null) subSet = Pos.UNKNOWN; // We use nonnull-ness of this Pos object to indicate subset or not
-        SigAST obj=new SigAST(pos,full,name, isAbstract,isLone,isOne,isSome,subSet, s?in:Util.asList(extend), fields,fact,this,null);
+        Pos subset=null;
+        if (parents!=null) {
+            if (parents.get(0)==null) {ExpName parent=parents.get(1); parents=Util.asList(parent);}
+            else for(ExpName p:parents) subset=p.span().merge(subset);
+        }
+        SigAST obj=new SigAST(pos,full,name, isAbstract,isLone,isOne,isSome,subset, parents, fields,fact,this,null);
         if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
@@ -527,21 +552,22 @@ public final class Module {
         if (oldS.subset!=null)  {
             if (oldS.abs!=null) throw new ErrorSyntax(pos, "Subset signature \""+name+"\" cannot be abstract.");
             List<Sig> parents = new ArrayList<Sig>();
-            for(String n: oldS.parents) {
-               SigAST parentAST = u.getRawSIG(pos, n);
-               if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+n+"\" cannot be found.");
+            for(ExpName n: oldS.parents) {
+               SigAST parentAST = u.getRawSIG(n.span(), n.name);
+               if (parentAST==null) throw new ErrorSyntax(n.span(), "The sig \""+n.name+"\" cannot be found.");
                oldS.realParents.add(parentAST);
                parents.add(resolveSig(sorted, parentAST));
             }
             oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered);
         } else {
-            String sup="univ";
-            if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup==null || sup.length()==0) sup="univ";}
-            SigAST parentAST = u.getRawSIG(pos, sup);
-            if (parentAST==null) throw new ErrorSyntax(pos, "The sig \""+sup+"\" cannot be found.");
+            ExpName sup = null;
+            if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.name.length()==0) sup=null;}
+            Pos suppos = sup==null ? Pos.UNKNOWN : sup.span();
+            SigAST parentAST = u.getRawSIG(suppos, sup==null ? "univ" : sup.name);
+            if (parentAST==null) throw new ErrorSyntax(suppos, "The sig \""+sup.name+"\" cannot be found.");
             oldS.realParents.add(parentAST);
             Sig parent = resolveSig(sorted, parentAST);
-            if (!(parent instanceof PrimSig)) throw new ErrorSyntax(pos, "Cannot extend the subset signature \"" + parent
+            if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
                + "\".\nA signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
             oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.hint_isLeaf);
@@ -670,7 +696,8 @@ public final class Module {
             if (x instanceof Expr) expr=(Expr)x;
             if (x instanceof Exp) {
                 expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
-                if (expr.errors.isEmpty()) e.setValue(expr);
+                if (expr.errors.isEmpty())
+                   e.setValue(ExprVar.make(expr.span(), (path.length()==0?"this/":(path+"/"))+e.getKey(), expr));
             }
             if (expr.errors.size()>0) errors=errors.join(expr.errors);
             else rep.typecheck("Assertion " + e.getKey() + ": " + expr.type+"\n");
@@ -683,7 +710,7 @@ public final class Module {
         TempList<Pair<String,Expr>> ans = new TempList<Pair<String,Expr>>(asserts.size());
         for(Map.Entry<String,Object> e:asserts.entrySet()) {
             Object x=e.getValue();
-            if (x instanceof Expr) ans.add(new Pair<String,Expr>(e.getKey(), (Expr)x));
+            if (x instanceof ExprVar) ans.add(new Pair<String,Expr>(e.getKey(), ((ExprVar)x).expr));
         }
         return ans.makeConst();
     }
@@ -768,15 +795,17 @@ public final class Module {
             Command cmd=commands.get(i).b;
             Expr e=null;
             if (cmd.check) {
-                Object ee=getRawQ(2, cmd.pos, cname); // We prefer assertion in the topmost module
-                if (ee==null && cname.indexOf('/')<0) ee=getRawNQ(2, cmd.pos, cname);
-                if (!(ee instanceof Expr)) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
-                e=(Expr)ee;
+                List<Object> m=getRawQS(2, cname); // We prefer assertion in the topmost module
+                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(null, 2, cname);
+                if (m.size()>1) unique(cmd.pos, cname, m);
+                if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
+                e=((ExprVar)(m.get(0))).expr;
             } else {
-                Object ee=getRawQ(1, cmd.pos, cname); // We prefer fun/pred in the topmost module
-                if (ee==null && cname.indexOf('/')<0) ee=getRawNQ(1, cmd.pos, cname);
-                if (!(ee instanceof FunAST)) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
-                e=((FunAST)ee).realFormula;
+                List<Object> m=getRawQS(4, cname); // We prefer fun/pred in the topmost module
+                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(null, 4, cname);
+                if (m.size()>1) unique(cmd.pos, cname, m);
+                if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
+                e=((FunAST)(m.get(0))).realFormula;
             }
             commands.set(i, new Pair<String,Command>(cname, cmd.changeFormula(e)));
         }
@@ -849,6 +878,7 @@ public final class Module {
               rep.typecheck("Fact " + name + ": " + disjF.type+"\n");
           }
         }
+        if (!errors.isEmpty()) throw errors.get(0);
         // The Alloy language forbids two overlapping sigs from having fields with the same name.
         // In other words: if 2 fields have the same name, then their type's first column must not intersect.
         final Map<String,List<Field>> fieldname2fields=new LinkedHashMap<String,List<Field>>();
@@ -869,17 +899,19 @@ public final class Module {
         }
         // Typecheck the function declarations
         for(Module x:modules) errors=x.resolveFuncDecls(rep, errors, warns);
+        if (!errors.isEmpty()) throw errors.get(0);
         // Typecheck the function bodies, assertions, and facts (which can refer to function declarations)
         for(Module x:modules) {
             errors=x.resolveFuncBodys(rep,errors,warns);
             errors=x.resolveAssertions(rep,errors,warns);
             errors=x.resolveFacts(rep,errors,warns);
         }
+        if (!errors.isEmpty()) throw errors.get(0);
         // Typecheck the run/check commands (which can refer to function bodies and assertions)
         root.resolveCommands();
-        // Issue the warnings, and generate the errors if there are any
+        if (!errors.isEmpty()) throw errors.get(0);
         for(ErrorWarning w:warns) rep.warning(w);
-        if (!errors.isEmpty()) throw errors.get(0); else return root;
+        return root;
     }
 
     //============================================================================================================================//
@@ -987,14 +1019,17 @@ public final class Module {
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
         if (rootsig!=null) {
             // Within a field decl
-            // (1) You can refer to any visible sig/param (but you cannot call any function or predicates)
-            // (2) You can refer to field in this sig (defined earlier than you), and fields in any visible ancestor sig
+            // (1) Can refer to any visible sig/param (but you cannot call any function or predicates)
+            // (2) Can refer to field in this sig (defined earlier than you), and fields in any visible ancestor sig
             // Within an appended facts
-            // (1) you can refer to any visible sig/param/func/predicate
-            // (2) You can refer to any visible field (though if it is in this sig or in a parent sig, then we'll prepend "this." unless it has '@')
+            // (1) Can refer to any visible sig/param/func/predicate
+            // (2) Can refer to any visible field (but if it is in this sig or a parent sig, we'll prepend "this." unless it has '@')
             ans=lookupSigOrParameterOrFunctionOrPredicate(name, !rootfield);
             Field f=lookupField(rootsig, rootsig, name);
-            if (f!=null) { Expr ff=ExprUnary.Op.NOOP.make(pos,f); if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff)); }
+            if (f!=null) {
+                Expr ff=ExprUnary.Op.NOOP.make(pos,f);
+                if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff));
+            }
             if (!rootfield) for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos, ff, ff.weight+1, null));
         }
         else {

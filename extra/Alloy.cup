@@ -14,7 +14,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -429,13 +428,13 @@ nonterminal Exp                        RangeExpr;
 nonterminal Exp                        RelationExpr;
 nonterminal List<String>               Scope;
 nonterminal                            Sig;
-nonterminal Pair<Pos,List<String>>     SigIn;
+nonterminal List<ExpName>              SigIn;
 nonterminal List<Pos>                  SigQual;
 nonterminal List<Pos>                  SigQuals;
 nonterminal ExpName                    SigRef;
 nonterminal List<ExpName>              SigRefp;
 nonterminal List<ExpName>              SigRefs;
-nonterminal Pair<Pos,List<String>>     SigRefu;
+nonterminal List<ExpName>              SigRefu;
 nonterminal                            Specification;
 nonterminal List<String>               Typescopes;
 nonterminal List<String>               Typescope;
@@ -591,17 +590,7 @@ Hint ::= HASH Name:e {: RESULT=Util.asList(e); :};
 
 Sig ::= Hint:h SigQuals:a SIG Names:b SigIn:c LBRACE Decls:d RBRACE SuperOpt:e
  {:
-   for(ExpName bbb:b) {
-     String bb=bbb.name;
-     if (c==null)
-       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), null, null,null,d,e);
-     else if (c.b.get(0)==null) {
-       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), null, null,(String)(c.b.get(1)),d,e);
-       }
-     else {
-       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), c.a,  c.b, null, d, e);
-       }
-   }
+   for(ExpName bbb:b) parser.alloymodule.addSig(h, bbb.pos, bbb.name, a.get(0), a.get(1), a.get(2), a.get(3), c,d,e);
  :};
 
 SigQual  ::= ABSTRACT:x               {: RESULT=new ArrayList<Pos>(4); RESULT.add(x);    RESULT.add(null); RESULT.add(null); RESULT.add(null); :};
@@ -612,9 +601,9 @@ SigQual  ::= SOME:x                   {: RESULT=new ArrayList<Pos>(4); RESULT.ad
 SigQuals ::=                          {: RESULT=new ArrayList<Pos>(4); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); :};
 SigQuals ::= SigQuals:a SigQual:b     {: RESULT=a; for(int i=0;i<4;i++) if (a.get(i)==null) a.set(i,b.get(i)); else if (b.get(i)!=null) throw new ErrorSyntax(b.get(i), "The same qualifer cannot be specified more than once for the same sig."); :};
 
-SigIn    ::= EXTENDS:e SigRef:a       {: RESULT=new Pair<Pos,List<String>>(e.merge(a.pos), new ArrayList<String>()); RESULT.b.add(null); RESULT.b.add(a.name); :};
-SigIn    ::= IN:a SigRefu:b           {: RESULT=new Pair<Pos,List<String>>(a.merge(b.a),   b.b);                                                               :};
-SigIn    ::=                          {: RESULT=null;                                                                                                          :};
+SigIn    ::= EXTENDS SigRef:x         {: RESULT=new ArrayList<ExpName>(2); RESULT.add(null); RESULT.add(x); :};
+SigIn    ::= IN SigRefu:x             {: RESULT=x;                                                          :};
+SigIn    ::=                          {: RESULT=null;                                                       :};
 
 SigRef   ::= Name:x                   {: RESULT=x;                                   :};
 SigRef   ::= UNIV:x                   {: RESULT=new ExpName(x, "univ");              :};
@@ -628,8 +617,8 @@ SigRefs  ::= SigRefp:x                {: RESULT=x;                        :};
 SigRefp  ::= SigRef:x                 {: RESULT=new ArrayList<ExpName>(); RESULT.add(x); :};
 SigRefp  ::= SigRefp:a COMMA SigRef:b {: a.add(b); RESULT=a;                             :};
 
-SigRefu  ::= SigRef:x                 {: RESULT=new Pair<Pos,List<String>>(x.pos, new ArrayList<String>()); RESULT.b.add(x.name); :};
-SigRefu  ::= SigRefu:a PLUS SigRef:b  {: RESULT=new Pair<Pos,List<String>>(a.a.merge(b.pos), a.b);          RESULT.b.add(b.name); :};
+SigRefu  ::= SigRef:x                 {: RESULT=new ArrayList<ExpName>(); RESULT.add(x); :};
+SigRefu  ::= SigRefu:a PLUS SigRef:b  {: a.add(b); RESULT=a;                             :};
 
 Name ::= NameHelper:x              {: RESULT=x;                                           :};
 Name ::= THIS:a SLASH NameHelper:b {: RESULT=new ExpName(a.merge(b.pos), "this/"+b.name); :};

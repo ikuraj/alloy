@@ -21,7 +21,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -3916,10 +3915,10 @@ class CUP$CompParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 84: // SigRefu ::= SigRefu PLUS SigRef
             {
-              Pair<Pos,List<String>> RESULT =null;
-        Pair<Pos,List<String>> a = (Pair<Pos,List<String>>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
+              List<ExpName> RESULT =null;
+        List<ExpName> a = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         ExpName b = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new Pair<Pos,List<String>>(a.a.merge(b.pos), a.b);          RESULT.b.add(b.name);
+         a.add(b); RESULT=a;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigRefu",51, RESULT);
             }
           return CUP$CompParser$result;
@@ -3927,9 +3926,9 @@ class CUP$CompParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 83: // SigRefu ::= SigRef
             {
-              Pair<Pos,List<String>> RESULT =null;
+              List<ExpName> RESULT =null;
         ExpName x = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new Pair<Pos,List<String>>(x.pos, new ArrayList<String>()); RESULT.b.add(x.name);
+         RESULT=new ArrayList<ExpName>(); RESULT.add(x);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigRefu",51, RESULT);
             }
           return CUP$CompParser$result;
@@ -4028,7 +4027,7 @@ class CUP$CompParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 73: // SigIn ::=
             {
-              Pair<Pos,List<String>> RESULT =null;
+              List<ExpName> RESULT =null;
          RESULT=null;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",45, RESULT);
             }
@@ -4037,10 +4036,9 @@ class CUP$CompParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 72: // SigIn ::= IN SigRefu
             {
-              Pair<Pos,List<String>> RESULT =null;
-        Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
-        Pair<Pos,List<String>> b = (Pair<Pos,List<String>>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new Pair<Pos,List<String>>(a.merge(b.a),   b.b);
+              List<ExpName> RESULT =null;
+        List<ExpName> x = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
+         RESULT=x;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",45, RESULT);
             }
           return CUP$CompParser$result;
@@ -4048,10 +4046,9 @@ class CUP$CompParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 71: // SigIn ::= EXTENDS SigRef
             {
-              Pair<Pos,List<String>> RESULT =null;
-        Pos e = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
-        ExpName a = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new Pair<Pos,List<String>>(e.merge(a.pos), new ArrayList<String>()); RESULT.b.add(null); RESULT.b.add(a.name);
+              List<ExpName> RESULT =null;
+        ExpName x = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
+         RESULT=new ArrayList<ExpName>(2); RESULT.add(null); RESULT.add(x);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",45, RESULT);
             }
           return CUP$CompParser$result;
@@ -4123,21 +4120,11 @@ class CUP$CompParser$actions {
         List<ExpName> h = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-8)).value;
         List<Pos> a = (List<Pos>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-7)).value;
         List<ExpName> b = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-5)).value;
-        Pair<Pos,List<String>> c = (Pair<Pos,List<String>>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
+        List<ExpName> c = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
-   for(ExpName bbb:b) {
-     String bb=bbb.name;
-     if (c==null)
-       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), null, null,null,d,e);
-     else if (c.b.get(0)==null) {
-       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), null, null,(String)(c.b.get(1)),d,e);
-       }
-     else {
-       parser.alloymodule.addSig(h, bbb.pos, bb, a.get(0), a.get(1), a.get(2), a.get(3), c.a,  c.b, null, d, e);
-       }
-   }
+   for(ExpName bbb:b) parser.alloymodule.addSig(h, bbb.pos, bbb.name, a.get(0), a.get(1), a.get(2), a.get(3), c,d,e);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Sig",44, RESULT);
             }
