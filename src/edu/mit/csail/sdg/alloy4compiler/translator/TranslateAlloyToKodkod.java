@@ -771,7 +771,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
           case ANY_ARROW_ONE:  case SOME_ARROW_ONE:  case ONE_ARROW_ONE:  case LONE_ARROW_ONE:  ans1=ar.one().and(ans1);  break;
           case ANY_ARROW_SOME: case SOME_ARROW_SOME: case ONE_ARROW_SOME: case LONE_ARROW_SOME: ans1=ar.some().and(ans1); break;
         }
-        if (a.arity()==1) ans1=ans1.forAll(d); else ans1=isIn(atuple, ab.left).implies(ans1).forAll(d); // TODO We should allow manual grounding
+        if (a.arity()==1) ans1=ans1.forAll(d); else ans1=isIn(atuple, ab.left).implies(ans1).forAll(d); // TODO: We should allow manual grounding
         //
         Decls d2=null; Expression b=csetIgnoreMultiplicity(ab.right), btuple=null, rb=r;
         for(int i=b.arity(); i>0; i--) {

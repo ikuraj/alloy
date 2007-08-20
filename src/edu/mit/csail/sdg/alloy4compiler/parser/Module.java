@@ -523,8 +523,7 @@ public final class Module {
                if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
                chg=true;
                p.setValue(vv);
-               // This detects for the Alloy3 behavior of util/ordering.als
-               // This is the only place where the exact name "util/ordering.als" matters
+               // TODO: This detects for the Alloy3 behavior of util/ordering.als
                if (kn.equals("elem") && sub.sigs.size()==1
                   && vv!=Module.UNIVast && vv!=Module.SIGINTast && vv!=Module.SEQIDXast && vv!=Module.NONEast
                   && sub.modulePos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) {
