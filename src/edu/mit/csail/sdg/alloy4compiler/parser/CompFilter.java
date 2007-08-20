@@ -59,6 +59,8 @@ import static edu.mit.csail.sdg.alloy4compiler.parser.CompSym.*;
 
 final class CompFilter implements Scanner {
 
+    // TODO: should double check that the filter rules in this file still matches the current Alloy4 grammar
+
     //===================== PHASE 1 ==================================================================================
 
     /** The underlying lexer. */
