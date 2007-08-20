@@ -566,7 +566,7 @@ public final class VizCustomizationPanel extends JPanel {
 
     /** Generates the "general graph settings" widgets, and add them to "parent". */
     private void createGeneralWidget(JPanel parent) {
-        final List<Object> fontSizes = Util.asList((Object)9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36);
+        final List<Object> fontSizes = Util.asList((Object)9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72);
         final ComboGetterSetter cgs=new ComboGetterSetter() {
             public Icon getIcon(Object key, Object value) { return null; }
             public String getText(Object key, Object value) {

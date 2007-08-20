@@ -169,7 +169,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     private static final IntPref AnalyzerHeight = new IntPref("AnalyzerHeight",0,-1,65535);
 
     /** The latest font size of the Alloy Analyzer. */
-    private static final IntPref FontSize = new IntPref("FontSize",9,12,24);
+    private static final IntPref FontSize = new IntPref("FontSize",9,12,72);
 
     /** The latest font name of the Alloy Analyzer. */
     private static final StringPref FontName = new StringPref("FontName","Lucida Grande");
@@ -1062,7 +1062,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             //
             int fontSize = FontSize.get();
             JMenu size = OurUtil.makeMenu("Font Size: "+fontSize);
-            for(final int n: new Integer[]{9,10,11,12,14,16,18,24}) {
+            for(final int n: new Integer[]{9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72}) {
                 (OurUtil.makeMenuItem(size, ""+n, -1, -1, new Runnable() {
                     public final void run() {
                         FontSize.set(n);
