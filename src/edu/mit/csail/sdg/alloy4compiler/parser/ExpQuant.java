@@ -32,6 +32,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant.Op;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 /**
  * Immutable; represents a quantified expression.

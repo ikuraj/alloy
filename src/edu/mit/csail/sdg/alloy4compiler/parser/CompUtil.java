@@ -38,6 +38,7 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module.Open;
 
 /** This class provides convenience methods for calling the parser and the compiler. */

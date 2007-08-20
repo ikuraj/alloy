@@ -24,6 +24,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
@@ -33,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -66,6 +68,45 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 /** Mutable; this class represents an Alloy module; equals() uses object identity. */
 
 public final class Module {
+
+    //============================================================================================================================//
+
+    static final class Context {
+        // field&sig!=null    else if sig!=null     else if fun!=null     allelse
+        public boolean rootfield=false;
+        public SigAST rootsig=null;
+        public boolean rootfun=false;
+        private Module rootmodule=null;
+        /** This maps local names (eg. let/quantification variables and function parameters) to the objects they refer to. */
+        private final Env<String,Expr> env=new Env<String,Expr>();
+        /** Returns true if the name is in the current lexical scope. */
+        public final boolean has(String name) { return env.has(name); }
+        /** Returns the expression corresbonding to the given name, or returns null if the name is not in the current lexical scope. */
+        public final Expr get(String name, Pos pos) {
+            Expr ans = env.get(name);
+            if (ans instanceof ExprVar) return ExprUnary.Op.NOOP.make(pos,ans); else return ans;
+        }
+        /** Associates the given name with the given expression in the current lexical scope. */
+        public final void put(String name, Expr value) { env.put(name,value); }
+        /** Removes the latest binding for the given name from the current lexical scope. */
+        public final void remove(String name) { env.remove(name); }
+        public Context(Module rootModule) { this.rootmodule=rootModule; }
+        public Collection<Object> resolve(Pos pos, String name) {
+            Expr match = env.get(name);
+            if (match!=null || name.equals("Int") || name.equals("univ") || name.equals("seq/Int") || name.equals("none") || name.equals("iden")) {
+                HashSet<Object> ans = new HashSet<Object>(1);
+                if (match!=null) ans.add(ExprUnary.Op.NOOP.make(pos, match));
+                else if (name.charAt(0)=='I') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.SIGINT));
+                else if (name.charAt(0)=='u') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.UNIV));
+                else if (name.charAt(0)=='s') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.SEQIDX));
+                else if (name.charAt(0)=='n') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.NONE));
+                else if (name.charAt(0)=='i') ans.add(ExprUnary.Op.NOOP.make(pos, ExprConstant.IDEN));
+                return ans;
+            }
+            if (rootmodule==null) return new HashSet<Object>(1);
+            return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
+        }
+    }
 
     //============================================================================================================================//
 

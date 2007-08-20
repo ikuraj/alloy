@@ -27,6 +27,7 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 /** Immutable; represents the builtin disjoint[] predicate. */
 
