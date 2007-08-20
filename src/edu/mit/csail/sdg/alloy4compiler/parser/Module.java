@@ -447,6 +447,17 @@ public final class Module {
         this.status=1; // This line must be at the end, since "addSig" will otherwise bump the status value to 3
     }
 
+    /** Add util/sequniv to the list of declarations. */
+    void addSeq(Pos pos) throws Err {
+        int oldStatus=status;
+        status=0;
+        try {
+            addOpen(pos, new ExpName(pos,"util/sequniv"), null, new ExpName(pos,"seq"));
+        } finally {
+            status=oldStatus;
+        }
+    }
+
     /** Add an OPEN declaration. */
     void addOpen(Pos pos, ExpName name, List<ExpName> args, ExpName alias) throws Err {
         if (status>2) throw new ErrorSyntax(pos,

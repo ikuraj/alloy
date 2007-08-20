@@ -676,7 +676,7 @@ CompareExpr ::= SOME:o UnionDiffExpr:b                       {: RESULT=new ExpUn
 CompareExpr ::= LONE:o UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
 CompareExpr ::= ONE:o  UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
 CompareExpr ::= SET:o  UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
-CompareExpr ::= SEQ:o  UnionDiffExpr:b                       {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addOpen(o, new ExpName(o,"util/sequniv"), null, new ExpName(o,"seq")); :};
+CompareExpr ::= SEQ:o  UnionDiffExpr:b                       {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addSeq(o); :};
 CompareExpr ::=        UnionDiffExpr:b                       {: RESULT=b;                                        :};
 
 UnionDiffExpr ::=                         NumUnopExpr:b        {: RESULT=b;                                                   :};

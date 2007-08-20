@@ -3107,7 +3107,7 @@ class CUP$CompParser$actions {
               Exp RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addOpen(o, new ExpName(o,"util/sequniv"), null, new ExpName(o,"seq"));
+         RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addSeq(o);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("CompareExpr",3, RESULT);
             }
           return CUP$CompParser$result;
