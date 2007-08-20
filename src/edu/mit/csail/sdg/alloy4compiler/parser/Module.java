@@ -21,10 +21,11 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
@@ -71,39 +72,30 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /** Mutable; this class represents the current typechecking context. */
     static final class Context {
         // field&sig!=null    else if sig!=null     else if fun!=null     allelse
-        public boolean rootfield=false;
-        public SigAST rootsig=null;
-        public boolean rootfun=false;
+        SigAST rootsig=null;
+        private boolean rootfield=false;
+        private boolean rootfun=false;
         private Module rootmodule=null;
         /** This maps local names (eg. let/quantification variables and function parameters) to the objects they refer to. */
         private final Env<String,Expr> env=new Env<String,Expr>();
         /** Returns true if the name is in the current lexical scope. */
-        public final boolean has(String name) { return env.has(name); }
+        final boolean has(String name) { return env.has(name); }
         /** Returns the expression corresbonding to the given name, or returns null if the name is not in the current lexical scope. */
-        public final Expr get(String name, Pos pos) {
+        final Expr get(String name, Pos pos) {
             Expr ans = env.get(name);
             if (ans instanceof ExprVar) return ExprUnary.Op.NOOP.make(pos,ans); else return ans;
         }
         /** Associates the given name with the given expression in the current lexical scope. */
-        public final void put(String name, Expr value) { env.put(name,value); }
+        final void put(String name, Expr value) { env.put(name,value); }
         /** Removes the latest binding for the given name from the current lexical scope. */
-        public final void remove(String name) { env.remove(name); }
-        public Context(Module rootModule) { this.rootmodule=rootModule; }
+        final void remove(String name) { env.remove(name); }
+        Context(Module rootModule) { this.rootmodule=rootModule; }
         public Collection<Object> resolve(Pos pos, String name) {
             Expr match = env.get(name);
-            if (match!=null || name.equals("Int") || name.equals("univ") || name.equals("seq/Int") || name.equals("none") || name.equals("iden")) {
-                HashSet<Object> ans = new HashSet<Object>(1);
-                if (match!=null) ans.add(ExprUnary.Op.NOOP.make(pos, match));
-                else if (name.charAt(0)=='I') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.SIGINT));
-                else if (name.charAt(0)=='u') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.UNIV));
-                else if (name.charAt(0)=='s') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.SEQIDX));
-                else if (name.charAt(0)=='n') ans.add(ExprUnary.Op.NOOP.make(pos, Sig.NONE));
-                else if (name.charAt(0)=='i') ans.add(ExprUnary.Op.NOOP.make(pos, ExprConstant.IDEN));
-                return ans;
-            }
-            if (rootmodule==null) return new HashSet<Object>(1);
+            if (match!=null) { List<Object> ans=new ArrayList<Object>(); ans.add(match); return ans; }
             return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
         }
     }
@@ -201,81 +193,9 @@ public final class Module {
     /** The builtin sig "none" */
     private static final SigAST NONEast = new SigAST("none", "none", null, NONE);
 
-    //======== ROOT ONLY =========================================================================================================//
-
-    // TODO: check this section
-
-    /** IF ROOT: This lists all modules in this world; it must be consistent with this.path2module */
-    private final ArrayList<Module> modules = new ArrayList<Module>();
-
-    /** IF ROOT: This maps pathname to the Module it refers to; it must be consistent with this.modules */
-    private final Map<String,Module> path2module = new LinkedHashMap<String,Module>();
-
-    /** Create a new module with the given list of paths. */
-    Module lookupOrCreateModule(Pos pos, String path) throws Err {
-        Module u=path2module.get(path);
-        if (u==null) u=new Module(world, pos, path); // The constructor will automatically add it to path2module if not there already
-        return u;
-    }
-
-    /**
-     * Find the module with the given path, then return it and all its descendent modules.
-     * (it will return an empty list if there are no modules matching this criteria)
-     *
-     * <p>   For example, suppose you have the following modules "", "A", "A/SUB1", "A/SUB2", "ANOTHER".
-     * <br>  Then "" will return every module.
-     * <br>  But "A" will only return "A", "A/SUB1", and "A/SUB2" (it will NOT return "ANOTHER")
-     * <br>  And "A/SUB1" will only return "A/SUB1"
-     * <br>  And "A/SUB" will return an empty list.
-     *
-     * <p>   Let's take another example, suppose you have the following modules "", "A/SUB1", "A/SUB2".
-     * <br>  Then "A" will return "A/SUB1" and "A/SUB2" (even though there is no module called "A")
-     */
-    private SafeList<Module> lookupModuleAndSubmodules(String path) {
-        if (path.length()==0) return getAllModules();
-        SafeList<Module> ans=new SafeList<Module>();
-        Module top=path2module.get(path);
-        if (top!=null) ans.add(top);
-        path=path+"/";
-        again: for(Module u:modules) if (u!=top) for(String n:u.paths) if (n.startsWith(path)) {ans.add(u); continue again;}
-        return ans.dup();
-    }
-
-    /** Returns an unmodifiable list of all modules in this world. */
-    public SafeList<Module> getAllModules() { return (new SafeList<Module>(modules)).dup(); }
-
-    /** Returns an unmodifiable list of all signatures in this world. */
-    public SafeList<Sig> getAllSigsInTheWorld() {
-        SafeList<Sig> x = new SafeList<Sig>();
-        x.add(UNIV);
-        x.add(SIGINT);
-        x.add(SEQIDX);
-        x.add(NONE);
-        for(Module m: modules) for(Map.Entry<String,SigAST> s: m.sigs.entrySet()) x.add(s.getValue().realSig);
-        return x.dup();
-    }
-
-    /**
-     * Constructs a new Module object
-     * @param world - the world that this Module belongs to (null if this is the beginning of a new World)
-     * @param pos - the position of the "module" line at the top of the file (it can be null if unknown)
-     * @param path - one of the path pointing to this module
-     */
-    Module(Module world, Pos pos, String path) throws Err {
-        if (world==null) { if (path.length()>0) throw new ErrorAPI(pos, "Root module misparsed."); else world=this; }
-        if (world.path2module.containsKey(path)) throw new ErrorSyntax("A module with the path \""+path+"\" already exists.");
-        world.path2module.put(path,this);
-        world.modules.add(this);
-        this.world=world;
-        this.modulePos=(pos==null ? Pos.UNKNOWN : pos);
-        this.path=path;
-        this.paths=new ArrayList<String>(1);
-        this.paths.add(path);
-    }
-
     //============================================================================================================================//
 
-    /** This field is used during a depth-first search of the dag-of-module(s) to mark which module has been visited. */
+    /** This field is used during a depth-first search of the dag-of-module(s) to mark which modules have been visited. */
     private Object visitedBy=null;
 
     /** The world that this Module belongs to. */
@@ -317,7 +237,35 @@ public final class Module {
     /** The list of (CommandName,Command) pairs; NOTE: duplicate command names are allowed. */
     private final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
 
+    /**
+     * Constructs a new Module object
+     * @param world - the world that this Module belongs to (null if this is the beginning of a new World)
+     * @param path - one of the path pointing to this module
+     */
+    Module(Module world, String path) throws Err {
+        if (world==null) { if (path.length()>0) throw new ErrorAPI("Root module misparsed."); else world=this; }
+        this.world=world;
+        this.path=path;
+        this.paths=new ArrayList<String>(1);
+        this.paths.add(path);
+    }
+
     //============================================================================================================================//
+
+    /** Return the untypechecked body of the first func/pred in this module; return null if there has not been any fun/pred. */
+    Expr parseOneExpressionFromString(String input) throws Err, FileNotFoundException, IOException {
+        Map<String,String> fc=new LinkedHashMap<String,String>();
+        fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
+        Module m = CompParser.alloy_parseStream(true, fc, null, -1, "", "");
+        if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
+        Exp body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
+        Context cx = new Context(this);
+        ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
+        Expr ans = body.check(cx, warnings);
+        ans = ans.resolve(ans.type, warnings);
+        if (ans.errors.size()>0) throw ans.errors.get(0);
+        return ans;
+    }
 
     /** Throw an exception if the name is already used, or has @ or /, or is univ/Int/none. */
     private void dup(Pos pos, String name, boolean checkFunctions) throws Err {
@@ -360,18 +308,43 @@ public final class Module {
         throw new ErrorSyntax(pos, msg.toString());
     }
 
+    /** Returns a list containing THIS MODULE and all modules reachable from this module. */
+    private void getHelper(SafeList<Module> ans, Object key) {
+        if (visitedBy==key) return;
+        visitedBy=key;
+        ans.add(this);
+        for(Map.Entry<String,Open> i:opens.entrySet()) {Module m=i.getValue().realModule; if (m!=null) m.getHelper(ans,key);}
+    }
+
+    /** Return the list containing THIS MODULE and all modules reachable from this module. */
+    public SafeList<Module> getAllReachableModules() {
+        SafeList<Module> ans=new SafeList<Module>();
+        getHelper(ans, new Object()); // The object must be new, since we need it to be a unique key
+        return ans.dup();
+    }
+
+    /** Return the list containing UNIV, SIGINT, SEQIDX, NONE, and all sigs defined in this module or a reachable submodule. */
+    public SafeList<Sig> getAllReachableSigs() {
+        SafeList<Sig> x = new SafeList<Sig>();
+        x.add(UNIV);
+        x.add(SIGINT);
+        x.add(SEQIDX);
+        x.add(NONE);
+        for(Module m:getAllReachableModules())
+          for(Map.Entry<String,SigAST> s: m.sigs.entrySet())
+            if (s.getValue().realSig!=null)
+               x.add(s.getValue().realSig);
+        return x.dup();
+    }
+
     /** It looks up non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
-    private List<Object> getRawNQS (List<Object> ans, int r, String name) {
+    private List<Object> getRawNQS (int r, String name) {
         // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar with expr is the value of an assertion    (r&4)!=0 => FunAST
-        if (ans==null) ans=new ArrayList<Object>();
-        if (visitedBy==ans) return ans; else visitedBy=ans; // This optimization is not strictly needed, but it avoids repeat visits
-        if ((r&1)!=0) { SigAST x=sigs.get(name); if (x!=null) ans.add(x); }
-        if ((r&2)!=0) { Object x=asserts.get(name); if (x instanceof Expr) ans.add(x); }
-        if ((r&4)!=0) { SafeList<FunAST> x=funcs.get(name); if (x!=null) ans.addAll(x); }
-        for(Map.Entry<String,Open> i:opens.entrySet()) {
-            Module m=i.getValue().realModule;
-            if (m==null) continue;
-            m.getRawNQS(ans, r, name);
+        List<Object> ans=new ArrayList<Object>();
+        for(Module m:getAllReachableModules()) {
+            if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) ans.add(x); }
+            if ((r&2)!=0) { Object x=m.asserts.get(name); if (x instanceof Expr) ans.add(x); }
+            if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) ans.addAll(x); }
         }
         return ans;
     }
@@ -407,7 +380,7 @@ public final class Module {
         if (name.equals("seq/Int")) return SEQIDXast;
         if (name.equals("none"))    return NONEast;
         if (name.indexOf('/')<0) {
-            s=getRawNQS(null, 1, name);
+            s=getRawNQS(1, name);
             s2=params.get(name);
         } else {
             if (name.startsWith("this/")) { name=name.substring(5); s2=params.get(name); }
@@ -491,12 +464,12 @@ public final class Module {
     }
 
     /** Every param in every module will now point to a nonnull SigAST. */
-    private static void resolveParams(A4Reporter rep, Module root) throws Err {
+    private static void resolveParams(A4Reporter rep, List<Module> modules) throws Err {
       while(true) {
          boolean chg=false;
          Open missing=null;
          String missingName="";
-         for(Module mod:root.modules) for(Map.Entry<String,Open> entry:mod.opens.entrySet()) {
+         for(Module mod:modules) for(Map.Entry<String,Open> entry:mod.opens.entrySet()) {
             Open open=entry.getValue();
             Module sub=open.realModule;
             if (open.args.size()!=sub.params.size())
@@ -531,13 +504,12 @@ public final class Module {
     }
 
     /** Modules with same filename and instantiating arguments will be merged. */
-    private static void resolveModules(A4Reporter rep, Module root) {
+    private static void resolveModules(A4Reporter rep, List<Module> modules) {
        // Before merging, the only pointers that go between Module objects are
        // (1) a module's "params" may point to a sig in another module
        // (2) a module's "imports" may point to another module
        // So when we find that two modules A and B should be merged,
        // we go through every module and replace "pointers into B" with equivalent "pointers into A".
-       final List<Module> modules=root.modules;
        while(true) {
           boolean chg=false;
           for(int i=0; i<modules.size(); i++) {
@@ -550,7 +522,6 @@ public final class Module {
                 if (i!=0 && Util.slashComparator.compare(a.path, b.path)>0) { a=b; b=modules.get(i); modules.set(i,a); }
                 modules.remove(j);
                 j--;
-                for(String c:b.paths) root.path2module.put(c,a); // This ensures root.modules and root.path2module are consistent
                 a.paths.addAll(b.paths);
                 Collections.sort(a.paths, Util.slashComparator);
                 for(Module c:modules) {
@@ -707,11 +678,6 @@ public final class Module {
         return errors;
     }
 
-    /** Return the untypechecked body of the first func/pred in this module; return null if there has not been any fun/pred. */
-    public Exp getFirstFunAST() {
-        return (funcs.size()==0) ? null : funcs.entrySet().iterator().next().getValue().get(0).body;
-    }
-
     /** Return an unmodifiable list of all functions in this module. */
     public SafeList<Func> getAllFunc() {
         SafeList<Func> ans = new SafeList<Func>();
@@ -838,13 +804,13 @@ public final class Module {
             Expr e=null;
             if (cmd.check) {
                 List<Object> m=getRawQS(2, cname); // We prefer assertion in the topmost module
-                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(null, 2, cname);
+                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(2, cname);
                 if (m.size()>1) unique(cmd.pos, cname, m);
                 if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
                 e=((ExprVar)(m.get(0))).expr;
             } else {
                 List<Object> m=getRawQS(4, cname); // We prefer fun/pred in the topmost module
-                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(null, 4, cname);
+                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(4, cname);
                 if (m.size()>1) unique(cmd.pos, cname, m);
                 if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
                 e=((FunAST)(m.get(0))).realFormula;
@@ -878,11 +844,11 @@ public final class Module {
 
     /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
     static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
-        resolveParams(rep, root);
-        resolveModules(rep, root);
+        List<Module> modules = new ArrayList<Module>(root.getAllReachableModules());
+        resolveParams(rep, modules);
+        resolveModules(rep, modules);
         JoinableList<Err> errors = new JoinableList<Err>();
         final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
-        final List<Module> modules = root.modules;
         // Resolves SigAST -> Sig, and topologically sort the sigs into the "sorted" array
         List<SigAST> sorted = new ArrayList<SigAST>();
         sorted.add(UNIVast);
@@ -967,12 +933,11 @@ public final class Module {
     /** Look up a field from any visible sig (and returns an empty set if there is no match) */
     private Set<Field> lookupField(String name) {
         Set<Field> ans=new LinkedHashSet<Field>();
-        for(String p:paths)
-          for(Module u:world.lookupModuleAndSubmodules(p))
-            for(Map.Entry<String,SigAST> s:u.sigs.entrySet())
-              for(Field f:s.getValue().realSig.getFields())
-                if (f.label.equals(name))
-                   ans.add(f);
+        for(Module m:getAllReachableModules())
+          for(Map.Entry<String,SigAST> s:m.sigs.entrySet())
+            for(Field f:s.getValue().realSig.getFields())
+              if (f.label.equals(name))
+                 ans.add(f);
         return ans;
     }
 
@@ -981,12 +946,14 @@ public final class Module {
         // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
         boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfun);
-        List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1,name) : getRawNQS(null,fun?5:1,name);
-             if (name.equals("univ"))    { ans.clear(); ans.add(UNIVast); }
-        else if (name.equals("Int"))     { ans.clear(); ans.add(SIGINTast); }
-        else if (name.equals("seq/Int")) { ans.clear(); ans.add(SEQIDXast); }
-        else if (name.equals("none"))    { ans.clear(); ans.add(NONEast); }
-        else { Object param=params.get(name); if (param!=null && !ans.contains(param)) ans.add(param); }
+        List<Object> ans;
+        if (name.equals("univ"))    { ans=new ArrayList<Object>(); ans.add(ExprUnary.Op.NOOP.make(pos, UNIV));   return ans; }
+        if (name.equals("Int"))     { ans=new ArrayList<Object>(); ans.add(ExprUnary.Op.NOOP.make(pos, SIGINT)); return ans; }
+        if (name.equals("seq/Int")) { ans=new ArrayList<Object>(); ans.add(ExprUnary.Op.NOOP.make(pos, SEQIDX)); return ans; }
+        if (name.equals("none"))    { ans=new ArrayList<Object>(); ans.add(ExprUnary.Op.NOOP.make(pos, NONE));   return ans; }
+        if (name.equals("iden"))    { ans=new ArrayList<Object>(); ans.add(ExprConstant.Op.IDEN.make(pos, 0));   return ans; }
+        ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1,name) : getRawNQS(fun?5:1,name);
+        Object param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
         if (rootsig!=null) {
             // Within a field decl
             // (1) Can refer to any visible sig/param (but you cannot call any function or predicates)
@@ -1001,10 +968,8 @@ public final class Module {
             }
         }
         else {
-            // If within a function paramDecl/returnDecl
-            //    we cannot call, but can refer to anything else visible.
-            // Else
-            //    we can call, and can refer to anything visible.
+            // If within a function paramDecl/returnDecl, we cannot call, but can refer to anything else visible.
+            // Else we can call, and can refer to anything visible.
             for(Field f:lookupField(name)) ans.add(ExprUnary.Op.NOOP.make(pos,f));
         }
         // Convert SigAST/FunAST/Field/Expr into Expr

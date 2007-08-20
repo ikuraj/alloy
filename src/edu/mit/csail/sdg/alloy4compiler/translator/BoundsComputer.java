@@ -518,7 +518,7 @@ final class BoundsComputer {
     BoundsComputer(Module world, A4Options options, final Command cmd, final Map<Formula,List<Object>> core) throws Err {
         this.core=core;
         final A4Reporter rep=A4Reporter.getReporter();
-        final SafeList<Sig> sigs=world.getAllSigsInTheWorld();
+        final SafeList<Sig> sigs=world.getAllReachableSigs();
         final Set<String> atoms=new LinkedHashSet<String>();
         // Determine the scope and bitwidth
         final ScopeComputer sc=new ScopeComputer(world, cmd);

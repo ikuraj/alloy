@@ -74,7 +74,7 @@ public class TranslateAlloyToMetamodel {
      */
     private static void make(Module world, String originalFilename, PrintWriter output) throws Err {
         TranslateAlloyToMetamodel ta=new TranslateAlloyToMetamodel();
-        SafeList<Sig> sigs=world.getAllSigsInTheWorld();
+        SafeList<Sig> sigs=world.getAllReachableSigs();
         Util.encodeXMLs(output, "\n<alloy builddate=\"",
                 Version.buildDate(),
                 "\">\n\n<instance isMetamodel=\"true\" filename=\"",

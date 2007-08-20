@@ -23,7 +23,6 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -31,14 +30,11 @@ import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module.Open;
 
 /** This class provides convenience methods for calling the parser and the compiler. */
@@ -201,23 +197,14 @@ public final class CompUtil {
     //=============================================================================================================//
 
     /**
-     * Parses the input as an Alloy expression from that world
+     * Parses then typecheck the given input String as an Alloy expression from that world
      * @return the fully-typechecked expression if no error occurred
      * @throws Err if world==null or if any other error occurred
      */
     public static Expr parseOneExpression_fromString (Module world, String input) throws Err {
         try {
-            if (world==null) throw new ErrorAPI("parseOneExpression() cannot be called with null World");
-            Map<String,String> fc=new LinkedHashMap<String,String>();
-            fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-            Exp body = CompParser.alloy_parseStream(true, fc, null, -1, "", "").getFirstFunAST();
-            if (body == null) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
-            Context cx = new Context(world);
-            ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
-            Expr ans = body.check(cx, warnings);
-            ans = ans.resolve(ans.type, warnings);
-            if (ans.errors.size()>0) throw ans.errors.get(0);
-            return ans;
+            if (world==null) throw new ErrorFatal("Cannot parse an expression with null world.");
+            return world.parseOneExpressionFromString(input);
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {

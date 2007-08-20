@@ -198,7 +198,7 @@ final class ScopeComputer {
     ScopeComputer(Module root, Command cmd) throws Err {
         this.rep=A4Reporter.getReporter();
         this.cmd=cmd;
-        final SafeList<Sig> sigs = root.getAllSigsInTheWorld();
+        final SafeList<Sig> sigs = root.getAllReachableSigs();
         // Process each sig listed in the command
         for(Pair<Sig,Integer> entry:cmd.scope) {
             Sig s=entry.a;

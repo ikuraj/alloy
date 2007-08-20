@@ -2385,11 +2385,12 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
   throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
-        if (world==null) world=new Module(null, Pos.UNKNOWN, "");
+        if (world==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parseStream called with root==null)");
+        Module u=new Module(world, prefix);
+        if (world==null) world=u.getRootModule();
         String content=fc.get(filename);
         if (content==null) { content=Util.readAll(filename); fc.put(filename,content); }
         isr=new StringReader(content);
-        Module u = world.lookupOrCreateModule(Pos.UNKNOWN, prefix);
         CompFilter s=new CompFilter(allowDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p=new CompParser(s);
         p.alloymodule=u;

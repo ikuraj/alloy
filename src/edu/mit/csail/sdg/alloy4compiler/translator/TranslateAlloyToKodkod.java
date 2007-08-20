@@ -164,7 +164,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(world, opt, cmd, core), skolemType, core);
         Formula kfact = tr.bc.getFacts();
         rep.debug("Generating facts...");
-        for(Module u:world.getAllModules()) kfact=tr.makeFacts(u,kfact);
+        for(Module u:world.getAllReachableModules()) kfact=tr.makeFacts(u,kfact);
         Formula mainformula;
         tr.current_command=cmd.label;
         tr.current_function.clear();
