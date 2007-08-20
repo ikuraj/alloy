@@ -578,43 +578,75 @@ public abstract class Expr {
     }
 
     /**
-     * Return a quantified variable (label: some this)
+     * Return the multiplicity expression "some this"
      * <p> this must be already fully typechecked, and must be a unary set
-     * <p> the label is only used for pretty-printing, and does not need to be unique
+     */
+    public final Expr someOf() {
+        return ExprUnary.Op.SOMEOF.make(span(), this);
+    }
+
+    /**
+     * Return a new variable "v: some this"
+     * <p> this must be already fully typechecked, and must be a unary set
+     * <p> the label is only used for pretty-printing, and does not have to be unique
      */
     public final ExprVar someOf(String label) {
         Expr x = ExprUnary.Op.SOMEOF.make(span(), this);
-        return ExprVar.make(span(), label, x);
+        return ExprVar.make(x.span(), label, x);
     }
 
     /**
-     * Return a quantified variable (label: lone this)
+     * Return the multiplicity expression "lone this"
      * <p> this must be already fully typechecked, and must be a unary set
-     * <p> the label is only used for pretty-printing, and does not need to be unique
+     */
+    public final Expr loneOf() {
+        return ExprUnary.Op.LONEOF.make(span(), this);
+    }
+
+    /**
+     * Return a new variable "v: lone this"
+     * <p> this must be already fully typechecked, and must be a unary set
+     * <p> the label is only used for pretty-printing, and does not have to be unique
      */
     public final ExprVar loneOf(String label) {
-        Expr x = ExprUnary.Op.LONEOF.make(span(), this);
-        return ExprVar.make(span(), label, x);
+        Expr x=ExprUnary.Op.LONEOF.make(span(), this);
+        return ExprVar.make(x.span(), label, x);
     }
 
     /**
-     * Return a quantified variable (label: one this)
+     * Return the multiplicity expression "one this"
      * <p> this must be already fully typechecked, and must be a unary set
-     * <p> the label is only used for pretty-printing, and does not need to be unique
+     */
+    public final Expr oneOf() {
+        return ExprUnary.Op.ONEOF.make(span(), this);
+    }
+
+    /**
+     * Return a new variable "v: one this"
+     * <p> this must be already fully typechecked, and must be a unary set
+     * <p> the label is only used for pretty-printing, and does not have to be unique
      */
     public final ExprVar oneOf(String label) {
-        Expr x = ExprUnary.Op.ONEOF.make(span(), this);
-        return ExprVar.make(span(), label, x);
+        Expr x=ExprUnary.Op.ONEOF.make(span(), this);
+        return ExprVar.make(x.span(), label, x);
     }
 
     /**
-     * Return a quantified variable (label: set this)
+     * Return the multiplicity expression "set this"
      * <p> this must be already fully typechecked, and must be a set or relation
-     * <p> the label is only used for pretty-printing, and does not need to be unique
+     */
+    public final Expr setOf() {
+        return ExprUnary.Op.SETOF.make(span(), this);
+    }
+
+    /**
+     * Return a new variable "v: set this"
+     * <p> this must be already fully typechecked, and must be a set or relation
+     * <p> the label is only used for pretty-printing, and does not have to be unique
      */
     public final ExprVar setOf(String label) {
-        Expr x = ExprUnary.Op.SETOF.make(span(), this);
-        return ExprVar.make(span(), label, x);
+        Expr x=ExprUnary.Op.SETOF.make(span(), this);
+        return ExprVar.make(x.span(), label, x);
     }
 
     /**

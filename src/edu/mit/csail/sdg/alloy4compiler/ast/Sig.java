@@ -371,7 +371,7 @@ public abstract class Sig extends Expr {
             this.label=label;
             // If the field declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (bound.mult==0 && bound.type.arity()==1) bound=ExprUnary.Op.ONEOF.make(null, bound);
-            if (var==null) var = sig.oneOf("this");
+            if (var==null) var = ExprVar.make(null, "this", sig.oneOf());
             boundingFormula=ExprQuant.Op.ALL.make(pos, null, Util.asList(var), var.join(this).in(bound));
             if (!boundingFormula.errors.isEmpty())
                 throw boundingFormula.errors.get(0);

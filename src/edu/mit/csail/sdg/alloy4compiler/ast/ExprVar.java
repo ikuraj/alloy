@@ -39,15 +39,8 @@ public final class ExprVar extends Expr {
     /** The expression that this variable is quantified over or substituted by; always nonnull. */
     public final Expr expr;
 
-    /** Caches the span() result. */
-    private Pos span=null;
-
     /** {@inheritDoc} */
-    @Override public Pos span() {
-        Pos p=span;
-        if (p==null) span = (p = pos.merge(expr.span()));
-        return p;
-    }
+    @Override public Pos span() { return pos; }
 
     /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
     @Override public boolean isSame(Expr obj) {
