@@ -112,7 +112,7 @@ public final class Type implements Iterable<Type.ProductType> {
          * <p> Precondition: this.arity == that.arity
          */
         private boolean isSubtypeOf(ProductType that) {
-            for(int i=types.length-1; i>=0; i--) if (!types[i].isSubtypeOf(that.types[i])) return false;
+            for(int i=types.length-1; i>=0; i--) if (!types[i].isSameOrDescendentOf(that.types[i])) return false;
             return true;
         }
 

@@ -140,7 +140,7 @@ public final class Module {
             this.appendedFact=appendedFacts;
             this.realModule=realModule;
             this.realSig=realSig;
-            this.realParents=new ArrayList<SigAST>();
+            this.realParents=new ArrayList<SigAST>(this.parents.size());
         }
         private SigAST(String fullname, String name, List<ExpName> parents, Sig realSig) {
             this(null, fullname, name, null, null, null, null, null, parents, null, null, null, realSig);
@@ -564,7 +564,7 @@ public final class Module {
             ExpName sup = null;
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.name.length()==0) sup=null;}
             Pos suppos = sup==null ? Pos.UNKNOWN : sup.span();
-            SigAST parentAST = u.getRawSIG(suppos, sup==null ? "univ" : sup.name);
+            SigAST parentAST = sup==null ? UNIVast : u.getRawSIG(suppos, sup.name);
             if (parentAST==null) throw new ErrorSyntax(suppos, "The sig \""+sup.name+"\" cannot be found.");
             oldS.realParents.add(parentAST);
             Sig parent = resolveSig(sorted, parentAST);
@@ -923,91 +923,7 @@ public final class Module {
 
     //============================================================================================================================//
 
-    /** Returns true if sig A can see sig B. */
-    private static boolean canSee(SigAST a, SigAST b) {
-        Module am=a.realModule, bm=b.realModule;
-        if (am.path.length()==0) return true; // Root module sees all
-        for(String ap: am.paths) {
-            String apSLASH=ap+"/";
-            for(String bp: bm.paths) {
-                if (ap.equals(bp)) return true;
-                if (bp.startsWith(apSLASH)) return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Look up a parameter, or a signature/function/predicate visible from this module.
-     * @param name - the name which can either be fully-qualified (eg. "alias/alias/somename") or not
-     * @param look_for_function_and_predicate - true if we want to include functions and predicates as well
-     * @return an empty set if there is no match
-     */
-    public Set<Object> lookupSigOrParameterOrFunctionOrPredicate (String name, boolean look_for_function_and_predicate) {
-        SigAST s;
-        Set<Object> ans=new LinkedHashSet<Object>();
-        if (name.length()==0 || name.charAt(0)=='/' || name.charAt(name.length()-1)=='/') return ans; // Illegal name
-        if (name.indexOf('/')<0) {
-            for(String p:paths) {
-                for(Module u:world.lookupModuleAndSubmodules(p)) {
-                    s=u.sigs.get(name); if (s!=null) ans.add(s.realSig);
-                    SafeList<FunAST> list = look_for_function_and_predicate ? u.funcs.get(name) : null;
-                    if (list!=null) for(FunAST f:list) ans.add(f.realFunc);
-                }
-            }
-            s=params.get(name); if (s!=null) ans.add(s.realSig);
-            return ans;
-        }
-        if (name.startsWith("this/")) name=name.substring(5);
-        s=params.get(name); if (s!=null) ans.add(s.realSig);
-        int i=name.lastIndexOf('/');
-        Module u=(i<0) ? this : world.path2module.get((path.length()==0?"":path+"/")+name.substring(0,i));
-        if (u!=null) {
-            if (i>=0) name=name.substring(i+1);
-            s=u.sigs.get(name); if (s!=null) ans.add(s.realSig);
-            SafeList<FunAST> list = look_for_function_and_predicate ? u.funcs.get(name) : null;
-            if (list!=null) for(FunAST f:list) ans.add(f.realFunc);
-        }
-        return ans;
-    }
-
-    /**
-     * Look up a visible ancestor field (and returns null if there is no match).
-     *
-     * @param origin - the sig where we started the search
-     * @param current - the sig we're currently looking (we will recursively call this method on parent sig(s))
-     * @param name - the name of the field
-     *
-     * @throws ErrorSyntax if "current" and at least one of "current"'s parent sig(s) both have a field named "name"
-     *
-     * <p> Note: this won't catch other field conflicts (such as two overlapping sibling sigs that both
-     * have a field with the same name...) Thus, World.typecheck() will do a complete intersection of all the fields
-     * to look for conflicts as well. Thus, the conflict check in this method isn't necessary.
-     * But, by having the check here, we can report an error sooner than later (so that the error message
-     * will be less confusing to the user hopefully)
-     */
-    private Field lookupField(SigAST originAST, SigAST currentAST, String name) {
-        Sig origin = originAST.realSig;
-        Sig current = currentAST.realSig;
-        Field ans = null;
-        if (!origin.builtin && !current.builtin && canSee(originAST, currentAST))
-            for(Field f:current.getFields())
-                if (f.label.equals(name))
-                    {ans=f; break;}
-        if (current instanceof PrimSig) {
-            PrimSig s=(PrimSig)current;
-            if (s.parent==null || s.parent.builtin) return ans;
-            Field ans2=lookupField(originAST, currentAST.realParents.get(0), name);
-            if (ans==null) return ans2;
-        }
-        if (current instanceof SubsetSig) for(SigAST p:currentAST.realParents) {
-            Field ans2=lookupField(originAST, p, name);
-            if (ans==null) ans=ans2;
-        }
-        return ans;
-    }
-
-    /** Look up field "name" from any visible sig (and returns an empty set if there is no match) */
+    /** Look up a field from any visible sig (and returns an empty set if there is no match) */
     private Set<Field> lookupField(String name) {
         Set<Field> ans=new LinkedHashSet<Field>();
         for(String p:paths)
@@ -1037,19 +953,18 @@ public final class Module {
             // Within an appended facts
             // (1) Can refer to any visible sig/param/func/predicate
             // (2) Can refer to any visible field (but if it is in this sig or a parent sig, we'll prepend "this." unless it has '@')
-            Field f=lookupField(rootsig, rootsig, name);
-            if (f!=null) {
-                Expr ff=ExprUnary.Op.NOOP.make(pos,f);
-                if (fullname.charAt(0)=='@') ans.add(ff); else ans.add(THIS.join(ff));
+            for(Field f:lookupField(name)) {
+                boolean isAncestor = rootsig.realSig.isSameOrDescendentOf(f.sig);
+                if (isAncestor) { Expr ee=ExprUnary.Op.NOOP.make(pos,f); ans.add(fullname.charAt(0)=='@' ? ee : THIS.join(ee)); }
+                else if (!rootfield) { Expr ee=ExprUnary.Op.NOOP.make(pos,f,f.weight+1,null); ans.add(ee); }
             }
-            if (!rootfield) for(Field ff:lookupField(name)) if (f!=ff) ans.add(ExprUnary.Op.NOOP.make(pos, ff, ff.weight+1, null));
         }
         else {
             // If within a function paramDecl/returnDecl
             //    we cannot call, but can refer to anything else visible.
             // Else
             //    we can call, and can refer to anything visible.
-            for(Field ff:lookupField(name)) ans.add(ExprUnary.Op.NOOP.make(pos,ff));
+            for(Field f:lookupField(name)) ans.add(ExprUnary.Op.NOOP.make(pos,f));
         }
         // Convert SigAST/FunAST/Field/Expr into Expr
         List<Object> realAns=new ArrayList<Object>();
@@ -1063,7 +978,7 @@ public final class Module {
                if (y.realFunc.params.isEmpty()) realAns.add(ExprCall.make(pos,null,y.realFunc,null,0)); else realAns.add(y.realFunc);
             }
             else if (x instanceof Field) {
-               realAns.add(ExprUnary.Op.NOOP.make(pos, (Expr)x));
+               realAns.add(ExprUnary.Op.NOOP.make(pos, (Field)x));
             }
             else if (x instanceof Expr) {
                realAns.add(x);

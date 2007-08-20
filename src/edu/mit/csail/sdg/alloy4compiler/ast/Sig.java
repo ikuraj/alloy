@@ -155,6 +155,9 @@ public abstract class Sig extends Expr {
         return (obj==this);
     }
 
+    /** Returns true iff "this is equal or subtype of that" */
+    public abstract boolean isSameOrDescendentOf(Sig that);
+
     //==============================================================================================================//
 
     /**
@@ -249,10 +252,8 @@ public abstract class Sig extends Expr {
             this(pos, null, label, null,null,null,null, null, false);
         }
 
-        /**
-         * Returns true iff "this is equal or subtype of that"
-         */
-        public boolean isSubtypeOf(PrimSig that) {
+        /** {@inheritDoc} */
+        @Override public boolean isSameOrDescendentOf(Sig that) {
             if (this==NONE || this==that || that==UNIV) return true;
             if (this==UNIV || that==NONE) return false;
             for(PrimSig me=this; me!=null; me=me.parent) if (me==that) return true;
@@ -263,8 +264,8 @@ public abstract class Sig extends Expr {
          * Returns the intersection between this and that (and returns "none" if they do not intersect).
          */
         public PrimSig intersect(PrimSig that) {
-            if (this.isSubtypeOf(that)) return this;
-            if (that.isSubtypeOf(this)) return that;
+            if (this.isSameOrDescendentOf(that)) return this;
+            if (that.isSameOrDescendentOf(this)) return that;
             return NONE;
         }
 
@@ -272,8 +273,8 @@ public abstract class Sig extends Expr {
          * Returns true iff the intersection between this and that is not "none".
          */
         public boolean intersects(PrimSig that) {
-            if (this.isSubtypeOf(that)) return this!=NONE;
-            if (that.isSubtypeOf(this)) return that!=NONE;
+            if (this.isSameOrDescendentOf(that)) return this!=NONE;
+            if (that.isSameOrDescendentOf(this)) return that!=NONE;
             return false;
         }
 
@@ -282,10 +283,10 @@ public abstract class Sig extends Expr {
          * In particular, if this extends that, then return that.
          */
         public PrimSig leastParent(PrimSig that) {
-            if (isSubtypeOf(that)) return that;
+            if (isSameOrDescendentOf(that)) return that;
             PrimSig me=this;
             while(true) {
-                if (that.isSubtypeOf(me)) return me;
+                if (that.isSameOrDescendentOf(me)) return me;
                 me=me.parent;
                 if (me==null) return UNIV;
             }
@@ -336,6 +337,14 @@ public abstract class Sig extends Expr {
             if (parents!=null) for(Sig parent:parents) if (!temp.contains(parent)) temp.add(parent);
             if (temp.size()==0) temp.add(UNIV);
             this.parents = temp.makeConst();
+        }
+
+        /** {@inheritDoc} */
+        @Override public boolean isSameOrDescendentOf(Sig that) {
+            if (that==UNIV || that==this) return true;
+            if (that==NONE) return false;
+            for(Sig p:parents) if (p.isSameOrDescendentOf(that)) return true;
+            return false;
         }
     }
 
