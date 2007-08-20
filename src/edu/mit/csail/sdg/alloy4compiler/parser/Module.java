@@ -74,25 +74,38 @@ public final class Module {
 
     /** Mutable; this class represents the current typechecking context. */
     static final class Context {
-        // field&sig!=null    else if sig!=null     else if fun!=null     allelse
-        SigAST rootsig=null;
-        private boolean rootfield=false;
-        private boolean rootfun=false;
+        /** The module that the current context is in. */
         private Module rootmodule=null;
+        /** Nonnull if we are typechecking a field declaration or a sig appended facts. */
+        SigAST rootsig=null;
+        /** True if we are typechecking a field declaration. */
+        private boolean rootfield=false;
+        /** True if we are typechecking a function's parameter declarations or return declaration. */
+        private boolean rootfun=false;
         /** This maps local names (eg. let/quantification variables and function parameters) to the objects they refer to. */
         private final Env<String,Expr> env=new Env<String,Expr>();
-        /** Returns true if the name is in the current lexical scope. */
-        final boolean has(String name) { return env.has(name); }
-        /** Returns the expression corresbonding to the given name, or returns null if the name is not in the current lexical scope. */
+        /** Returns true if the name is in scope. */
+        final boolean has(String name) {
+            return env.has(name);
+        }
+        /** Returns the expression corresbonding to the given name, or returns null if the name is not in scope. */
         final Expr get(String name, Pos pos) {
             Expr ans = env.get(name);
-            if (ans instanceof ExprVar) return ExprUnary.Op.NOOP.make(pos,ans); else return ans;
+            if (ans!=null) return ExprUnary.Op.NOOP.make(pos,ans); else return null;
         }
         /** Associates the given name with the given expression in the current lexical scope. */
-        final void put(String name, Expr value) { env.put(name,value); }
+        final void put(String name, Expr value) {
+            env.put(name,value);
+        }
         /** Removes the latest binding for the given name from the current lexical scope. */
-        final void remove(String name) { env.remove(name); }
-        Context(Module rootModule) { this.rootmodule=rootModule; }
+        final void remove(String name) {
+            env.remove(name);
+        }
+        /** Construct a new Context with an empty lexical scope. */
+        Context(Module rootModule) {
+            this.rootmodule=rootModule;
+        }
+        /** Resolve the given name to get a collection of Expr and Func objects. */
         public Collection<Object> resolve(Pos pos, String name) {
             Expr match = env.get(name);
             if (match!=null) { List<Object> ans=new ArrayList<Object>(); ans.add(match); return ans; }
@@ -207,8 +220,12 @@ public final class Module {
     /** The list of paths pointing to this Module; it is always nonempty and already sorted by Util.slashComparator */
     private final List<String> paths;
 
-    /** Whether the "MODULE" line has been parsed or not. */
-    private boolean moduleLoaded = false;
+    /**
+     * 1: has seen the "module" line
+     * 2: has seen the "open" lines
+     * 3: has seen the "sig/pred/fun/fact/assert/check/run" commands
+     */
+    private int status = 0;
 
     /** The position of the "MODULE" line at the top of the file; Pos.UNKNOWN if the line has not been parsed from the file yet. */
     private Pos modulePos = Pos.UNKNOWN;
@@ -240,14 +257,16 @@ public final class Module {
     /**
      * Constructs a new Module object
      * @param world - the world that this Module belongs to (null if this is the beginning of a new World)
+     * @param filename - the filename corresponding to this module
      * @param path - one of the path pointing to this module
      */
-    Module(Module world, String path) throws Err {
+    Module(Module world, String filename, String path) throws Err {
         if (world==null) { if (path.length()>0) throw new ErrorAPI("Root module misparsed."); else world=this; }
         this.world=world;
         this.path=path;
         this.paths=new ArrayList<String>(1);
         this.paths.add(path);
+        if (filename!=null && filename.length()>0) this.modulePos=new Pos(filename,1,1);
     }
 
     //============================================================================================================================//
@@ -290,19 +309,20 @@ public final class Module {
         if (objs.size()==0) return null;
         if (objs.size()==1) return objs.get(0);
         StringBuilder msg = new StringBuilder("The name \"").append(name);
-        msg.append("\" is ambiguous.\nThere are ").append(objs.size()).append(" choices:");
+        msg.append("\" is ambiguous.\n" + "There are ").append(objs.size()).append(" choices:");
         for(int i=0; i<objs.size(); i++) {
             msg.append("\n\n#").append(i+1).append(": ");
             Object x=objs.get(i);
             if (x instanceof SigAST) {
-                SigAST y=(SigAST)x; msg.append("sig ").append(y.fullname).append("\nat ").append(y.pos.toShortString());
+                SigAST y=(SigAST)x; msg.append("sig ").append(y.fullname).append("\n"+"at ").append(y.pos.toShortString());
             }
             else if (x instanceof FunAST) {
                 FunAST y=(FunAST)x;
-                msg.append(y.returnType==null?"pred ":"fun ").append(y.realFunc.label).append("\nat ").append(y.pos.toShortString());
+                msg.append(y.returnType==null?"pred ":"fun ")
+                   .append(y.realFunc.label).append("\n"+"at ").append(y.pos.toShortString());
             }
             else if (x instanceof ExprVar) {
-                ExprVar y=(ExprVar)x; msg.append("assert ").append(y.label).append("\nat ").append(y.pos.toShortString());
+                ExprVar y=(ExprVar)x; msg.append("assert ").append(y.label).append("\n"+"at ").append(y.pos.toShortString());
             }
         }
         throw new ErrorSyntax(pos, msg.toString());
@@ -400,7 +420,7 @@ public final class Module {
     //============================================================================================================================//
 
     /** Returns a pointer to the root module in this world. */
-    public Module getRootModule() { return world; }
+    Module getRootModule() { return world; }
 
     /** Returns the text of the "MODULE" line at the top of the file; "unknown" if the line has not be parsed from the file yet. */
     String getModelName() { return moduleName; }
@@ -414,8 +434,8 @@ public final class Module {
 
     /** Add the "MODULE" declaration. */
     void addModelName(Pos pos, String moduleName, List<ExpName> list) throws Err {
-        if (moduleLoaded) throw new ErrorSyntax(pos,"The \"module\" declaration can not occur more than once.");
-        this.moduleLoaded=true;
+        if (status>0) throw new ErrorSyntax(pos,
+           "The \"module\" declaration must occur at the top,\n" + "and can occur at most once.");
         this.moduleName=moduleName;
         this.modulePos=pos;
         if (list!=null) for(ExpName expr: list) {
@@ -424,10 +444,14 @@ public final class Module {
             if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null);
             else params.put(name, null);
         }
+        this.status=1; // This line must be at the end, since "addSig" will otherwise bump the status value to 3
     }
 
     /** Add an OPEN declaration. */
     void addOpen(Pos pos, ExpName name, List<ExpName> args, ExpName alias) throws Err {
+        if (status>2) throw new ErrorSyntax(pos,
+           "The \"open\" declaration must occur before any\n" + "sig/pred/fun/fact/assert/check/run command.");
+        status=2;
         String as = (alias==null ? "" : alias.name);
         if (name.name.length()==0) throw new ErrorSyntax(name.span(), "The filename cannot be empty.");
         if (as.indexOf('@')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'@\' character");
@@ -457,7 +481,7 @@ public final class Module {
         if (x!=null) {
             // we allow this, especially because of util/sequniv
             if (x.args.equals(newlist.makeConst()) && x.filename.equals(name.name)) return;
-            throw new ErrorSyntax(pos, "You cannot import two different modules using the same alias.");
+            throw new ErrorSyntax(pos, "You cannot import two different modules\n" + "using the same alias.");
         }
         x=new Open(pos, as, newlist.makeConst(), name.name);
         opens.put(as,x);
@@ -541,6 +565,7 @@ public final class Module {
     /** Add a sig declaration. */
     SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome,
     List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
+        status=3;
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
         Pos subset=null;
@@ -581,7 +606,7 @@ public final class Module {
             oldS.realParents.add(parentAST);
             Sig parent = resolveSig(sorted, parentAST);
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
-               + "\".\nA signature can only extend a toplevel signature or a subsignature.");
+               + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
             oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.hint_isLeaf);
         }
@@ -600,6 +625,7 @@ public final class Module {
 
     /** Add a FUN or PRED declaration. */
     void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
+        status=3;
         dup(p, n, false);
         ExpName dup = Decl.findDuplicateName(d);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
@@ -669,7 +695,7 @@ public final class Module {
             if (ff.returnDecl.type.hasTuple() && newBody.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
                 warns.add(new ErrorWarning(ff.getBody().span(),
                     "Function return value is disjoint from its return type.\n"
-                    +"Function body has type "+ff.getBody().type+"\nbut the return type is "+ff.returnDecl.type));
+                    +"Function body has type "+ff.getBody().type + "\n" + "but the return type is "+ff.returnDecl.type));
             rep.typecheck(ff.toString()+", BODY:"+ff.getBody().type+"\n");
             if (!ff.isPred) newBody=newBody.in(ff.returnDecl);
             if (ff.params.size()>0) newBody=ExprQuant.Op.SOME.make(null, null, ff.params, newBody.and(disj));
@@ -689,6 +715,7 @@ public final class Module {
 
     /** Add an ASSERT declaration. */
     String addAssertion(Pos pos, String name, Exp value) throws Err {
+        status=3;
         if (name==null || name.length()==0) name="assert$"+(1+asserts.size());
         dup(pos, name, true);
         asserts.put(name, value);
@@ -727,6 +754,7 @@ public final class Module {
 
     /** Add a FACT declaration. */
     void addFact(Pos pos, String name, Exp value) throws Err {
+        status=3;
         if (name==null || name.length()==0) name="fact$"+(1+facts.size());
         dup(pos, name, true);
         facts.put(name,value);
@@ -782,6 +810,7 @@ public final class Module {
 
     /** Add a COMMAND declaration. */
     void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, String label) throws Err {
+        status=3;
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         if (label==null || label.length()==0) label=n;
@@ -790,6 +819,7 @@ public final class Module {
 
     /** Add a COMMAND declaration. */
     void addCommand(Pos p, Exp e, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, String label) throws Err {
+        status=3;
         String n;
         if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run$"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
         if (label==null || label.length()==0) label=n;
@@ -825,7 +855,7 @@ public final class Module {
         }
     }
 
-    /** Return an unmodifiable list of commands in this module. */
+    /** Return an unmodifiable list of all commands in this module. */
     public SafeList<Command> getAllCommands() {
         SafeList<Command> ans = new SafeList<Command>(commands.size());
         for(Pair<String,Command> c:commands) ans.add(c.b);
@@ -904,7 +934,7 @@ public final class Module {
                for(Field field2: peers)
                   if (field.type.firstColumnOverlaps(field2.type))
                      throw new ErrorType(field.pos,
-                     "Two overlapping signatures cannot have\ntwo fields with the same name \""+field.label
+                     "Two overlapping signatures cannot have\n" + "two fields with the same name \""+field.label
                      +"\":\n\n1) one is in sig \""+field.sig+"\"\n"+field.pos
                      +"\n\n2) the other is in sig \""+field2.sig+"\"\n"+field2.pos);
                peers.add(field);

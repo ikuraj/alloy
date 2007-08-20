@@ -65,7 +65,7 @@ import java_cup_11a.runtime.*;
     try {
        n=Integer.parseInt(txt);
     } catch(NumberFormatException ex) {
-       throw new ErrorSyntax(p, "The number "+txt+" is too small or too large to be stored in a Java integer");
+       throw new ErrorSyntax(p, "The number "+txt+" is too large to be stored in a Java integer");
     }
     return new Symbol(CompSym.NUMBER, p, new ExpConstant(p, ExprConstant.Op.NUMBER, n));
  }
@@ -75,54 +75,54 @@ import java_cup_11a.runtime.*;
 
 "!"                   { return alloy_sym(yytext(), CompSym.NOT         );}
 "#"                   { return alloy_sym(yytext(), CompSym.HASH        );}
-"&"                   { return alloy_sym(yytext(), CompSym.AMPERSAND   );}
 "&&"                  { return alloy_sym(yytext(), CompSym.AND         );}
+"&"                   { return alloy_sym(yytext(), CompSym.AMPERSAND   );}
 "("                   { return alloy_sym(yytext(), CompSym.LPAREN      );}
 ")"                   { return alloy_sym(yytext(), CompSym.RPAREN      );}
 "*"                   { return alloy_sym(yytext(), CompSym.STAR        );}
-"+"                   { return alloy_sym(yytext(), CompSym.PLUS        );}
 "++"                  { return alloy_sym(yytext(), CompSym.PLUSPLUS    );}
+"+"                   { return alloy_sym(yytext(), CompSym.PLUS        );}
 ","                   { return alloy_sym(yytext(), CompSym.COMMA       );}
-"-"                   { return alloy_sym(yytext(), CompSym.MINUS       );}
 "->"                  { return alloy_sym(yytext(), CompSym.ARROW       );}
-"."                   { return alloy_sym(yytext(), CompSym.DOT         );}
+"-"                   { return alloy_sym(yytext(), CompSym.MINUS       );}
 ".."                  { return alloy_sym(yytext(), CompSym.DOT         );}
+"."                   { return alloy_sym(yytext(), CompSym.DOT         );}
 "/"                   { return alloy_sym(yytext(), CompSym.SLASH       );}
-":"                   { return alloy_sym(yytext(), CompSym.COLON       );}
 "::"                  { return alloy_sym(yytext(), CompSym.DOT         );}
 ":>"                  { return alloy_sym(yytext(), CompSym.RANGE       );}
-"<"                   { return alloy_sym(yytext(), CompSym.LT          );}
-"<:"                  { return alloy_sym(yytext(), CompSym.DOMAIN      );}
-"<="                  { return alloy_sym(yytext(), CompSym.LTE         );}
-"=<"                  { return alloy_sym(yytext(), CompSym.LTE         );}
+":"                   { return alloy_sym(yytext(), CompSym.COLON       );}
 "<=>"                 { return alloy_sym(yytext(), CompSym.IFF         );}
-"="                   { return alloy_sym(yytext(), CompSym.EQUALS      );}
+"<="                  { return alloy_sym(yytext(), CompSym.LTE         );}
+"<:"                  { return alloy_sym(yytext(), CompSym.DOMAIN      );}
+"<"                   { return alloy_sym(yytext(), CompSym.LT          );}
+"=<"                  { return alloy_sym(yytext(), CompSym.LTE         );}
 "=="                  { return alloy_sym(yytext(), CompSym.EQUALS      );}
 "=>"                  { return alloy_sym(yytext(), CompSym.IMPLIES     );}
-">"                   { return alloy_sym(yytext(), CompSym.GT          );}
+"="                   { return alloy_sym(yytext(), CompSym.EQUALS      );}
 ">="                  { return alloy_sym(yytext(), CompSym.GTE         );}
+">"                   { return alloy_sym(yytext(), CompSym.GT          );}
 "@"                   { return alloy_sym(yytext(), CompSym.AT          );}
 "["                   { return alloy_sym(yytext(), CompSym.LBRACKET    );}
 "]"                   { return alloy_sym(yytext(), CompSym.RBRACKET    );}
 "^"                   { return alloy_sym(yytext(), CompSym.CARET       );}
 "{"                   { return alloy_sym(yytext(), CompSym.LBRACE      );}
-"|"                   { return alloy_sym(yytext(), CompSym.BAR         );}
 "||"                  { return alloy_sym(yytext(), CompSym.OR          );}
+"|"                   { return alloy_sym(yytext(), CompSym.BAR         );}
 "}"                   { return alloy_sym(yytext(), CompSym.RBRACE      );}
 "~"                   { return alloy_sym(yytext(), CompSym.TILDE       );}
 "abstract"            { return alloy_sym(yytext(), CompSym.ABSTRACT    );}
 "all"                 { return alloy_sym(yytext(), CompSym.ALL         );}
 "and"                 { return alloy_sym(yytext(), CompSym.AND         );}
-"as"                  { return alloy_sym(yytext(), CompSym.AS          );}
 "assert"              { return alloy_sym(yytext(), CompSym.ASSERT      );}
+"as"                  { return alloy_sym(yytext(), CompSym.AS          );}
 "but"                 { return alloy_sym(yytext(), CompSym.BUT         );}
 "check"               { return alloy_sym(yytext(), CompSym.CHECK       );}
-"disj"                { return alloy_sym(yytext(), CompSym.DISJ        );}
 "disjoint"            { return alloy_sym(yytext(), CompSym.DISJ        );}
+"disj"                { return alloy_sym(yytext(), CompSym.DISJ        );}
 "else"                { return alloy_sym(yytext(), CompSym.ELSE        );}
 "exactly"             { return alloy_sym(yytext(), CompSym.EXACTLY     );}
-"exh"                 { return alloy_sym(yytext(), CompSym.EXH         );}
 "exhaustive"          { return alloy_sym(yytext(), CompSym.EXH         );}
+"exh"                 { return alloy_sym(yytext(), CompSym.EXH         );}
 "expect"              { return alloy_sym(yytext(), CompSym.EXPECT      );}
 "extends"             { return alloy_sym(yytext(), CompSym.EXTENDS     );}
 "fact"                { return alloy_sym(yytext(), CompSym.FACT        );}
@@ -131,20 +131,20 @@ import java_cup_11a.runtime.*;
 "iden"                { return alloy_sym(yytext(), CompSym.IDEN        );}
 "iff"                 { return alloy_sym(yytext(), CompSym.IFF         );}
 "implies"             { return alloy_sym(yytext(), CompSym.IMPLIES     );}
-"in"                  { return alloy_sym(yytext(), CompSym.IN          );}
-"int"                 { return alloy_sym(yytext(), CompSym.INT         );}
 "Int"                 { return alloy_sym(yytext(), CompSym.SIGINT      );}
+"int"                 { return alloy_sym(yytext(), CompSym.INT         );}
+"in"                  { return alloy_sym(yytext(), CompSym.IN          );}
 "let"                 { return alloy_sym(yytext(), CompSym.LET         );}
 "lone"                { return alloy_sym(yytext(), CompSym.LONE        );}
 "module"              { return alloy_sym(yytext(), CompSym.MODULE      );}
-"no"                  { return alloy_sym(yytext(), CompSym.NO          );}
 "none"                { return alloy_sym(yytext(), CompSym.NONE        );}
 "not"                 { return alloy_sym(yytext(), CompSym.NOT         );}
+"no"                  { return alloy_sym(yytext(), CompSym.NO          );}
 "one"                 { return alloy_sym(yytext(), CompSym.ONE         );}
 "open"                { return alloy_sym(yytext(), CompSym.OPEN        );}
 "or"                  { return alloy_sym(yytext(), CompSym.OR          );}
-"part"                { return alloy_sym(yytext(), CompSym.PART        );}
 "partition"           { return alloy_sym(yytext(), CompSym.PART        );}
+"part"                { return alloy_sym(yytext(), CompSym.PART        );}
 "pred"                { return alloy_sym(yytext(), CompSym.PRED        );}
 "run"                 { return alloy_sym(yytext(), CompSym.RUN         );}
 "seq"                 { return alloy_sym(yytext(), CompSym.SEQ         );}
@@ -156,18 +156,18 @@ import java_cup_11a.runtime.*;
 "this"                { return alloy_sym(yytext(), CompSym.THIS        );}
 "univ"                { return alloy_sym(yytext(), CompSym.UNIV        );}
 
-[0-9][0-9]*[a-zA-Z_\'\"\u0019\u001d]       { throw new ErrorSyntax(alloy_here(yytext()),"An identifier cannot start with a digit."); }
-[0-9][0-9]*                                { return alloy_num (yytext()); }
-[\$a-zA-Z][\$0-9a-zA-Z_\'\"\u0019\u001d]*  { return alloy_id  (yytext()); }
+[0-9][0-9]*[\$a-zA-Z_\'\"\u0019\u001d][\$0-9a-zA-Z_\'\"\u0019\u001d]* { throw new ErrorSyntax(alloy_here(yytext()),"Name cannot start with a number."); }
+[0-9][0-9]*                                                           { return alloy_num (yytext()); }
+[\$a-zA-Z][\$0-9a-zA-Z_\'\"\u0019\u001d]*                             { return alloy_id  (yytext()); }
 
-"/*" ~"*/"            { }
+"/*" ~"*/"                   { }
 
 ("//"|"--") [^\r\n]* [\r\n]  { }
 
 ("//"|"--") [^\r\n]*         { } // This rule is shorter than the previous rule,
-                                 // so it will only apply if the last line
+                                 // so it will only apply if the final line of a file
                                  // is missing the \n or \r character.
 
-[ \t\f\r\n]           { }
+[ \t\f\r\n]                  { }
 
-. { throw new ErrorSyntax(alloy_here(" "),"The character \'"+yytext()+"\' cannot start a lexical token."); }
+. { throw new ErrorSyntax(alloy_here(" "),"The character "+yytext()+" cannot start a lexical token."); }

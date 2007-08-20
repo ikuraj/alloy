@@ -28,7 +28,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 parser code {:
 
   public Module alloymodule=null;
-  public String alloyfile="";
 
   @SuppressWarnings("unchecked")
   @Override public Symbol parse() throws java.lang.Exception {
@@ -69,13 +68,6 @@ parser code {:
      return lhs_sym;
   }
 
-  private Pos alloypos(Symbol x) {
-    if (x==null) return null;
-    if (x.value instanceof Pos) return (Pos)(x.value);
-    if (x.value instanceof Exp) return ((Exp)(x.value)).pos;
-    return x.pos;
-  }
-
   public void syntax_error(Symbol x) throws Err {
     Map<Integer,String> ch=new LinkedHashMap<Integer,String>();
     ch.put(CompSym.ABSTRACT        , "abstract");
@@ -88,6 +80,7 @@ parser code {:
     ch.put(CompSym.ASSERT          , "assert");
     ch.put(CompSym.BUT             , "but");
     ch.put(CompSym.CHECK           , "check");
+    ch.put(CompSym.DISJ            , "disj");
     ch.put(CompSym.ELSE            , "else");
     ch.put(CompSym.EXACTLY         , "exactly");
     ch.put(CompSym.EXPECT          , "expect");
@@ -120,6 +113,7 @@ parser code {:
     ch.put(CompSym.OPEN            , "open");
     ch.put(CompSym.PRED            , "pred");
     ch.put(CompSym.RUN             , "run");
+    ch.put(CompSym.SEQ             , "seq");
     ch.put(CompSym.SET             , "set");
     ch.put(CompSym.SIG             , "sig");
     ch.put(CompSym.SIGINT          , "Int");
@@ -173,7 +167,10 @@ parser code {:
     ch.put(CompSym.STAR            , "*");
     ch.put(CompSym.TILDE           , "~");
     TreeSet<String> list=new TreeSet<String>();
-    Pos p=alloypos(x);
+    Pos p=Pos.UNKNOWN;
+    if (x!=null && x.value instanceof Pos) p=(Pos)(x.value);
+       else if (x!=null && x.value instanceof Exp) p=((Exp)(x.value)).pos;
+       else if (x!=null) p=x.pos;
     if (!stack.empty()) for(Map.Entry<Integer,String> e:ch.entrySet()) {
         int key=e.getKey(), act=get_action(((Symbol)stack.peek()).parse_state, key);
         if (act==0) continue;
@@ -209,15 +206,15 @@ parser code {:
   throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
-        if (world==null) world=new Module(null, Pos.UNKNOWN, "");
+        if (world==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parseStream called with root==null)");
+        Module u=new Module(world, filename, prefix);
+        if (world==null) world=u.getRootModule();
         String content=fc.get(filename);
         if (content==null) { content=Util.readAll(filename); fc.put(filename,content); }
         isr=new StringReader(content);
-        Module u = world.lookupOrCreateModule(Pos.UNKNOWN, prefix);
         CompFilter s=new CompFilter(allowDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p=new CompParser(s);
         p.alloymodule=u;
-        p.alloyfile=filename;
         try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception: "+ex);}
         return u;
     } finally {
@@ -238,8 +235,8 @@ action code {:
      *
      * <p>
      * So we let the parser generate the former by default.
-     * And whenever we construct a EDecl(x,y) object,
-     * or an ExprBinary.Op.IN(x,y) object, or a function return type,
+     * And whenever we construct a Decl "x: y" object,
+     * or an binary expression "x in y", or a function return type,
      * we call this method on y to convert it into a multiplicity constraint.
      *
      * <p>
@@ -262,8 +259,6 @@ action code {:
         }
         return x;
     }
-    private Exp alloyTrue(Pos pos) throws Err { return new ExpConstant(pos, ExprConstant.Op.TRUE, 0); }
-
     private Exp t(ExpDot j, Pos close) throws Err {
       if (j.right instanceof ExpName) {
          String n=((ExpName)(j.right)).name;
@@ -271,7 +266,7 @@ action code {:
          if (n.equals("disj")) return new ExpBuiltin(j.pos, close, Util.asList(j.left));
       }
       else if (j.right instanceof ExpBuiltin) {
-         ExpBuiltin n=((ExpBuiltin)(j.right));
+         ExpBuiltin n=(ExpBuiltin)(j.right);
          List<Exp> args=new ArrayList<Exp>(n.args);
          args.add(j.left);
          return new ExpBuiltin(j.pos, n.closingBracket, args);
@@ -283,21 +278,21 @@ action code {:
 //===========================================================================//
 
 terminal Pos ARROW;            //  ->
-terminal Pos ANY_ARROW_SOME;   //  ->some    // The filter allows whitespace/comment in these 15 "*->*" tokens
-terminal Pos ANY_ARROW_ONE;    //  ->one
-terminal Pos ANY_ARROW_LONE;   //  ->lone
-terminal Pos SOME_ARROW_ANY;   //  some->
-terminal Pos SOME_ARROW_SOME;  //  some->some
-terminal Pos SOME_ARROW_ONE;   //  some->one
-terminal Pos SOME_ARROW_LONE;  //  some->lone
-terminal Pos ONE_ARROW_ANY;    //  one->
-terminal Pos ONE_ARROW_SOME;   //  one->some
-terminal Pos ONE_ARROW_ONE;    //  one->one
-terminal Pos ONE_ARROW_LONE;   //  one->lone
-terminal Pos LONE_ARROW_ANY;   //  lone->any
-terminal Pos LONE_ARROW_SOME;  //  lone->some
-terminal Pos LONE_ARROW_ONE;   //  lone->one
-terminal Pos LONE_ARROW_LONE;  //  lone->lone
+terminal Pos ANY_ARROW_SOME;   //  ->some       // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos ANY_ARROW_ONE;    //  ->one        // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos ANY_ARROW_LONE;   //  ->lone       // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos SOME_ARROW_ANY;   //  some->       // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos SOME_ARROW_SOME;  //  some->some   // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos SOME_ARROW_ONE;   //  some->one    // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos SOME_ARROW_LONE;  //  some->lone   // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos ONE_ARROW_ANY;    //  one->        // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos ONE_ARROW_SOME;   //  one->some    // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos ONE_ARROW_ONE;    //  one->one     // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos ONE_ARROW_LONE;   //  one->lone    // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos LONE_ARROW_ANY;   //  lone->any    // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos LONE_ARROW_SOME;  //  lone->some   // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos LONE_ARROW_ONE;   //  lone->one    // The filter allows whitespace/comment in these 15 "*->*" tokens
+terminal Pos LONE_ARROW_LONE;  //  lone->lone   // The filter allows whitespace/comment in these 15 "*->*" tokens
 
 terminal Pos ABSTRACT;         //  abstract
 terminal Pos ALL;              //  all      // The filter enables us to disambiguate
@@ -340,7 +335,7 @@ terminal Pos LONE2;            //  lone      // The filter enables us to disambi
 terminal Pos LONE;             //  lone      // The filter enables us to disambiguate
 terminal Pos LPAREN;           //  (
 terminal Pos LT;               //  <
-terminal Pos LTE;              //  =<
+terminal Pos LTE;              //  <=     =<
 terminal Pos MINUS;            //  -
 terminal Pos MODULE;           //  module
 terminal Pos NO2;              //  no        // The filter enables us to disambiguate
@@ -397,7 +392,7 @@ nonterminal List<Decl>                 Decls;
 nonterminal Exp                        DomainExpr;
 nonterminal Exp                        DotExpr;
 nonterminal Exp                        EquivExpr;
-nonterminal Integer                    Expects;
+nonterminal ExpConstant                Expects;
 nonterminal Exp                        Expr;
 nonterminal Exp                        Super;
 nonterminal Exp                        SuperOpt;
@@ -412,19 +407,13 @@ nonterminal Exp                        ImpliesExprClose;
 nonterminal Exp                        ImpliesExprOpen;
 nonterminal Exp                        IntersectExpr;
 nonterminal Exp                        Let;
-nonterminal                            Module;
-nonterminal                            Modules;
-nonterminal                            Modulep;
 nonterminal ExpName                    Name;
 nonterminal ExpName                    NameHelper;
 nonterminal List<ExpName>              Names;
 nonterminal Exp                        NegExpr;
 nonterminal Exp                        NumUnopExpr;
-nonterminal                            Open;
-nonterminal                            Opens;
 nonterminal Exp                        OrExpr;
 nonterminal Exp                        OverrideExpr;
-nonterminal                            Paragraphs;
 nonterminal                            Predicate;
 nonterminal Exp                        RangeExpr;
 nonterminal Exp                        RelationExpr;
@@ -437,7 +426,7 @@ nonterminal ExpName                    SigRef;
 nonterminal List<ExpName>              SigRefp;
 nonterminal List<ExpName>              SigRefs;
 nonterminal List<ExpName>              SigRefu;
-nonterminal                            Specification;
+nonterminal                            Spec;
 nonterminal List<Pair<Sig,Integer>>    Typescopes;
 nonterminal Pair<Sig,Integer>          Typescope;
 nonterminal Exp                        UnionDiffExpr;
@@ -445,81 +434,78 @@ nonterminal Exp                        UnopExpr;
 
 //===========================================================================//
 
-Specification ::= Modules Opens Paragraphs ;
+Spec ::= Spec FACT:o          Super:e {: parser.alloymodule.addFact      (o , ""     , e); :};
+Spec ::= Spec FACT:o   Name:n Super:e {: parser.alloymodule.addFact      (o , n.name , e); :};
+Spec ::= Spec ASSERT:o        Super:e {: parser.alloymodule.addAssertion (o , ""     , e); :};
+Spec ::= Spec ASSERT:o Name:n Super:e {: parser.alloymodule.addAssertion (o , n.name , e); :};
+Spec ::= Spec Sig             ;
+Spec ::= Spec Function        ;
+Spec ::= Spec Predicate       ;
+Spec ::= Spec OPEN:o Name:a                                         {: parser.alloymodule.addOpen(o.merge(a.pos), a, null, null); :};
+Spec ::= Spec OPEN:o Name:a                               AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, null, c);    :};
+Spec ::= Spec OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c           {: parser.alloymodule.addOpen(o.merge(c),     a, b,    null); :};
+Spec ::= Spec OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, b,    c);    :};
+Spec ::= Spec MODULE:o Name:n                                       {: parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
+Spec ::= Spec MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r         {: parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
+Spec ::= ;
 
-Modulep ::= Module                                       ;
-Modulep ::= Modulep Module                               ;
-Modules ::= Modulep                                      ;
-Modules ::=                                              {: parser.alloymodule.addModelName(new Pos(parser.alloyfile,1,1), ""     , new ArrayList<ExpName>()); :};
-Module ::= MODULE:o Name:n                               {: parser.alloymodule.addModelName(o.merge(n.pos)               , n.name , new ArrayList<ExpName>()); :};
-Module ::= MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r {: parser.alloymodule.addModelName(o.merge(r)                   , n.name , b                       ); :};
+Spec ::= Spec CHECK:o CmdLabel:x Super:e  Scope:s  Expects:c {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
+  Pos p=o.merge(c==null ? null : c.pos);
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).a;
+    p=p.merge(j.pos);
+    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
+  }
+  parser.alloymodule.addCommand(p, e, true, overall, bitwidth, maxseq, expects, s, x);
+:};
 
-Open ::= OPEN:o Name:a                                         {: parser.alloymodule.addOpen(o.merge(a.pos), a, null, null); :};
-Open ::= OPEN:o Name:a                               AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, null, c);    :};
-Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c           {: parser.alloymodule.addOpen(o.merge(c),     a, b,    null); :};
-Open ::= OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, b,    c);    :};
+Spec ::= Spec CHECK:o CmdLabel:x Name:n  Scope:s Expects:c  {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
+  Pos p=o.merge(c==null ? null : c.pos);
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).a;
+    p=p.merge(j.pos);
+    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
+  }
+  parser.alloymodule.addCommand(p, n.name, true, overall, bitwidth, maxseq, expects, s, x);
+:};
 
-Opens ::=            ;
-Opens ::= Opens Open ;
+Spec ::= Spec RUN:o CmdLabel:x Super:e  Scope:s  Expects:c {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
+  Pos p=o.merge(c==null ? null : c.pos);
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).a;
+    p=p.merge(j.pos);
+    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
+  }
+  parser.alloymodule.addCommand(p, e, false, overall, bitwidth, maxseq, expects, s, x);
+:};
 
-Paragraphs ::= Paragraphs FACT:o          Super:e {: parser.alloymodule.addFact      (o , ""     , e); :};
-Paragraphs ::= Paragraphs FACT:o   Name:n Super:e {: parser.alloymodule.addFact      (o , n.name , e); :};
-Paragraphs ::= Paragraphs ASSERT:o        Super:e {: parser.alloymodule.addAssertion (o , ""     , e); :};
-Paragraphs ::= Paragraphs ASSERT:o Name:n Super:e {: parser.alloymodule.addAssertion (o , n.name , e); :};
-Paragraphs ::= Paragraphs Sig             ;
-Paragraphs ::= Paragraphs FUN Function    ;
-Paragraphs ::= Paragraphs PRED Predicate  ;
-Paragraphs ::=                            ;
+Spec ::= Spec RUN:o CmdLabel:x Name:n  Scope:s  Expects:c {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
+  Pos p=o.merge(c==null ? null : c.pos);
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).a;
+    p=p.merge(j.pos);
+    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
+  }
+  parser.alloymodule.addCommand(p, n.name, false, overall, bitwidth, maxseq, expects, s, x);
+:};
 
 CmdLabel ::=           {: RESULT="";     :};
 CmdLabel ::= DOT ID:i  {: RESULT=i.name; :};
 
-Paragraphs ::= Paragraphs CHECK:o CmdLabel:x Super:e  Scope:s  Expects:c {:
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=c;
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).a;
-    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("int"))  { bitwidth=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { maxseq=s.get(i).b; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(o, e, true, overall, bitwidth, maxseq, expects, s, x);
-:};
-
-Paragraphs ::= Paragraphs CHECK:o CmdLabel:x Name:n  Scope:s Expects:c  {:
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=c;
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).a;
-    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("int"))  { bitwidth=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { maxseq=s.get(i).b; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(o, n.name, true, overall, bitwidth, maxseq, expects, s, x);
-:};
-
-Paragraphs ::= Paragraphs RUN:o CmdLabel:x Name:n  Scope:s  Expects:c {:
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=c;
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).a;
-    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("int"))  { bitwidth=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { maxseq=s.get(i).b; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(o, n.name, false, overall, bitwidth, maxseq, expects, s, x);
-:};
-
-Paragraphs ::= Paragraphs RUN:o CmdLabel:x Super:e  Scope:s  Expects:c {:
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=c;
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).a;
-    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("int"))  { bitwidth=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { maxseq=s.get(i).b; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(o, e, false, overall, bitwidth, maxseq, expects, s, x);
-:};
-
-Expects    ::=                 {: RESULT=Integer.valueOf(-1);    :};
-Expects    ::= EXPECT NUMBER:a {: RESULT=Integer.valueOf(a.num); :};
+Expects    ::=                 {: RESULT=null; :};
+Expects    ::= EXPECT NUMBER:a {: RESULT=a;    :};
 
 Scope      ::= FOR NUMBER:a                  {: RESULT=new ArrayList<Pair<Sig,Integer>>(); RESULT.add(new Pair<Sig,Integer>(new PrimSig(a.pos, "univ"), a.num)); :};
 Scope      ::= FOR NUMBER:a BUT Typescopes:b {: RESULT=b;                                       b.add(new Pair<Sig,Integer>(new PrimSig(a.pos, "univ"), a.num)); :};
@@ -535,33 +521,33 @@ Typescope  ::=           NUMBER:a INT:b     {: RESULT=new Pair<Sig,Integer>(new 
 Typescope  ::=           NUMBER:a SEQ:b     {: RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "seq")  ,    a.num    );                                                                            :};
 Typescope  ::= EXACTLY:e NUMBER   INT:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the integer bitwidth has to be exact.");                               :};
 Typescope  ::= EXACTLY:e NUMBER   SEQ:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the number of sequence index has to be exact.");                       :};
-Typescope  ::= EXACTLY:e NUMBER   UNIV:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on univ.");                                                                                  :};
 Typescope  ::=           NUMBER:e UNIV:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on univ.");                                                                                  :};
-Typescope  ::= EXACTLY:e NUMBER   SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
+Typescope  ::= EXACTLY:e NUMBER   UNIV:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on univ.");                                                                                  :};
 Typescope  ::=           NUMBER:e SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
-Typescope  ::= EXACTLY:e NUMBER   NONE:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on none.");                                                                                  :};
+Typescope  ::= EXACTLY:e NUMBER   SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
 Typescope  ::=           NUMBER:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none.");                                                                                  :};
+Typescope  ::= EXACTLY:e NUMBER   NONE:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on none.");                                                                                  :};
 
-Function ::=              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v); :};
-Function ::=              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v); :};
-Function ::=              Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<Decl>(), mult(r), v); :};
-Function ::= SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , mult(r), v); :};
-Function ::= SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , mult(r), v); :};
-Function ::= SigRef:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<Decl>(), mult(r), v); :};
+Function ::= FUN              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v); :};
+Function ::= FUN              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v); :};
+Function ::= FUN              Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<Decl>(), mult(r), v); :};
+Function ::= FUN SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , mult(r), v); :};
+Function ::= FUN SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , mult(r), v); :};
+Function ::= FUN SigRef:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<Decl>(), mult(r), v); :};
 
-Predicate ::=              Name:n LPAREN   Decls:d RPAREN   Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , null, v); :};
-Predicate ::=              Name:n LBRACKET Decls:d RBRACKET Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , null, v); :};
-Predicate ::=              Name:n                           Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<Decl>(), null, v); :};
-Predicate ::= SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , null, v); :};
-Predicate ::= SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , null, v); :};
-Predicate ::= SigRef:f DOT Name:n                           Super:v {: parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<Decl>(), null, v); :};
+Predicate ::= PRED              Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , null, v); :};
+Predicate ::= PRED              Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , null, v); :};
+Predicate ::= PRED              Name:n                           Super:v             {: parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<Decl>(), null, v); :};
+Predicate ::= PRED SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , null, v); :};
+Predicate ::= PRED SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , null, v); :};
+Predicate ::= PRED SigRef:f DOT Name:n                           Super:v             {: parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<Decl>(), null, v); :};
 
 Hint ::=             {: RESULT=null;           :};
 Hint ::= HASH Name:e {: RESULT=Util.asList(e); :};
 
 Sig ::= Hint:h SigQuals:a SIG Names:b SigIn:c LBRACE Decls:d RBRACE SuperOpt:e
  {:
-   for(ExpName bbb:b) parser.alloymodule.addSig(h, bbb.pos, bbb.name, a.get(0), a.get(1), a.get(2), a.get(3), c,d,e);
+   for(ExpName bb:b) parser.alloymodule.addSig(h, bb.pos, bb.name, a.get(0), a.get(1), a.get(2), a.get(3), c,d,e);
  :};
 
 SigQual  ::= ABSTRACT:x               {: RESULT=new ArrayList<Pos>(4); RESULT.add(x);    RESULT.add(null); RESULT.add(null); RESULT.add(null); :};
@@ -627,12 +613,12 @@ Let ::= Name:a EQUALS:o Expr:b COMMA Let:x {:
   RESULT = new ExpLet(o, a, b, x);
 :};
 
-SuperOpt ::=                               {: RESULT=null;                                         :};
-SuperOpt ::= Super:x                       {: RESULT=x;                                            :};
-Super    ::= LBRACE   SuperP:x RBRACE      {: RESULT=x;                                            :};
-Super    ::= LBRACE:o          RBRACE      {: RESULT=alloyTrue(o);                                 :};
-SuperP   ::= Expr:a                        {: RESULT=a;                                            :};
-SuperP   ::= Expr:a SuperP:b               {: RESULT=new ExpBinary(null, ExprBinary.Op.AND, a, b); :};
+SuperOpt ::=                               {: RESULT=null;                                                 :};
+SuperOpt ::= Super:x                       {: RESULT=x;                                                    :};
+Super    ::= LBRACE   SuperP:x RBRACE      {: RESULT=x;                                                    :};
+Super    ::= LBRACE:a          RBRACE:b    {: RESULT=new ExpConstant(a.merge(b), ExprConstant.Op.TRUE, 0); :};
+SuperP   ::= Expr:a                        {: RESULT=a;                                                    :};
+SuperP   ::= Expr:a SuperP:b               {: RESULT=new ExpBinary(null, ExprBinary.Op.AND, a, b);         :};
 
 SuperOrBar ::= BAR Expr:x  {: RESULT=x; :};
 SuperOrBar ::= Super:x     {: RESULT=x; :};
@@ -690,23 +676,23 @@ CompareExpr ::= SOME:o UnionDiffExpr:b                       {: RESULT=new ExpUn
 CompareExpr ::= LONE:o UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
 CompareExpr ::= ONE:o  UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
 CompareExpr ::= SET:o  UnionDiffExpr:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
-CompareExpr ::= SEQ:o  UnionDiffExpr:b                       {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(null,"seq/Int"), b); parser.alloymodule.addOpen(o, new ExpName(o,"util/sequniv"), null, new ExpName(o,"seq")); :};
+CompareExpr ::= SEQ:o  UnionDiffExpr:b                       {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addOpen(o, new ExpName(o,"util/sequniv"), null, new ExpName(o,"seq")); :};
 CompareExpr ::=        UnionDiffExpr:b                       {: RESULT=b;                                        :};
 
-UnionDiffExpr ::=                         NumUnopExpr:b  {: RESULT=b;                                           :};
-UnionDiffExpr ::= UnionDiffExpr:a PLUS:o  NumUnopExpr:b  {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUS,  a, b); :};
-UnionDiffExpr ::= UnionDiffExpr:a MINUS:o NumUnopExpr:b  {: RESULT=new ExpBinary(o, ExprBinary.Op.MINUS, a, b); :};
+UnionDiffExpr ::=                         NumUnopExpr:b        {: RESULT=b;                                                   :};
+UnionDiffExpr ::= UnionDiffExpr:a PLUS:o  NumUnopExpr:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUS,  a, b);         :};
+UnionDiffExpr ::= UnionDiffExpr:a MINUS:o NumUnopExpr:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.MINUS, a, b);         :};
 
-NumUnopExpr ::=          OverrideExpr:b      {: RESULT=b;                                            :};
-NumUnopExpr ::= HASH:o   NumUnopExpr:b       {: RESULT=new ExpUnary(o, ExprUnary.Op.CARDINALITY, b); :};
-NumUnopExpr ::= SUM:o    NumUnopExpr:b       {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b); :};
-NumUnopExpr ::= INT:o    NumUnopExpr:b       {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b); :};
+NumUnopExpr ::=          OverrideExpr:b                        {: RESULT=b;                                                   :};
+NumUnopExpr ::= HASH:o   NumUnopExpr:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CARDINALITY, b);        :};
+NumUnopExpr ::= SUM:o    NumUnopExpr:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b);        :};
+NumUnopExpr ::= INT:o    NumUnopExpr:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b);        :};
 
-OverrideExpr ::=                           IntersectExpr:b   {: RESULT=b;                                              :};
-OverrideExpr ::= OverrideExpr:a PLUSPLUS:o IntersectExpr:b   {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUSPLUS, a, b); :};
+OverrideExpr ::=                           IntersectExpr:b     {: RESULT=b;                                                   :};
+OverrideExpr ::= OverrideExpr:a PLUSPLUS:o IntersectExpr:b     {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUSPLUS, a, b);      :};
 
-IntersectExpr ::=                             RelationExpr:b {: RESULT=b;                                               :};
-IntersectExpr ::= IntersectExpr:a AMPERSAND:o RelationExpr:b {: RESULT=new ExpBinary(o, ExprBinary.Op.INTERSECT, a, b); :};
+IntersectExpr ::=                             RelationExpr:b   {: RESULT=b;                                                   :};
+IntersectExpr ::= IntersectExpr:a AMPERSAND:o RelationExpr:b   {: RESULT=new ExpBinary(o, ExprBinary.Op.INTERSECT, a, b);     :};
 
 RelationExpr ::= DomainExpr:a                                  {: RESULT=a;                                                   :};
 RelationExpr ::= DomainExpr:a ARROW:o           RelationExpr:b {: RESULT=new ExpBinary(o, ExprBinary.Op.ARROW          ,a,b); :};
@@ -751,14 +737,14 @@ UnopExpr ::= CARET:o  UnopExpr:b  {: RESULT=new ExpUnary(o, ExprUnary.Op.CLOSURE
 
 //=============================================================================
 
-BaseExpr ::= NUMBER:x                               {: RESULT=x;                                                               :};
-BaseExpr ::= IDEN:o                                 {: RESULT=new ExpName(o, "iden");                                          :};
-BaseExpr ::= THIS:o                                 {: RESULT=new ExpName(o, "this");                                          :};
-BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT=x;                                                               :};
-BaseExpr ::= SigRef:x                               {: RESULT=x;                                                               :};
-BaseExpr ::= AT:o Name:x                            {: RESULT=new ExpName(o.merge(x.pos), "@"+x.name);                         :};
-BaseExpr ::= Super:x                                {: RESULT=x;                                                               :};
-BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT=new ExpQuant(o, c, ExprQuant.Op.COMPREHENSION, a, b);            :};
-BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT=new ExpQuant(o, c, ExprQuant.Op.COMPREHENSION, a, alloyTrue(c)); :};
+BaseExpr ::= NUMBER:x                               {: RESULT=x;                                                                                                 :};
+BaseExpr ::= IDEN:o                                 {: RESULT=new ExpName(o, "iden");                                                                            :};
+BaseExpr ::= THIS:o                                 {: RESULT=new ExpName(o, "this");                                                                            :};
+BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT=x;                                                                                                 :};
+BaseExpr ::= SigRef:x                               {: RESULT=x;                                                                                                 :};
+BaseExpr ::= AT:o Name:x                            {: RESULT=new ExpName(o.merge(x.pos), "@"+x.name);                                                           :};
+BaseExpr ::= Super:x                                {: RESULT=x;                                                                                                 :};
+BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT=new ExpQuant(o, c, ExprQuant.Op.COMPREHENSION, a, b);                                              :};
+BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT=new ExpQuant(o, c, ExprQuant.Op.COMPREHENSION, a, new ExpConstant(null, ExprConstant.Op.TRUE, 0)); :};
 
 //=============================================================================
