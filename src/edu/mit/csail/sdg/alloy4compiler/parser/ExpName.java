@@ -20,8 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -58,7 +58,7 @@ final class ExpName extends Exp {
 
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
-        Set<Object> choices = cx.resolve(pos, name);
+        Collection<Object> choices = cx.resolve(pos, name);
         TempList<Expr> objects = new TempList<Expr>(choices.size());
         Expr THIS = (cx.rootsig!=null) ? cx.get("this",pos) : null;
         for(Object ch:choices) {

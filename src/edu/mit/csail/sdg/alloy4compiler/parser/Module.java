@@ -22,6 +22,7 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Locale;
@@ -320,7 +321,7 @@ public final class Module {
 
     /** It looks up non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
     private List<Object> getRawNQS (List<Object> ans, int r, String name) {
-        // r: 1=sig 2=assert 4=func/pred
+        // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar with expr is the value of an assertion    (r&4)!=0 => FunAST
         if (ans==null) ans=new ArrayList<Object>();
         if (visitedBy==ans) return ans; else visitedBy=ans; // This optimization is not strictly needed, but it avoids repeat visits
         if ((r&1)!=0) { SigAST x=sigs.get(name); if (x!=null) ans.add(x); }
@@ -336,7 +337,7 @@ public final class Module {
 
     /** It looks up fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
     private List<Object> getRawQS (int r, String name) {
-        // r: 1=sig 2=assert 4=func/pred
+        // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar with expr is the value of an assertion    (r&4)!=0 => FunAST
         List<Object> ans=new ArrayList<Object>();
         Module u=this;
         if (name.startsWith("this/")) name=name.substring(5);
@@ -773,7 +774,7 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, Map<String,Integer> s, String label) throws Err {
+    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, String label) throws Err {
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         if (label==null || label.length()==0) label=n;
@@ -781,7 +782,7 @@ public final class Module {
     }
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, Exp e, boolean c, int o, int b, int seq, int exp, Map<String,Integer> s, String label) throws Err {
+    void addCommand(Pos p, Exp e, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, String label) throws Err {
         String n;
         if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run$"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
         if (label==null || label.length()==0) label=n;
@@ -807,7 +808,13 @@ public final class Module {
                 if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
                 e=((FunAST)(m.get(0))).realFormula;
             }
-            commands.set(i, new Pair<String,Command>(cname, cmd.changeFormula(e)));
+            TempList<Pair<Sig,Integer>> sc=new TempList<Pair<Sig,Integer>>(cmd.scope.size());
+            for(Pair<Sig,Integer> et:cmd.scope) {
+                SigAST s=getRawSIG(et.a.pos, et.a.label);
+                if (s==null) throw new ErrorSyntax(et.a.pos, "The sig \""+et.a.label+"\" cannot be found.");
+                sc.add(new Pair<Sig,Integer>(s.realSig, et.b));
+            }
+            commands.set(i, new Pair<String,Command>(cname, cmd.change(e, sc.makeConst())));
         }
     }
 
@@ -1013,10 +1020,16 @@ public final class Module {
     }
 
     /** Resolve the name based on the current context and this module. */
-    public Set<Object> populate(boolean rootfield, SigAST rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
-        // Return object can be FuncN or Expr
-        Set<Object> ans;
+    public Collection<Object> populate(boolean rootfield, SigAST rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
+        // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
+        boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfun);
+        List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1,name) : getRawNQS(null,fun?5:1,name);
+             if (name.equals("univ"))    { ans.clear(); ans.add(UNIVast); }
+        else if (name.equals("Int"))     { ans.clear(); ans.add(SIGINTast); }
+        else if (name.equals("seq/Int")) { ans.clear(); ans.add(SEQIDXast); }
+        else if (name.equals("none"))    { ans.clear(); ans.add(NONEast); }
+        else { Object param=params.get(name); if (param!=null && !ans.contains(param)) ans.add(param); }
         if (rootsig!=null) {
             // Within a field decl
             // (1) Can refer to any visible sig/param (but you cannot call any function or predicates)
@@ -1024,7 +1037,6 @@ public final class Module {
             // Within an appended facts
             // (1) Can refer to any visible sig/param/func/predicate
             // (2) Can refer to any visible field (but if it is in this sig or a parent sig, we'll prepend "this." unless it has '@')
-            ans=lookupSigOrParameterOrFunctionOrPredicate(name, !rootfield);
             Field f=lookupField(rootsig, rootsig, name);
             if (f!=null) {
                 Expr ff=ExprUnary.Op.NOOP.make(pos,f);
@@ -1037,18 +1049,25 @@ public final class Module {
             //    we cannot call, but can refer to anything else visible.
             // Else
             //    we can call, and can refer to anything visible.
-            ans=lookupSigOrParameterOrFunctionOrPredicate(name, !rootfun);
             for(Field ff:lookupField(name)) ans.add(ExprUnary.Op.NOOP.make(pos,ff));
         }
-        // Convert Sig/Field/Func0 into references
-        Set<Object> realAns=new LinkedHashSet<Object>();
+        // Convert SigAST/FunAST/Field/Expr into Expr
+        List<Object> realAns=new ArrayList<Object>();
         for(Object x:ans) {
-            if (x instanceof Sig || x instanceof Field)
-                realAns.add(ExprUnary.Op.NOOP.make(pos, (Expr)x));
-            else if (x instanceof Func && ((Func)x).params.size()==0)
-                realAns.add(ExprCall.make(pos, null, (Func)x, null, 0));
-            else if (x instanceof Func || x instanceof Expr)
-                realAns.add(x);
+            if (x instanceof SigAST) {
+               SigAST y=(SigAST)x;
+               realAns.add(ExprUnary.Op.NOOP.make(pos, y.realSig));
+            }
+            else if (x instanceof FunAST) {
+               FunAST y=(FunAST)x;
+               if (y.realFunc.params.isEmpty()) realAns.add(ExprCall.make(pos,null,y.realFunc,null,0)); else realAns.add(y.realFunc);
+            }
+            else if (x instanceof Field) {
+               realAns.add(ExprUnary.Op.NOOP.make(pos, (Expr)x));
+            }
+            else if (x instanceof Expr) {
+               realAns.add(x);
+            }
         }
         return realAns;
     }

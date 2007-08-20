@@ -20,8 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -89,7 +89,7 @@ final class Context {
 
     public Context(Module rootModule) { this.rootmodule=rootModule; }
 
-    public Set<Object> resolve(Pos pos, String name) {
+    public Collection<Object> resolve(Pos pos, String name) {
         Expr match = env.get(name);
         if (match!=null || name.equals("Int") || name.equals("univ") || name.equals("seq/Int") || name.equals("none") || name.equals("iden")) {
             HashSet<Object> ans = new HashSet<Object>(1);

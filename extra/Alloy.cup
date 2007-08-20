@@ -14,11 +14,14 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 
 //===========================================================================//
 
@@ -379,7 +382,7 @@ terminal Pos UNIV;             //  univ
 
 terminal ExpName ID;
 
-terminal Exp NUMBER;
+terminal ExpConstant NUMBER;
 
 //===========================================================================//
 
@@ -388,14 +391,13 @@ nonterminal Exp                        BaseExpr;
 nonterminal Exp                        BracketExpr;
 nonterminal Exp                        CompareExpr;
 nonterminal String                     CmdLabel;
-nonterminal List<ExpName>              CmdOpt;
 nonterminal Decl                       Decla;
 nonterminal List<Decl>                 Declp;
 nonterminal List<Decl>                 Decls;
 nonterminal Exp                        DomainExpr;
 nonterminal Exp                        DotExpr;
 nonterminal Exp                        EquivExpr;
-nonterminal String                     Expects;
+nonterminal Integer                    Expects;
 nonterminal Exp                        Expr;
 nonterminal Exp                        Super;
 nonterminal Exp                        SuperOpt;
@@ -426,7 +428,7 @@ nonterminal                            Paragraphs;
 nonterminal                            Predicate;
 nonterminal Exp                        RangeExpr;
 nonterminal Exp                        RelationExpr;
-nonterminal List<String>               Scope;
+nonterminal List<Pair<Sig,Integer>>    Scope;
 nonterminal                            Sig;
 nonterminal List<ExpName>              SigIn;
 nonterminal List<Pos>                  SigQual;
@@ -436,8 +438,8 @@ nonterminal List<ExpName>              SigRefp;
 nonterminal List<ExpName>              SigRefs;
 nonterminal List<ExpName>              SigRefu;
 nonterminal                            Specification;
-nonterminal List<String>               Typescopes;
-nonterminal List<String>               Typescope;
+nonterminal List<Pair<Sig,Integer>>    Typescopes;
+nonterminal Pair<Sig,Integer>          Typescope;
 nonterminal Exp                        UnionDiffExpr;
 nonterminal Exp                        UnopExpr;
 
@@ -472,104 +474,73 @@ Paragraphs ::=                            ;
 CmdLabel ::=           {: RESULT="";     :};
 CmdLabel ::= DOT ID:i  {: RESULT=i.name; :};
 
-CmdOpt ::=                               {: RESULT=new ArrayList<ExpName>(); :};
-CmdOpt ::= LBRACKET SigRefp:o RBRACKET   {: RESULT=o;                        :};
-
-Paragraphs ::= Paragraphs CHECK:o CmdLabel:x CmdOpt Super:e  Scope:s  {: // Current, CmdOpt are unused
-  int bitwidth = -1 , maxseq = -1;
-  int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
-  int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
-  Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
-  for(int i=2; i<s.size()-1; i=i+2) {
-    int j;
-    String a=s.get(i);
-    String b=s.get(i+1);
-    if (a.charAt(0)=='e') { j=Integer.parseInt(a.substring(1)); j=(0-j)-1; } else { j=Integer.parseInt(a); }
-    if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once.");
-    scope.put(b,j);
+Paragraphs ::= Paragraphs CHECK:o CmdLabel:x Super:e  Scope:s  Expects:c {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=c;
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).a;
+    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("int"))  { bitwidth=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { maxseq=s.get(i).b; s.remove(i); continue; }
   }
-  if (scope.containsKey("int")) bitwidth=scope.remove("int");
-  if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, e, true, overall, bitwidth, maxseq, expects, scope, x);
+  parser.alloymodule.addCommand(o, e, true, overall, bitwidth, maxseq, expects, s, x);
 :};
 
-Paragraphs ::= Paragraphs CHECK:o CmdLabel:x CmdOpt Name:n  Scope:s  {: // Current, CmdOpt are unused
-  int bitwidth = -1 , maxseq = -1;
-  int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
-  int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
-  Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
-  for(int i=2; i<s.size()-1; i=i+2) {
-    int j;
-    String a=s.get(i);
-    String b=s.get(i+1);
-    if (a.charAt(0)=='e') { j=Integer.parseInt(a.substring(1)); j=(0-j)-1; } else { j=Integer.parseInt(a); }
-    if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once.");
-    scope.put(b,j);
+Paragraphs ::= Paragraphs CHECK:o CmdLabel:x Name:n  Scope:s Expects:c  {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=c;
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).a;
+    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("int"))  { bitwidth=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { maxseq=s.get(i).b; s.remove(i); continue; }
   }
-  if (scope.containsKey("int")) bitwidth=scope.remove("int");
-  if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, n.name, true, overall, bitwidth, maxseq, expects, scope, x);
+  parser.alloymodule.addCommand(o, n.name, true, overall, bitwidth, maxseq, expects, s, x);
 :};
 
-Paragraphs ::= Paragraphs RUN:o CmdLabel:x CmdOpt Name:n  Scope:s  {: // Current, CmdOpt are unused
-  int bitwidth = -1 , maxseq = -1;
-  int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
-  int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
-  Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
-  for(int i=2; i<s.size()-1; i=i+2) {
-    int j;
-    String a=s.get(i);
-    String b=s.get(i+1);
-    if (a.charAt(0)=='e') { j=Integer.parseInt(a.substring(1)); j=(0-j)-1; } else { j=Integer.parseInt(a); }
-    if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once.");
-    scope.put(b,j);
+Paragraphs ::= Paragraphs RUN:o CmdLabel:x Name:n  Scope:s  Expects:c {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=c;
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).a;
+    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("int"))  { bitwidth=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { maxseq=s.get(i).b; s.remove(i); continue; }
   }
-  if (scope.containsKey("int")) bitwidth=scope.remove("int");
-  if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, n.name, false, overall, bitwidth, maxseq, expects, scope, x);
+  parser.alloymodule.addCommand(o, n.name, false, overall, bitwidth, maxseq, expects, s, x);
 :};
 
-Paragraphs ::= Paragraphs RUN:o CmdLabel:x CmdOpt Super:e  Scope:s  {: // Current, CmdOpt are unused
-  int bitwidth = -1 , maxseq = -1;
-  int overall = s.get(0).length()>0 ? Integer.parseInt(s.get(0)) : -1;
-  int expects = s.get(1).length()>0 ? Integer.parseInt(s.get(1)) : -1;
-  Map<String,Integer> scope=new LinkedHashMap<String,Integer>();
-  for(int i=2; i<s.size()-1; i=i+2) {
-    int j;
-    String a=s.get(i);
-    String b=s.get(i+1);
-    if (a.charAt(0)=='e') { j=Integer.parseInt(a.substring(1)); j=(0-j)-1; } else { j=Integer.parseInt(a); }
-    if (scope.containsKey(b)) throw new ErrorSyntax(o,"The scope of the sig \""+b+"\" cannot be specified more than once.");
-    scope.put(b,j);
+Paragraphs ::= Paragraphs RUN:o CmdLabel:x Super:e  Scope:s  Expects:c {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=c;
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).a;
+    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("int"))  { bitwidth=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { maxseq=s.get(i).b; s.remove(i); continue; }
   }
-  if (scope.containsKey("int")) bitwidth=scope.remove("int");
-  if (scope.containsKey("seq")) maxseq=scope.remove("seq");
-  parser.alloymodule.addCommand(o, e, false, overall, bitwidth, maxseq, expects, scope, x);
+  parser.alloymodule.addCommand(o, e, false, overall, bitwidth, maxseq, expects, s, x);
 :};
 
-Expects    ::=                 {: RESULT="";                      :};
-Expects    ::= EXPECT NUMBER:a {: RESULT=""+((ExpConstant)a).num; :};
+Expects    ::=                 {: RESULT=Integer.valueOf(-1);    :};
+Expects    ::= EXPECT NUMBER:a {: RESULT=Integer.valueOf(a.num); :};
 
-Scope      ::= FOR NUMBER:a                  Expects:c {: RESULT=new ArrayList<String>(); RESULT.add(""+((ExpConstant)a).num); RESULT.add(c);                   :};
-Scope      ::= FOR NUMBER:a BUT Typescopes:b Expects:c {: RESULT=new ArrayList<String>(); RESULT.add(""+((ExpConstant)a).num); RESULT.add(c); RESULT.addAll(b); :};
-Scope      ::= FOR              Typescopes:b Expects:c {: RESULT=new ArrayList<String>(); RESULT.add("");                      RESULT.add(c); RESULT.addAll(b); :};
-Scope      ::=                               Expects:c {: RESULT=new ArrayList<String>(); RESULT.add("");                      RESULT.add(c);                   :};
+Scope      ::= FOR NUMBER:a                  {: RESULT=new ArrayList<Pair<Sig,Integer>>(); RESULT.add(new Pair<Sig,Integer>(new PrimSig(a.pos, "univ"), a.num)); :};
+Scope      ::= FOR NUMBER:a BUT Typescopes:b {: RESULT=b;                                       b.add(new Pair<Sig,Integer>(new PrimSig(a.pos, "univ"), a.num)); :};
+Scope      ::= FOR              Typescopes:b {: RESULT=b;                                                                                                        :};
+Scope      ::=                               {: RESULT=new ArrayList<Pair<Sig,Integer>>();                                                                       :};
 
-Typescopes ::= Typescope:a                    {: RESULT=a;               :};
-Typescopes ::= Typescopes:a COMMA Typescope:b {: RESULT=a; a.addAll(b);  :};
+Typescopes ::= Typescope:a                    {: RESULT=new ArrayList<Pair<Sig,Integer>>(); RESULT.add(a); :};
+Typescopes ::= Typescopes:a COMMA Typescope:b {: RESULT=a; a.add(b);                                       :};
 
-Typescope  ::= EXACTLY NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExpConstant)a).num); RESULT.add(b.name); :};
-Typescope  ::=         NUMBER:a Name:b        {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExpConstant)a).num); RESULT.add(b.name); :};
-Typescope  ::= EXACTLY NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExpConstant)a).num); RESULT.add("int");  :};
-Typescope  ::=         NUMBER:a INT           {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExpConstant)a).num); RESULT.add("int");  :};
-Typescope  ::= EXACTLY NUMBER:a SEQ           {: RESULT=new ArrayList<String>(); RESULT.add("e"+((ExpConstant)a).num); RESULT.add("seq");  :};
-Typescope  ::=         NUMBER:a SEQ           {: RESULT=new ArrayList<String>(); RESULT.add( ""+((ExpConstant)a).num); RESULT.add("seq");  :};
-Typescope  ::= EXACTLY NUMBER:a UNIV          {: if (1==1) throw new ErrorSyntax(a.pos, "You cannot set a scope on univ."); :};
-Typescope  ::=         NUMBER:a UNIV          {: if (1==1) throw new ErrorSyntax(a.pos, "You cannot set a scope on univ."); :};
-Typescope  ::= EXACTLY NUMBER:a SIGINT        {: if (1==1) throw new ErrorSyntax(a.pos, "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
-Typescope  ::=         NUMBER:a SIGINT        {: if (1==1) throw new ErrorSyntax(a.pos, "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
-Typescope  ::= EXACTLY NUMBER:a NONE          {: if (1==1) throw new ErrorSyntax(a.pos, "You cannot set a scope on none."); :};
-Typescope  ::=         NUMBER:a NONE          {: if (1==1) throw new ErrorSyntax(a.pos, "You cannot set a scope on none."); :};
+Typescope  ::= EXACTLY:e NUMBER:a Name:b    {: RESULT=new Pair<Sig,Integer>(new PrimSig(e.merge(b.pos)    , b.name) , (0-a.num)-1 );                                                                            :};
+Typescope  ::=           NUMBER:a Name:b    {: RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b.pos), b.name) ,    a.num    );                                                                            :};
+Typescope  ::=           NUMBER:a INT:b     {: RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "int")  ,    a.num    );                                                                            :};
+Typescope  ::=           NUMBER:a SEQ:b     {: RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "seq")  ,    a.num    );                                                                            :};
+Typescope  ::= EXACTLY:e NUMBER   INT:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the integer bitwidth has to be exact.");                               :};
+Typescope  ::= EXACTLY:e NUMBER   SEQ:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the number of sequence index has to be exact.");                       :};
+Typescope  ::= EXACTLY:e NUMBER   UNIV:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on univ.");                                                                                  :};
+Typescope  ::=           NUMBER:e UNIV:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on univ.");                                                                                  :};
+Typescope  ::= EXACTLY:e NUMBER   SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
+Typescope  ::=           NUMBER:e SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
+Typescope  ::= EXACTLY:e NUMBER   NONE:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on none.");                                                                                  :};
+Typescope  ::=           NUMBER:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none.");                                                                                  :};
 
 Function ::=              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v); :};
 Function ::=              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v); :};

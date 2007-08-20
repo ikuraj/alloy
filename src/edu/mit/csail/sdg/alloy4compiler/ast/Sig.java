@@ -244,6 +244,15 @@ public abstract class Sig extends Expr {
         }
 
         /**
+         * Constructs a non-builtin sig.
+         * @param pos - the position in the original file where this sig was defined (can be null if unknown)
+         * @param label - the name of this sig (it does not need to be unique)
+         */
+        public PrimSig(Pos pos, String label) throws Err {
+            this(pos, null, label, null,null,null,null, null, false);
+        }
+
+        /**
          * Returns true iff "this is equal or subtype of that"
          */
         public boolean isSubtypeOf(PrimSig that) {

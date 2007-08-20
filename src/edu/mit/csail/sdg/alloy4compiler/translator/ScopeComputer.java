@@ -19,7 +19,6 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -27,6 +26,7 @@ import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.parser.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -35,6 +35,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 /**
@@ -198,26 +199,19 @@ final class ScopeComputer {
         this.rep=A4Reporter.getReporter();
         this.cmd=cmd;
         final SafeList<Sig> sigs = root.getAllSigsInTheWorld();
-        // Resolve each name listed in the command
-        for(Map.Entry<String,Integer> entry:cmd.scope.entrySet()) {
-            String name=entry.getKey();
-            int scope=entry.getValue();
+        // Process each sig listed in the command
+        for(Pair<Sig,Integer> entry:cmd.scope) {
+            Sig s=entry.a;
+            int scope=entry.b;
             boolean exact=(scope<0);
             if (scope<0) scope=0-(scope+1);
-            Set<Object> set=root.lookupSigOrParameterOrFunctionOrPredicate(name,false);
-            Iterator<Object> it=set.iterator();
-            if (set.size()<1) throw new ErrorSyntax(cmd.pos, "The name \""+name+"\" cannot be found");
-            if (set.size()>1) {
-                Sig choice1=(Sig)(it.next());
-                Sig choice2=(Sig)(it.next());
-                throw new ErrorSyntax(cmd.pos,
-                    "The name \""+name+"\" is ambiguous: it could be "+choice1+" or "+choice2);
-            }
-            Sig s=(Sig)(it.next());
             if (s==UNIV) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on \"univ\".");
             if (s==SIGINT) throw new ErrorSyntax(cmd.pos,
                     "You can no longer set a scope on \"Int\". "
                     +"The number of atoms in Int is always exactly equal to 2^(integer bitwidth).\n");
+            if (s==SEQIDX) throw new ErrorSyntax(cmd.pos,
+                    "You cannot set a scope on \"seq/Int\". "
+                    +"To set the number of sequence atoms, use the seq keyword.\n");
             if (s==NONE) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on \"none\".");
             if (exact) makeExact(s);
             if (s.isOne!=null && scope!=1) throw new ErrorSyntax(cmd.pos,

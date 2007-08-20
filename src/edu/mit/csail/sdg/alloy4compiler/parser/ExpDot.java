@@ -20,8 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -122,7 +122,7 @@ final class ExpDot extends Exp {
         Exp ptr=right;
         while (ptr instanceof ExpDot) { n++; ptr=((ExpDot)ptr).right; }
         if (ptr instanceof ExpName && !cx.has(((ExpName)ptr).name)) {
-            Set<Object> choices = cx.resolve(ptr.pos, ((ExpName)ptr).name);
+            Collection<Object> choices = cx.resolve(ptr.pos, ((ExpName)ptr).name);
             TempList<Expr> tempargs = new TempList<Expr>(n);
             for(Exp x=this; x instanceof ExpDot; x=((ExpDot)x).right) {
                 Expr y = ((ExpDot)x).left.check(cx, warnings).typecheck_as_set();
