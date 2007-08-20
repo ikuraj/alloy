@@ -19,6 +19,13 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
+/** This exception is thrown when Kodkod finishes saving the CNF file. */
+
 public final class SaveToFileException extends Exception {
+
+    /** This silences javac's warning about the missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
+
+    /** Constructs an SaveToFileException object. */
+    public SaveToFileException() { }
 }

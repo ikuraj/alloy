@@ -23,7 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public class MagicColour {
+final class MagicColour {
 
     /** This method logs the progress */
     static final void log(String msg) {

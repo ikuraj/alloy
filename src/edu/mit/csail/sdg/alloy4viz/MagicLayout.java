@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MagicLayout {
+final class MagicLayout {
 
     /** This method logs the progress */
     private static final void log(String msg) {
