@@ -423,11 +423,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final ExprVar v=q.vars.get(0);
         x=deNOP(v.expr);
         if (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.ONEOF) x=((ExprUnary)x).sub;
-        if (!x.equals(s)) return null;
+        if (!x.isSame(s)) return null;
         if (!(q.sub instanceof ExprBinary)) return null;
         ExprBinary in=(ExprBinary)(q.sub);
         if (in.op!=ExprBinary.Op.IN) return null;
-        if (!in.left.equals(v.join(f))) return null;
+        if (!in.left.isSame(v.join(f))) return null;
         x=deNOP(in.right);
         if (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.SETOF) x=deNOP(((ExprUnary)x).sub);
         return x;
@@ -437,7 +437,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private static Sig findElem(Sig s, Field field1, Field field2, Field field3) {
         Expr b1=findY(s,field1), b2=findY(s,field2), b3=findY(s,field3);
         if (!(b1 instanceof Sig) || b1!=b2 || b3==null) return null;
-        if (!(b3.equals(b1.product(b1)))) return null;
+        if (!(b3.isSame(b1.product(b1)))) return null;
         return (Sig)b1;
     }
 
@@ -462,23 +462,23 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (!(fact instanceof ExprBinary)) return false;
         bin=(ExprBinary)fact;
         if (!(bin.right instanceof ExprBinary)) return false;
-        if (!elem.in(first.join(next.reflexiveClosure())).equals(bin.left)) return false;
+        if (!elem.in(first.join(next.reflexiveClosure())).isSame(bin.left)) return false;
         bin=(ExprBinary)(bin.right);
         if (!(bin.right instanceof ExprBinary)) return false;
-        if (!first.join(prev).no().equals(bin.left)) return false;
+        if (!first.join(prev).no().isSame(bin.left)) return false;
         bin=(ExprBinary)(bin.right);
         if (!(bin.right instanceof ExprQuant)) return false;
-        if (!last.join(next).no().equals(bin.left)) return false;
+        if (!last.join(next).no().isSame(bin.left)) return false;
         ExprQuant qt=(ExprQuant)(bin.right);
         if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1 || !(qt.sub instanceof ExprBinary)) return false;
         ExprVar e=qt.vars.get(0);
-        if (!e.expr.equals(ExprUnary.Op.ONEOF.make(null,elem))) return false;
+        if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
         bin=(ExprBinary)(qt.sub);
         if (!(bin.right instanceof ExprBinary)) return false;
-        if (!e.equal(first).or(e.join(prev).one()).equals(bin.left)) return false;
+        if (!e.equal(first).or(e.join(prev).one()).isSame(bin.left)) return false;
         bin=(ExprBinary)(bin.right);
-        if (!e.equal(last).or(e.join(next).one()).equals(bin.left)) return false;
-        if (!e.in(e.join(next.closure())).not().equals(bin.right)) return false;
+        if (!e.equal(last).or(e.join(next).one()).isSame(bin.left)) return false;
+        if (!e.in(e.join(next.closure())).not().isSame(bin.right)) return false;
         return true;
     }
 
@@ -892,13 +892,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             ExprVar a=x.vars.get(0);
             Expr max=a.gte(ZERO).and(a.plus(ONE).lt(ZERO));
             Expr min=a.lt(ZERO).and(a.minus(ONE).gte(ZERO));
-            if (x.sub.equals(max)) return BoundsComputer.SIGINT_MAX;
-            if (x.sub.equals(min)) return BoundsComputer.SIGINT_MIN;
+            if (x.sub.isSame(max)) return BoundsComputer.SIGINT_MAX;
+            if (x.sub.isSame(min)) return BoundsComputer.SIGINT_MIN;
         }
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==2) {
             ExprVar a=x.vars.get(0), b=x.vars.get(1);
             Expr next=b.gt(a).and(b.equal(a.plus(ONE)));
-            if (x.sub.equals(next)) return BoundsComputer.SIGINT_NEXT;
+            if (x.sub.isSame(next)) return BoundsComputer.SIGINT_NEXT;
         }
         return visit_qt(x.op, x.vars, x.sub, false);
     }

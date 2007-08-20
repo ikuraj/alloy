@@ -78,18 +78,13 @@ public final class ExprBinary extends Expr {
     //============================================================================================================//
 
     /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
-    @Override public boolean equals(Object obj) {
+    @Override public boolean isSame(Expr obj) {
         while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
         if (obj==this) return true;
         if (!(obj instanceof ExprBinary)) return false;
         ExprBinary x=(ExprBinary)obj;
-        return op==x.op && left.equals(x.left) && right.equals(x.right);
+        return op==x.op && left.isSame(x.left) && right.isSame(x.right);
     }
-
-    //============================================================================================================//
-
-    /** Due to the conservative nature of Expr.equals(), we just return 0 as the safe hashcode. */
-    @Override public int hashCode() { return 0; }
 
     //============================================================================================================//
 

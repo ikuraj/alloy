@@ -234,6 +234,12 @@ public abstract class Expr {
     /** Print a brief text description of it and all subnodes. */
     @Override public String toString() { StringBuilder sb=new StringBuilder(); toString(sb,-1); return sb.toString(); }
 
+    /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
+    public boolean isSame(Expr obj) {
+        while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
+        return obj==this;
+    }
+
     /** A return visitor that determines whether the node (or a subnode) contains a predicate/function call. */
     private static final VisitQuery hasCall = new VisitQuery() {
         @Override public final Object visit(ExprCall x) { return this; }
