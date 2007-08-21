@@ -48,6 +48,7 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
@@ -575,6 +576,7 @@ public final class Module {
     /** Add a sig declaration. */
     SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome,
     List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
+        if (name.indexOf('$')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'$\' character");
         status=3;
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
@@ -861,7 +863,7 @@ public final class Module {
                 if (s==null) throw new ErrorSyntax(et.a.pos, "The sig \""+et.a.label+"\" cannot be found.");
                 sc.add(new Pair<Sig,Integer>(s.realSig, et.b));
             }
-            commands.set(i, new Pair<String,Command>(cname, cmd.change(e, sc.makeConst())));
+            commands.set(i, new Pair<String,Command>(cname, cmd.make(e, sc.makeConst())));
         }
     }
 

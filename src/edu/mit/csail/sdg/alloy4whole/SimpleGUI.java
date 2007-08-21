@@ -78,7 +78,7 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.text.BadLocationException;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4compiler.parser.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;

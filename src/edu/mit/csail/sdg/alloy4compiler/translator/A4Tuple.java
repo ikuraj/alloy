@@ -23,7 +23,7 @@ import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import kodkod.instance.Tuple;
 
-/** Immutable; represents an Alloy tuple; comparison is by identity rather than by value. */
+/** Immutable; represents a single Alloy tuple; comparison is by identity rather than by value. */
 
 public final class A4Tuple {
 
@@ -36,7 +36,10 @@ public final class A4Tuple {
     /** The kodkodAtom_to_MostSpecificSig map. */
     private final ConstMap<Object,PrimSig> sigMap;
 
-    /** Construct a Tuple from the kodkod Tuple, while renaming each atom using the given atomMap. */
+    /**
+     * Construct a Tuple from the kodkod Tuple, while renaming each atom using the given atomMap.
+     * <br> NOTE: caller must ensure the Kodkod tuple is not modified, since we expect the resulting A4Tuple to be constant.
+     */
     A4Tuple(Tuple tuple, ConstMap<Object,String> atomMap, ConstMap<Object,PrimSig> sigMap) {
         this.tuple=tuple;
         this.atomMap=atomMap;

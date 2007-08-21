@@ -28,11 +28,10 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.SafeList;
-import edu.mit.csail.sdg.alloy4compiler.parser.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
@@ -195,10 +194,9 @@ final class ScopeComputer {
     //==============================================================================================================//
 
     /** Compute the scopes of "world", based on the settings in the "cmd", then log messages into "options.logger". */
-    ScopeComputer(Module root, Command cmd) throws Err {
+    ScopeComputer(SafeList<Sig> sigs, Command cmd) throws Err {
         this.rep=A4Reporter.getReporter();
         this.cmd=cmd;
-        final SafeList<Sig> sigs = root.getAllReachableSigs();
         // Process each sig listed in the command
         for(Pair<Sig,Integer> entry:cmd.scope) {
             Sig s=entry.a;

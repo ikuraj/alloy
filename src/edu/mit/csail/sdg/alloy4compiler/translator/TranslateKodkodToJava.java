@@ -21,8 +21,8 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.io.PrintWriter;
@@ -85,7 +85,8 @@ public final class TranslateKodkodToJava implements VoidVisitor {
      * @param bounds - the Kodkod bounds object to use
      * @param atomMap - if nonnull, it is used to map the atom name before printing
      */
-    public static String convert(Formula formula, int bitwidth, Iterator<Object> atoms, Bounds bounds, ConstMap<Object,String> atomMap) {
+    public static String convert
+    (Formula formula, int bitwidth, Iterator<Object> atoms, Bounds bounds, ConstMap<Object,String> atomMap) {
         StringWriter string=new StringWriter();
         PrintWriter file=new PrintWriter(string);
         new TranslateKodkodToJava(file, formula, bitwidth, atoms, bounds, atomMap);
@@ -100,7 +101,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     private final PrintWriter file;
 
     /** This caches nodes that we have already generated. */
-    private final LinkedHashMap<Node,String> map=new LinkedHashMap<Node,String>();
+    private final IdentityHashMap<Node,String> map=new IdentityHashMap<Node,String>();
 
     /** Given a node, return its name (if no name has been chosen, then make a new name) */
     private String makename(Node obj) {
@@ -178,7 +179,8 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         String result=make(x);
         file.printf("%nSolver solver = new Solver();");
         file.printf("%nsolver.options().setLogTranslation(true);");
-        file.printf("%nsolver.options().setSolver(SATFactory.DefaultSAT4J); // Or \"SATFactory.MiniSatProver\" if you want unsat core");
+        file.printf("%nsolver.options().setSolver(SATFactory.DefaultSAT4J);"
+                   +" // Or \"SATFactory.MiniSatProver\" if you want unsat core");
         file.printf("%nsolver.options().setBitwidth(%d);",bitwidth);
         file.printf("%nsolver.options().setIntEncoding(Options.IntEncoding.BINARY);");
         file.printf("%nSolution sol = solver.solve(%s,bounds);", result);
@@ -195,8 +197,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
                 if (i!=0) file.printf(".product(");
                 Object a=t.atom(i);
                 String b=atomMap==null ? null : atomMap.get(a);
-                String c=(b!=null? b : a.toString());
-                file.printf("factory.tuple(\"%s\")", c);
+                file.printf("factory.tuple(\"%s\")" , (b==null ? a.toString() : b) );
                 if (i!=0) file.printf(")");
             }
             file.printf(");%n");

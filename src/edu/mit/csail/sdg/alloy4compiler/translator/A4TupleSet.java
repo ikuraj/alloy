@@ -39,7 +39,10 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
     /** The kodkodAtom_to_MostSpecificSig map. */
     private final ConstMap<Object,PrimSig> sigMap;
 
-    /** Construct a TupleSet from the kodkod TupleSet, while renaming each atom using the given atomMap. */
+    /**
+     * Construct a TupleSet from the kodkod TupleSet, while renaming each atom using the given atomMap.
+     * <br> NOTE: caller must ensure the Kodkod tupleset is not modified, since we expect the resulting A4Tupleset to be constant.
+     */
     A4TupleSet(TupleSet tuples, ConstMap<Object,String> atomMap, ConstMap<Object,PrimSig> sigMap) {
         this.tuples = tuples;
         this.atomMap = atomMap;

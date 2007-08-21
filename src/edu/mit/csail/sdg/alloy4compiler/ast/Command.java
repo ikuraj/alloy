@@ -18,7 +18,7 @@
  * 02110-1301, USA
  */
 
-package edu.mit.csail.sdg.alloy4compiler.parser;
+package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +27,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 
 /**
  * Immutable; reresents a "run" or "check" command.
@@ -132,7 +130,14 @@ public final class Command {
         this.scope = ConstList.make(scope);
     }
 
-    Command change(Expr newFormula, ConstList<Pair<Sig,Integer>> scope) throws Err {
+    /**
+     * Constructs a new Command object where it is the same as the current object, except with a different formula and scope.
+     * @param newFormula - the formula to be associated with the new command (it must be fully typechecked and unambiguous)
+     * @param scope - Sig-to-Integer map to be associated with the new command (see the "scope" field for its meaning)
+     *
+     * @throws Err if the formula is not already fully-typechecked to be a formula, or is unambiguous
+     */
+    public Command make(Expr newFormula, ConstList<Pair<Sig,Integer>> scope) throws Err {
         return new Command(pos, label, newFormula, check, overall, bitwidth, maxseq, expects, scope);
     }
 }

@@ -21,6 +21,7 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.io.File;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -32,10 +33,12 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
@@ -48,7 +51,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
-import edu.mit.csail.sdg.alloy4compiler.parser.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
@@ -63,19 +65,28 @@ import kodkod.ast.Variable;
 import kodkod.ast.Relation;
 import kodkod.ast.Formula;
 import kodkod.ast.Expression;
+import kodkod.engine.Proof;
+import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.satlab.SATFactory;
+import kodkod.engine.ucore.MinTopStrategy;
 import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
+import kodkod.instance.Bounds;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ONE;
+import static kodkod.engine.Solution.Outcome.TRIVIALLY_UNSATISFIABLE;
+import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
 
 /** Given a World object, solve one or more commands using Kodkod. */
 
 public final class TranslateAlloyToKodkod extends VisitReturn {
+
+    /** The reporter that does nothing. */
+    private static AbstractReporter blankReporter = new AbstractReporter(){};
 
     /**
      * This is used to detect "function recursion" (which we currently do not allow);
@@ -161,7 +172,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final Map<Formula,List<Object>> core=new LinkedHashMap<Formula,List<Object>>();
         final A4Reporter rep=A4Reporter.getReporter();
         rep.debug("Generating bounds...");
-        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(world, opt, cmd, core), skolemType, core);
+        final SafeList<Sig> sigs = world.getAllReachableSigs();
+        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(sigs, opt, cmd, core), skolemType, core);
         Formula kfact = tr.bc.getFacts();
         rep.debug("Generating facts...");
         for(Module u:world.getAllReachableModules()) kfact=tr.makeFacts(u,kfact);
@@ -229,9 +241,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         rep.debug("Simplifying the bounds...");
         if (!tr.bc.simplify(mainformula, solver.options())) mainformula=Formula.FALSE;
         rep.debug("Generating the solution...");
+        long time=System.currentTimeMillis();
         A4Solution mainResult;
         try {
-            mainResult=A4Solution.make(
+            mainResult=make(
                 tr,
                 world,
                 opt,
@@ -258,15 +271,103 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             return null;
         }
         rep.debug("Solution nontrivial...");
-        long t2=mainResult.solvingTime();
+        time=System.currentTimeMillis()-time;
         if (!mainResult.satisfiable()) {
-            rep.resultUNSAT(cmd, t2, mainResult.kInput, mainResult.core());
+            rep.resultUNSAT(cmd, time, mainResult.formula, mainResult.core());
         } else {
             if (xmlFileName!=null && xmlFileName.length()>0) mainResult.writeXML(xmlFileName,true);
-            rep.resultSAT(cmd, t2, mainResult.kInput, xmlFileName);
+            rep.resultSAT(cmd, time, mainResult.formula, xmlFileName);
         }
         return mainResult;
     }
+
+
+
+
+
+
+
+
+
+    /** Construct the first solution from a formula; after this, user would call A4Solution.next() to get the next solution. */
+    private static A4Solution make (TranslateAlloyToKodkod tr, Module world, A4Options opt, Map<Relation,Type> skolem2type, Solver solver, Formula formula,
+    Map<String,String> sources, Command command, boolean tryBookExamples) throws Err, SaveToFileException {
+        final A4Reporter rep=A4Reporter.getReporter();
+        final BoundsComputer bc=tr.bc;
+        final Bounds bounds=bc.getBounds();
+        final String filename=opt.originalFilename;
+        Iterator<Solution> sols;
+        Solution sol = null;
+        IdentitySet<Formula> kCore = null;
+        if (tryBookExamples && solver.options().solver()!=SATFactory.MiniSatProver) {
+            try {
+                sol = BookExamples.trial(world, bc, bounds, formula, solver, command.toString(), filename);
+            } catch(Throwable ex) {
+                sol=null;
+            }
+        }
+        if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
+            sols=null;
+            if (sol==null) {
+                try {
+                    sol=solver.solve(formula,bounds);
+                } catch(Throwable ex) {
+                    if (ex instanceof UnsatisfiedLinkError) throw (UnsatisfiedLinkError)ex;
+                    if (ex instanceof HigherOrderDeclException) throw (HigherOrderDeclException)ex;
+                    if (ex.toString().contains("nosuchprogram") && opt.solver.equals(A4Options.SatSolver.FILE)) throw new SaveToFileException();
+                    throw new ErrorFatal("Solver fatal exception: "+ex,ex);
+                }
+            }
+        } else {
+            sols=solver.solveAll(formula,bounds);
+            if (sol==null) {
+                try {
+                    sol=sols.next();
+                } catch(Throwable ex) {
+                    if (ex instanceof UnsatisfiedLinkError) throw (UnsatisfiedLinkError)ex;
+                    if (ex instanceof HigherOrderDeclException) throw (HigherOrderDeclException)ex;
+                    if (ex.toString().contains("nosuchprogram") && opt.solver.equals(A4Options.SatSolver.FILE)) throw new SaveToFileException();
+                    throw new ErrorFatal("Solver fatal exception: "+ex,ex);
+                }
+                if (sol.outcome()==TRIVIALLY_UNSATISFIABLE || sol.outcome()==UNSATISFIABLE) {
+                    if (solver.options().solver()==SATFactory.MiniSatProver) {
+                        rep.minimizing(command);
+                        try {
+                            kCore=new IdentitySet<Formula>();
+                            Proof p=sol.proof();
+                            if (sol.outcome()==UNSATISFIABLE) {
+                                try { p.minimize(new MinTopStrategy(p.log())); }
+                                catch(UnsupportedOperationException ex) {}
+                            }
+                            for(Formula f:p.highLevelCore()) kCore.add(f);
+                        } catch(Throwable th) {
+                            kCore=null;
+                        }
+                    }
+                }
+            }
+        }
+        solver.options().setReporter(blankReporter); // To ensure no more output during SolutionEnumeration
+        if (!opt.recordKodkod) formula=null;
+        return new A4Solution(
+                world,
+                bc,
+                null,
+                filename,
+                sources,
+                command.toString(),
+                (solver.options().solver()!=SATFactory.ZChaff && solver.options().solver().incremental()) ? sols : null,
+                formula,
+                bounds,
+                solver.options().bitwidth(),
+                sol.instance(), skolem2type, tr.core, kCore);
+    }
+
+
+
+
+
+
 
     /**
      * Based on the specified "options", execute a command from the given "world", then optionally write the result as an XML file.

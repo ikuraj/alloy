@@ -49,8 +49,7 @@ import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
-import edu.mit.csail.sdg.alloy4compiler.parser.Command;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -315,19 +314,17 @@ final class BoundsComputer {
         for(int i=0;i<n;i++) {
             sb.delete(0, sb.length());
             sb.append(name);
-            sb.append('[');
+            sb.append('$');
             String x=Integer.toString(i);
             int xlen=x.length();
             while(xlen<width) {sb.append('0'); xlen++;}
             sb.append(x);
-            sb.append(']');
             x=sb.toString();
             if (list1!=null) list1.add(x);
             if (list2!=null) list2.add(x);
         }
-        // The format of the atoms is "SIGNAME[INDEX]".
+        // The format of the atoms is "SIGNAME$INDEX".
         // By prepending the index with 0 so that they're the same width, we ensure they sort lexicographically.
-        // By using '[' which is illegal in a signature name, we ensure such atoms are unique.
     }
 
     //==============================================================================================================//
@@ -515,13 +512,12 @@ final class BoundsComputer {
     //==============================================================================================================//
 
     /** This method computes the bounds for sigs/fields, then return a BoundsComputer object that you can query. */
-    BoundsComputer(Module world, A4Options options, final Command cmd, final Map<Formula,List<Object>> core) throws Err {
+    BoundsComputer(SafeList<Sig> sigs, A4Options options, final Command cmd, final Map<Formula,List<Object>> core) throws Err {
         this.core=core;
         final A4Reporter rep=A4Reporter.getReporter();
-        final SafeList<Sig> sigs=world.getAllReachableSigs();
         final Set<String> atoms=new LinkedHashSet<String>();
         // Determine the scope and bitwidth
-        final ScopeComputer sc=new ScopeComputer(world, cmd);
+        final ScopeComputer sc=new ScopeComputer(sigs, cmd);
         this.bitwidth=sc.getBitwidth();
         this.maxseq=sc.getMaxSeq();
         // Generate SIGINT atoms
