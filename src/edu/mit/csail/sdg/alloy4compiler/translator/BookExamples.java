@@ -21,8 +21,8 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import static kodkod.engine.Solution.Outcome.SATISFIABLE;
 import static kodkod.engine.Solution.Outcome.TRIVIALLY_SATISFIABLE;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -41,15 +41,15 @@ class BookExamples {
     /** The reporter that does nothing. */
     private static AbstractReporter blankReporter = new AbstractReporter(){};
 
-    private static boolean hasSig(Module m, String label) {
-        for(Sig s:m.getAllSigs()) if (s.label.equals(label)) return true;
+    private static boolean hasSig(SafeList<Sig> sigs, String label) {
+        for(Sig s:sigs) if (s.label.equals(label)) return true;
         return false;
     }
 
     static Solution trial
-    (Module world, BoundsComputer bc, Bounds bounds, Formula formula, Solver solver, String originalCommand, String originalFileName) {
+    (SafeList<Sig> sigs, BoundsComputer bc, Bounds bounds, Formula formula, Solver solver, String originalCommand, String originalFileName) {
         Solution sol=null;
-        if (hasSig(world, "this/Book")) {
+        if (hasSig(sigs, "this/Book")) {
             Tuple B0N0A0 = t_tuple(bc, "Book[0]", "Name[0]", "Addr[0]");
             Tuple B0N1A0 = t_tuple(bc, "Book[0]", "Name[1]", "Addr[0]");
             Tuple B0N2A0 = t_tuple(bc, "Book[0]", "Name[2]", "Addr[0]");
@@ -72,7 +72,7 @@ class BookExamples {
             Tuple B310 = t_tuple(bc, "Book[3]", "Target[1]", "Target[0]");
             Tuple B312 = t_tuple(bc, "Book[3]", "Target[1]", "Target[2]");
             if (sol==null && B000!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.9",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.9",
                     "Book[0]", "", "this/Book", "",
                     "Target[0]", "", "this/Alias", "",
                     "", "this/Group", "",
@@ -80,7 +80,7 @@ class BookExamples {
                     B000, "", "this/Book", "addr",
             });
             if (sol==null && B001!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.10",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.10",
                     "Book[0]", "", "this/Book", "",
                     "", "this/Alias", "",
                     "Target[0]", "", "this/Group", "",
@@ -88,7 +88,7 @@ class BookExamples {
                     B001, B002, "", "this/Book", "addr",
             });
             if (sol==null && B001!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.11",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.11",
                     "Book[0]", "", "this/Book", "",
                     "Target[0]", "", "this/Alias", "",
                     "", "this/Group", "",
@@ -96,7 +96,7 @@ class BookExamples {
                     B001, B002, "", "this/Book", "addr",
             });
             if (sol==null && B001!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.12",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.12",
                     "Book[0]", "", "this/Book", "",
                     "Target[0]", "", "this/Alias", "",
                     "Target[1]", "", "this/Group", "",
@@ -104,7 +104,7 @@ class BookExamples {
                     B001, "", "this/Book", "addr",
             });
             if (sol==null && B010!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.13",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.13",
                     "Book[0]", "Book[1]", "", "this/Book", "",
                     "", "this/Alias", "",
                     "Target[0]", "Target[1]", "", "this/Group", "",
@@ -112,7 +112,7 @@ class BookExamples {
                     B010, B110, B102, "", "this/Book", "addr",
             });
             if (sol==null && B312!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.15",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.15",
                     "Book[0]", "Book[1]", "Book[2]", "Book[3]", "", "this/Book", "",
                     "", "this/Alias", "",
                     "Target[0]", "Target[1]", "", "this/Group", "",
@@ -120,7 +120,7 @@ class BookExamples {
                     B102, B210, B202, B212, B302, B312, "", "this/Book", "addr",
             });
             if (sol==null && B101!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.16",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.16",
                     "Book[0]", "Book[1]", "Book[2]", "Book[3]", "", "this/Book", "",
                     "Target[1]", "", "this/Alias", "",
                     "Target[0]", "", "this/Group", "",
@@ -128,7 +128,7 @@ class BookExamples {
                     B101, "", "this/Book", "addr",
             });
             if (sol==null && B102!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.17",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.17",
                     "Book[0]", "Book[1]", "Book[2]", "Book[3]", "", "this/Book", "",
                     "Target[0]", "", "this/Alias", "",
                     "Target[1]", "", "this/Group", "",
@@ -136,69 +136,69 @@ class BookExamples {
                     B102, B210, B310, B302, "", "this/Book", "addr",
             });
             if (sol==null && B0N0A0!=null && originalCommand.startsWith("Check "))
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.6",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.6",
                     "Book[0]", "Book[1]", "", "this/Book", "",
                     "Addr[0]", "", "this/Addr", "",
                     "Name[0]", "", "this/Name", "",
                     B0N0A0, "", "this/Book", "addr",
             });
             if (sol==null && B1N0A0!=null && originalCommand.startsWith("Run "))
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.4",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.4",
                     "Book[0]", "Book[1]", "", "this/Book", "",
                     "Addr[0]", "", "this/Addr", "",
                     "Name[0]", "", "this/Name", "",
                     B1N0A0, "", "this/Book", "addr",
             });
             if (sol==null && B0N2A1!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.5",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.5",
                     "Book[0]", "Book[1]", "", "this/Book", "",
                     "Addr[0]", "Addr[1]", "", "this/Addr", "",
                     "Name[0]", "Name[1]", "Name[2]", "", "this/Name", "",
                     B0N2A1, B0N1A1, B1N2A1, B1N1A1, B1N0A0, "", "this/Book", "addr",
             });
             if (sol==null && B0N0A0!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.1",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.1",
                     "Book[0]", "", "this/Book", "",
                     "Addr[0]", "", "this/Addr", "",
                     "Name[0]", "", "this/Name", "",
                     B0N0A0, "", "this/Book", "addr",
             });
             if (sol==null && B0N0A0!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.2",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.2",
                     "Book[0]", "", "this/Book", "",
                     "Addr[0]", "", "this/Addr", "",
                     "Name[0]", "Name[1]", "Name[2]", "", "this/Name", "",
                     B0N0A0, B0N1A0, B0N2A0, "", "this/Book", "addr",
             });
             if (sol==null && B0N0A0!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 2.3",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.3",
                     "Book[0]", "", "this/Book", "",
                     "Addr[0]", "Addr[1]", "", "this/Addr", "",
                     "Name[0]", "Name[1]", "Name[2]", "", "this/Name", "",
                     B0N0A0, B0N1A0, B0N2A1, "", "this/Book", "addr",
             });
             if (sol==null && B001!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 5.2",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 5.2",
                     "Book[0]", "Book[1]", "", "this/Book", "",
                     "Target[0]", "", "this/Name", "",
                     "Target[1]", "", "this/Addr", "",
                     B001, B101, "", "this/Book", "addr",
             });
             if (sol==null && B102!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 5.3",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 5.3",
                     "Book[0]", "Book[1]", "", "this/Book", "",
                     "Target[0]", "Target[1]", "", "this/Name", "",
                     "Target[2]", "", "this/Addr", "",
                     B010, B110, B102, "", "this/Book", "addr",
             });
         }
-        else if (hasSig(world, "this/Woman")) {
+        else if (hasSig(sigs, "this/Woman")) {
             Tuple man0_woman0 = t_tuple(bc, "Person[1]", "Person[0]");
             Tuple man1_woman0 = t_tuple(bc, "Person[2]", "Person[0]");
             Tuple man0_woman1 = t_tuple(bc, "Person[1]", "Person[3]");
             Tuple man1_woman1 = t_tuple(bc, "Person[2]", "Person[3]");
             if (sol==null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 4.2",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 4.2",
                     "Person[1]", "", "this/Man", "",
                     "Person[0]", "", "this/Woman", "",
                     man0_woman0, "", "this/Man", "wife",
@@ -206,7 +206,7 @@ class BookExamples {
                     "", "this/Person", "father",
             });
             if (sol==null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 4.3",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 4.3",
                     "Person[1]", "Person[2]", "", "this/Man", "",
                     "Person[0]", "Person[3]", "", "this/Woman", "",
                     man1_woman0, man0_woman1, "", "this/Man", "wife",
@@ -214,7 +214,7 @@ class BookExamples {
                     "", "this/Person", "father",
             });
         }
-        else if (hasSig(world, "this/Process")) {
+        else if (hasSig(sigs, "this/Process")) {
             String p0="Process[0]", p1="Process[1]", p2="Process[2]";
             String t0="Time[0]", t1="Time[1]", t2="Time[2]", t3="Time[3]";
             Tuple s20=t_tuple(bc,p2,p0), s01=t_tuple(bc,p0,p1), s12=t_tuple(bc,p1,p2);
@@ -223,18 +223,18 @@ class BookExamples {
             Tuple d002=t_tuple(bc,p0,p0,t2), d112=t_tuple(bc,p1,p1,t2), d122=t_tuple(bc,p1,p2,t2);
             Tuple d003=t_tuple(bc,p0,p0,t3), d113=t_tuple(bc,p1,p1,t3), d223=t_tuple(bc,p2,p2,t3);
             if (sol==null && d000!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 6.4",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.4",
                 s20, s01, s12, "", "this/Process", "succ",
                 d000,d110,d220,d001,d021,d111,d002,d112,d122,d003,d113,d223,"","this/Process","toSend",
                 t_tuple(bc,p2,t3),"","this/Process","elected",
             });
         }
-        else if (hasSig(world, "this/Desk")) {
+        else if (hasSig(sigs, "this/Desk")) {
             String f="Desk[0]", g0="Guest[0]", g1="Guest[1]", r="Room[0]", k0="Key[0]", k1="Key[1]";
             String t0="Time[0]", t1="Time[1]", t2="Time[2]", t3="Time[3]", t4="Time[4]", t5="Time[5]";
             String c0="Card[0]", c1="Card[1]";
             if (sol==null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig E.3",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig E.3",
                 t_tuple(bc,c0,k0), t_tuple(bc,c1,k1), "", "this/Card", "fst",
                 t_tuple(bc,c0,k1), t_tuple(bc,c1,k0), "", "this/Card", "snd",
                 t_tuple(bc,g0,c0,t1),
@@ -253,7 +253,7 @@ class BookExamples {
                 t_tuple(bc,f,r,k0,t3), t_tuple(bc,f,r,k0,t4), t_tuple(bc,f,r,k0,t5), "", "this/Desk", "prev"
             });
         }
-        else if (hasSig(world, "this/FrontDesk")) {
+        else if (hasSig(sigs, "this/FrontDesk")) {
             String f="FrontDesk[0]", g0="Guest[0]", g1="Guest[1]", r="Room[0]", k0="Key[0]", k1="Key[1]", k2="Key[2]";
             String t0="Time[0]", t1="Time[1]", t2="Time[2]", t3="Time[3]", t4="Time[4]";
             Tuple G0=t_tuple(bc,g0), G1=t_tuple(bc,g1);
@@ -266,7 +266,7 @@ class BookExamples {
             Tuple GK4=t_tuple(bc,g1,k2,t3), GK5=t_tuple(bc,g0,k1,t4), GK6=t_tuple(bc,g1,k2,t4);
             Tuple O1=t_tuple(bc,f,r,g0,t1), O2=t_tuple(bc,f,r,g1,t3), O3=t_tuple(bc,f,r,g1,t4);
             if (sol==null && K0T0!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 6.13",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.13",
                 G0, G1, "", "this/Guest", "",
                 K0, K1, K2, "", "this/Room", "keys",
                 K0T0, K0T1, K0T2, K0T3, K1T4, "", "this/Room", "currentKey",
@@ -282,7 +282,7 @@ class BookExamples {
                 t_tuple(bc,"Event[3]",t3), "", "this/Event", "pre",
             });
             if (sol==null && K0T0!=null)
-                sol=trial(solver, world, bc, formula, bounds, new Object[]{"Fig 6.6",
+                sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.6",
                 G0, G1, "", "this/Guest", "",
                 K0, K1, K2, "", "this/Room", "keys",
                 K0T0, K0T1, K0T2, K0T3, K1T4, "", "this/Room", "currentKey",
@@ -294,7 +294,7 @@ class BookExamples {
         return sol;
     }
 
-    private static Solution trial(Solver solver, Module world, BoundsComputer bc, Formula f, final Bounds bb, Object[] t) {
+    private static Solution trial(Solver solver, SafeList<Sig> sigs, BoundsComputer bc, Formula f, final Bounds bb, Object[] t) {
         try {
             Bounds b = null;
             TupleSet ts = null;
@@ -320,7 +320,7 @@ class BookExamples {
                     i++;
                     String fieldName = (String)(t[i]);
                     Sig first=null;
-                    for(Sig ans:world.getAllSigs()) if (ans.label.equals(sigName)) {first=ans; break;}
+                    for(Sig ans:sigs) if (ans.label.equals(sigName)) {first=ans; break;}
                     if (first==null) return null;
                     Expression expr = null;
                     if (fieldName.length()==0) {

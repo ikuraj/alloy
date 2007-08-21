@@ -296,12 +296,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final BoundsComputer bc=tr.bc;
         final Bounds bounds=bc.getBounds();
         final String filename=opt.originalFilename;
+        final SafeList<Sig> sigs=world.getAllReachableSigs();
         Iterator<Solution> sols;
         Solution sol = null;
         IdentitySet<Formula> kCore = null;
         if (tryBookExamples && solver.options().solver()!=SATFactory.MiniSatProver) {
             try {
-                sol = BookExamples.trial(world, bc, bounds, formula, solver, command.toString(), filename);
+                sol = BookExamples.trial(sigs, bc, bounds, formula, solver, command.toString(), filename);
             } catch(Throwable ex) {
                 sol=null;
             }

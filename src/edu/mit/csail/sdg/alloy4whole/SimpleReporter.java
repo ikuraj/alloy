@@ -49,6 +49,7 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -197,6 +198,7 @@ final class SimpleReporter extends A4Reporter {
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
         final Module world = CompUtil.parseEverything_fromFile(bundleCache, Helper.alloyHome(), rep.mainAlloyFileName);
+        final SafeList<Sig> sigs = world.getAllReachableSigs();
         final SafeList<Command> cmds = world.getAllCommands();
         if (rep.warnings.size()>0) {
             if (rep.warnings.size()>1)
@@ -218,7 +220,7 @@ final class SimpleReporter extends A4Reporter {
             final String outf=tempdir+File.separatorChar+"m.xml";
             rep.log(SAVE2);
             rep.logBold("Generating the metamodel...\n");
-            TranslateAlloyToMetamodel.make(world, options.originalFilename, outf);
+            TranslateAlloyToMetamodel.make(sigs, options.originalFilename, outf);
             rep.log(RESTORE2);
             rep.deleteOnExit(outf);
             rep.declareInstance(outf);
