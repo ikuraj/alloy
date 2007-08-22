@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import nanoxml_2_2_3.XMLElement;
+import kodkod.ast.BinaryExpression;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
@@ -305,12 +306,22 @@ public final class A4Solution {
         try { return evaluator.evaluate(expr); } catch(Throwable ex) { return null; }
     }
 
+    private static void addAllSubrelation(IdentitySet<Relation> set, Expression ex) {
+        while(ex instanceof BinaryExpression) {
+            BinaryExpression b = (BinaryExpression)ex;
+            if (b.op() != BinaryExpression.Operator.UNION && b.op() != BinaryExpression.Operator.PRODUCT) return;
+            addAllSubrelation(set, b.left());
+            ex = b.right();
+        }
+        if (ex instanceof Relation) set.add((Relation)ex);
+    }
+
     /** Convenience helper method that writes out sig "s" and all its fields. */
-    private void process_each_sig(PrintWriter out, Sig s, IdentitySet<Expression> rels, UniqueNameGenerator un) throws Err {
+    private void process_each_sig(PrintWriter out, Sig s, IdentitySet<Relation> rels, UniqueNameGenerator un) throws Err {
         // "univ" and "none" do not need to be generated; SIGINT and SEQIDX will be generated explicitly later.
         if (s.builtin) return;
         Expression r=bc.expr(s);
-        rels.add(r);
+        addAllSubrelation(rels, r);
         TupleSet ts = eval(kEval,r);
         if (ts!=null) {
             if (s instanceof SubsetSig) {
@@ -329,7 +340,7 @@ public final class A4Solution {
         }
         for(Field f:s.getFields()) {
             r=bc.expr(f);
-            rels.add(r);
+            addAllSubrelation(rels,r);
             ts=eval(kEval,r);
             if (ts!=null) writeTS(new A4TupleSet(ts, map, map2sig), out, f.label, f.type, un);
         }
@@ -449,7 +460,12 @@ public final class A4Solution {
             throw new ErrorAPI("writeXML failed: "+ex);
         }
         final UniqueNameGenerator un=new UniqueNameGenerator();
-        final IdentitySet<Expression> rels=bc.getDiscards();
+        final IdentitySet<Relation> rels=new IdentitySet<Relation>();
+        rels.add(BoundsComputer.SEQ_SEQIDX);
+        rels.add(BoundsComputer.SIGINT_MAX);
+        rels.add(BoundsComputer.SIGINT_MIN);
+        rels.add(BoundsComputer.SIGINT_NEXT);
+        rels.add(BoundsComputer.SIGINT_ZERO);
         // Write out all user-defined Sig(s) and their Field(s)
         Util.encodeXMLs(out, "\n<alloy builddate=\"",
             Version.buildDate(), "\">\n\n<instance filename=\"",

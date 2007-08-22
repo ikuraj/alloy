@@ -19,13 +19,11 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.IdentityHashMap;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -65,137 +63,144 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 final class ScopeComputer {
 
-    //==============================================================================================================//
-    /** Stores the command that we're computing the scope for. */
-
+    /** The command that we're computing the scope for. */
     private final Command cmd;
 
-    //==============================================================================================================//
-    /** Stores the reporter that we should send the diagnostics messages to. */
+    /** The bitwidth. */
+    private final int bitwidth;
 
-    private final A4Reporter rep;
+    /** The maximum sequence length. */
+    private final int maxseq;
 
-    //==============================================================================================================//
-    /** Stores the scope for each sig. */
+    /** The scope for each sig. */
+    private final IdentityHashMap<PrimSig,Integer> sig2scope = new IdentityHashMap<PrimSig,Integer>();
 
-    private final Map<PrimSig,Integer> sig2scope = new LinkedHashMap<PrimSig,Integer>();
+    /** The sig's scope is exact iff it is in this set. */
+    private final IdentitySet<Sig> exact = new IdentitySet<Sig>();
 
-    int sig2scope(Sig sig) { Integer y=sig2scope.get(sig); if (y==null) return -1; return y; }
+    //===========================================================================================================================//
 
-    private void sig2scope(Sig sig, int newValue) throws Err {
+    /** Returns the integer bitwidth. */
+    int getBitwidth() { return bitwidth; }
+
+    /** Returns the maximum allowed sequence length. */
+    int getMaxSeq() { return maxseq; }
+
+    /** Returns the scope for a sig (or -1 if we don't know). */
+    int sig2scope(Sig sig) { Integer y=sig2scope.get(sig); if (y==null) return -1; else return y; }
+
+    /** Returns whether the scope of a sig is exact or not. */
+    boolean isExact(Sig sig) { return (sig instanceof PrimSig) && exact.contains(sig); }
+
+    /** Sets the scope for a sig. */
+    private void sig2scope(A4Reporter rep, Sig sig, int newValue) throws Err {
         if (sig.builtin)
-            throw new ErrorSyntax(cmd.pos, "You cannot specify a scope for the builtin signature \""+sig+"\"");
+           throw new ErrorSyntax(cmd.pos, "Cannot specify a scope for the builtin signature \""+sig+"\"");
         if (sig instanceof SubsetSig)
-            throw new ErrorSyntax(cmd.pos, "Can not specify a scope for a subset signature \""+sig+"\"");
+           throw new ErrorSyntax(cmd.pos, "Cannot specify a scope for a subset signature \""+sig+"\"");
         if (newValue<0)
-            throw new ErrorSyntax(cmd.pos, "Sig \""+sig+"\" cannot have a negative scope");
+           throw new ErrorSyntax(cmd.pos, "Cannot specify a negative scope for sig \""+sig+"\"");
         int old=sig2scope(sig);
         if (old==newValue) return;
         if (old>=0)
-            throw new ErrorSyntax(cmd.pos, "Sig \""+sig+"\" already has a scope of "
-            +old+", so we cannot set it to be "+newValue);
-        sig2scope.put((PrimSig)sig,newValue);
+           throw new ErrorSyntax(cmd.pos, "Sig \""+sig+"\" already has a scope of "+old+", so we cannot set it to be "+newValue);
+        sig2scope.put((PrimSig)sig, newValue);
         rep.scope("Sig "+sig+" scope <= "+newValue+"\n");
     }
 
-    //==============================================================================================================//
-    /** Stores the exactness of each sig's scope. */
-
-    private final Set<PrimSig> exact = new LinkedHashSet<PrimSig>();
-
-    boolean isExact(Sig sig) { if (sig instanceof PrimSig) return exact.contains(sig); else return false; }
-
+    /** Make the given sig "exact". */
     private void makeExact(Sig sig) throws Err {
-        if (sig instanceof SubsetSig)
-            throw new ErrorSyntax(cmd.pos, "Can not specify a scope for a subset signature \""+sig+"\"");
+        if (sig instanceof SubsetSig) throw new ErrorSyntax(cmd.pos, "Cannot specify a scope for a subset signature \""+sig+"\"");
         exact.add((PrimSig)sig);
     }
 
-    //==============================================================================================================//
-    /** Stores the integer bitwidth */
-
-    private final int bitwidth;
-
-    int getBitwidth() { return bitwidth; }
-
-    //==============================================================================================================//
-    /** Stores the scope on sequence. */
-
-    private final int maxseq;
-
-    int getMaxSeq() { return maxseq; }
-
-    //==============================================================================================================//
-
-    // If A is abstract, unscoped, and all children are scoped, then we can derive A' scope.
-    // If A is abstract, scoped, and every child is scoped except one, then we can derive that child's scope.
-    private boolean derive_abstract_scope (Iterable<Sig> sigs) throws Err {
-        boolean changed=false;
-        again:
-        for(Sig s:sigs) if (!s.builtin && (s instanceof PrimSig) && s.isAbstract!=null) {
-            SafeList<PrimSig> subs = ((PrimSig)s).children();
-            if (subs.size()==0) continue;
-            int sn=sig2scope(s);
-            if (sn<0) {
-                int sum=0;
-                for(Sig c:subs) { int cn=sig2scope(c); if (cn>=0) sum=sum+cn; else continue again; }
-                sig2scope(s,sum);
-                changed=true;
-            } else {
-                int sum=0;
-                Sig cc=null;
-                for(Sig c:subs) { int cn=sig2scope(c); if (cn>=0) sum=sum+cn; else if (cc==null) cc=c; else continue again; }
-                if (cc!=null) { sig2scope(cc, (sn<sum) ? 0 : sn-sum); changed=true; }
-            }
+    /**
+     * Compute the sum of all "exact" scope of the given sig and its descendents
+     * <p> Precondition: sig must not be UNIV
+     */
+    private int sum(PrimSig sig) throws Err {
+        int min=isExact(sig) ? sig2scope(sig) : 0;
+        int submin=0;
+        for(PrimSig c:sig.children()) {
+            int tmp=sum(c);
+            if (tmp<0) throw new ErrorSyntax(cmd.pos, "The number of atoms exceeds the internal limit of "+Integer.MAX_VALUE);
+            submin=submin+tmp;
+            if (submin<0) throw new ErrorSyntax(cmd.pos, "The number of atoms exceeds the internal limit of "+Integer.MAX_VALUE);
         }
-        return changed;
+        return (min<submin) ? submin : min;
     }
 
-    //==============================================================================================================//
+    //===========================================================================================================================//
 
-    // If A is toplevel, and we haven't been able to derive its scope yet, then let it get the "overall" scope.
-    //
-    // After 1 or more execution of this method, every toplevel sig will be scoped
-    // (Or else this method would have thrown an exception)
-    private boolean derive_overall_scope(Iterable<Sig> sigs) throws Err {
+    /**
+     * If A is abstract, unscoped, and all children are scoped, then set A's scope to be the sum;
+     * if A is abstract, scoped, and every child except one is scoped, then set that child's scope to be the difference.
+     */
+    private boolean derive_abstract_scope (A4Reporter rep, Iterable<Sig> sigs) throws Err {
+       boolean changed=false;
+       again:
+       for(Sig s:sigs) if (!s.builtin && (s instanceof PrimSig) && s.isAbstract!=null) {
+          SafeList<PrimSig> subs = ((PrimSig)s).children();
+          if (subs.size()==0) continue;
+          Sig missing=null;
+          int sum=0;
+          for(Sig c:subs) {
+             int cn=sig2scope(c);
+             if (cn<0) { if (missing==null) { missing=c; continue; } else { continue again; } }
+             sum=sum+cn;
+             if (sum<0) throw new ErrorSyntax(cmd.pos, "The number of atoms exceeds the internal limit of "+Integer.MAX_VALUE);
+          }
+          int sn=sig2scope(s);
+          if (sn<0) {
+             if (missing!=null) continue;
+             sig2scope(rep,s,sum);
+             changed=true;
+          } else if (missing!=null) {
+             sig2scope(rep, missing, (sn<sum) ? 0 : sn-sum);
+             changed=true;
+          }
+       }
+       return changed;
+    }
+
+    //===========================================================================================================================//
+
+    /**
+     * If A is toplevel, and we haven't been able to derive its scope yet, then let it get the "overall" scope.
+     */
+    private boolean derive_overall_scope (A4Reporter rep, Iterable<Sig> sigs) throws Err {
         boolean changed=false;
-        final int overall;
-        if (cmd.overall<0 && cmd.scope.size()==0) overall=3; else overall=cmd.overall;
+        final int overall = (cmd.overall<0 && cmd.scope.size()==0) ? 3 : cmd.overall;
         for(Sig s:sigs) if (!s.builtin && s.isTopLevel() && sig2scope(s)<0) {
-           if (overall<0) throw new ErrorSyntax(cmd.pos,"No scope specified for top-level type "+s+" in command.");
-           sig2scope(s, overall);
-           changed=true;
+            if (overall<0) throw new ErrorSyntax(cmd.pos, "You must specify a scope for sig \""+s+"\"");
+            sig2scope(rep, s, overall);
+            changed=true;
         }
         return changed;
     }
 
-    //==============================================================================================================//
+    //===========================================================================================================================//
 
-    // If A is not toplevel, and we haven't been able to derive its scope yet, then give it its parent's scope.
-    //
-    // After 1 execution of this method, every subsig will be scoped.
-    // (Or else this method would have thrown an exception)
-    private void derive_scope_from_parent(Iterable<Sig> sigs) throws Err {
-        while(true) {
-            boolean changed=false;
-            Sig trouble=null;
-            for(Sig s:sigs) if (!s.builtin && !s.isTopLevel() && sig2scope(s)<0 && (s instanceof PrimSig)) {
-                PrimSig p=((PrimSig)s).parent;
-                int pb=sig2scope(p);
-                if (pb>=0) {sig2scope(s,pb); changed=true;} else trouble=s;
-            }
-            if (!changed) {
-                if (trouble==null) return;
-                throw new ErrorSyntax(cmd.pos,"No scope specified for subsignature \""+trouble+"\"");
-            }
+    /**
+     * If A is not toplevel, and we haven't been able to derive its scope yet, then give it its parent's scope.
+     */
+    private boolean derive_scope_from_parent (A4Reporter rep, Iterable<Sig> sigs) throws Err {
+        boolean changed=false;
+        Sig trouble=null;
+        for(Sig s:sigs) if (!s.builtin && !s.isTopLevel() && sig2scope(s)<0 && (s instanceof PrimSig)) {
+           PrimSig p=((PrimSig)s).parent;
+           int pb=sig2scope(p);
+           if (pb>=0) {sig2scope(rep,s,pb); changed=true;} else trouble=s;
         }
+        if (changed) return true;
+        if (trouble==null) return false;
+        throw new ErrorSyntax(cmd.pos,"You must specify a scope for sig \""+trouble+"\"");
     }
 
-    //==============================================================================================================//
+    //===========================================================================================================================//
 
-    /** Compute the scopes of "world", based on the settings in the "cmd", then log messages into "options.logger". */
-    ScopeComputer(SafeList<Sig> sigs, Command cmd) throws Err {
-        this.rep=A4Reporter.getReporter();
+    /** Compute the scopes of "world", based on the settings in the "cmd", then log messages to the reporter. */
+    ScopeComputer(A4Reporter rep, SafeList<Sig> sigs, Command cmd) throws Err {
         this.cmd=cmd;
         // Process each sig listed in the command
         for(Pair<Sig,Integer> entry:cmd.scope) {
@@ -209,33 +214,33 @@ final class ScopeComputer {
                     +"The number of atoms in Int is always exactly equal to 2^(integer bitwidth).\n");
             if (s==SEQIDX) throw new ErrorSyntax(cmd.pos,
                     "You cannot set a scope on \"seq/Int\". "
-                    +"To set the number of sequence atoms, use the seq keyword.\n");
+                    +"To set the maximum allowed sequence length, use the seq keyword.\n");
             if (s==NONE) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on \"none\".");
-            if (exact) makeExact(s);
             if (s.isOne!=null && scope!=1) throw new ErrorSyntax(cmd.pos,
                 "Sig \""+s+"\" has the multiplicity of \"one\", so its scope must be 1, and cannot be "+scope);
             if (s.isLone!=null && scope>1) throw new ErrorSyntax(cmd.pos,
                 "Sig \""+s+"\" has the multiplicity of \"lone\", so its scope must 0 or 1, and cannot be "+scope);
             if (s.isSome!=null && scope<1) throw new ErrorSyntax(cmd.pos,
                 "Sig \""+s+"\" has the multiplicity of \"some\", so its scope must 1 or above, and cannot be "+scope);
-            sig2scope(s, scope);
+            sig2scope(rep, s, scope);
+            if (exact) makeExact(s);
         }
         // Force "one" sigs to be exactly one, and "lone" to be at most one
         for(Sig s:sigs) if (s instanceof PrimSig) {
-            if (s.isOne!=null) { makeExact(s); sig2scope(s,1); } else if (s.isLone!=null && sig2scope(s)!=0) sig2scope(s,1);
+            if (s.isOne!=null) { makeExact(s); sig2scope(rep,s,1); } else if (s.isLone!=null && sig2scope(s)!=0) sig2scope(rep,s,1);
         }
         // Derive the implicit scopes
         while(true) {
-            if (derive_abstract_scope(sigs)) continue;
-            if (derive_overall_scope(sigs)) continue;
-            derive_scope_from_parent(sigs);
+            if (derive_abstract_scope(rep,sigs)) continue;
+            if (derive_overall_scope(rep,sigs)) continue;
+            if (derive_scope_from_parent(rep,sigs)) continue;
             break;
         }
         // Set the initial scope on "int" and "Int" and "seq"
         int maxseq=cmd.maxseq, bitwidth=cmd.bitwidth;
         if (bitwidth<0) bitwidth=4;
-        if (bitwidth<1) throw new ErrorSyntax(cmd.pos, "Cannot specify a bitwidth of 0");
-        if (bitwidth>30) throw new ErrorSyntax(cmd.pos, "Cannot specify a bitwidth of greater than 30");
+        if (bitwidth<1) throw new ErrorSyntax(cmd.pos, "Cannot specify a bitwidth less than 1");
+        if (bitwidth>30) throw new ErrorSyntax(cmd.pos, "Cannot specify a bitwidth greater than 30");
         sig2scope.put(SIGINT, 1<<bitwidth);
         int max=(1<<(bitwidth-1))-1;
         this.bitwidth=bitwidth;
@@ -246,13 +251,17 @@ final class ScopeComputer {
             if (maxseq>max) maxseq=max;
         }
         this.maxseq=maxseq;
+        sig2scope.put(SEQIDX, maxseq);
         // Bump up the scope from below
         for(Sig s:sigs) if (s instanceof PrimSig && !s.builtin) {
             PrimSig realS=(PrimSig)s;
-            int min=minimum(realS), old=sig2scope(s);
+            int min=sum(realS), old=sig2scope(s);
             if (old<min) {
                 sig2scope.put(realS,min);
-                rep.scope("Sig "+s+" scope raised from <="+old+" to be <="+min+"\n");
+                if (isExact(s))
+                    rep.scope("Sig "+s+" scope raised from =="+old+" to be =="+min+"\n");
+                else
+                    rep.scope("Sig "+s+" scope raised from <="+old+" to be <="+min+"\n");
             }
         }
         // Add special overrides for ordered sigs
@@ -266,17 +275,5 @@ final class ScopeComputer {
         }
     }
 
-    //==============================================================================================================//
-
-    /**
-     * Compute the sum of all "exact" bounds of the given sig's descendents.
-     * <p> Precondition: sig must not be UNIV
-     */
-    private int minimum(PrimSig sig) throws Err {
-        int min=isExact(sig) ? sig2scope(sig) : 0;
-        int submin=0;
-        for(PrimSig c:sig.children()) submin=submin+minimum(c);
-        if (min<submin) min=submin;
-        return (min>0) ? min : 0;
-    }
+    //===========================================================================================================================//
 }

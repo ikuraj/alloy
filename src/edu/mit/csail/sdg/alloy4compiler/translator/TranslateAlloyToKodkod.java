@@ -56,6 +56,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import kodkod.ast.BinaryFormula;
+import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
@@ -73,7 +74,9 @@ import kodkod.engine.ucore.MinTopStrategy;
 import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
+import kodkod.engine.fol2sat.Translator;
 import kodkod.instance.Bounds;
+import kodkod.instance.TupleSet;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
@@ -92,22 +95,22 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * This is used to detect "function recursion" (which we currently do not allow);
      * also, by knowing the current function name, we can provide a more meaningful name for skolem variables
      */
-    private final List<Func> current_function=new ArrayList<Func>();
+    private final List<Func> current_function = new ArrayList<Func>();
 
     /**
      * This is used to provide a more meaningful name for skolem variables (when we are not inside a function);
      * when we are inside a function, then the function's name is used to provide the prefix for skolem variables.
      */
-    private String current_command="";
+    private String current_command = "";
 
     /** This map keeps track of the mapping from local variables (LET, QUANT, Function Param) to the actual value. */
-    private Env<ExprVar,Object> env=new Env<ExprVar,Object>();
+    private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
-    /** This map keeps track of the mapping from Kodkod Decl to the original Union Type and the original Pos. */
+    /** This map keeps track of the mapping from Kodkod Decl to the original Type and the original Pos. */
     private final Map<Decl,Pair<Type,Pos>> skolemType;
 
     /** This map keeps track of the mapping from Kodkod Skolem to the original Union Type. */
-    private final Map<Relation,Type> skolemRelType=new IdentityHashMap<Relation,Type>();
+    private final Map<Relation,Type> skolemRelType = new IdentityHashMap<Relation,Type>();
 
     /** The Kodkod-to-Alloy map. */
     final Map<Formula,List<Object>> core;
@@ -165,6 +168,37 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     //==============================================================================================================//
 
+    /** Simplify the bounds based on the fact that "a is subset of b"; return false if we discover the formula is unsat. */
+    private static boolean simplify_in(Bounds bounds, Expression a, Expression b, Options opt) {
+        if (a instanceof Relation) {
+            Relation r=(Relation)a;
+            TupleSet u=bounds.upperBound(r);
+            TupleSet l=bounds.lowerBound(r);
+            TupleSet t=u.universe().factory().setOf(b.arity(), Translator.approximate(b,bounds,opt).denseIndices());
+            t.retainAll(u);
+            if (!t.containsAll(l)) return false; // This means the upperbound is shrunk BELOW the lowerbound.
+            bounds.bound(r,l,t);
+        }
+        return true;
+    }
+
+    /** Simplify the bounds based on the fact that "form is true"; return false if we discover the formula is unsat. */
+    private static boolean simplify(Bounds bounds, Formula form, Options opt) {
+        boolean flag1=true, flag2=true;
+        if (form instanceof BinaryFormula) {
+            BinaryFormula f=(BinaryFormula)form;
+            if (f.op() == BinaryFormula.Operator.AND) {
+                flag1=simplify(bounds, f.left(), opt);
+                flag2=simplify(bounds, f.right(), opt);
+            }
+        } else if (form instanceof ComparisonFormula) {
+            ComparisonFormula f=(ComparisonFormula)form;
+            flag1=simplify_in(bounds, f.left(), f.right(), opt);
+            if (f.op() == ComparisonFormula.Operator.EQUALS) flag2=simplify_in(bounds, f.right(), f.left(), opt);
+        }
+        return flag1 && flag2;
+    }
+
     private static A4Solution helper
     (final Map<Decl,Pair<Type,Pos>> skolemType, final Module world, Command cmd, final A4Options opt,
     Map<String,String> originalSources, String xmlFileName, String tempFileName, boolean tryBookExamples)
@@ -173,7 +207,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final A4Reporter rep=A4Reporter.getReporter();
         rep.debug("Generating bounds...");
         final SafeList<Sig> sigs = world.getAllReachableSigs();
-        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(sigs, opt, cmd, core), skolemType, core);
+        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(rep,sigs,opt,cmd,core), skolemType, core);
         Formula kfact = tr.bc.getFacts();
         rep.debug("Generating facts...");
         for(Module u:world.getAllReachableModules()) kfact=tr.makeFacts(u,kfact);
@@ -239,7 +273,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             }
         });
         rep.debug("Simplifying the bounds...");
-        if (!tr.bc.simplify(mainformula, solver.options())) mainformula=Formula.FALSE;
+        if (!simplify(tr.bc.getBounds(), mainformula, solver.options())) mainformula=Formula.FALSE;
         rep.debug("Generating the solution...");
         long time=System.currentTimeMillis();
         A4Solution mainResult;
