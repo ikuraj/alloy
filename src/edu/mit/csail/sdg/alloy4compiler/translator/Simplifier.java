@@ -41,7 +41,7 @@ import kodkod.instance.TupleSet;
  * <p> (2) When it sees "A = B", it will try to simplify A assuming "A in B", and then simplify B assuming "B in A".
  */
 
-class Simplifier {
+final class Simplifier {
 
     /** Constructor is private, since this class never needs to be instantiated. */
     private Simplifier() { }

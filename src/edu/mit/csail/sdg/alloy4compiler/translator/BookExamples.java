@@ -45,7 +45,7 @@ import kodkod.instance.TupleSet;
  * nondeterminism of SAT solving.
  */
 
-class BookExamples {
+final class BookExamples {
 
     /** The reporter that does nothing. */
     private static AbstractReporter blankReporter = new AbstractReporter(){};
