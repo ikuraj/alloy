@@ -20,10 +20,10 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -107,7 +107,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     private String makename(Node obj) {
         if (map.containsKey(obj)) return null;
         String name="x"+(map.size());
-        map.put(obj,name);
+        map.put(obj, name);
         return name;
     }
 
@@ -118,32 +118,35 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     private TranslateKodkodToJava
     (PrintWriter pw, Formula x, int bitwidth, Iterator<Object> atoms, Bounds bounds, Map<Object,String> atomMap) {
         file=pw;
-        file.print("import java.util.Arrays;\n");
-        file.print("import java.util.List;\n");
-        file.print("import kodkod.ast.*;\n");
-        file.print("import kodkod.instance.*;\n");
-        file.print("import kodkod.engine.*;\n");
-        file.print("import kodkod.engine.satlab.SATFactory;\n");
-        file.print("import kodkod.engine.config.Options;\n\n");
-        file.print("public final class Test {\n\n");
-        file.print("public static void main(String[] args) throws Exception {\n\n");
+        file.printf("import java.util.Arrays;%n");
+        file.printf("import java.util.List;%n");
+        file.printf("import kodkod.ast.*;%n");
+        file.printf("import kodkod.instance.*;%n");
+        file.printf("import kodkod.engine.*;%n");
+        file.printf("import kodkod.engine.satlab.SATFactory;%n");
+        file.printf("import kodkod.engine.config.Options;%n%n");
+        file.printf("public final class Test {%n%n");
+        file.printf("public static void main(String[] args) throws Exception {%n%n");
         ArrayList<String> atomlist=new ArrayList<String>();
         while(atoms.hasNext()) {
             Object a = atoms.next();
             String b = atomMap==null ? null : atomMap.get(a);
             atomlist.add(b==null ? a.toString() : b);
         }
+        Collections.sort(atomlist);
         for(Relation r:bounds.relations()) {
             String name=makename(r);
-            file.printf("Relation %s = Relation.nary(\"%s\", %d);%n", name, r.name(), r.arity());
+            int a=r.arity();
+            if (a==1)
+                file.printf("Relation %s = Relation.unary(\"%s\");%n", name, r.name());
+            else
+                file.printf("Relation %s = Relation.nary(\"%s\", %d);%n", name, r.name(), a);
         }
-        Collections.sort(atomlist);
         file.printf("%nList<String> atomlist = Arrays.asList(%n");
         int j=(-1);
         for(String a:atomlist) {
             if (j!=(-1)) file.printf(","); else j=0;
-            if (j==5) {file.printf("%n "); j=0;}
-            else {file.printf(" ");j++;}
+            if (j==5) {file.printf("%n "); j=0;} else {file.printf(" "); j++;}
             file.printf("\"%s\"", a);
         }
         file.printf("%n);%n%n");
@@ -168,11 +171,11 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
         for(IndexedEntry<TupleSet> i:bounds.intBounds()) {
             for(Tuple t:i.value()) {
-                Object a=t.atom(0);
-                String b=atomMap==null ? null : atomMap.get(a);
-                String c=(b!=null? b : a.toString());
+                Object a = t.atom(0);
+                String b = (atomMap!=null ? atomMap.get(a) : null);
+                String c = (b!=null? b : a.toString());
                 file.printf("bounds.boundExactly(%d,factory.range("
-                +"factory.tuple(\"%s\"),factory.tuple(\"%s\")));%n", i.index(), c, c);
+                    +"factory.tuple(\"%s\"),factory.tuple(\"%s\")));%n", i.index(), c, c);
             }
         }
         file.printf("%n");
@@ -183,12 +186,15 @@ public final class TranslateKodkodToJava implements VoidVisitor {
                    +" // Or \"SATFactory.MiniSatProver\" if you want unsat core");
         file.printf("%nsolver.options().setBitwidth(%d);",bitwidth);
         file.printf("%nsolver.options().setIntEncoding(Options.IntEncoding.BINARY);");
+        file.printf("%nsolver.options().setSymmetryBreaking(20);");
+        file.printf("%nsolver.options().setSkolemDepth(0);");
         file.printf("%nSolution sol = solver.solve(%s,bounds);", result);
         file.printf("%nSystem.out.println(sol.toString());");
         file.printf("%n}}%n");
         file.close();
     }
 
+    /** Print the tupleset using the name n. */
     private void printTupleset(String n, TupleSet ts, Map<Object,String> atomMap) {
         file.printf("TupleSet %s = factory.noneOf(%d);%n", n, ts.arity());
         for(Tuple t:ts) {
@@ -204,10 +210,12 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(Relation x) {
         if (!map.containsKey(x)) throw new RuntimeException("Unknown kodkod relation \""+x.name()+"\" encountered");
     }
 
+    /** {@inheritDoc} */
     public void visit(BinaryExpression x) {
         String newname=makename(x); if (newname==null) return;
         String left=make(x.left());
@@ -223,6 +231,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(ComparisonFormula x) {
         String newname=makename(x); if (newname==null) return;
         String left=make(x.left());
@@ -234,6 +243,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(ProjectExpression x) {
         String newname=makename(x); if (newname==null) return;
         String expr=make(x.expression());
@@ -243,9 +253,10 @@ public final class TranslateKodkodToJava implements VoidVisitor {
             if (i==0) file.printf("Expression %s=%s.over(", newname, expr); else file.printf(",");
             file.printf("%s", names.get(i));
         }
-        file.printf(";%n");
+        file.printf(");%n");
     }
 
+    /** {@inheritDoc} */
     public void visit(IntComparisonFormula x) {
         String newname=makename(x); if (newname==null) return;
         String left=make(x.left());
@@ -260,6 +271,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(BinaryFormula x) {
         String newname=makename(x); if (newname==null) return;
         String left=make(x.left());
@@ -267,12 +279,14 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         switch(x.op()) {
            case AND: file.printf("Formula %s=%s.and(%s);%n", newname, left, right); break;
            case OR: file.printf("Formula %s=%s.or(%s);%n", newname, left, right); break;
+           case XOR: file.printf("Formula %s=%s.xor(%s);%n", newname, left, right); break;
            case IMPLIES: file.printf("Formula %s=%s.implies(%s);%n", newname, left, right); break;
            case IFF: file.printf("Formula %s=%s.iff(%s);%n", newname, left, right); break;
            default: throw new RuntimeException("Unknown kodkod operator \""+x.op()+"\" encountered");
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(BinaryIntExpression x) {
         String newname=makename(x); if (newname==null) return;
         String left=make(x.left());
@@ -282,10 +296,18 @@ public final class TranslateKodkodToJava implements VoidVisitor {
            case MINUS: file.printf("IntExpression %s=%s.minus(%s);%n", newname, left, right); break;
            case MULTIPLY: file.printf("IntExpression %s=%s.multiply(%s);%n", newname, left, right); break;
            case DIVIDE: file.printf("IntExpression %s=%s.divide(%s);%n", newname, left, right); break;
+           case MODULO: file.printf("IntExpression %s=%s.modulo(%s);%n", newname, left, right); break;
+           case AND: file.printf("IntExpression %s=%s.and(%s);%n", newname, left, right); break;
+           case OR: file.printf("IntExpression %s=%s.or(%s);%n", newname, left, right); break;
+           case XOR: file.printf("IntExpression %s=%s.xor(%s);%n", newname, left, right); break;
+           case SHA: file.printf("IntExpression %s=%s.sha(%s);%n", newname, left, right); break;
+           case SHL: file.printf("IntExpression %s=%s.shl(%s);%n", newname, left, right); break;
+           case SHR: file.printf("IntExpression %s=%s.shr(%s);%n", newname, left, right); break;
            default: throw new RuntimeException("Unknown kodkod operator \""+x.op()+"\" encountered");
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(UnaryIntExpression x) {
         String newname=makename(x); if (newname==null) return;
         String sub=make(x.expression());
@@ -298,6 +320,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(UnaryExpression x) {
         String newname=makename(x); if (newname==null) return;
         String sub=make(x.expression());
@@ -309,6 +332,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(IfExpression x) {
         String newname=makename(x); if (newname==null) return;
         String a=make(x.condition());
@@ -317,6 +341,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("Expression %s=%s.thenElse(%s,%s);%n", newname, a, b, c);
     }
 
+    /** {@inheritDoc} */
     public void visit(IfIntExpression x) {
         String newname=makename(x); if (newname==null) return;
         String a=make(x.condition());
@@ -325,18 +350,21 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("IntExpression %s=%s.thenElse(%s,%s);%n", newname, a, b, c);
     }
 
+    /** {@inheritDoc} */
     public void visit(NotFormula x) {
         String newname=makename(x); if (newname==null) return;
         String sub=make(x.formula());
         file.printf("Formula %s=%s.not();%n", newname, sub);
     }
 
+    /** {@inheritDoc} */
     public void visit(IntToExprCast x) {
         String newname=makename(x); if (newname==null) return;
         String sub=make(x.intExpr());
         file.printf("Expression %s=%s.toExpression();%n", newname, sub);
     }
 
+    /** {@inheritDoc} */
     public void visit(ExprToIntCast x) {
         String newname=makename(x); if (newname==null) return;
         String sub=make(x.expression());
@@ -347,17 +375,20 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(IntConstant x) {
         String newname=makename(x); if (newname==null) return;
         file.printf("IntExpression %s=IntConstant.constant(%d);%n", newname, x.value());
     }
 
+    /** {@inheritDoc} */
     public void visit(ConstantFormula x) {
         if (map.containsKey(x)) return;
         String newname=(x.booleanValue() ? "Formula.TRUE" : "Formula.FALSE");
         map.put(x,newname);
     }
 
+    /** {@inheritDoc} */
     public void visit(ConstantExpression x) {
         if (map.containsKey(x)) return;
         String newname=null;
@@ -369,11 +400,17 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         map.put(x,newname);
     }
 
+    /** {@inheritDoc} */
     public void visit(Variable x) {
         String newname=makename(x); if (newname==null) return;
-        file.printf("Variable %s=Variable.nary(\"%s\",%d);%n", newname, x.name(), x.arity());
+        int a=x.arity();
+        if (a==1)
+            file.printf("Variable %s=Variable.unary(\"%s\");%n", newname, x.name());
+        else
+            file.printf("Variable %s=Variable.nary(\"%s\",%d);%n", newname, x.name(), a);
     }
 
+    /** {@inheritDoc} */
     public void visit(Comprehension x) {
         String newname=makename(x); if (newname==null) return;
         String d=make(x.declarations());
@@ -381,6 +418,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("Expression %s=%s.comprehension(%s);%n",newname,f,d);
     }
 
+    /** {@inheritDoc} */
     public void visit(QuantifiedFormula x) {
         String newname=makename(x); if (newname==null) return;
         String d=make(x.declarations());
@@ -392,6 +430,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(SumExpression x) {
         String newname=makename(x); if (newname==null) return;
         String d=make(x.declarations());
@@ -399,6 +438,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("IntExpression %s=%s.sum(%s);%n",newname,f,d);
     }
 
+    /** {@inheritDoc} */
     public void visit(MultiplicityFormula x) {
         String newname=makename(x); if (newname==null) return;
         String sub=make(x.expression());
@@ -411,6 +451,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(Decl x) {
         String newname=makename(x); if (newname==null) return;
         String v=make(x.variable());
@@ -424,6 +465,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     public void visit(Decls x) {
         String newname=makename(x); if (newname==null) return;
         for (Decl y:x) { y.accept(this); }
@@ -436,6 +478,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf(";%n");
     }
 
+    /** {@inheritDoc} */
     public void visit(RelationPredicate x) {
         String newname=makename(x); if (newname==null) return;
         String rel=make(x.relation());
@@ -453,12 +496,12 @@ public final class TranslateKodkodToJava implements VoidVisitor {
              String domain=make(tp.domain());
              String range=make(tp.range());
              switch(((RelationPredicate.Function)x).targetMult()) {
-               case ONE: file.printf("Formula %s=%s.function(%s,%s);%n",newname,rel,domain,range); break;
-               case LONE: file.printf("Formula %s=%s.functional(%s,%s);%n",newname,rel,domain,range); break;
+               case ONE: file.printf("Formula %s=%s.function(%s,%s);%n",newname,rel,domain,range); return;
+               case LONE: file.printf("Formula %s=%s.functional(%s,%s);%n",newname,rel,domain,range); return;
                default: throw new RuntimeException("Illegal multiplicity encountered in RelationPredicate.Function");
              }
           }
-          case ACYCLIC: file.printf("Formula %s=%s.acyclic();%n",newname,rel);
+          case ACYCLIC: { file.printf("Formula %s=%s.acyclic();%n",newname,rel); return; }
         }
         throw new RuntimeException("Unknown RelationPredicate \""+x+"\" encountered");
     }
