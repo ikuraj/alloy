@@ -20,14 +20,15 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.io.File;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -55,6 +56,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
+import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Decl;
@@ -145,25 +147,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private final int bitwidth;
 
     /**
-     * If nonnull, this holds the BoundsComputer object which computed the bounds for each sig and each field.
-     */
-    final BoundsComputer bc;
-
-    /**
      * If nonnull, this holds a map from Sig, Field, and String to a Kodkod Expression
      */
     private final Map<Object,Expression> bcc;
 
-    /** Constructs a TranslateAlloyKodkod object based on the BoundsComputer object. */
-    TranslateAlloyToKodkod(BoundsComputer bc, int bitwidth, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Object>> core) {
-        if (skolemType==null) skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
-        this.skolemType=skolemType; this.bc=bc; this.bcc=null; this.bitwidth=bitwidth; this.core=core;
-    }
-
     /** Constructs a TranslateAlloyKodkod object. */
     TranslateAlloyToKodkod(Map<Object,Expression> bcc, int bitwidth, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Object>> core) {
         if (skolemType==null) skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
-        this.skolemType=skolemType; this.bc=null; this.bcc=bcc; this.bitwidth=bitwidth; this.core=core;
+        this.skolemType=skolemType; this.bcc=bcc; this.bitwidth=bitwidth; this.core=core;
     }
 
     //==============================================================================================================//
@@ -208,8 +199,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         rep.debug("Generating bounds...");
         final SafeList<Sig> sigs = world.getAllReachableSigs();
         final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
-        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(sc,rep,sigs,opt,core), sc.getBitwidth(), skolemType, core);
-        Formula kfact = tr.bc.getFacts();
+        final Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>> bc = BoundsComputer.compute(sc,rep,sigs,opt,core);
+        Formula kfact = bc.a.b;
+        Bounds bounds = bc.a.a;
+        ConstMap<Object,Expression> a2k = bc.b;
+        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(a2k, sc.getBitwidth(), skolemType, core);
         rep.debug("Generating facts...");
         for(Module u:world.getAllReachableModules()) kfact=tr.makeFacts(u,kfact);
         Formula mainformula;
@@ -274,13 +268,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             }
         });
         rep.debug("Simplifying the bounds...");
-        if (!simplify(tr.bc.getBounds(), mainformula, solver.options())) mainformula=Formula.FALSE;
+        if (!simplify(bounds, mainformula, solver.options())) mainformula=Formula.FALSE;
         rep.debug("Generating the solution...");
         long time=System.currentTimeMillis();
         A4Solution mainResult;
         try {
             mainResult=make(
-                tr,
+                a2k,
+                core,
+                bounds,
                 world,
                 opt,
                 tr.skolemRelType, // You cannot turn it Constant, since it needs to be modified DURING KODKOD TRANSLATION!
@@ -325,11 +321,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
 
     /** Construct the first solution from a formula; after this, user would call A4Solution.next() to get the next solution. */
-    private static A4Solution make (TranslateAlloyToKodkod tr, Module world, A4Options opt, Map<Relation,Type> skolem2type, Solver solver, Formula formula,
+    private static A4Solution make
+    (ConstMap<Object,Expression> a2k, Map<Formula,List<Object>> core,
+    Bounds bounds, Module world, A4Options opt, Map<Relation,Type> skolem2type, Solver solver, Formula formula,
     Map<String,String> sources, Command command, boolean tryBookExamples) throws Err, SaveToFileException {
         final A4Reporter rep=A4Reporter.getReporter();
-        final BoundsComputer bc=tr.bc;
-        final Bounds bounds=bc.getBounds();
         final String filename=opt.originalFilename;
         final SafeList<Sig> sigs=world.getAllReachableSigs();
         Iterator<Solution> sols;
@@ -337,7 +333,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         IdentitySet<Formula> kCore = null;
         if (tryBookExamples && solver.options().solver()!=SATFactory.MiniSatProver) {
             try {
-                sol = BookExamples.trial(sigs, bc, bounds, formula, solver, command.toString(), filename);
+                sol = BookExamples.trial(sigs, a2k, bounds, formula, solver, command);
             } catch(Throwable ex) {
                 sol=null;
             }
@@ -387,8 +383,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (!opt.recordKodkod) formula=null;
         return new A4Solution(
                 world,
-                bc,
-                null,
+                a2k,
                 filename,
                 sources,
                 command.toString(),
@@ -396,7 +391,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 formula,
                 bounds,
                 solver.options().bitwidth(),
-                sol.instance(), skolem2type, tr.core, kCore);
+                sol.instance(), skolem2type, core, kCore);
     }
 
 
@@ -619,18 +614,25 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         return true;
     }
 
+    private Relation right(Expression x) {
+        if (!(x instanceof BinaryExpression)) return null;
+        BinaryExpression bin = (BinaryExpression)x;
+        if (bin.op() != BinaryExpression.Operator.PRODUCT) return null;
+        if (bin.left().arity()==1 && bin.right() instanceof Relation) return (Relation)(bin.right()); else return null;
+    }
+
     /** Construct the constraints for "field declarations" and "appended fact paragraphs" and "fact" paragraphs */
     private Formula makeFacts(Module module, Formula kfact) throws Err {
         SafeList<Sig> sigs = module.getAllSigs();
         SafeList<Pair<String,Expr>> facts = module.getAllFacts();
         for(Sig sig: sigs) {
             if (sig.isOne!=null && sigs.size()==1 && sig.getFields().size()==3 && facts.size()==1) {
-                Field f1 = sig.getFields().get(0); Expression fst = bc.exprWithoutFirst(f1);
-                Field f2 = sig.getFields().get(1); Expression lst = bc.exprWithoutFirst(f2);
-                Field f3 = sig.getFields().get(2); Expression nxt = bc.exprWithoutFirst(f3);
+                Field f1 = sig.getFields().get(0); Relation fst = right(bcc.get(f1));
+                Field f2 = sig.getFields().get(1); Relation lst = right(bcc.get(f2));
+                Field f3 = sig.getFields().get(2); Relation nxt = right(bcc.get(f3));
                 Sig e = findElem(sig,f1,f2,f3);
-                if (e!=null && e.isOrdered!=null && fst instanceof Relation && lst instanceof Relation && nxt instanceof Relation) {
-                    Expression ee = bc.expr(e);
+                if (e!=null && e.isOrdered!=null && fst!=null && lst!=null && nxt!=null) {
+                    Expression ee = bcc.get(e);
                     if (ee instanceof Relation && chkFact(e, sig, f1, f2, f3, facts.get(0).b)) {
                         Formula f = ((Relation)nxt).totalOrder((Relation)ee, (Relation)fst, (Relation)lst);
                         return core(f, e.isOrdered).and(kfact);
@@ -643,7 +645,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
                 // Thus, we need to add a bound that the first column is a subset of s.
                 if (sig.isOne==null) {
-                    Expression sr=bc.expr(sig), fr=bc.expr(f);
+                    Expression sr=bcc.get(sig), fr=bcc.get(f);
                     for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
                     kfact=core(fr.in(sr), f).and(kfact);
                 }
@@ -700,9 +702,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
               return IntConstant.constant(n);
           case TRUE: return Formula.TRUE;
           case FALSE: return Formula.FALSE;
-          case IDEN:
-              if (bc==null) return Relation.IDEN;
-              return Expression.IDEN.intersection(bc.expr(UNIV).product(Relation.UNIV));
+          case IDEN: return Expression.IDEN.intersection(bcc.get(UNIV).product(Relation.UNIV));
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprConstant.accept()");
     }
@@ -740,8 +740,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case CAST2SIGINT: return cint(x.sub).toExpression();
             case TRANSPOSE: return cset(x.sub).transpose();
             case RCLOSURE:
-                if (bc==null) return cset(x.sub).reflexiveClosure();
-                Expression iden=Expression.IDEN.intersection(bc.expr(UNIV).product(Relation.UNIV));
+                Expression iden=Expression.IDEN.intersection(bcc.get(UNIV).product(Relation.UNIV));
                 return cset(x.sub).closure().union(iden);
             case CLOSURE: return cset(x.sub).closure();
             case CARDINALITY: return cset(x.sub).count();
@@ -763,16 +762,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates a Field node or an ExprField node. */
     /*==============================================*/
 
-    @Override public Object visit(Field x) throws Err {
-        if (bc!=null) return bc.expr(x); else return bcc.get(x);
+    @Override public Object visit(Field x) {
+        return bcc.get(x);
     }
 
     /*==========================================*/
     /* Evaluates a Sig node or an ExprSig node. */
     /*==========================================*/
 
-    @Override public Object visit(Sig x) throws Err {
-        if (bc!=null) return bc.expr(x); else return bcc.get(x);
+    @Override public Object visit(Sig x) {
+        return bcc.get(x);
     }
 
     /*=============================*/

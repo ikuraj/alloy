@@ -21,12 +21,14 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import static kodkod.engine.Solution.Outcome.SATISFIABLE;
 import static kodkod.engine.Solution.Outcome.TRIVIALLY_SATISFIABLE;
+import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.SafeList;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
-import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
+import kodkod.ast.Expression;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.config.AbstractReporter;
@@ -34,6 +36,7 @@ import kodkod.engine.config.Reporter;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Tuple;
+import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 
 class BookExamples {
@@ -47,30 +50,31 @@ class BookExamples {
     }
 
     static Solution trial
-    (SafeList<Sig> sigs, BoundsComputer bc, Bounds bounds, Formula formula, Solver solver, String originalCommand, String originalFileName) {
+    (SafeList<Sig> sigs, ConstMap<Object,Expression> bc, Bounds bounds, Formula formula, Solver solver, Command command) {
+        TupleFactory fac = bounds.universe().factory();
         Solution sol=null;
         if (hasSig(sigs, "this/Book")) {
-            Tuple B0N0A0 = t_tuple(bc, "Book[0]", "Name[0]", "Addr[0]");
-            Tuple B0N1A0 = t_tuple(bc, "Book[0]", "Name[1]", "Addr[0]");
-            Tuple B0N2A0 = t_tuple(bc, "Book[0]", "Name[2]", "Addr[0]");
-            Tuple B0N2A1 = t_tuple(bc, "Book[0]", "Name[2]", "Addr[1]");
-            Tuple B0N1A1 = t_tuple(bc, "Book[0]", "Name[1]", "Addr[1]");
-            Tuple B1N0A0 = t_tuple(bc, "Book[1]", "Name[0]", "Addr[0]");
-            Tuple B1N2A1 = t_tuple(bc, "Book[1]", "Name[2]", "Addr[1]");
-            Tuple B1N1A1 = t_tuple(bc, "Book[1]", "Name[1]", "Addr[1]");
-            Tuple B000 = t_tuple(bc, "Book[0]", "Target[0]", "Target[0]");
-            Tuple B001 = t_tuple(bc, "Book[0]", "Target[0]", "Target[1]");
-            Tuple B002 = t_tuple(bc, "Book[0]", "Target[0]", "Target[2]");
-            Tuple B010 = t_tuple(bc, "Book[0]", "Target[1]", "Target[0]");
-            Tuple B101 = t_tuple(bc, "Book[1]", "Target[0]", "Target[1]");
-            Tuple B110 = t_tuple(bc, "Book[1]", "Target[1]", "Target[0]");
-            Tuple B102 = t_tuple(bc, "Book[1]", "Target[0]", "Target[2]");
-            Tuple B210 = t_tuple(bc, "Book[2]", "Target[1]", "Target[0]");
-            Tuple B202 = t_tuple(bc, "Book[2]", "Target[0]", "Target[2]");
-            Tuple B212 = t_tuple(bc, "Book[2]", "Target[1]", "Target[2]");
-            Tuple B302 = t_tuple(bc, "Book[3]", "Target[0]", "Target[2]");
-            Tuple B310 = t_tuple(bc, "Book[3]", "Target[1]", "Target[0]");
-            Tuple B312 = t_tuple(bc, "Book[3]", "Target[1]", "Target[2]");
+            Tuple B0N0A0 = t_tuple(fac, "Book[0]", "Name[0]", "Addr[0]");
+            Tuple B0N1A0 = t_tuple(fac, "Book[0]", "Name[1]", "Addr[0]");
+            Tuple B0N2A0 = t_tuple(fac, "Book[0]", "Name[2]", "Addr[0]");
+            Tuple B0N2A1 = t_tuple(fac, "Book[0]", "Name[2]", "Addr[1]");
+            Tuple B0N1A1 = t_tuple(fac, "Book[0]", "Name[1]", "Addr[1]");
+            Tuple B1N0A0 = t_tuple(fac, "Book[1]", "Name[0]", "Addr[0]");
+            Tuple B1N2A1 = t_tuple(fac, "Book[1]", "Name[2]", "Addr[1]");
+            Tuple B1N1A1 = t_tuple(fac, "Book[1]", "Name[1]", "Addr[1]");
+            Tuple B000 = t_tuple(fac, "Book[0]", "Target[0]", "Target[0]");
+            Tuple B001 = t_tuple(fac, "Book[0]", "Target[0]", "Target[1]");
+            Tuple B002 = t_tuple(fac, "Book[0]", "Target[0]", "Target[2]");
+            Tuple B010 = t_tuple(fac, "Book[0]", "Target[1]", "Target[0]");
+            Tuple B101 = t_tuple(fac, "Book[1]", "Target[0]", "Target[1]");
+            Tuple B110 = t_tuple(fac, "Book[1]", "Target[1]", "Target[0]");
+            Tuple B102 = t_tuple(fac, "Book[1]", "Target[0]", "Target[2]");
+            Tuple B210 = t_tuple(fac, "Book[2]", "Target[1]", "Target[0]");
+            Tuple B202 = t_tuple(fac, "Book[2]", "Target[0]", "Target[2]");
+            Tuple B212 = t_tuple(fac, "Book[2]", "Target[1]", "Target[2]");
+            Tuple B302 = t_tuple(fac, "Book[3]", "Target[0]", "Target[2]");
+            Tuple B310 = t_tuple(fac, "Book[3]", "Target[1]", "Target[0]");
+            Tuple B312 = t_tuple(fac, "Book[3]", "Target[1]", "Target[2]");
             if (sol==null && B000!=null)
                 sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.9",
                     "Book[0]", "", "this/Book", "",
@@ -135,14 +139,14 @@ class BookExamples {
                     "Target[2]", "", "this/Addr", "",
                     B102, B210, B310, B302, "", "this/Book", "addr",
             });
-            if (sol==null && B0N0A0!=null && originalCommand.startsWith("Check "))
+            if (sol==null && B0N0A0!=null && command.check)
                 sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.6",
                     "Book[0]", "Book[1]", "", "this/Book", "",
                     "Addr[0]", "", "this/Addr", "",
                     "Name[0]", "", "this/Name", "",
                     B0N0A0, "", "this/Book", "addr",
             });
-            if (sol==null && B1N0A0!=null && originalCommand.startsWith("Run "))
+            if (sol==null && B1N0A0!=null && !command.check)
                 sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.4",
                     "Book[0]", "Book[1]", "", "this/Book", "",
                     "Addr[0]", "", "this/Addr", "",
@@ -193,10 +197,10 @@ class BookExamples {
             });
         }
         else if (hasSig(sigs, "this/Woman")) {
-            Tuple man0_woman0 = t_tuple(bc, "Person[1]", "Person[0]");
-            Tuple man1_woman0 = t_tuple(bc, "Person[2]", "Person[0]");
-            Tuple man0_woman1 = t_tuple(bc, "Person[1]", "Person[3]");
-            Tuple man1_woman1 = t_tuple(bc, "Person[2]", "Person[3]");
+            Tuple man0_woman0 = t_tuple(fac, "Person[1]", "Person[0]");
+            Tuple man1_woman0 = t_tuple(fac, "Person[2]", "Person[0]");
+            Tuple man0_woman1 = t_tuple(fac, "Person[1]", "Person[3]");
+            Tuple man1_woman1 = t_tuple(fac, "Person[2]", "Person[3]");
             if (sol==null)
                 sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 4.2",
                     "Person[1]", "", "this/Man", "",
@@ -217,16 +221,16 @@ class BookExamples {
         else if (hasSig(sigs, "this/Process")) {
             String p0="Process[0]", p1="Process[1]", p2="Process[2]";
             String t0="Time[0]", t1="Time[1]", t2="Time[2]", t3="Time[3]";
-            Tuple s20=t_tuple(bc,p2,p0), s01=t_tuple(bc,p0,p1), s12=t_tuple(bc,p1,p2);
-            Tuple d000=t_tuple(bc,p0,p0,t0), d110=t_tuple(bc,p1,p1,t0), d220=t_tuple(bc,p2,p2,t0);
-            Tuple d001=t_tuple(bc,p0,p0,t1), d021=t_tuple(bc,p0,p2,t1), d111=t_tuple(bc,p1,p1,t1);
-            Tuple d002=t_tuple(bc,p0,p0,t2), d112=t_tuple(bc,p1,p1,t2), d122=t_tuple(bc,p1,p2,t2);
-            Tuple d003=t_tuple(bc,p0,p0,t3), d113=t_tuple(bc,p1,p1,t3), d223=t_tuple(bc,p2,p2,t3);
+            Tuple s20=t_tuple(fac,p2,p0), s01=t_tuple(fac,p0,p1), s12=t_tuple(fac,p1,p2);
+            Tuple d000=t_tuple(fac,p0,p0,t0), d110=t_tuple(fac,p1,p1,t0), d220=t_tuple(fac,p2,p2,t0);
+            Tuple d001=t_tuple(fac,p0,p0,t1), d021=t_tuple(fac,p0,p2,t1), d111=t_tuple(fac,p1,p1,t1);
+            Tuple d002=t_tuple(fac,p0,p0,t2), d112=t_tuple(fac,p1,p1,t2), d122=t_tuple(fac,p1,p2,t2);
+            Tuple d003=t_tuple(fac,p0,p0,t3), d113=t_tuple(fac,p1,p1,t3), d223=t_tuple(fac,p2,p2,t3);
             if (sol==null && d000!=null)
                 sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.4",
                 s20, s01, s12, "", "this/Process", "succ",
                 d000,d110,d220,d001,d021,d111,d002,d112,d122,d003,d113,d223,"","this/Process","toSend",
-                t_tuple(bc,p2,t3),"","this/Process","elected",
+                t_tuple(fac,p2,t3),"","this/Process","elected",
             });
         }
         else if (hasSig(sigs, "this/Desk")) {
@@ -235,36 +239,36 @@ class BookExamples {
             String c0="Card[0]", c1="Card[1]";
             if (sol==null)
                 sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig E.3",
-                t_tuple(bc,c0,k0), t_tuple(bc,c1,k1), "", "this/Card", "fst",
-                t_tuple(bc,c0,k1), t_tuple(bc,c1,k0), "", "this/Card", "snd",
-                t_tuple(bc,g0,c0,t1),
-                t_tuple(bc,g0,c0,t2), t_tuple(bc,g1,c1,t2),
-                t_tuple(bc,g0,c0,t3), t_tuple(bc,g1,c1,t3),
-                t_tuple(bc,g0,c0,t4), t_tuple(bc,g1,c1,t4),
-                t_tuple(bc,g0,c0,t5), t_tuple(bc,g1,c1,t5), "", "this/Guest", "cards",
-                t_tuple(bc,r,k0,t0), t_tuple(bc,r,k0,t1), t_tuple(bc,r,k0,t2),
-                t_tuple(bc,r,k1,t3), t_tuple(bc,r,k0,t4), t_tuple(bc,r,k1,t5), "", "this/Room", "key",
-                t_tuple(bc,f,k1,t1),
-                t_tuple(bc,f,k0,t2), t_tuple(bc,f,k1,t2),
-                t_tuple(bc,f,k0,t3), t_tuple(bc,f,k1,t3),
-                t_tuple(bc,f,k0,t4), t_tuple(bc,f,k1,t4),
-                t_tuple(bc,f,k0,t5), t_tuple(bc,f,k1,t5), "", "this/Desk", "issued",
-                t_tuple(bc,f,r,k0,t0), t_tuple(bc,f,r,k1,t1), t_tuple(bc,f,r,k0,t2),
-                t_tuple(bc,f,r,k0,t3), t_tuple(bc,f,r,k0,t4), t_tuple(bc,f,r,k0,t5), "", "this/Desk", "prev"
+                t_tuple(fac,c0,k0), t_tuple(fac,c1,k1), "", "this/Card", "fst",
+                t_tuple(fac,c0,k1), t_tuple(fac,c1,k0), "", "this/Card", "snd",
+                t_tuple(fac,g0,c0,t1),
+                t_tuple(fac,g0,c0,t2), t_tuple(fac,g1,c1,t2),
+                t_tuple(fac,g0,c0,t3), t_tuple(fac,g1,c1,t3),
+                t_tuple(fac,g0,c0,t4), t_tuple(fac,g1,c1,t4),
+                t_tuple(fac,g0,c0,t5), t_tuple(fac,g1,c1,t5), "", "this/Guest", "cards",
+                t_tuple(fac,r,k0,t0), t_tuple(fac,r,k0,t1), t_tuple(fac,r,k0,t2),
+                t_tuple(fac,r,k1,t3), t_tuple(fac,r,k0,t4), t_tuple(fac,r,k1,t5), "", "this/Room", "key",
+                t_tuple(fac,f,k1,t1),
+                t_tuple(fac,f,k0,t2), t_tuple(fac,f,k1,t2),
+                t_tuple(fac,f,k0,t3), t_tuple(fac,f,k1,t3),
+                t_tuple(fac,f,k0,t4), t_tuple(fac,f,k1,t4),
+                t_tuple(fac,f,k0,t5), t_tuple(fac,f,k1,t5), "", "this/Desk", "issued",
+                t_tuple(fac,f,r,k0,t0), t_tuple(fac,f,r,k1,t1), t_tuple(fac,f,r,k0,t2),
+                t_tuple(fac,f,r,k0,t3), t_tuple(fac,f,r,k0,t4), t_tuple(fac,f,r,k0,t5), "", "this/Desk", "prev"
             });
         }
         else if (hasSig(sigs, "this/FrontDesk")) {
             String f="FrontDesk[0]", g0="Guest[0]", g1="Guest[1]", r="Room[0]", k0="Key[0]", k1="Key[1]", k2="Key[2]";
             String t0="Time[0]", t1="Time[1]", t2="Time[2]", t3="Time[3]", t4="Time[4]";
-            Tuple G0=t_tuple(bc,g0), G1=t_tuple(bc,g1);
-            Tuple K0=t_tuple(bc,r,k0), K1=t_tuple(bc,r,k1), K2=t_tuple(bc,r,k2);
-            Tuple K0T0=t_tuple(bc,r,k0,t0), K0T1=t_tuple(bc,r,k0,t1), K0T2=t_tuple(bc,r,k0,t2);
-            Tuple K0T3=t_tuple(bc,r,k0,t3), K1T4=t_tuple(bc,r,k1,t4);
-            Tuple F1=t_tuple(bc,f,r,k0,t0), F2=t_tuple(bc,f,r,k1,t1), F3=t_tuple(bc,f,r,k1,t2);
-            Tuple F4=t_tuple(bc,f,r,k2,t3), F5=t_tuple(bc,f,r,k2,t4);
-            Tuple GK1=t_tuple(bc,g0,k1,t1), GK2=t_tuple(bc,g0,k1,t2), GK3=t_tuple(bc,g0,k1,t3);
-            Tuple GK4=t_tuple(bc,g1,k2,t3), GK5=t_tuple(bc,g0,k1,t4), GK6=t_tuple(bc,g1,k2,t4);
-            Tuple O1=t_tuple(bc,f,r,g0,t1), O2=t_tuple(bc,f,r,g1,t3), O3=t_tuple(bc,f,r,g1,t4);
+            Tuple G0=t_tuple(fac,g0), G1=t_tuple(fac,g1);
+            Tuple K0=t_tuple(fac,r,k0), K1=t_tuple(fac,r,k1), K2=t_tuple(fac,r,k2);
+            Tuple K0T0=t_tuple(fac,r,k0,t0), K0T1=t_tuple(fac,r,k0,t1), K0T2=t_tuple(fac,r,k0,t2);
+            Tuple K0T3=t_tuple(fac,r,k0,t3), K1T4=t_tuple(fac,r,k1,t4);
+            Tuple F1=t_tuple(fac,f,r,k0,t0), F2=t_tuple(fac,f,r,k1,t1), F3=t_tuple(fac,f,r,k1,t2);
+            Tuple F4=t_tuple(fac,f,r,k2,t3), F5=t_tuple(fac,f,r,k2,t4);
+            Tuple GK1=t_tuple(fac,g0,k1,t1), GK2=t_tuple(fac,g0,k1,t2), GK3=t_tuple(fac,g0,k1,t3);
+            Tuple GK4=t_tuple(fac,g1,k2,t3), GK5=t_tuple(fac,g0,k1,t4), GK6=t_tuple(fac,g1,k2,t4);
+            Tuple O1=t_tuple(fac,f,r,g0,t1), O2=t_tuple(fac,f,r,g1,t3), O3=t_tuple(fac,f,r,g1,t4);
             if (sol==null && K0T0!=null)
                 sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.13",
                 G0, G1, "", "this/Guest", "",
@@ -276,10 +280,10 @@ class BookExamples {
                 "Event[0]", "Event[1]", "", "this/Checkin", "",
                 "Event[2]", "", "this/Checkout", "",
                 "Event[3]", "", "this/Entry", "",
-                t_tuple(bc,"Event[0]",t0),
-                t_tuple(bc,"Event[2]",t1),
-                t_tuple(bc,"Event[1]",t2),
-                t_tuple(bc,"Event[3]",t3), "", "this/Event", "pre",
+                t_tuple(fac,"Event[0]",t0),
+                t_tuple(fac,"Event[2]",t1),
+                t_tuple(fac,"Event[1]",t2),
+                t_tuple(fac,"Event[3]",t3), "", "this/Event", "pre",
             });
             if (sol==null && K0T0!=null)
                 sol=trial(solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.6",
@@ -294,22 +298,23 @@ class BookExamples {
         return sol;
     }
 
-    private static Solution trial(Solver solver, SafeList<Sig> sigs, BoundsComputer bc, Formula f, final Bounds bb, Object[] t) {
+    private static Solution trial(Solver solver, SafeList<Sig> sigs, ConstMap<Object,Expression> bc, Formula f, final Bounds bb, Object[] t) {
         try {
+            TupleFactory fac=bb.universe().factory();
             Bounds b = null;
             TupleSet ts = null;
             for(int i=1; i<t.length; i++) {
                 Object x=t[i];
                 if (x==null) return null;
                 if (x instanceof String && ((String)x).length()>0) {
-                    Tuple xx = bc.factory().tuple((String)x);
-                    if (ts==null) ts=bc.factory().noneOf(xx.arity());
+                    Tuple xx = fac.tuple((String)x);
+                    if (ts==null) ts=fac.noneOf(xx.arity());
                     ts.add(xx);
                     continue;
                 }
                 if (x instanceof Tuple) {
                     Tuple xx=(Tuple)x;
-                    if (ts==null) ts=bc.factory().noneOf(xx.arity());
+                    if (ts==null) ts=fac.noneOf(xx.arity());
                     ts.add(xx);
                     continue;
                 }
@@ -324,13 +329,13 @@ class BookExamples {
                     if (first==null) return null;
                     Expression expr = null;
                     if (fieldName.length()==0) {
-                        expr = bc.expr(first);
+                        expr = bc.get(first);
                     } else {
-                        for(Field field:first.getFields()) if (field.label.equals(fieldName)) { expr=bc.expr(field); break; }
+                        for(Field field:first.getFields()) if (field.label.equals(fieldName)) { expr=bc.get(field); break; }
                     }
                     if (!(expr instanceof Relation)) return null;
                     if (b==null) b=bb.clone();
-                    if (ts==null) ts=bc.factory().noneOf(expr.arity());
+                    if (ts==null) ts=fac.noneOf(expr.arity());
                     if (!ts.containsAll(b.lowerBound((Relation)expr))) return null;
                     if (!b.upperBound((Relation)expr).containsAll(ts)) return null;
                     b.boundExactly((Relation)expr, ts);
@@ -357,10 +362,10 @@ class BookExamples {
         }
     }
 
-    private static Tuple t_tuple(BoundsComputer bc, Object... atoms) {
+    private static Tuple t_tuple(TupleFactory factory, Object... atoms) {
         if (atoms.length <= 0) return null;
         try {
-            Tuple t = bc.factory().tuple(atoms);
+            Tuple t = factory.tuple(atoms);
             return t;
         } catch(Throwable ex) {
             return null;

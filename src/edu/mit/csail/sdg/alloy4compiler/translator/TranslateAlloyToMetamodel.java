@@ -19,8 +19,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Err;

@@ -39,13 +39,15 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
+import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
@@ -264,7 +266,7 @@ final class BoundsComputer {
      * This maps each Alloy sig/field to an Kodkod expression representing it.
      * This field is initialized by the constructor and will not be modified afterwards.
      */
-    private final Map<Expr,Expression> a2k = new LinkedHashMap<Expr,Expression>();
+    private final TempMap<Object,Expression> a2k = new TempMap<Object,Expression>();
 
     /**
      * Stores the additional set of constraints that are needed to bound everything correctly.
@@ -381,7 +383,8 @@ final class BoundsComputer {
     }
 
     /** Computes the bounds for sigs/fields, then construct a BoundsComputer object that you can query. */
-    BoundsComputer(ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,List<Object>> core) throws Err {
+    private BoundsComputer(ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,List<Object>> core)
+    throws Err {
         // Perform the prelimenary computation
         prelim(sc, rep, sigs);
         // Create the bounds object
@@ -427,12 +430,12 @@ final class BoundsComputer {
                 }
                 ans.addAll(upper);
             }
-            a2k.put(f,r);
+            if (s.isOne!=null) a2k.put(f, a2k.get(s).product(r)); else a2k.put(f,r);
             bounds.bound(r,ans);
         }
         // Add any additional SIZE constraints
         for(Sig s:sigs) if (!s.builtin) {
-            Expression exp=expr(s);
+            Expression exp=a2k.get(s);
             TupleSet upper=query(true,exp,false), lower=query(false,exp,false);
             final int n=sc.sig2scope(s);
             if (s.isOne!=null && (lower.size()!=1 || upper.size()!=1)) {
@@ -458,29 +461,28 @@ final class BoundsComputer {
                 fact=size(s,n,false,core).and(fact);
             }
         }
+        // Turn everything read-only
+        a2k.makeConst();
     }
 
-    //==============================================================================================================//
-
-    /** Returns the factory we use to generate the Tuple objects. */
-    TupleFactory factory() { return universe.factory(); }
-
-    /** Returns the set of constraints that we need to correctly bound everything. */
-    Formula getFacts() { return fact; }
-
-    /** Returns an unmodifiable view of the resulting Bounds object. */
-    Bounds getBounds() { return bounds; } // TODO: should return an unmodifiable view instead, but TranslateA2K calls simplify on it
-
-    /** Given a signature, return its associated Kodkod expression (null if no expression was assigned for it) */
-    Expression expr(Sig x) { return a2k.get(x); }
-
-    /** Given a field, return its associated Kodkod expression (null if no expression was assigned for it) */
-    Expression expr(Field x) {
-        Expression ans = a2k.get(x);
-        if (x.sig.isOne!=null && ans!=null) ans = expr(x.sig).product(ans);
-        return ans;
+    /**
+     * Computes the bounds, constraints, and the Sig/Field-to-Expression map:
+     * <br> 1) The map maps each sig and field to a Kodkod Expression
+     * <br> 2) The Bounds defines lower and upper bound for any Kodkod relation mentioned in the map
+     * <br> 3) The Formula, when combined with the Map and Bounds, fully expresses the user's intent
+     * <p>
+     *
+     * @param sc - the ScopeComputer that bounds each PrimSig to a scope
+     * @param rep - the reporter that may receive diagnostic messages
+     * @param sigs - the list of all sigs
+     * @param options - the Alloy options object
+     * @param core - this map will receive additional mappings between each constraint to a list of Pos objects
+     */
+    static Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>> compute
+    (ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,List<Object>> core)
+    throws Err {
+        BoundsComputer bc = new BoundsComputer(sc, rep, sigs, options, core);
+        Pair<Bounds,Formula> a = new Pair<Bounds,Formula>(bc.bounds, bc.fact);
+        return new Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>>(a, bc.a2k.makeConst());
     }
-
-    /** Given a field, return its associated Kodkod expression (null if no expression was assigned for it) */
-    Expression exprWithoutFirst(Field x) { return a2k.get(x); }
 }
