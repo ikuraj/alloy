@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
@@ -22,14 +23,13 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import nanoxml_2_2_3.XMLElement;
 import kodkod.ast.BinaryExpression;
@@ -53,17 +53,17 @@ import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
@@ -71,11 +71,20 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
-import static edu.mit.csail.sdg.alloy4.Util.tail;
 
 /** Immutable; represents an Alloy solution (which is either satisfiable or unsatisfiable). */
 
 public final class A4Solution {
+
+    private int z;
+
+    public int getBitwidth() { return bitwidth; }
+    public SafeList<Sig> getAllReachableSigs() { return world.getAllReachableSigs(); }
+
+    public String getOriginalCommand() { return command; }
+    public String getOriginalFilename() { return filename; }
+    public ConstMap<String,String> getOriginalSources() { return sources; }
+    public String getOriginalFormula() { return formula; }
 
     //================ IMMUTABLE FIELDS ==========================================================================================//
 
@@ -117,7 +126,7 @@ public final class A4Solution {
     /** It's the root module that these solutions belong to. */
     private final Module world;
 
-    /** If not null, it's a map from Sig/Field/String to Kodkod expressions. NOTE: bc==null iff bcc!=null. */
+    /** If not null, it's a map from Sig/Field/String to Kodkod expressions. */
     private final Map<Object,Expression> bcc;
 
     /** The map from kodkod unsat core back to Alloy AST (or null if the map is unavailable) */
@@ -141,6 +150,7 @@ public final class A4Solution {
     A4Solution(Module world, Map<Object,Expression> bcc, String filename, Map<String,String> sources,
     String command, Iterator<Solution> kEnumerator, Formula kFormula, Bounds kBounds, int bitwidth, Instance kInstance,
     Map<Relation,Type> skolem2type, Map<Formula,List<Object>> core, IdentitySet<Formula> kCore) throws Err {
+        this.skolem2type=skolem2type;
         this.world=world;
         this.bcc=bcc;
         this.filename=filename;
@@ -151,7 +161,6 @@ public final class A4Solution {
         this.kBounds=kBounds;
         this.bitwidth=bitwidth;
         this.kInstance=kInstance;
-        this.skolem2type=skolem2type;
         this.core=core;
         this.kCore=kCore;
         if (this.kInstance!=null) {
@@ -166,7 +175,8 @@ public final class A4Solution {
         if (kEval!=null) {
             for(Sig s:world.getAllReachableSigs()) if (!s.builtin && s.isTopLevel()) rename((PrimSig)s,m1,m2);
             int unused=0;
-            for(Object atom: kBounds.universe()) {
+            for(Tuple tuple: kEval.evaluate(Relation.UNIV)) {
+                Object atom = tuple.atom(0);
                 String atomstr = atom.toString();
                 if (atomstr.indexOf('$')<0) { m2.put(atom, SIGINT); continue; }
                 if (!m1.containsKey(atom)) { m1.put(atom, "unused"+unused); unused++; }
@@ -274,6 +284,7 @@ public final class A4Solution {
      * @throws ErrorAPI if this solution is not a satisfiable solution
      */
     public synchronized Object eval(Expr expr) throws Err {
+        // TODO: should add a shortcut: if expr is a Sig, we should query bcc for each component, call kEval, then union them
         if (!satisfiable()) throw new ErrorAPI("This solution is unsatisfiable, so no eval() is allowed.");
         Object result = (new TranslateAlloyToKodkod(bcc, bitwidth, null, null)).visitThis(expr);
         if (result instanceof IntExpression) return kEval.evaluate((IntExpression)result);
@@ -285,18 +296,15 @@ public final class A4Solution {
         throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
     }
 
-    /** Convenience helper method that returns a short but unique name for each sig. */
-    private static String shorten(Sig sig) {
-        String string=sig.toString();
-        if (string.startsWith("/")) string=string.substring(1);
-        if (string.startsWith("this/")) string=string.substring(5);
-        return string;
-    }
 
-    /** Convenience helper method to sheild us from possible "Higher Order Quantification" exceptions. */
-    private static TupleSet eval(Evaluator evaluator, Expression expr) {
-        try { return evaluator.evaluate(expr); } catch(Throwable ex) { return null; }
-    }
+
+
+
+
+
+
+
+
 
     private static void addAllSubrelation(IdentitySet<Relation> set, Expression ex) {
         while(ex instanceof BinaryExpression) {
@@ -308,35 +316,37 @@ public final class A4Solution {
         if (ex instanceof Relation) set.add((Relation)ex);
     }
 
-    /** Convenience helper method that writes out sig "s" and all its fields. */
-    private void process_each_sig(PrintWriter out, Sig s, IdentitySet<Relation> rels, UniqueNameGenerator un) throws Err {
-        // "univ" and "none" do not need to be generated; SIGINT and SEQIDX will be generated explicitly later.
-        if (s.builtin) return;
-        final Expression r=bcc.get(s);
-        addAllSubrelation(rels, r);
-        TupleSet ts = eval(kEval,r);
-        if (ts!=null) {
-            if (s instanceof SubsetSig) {
-                writeTS(new A4TupleSet(ts, map, map2sig), out, shorten(s), s.type, un);
-            } else {
-                Util.encodeXMLs(out, "\n<sig name=\"", un.seen(shorten(s)), "\"");
-                if (!s.isTopLevel()) Util.encodeXMLs(out, " extends=\"", shorten(((PrimSig)s).parent), "\"");
-                if (s.isOne!=null) out.printf(" isOne=\"true\"");
-                if (s.isAbstract!=null) out.printf(" isAbstract=\"true\"");
-                if (s.builtin) out.printf(" isBuiltin=\"true\"");
-                if (s.isOrdered!=null) out.printf(" isOrdered=\"true\"");
-                out.printf(">\n");
-                for(Tuple t:ts) Util.encodeXMLs(out, "  <atom name=\"", a2s(t.atom(0)), "\"/>\n");
-                out.printf("</sig>\n");
-            }
+    // Write out any Skolem relations that were generated by Kodkod
+    public synchronized List<Pair<String,Pair<Type,A4TupleSet>>> skolems() {
+        List<Pair<String,Pair<Type,A4TupleSet>>> ans = new ArrayList<Pair<String,Pair<Type,A4TupleSet>>>();
+        IdentitySet<Relation> rels = new IdentitySet<Relation>();
+        for(Sig s: world.getAllReachableSigs()) {
+            addAllSubrelation(rels, bcc.get(s));
+            for(Field f:s.getFields()) addAllSubrelation(rels, bcc.get(f));
         }
-        for(Field f:s.getFields()) {
-            Expression rr=bcc.get(f);
-            addAllSubrelation(rels,rr);
-            ts=eval(kEval,rr);
-            if (ts!=null) writeTS(new A4TupleSet(ts, map, map2sig), out, f.label, f.type, un);
+        for(final Relation r:kInstance.relations()) if (!rels.contains(r)) {
+            Type t=skolem2type.get(r);
+            if (t==null) continue; // That means we don't know its type
+            while (t.arity() < r.arity()) t=UNIV.type.product(t);
+            if (t.arity() > r.arity()) continue; // That means something terrible has happened, so let's skip it
+            String rn=r.name();
+            while(rn.length()>0 && rn.charAt(0)=='$') rn=rn.substring(1);
+            Pair<Type,A4TupleSet> ta = new Pair<Type,A4TupleSet>(t, new A4TupleSet(kInstance.tuples(r),map,map2sig));
+            Pair<String,Pair<Type,A4TupleSet>> sta = new Pair<String,Pair<Type,A4TupleSet>>(rn,ta);
+            ans.add(sta);
         }
+        return ans;
     }
+
+
+    public synchronized void writeXML(String filename, boolean writeMacros) throws Err {
+            new A4SolutionWriter(this, filename, world.getAllFunc());
+    }
+
+
+
+
+
 
     /** Dumps the Kodkod solution into String. */
     @Override public String toString() {
@@ -380,134 +390,6 @@ public final class A4Solution {
         return sb.toString();
     }
 
-    private void writeTS(A4TupleSet r, PrintWriter out, String name, Type type, UniqueNameGenerator un) throws Err {
-        int n=r.arity();
-        List<PrimSig> list = new ArrayList<PrimSig>(n);
-        if (type==null) {
-            type=Type.EMPTY;
-            again:
-            for(A4Tuple t:r) {
-                list.clear();
-                for(int i=0; i<n; i++) {
-                    PrimSig s=t.sig(i);
-                    if (s==null) continue again;
-                    list.add(s);
-                }
-                type=type.merge(list);
-            }
-        }
-        if (type.size()==0) return;
-        for(List<PrimSig> sigs:type.fold()) {
-            if (n>1) {
-                Util.encodeXMLs(out, "\n<field name=\"", un.seen(name), "\">\n");
-                out.print("    <type>");
-                for(int i=0; i<n; i++) Util.encodeXMLs(out, " <sig name=\"", un.seen(shorten(sigs.get(i))), "\"/>");
-                out.print(" </type>\n");
-            } else {
-                Util.encodeXMLs(out, "\n<set name=\"", un.seen(name), "\" type=\"", shorten(sigs.get(0)), "\">\n");
-            }
-            again2:
-            for(A4Tuple t:r) {
-                for(int i=0; i<n; i++) {
-                    PrimSig s=t.sig(i);
-                    if (s==null) continue again2;
-                    if (!s.intersects(sigs.get(i))) continue again2;
-                }
-                if (n>1) {
-                    out.print("    <tuple>");
-                    for(int i=0; i<n; i++) Util.encodeXMLs(out, " <atom name=\"", t.atom(i), "\"/>");
-                    out.print(" </tuple>\n");
-                } else {
-                    Util.encodeXMLs(out, "  <atom name=\"", t.atom(0), "\"/>\n");
-                }
-            }
-            out.print(n>1 ? "</field>\n" : "</set>\n");
-        }
-    }
-
-    /**
-     * If this solution is a satisfiable solution, write it to an XML file.
-     *
-     * <p>  We first write every Sig and every Field into the XML file;
-     * <br> after that, we look through the additional Relation(s) generated by Kodkod.
-     * <br> For each additional relation X:
-     * <br> (1) If X hasn't already been written out to the XML file (as a Sig or as a Field)
-     * <br> (2) and if X's Kodkod name does not contain "[discard]"
-     * <br> Then we write X into the XML file as a Skolem value.
-     *
-     * @param destfilename - the XML filename (It will be overwritten if it exists)
-     * @param evaluateAllMacros - if true, we will also write the value of every parameter-less function into the XML file
-     *
-     * @throws ErrorAPI if this solution is not a satisfiable solution
-     */
-    public synchronized void writeXML(String destfilename, boolean evaluateAllMacros) throws Err {
-        if (kInstance==null)
-            throw new ErrorAPI("This solution is unsatisfiable, so there is nothing to write to an XML file.");
-        //if (bc==null)
-        //    throw new ErrorAPI("This solution was reconstructed from readXML, so we cannot call writeXML on it.");
-        PrintWriter out;
-        try {
-            out=new PrintWriter(destfilename,"UTF-8");
-        } catch(IOException ex) {
-            throw new ErrorAPI("writeXML failed: "+ex);
-        }
-        final UniqueNameGenerator un=new UniqueNameGenerator();
-        final IdentitySet<Relation> rels=new IdentitySet<Relation>();
-        rels.add(BoundsComputer.SEQ_SEQIDX);
-        rels.add(BoundsComputer.SIGINT_MAX);
-        rels.add(BoundsComputer.SIGINT_MIN);
-        rels.add(BoundsComputer.SIGINT_NEXT);
-        rels.add(BoundsComputer.SIGINT_ZERO);
-        // Write out all user-defined Sig(s) and their Field(s)
-        Util.encodeXMLs(out, "\n<alloy builddate=\"",
-            Version.buildDate(), "\">\n\n<instance filename=\"",
-            filename, "\" bitwidth=\"",
-            Integer.toString(bitwidth), "\" command=\"", command,"\">\n");
-        for(Sig s:world.getAllReachableSigs()) process_each_sig(out, s, rels, un);
-        // Write out SIGINT
-        out.print("\n<sig name=\"Int\" isBuiltin=\"true\">\n");
-        un.seen("Int");
-        for(Tuple t:kEval.evaluate(Expression.INTS)) Util.encodeXMLs(out, "  <atom name=\"", a2s(t.atom(0)), "\"/>\n");
-        out.print("</sig>\n");
-        // Write out SEQIDX
-        out.print("\n<sig name=\"seq/Int\" extends=\"Int\" isBuiltin=\"true\">\n");
-        un.seen("seq/Int");
-        for(Tuple t:kEval.evaluate(BoundsComputer.SEQ_SEQIDX)) Util.encodeXMLs(out, "  <atom name=\"", a2s(t.atom(0)), "\"/>\n");
-        out.print("</sig>\n");
-        // Write out any Skolem relations that were generated by Kodkod
-        for(final Relation r:kInstance.relations()) if (!rels.contains(r)) if (!r.name().contains("[discard]")) {
-            Type t=skolem2type.get(r);
-            if (t==null) continue; // That means we don't know its type
-            while (t.arity() < r.arity()) t=UNIV.type.product(t);
-            if (t.arity() > r.arity()) continue; // That means something terrible has happened, so let's skip it
-            String rn=r.name();
-            while(rn.length()>0 && rn.charAt(0)=='$') rn=rn.substring(1);
-            writeTS(new A4TupleSet(kInstance.tuples(r),map,map2sig), out, un.make("$"+rn), t, un);
-        }
-        // Write out all parameter-less Function in the main module
-        for(final Func pf:world.getAllFunc()) if (!pf.isPred && pf.params.size()==0) {
-            A4TupleSet ts;
-            try {
-                final Object obj=eval(pf.getBody());
-                if (!(obj instanceof A4TupleSet)) continue;
-                ts=(A4TupleSet)obj;
-            } catch(Throwable ex) { continue; } // This is not fatal
-            String rname=tail(pf.label);
-            while(rname.length()>0 && rname.charAt(0)=='$') rname=rname.substring(1);
-            writeTS(ts, out, un.make("$"+rname), pf.returnDecl.type, un);
-        }
-        // Done!
-        out.print("\n</instance>\n");
-        if (formula.length()>0) {
-            String kOutput=dump(kInstance);
-            Util.encodeXMLs(out, "\n<koutput value=\"", kOutput, "\"/>\n\n<kinput value=\"", formula, "\"/>\n");
-        }
-        for(Map.Entry<String,String> e: sources.entrySet()) {
-            Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
-        }
-        out.print("\n</alloy>\n");
-        if (!Util.close(out)) throw new ErrorAPI("writeXML failed!");
-    }
 
     //============================================================================================================================//
 
@@ -674,8 +556,7 @@ public final class A4Solution {
             i.add(r, e.getValue());
         }
         // Done
-        return new A4Solution(world, obj2expr, filename, fc, command, null, null, null, bitwidth
-                , i, ConstMap.make((Map<Relation,Type>)null), null, null);
+        return new A4Solution(world, obj2expr, filename, fc, command, null, null, null, bitwidth, i, null, null, null);
     }
 
     private static void getField(Sig s, String fieldName, Map<String,TupleSet> cache, TupleSet ans) {

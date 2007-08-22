@@ -21,8 +21,8 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -39,7 +39,9 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
  * Given a World object, generate its metamodel.
  */
 
-public class TranslateAlloyToMetamodel {
+public final class TranslateAlloyToMetamodel {
+
+    private int z;
 
     /** Constructor is private, since we want to force all access to this class via the static public methods. */
     private TranslateAlloyToMetamodel() { }
