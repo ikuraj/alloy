@@ -281,7 +281,7 @@ public final class A4Solution {
         if (!satisfiable()) throw new ErrorAPI("This solution is unsatisfiable, so no eval() is allowed.");
         Object result;
         if (bc!=null)
-            result=(new TranslateAlloyToKodkod(bc, null, null)).visitThis(expr);
+            result=(new TranslateAlloyToKodkod(bc, bitwidth, null, null)).visitThis(expr);
         else
             result=(new TranslateAlloyToKodkod(bcc, bitwidth, null, null)).visitThis(expr);
         if (result instanceof IntExpression) return kEval.evaluate((IntExpression)result);

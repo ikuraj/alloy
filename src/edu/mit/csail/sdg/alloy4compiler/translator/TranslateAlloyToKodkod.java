@@ -155,9 +155,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private final Map<Object,Expression> bcc;
 
     /** Constructs a TranslateAlloyKodkod object based on the BoundsComputer object. */
-    TranslateAlloyToKodkod(BoundsComputer bc, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Object>> core) {
+    TranslateAlloyToKodkod(BoundsComputer bc, int bitwidth, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Object>> core) {
         if (skolemType==null) skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
-        this.skolemType=skolemType; this.bc=bc; this.bcc=null; this.bitwidth=bc.getBitwidth(); this.core=core;
+        this.skolemType=skolemType; this.bc=bc; this.bcc=null; this.bitwidth=bitwidth; this.core=core;
     }
 
     /** Constructs a TranslateAlloyKodkod object. */
@@ -207,7 +207,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final A4Reporter rep=A4Reporter.getReporter();
         rep.debug("Generating bounds...");
         final SafeList<Sig> sigs = world.getAllReachableSigs();
-        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(rep,sigs,opt,cmd,core), skolemType, core);
+        final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
+        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(new BoundsComputer(sc,rep,sigs,opt,core), sc.getBitwidth(), skolemType, core);
         Formula kfact = tr.bc.getFacts();
         rep.debug("Generating facts...");
         for(Module u:world.getAllReachableModules()) kfact=tr.makeFacts(u,kfact);
@@ -251,7 +252,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         }
         solver.options().setSymmetryBreaking(sym);
         solver.options().setSkolemDepth(skolemDepth);
-        rep.translate(opt.solver.id(), tr.bitwidth, tr.bc.getMaxSeq(), skolemDepth, sym);
+        rep.translate(opt.solver.id(), tr.bitwidth, sc.getMaxSeq(), skolemDepth, sym);
         rep.debug("Assigning kodkod reporter...");
         solver.options().setReporter(new AbstractReporter() {
             @Override public final void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {

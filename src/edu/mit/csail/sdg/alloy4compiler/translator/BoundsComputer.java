@@ -40,12 +40,10 @@ import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
-import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -58,6 +56,11 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 /**
  * Immutable; this class computes the bounds based on the user's instructions in a "run" or "check" command.
+ *
+ * <p> In particular, it computes the following 3 information:
+ * <br> 1) a map from each Sig and Field to a Kodkod expression representing it
+ * <br> 2) a Bounds object that defines lower and upper bound for any Kodkod relation mentioned in the map
+ * <br> 3) a Formula object that, when combined with the Map and Bounds, fully express the user's intent
  */
 
 final class BoundsComputer {
@@ -179,7 +182,7 @@ final class BoundsComputer {
             StringBuilder msg=new StringBuilder();
             msg.append("Scope for sig \"").append(sig).append("\" was miscalculated (").append(n).append(" < #{");
             for(String atom:lower) msg.append(' ').append(atom);
-            throw new ErrorAPI(sig.pos, msg.append(" })").toString());
+            throw new ErrorFatal(msg.append(" })").toString());
         }
         // Make a copy
         ArrayList<String> upper=new ArrayList<String>(lower);
@@ -214,12 +217,10 @@ final class BoundsComputer {
     }
 
     /** Compute the scope, compute the upperbound and lowerbound in terms of String objects, then make the universe. */
-    private ScopeComputer prelim(A4Reporter rep, SafeList<Sig> sigs, Command cmd) throws Err {
-        // Compute the scope, bitwidth, and maxseq
-        ScopeComputer sc = new ScopeComputer(rep, sigs, cmd);
+    private void prelim(ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs) throws Err {
+        // Generate SIGINT atoms
         bitwidth = sc.getBitwidth();
         maxseq = sc.getMaxSeq();
-        // Generate SIGINT atoms
         Set<String> atoms=new LinkedHashSet<String>();
         int min = 0-(1<<(bitwidth-1)); // Safe since we know 1 <= bitwidth <= 30
         int max = (1<<(bitwidth-1))-1;
@@ -235,7 +236,6 @@ final class BoundsComputer {
         for(Sig s:sigs) if (s.isTopLevel()) computeLowerBound( sc , (PrimSig)s );
         for(Sig s:sigs) if (s.isTopLevel()) atoms.addAll( computeUpperBound(sc , (PrimSig)s) );
         this.universe = new Universe(atoms);
-        return sc;
     }
 
     //==================================================//
@@ -381,9 +381,9 @@ final class BoundsComputer {
     }
 
     /** Computes the bounds for sigs/fields, then construct a BoundsComputer object that you can query. */
-    BoundsComputer(A4Reporter rep, SafeList<Sig> sigs, A4Options options, Command cmd, Map<Formula,List<Object>> core) throws Err {
+    BoundsComputer(ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,List<Object>> core) throws Err {
         // Perform the prelimenary computation
-        ScopeComputer sc=prelim(rep, sigs, cmd);
+        prelim(sc, rep, sigs);
         // Create the bounds object
         this.bounds = new Bounds(universe);
         // Bound SIGINT_NEXT, SIGINT_MAX, SIGINT_MIN, SIGINT_ZERO, and SEQ_SEQIDX
@@ -462,12 +462,6 @@ final class BoundsComputer {
 
     //==============================================================================================================//
 
-    /** Returns the integer bitwidth. */
-    int getBitwidth() { return bitwidth; }
-
-    /** Returns the maximum sequence length. */
-    int getMaxSeq() { return maxseq; }
-
     /** Returns the factory we use to generate the Tuple objects. */
     TupleFactory factory() { return universe.factory(); }
 
@@ -475,7 +469,7 @@ final class BoundsComputer {
     Formula getFacts() { return fact; }
 
     /** Returns an unmodifiable view of the resulting Bounds object. */
-    Bounds getBounds() { return bounds.clone(); } // TODO: should return an unmodifiable view instead, but TranslateA2K calls simplify on it
+    Bounds getBounds() { return bounds; } // TODO: should return an unmodifiable view instead, but TranslateA2K calls simplify on it
 
     /** Given a signature, return its associated Kodkod expression (null if no expression was assigned for it) */
     Expression expr(Sig x) { return a2k.get(x); }

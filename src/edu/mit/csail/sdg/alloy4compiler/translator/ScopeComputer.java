@@ -38,6 +38,11 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 /**
  * Immutable; this class computes the scopes based on the user's instructions in a "run" or "check" command.
  *
+ * <p> In particular, it computes the following 3 information:
+ * <br> 1) the bitwidth (always between 1 and 30)
+ * <br> 2) the maximum sequence length (always between 0 and 2^(bitwidth-1)-1
+ * <br> 3) the scope for each PrimSig, and whether the scope is exact or not
+ *
  * <p> The scopes are determined as follows:
  *
  * <p>  "run x": every topsig is scoped to <= 3 elements.
