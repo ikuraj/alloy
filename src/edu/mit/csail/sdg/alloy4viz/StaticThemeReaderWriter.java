@@ -61,7 +61,13 @@ public final class StaticThemeReaderWriter {
             } catch (XMLParseException e) {
                 throw new IOException("The file \""+file.getPath()+"\" is not a valid XML file.");
             }
-            synchronized(theme) { for(XMLElement sub: elem.getChildren("view")) parseView(sub,theme); }
+            synchronized(theme) {
+                try {
+                    for(XMLElement sub: elem.getChildren("view")) parseView(sub,theme);
+                } catch(Throwable e) {
+                    throw new IOException("An error occurred in reading or parsing the file \""+file.getPath()+"\"");
+                }
+            }
         } finally {
             Util.close(reader);
             Util.close(fis);
@@ -270,7 +276,9 @@ public final class StaticThemeReaderWriter {
          */
         if (!x.is("set")) return null;
         String name=x.getAttribute("name"), type=x.getAttribute("type");
-        if (name.length()==0 || type.length()==0) return null; else return new AlloySet(name, now.getOriginalModel().hasType(type));
+        if (name.length()==0 || type.length()==0) return null;
+        AlloyType t=now.getOriginalModel().hasType(type);
+        if (t==null) return null; else return new AlloySet(name, t);
     }
 
     /** Writes nothing if the argument is null. */
