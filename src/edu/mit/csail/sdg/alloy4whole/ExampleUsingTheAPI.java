@@ -36,7 +36,7 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 
-public class ExampleUsingTheAPI {
+public final class ExampleUsingTheAPI {
 
     @SuppressWarnings("unused")
     public static void main(String[] args) throws Err {

@@ -44,6 +44,11 @@ public final class UniqueNameGenerator {
     public synchronized String seen(String name) { names.add(name); return name; }
 
     /**
+     * Queries whether the provided name has been "seen" or not.
+     */
+    public synchronized boolean hasSeen(String name) { return names.contains(name); }
+
+    /**
      * Generate a unique name based on the input name.
      *
      * <p> Specifically: if the name has not been generated/seen already by this generator,
