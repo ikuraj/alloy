@@ -48,15 +48,15 @@ public final class A4Options implements Serializable {
             this.external=external;
             if (add) { synchronized(SatSolver.class) { values.add(this); } }
         }
-        /** Constructs a new SatSolver value that uses an external command-line solver; throws ErrorAPI if the ID is already in use. */
+        /** Constructs a new SatSolver value that uses a command-line solver; throws ErrorAPI if the ID is already in use. */
         public static SatSolver make(String id, String toString, String external) throws ErrorAPI {
-            if (external==null) throw new ErrorAPI("NullPointerException in SatSolver.make()");
-            SatSolver ans = new SatSolver(id,toString,external,false);
+            if (id==null || toString==null || external==null) throw new ErrorAPI("NullPointerException in SatSolver.make()");
+            SatSolver ans = new SatSolver(id, toString, external, false);
             synchronized(SatSolver.class) {
-                for(SatSolver x: values)
-                    if (x.id.equals(id))
-                        throw new ErrorAPI("The SatSolver id \""+id+"\" is already in use.");
-                values.add(ans);
+               for(SatSolver x: values)
+                  if (x.id.equals(id))
+                     throw new ErrorAPI("The SatSolver id \""+id+"\" is already in use.");
+               values.add(ans);
             }
             return ans;
         }
