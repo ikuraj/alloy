@@ -55,9 +55,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
-/**
- * This helper class contains helper routines for reading an A4Solution object from an XML file.
- */
+/** This helper class contains helper routines for reading an A4Solution object from an XML file. */
 
 public final class A4SolutionReader {
 

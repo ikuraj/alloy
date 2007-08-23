@@ -324,7 +324,7 @@ public final class A4Solution {
 
 
     public synchronized void writeXML(String filename, boolean writeMacros) throws Err {
-            new A4SolutionWriter(this, filename, world.getAllFunc());
+           A4SolutionWriter.write(this, filename, world.getAllFunc());
     }
 
 
