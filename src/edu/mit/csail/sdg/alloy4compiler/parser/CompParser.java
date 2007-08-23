@@ -2374,15 +2374,17 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
     }
   }
 
-  static Module alloy_parseStream(boolean allowDollar, Map<String,String> fc, Module world, int lineOffset, String filename, String prefix)
-  throws Err, FileNotFoundException, IOException {
+  static Module alloy_parseStream (boolean allowDollar, Map<String,String> loaded, Map<String,String> fc, Module root,
+  int lineOffset, String filename, String prefix) throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
-        if (world==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parseStream called with root==null)");
-        Module u=new Module(world, filename, prefix);
-        if (world==null) world=u.getRootModule();
-        String content=fc.get(filename);
-        if (content==null) { content=Util.readAll(filename); fc.put(filename,content); }
+        if (root==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parse subfile with root==null)");
+        if (root!=null && prefix.length()==0) throw new ErrorFatal("Internal error (parse topfile with root!=null)");
+        Module u = new Module(root, filename, prefix);
+        String content = fc!=null ? fc.get(filename) : null;
+        if (content==null && loaded!=null) content = loaded.get(filename);
+        if (content==null) content = Util.readAll(filename);
+        if (loaded!=null) loaded.put(filename,content);
         isr=new StringReader(content);
         CompFilter s=new CompFilter(allowDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p=new CompParser(s);

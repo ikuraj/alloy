@@ -62,7 +62,7 @@ public final class ExampleUsingTheCompiler {
 
             // Parse+typecheck the model
             System.out.println("=========== Parsing+Typechecking "+filename+" =============");
-            Module world = CompUtil.parseEverything_fromFile(null, null, filename);
+            Module world = CompUtil.parseEverything_fromFile(null, filename);
 
             // Choose some default options for how you want to execute the commands
             A4Options options = new A4Options();

@@ -99,43 +99,18 @@ public final class CompUtil {
 
     /**
      * Helper method that recursively parse a file and all its included subfiles
-     * @param fc - this caches previously loaded text file
-     * @param rootdir - the root directory where we look for imported text files
+     * @param loaded - this stores the text files we've loaded while parsing; cannot be null
+     * @param fc - if a file cannot be found, we consult this cache first before attempting to load it from disk/jar; cannot be null
      * @param pos - the position of the "open" statement
-     * @param name - the filename to open
-     * @param parent - the "model name" of the parent module
+     * @param filename - the filename to open
+     * @param root - the root module (this field is ignored if prefix=="")
      * @param parentFileName -the "exact filename" of the parent module
      * @param prefix - the prefix for the file we are about to parse
      * @param thispath - the set of filenames involved in the current chain_of_file_opening
      */
-    private static Module parseRecursively (
-    Map<String,String> fc, String rootdir, Pos pos, String name, Module parent,
-    String parentFileName, String prefix, Set<String> thispath)
+    private static Module parseRecursively
+    (Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename, Module root, String prefix, Set<String> thispath)
     throws Err, FileNotFoundException, IOException {
-        // Figure out the exact filename
-        File f = new File(name);
-        String canon = f.getCanonicalPath();
-        if (!f.exists() && !fc.containsKey(canon) && parent!=null && parentFileName!=null) {
-            f = new File(CompUtil.computeModulePath(parent.getModelName(), parentFileName, name));
-            canon = f.getCanonicalPath();
-        }
-        if (!f.exists() && !fc.containsKey(canon) && rootdir!=null && rootdir.length()>0) {
-            f = new File(rootdir+(("/models/"+name+".als").replace('/',File.separatorChar)));
-            canon = f.getCanonicalPath();
-        }
-        if (!f.exists() && !fc.containsKey(canon)) {
-            String content;
-            try {
-                content = Util.readAll(true, "models/"+name+".als");
-            } catch(IOException ex) {
-                throw new ErrorSyntax(pos, "The module \""+name
-                   +"\" cannot be found.\nIt is not a built-in library module, and it cannot be found at \""
-                   +(new File(name)).getAbsolutePath()+"\".\n");
-            }
-            f = new File("/models/"+name+".als");
-            canon = f.getCanonicalPath();
-            fc.put(canon, content);
-        }
         // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
         // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
         // => As you descend down the chain via OPEN, if you see the same FILE twice, then
@@ -143,18 +118,34 @@ public final class CompUtil {
         //    that file will attempt to OPEN the exact same set of files. leading back to itself, etc. etc.)
         // <= If there is an infinite loop, that means there is at least 1 infinite chain of OPEN (from root).
         //    Since the number of files is finite, at least 1 filename will be repeated.
-        if (thispath.contains(canon))
-           throw new ErrorSyntax(pos, "Circular dependency in module import. The file \""+name+"\" is imported infinitely often.");
-        thispath.add(canon);
+        if (thispath.contains(filename))
+           throw new ErrorSyntax(pos,
+           "Circular dependency in module import. The file \""+(new File(filename)).getName()+"\" is imported infinitely often.");
+        thispath.add(filename);
         // No cycle detected so far. So now we parse the file.
-        Module u = CompParser.alloy_parseStream(false, fc, (parent==null ? null : parent.getRootModule()), 0, canon, prefix);
+        if (prefix.length()==0) root=null;
+        Module u = CompParser.alloy_parseStream(false, loaded, fc, root, 0, filename, prefix);
+        if (prefix.length()==0) root=u;
         // Here, we recursively open the included files
         for(Open x: u.getOpens()) {
-            Module y = parseRecursively(fc, rootdir, x.pos, x.filename, u, canon,
-                       (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath);
+            String cp=Util.canon(computeModulePath(u.getModelName(), filename, x.filename)), content=fc.get(cp);
+            try {
+                if (content==null) content=loaded.get(cp);
+                if (content==null) content=Util.readAll(cp);
+            } catch(IOException ex1) {
+                try {
+                    content=Util.readAll(true, "models/"+x.filename+".als");
+                    cp=x.filename;
+                } catch(IOException ex) {
+                    throw new ErrorSyntax(pos,
+                    "This module cannot be found.\nIt is not a built-in library module, and it cannot be found at \""+cp+"\".\n");
+                }
+            }
+            loaded.put(cp, content);
+            Module y = parseRecursively(loaded, fc, x.pos, cp, root, (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath);
             x.connect(y);
         }
-        thispath.remove(canon); // Remove this file from the CYCLE DETECTION LIST.
+        thispath.remove(filename); // Remove this file from the CYCLE DETECTION LIST.
         return u;
     }
 
@@ -167,8 +158,8 @@ public final class CompUtil {
     public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
         try {
             Map<String,String> fc=new LinkedHashMap<String,String>();
-            fc.put("",content);
-            Module u=CompParser.alloy_parseStream(false, fc, null, 0, "", "");
+            fc.put("", content);
+            Module u=CompParser.alloy_parseStream(false, null, fc, null, 0, "", "");
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
@@ -185,8 +176,7 @@ public final class CompUtil {
      */
     public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
         try {
-            Map<String,String> fc=new LinkedHashMap<String,String>();
-            Module u=CompParser.alloy_parseStream(false, fc, null, 0, filename, "");
+            Module u=CompParser.alloy_parseStream(false, null, null, null, 0, filename, "");
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
@@ -217,19 +207,20 @@ public final class CompUtil {
 
     /**
      * Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
-     * @param fc - a cache of files that have been pre-fetched (can be null if there were no prefetching)
-     * @param rootdir - the directory for Alloy's builtin modules (eg. util/boolean.als, util/integer.als, ...); can be null.
+     * @param loaded - a cache of files that have been pre-fetched (can be null if there were no prefetching)
      * @param filename - the main module we are parsing
      * @return the root Module which contains pointers to all submodules
      * @throws Err if an error occurred
-     * <p>Note: if fc!=null and during parsing we read more files, these additional file contents will be stored into fc
+     * <p> And if loaded!=null, it will contain all the files needed for this parse, and furthermore, other entries will be deleted.
      */
-    public static Module parseEverything_fromFile (Map<String,String> fc, String rootdir, String filename) throws Err {
+    public static Module parseEverything_fromFile (Map<String,String> loaded, String filename) throws Err {
         try {
-            filename=Util.canon(filename);
-            if (fc==null) fc=new LinkedHashMap<String,String>();
-            Set<String> thispath=new LinkedHashSet<String>();
-            Module root = parseRecursively(fc, rootdir, Pos.UNKNOWN, filename, null, null, "", thispath);
+            filename = Util.canon(filename);
+            Set<String> thispath = new LinkedHashSet<String>();
+            if (loaded==null) loaded = new LinkedHashMap<String,String>();
+            Map<String,String> fc = new LinkedHashMap<String,String>(loaded);
+            loaded.clear();
+            Module root = parseRecursively(loaded, fc, new Pos(filename,1,1), filename, null, "", thispath);
             A4Reporter rep = A4Reporter.getReporter();
             return Module.resolveAll(rep, root);
         } catch(FileNotFoundException ex) {

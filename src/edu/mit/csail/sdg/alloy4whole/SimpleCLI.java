@@ -101,7 +101,7 @@ public final class SimpleCLI {
             try {
                 rep.sb.append("\n\nMain file = "+filename+"\n");
                 if (db) db("Parsing+Typechecking...");
-                Module world = CompUtil.parseEverything_fromFile(null, null, filename);
+                Module world = CompUtil.parseEverything_fromFile(null, filename);
                 if (db) db(" ok\n");
                 SafeList<Command> cmds=world.getAllCommands();
                 for(ErrorWarning msg: rep.warnings) rep.sb.append("Relevance Warning:\n" + (msg.toString().trim()) + "\n\n");

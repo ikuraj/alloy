@@ -1,3 +1,23 @@
+/*
+ * Alloy Analyzer
+ * Copyright (c) 2007 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
+ */
+
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
@@ -35,6 +55,10 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
+/**
+ * This helper class contains helper routines for reading an A4Solution object from an XML file.
+ */
+
 public final class A4SolutionReader {
 
     /** Use the XML library to parse the given file into an XMLElement object. */
@@ -65,12 +89,12 @@ public final class A4SolutionReader {
     }
 
     /** Parse the XML element into an AlloyInstance if possible. */
-    private static A4Solution parseInstance(final String alloyHome, final ConstMap<String,String> fc, final XMLElement x) throws Err {
+    private static A4Solution parseInstance(final ConstMap<String,String> fc, final XMLElement x) throws Err {
         final String filename = x.getAttribute("filename");
         final String command = x.getAttribute("command");
         Module world;
         try {
-            world = CompUtil.parseEverything_fromFile(fc, alloyHome, filename);
+            world = CompUtil.parseEverything_fromFile(new LinkedHashMap<String,String>(fc), filename);
         } catch(Throwable ex) {
             throw new RuntimeException("The original source files failed to be reconstructed.");
         }
@@ -193,7 +217,7 @@ public final class A4SolutionReader {
      * @throws ErrorFatal - if an error occurred in reading of the XML file.
      * @throws ErrorSyntax - if there is a syntax error in the XML file.
      */
-    public static A4Solution readXML(final String file, final String alloyHome) throws Err {
+    public static A4Solution readXML(final String file) throws Err {
         final XMLElement xml;
         try {
             xml=readElement(new File(file));
@@ -210,7 +234,7 @@ public final class A4SolutionReader {
         }
         if (fc.size()==0) throw new RuntimeException("The original source files were not embedded in the saved instance file.");
         ConstMap<String,String> cfc = fc.makeConst();
-        for(XMLElement sub: xml.getChildren("instance")) { instance=parseInstance(alloyHome, cfc, sub); break; }
+        for(XMLElement sub: xml.getChildren("instance")) { instance=parseInstance(cfc, sub); break; }
         if (instance==null) throw new ErrorSyntax("The XML file does not have an <instance> element.");
         return instance;
     }

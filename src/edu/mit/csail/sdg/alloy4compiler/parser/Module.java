@@ -276,7 +276,7 @@ public final class Module {
     Expr parseOneExpressionFromString(String input) throws Err, FileNotFoundException, IOException {
         Map<String,String> fc=new LinkedHashMap<String,String>();
         fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-        Module m = CompParser.alloy_parseStream(true, fc, null, -1, "", "");
+        Module m = CompParser.alloy_parseStream(true, null, fc, null, -1, "", "");
         if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
         Exp body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
         Context cx = new Context(this);

@@ -47,7 +47,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 
 /**
- * This helper class contains the routines used to write an A4Solution object out as an XML file.
+ * This helper class contains helper routines for writing an A4Solution object out as an XML file.
  */
 
 final class A4SolutionWriter {

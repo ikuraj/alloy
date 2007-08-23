@@ -197,7 +197,7 @@ final class SimpleReporter extends A4Reporter {
         rep.mainAlloyFileName = Util.canon(options.originalFilename);
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
-        final Module world = CompUtil.parseEverything_fromFile(bundleCache, Helper.alloyHome(), rep.mainAlloyFileName);
+        final Module world = CompUtil.parseEverything_fromFile(bundleCache, rep.mainAlloyFileName);
         final SafeList<Sig> sigs = world.getAllReachableSigs();
         final SafeList<Command> cmds = world.getAllCommands();
         if (rep.warnings.size()>0) {
