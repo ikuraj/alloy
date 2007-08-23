@@ -82,6 +82,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4.Computer;
@@ -1541,7 +1542,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         public final String compute(String input) throws Exception {
             try {
                 if (filename==null) throw new RuntimeException("Internal Error: filename==null.");
-                instance=A4Solution.readXML(filename, Helper.alloyHome());
+                instance=A4SolutionReader.readXML(filename, Helper.alloyHome());
                 if (input.trim().length()==0) return ""; // Empty line
                 Expr e=CompUtil.parseOneExpression_fromString(instance.getWorld(), input);
                 return instance.eval(e).toString();
