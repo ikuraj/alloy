@@ -123,15 +123,16 @@ public final class CompUtil {
            "Circular dependency in module import. The file \""+(new File(filename)).getName()+"\" is imported infinitely often.");
         thispath.add(filename);
         // No cycle detected so far. So now we parse the file.
-        if (prefix.length()==0) root=null;
         Module u = CompParser.alloy_parseStream(false, loaded, fc, root, 0, filename, prefix);
-        if (prefix.length()==0) root=u;
+        if (prefix.length()==0) root = u;
         // Here, we recursively open the included files
         for(Open x: u.getOpens()) {
             String cp=Util.canon(computeModulePath(u.getModelName(), filename, x.filename)), content=fc.get(cp);
             try {
-                if (content==null) content=loaded.get(cp);
-                if (content==null) content=Util.readAll(cp);
+                if (content==null) { content=loaded.get(cp); }
+                if (content==null) { content=fc.get(x.filename);     if (content!=null) cp=x.filename; }
+                if (content==null) { content=loaded.get(x.filename); if (content!=null) cp=x.filename; }
+                if (content==null) { content=Util.readAll(cp); }
             } catch(IOException ex1) {
                 try {
                     content=Util.readAll(true, "models/"+x.filename+".als");
