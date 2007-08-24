@@ -55,6 +55,7 @@ import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionWriter;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToMetamodel;
 
@@ -177,7 +178,7 @@ final class SimpleReporter extends A4Reporter {
             return "There are no more satisfying instances.\n\n" +
             "Note: due to symmetry breaking and other optimizations,\n" +
             "some equivalent solutions may have been omitted.";
-        sol.writeXML(filename, mod.getAllFunc());
+        A4SolutionWriter.write(sol, filename, mod.getAllFunc());
         synchronized(SimpleReporter.class) { latestKodkod=sol; }
         rep.declareInstance(filename);
         return "";

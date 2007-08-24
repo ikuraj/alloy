@@ -42,8 +42,6 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 
 public final class TranslateAlloyToMetamodel {
 
-    private int z;
-
     /** Constructor is private, since we want to force all access to this class via the static public methods. */
     private TranslateAlloyToMetamodel() { }
 

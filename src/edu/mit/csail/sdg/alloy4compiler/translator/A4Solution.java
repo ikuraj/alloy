@@ -51,7 +51,6 @@ import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4.ConstSet.TempSet;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -101,7 +100,7 @@ public final class A4Solution {
     private final ConstMap<Object,PrimSig> k2sig;
 
     /** The unmomdifiable original kodkod unsat core (can be empty if unknown) */
-    private final ConstList<Formula> kCore;
+    private final ConstList<Formula> core;
 
     /** The map from kodkod Formula to Alloy Expr or Alloy Pos (can be empty if unknown) */
     private final ConstMap<Formula,Object> fmap;
@@ -165,11 +164,11 @@ public final class A4Solution {
      * @param kInstance - the Kodkod instance represented by this A4Solution; nonnull iff this solution is satisfiable
      * @param skolem2type - this maps each known Skolem to its Alloy type
      * @param fmap - map from kodkod Formula to Alloy Expr or Alloy Pos; can be empty or null if the map is unavailable
-     * @param kCore - unsat core in terms of Kodkod formulas; can be null or empty if unknown
+     * @param core - unsat core in terms of Kodkod formulas; can be null or empty if unknown
      */
     A4Solution(Iterable<Sig> sigs, ConstMap<Object,Expression> bcc, String filename, Map<String,String> sources,
     String command, Iterator<Solution> kEnumerator, Formula kFormula, Bounds kBounds, int bitwidth,
-    Instance kInstance, Map<Relation,Type> skolem2type, Map<Formula,Object> fmap, Iterable<Formula> kCore)
+    Instance kInstance, Map<Relation,Type> skolem2type, Map<Formula,Object> fmap, Iterable<Formula> core)
     throws Err {
         this.sigs = ConstList.make(sigs);
         this.skolem2type = ConstMap.make(skolem2type);
@@ -180,7 +179,7 @@ public final class A4Solution {
         this.kEnumerator = kEnumerator;
         this.kBounds = (kBounds!=null ? kBounds.clone() : null);
         this.fmap = ConstMap.make(fmap);
-        this.kCore = ConstList.make(kCore);
+        this.core = ConstList.make(core);
         this.bitwidth = bitwidth;
         if (bitwidth<1 || bitwidth>30) throw new ErrorAPI("The integer bitwidth must be between 1 and 30.");
         TempMap<Object,String> m1 = new TempMap<Object,String>();
@@ -255,10 +254,6 @@ public final class A4Solution {
         return ans;
     }
 
-    public synchronized void writeXML(String filename, Iterable<Func> macros) throws Err { // TODO
-           A4SolutionWriter.write(this, filename, macros);
-    }
-
     //============================================================================================================================//
 
     /** If not null, you can ask it to get another solution; this field must be synchronized. */
@@ -295,7 +290,7 @@ public final class A4Solution {
         if (!satisfiable()) throw new ErrorAPI("This solution is unsatisfiable, so no eval() is allowed.");
         if (!expr.errors.isEmpty() && expr.ambiguous) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
-        Object result = (new TranslateAlloyToKodkod(bcc, bitwidth, null, null)).visitThis(expr);
+        Object result = (new TranslateAlloyToKodkod(bcc, bitwidth, null)).visitThis(expr);
         if (result instanceof IntExpression) return kEval.evaluate((IntExpression)result);
         if (result instanceof Formula) return kEval.evaluate((Formula)result);
         if (result instanceof Expression) return new A4TupleSet(kEval.evaluate((Expression)result), k2atom, k2sig);
@@ -312,7 +307,7 @@ public final class A4Solution {
         ConstSet<Pos> answer = coreCache;
         if (answer!=null) return answer;
         TempSet<Pos> ans = new TempSet<Pos>();
-        if (kEval==null) for(Formula f: kCore) {
+        if (kEval==null) for(Formula f: core) {
            Object y = fmap.get(f);
            if (y instanceof Pos) ans.add( (Pos)y );
            if (y instanceof Expr) ans.add( ((Expr)y).span() );

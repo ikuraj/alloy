@@ -339,7 +339,7 @@ public final class A4SolutionReader {
         sol = new A4Solution(sigs, ConstMap.make(a2k), filename, fc, command, null, null, null, bitwidth, inst, null, null, null);
     }
 
-    /** Parse the XML element into an AlloyInstance if possible. */
+    /** Parse the XML element into an AlloyInstance. */
     public static Pair<Module,A4Solution> read(String filename) throws Err {
         try {
             A4SolutionReader x = new A4SolutionReader(filename);

@@ -47,7 +47,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 
 /** This helper class contains helper routines for writing an A4Solution object out as an XML file. */
 
-final class A4SolutionWriter {
+public final class A4SolutionWriter {
 
     /** If a sig label is "", or a field label is "", we use this as the name instead. */
     private static final String BLANK = "x";
@@ -205,7 +205,7 @@ final class A4SolutionWriter {
      * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
      * <p> If two or more fields have the same name and overlapping type, we append ' to the names until no more conflict.
      */
-    public static void write(A4Solution sol, String filename, Iterable<Func> allMacros) throws Err {
+    public static void write(A4Solution sol, String filename, Iterable<Func> macros) throws Err {
         final PrintWriter out;
         try {
             out=new PrintWriter(filename,"UTF-8");
@@ -213,7 +213,7 @@ final class A4SolutionWriter {
             throw new ErrorFatal("Cannot write to the file \""+filename+"\"");
         }
         try {
-            new A4SolutionWriter(sol, out, allMacros);
+            new A4SolutionWriter(sol, out, macros);
         } catch(Throwable ex) {
             Util.close(out);
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the A4Solution XML file.",ex);

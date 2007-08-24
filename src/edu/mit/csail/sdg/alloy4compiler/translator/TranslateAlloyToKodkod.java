@@ -62,7 +62,6 @@ import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntToExprCast;
-import kodkod.ast.Node;
 import kodkod.ast.Variable;
 import kodkod.ast.Relation;
 import kodkod.ast.Formula;
@@ -88,8 +87,6 @@ import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
 
 public final class TranslateAlloyToKodkod extends VisitReturn {
 
-    private int z;
-
     /** The reporter that does nothing. */
     private static AbstractReporter blankReporter = new AbstractReporter(){};
 
@@ -109,32 +106,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
     /** This map keeps track of the mapping from Kodkod Decl to the original Type and the original Pos. */
-    private final Map<Decl,Pair<Type,Pos>> skolemType;
+    private final Map<Decl,Pair<Type,Pos>> decl2type = new IdentityHashMap<Decl,Pair<Type,Pos>>();
 
     /** This map keeps track of the mapping from Kodkod Skolem to the original Union Type. */
-    private final Map<Relation,Type> skolemRelType = new IdentityHashMap<Relation,Type>();
-
-    /** The Kodkod-to-Alloy map. */
-//    final Map<Formula,List<Object>> core;
-//    private Formula core(Formula f, Pos x) {
-//        if (core==null || x==null) return f;
-//        List<Object> list=core.get(f);
-//        if (list==null) { list=new ArrayList<Object>(3); core.put(f,list); }
-//        list.add(x);
-//        return f;
-//    }
-//    private Formula core(Formula f, Expr x) {
-//        if (core==null || x==null) return f;
-//        if (f instanceof BinaryFormula && ((BinaryFormula)f).op()==BinaryFormula.Operator.AND) {
-//            core(((BinaryFormula)f).left(), x);
-//            core(((BinaryFormula)f).right(), x);
-//            return f;
-//        }
-//        List<Object> list=core.get(f);
-//        if (list==null) { list=new ArrayList<Object>(3); core.put(f,list); }
-//        list.add(x);
-//        return f;
-//    }
+    private final Map<Relation,Type> rel2type = new IdentityHashMap<Relation,Type>();
 
     /**
      * True if we want to silently ignore "multiplicity constraints".
@@ -146,9 +121,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** The integer bitwidth. */
     private final int bitwidth;
 
-    /**
-     * If nonnull, this holds a map from Sig, Field, and possibly even some parameterless Func to a Kodkod Expression
-     */
+    /** If nonnull, this holds a map from Sig, Field, and possibly even some parameterless Func to a Kodkod Expression. */
     private final ConstMap<Object,Expression> bcc;
 
     private Formula fmap(Object f, Expr x) {
@@ -166,16 +139,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private final IdentityHashMap<Formula,Object> fmap;
 
     /** Constructs a TranslateAlloyKodkod object. */
-    TranslateAlloyToKodkod
-    (ConstMap<Object,Expression> bcc, int bitwidth, Map<Decl,Pair<Type,Pos>> skolemType, IdentityHashMap<Formula,Object> core) {
-        if (skolemType==null) skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
-        this.skolemType=skolemType; this.bcc=ConstMap.make(bcc); this.bitwidth=bitwidth; this.fmap=core;
+    TranslateAlloyToKodkod(ConstMap<Object,Expression> bcc, int bitwidth, IdentityHashMap<Formula,Object> core) {
+        this.bcc=ConstMap.make(bcc); this.bitwidth=bitwidth; this.fmap=core;
     }
 
     //==============================================================================================================//
 
     private static A4Solution helper
-    (final Map<Decl,Pair<Type,Pos>> skolemType, final Module world, Command cmd, final A4Options opt,
+    (final Module world, Command cmd, final A4Options opt,
     Map<String,String> originalSources, String xmlFileName, String tempFileName, boolean tryBookExamples)
     throws Err {
         final IdentityHashMap<Formula,Object> core=new IdentityHashMap<Formula,Object>();
@@ -187,113 +158,120 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Formula kfact = bc.a.b;
         Bounds bounds = bc.a.a;
         ConstMap<Object,Expression> a2k = bc.b;
-        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(a2k, sc.getBitwidth(), skolemType, core);
-        rep.debug("Generating facts...");
-        for(Module u:world.getAllReachableModules()) kfact=tr.makeFacts(u,kfact);
-        Formula mainformula;
-        tr.current_command=cmd.label;
-        tr.current_function.clear();
-        if (cmd.check) {
-            mainformula=tr.fmap(tr.cform(cmd.formula.not()), cmd.formula).and(kfact);
-        } else {
-            mainformula=tr.fmap(tr.cform(cmd.formula), cmd.formula).and(kfact);
-        }
-        tr.current_command="";
-        tr.current_function.clear();
-        rep.debug("Assigning kodkod options...");
-        Solver solver = new Solver();
-        if (opt.solver.external()!=null) {
-            String ext = opt.solver.external();
-            if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
-            solver.options().setSolver(SATFactory.externalFactory(ext, "", tempFileName, ""));
-        } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
-            solver.options().setSolver(SATFactory.ZChaff);
-        } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
-            solver.options().setSolver(SATFactory.MiniSat);
-        } else if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
-            solver.options().setSolver(SATFactory.MiniSatProver);
-        } else if (opt.solver.equals(A4Options.SatSolver.FILE)) {
-            solver.options().setSolver(SATFactory.externalFactory(
-            System.getProperty("user.home")+File.separatorChar+"nosuchprogram", "", tempFileName, ""));
-        } else {
-            solver.options().setSolver(SATFactory.DefaultSAT4J);
-        }
-        solver.options().setBitwidth(tr.bitwidth);
-        solver.options().setIntEncoding(Options.IntEncoding.BINARY);
-        int sym=1;
-        int skolemDepth=opt.skolemDepth;
-        if (cmd.expects==1) sym=0;
-        sym = sym * opt.symmetry;
-        if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
-            sym=20;
-            solver.options().setLogTranslation(true);
-        }
-        solver.options().setSymmetryBreaking(sym);
-        solver.options().setSkolemDepth(skolemDepth);
-        rep.translate(opt.solver.id(), tr.bitwidth, sc.getMaxSeq(), skolemDepth, sym);
-        rep.debug("Assigning kodkod reporter...");
-        solver.options().setReporter(new AbstractReporter() {
-            @Override public final void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
-                try {
-                    Pair<Type,Pos> p=tr.skolemType.get(decl);
-                    if (p==null) return;
-                    Type t=p.a;
-                    if (predecl!=null) for(int i=predecl.size()-1; i>=0; i--) {
-                        Pair<Type,Pos> pp=tr.skolemType.get(predecl.get(i));
-                        if (pp==null) return;
-                        t=(pp.a).product(t);
-                    }
-                    while(t.arity() > skolem.arity()) t=UNIV.type.join(t);
-                    tr.skolemRelType.put(skolem,t);
-                } catch(Throwable ex) { }
-            }
-            @Override public final void solvingCNF(int primaryVars, int vars, int clauses) {
-                rep.solve(primaryVars, vars, clauses);
-            }
-        });
-        rep.debug("Simplifying the bounds...");
-        if (!Simplifier.simplify(bounds, mainformula, solver.options())) mainformula=Formula.FALSE;
-        rep.debug("Generating the solution...");
-        long time=System.currentTimeMillis();
-        A4Solution mainResult;
+        final TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(a2k, sc.getBitwidth(), core);
+        final Map<Decl,Pair<Type,Pos>> decl2type = tr.decl2type;
         try {
-            mainResult=make(
-                a2k,
-                core,
-                bounds,
-                world,
-                opt,
-                tr.skolemRelType, // You cannot turn it Constant, since it needs to be modified DURING KODKOD TRANSLATION!
-                solver,
-                mainformula,
-                originalSources,
-                cmd,
-                tryBookExamples);
-        } catch(SaveToFileException ex) {
-            rep.resultCNF(tempFileName);
-            return null;
+            rep.debug("Generating facts...");
+            for(Module u:world.getAllReachableModules()) kfact=tr.makeFacts(u,kfact);
+            Formula mainformula;
+            tr.current_command=cmd.label;
+            tr.current_function.clear();
+            if (cmd.check) {
+                mainformula=tr.fmap(tr.cform(cmd.formula.not()), cmd.formula).and(kfact);
+            } else {
+                mainformula=tr.fmap(tr.cform(cmd.formula), cmd.formula).and(kfact);
+            }
+            tr.current_command="";
+            tr.current_function.clear();
+            rep.debug("Assigning kodkod options...");
+            Solver solver = new Solver();
+            if (opt.solver.external()!=null) {
+                String ext = opt.solver.external();
+                if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
+                solver.options().setSolver(SATFactory.externalFactory(ext, "", tempFileName, ""));
+            } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
+                solver.options().setSolver(SATFactory.ZChaff);
+            } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
+                solver.options().setSolver(SATFactory.MiniSat);
+            } else if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
+                solver.options().setSolver(SATFactory.MiniSatProver);
+            } else if (opt.solver.equals(A4Options.SatSolver.FILE)) {
+                solver.options().setSolver(SATFactory.externalFactory(
+                        System.getProperty("user.home")+File.separatorChar+"nosuchprogram", "", tempFileName, ""));
+            } else {
+                solver.options().setSolver(SATFactory.DefaultSAT4J);
+            }
+            solver.options().setBitwidth(tr.bitwidth);
+            solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+            int sym=1;
+            int skolemDepth=opt.skolemDepth;
+            if (cmd.expects==1) sym=0;
+            sym = sym * opt.symmetry;
+            if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
+                sym=20;
+                solver.options().setLogTranslation(true);
+            }
+            solver.options().setSymmetryBreaking(sym);
+            solver.options().setSkolemDepth(skolemDepth);
+            rep.translate(opt.solver.id(), tr.bitwidth, sc.getMaxSeq(), skolemDepth, sym);
+            rep.debug("Assigning kodkod reporter...");
+            solver.options().setReporter(new AbstractReporter() {
+                @Override public final void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
+                    try {
+                        Pair<Type,Pos> p=tr.decl2type.get(decl);
+                        if (p==null) return;
+                        Type t=p.a;
+                        if (predecl!=null) for(int i=predecl.size()-1; i>=0; i--) {
+                            Pair<Type,Pos> pp=tr.decl2type.get(predecl.get(i));
+                            if (pp==null) return;
+                            t=(pp.a).product(t);
+                        }
+                        while(t.arity() > skolem.arity()) t=UNIV.type.join(t);
+                        tr.rel2type.put(skolem,t);
+                    } catch(Throwable ex) { }
+                }
+                @Override public final void solvingCNF(int primaryVars, int vars, int clauses) {
+                    rep.solve(primaryVars, vars, clauses);
+                }
+            });
+            rep.debug("Simplifying the bounds...");
+            if (!Simplifier.simplify(bounds, mainformula, solver.options())) mainformula=Formula.FALSE;
+            rep.debug("Generating the solution...");
+            long time=System.currentTimeMillis();
+            A4Solution mainResult;
+            try {
+                mainResult=make(
+                        a2k,
+                        core,
+                        bounds,
+                        world,
+                        opt,
+                        tr.rel2type, // You cannot turn it Constant, since it needs to be modified DURING KODKOD TRANSLATION!
+                        solver,
+                        mainformula,
+                        originalSources,
+                        cmd,
+                        tryBookExamples);
+            } catch(SaveToFileException ex) {
+                rep.resultCNF(tempFileName);
+                return null;
+            }
+            if (opt.solver.equals(A4Options.SatSolver.FILE)) {
+                rep.debug("Solution trivial...");
+                // If the formula wasn't trivial, we should have entered the "RuntimeException" clause above
+                // (since we specified a non-sensical SAT solver name); but we didn't, hence the formula was trivial.
+                // Now, since the user wants it in CNF format, so we manually generate
+                // a trivial satisfiable (or unsatisfiable) CNF file.
+                String txt = mainResult.satisfiable() ? "p cnf 1 1\n1 0\n" : "p cnf 1 2\n1 0\n-1 0\n";
+                Util.writeAll(tempFileName, txt);
+                rep.debug("Solution return...");
+                rep.resultCNF(tempFileName);
+                return null;
+            }
+            rep.debug("Solution nontrivial...");
+            time=System.currentTimeMillis()-time;
+            if (!mainResult.satisfiable()) {
+                rep.resultUNSAT(cmd, time, mainResult.formula, mainResult.core());
+            } else {
+                if (xmlFileName!=null && xmlFileName.length()>0) A4SolutionWriter.write(mainResult, xmlFileName, world.getAllFunc());
+                rep.resultSAT(cmd, time, mainResult.formula, xmlFileName);
+            }
+            return mainResult;
+        } catch(HigherOrderDeclException ex) {
+            Pair<Type,Pos> x=decl2type.get(ex.decl());
+            Pos p=(x!=null ? x.b : Pos.UNKNOWN);
+            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         }
-        if (opt.solver.equals(A4Options.SatSolver.FILE)) {
-            rep.debug("Solution trivial...");
-            // If the formula wasn't trivial, we should have entered the "RuntimeException" clause above
-            // (since we specified a non-sensical SAT solver name); but we didn't, hence the formula was trivial.
-            // Now, since the user wants it in CNF format, so we manually generate
-            // a trivial satisfiable (or unsatisfiable) CNF file.
-            String txt = mainResult.satisfiable() ? "p cnf 1 1\n1 0\n" : "p cnf 1 2\n1 0\n-1 0\n";
-            Util.writeAll(tempFileName, txt);
-            rep.debug("Solution return...");
-            rep.resultCNF(tempFileName);
-            return null;
-        }
-        rep.debug("Solution nontrivial...");
-        time=System.currentTimeMillis()-time;
-        if (!mainResult.satisfiable()) {
-            rep.resultUNSAT(cmd, time, mainResult.formula, mainResult.core());
-        } else {
-            if (xmlFileName!=null && xmlFileName.length()>0) mainResult.writeXML(xmlFileName, world.getAllFunc());
-            rep.resultSAT(cmd, time, mainResult.formula, xmlFileName);
-        }
-        return mainResult;
     }
 
 
@@ -407,15 +385,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     public static A4Solution execute_command
     (Module world, Command cmd, A4Options opt, String xmlFileName, String tempFileName)
     throws Err {
-        Map<Decl,Pair<Type,Pos>> skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
         try {
-            A4Solution ans=helper(skolemType,world,cmd,opt,null,xmlFileName,tempFileName,false);
+            A4Solution ans=helper(world,cmd,opt,null,xmlFileName,tempFileName,false);
             return ans;
-        } catch(HigherOrderDeclException ex) {
-            Pair<Type,Pos> x=skolemType.get(ex.decl());
-            Pos p=(x!=null ? x.b : Pos.UNKNOWN);
-            throw new ErrorType(p,
-                  "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(Throwable ex) {
@@ -446,15 +418,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     public static A4Solution execute_commandFromBook
     (Module world, Command cmd, A4Options opt, Map<String,String> originalSources, String xmlFileName, String tempFileName)
     throws Err {
-        Map<Decl,Pair<Type,Pos>> skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
         try {
-            A4Solution ans=helper(skolemType,world,cmd,opt,originalSources, xmlFileName,tempFileName,true);
+            A4Solution ans=helper(world,cmd,opt,originalSources, xmlFileName,tempFileName,true);
             return ans;
-        } catch(HigherOrderDeclException ex) {
-            Pair<Type,Pos> x=skolemType.get(ex.decl());
-            Pos p=(x!=null ? x.b : Pos.UNKNOWN);
-            throw new ErrorType(p,
-                  "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(Throwable ex) {
@@ -1013,7 +979,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 guard=isIn(v, dexexpr).and(guard);
                 newd=v.setOf(dv);
             }
-            skolemType.put(newd, new Pair<Type,Pos>(dex.type, dex.pos));
+            decl2type.put(newd, new Pair<Type,Pos>(dex.type, dex.pos));
             if (dd==null) dd=newd; else dd=dd.and(newd);
             decls.add(newd);
         }
