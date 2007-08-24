@@ -109,8 +109,13 @@ public final class Module {
         /** Resolve the given name to get a collection of Expr and Func objects. */
         public Collection<Object> resolve(Pos pos, String name) {
             Expr match = env.get(name);
-            if (match==null) { match=rootmodule.globals.get(name); if (match!=null) match=ExprUnary.Op.NOOP.make(pos,match); }
-            if (match!=null) { List<Object> ans=new ArrayList<Object>(); ans.add(match); return ans; }
+            if (match==null) match=rootmodule.globals.get(name);
+            if (match!=null) {
+                match=ExprUnary.Op.NOOP.make(pos,match);
+                List<Object> ans=new ArrayList<Object>(1);
+                ans.add(match);
+                return ans;
+            }
             return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
         }
     }
@@ -168,12 +173,12 @@ public final class Module {
         private boolean hint_isLeaf=false;
         private final Pos pos;
         private final String name,fullname;
-        private final Pos abs,lone,one,some,subset;
+        private final Pos abs,lone,one,some,subsig,subset;
         private final ConstList<ExpName> parents;
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
         private Pos isOrdered=null;
-        private SigAST(Pos pos, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subset,
+        private SigAST(Pos pos, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
             List<ExpName> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
             this.fullname=fullname;
@@ -182,6 +187,7 @@ public final class Module {
             this.lone=lone;
             this.one=one;
             this.some=some;
+            this.subsig=subsig;
             this.subset=subset;
             this.parents=ConstList.make(parents);
             this.fields=ConstList.make(fields);
@@ -191,7 +197,7 @@ public final class Module {
             this.realParents=new ArrayList<SigAST>(this.parents.size());
         }
         private SigAST(String fullname, String name, List<ExpName> parents, Sig realSig) {
-            this(null, fullname, name, null, null, null, null, null, parents, null, null, null, realSig);
+            this(null, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig);
         }
         @Override public String toString() { return fullname; }
     }
@@ -446,7 +452,7 @@ public final class Module {
         if (list!=null) for(ExpName expr: list) {
             String name=expr.name;
             dup(expr.span(), name, true);
-            if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null);
+            if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null, null);
             else params.put(name, null);
         }
         this.status=1; // This line must be at the end, since "addSig" will otherwise bump the status value to 3
@@ -579,17 +585,17 @@ public final class Module {
 
     /** Add a sig declaration. */
     SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome,
-    List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
+    ExpName par, List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
         if (name.indexOf('$')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'$\' character");
         status=3;
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
-        Pos subset=null;
-        if (parents!=null) {
-            if (parents.get(0)==null) {ExpName parent=parents.get(1); parents=Util.asList(parent);}
-            else for(ExpName p:parents) subset=p.span().merge(subset);
+        Pos subset=null, subsig=null;
+        if (par!=null) {
+            if (par.name.charAt(0)=='e') { subsig=par.span().merge(parents.get(0).span()); }
+            else { subset=par.span(); for(ExpName p:parents) subset=p.span().merge(subset); }
         }
-        SigAST obj=new SigAST(pos,full,name, isAbstract,isLone,isOne,isSome,subset, parents, fields,fact,this,null);
+        SigAST obj=new SigAST(pos,full,name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null);
         if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
@@ -624,7 +630,7 @@ public final class Module {
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
                + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
-            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.hint_isLeaf);
+            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isOrdered, oldS.hint_isLeaf);
         }
         sorted.add(oldS);
         return oldS.realSig;

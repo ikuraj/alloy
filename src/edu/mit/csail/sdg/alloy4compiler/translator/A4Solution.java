@@ -47,6 +47,7 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4.ConstSet.TempSet;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -57,12 +58,11 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 
 /** Immutable; represents an Alloy solution (which is either satisfiable or unsatisfiable). */
 
 public final class A4Solution {
-
-    //================ UNSYNCHRONIZED FIELDS =====================================================================================//
 
     /** The integer bitwidth of this solution's model; always between 1 and 30. */
     private final int bitwidth;
@@ -82,6 +82,9 @@ public final class A4Solution {
     /** The original formula (as a Kodkod formula object) used to generate this solution; can be null if unknown. */
     private final Formula kFormula;
 
+    /** The list of all sigs in this solution's model; always complete, has UNIV+SIGINT+SEQIDX+NONE, and has no duplciates. */
+    private final ConstList<Sig> sigs;
+
     /** If not empty, it maps each Sig/Field (and possibly even some parameterless Func) to a Kodkod expression. */
     private final ConstMap<Object,Expression> bcc;
 
@@ -90,9 +93,6 @@ public final class A4Solution {
 
     /** The unmodifiable original Kodkod bounds (can be null if unknown) */
     private final Bounds kBounds;
-
-    /** The list of all sigs in this solution's model; always complete, has UNIV+SIGINT+SEQIDX+NONE, and has no duplciates. */
-    private final ConstList<Sig> sigs;
 
     /** This maps each Kodkod atom to its corresponding Alloy atom. */
     private final ConstMap<Object,String> k2atom;
@@ -103,19 +103,51 @@ public final class A4Solution {
     /** The unmomdifiable original kodkod unsat core (can be empty if unknown) */
     private final ConstList<Formula> kCore;
 
-    /** The map from kodkod unsat core back to Alloy AST (or null if the map is unavailable) */
-    private final ConstMap<Formula,List<Object>> core;
+    /** The map from kodkod Formula to Alloy Expr or Alloy Pos (can be empty if unknown) */
+    private final ConstMap<Formula,Object> fmap;
 
     /** Modifiable Skolem->Type map. */
     private final ConstMap<Relation,Type> skolem2type;
 
-    //================ SYNCHRONIZED FIELDS =======================================================================================//
+    //============================================================================================================================//
 
-    /** If nonnull, it caches the result of calling "next()"; this field must be synchronized. */
-    private A4Solution next = null;
-
-    /** If not null, you can ask it to get another solution; this field must be synchronized. */
-    private final Iterator<Solution> kEnumerator;
+    /** Recursively rename all atoms to be of the form "SIGNAME$INDEX" where SIGNAME is the most-specific-sig. */
+    private static void rename
+    (Evaluator eval, ConstMap<Object,Expression> bcc, PrimSig s,
+    TempMap<Object,String> map, TempMap<Object,PrimSig> map2, UniqueNameGenerator un)
+    throws Err {
+        for(PrimSig c:s.children()) rename(eval, bcc, c, map, map2, un);
+        List<String> list=null;
+        for(Tuple t:eval.evaluate(bcc.get(s))) {
+            String a=t.atom(0).toString();
+            if (map2.containsKey(a)) continue; // This means one of the subsig has already claimed this atom.
+            map2.put(t.atom(0), s);
+            if (list==null) list=new ArrayList<String>();
+            list.add(a);
+        }
+        if (list==null) return;
+        // Compute the width of the index (eg. width("0")=1,  width("7")=1,  width("23")=2, etc)
+        int width=1;
+        for(int i=list.size()-1; i>=10; i=i/10) width++;
+        // Now, generate the new name. By prepending enough 0 to line up the numbers, we ensure the atoms will sort lexicographically
+        StringBuilder sb = new StringBuilder();
+        String signame = s.toString();
+        // Many A4Solution objects will have the repetitive "this/" in front of the sig names (since that is
+        // the convention of alloy4compiler), so removing "this/" will make the output look nicer.
+        // This renaming is safe, since we'll pass it into UniqueNameGenerator to ensure no name clash anyway.
+        if (signame.startsWith("this/")) signame=signame.substring(5);
+        signame=un.make(signame);
+        for(int i=0; i<list.size(); i++) {
+            sb.delete(0, sb.length());
+            sb.append(signame);
+            sb.append('$');
+            String x=Integer.toString(i);
+            int xlen=x.length();
+            while(xlen<width) {sb.append('0'); xlen++;}
+            sb.append(x);
+            map.put(list.get(i), sb.toString());
+        }
+    }
 
     //============================================================================================================================//
 
@@ -132,22 +164,22 @@ public final class A4Solution {
      * @param bitwidth - the integer bitwidth of this solution's model; must be between 1 and 30
      * @param kInstance - the Kodkod instance represented by this A4Solution; nonnull iff this solution is satisfiable
      * @param skolem2type - this maps each known Skolem to its Alloy type
-     * @param core - unsat core in terms of Kodkod formulas; can be null or empty if unknown
-     * @param kCore - unsat core map that maps Kodkod Formula to Alloy4 Pos; can be null or empty if unknown
+     * @param fmap - map from kodkod Formula to Alloy Expr or Alloy Pos; can be empty or null if the map is unavailable
+     * @param kCore - unsat core in terms of Kodkod formulas; can be null or empty if unknown
      */
     A4Solution(Iterable<Sig> sigs, ConstMap<Object,Expression> bcc, String filename, Map<String,String> sources,
     String command, Iterator<Solution> kEnumerator, Formula kFormula, Bounds kBounds, int bitwidth,
-    Instance kInstance, Map<Relation,Type> skolem2type, Map<Formula,List<Object>> core, Iterable<Formula> kCore)
+    Instance kInstance, Map<Relation,Type> skolem2type, Map<Formula,Object> fmap, Iterable<Formula> kCore)
     throws Err {
-        this.skolem2type = ConstMap.make(skolem2type);
         this.sigs = ConstList.make(sigs);
+        this.skolem2type = ConstMap.make(skolem2type);
         this.bcc = ConstMap.make(bcc);
         this.filename = (filename==null ? "" : filename);
         this.sources = ConstMap.make(sources);
         this.command = (command==null ? "" : command);
         this.kEnumerator = kEnumerator;
         this.kBounds = (kBounds!=null ? kBounds.clone() : null);
-        this.core = ConstMap.make(core);
+        this.fmap = ConstMap.make(fmap);
         this.kCore = ConstList.make(kCore);
         this.bitwidth = bitwidth;
         if (bitwidth<1 || bitwidth>30) throw new ErrorAPI("The integer bitwidth must be between 1 and 30.");
@@ -156,20 +188,30 @@ public final class A4Solution {
         if (kInstance==null) {
             kEval = null;
         } else {
-            Options options = new Options();
+            final UniqueNameGenerator un = new UniqueNameGenerator();
+            final Options options = new Options();
             options.setBitwidth(bitwidth);
             kEval = new Evaluator(kInstance.clone(), options);
-            for(Sig s:this.sigs) if (!s.builtin && s.isTopLevel()) rename((PrimSig)s,m1,m2);
+            // We first process SIGINT
+            for(Tuple t:kEval.evaluate(Relation.INTS)) { m2.put(t.atom(0), SIGINT); }
+            // We then process SEQIDX so we override the old mapping to SIGINT with the new mapping to SEQIDX
+            for(Tuple t:kEval.evaluate(BoundsComputer.SEQ_SEQIDX)) { m2.put(t.atom(0), SEQIDX); }
+            // Now, process the non-builtin sigs
+            for(Map.Entry<Object,Expression> e:this.bcc.entrySet()) {
+                if (e.getKey() instanceof PrimSig) {
+                    PrimSig s=(PrimSig)(e.getKey());
+                    if (!s.builtin && s.isTopLevel()) rename(kEval, this.bcc, s, m1, m2, un);
+                }
+            }
+            // These are redundant atoms that were not chosen to be in the final instance
             int unused=0;
             for(Tuple tuple: kEval.evaluate(Relation.UNIV)) {
                 Object atom = tuple.atom(0);
-                String atomstr = atom.toString();
-                if (atomstr.indexOf('$')<0) { m2.put(atom, SIGINT); continue; }
-                if (!m1.containsKey(atom)) { m1.put(atom, "unused"+unused); unused++; }
+                if (!m2.containsKey(atom)) { m1.put(atom, "unused"+unused); unused++; }
             }
         }
-        this.k2atom = m1.makeConst();
-        this.k2sig = m2.makeConst();
+        k2atom = m1.makeConst();
+        k2sig = m2.makeConst();
         if (kFormula!=null && this.kBounds!=null) {
             this.formula=TranslateKodkodToJava.convert(kFormula, bitwidth, this.kBounds.universe().iterator(), this.kBounds, k2atom);
         } else {
@@ -178,58 +220,9 @@ public final class A4Solution {
         this.kFormula = kFormula;
     }
 
-    /**
-     * If this solution is UNSAT, return itself; else return the next solution (which could be SAT or UNSAT).
-     * @throws ErrorAPI if the solver was not an incremental solver
-     */
-    public synchronized A4Solution next() throws Err {
-        if (kEval==null) return this; // If UNSAT, then return myself.
-        if (next!=null) return next; // If result is already cached, then return it.
-        if (kEnumerator==null)
-            throw new ErrorAPI("This solution was not generated by an incremental SAT solver.\n"
-            +"Solution enumeration is currently only implemented for MiniSat and SAT4J.");
-        Solution sol=kEnumerator.next();
-        next=new A4Solution(sigs, bcc, filename, sources, command, kEnumerator, kFormula, kBounds, bitwidth,
-            sol.instance(), skolem2type, null, null); // Core==kCore==null since the current solution is satisfiable
-        return next;
-    }
+    //============================================================================================================================//
 
-    /**
-     * Recursively rename all atoms to be of the form "SIGNAME[INDEX]" where SIGNAME is the most-specific-sig.
-     * <br> <b>PRECONDITION:</b> kEval!=null && bc!=null
-     */
-    private void rename(PrimSig s, TempMap<Object,String> map, TempMap<Object,PrimSig> map2sig) throws Err {
-        for(PrimSig c:s.children()) rename(c, map, map2sig);
-        List<String> list=null;
-        for(Tuple t:kEval.evaluate(bcc.get(s))) {
-            String a=t.atom(0).toString();
-            if (map.containsKey(a)) continue; // This means one of the subsig has already claimed this atom.
-            if (list==null) list=new ArrayList<String>();
-            list.add(a);
-        }
-        if (list==null) return;
-        // Compute the width of the index (eg. width("0")=1,  width("7")=1,  width("23")=2, etc)
-        int width=1;
-        for(int i=list.size()-1; i>=10; i=i/10) width++;
-        // Now, generate the mappings
-        // By prepending enough 0 to make the numbers line up, we ensure the atoms will sort lexicographically.
-        StringBuilder sb = new StringBuilder();
-        String signame = s.toString();
-        if (signame.startsWith("this/")) signame=signame.substring(5);
-        for(int i=0; i<list.size(); i++) {
-            sb.delete(0, sb.length());
-            sb.append(signame);
-            sb.append('$');
-            String x=Integer.toString(i);
-            int xlen=x.length();
-            while(xlen<width) {sb.append('0'); xlen++;}
-            sb.append(x);
-            map2sig.put(list.get(i), s);
-            map.put(list.get(i), sb.toString());
-        }
-    }
-
-    private static void addAllSubrelation(IdentitySet<Relation> set, Expression ex) {
+    private static void addAllSubrelation(IdentitySet<Relation> set, Expression ex) { // TODO
         while(ex instanceof BinaryExpression) {
             BinaryExpression b = (BinaryExpression)ex;
             if (b.op() != BinaryExpression.Operator.UNION && b.op() != BinaryExpression.Operator.PRODUCT) return;
@@ -240,11 +233,11 @@ public final class A4Solution {
     }
 
     // Write out any Skolem relations that were generated by Kodkod
-    public synchronized List<Pair<String,Pair<Type,A4TupleSet>>> skolems() {
+    public synchronized List<Pair<String,Pair<Type,A4TupleSet>>> skolems() { // TODO
         Instance inst = kEval.instance();
         List<Pair<String,Pair<Type,A4TupleSet>>> ans = new ArrayList<Pair<String,Pair<Type,A4TupleSet>>>();
         IdentitySet<Relation> rels = new IdentitySet<Relation>();
-        for(Sig s:sigs) {
+        for(Sig s:getAllReachableSigs()) {
             addAllSubrelation(rels, bcc.get(s));
             for(Field f:s.getFields()) addAllSubrelation(rels, bcc.get(f));
         }
@@ -262,9 +255,34 @@ public final class A4Solution {
         return ans;
     }
 
-    public synchronized void writeXML(String filename, Iterable<Func> macros) throws Err {
+    public synchronized void writeXML(String filename, Iterable<Func> macros) throws Err { // TODO
            A4SolutionWriter.write(this, filename, macros);
     }
+
+    //============================================================================================================================//
+
+    /** If not null, you can ask it to get another solution; this field must be synchronized. */
+    private final Iterator<Solution> kEnumerator;
+
+    /** If nonnull, it caches the result of calling "next()"; this field must be synchronized. */
+    private A4Solution nextCache = null;
+
+    /**
+     * If this solution is UNSAT, return itself; else return the next solution (which could be SAT or UNSAT).
+     * @throws ErrorAPI if the solver was not an incremental solver
+     */
+    public synchronized A4Solution next() throws Err {
+        if (kEval==null) return this; // Since the solution is UNSAT, just return myself
+        if (nextCache!=null) return nextCache; // Since the result was already computed, return it
+        if (kEnumerator==null) throw new ErrorAPI("This solution was not generated by an incremental SAT solver.\n"
+            +"Solution enumeration is currently only implemented for MiniSat and SAT4J.");
+        nextCache = new A4Solution(sigs, bcc, filename, sources, command, kEnumerator, kFormula,
+            kBounds, bitwidth, kEnumerator.next().instance(), skolem2type, null, null);
+        return nextCache;
+    }
+
+    /** Returns true if this solution was generated by an incremental SAT solver. */
+    public synchronized boolean isIncremental() { return kEnumerator!=null; }
 
     //============================================================================================================================//
 
@@ -290,20 +308,15 @@ public final class A4Solution {
     private ConstSet<Pos> coreCache = null;
 
     /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
-    public ConstSet<Pos> core() {
+    public synchronized ConstSet<Pos> core() {
         ConstSet<Pos> answer = coreCache;
         if (answer!=null) return answer;
         TempSet<Pos> ans = new TempSet<Pos>();
         if (kEval==null) for(Formula f: kCore) {
-           List<Object> x = core.get(f);
-           if (x!=null) for(Object y:x) {
-              if (y instanceof Pos) ans.add( (Pos)y );
-              if (y instanceof Expr) {
-                 Expr expr = (Expr)y;
-                 ans.add(expr.span()); // Include the expression itself
-                 for(Func func:expr.findAllFunctions()) ans.add(func.getBody().span()); // Include all called functions' bodies also
-              }
-           }
+           Object y = fmap.get(f);
+           if (y instanceof Pos) ans.add( (Pos)y );
+           if (y instanceof Expr) ans.add( ((Expr)y).span() );
+           //for (Func func:expr.findAllFunctions()) ans.add(func.getBody().span()); // Include all called functions' bodies also
         }
         coreCache = (answer = ans.makeConst());
         return answer;
@@ -311,11 +324,11 @@ public final class A4Solution {
 
     //============================================================================================================================//
 
-    /** Caches the toString() output. */
+    /** This caches the toString() output. */
     private String toStringCache = null;
 
     /** Dumps the Kodkod solution into String. */
-    @Override public String toString() {
+    @Override public synchronized String toString() {
         if (kEval==null) return "---OUTCOME---\nUnsatisfiable.\n";
         String answer = toStringCache;
         if (answer!=null) return answer;
@@ -358,14 +371,11 @@ public final class A4Solution {
     /** Returns true iff the problem is satisfiable. */
     public boolean satisfiable() { return kEval!=null; }
 
-    /** Returns true if this solution was generated by an incremental SAT solver. */
-    public synchronized boolean isIncremental() { return kEnumerator!=null; }
+    /** Returns the list of all sigs in this solution's model; always contains UNIV+SIGINT+SEQIDX+NONE and has no duplicates. */
+    public ConstList<Sig> getAllReachableSigs() { return sigs; }
 
     /** Returns the integer bitwidth of this solution's model; always between 1 and 30. */
     public int getBitwidth() { return bitwidth; }
-
-    /** Returns the list of all sigs in this solution's model; always nonempty. */
-    public ConstList<Sig> getAllReachableSigs() { return sigs; }
 
     /** Returns the original formula (in Java source code format) used to generate this solution; can be "" if unknown. */
     public String getOriginalFormula() { return formula; }

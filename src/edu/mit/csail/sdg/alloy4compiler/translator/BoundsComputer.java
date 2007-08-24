@@ -14,7 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
  */
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
@@ -88,16 +89,13 @@ final class BoundsComputer {
     private static final ArrayList<String> empty = new ArrayList<String>(0);
 
     /** Associate the given formula with the given Pos object, then return the given formula. */
-    private static Formula add(Formula f, Pos x, Map<Formula,List<Object>> core) {
-        if (core==null || x==null) return f;
+    private static Formula add(Formula f, Pos x, Map<Formula,Object> fmap) {
+        if (fmap==null || x==null || x==Pos.UNKNOWN) return f;
         if (f instanceof BinaryFormula && ((BinaryFormula)f).op()==BinaryFormula.Operator.AND) {
-            add(((BinaryFormula)f).left(), x, core);
-            add(((BinaryFormula)f).right(), x, core);
-            return f;
+            add(((BinaryFormula)f).left(), x, fmap);
+            add(((BinaryFormula)f).right(), x, fmap);
         }
-        List<Object> list=core.get(f);
-        if (list==null) { list=new ArrayList<Object>(); core.put(f,list); }
-        list.add(x);
+        if (!fmap.containsKey(f)) fmap.put(f,x);
         return f;
     }
 
@@ -296,11 +294,10 @@ final class BoundsComputer {
     }
 
     /** Add the constraint that the sig has exactly "n" elements, or at most "n" elements */
-    private Formula size(Sig sig, int n, boolean exact, Map<Formula,List<Object>> core) {
+    private Formula size(Sig sig, int n, boolean exact, Map<Formula,Object> fmap) {
         Expression a = a2k.get(sig);
-        Pos comment = Pos.UNKNOWN; // TODO: addComment("sig["+sig+"] is scoped to have "+(exact?"exactly ":"at most ")+n+" atoms")
-        if (n<=0) return add(a.no(), comment, core);
-        if (n==1) return add(exact ? a.one() : a.lone(), comment, core);
+        if (n<=0) return a.no();
+        if (n==1) return exact ? a.one() : a.lone();
         Formula f = exact ? Formula.TRUE : null;
         Decls d = null;
         Expression sum = null;
@@ -311,8 +308,7 @@ final class BoundsComputer {
             if (d==null) d=dd; else d=dd.and(d);
             if (sum==null) sum=v; else { if (f!=null) f=v.intersection(sum).no().and(f); sum=v.union(sum); }
         }
-        if (f!=null) f=sum.eq(a).and(f).forSome(d); else f=a.no().or(sum.eq(a).forSome(d));
-        return add(f, comment, core);
+        if (f!=null) return sum.eq(a).and(f).forSome(d); else return a.no().or(sum.eq(a).forSome(d));
     }
 
     /** Converts the list of String into a unary TupleSet. */
@@ -324,15 +320,14 @@ final class BoundsComputer {
     }
 
     /** Allocate relations for nonbuiltin PrimSigs bottom-up. */
-    private Expression allocatePrimSig(PrimSig sig, Map<Formula,List<Object>> core) throws Err {
+    private Expression allocatePrimSig(PrimSig sig, Map<Formula,Object> fmap) throws Err {
         // Recursively allocate all children expressions, and form the union of them
         Expression sum=null;
         for(PrimSig child:sig.children()) {
-            Expression childexpr=allocatePrimSig(child, core);
+            Expression childexpr=allocatePrimSig(child, fmap);
             if (sum==null) { sum=childexpr; continue; }
             // subsigs are disjoint
-            Pos pos = Pos.UNKNOWN; // TODO: addComment("subsigs of "+sig+" must be disjoint")
-            fact = add(sum.intersection(childexpr).no(), pos, core).and(fact);
+            fact = add(sum.intersection(childexpr).no(), child.isSubsig, fmap).and(fact);
             sum = sum.union(childexpr);
         }
         TupleSet lower=convert(sig2lower.get(sig)), upper=convert(sig2upper.get(sig));
@@ -361,14 +356,14 @@ final class BoundsComputer {
     }
 
     /** Allocate relations for SubsetSig top-down. */
-    private Expression allocateSubsetSig(A4Reporter rep, SubsetSig sig, Map<Formula,List<Object>> core) throws Err {
+    private Expression allocateSubsetSig(A4Reporter rep, SubsetSig sig, Map<Formula,Object> fmap) throws Err {
         // We must not visit the same SubsetSig more than once, so if we've been here already, then return the old value right away
         Expression sum = a2k.get(sig);
         if (sum!=null) return sum;
         // Recursively form the union of all parent expressions
         TupleSet ts = universe.factory().noneOf(1);
         for(Sig parent:sig.parents) {
-            Expression p = (parent instanceof PrimSig) ? a2k.get(parent) : allocateSubsetSig(rep, (SubsetSig)parent, core);
+            Expression p = (parent instanceof PrimSig) ? a2k.get(parent) : allocateSubsetSig(rep, (SubsetSig)parent, fmap);
             ts.addAll(query(true, p, false));
             if (sum==null) sum=p; else sum=sum.union(p);
         }
@@ -378,12 +373,12 @@ final class BoundsComputer {
         bounds.bound(r, ts);
         a2k.put(sig, r);
         // Add a constraint that it is INDEED a subset of the union of its parents
-        fact = add(r.in(sum), sig.isSubset, core).and(fact);
+        fact = add(r.in(sum), sig.isSubset, fmap).and(fact);
         return r;
     }
 
     /** Computes the bounds for sigs/fields, then construct a BoundsComputer object that you can query. */
-    private BoundsComputer(ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,List<Object>> core)
+    private BoundsComputer(ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,Object> fmap)
     throws Err {
         // Perform the prelimenary computation
         prelim(sc, rep, sigs);
@@ -410,13 +405,13 @@ final class BoundsComputer {
         bounds.boundExactly(SEQ_SEQIDX, seqidxBounds);
         // Bound the PrimSig(s)
         Expression univ = Relation.INTS;
-        for(Sig s:sigs) if (!s.builtin && s.isTopLevel()) univ=allocatePrimSig((PrimSig)s, core).union(univ);
+        for(Sig s:sigs) if (!s.builtin && s.isTopLevel()) univ=allocatePrimSig((PrimSig)s, fmap).union(univ);
         a2k.put(UNIV, univ);
         a2k.put(NONE, Relation.NONE);
         a2k.put(SIGINT, Relation.INTS);
         a2k.put(SEQIDX, SEQ_SEQIDX);
         // Bound the SubsetSig(s).
-        for(Sig s:sigs) if (s instanceof SubsetSig) allocateSubsetSig(rep, (SubsetSig)s, core);
+        for(Sig s:sigs) if (s instanceof SubsetSig) allocateSubsetSig(rep, (SubsetSig)s, fmap);
         // Bound the fields
         for(Sig s:sigs) for(Field f:s.getFields()) {
             Type t = (s.isOne!=null) ? UNIV.join(f).type : f.type;
@@ -440,25 +435,25 @@ final class BoundsComputer {
             final int n=sc.sig2scope(s);
             if (s.isOne!=null && (lower.size()!=1 || upper.size()!=1)) {
                 rep.bound("Sig "+s+" in "+upper+" with size==1\n");
-                fact=add(exp.one(), s.isOne, core).and(fact);
+                fact=add(exp.one(), s.isOne, fmap).and(fact);
                 continue;
             }
-            if (s.isSome!=null && lower.size()<1) fact=add(exp.some(), s.isSome, core).and(fact);
-            if (s.isLone!=null && upper.size()>1) fact=add(exp.lone(), s.isLone, core).and(fact);
+            if (s.isSome!=null && lower.size()<1) fact=add(exp.some(), s.isSome, fmap).and(fact);
+            if (s.isLone!=null && upper.size()>1) fact=add(exp.lone(), s.isLone, fmap).and(fact);
             if (n<0) continue; // This means no scope was specified
             if (sc.isExact(s) && lower.size()==n && upper.size()==n) {
                 rep.bound("Sig "+s+" == "+upper+"\n");
             }
             else if (sc.isExact(s)) {
                 rep.bound("Sig "+s+" in "+upper+" with size=="+n+"\n");
-                fact=size(s,n,true,core).and(fact);
+                fact=size(s,n,true,fmap).and(fact);
             }
             else if (upper.size()<=n){
                 rep.bound("Sig "+s+" in "+upper+"\n");
             }
             else {
                 rep.bound("Sig "+s+" in "+upper+" with size<="+n+"\n");
-                fact=size(s,n,false,core).and(fact);
+                fact=size(s,n,false,fmap).and(fact);
             }
         }
         // Turn everything read-only
@@ -476,12 +471,12 @@ final class BoundsComputer {
      * @param rep - the reporter that may receive diagnostic messages
      * @param sigs - the list of all sigs
      * @param options - the Alloy options object
-     * @param core - this map will receive additional mappings between each constraint to a list of Pos objects
+     * @param fmap - this map will receive additional mappings between each constraint to a Pos object
      */
     static Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>> compute
-    (ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,List<Object>> core)
+    (ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,Object> fmap)
     throws Err {
-        BoundsComputer bc = new BoundsComputer(sc, rep, sigs, options, core);
+        BoundsComputer bc = new BoundsComputer(sc, rep, sigs, options, fmap);
         Pair<Bounds,Formula> a = new Pair<Bounds,Formula>(bc.bounds, bc.fact);
         return new Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>>(a, bc.a2k.makeConst());
     }

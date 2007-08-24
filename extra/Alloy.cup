@@ -549,7 +549,8 @@ Hint ::= HASH Name:e {: RESULT=Util.asList(e); :};
 
 Sig ::= Hint:h SigQuals:a SIG Names:b SigIn:c LBRACE Decls:d RBRACE SuperOpt:e
  {:
-   for(ExpName bb:b) parser.alloymodule.addSig(h, bb.pos, bb.name, a.get(0), a.get(1), a.get(2), a.get(3), c,d,e);
+   ExpName cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
+   for(ExpName bb:b) parser.alloymodule.addSig(h, bb.pos, bb.name, a.get(0), a.get(1), a.get(2), a.get(3), cc, c, d, e);
  :};
 
 SigQual  ::= ABSTRACT:x               {: RESULT=new ArrayList<Pos>(4); RESULT.add(x);    RESULT.add(null); RESULT.add(null); RESULT.add(null); :};
@@ -560,9 +561,9 @@ SigQual  ::= SOME:x                   {: RESULT=new ArrayList<Pos>(4); RESULT.ad
 SigQuals ::=                          {: RESULT=new ArrayList<Pos>(4); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); :};
 SigQuals ::= SigQuals:a SigQual:b     {: RESULT=a; for(int i=0;i<4;i++) if (a.get(i)==null) a.set(i,b.get(i)); else if (b.get(i)!=null) throw new ErrorSyntax(b.get(i), "The same qualifer cannot be specified more than once for the same sig."); :};
 
-SigIn    ::= EXTENDS SigRef:x         {: RESULT=new ArrayList<ExpName>(2); RESULT.add(null); RESULT.add(x); :};
-SigIn    ::= IN SigRefu:x             {: RESULT=x;                                                          :};
-SigIn    ::=                          {: RESULT=null;                                                       :};
+SigIn    ::= EXTENDS:a SigRef:x       {: RESULT=new ArrayList<ExpName>(2); RESULT.add(x); RESULT.add(new ExpName(a,"extends")); :};
+SigIn    ::= IN:a SigRefu:x           {: RESULT=x;  x.add(new ExpName(a,"in"));                                                 :};
+SigIn    ::=                          {: RESULT=null;                                                                           :};
 
 SigRef   ::= Name:x                   {: RESULT=x;                                   :};
 SigRef   ::= UNIV:x                   {: RESULT=new ExpName(x, "univ");              :};

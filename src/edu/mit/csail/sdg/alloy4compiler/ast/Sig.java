@@ -83,7 +83,12 @@ public abstract class Sig extends Expr {
     public final Pos isAbstract;
 
     /**
-     * Nonnull if this sig is a subset sig.
+     * Nonnull if this sig is a PrimSig but not a builtin sig and its parent is not UNIV
+     */
+    public final Pos isSubsig;
+
+    /**
+     * Nonnull if this sig is a SubsetSig.
      * <p> Note: if a sig is a subset sig, then it cannot and will not be abstract.
      */
     public final Pos isSubset;
@@ -130,11 +135,13 @@ public abstract class Sig extends Expr {
         this.isSome=null;
         this.label=label;
         this.isSubset=null;
+        this.isSubsig=null;
         this.isOrdered=null;
     }
 
     /** Constructs a new PrimSig or SubsetSig. */
-    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subset, Pos isOrdered) throws Err {
+    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isOrdered)
+    throws Err {
         super(pos, type);
         if (lone!=null && one!=null)  throw new ErrorSyntax(lone.merge(one),  "You cannot delcare a sig to be both lone and one.");
         if (lone!=null && some!=null) throw new ErrorSyntax(lone.merge(some), "You cannot delcare a sig to be both lone and some.");
@@ -147,6 +154,7 @@ public abstract class Sig extends Expr {
         this.isSome=some;
         this.label=label;
         this.isSubset=subset;
+        this.isSubsig=subsig;
     }
 
     /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
@@ -214,8 +222,14 @@ public abstract class Sig extends Expr {
          * @throws ErrorSyntax if the signature has two or more multiplicities
          * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
          */
-        public PrimSig(Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos ordered, boolean isLeaf) throws Err {
-            super(pos, (parent!=null && parent.hint_isLeaf) ? parent.type : null, label, isAbstract, lone, one, some, null, ordered);
+        public PrimSig
+        (Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos subsig, Pos ordered, boolean isLeaf)
+        throws Err {
+            super(pos,
+                (parent!=null && parent.hint_isLeaf) ? parent.type : null,
+                label, isAbstract, lone, one, some,
+                (parent!=null && parent!=UNIV) ? Pos.UNKNOWN.merge(subsig) : null,
+                null, ordered);
             if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
             if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
             if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"none\" signature");
@@ -239,8 +253,10 @@ public abstract class Sig extends Expr {
          * @throws ErrorSyntax if the signature has two or more multiplicities
          * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
          */
-        public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws Err {
-            this(pos, parent, label, isAbstract?Pos.UNKNOWN:null, lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, isLeaf);
+        public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some,
+        boolean isLeaf) throws Err {
+            this(pos, parent, label, isAbstract?Pos.UNKNOWN:null,
+               lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, null, isLeaf);
         }
 
         /**
@@ -248,9 +264,7 @@ public abstract class Sig extends Expr {
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param label - the name of this sig (it does not need to be unique)
          */
-        public PrimSig(Pos pos, String label) throws Err {
-            this(pos, null, label, null,null,null,null, null, false);
-        }
+        public PrimSig(Pos pos, String label) throws Err { this(pos, null, label, null,null,null,null,null,null, false); }
 
         /** {@inheritDoc} */
         @Override public boolean isSameOrDescendentOf(Sig that) {
@@ -260,18 +274,14 @@ public abstract class Sig extends Expr {
             return false;
         }
 
-        /**
-         * Returns the intersection between this and that (and returns "none" if they do not intersect).
-         */
+        /** Returns the intersection between this and that (and returns "none" if they do not intersect). */
         public PrimSig intersect(PrimSig that) {
             if (this.isSameOrDescendentOf(that)) return this;
             if (that.isSameOrDescendentOf(this)) return that;
             return NONE;
         }
 
-        /**
-         * Returns true iff the intersection between this and that is not "none".
-         */
+        /** Returns true iff the intersection between this and that is not "none". */
         public boolean intersects(PrimSig that) {
             if (this.isSameOrDescendentOf(that)) return this!=NONE;
             if (that.isSameOrDescendentOf(this)) return that!=NONE;
@@ -332,7 +342,7 @@ public abstract class Sig extends Expr {
          * @throws ErrorType if parents contains NONE or SIGINT or SEQIDX
          */
         public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos ordered) throws Err {
-            super(pos, getType(pos,label,parents), label, null, lone, one, some, Pos.UNKNOWN.merge(subsetPosition), ordered);
+            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), ordered);
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
             if (parents!=null) for(Sig parent:parents) if (!temp.contains(parent)) temp.add(parent);
             if (temp.size()==0) temp.add(UNIV);

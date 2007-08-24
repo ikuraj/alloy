@@ -4026,8 +4026,9 @@ class CUP$CompParser$actions {
           case 63: // SigIn ::= IN SigRefu
             {
               List<ExpName> RESULT =null;
+        Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         List<ExpName> x = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=x;
+         RESULT=x;  x.add(new ExpName(a,"in"));
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",38, RESULT);
             }
           return CUP$CompParser$result;
@@ -4036,8 +4037,9 @@ class CUP$CompParser$actions {
           case 62: // SigIn ::= EXTENDS SigRef
             {
               List<ExpName> RESULT =null;
+        Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExpName x = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ArrayList<ExpName>(2); RESULT.add(null); RESULT.add(x);
+         RESULT=new ArrayList<ExpName>(2); RESULT.add(x); RESULT.add(new ExpName(a,"extends"));
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",38, RESULT);
             }
           return CUP$CompParser$result;
@@ -4113,7 +4115,8 @@ class CUP$CompParser$actions {
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
-   for(ExpName bb:b) parser.alloymodule.addSig(h, bb.pos, bb.name, a.get(0), a.get(1), a.get(2), a.get(3), c,d,e);
+   ExpName cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
+   for(ExpName bb:b) parser.alloymodule.addSig(h, bb.pos, bb.name, a.get(0), a.get(1), a.get(2), a.get(3), cc, c, d, e);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Sig",37, RESULT);
             }
