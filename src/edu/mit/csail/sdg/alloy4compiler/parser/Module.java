@@ -529,11 +529,11 @@ public final class Module {
                chg=true;
                p.setValue(vv);
                // TODO: This detects for the Alloy3 behavior of util/ordering.als
-               if (kn.equals("elem") && sub.sigs.size()==1
-                  && vv!=Module.UNIVast && vv!=Module.SIGINTast && vv!=Module.SEQIDXast && vv!=Module.NONEast
-                  && sub.modulePos.filename.toLowerCase(Locale.US).endsWith("util"+File.separatorChar+"ordering.als")) {
+               String sn=sub.modulePos.filename.toLowerCase(Locale.US);
+               if (kn.equals("elem") && sub.sigs.size()==1 &&
+                  (sn.endsWith("util"+File.separatorChar+"ordering.als") || sn.equals("util/ordering")) &&
+                  vv!=Module.UNIVast && vv!=Module.SIGINTast && vv!=Module.SEQIDXast && vv!=Module.NONEast)
                      vv.isOrdered = open.pos;
-                  }
                rep.parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
             }
          }
