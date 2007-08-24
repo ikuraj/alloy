@@ -138,9 +138,9 @@ final class A4SolutionWriter {
         }
         for(Sig s:sigs) if (!s.builtin) { // Then we add the non-builtin sigs
             String label = s.label;
-            // The following line of code does not affect the correctness, since any consistent renaming of the signatures is okay.
-            // However, assuming the input came from alloy4compiler, then removing leading "this/" here
-            // will provide a two-way transformation between A4SolutionWriter and A4SolutionReader.
+            // Many A4Solution objects will have the repetitive "this/" in front of the sig names (since that is
+            // the convention of alloy4compiler), so removing "this/" will make the output look nicer.
+            // This renaming is safe, since we'll pass it into UniqueNameGenerator to ensure no name clash anyway.
             if (label.startsWith("this/")) label=label.substring(5);
             sig2name.put(s, un.make(label.length()==0 ? BLANK : label));
         }
@@ -205,12 +205,12 @@ final class A4SolutionWriter {
      * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
      * <p> If two or more fields have the same name and overlapping type, we append ' to the names until no more conflict.
      */
-    public static void write(A4Solution sol, String destfilename, Iterable<Func> allMacros) throws Err {
+    public static void write(A4Solution sol, String filename, Iterable<Func> allMacros) throws Err {
         final PrintWriter out;
         try {
-            out=new PrintWriter(destfilename,"UTF-8");
+            out=new PrintWriter(filename,"UTF-8");
         } catch(IOException ex) {
-            throw new ErrorFatal("Cannot write to the file \""+destfilename+"\"");
+            throw new ErrorFatal("Cannot write to the file \""+filename+"\"");
         }
         try {
             new A4SolutionWriter(sol, out, allMacros);
@@ -218,6 +218,6 @@ final class A4SolutionWriter {
             Util.close(out);
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the A4Solution XML file.",ex);
         }
-        if (!Util.close(out)) throw new ErrorFatal("Cannot write to the file \""+destfilename+"\"");
+        if (!Util.close(out)) throw new ErrorFatal("Cannot write to the file \""+filename+"\"");
     }
 }

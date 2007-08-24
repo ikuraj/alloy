@@ -146,7 +146,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private final int bitwidth;
 
     /**
-     * If nonnull, this holds a map from Sig, Field, and String to a Kodkod Expression
+     * If nonnull, this holds a map from Sig, Field, and possibly even some parameterless Func to a Kodkod Expression
      */
     private final Map<Object,Expression> bcc;
 
@@ -761,6 +761,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     @Override public Object visit(ExprCall x) throws Err {
         Func y=x.fun;
+        if (y.params.size()==0) {
+            Object ans=bcc.get(y);
+            if (ans!=null) return ans;
+        }
         if (current_function.contains(y)) throw new ErrorSyntax(x.span(), ""+y+" cannot call itself recursively!");
         Env<ExprVar,Object> newenv=new Env<ExprVar,Object>();
         int r=0;

@@ -24,9 +24,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -42,16 +40,19 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import nanoxml_2_2_3.XMLElement;
-import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
+import edu.mit.csail.sdg.alloy4.SafeList;
+import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
+import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
@@ -59,181 +60,291 @@ import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
 public final class A4SolutionReader {
 
-    /** Use the XML library to parse the given file into an XMLElement object. */
-    private static XMLElement readElement(File file) throws IOException {
-        FileInputStream fis=null;
-        InputStreamReader reader=null;
+    /** The filename-to-content cache. */
+    private final Map<String,String> fc = new LinkedHashMap<String,String>();
+
+    /** The root of the XML document. */
+    private XMLElement xml = null;
+
+    /** This stores the root module parsed from the Alloy model. */
+    private Module root = null;
+
+    /** This stores the list of sigs. */
+    private SafeList<Sig> sigs = null;
+
+    //private PrimSig make(String signame, Map<String,String> name2parent, Map<String,PrimSig> name2sig) throws Err {
+    //    if (signame==null || signame.length()==0 || signame.equals(UNIV.label)) return UNIV;
+    //    if (signame.equals(SIGINT.label)) return SIGINT;
+    //    if (signame.equals(SEQIDX.label)) return SEQIDX;
+    //    if (signame.equals(NONE.label)) return NONE;
+    //    PrimSig ans = name2sig.get(signame);
+    //    if (ans!=null) return ans;
+    //    PrimSig parent = make(name2parent.get(signame), name2parent, name2sig);
+    //    ans = new PrimSig(null, parent, signame, false, false, false, false, false);
+    //    name2sig.put(signame, ans);
+    //    root.addSig(ans);
+    //    return ans;
+    //}
+
+    /** Step1: parse the original Alloy model. */
+    private void parseXML(String filename) throws Err {
+        XMLElement x=null;
         try {
-            fis = new FileInputStream(file);
-            reader = new InputStreamReader(fis,"UTF-8");
-            XMLElement xml = new XMLElement(new Hashtable(),true,false);
-            xml.parseFromReader(reader);
-            return xml;
-        } finally {
-            Util.close(reader);
-            Util.close(fis);
+            FileInputStream fis=null;
+            InputStreamReader reader=null;
+            try {
+                fis = new FileInputStream(filename);
+                reader = new InputStreamReader(fis,"UTF-8");
+                x = new XMLElement(new Hashtable(),true,false);
+                x.parseFromReader(reader);
+            } finally {
+                Util.close(reader);
+                Util.close(fis);
+            }
+        } catch(Throwable ex) {
+            throw new ErrorFatal("Cannot read or parse the XML file: "+filename);
+        }
+        if (!x.is("alloy")) throw new ErrorSyntax("The XML file's root node must be <alloy>.");
+        for(XMLElement sub: x.getChildren("source")) {
+            String name = sub.getAttribute("filename");
+            String content = sub.getAttribute("content");
+            fc.put(name, content);
+        }
+        for(XMLElement sub: x.getChildren()) if (sub.is("instance")) { xml=sub; break; }
+        if (xml==null) throw new ErrorSyntax("The XML file must contain an <instance> element.");
+        try {
+            if (fc.size()>0) {
+                root = CompUtil.parseEverything_fromFile(fc, xml.getAttribute("filename"));
+            } else {
+                throw new ErrorSyntax("The original source files were not embedded in the saved instance file.");
+                // root = new Module();
+                // Map<String,String> ext = new LinkedHashMap<String,String>();
+                // Map<String,PrimSig> make = new LinkedHashMap<String,PrimSig>();
+                // for(XMLElement sub:xml.getChildren()) if (sub.is("sig")) {
+                //     String name = sub.getAttribute("name");
+                //     String parent = sub.getAttribute("extends");
+                //     ext.put(name, parent==null ? "" : parent);
+                // }
+                // for(Map.Entry<String,String> e:ext.entrySet()) make(e.getKey(), ext, make);
+            }
+        } catch(Throwable ex) {
+            throw new ErrorFatal("The original source files failed to be reconstructed.");
+        }
+        sigs = root.getAllReachableSigs();
+    }
+
+
+    //============================================================================================================================//
+
+    /** This maps each Sig and Field to a Kodkod expression. */
+    private final Map<Object,Expression> a2k = new LinkedHashMap<Object,Expression>();
+
+    /** Step2: construct all sigs and fields. */
+    private void makeSigsAndFields() {
+        Expression u = Relation.INTS.union(BoundsComputer.SEQ_SEQIDX);
+        for(Sig s:sigs) if (!s.builtin) {
+            Relation r = Relation.unary(s.label);
+            u = u.union(r);
+            a2k.put(s, r);
+            for(Field f:s.getFields()) a2k.put(f, Relation.nary(s.label+"."+f.label, f.type.arity()));
+        }
+        a2k.put(UNIV, u);
+        a2k.put(SIGINT, Relation.INTS);
+        a2k.put(SEQIDX, BoundsComputer.SEQ_SEQIDX);
+        a2k.put(NONE, Relation.NONE);
+    }
+
+    //============================================================================================================================//
+
+    /** This stores the resulting Kodkod instance. */
+    private Instance inst = null;
+
+    /** Step3: construct the list of all atoms, then make the instance. */
+    private void makeInstance(int bitwidth) throws Err {
+        if (bitwidth<1 || bitwidth>30) throw new ErrorSyntax("Bitwidth of "+bitwidth+" is not allowed.");
+        final int min=0-(1<<(bitwidth-1));
+        final int max=(1<<(bitwidth-1))-1;
+        LinkedHashSet<String> atoms = new LinkedHashSet<String>();
+        for(XMLElement sub: xml.getChildren()) {
+            if (sub.is("sig") || sub.is("set")) {
+                for(XMLElement atom:sub.getChildren()) if (atom.is("atom")) atoms.add(atom.getAttribute("name"));
+            }
+        }
+        for(int i=min; i<=max; i++) atoms.add(""+i);
+        Universe u = new Universe(atoms);
+        TupleFactory f = u.factory();
+        inst = new Instance(u);
+        for(Map.Entry<Object,Expression> e: a2k.entrySet()) {
+            Expression r = e.getValue();
+            if (r!=Relation.UNIV && r!=Relation.INTS && r!=Relation.NONE && r instanceof Relation)
+               inst.add((Relation)r, f.noneOf(r.arity()));
+        }
+        TupleSet next = f.noneOf(2);
+        for(int i=min; i<=max; i++) {
+            Tuple t=f.tuple(""+i);
+            inst.add(i, f.range(t,t));
+            if (i+1<=max) next.add(t.product(f.tuple(""+(i+1))));
+        }
+        inst.add(BoundsComputer.SIGINT_NEXT, next);
+        inst.add(BoundsComputer.SIGINT_MAX, f.range(f.tuple(""+max), f.tuple(""+max)));
+        inst.add(BoundsComputer.SIGINT_ZERO, f.range(f.tuple("0"), f.tuple("0")));
+        inst.add(BoundsComputer.SIGINT_MIN, f.range(f.tuple(""+min), f.tuple(""+min)));
+    }
+
+    //============================================================================================================================//
+
+    /** This maps the "sig name" in the XML file to its corresponding Sig object. */
+    private final Map<String,Sig> name2sig = new LinkedHashMap<String,Sig>();
+
+    /** This maps each atom to the most specific sig. */
+    private final Map<String,PrimSig> atom2sig = new LinkedHashMap<String,PrimSig>();
+
+    /** This maps each skolem name to its tupleset. */
+    private final Map<String,TupleSet> skolems = new LinkedHashMap<String,TupleSet>();
+
+    /** This allows us to choose unique names for each skolem value. */
+    private final UniqueNameGenerator un = new UniqueNameGenerator();
+
+    /** Step4: process all "sig" and "set" elements in the XML file. */
+    private void processSigAndSet() throws Err {
+        TupleFactory tf = inst.universe().factory();
+        again:
+        for(XMLElement sub:xml.getChildren()) if (sub.is("sig") || sub.is("set")) {
+           // Parse the tuple set
+           TupleSet ts = tf.noneOf(1);
+           for(XMLElement atom:sub.getChildren()) if (atom.is("atom")) {
+              String atomname = atom.getAttribute("name");
+              Tuple tuple = tf.tuple(atomname);
+              ts.add(tuple);
+           }
+           // If it's one of the PrimSig or SubsetSig, then read its atoms and add them to the instance
+           String name=sub.getAttribute("name"), sname="this/"+name;
+           for(Sig s:sigs) if (s.label.equals(name) || s.label.equals(sname)) {
+              name2sig.put(name,s);
+              if (s==UNIV || s==SIGINT || s==NONE) continue again;
+              if (s!=SEQIDX && s instanceof PrimSig) for(Tuple tp:ts) {
+                 String atom = (String) tp.atom(0);
+                 PrimSig oldsig = atom2sig.get(atom);
+                 if (oldsig==null || s.isSameOrDescendentOf(oldsig)) atom2sig.put(atom,(PrimSig)s);
+              }
+              Relation r = (Relation) (a2k.get(s));
+              ts.addAll(inst.tuples(r));
+              inst.add(r, ts);
+              continue again;
+           }
+           // Otherwise, that means it is a skolem set
+           while(name.length()>0 && name.charAt(0)=='$') name=name.substring(1);
+           if (name.length()==0) name="x"; // Any default would do
+           skolems.put(un.make("$"+name), ts);
         }
     }
 
-    private static void getField(Sig s, String fieldName, Map<String,TupleSet> cache, TupleSet ans) {
-        if (s instanceof PrimSig) {
-            String sn=s.label;
-            if (sn.startsWith("this/")) sn=sn.substring(5);
-            TupleSet tmp=cache.remove(sn+"["+fieldName+"]");
-            if (tmp!=null && tmp.arity()==ans.arity()) ans.addAll(tmp);
-            return;
+    //============================================================================================================================//
+
+    /** Step5: process all "field" elements in the XML file. */
+    private void processField() {
+        TupleFactory tf=inst.universe().factory();
+        again:
+        for(XMLElement sub:xml.getChildren()) if (sub.is("field")) {
+           // Parse the type
+           String name=sub.getAttribute("name");
+           Type type=Type.EMPTY;
+           for(XMLElement t:sub.getChildren()) if (t.is("type")) for(XMLElement s:t.getChildren()) if (s.is("sig")) {
+               Sig sg = name2sig.get(s.getAttribute("name"));
+               if (sg == null) continue again; // This field contains nonexistent sig!
+               if (type == Type.EMPTY) type=sg.type; else type=type.product(sg.type);
+           }
+           // Parse the tuple set
+           TupleSet ts = tf.noneOf(type.arity());
+           for(XMLElement t:sub.getChildren()) if (t.is("tuple")) {
+              Tuple tp = null;
+              for(XMLElement s:t.getChildren()) if (s.is("atom")) {
+                 Tuple tp2 = tf.tuple(s.getAttribute("name"));
+                 if (tp==null) tp=tp2; else tp=tp.product(tp2);
+              }
+              ts.add(tp);
+           }
+           // If it's one of the Field, then read its tuples and add them to the instance
+           for(Sig s:sigs) for(Field f:s.getFields()) if (f.label.equals(name) && f.type.firstColumnOverlaps(type)) {
+               Relation r = (Relation) (a2k.get(f));
+               ts.addAll(inst.tuples(r));
+               inst.add(r, ts);
+               continue again;
+           }
+           // Otherwise, that means it is a skolem relation
+           while(name.length()>0 && name.charAt(0)=='$') name=name.substring(1);
+           if (name.length()==0) name="x"; // Any default would do
+           skolems.put(un.make("$"+name), ts);
         }
-        for(Sig c: ((SubsetSig)s).parents) getField(c, fieldName, cache, ans);
+    }
+
+    //============================================================================================================================//
+
+    /** Step6: add the atoms and skolems so that they can be referred to by the evaluator. */
+    private void addSkolems() throws Err {
+        TupleFactory tf = inst.universe().factory();
+        List<ExprVar> empty = new ArrayList<ExprVar>();
+        for(Object atom: inst.universe()) {
+            String n = (String)atom;
+            PrimSig ret = atom2sig.get(n);
+            if (ret!=null) {
+                Func func = new Func(null, n, empty, ret);
+                root.addGlobal(n, func.call());
+                Relation r = Relation.unary(n);
+                inst.add(r, tf.range(tf.tuple(n), tf.tuple(n)));
+                a2k.put(func, r);
+            }
+        }
+        again:
+        for(Map.Entry<String,TupleSet> s:skolems.entrySet()) {
+            int a = s.getValue().arity();
+            String n = s.getKey();
+            Expr ret = NONE;
+            while(ret.type.arity()<a) ret=ret.product(NONE);
+            for(Tuple tp: s.getValue()) {
+                Expr one = null;
+                for(int i=0; i<a; i++) {
+                    PrimSig sig = atom2sig.get(tp.atom(i));
+                    if (sig==null) continue again;
+                    if (one==null) one=sig; else one=one.product(sig);
+                }
+                if (ret.type.hasNoTuple()) ret=one; else ret=ret.plus(one);
+            }
+            Func func = new Func(null, n, empty, ret);
+            root.addGlobal(n, func.call());
+            Relation r = Relation.nary(n,a);
+            inst.add(r, s.getValue());
+            a2k.put(func, r);
+        }
+    }
+
+    //============================================================================================================================//
+
+    /** This stores the resulting A4Solution object. */
+    private A4Solution sol = null;
+
+    /** Parse the XML element into an AlloyInstance if possible. */
+    private A4SolutionReader(String filename) throws Err {
+        parseXML(filename);
+        makeSigsAndFields();
+        int bitwidth = Integer.parseInt(xml.getAttribute("bitwidth"));
+        makeInstance(bitwidth);
+        processSigAndSet();
+        processField();
+        addSkolems();
+        String command = xml.getAttribute("command");
+        filename = xml.getAttribute("filename");
+        sol = new A4Solution(root, a2k, filename, fc, command, null, null, null, bitwidth, inst, null, null, null);
     }
 
     /** Parse the XML element into an AlloyInstance if possible. */
-    private static A4Solution parseInstance(final ConstMap<String,String> fc, final XMLElement x) throws Err {
-        final String filename = x.getAttribute("filename");
-        final String command = x.getAttribute("command");
-        Module world;
+    public static A4Solution read(String filename) throws Err {
         try {
-            world = CompUtil.parseEverything_fromFile(new LinkedHashMap<String,String>(fc), filename);
+            A4SolutionReader x = new A4SolutionReader(filename);
+            return x.sol;
         } catch(Throwable ex) {
-            throw new RuntimeException("The original source files failed to be reconstructed.");
+            if (ex instanceof Err) throw ((Err)ex);
+            throw new ErrorFatal("Fatal error occured: "+ex, ex);
         }
-        LinkedHashSet<String> atoms=new LinkedHashSet<String>();
-        LinkedHashMap<String,List<String>> sig2atoms=new LinkedHashMap<String,List<String>>(); // The list may contain duplicates
-        LinkedHashMap<String,List<String>> set2atoms=new LinkedHashMap<String,List<String>>(); // The list may contain duplicates
-        for(XMLElement sub:x.getChildren()) {
-            boolean isSig=sub.is("sig");
-            if (isSig || sub.is("set")) {
-                String name=sub.getAttribute("name");
-                if (name.indexOf('/')<0 && !name.equals("univ") && !name.equals("Int")) name="this/"+name;
-                List<String> array = isSig ? sig2atoms.get(name) : set2atoms.get(name);
-                if (array==null) array = new ArrayList<String>();
-                for(XMLElement atom:sub.getChildren("atom")) { array.add(atom.getAttribute("name")); }
-                atoms.addAll(array);
-                if (isSig) sig2atoms.put(name,array); else set2atoms.put(name,array);
-            }
-        }
-        Universe u=new Universe(atoms);
-        TupleFactory tf=u.factory();
-        Instance i=new Instance(u);
-        LinkedHashMap<Object,Expression> obj2expr = new LinkedHashMap<Object,Expression>();
-        obj2expr.put(UNIV, Relation.UNIV);
-        obj2expr.put(SIGINT, Relation.INTS);
-        obj2expr.put(NONE, Relation.NONE);
-        for(Sig s:world.getAllReachableSigs()) if (s!=NONE && s!=UNIV) {
-            List<String> atms = (s instanceof PrimSig) ? sig2atoms.remove(s.label) : set2atoms.remove(s.label);
-            TupleSet ts=tf.noneOf(1);
-            if (atms!=null) for(String a:atms) {
-                Tuple ta=tf.tuple(a);
-                if (s==SIGINT) i.add(Integer.parseInt(a), tf.range(ta,ta));
-                ts.add(ta);
-            }
-            if (s!=SIGINT) {
-                Relation r = (s==SEQIDX) ? BoundsComputer.SEQ_SEQIDX : Relation.unary(s.label);
-                i.add(r,ts);
-                obj2expr.put(s,r);
-            }
-        }
-        LinkedHashMap<String,TupleSet> field2expr = new LinkedHashMap<String,TupleSet>();
-        for(XMLElement sub:x.getChildren("field")) {
-            int arity=0;
-            String fn=null;
-            for(XMLElement t:sub.getChildren()) if (t.is("type")) {
-                for(XMLElement s:t.getChildren()) if (s.is("sig")) {
-                    arity++;
-                    if (arity==1) fn=s.getAttribute("name")+"["+sub.getAttribute("name")+"]";
-                }
-            }
-            if (arity<1 || fn==null) continue;
-            TupleSet ts=field2expr.get(fn);
-            if (ts==null) ts=tf.noneOf(arity);
-            if (ts.arity()!=arity) continue; // If we encounter an illegal value, we skip it.
-            for(XMLElement t:sub.getChildren()) if (t.is("tuple")) {
-                Tuple tuple=null;
-                for(XMLElement a:t.getChildren()) if (a.is("atom")) {
-                    Tuple temp=tf.tuple(a.getAttribute("name"));
-                    if (tuple==null) tuple=temp; else tuple=tuple.product(temp);
-                }
-                if (tuple!=null && tuple.arity()==arity) ts.add(tuple);
-            }
-            field2expr.put(fn, ts);
-        }
-        for(Sig s:world.getAllReachableSigs()) if (!s.builtin) {
-            for(Field f:s.getFields()) {
-                TupleSet ts=tf.noneOf(f.type.arity());
-                getField(s, f.label, field2expr, ts);
-                Relation fr=Relation.nary(s.label+" <: "+f.label, ts.arity());
-                obj2expr.put(f, fr);
-                i.add(fr, ts);
-            }
-        }
-        // Bound SIGINT_{NEXT,MAX,ZERO,MIN}
-        final int bitwidth=Integer.parseInt(x.getAttribute("bitwidth"));
-        if (bitwidth<1 || bitwidth>30) throw new RuntimeException("Bitwidth of "+bitwidth+" is not allowed.");
-        int min=0-(1<<(bitwidth-1));
-        int max=(1<<(bitwidth-1))-1;
-        TupleSet next=tf.noneOf(2);
-        for(int h=min; h<max; h++) next.add(tf.tuple(""+h).product(tf.tuple(""+(h+1))));
-        i.add(BoundsComputer.SIGINT_NEXT, next);
-        i.add(BoundsComputer.SIGINT_MAX, tf.range(tf.tuple(""+max), tf.tuple(""+max)));
-        i.add(BoundsComputer.SIGINT_ZERO, tf.range(tf.tuple("0"), tf.tuple("0")));
-        i.add(BoundsComputer.SIGINT_MIN, tf.range(tf.tuple(""+min), tf.tuple(""+min)));
-        // Add each atom so that you can refer to them in the evaluator
-        for(String a:atoms) if (a.indexOf('$')>=0) {
-            if (a.startsWith("this/")) a=a.substring(5);
-            TupleSet ts=tf.noneOf(1);
-            ts.add(tf.tuple(a));
-            Relation r=Relation.unary(a);
-            obj2expr.put(a,r);
-            i.add(r, ts);
-        }
-        // Add the skolem sets
-        for(Map.Entry<String,List<String>> e: set2atoms.entrySet()) {
-            TupleSet ts=tf.noneOf(1);
-            for(String a: e.getValue()) ts.add(tf.tuple(a));
-            String n=e.getKey();
-            if (n.startsWith("this/")) n=n.substring(5);
-            if (n.length()==0 || n.charAt(0)!='$') n="$"+n;
-            Relation r=Relation.unary(n);
-            obj2expr.put(n, r);
-            i.add(r, ts);
-        }
-        // Add the skolem relations
-        for(Map.Entry<String,TupleSet> e: field2expr.entrySet()) {
-            String n=e.getKey();
-            if (n.startsWith("this/")) n=n.substring(5);
-            if (n.length()==0 || n.charAt(0)!='$') n="$"+n;
-            Relation r=Relation.nary(n, e.getValue().arity());
-            obj2expr.put(n, r);
-            i.add(r, e.getValue());
-        }
-        // Done
-        return new A4Solution(world, obj2expr, filename, fc, command, null, null, null, bitwidth, i, null, null, null);
-    }
-
-
-    /**
-     * Parse the file into an AlloyInstance if possible.
-     * @throws ErrorFatal - if an error occurred in reading of the XML file.
-     * @throws ErrorSyntax - if there is a syntax error in the XML file.
-     */
-    public static A4Solution readXML(final String file) throws Err {
-        final XMLElement xml;
-        try {
-            xml=readElement(new File(file));
-        } catch(IOException ex) {
-            throw new ErrorFatal("Cannot read or parse the XML file: "+file);
-        }
-        if (!xml.is("alloy")) throw new ErrorSyntax("The XML file's root node must be <alloy>.");
-        A4Solution instance = null;
-        TempMap<String,String> fc = new TempMap<String,String>();
-        for(XMLElement sub: xml.getChildren()) if (sub.is("source")) {
-            String name = sub.getAttribute("filename");
-            String content = sub.getAttribute("content");
-            fc.put(name,content);
-        }
-        if (fc.size()==0) throw new RuntimeException("The original source files were not embedded in the saved instance file.");
-        ConstMap<String,String> cfc = fc.makeConst();
-        for(XMLElement sub: xml.getChildren("instance")) { instance=parseInstance(cfc, sub); break; }
-        if (instance==null) throw new ErrorSyntax("The XML file does not have an <instance> element.");
-        return instance;
     }
 }

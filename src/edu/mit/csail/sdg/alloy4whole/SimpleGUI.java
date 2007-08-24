@@ -1542,7 +1542,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         public final String compute(String input) throws Exception {
             try {
                 if (filename==null) throw new RuntimeException("Internal Error: filename==null.");
-                instance=A4SolutionReader.readXML(filename);
+                instance=A4SolutionReader.read(filename);
                 if (input.trim().length()==0) return ""; // Empty line
                 Expr e=CompUtil.parseOneExpression_fromString(instance.getWorld(), input);
                 return instance.eval(e).toString();

@@ -109,6 +109,7 @@ public final class Module {
         /** Resolve the given name to get a collection of Expr and Func objects. */
         public Collection<Object> resolve(Pos pos, String name) {
             Expr match = env.get(name);
+            if (match==null) { match=rootmodule.globals.get(name); if (match!=null) match=ExprUnary.Op.NOOP.make(pos,match); }
             if (match!=null) { List<Object> ans=new ArrayList<Object>(); ans.add(match); return ans; }
             return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
         }
@@ -254,6 +255,9 @@ public final class Module {
 
     /** The list of (CommandName,Command) pairs; NOTE: duplicate command names are allowed. */
     private final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
+
+    /** This stores a set of global values; given a unresolved name, we query this map first before all else. */
+    private final Map<String,Expr> globals = new LinkedHashMap<String,Expr>();
 
     /**
      * Constructs a new Module object
@@ -972,6 +976,11 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /** Add a global expression; if the name already exists, it is removed first. */
+    public void addGlobal(String name, Expr value) {
+        globals.put(name, value);
+    }
+
     /** Look up a field from any visible sig (and returns an empty set if there is no match) */
     private Set<Field> lookupField(String name) {
         Set<Field> ans=new LinkedHashSet<Field>();
@@ -984,7 +993,7 @@ public final class Module {
     }
 
     /** Resolve the name based on the current context and this module. */
-    public Collection<Object> populate(boolean rootfield, SigAST rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
+    private Collection<Object> populate(boolean rootfield, SigAST rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
         // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
         boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfun);
