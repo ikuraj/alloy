@@ -104,7 +104,6 @@ public final class CompUtil {
      * @param pos - the position of the "open" statement
      * @param filename - the filename to open
      * @param root - the root module (this field is ignored if prefix=="")
-     * @param parentFileName -the "exact filename" of the parent module
      * @param prefix - the prefix for the file we are about to parse
      * @param thispath - the set of filenames involved in the current chain_of_file_opening
      */
