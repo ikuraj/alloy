@@ -148,13 +148,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /**
      * If nonnull, this holds a map from Sig, Field, and possibly even some parameterless Func to a Kodkod Expression
      */
-    private final Map<Object,Expression> bcc;
+    private final ConstMap<Object,Expression> bcc;
 
     /** Constructs a TranslateAlloyKodkod object. */
     TranslateAlloyToKodkod
-    (Map<Object,Expression> bcc, int bitwidth, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Object>> core) {
+    (ConstMap<Object,Expression> bcc, int bitwidth, Map<Decl,Pair<Type,Pos>> skolemType, Map<Formula,List<Object>> core) {
         if (skolemType==null) skolemType=new IdentityHashMap<Decl,Pair<Type,Pos>>();
-        this.skolemType=skolemType; this.bcc=bcc; this.bitwidth=bitwidth; this.core=core;
+        this.skolemType=skolemType; this.bcc=ConstMap.make(bcc); this.bitwidth=bitwidth; this.core=core;
     }
 
     //==============================================================================================================//
@@ -275,7 +275,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (!mainResult.satisfiable()) {
             rep.resultUNSAT(cmd, time, mainResult.formula, mainResult.core());
         } else {
-            if (xmlFileName!=null && xmlFileName.length()>0) mainResult.writeXML(xmlFileName,true);
+            if (xmlFileName!=null && xmlFileName.length()>0) mainResult.writeXML(xmlFileName, world.getAllFunc());
             rep.resultSAT(cmd, time, mainResult.formula, xmlFileName);
         }
         return mainResult;
@@ -353,7 +353,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         solver.options().setReporter(blankReporter); // To ensure no more output during SolutionEnumeration
         if (!opt.recordKodkod) formula=null;
         return new A4Solution(
-                world,
+                sigs,
                 a2k,
                 filename,
                 sources,

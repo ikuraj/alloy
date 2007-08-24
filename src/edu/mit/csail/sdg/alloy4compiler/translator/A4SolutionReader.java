@@ -40,10 +40,12 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import nanoxml_2_2_3.XMLElement;
+import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.SafeList;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -70,7 +72,7 @@ public final class A4SolutionReader {
     private Module root = null;
 
     /** This stores the list of sigs. */
-    private SafeList<Sig> sigs = null;
+    private ConstList<Sig> sigs = null;
 
     //private PrimSig make(String signame, Map<String,String> name2parent, Map<String,PrimSig> name2sig) throws Err {
     //    if (signame==null || signame.length()==0 || signame.equals(UNIV.label)) return UNIV;
@@ -130,7 +132,7 @@ public final class A4SolutionReader {
         } catch(Throwable ex) {
             throw new ErrorFatal("The original source files failed to be reconstructed.");
         }
-        sigs = root.getAllReachableSigs();
+        sigs = ConstList.make(root.getAllReachableSigs());
     }
 
 
@@ -334,14 +336,14 @@ public final class A4SolutionReader {
         addSkolems();
         String command = xml.getAttribute("command");
         filename = xml.getAttribute("filename");
-        sol = new A4Solution(root, a2k, filename, fc, command, null, null, null, bitwidth, inst, null, null, null);
+        sol = new A4Solution(sigs, ConstMap.make(a2k), filename, fc, command, null, null, null, bitwidth, inst, null, null, null);
     }
 
     /** Parse the XML element into an AlloyInstance if possible. */
-    public static A4Solution read(String filename) throws Err {
+    public static Pair<Module,A4Solution> read(String filename) throws Err {
         try {
             A4SolutionReader x = new A4SolutionReader(filename);
-            return x.sol;
+            return new Pair<Module,A4Solution>(x.root, x.sol);
         } catch(Throwable ex) {
             if (ex instanceof Err) throw ((Err)ex);
             throw new ErrorFatal("Fatal error occured: "+ex, ex);

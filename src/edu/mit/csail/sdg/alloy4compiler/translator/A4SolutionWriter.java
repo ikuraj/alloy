@@ -30,11 +30,11 @@ import java.io.PrintWriter;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pair;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
@@ -132,7 +132,7 @@ final class A4SolutionWriter {
         // We only write out satisfiable instance
         if (!sol.satisfiable()) throw new ErrorAPI("This solution is unsatisfiable, so there is nothing to write to an XML file.");
         // Add all sig names into the "has seen" set; along the way, rename the sigs so that we don't have duplicate names
-        SafeList<Sig> sigs = sol.getAllReachableSigs();
+        ConstList<Sig> sigs = sol.getAllReachableSigs();
         for(Sig s:new Sig[]{UNIV,SIGINT,SEQIDX,NONE}) { // We first add the builtin sigs
             sig2name.put(s, un.make(s.label.length()==0 ? BLANK : s.label));
         }

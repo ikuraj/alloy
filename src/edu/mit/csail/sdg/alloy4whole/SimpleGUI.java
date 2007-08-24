@@ -81,6 +81,7 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
@@ -98,6 +99,7 @@ import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.OurTabbedEditor;
 import edu.mit.csail.sdg.alloy4.OurUtil;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Subprocess;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -1535,17 +1537,16 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
 
     private static Computer evaluator = new Computer() {
         private String filename=null;
-        private A4Solution instance=null;
         public final void setSourceFile(String filename) {
             this.filename=filename;
         }
         public final String compute(String input) throws Exception {
             try {
                 if (filename==null) throw new RuntimeException("Internal Error: filename==null.");
-                instance=A4SolutionReader.read(filename);
+                Pair<Module,A4Solution> ans=A4SolutionReader.read(filename);
                 if (input.trim().length()==0) return ""; // Empty line
-                Expr e=CompUtil.parseOneExpression_fromString(instance.getWorld(), input);
-                return instance.eval(e).toString();
+                Expr e=CompUtil.parseOneExpression_fromString(ans.a, input);
+                return ans.b.eval(e).toString();
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");
             }
