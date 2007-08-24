@@ -554,7 +554,8 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 if (myEvaluatorPanel==null) {
                     myEvaluatorPanel=OurDialog.showConsole(null,
                     "The <b>Alloy Evaluator</b> allows you to type<br>"+
-                    "in Alloy expressions and see their values.<br>", evaluator);
+                    "in Alloy expressions and see their values.<br>"+
+                    "For example, <b>univ</b> shows the list of all atoms.<br>", evaluator);
                 }
                 evaluator.setSourceFile(xmlFileName);
                 left = new JScrollPane(myEvaluatorPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);

@@ -38,9 +38,6 @@ public final class Pos implements Serializable {
     /** The filename (it can be an empty string if unknown) */
     public final String filename;
 
-    /** Additional annotation about this position (if can be null if there are no additional annotation) */
-    public transient final Object comment;
-
     /** The starting column position (from 1..) */
     public final int x;
 
@@ -63,7 +60,6 @@ public final class Pos implements Serializable {
      * @param y - the row position (from 1..)
      */
     public Pos(String filename, int x, int y) {
-        this.comment=null;
         this.filename=(filename==null?"":filename);
         this.x=(x>0?x:1);
         this.y=(y>0?y:1);
@@ -79,19 +75,7 @@ public final class Pos implements Serializable {
      * @param x2 - the ending column position (from 1..)
      * @param y2 - the ending row position (from 1..)
      */
-    public Pos(String filename, int x, int y, int x2, int y2) { this(filename,x,y,x2,y2,null); }
-
-    /**
-     * Constructs a new Pos object.
-     * @param filename - the filename (it can be an empty string if unknown)
-     * @param x - the starting column position (from 1..)
-     * @param y - the starting row position (from 1..)
-     * @param x2 - the ending column position (from 1..)
-     * @param y2 - the ending row position (from 1..)
-     * @param comment - the comment
-     */
-    private Pos(String filename, int x, int y, int x2, int y2, Object comment) {
-        this.comment=comment;
+    public Pos(String filename, int x, int y, int x2, int y2) {
         this.filename=(filename==null?"":filename);
         this.x=(x>0?x:1);
         this.y=(y>0?y:1);
@@ -109,14 +93,6 @@ public final class Pos implements Serializable {
         }
         this.x2=x2;
         this.y2=y2;
-    }
-
-    /**
-     * Return a new position that is identical to the old position, except the comment is changed.
-     * @param newComment - the new comment value
-     */
-    public Pos addComment(Object newComment) {
-        return new Pos(filename, x, y, x2, y2, newComment);
     }
 
     /**
@@ -139,11 +115,11 @@ public final class Pos implements Serializable {
             x2=this.x2;
             y2=this.y2;
         }
-        return new Pos(filename, x, y, x2, y2, (this.comment!=null ? this.comment : that.comment));
+        return new Pos(filename, x, y, x2, y2);
     }
 
     /**
-     * Two Pos objects are equal if the filename x y x2 y2 are the same; the "Object comment" field is not considered.
+     * Two Pos objects are equal if the filename x y x2 y2 are the same.
      */
     @Override public boolean equals(Object other) {
         if (this==other) return true;
@@ -171,8 +147,7 @@ public final class Pos implements Serializable {
 
     /** Returns a String representation of this position value. */
     @Override public String toString() {
-        String comment=(this.comment==null?"":(this.comment.toString()));
-        if (filename.length()==0) return "line "+y+", column "+x+(comment.length()==0?"":(" ["+comment+"]"));
-        return "line "+y+", column "+x+", filename="+filename+(comment.length()==0?"":(" ["+comment+"]"));
+        if (filename.length()==0) return "line "+y+", column "+x;
+        return "line "+y+", column "+x+", filename="+filename;
     }
 }

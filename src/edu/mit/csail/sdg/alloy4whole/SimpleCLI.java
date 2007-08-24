@@ -22,9 +22,9 @@ package edu.mit.csail.sdg.alloy4whole;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -77,7 +77,7 @@ public final class SimpleCLI {
             sb.append(". "+solvingTime+"ms.\n\n");
         }
 
-        @Override public void resultUNSAT(Object command, long solvingTime, String formula, IdentitySet<Pos> core) {
+        @Override public void resultUNSAT(Object command, long solvingTime, String formula, Set<Pos> core) {
             if (db) db("   UNSAT!\n");
             if (!(command instanceof Command)) return;
             Command cmd = (Command)command;

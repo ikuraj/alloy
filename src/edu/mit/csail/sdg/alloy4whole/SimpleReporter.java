@@ -42,9 +42,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -365,7 +365,7 @@ final class SimpleReporter extends A4Reporter {
     }
 
     /** {@inheritDoc} */
-    @Override public void resultUNSAT(Object command, long solvingTime, String formula, IdentitySet<Pos> core) {
+    @Override public void resultUNSAT(Object command, long solvingTime, String formula, Set<Pos> core) {
         if (!(command instanceof Command)) return;
         Command cmd = (Command)command;
         log(RESTORE3);

@@ -31,9 +31,11 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.prefs.Preferences;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -89,7 +91,6 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
-import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.MacUtil;
@@ -1473,7 +1474,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             if (arg.startsWith("CORE: ")) {
                 String filename = Util.canon(arg.substring(6));
                 String alloyfilename = null;
-                IdentitySet<Pos> core = new IdentitySet<Pos>();
+                Set<Pos> core = new LinkedHashSet<Pos>();
                 InputStream is=null;
                 ObjectInputStream ois=null;
                 try {

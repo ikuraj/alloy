@@ -298,7 +298,7 @@ final class BoundsComputer {
     /** Add the constraint that the sig has exactly "n" elements, or at most "n" elements */
     private Formula size(Sig sig, int n, boolean exact, Map<Formula,List<Object>> core) {
         Expression a = a2k.get(sig);
-        Pos comment = Pos.UNKNOWN.addComment("sig["+sig+"] is scoped to have "+(exact?"exactly ":"at most ")+n+" atoms");
+        Pos comment = Pos.UNKNOWN; // TODO: addComment("sig["+sig+"] is scoped to have "+(exact?"exactly ":"at most ")+n+" atoms")
         if (n<=0) return add(a.no(), comment, core);
         if (n==1) return add(exact ? a.one() : a.lone(), comment, core);
         Formula f = exact ? Formula.TRUE : null;
@@ -331,7 +331,7 @@ final class BoundsComputer {
             Expression childexpr=allocatePrimSig(child, core);
             if (sum==null) { sum=childexpr; continue; }
             // subsigs are disjoint
-            Pos pos = Pos.UNKNOWN.addComment("subsigs of "+sig+" must be disjoint");
+            Pos pos = Pos.UNKNOWN; // TODO: addComment("subsigs of "+sig+" must be disjoint")
             fact = add(sum.intersection(childexpr).no(), pos, core).and(fact);
             sum = sum.union(childexpr);
         }

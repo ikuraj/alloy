@@ -20,6 +20,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
@@ -145,7 +146,7 @@ public class A4Reporter {
      * @param command - this is the original Command used to generate this solution
      * @param solvingTime - this is the number of milliseconds the solver took to obtain this result
      * @param formula - if not null, and length()>0, then it's the original Kodkod formula expressed in Java format
-     * @param core - if not null, and length()>0, then it is a unsat core
+     * @param core - if not null, and size()>0, then it is a unsat core
      */
-    public void resultUNSAT(Object command, long solvingTime, String formula, IdentitySet<Pos> core) {}
+    public void resultUNSAT(Object command, long solvingTime, String formula, Set<Pos> core) {}
 }
