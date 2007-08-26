@@ -59,6 +59,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import kodkod.ast.BinaryExpression;
+import kodkod.ast.BinaryFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
@@ -162,11 +163,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private void makeFormula (Iterable<Module> modules) throws Err {
         rep.debug("Generating bounds...");
         final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
-        this.bitwidth = sc.getBitwidth();
-        this.maxseq = sc.getMaxSeq();
+        bitwidth = sc.getBitwidth();
+        maxseq = sc.getMaxSeq();
         final Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>> bc = BoundsComputer.compute(sc,rep,sigs,fmap);
-        this.bcc = bc.b;
-        this.bounds = bc.a.a;
+        bcc = bc.b;
+        bounds = bc.a.a;
         goal = bc.a.b;
         rep.debug("Generating facts...");
         for(Module u:modules) goal = makeFacts(u, goal);
@@ -184,7 +185,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /**
      * Step3: construct the Kodkod solver object, and chooses the temporary file name
      * <p> Reads: rep, cmd, bitwidth, maxseq
-     * <p> Writes: solver
+     * <p> Writes: solver, tmpCNF
      */
     private void makeSolver (A4Options opt) throws Err, IOException {
         rep.debug("Assigning kodkod options...");
@@ -193,8 +194,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (opt.solver.external()!=null) {
             String ext = opt.solver.external();
             if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
-            tmpCNF = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
-            solver.options().setSolver(SATFactory.externalFactory(ext, "", tmpCNF.getAbsolutePath(), ""));
+            File tmp = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
+            solver.options().setSolver(SATFactory.externalFactory(ext, "", tmp.getAbsolutePath(), ""));
         } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
             solver.options().setSolver(SATFactory.ZChaff);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
@@ -205,7 +206,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             solver.options().setLogTranslation(true);
         } else if (opt.solver.equals(A4Options.SatSolver.FILE)) {
             tmpCNF = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
-            String name = System.getProperty("user.home")+File.separatorChar+"nosuchprogram";
+            String name = System.getProperty("user.home")+File.separatorChar+"nosuchprogram"+File.separatorChar;
             solver.options().setSolver(SATFactory.externalFactory(name, "", tmpCNF.getAbsolutePath(), ""));
         } else {
             solver.options().setSolver(SATFactory.DefaultSAT4J);
@@ -242,9 +243,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Reads: all
      * <p> Writes: all
      */
-    private A4Solution solve (boolean tryBookExamples, A4Options opt)
-    throws SaveToFileException, Err {
+    private A4Solution solve (boolean tryBookExamples, A4Options opt) throws Err {
         rep.debug("Generating the solution...");
+        long time = System.currentTimeMillis();
         Iterator<Solution> sols;
         Solution sol = null;
         IdentitySet<Formula> kCore = null;
@@ -265,55 +266,44 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 kCore=new IdentitySet<Formula>();
                 Proof p=sol.proof();
                 if (sol.outcome()==UNSATISFIABLE) {
-                    try { p.minimize(new MinTopStrategy(p.log())); } catch(UnsupportedOperationException ex) {}
+                    try { p.minimize(new MinTopStrategy(p.log())); } catch(Throwable ex) {}
                 }
                 for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) {
                     Object n=it.next().node();
                     if (n instanceof Formula) kCore.add((Formula)n);
                 }
-            } catch(Throwable th) {
-                kCore=null;
+            } catch(Throwable ex) {
+                kCore=null; // Failure is not fatal
             }
         }
         solver.options().setReporter(blankReporter); // To ensure no more output during SolutionEnumeration
         if (opt.solver.equals(A4Options.SatSolver.FILE)) {
-            // The formula is trivial, but since the user wants it in CNF format, so we manually generate
-            // a trivial satisfiable (or unsatisfiable) CNF file.
+            // The formula is trivial! (otherwise, since we used a nonexistent solver name, it would have thrown an exception.
+            // Since the user wants it in CNF format, we manually generate
+            // a trivially satisfiable (or unsatisfiable) CNF file.
             String txt = inst!=null ? "p cnf 1 1\n1 0\n" : "p cnf 1 2\n1 0\n-1 0\n";
-            Util.writeAll(tmpCNF.getAbsolutePath(), txt);
-            throw new RuntimeException("CNF file successfully generated (using \"nosuchprogram\" as the solver name)");
+            String out = tmpCNF.getAbsolutePath();
+            Util.writeAll(out, txt);
+            rep.resultCNF(out);
+            return null;
         }
-        return new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(), sols, (opt.recordKodkod ? goal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
+        A4Solution answer = new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(), sols, (opt.recordKodkod ? goal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
+        time = System.currentTimeMillis() - time;
+        if (answer.satisfiable()) rep.resultSAT(cmd, time, answer); else rep.resultUNSAT(cmd, time, answer);
+        return answer;
     }
 
     //==============================================================================================================//
 
-    public static Object alloy2kodkod(ConstMap<Object,Expression> bcc, int bitwidth, Expr expr) throws Err {
-        if (bitwidth<1 || bitwidth>30) throw new ErrorType("The integer bitwidth must be between 1 and 30.");
-        if (!expr.errors.isEmpty() && expr.ambiguous) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
-        if (!expr.errors.isEmpty()) throw expr.errors.get(0);
-        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(A4Reporter.NOP, null, null);
-        tr.bcc = bcc;
-        tr.bitwidth = bitwidth;
-        Object ans = tr.visitThis(expr);
-        if ((ans instanceof IntExpression) || (ans instanceof Formula) || (ans instanceof Expression)) return ans;
-        throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
-    }
-
     /**
-     * Based on the specified "options", execute a command from the given "world", then optionally write the result as an XML file.
+     * Based on the specified "options", execute one command and return the resulting A4Solution object.
      *
      * @param rep - if nonnull, we'll send compilation diagnostic messages to it
      * @param world - the World that the command comes from
      * @param cmd - the Command to execute
      * @param opt - the set of options guiding the execution of the command
-     * @param xmlFileName - if it's a nonempty String, and the command is satisfiable, then we'll write the solution into it
-     * @param tempFileName - this is the name of a temporary file where the solver MIGHT dump temporary formulas into
      *
-     * <p> (In particular, if solver is not "FILE", and solver is not "EXTERNAL", and "recordKodkod==false",
-     * then we promise we will not write into "tempFileName", so you can pass "null" as the argument in this case.)
-     *
-     * @return null if the solver wrote the CNF to "tempFileName",
+     * @return null if the user chose "save to FILE" as the SAT solver,
      * and nonnull if the solver finishes the entire solving and is either satisfiable or unsatisfiable.
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
@@ -325,17 +315,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             tr = new TranslateAlloyToKodkod(rep, world.getAllReachableSigs(), cmd);
             tr.makeFormula(world.getAllReachableModules());
             tr.makeSolver(opt);
-            long time = System.currentTimeMillis();
-            A4Solution sol = tr.solve(false, opt);
-            time = System.currentTimeMillis()-time;
-            if (!sol.satisfiable()) rep.resultUNSAT(cmd, time, sol); else rep.resultSAT(cmd, time, sol);
-            return sol;
+            return tr.solve(false, opt);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
             Pair<Type,Pos> x = tr!=null ? tr.decl2type.get(ex.decl()) : null;
             Pos p = x!=null ? x.b : Pos.UNKNOWN;
-            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
+            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order " +
+               "quantification that could not be skolemized.");
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex;
             if (ex.toString().contains("nosuchprogram") && tr!=null && tr.tmpCNF!=null) {
@@ -347,21 +334,17 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     }
 
     /**
-     * Based on the specified "options", execute a command from the given "world", then optionally write the result as an XML file.
-     * Note: it will first test whether the model fits one of the model from the "Software Abstractions" book;
+     * Based on the specified "options", execute one command and return the resulting A4Solution object.
+     *
+     * <p> Note: it will first test whether the model fits one of the model from the "Software Abstractions" book;
      * if so, it will use the exact instance that was in the book.
      *
      * @param rep - if nonnull, we'll send compilation diagnostic messages to it
      * @param world - the World that the command comes from
      * @param cmd - the Command to execute
      * @param opt - the set of options guiding the execution of the command
-     * @param xmlFileName - if it's a nonempty String, and the command is satisfiable, then we'll write the solution into it
-     * @param tempFileName - this is the name of a temporary file where the solver MIGHT dump temporary formulas into
      *
-     * <p> (In particular, if solver is not "FILE", and solver is not "EXTERNAL", and "recordKodkod==false",
-     * then we promise we will not write into "tempFileName", so you can pass "null" as the argument in this case.)
-     *
-     * @return null if the solver wrote the CNF to "tempFileName",
+     * @return null if the user chose "save to FILE" as the SAT solver,
      * and nonnull if the solver finishes the entire solving and is either satisfiable or unsatisfiable.
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
@@ -373,17 +356,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             tr = new TranslateAlloyToKodkod(rep, world.getAllReachableSigs(), cmd);
             tr.makeFormula(world.getAllReachableModules());
             tr.makeSolver(opt);
-            long time = System.currentTimeMillis();
-            A4Solution sol = tr.solve(false, opt);
-            time = System.currentTimeMillis()-time;
-            if (!sol.satisfiable()) rep.resultUNSAT(cmd, time, sol); else rep.resultSAT(cmd, time, sol);
-            return sol;
+            return tr.solve(true, opt);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
             Pair<Type,Pos> x = tr!=null ? tr.decl2type.get(ex.decl()) : null;
             Pos p = x!=null ? x.b : Pos.UNKNOWN;
-            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
+            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order " +
+               "quantification that could not be skolemized.");
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex;
             if (ex.toString().contains("nosuchprogram") && tr!=null && tr.tmpCNF!=null) {
@@ -394,6 +374,35 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         }
     }
 
+    /**
+     * Translate the Alloy expression into an equivalent Kodkod Expression or IntExpression or Formula object.
+     * @param bcc - this must map every Sig and every Field to an equivalent Kodkod Expression
+     * @param bitwidth - this specifies the integer bitwidth and must be between 1 and 30
+     * @param expr - this is the Alloy expression we want to translate
+     */
+    public static Object alloy2kodkod(ConstMap<Object,Expression> bcc, int bitwidth, Expr expr) throws Err {
+        if (bitwidth<1 || bitwidth>30) throw new ErrorType("The integer bitwidth must be between 1 and 30.");
+        if (!expr.errors.isEmpty() && expr.ambiguous) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
+        if (!expr.errors.isEmpty()) throw expr.errors.get(0);
+        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(A4Reporter.NOP, null, null);
+        tr.bcc = bcc;
+        tr.bitwidth = bitwidth;
+        Object ans;
+        try {
+            ans = tr.visitThis(expr);
+        } catch(UnsatisfiedLinkError ex) {
+            throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
+        } catch(HigherOrderDeclException ex) {
+            throw new ErrorType("Analysis cannot be performed since it requires higher-order " +
+               "quantification that could not be skolemized.");
+        } catch(Throwable ex) {
+            if (ex instanceof Err) throw (Err)ex;
+            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+        }
+        if ((ans instanceof IntExpression) || (ans instanceof Formula) || (ans instanceof Expression)) return ans;
+        throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
+    }
+
     //==============================================================================================================//
 
     /**
@@ -401,7 +410,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @return the formula - if x evaluates to a Formula
      * @throws ErrorFatal - if x does not evaluate to a Formula
      */
-    private final Formula cform(Expr x) throws Err {
+    private Formula cform(Expr x) throws Err {
         Object y=visitThis(x);
         if (y instanceof Formula) return (Formula)y;
         throw new ErrorFatal(x.span(), "This should have been a formula.\nInstead it is "+y);
@@ -412,7 +421,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @return the integer expression - if x evaluates to an IntExpression
      * @throws ErrorFatal - if x does not evaluate to an IntExpression
      */
-    private final IntExpression cint(Expr x) throws Err {
+    private IntExpression cint(Expr x) throws Err {
         Object y=visitThis(x);
         if (y instanceof IntExpression) return (IntExpression)y;
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
@@ -423,7 +432,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @return the expression - if x evaluates to an Expression
      * @throws ErrorFatal - if x does not evaluate to an Expression
      */
-    private final Expression cset(Expr x) throws Err {
+    private Expression cset(Expr x) throws Err {
         Object y=visitThis(x);
         if (y instanceof Expression) return (Expression)y;
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
@@ -437,39 +446,48 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      */
     private String skolem(String name) {
         if (current_function.size()==0) {
-            if (cmd.label.length()>0 && cmd.label.indexOf('$')<0) return cmd.label+"_"+name; else return name;
+            if (cmd!=null && cmd.label.length()>0 && cmd.label.indexOf('$')<0) return cmd.label+"_"+name; else return name;
         }
         Func last=current_function.get(current_function.size()-1);
-        if (last!=null) {
-            String funcname=tail(last.label);
-            if (funcname.indexOf('$')<0) return funcname+"_"+name;
-        }
-        return name;
+        String funcname=tail(last.label);
+        if (funcname.indexOf('$')<0) return funcname+"_"+name; else return name;
     }
 
     //==============================================================================================================//
 
+    /** If f is a formula, and it hasn't been associated with any location information, then associate it with x. */
     private Formula fmap(Object f, Expr x) {
         if (!(f instanceof Formula)) return null;
-        if (!fmap.containsKey(f)) fmap.put((Formula)f, x);
-        return (Formula)f;
+        Formula ff=(Formula)f;
+        if (fmap.containsKey(ff)) return ff;
+        fmap.put(ff, x);
+        if (ff instanceof BinaryFormula) {
+            BinaryFormula b=(BinaryFormula)ff;
+            if (b.op() == BinaryFormula.Operator.AND) { fmap(b.left(), x); fmap(b.right(), x); }
+        }
+        return ff;
     }
 
+    /** If f is a formula, and it hasn't been associated with any location information, then associate it with x. */
     private Formula fmap(Object f, Pos x) {
         if (!(f instanceof Formula)) return null;
-        if (x!=null && x!=Pos.UNKNOWN && !fmap.containsKey(f)) fmap.put((Formula)f, x);
-        return (Formula)f;
+        Formula ff=(Formula)f;
+        if (x==null || x==Pos.UNKNOWN || fmap.containsKey(f)) return ff;
+        fmap.put(ff, x);
+        if (ff instanceof BinaryFormula) {
+            BinaryFormula b=(BinaryFormula)ff;
+            if (b.op() == BinaryFormula.Operator.AND) { fmap(b.left(), x); fmap(b.right(), x); }
+        }
+        return ff;
     }
 
     //==============================================================================================================//
 
-    /** Remove the NOOP in front of an expression. */
+    /** Remove the "ExprUnary NOP" in front of an expression. */
     private static Expr deNOP(Expr x) {
         while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
         return x;
     }
-
-    //==============================================================================================================//
 
     /** Returns y if f.boundingFormula is of the form "all SomeVar: one s | SomeVar.f in y" */
     private static Expr findY(Sig s, Field f) {
@@ -509,7 +527,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <br> e5 = (e = Last || one e.Next)
      * <br> e6 = (e !in e.^Next)
      */
-    private static boolean chkFact(Sig elem, Sig ord, Expr first, Expr last, Expr next, Expr fact) {
+    private static boolean findOrder(Sig elem, Sig ord, Expr first, Expr last, Expr next, Expr fact) {
         Expr prev;
         ExprBinary bin;
         first = ord.join(first);
@@ -518,36 +536,39 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         prev = next.transpose();
         if (!(fact instanceof ExprBinary)) return false;
         bin=(ExprBinary)fact;
-        if (!(bin.right instanceof ExprBinary)) return false;
+        if (bin.op != ExprBinary.Op.AND || !(bin.right instanceof ExprBinary)) return false;
         if (!elem.in(first.join(next.reflexiveClosure())).isSame(bin.left)) return false;
         bin=(ExprBinary)(bin.right);
-        if (!(bin.right instanceof ExprBinary)) return false;
+        if (bin.op != ExprBinary.Op.AND || !(bin.right instanceof ExprBinary)) return false;
         if (!first.join(prev).no().isSame(bin.left)) return false;
         bin=(ExprBinary)(bin.right);
-        if (!(bin.right instanceof ExprQuant)) return false;
+        if (bin.op != ExprBinary.Op.AND || !(bin.right instanceof ExprQuant)) return false;
         if (!last.join(next).no().isSame(bin.left)) return false;
         ExprQuant qt=(ExprQuant)(bin.right);
         if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1 || !(qt.sub instanceof ExprBinary)) return false;
         ExprVar e=qt.vars.get(0);
         if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
         bin=(ExprBinary)(qt.sub);
-        if (!(bin.right instanceof ExprBinary)) return false;
+        if (bin.op!=ExprBinary.Op.AND || !(bin.right instanceof ExprBinary)) return false;
         if (!e.equal(first).or(e.join(prev).one()).isSame(bin.left)) return false;
         bin=(ExprBinary)(bin.right);
+        if (bin.op!=ExprBinary.Op.AND) return false;
         if (!e.equal(last).or(e.join(next).one()).isSame(bin.left)) return false;
         if (!e.in(e.join(next.closure())).not().isSame(bin.right)) return false;
         return true;
     }
 
     /** If x = SOMETHING->RELATION where SOMETHING.arity==1, then return the RELATION, else return null. */
-    private Relation right(Expression x) {
+    private static Relation right(Expression x) {
         if (!(x instanceof BinaryExpression)) return null;
         BinaryExpression bin = (BinaryExpression)x;
         if (bin.op() != BinaryExpression.Operator.PRODUCT) return null;
         if (bin.left().arity()==1 && bin.right() instanceof Relation) return (Relation)(bin.right()); else return null;
     }
 
-    /** Construct the constraints for "field declarations" and "appended fact paragraphs" and "fact" paragraphs */
+    //==============================================================================================================//
+
+    /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
     private Formula makeFacts(Module module, Formula kfact) throws Err {
         SafeList<Sig> sigs = module.getAllSigs();
         SafeList<Pair<String,Expr>> facts = module.getAllFacts();
@@ -559,8 +580,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 Sig e = findElem(sig,f1,f2,f3);
                 if (e!=null && e.isOrdered!=null && fst!=null && lst!=null && nxt!=null) {
                     Expression ee = bcc.get(e);
-                    if (ee instanceof Relation && chkFact(e, sig, f1, f2, f3, facts.get(0).b)) {
-                        Formula f = ((Relation)nxt).totalOrder((Relation)ee, (Relation)fst, (Relation)lst);
+                    if (ee instanceof Relation && findOrder(e, sig, f1, f2, f3, facts.get(0).b)) {
+                        Formula f = nxt.totalOrder((Relation)ee, fst, lst);
                         return fmap(f, e.isOrdered).and(kfact);
                     }
                 }
@@ -581,12 +602,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         return kfact;
     }
 
-    //==============================================================================================================//
-
     /*============================*/
     /* Evaluates an ExprITE node. */
     /*============================*/
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprITE x) throws Err {
         Formula c=cform(x.cond);
         Object l=visitThis(x.left);
@@ -596,18 +616,18 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             return fmap(c1.and(c2) , x );
         }
         if (l instanceof Expression) {
-            return c.thenElse((Expression)l,cset(x.right));
+            return c.thenElse((Expression)l, cset(x.right));
         }
-        return c.thenElse((IntExpression)l,cint(x.right));
+        return c.thenElse((IntExpression)l, cint(x.right));
     }
 
     /*============================*/
     /* Evaluates an ExprLet node. */
     /*============================*/
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprLet x) throws Err {
-        Object r=visitThis(x.var.expr);
-        env.put(x.var, r);
+        env.put(x.var, visitThis(x.var.expr));
         Object ans=visitThis(x.sub);
         env.remove(x.var);
         return ans;
@@ -617,18 +637,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates an ExprConstant node. */
     /*=================================*/
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprConstant x) throws Err {
         switch(x.op) {
           case NUMBER:
-              int n=x.num();
-              int b=bitwidth;
-              int max=(b==1 ? 0 : (1<<(b-1))-1);
-              int min=(0-max)-1;
-              if (n<min) throw new ErrorType(x.pos,
-                 "Current bitwidth is set to "+b+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
-              if (n>max) throw new ErrorType(x.pos,
-                 "Current bitwidth is set to "+b+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
-              return IntConstant.constant(n);
+            int n=x.num(), max=(1<<(bitwidth-1))-1, min=(0-max)-1;
+            if (n<min) throw new ErrorType(x.pos,
+               "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
+            if (n>max) throw new ErrorType(x.pos,
+               "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
+            return IntConstant.constant(n);
           case TRUE: return Formula.TRUE;
           case FALSE: return Formula.FALSE;
           case IDEN: return Expression.IDEN.intersection(bcc.get(UNIV).product(Relation.UNIV));
@@ -640,6 +658,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates an ExprUnary node. */
     /*==============================*/
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprUnary x) throws Err {
         switch(x.op) {
             case NOOP:
@@ -648,7 +667,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 return cset(x.sub);
             case NOT:
                 if (x.sub instanceof ExprBinary && ((ExprBinary)(x.sub)).op==ExprBinary.Op.OR) {
-                    // This transformation is not required; but it should give you better precision unsat core
+                    // This transformation is not required; but it should give you better unsat core
                     Expr left = ((ExprBinary)(x.sub)).left;
                     Expr right = ((ExprBinary)(x.sub)).right;
                     Formula leftF = fmap( cform(left.not()) , left );
@@ -680,52 +699,56 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates an ExprVar node. */
     /*============================*/
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprVar x) throws Err {
         Object ans=env.get(x);
-        if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" cannot be resolved during translation.\n");
+        if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
     }
 
-    /*==============================================*/
-    /* Evaluates a Field node or an ExprField node. */
-    /*==============================================*/
+    /*=========================*/
+    /* Evaluates a Field node. */
+    /*=========================*/
 
-    @Override public Object visit(Field x) {
-        return bcc.get(x);
+    /** {@inheritDoc} */
+    @Override public Object visit(Field x) throws Err {
+        Expression ans=bcc.get(x);
+        if (ans==null) throw new ErrorFatal(x.pos, "Field \""+x+"\" is not bound to a legal value during translation.\n");
+        return ans;
     }
 
-    /*==========================================*/
-    /* Evaluates a Sig node or an ExprSig node. */
-    /*==========================================*/
+    /*=======================*/
+    /* Evaluates a Sig node. */
+    /*=======================*/
 
-    @Override public Object visit(Sig x) {
-        return bcc.get(x);
+    /** {@inheritDoc} */
+    @Override public Object visit(Sig x) throws Err {
+        Expression ans=bcc.get(x);
+        if (ans==null) throw new ErrorFatal(x.pos, "Sig \""+x+"\" is not bound to a legal value during translation.\n");
+        return ans;
     }
 
     /*=============================*/
     /* Evaluates an ExprCall node. */
     /*=============================*/
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprCall x) throws Err {
-        Func y=x.fun;
-        if (y.params.size()==0) {
-            Object ans=bcc.get(y);
+        Func f=x.fun;
+        int n=f.params.size();
+        if (n==0) {
+            Object ans=bcc.get(f); // Try looking it up; it may have been pre-bound to some value
             if (ans!=null) return ans;
         }
-        if (current_function.contains(y)) throw new ErrorSyntax(x.span(), ""+y+" cannot call itself recursively!");
+        for(Func ff:current_function) if (ff==f) throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
         Env<ExprVar,Object> newenv=new Env<ExprVar,Object>();
-        int r=0;
-        for(ExprVar d:y.params) {
-            newenv.put(d, cset(x.args.get(r)));
-            r++;
-        }
+        for(int i=0; i<n; i++) newenv.put(f.params.get(i), cset(x.args.get(i)));
         Env<ExprVar,Object> oldenv=env;
         env=newenv;
-        int oldfunc=current_function.size();
-        current_function.add(y);
-        Object ans=visitThis(y.getBody());
+        current_function.add(f);
+        Object ans=visitThis(f.getBody());
         env=oldenv;
-        while(current_function.size()>oldfunc) current_function.remove(current_function.size()-1);
+        current_function.remove(current_function.size()-1);
         if (ans instanceof Formula) fmap(ans, x);
         return ans;
     }
@@ -734,15 +757,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates an ExprBuiltin node. */
     /*================================*/
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprBuiltin x) throws Err {
-        // This says  no(a&b) and no((a+b)&c) and no((a+b+c)&d)
+        // This says  no(a&b) and no((a+b)&c) and no((a+b+c)&d)...
         // Emperically this seems to be more efficient than "no(a&b) and no(a&c) and no(b&c)"
         Formula answer=null;
         Expression a=null;
         for(Expr arg:x.args) {
             Expression b=cset(arg);
             if (a==null) {a=b;continue;}
-            if (answer==null) answer=a.intersection(b).no(); else answer=a.intersection(b).no().and(answer);
+            if (answer==null) answer=fmap(a.intersection(b).no(), x); else answer=fmap(a.intersection(b).no(), x).and(answer);
             a=a.union(b);
         }
         if (answer!=null) return fmap(answer,x); else return Formula.TRUE;
@@ -752,11 +776,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates an ExprBinary node. */
     /*===============================*/
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprBinary x) throws Err {
         Expr a=x.left, b=x.right;
         Expression s, s2; IntExpression i; Formula f; Object obj;
         switch(x.op) {
-            case IN: f=isIn(cset(a),b); return fmap(f,x);
+            case IN: return fmap(isIn(cset(a),b), x);
             case LT: i=cint(a); f=i.lt(cint(b)); return fmap(f,x);
             case LTE: i=cint(a); f=i.lte(cint(b)); return fmap(f,x);
             case GT: i=cint(a); f=i.gt(cint(b)); return fmap(f,x);
@@ -803,6 +828,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprBinary.accept()");
     }
 
+    /** Helper method that translates the formula "a in b" into a Kodkod formula. */
     private Formula isIn(Expression a, Expr right) throws Err {
         Expression b;
         if (right instanceof ExprUnary) {
@@ -813,15 +839,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             if (y.op==ExprUnary.Op.LONEOF) { b=cset(y.sub); return a.lone().and(a.in(b)); }
             if (y.op==ExprUnary.Op.SOMEOF) { b=cset(y.sub); return a.some().and(a.in(b)); }
         }
-        if (right instanceof ExprBinary) {
+        if (right instanceof ExprBinary && right.mult!=0 && ((ExprBinary)right).op.isArrow) {
             // Handles possible "binary" or higher-arity multiplicity
             return isInBinary(a, (ExprBinary)right);
         }
         return a.in(cset(right));
     }
 
+    /** Helper method that translates the formula "r in (a ?->? b)" into a Kodkod formula. */
     private Formula isInBinary(Expression r, ExprBinary ab) throws Err {
-        if (!ab.op.isArrow || ab.mult==0) return r.in(cset(ab));
         // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
         // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
         Decls d=null; Expression a=cset(ab.left), atuple=null, ar=r;

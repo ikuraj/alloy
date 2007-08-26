@@ -152,7 +152,6 @@ public final class A4Solution {
      * @param sigs - the list of Sigs; must be complete, must contain UNIV+SIGINT+SEQIDX+NONE, and has no duplicates
      * @param bcc - maps each Sig and Field (and possibly even some parameterless Func) to a Kodkod expression
      * @param filename - original Alloy main model's file name that generated this solution; can be "" if unknown
-     * @param sources - original Alloy models file names and file contents used to generate this solution; can be empty if unknown
      * @param command - original command used to generate this solution; can be "" if unknown
      * @param kEnumerator - if nonnull, we can ask it to get another solution
      * @param kFormula - original formula (as a Kodkod formula object) used to generate this solution; can be null if unknown
