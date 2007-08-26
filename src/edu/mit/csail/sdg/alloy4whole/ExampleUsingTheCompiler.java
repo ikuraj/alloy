@@ -54,8 +54,6 @@ public final class ExampleUsingTheCompiler {
             }
         };
 
-        A4Reporter.setReporter(rep);
-
         // Load the visualizer (You only need to do this if you plan to visualize an Alloy solution)
         // VizGUI viz = new VizGUI(false, "", null);
 
@@ -63,7 +61,7 @@ public final class ExampleUsingTheCompiler {
 
             // Parse+typecheck the model
             System.out.println("=========== Parsing+Typechecking "+filename+" =============");
-            Module world = CompUtil.parseEverything_fromFile(null, filename);
+            Module world = CompUtil.parseEverything_fromFile(rep, null, filename);
 
             // Choose some default options for how you want to execute the commands
             A4Options options = new A4Options();
@@ -72,7 +70,7 @@ public final class ExampleUsingTheCompiler {
             for (Command cmd: world.getAllCommands()) {
                 // Execute the command
                 System.out.println("============ Command "+cmd+": ============");
-                A4Solution ans = TranslateAlloyToKodkod.execute_command(world, cmd, options, null, null);
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world, cmd, options, null, null);
                 // Print the outcome
                 System.out.println("Answer:");
                 System.out.println(ans.toString());

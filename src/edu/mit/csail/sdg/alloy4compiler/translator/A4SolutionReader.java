@@ -40,6 +40,7 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import nanoxml_2_2_3.XMLElement;
+import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -116,7 +117,7 @@ public final class A4SolutionReader {
         if (xml==null) throw new ErrorSyntax("The XML file must contain an <instance> element.");
         try {
             if (fc.size()>0) {
-                root = CompUtil.parseEverything_fromFile(fc, xml.getAttribute("filename"));
+                root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, xml.getAttribute("filename"));
             } else {
                 throw new ErrorSyntax("The original source files were not embedded in the saved instance file.");
                 // root = new Module();

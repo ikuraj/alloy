@@ -21,7 +21,6 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
@@ -41,7 +40,6 @@ import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
@@ -306,6 +304,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /**
      * Based on the specified "options", execute a command from the given "world", then optionally write the result as an XML file.
      *
+     * @param rep - if nonnull, we'll send compilation diagnostic messages to it
      * @param world - the World that the command comes from
      * @param cmd - the Command to execute
      * @param opt - the set of options guiding the execution of the command
@@ -321,9 +320,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
     public static A4Solution execute_command
-    (Module world, Command cmd, A4Options opt, String xmlFileName, String tempFileName)
+    (A4Reporter rep, Module world, Command cmd, A4Options opt, String xmlFileName, String tempFileName)
     throws Err {
-        A4Reporter rep = A4Reporter.getReporter();
+        if (rep==null) rep=A4Reporter.NOP;
         TranslateAlloyToKodkod tr = null;
         try {
             tr = new TranslateAlloyToKodkod(rep, world.getAllReachableSigs(), cmd);
@@ -332,10 +331,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             long time = System.currentTimeMillis();
             A4Solution sol = tr.solve(false,xmlFileName,tempFileName,opt);
             time = System.currentTimeMillis()-time;
-            if (!sol.satisfiable())
-               rep.resultUNSAT(cmd, time, sol.formula, sol.core());
-            else
-               rep.resultSAT(cmd, time, sol.formula, "");
+            if (!sol.satisfiable()) rep.resultUNSAT(cmd, time, sol); else rep.resultSAT(cmd, time, sol);
             return sol;
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
@@ -358,6 +354,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * Note: it will first test whether the model fits one of the model from the "Software Abstractions" book;
      * if so, it will use the exact instance that was in the book.
      *
+     * @param rep - if nonnull, we'll send compilation diagnostic messages to it
      * @param world - the World that the command comes from
      * @param cmd - the Command to execute
      * @param opt - the set of options guiding the execution of the command
@@ -373,9 +370,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
     public static A4Solution execute_commandFromBook
-    (Module world, Command cmd, A4Options opt, Map<String,String> originalSources, String xmlFileName, String tempFileName)
+    (A4Reporter rep, Module world, Command cmd, A4Options opt, Map<String,String> originalSources, String xmlFileName, String tempFileName)
     throws Err {
-        A4Reporter rep = A4Reporter.getReporter();
+        if (rep==null) rep=A4Reporter.NOP;
         TranslateAlloyToKodkod tr = null;
         try {
             tr = new TranslateAlloyToKodkod(rep, world.getAllReachableSigs(), cmd);
@@ -384,21 +381,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             long time = System.currentTimeMillis();
             A4Solution sol = tr.solve(false,xmlFileName,tempFileName,opt);
             time = System.currentTimeMillis()-time;
-            if (!sol.satisfiable()) {
-                rep.resultUNSAT(cmd, time, sol.formula, sol.core());
-            } else {
-                if (xmlFileName!=null && xmlFileName.length()>0) {
-                    final PrintWriter out=new PrintWriter(xmlFileName,"UTF-8");
-                    Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
-                    A4SolutionWriter.write(sol, out, world.getAllFunc());
-                    for(Map.Entry<String,String> e: originalSources.entrySet()) {
-                        Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
-                    }
-                    out.print("\n</alloy>\n");
-                    if (!Util.close(out)) throw new ErrorFatal("Error writing to the A4Solution XML file "+xmlFileName);
-                }
-                rep.resultSAT(cmd, time, sol.formula, xmlFileName);
-            }
+            if (!sol.satisfiable()) rep.resultUNSAT(cmd, time, sol); else rep.resultSAT(cmd, time, sol);
             return sol;
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());

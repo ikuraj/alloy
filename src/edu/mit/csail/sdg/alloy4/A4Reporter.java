@@ -20,9 +20,6 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.util.Set;
-import java.util.WeakHashMap;
-
 /**
  * This class receives diagnostic, progress, and warning messages from Alloy4.
  * (This default implementation ignores all calls; you should subclass it to do the appropriate screen output)
@@ -32,42 +29,6 @@ public class A4Reporter {
 
     /** This is a pre-constructed instance that simply ignores all calls. */
     public static final A4Reporter NOP = new A4Reporter();
-
-    /** This stores the mapping from a Thread to the current reporter associated with that thread. */
-    private static final WeakHashMap<Thread,A4Reporter> map = new WeakHashMap<Thread,A4Reporter>();
-
-    /** This caches the most recent A4Reporter's thread. */
-    private static Thread latestThread=null;
-
-    /** This caches the most recent A4Reporter. */
-    private static A4Reporter latestReporter=null;
-
-    /** Sets the reporter for the current thread. */
-    public static final void setReporter(A4Reporter reporter) {
-        synchronized(A4Reporter.class) {
-            latestThread=Thread.currentThread();
-            if (reporter==null || reporter==NOP) {
-                latestReporter=NOP;
-                map.remove(latestThread);
-            } else {
-                latestReporter=reporter;
-                map.put(latestThread, reporter);
-            }
-        }
-    }
-
-    /** Returns the reporter for the current thread. */
-    public static final A4Reporter getReporter() {
-        synchronized(A4Reporter.class) {
-            Thread t=Thread.currentThread();
-            if (t!=latestThread) {
-                latestThread=t;
-                latestReporter=map.get(t);
-                if (latestReporter==null) latestReporter=NOP;
-            }
-            return latestReporter;
-        }
-    }
 
     /** Constructs a default A4Reporter object that does nothing. */
     public A4Reporter() {}
@@ -128,10 +89,9 @@ public class A4Reporter {
      *
      * @param command - this is the original Command used to generate this solution
      * @param solvingTime - this is the number of milliseconds the solver took to obtain this result
-     * @param formula - if not null, and length()>0, then it's the original Kodkod formula expressed in Java format
-     * @param filename - if not null, and length()>0, then it points to a file containing the solution in XML format
+     * @param solution - the satisfying A4Solutio object
      */
-    public void resultSAT(Object command, long solvingTime, String formula, String filename) {}
+    public void resultSAT(Object command, long solvingTime, Object solution) {}
 
     /**
      * If solver!=FILE, this method is called by the translator during unsat core minimization.
@@ -145,8 +105,7 @@ public class A4Reporter {
      *
      * @param command - this is the original Command used to generate this solution
      * @param solvingTime - this is the number of milliseconds the solver took to obtain this result
-     * @param formula - if not null, and length()>0, then it's the original Kodkod formula expressed in Java format
-     * @param core - if not null, and size()>0, then it is a unsat core
+     * @param solution - the unsatisfying A4Solution object
      */
-    public void resultUNSAT(Object command, long solvingTime, String formula, Set<Pos> core) {}
+    public void resultUNSAT(Object command, long solvingTime, Object solution) {}
 }

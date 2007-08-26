@@ -44,9 +44,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstMap;
+import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -160,7 +160,6 @@ final class SimpleReporter extends A4Reporter {
      */
     static String performEnumeration(PrintStream out, String filename) throws Exception {
         SimpleReporter rep = new SimpleReporter(out);
-        A4Reporter.setReporter(rep);
         rep.logBold("Enumerating...\n");
         rep.log(FLUSH);
         A4Solution sol;
@@ -215,12 +214,11 @@ final class SimpleReporter extends A4Reporter {
         final boolean bundleWarningNonFatal, final String tempdir, final int verbosity)
         throws Exception {
         SimpleReporter rep = new SimpleReporter(out);
-        A4Reporter.setReporter(rep);
         rep.verbosity = verbosity;
         rep.mainAlloyFileName = Util.canon(options.originalFilename);
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
-        final Module world = CompUtil.parseEverything_fromFile(bundleCache, rep.mainAlloyFileName);
+        final Module world = CompUtil.parseEverything_fromFile(rep, bundleCache, rep.mainAlloyFileName);
         final SafeList<Sig> sigs = world.getAllReachableSigs();
         final SafeList<Command> cmds = world.getAllCommands();
         if (rep.warnings.size()>0) {
@@ -251,11 +249,13 @@ final class SimpleReporter extends A4Reporter {
             rep.log(" successfully generated.\n\n");
             synchronized(SimpleReporter.class) { latestMetamodelXML=outf; }
         } else for(int i=0; i<cmds.size(); i++) if (bundleIndex<0 || i==bundleIndex) {
-            final String tempXML=tempdir+File.separatorChar+i+".xml";
+            latestModule=world; // TODO
+            latestKodkodSRC=ConstMap.make(bundleCache); // TODO
+            final String tempXML=tempdir+File.separatorChar+i+".cnf.xml";
             final String tempCNF=tempdir+File.separatorChar+i+".cnf";
             rep.tempfile=tempCNF;
             rep.logBold("Executing \""+cmds.get(i)+"\"\n");
-            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(world, cmds.get(i), options, bundleCache, tempXML, tempCNF);
+            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world, cmds.get(i), options, bundleCache, tempXML, tempCNF);
             if (ai==null) {
                 result.add(null);
             }
@@ -266,7 +266,6 @@ final class SimpleReporter extends A4Reporter {
                 rep.deleteOnExit(tempXML);
                 rep.declareInstance(tempXML);
                 result.add(tempXML);
-                synchronized(SimpleReporter.class) { latestKodkod=ai; latestModule=world; latestKodkodSRC=ConstMap.make(bundleCache); latestKodkodXML=tempXML; }
             }
         }
         (new File(tempdir)).delete(); // In case it was UNSAT, or canceled...
@@ -351,10 +350,36 @@ final class SimpleReporter extends A4Reporter {
     }
 
     /** {@inheritDoc} */
-    @Override public void resultSAT(Object command, long solvingTime, String formula, String filename) {
+    @Override public void resultSAT(Object command, long solvingTime, Object solution) { //String formula, String filename) {
+        if (!(solution instanceof A4Solution)) return;
         if (!(command instanceof Command)) return;
+        A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
+        String formula = sol.formula;
         log(RESTORE3);
+        String filename = tempfile+".xml";
+
+        try {
+            final PrintWriter out=new PrintWriter(filename,"UTF-8");
+            Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
+            synchronized(this) {
+                A4SolutionWriter.write(sol, out, latestModule.getAllFunc());
+                for(Map.Entry<String,String> e: latestKodkodSRC.entrySet()) {
+                    Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
+                }
+                out.print("\n</alloy>\n");
+                if (!Util.close(out)) throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
+                latestKodkod=sol;
+                latestKodkodXML=filename;
+                // ALREADY DONE: latestModule=world; latestKodkodSRC=ConstMap.make(bundleCache);
+            }
+        } catch(Throwable ex) {
+            Util.close(out);
+            log("ERROR: "+ex);
+            // should report an error
+        }
+
+
         String formulafilename=null;
         if (formula!=null && formula.length()>0 && tempfile!=null) {
             formulafilename=tempfile+".java";
@@ -383,16 +408,19 @@ final class SimpleReporter extends A4Reporter {
     }
 
     /** {@inheritDoc} */
-    @Override public void resultUNSAT(Object command, long solvingTime, String formula, Set<Pos> core) {
+    @Override public void resultUNSAT(Object command, long solvingTime, Object solution) {
+        if (!(solution instanceof A4Solution)) return;
         if (!(command instanceof Command)) return;
+        A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
         log(RESTORE3);
         String corefilename=null, formulafilename=null;
-        if (formula!=null && formula.length()>0 && tempfile!=null) {
+        if (sol.formula.length()>0 && tempfile!=null) {
             formulafilename=tempfile+".java";
-            try { Util.writeAll(formulafilename,formula); } catch(Throwable ex) { formulafilename=null; }
+            try { Util.writeAll(formulafilename, sol.formula); } catch(Throwable ex) { formulafilename=null; }
         }
-        if (core!=null && core.size()>0 && tempfile!=null) {
+        ConstSet<Pos> core = sol.core();
+        if (core.size()>0 && tempfile!=null) {
             corefilename=tempfile+".core";
             OutputStream fs=null;
             ObjectOutputStream os=null;

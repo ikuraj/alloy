@@ -207,13 +207,14 @@ public final class CompUtil {
 
     /**
      * Read everything from "file" and parse it; if it mentions submodules, open them and parse them too.
+     * @param rep - if nonnull, we will report compilation progress messages to it
      * @param loaded - a cache of files that have been pre-fetched (can be null if there were no prefetching)
      * @param filename - the main module we are parsing
      * @return the root Module which contains pointers to all submodules
      * @throws Err if an error occurred
      * <p> And if loaded!=null, it will contain all the files needed for this parse, and furthermore, other entries will be deleted.
      */
-    public static Module parseEverything_fromFile (Map<String,String> loaded, String filename) throws Err {
+    public static Module parseEverything_fromFile (A4Reporter rep, Map<String,String> loaded, String filename) throws Err {
         try {
             filename = Util.canon(filename);
             Set<String> thispath = new LinkedHashSet<String>();
@@ -221,8 +222,7 @@ public final class CompUtil {
             Map<String,String> fc = new LinkedHashMap<String,String>(loaded);
             loaded.clear();
             Module root = parseRecursively(loaded, fc, new Pos(filename,1,1), filename, null, "", thispath);
-            A4Reporter rep = A4Reporter.getReporter();
-            return Module.resolveAll(rep, root);
+            return Module.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());
         } catch(IOException ex) {

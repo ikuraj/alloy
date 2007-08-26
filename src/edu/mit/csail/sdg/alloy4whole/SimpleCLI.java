@@ -23,10 +23,8 @@ package edu.mit.csail.sdg.alloy4whole;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
@@ -68,7 +66,7 @@ public final class SimpleCLI {
 
         @Override public void resultCNF(String filename) {}
 
-        @Override public void resultSAT(Object command, long solvingTime, String formula, String filename) {
+        @Override public void resultSAT(Object command, long solvingTime, Object solution) {
             if (db) db("   SAT!\n");
             if (!(command instanceof Command)) return;
             Command cmd = (Command)command;
@@ -78,7 +76,7 @@ public final class SimpleCLI {
             sb.append(". "+solvingTime+"ms.\n\n");
         }
 
-        @Override public void resultUNSAT(Object command, long solvingTime, String formula, Set<Pos> core) {
+        @Override public void resultUNSAT(Object command, long solvingTime, Object solution) {
             if (db) db("   UNSAT!\n");
             if (!(command instanceof Command)) return;
             Command cmd = (Command)command;
@@ -97,12 +95,11 @@ public final class SimpleCLI {
 
     public static void main(String[] args) throws Exception {
         final SimpleReporter rep = new SimpleReporter();
-        A4Reporter.setReporter(rep);
         for(String filename:args) {
             try {
                 rep.sb.append("\n\nMain file = "+filename+"\n");
                 if (db) db("Parsing+Typechecking...");
-                Module world = CompUtil.parseEverything_fromFile(null, filename);
+                Module world = CompUtil.parseEverything_fromFile(rep, null, filename);
                 if (db) db(" ok\n");
                 SafeList<Command> cmds=world.getAllCommands();
                 for(ErrorWarning msg: rep.warnings) rep.sb.append("Relevance Warning:\n" + (msg.toString().trim()) + "\n\n");
@@ -119,7 +116,7 @@ public final class SimpleCLI {
                         db("Executing "+cc+"...\n");
                     }
                     rep.sb.append("Executing \""+c+"\"\n");
-                    TranslateAlloyToKodkod.execute_command(world, c, options, filename+"."+i+".xml", filename+"."+i+".cnf");
+                    TranslateAlloyToKodkod.execute_command(rep, world, c, options, filename+"."+i+".xml", filename+"."+i+".cnf");
                 }
             } catch(Throwable ex) {
                 rep.sb.append("\n\nException: "+ex);
