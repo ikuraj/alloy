@@ -56,7 +56,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module; // TODO
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
@@ -65,6 +65,7 @@ import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntToExprCast;
+import kodkod.ast.QuantifiedFormula;
 import kodkod.ast.Variable;
 import kodkod.ast.Relation;
 import kodkod.ast.Formula;
@@ -287,7 +288,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             rep.resultCNF(out);
             return null;
         }
-        A4Solution answer = new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(), sols, (opt.recordKodkod ? goal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
+        A4Solution answer = new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(), // TODO: check these args...
+           sols, (opt.recordKodkod ? goal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
         time = System.currentTimeMillis() - time;
         if (answer.satisfiable()) rep.resultSAT(cmd, time, answer); else rep.resultUNSAT(cmd, time, answer);
         return answer;
@@ -848,40 +850,41 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     /** Helper method that translates the formula "r in (a ?->? b)" into a Kodkod formula. */
     private Formula isInBinary(Expression r, ExprBinary ab) throws Err {
+        final Expression a=cset(ab.left), b=cset(ab.right);
+        Decls d=null, d2=null;
+        Formula ans1, ans2;
         // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
-        // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
-        Decls d=null; Expression a=cset(ab.left), atuple=null, ar=r;
+        Expression atuple=null, ar=r;
         for(int i=a.arity(); i>0; i--) {
-          Variable v=Variable.unary("[discard]");
-          if (a.arity()==1) d=v.oneOf(a); else if (d==null) d=v.oneOf(Relation.UNIV); else d=v.oneOf(Relation.UNIV).and(d);
-          ar=v.join(ar);
-          if (atuple==null) atuple=v; else atuple=atuple.product(v);
+           Variable v=Variable.unary("");
+           if (a.arity()==1) d=v.oneOf(a); else if (d==null) d=v.oneOf(Relation.UNIV); else d=v.oneOf(Relation.UNIV).and(d);
+           ar=v.join(ar);
+           if (atuple==null) atuple=v; else atuple=atuple.product(v);
         }
-        Formula ans1=isIn(ar, ab.right);
+        ans1=isIn(ar, ab.right);
         switch(ab.op) {
-          case ISSEQ_ARROW_LONE:
-          case ANY_ARROW_LONE: case SOME_ARROW_LONE: case ONE_ARROW_LONE: case LONE_ARROW_LONE: ans1=ar.lone().and(ans1); break;
-          case ANY_ARROW_ONE:  case SOME_ARROW_ONE:  case ONE_ARROW_ONE:  case LONE_ARROW_ONE:  ans1=ar.one().and(ans1);  break;
-          case ANY_ARROW_SOME: case SOME_ARROW_SOME: case ONE_ARROW_SOME: case LONE_ARROW_SOME: ans1=ar.some().and(ans1); break;
+           case ISSEQ_ARROW_LONE:
+           case ANY_ARROW_LONE: case SOME_ARROW_LONE: case ONE_ARROW_LONE: case LONE_ARROW_LONE: ans1=ar.lone().and(ans1); break;
+           case ANY_ARROW_ONE:  case SOME_ARROW_ONE:  case ONE_ARROW_ONE:  case LONE_ARROW_ONE:  ans1=ar.one().and(ans1);  break;
+           case ANY_ARROW_SOME: case SOME_ARROW_SOME: case ONE_ARROW_SOME: case LONE_ARROW_SOME: ans1=ar.some().and(ans1); break;
         }
-        // TODO: We should allow manual grounding
         if (a.arity()==1) ans1=ans1.forAll(d); else ans1=isIn(atuple, ab.left).implies(ans1).forAll(d);
-        //
-        Decls d2=null; Expression b=cset(ab.right), btuple=null, rb=r;
+        // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
+        Expression btuple=null, rb=r;
         for(int i=b.arity(); i>0; i--) {
-          Variable v=Variable.unary("[discard]");
-          if (b.arity()==1) d2=v.oneOf(b); else if (d2==null) d2=v.oneOf(Relation.UNIV); else d2=v.oneOf(Relation.UNIV).and(d2);
-          rb=rb.join(v);
-          if (btuple==null) btuple=v; else btuple=v.product(btuple);
+           Variable v=Variable.unary("");
+           if (b.arity()==1) d2=v.oneOf(b); else if (d2==null) d2=v.oneOf(Relation.UNIV); else d2=v.oneOf(Relation.UNIV).and(d2);
+           rb=rb.join(v);
+           if (btuple==null) btuple=v; else btuple=v.product(btuple);
         }
-        Formula ans2=isIn(rb, ab.left);
+        ans2=isIn(rb, ab.left);
         switch(ab.op) {
-          case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE: ans2=rb.lone().and(ans2); break;
-          case ONE_ARROW_LONE: case ONE_ARROW_ANY:   case ONE_ARROW_SOME: case ONE_ARROW_ONE:   ans2=rb.one().and(ans2);  break;
-          case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE: ans2=rb.some().and(ans2); break;
+           case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE: ans2=rb.lone().and(ans2); break;
+           case ONE_ARROW_ANY:  case ONE_ARROW_SOME:  case ONE_ARROW_ONE:  case ONE_ARROW_LONE:  ans2=rb.one().and(ans2);  break;
+           case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE: ans2=rb.some().and(ans2); break;
         }
         if (b.arity()==1) ans2=ans2.forAll(d2); else ans2=isIn(btuple, ab.right).implies(ans2).forAll(d2);
-        //
+        // Now, put everything together
         Formula ans=r.in(a.product(b)).and(ans1).and(ans2);
         if (ab.op==ExprBinary.Op.ISSEQ_ARROW_LONE) {
             Expression rr=r;
@@ -895,6 +898,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates an ExprQuant node. */
     /*==============================*/
 
+    /** Adds a "one of" in front of X if X is unary and does not have a declared multiplicity. */
     private static Expr addOne(Expr x) {
         if (x instanceof ExprUnary) switch(((ExprUnary)x).op) {
             case SETOF: case ONEOF: case LONEOF: case SOMEOF: return x;
@@ -902,36 +906,34 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         return (x.type.arity()!=1) ? x : ExprUnary.Op.ONEOF.make(x.span(), x);
     }
 
-    private Object visit_qt(final ExprQuant.Op op, final ConstList<ExprVar> xvars, final Expr sub, final boolean split) throws Err {
+    /** Helper method that translates the quantification expression "op vars | sub" */
+    private Object visit_qt(final ExprQuant.Op op, final ConstList<ExprVar> xvars, final Expr sub) throws Err {
         if (op == ExprQuant.Op.NO) {
-            return visit_qt(ExprQuant.Op.ALL, xvars, sub.not(), false);
+            return visit_qt(ExprQuant.Op.ALL, xvars, sub.not());
         }
         if (op == ExprQuant.Op.ONE || op == ExprQuant.Op.LONE) {
             for(int i=0; ;i++) {
                 if (i>=xvars.size() && op==ExprQuant.Op.ONE)
-                   return ((Expression) visit_qt(ExprQuant.Op.COMPREHENSION, xvars, sub, false)).one();
+                   return ((Expression) visit_qt(ExprQuant.Op.COMPREHENSION, xvars, sub)).one();
                 if (i>=xvars.size() && op==ExprQuant.Op.LONE)
-                   return ((Expression) visit_qt(ExprQuant.Op.COMPREHENSION, xvars, sub, false)).lone();
-                Expr v=addOne(xvars.get(i).expr);
-                if (v.type.arity()>1) break;
-                if (v.mult!=1) break;
-                if (!(v instanceof ExprUnary)) break;
-                if (((ExprUnary)v).op!=ExprUnary.Op.ONEOF) break;
+                   return ((Expression) visit_qt(ExprQuant.Op.COMPREHENSION, xvars, sub)).lone();
+                Expr v = deNOP(addOne(xvars.get(i).expr));
+                if (v.type.arity()>1 || v.mult!=1 || !(v instanceof ExprUnary) || ((ExprUnary)v).op!=ExprUnary.Op.ONEOF) break;
             }
         }
         if (op == ExprQuant.Op.ONE) {
-            Formula f1 = (Formula) visit_qt(ExprQuant.Op.LONE, xvars, sub, false);
-            Formula f2 = (Formula) visit_qt(ExprQuant.Op.SOME, xvars, sub, false);
+            Formula f1 = (Formula) visit_qt(ExprQuant.Op.LONE, xvars, sub);
+            Formula f2 = (Formula) visit_qt(ExprQuant.Op.SOME, xvars, sub);
             return f1.and(f2);
         }
         if (op == ExprQuant.Op.LONE) {
-            Pair p1 = (Pair) visit_qt(ExprQuant.Op.ALL, xvars, sub, true);
-            Pair p2 = (Pair) visit_qt(ExprQuant.Op.ALL, xvars, sub, true);
-            Formula f1 = (Formula)(p1.a), f2 = (Formula)(p2.a), eqv = Formula.TRUE;
-            List s1 = (List)(p1.b), s2 = (List)(p2.b);
-            Decls decls = null;
+            QuantifiedFormula p1 = (QuantifiedFormula) visit_qt(ExprQuant.Op.ALL, xvars, sub);
+            QuantifiedFormula p2 = (QuantifiedFormula) visit_qt(ExprQuant.Op.ALL, xvars, sub);
+            Formula f1=p1.formula(), f2=p2.formula(), eqv=Formula.TRUE;
+            List<Decl> s1=p1.declarations().declarations(), s2=p2.declarations().declarations();
+            Decls decls=null;
             for(int i=0; i<s1.size(); i++) {
-                Decl d1=(Decl)(s1.get(i)), d2=(Decl)(s2.get(i));
+                Decl d1=s1.get(i), d2=s2.get(i);
                 eqv = d1.variable().eq(d2.variable()).and(eqv);
                 if (decls==null) decls=d1.and(d2); else decls=decls.and(d1).and(d2);
             }
@@ -974,28 +976,31 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final Formula ans = (op==ExprQuant.Op.SUM) ? null : cform(sub) ;
         final IntExpression ians = (op!=ExprQuant.Op.SUM) ? null : cint(sub) ;
         for(ExprVar dex:xvars) env.remove(dex);
-        if (split) return new Pair<Formula,List>(guard.implies(ans), decls);
         if (op==ExprQuant.Op.COMPREHENSION) return ans.comprehension(dd); // guard==Formula.TRUE, since each var has to be unary
         if (op==ExprQuant.Op.SUM) return ians.sum(dd);                    // guard==Formula.TRUE, since each var has to be unary
         if (op==ExprQuant.Op.SOME) return guard.and(ans).forSome(dd); else return guard.implies(ans).forAll(dd);
     }
 
+    /** {@inheritDoc} */
     @Override public Object visit(ExprQuant x) throws Err {
         // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==1) {
             ExprVar a=x.vars.get(0);
-            Expr max=a.gte(ZERO).and(a.plus(ONE).lt(ZERO));
-            Expr min=a.lt(ZERO).and(a.minus(ONE).gte(ZERO));
-            if (x.sub.isSame(max)) return BoundsComputer.SIGINT_MAX;
-            if (x.sub.isSame(min)) return BoundsComputer.SIGINT_MIN;
+            if (a.expr.isSame(Sig.SIGINT)) {
+                if (a.gte(ZERO).and(a.plus(ONE).lt(ZERO)).isSame(x.sub)) return BoundsComputer.SIGINT_MAX;
+                if (a.lt(ZERO).and(a.minus(ONE).gte(ZERO)).isSame(x.sub)) return BoundsComputer.SIGINT_MIN;
+            }
         }
+        // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==2) {
             ExprVar a=x.vars.get(0), b=x.vars.get(1);
-            Expr next=b.gt(a).and(b.equal(a.plus(ONE)));
-            if (x.sub.isSame(next)) return BoundsComputer.SIGINT_NEXT;
+            if (a.expr.isSame(Sig.SIGINT) && b.expr.isSame(Sig.SIGINT)) {
+                if (b.gt(a).and(b.equal(a.plus(ONE))).isSame(x.sub)) return BoundsComputer.SIGINT_NEXT;
+            }
         }
-        Object ans = visit_qt(x.op, x.vars, x.sub, false);
-        if (ans instanceof Formula) fmap.put((Formula)ans, x);
+        // All else, invoke the helper method to translate this quantification expression
+        Object ans = visit_qt(x.op, x.vars, x.sub);
+        if (ans instanceof Formula) fmap(ans, x);
         return ans;
     }
 }
