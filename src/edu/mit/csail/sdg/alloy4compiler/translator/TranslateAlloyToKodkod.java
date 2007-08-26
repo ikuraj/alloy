@@ -79,13 +79,13 @@ import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.engine.fol2sat.TranslationRecord;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ONE;
 import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
 
-/** Given a World object, solve one or more commands using Kodkod. */
+/** Translate an Alloy AST into Kodkod AST then attempt to solve it using Kodkod. */
 
 public final class TranslateAlloyToKodkod extends VisitReturn {
 
@@ -100,13 +100,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual Kodkod Expression/IntExpression/Formula. */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
-
-    /**
-     * True if we want to silently ignore "multiplicity constraints".
-     * <br> It must be off by default (for correctness).
-     * <br> However, somtimes we might turn this on, evaluate some expression, then turn it off again.
-     */
-    private boolean demul = false;
 
     /** This maps each Kodkod formula we generate to a Alloy Pos or Alloy Expr. */
     private final IdentityHashMap<Formula,Object> fmap = new IdentityHashMap<Formula,Object>();
@@ -436,20 +429,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
     }
 
-    /**
-     * Convenience method that evalutes x (ignoring all multiplicity) and cast the result to be a Kodkod Expression.
-     * @return the expression - if x evaluates to an Expression
-     * @throws ErrorFatal - if x does not evaluate to an Expression
-     */
-    private final Expression csetIgnoreMultiplicity(Expr x) throws Err {
-        boolean old=demul;
-        demul=true;
-        Object y=visitThis(x);
-        demul=old;
-        if (y instanceof Expression) return (Expression)y;
-        throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
-    }
-
     //==============================================================================================================//
 
     /**
@@ -666,8 +645,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case NOOP:
                 return visitThis(x.sub);
             case SOMEOF: case LONEOF: case ONEOF: case SETOF:
-                if (demul) return cset(x.sub);
-                throw new ErrorType(x.sub.span(), "Multiplicity symbols are not allowed here.");
+                return cset(x.sub);
             case NOT:
                 if (x.sub instanceof ExprBinary && ((ExprBinary)(x.sub)).op==ExprBinary.Op.OR) {
                     // This transformation is not required; but it should give you better precision unsat core
@@ -802,8 +780,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case ONE_ARROW_ANY: case ONE_ARROW_SOME: case ONE_ARROW_ONE: case ONE_ARROW_LONE:
             case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE:
             case ISSEQ_ARROW_LONE:
-                if (demul) { s=cset(a); return s.product(cset(b)); }
-                throw new ErrorType(x.right.span(), "Multiplicity symbols are not allowed here");
             case ARROW:
                 s=cset(a); return s.product(cset(b));
             case JOIN:
@@ -845,10 +821,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     }
 
     private Formula isInBinary(Expression r, ExprBinary ab) throws Err {
-        if (!ab.op.isArrow || ab.mult==0) return r.in(csetIgnoreMultiplicity(ab));
+        if (!ab.op.isArrow || ab.mult==0) return r.in(cset(ab));
         // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
         // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
-        Decls d=null; Expression a=csetIgnoreMultiplicity(ab.left), atuple=null, ar=r;
+        Decls d=null; Expression a=cset(ab.left), atuple=null, ar=r;
         for(int i=a.arity(); i>0; i--) {
           Variable v=Variable.unary("[discard]");
           if (a.arity()==1) d=v.oneOf(a); else if (d==null) d=v.oneOf(Relation.UNIV); else d=v.oneOf(Relation.UNIV).and(d);
@@ -865,7 +841,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         // TODO: We should allow manual grounding
         if (a.arity()==1) ans1=ans1.forAll(d); else ans1=isIn(atuple, ab.left).implies(ans1).forAll(d);
         //
-        Decls d2=null; Expression b=csetIgnoreMultiplicity(ab.right), btuple=null, rb=r;
+        Decls d2=null; Expression b=cset(ab.right), btuple=null, rb=r;
         for(int i=b.arity(); i>0; i--) {
           Variable v=Variable.unary("[discard]");
           if (b.arity()==1) d2=v.oneOf(b); else if (d2==null) d2=v.oneOf(Relation.UNIV); else d2=v.oneOf(Relation.UNIV).and(d2);
@@ -943,7 +919,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         for(ExprVar dex:xvars) {
             final Variable v = Variable.nary(skolem(dex.label), dex.type.arity());
             final Decl newd;
-            final Expression dv = (dex.expr==lastExpr) ? lastValue : csetIgnoreMultiplicity(dex.expr);
+            final Expression dv = (dex.expr==lastExpr) ? lastValue : cset(dex.expr);
             env.put(dex, v);
             lastExpr=dex.expr;
             lastValue=dv;

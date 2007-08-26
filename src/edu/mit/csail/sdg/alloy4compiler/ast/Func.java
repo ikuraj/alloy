@@ -115,6 +115,7 @@ public final class Func {
      * <b>Precondition:</b> The expression should have no free variables,
      * except possibly the list of function parameters.
      *
+     * @throws ErrorSyntax if newBody.mult!=0
      * @throws ErrorType if newBody cannot be unambiguously resolved
      * @throws ErrorType if newBody's type is incompatible with the original declared type of this predicate/function
      */
@@ -132,6 +133,7 @@ public final class Func {
                 "Function return type is "+returnDecl.type+",\nso the body must be a relation with arity "
                 +returnDecl.type.arity()+".\nSo the body's type cannot be: "+newBody.type);
         }
+        if (newBody.mult!=0) throw new ErrorSyntax(newBody.span(), "Multiplicity expression not allowed here.");
         this.body=newBody;
     }
 
