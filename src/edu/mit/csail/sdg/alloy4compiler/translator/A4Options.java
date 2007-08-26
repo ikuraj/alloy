@@ -139,7 +139,12 @@ public final class A4Options implements Serializable {
      * When this.solver is external, and the solver filename is a relative filename, then this option specifies
      * the directory that the solver filename is relative to.
      */
-    public String solverDirectory="";
+    public String solverDirectory = "";
+
+    /**
+     * This specifies the directory where we may write temporary files to.
+     */
+    public String tempDirectory = System.getProperty("java.io.tmpdir");
 
     /**
      * This option tells the compiler the "original filename" that these AST nodes came from;

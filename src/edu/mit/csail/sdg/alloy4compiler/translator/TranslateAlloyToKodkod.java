@@ -21,6 +21,7 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
@@ -184,19 +185,23 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** The Kodkod solver object. */
     private Solver solver;
 
+    /** The temporary file that may receive the CNF (or null if we are not writing the CNF out) */
+    private File tmpCNF = null;
+
     /**
-     * Step3: construct the Kodkod solver object
+     * Step3: construct the Kodkod solver object, and chooses the temporary file name
      * <p> Reads: rep, cmd, bitwidth, maxseq
      * <p> Writes: solver
      */
-    private void makeSolver (String tempFileName, A4Options opt) throws Err {
+    private void makeSolver (A4Options opt) throws Err, IOException {
         rep.debug("Assigning kodkod options...");
         int sym = (cmd.expects==1 ? 0 : opt.symmetry);
         solver = new Solver();
         if (opt.solver.external()!=null) {
             String ext = opt.solver.external();
             if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
-            solver.options().setSolver(SATFactory.externalFactory(ext, "", tempFileName, ""));
+            tmpCNF = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
+            solver.options().setSolver(SATFactory.externalFactory(ext, "", tmpCNF.getAbsolutePath(), ""));
         } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
             solver.options().setSolver(SATFactory.ZChaff);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
@@ -206,8 +211,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             solver.options().setSolver(SATFactory.MiniSatProver);
             solver.options().setLogTranslation(true);
         } else if (opt.solver.equals(A4Options.SatSolver.FILE)) {
+            tmpCNF = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
             String name = System.getProperty("user.home")+File.separatorChar+"nosuchprogram";
-            solver.options().setSolver(SATFactory.externalFactory(name, "", tempFileName, ""));
+            solver.options().setSolver(SATFactory.externalFactory(name, "", tmpCNF.getAbsolutePath(), ""));
         } else {
             solver.options().setSolver(SATFactory.DefaultSAT4J);
         }
@@ -243,7 +249,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Reads: all
      * <p> Writes: all
      */
-    private A4Solution solve (boolean tryBookExamples, String xmlFileName, String tempFileName, A4Options opt)
+    private A4Solution solve (boolean tryBookExamples, A4Options opt)
     throws SaveToFileException, Err {
         rep.debug("Generating the solution...");
         Iterator<Solution> sols;
@@ -281,7 +287,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             // The formula is trivial, but since the user wants it in CNF format, so we manually generate
             // a trivial satisfiable (or unsatisfiable) CNF file.
             String txt = inst!=null ? "p cnf 1 1\n1 0\n" : "p cnf 1 2\n1 0\n-1 0\n";
-            Util.writeAll(tempFileName, txt);
+            Util.writeAll(tmpCNF.getAbsolutePath(), txt);
             throw new RuntimeException("CNF file successfully generated (using \"nosuchprogram\" as the solver name)");
         }
         return new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(), sols, (opt.recordKodkod ? goal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
@@ -319,17 +325,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_command
-    (A4Reporter rep, Module world, Command cmd, A4Options opt, String xmlFileName, String tempFileName)
-    throws Err {
+    public static A4Solution execute_command (A4Reporter rep, Module world, Command cmd, A4Options opt) throws Err {
         if (rep==null) rep=A4Reporter.NOP;
         TranslateAlloyToKodkod tr = null;
         try {
             tr = new TranslateAlloyToKodkod(rep, world.getAllReachableSigs(), cmd);
             tr.makeFormula(world.getAllReachableModules());
-            tr.makeSolver(tempFileName, opt);
+            tr.makeSolver(opt);
             long time = System.currentTimeMillis();
-            A4Solution sol = tr.solve(false,xmlFileName,tempFileName,opt);
+            A4Solution sol = tr.solve(false, opt);
             time = System.currentTimeMillis()-time;
             if (!sol.satisfiable()) rep.resultUNSAT(cmd, time, sol); else rep.resultSAT(cmd, time, sol);
             return sol;
@@ -341,8 +345,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex;
-            if (ex.toString().contains("nosuchprogram") && opt.solver.equals(A4Options.SatSolver.FILE)) {
-                rep.resultCNF(tempFileName);
+            if (ex.toString().contains("nosuchprogram") && tr!=null && tr.tmpCNF!=null) {
+                rep.resultCNF(tr.tmpCNF.getAbsolutePath());
                 return null;
             }
             throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
@@ -369,17 +373,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_commandFromBook
-    (A4Reporter rep, Module world, Command cmd, A4Options opt, Map<String,String> originalSources, String xmlFileName, String tempFileName)
-    throws Err {
+    public static A4Solution execute_commandFromBook (A4Reporter rep, Module world, Command cmd, A4Options opt) throws Err {
         if (rep==null) rep=A4Reporter.NOP;
         TranslateAlloyToKodkod tr = null;
         try {
             tr = new TranslateAlloyToKodkod(rep, world.getAllReachableSigs(), cmd);
             tr.makeFormula(world.getAllReachableModules());
-            tr.makeSolver(tempFileName, opt);
+            tr.makeSolver(opt);
             long time = System.currentTimeMillis();
-            A4Solution sol = tr.solve(false,xmlFileName,tempFileName,opt);
+            A4Solution sol = tr.solve(false, opt);
             time = System.currentTimeMillis()-time;
             if (!sol.satisfiable()) rep.resultUNSAT(cmd, time, sol); else rep.resultSAT(cmd, time, sol);
             return sol;
@@ -391,8 +393,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex;
-            if (ex.toString().contains("nosuchprogram") && opt.solver.equals(A4Options.SatSolver.FILE)) {
-                rep.resultCNF(tempFileName);
+            if (ex.toString().contains("nosuchprogram") && tr!=null && tr.tmpCNF!=null) {
+                rep.resultCNF(tr.tmpCNF.getAbsolutePath());
                 return null;
             }
             throw new ErrorFatal("Unknown exception occurred: "+ex, ex);

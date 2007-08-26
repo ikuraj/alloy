@@ -1354,11 +1354,12 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         stopbutton.setVisible(true);
         final SatSolver sc = SatSolver.get();
         final A4Options opt = new A4Options();
+        opt.tempDirectory = Helper.alloyHome()+fs+"tmp";
+        opt.solverDirectory = Helper.alloyHome()+fs+"binary";
         opt.recordKodkod = RecordKodkod.get();
         opt.skolemDepth = SkolemDepth.get();
         opt.originalFilename = Util.canon(text.getFilename());
         opt.solver = sc;
-        opt.solverDirectory = Helper.alloyHome()+fs+"binary";
         if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
             try {
                 final String tempdir = Helper.maketemp();

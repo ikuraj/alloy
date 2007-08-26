@@ -255,7 +255,7 @@ final class SimpleReporter extends A4Reporter {
             final String tempCNF=tempdir+File.separatorChar+i+".cnf";
             rep.tempfile=tempCNF;
             rep.logBold("Executing \""+cmds.get(i)+"\"\n");
-            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world, cmds.get(i), options, bundleCache, tempXML, tempCNF);
+            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world, cmds.get(i), options);
             if (ai==null) {
                 result.add(null);
             }

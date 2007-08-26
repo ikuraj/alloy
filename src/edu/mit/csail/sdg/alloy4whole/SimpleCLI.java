@@ -116,7 +116,7 @@ public final class SimpleCLI {
                         db("Executing "+cc+"...\n");
                     }
                     rep.sb.append("Executing \""+c+"\"\n");
-                    TranslateAlloyToKodkod.execute_command(rep, world, c, options, filename+"."+i+".xml", filename+"."+i+".cnf");
+                    TranslateAlloyToKodkod.execute_command(rep, world, c, options);
                 }
             } catch(Throwable ex) {
                 rep.sb.append("\n\nException: "+ex);

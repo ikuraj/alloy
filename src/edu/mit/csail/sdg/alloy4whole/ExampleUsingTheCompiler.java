@@ -70,7 +70,7 @@ public final class ExampleUsingTheCompiler {
             for (Command cmd: world.getAllCommands()) {
                 // Execute the command
                 System.out.println("============ Command "+cmd+": ============");
-                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world, cmd, options, null, null);
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world, cmd, options);
                 // Print the outcome
                 System.out.println("Answer:");
                 System.out.println(ans.toString());
