@@ -747,11 +747,12 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             if (key==evs_loadInstanceForcefully || !xmlFileName.equals(this.xmlFileName)) {
                 AlloyInstance myInstance;
                 try {
+                    if (!f.canRead()) throw new Exception("");
                     myInstance = StaticInstanceReader.parseInstance(f);
                 } catch (Throwable e) {
                     xmlLoaded.remove(arg);
                     xmlLoaded.remove(xmlFileName);
-                    JOptionPane.showMessageDialog(null, "File is not of valid Alloy XML format: "
+                    JOptionPane.showMessageDialog(null, "File does not exist or is not a valid Alloy instance: "
                        +e.getMessage()+"\n\nFile: "+xmlFileName,
                        "Error", JOptionPane.ERROR_MESSAGE);
                     if (xmlLoaded.size()>0) {run(evs_loadInstance, xmlLoaded.get(xmlLoaded.size()-1)); return true;}
