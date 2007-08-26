@@ -138,13 +138,13 @@ final class SimpleRunner implements Runnable {
         log(SAVE1);
         try {
             if (mode=='S') {
-                final String bundleName=tempdir+File.separatorChar+"cache";
-                final SimpleRunnerBundle bundle=SimpleRunnerBundle.read(bundleName);
+                final String bundleName = tempdir+File.separatorChar+"cache";
+                final SimpleRunnerBundle bundle = SimpleRunnerBundle.read(bundleName);
                 if (bundle==null) throw new IOException("Error reading from the file:\n"+bundleName);
                 verbosity = bundle.verbosity;
                 SimpleReporter.performRegularCommand(out, bundle.cache, bundle.index, bundle.options, bundle.warningNonFatal, tempdir, bundle.verbosity);
             } else {
-                String ans=SimpleReporter.performEnumeration(out,tempdir);
+                String ans=SimpleReporter.performEnumeration(out, tempdir);
                 log(RESTORE1);
                 if (ans.length()>0) logViz(ans);
                 log(RESTORE1);

@@ -25,7 +25,6 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -37,7 +36,6 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
@@ -158,8 +156,7 @@ public final class A4SolutionWriter {
            }
         }
         // Write out all user-defined Sig(s) and their Field(s)
-        Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(),
-            "\">\n\n<instance filename=\"", sol.getOriginalFilename(),
+        Util.encodeXMLs(out, "<instance filename=\"", sol.getOriginalFilename(),
             "\" bitwidth=\"", Integer.toString(sol.getBitwidth()),
             "\" command=\"", sol.getOriginalCommand(),"\">\n");
         // Write out every sig and field
@@ -193,10 +190,6 @@ public final class A4SolutionWriter {
         if (originalFormula.length()>0) {
             Util.encodeXMLs(out, "\n<koutput value=\"", sol.toString(), "\"/>\n\n<kinput value=\"", originalFormula, "\"/>\n");
         }
-        for(Map.Entry<String,String> e: sol.getOriginalSources().entrySet()) {
-            Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
-        }
-        out.print("\n</alloy>\n");
     }
 
     /**
@@ -205,19 +198,12 @@ public final class A4SolutionWriter {
      * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
      * <p> If two or more fields have the same name and overlapping type, we append ' to the names until no more conflict.
      */
-    public static void write(A4Solution sol, String filename, Iterable<Func> macros) throws Err {
-        final PrintWriter out;
-        try {
-            out=new PrintWriter(filename,"UTF-8");
-        } catch(IOException ex) {
-            throw new ErrorFatal("Cannot write to the file \""+filename+"\"");
-        }
+    public static void write(A4Solution sol, PrintWriter out, Iterable<Func> macros) throws Err {
         try {
             new A4SolutionWriter(sol, out, macros);
         } catch(Throwable ex) {
-            Util.close(out);
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the A4Solution XML file.",ex);
         }
-        if (!Util.close(out)) throw new ErrorFatal("Cannot write to the file \""+filename+"\"");
+        if (out.checkError()) throw new ErrorFatal("Error writing the A4Solution XML file.");
     }
 }

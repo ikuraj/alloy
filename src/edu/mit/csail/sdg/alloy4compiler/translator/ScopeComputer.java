@@ -206,7 +206,7 @@ final class ScopeComputer {
     //===========================================================================================================================//
 
     /** Compute the scopes of "world", based on the settings in the "cmd", then log messages to the reporter. */
-    ScopeComputer(A4Reporter rep, SafeList<Sig> sigs, Command cmd) throws Err {
+    ScopeComputer(A4Reporter rep, Iterable<Sig> sigs, Command cmd) throws Err {
         this.cmd=cmd;
         // Process each sig listed in the command
         for(Pair<Sig,Integer> entry:cmd.scope) {

@@ -859,13 +859,13 @@ public final class Module {
                 if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(2, cname);
                 if (m.size()>1) unique(cmd.pos, cname, m);
                 if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
-                e=((ExprVar)(m.get(0))).expr;
+                e = ((ExprVar)(m.get(0))).expr.not();
             } else {
                 List<Object> m=getRawQS(4, cname); // We prefer fun/pred in the topmost module
                 if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(4, cname);
                 if (m.size()>1) unique(cmd.pos, cname, m);
                 if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
-                e=((FunAST)(m.get(0))).realFormula;
+                e = ((FunAST)(m.get(0))).realFormula;
             }
             TempList<Pair<Sig,Integer>> sc=new TempList<Pair<Sig,Integer>>(cmd.scope.size());
             for(Pair<Sig,Integer> et:cmd.scope) {

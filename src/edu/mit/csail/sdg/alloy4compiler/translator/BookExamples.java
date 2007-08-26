@@ -23,7 +23,6 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 import static kodkod.engine.Solution.Outcome.SATISFIABLE;
 import static kodkod.engine.Solution.Outcome.TRIVIALLY_SATISFIABLE;
 import edu.mit.csail.sdg.alloy4.ConstMap;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import kodkod.ast.BinaryExpression;
@@ -52,7 +51,7 @@ final class BookExamples {
     private static AbstractReporter blankReporter = new AbstractReporter(){};
 
     /** Returns the Sig if the list of sig contains a sig with the given label, else returns null. */
-    private static Sig hasSig(SafeList<Sig> sigs, String label) {
+    private static Sig hasSig(Iterable<Sig> sigs, String label) {
         for(Sig s:sigs) if (s.label.equals(label)) return s;
         return null;
     }
@@ -67,7 +66,7 @@ final class BookExamples {
      * @param check - if true, it was a "check", else it was a "run"
      */
     static Solution trial
-    (SafeList<Sig> sigs, ConstMap<Object,Expression> bc, Bounds bounds, Formula formula, Solver solver, boolean check) {
+    (Iterable<Sig> sigs, ConstMap<Object,Expression> bc, Bounds bounds, Formula formula, Solver solver, boolean check) {
         TupleFactory fac = bounds.universe().factory();
         Solution sol=null;
         if (hasSig(sigs, "this/Book")!=null) {
@@ -317,7 +316,7 @@ final class BookExamples {
 
     /** This tries a particular solution against the formula. */
     private static Solution trial
-    (Solver solver, SafeList<Sig> sigs, ConstMap<Object,Expression> bc, Formula f, final Bounds bb, Object[] t) {
+    (Solver solver, Iterable<Sig> sigs, ConstMap<Object,Expression> bc, Formula f, final Bounds bb, Object[] t) {
        try {
           TupleFactory fac=bb.universe().factory();
           Bounds b = null;

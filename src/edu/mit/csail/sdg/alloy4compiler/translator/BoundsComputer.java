@@ -45,7 +45,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -217,7 +216,7 @@ final class BoundsComputer {
     }
 
     /** Compute the scope, compute the upperbound and lowerbound in terms of String objects, then make the universe. */
-    private void prelim(ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs) throws Err {
+    private void prelim(ScopeComputer sc, A4Reporter rep, Iterable<Sig> sigs) throws Err {
         // Generate SIGINT atoms
         bitwidth = sc.getBitwidth();
         maxseq = sc.getMaxSeq();
@@ -378,7 +377,7 @@ final class BoundsComputer {
     }
 
     /** Computes the bounds for sigs/fields, then construct a BoundsComputer object that you can query. */
-    private BoundsComputer(ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,Object> fmap)
+    private BoundsComputer(ScopeComputer sc, A4Reporter rep, Iterable<Sig> sigs, Map<Formula,Object> fmap)
     throws Err {
         // Perform the prelimenary computation
         prelim(sc, rep, sigs);
@@ -470,13 +469,11 @@ final class BoundsComputer {
      * @param sc - the ScopeComputer that bounds each PrimSig to a scope
      * @param rep - the reporter that may receive diagnostic messages
      * @param sigs - the list of all sigs
-     * @param options - the Alloy options object
      * @param fmap - this map will receive additional mappings between each constraint to a Pos object
      */
     static Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>> compute
-    (ScopeComputer sc, A4Reporter rep, SafeList<Sig> sigs, A4Options options, Map<Formula,Object> fmap)
-    throws Err {
-        BoundsComputer bc = new BoundsComputer(sc, rep, sigs, options, fmap);
+    (ScopeComputer sc, A4Reporter rep, Iterable<Sig> sigs, Map<Formula,Object> fmap) throws Err {
+        BoundsComputer bc = new BoundsComputer(sc, rep, sigs, fmap);
         Pair<Bounds,Formula> a = new Pair<Bounds,Formula>(bc.bounds, bc.fact);
         return new Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>>(a, bc.a2k.makeConst());
     }

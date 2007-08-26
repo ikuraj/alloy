@@ -336,7 +336,7 @@ public final class A4SolutionReader {
         addSkolems();
         String command = xml.getAttribute("command");
         filename = xml.getAttribute("filename");
-        sol = new A4Solution(sigs, ConstMap.make(a2k), filename, fc, command, null, null, null, bitwidth, inst, null, null, null);
+        sol = new A4Solution(sigs, ConstMap.make(a2k), filename, command, null, null, null, bitwidth, inst, null, null, null);
     }
 
     /** Parse the XML element into an AlloyInstance. */
