@@ -1738,41 +1738,37 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
 
         // Testing the platform-dependent SAT solvers
         if (1==1) {
-            SatSolver now=SatSolver.get();
+            SatSolver now = SatSolver.get();
             satChoices = new ArrayList<SatSolver>(SatSolver.values());
-            try { System.loadLibrary("minisat"); } catch(UnsatisfiedLinkError e) {
-                log.logBold("Warning: the platform-specific JNI library failed.\n");
-                log.log("This means you cannot use any JNI-based SAT solver.\n"+
-                        "Please visit the troubleshooting page on\n"+
-                        "http://alloy.mit.edu/alloy4/");
-                log.logBold("\nThe exact error message is:\n");
-                log.logIndented(e.toString().trim());
-                log.log("\n");
-                log.logDivider();
-                log.flush();
-                satChoices.remove(SatSolver.MiniSatJNI);
-            }
-            try { System.loadLibrary("minisatprover"); } catch(UnsatisfiedLinkError e) {
-                satChoices.remove(SatSolver.MiniSatProverJNI);
-            }
-            try { System.loadLibrary("zchaff"); } catch(UnsatisfiedLinkError e) {
-                satChoices.remove(SatSolver.ZChaffJNI);
-            }
             Subprocess test = new Subprocess(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
             String output = test.getStandardOutput();
             if (!output.startsWith("s SATISFIABLE")) {
-                log.logBold("Warning: the platform-specific SAT solvers failed.\n");
-                log.log("This means the only SAT solver you can use is SAT4J.\n"+
-                        "Please visit the troubleshooting page on\n"+
-                        "http://alloy.mit.edu/alloy4/");
-                log.logBold("\nThe exact error message is:\n");
-                log.logIndented(test.getStandardOutputAndError());
-                log.log("\n");
+                log.logBold("Warning: non-Java based SAT solver does not work on this platform.\n");
+                log.log("This is okay, since you can still use SAT4J as the solver.\n"+
+                        "For more information, please visit http://alloy.mit.edu/alloy4/\n");
+                //log.logBold("\nThe exact error message is:\n");
+                //log.logIndented(test.getStandardOutputAndError());
                 log.logDivider();
                 log.flush();
                 satChoices.clear();
                 satChoices.add(SatSolver.SAT4J);
                 satChoices.add(SatSolver.FILE);
+            } else {
+                try { System.loadLibrary("minisat"); } catch(UnsatisfiedLinkError e) {
+                    log.logBold("Warning: JNI-based SAT solver does not work on this platform.\n");
+                    log.log("This is okay, since you can still use SAT4J as the solver.\n"+
+                    "For more information, please visit http://alloy.mit.edu/alloy4/\n");
+                    // log.logIndented(e.toString().trim());
+                    log.logDivider();
+                    log.flush();
+                    satChoices.remove(SatSolver.MiniSatJNI);
+                }
+                try { System.loadLibrary("minisatprover"); } catch(UnsatisfiedLinkError e) {
+                    satChoices.remove(SatSolver.MiniSatProverJNI);
+                }
+                try { System.loadLibrary("zchaff"); } catch(UnsatisfiedLinkError e) {
+                    satChoices.remove(SatSolver.ZChaffJNI);
+                }
             }
             if (!satChoices.contains(now)) now=SatSolver.ZChaffJNI;
             if (!satChoices.contains(now)) now=SatSolver.SAT4J;
@@ -1781,32 +1777,17 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
 
         // Testing the platform-dependent "dot" program
         do {
-            if (!Util.onWindows()) {
-                Subprocess test1 = new Subprocess(20000, new String[]{"chmod","700",binary+fs+"dotbin"});
-                String out = test1.getStandardOutputAndError();
-                if (out.length()>0) {
-                    log.logBold("Warning: unable to install the platform-specific graph generator \"dot\".\n");
-                    log.log("You can solve formulas but cannot visualize the results.\n"+
-                            "Please visit the troubleshooting page on\n"+
-                    "http://alloy.mit.edu/alloy4/");
-                    log.logBold("\nThe exact error message is:\n");
-                    log.logIndented(out);
-                    log.log("\n");
-                    log.logDivider();
-                    log.flush();
-                    break;
-                }
-            }
+            Subprocess test1 = new Subprocess(20000, new String[]{"chmod","700",binary+fs+"dotbin"});
+            test1.getStandardOutputAndError();
             Subprocess test2 = new Subprocess(20000, new String[]{binary+fs+"dotbin", binary+fs+"tmp.dot"}, 0);
-            String out2=test2.getStandardOutput().trim();
+            String out2 = test2.getStandardOutput().trim();
             if (!out2.startsWith("digraph")) {
                 Subprocess test3 = new Subprocess(20000, new String[]{"dot", binary+fs+"tmp.dot"}, 0);
                 String out3 = test3.getStandardOutput().trim();
                 if (!out3.startsWith("digraph")) {
-                    log.logBold("Warning: the platform-specific graph generator \"dot\" failed.\n");
-                    log.log("You can solve formulas but cannot visualize the results.\n"+
-                            "Please visit the troubleshooting page on\n"+
-                            "http://alloy.mit.edu/alloy4/");
+                    log.logBold("Warning: unable to install the graph generator \"dot\".\n");
+                    log.log("This is okay, since you can still solve formulas and examine the output in tree view.\n");
+                    log.log("For more information, please visit the troubleshooting page on http://alloy.mit.edu/alloy4/\n");
                     log.logBold("\nThe exact error message is:\n");
                     out2 = test2.getStandardOutputAndError();
                     out3 = test3.getStandardOutputAndError();
@@ -1903,16 +1884,25 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             return true;
         }
         try {
+            String java="java", javahome = System.getProperty("java.home");
+            if (javahome!=null && javahome.length()>0) {
+                // First try "[JAVAHOME]/bin/java"
+                File f = new File(javahome + fs + "bin" + fs + "java");
+                // Then try "[JAVAHOME]/java"
+                if (!f.isFile()) f = new File(javahome + fs + "java");
+                // All else, try "java" (and let the Operating System search the program path...)
+                if (f.isFile()) java=f.getAbsolutePath();
+            }
             subprocess=Runtime.getRuntime().exec(new String[]{
-                    "java",
-                    "-Xmx"+subMemory+"m",
-                    "-Djava.library.path="+Helper.alloyHome()+fs+"binary",
-                    "-cp",
-                    System.getProperty("java.class.path"),
-                    "edu.mit.csail.sdg.alloy4whole.SimpleRunner",
-                    Integer.toString(Version.buildNumber()),
-                    Integer.toString(latestAlloyVersion),
-                    latestAlloyVersionName
+                java,
+                "-Xmx"+subMemory+"m",
+                "-Djava.library.path="+Helper.alloyHome()+fs+"binary",
+                "-cp",
+                System.getProperty("java.class.path"),
+                "edu.mit.csail.sdg.alloy4whole.SimpleRunner",
+                Integer.toString(Version.buildNumber()),
+                Integer.toString(latestAlloyVersion),
+                latestAlloyVersionName
             });
             subMemoryNow=subMemory;
         } catch (IOException ex) {
