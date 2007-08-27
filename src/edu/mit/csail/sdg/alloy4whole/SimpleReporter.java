@@ -261,11 +261,11 @@ final class SimpleReporter extends A4Reporter {
             synchronized(SimpleReporter.class) { latestModule=world; latestKodkodSRC=ConstMap.make(bundleCache); }
             final String tempXML=tempdir+File.separatorChar+i+".cnf.xml";
             final String tempCNF=tempdir+File.separatorChar+i+".cnf";
+            final Pair<Command,Expr> cmd=cmds.get(i);
             rep.tempfile=tempCNF;
-            rep.logBold("Executing \""+cmds.get(i)+"\"\n");
+            rep.logBold("Executing \""+cmd.a+"\"\n");
             Expr facts = ExprConstant.TRUE;
             for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
-            Pair<Command,Expr> cmd=cmds.get(i);
             A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmd.b), cmd.a, options);
             if (ai==null) {
                 result.add(null);
