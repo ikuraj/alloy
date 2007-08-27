@@ -110,7 +110,7 @@ public final class Subprocess {
             synchronized(Subprocess.class) { stopper.schedule(stoptask,timeLimit); }
         }
         if (input!=null && input.length()>0) {
-            byte[] bytes=null;
+            byte[] bytes = new byte[0];
             try {bytes=input.getBytes("UTF-8");} catch(UnsupportedEncodingException ex) {} // Should not happen
             for(int i=0, n=bytes.length; i<n;) {
                 int len=((n-i)>1024) ? 1024 : (n-i); // Pick a small number to avoid overflow on some OS

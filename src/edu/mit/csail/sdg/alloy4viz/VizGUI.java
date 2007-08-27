@@ -511,7 +511,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             case Plugin0: plugin0Button.setEnabled(false); break;
             default: vizButton.setEnabled(false);
         }
-        final boolean isMeta = (myState!=null && myState.getOriginalInstance().isMetamodel);
+        final boolean isMeta = myState.getOriginalInstance().isMetamodel;
         magicLayout.setVisible(!isMeta && settingsOpen==0 && currentMode==VisualizerMode.Viz);
         magicColour.setVisible(false && magicLayout.isVisible()); // hidden for now
         projectionButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);

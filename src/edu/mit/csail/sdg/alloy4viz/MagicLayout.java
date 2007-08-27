@@ -96,12 +96,11 @@ final class MagicLayout {
                     // we have a winner
                     enumerationTypes.add(t);
                     enumerationTypes.addAll(subTypes);
-                    final Boolean inherited = null;
                     for (final AlloyType st: subTypes) {
                         // all of the subtypes in the enumeration should have visibility inherited
                         // so that the user only needs to make the abstract supertype visible
                         // if we made a mistake hiding these things
-                        vizState.nodeVisible(st, inherited);
+                        vizState.nodeVisible(st, (Boolean)null);
                     }
                     // hide unless these are the source of some relation
                     boolean visible = false;
@@ -267,11 +266,9 @@ final class MagicLayout {
 
         // set spines to influence layout
         for (final AlloyRelation s : spineRelations) {
-            final Boolean inherit = null;
-            vizState.constraint(s, inherit);
+            vizState.constraint(s, (Boolean)null );
             // inherit the default color, which should be black
-            final DotColor inheritedDotColor = null;
-            vizState.edgeColor(s, inheritedDotColor);
+            vizState.edgeColor(s, (DotColor)null );
         }
 
     }
