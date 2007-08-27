@@ -264,7 +264,13 @@ public final class A4SolutionReader {
 
     //============================================================================================================================//
 
-    /** Parse the XML element into an AlloyInstance. */
+    /**
+     * Parse the XML element into an AlloyInstance.
+     *
+     * <p> The list of sigs is used to define the sigs that we expect to exist;
+     * <br> if there's a sig X in the list but not in the XML, then X's tuple set will be regarded as empty;
+     * <br> if there's a sig X in the XML but not in the list, then X will be added to the solution as a Skolem.
+     */
     public static Pair<A4Solution,ConstList<Func>> read(Iterable<Sig> sigs, XMLElement xml) throws Err {
         try {
             A4SolutionReader x = new A4SolutionReader(sigs, xml);

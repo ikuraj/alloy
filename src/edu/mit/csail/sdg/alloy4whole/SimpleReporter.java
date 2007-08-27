@@ -68,7 +68,6 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionWriter;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
-import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToMetamodel;
 
 final class SimpleReporter extends A4Reporter {
 
@@ -163,7 +162,7 @@ final class SimpleReporter extends A4Reporter {
     private static void writeXML(String filename, A4Solution sol, SafeList<Func> macros, Map<String,String> sources) throws IOException, Err {
         final PrintWriter out=new PrintWriter(filename,"UTF-8");
         Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
-        A4SolutionWriter.write(sol, out, macros);
+        A4SolutionWriter.writeInstance(sol, out, macros);
         for(Map.Entry<String,String> e: sources.entrySet()) {
             Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
         }
@@ -250,7 +249,11 @@ final class SimpleReporter extends A4Reporter {
             final String outf=tempdir+File.separatorChar+"m.xml";
             rep.log(SAVE2);
             rep.logBold("Generating the metamodel...\n");
-            TranslateAlloyToMetamodel.make(sigs, options.originalFilename, outf);
+            PrintWriter of=new PrintWriter(outf, "UTF-8");
+            Util.encodeXMLs(of, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
+            A4SolutionWriter.writeMetamodel(ConstList.make(sigs), options.originalFilename, of);
+            Util.encodeXMLs(of, "\n</alloy>");
+            Util.close(of);
             rep.log(RESTORE2);
             rep.deleteOnExit(outf);
             rep.declareInstance(outf);
@@ -439,7 +442,7 @@ final class SimpleReporter extends A4Reporter {
         if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
         log(".");
         logLink(" "+(System.currentTimeMillis()-lastTime)+"ms.", (formulafilename==null ? "" : ("CNF: "+formulafilename)));
-        if (verbosity>2 && core!=null) for(Pos p:core) log("\n   CORE: "+p);
+        if (verbosity>2) for(Pos p:core) log("\n   CORE: "+p);
         log("\n\n");
     }
 

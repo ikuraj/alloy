@@ -1568,6 +1568,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                    mainname=sub.getAttribute("filename");
                    break;
                 }
+                if (mainname==null) throw new Exception();
                 for(XMLElement sub: x.getChildren()) if (sub.is("source")) {
                    String name = sub.getAttribute("filename");
                    String content = sub.getAttribute("content");

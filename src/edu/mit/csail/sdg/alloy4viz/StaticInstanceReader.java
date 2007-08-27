@@ -111,7 +111,7 @@ public final class StaticInstanceReader {
         types.put("univ", AlloyType.UNIV);
         // Generate the extends relationship and all the atoms
         Map<AlloyType,AlloyType> ts = parseTypeStructure(x, types);
-        Map<String,AlloyAtom> atomname2atom = parseAllAtoms(x, types, ts);
+        Map<String,AlloyAtom> atomname2atom = parseAllAtoms(isMetamodel, x, types, ts);
         // Generate "sets" and "atom2sets"
         Map<AlloyAtom,Set<AlloySet>> atom2sets = new LinkedHashMap<AlloyAtom,Set<AlloySet>>();
         for(Map.Entry<String,AlloyAtom> e:atomname2atom.entrySet()) {
@@ -125,7 +125,7 @@ public final class StaticInstanceReader {
             String typename=sub.getAttribute("type");
             if (typename.length()==0) typename="univ";
             AlloyType type=types.get(typename);
-            if (type==null) throw new RuntimeException("<set name=\""+name+"\"> cannot be a subset of a nonexisting type \""+type.getName()+"\"");
+            if (type==null) throw new RuntimeException("<set name=\""+name+"\"> cannot be a subset of a nonexisting type \""+typename+"\"");
             Set<AlloyAtom> atoms=parseAlloyAtomS(sub, atomname2atom);
             AlloySet set=new AlloySet(name,type);
             sets.add(set);
@@ -162,7 +162,7 @@ public final class StaticInstanceReader {
      * @param xml - the XML node
      * @param ts - the "extends" relationship computed from parseTypeStructure()
      */
-    private static Map<String,AlloyAtom> parseAllAtoms(XMLElement xml, Map<String,AlloyType> types, Map<AlloyType,AlloyType> ts) {
+    private static Map<String,AlloyAtom> parseAllAtoms(boolean isMeta, XMLElement xml, Map<String,AlloyType> types, Map<AlloyType,AlloyType> ts) {
         Map<String,AlloyType> atom2type=new LinkedHashMap<String,AlloyType>();
         Map<AlloyType,Set<String>> type2atoms=new LinkedHashMap<AlloyType,Set<String>>();
         // Compute the atom2type and type2atom maps
@@ -185,16 +185,14 @@ public final class StaticInstanceReader {
         Map<String,AlloyAtom> ans=new LinkedHashMap<String,AlloyAtom>();
         for(Map.Entry<AlloyType,Set<String>> e:type2atoms.entrySet()) {
             AlloyType type=e.getKey();
-            if (type.getName().equals("Int")) {
-                // Special handling for Int atoms
-                int n=e.getValue().size();
-                for(String atom:e.getValue()) ans.put(atom, new AlloyAtom(type, ((n==1)?Integer.MAX_VALUE:parseInt(atom)), atom));
-            } else {
-                int n=e.getValue().size(), i=0;
-                for(String atom:e.getValue()) {
-                    ans.put(atom, new AlloyAtom(type, ((n==1)?Integer.MAX_VALUE:i), atom));
-                    i++;
-                }
+            int n=e.getValue().size(), i=0;
+            for(String atom:e.getValue()) {
+                int j=i;
+                if (atom.charAt(0)=='-' || (atom.charAt(0)>='0' && atom.charAt(0)<='9')) j=parseInt(atom);
+                else if (n==1 && type.getName().equals("seq/Int")) j=Integer.MIN_VALUE;
+                else if (n==1) j=Integer.MAX_VALUE;
+                ans.put(atom, new AlloyAtom(type, j, atom));
+                i++;
             }
         }
         return ans;
