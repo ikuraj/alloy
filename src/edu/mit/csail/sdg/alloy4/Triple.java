@@ -21,7 +21,7 @@
 package edu.mit.csail.sdg.alloy4;
 
 /**
- * Immutable; stores a Triple of object references; Triple.equals() compares by value.
+ * Immutable; stores a triple of object references; Triple.equals() compares by value.
  *
  * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
