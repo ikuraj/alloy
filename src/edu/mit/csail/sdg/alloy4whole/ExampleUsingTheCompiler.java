@@ -23,7 +23,10 @@ package edu.mit.csail.sdg.alloy4whole;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -70,7 +73,9 @@ public final class ExampleUsingTheCompiler {
             for (Command cmd: world.getAllCommands()) {
                 // Execute the command
                 System.out.println("============ Command "+cmd+": ============");
-                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world, cmd, options);
+                Expr facts = ExprConstant.TRUE;
+                for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), facts, cmd, options);
                 // Print the outcome
                 System.out.println("Answer:");
                 System.out.println(ans.toString());

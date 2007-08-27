@@ -36,6 +36,9 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static edu.mit.csail.sdg.alloy4.A4Reporter.NOP;
 
 public final class ExampleUsingTheAPI {
@@ -78,10 +81,20 @@ public final class ExampleUsingTheAPI {
         Func atMost3 = new Func(null, "atMost3", Util.asList(x,y), null);
         atMost3.setBody(x.plus(y).cardinality().lte(ExprConstant.makeNUMBER(3)));
 
+        List<Sig> sigs = new ArrayList<Sig>();
+        sigs.add(UNIV);
+        sigs.add(SIGINT);
+        sigs.add(SEQIDX);
+        sigs.add(NONE);
+        sigs.add(A);
+        sigs.add(B);
+        sigs.add(A1);
+        sigs.add(A2);
+
         // run { some A && atMostThree[B,B] } for 3 but 3 int, 3 seq
         Expr expr1 = A.some().and(atMost3.call(B,B));
         Command cmd1 = new Command(null, "command1", expr1, false, 3, 3, 3, -1, null);
-        A4Solution sol1 = TranslateAlloyToKodkod.execute_command(NOP, null, cmd1, opt);
+        A4Solution sol1 = TranslateAlloyToKodkod.execute_command(NOP, sigs, null, cmd1, opt);
         System.out.println("[Solution1]:");
         System.out.println(sol1.toString());
 
@@ -91,7 +104,7 @@ public final class ExampleUsingTheAPI {
         scope.add(new Pair<Sig,Integer>(B,-7)); // To say exactly N, use the number "-N-1". So, to say "exactly 6", use "-7".
         Expr expr2 = f.some().and(someG.call());
         Command cmd2 = new Command(null, "command2", expr2, false, 3, 2, 1, -1, scope);
-        A4Solution sol2 = TranslateAlloyToKodkod.execute_command(NOP, null, cmd2, opt);
+        A4Solution sol2 = TranslateAlloyToKodkod.execute_command(NOP, sigs, null, cmd2, opt);
         System.out.println("[Solution2]:");
         System.out.println(sol2.toString());
     }

@@ -39,7 +39,6 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -56,7 +55,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module; // TODO
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
@@ -157,22 +155,26 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private Formula goal;
 
     /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
-    private Formula makeFacts(Module module, Formula kfact) throws Err {
-        SafeList<Sig> sigs = module.getAllSigs();
-        SafeList<Pair<String,Expr>> facts = module.getAllFacts();
+    private Formula makeFacts(List<Sig> sigs, Expr facts, Formula kfact) throws Err {
+        ArrayList<Expr> ar = new ArrayList<Expr>();
+        makelist(ar, facts);
+        again:
         for(Sig sig: sigs) {
-            if (sig.isOne!=null && sigs.size()==1 && sig.getFields().size()==3 && facts.size()==1) {
-                Field f1 = sig.getFields().get(0); Relation fst = right(bcc.get(f1));
-                Field f2 = sig.getFields().get(1); Relation lst = right(bcc.get(f2));
-                Field f3 = sig.getFields().get(2); Relation nxt = right(bcc.get(f3));
+            while(sig.isOne!=null && sig.getFields().size()==3) {
+                Field f1 = sig.getFields().get(0); Relation fst = right(bcc.get(f1)); if (fst==null) break;
+                Field f2 = sig.getFields().get(1); Relation lst = right(bcc.get(f2)); if (lst==null) break;
+                Field f3 = sig.getFields().get(2); Relation nxt = right(bcc.get(f3)); if (nxt==null) break;
                 Sig e = findElem(sig,f1,f2,f3);
-                if (e!=null && e.isOrdered!=null && fst!=null && lst!=null && nxt!=null) {
-                    Expression ee = bcc.get(e);
-                    if (ee instanceof Relation && findOrder(e, sig, f1, f2, f3, facts.get(0).b)) {
-                        Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                        return fmap(f, e.isOrdered).and(kfact);
-                    }
+                if (e==null || e.isOrdered==null) break;
+                Expression ee = bcc.get(e);
+                if (!(ee instanceof Relation)) break;
+                for(int i=0; i<ar.size()-3; i++) if (findOrder(e,sig,f1,f2,f3, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3))) {
+                    ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i); // The remaining elements are not re-arranged
+                    Formula f = nxt.totalOrder((Relation)ee, fst, lst);
+                    kfact = fmap(f, e.isOrdered).and(kfact);
+                    continue again;
                 }
+                break;
             }
             for(Field f:sig.getFields()) {
                 // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
@@ -186,7 +188,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 }
             }
         }
-        for(Pair<String,Expr> e:module.getAllFacts()) kfact = fmap(cform(e.b), e.b).and(kfact);
+        for(Expr e:ar) kfact = fmap(cform(e), e).and(kfact);
         return kfact;
     }
 
@@ -195,7 +197,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Reads: rep, sigs, cmd
      * <p> Writes: bitwidth, maxseq, bcc, bounds, goal
      */
-    private void makeFormula (Iterable<Module> modules) throws Err {
+    private void makeFormula (List<Sig> sigs, Expr facts) throws Err {
         rep.debug("Generating bounds...");
         final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
         bitwidth = sc.getBitwidth();
@@ -205,7 +207,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         bounds = bc.a.a;
         goal = bc.a.b;
         rep.debug("Generating facts...");
-        for(Module u:modules) goal = makeFacts(u, goal);
+        goal = makeFacts(sigs, facts, goal);
         goal = fmap(cform(cmd.formula), cmd.formula).and(goal);
     }
 
@@ -344,12 +346,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_command (A4Reporter rep, Module world, Command cmd, A4Options opt) throws Err {
+    public static A4Solution execute_command (A4Reporter rep, List<Sig> sigs, Expr facts, Command cmd, A4Options opt)
+    throws Err {
         if (rep==null) rep=A4Reporter.NOP;
+        if (facts==null) facts=ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
-            tr = new TranslateAlloyToKodkod(rep, world.getAllReachableSigs(), cmd);
-            tr.makeFormula(world.getAllReachableModules());
+            tr = new TranslateAlloyToKodkod(rep, sigs, cmd);
+            tr.makeFormula(sigs, facts);
             tr.makeSolver(opt);
             return tr.solve(false, opt);
         } catch(UnsatisfiedLinkError ex) {
@@ -385,12 +389,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_commandFromBook (A4Reporter rep, Module world, Command cmd, A4Options opt) throws Err {
+    public static A4Solution execute_commandFromBook (A4Reporter rep, List<Sig> sigs, Expr facts, Command cmd, A4Options opt)
+    throws Err {
         if (rep==null) rep=A4Reporter.NOP;
+        if (facts==null) facts=ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
-            tr = new TranslateAlloyToKodkod(rep, world.getAllReachableSigs(), cmd);
-            tr.makeFormula(world.getAllReachableModules());
+            tr = new TranslateAlloyToKodkod(rep, sigs, cmd);
+            tr.makeFormula(sigs, facts);
             tr.makeSolver(opt);
             return tr.solve(true, opt);
         } catch(UnsatisfiedLinkError ex) {
@@ -519,6 +525,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     //==============================================================================================================//
 
+    /** Break a tree of conjunction into a list of formula. */
+    private static void makelist(ArrayList<Expr> list, Expr input) {
+        while(input instanceof ExprBinary && ((ExprBinary)input).op==ExprBinary.Op.AND) {
+            makelist(list, ((ExprBinary)input).left);
+            input = ((ExprBinary)input).right;
+        }
+        list.add(input);
+    }
+
     /** Remove the "ExprUnary NOP" in front of an expression. */
     private static Expr deNOP(Expr x) {
         while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
@@ -553,34 +568,30 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     }
 
     /**
-     * Returns true if we can determine that "fact" says "total order on elem".
+     * Returns true if we can determine that "e1 && e2 && e3 && e4" says "total order on elem".
      *
-     * <p> In particular, that means fact == e1 && (e2 && (e3 && (all e: one elem | (e4 && (e5 && e6))))) where
-     * <br> e1 = elem in First.*Next
-     * <br> e2 = no First.(~Next)
-     * <br> e3 = no Last.Next
-     * <br> e4 = (e = First || one e.(~Next))
-     * <br> e5 = (e = Last || one e.Next)
-     * <br> e6 = (e !in e.^Next)
+     * <p> In particular, that means:
+     * <br> e1 == elem in First.*Next
+     * <br> e2 == no First.(~Next)
+     * <br> e3 == no Last.Next
+     * <br> e4 == all e: one elem | (s1 && (s2 && s3))
+     * <br> where
+     * <br> s1 == (e = First || one e.(~Next))
+     * <br> s2 == (e = Last || one e.Next)
+     * <br> s3 == (e !in e.^Next)
      */
-    private static boolean findOrder(Sig elem, Sig ord, Expr first, Expr last, Expr next, Expr fact) {
+    private static boolean findOrder(Sig elem, Sig ord, Expr first, Expr last, Expr next, Expr e1, Expr e2, Expr e3, Expr e4) {
         Expr prev;
         ExprBinary bin;
         first = ord.join(first);
         last = ord.join(last);
         next = ord.join(next);
         prev = next.transpose();
-        if (!(fact instanceof ExprBinary)) return false;
-        bin=(ExprBinary)fact;
-        if (bin.op != ExprBinary.Op.AND || !(bin.right instanceof ExprBinary)) return false;
-        if (!elem.in(first.join(next.reflexiveClosure())).isSame(bin.left)) return false;
-        bin=(ExprBinary)(bin.right);
-        if (bin.op != ExprBinary.Op.AND || !(bin.right instanceof ExprBinary)) return false;
-        if (!first.join(prev).no().isSame(bin.left)) return false;
-        bin=(ExprBinary)(bin.right);
-        if (bin.op != ExprBinary.Op.AND || !(bin.right instanceof ExprQuant)) return false;
-        if (!last.join(next).no().isSame(bin.left)) return false;
-        ExprQuant qt=(ExprQuant)(bin.right);
+        if (!elem.in(first.join(next.reflexiveClosure())).isSame(e1)) return false;
+        if (!first.join(prev).no().isSame(e2)) return false;
+        if (!last.join(next).no().isSame(e3)) return false;
+        if (!(e4 instanceof ExprQuant)) return false;
+        ExprQuant qt=(ExprQuant)e4;
         if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1 || !(qt.sub instanceof ExprBinary)) return false;
         ExprVar e=qt.vars.get(0);
         if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;

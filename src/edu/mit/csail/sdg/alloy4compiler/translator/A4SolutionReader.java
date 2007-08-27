@@ -75,20 +75,6 @@ public final class A4SolutionReader {
     /** This stores the list of sigs. */
     private ConstList<Sig> sigs = null;
 
-    //private PrimSig make(String signame, Map<String,String> name2parent, Map<String,PrimSig> name2sig) throws Err {
-    //    if (signame==null || signame.length()==0 || signame.equals(UNIV.label)) return UNIV;
-    //    if (signame.equals(SIGINT.label)) return SIGINT;
-    //    if (signame.equals(SEQIDX.label)) return SEQIDX;
-    //    if (signame.equals(NONE.label)) return NONE;
-    //    PrimSig ans = name2sig.get(signame);
-    //    if (ans!=null) return ans;
-    //    PrimSig parent = make(name2parent.get(signame), name2parent, name2sig);
-    //    ans = new PrimSig(null, parent, signame, false, false, false, false, false);
-    //    name2sig.put(signame, ans);
-    //    root.addSig(ans);
-    //    return ans;
-    //}
-
     /** Step1: parse the original Alloy model. */
     private void parseXML(String filename) throws Err {
         XMLElement x=null;
@@ -120,15 +106,6 @@ public final class A4SolutionReader {
                 root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, xml.getAttribute("filename"));
             } else {
                 throw new ErrorSyntax("The original source files were not embedded in the saved instance file.");
-                // root = new Module();
-                // Map<String,String> ext = new LinkedHashMap<String,String>();
-                // Map<String,PrimSig> make = new LinkedHashMap<String,PrimSig>();
-                // for(XMLElement sub:xml.getChildren()) if (sub.is("sig")) {
-                //     String name = sub.getAttribute("name");
-                //     String parent = sub.getAttribute("extends");
-                //     ext.put(name, parent==null ? "" : parent);
-                // }
-                // for(Map.Entry<String,String> e:ext.entrySet()) make(e.getKey(), ext, make);
             }
         } catch(Throwable ex) {
             throw new ErrorFatal("The original source files failed to be reconstructed.");

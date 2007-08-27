@@ -355,8 +355,8 @@ public final class Module {
     }
 
     /** Return the list containing UNIV, SIGINT, SEQIDX, NONE, and all sigs defined in this module or a reachable submodule. */
-    public SafeList<Sig> getAllReachableSigs() {
-        SafeList<Sig> x = new SafeList<Sig>();
+    public ConstList<Sig> getAllReachableSigs() {
+        TempList<Sig> x = new TempList<Sig>();
         x.add(UNIV);
         x.add(SIGINT);
         x.add(SEQIDX);
@@ -365,7 +365,7 @@ public final class Module {
           for(Map.Entry<String,SigAST> s: m.sigs.entrySet())
             if (s.getValue().realSig!=null)
                x.add(s.getValue().realSig);
-        return x.dup();
+        return x.makeConst();
     }
 
     /** It looks up non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */

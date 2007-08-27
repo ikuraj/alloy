@@ -25,8 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -116,7 +119,9 @@ public final class SimpleCLI {
                         db("Executing "+cc+"...\n");
                     }
                     rep.sb.append("Executing \""+c+"\"\n");
-                    TranslateAlloyToKodkod.execute_command(rep, world, c, options);
+                    Expr facts = ExprConstant.TRUE;
+                    for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
+                    TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), facts, c, options);
                 }
             } catch(Throwable ex) {
                 rep.sb.append("\n\nException: "+ex);

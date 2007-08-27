@@ -49,11 +49,14 @@ import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
@@ -219,7 +222,7 @@ final class SimpleReporter extends A4Reporter {
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
         final Module world = CompUtil.parseEverything_fromFile(rep, bundleCache, rep.mainAlloyFileName);
-        final SafeList<Sig> sigs = world.getAllReachableSigs();
+        final List<Sig> sigs = world.getAllReachableSigs();
         final SafeList<Command> cmds = world.getAllCommands();
         if (rep.warnings.size()>0) {
             if (rep.warnings.size()>1)
@@ -254,7 +257,9 @@ final class SimpleReporter extends A4Reporter {
             final String tempCNF=tempdir+File.separatorChar+i+".cnf";
             rep.tempfile=tempCNF;
             rep.logBold("Executing \""+cmds.get(i)+"\"\n");
-            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world, cmds.get(i), options);
+            Expr facts = ExprConstant.TRUE;
+            for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
+            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts, cmds.get(i), options);
             if (ai==null) {
                 result.add(null);
             }
