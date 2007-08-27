@@ -46,6 +46,7 @@ import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
+import edu.mit.csail.sdg.alloy4.Triple;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -259,8 +260,8 @@ public final class Module {
     /** Each fact name is mapped to either an untypechecked Exp, or a typechecked Expr. */
     private final Map<String,Object> facts = new LinkedHashMap<String,Object>();
 
-    /** The list of (CommandName,Command) pairs; NOTE: duplicate command names are allowed. */
-    private final List<Pair<String,Command>> commands = new ArrayList<Pair<String,Command>>();
+    /** The list of (CommandName,Command,Expr) triples; NOTE: duplicate command names are allowed. */
+    private final List<Triple<String,Command,Expr>> commands = new ArrayList<Triple<String,Command,Expr>>();
 
     /** This stores a set of global values; given a unresolved name, we query this map first before all else. */
     private final Map<String,Expr> globals = new LinkedHashMap<String,Expr>();
@@ -836,7 +837,7 @@ public final class Module {
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         if (label==null || label.length()==0) label=n;
-        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
+        commands.add(new Triple<String,Command,Expr>(n, new Command(p, label, c, o, b, seq, exp, s), ExprConstant.TRUE));
     }
 
     /** Add a COMMAND declaration. */
@@ -845,7 +846,7 @@ public final class Module {
         String n;
         if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run$"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
         if (label==null || label.length()==0) label=n;
-        commands.add(new Pair<String,Command>(n, new Command(p, label, ExprConstant.TRUE, c, o, b, seq, exp, s)));
+        commands.add(new Triple<String,Command,Expr>(n, new Command(p, label, c, o, b, seq, exp, s), ExprConstant.TRUE));
     }
 
     /** Each command now points to a typechecked Expr. */
@@ -873,15 +874,22 @@ public final class Module {
                 if (s==null) throw new ErrorSyntax(et.a.pos, "The sig \""+et.a.label+"\" cannot be found.");
                 sc.add(new Pair<Sig,Integer>(s.realSig, et.b));
             }
-            commands.set(i, new Pair<String,Command>(cname, cmd.make(e, sc.makeConst())));
+            commands.set(i, new Triple<String,Command,Expr>(cname, cmd.make(sc.makeConst()), e));
         }
     }
 
     /** Return an unmodifiable list of all commands in this module. */
-    public SafeList<Command> getAllCommands() {
-        SafeList<Command> ans = new SafeList<Command>(commands.size());
-        for(Pair<String,Command> c:commands) ans.add(c.b);
-        return ans.dup();
+    public ConstList<Command> getAllCommands() {
+        TempList<Command> ans = new TempList<Command>(commands.size());
+        for(Triple<String,Command,Expr> c:commands) ans.add(c.b);
+        return ans.makeConst();
+    }
+
+    /** Return an unmodifiable list of all commands (and each command's associated formula) in this module. */
+    public ConstList<Pair<Command,Expr>> getAllCommandsWithFormulas() {
+        TempList<Pair<Command,Expr>> ans = new TempList<Pair<Command,Expr>>(commands.size());
+        for(Triple<String,Command,Expr> c:commands) ans.add(new Pair<Command,Expr>(c.b, c.c));
+        return ans.makeConst();
     }
 
     //============================================================================================================================//

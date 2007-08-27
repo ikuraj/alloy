@@ -70,12 +70,12 @@ public final class ExampleUsingTheCompiler {
             A4Options options = new A4Options();
             options.solver = A4Options.SatSolver.SAT4J;
 
-            for (Command cmd: world.getAllCommands()) {
+            for (Pair<Command,Expr> cmd: world.getAllCommandsWithFormulas()) {
                 // Execute the command
                 System.out.println("============ Command "+cmd+": ============");
                 Expr facts = ExprConstant.TRUE;
                 for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
-                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), facts, cmd, options);
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), facts.and(cmd.b), cmd.a, options);
                 // Print the outcome
                 System.out.println("Answer:");
                 System.out.println(ans.toString());

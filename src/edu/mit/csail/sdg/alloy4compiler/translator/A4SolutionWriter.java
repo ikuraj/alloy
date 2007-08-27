@@ -193,7 +193,8 @@ public final class A4SolutionWriter {
     }
 
     /**
-     * If this solution is a satisfiable solution, this method will write it to an XML file.
+     * If this solution is a satisfiable solution,
+     * this method will write it out as a &lt;instance&gt;..&lt;/instance&gt; in XML format.
      *
      * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
      * <p> If two or more fields have the same name and overlapping type, we append ' to the names until no more conflict.

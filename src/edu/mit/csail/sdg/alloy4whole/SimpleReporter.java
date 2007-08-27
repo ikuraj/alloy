@@ -36,6 +36,7 @@ import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.SAVE3;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.SETLINK;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -45,8 +46,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.ConstSet;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pair;
@@ -57,6 +60,7 @@ import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
@@ -155,6 +159,18 @@ final class SimpleReporter extends A4Reporter {
      */
     private SimpleReporter(PrintStream out) { this.out=out; }
 
+    /** Helper method to write out a full XML file. */
+    private static void writeXML(String filename, A4Solution sol, SafeList<Func> macros, Map<String,String> sources) throws IOException, Err {
+        final PrintWriter out=new PrintWriter(filename,"UTF-8");
+        Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
+        A4SolutionWriter.write(sol, out, macros);
+        for(Map.Entry<String,String> e: sources.entrySet()) {
+            Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
+        }
+        out.print("\n</alloy>\n");
+        if (!Util.close(out)) throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
+    }
+
     /**
      * Perform solution enumeration.
      * @param out - the PrintStream that shall receive the progress messages (or null if we want to write to System.err)
@@ -187,17 +203,7 @@ final class SimpleReporter extends A4Reporter {
             return "There are no more satisfying instances.\n\n" +
             "Note: due to symmetry breaking and other optimizations,\n" +
             "some equivalent solutions may have been omitted.";
-        //
-        final PrintWriter f=new PrintWriter(filename, "UTF-8");
-        Util.encodeXMLs(f, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
-        A4SolutionWriter.write(sol, f, mod.getAllFunc());
-        for(Map.Entry<String,String> e:latestKodkodSRC.entrySet()) {
-            Util.encodeXMLs(f, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
-        }
-        f.print("\n</alloy>\n");
-        if (!Util.close(f)) throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
-        //
-        synchronized(SimpleReporter.class) { latestKodkod=sol; }
+        synchronized(SimpleReporter.class) { writeXML(filename, sol, mod.getAllFunc(), latestKodkodSRC); latestKodkod=sol; }
         rep.declareInstance(filename);
         return "";
     }
@@ -223,7 +229,7 @@ final class SimpleReporter extends A4Reporter {
         rep.logBold("Starting the solver...\n\n");
         final Module world = CompUtil.parseEverything_fromFile(rep, bundleCache, rep.mainAlloyFileName);
         final List<Sig> sigs = world.getAllReachableSigs();
-        final SafeList<Command> cmds = world.getAllCommands();
+        final ConstList<Pair<Command,Expr>> cmds = world.getAllCommandsWithFormulas();
         if (rep.warnings.size()>0) {
             if (rep.warnings.size()>1)
                 rep.logBold("Note: There were "+rep.warnings.size()+" compilation warnings. Please scroll up to see them.\n\n");
@@ -259,7 +265,8 @@ final class SimpleReporter extends A4Reporter {
             rep.logBold("Executing \""+cmds.get(i)+"\"\n");
             Expr facts = ExprConstant.TRUE;
             for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
-            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts, cmds.get(i), options);
+            Pair<Command,Expr> cmd=cmds.get(i);
+            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmd.b), cmd.a, options);
             if (ai==null) {
                 result.add(null);
             }
@@ -362,28 +369,11 @@ final class SimpleReporter extends A4Reporter {
         String formula = sol.formula;
         log(RESTORE3);
         String filename = tempfile+".xml";
-
-        try {
-            final PrintWriter out=new PrintWriter(filename,"UTF-8");
-            Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
-            synchronized(SimpleReporter.class) {
-                A4SolutionWriter.write(sol, out, latestModule.getAllFunc());
-                for(Map.Entry<String,String> e: latestKodkodSRC.entrySet()) {
-                    Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
-                }
-                out.print("\n</alloy>\n");
-                if (!Util.close(out)) throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
-                latestKodkod=sol;
-                latestKodkodXML=filename;
-                // ALREADY DONE: latestModule=world; latestKodkodSRC=ConstMap.make(bundleCache);
-            }
-        } catch(Throwable ex) {
-            Util.close(out);
-            log("ERROR: "+ex);
-            // should report an error
+        synchronized(SimpleReporter.class) {
+            try { writeXML(filename, sol, latestModule.getAllFunc(), latestKodkodSRC); } catch(Throwable ex) { }
+            latestKodkod=sol;
+            latestKodkodXML=filename;
         }
-
-
         String formulafilename=null;
         if (formula!=null && formula.length()>0 && tempfile!=null) {
             formulafilename=tempfile+".java";

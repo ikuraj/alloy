@@ -26,7 +26,6 @@ import java.util.List;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pair;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -104,7 +103,7 @@ public final class SimpleCLI {
                 if (db) db("Parsing+Typechecking...");
                 Module world = CompUtil.parseEverything_fromFile(rep, null, filename);
                 if (db) db(" ok\n");
-                SafeList<Command> cmds=world.getAllCommands();
+                List<Pair<Command,Expr>> cmds=world.getAllCommandsWithFormulas();
                 for(ErrorWarning msg: rep.warnings) rep.sb.append("Relevance Warning:\n" + (msg.toString().trim()) + "\n\n");
                 rep.warnings.clear();
                 A4Options options = new A4Options();
@@ -112,7 +111,7 @@ public final class SimpleCLI {
                 options.solver = A4Options.SatSolver.MiniSatJNI;
                 if (args.length!=1) continue;
                 for (int i=0; i<cmds.size(); i++) {
-                    Command c = cmds.get(i);
+                    Command c = cmds.get(i).a;
                     if (db) {
                         String cc = c.toString();
                         if (cc.length()>60) cc=cc.substring(0,55);
@@ -121,7 +120,7 @@ public final class SimpleCLI {
                     rep.sb.append("Executing \""+c+"\"\n");
                     Expr facts = ExprConstant.TRUE;
                     for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
-                    TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), facts, c, options);
+                    TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
                 }
             } catch(Throwable ex) {
                 rep.sb.append("\n\nException: "+ex);

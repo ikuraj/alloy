@@ -20,18 +20,15 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 
 /**
  * Immutable; reresents a "run" or "check" command.
  *
- * <p> <b>Invariant:</b>  formula is fully typechecked and unambiguous
  * <p> <b>Invariant:</b>  expects == -1, 0, or 1
  * <p> <b>Invariant:</b>  overall >= -1
  * <p> <b>Invariant:</b>  bitwidth >= -1
@@ -42,9 +39,6 @@ public final class Command {
 
     /** The position in the original file where this command was declared; never null. */
     public final Pos pos;
-
-    /** The formula associated with this command; always fully-typechecked and unambiguous. */
-    public final Expr formula;
 
     /** The label for the command; it is just for pretty-printing and does not have to be unique. */
     public final String label;
@@ -102,25 +96,17 @@ public final class Command {
      *
      * @param pos - the original position in the file (must not be null)
      * @param label - the label for this command (it is only for pretty-printing and does not have to be unique)
-     * @param formula - the formula associated with this command (it must be fully typechecked and unambiguous)
      * @param check - true if this is a "check"; false if this is a "run"
      * @param overall - the overall scope (0 or higher) (-1 if no overall scope was specified)
      * @param bitwidth - the integer bitwidth (0 or higher) (-1 if it was not specified)
      * @param maxseq - the maximum sequence length (0 or higher) (-1 if it was not specified)
      * @param expects - the expected value (0 or 1) (-1 if no expectation was specified)
      * @param scope - Sig-to-Integer map (see the "scope" field of the Command class for its meaning)
-     *
-     * @throws Err if the formula is not already fully-typechecked to be a formula, or is unambiguous
      */
-    public Command(Pos pos, String label, Expr formula, boolean check, int overall, int bitwidth,
-    int maxseq, int expects, List<Pair<Sig,Integer>> scope)
-    throws Err {
+    public Command(Pos pos, String label, boolean check, int overall, int bitwidth,
+    int maxseq, int expects, List<Pair<Sig,Integer>> scope) {
         if (pos==null) pos = Pos.UNKNOWN;
-        formula = formula.typecheck_as_formula();
-        if (formula.ambiguous) formula=formula.resolve_as_formula(new ArrayList<ErrorWarning>());
-        if (!formula.errors.isEmpty()) throw formula.errors.get(0);
         this.pos = pos;
-        this.formula = formula;
         this.label = (label==null ? "" : label);
         this.check = check;
         this.overall = (overall<0 ? -1 : overall);
@@ -131,13 +117,10 @@ public final class Command {
     }
 
     /**
-     * Constructs a new Command object where it is the same as the current object, except with a different formula and scope.
-     * @param newFormula - the formula to be associated with the new command (it must be fully typechecked and unambiguous)
+     * Constructs a new Command object where it is the same as the current object, except with a different scope.
      * @param scope - Sig-to-Integer map to be associated with the new command (see the "scope" field for its meaning)
-     *
-     * @throws Err if the formula is not already fully-typechecked to be a formula, or is unambiguous
      */
-    public Command make(Expr newFormula, ConstList<Pair<Sig,Integer>> scope) throws Err {
-        return new Command(pos, label, newFormula, check, overall, bitwidth, maxseq, expects, scope);
+    public Command make(ConstList<Pair<Sig,Integer>> scope) {
+        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope);
     }
 }

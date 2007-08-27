@@ -65,8 +65,7 @@ import kodkod.instance.Tuple;
 import kodkod.util.ints.IndexedEntry;
 
 /**
- * Given a Kodkod formula node, this class can generate a Java program that (when compiled and executed)
- * would solve that formula.
+ * Translate a Kodkod formula node to an equivalent Java program that solves the formula.
  *
  * <p> Requirements: atoms must be String objects (since we cannot possibly
  * output a Java source code that can re-generate arbitrary Java objects).

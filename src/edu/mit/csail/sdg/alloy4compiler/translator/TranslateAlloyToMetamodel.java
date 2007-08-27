@@ -36,9 +36,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 
-/**
- * Given a World object, generate its metamodel.
- */
+/** Translate an Alloy AST into a metamodel XML file. */
 
 public final class TranslateAlloyToMetamodel {
 

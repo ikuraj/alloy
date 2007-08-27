@@ -125,15 +125,18 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * Step1: Initialize the list of sigs and the command to check.
      *
      * @param rep - if nonnull, it's the reporter that will receive diagnostics and progress reports
-     * @param sigs - the list of sigs; must be complete, must contain UNIV+SIGINT+SEQIDX+NONE, and must not contain duplicates
+     * @param sigs - the list of sigs (this list must be complete)
      * @param cmd - the command to solve
      *
      * <p> Reads: none
      * <p> Writes: rep, sigs, cmd
      */
     private TranslateAlloyToKodkod (A4Reporter rep, Iterable<Sig> sigs, Command cmd) {
+        IdentitySet<Sig> set = new IdentitySet<Sig>();
+        set.add(Sig.UNIV); set.add(Sig.SIGINT); set.add(Sig.SEQIDX); set.add(Sig.NONE);
+        if (sigs!=null) for(Sig s:sigs) set.add(s);
         this.rep = (rep != null) ? rep : A4Reporter.NOP;
-        this.sigs = ConstList.make(sigs);
+        this.sigs = ConstList.make(set);
         this.cmd = cmd;
     }
 
@@ -155,7 +158,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private Formula goal;
 
     /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
-    private Formula makeFacts(List<Sig> sigs, Expr facts, Formula kfact) throws Err {
+    private void makeFacts(Expr facts) throws Err {
         ArrayList<Expr> ar = new ArrayList<Expr>();
         makelist(ar, facts);
         again:
@@ -171,25 +174,24 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 for(int i=0; i<ar.size()-3; i++) if (findOrder(e,sig,f1,f2,f3, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3))) {
                     ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i); // The remaining elements are not re-arranged
                     Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                    kfact = fmap(f, e.isOrdered).and(kfact);
+                    goal = fmap(f, e.isOrdered).and(goal);
                     continue again;
                 }
                 break;
             }
             for(Field f:sig.getFields()) {
                 // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
-                kfact = fmap(cform(f.boundingFormula), f).and(kfact);
+                goal = fmap(cform(f.boundingFormula), f).and(goal);
                 // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
                 // Thus, we need to add a bound that the first column is a subset of s.
                 if (sig.isOne==null) {
                     Expression sr=bcc.get(sig), fr=bcc.get(f);
                     for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
-                    kfact = fmap(fr.in(sr), f).and(kfact);
+                    goal = fmap(fr.in(sr), f).and(goal);
                 }
             }
         }
-        for(Expr e:ar) kfact = fmap(cform(e), e).and(kfact);
-        return kfact;
+        for(Expr e:ar) goal = fmap(cform(e), e).and(goal);
     }
 
     /**
@@ -197,7 +199,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Reads: rep, sigs, cmd
      * <p> Writes: bitwidth, maxseq, bcc, bounds, goal
      */
-    private void makeFormula (List<Sig> sigs, Expr facts) throws Err {
+    private void makeFormula (Expr facts) throws Err {
         rep.debug("Generating bounds...");
         final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
         bitwidth = sc.getBitwidth();
@@ -207,8 +209,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         bounds = bc.a.a;
         goal = bc.a.b;
         rep.debug("Generating facts...");
-        goal = makeFacts(sigs, facts, goal);
-        goal = fmap(cform(cmd.formula), cmd.formula).and(goal);
+        makeFacts(facts);
     }
 
     //==============================================================================================================//
@@ -337,7 +338,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * Based on the specified "options", execute one command and return the resulting A4Solution object.
      *
      * @param rep - if nonnull, we'll send compilation diagnostic messages to it
-     * @param world - the World that the command comes from
+     * @param sigs - the list of sigs; this list must be complete
+     * @param fact - a formula that must be satisfied by the solution
      * @param cmd - the Command to execute
      * @param opt - the set of options guiding the execution of the command
      *
@@ -346,14 +348,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_command (A4Reporter rep, List<Sig> sigs, Expr facts, Command cmd, A4Options opt)
+    public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt)
     throws Err {
         if (rep==null) rep=A4Reporter.NOP;
-        if (facts==null) facts=ExprConstant.TRUE;
+        if (fact==null) fact=ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
             tr = new TranslateAlloyToKodkod(rep, sigs, cmd);
-            tr.makeFormula(sigs, facts);
+            tr.makeFormula(fact);
             tr.makeSolver(opt);
             return tr.solve(false, opt);
         } catch(UnsatisfiedLinkError ex) {
@@ -380,7 +382,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * if so, it will use the exact instance that was in the book.
      *
      * @param rep - if nonnull, we'll send compilation diagnostic messages to it
-     * @param world - the World that the command comes from
+     * @param sigs - the list of sigs; this list must be complete
+     * @param fact - a formula that must be satisfied by the solution
      * @param cmd - the Command to execute
      * @param opt - the set of options guiding the execution of the command
      *
@@ -389,14 +392,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_commandFromBook (A4Reporter rep, List<Sig> sigs, Expr facts, Command cmd, A4Options opt)
+    public static A4Solution execute_commandFromBook (A4Reporter rep, List<Sig> sigs, Expr fact, Command cmd, A4Options opt)
     throws Err {
         if (rep==null) rep=A4Reporter.NOP;
-        if (facts==null) facts=ExprConstant.TRUE;
+        if (fact==null) fact=ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
             tr = new TranslateAlloyToKodkod(rep, sigs, cmd);
-            tr.makeFormula(sigs, facts);
+            tr.makeFormula(fact);
             tr.makeSolver(opt);
             return tr.solve(true, opt);
         } catch(UnsatisfiedLinkError ex) {
@@ -422,11 +425,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @param bitwidth - this specifies the integer bitwidth and must be between 1 and 30
      * @param expr - this is the Alloy expression we want to translate
      */
-    public static Object alloy2kodkod(ConstMap<Object,Expression> bcc, int bitwidth, Expr expr) throws Err {
+    public static Object alloy2kodkod(ConstMap<Object,Expression> bcc, int bitwidth, Expr expr)
+    throws Err {
         if (bitwidth<1 || bitwidth>30) throw new ErrorType("The integer bitwidth must be between 1 and 30.");
         if (!expr.errors.isEmpty() && expr.ambiguous) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
-        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(A4Reporter.NOP, null, null);
+        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(null, null, null);
         tr.bcc = bcc;
         tr.bitwidth = bitwidth;
         Object ans;
