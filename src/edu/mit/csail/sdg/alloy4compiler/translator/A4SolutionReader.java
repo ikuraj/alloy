@@ -24,10 +24,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,7 +37,6 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
 import nanoxml_2_2_3.XMLElement;
-import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -48,7 +44,7 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
-import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
@@ -56,61 +52,26 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
-import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 
 /** This helper class contains helper routines for reading an A4Solution object from an XML file. */
 
 public final class A4SolutionReader {
 
-    /** The filename-to-content cache. */
-    private final Map<String,String> fc = new LinkedHashMap<String,String>();
-
     /** The root of the XML document. */
     private XMLElement xml = null;
-
-    /** This stores the root module parsed from the Alloy model. */
-    private Module root = null;
 
     /** This stores the list of sigs. */
     private ConstList<Sig> sigs = null;
 
     /** Step1: parse the original Alloy model. */
-    private void parseXML(String filename) throws Err {
-        XMLElement x=null;
-        try {
-            FileInputStream fis=null;
-            InputStreamReader reader=null;
-            try {
-                fis = new FileInputStream(filename);
-                reader = new InputStreamReader(fis,"UTF-8");
-                x = new XMLElement(new Hashtable(),true,false);
-                x.parseFromReader(reader);
-            } finally {
-                Util.close(reader);
-                Util.close(fis);
-            }
-        } catch(Throwable ex) {
-            throw new ErrorFatal("Cannot read or parse the XML file: "+filename);
-        }
-        if (!x.is("alloy")) throw new ErrorSyntax("The XML file's root node must be <alloy>.");
-        for(XMLElement sub: x.getChildren("source")) {
-            String name = sub.getAttribute("filename");
-            String content = sub.getAttribute("content");
-            fc.put(name, content);
-        }
-        for(XMLElement sub: x.getChildren()) if (sub.is("instance")) { xml=sub; break; }
-        if (xml==null) throw new ErrorSyntax("The XML file must contain an <instance> element.");
-        try {
-            if (fc.size()>0) {
-                root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, xml.getAttribute("filename"));
-            } else {
-                throw new ErrorSyntax("The original source files were not embedded in the saved instance file.");
-            }
-        } catch(Throwable ex) {
-            throw new ErrorFatal("The original source files failed to be reconstructed.");
-        }
-        sigs = ConstList.make(root.getAllReachableSigs());
+    private A4SolutionReader(Iterable<Sig> sigs, XMLElement xml) throws Err {
+        if (!xml.is("alloy")) throw new ErrorSyntax("The XML file's root node must be <alloy>.");
+        for(XMLElement sub: xml.getChildren()) if (sub.is("instance")) { this.xml=sub; break; }
+        if (this.xml==null) throw new ErrorSyntax("The XML file must contain an <instance> element.");
+        TempList<Sig> newsigs = new TempList<Sig>();
+        newsigs.add(UNIV); newsigs.add(SIGINT); newsigs.add(SEQIDX); newsigs.add(NONE);
+        if (sigs!=null) for(Sig s:sigs) if (!newsigs.contains(s)) newsigs.add(s);
+        this.sigs = newsigs.makeConst();
     }
 
 
@@ -260,6 +221,9 @@ public final class A4SolutionReader {
 
     //============================================================================================================================//
 
+    /** The list of globals. */
+    private TempList<Func> globals = new TempList<Func>();
+
     /** Step6: add the atoms and skolems so that they can be referred to by the evaluator. */
     private void addSkolems() throws Err {
         TupleFactory tf = inst.universe().factory();
@@ -269,10 +233,10 @@ public final class A4SolutionReader {
             PrimSig ret = atom2sig.get(n);
             if (ret!=null) {
                 Func func = new Func(null, n, empty, ret);
-                root.addGlobal(n, func.call());
                 Relation r = Relation.unary(n);
                 inst.add(r, tf.range(tf.tuple(n), tf.tuple(n)));
                 a2k.put(func, r);
+                globals.add(func);
             }
         }
         again:
@@ -291,37 +255,30 @@ public final class A4SolutionReader {
                 if (ret.type.hasNoTuple()) ret=one; else ret=ret.plus(one);
             }
             Func func = new Func(null, n, empty, ret);
-            root.addGlobal(n, func.call());
             Relation r = Relation.nary(n,a);
             inst.add(r, s.getValue());
             a2k.put(func, r);
+            globals.add(func);
         }
     }
 
     //============================================================================================================================//
 
-    /** This stores the resulting A4Solution object. */
-    private A4Solution sol = null;
-
-    /** Parse the XML element into an AlloyInstance if possible. */
-    private A4SolutionReader(String filename) throws Err {
-        parseXML(filename);
-        makeSigsAndFields();
-        int bitwidth = Integer.parseInt(xml.getAttribute("bitwidth"));
-        makeInstance(bitwidth);
-        processSigAndSet();
-        processField();
-        addSkolems();
-        String command = xml.getAttribute("command");
-        filename = xml.getAttribute("filename");
-        sol = new A4Solution(sigs, ConstMap.make(a2k), filename, command, null, null, null, bitwidth, inst, null, null, null);
-    }
-
     /** Parse the XML element into an AlloyInstance. */
-    public static Pair<Module,A4Solution> read(String filename) throws Err {
+    public static Pair<A4Solution,ConstList<Func>> read(Iterable<Sig> sigs, XMLElement xml) throws Err {
         try {
-            A4SolutionReader x = new A4SolutionReader(filename);
-            return new Pair<Module,A4Solution>(x.root, x.sol);
+            A4SolutionReader x = new A4SolutionReader(sigs, xml);
+            x.makeSigsAndFields();
+            int bitwidth = Integer.parseInt(x.xml.getAttribute("bitwidth"));
+            x.makeInstance(bitwidth);
+            x.processSigAndSet();
+            x.processField();
+            x.addSkolems();
+            String command = x.xml.getAttribute("command");
+            String filename = x.xml.getAttribute("filename");
+            ConstMap<Object,Expression> a2k = ConstMap.make(x.a2k);
+            A4Solution sol = new A4Solution(sigs, a2k, filename, command, null, null, null, bitwidth, x.inst, null, null, null);
+            return new Pair<A4Solution,ConstList<Func>>(sol, x.globals.makeConst());
         } catch(Throwable ex) {
             if (ex instanceof Err) throw ((Err)ex);
             throw new ErrorFatal("Fatal error occured: "+ex, ex);

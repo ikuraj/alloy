@@ -32,9 +32,12 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.prefs.Preferences;
@@ -79,17 +82,21 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.BadLocationException;
+import nanoxml_2_2_3.XMLElement;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
+import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Computer;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.MailBug;
@@ -1544,12 +1551,45 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             this.filename=filename;
         }
         public final String compute(String input) throws Exception {
+            if (input.trim().length()==0) return ""; // Empty line
+            FileInputStream fis = null;
+            InputStreamReader reader = null;
+            Module root = null;
+            Pair<A4Solution,ConstList<Func>> ans = null;
             try {
-                if (filename==null) throw new RuntimeException("Internal Error: filename==null.");
-                Pair<Module,A4Solution> ans=A4SolutionReader.read(filename);
-                if (input.trim().length()==0) return ""; // Empty line
-                Expr e=CompUtil.parseOneExpression_fromString(ans.a, input);
-                return ans.b.eval(e).toString();
+                Map<String,String> fc = new LinkedHashMap<String,String>();
+                fis = new FileInputStream(filename);
+                reader = new InputStreamReader(fis, "UTF-8");
+                XMLElement x = new XMLElement(new Hashtable(), true, false);
+                x.parseFromReader(reader);
+                if (!x.is("alloy")) throw new Exception();
+                String mainname=null;
+                for(XMLElement sub: x.getChildren()) if (sub.is("instance")) {
+                   mainname=sub.getAttribute("filename");
+                   break;
+                }
+                for(XMLElement sub: x.getChildren()) if (sub.is("source")) {
+                   String name = sub.getAttribute("filename");
+                   String content = sub.getAttribute("content");
+                   fc.put(name, content);
+                }
+                root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, mainname);
+                ans = A4SolutionReader.read(root.getAllReachableSigs(), x);
+                for(Func f:root.getAllFunc()) if (f.params.size()==0) {
+                   String label = f.label;
+                   while(label.startsWith("this/")) label=label.substring(5);
+                   root.addGlobal("$"+label, f.call());
+                }
+                for(Func f:ans.b) root.addGlobal(f.label, f.call());
+            } catch(Throwable ex) {
+                throw new ErrorFatal("Failed to read or parse the XML file.");
+            } finally {
+                Util.close(reader);
+                Util.close(fis);
+            }
+            try {
+                Expr e = CompUtil.parseOneExpression_fromString(root, input);
+                return ans.a.eval(e).toString();
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");
             }
