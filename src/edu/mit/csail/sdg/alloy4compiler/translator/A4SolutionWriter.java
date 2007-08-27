@@ -162,9 +162,11 @@ public final class A4SolutionWriter {
         if (sol!=null && !sol.satisfiable())
            throw new ErrorAPI("This solution is unsatisfiable, so there is nothing to write to an XML file.");
         // Add all sig names into the "has seen" set; along the way, rename the sigs so that we don't have duplicate names
-        for(Sig s:new Sig[]{UNIV,SIGINT,SEQIDX,NONE}) { // We first add the builtin sigs
-            sig2name.put(s, un.make(s.label.length()==0 ? BLANK : s.label));
-        }
+        sig2name.put(UNIV,   un.seen(UNIV.label));
+        sig2name.put(SIGINT, un.seen(SIGINT.label));
+        sig2name.put(SEQIDX, un.seen(SEQIDX.label));
+        sig2name.put(NONE,   un.seen(NONE.label));
+        un.seen("set");
         for(Sig s:sigs) if (!s.builtin) { // Then we add the non-builtin sigs
             String label = s.label;
             // Many A4Solution objects will have the repetitive "this/" in front of the sig names (since that is
@@ -174,12 +176,14 @@ public final class A4SolutionWriter {
             sig2name.put(s, un.make(label.length()==0 ? BLANK : label));
         }
         // Rename the fields if necessary, and add the field names into the "has seen" set
+        un.seen("extends");
+        un.seen("in");
         for(Sig s:sigs) for(Field f:s.getFields()) {
            String fl = f.label.length()==0 ? BLANK : f.label;
            again:
            while(true) {
              for(Map.Entry<Field,String> e:field2name.entrySet())
-                if (fl.equals(e.getValue()) && e.getKey().type.firstColumnOverlaps(f.type))
+                if (fl.equals("extends") || fl.equals("in") || (fl.equals(e.getValue()) && e.getKey().type.firstColumnOverlaps(f.type)))
                    {fl=fl+"'"; continue again;}
              field2name.put(f, fl);
              un.seen(fl);
