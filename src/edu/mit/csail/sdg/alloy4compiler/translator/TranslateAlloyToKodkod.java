@@ -156,6 +156,40 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** This is the formula we want to satisfy. */
     private Formula goal;
 
+    /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
+    private Formula makeFacts(Module module, Formula kfact) throws Err {
+        SafeList<Sig> sigs = module.getAllSigs();
+        SafeList<Pair<String,Expr>> facts = module.getAllFacts();
+        for(Sig sig: sigs) {
+            if (sig.isOne!=null && sigs.size()==1 && sig.getFields().size()==3 && facts.size()==1) {
+                Field f1 = sig.getFields().get(0); Relation fst = right(bcc.get(f1));
+                Field f2 = sig.getFields().get(1); Relation lst = right(bcc.get(f2));
+                Field f3 = sig.getFields().get(2); Relation nxt = right(bcc.get(f3));
+                Sig e = findElem(sig,f1,f2,f3);
+                if (e!=null && e.isOrdered!=null && fst!=null && lst!=null && nxt!=null) {
+                    Expression ee = bcc.get(e);
+                    if (ee instanceof Relation && findOrder(e, sig, f1, f2, f3, facts.get(0).b)) {
+                        Formula f = nxt.totalOrder((Relation)ee, fst, lst);
+                        return fmap(f, e.isOrdered).and(kfact);
+                    }
+                }
+            }
+            for(Field f:sig.getFields()) {
+                // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
+                kfact = fmap(cform(f.boundingFormula), f).and(kfact);
+                // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
+                // Thus, we need to add a bound that the first column is a subset of s.
+                if (sig.isOne==null) {
+                    Expression sr=bcc.get(sig), fr=bcc.get(f);
+                    for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
+                    kfact = fmap(fr.in(sr), f).and(kfact);
+                }
+            }
+        }
+        for(Pair<String,Expr> e:module.getAllFacts()) kfact = fmap(cform(e.b), e.b).and(kfact);
+        return kfact;
+    }
+
     /**
      * Step2: construct the bounds and the formula we want to satisfy.
      * <p> Reads: rep, sigs, cmd
@@ -288,7 +322,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             rep.resultCNF(out);
             return null;
         }
-        A4Solution answer = new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(), // TODO: check these args...
+        A4Solution answer = new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(),
            sols, (opt.recordKodkod ? goal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
         time = System.currentTimeMillis() - time;
         if (answer.satisfiable()) rep.resultSAT(cmd, time, answer); else rep.resultUNSAT(cmd, time, answer);
@@ -569,40 +603,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     }
 
     //==============================================================================================================//
-
-    /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
-    private Formula makeFacts(Module module, Formula kfact) throws Err {
-        SafeList<Sig> sigs = module.getAllSigs();
-        SafeList<Pair<String,Expr>> facts = module.getAllFacts();
-        for(Sig sig: sigs) {
-            if (sig.isOne!=null && sigs.size()==1 && sig.getFields().size()==3 && facts.size()==1) {
-                Field f1 = sig.getFields().get(0); Relation fst = right(bcc.get(f1));
-                Field f2 = sig.getFields().get(1); Relation lst = right(bcc.get(f2));
-                Field f3 = sig.getFields().get(2); Relation nxt = right(bcc.get(f3));
-                Sig e = findElem(sig,f1,f2,f3);
-                if (e!=null && e.isOrdered!=null && fst!=null && lst!=null && nxt!=null) {
-                    Expression ee = bcc.get(e);
-                    if (ee instanceof Relation && findOrder(e, sig, f1, f2, f3, facts.get(0).b)) {
-                        Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                        return fmap(f, e.isOrdered).and(kfact);
-                    }
-                }
-            }
-            for(Field f:sig.getFields()) {
-                // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
-                kfact = fmap(cform(f.boundingFormula), f).and(kfact);
-                // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
-                // Thus, we need to add a bound that the first column is a subset of s.
-                if (sig.isOne==null) {
-                    Expression sr=bcc.get(sig), fr=bcc.get(f);
-                    for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
-                    kfact = fmap(fr.in(sr), f).and(kfact);
-                }
-            }
-        }
-        for(Pair<String,Expr> e:module.getAllFacts()) kfact = fmap(cform(e.b), e.b).and(kfact);
-        return kfact;
-    }
 
     /*============================*/
     /* Evaluates an ExprITE node. */

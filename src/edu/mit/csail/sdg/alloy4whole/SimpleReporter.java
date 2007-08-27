@@ -249,8 +249,7 @@ final class SimpleReporter extends A4Reporter {
             rep.log(" successfully generated.\n\n");
             synchronized(SimpleReporter.class) { latestMetamodelXML=outf; }
         } else for(int i=0; i<cmds.size(); i++) if (bundleIndex<0 || i==bundleIndex) {
-            latestModule=world; // TODO
-            latestKodkodSRC=ConstMap.make(bundleCache); // TODO
+            synchronized(SimpleReporter.class) { latestModule=world; latestKodkodSRC=ConstMap.make(bundleCache); }
             final String tempXML=tempdir+File.separatorChar+i+".cnf.xml";
             final String tempCNF=tempdir+File.separatorChar+i+".cnf";
             rep.tempfile=tempCNF;
@@ -362,7 +361,7 @@ final class SimpleReporter extends A4Reporter {
         try {
             final PrintWriter out=new PrintWriter(filename,"UTF-8");
             Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
-            synchronized(this) {
+            synchronized(SimpleReporter.class) {
                 A4SolutionWriter.write(sol, out, latestModule.getAllFunc());
                 for(Map.Entry<String,String> e: latestKodkodSRC.entrySet()) {
                     Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
