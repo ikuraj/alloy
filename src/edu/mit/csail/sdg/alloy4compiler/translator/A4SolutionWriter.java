@@ -244,7 +244,7 @@ public final class A4SolutionWriter {
 
     /**
      * If this solution is a satisfiable solution,
-     * this method will write it out as a &lt;instance&gt;..&lt;/instance&gt; in XML format.
+     * this method will write it out as &lt;instance&gt;..&lt;/instance&gt; in XML format.
      *
      * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
      * <p> If two or more fields have the same name and overlapping type, we append ' to the names until no more conflict.
@@ -258,6 +258,9 @@ public final class A4SolutionWriter {
         if (out.checkError()) throw new ErrorFatal("Error writing the A4Solution XML file.");
     }
 
+    /**
+     * Write the metamodel as &lt;instance&gt;..&lt;/instance&gt; in XML format.
+     */
     public static void writeMetamodel(ConstList<Sig> sigs, String originalFilename, PrintWriter out) throws Err {
         try {
             new A4SolutionWriter(null, sigs, originalFilename, out, new ArrayList<Func>(1));
