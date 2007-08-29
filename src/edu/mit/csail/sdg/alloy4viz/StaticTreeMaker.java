@@ -24,6 +24,7 @@ import java.awt.Color;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
@@ -69,7 +70,7 @@ public final class StaticTreeMaker {
                 if (tuple.getStart().equals(atom)) {if (tuple.getArity()==2) ans.add(tuple.getEnd()); else ans.add(tuple);}
             return ans;
         }
-        private List<Object> blank = Util.asList();
+        private List<Object> blank = Collections.unmodifiableList(new ArrayList<Object>());
         private List<?> getChildren(Object parent) {
             if (parent instanceof AlloyInstance) return typesAndSets;
             if (parent instanceof AlloyType) return instance.type2atoms((AlloyType)parent);

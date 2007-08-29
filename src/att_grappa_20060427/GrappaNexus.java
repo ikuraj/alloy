@@ -189,6 +189,7 @@ public class GrappaNexus
      * For edges, the <I>pos</I> attribute is examined.
      * For subgraph, the bounding box is recomputed.
      */
+    @SuppressWarnings("unchecked")
     public void updateShape() {
 	long thisShapeUpdate = System.currentTimeMillis();
 	switch(element.getType()) {
