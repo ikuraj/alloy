@@ -26,12 +26,12 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
+import edu.mit.csail.sdg.alloy4viz.VizGUI;
 
 public final class ExampleUsingTheCompiler {
 
@@ -47,6 +47,9 @@ public final class ExampleUsingTheCompiler {
      */
     public static void main(String[] args) throws Err {
 
+        // The visualizer (We will initialize it to nonnull when we visualize an Alloy solution)
+        VizGUI viz = null;
+
         // Alloy4 sends diagnostic messages and progress reports to the A4Reporter.
         // By default, the A4Reporter ignores all these events (but you can extend the A4Reporter to display the event for the user)
         A4Reporter rep = new A4Reporter() {
@@ -56,9 +59,6 @@ public final class ExampleUsingTheCompiler {
                 System.out.flush();
             }
         };
-
-        // Load the visualizer (You only need to do this if you plan to visualize an Alloy solution)
-        // VizGUI viz = new VizGUI(false, "", null);
 
         for(String filename:args) {
 
@@ -70,12 +70,17 @@ public final class ExampleUsingTheCompiler {
             A4Options options = new A4Options();
             options.solver = A4Options.SatSolver.SAT4J;
 
-            for (Pair<Command,Expr> cmd: world.getAllCommandsWithFormulas()) {
+            for (Pair<Command,Expr> pair: world.getAllCommandsWithFormulas()) {
+                Command command = pair.a;
+                Expr formula = pair.b;
                 // Execute the command
-                System.out.println("============ Command "+cmd+": ============");
-                Expr facts = ExprConstant.TRUE;
-                for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
-                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), facts.and(cmd.b), cmd.a, options);
+                System.out.println("============ Command "+command+": ============");
+                // Conjoin the facts with the command
+                for(Module m:world.getAllReachableModules())
+                    for(Pair<String,Expr> f:m.getAllFacts())
+                        formula = formula.and(f.b);
+                // Now run it!
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), formula, command, options);
                 // Print the outcome
                 System.out.println("Answer:");
                 System.out.println(ans.toString());
@@ -85,10 +90,14 @@ public final class ExampleUsingTheCompiler {
                     // This can be useful for debugging.
                     //
                     // You can also write the outcome to an XML file
-                    // ans.writeXML("output.xml", false);
+                    ans.writeXML("alloy_example_output.xml");
                     //
                     // You can then visualize the XML file by calling this:
-                    // viz.run(VizGUI.evs_loadInstanceForcefully, "output.xml");
+                    if (viz==null) {
+                        viz = new VizGUI(false, "alloy_example_output.xml", null);
+                    } else {
+                        viz.run(VizGUI.evs_loadInstanceForcefully, "alloy_example_output.xml");
+                    }
                 }
             }
         }

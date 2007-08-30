@@ -20,6 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,9 +50,12 @@ import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
+import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4.ConstSet.TempSet;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -376,4 +381,19 @@ public final class A4Solution {
 
     /** Returns the original Alloy main model's file name that generated this solution; can be "" if unknown. */
     public String getOriginalFilename() { return filename; }
+
+    /** Helper method to write out a full XML file. */
+    public void writeXML(String filename) throws Err {
+        PrintWriter out=null;
+        try {
+            out=new PrintWriter(filename,"UTF-8");
+            Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
+            A4SolutionWriter.writeInstance(this, out, new ArrayList<Func>());
+            out.print("\n</alloy>\n");
+            if (!Util.close(out)) throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
+        } catch(IOException ex) {
+            Util.close(out);
+            throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
+        }
+    }
 }
