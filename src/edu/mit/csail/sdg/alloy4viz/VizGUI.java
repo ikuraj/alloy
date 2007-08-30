@@ -900,6 +900,8 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             if (myState==null) return false;
             if (key==ev_resetTheme) {
                 if (!OurDialog.yesno(frame, "Are you sure you wish to clear all your customizations?", "Yes, clear them", "No, keep them")) return false;
+            } else {
+            	if (!OurDialog.yesno(frame, "This will clear your original customizations. Are you sure?", "Yes, clear them", "No, keep them")) return false;
             }
             myState.resetTheme();
             if (key==ev_magicLayout) {
