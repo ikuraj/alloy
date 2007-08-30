@@ -1737,26 +1737,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             old.set(null,newarray);
         } catch (Throwable ex) { }
 
-        satChoices = new ArrayList<SatSolver>(SatSolver.values());
-
-        // Test if Spear works on this platform
-        if (1==1) {
-            Subprocess test = new Subprocess(20000, new String[]{binary+fs+"spear", binary+fs+"tmp.cnf"});
-            String output = test.getStandardOutput();
-            if (!output.startsWith("s SATISFIABLE")) {
-                log.logBold("Warning: Spear does not work on this platform.\n");
-                log.log("This is okay, since you can still use SAT4J as the solver.\n"+
-                        "For more information, please visit http://alloy.mit.edu/alloy4/\n");
-                log.logBold("\nThe exact error message is:\n");
-                log.logIndented(test.getStandardOutputAndError());
-                log.logDivider();
-                log.flush();
-                satChoices.remove(SatSolver.SpearPIPE);
-            }
-        }
-
         // Testing the platform-dependent SAT solvers
         if (1==1) {
+            satChoices = new ArrayList<SatSolver>(SatSolver.values());
             SatSolver now = SatSolver.get();
             Subprocess test = new Subprocess(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
             String output = test.getStandardOutput();

@@ -92,8 +92,6 @@ public final class A4Options implements Serializable {
         public static SatSolver get() { return parse(Preferences.userNodeForPackage(Util.class).get("SatSolver2","")); }
         /** BerkMin via pipe */
         public static final SatSolver BerkMinPIPE = new SatSolver("berkmin", "BerkMin", "berkmin", true);
-        /** Spear via pipe */
-        public static final SatSolver SpearPIPE = new SatSolver("spear", "Spear", "spear", true);
         /** MiniSat1 via JNI */
         public static final SatSolver MiniSatJNI = new SatSolver("minisat(jni)", "MiniSat", null, true);
         /** MiniSatProver1 via JNI */
