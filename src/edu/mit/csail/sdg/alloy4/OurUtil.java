@@ -29,7 +29,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import javax.swing.Box;
@@ -129,11 +128,6 @@ public final class OurUtil {
     /** Make a JEditorPane. */
     public static JEditorPane editorPane(String type, String text) {
         return new JEditorPane(type, text);
-    }
-
-    /** Make a JEditorPane. */
-    public static JEditorPane editorPane(URL url) throws IOException {
-        return new JEditorPane(url);
     }
 
     /** Make a JTextArea. */

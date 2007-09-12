@@ -82,6 +82,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.html.HTMLDocument;
 import nanoxml_2_2_3.XMLElement;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -1221,18 +1222,22 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
 
         if (key==ev_help) try {
             int w=OurUtil.getScreenWidth(), h=OurUtil.getScreenHeight();
-            final JEditorPane html1,html2;
             final JFrame frame = new JFrame();
-            URL url1=this.getClass().getResource("/help/Nav.html");
-            URL url2=this.getClass().getResource("/help/index.html");
-            html1=OurUtil.editorPane(url1);
-            html2=OurUtil.editorPane(url2);
+            final JEditorPane html1 = new JEditorPane("text/html", "");
+            final JEditorPane html2 = new JEditorPane("text/html", "");
+            final HTMLDocument doc1 = (HTMLDocument) (html1.getDocument()); doc1.setAsynchronousLoadPriority(-1);
+            final HTMLDocument doc2 = (HTMLDocument) (html2.getDocument()); doc2.setAsynchronousLoadPriority(-1);
+            html1.setPage(this.getClass().getResource("/help/Nav.html"));
+            html2.setPage(this.getClass().getResource("/help/index.html"));
             HyperlinkListener hl=new HyperlinkListener() {
                 public final void hyperlinkUpdate(HyperlinkEvent e) {
                     try {
                         if (e.getEventType()!=HyperlinkEvent.EventType.ACTIVATED) return;
                         if (e.getURL().getPath().endsWith("quit.htm")) { frame.dispose(); return; }
-                        html2.setPage(e.getURL()); html2.requestFocusInWindow();
+                        HTMLDocument doc = (HTMLDocument) (html2.getDocument());
+                        doc.setAsynchronousLoadPriority(-1); // So that we can catch any exception that may occur
+                        html2.setPage(e.getURL());
+                        html2.requestFocusInWindow();
                     } catch(Throwable ex) { }
                 }
             };

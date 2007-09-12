@@ -2,8 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="lib" path="src/apple-osx-ui.jar"/>
-	<classpathentry exported="true" kind="lib" path="src/binary.jar"/>
-	<classpathentry exported="true" kind="lib" path="src/text.jar"/>
+	<classpathentry exported="true" kind="lib" path="src/extra.jar"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/relations"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
