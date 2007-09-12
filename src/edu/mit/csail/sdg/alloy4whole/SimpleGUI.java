@@ -424,7 +424,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** Query the server to get the version number of the latest version of the Alloy Analyzer. */
     private static String checkForUpdate() {
         final String NEW_LINE = System.getProperty("line.separator");
-        final String URL = "http://alloy.mit.edu/alloy4/download/alloy4.txt";
+        final String URL = "http://alloy.mit.edu/alloy4/download/alloy4.txt?buildnum="+Version.buildNumber()+"&builddate="+Version.buildDate();
         BufferedReader in = null;
         try {
             URL url = new URL(URL);
