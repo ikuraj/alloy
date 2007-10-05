@@ -37,14 +37,14 @@ import java.util.LinkedList;
  *       the new variable "hides" the old mapping; and when the new variable falls
  *       out of scope, the previous mapping is once again "revealed".
  *
- * <p><b>Invariant:</b>  map2.containsKey(x) implies (map1.containsKey(x) && map2.get(x).size()>0)
- *
  * <p><b>Thread Safety:</b>  Safe
  *
  * @param <V> - the type for Value
  */
 
 public final class Env<K,V> {
+
+    // Invariant:  map2.containsKey(x) implies (map1.containsKey(x) && map2.get(x).size()>0)
 
     /**
      * If a key is bound to one or more values, this stores the first value.

@@ -45,14 +45,14 @@ import java.util.NoSuchElementException;
  * The iterator is guaranteed to iterate over exactly the elements
  * that existed at the time that the iterator was created.
  *
- * <p><b>Invariant:</b>      hashmap.containsKey(x) if and only if (x==list.get(i) for some i)
- *
  * <p><b>Thread Safety:</b>  Safe
  *
  * @param <T> - the type of element
  */
 
 public final class IdentitySet<T> implements Iterable<T> {
+
+    // Invariant:  hashmap.containsKey(x) if and only if (x==list.get(i) for some i)
 
     /** This map's key set is used to store the set of elements; the values are ignored. */
     private final IdentityHashMap<T,Object> hashmap = new IdentityHashMap<T,Object>();
