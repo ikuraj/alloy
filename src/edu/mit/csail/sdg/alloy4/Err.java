@@ -45,7 +45,7 @@ public abstract class Err extends Exception {
      * @param msg - the actual error message
      * @param ex - if nonnull, its stack trace will be merged with this exception's stack trace
      */
-    public Err(Pos pos, String msg, Throwable ex) {
+    Err(Pos pos, String msg, Throwable ex) {
         this.pos = (pos==null ? Pos.UNKNOWN : pos);
         this.msg = (msg==null ? "" : msg);
         this.other = ex;
