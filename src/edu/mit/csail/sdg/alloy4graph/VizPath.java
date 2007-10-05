@@ -7,7 +7,11 @@ import java.awt.geom.QuadCurve2D;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Mutable; represents a connected path. */
+/**
+ * Mutable; represents a connected path.
+ *
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
+ */
 
 public final class VizPath {
 
