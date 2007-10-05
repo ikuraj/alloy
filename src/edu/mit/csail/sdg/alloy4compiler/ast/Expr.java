@@ -234,6 +234,12 @@ public abstract class Expr {
     /** Print a brief text description of it and all subnodes. */
     @Override public String toString() { StringBuilder sb=new StringBuilder(); toString(sb,-1); return sb.toString(); }
 
+    /** {@inheritDoc} */
+    @Override public final int hashCode() { return super.hashCode(); }
+
+    /** {@inheritDoc} */
+    @Override public final boolean equals(Object other) { return super.equals(other); }
+
     /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
     public boolean isSame(Expr obj) {
         while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
