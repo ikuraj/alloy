@@ -27,7 +27,7 @@ import java.io.RandomAccessFile;
 import javax.imageio.ImageIO;
 
 /**
- * Graphical helper method for producing PNG files.
+ * Graphical convenience methods for producing PNG files.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
@@ -48,8 +48,6 @@ public final class OurImageUtil {
 
     /** Modifies the given PNG file to have the given horizontal and vertical dots-per-inch. */
     private static void setDPI(String filename, int dpiX, int dpiY) throws IOException {
-       int dpmX = (int) (((double)dpiX)/2.54d*100d);
-       int dpmY = (int) (((double)dpiY)/2.54d*100d);
        RandomAccessFile f = null;
        try {
           f = new RandomAccessFile(filename, "rw");
@@ -73,7 +71,7 @@ public final class OurImageUtil {
                 rOffset=rOffset+fill;
                 // At this point, buf1 either contains the ENTIRE REMAINING FILE, or buf1 contains at least BUFSIZE bytes
                 f.seek(wOffset);
-                writeDPI(f, dpmX, dpmY);
+                writeDPI(f, dpiX, dpiY);
                 wOffset=wOffset+(12+9);
                 break;
              }
@@ -112,9 +110,11 @@ public final class OurImageUtil {
         return n;
     }
 
-    /** Write the "pHYs" chunk into the PNG file, specifying the given horizontal and veritical dots-per-meter. */
-    private static void writeDPI(RandomAccessFile f, int dpmX, int dpmY) throws IOException {
-        int crc=0xFFFFFFFF, b;
+    /** Write the "pHYs" chunk into the PNG file with the given horizontal and vertical dots-per-inch. */
+    private static void writeDPI(RandomAccessFile f, int dpiX, int dpiY) throws IOException {
+        int dpmX = (int) (((double)dpiX)/2.54d*100d); // Translate dots-per-inch into dots-per-meter
+        int dpmY = (int) (((double)dpiY)/2.54d*100d); // Translate dots-per-inch into dots-per-meter
+        int crc = 0xFFFFFFFF, b;
         f.write(0); f.write(0); f.write(0); f.write(9);
         b='p';              crc=table[(crc ^ b) & 0xff] ^ (crc >>> 8); f.write(b);
         b='H';              crc=table[(crc ^ b) & 0xff] ^ (crc >>> 8); f.write(b);
