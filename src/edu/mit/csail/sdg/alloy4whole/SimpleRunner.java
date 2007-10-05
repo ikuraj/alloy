@@ -47,6 +47,8 @@ import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.DONE;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.FAIL;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.VIZMSG;
 
+/** This helper method is used by SimpleGUI. */
+
 final class SimpleRunner implements Runnable {
 
     // Defines the 2 possible exit codes; NOTE: try to keep these between 10 and 15

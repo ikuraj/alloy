@@ -26,6 +26,8 @@ import java.util.Random;
 import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.Util;
 
+/** This helper method is used by SimpleGUI. */
+
 final class Helper {
 
     /** Constructor is private, since this utility class never needs to be instantiated. */

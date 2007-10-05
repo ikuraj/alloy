@@ -51,7 +51,7 @@ import javax.swing.text.ViewFactory;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4viz.VizGUI;
 
-/** Only the AWT Event Thread may call methods in this class. */
+/** This helper method is used by SimpleGUI; only the AWT Event Thread may call methods in this class. */
 
 final class SwingLogPanel {
 

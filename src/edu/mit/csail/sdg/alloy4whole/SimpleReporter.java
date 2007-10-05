@@ -69,6 +69,8 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionWriter;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 
+/** This helper method is used by SimpleGUI. */
+
 final class SimpleReporter extends A4Reporter {
 
     /** The PrintStream that will display the messages (or null if we want to write to System.err instead) */

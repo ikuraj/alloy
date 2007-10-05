@@ -39,6 +39,8 @@ import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4.A4Reporter.NOP;
 
+/** This class demonstrates how to access Alloy4 via the API. */
+
 public final class ExampleUsingTheAPI {
 
     @SuppressWarnings("unused")

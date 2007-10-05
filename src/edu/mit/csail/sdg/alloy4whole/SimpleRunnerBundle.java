@@ -32,6 +32,8 @@ import java.util.Map;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 
+/** This helper method is used by SimpleGUI. */
+
 final class SimpleRunnerBundle implements Serializable {
 
     /** Ensures the serialized form is consistent. */
