@@ -76,7 +76,7 @@ public final class MailBug implements UncaughtExceptionHandler {
         final JScrollPane scroll=OurUtil.scrollpane(problem);
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
-        if (latestAlloyVersion>Version.buildNumber()) {
+        if (!"yes".equals(System.getProperty("debug")) && latestAlloyVersion>Version.buildNumber()) {
             JOptionPane.showMessageDialog(null, new Object[] {
                     "Sorry. A fatal internal error has occurred.",
                     " ",
