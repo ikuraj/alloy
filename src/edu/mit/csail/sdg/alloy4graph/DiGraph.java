@@ -162,7 +162,7 @@ public final class DiGraph {
     /** {@inheritDoc} */
     @Override public final boolean equals(Object other) { return super.equals(other); }
 
-    /** Returns an unmodifiable view of the list of nodes in the given layer (0 .. #layer-1); return an empty list if no such layer. */
+    /** Returns an unmodifiable view of the list of nodes in the given layer (0..#layer-1); return an empty list if no such layer. */
     public final List<VizNode> layer(int i) {
        if (i>=0 && i<layerlist.size()) return Collections.unmodifiableList(layerlist.get(i));
        return emptyListOfNodes;
@@ -174,6 +174,6 @@ public final class DiGraph {
     /** Sort the list of nodes using the given comparator. */
     public final void sortNodes(Comparator<VizNode> comparator) { Collections.sort(nodelist, comparator); }
 
-    /** Sort the list of nodes in a given layer (0 .. #layer-1) using the given comparator. */
+    /** Sort the list of nodes in a given layer (0..#layer-1) using the given comparator. */
     public final void sortLayer(int layer, Comparator<VizNode> comparator) { Collections.sort(layerlist.get(layer), comparator); }
 }
