@@ -19,6 +19,9 @@ public final class DiGraph {
         /** Stores the layer that this node is in. */
         private int layer=0;
 
+        /** Stores the current position of this node in the graph's node list. */
+        private int pos;
+
         /** Stores the "in" edges. */
         private final LinkedList<VizEdge> ins = new LinkedList<VizEdge>();
 
@@ -49,6 +52,7 @@ public final class DiGraph {
         /** Constructs a new node. */
         public DiNode(DiGraph graph) {
             this.graph=graph;
+            this.pos=graph.nodelist.size();
             graph.nodelist.add((VizNode)this);
             graph.layerlist.get(0).add((VizNode)this);
         }
@@ -59,7 +63,10 @@ public final class DiGraph {
         /** {@inheritDoc} */
         @Override public final boolean equals(Object other) { return super.equals(other); }
 
-        /** Return the layer that this node is in. */
+        /** Returns the node's current position in the node list, which is always between 0 and node.size()-1 */
+        public final int pos() { return pos; }
+
+        /** Returns the layer that this node is in. */
         public final int layer() { return layer; }
 
         /**
@@ -171,8 +178,21 @@ public final class DiGraph {
     /** Return the number of layers; always at least 1. */
     public final int layers() { return layerlist.size(); }
 
-    /** Sort the list of nodes using the given comparator. */
-    public final void sortNodes(Comparator<VizNode> comparator) { Collections.sort(nodelist, comparator); }
+    /** Sort the list of nodes according to the order in the given list. */
+    public final void sortNodes(Iterable<VizNode> newOrder) {
+       // The nodes that are common to this.nodelist and newOrder are moved to the front of the list, in the given order.
+       // The nodes that are in this.nodelist but not in newOrder are moved to the back in an unspecified order.
+       // The nodes that are in newOrder but not in this.nodelist are ignored.
+       int i=0, n=nodelist.size();
+       again:
+       for(VizNode x:newOrder) for(int j=i; j<n; j++) if (nodelist.get(j)==x) {
+          if (i!=j) { VizNode tmp=nodelist.get(i); nodelist.set(i,x); nodelist.set(j,tmp); }
+          i++;
+          continue again;
+       }
+       i=0;
+       for(DiNode x:nodelist) { x.pos=i; i++; }
+    }
 
     /** Sort the list of nodes in a given layer (0..#layer-1) using the given comparator. */
     public final void sortLayer(int layer, Comparator<VizNode> comparator) { Collections.sort(layerlist.get(layer), comparator); }
