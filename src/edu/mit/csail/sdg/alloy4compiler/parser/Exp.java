@@ -35,7 +35,7 @@ abstract class Exp {
     public final Pos pos;
 
     /** Constructs an Exp node. */
-    public Exp(Pos pos) {
+    Exp(Pos pos) {
         this.pos = (pos==null ? Pos.UNKNOWN : pos);
     }
 
