@@ -35,8 +35,10 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.prefs.Preferences;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
@@ -151,6 +153,28 @@ public final class Util {
         TempList<T> ans = new TempList<T>(array.length);
         for(int i=0; i<array.length; i++) { ans.add(array[i]); }
         return ans.makeConst();
+    }
+
+    /** Return an iterable whose iterator is a read-only iterator that first iterate over Collection1, and then Collection2. */
+    public static<E> Iterable<E> fastJoin(final Iterable<E> collection1, final Iterable<E> collection2) {
+       return new Iterable<E>() {
+          public Iterator<E> iterator() {
+             return new Iterator<E> () {
+                private Iterator<E> a=collection1.iterator(), b=collection2.iterator();
+                public boolean hasNext() {
+                   if (a!=null) { if (a.hasNext()) return true; a=null; }
+                   if (b!=null) { if (b.hasNext()) return true; b=null; }
+                   return false;
+                }
+                public E next() {
+                   if (a!=null) { if (a.hasNext()) return a.next(); a=null; }
+                   if (b!=null) { if (b.hasNext()) return b.next(); b=null; }
+                   throw new NoSuchElementException();
+                }
+                public void remove() { throw new UnsupportedOperationException(); }
+             };
+          }
+       };
     }
 
     /** Helper method that converts Windows/Mac/Unix linebreaks into "\n" */
