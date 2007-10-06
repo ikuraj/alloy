@@ -52,7 +52,7 @@ public final class VizNode extends DiGraph.DiNode {
     /** This determines the minimum amount of padding added above, left, right, and below the text label. */
     private static final int labelPadding = 5;
 
-    // =============================== cache for performance efficiency ====================================
+    // =============================== cached for performance efficiency ===================================
 
     /** Caches the value of sqrt(3.0). The extra digits in the definition will be truncated by the Java compiler. */
     private static final double sqrt3 = 1.7320508075688772935274463415058723669428052538103806280558D;
