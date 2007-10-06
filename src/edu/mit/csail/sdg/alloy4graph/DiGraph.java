@@ -28,7 +28,7 @@ import java.util.List;
 
 /** Mutable; represents a digraph. */
 
-public final class DiGraph {
+public class DiGraph {
 
     /** Mutable; represents a node in a digraph. */
     public static abstract class DiNode {
@@ -70,7 +70,7 @@ public final class DiGraph {
         public final List<VizEdge> selfEdges() { return selfView; }
 
         /** Constructs a new node. */
-        public DiNode(DiGraph graph) {
+        DiNode(DiGraph graph) {
             this.graph=graph;
             this.pos=graph.nodelist.size();
             graph.nodelist.add((VizNode)this);
@@ -114,7 +114,7 @@ public final class DiGraph {
         private DiNode b;
 
         /** Constructs a new edge; the two nodes must belong to the same graph. */
-        public DiEdge(DiNode a, DiNode b) {
+        DiEdge(DiNode a, DiNode b) {
             if (a.graph!=b.graph) throw new IllegalArgumentException("You cannot draw an edge between two different graphs.");
             this.a=a; this.b=b;
             if (a==b) { a.selfs.add((VizEdge)this); } else { a.outs.add((VizEdge)this); b.ins.add((VizEdge)this); }
@@ -181,7 +181,7 @@ public final class DiGraph {
     private final List<VizNode> emptyListOfNodes = Collections.unmodifiableList(new ArrayList<VizNode>(0));
 
     /** Constructs a new digraph. */
-    public DiGraph() { layerlist.add(new ArrayList<VizNode>()); }
+    DiGraph() { layerlist.add(new ArrayList<VizNode>()); }
 
     /** {@inheritDoc} */
     @Override public final int hashCode() { return super.hashCode(); }
