@@ -140,15 +140,6 @@ public final class OurTabbedEditor {
     /** Default border color for each tab. */
     private static final Color BORDER=Color.LIGHT_GRAY;
 
-    /** The default directory (for open and save) */
-    private String defaultDirectory;
-
-    /** Returns the default directory (for open and save) */
-    public String defaultDirectory() { return defaultDirectory; }
-
-    /** Changes the default directory (for open and save) */
-    public void setDefaultDirectory(String newDefaultDirectory) { defaultDirectory=newDefaultDirectory; }
-
     /** The font to use in the JTextArea */
     private Font font;
 
@@ -326,15 +317,13 @@ public final class OurTabbedEditor {
         if (!allowIO || me<0 || me>=tabs.size()) { return null; }
         String filename = tabs.get(me).filename;
         if (tabs.get(me).isFile==false || alwaysPickNewName) {
-            String start = defaultDirectory;
-            if (!(new File(start)).isDirectory()) { start=System.getProperty("user.home"); }
-            File file=OurDialog.askFile(parentFrame, false, start, ".als", ".als files");
-            if (file==null) { return null; }
+            File file=OurDialog.askFile(parentFrame, false, null, ".als", ".als files");
+            if (file==null) return null;
             filename=Util.canon(file.getPath());
             if (file.exists() && !OurDialog.askOverwrite(parentFrame,filename)) { return null; }
         }
         if (saveAs(filename)) {
-            defaultDirectory = (new File(filename)).getParent();
+            Util.setCurrentDirectory(new File(filename).getParentFile());
             return Util.canon(filename);
         }
         return null;
@@ -692,12 +681,11 @@ public final class OurTabbedEditor {
     public void highlight(final Err e) { highlight(e.pos, true); }
 
     /** Constructs a tabbed editor pane. */
-    public OurTabbedEditor(final Parent parent, final JFrame parentFrame, final Font font, final int tabSize, final String initialDirectory) {
+    public OurTabbedEditor(final Parent parent, final JFrame parentFrame, final Font font, final int tabSize) {
         this.parent=parent;
         this.parentFrame=parentFrame;
         this.font=font;
         this.tabSize=tabSize;
-        this.defaultDirectory=initialDirectory;
         JPanel glue = OurUtil.makeHB(new Object[]{null});
         glue.setBorder(new OurBorder(null,null,BORDER,null));
         tabBar=OurUtil.makeHB(glue);

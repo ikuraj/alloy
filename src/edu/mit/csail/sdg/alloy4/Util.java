@@ -199,6 +199,19 @@ public final class Util {
         }
     }
 
+    /** This synchronized field stores the current "default directory" which is used by the FileOpen and FileSave dialogs. */
+    private static String currentDirectory = canon(System.getProperty("user.home"));
+
+    /** Modifies the current "default directory" which is used by the FileOpen and FileSave dialogs. */
+    public synchronized static void setCurrentDirectory(File newDirectory) {
+        currentDirectory = canon(newDirectory.getAbsolutePath());
+    }
+
+    /** Returns the current "default directory" which is used by the FileOpen and FileSave dialogs. */
+    public synchronized static String getCurrentDirectory() {
+        return currentDirectory;
+    }
+
     /** Read the file then return the file size and a byte[] array (the array could be slightly bigger than file size) */
     private static Pair<byte[],Integer> readEntireFile(boolean fromJar, String filename) throws FileNotFoundException, IOException {
         InputStream fis=null;

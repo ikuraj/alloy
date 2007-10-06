@@ -172,13 +172,16 @@ public final class OurDialog {
      * <br> Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
      * @param parentFrame - the parent frame
      * @param isOpen - true means this is an Open operation; false means this is a Save operation
-     * @param dir - the initial directory
+     * @param dir - the initial directory (or null if we want to use the default)
      * @param ext - the file extension (including "."; using lowercase letters; for example, ".als") or ""
      * @param description - the description for the given extension
      * @return null if the user didn't choose anything, otherwise it returns the selected file
      */
     public static File askFile
     (Frame parentFrame, boolean isOpen, String dir, final String ext, final String description) {
+        if (dir==null) dir=Util.getCurrentDirectory();
+        if (!(new File(dir).isDirectory())) dir=System.getProperty("user.home");
+        dir=Util.canon(dir);
         String ans;
         if (Util.onMac()) {
             FileDialog f = new FileDialog(parentFrame, isOpen?"Open...":"Save...");
