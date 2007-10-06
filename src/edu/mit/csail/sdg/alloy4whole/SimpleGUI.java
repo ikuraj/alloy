@@ -196,12 +196,6 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** The amount of memory (in M) to allocate for Kodkod and the SAT solvers. */
     private static final IntPref SubMemory = new IntPref("SubMemory",16,768,65535);
 
-    /**
-     * The default directory for AlloyAnalyzer and AlloyVisualizer's "open"/"save" command.
-     * NOTE: we intentionally use the same key "Dir" as the other Alloy4 components to make sure they use the same current directory.
-     */
-    private static final StringPref Dir = new StringPref("Dir");
-
     /** The first file in Alloy Analyzer's "open recent" list. */
     private static final StringPref Model0 = new StringPref("Model0");
 
@@ -717,20 +711,16 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         }
 
         if (key==ev_open || key==ev_builtin) {
-            String start = (key==ev_open) ? Dir.get() : (Helper.alloyHome()+File.separatorChar+"models");
-            if (!(new File(start)).isDirectory()) start=System.getProperty("user.home");
-            start=Util.canon(start);
+            String start = (key==ev_open) ? null : (Helper.alloyHome()+File.separatorChar+"models");
             File file=OurDialog.askFile(frame, true, start, openAlsOnly?".als":"", ".als files");
             if (file==null) return false;
             if (!file.getPath().toLowerCase(Locale.US).endsWith(".als")) openAlsOnly=false;
-            if (key==ev_open) Dir.set(file.getParent());
+            if (key==ev_open) Util.setCurrentDirectory(file.getParentFile());
             return run(evs_open, file.getPath());
         }
 
         if ((key==ev_save || key==ev_saveAs) && !mode_externalEditor) {
-            text.setDefaultDirectory(Dir.get());
             String ans=text.save(key==ev_saveAs);
-            Dir.set(text.defaultDirectory());
             if (ans==null) return false;
             notifyChange();
             addHistory(ans);
@@ -739,16 +729,11 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         }
 
         if (key==ev_close) {
-            text.setDefaultDirectory(Dir.get());
             text.close();
-            Dir.set(text.defaultDirectory());
         }
 
         if (key==ev_quit || key==ev_dispose) {
-            text.setDefaultDirectory(Dir.get());
-            boolean r = text.closeAll();
-            Dir.set(text.defaultDirectory());
-            if (r) System.exit(0);
+            if (text.closeAll()) System.exit(0);
         }
 
         if (key==ev_refreshEdit) {
@@ -1123,10 +1108,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             //
             Runnable ext=new Runnable() {
                 public void run() {
-                    text.setDefaultDirectory(Dir.get());
-                    boolean r=text.closeAll();
-                    Dir.set(text.defaultDirectory());
-                    if (!r) return;
+                    if (!text.closeAll()) return;
                     log.clearError();
                     ExternalEditor.set(mode_externalEditor = !mode_externalEditor);
                     if (mode_externalEditor) text.disableIO(); else text.enableIO();
@@ -1708,7 +1690,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this, viz);
 
         // Create the text area
-        text = new OurTabbedEditor(this, frame, new Font(fontName, Font.PLAIN, fontSize), TabSize.get(), Dir.get());
+        text = new OurTabbedEditor(this, frame, new Font(fontName, Font.PLAIN, fontSize), TabSize.get());
 
         // Add everything to the frame, then display the frame
         Container all=frame.getContentPane();
