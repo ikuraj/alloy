@@ -14,7 +14,7 @@ public final class DiGraph {
     public static abstract class DiNode {
 
         /** The graph that this node belongs to. */
-        public final DiGraph graph;
+        final DiGraph graph;
 
         /** Stores the layer that this node is in. */
         private int layer=0;
