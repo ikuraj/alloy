@@ -22,6 +22,7 @@ package edu.mit.csail.sdg.alloy4graph;
 
 import static java.awt.Color.WHITE;
 import static java.awt.Color.BLACK;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -42,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
 import javax.swing.border.EmptyBorder;
@@ -49,6 +51,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.OurImageUtil;
+import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
 
 /**
@@ -154,44 +157,109 @@ public final class VizViewer extends JPanel {
     /** Changes the annotation associated with this object. */
     public void do_setAnnotation(String newAnnotation) { this.annotation=newAnnotation; }
 
-    /** This stores the most recent DPI value. */
-    private static int oldDPI=72;
+    /**
+     * This color is used as the background for a JTextField that contains bad data.
+     * <p> Note: we intentionally choose to make it an instance field rather than a static field,
+     * since we want to make sure we only instantiate it from the AWT Event Dispatching thread.
+     */
+    private final Color badColor = new Color(255,200,200);
+
+    /** This synchronized field stores the most recent DPI value. */
+    private static double oldDPI=300;
+
+    /** True if we are currently in the middle of a DocumentListener already. */
+    private boolean recursive=false;
+
+    /** This updates the three input boxes and the three accompanying text labels. */
+    private void do_refresh(int who, double ratio, JTextField w1, JLabel w2, JTextField h1, JLabel h2, JTextField d1, JLabel d2) {
+       if (recursive) return;
+       try {
+          recursive=true;
+          w1.setBackground(WHITE); h1.setBackground(WHITE); d1.setBackground(WHITE);
+          boolean bad=false;
+          double w; try { w=Double.parseDouble(w1.getText()); } catch(NumberFormatException ex) { w=0; }
+          double h; try { h=Double.parseDouble(h1.getText()); } catch(NumberFormatException ex) { h=0; }
+          double d; try { d=Double.parseDouble(d1.getText()); } catch(NumberFormatException ex) { d=0; }
+          if (who==1) { h=((int)(w*100/ratio))/100D; h1.setText(""+h); }
+          if (who==2) { w=((int)(h*100*ratio))/100D; w1.setText(""+w); }
+          if (!(d>0.01) || !(d<10000)) { bad=true; d1.setBackground(badColor); }
+          if (!(w>0.01) || !(w<10000)) { bad=true; w1.setBackground(badColor); if (who==2) w1.setText(""); }
+          if (!(h>0.01) || !(h<10000)) { bad=true; h1.setBackground(badColor); if (who==1) h1.setText(""); }
+          if (bad) { w2.setText(" inches"); h2.setText(" inches"); return; }
+          w2.setText(" inches ("+(int)(w*d)+" pixels)");
+          h2.setText(" inches ("+(int)(h*d)+" pixels)");
+       } finally {
+          recursive=false;
+       }
+    }
 
     /** Export the current drawing as a PNG file by asking the user for the filename and the image resolution. */
     public void do_saveAsPNG() {
        // Find the enclosing JFrame if such a JFrame exists
        JFrame me=null;
        for(Container c=getParent(); c!=null; c=c.getParent()) if (c instanceof JFrame) { me=(JFrame)c; break; }
-       // Create the editable and noneditable fields
-       int newDPI;
-       synchronized(VizViewer.class) { newDPI=oldDPI; }
-       final JLabel w = new JLabel("Width  : "+graph.totalWidth+" pixels ("+(graph.totalWidth*100/oldDPI)/100D+" inch)");
-       final JLabel h = new JLabel("Height : "+graph.totalHeight+" pixels ("+(graph.totalHeight*100/oldDPI)/100D+" inch)");
-       final JTextField dpi = new JTextField(""+oldDPI);
-       dpi.getDocument().addDocumentListener(new DocumentListener() {
-          public void changedUpdate(DocumentEvent e) {
-             int newDPI=(-1);
-             try { newDPI=Integer.parseInt(dpi.getText()); } catch(NumberFormatException ex) { newDPI=(-1); }
-             if (newDPI<=0) {
-                w.setText("<html><font color=red>DPI must be a positive integer.</font></html>");
-                h.setText(" ");
-                return;
-             }
-             w.setText("Width  : "+graph.totalWidth+" pixels ("+(graph.totalWidth*100/newDPI)/100D+" inch)");
-             h.setText("Height : "+graph.totalHeight+" pixels ("+(graph.totalHeight*100/newDPI)/100D+" inch)");
-          }
-          public void insertUpdate(DocumentEvent e) { changedUpdate(e); }
-          public void removeUpdate(DocumentEvent e) { changedUpdate(e); }
+       // Figure out the initial width, height, and DPI that we might want to suggest to the user
+       final double ratio=((double)(graph.totalWidth))/graph.totalHeight;
+       double dpi, iw=8.5D, ih=((int)(iw*100/ratio))/100D;
+       if (ih>11D) { ih=11D; iw=((int)(ih*100*ratio))/100D; }
+       synchronized(VizViewer.class) { dpi=oldDPI; if (!(dpi>=1)) dpi=1; if (!(dpi<=10000)) dpi=10000; }
+       // Allow the user to change the width, height, and DPI
+       final JLabel w=new JLabel("Width: "+((int)(graph.totalWidth*scale))+" pixels");
+       final JLabel h=new JLabel("Height: "+((int)(graph.totalHeight*scale))+" pixels");
+       final JTextField w1=new JTextField(""+iw); final JLabel w0=new JLabel("Width: "), w2=new JLabel();
+       final JTextField h1=new JTextField(""+ih); final JLabel h0=new JLabel("Height: "), h2=new JLabel();
+       final JTextField d1=new JTextField(""+(int)dpi); final JLabel d0=new JLabel("Resolution: "), d2=new JLabel(" dots per inch");
+       Dimension dim = new Dimension(100,20);
+       w1.setMaximumSize(dim); w1.setPreferredSize(dim);
+       h1.setMaximumSize(dim); h1.setPreferredSize(dim);
+       d1.setMaximumSize(dim); d1.setPreferredSize(dim);
+       do_refresh(0,ratio,w1,w2,h1,h2,d1,d2);
+       w1.setEnabled(false);
+       w1.getDocument().addDocumentListener(new DocumentListener() {
+          public void changedUpdate(DocumentEvent e) { do_refresh(1,ratio,w1,w2,h1,h2,d1,d2); }
+          public void insertUpdate(DocumentEvent e) { do_refresh(1,ratio,w1,w2,h1,h2,d1,d2); }
+          public void removeUpdate(DocumentEvent e) { do_refresh(1,ratio,w1,w2,h1,h2,d1,d2); }
        });
-       if (!OurDialog.getInput(me, "Export as PNG", new Object[]{"Please specify the DPI (dots per inch):", dpi, w, h})) return;
-       try { newDPI=Integer.parseInt(dpi.getText()); } catch(NumberFormatException ex) { newDPI=(-1); }
-       if (newDPI<=0) { OurDialog.alert(me, "The DPI must be a positive integer.", "Error exporting to PNG"); return; }
-       // Now, let's ask for a filename
+       h1.setEnabled(false);
+       h1.getDocument().addDocumentListener(new DocumentListener() {
+          public void changedUpdate(DocumentEvent e) { do_refresh(2,ratio,w1,w2,h1,h2,d1,d2); }
+          public void insertUpdate(DocumentEvent e) { do_refresh(2,ratio,w1,w2,h1,h2,d1,d2); }
+          public void removeUpdate(DocumentEvent e) { do_refresh(2,ratio,w1,w2,h1,h2,d1,d2); }
+       });
+       d1.setEnabled(false);
+       d1.getDocument().addDocumentListener(new DocumentListener() {
+          public void changedUpdate(DocumentEvent e) { do_refresh(3,ratio,w1,w2,h1,h2,d1,d2); }
+          public void insertUpdate(DocumentEvent e) { do_refresh(3,ratio,w1,w2,h1,h2,d1,d2); }
+          public void removeUpdate(DocumentEvent e) { do_refresh(3,ratio,w1,w2,h1,h2,d1,d2); }
+       });
+       final JRadioButton b1 = new JRadioButton("Using the window's current magnification:", true);
+       final JRadioButton b2 = new JRadioButton("Using a specific width, height, and resolution:", false);
+       b1.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+             if (!b1.isSelected()) b1.setSelected(true);
+             b2.setSelected(false); w1.setEnabled(false); h1.setEnabled(false); d1.setEnabled(false);
+          }
+       });
+       b2.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+             if (!b2.isSelected()) b2.setSelected(true);
+             b1.setSelected(false); w1.setEnabled(true); h1.setEnabled(true); d1.setEnabled(true);
+          }
+       });
+       if (!OurDialog.getInput(me, "Export as PNG", new Object[]{
+          b1, OurUtil.makeH(20, w, null), OurUtil.makeH(20, h, null), " ",
+          b2, OurUtil.makeH(20, w0, w1, w2, null), OurUtil.makeH(20, h0, h1, h2, null), OurUtil.makeH(20, d0, d1, d2, null),
+          })) return;
+       try { dpi=Integer.parseInt(d1.getText()); } catch(NumberFormatException ex) { return; }
+       // TODO Should validate that the values are sane
+       // Ask the user for a filename
        File filename = OurDialog.askFile(me, false, null, ".png", "PNG file");
        if (filename==null) return;
-       synchronized(VizViewer.class) { oldDPI=newDPI; }
+       if (filename.exists() && !OurDialog.askOverwrite(me, filename.getAbsolutePath())) return;
+       // Attempt to write the PNG file
        try {
-          do_saveAsPNG(filename.getAbsolutePath(), newDPI, newDPI);
+          do_saveAsPNG(filename.getAbsolutePath(), dpi, dpi); // TODO should use the specified values
+          synchronized(VizViewer.class) { oldDPI=dpi; }
           Util.setCurrentDirectory(filename.getParentFile());
        } catch(IOException ex) {
           OurDialog.alert(me, "An error has occured in writing the PNG file.", "Error");
@@ -199,7 +267,7 @@ public final class VizViewer extends JPanel {
     }
 
     /** Export the current drawing as a PNG file with the given file name and image resolution. */
-    public void do_saveAsPNG(String filename, int dpiX, int dpiY) throws IOException {
+    public void do_saveAsPNG(String filename, double dpiX, double dpiY) throws IOException {
        int width = (int) (graph.totalWidth*scale);   if (width<10) width=10;
        int height = (int) (graph.totalHeight*scale); if (height<10) height=10;
        BufferedImage bf = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
