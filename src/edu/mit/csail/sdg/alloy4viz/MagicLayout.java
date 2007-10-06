@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/** This class implements the automatic visualization inference. */
+
 final class MagicLayout {
 
     /** This method logs the progress */

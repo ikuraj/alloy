@@ -20,9 +20,12 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.swing.Icon;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
@@ -45,6 +48,9 @@ public final class DotColor extends DotAttribute {
     public static final DotColor BLUE = new DotColor("Blue", "cornflowerblue", "blue", "cadetblue", "cyan");
     public static final DotColor YELLOW = new DotColor("Yellow", "gold", "yellow", "lightgoldenrod", "yellow");
 
+    /** This maps each dot color name into the corresponding Java Color object. */
+    private static final Map<String,Color> name2color = new HashMap<String,Color>();
+
     static {
         List<DotColor> list = new ArrayList<DotColor>();
         list.add(YELLOW);
@@ -55,6 +61,32 @@ public final class DotColor extends DotAttribute {
         list.add(WHITE);
         list.add(BLACK);
         values=Collections.unmodifiableList(list);
+    }
+
+    /** Convert the Dot color name into its corresponding Java Color object. */
+    public static Color name2color(String name) {
+        Color ans = name2color.get(name);
+        if (ans!=null) return ans;
+        else if (name.equals("palevioletred"))   ans=new Color(222,113,148);
+        else if (name.equals("red"))             ans=new Color(255,0,0);
+        else if (name.equals("salmon"))          ans=new Color(255,130,115);
+        else if (name.equals("magenta"))         ans=new Color(255,0,255);
+        else if (name.equals("limegreen"))       ans=new Color(49,207,49);
+        else if (name.equals("green2"))          ans=new Color(0,239,0);
+        else if (name.equals("darkolivegreen2")) ans=new Color(189,239,107);
+        else if (name.equals("chartreuse2"))     ans=new Color(115,239,0);
+        else if (name.equals("gold"))            ans=new Color(255,215,0);
+        else if (name.equals("yellow"))          ans=new Color(255,255,0);
+        else if (name.equals("lightgoldenrod"))  ans=new Color(239,223,132);
+        else if (name.equals("cornflowerblue"))  ans=new Color(99,150,239);
+        else if (name.equals("blue"))            ans=new Color(0,0,255);
+        else if (name.equals("cadetblue"))       ans=new Color(90,158,165);
+        else if (name.equals("cyan"))            ans=new Color(0,255,255);
+        else if (name.equals("lightgray"))       ans=new Color(214,214,214);
+        else if (name.equals("white"))           ans=Color.WHITE;
+        else ans=Color.BLACK;
+        name2color.put(name,ans);
+        return ans;
     }
 
     /**

@@ -21,10 +21,8 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.util.Set;
-//import java.util.Map;
-//import dot.Dot;
-//import dot.Dot.Agnode_t_;
-//import dot.Dot.Agraph_t_;
+import edu.mit.csail.sdg.alloy4graph.DiGraph;
+import edu.mit.csail.sdg.alloy4graph.VizNode;
 
 /**
  * Immutable; this represents a node to be written out to the DOT file.
@@ -64,21 +62,12 @@ public final class DotNode {
         this.id = id; this.label = label; this.shape = shape; this.color = color; this.style = style;
     }
 
-//    public Agnode_t_ write(Dot dot, Agraph_t_ dotgraph, Map<Integer,Agnode_t_> dotmap,
-//            int iLabel, int iShape, int iStyle, int iColor, int iFontColor,
-//            Set<String> attribs, DotPalette pal) {
-//        Agnode_t_ x = dotmap.get(id);
-//        if (x==null) dotmap.put(id, x=dot.agnode(dotgraph, Dot.C("N"+id)));
-//        //System.err.printf("Agnode_t_ N%d=agnode(g,\"N%d\");\n", id, id);
-//        String lb=label;
-//        if (attribs!=null) for (String a:attribs) if (a.length()>0) lb=lb+"\\n"+a;
-//        dot.agxset(x, iLabel, Dot.C(lb));
-//        dot.agxset(x, iColor, Dot.C(color.getDotText(pal)));
-//        dot.agxset(x, iFontColor, Dot.C(color.getLabelColorText(pal)));
-//        dot.agxset(x, iShape, Dot.C(shape.getDotText(pal)));
-//        dot.agxset(x, iStyle, Dot.C("filled, " + style.getDotText(pal)));
-//        return x;
-//    }
+    public VizNode write2(DiGraph dotgraph, Set<String> attribs, DotPalette pal) {
+        VizNode n = new VizNode(dotgraph, label);
+        if (attribs!=null) for (String a:attribs) if (a.length()>0) n.add(a);
+        n.set(DotColor.name2color(color.getDotText(pal))).set(shape.vizShape).set(style.vizStyle);
+        return n;
+    }
 
     /**
      * Writes the node into a StringBuilder as we would writing to a Dot file

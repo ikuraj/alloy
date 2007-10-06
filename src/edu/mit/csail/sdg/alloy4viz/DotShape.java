@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.OurUtil;
+import edu.mit.csail.sdg.alloy4graph.VizShape;
 
 /**
  * Immutable; this defines the set of shapes that dot can produce.
@@ -37,27 +38,26 @@ public final class DotShape extends DotAttribute {
     /** The list of values that the user can select from a combobox. */
     static final List<DotShape> values;
 
-    public static final DotShape ELLIPSE = new DotShape("Ellipse", "ellipse");
-    public static final DotShape BOX = new DotShape("Box", "box");
-    public static final DotShape CIRCLE = new DotShape("Circle", "circle");
-    private static final DotShape EGG = new DotShape("Egg", "egg");
-    private static final DotShape TRIANGLE = new DotShape("Triangle", "triangle");
-    private static final DotShape DIAMOND = new DotShape("Diamond", "diamond");
-    private static final DotShape TRAPEZOID = new DotShape("Trapezoid", "trapezium");
-    private static final DotShape PARALLELOGRAM = new DotShape("Parallelogram", "parallelogram");
-    private static final DotShape HOUSE = new DotShape("House", "house");
-    private static final DotShape HEXAGON = new DotShape("Hexagon", "hexagon");
-    private static final DotShape OCTAGON = new DotShape("Octagon", "octagon");
-    private static final DotShape DOUBLE_CIRCLE = new DotShape("Dbl Circle", "doublecircle");
-    private static final DotShape DOUBLE_OCTAGON = new DotShape("Dbl Octagon", "doubleoctagon");
-    private static final DotShape TRIPLE_OCTAGON = new DotShape("Tpl Octagon", "tripleoctagon");
-    private static final DotShape INV_TRIANGLE = new DotShape("Inv Triangle", "invtriangle");
-    private static final DotShape INV_TRAPEZOID = new DotShape("Inv Trapezoid", "invtrapezium");
-    private static final DotShape INV_HOUSE = new DotShape("Inv House", "invhouse");
-    private static final DotShape M_DIAMOND = new DotShape("Lined Diamond", "Mdiamond");
-    private static final DotShape M_SQUARE = new DotShape("Lined Square", "Msquare");
-    private static final DotShape M_CIRCLE = new DotShape("Lined Circle", "Mcircle");
-
+    public static final DotShape ELLIPSE = new DotShape("Ellipse", "ellipse", VizShape.ELLIPSE);
+    public static final DotShape BOX = new DotShape("Box", "box", VizShape.BOX);
+    public static final DotShape CIRCLE = new DotShape("Circle", "circle", VizShape.CIRCLE);
+    private static final DotShape EGG = new DotShape("Egg", "egg", VizShape.EGG);
+    private static final DotShape TRIANGLE = new DotShape("Triangle", "triangle", VizShape.TRIANGLE);
+    private static final DotShape DIAMOND = new DotShape("Diamond", "diamond", VizShape.DIAMOND);
+    private static final DotShape TRAPEZOID = new DotShape("Trapezoid", "trapezium", VizShape.TRAPEZOID);
+    private static final DotShape PARALLELOGRAM = new DotShape("Parallelogram", "parallelogram", VizShape.PARALLELOGRAM);
+    private static final DotShape HOUSE = new DotShape("House", "house", VizShape.HOUSE);
+    private static final DotShape HEXAGON = new DotShape("Hexagon", "hexagon", VizShape.HEXAGON);
+    private static final DotShape OCTAGON = new DotShape("Octagon", "octagon", VizShape.OCTAGON);
+    private static final DotShape DOUBLE_CIRCLE = new DotShape("Dbl Circle", "doublecircle", VizShape.DOUBLE_CIRCLE);
+    private static final DotShape DOUBLE_OCTAGON = new DotShape("Dbl Octagon", "doubleoctagon", VizShape.DOUBLE_OCTAGON);
+    private static final DotShape TRIPLE_OCTAGON = new DotShape("Tpl Octagon", "tripleoctagon", VizShape.TRIPLE_OCTAGON);
+    private static final DotShape INV_TRIANGLE = new DotShape("Inv Triangle", "invtriangle", VizShape.INV_TRIANGLE);
+    private static final DotShape INV_TRAPEZOID = new DotShape("Inv Trapezoid", "invtrapezium", VizShape.INV_TRAPEZOID);
+    private static final DotShape INV_HOUSE = new DotShape("Inv House", "invhouse", VizShape.INV_HOUSE);
+    private static final DotShape M_DIAMOND = new DotShape("Lined Diamond", "Mdiamond", VizShape.M_DIAMOND);
+    private static final DotShape M_SQUARE = new DotShape("Lined Square", "Msquare", VizShape.M_SQUARE);
+    private static final DotShape M_CIRCLE = new DotShape("Lined Circle", "Mcircle", VizShape.M_CIRCLE);
 
     /** Initialize values. */
     static {
@@ -109,9 +109,12 @@ public final class DotShape extends DotAttribute {
      * @param displayedText - the label to show when the user selects a style from a combobox
      * @param dotText - the actual attribute that we will write into the DOT file
      */
-    private DotShape(String displayedText, String dotText) {
+    private DotShape(String displayedText, String dotText, VizShape vizShape) {
         super(displayedText, dotText, OurUtil.loadIcon("icons/ShapeIcons/"+dotText+".gif"));
+        this.vizShape=vizShape;
     }
+
+    public final VizShape vizShape;
 
     /** Returns the default value. */
     public static DotShape getDefault() { return ELLIPSE; }

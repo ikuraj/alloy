@@ -26,6 +26,8 @@ import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -48,6 +50,7 @@ import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4graph.VizViewer;
 
 /**
  * GUI panel that houses the actual graph, as well as any projection comboboxes.
@@ -65,6 +68,9 @@ public final class VizGraphPanel extends JPanel {
 
     /** Whether the user wants to see the DOT source code or not. */
     private boolean seeDot=false;
+
+    /** The current VizViewer (or null if we are not looking at a VizViewer) */
+    private VizViewer viewer=null;
 
     /** The scrollpane containing the upperhalf of the panel (showing the graph) */
     private final JScrollPane diagramScrollPanel;
@@ -193,6 +199,13 @@ public final class VizGraphPanel extends JPanel {
         graphPanel.setOpaque(true);
         graphPanel.setBorder(null);
         graphPanel.setBackground(Color.WHITE);
+        graphPanel.addMouseListener(new MouseListener() {
+            public void mouseClicked(MouseEvent ev) { }
+            public void mouseEntered(MouseEvent ev) { }
+            public void mouseExited(MouseEvent ev) { }
+            public void mousePressed(MouseEvent ev) { if (viewer!=null) viewer.do_popup(graphPanel, ev.getX(), ev.getY()); }
+            public void mouseReleased(MouseEvent ev) { }
+        });
         diagramScrollPanel = new JScrollPane(graphPanel);
         diagramScrollPanel.setBorder(new OurBorder(true,true,true,false));
         split = OurUtil.splitpane(JSplitPane.VERTICAL_SPLIT, diagramScrollPanel, navscroll, 0);
@@ -218,18 +231,28 @@ public final class VizGraphPanel extends JPanel {
         }
         currentProjection=new AlloyProjection(map);
         JPanel graph=vizState.getGraph(currentProjection).b;
-        graph.setBackground(Color.WHITE);
         if (seeDot && (graph instanceof GrappaPanel)) {
+            viewer=null;
             final JTextArea t = OurUtil.textarea(((GrappaPanel)graph).annotation, 10, 10);
             t.setBackground(Color.WHITE);
             t.setEditable(false);
             t.setLineWrap(true);
             t.setWrapStyleWord(true);
             diagramScrollPanel.setViewportView(t);
+        } else if (seeDot && (graph instanceof VizViewer)) {
+            viewer=null;
+            final JTextArea t = OurUtil.textarea(((VizViewer)graph).do_getAnnotation(), 10, 10);
+            t.setBackground(Color.WHITE);
+            t.setEditable(false);
+            t.setLineWrap(true);
+            t.setWrapStyleWord(true);
+            diagramScrollPanel.setViewportView(t);
         } else {
+            if (graph instanceof VizViewer) viewer=(VizViewer)graph; else viewer=null;
             graphPanel.removeAll();
             graphPanel.add(graph);
             diagramScrollPanel.setViewportView(graphPanel);
+            diagramScrollPanel.invalidate(); diagramScrollPanel.repaint(); diagramScrollPanel.validate();
         }
     }
 

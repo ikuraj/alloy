@@ -298,12 +298,6 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         public static VisualizerMode get() { return parse(Preferences.userNodeForPackage(Util.class).get("VisualizerMode","")); }
     };
 
-    /**
-     * The default directory for AlloyAnalyzer and AlloyVisualizer's "open"/"save" command.
-     * NOTE: we intentionally use the same key "Dir" as the other Alloy4 components to make sure they use the same current directory.
-     */
-    private static final StringPref Dir = new StringPref("Dir");
-
     /** The latest X corrdinate of the Alloy Visualizer window. */
     private static final IntPref VizX = new IntPref("VizX",0,-1,65535);
 
@@ -828,9 +822,9 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     public boolean run(final int key) {
 
         if (key==ev_loadInstance) {
-            File file=OurDialog.askFile(frame, true, Dir.get(), ".xml", ".xml instance files");
+            File file=OurDialog.askFile(frame, true, null, ".xml", ".xml instance files");
             if (file==null) return false;
-            Dir.set(file.getParent());
+            Util.setCurrentDirectory(file.getParentFile());
             run(evs_loadInstanceForcefully, file.getPath());
         }
 
@@ -866,9 +860,9 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 if (opt==null) return false;
                 if (opt.booleanValue() && !run(ev_saveTheme)) return false;
             }
-            File file=OurDialog.askFile(frame, true, (key==ev_loadTheme ? Dir.get() : defaultTheme), ".thm", ".thm theme files");
+            File file=OurDialog.askFile(frame, true, (key==ev_loadTheme ? null : defaultTheme), ".thm", ".thm theme files");
             if (file==null) return false;
-            if (key==ev_loadTheme) Dir.set(file.getParent());
+            if (key==ev_loadTheme) Util.setCurrentDirectory(file.getParentFile());
             return run(evs_loadTheme, file.getPath());
         }
 
@@ -881,18 +875,18 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         }
 
         if (key==ev_saveThemeAs) {
-            File file=OurDialog.askFile(frame, false, Dir.get(), ".thm", ".thm theme files");
+            File file=OurDialog.askFile(frame, false, null, ".thm", ".thm theme files");
             if (file==null) return false;
             if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return false;
-            Dir.set(file.getParent());
+            Util.setCurrentDirectory(file.getParentFile());
             return run(evs_saveTheme, file.getPath());
         }
 
         if (key==ev_saveThemeAsTS) {
-            File file=OurDialog.askFile(frame, false, Dir.get(), ".tab", ".tab tab-delimited theme files");
+            File file=OurDialog.askFile(frame, false, null, ".tab", ".tab tab-delimited theme files");
             if (file==null) return false;
             if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return false;
-            Dir.set(file.getParent());
+            Util.setCurrentDirectory(file.getParentFile());
             return run(evs_saveThemeTS, file.getPath());
         }
 

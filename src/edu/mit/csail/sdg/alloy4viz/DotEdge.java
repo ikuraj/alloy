@@ -20,11 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-//import java.util.Map;
-//import dot.Dot;
-//import dot.Dot.Agedge_t_;
-//import dot.Dot.Agnode_t_;
-//import dot.Dot.Agraph_t_;
+import edu.mit.csail.sdg.alloy4graph.VizEdge;
+import edu.mit.csail.sdg.alloy4graph.VizNode;
 
 /**
  * Immutable; this represents an edge to be written out to the DOT file.
@@ -87,23 +84,16 @@ public final class DotEdge {
         this.constraint = constraint;
     }
 
-//    public Agedge_t_ write(Dot dot, Agraph_t_ dotgraph, Map<Integer,Agnode_t_> dotmap,
-//            int iLabel, int iColor, int iFontColor, int iStyle, int iDir, int iWeight, int iConstraint,
-//            DotPalette pal) {
-//        Agnode_t_ a=dotmap.get(from.getID()), b=dotmap.get(to.getID());
-//        if (a==null) dotmap.put(from.getID(), a=dot.agnode(dotgraph, Dot.C("N"+from.getID())));
-//        if (b==null) dotmap.put(to.getID(), b=dot.agnode(dotgraph, Dot.C("N"+to.getID())));
-//        Agedge_t_ x=dot.agedge(dotgraph,a,b);
-//        //System.err.printf("agedge(g,N%d,N%d);\n",from.getID(),to.getID());
-//        dot.agxset(x, iColor, Dot.C(color.getDotText(pal)));
-//        dot.agxset(x, iFontColor, Dot.C(color.getDotText(pal)));
-//        dot.agxset(x, iStyle, Dot.C(style.getDotText(pal)));
-//        dot.agxset(x, iLabel, Dot.C(label));
-//        dot.agxset(x, iDir, Dot.C(dir.getDotText(pal)));
-//        dot.agxset(x, iConstraint, Dot.C(constraint?"true":"false"));
-//        if (weight!=0) dot.agxset(x, iWeight, Dot.C(""+weight));
-//        return x;
-//    }
+    /** Write this edge (using the given Edge palette) into a StringBuilder as if writing to a DOT file. */
+    public void write2(VizNode from, VizNode to, DotPalette pal) {
+        VizEdge e;
+        if (dir==DotDirection.FORWARD) e=new VizEdge(from,to).set(false,true);
+           else if (dir==DotDirection.BACK) e=new VizEdge(to,from).set(true,false);
+           else e=new VizEdge(from,to).set(true,true);
+        e.set(DotColor.name2color(color.getDotText(pal))).set(style.vizStyle).set(weight);
+        //TODO out.append(", label = \"" + esc(label) + "\"");
+        //TODO out.append(", constraint = \"" + (constraint?"true":"false") + "\"");
+    }
 
     /** Write this edge (using the given Edge palette) into a StringBuilder as if writing to a DOT file. */
     public void write(StringBuilder out, DotPalette pal) {

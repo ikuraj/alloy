@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import edu.mit.csail.sdg.alloy4.OurUtil;
+import edu.mit.csail.sdg.alloy4graph.VizStyle;
 
 /**
  * Immutable; this defines the set of line styles that dot can produce.
@@ -36,10 +37,10 @@ public final class DotStyle extends DotAttribute {
     /** The list of values that the user can select from a combobox. */
     private static final List<Object> values;
 
-    public static final DotStyle SOLID = new DotStyle("Solid", "solid", "icons/StyleIcons/solid.gif");
-    public static final DotStyle DASHED = new DotStyle("Dashed", "dashed", "icons/StyleIcons/dashed.gif");
-    public static final DotStyle DOTTED = new DotStyle("Dotted", "dotted", "icons/StyleIcons/dotted.gif");
-    public static final DotStyle BOLD = new DotStyle("Bold", "bold", "icons/StyleIcons/bold.gif");
+    public static final DotStyle SOLID = new DotStyle("Solid", "solid", "icons/StyleIcons/solid.gif", VizStyle.SOLID);
+    public static final DotStyle DASHED = new DotStyle("Dashed", "dashed", "icons/StyleIcons/dashed.gif", VizStyle.DASHED);
+    public static final DotStyle DOTTED = new DotStyle("Dotted", "dotted", "icons/StyleIcons/dotted.gif", VizStyle.DOTTED);
+    public static final DotStyle BOLD = new DotStyle("Bold", "bold", "icons/StyleIcons/bold.gif", VizStyle.BOLD);
 
     static {
         List<Object> list = new ArrayList<Object>();
@@ -56,9 +57,12 @@ public final class DotStyle extends DotAttribute {
      * @param dotText - the actual attribute that we will write into the DOT file
      * @param icon - the icon to use for this
      */
-    private DotStyle(String displayedText, String dotText, String icon) {
+    private DotStyle(String displayedText, String dotText, String icon, VizStyle vizStyle) {
         super(displayedText, dotText, OurUtil.loadIcon(icon));
+        this.vizStyle=vizStyle;
     }
+
+    public final VizStyle vizStyle;
 
     /** Returns the default value. */
     public static DotStyle getDefault() { return SOLID; }

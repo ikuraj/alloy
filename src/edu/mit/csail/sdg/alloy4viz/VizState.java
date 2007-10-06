@@ -203,9 +203,9 @@ public final class VizState {
             ans=new Pair<String,JPanel>("",new JPanel());
             ans.b.setLayout(new BorderLayout());
             ans.b.add(scroll, BorderLayout.CENTER);
+            ans.b.setBackground(Color.WHITE);
         }
         ans.b.setBorder(null);
-        ans.b.setBackground(Color.WHITE);
         return ans;
     }
 

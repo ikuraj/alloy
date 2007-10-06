@@ -24,6 +24,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+/** This class implements the automatic visualization inference. */
+
 final class MagicColour {
 
     /** This method logs the progress */
