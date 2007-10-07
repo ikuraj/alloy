@@ -459,6 +459,10 @@ public final class VizNode extends DiGraph.DiNode {
           }
           case EGG:
           case ELLIPSE: {
+             int pad = ad/2;
+             side+=pad;
+             up+=pad;
+             down+=pad;
              int d = (shape==VizShape.ELLIPSE) ? 0 : (ad/2);
              GeneralPath path=new GeneralPath();
              path.moveTo(-side,d);

@@ -198,7 +198,7 @@ public final class VizEdge extends DiGraph.DiEdge {
           fan=(style==VizStyle.BOLD?bigFan:smallFan); gr.setColor(color); style.set(gr,scale);
        }
        // Now, draw the arrow heads if needed
-       double tip = (gr.getFontMetrics().getMaxAscent()+gr.getFontMetrics().getMaxDescent()) / scale * 0.66D; // Length of arrow head
+       double tip = (gr.getFontMetrics().getMaxAscent()+gr.getFontMetrics().getMaxDescent()) / scale * 0.6D; // Length of arrow head
        int n = path.getPoints();
        if (ahead && a().shape()!=null) {
           double ax=path.getX(0), ay=path.getY(0), bx=path.getX(1), by=path.getY(1);
