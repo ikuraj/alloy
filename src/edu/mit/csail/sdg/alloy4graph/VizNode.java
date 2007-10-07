@@ -102,7 +102,7 @@ public final class VizNode extends DiGraph.DiNode {
        }
     }
 
-    // =============================== configurable settings =============================================
+    // =============================== per-node settings ==================================================
 
     /** The X coordinate of the center of the text labels. */
     private int textX = 0;
@@ -250,6 +250,12 @@ public final class VizNode extends DiGraph.DiNode {
     /** Returns the node width. */
     public int getWidth()  { if (up<0) calcBounds(); return side+side; }
 
+    /** Returns the amount of space we need to reserve on the right hand side for the self edges (0 if this has no self edges now) */
+    public int getReserved() {
+        int n=selfEdges().size();
+        if (n==0) return 0; else return VizEdge.selfLoopMinWidth + VizEdge.selfLoopXGap*(n-1);
+    }
+
     /** Returns true if the given point intersects this node or not. */
     public boolean intersects(double x, double y) {
         if (shape==null) return false;
@@ -319,6 +325,15 @@ public final class VizNode extends DiGraph.DiNode {
           ans.y=ry+textY;
           return;
        }
+    }
+
+    /** Return the horizontal point of intersection of this node with a horizontal ray at height y going from this.x() rightward. */
+    public double intersectsAtHeight(double y) {
+       if (shape==null) return 0;
+       if (up<0) calcBounds();
+       y=y-textY;
+       double x;
+       for(x=0;;x=x+1) if (!poly.contains(x,y)) return x+textX;
     }
 
     //===================================================================================================

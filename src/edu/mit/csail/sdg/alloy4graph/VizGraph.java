@@ -251,11 +251,11 @@ public final class VizGraph extends DiGraph {
        int i=1;
        while(true) {
           Block b = block[i];
-          double tmp = b.posn + (nodes.get(b.first-1).getWidth() + xJump)/2D;
+          double tmp = b.posn + (nodes.get(b.first-1).getWidth() + nodes.get(b.first-1).getReserved() + xJump)/2D;
           nodes.get(i-1).setX((int)tmp);
           for(i=i+1; i<=b.last; i++) {
-             VizNode v1=nodes.get(i-1);
-             VizNode v2=nodes.get(i-2);
+             VizNode v1 = nodes.get(i-1);
+             VizNode v2 = nodes.get(i-2);
              v1.setX(v2.x() + xsep(v1,v2));
           }
           i=b.last+1;
@@ -264,7 +264,9 @@ public final class VizGraph extends DiGraph {
     }
 
     /** This computes the xsep() value as described in the paper. */
-    private static int xsep(VizNode a, VizNode b) { return (a.getWidth() + b.getWidth())/2 + xJump; }
+    private static int xsep(VizNode a, VizNode b) {
+        return (a.getWidth() + a.getReserved() + b.getWidth() + b.getReserved())/2 + xJump;
+    }
 
     /** This computes the des() value as described in the paper. */
     private static double des(VizNode n) {
@@ -294,7 +296,7 @@ public final class VizGraph extends DiGraph {
        private double width, posn, wposn;
        /** This constructs a regular block. */
        public Block(VizNode v, int i) {
-          first=i; last=i; width=v.getWidth()+xJump; posn=des(v)-(width/2); weight=wt(v); wposn=weight*posn;
+          first=i; last=i; width=v.getWidth()+v.getReserved()+xJump; posn=des(v)-(width/2); weight=wt(v); wposn=weight*posn;
        }
        /** This merges the two existing blocks into a new block. */
        public Block(Block a, Block b) {
@@ -390,7 +392,7 @@ public final class VizGraph extends DiGraph {
               int nHeight = n.getHeight(), nWidth = n.getWidth();
               n.setX(x + nWidth/2);
               if (h < nHeight) h = nHeight;
-              x = x + nWidth + 20;
+              x = x + nWidth + n.getReserved() + 20;
            }
            layerPH[layer] = h;
         }
@@ -405,18 +407,18 @@ public final class VizGraph extends DiGraph {
         int minX = (int) (nodes.get(0).x() - nodes.get(0).getWidth()/2 - 5);
         int maxX = (int) (nodes.get(0).x() + nodes.get(0).getWidth()/2 + 5);
         for(VizNode n:nodes) {
-            int min = (int) (n.x() - n.getWidth()/2 - 5); if (minX>min) minX=min;
-            int max = (int) (n.x() + n.getWidth()/2 + 5); if (maxX<max) maxX=max;
+            int min = (int) (n.x() - n.getWidth()/2                   - 5); if (minX>min) minX=min;
+            int max = (int) (n.x() + n.getWidth()/2 + n.getReserved() + 5); if (maxX<max) maxX=max;
         }
         for(VizNode n:nodes) n.setX(n.x() - minX);
 
         // Calculate each node's y, and figure out the total width and total height
         int py=5; // So that we are not touching the top-edge of the window
         for(int layer=layers-1; layer>=0; layer--) {
-            final int ph = layerPH[layer];
-            for(VizNode n:layer(layer)) n.setY(py + ph/2 - n.getHeight()/2 + n.getUp());
-            py = py + ph + yJump/2;
-            py = py + yJump/2;
+           final int ph = layerPH[layer];
+           for(VizNode n:layer(layer)) n.setY(py + ph/2 - n.getHeight()/2 + n.getUp());
+           py = py + ph + yJump/2;
+           py = py + yJump/2;
         }
         totalHeight=py;
         totalWidth=maxX-minX;
@@ -435,15 +437,26 @@ public final class VizGraph extends DiGraph {
         // Now, for each edge that has an arrow head, move it to the right place
         Point2D.Double ans = new Point2D.Double();
         for(VizEdge e:edges) {
-            VizPath p=e.path();
-            if (e.ahead() && e.a().shape()!=null) {
-                e.a().intersectsNonhorizontalRay(p.getX(1), p.getY(1), ans);
-                p.move(0, ans.x, ans.y);
-            }
-            if (e.bhead() && e.b().shape()!=null) {
-                e.b().intersectsNonhorizontalRay(p.getX(p.getPoints()-2), p.getY(p.getPoints()-2), ans);
-                p.move(p.getPoints()-1, ans.x, ans.y);
-            }
+           VizPath p=e.path();
+           if (e.a()==e.b()) {
+              if (e.ahead() && e.a().shape()!=null) {
+                 double y=p.getY(0), x=e.a().intersectsAtHeight(y);
+                 p.move(0, x, y);
+              }
+              if (e.bhead() && e.b().shape()!=null) {
+                 double y=p.getY(p.getPoints()-1), x=e.a().intersectsAtHeight(y);
+                 p.move(p.getPoints()-1, x, y);
+              }
+           } else {
+              if (e.ahead() && e.a().shape()!=null) {
+                 e.a().intersectsNonhorizontalRay(p.getX(1), p.getY(1), ans);
+                 p.move(0, ans.x, ans.y);
+              }
+              if (e.bhead() && e.b().shape()!=null) {
+                 e.b().intersectsNonhorizontalRay(p.getX(p.getPoints()-2), p.getY(p.getPoints()-2), ans);
+                 p.move(p.getPoints()-1, ans.x, ans.y);
+              }
+           }
         }
     }
 
@@ -460,8 +473,11 @@ public final class VizGraph extends DiGraph {
         }
         // Since drawing an edge will automatically draw all segments if they're connected via dummy nodes,
         // we must make sure we only draw out edges from non-dummy-nodes
-        for(VizNode n:nodes) if (n.shape()!=null) for(VizEdge e:n.outEdges()) if (e!=highFirstEdge) e.draw(gr, scale, false);
-        if (highFirstEdge!=null && highFirstEdge.a()!=highFirstEdge.b()) highFirstEdge.draw(gr, scale, true);
+        for(VizNode n:nodes) if (n.shape()!=null) {
+            for(VizEdge e:n.outEdges())  if (e!=highFirstEdge) e.draw(gr, scale, false);
+            for(VizEdge e:n.selfEdges()) if (e!=highFirstEdge) e.draw(gr, scale, false);
+        }
+        if (highFirstEdge!=null) highFirstEdge.draw(gr, scale, true);
         for(VizNode n:nodes) n.draw(gr, scale, highlight);
         for(VizEdge e:edges) if (e!=highFirstEdge && e!=highLastEdge) e.drawArrowhead(gr, scale, false);
         if (highFirstEdge!=null) highFirstEdge.drawArrowhead(gr, scale, true);
@@ -473,7 +489,7 @@ public final class VizGraph extends DiGraph {
     /* This is a test driver. */
     public static final void main(String[] args) {
         final VizGraph gr = new VizGraph();
-        VizNode n0 = new VizNode(gr, "N0").set(VizShape.BOX).set(Color.RED);
+        VizNode n0 = new VizNode(gr, "N0").set(VizShape.CIRCLE).set(Color.RED);
         VizNode n1 = new VizNode(gr, "N1").set(VizShape.BOX).set(Color.LIGHT_GRAY).setFontBoldness(true);
         VizNode n2 = new VizNode(gr, "N2").set(VizShape.BOX).set(Color.YELLOW);
         VizNode n3 = new VizNode(gr, "N3").set(VizShape.HOUSE).set(Color.GREEN);
@@ -483,6 +499,14 @@ public final class VizGraph extends DiGraph {
         for(VizShape s:VizShape.values()) {
            String n=s.toString();
            b=new VizNode(gr,n).set(s).set(Color.YELLOW).set(VizStyle.SOLID);
+           new VizEdge(b,b);
+           new VizEdge(b,b);
+           new VizEdge(b,b);
+           new VizEdge(b,b);
+           new VizEdge(b,b);
+           new VizEdge(b,b);
+           new VizEdge(b,b);
+           new VizEdge(b,b);
            if (a==null) a=b; else if (k<4) { new VizEdge(a,b); a=b; k++; } else { k=0; a=b; }
         }
         new VizEdge(n0, n1).set(Color.RED);
@@ -492,6 +516,7 @@ public final class VizGraph extends DiGraph {
         new VizEdge(n2, n1).set(VizStyle.DASHED);
         new VizEdge(n3, n1);
         new VizEdge(n0, n0);
+        new VizEdge(n2, n2);
         final JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());

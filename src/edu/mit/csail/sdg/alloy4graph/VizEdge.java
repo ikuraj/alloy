@@ -24,6 +24,8 @@ import static java.awt.Color.BLACK;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Line2D;
+import java.awt.geom.QuadCurve2D;
 
 /**
  * Mutable; represents a graphical edge.
@@ -32,6 +34,19 @@ import java.awt.geom.GeneralPath;
  */
 
 public final class VizEdge extends DiGraph.DiEdge {
+
+    // =============================== adjustable options ==================================================
+
+    /** This determines the minimum width of a self loop. */
+    static final int selfLoopMinWidth = 20;
+
+    /** This determines how much farther to the right you need to go, for each subsequent self loop on the same node. */
+    static final int selfLoopXGap = 10;
+
+    /** This determines the prefered vertical gap between self loops. */
+    static final int selfLoopYGap = 10;
+
+    // =============================== per-edge settings ===================================================
 
     /** Whether to draw an arrow head on the "from" node; default is false. */
     private boolean ahead = false;
@@ -111,7 +126,19 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** Reset the path as a straightline from the center of the "from" node to the center of the "to" node. */
     void resetPath() {
         VizNode a=a(), b=b();
-        this.path=new VizPath(a.x(), a.y()-a.getUp()+a.getHeight()/2, b.x(), b.y()-b.getUp()+b.getHeight()/2);
+        double ax=a.x(), ay=a.y()-a.getUp()+a.getHeight()/2;
+        if (a==b) {
+           int i, n=a.selfEdges().size(), q=selfLoopMinWidth, d=selfLoopXGap;
+           for(i=0; i<n; i++) if (a.selfEdges().get(i)==this) break;
+           double p=a.getHeight()/(2*n+1D);
+           if (!(p<=selfLoopYGap)) p=selfLoopYGap;
+           p=i*p+(p/2D);
+           path=new VizPath(ax, ay-p, ax, ay+p);
+           path.add(1, ax+a.getWidth()/2+q+i*d, ay-p);
+           path.add(2, ax+a.getWidth()/2+q+i*d, ay+p);
+        } else {
+           path=new VizPath(ax, ay, b.x(), b.y()-b.getUp()+b.getHeight()/2);
+        }
     }
 
     /** Returns the current path; if the path was not yet assigned, it returns a straight line from "from" node to "to" node. */
@@ -128,32 +155,39 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     /** Returns true iff the edge intersects the given point (px,py), given the current zoom scale. */
     public boolean intersects(double px, double py, double scale) {
-        if (a() == b()) return false;
         double fudge=10/scale; // we enlarge (px,py) into a square of size (fudge*2) x (fudge*2) when testing for intersection
         return path.intersectsVertical(px, py-fudge, py+fudge, null)>=0 || path.intersectsHorizontal(px-fudge, px+fudge, py);
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
     public void draw(Graphics2D gr, double scale, boolean highlight) {
-       if (a()==b()) return;
        if (highlight) { gr.setColor(Color.RED); VizStyle.BOLD.set(gr,scale); } else { gr.setColor(color); style.set(gr, scale); }
-       // Concatenate this path and its connected segments into a single VizPath object
-       VizPath p=null;
-       VizEdge e=this;
-       while(e.a().shape()==null) e=e.a().inEdges().get(0); // Let e points to the first segment of this chain of connected segments
-       while(true) {
-          p = (p==null) ? e.path : new VizPath(p, e.path);
-          if (e.b().shape()!=null) break;
-          e = e.b().outEdges().get(0);
+       if (a()==b()) {
+          // Draw the self edge
+          double x0=path.getX(0), y0=path.getY(0), x1=path.getX(1), y1=y0, x2=x1, y2=path.getY(2), x3=path.getX(3), y3=y2;
+          double gap=(y2-y1)/3; if (!(gap<5D)) gap=5D;
+          gr.draw(new Line2D.Double(x0, y0, x1-5, y1));
+          gr.draw(new QuadCurve2D.Double(x1-5, y1, x1, y1, x1, y1+gap));
+          gr.draw(new Line2D.Double(x1, y1+gap, x2, y2-gap));
+          gr.draw(new QuadCurve2D.Double(x2, y2-gap, x2, y2, x2-5, y2));
+          gr.draw(new Line2D.Double(x2-5, y2, x3, y3));
+       } else {
+          // Concatenate this path and its connected segments into a single VizPath object, then draw it
+          VizPath p=null;
+          VizEdge e=this;
+          while(e.a().shape()==null) e=e.a().inEdges().get(0); // Let e be the first segment of this chain of connected segments
+          while(true) {
+             p = (p==null) ? e.path : new VizPath(p, e.path);
+             if (e.b().shape()!=null) break;
+             e = e.b().outEdges().get(0);
+          }
+          p.draw(gr);
        }
-       // Now draw the combined VizPath
-       p.draw(gr);
        VizStyle.SOLID.set(gr,scale);
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
     public void drawArrowhead(Graphics2D gr, double scale, boolean highlight) {
-       if (a()==b()) return;
        // Return if there are no arrow heads to draw
        if (!ahead || a().shape()==null) if (!bhead || b().shape()==null) return;
        // Check to see if this edge is highlighted or not
@@ -164,7 +198,7 @@ public final class VizEdge extends DiGraph.DiEdge {
           fan=(style==VizStyle.BOLD?bigFan:smallFan); gr.setColor(color); style.set(gr,scale);
        }
        // Now, draw the arrow heads if needed
-       int tip = (gr.getFontMetrics().getMaxAscent()+gr.getFontMetrics().getMaxDescent()) * 2 / 3; // Length of arrow head
+       double tip = (gr.getFontMetrics().getMaxAscent()+gr.getFontMetrics().getMaxDescent()) / scale * 0.66D; // Length of arrow head
        int n = path.getPoints();
        if (ahead && a().shape()!=null) {
           double ax=path.getX(0), ay=path.getY(0), bx=path.getX(1), by=path.getY(1);
