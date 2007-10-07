@@ -161,8 +161,17 @@ public final class VizNode extends DiGraph.DiNode {
     /** Returns the node shape (or null if the node is a dummy node). */
     public VizShape shape() { return shape; }
 
-    /** Add the given label, then invalidate the computed bounds. */
-    public VizNode add(String label) {
+    /** Add the given label to the start of the labels, then invalidate the computed bounds. */
+    public VizNode addBefore(String label) {
+        if (label==null || label.length()==0) return this;
+        if (labels==null) labels=new ArrayList<String>();
+        labels.add(0,label);
+        up=(-1);
+        return this;
+    }
+
+    /** Add the given label after the existing labels, then invalidate the computed bounds. */
+    public VizNode addAfter(String label) {
         if (label==null || label.length()==0) return this;
         if (labels==null) labels=new ArrayList<String>();
         labels.add(label);

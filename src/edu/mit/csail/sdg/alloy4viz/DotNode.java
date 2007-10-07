@@ -64,7 +64,7 @@ public final class DotNode {
 
     public VizNode write2(DiGraph dotgraph, Set<String> attribs, DotPalette pal) {
         VizNode n = new VizNode(dotgraph, label);
-        if (attribs!=null) for (String a:attribs) if (a.length()>0) n.add(a);
+        if (attribs!=null) for (String a:attribs) if (a.length()>0) n.addAfter(a);
         n.set(DotColor.name2color(color.getDotText(pal))).set(shape.vizShape).set(style.vizStyle);
         return n;
     }

@@ -387,6 +387,18 @@ public final class VizGraph extends DiGraph {
         // Calculate each node's width and height
         for(VizNode n:nodes) n.calcBounds();
 
+        // If a node has too many self-edges, we add blank labels to the node's label until there is a reasonable vertical gap.
+        for(VizNode n:nodes) {
+           int num=n.selfEdges().size();
+           while(true) {
+             double y=n.getHeight()/(1D+2*num);
+             if (!(y<VizEdge.selfLoopYGap)) break;
+             n.addBefore(" ");
+             n.addAfter(" ");
+             n.calcBounds();
+           }
+        }
+
         // Layout the nodes
         layout_remoteMultiEdges();
         layout_assignOrder();
