@@ -177,6 +177,20 @@ public final class VizGraph extends DiGraph {
        }
        // Now, we simply do the simplest thing: assign each node to the layer corresponding to its max-length-to-sink.
        for(VizNode x:nodes) x.setLayer(len[x.pos()]);
+       // Now, apply a simple trick: whenever every one of X's incoming edge is more than one layer above, then move X up
+       while(true) {
+         boolean changed=false;
+         for(VizNode x:nodes) if (x.inEdges().size()>0) {
+            int closestLayer=layers()+1;
+            for(VizEdge e:x.inEdges()) {
+               int y=e.a().layer();
+               if (closestLayer>y) closestLayer=y;
+            }
+            if (closestLayer-1>x.layer()) { x.setLayer(closestLayer-1); changed=true; }
+         }
+         if (!changed) break;
+       }
+       // All done!
        return layers();
     }
 
