@@ -521,9 +521,11 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         JComponent content;
         frame.setTitle(makeVizTitle());
         switch (currentMode) {
+           case Plugin0:
+           case Tree:
+               if (currentMode!=VisualizerMode.Tree) runPlugin(myState);
+               content=StaticTreeMaker.makeTree(myState.getOriginalInstance(), makeVizTitle(), myState); break;
            case XML: content=getTextComponent(xmlFileName); break;
-           case Plugin0: runPlugin(myState); // Intentional Fall Thru
-           case Tree: content=StaticTreeMaker.makeTree(myState.getOriginalInstance(), makeVizTitle(), myState); break;
            case KInput: content=makeTextArea(myState.getOriginalInstance().kodkod_input); break;
            case KOutput: content=makeTextArea(myState.getOriginalInstance().kodkod_output); break;
            default:

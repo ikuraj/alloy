@@ -67,27 +67,27 @@ public final class VizGraph extends DiGraph {
     /** Convert multiedges into unique edges by inserting dummy nodes. */
     private void layout_remoteMultiEdges() {
        for(VizNode n:new ArrayList<VizNode>(nodes)) {
-      	  List<VizEdge> outs=n.outEdges();
-      	  for(int i=0; i<outs.size(); i++) {
-      		 VizEdge e1=outs.get(i);
-      		 VizNode n1=e1.b();
-      		 boolean multiedge=false;
-      		 for(int j=i+1; j<outs.size(); j++) {
-      			VizEdge e2=outs.get(j);
-      			VizNode n2=e2.b();
-      			if (n1==n2) {
-      			   n2=new VizNode(this).set((VizShape)null);
-      			   e2.changeB(n2);
-      			   new VizEdge(n2, n1, e2.ahead(), e2.bhead(), e2.style(), e2.color());
-      			   multiedge=true;
-      			}
-      		 }
-      		 if (multiedge) {
-      			VizNode n2=new VizNode(this).set((VizShape)null);
-      			e1.changeB(n2);
-      			new VizEdge(n2, n1, e1.ahead(), e1.bhead(), e1.style(), e1.color());
-      		 }
-      	  }
+          List<VizEdge> outs=n.outEdges();
+          for(int i=0; i<outs.size(); i++) {
+             VizEdge e1=outs.get(i);
+             VizNode n1=e1.b();
+             boolean multiedge=false;
+             for(int j=i+1; j<outs.size(); j++) {
+                VizEdge e2=outs.get(j);
+                VizNode n2=e2.b();
+                if (n1==n2) {
+                   n2=new VizNode(this).set((VizShape)null);
+                   e2.changeB(n2);
+                   new VizEdge(n2, n1, e2.ahead(), e2.bhead(), e2.style(), e2.color());
+                   multiedge=true;
+                }
+             }
+             if (multiedge) {
+                VizNode n2=new VizNode(this).set((VizShape)null);
+                e1.changeB(n2);
+                new VizEdge(n2, n1, e1.ahead(), e1.bhead(), e1.style(), e1.color());
+             }
+          }
        }
     }
 
@@ -312,7 +312,7 @@ public final class VizGraph extends DiGraph {
 
     /** For each edge coming out of this layer of nodes, add bends to it if it currently overlaps some nodes inappropriately. */
     private void checkUpperCollision(List<VizNode> top) {
-    	final int room=2; // This is how much we need to stay clear of a node's boundary
+        final int room=2; // This is how much we need to stay clear of a node's boundary
         for(int i=0; i<top.size(); i++) {
             VizNode a=top.get(i); double left=a.x()-a.getWidth()/2, right=a.x()-a.getWidth()/2;
             for(VizEdge e:a.outEdges()) {
@@ -339,7 +339,7 @@ public final class VizGraph extends DiGraph {
 
     /** For each edge going into this layer of nodes, add bends to it if it currently overlaps some nodes inappropriately. */
     private void checkLowerCollision(List<VizNode> bottom) {
-    	final int room=2; // This is how much we need to stay clear of a node's boundary
+        final int room=2; // This is how much we need to stay clear of a node's boundary
         for(int i=0; i<bottom.size(); i++) {
             VizNode b=bottom.get(i); double left=b.x()-b.getWidth()/2, right=b.x()-b.getWidth()/2;
             for(VizEdge e:b.inEdges()) {
