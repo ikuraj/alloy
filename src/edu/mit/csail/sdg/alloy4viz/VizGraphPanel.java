@@ -26,8 +26,8 @@ import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -199,12 +199,16 @@ public final class VizGraphPanel extends JPanel {
         graphPanel.setOpaque(true);
         graphPanel.setBorder(null);
         graphPanel.setBackground(Color.WHITE);
-        graphPanel.addMouseListener(new MouseListener() {
-            public void mouseClicked(MouseEvent ev) { }
-            public void mouseEntered(MouseEvent ev) { }
-            public void mouseExited(MouseEvent ev) { }
-            public void mousePressed(MouseEvent ev) { if (viewer!=null) viewer.do_popup(graphPanel, ev.getX(), ev.getY()); }
-            public void mouseReleased(MouseEvent ev) { }
+        graphPanel.addMouseListener(new MouseAdapter() {
+           @Override public void mousePressed(MouseEvent ev) {
+               // We let Ctrl+LeftClick bring up the popup menu, just like RightClick,
+               // since many Mac mouses do not have a right button.
+               if (viewer==null) return;
+               else if (ev.getButton()==MouseEvent.BUTTON3) { }
+               else if (ev.getButton()==MouseEvent.BUTTON1 && ev.isControlDown()) { }
+               else return;
+               viewer.do_popup(graphPanel, ev.getX(), ev.getY());
+           }
         });
         diagramScrollPanel = new JScrollPane(graphPanel);
         diagramScrollPanel.setBorder(new OurBorder(true,true,true,false));

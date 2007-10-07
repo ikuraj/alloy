@@ -90,7 +90,7 @@ public final class DotEdge {
         if (dir==DotDirection.FORWARD) e=new VizEdge(from,to).set(false,true);
            else if (dir==DotDirection.BACK) e=new VizEdge(to,from).set(true,false);
            else e=new VizEdge(from,to).set(true,true);
-        e.set(DotColor.name2color(color.getDotText(pal))).set(style.vizStyle).set(weight);
+        e.set(DotColor.name2color(color.getDotText(pal))).set(style.vizStyle).set(weight<1 ? 1 : (weight>100 ? 100 : weight));
         //TODO out.append(", label = \"" + esc(label) + "\"");
         //TODO out.append(", constraint = \"" + (constraint?"true":"false") + "\"");
     }
