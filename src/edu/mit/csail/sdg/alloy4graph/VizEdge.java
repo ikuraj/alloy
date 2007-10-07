@@ -23,6 +23,7 @@ package edu.mit.csail.sdg.alloy4graph;
 import static java.awt.Color.BLACK;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.GeneralPath;
 
 /**
  * Mutable; represents a graphical edge.
@@ -154,8 +155,10 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
     public void drawArrowhead(Graphics2D gr, double scale, Object highlight) {
-       // Check to see if this edge is highlighted or not
        if (a()==b()) return;
+       // Return if there are no arrow heads to draw
+       if (!ahead || a().shape()==null) if (!bhead || b().shape()==null) return;
+       // Check to see if this edge is highlighted or not
        VizEdge e=this;
        while(e.a().shape()==null) e=e.a().inEdges().get(0); // Let e points to the first segment of this chain of connected segments
        while(true) {
@@ -163,28 +166,29 @@ public final class VizEdge extends DiGraph.DiEdge {
           if (e.b().shape()!=null) { gr.setColor(color); style.set(gr,scale); break; }
           e = e.b().outEdges().get(0);
        }
+       // Now, draw the arrow heads if needed
+       final double fan = Math.toRadians(15); // the angle to fan out the arrow head
+       int tip = (gr.getFontMetrics().getMaxAscent()+gr.getFontMetrics().getMaxDescent()) * 2 / 3; // Length of arrow head
        int n = path.getPoints();
        if (ahead && a().shape()!=null) {
-          gr.fillOval((int)(path.getX(0)  -5), (int)(path.getY(0)  -5), 10, 10);
+          double ax=path.getX(0), ay=path.getY(0), bx=path.getX(1), by=path.getY(1);
+          double t=Math.PI+Math.atan2(ay-by, ax-bx);
+          double gx1 = ax + tip*Math.cos(t-fan), gy1 = ay + tip*Math.sin(t-fan);
+          double gx2 = ax + tip*Math.cos(t+fan), gy2 = ay + tip*Math.sin(t+fan);
+          GeneralPath gp=new GeneralPath();
+          gp.moveTo((float)gx1,(float)gy1); gp.lineTo((float)ax,(float)ay); gp.lineTo((float)gx2, (float)gy2);
+          gp.closePath();
+          gr.fill(gp);
        }
        if (bhead && b().shape()!=null) {
-          gr.fillOval((int)(path.getX(n-1)-5), (int)(path.getY(n-1)-5), 10, 10);
+          double ax=path.getX(n-2), ay=path.getY(n-2), bx=path.getX(n-1), by=path.getY(n-1);
+          double t=Math.PI+Math.atan2(by-ay, bx-ax);
+          double gx1 = bx + tip*Math.cos(t-fan), gy1 = by + tip*Math.sin(t-fan);
+          double gx2 = bx + tip*Math.cos(t+fan), gy2 = by + tip*Math.sin(t+fan);
+          GeneralPath gp=new GeneralPath();
+          gp.moveTo((float)gx1,(float)gy1); gp.lineTo((float)bx,(float)by); gp.lineTo((float)gx2, (float)gy2);
+          gp.closePath();
+          gr.fill(gp);
        }
-       /*
-       final double fan = Math.toRadians(18); // the angle to fan out the arrow head
-       int tip = (fm.getMaxAscent()+fm.getMaxDescent());
-       if (ahead && a.shape!=null) {
-          double t=Math.PI+Math.atan2(a.y-b.y, a.x-b.x);
-          double gx1 = a.x + tip*Math.cos(t-fan), gy1 = a.y + tip*Math.sin(t-fan);
-          double gx2 = a.x + tip*Math.cos(t+fan), gy2 = a.y + tip*Math.sin(t+fan);
-          GeneralPath gp=new GeneralPath(); gp.moveTo((float)gx1,(float)gy1); gp.lineTo(a.x, a.y); gp.lineTo((float)gx2, (float)gy2); gp.closePath(); gr.fill(gp);
-       }
-       if (bhead && b.shape!=null) {
-          double t=Math.PI+Math.atan2(b.y-a.y, b.x-a.x);
-          double gx1 = b.x + tip*Math.cos(t-fan), gy1 = b.y + tip*Math.sin(t-fan);
-          double gx2 = b.x + tip*Math.cos(t+fan), gy2 = b.y + tip*Math.sin(t+fan);
-          GeneralPath gp=new GeneralPath(); gp.moveTo((float)gx1,(float)gy1); gp.lineTo(b.x, b.y); gp.lineTo((float)gx2, (float)gy2); gp.closePath(); gr.fill(gp);
-       }
-       */
     }
 }
