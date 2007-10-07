@@ -27,6 +27,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.Shape;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -229,13 +230,13 @@ public final class VizNode extends DiGraph.DiNode {
     private int height;
 
     /** If (up>=0 and shape!=null), this is the bounding polygon. */
-    private Polygon poly;
+    private Shape poly;
 
     /** If (up>=0 and shape!=null and poly2!=null), then poly2 will also be drawn during the draw() method. */
-    private Polygon poly2;
+    private Shape poly2;
 
     /** If (up>=0 and shape!=null and poly3!=null), then poly3 will also be drawn during the draw() method. */
-    private Polygon poly3;
+    private Shape poly3;
 
     /** Returns the distance from the center of the text label to the top edge. */
     public int getUp() { if (up<0) calcBounds(); return up; }
@@ -259,16 +260,64 @@ public final class VizNode extends DiGraph.DiNode {
     /**
      * Find the point of intersection between this node and a given ray, and store the point of intersection into ans.
      * <p> The ray starts from this node's center, and goes through the point (rx,ry) given as arguments.
-     * <p> Note: this method may find the wrong point of intersection if the ray's slope is too flat.
+     * <p> Note: this method may find the wrong point of intersection if the ray is too horizontal.
      */
     public void intersectsNonhorizontalRay(double rx, double ry, Point2D.Double ans) {
+       if (shape==null) { ans.x=textX; ans.y=textY; return; }
+       if (up<0) calcBounds();
        // Shift the input argument to the center of this node
        rx=rx-textX; ry=ry-textY;
        double slope=rx/ry, step=(ry<0 ? -1 : 1);
+       // Use the radius to directly compute the intersection, if the shape is CIRCLE, M_CIRCLE, or DOUBLE_CIRCLE
+       if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
+          int hw=width/2, hh=height/2;
+          int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
+          if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
+          // x^2+y^2=radius^2  and x=y*slope, thus (1+slope^2)(y^2)=radius^2
+          ry=Math.sqrt((radius*radius)/(1+slope*slope)); if (step<0) ry=(-ry);
+          ans.x=ry*slope + textX;
+          ans.y=ry + textY;
+          return;
+       }
+       // Check for intersection
        for(ry=0;;ry=ry+step) {
           rx=ry*slope;
           if (poly.contains(rx, ry)) continue;
-          ans.x=rx+textX; ans.y=ry+textY; return;
+          ans.x=rx+textX;
+          ans.y=ry+textY;
+          return;
+       }
+    }
+
+    /**
+     * Find the point of intersection between this node and a given ray, and store the point of intersection into ans.
+     * <p> The ray starts from this node's center, and goes through the point (rx,ry) given as arguments.
+     * <p> Note: this method may find the wrong point of intersection if the ray is too vertical.
+     */
+    public void intersectsNonverticalRay(double rx, double ry, Point2D.Double ans) {
+       if (shape==null) { ans.x=textX; ans.y=textY; return; }
+       if (up<0) calcBounds();
+       // Shift the input argument to the center of this node
+       rx=rx-textX; ry=ry-textY;
+       double slope=ry/rx, step=(rx<0 ? -1 : 1);
+       // Use the radius to directly compute the intersection, if the shape is CIRCLE, M_CIRCLE, or DOUBLE_CIRCLE
+       if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
+          int hw=width/2, hh=height/2;
+          int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
+          if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
+          // x^2+y^2=radius^2  and y=x*slope, thus (1+slope^2)(x^2)=radius^2
+          rx=Math.sqrt((radius*radius)/(1+slope*slope)); if (step<0) rx=(-rx);
+          ans.y=rx*slope + textY;
+          ans.x=rx + textX;
+          return;
+       }
+       // Check for intersection
+       for(rx=0;;rx=rx+step) {
+          ry=rx*slope;
+          if (poly.contains(rx, ry)) continue;
+          ans.x=rx+textX;
+          ans.y=ry+textY;
+          return;
        }
     }
 
@@ -278,8 +327,9 @@ public final class VizNode extends DiGraph.DiNode {
     public void calcBounds() {
        width=2*labelPadding; if (width<dummyWidth) side=dummyWidth/2;
        height=width;         if (height<dummyHeight) down=(up=dummyHeight/2);
-       poly2=(poly3=null);
-       if (shape==null) { poly=null; return; } else if (poly!=null) { poly.reset(); } else { poly=new Polygon(); }
+       poly=(poly2=(poly3=null));
+       if (shape==null) return;
+       Polygon poly=new Polygon();
        updateCache(fontSize, fontBold);
        final Graphics2D gr = cachedGraphics;
        final FontMetrics fm = cachedFontMetrics;
@@ -376,8 +426,6 @@ public final class VizNode extends DiGraph.DiNode {
           case CIRCLE:
           case DOUBLE_CIRCLE: {
              int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
-             if (radius < hw) radius=hw; // should not be necessary, but just as a sanity check
-             if (radius < hh) radius=hh; // should not be necessary, but just as a sanity check
              if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
              int L = ((int) (radius / cos18))+2, a = (int) (L * sin36), b = (int) (L * cos36), c = (int) (radius * tan18);
              poly.addPoint(-L,0); poly.addPoint(-b,a); poly.addPoint(-c,L); poly.addPoint(c,L); poly.addPoint(b,a);
@@ -385,11 +433,22 @@ public final class VizNode extends DiGraph.DiNode {
              up=L; down=L; side=L;
              break;
           }
-          default: { // BOX EGG ELLIPSE
+          case EGG:
+          case ELLIPSE: {
+             int d = (shape==VizShape.ELLIPSE) ? 0 : (ad/2);
+             GeneralPath path=new GeneralPath();
+             path.moveTo(-side,d);
+             path.quadTo(-side,-up,0,-up); path.quadTo(side,-up,side,d); path.quadTo(side,up,0,up); path.quadTo(-side,up,-side,d);
+             path.closePath();
+             this.poly=path;
+             return; // We must return, since otherwise "this.poly" will be overwritten by the local variable "poly"
+          }
+          default: { // BOX
              if (shape!=VizShape.BOX) { int d=ad/2; hw=hw+d; side=hw; hh=hh+d; up=hh; down=hh; }
              poly.addPoint(-hw,-hh); poly.addPoint(hw,-hh); poly.addPoint(hw,hh); poly.addPoint(-hw,hh);
           }
        }
+       this.poly=poly;
     }
 
     /** Assuming calcBounds() have been called, and (x,y) have been set, then this draws the node. */
@@ -405,8 +464,6 @@ public final class VizNode extends DiGraph.DiNode {
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
           int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
-          if (radius < hw) radius=hw; // should not be necessary, but just as a sanity check
-          if (radius < hh) radius=hh; // should not be necessary, but just as a sanity check
           if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
           gr.fillArc(-radius, -radius, radius*2, radius*2, 0, 360);
           gr.setColor(BLACK);
@@ -419,21 +476,12 @@ public final class VizNode extends DiGraph.DiNode {
           if (shape==VizShape.DOUBLE_CIRCLE) {
              int r = radius-5; gr.drawArc(-r, -r, r*2, r*2, 0, 360);
           }
-       } else if (shape==VizShape.ELLIPSE || shape==VizShape.EGG) {
-          int d = (shape==VizShape.ELLIPSE) ? 0 : (ad/2);
-          GeneralPath path=new GeneralPath();
-          path.moveTo(-side,d);
-          path.quadTo(-side,-up,0,-up); path.quadTo(side,-up,side,d); path.quadTo(side,up,0,up); path.quadTo(-side,up,-side,d);
-          path.closePath();
-          gr.fill(path);
-          gr.setColor(BLACK);
-          gr.draw(path);
        } else {
-          gr.fillPolygon(poly);
+          gr.fill(poly);
           gr.setColor(BLACK);
-          gr.drawPolygon(poly);
-          if (poly2!=null) gr.drawPolygon(poly2);
-          if (poly3!=null) gr.drawPolygon(poly3);
+          gr.draw(poly);
+          if (poly2!=null) gr.draw(poly2);
+          if (poly3!=null) gr.draw(poly3);
           if (style==VizStyle.DOTTED || style==VizStyle.DASHED) VizStyle.SOLID.set(gr, scale);
           if (shape==VizShape.M_DIAMOND) {
              gr.drawLine(-side+8, -8, -side+8, 8); gr.drawLine(-8, -side+8, 8, -side+8);
