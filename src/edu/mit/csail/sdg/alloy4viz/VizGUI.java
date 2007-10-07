@@ -512,8 +512,8 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         openSettingsButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
         closeSettingsButton.setVisible(settingsOpen==1);
         updateSettingsButton.setVisible(settingsOpen==1);
-        openEvaluatorButton.setVisible(settingsOpen==0 && evaluator!=null);
-        closeEvaluatorButton.setVisible(settingsOpen==2 && evaluator!=null);
+        openEvaluatorButton.setVisible(!isMeta && settingsOpen==0 && evaluator!=null);
+        closeEvaluatorButton.setVisible(!isMeta && settingsOpen==2 && evaluator!=null);
         enumerateMenu.setEnabled(!isMeta && settingsOpen==0 && enumerator!=null);
         enumerateButton.setVisible(!isMeta && settingsOpen==0 && enumerator!=null);
         toolbar.setVisible(true);
