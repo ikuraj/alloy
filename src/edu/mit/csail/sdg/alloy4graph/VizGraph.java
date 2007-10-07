@@ -130,12 +130,12 @@ public final class VizGraph extends DiGraph {
           if (!bins.get(0).isEmpty()) {
              // If a sink exists, take a sink X and prepend X to S2
              x = bins.get(0).remove(bins.get(0).size()-1);
-             s2.addFirst(x);
+             s1.add(x);
           } else for(int j=2*num; j>0; j--) {
              // Otherwise, let x be a source if one exists, or a node with the highest #out-#in. Then append X to S1.
              List<VizNode> bin=bins.get(j);
              int sz=bin.size();
-             if (sz>0) { x=bin.remove(sz-1); s1.add(x); break; }
+             if (sz>0) { x=bin.remove(sz-1); s2.addFirst(x); break; }
           }
           if (x==null) break; // This means we're done; else, delete X from its bin, and move each of X's neighbor into their new bin
           bins.get(grBIN[x.pos()]).remove(x);
