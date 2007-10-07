@@ -46,7 +46,7 @@ public final class VizNode extends DiGraph.DiNode {
     // =============================== adjustable options ==================================================
 
     /** This determines the minimum width of a dummy node. */
-    private static final int dummyWidth = 10;
+    private static final int dummyWidth = 30;
 
     /** This determines the minimum height of a dummy node. */
     private static final int dummyHeight = 10;
