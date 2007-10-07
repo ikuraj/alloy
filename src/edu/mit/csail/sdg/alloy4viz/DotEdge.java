@@ -88,7 +88,7 @@ public final class DotEdge {
     public void write2(VizNode from, VizNode to, DotPalette pal) {
         VizEdge e;
         if (dir==DotDirection.FORWARD) e=new VizEdge(from,to).set(false,true);
-           else if (dir==DotDirection.BACK) e=new VizEdge(to,from).set(true,false);
+           else if (dir==DotDirection.BACK) e=new VizEdge(from,to).set(true,false);
            else e=new VizEdge(from,to).set(true,true);
         e.set(DotColor.name2color(color.getDotText(pal))).set(style.vizStyle).set(weight<1 ? 1 : (weight>100 ? 100 : weight));
         //TODO out.append(", label = \"" + esc(label) + "\"");
