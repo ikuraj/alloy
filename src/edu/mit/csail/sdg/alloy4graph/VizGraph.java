@@ -451,11 +451,21 @@ public final class VizGraph extends DiGraph {
 
     /** Assuming layout has been performed, this drwas the graph with the given magnification scale. */
     public void draw(Graphics2D gr, double scale, Object highlight) {
+        VizEdge highFirstEdge=null, highLastEdge=null;
+        if (highlight instanceof VizEdge) {
+            highFirstEdge=(VizEdge)highlight;
+            while(highFirstEdge.a().shape()==null) highFirstEdge=highFirstEdge.a().inEdges().get(0);
+            highLastEdge=(VizEdge)highlight;
+            while(highLastEdge.b().shape()==null) highLastEdge=highLastEdge.b().outEdges().get(0);
+        }
         // Since drawing an edge will automatically draw all segments if they're connected via dummy nodes,
         // we must make sure we only draw out edges from non-dummy-nodes
-        for(VizNode n:nodes) if (n.shape()!=null) for(VizEdge e:n.outEdges()) e.draw(gr, scale, highlight);
+        for(VizNode n:nodes) if (n.shape()!=null) for(VizEdge e:n.outEdges()) if (e!=highFirstEdge) e.draw(gr, scale, false);
+        if (highFirstEdge!=null && highFirstEdge.a()!=highFirstEdge.b()) highFirstEdge.draw(gr, scale, true);
         for(VizNode n:nodes) n.draw(gr, scale, highlight);
-        for(VizEdge e:edges) e.drawArrowhead(gr, scale, highlight);
+        for(VizEdge e:edges) if (e!=highFirstEdge && e!=highLastEdge) e.drawArrowhead(gr, scale, false);
+        if (highFirstEdge!=null) highFirstEdge.drawArrowhead(gr, scale, true);
+        if (highLastEdge!=null && highLastEdge!=highFirstEdge) highLastEdge.drawArrowhead(gr, scale, true);
     }
 
     //============================================================================================================================//
