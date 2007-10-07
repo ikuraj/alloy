@@ -153,8 +153,15 @@ public final class VizEdge extends DiGraph.DiEdge {
        VizStyle.SOLID.set(gr,scale);
     }
 
+    /** The angle (in radian) to fan out the arrow head, if the line is not bold. */
+    private final double smallFan = Math.toRadians(16);
+
+    /** The angle (in radian) to fan out the arrow head, if the line is bold. */
+    private final double bigFan = Math.toRadians(32);
+
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
     public void drawArrowhead(Graphics2D gr, double scale, Object highlight) {
+       double fan;
        if (a()==b()) return;
        // Return if there are no arrow heads to draw
        if (!ahead || a().shape()==null) if (!bhead || b().shape()==null) return;
@@ -162,12 +169,11 @@ public final class VizEdge extends DiGraph.DiEdge {
        VizEdge e=this;
        while(e.a().shape()==null) e=e.a().inEdges().get(0); // Let e points to the first segment of this chain of connected segments
        while(true) {
-          if (e==highlight) { gr.setColor(Color.RED); VizStyle.BOLD.set(gr,scale); break; }
-          if (e.b().shape()!=null) { gr.setColor(color); style.set(gr,scale); break; }
+          if (e==highlight) { fan=bigFan; gr.setColor(Color.RED); VizStyle.BOLD.set(gr,scale); break; }
+          if (e.b().shape()!=null) { fan=(style==VizStyle.BOLD?bigFan:smallFan); gr.setColor(color); style.set(gr,scale); break; }
           e = e.b().outEdges().get(0);
        }
        // Now, draw the arrow heads if needed
-       final double fan = Math.toRadians(15); // the angle to fan out the arrow head
        int tip = (gr.getFontMetrics().getMaxAscent()+gr.getFontMetrics().getMaxDescent()) * 2 / 3; // Length of arrow head
        int n = path.getPoints();
        if (ahead && a().shape()!=null) {
