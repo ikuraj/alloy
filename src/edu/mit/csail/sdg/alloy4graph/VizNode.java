@@ -28,6 +28,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -253,6 +254,22 @@ public final class VizNode extends DiGraph.DiNode {
         if (shape==null) return false;
         if (up<0) calcBounds();
         return poly.contains(x-textX, y-textY);
+    }
+
+    /**
+     * Find the point of intersection between this node and a given ray, and store the point of intersection into ans.
+     * <p> The ray starts from this node's center, and goes through the point (rx,ry) given as arguments.
+     * <p> Note: this method may find the wrong point of intersection if the ray's slope is too flat.
+     */
+    public void intersectsNonhorizontalRay(double rx, double ry, Point2D.Double ans) {
+       // Shift the input argument to the center of this node
+       rx=rx-textX; ry=ry-textY;
+       double slope=rx/ry, step=(ry<0 ? -1 : 1);
+       for(ry=0;;ry=ry+step) {
+          rx=ry*slope;
+          if (poly.contains(rx, ry)) continue;
+          ans.x=rx+textX; ans.y=ry+textY; return;
+       }
     }
 
     //===================================================================================================

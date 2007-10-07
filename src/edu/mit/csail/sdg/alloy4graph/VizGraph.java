@@ -23,6 +23,7 @@ package edu.mit.csail.sdg.alloy4graph;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
@@ -430,6 +431,20 @@ public final class VizGraph extends DiGraph {
            checkLowerCollision(bottom);
            checkUpperCollision(top);
         }
+
+        // Now, for each edge that has an arrow head, move it to the right place
+        Point2D.Double ans = new Point2D.Double();
+        for(VizEdge e:edges) {
+            VizPath p=e.path();
+            if (e.ahead() && e.a().shape()!=null) {
+                e.a().intersectsNonhorizontalRay(p.getX(1), p.getY(1), ans);
+                p.move(0, ans.x, ans.y);
+            }
+            if (e.bhead() && e.b().shape()!=null) {
+                e.b().intersectsNonhorizontalRay(p.getX(p.getPoints()-2), p.getY(p.getPoints()-2), ans);
+                p.move(p.getPoints()-1, ans.x, ans.y);
+            }
+        }
     }
 
     //============================================================================================================================//
@@ -440,6 +455,7 @@ public final class VizGraph extends DiGraph {
         // we must make sure we only draw out edges from non-dummy-nodes
         for(VizNode n:nodes) if (n.shape()!=null) for(VizEdge e:n.outEdges()) e.draw(gr, scale, highlight);
         for(VizNode n:nodes) n.draw(gr, scale, highlight);
+        for(VizEdge e:edges) e.drawArrowhead(gr, scale, highlight);
     }
 
     //============================================================================================================================//

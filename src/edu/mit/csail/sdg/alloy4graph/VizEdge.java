@@ -132,7 +132,7 @@ public final class VizEdge extends DiGraph.DiEdge {
         return path.intersectsVertical(px, py-fudge, py+fudge, null)>=0 || path.intersectsHorizontal(px-fudge, px+fudge, py);
     }
 
-    /** Assuming this edge's coordinates have been assigned already, and given the current zoom scale, this method draws the edge. */
+    /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
     public void draw(Graphics2D gr, double scale, Object highlight) {
        if (a()==b()) return;
        gr.setColor(color);
@@ -149,22 +149,42 @@ public final class VizEdge extends DiGraph.DiEdge {
        }
        // Now draw the combined VizPath
        p.draw(gr);
+       VizStyle.SOLID.set(gr,scale);
+    }
+
+    /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
+    public void drawArrowhead(Graphics2D gr, double scale, Object highlight) {
+       // Check to see if this edge is highlighted or not
+       if (a()==b()) return;
+       VizEdge e=this;
+       while(e.a().shape()==null) e=e.a().inEdges().get(0); // Let e points to the first segment of this chain of connected segments
+       while(true) {
+          if (e==highlight) { gr.setColor(Color.RED); VizStyle.BOLD.set(gr,scale); break; }
+          if (e.b().shape()!=null) { gr.setColor(color); style.set(gr,scale); break; }
+          e = e.b().outEdges().get(0);
+       }
+       int n = path.getPoints();
+       if (ahead && a().shape()!=null) {
+          gr.fillOval((int)(path.getX(0)  -5), (int)(path.getY(0)  -5), 10, 10);
+       }
+       if (bhead && b().shape()!=null) {
+          gr.fillOval((int)(path.getX(n-1)-5), (int)(path.getY(n-1)-5), 10, 10);
+       }
        /*
-        final double fan = Math.toRadians(18); // the angle to fan out the arrow head
-        int tip = (fm.getMaxAscent()+fm.getMaxDescent());
-        if (ahead && a.shape!=null) {
-            double t=Math.PI+Math.atan2(a.y-b.y, a.x-b.x);
-            double gx1 = a.x + tip*Math.cos(t-fan), gy1 = a.y + tip*Math.sin(t-fan);
-            double gx2 = a.x + tip*Math.cos(t+fan), gy2 = a.y + tip*Math.sin(t+fan);
-            GeneralPath gp=new GeneralPath(); gp.moveTo((float)gx1,(float)gy1); gp.lineTo(a.x, a.y); gp.lineTo((float)gx2, (float)gy2); gp.closePath(); gr.fill(gp);
-        }
-        if (bhead && b.shape!=null) {
-            double t=Math.PI+Math.atan2(b.y-a.y, b.x-a.x);
-            double gx1 = b.x + tip*Math.cos(t-fan), gy1 = b.y + tip*Math.sin(t-fan);
-            double gx2 = b.x + tip*Math.cos(t+fan), gy2 = b.y + tip*Math.sin(t+fan);
-            GeneralPath gp=new GeneralPath(); gp.moveTo((float)gx1,(float)gy1); gp.lineTo(b.x, b.y); gp.lineTo((float)gx2, (float)gy2); gp.closePath(); gr.fill(gp);
-        }
-        */
-        VizStyle.SOLID.set(gr,scale);
+       final double fan = Math.toRadians(18); // the angle to fan out the arrow head
+       int tip = (fm.getMaxAscent()+fm.getMaxDescent());
+       if (ahead && a.shape!=null) {
+          double t=Math.PI+Math.atan2(a.y-b.y, a.x-b.x);
+          double gx1 = a.x + tip*Math.cos(t-fan), gy1 = a.y + tip*Math.sin(t-fan);
+          double gx2 = a.x + tip*Math.cos(t+fan), gy2 = a.y + tip*Math.sin(t+fan);
+          GeneralPath gp=new GeneralPath(); gp.moveTo((float)gx1,(float)gy1); gp.lineTo(a.x, a.y); gp.lineTo((float)gx2, (float)gy2); gp.closePath(); gr.fill(gp);
+       }
+       if (bhead && b.shape!=null) {
+          double t=Math.PI+Math.atan2(b.y-a.y, b.x-a.x);
+          double gx1 = b.x + tip*Math.cos(t-fan), gy1 = b.y + tip*Math.sin(t-fan);
+          double gx2 = b.x + tip*Math.cos(t+fan), gy2 = b.y + tip*Math.sin(t+fan);
+          GeneralPath gp=new GeneralPath(); gp.moveTo((float)gx1,(float)gy1); gp.lineTo(b.x, b.y); gp.lineTo((float)gx2, (float)gy2); gp.closePath(); gr.fill(gp);
+       }
+       */
     }
 }

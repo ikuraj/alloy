@@ -51,9 +51,25 @@ public final class VizPath {
        points.addAll(b.points);
     }
 
+    /** Returns the number of points in this path. */
+    public int getPoints() { return points.size(); }
+
+    /** Returns the i-th point's x coordinate (where i counts from 0...) */
+    public double getX(int index) { return points.get(index).x; }
+
+    /** Returns the i-th point's y coordinate (where i counts from 0...) */
+    public double getY(int index) { return points.get(index).y; }
+
     /** Helper method that returns true if (x2>=x>=x1 or x1>=x>=x2) */
     private static boolean in(double x1, double x, double x2) {
        return (x1<=x && x<=x2) || (x2<=x && x<=x1);
+    }
+
+    /** Move the i-th point to the given coordinate (x,y) where i must be between 0 and points.size()-1 inclusively. */
+    public void move(int i, double x, double y) {
+       Point2D.Double pt=points.get(i);
+       pt.x=x;
+       pt.y=y;
     }
 
     /** Insert a new point into the list at the i-th position where i must be between 0 and points.size() inclusively. */
