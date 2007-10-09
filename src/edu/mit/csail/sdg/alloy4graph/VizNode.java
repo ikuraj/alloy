@@ -480,15 +480,16 @@ public final class VizNode extends DiGraph.DiNode {
     }
 
     /** Assuming calcBounds() have been called, and (x,y) have been set, then this draws the node. */
-    public void draw(Graphics2D gr, double scale, Object highlight) {
+    public void draw(Graphics2D gr, double scale, boolean highlight) {
+       final int top=((VizGraph)graph).top, left=((VizGraph)graph).left;
        if (shape==null) return;
        if (up<0) calcBounds();
        style.set(gr, scale);
        updateCache(fontSize, fontBold);
        gr.setFont(cachedFont);
        final int ad = cachedFontMetrics.getMaxAscent() + cachedFontMetrics.getMaxDescent();
-       gr.translate(textX, textY);
-       if (this==highlight) gr.setColor(Color.RED); else gr.setColor(color);
+       gr.translate(textX-left, textY-top);
+       if (highlight) gr.setColor(Color.RED); else gr.setColor(color);
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
           int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
@@ -533,6 +534,35 @@ public final class VizNode extends DiGraph.DiNode {
              y=y+ad;
           }
        }
-       gr.translate(-textX, -textY);
+       gr.translate(left-textX, top-textY);
+    }
+
+    /** Assuming the graph is already laid out, this shifts this node (and re-layouts nearby nodes/edges) */
+    public void tweak(int x, int y) {
+       final int xJump=VizGraph.xJump;
+       if (textX==x) return;
+       List<VizNode> layer=graph.layer(layer());
+       int i, n=layer.size();
+       for(i=0; i<n; i++) if (layer.get(i)==this) break;
+       if (textX>x) {
+          textX=x;
+          x=x-(shape==null?0:side);
+          for(i--;i>=0;i--) {
+             VizNode node=layer.get(i);
+             int side=(node.shape==null?0:node.side);
+             if (node.textX+side+node.getReserved()+xJump>x) node.textX=x-side-node.getReserved()-xJump;
+             x=node.textX-side;
+          }
+       } else {
+          textX=x;
+          x=x+(shape==null?0:side)+getReserved();
+          for(i++;i<n;i++) {
+             VizNode node=layer.get(i);
+             int side=(node.shape==null?0:node.side);
+             if (node.textX-side-xJump<x) node.textX=x+side+xJump;
+             x=node.textX+side+node.getReserved();
+          }
+       }
+       ((VizGraph)graph).relayout_edges(layer());
     }
 }

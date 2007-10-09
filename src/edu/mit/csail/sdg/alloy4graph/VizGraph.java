@@ -47,10 +47,16 @@ public final class VizGraph extends DiGraph {
     //================================ adjustable options ========================================================================//
 
     /** Minimum horizontal distance between adjacent nodes. */
-    private static final int xJump=15;
+    static final int xJump=15;
 
     /** Minimum vertical distance between adjacent layers. */
-    private static final int yJump=30;
+    static final int yJump=30;
+
+    /** The left edge. */
+    int left=0;
+
+    /** The top edge. */
+    int top=0;
 
     /** The total width of the graph; this value is computed by layout(). */
     int totalWidth=0;
@@ -384,6 +390,9 @@ public final class VizGraph extends DiGraph {
     /** Perform the layout. */
     public void layout() {
 
+        // The rest of the code below assumes at least one node, so we return right away if nodes.size()==0
+        if (nodes.size()==0) return;
+
         // Calculate each node's width and height
         for(VizNode n:nodes) n.calcBounds();
 
@@ -436,7 +445,8 @@ public final class VizGraph extends DiGraph {
             int min = (int) (n.x() - n.getWidth()/2                   - 5); if (minX>min) minX=min;
             int max = (int) (n.x() + n.getWidth()/2 + n.getReserved() + 5); if (maxX<max) maxX=max;
         }
-        for(VizNode n:nodes) n.setX(n.x() - minX);
+        left=minX;
+        totalWidth=maxX-minX;
 
         // Calculate each node's y, and figure out the total width and total height
         int py=5; // So that we are not touching the top-edge of the window
@@ -446,8 +456,8 @@ public final class VizGraph extends DiGraph {
            py = py + ph + yJump/2;
            py = py + yJump/2;
         }
+        top=0;
         totalHeight=py;
-        totalWidth=maxX-minX;
 
         // Now layout the edges, initially as straight lines
         for(VizEdge e:edges) e.resetPath();
@@ -455,33 +465,62 @@ public final class VizGraph extends DiGraph {
         // Now, scan layer-by-layer to find edges that intersect nodes improperly, and bend them accordingly
         for(int layer=layers-1; layer>0; layer--) {
            List<VizNode> top=layer(layer), bottom=layer(layer-1);
-           checkUpperCollision(top);
-           checkLowerCollision(bottom);
-           checkUpperCollision(top);
+           checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
         }
 
         // Now, for each edge that has an arrow head, move it to the right place
-        Point2D.Double ans = new Point2D.Double();
-        for(VizEdge e:edges) {
-           VizPath p=e.path();
-           if (e.a()==e.b()) {
-              if (e.ahead() && e.a().shape()!=null) {
-                 double y=p.getY(0), x=e.a().intersectsAtHeight(y);
-                 p.move(0, x, y);
-              }
-              if (e.bhead() && e.b().shape()!=null) {
-                 double y=p.getY(p.getPoints()-1), x=e.a().intersectsAtHeight(y);
-                 p.move(p.getPoints()-1, x, y);
-              }
-           } else {
-              if (e.ahead() && e.a().shape()!=null) {
-                 e.a().intersectsNonhorizontalRay(p.getX(1), p.getY(1), ans);
-                 p.move(0, ans.x, ans.y);
-              }
-              if (e.bhead() && e.b().shape()!=null) {
-                 e.b().intersectsNonhorizontalRay(p.getX(p.getPoints()-2), p.getY(p.getPoints()-2), ans);
-                 p.move(p.getPoints()-1, ans.x, ans.y);
-              }
+        for(VizEdge e:edges) layout_arrowHead(e);
+    }
+
+    /** Assuming everything was laid out already, and that the nodes in layer[i] just moved horizontally, then this re-layouts the edges going to and from layer i. */
+    public void relayout_edges(int i) {
+        if (nodes.size()==0) return; // The rest of the code assumes there is at least one node
+        for(VizNode n:layer(i)) for(VizEdge e:n.selfEdges()) { e.resetPath(); layout_arrowHead(e); }
+        if (i>0) {
+            List<VizNode> top=layer(i), bottom=layer(i-1);
+            for(VizNode n:top) for(VizEdge e:n.outEdges()) e.resetPath();
+            checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
+            for(VizNode n:top) for(VizEdge e:n.outEdges()) layout_arrowHead(e);
+        }
+        if (i<layers()-1) {
+            List<VizNode> top=layer(i+1), bottom=layer(i);
+            for(VizNode n:top) for(VizEdge e:n.outEdges()) e.resetPath();
+            checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
+            for(VizNode n:top) for(VizEdge e:n.outEdges()) layout_arrowHead(e);
+        }
+        // Find the leftmost and rightmost pixel
+        int minX = (int) (nodes.get(0).x() - nodes.get(0).getWidth()/2 - 5);
+        int maxX = (int) (nodes.get(0).x() + nodes.get(0).getWidth()/2 + 5);
+        for(VizNode n:nodes) {
+            int min = (int) (n.x() - n.getWidth()/2                   - 5); if (minX>min) minX=min;
+            int max = (int) (n.x() + n.getWidth()/2 + n.getReserved() + 5); if (maxX<max) maxX=max;
+        }
+        left=minX;
+        totalWidth=maxX-minX;
+    }
+
+    /** Positions the arrow heads of the given edge properly. */
+    private void layout_arrowHead(VizEdge e) {
+        VizPath p=e.path();
+        if (e.a()==e.b()) {
+           if (e.ahead() && e.a().shape()!=null) {
+              double y=p.getY(0), x=e.a().intersectsAtHeight(y);
+              p.move(0, x, y);
+           }
+           if (e.bhead() && e.b().shape()!=null) {
+              double y=p.getY(p.getPoints()-1), x=e.a().intersectsAtHeight(y);
+              p.move(p.getPoints()-1, x, y);
+           }
+        } else {
+           if (e.ahead() && e.a().shape()!=null) {
+              Point2D.Double ans = new Point2D.Double();
+              e.a().intersectsNonhorizontalRay(p.getX(1), p.getY(1), ans);
+              p.move(0, ans.x, ans.y);
+           }
+           if (e.bhead() && e.b().shape()!=null) {
+              Point2D.Double ans = new Point2D.Double();
+              e.b().intersectsNonhorizontalRay(p.getX(p.getPoints()-2), p.getY(p.getPoints()-2), ans);
+              p.move(p.getPoints()-1, ans.x, ans.y);
            }
         }
     }
@@ -489,7 +528,8 @@ public final class VizGraph extends DiGraph {
     //============================================================================================================================//
 
     /** Assuming layout has been performed, this drwas the graph with the given magnification scale. */
-    public void draw(Graphics2D gr, double scale, Object highlight) {
+    public void draw(Graphics2D gr, double scale, Object selected, Object highlight) {
+        if (highlight==null) highlight=selected;
         VizEdge highFirstEdge=null, highLastEdge=null;
         if (highlight instanceof VizEdge) {
             highFirstEdge=(VizEdge)highlight;
@@ -504,7 +544,7 @@ public final class VizGraph extends DiGraph {
             for(VizEdge e:n.selfEdges()) if (e!=highFirstEdge) e.draw(gr, scale, false);
         }
         if (highFirstEdge!=null) highFirstEdge.draw(gr, scale, true);
-        for(VizNode n:nodes) n.draw(gr, scale, highlight);
+        for(VizNode n:nodes) n.draw(gr, scale, n==highlight);
         for(VizEdge e:edges) if (e!=highFirstEdge && e!=highLastEdge) e.drawArrowhead(gr, scale, false);
         if (highFirstEdge!=null) highFirstEdge.drawArrowhead(gr, scale, true);
         if (highLastEdge!=null && highLastEdge!=highFirstEdge) highLastEdge.drawArrowhead(gr, scale, true);
@@ -525,14 +565,8 @@ public final class VizGraph extends DiGraph {
         for(VizShape s:VizShape.values()) {
            String n=s.toString();
            b=new VizNode(gr,n).set(s).set(Color.YELLOW).set(VizStyle.SOLID);
-           new VizEdge(b,b);
-           new VizEdge(b,b);
-           new VizEdge(b,b);
-           new VizEdge(b,b);
-           new VizEdge(b,b);
-           new VizEdge(b,b);
-           new VizEdge(b,b);
-           new VizEdge(b,b);
+           // new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b);
+           // new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b);
            if (a==null) a=b; else if (k<4) { new VizEdge(a,b); a=b; k++; } else { k=0; a=b; }
         }
         new VizEdge(n0, n1).set(Color.RED);

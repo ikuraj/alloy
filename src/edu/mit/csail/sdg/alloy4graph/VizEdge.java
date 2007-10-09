@@ -161,6 +161,8 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
     public void draw(Graphics2D gr, double scale, boolean highlight) {
+       final int top=((VizGraph)(a().graph)).top, left=((VizGraph)(a().graph)).left;
+       gr.translate(-left, -top);
        if (highlight) { gr.setColor(Color.RED); VizStyle.BOLD.set(gr,scale); } else { gr.setColor(color); style.set(gr, scale); }
        if (a()==b()) {
           // Draw the self edge
@@ -184,10 +186,12 @@ public final class VizEdge extends DiGraph.DiEdge {
           p.draw(gr);
        }
        VizStyle.SOLID.set(gr,scale);
+       gr.translate(left, top);
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
     public void drawArrowhead(Graphics2D gr, double scale, boolean highlight) {
+       final int top=((VizGraph)(a().graph)).top, left=((VizGraph)(a().graph)).left;
        // Return if there are no arrow heads to draw
        if (!ahead || a().shape()==null) if (!bhead || b().shape()==null) return;
        // Check to see if this edge is highlighted or not
@@ -206,7 +210,9 @@ public final class VizEdge extends DiGraph.DiEdge {
           double gx1 = ax + tip*Math.cos(t-fan), gy1 = ay + tip*Math.sin(t-fan);
           double gx2 = ax + tip*Math.cos(t+fan), gy2 = ay + tip*Math.sin(t+fan);
           GeneralPath gp=new GeneralPath();
-          gp.moveTo((float)gx1,(float)gy1); gp.lineTo((float)ax,(float)ay); gp.lineTo((float)gx2, (float)gy2);
+          gp.moveTo((float)(gx1-left),(float)(gy1-top));
+          gp.lineTo((float)(ax-left),(float)(ay-top));
+          gp.lineTo((float)(gx2-left), (float)(gy2-top));
           gp.closePath();
           gr.fill(gp);
        }
@@ -216,7 +222,9 @@ public final class VizEdge extends DiGraph.DiEdge {
           double gx1 = bx + tip*Math.cos(t-fan), gy1 = by + tip*Math.sin(t-fan);
           double gx2 = bx + tip*Math.cos(t+fan), gy2 = by + tip*Math.sin(t+fan);
           GeneralPath gp=new GeneralPath();
-          gp.moveTo((float)gx1,(float)gy1); gp.lineTo((float)bx,(float)by); gp.lineTo((float)gx2, (float)gy2);
+          gp.moveTo((float)(gx1-left),(float)(gy1-top));
+          gp.lineTo((float)(bx-left),(float)(by-top));
+          gp.lineTo((float)(gx2-left), (float)(gy2-top));
           gp.closePath();
           gr.fill(gp);
        }

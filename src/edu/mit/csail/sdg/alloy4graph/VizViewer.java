@@ -28,6 +28,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -71,14 +72,40 @@ public final class VizViewer extends JPanel {
     /** The current amount of zoom. */
     private double scale = 1d;
 
-    /** The currently highlighted VizNode or VizEdge, or null if there is none. */
+    /** The currently hovered VizNode or VizEdge, or null if there is none. */
     private Object highlight = null;
+
+    /** The currently selected VizNode or VizEdge, or null if there is none. */
+    private Object selected = null;
 
     /** The right-click context menu associated with this JPanel. */
     private final JPopupMenu pop = new JPopupMenu();
 
     /** This allows users to attach a String object to this JPanel. */
     private String annotation = "";
+
+    /** Locates the node or edge at the given (X,Y) location. */
+    private Object do_find(int mouseX, int mouseY) {
+       double x=mouseX/scale+graph.left, y=mouseY/scale+graph.top;
+       for(VizNode n:graph.nodes) {
+           if (n.shape()==null && Math.abs(n.x()-x)<10 && Math.abs(n.y()-y)<10) return n;
+           if (n.intersects(x,y)) return n;
+       }
+       for(VizEdge e:graph.edges) {
+           if (e.intersects(x,y,scale)) return e;
+       }
+       return null;
+    }
+
+    private int oldMouseX=0, oldMouseY=0, oldX=0, oldY=0;
+
+    /** Repaint this component. */
+    private void do_repaint() {
+        Container c=getParent();
+        while(c!=null) { if (c instanceof JViewport) break; else c=c.getParent(); }
+        setSize((int)(graph.totalWidth*scale), (int)(graph.totalHeight*scale));
+        if (c!=null) { c.invalidate(); c.repaint(); c.validate(); } else { invalidate(); repaint(); validate(); }
+    }
 
     /** Construct a VizViewer that displays the given graph. */
     public VizViewer(final VizGraph graph) {
@@ -112,8 +139,7 @@ public final class VizViewer extends JPanel {
                  double scale1 = ((double)w)/graph.totalWidth, scale2 = ((double)h)/graph.totalHeight;
                  if (scale1<scale2) scale=scale1; else scale=scale2;
               }
-              setSize((int)(graph.totalWidth*scale), (int)(graph.totalHeight*scale));
-              if (c!=null) { c.invalidate(); c.repaint(); c.validate(); } else { invalidate(); repaint(); validate(); }
+              do_repaint();
            }
         };
         zoomIn.addActionListener(act);
@@ -123,30 +149,51 @@ public final class VizViewer extends JPanel {
         print.addActionListener(act);
         addMouseMotionListener(new MouseMotionAdapter() {
            @Override public void mouseMoved(MouseEvent ev) {
-              double x=ev.getX()/scale, y=ev.getY()/scale;
-              for(VizNode n:graph.nodes) if (n.intersects(x,y)) {
-                 if (highlight!=n) { highlight=n; invalidate(); repaint(); validate(); }
-                 return;
+              if (pop.isVisible()) return;
+              Object obj=do_find(ev.getX(), ev.getY());
+              if (highlight!=obj) { highlight=obj; do_repaint(); }
+           }
+           @Override public void mouseDragged(MouseEvent ev) {
+              if (selected instanceof VizNode) {
+                 int newX=(int)(oldX+(ev.getX()-oldMouseX)/scale);
+                 int newY=(int)(oldY+(ev.getY()-oldMouseY)/scale);
+                 VizNode n=(VizNode)selected;
+                 if (n.x()!=newX || n.y()!=newY) {
+                     n.tweak(newX,newY);
+                     do_repaint();
+                     scrollRectToVisible(new Rectangle(
+                       (int)((newX-graph.left)*scale)-n.getWidth()/2,
+                       (int)((newY-graph.top)*scale)-n.getUp(),
+                       n.getWidth()+n.getReserved(), n.getUp()+n.getDown()
+                     ));
+                 }
               }
-              for(VizEdge e:graph.edges) if (e.intersects(x,y,scale)) {
-                 if (highlight!=e) { highlight=e; invalidate(); repaint(); validate(); }
-                 return;
-              }
-              if (highlight!=null) { highlight=null; invalidate(); repaint(); validate(); }
            }
         });
         addMouseListener(new MouseAdapter() {
+           @Override public void mouseReleased(MouseEvent ev) {
+               Object obj=do_find(ev.getX(), ev.getY());
+               if (selected!=null || highlight!=obj) { selected=null; highlight=obj; do_repaint(); }
+           }
            @Override public void mousePressed(MouseEvent ev) {
                if (ev.getButton()==MouseEvent.BUTTON3) {
+                   Object x=do_find(ev.getX(), ev.getY());
+                   if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
                    pop.show(VizViewer.this, ev.getX(), ev.getY());
                } else if (ev.getButton()==MouseEvent.BUTTON1 && ev.isControlDown()) {
                    // This lets Ctrl+LeftClick bring up the popup menu, just like RightClick,
                    // since many Mac mouses do not have a right button.
+                   Object x=do_find(ev.getX(), ev.getY());
+                   if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
                    pop.show(VizViewer.this, ev.getX(), ev.getY());
+               } else if (ev.getButton()==MouseEvent.BUTTON1 && !ev.isControlDown() && !ev.isShiftDown() && !ev.isAltDown()) {
+                   Object x=do_find(oldMouseX=ev.getX(), oldMouseY=ev.getY());
+                   if (x instanceof VizNode) { oldX=((VizNode)x).x(); oldY=((VizNode)x).y(); }
+                   if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
                }
            }
            @Override public void mouseExited(MouseEvent ev) {
-               if (highlight!=null) { highlight=null; invalidate(); repaint(); validate(); }
+               if (highlight!=null) { highlight=null; do_repaint(); }
            }
         });
     }
@@ -324,7 +371,7 @@ public final class VizViewer extends JPanel {
        gr.setColor(BLACK);
        gr.scale(scale,scale);
        gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-       graph.draw(gr, scale, null);
+       graph.draw(gr, scale, null, null);
        OurImageUtil.writePNG(bf, filename, dpiX, dpiY);
     }
 
@@ -345,7 +392,7 @@ public final class VizViewer extends JPanel {
         AffineTransform oldAF = (AffineTransform) (g2.getTransform().clone());
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.scale(scale, scale);
-        graph.draw(g2, scale, highlight);
+        graph.draw(g2, scale, selected, highlight);
         g2.setTransform(oldAF);
     }
 }
