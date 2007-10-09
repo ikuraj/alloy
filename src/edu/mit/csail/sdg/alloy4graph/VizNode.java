@@ -104,11 +104,11 @@ public final class VizNode extends DiGraph.DiNode {
 
     // =============================== per-node settings ==================================================
 
-    /** The X coordinate of the center. */
-    private int textX = 0;
+    /** The X coordinate of the center of the node. */
+    private int centerX = 0;
 
-    /** The Y coordinate of the center. */
-    private int textY = 0;
+    /** The Y coordinate of the center of the node. */
+    private int centerY = 0;
 
     /**
      * The font boldness.
@@ -146,20 +146,20 @@ public final class VizNode extends DiGraph.DiNode {
      */
     private VizShape shape = VizShape.BOX;
 
-    /** Returns the X coordinate of the center of the text labels. */
-    public int x() { return textX; }
+    /** Returns the X coordinate of the center of the node. */
+    public int x() { return centerX; }
 
-    /** Returns the Y coordinate of the center of the text labels. */
-    public int y() { return textY; }
+    /** Returns the Y coordinate of the center of the node. */
+    public int y() { return centerY; }
 
     /** Returns the font size. */
     public int fontSize() { return fontSize; }
 
-    /** Changes the X coordinate of the center of the text labels. */
-    public void setX(int x) { textX=x;}
+    /** Changes the X coordinate of the center of the node. */
+    public void setX(int x) { centerX=x;}
 
-    /** Changes the Y coordinate of the center of the text labels. */
-    public void setY(int y) { textY=y; }
+    /** Changes the Y coordinate of the center of the node. */
+    public void setY(int y) { centerY=y; }
 
     /** Returns the node shape (or null if the node is a dummy node). */
     public VizShape shape() { return shape; }
@@ -266,7 +266,7 @@ public final class VizNode extends DiGraph.DiNode {
     public boolean intersects(double x, double y) {
         if (shape==null) return false;
         if (updown<0) calcBounds();
-        return poly.contains(x-textX, y-textY);
+        return poly.contains(x-centerX, y-centerY);
     }
 
     /**
@@ -275,10 +275,10 @@ public final class VizNode extends DiGraph.DiNode {
      * <p> Note: this method may find the wrong point of intersection if the ray is too horizontal.
      */
     public void intersectsNonhorizontalRay(double rx, double ry, Point2D.Double ans) {
-       if (shape==null) { ans.x=textX; ans.y=textY; return; }
+       if (shape==null) { ans.x=centerX; ans.y=centerY; return; }
        if (updown<0) calcBounds();
        // Shift the input argument to the center of this node
-       rx=rx-textX; ry=ry-textY;
+       rx=rx-centerX; ry=ry-centerY;
        double slope=rx/ry, step=(ry<0 ? -1 : 1);
        // Use the radius to directly compute the intersection, if the shape is CIRCLE, M_CIRCLE, or DOUBLE_CIRCLE
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
@@ -287,16 +287,16 @@ public final class VizNode extends DiGraph.DiNode {
           if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
           // x^2+y^2=radius^2  and x=y*slope, thus (1+slope^2)(y^2)=radius^2
           ry=Math.sqrt((radius*radius)/(1+slope*slope)); if (step<0) ry=(-ry);
-          ans.x=ry*slope + textX;
-          ans.y=ry + textY;
+          ans.x=ry*slope + centerX;
+          ans.y=ry + centerY;
           return;
        }
        // Check for intersection
        for(ry=0;;ry=ry+step) {
           rx=ry*slope;
           if (poly.contains(rx, ry)) continue;
-          ans.x=rx+textX;
-          ans.y=ry+textY;
+          ans.x=rx+centerX;
+          ans.y=ry+centerY;
           return;
        }
     }
@@ -307,10 +307,10 @@ public final class VizNode extends DiGraph.DiNode {
      * <p> Note: this method may find the wrong point of intersection if the ray is too vertical.
      */
     public void intersectsNonverticalRay(double rx, double ry, Point2D.Double ans) {
-       if (shape==null) { ans.x=textX; ans.y=textY; return; }
+       if (shape==null) { ans.x=centerX; ans.y=centerY; return; }
        if (updown<0) calcBounds();
        // Shift the input argument to the center of this node
-       rx=rx-textX; ry=ry-textY;
+       rx=rx-centerX; ry=ry-centerY;
        double slope=ry/rx, step=(rx<0 ? -1 : 1);
        // Use the radius to directly compute the intersection, if the shape is CIRCLE, M_CIRCLE, or DOUBLE_CIRCLE
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
@@ -319,28 +319,33 @@ public final class VizNode extends DiGraph.DiNode {
           if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
           // x^2+y^2=radius^2  and y=x*slope, thus (1+slope^2)(x^2)=radius^2
           rx=Math.sqrt((radius*radius)/(1+slope*slope)); if (step<0) rx=(-rx);
-          ans.y=rx*slope + textY;
-          ans.x=rx + textX;
+          ans.y=rx*slope + centerY;
+          ans.x=rx + centerX;
           return;
        }
        // Check for intersection
        for(rx=0;;rx=rx+step) {
           ry=rx*slope;
           if (poly.contains(rx, ry)) continue;
-          ans.x=rx+textX;
-          ans.y=ry+textY;
+          ans.x=rx+centerX;
+          ans.y=ry+centerY;
           return;
        }
     }
 
     /** Return the horizontal point of intersection of this node with a horizontal ray at height y going from this.x() rightward. */
     public double intersectsAtHeight(double y) {
-       // TODO: need better precision for CIRCLE, M_CIRCLE, and DOUBLE_CIRCLE
        if (shape==null) return 0;
        if (updown<0) calcBounds();
-       y=y-textY;
-       double x;
-       for(x=0;;x=x+1) if (!poly.contains(x,y)) return x+textX;
+       y=y-centerY;
+       if (shape==VizShape.CIRCLE || shape==VizShape.DOUBLE_CIRCLE || shape==VizShape.M_CIRCLE) {
+          int hw=width/2, hh=height/2;
+          int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
+          if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
+          return Math.sqrt(radius*radius - y*y) + centerX;
+       } else {
+          for(double x=0;;x=x+1) if (!poly.contains(x,y)) return x+centerX;
+       }
     }
 
     //===================================================================================================
@@ -489,7 +494,7 @@ public final class VizNode extends DiGraph.DiNode {
        updateCache(fontSize, fontBold);
        gr.setFont(cachedFont);
        final int ad = cachedFontMetrics.getMaxAscent() + cachedFontMetrics.getMaxDescent();
-       gr.translate(textX-left, textY-top);
+       gr.translate(centerX-left, centerY-top);
        if (highlight) gr.setColor(Color.RED); else gr.setColor(color);
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
@@ -533,63 +538,63 @@ public final class VizNode extends DiGraph.DiNode {
              y=y+ad;
           }
        }
-       gr.translate(left-textX, top-textY);
+       gr.translate(left-centerX, top-centerY);
     }
 
     /** Helper method that sets the Y coordinate of every node in a given layer. */
     private void setY(int layer, int y) {
-        for(VizNode n:graph.layer(layer)) n.textY=y;
+        for(VizNode n:graph.layer(layer)) n.centerY=y;
     }
 
     /** Assuming the graph is already laid out, this shifts this node (and re-layouts nearby nodes/edges) */
     public void tweak(int x, int y) {
        final int[] ph = ((VizGraph)graph).layerPH;
-       if (textX==x && textY==y) return; // If no change, then return right away
+       if (centerX==x && centerY==y) return; // If no change, then return right away
        final int xJump = VizGraph.xJump;
        final int yJump = VizGraph.yJump/2;
        List<VizNode> layer = graph.layer(layer());
        final int n = layer.size();
        int i;
        for(i=0; i<n; i++) if (layer.get(i)==this) break; // Figure out this node's position in its layer
-       if (textX>x) {
-          textX=x;
+       if (centerX>x) {
+          centerX=x;
           x=x-(shape==null?0:side); // x is now the left-most edge of this node
           for(i--;i>=0;i--) {
              VizNode node=layer.get(i);
              int side=(node.shape==null?0:node.side);
-             if (node.textX+side+node.getReserved()+xJump>x) node.textX=x-side-node.getReserved()-xJump;
-             x=node.textX-side;
+             if (node.centerX+side+node.getReserved()+xJump>x) node.centerX=x-side-node.getReserved()-xJump;
+             x=node.centerX-side;
           }
-       } else if (textX<x) {
-          textX=x;
+       } else if (centerX<x) {
+          centerX=x;
           x=x+(shape==null?0:side)+getReserved(); // x is now the right most edge of this node
           for(i++;i<n;i++) {
              VizNode node=layer.get(i);
              int side=(node.shape==null?0:node.side);
-             if (node.textX-side-xJump<x) node.textX=x+side+xJump;
-             x=node.textX+side+node.getReserved();
+             if (node.centerX-side-xJump<x) node.centerX=x+side+xJump;
+             x=node.centerX+side+node.getReserved();
           }
        }
-       if (textY>y) {
+       if (centerY>y) {
            i=layer();
            setY(i,y);
            y=y-ph[i]/2; // y is now the top-most edge of this layer
            for(i++; i<graph.layers(); i++) {
                List<VizNode> list=graph.layer(i);
                VizNode first=list.get(0);
-               if (first.textY+ph[i]/2+yJump > y) setY(i, y-ph[i]/2-yJump);
-               y=first.textY-ph[i]/2;
+               if (first.centerY+ph[i]/2+yJump > y) setY(i, y-ph[i]/2-yJump);
+               y=first.centerY-ph[i]/2;
            }
            ((VizGraph)graph).relayout_edges();
-       } else if (textY<y) {
+       } else if (centerY<y) {
            i=layer();
            setY(i,y);
            y=y+ph[i]/2; // y is now the bottom-most edge of this layer
            for(i--; i>=0; i--) {
                List<VizNode> list=graph.layer(i);
                VizNode first=list.get(0);
-               if (first.textY-ph[i]/2-yJump < y) setY(i, y+ph[i]/2+yJump);
-               y=first.textY+ph[i]/2;
+               if (first.centerY-ph[i]/2-yJump < y) setY(i, y+ph[i]/2+yJump);
+               y=first.centerY+ph[i]/2;
            }
            ((VizGraph)graph).relayout_edges();
        } else {
