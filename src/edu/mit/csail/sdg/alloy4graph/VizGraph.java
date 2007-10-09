@@ -22,7 +22,6 @@ package edu.mit.csail.sdg.alloy4graph;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -58,11 +57,17 @@ public final class VizGraph extends DiGraph {
     /** The top edge. */
     int top=0;
 
+    /** The bottom edge. */
+    int bottom=0;
+
     /** The total width of the graph; this value is computed by layout(). */
     int totalWidth=0;
 
     /** The total height of the graph; this value is computed by layout(). */
     int totalHeight=0;
+
+    /** The height of each layer. */
+    int[] layerPH=null;
 
     //=============================== constructors and other methods =============================================================//
 
@@ -343,14 +348,14 @@ public final class VizGraph extends DiGraph {
                if (b.x()>=right) for(int j=i+1; j<top.size(); j++) { // This edge goes from top-left to bottom-right
                   VizNode c=top.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  double ctop=c.y()-c.getUp(), cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getDown();
+                  double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
                   int intersect=e.path().intersectsVertical(cleft, ctop-room, cbottom+room, null);
                   if (intersect>=0) e.pathAdd(intersect, cleft, cbottom+5);
                }
                else if (b.x()<=left) for(int j=i-1; j>=0; j--) { // This edge goes from top-right to bottom-left
                   VizNode c=top.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  double ctop=c.y()-c.getUp(), cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getDown();
+                  double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
                   int intersect=e.path().intersectsVertical(cright, ctop-room, cbottom+room, null);
                   if (intersect>=0) e.pathAdd(intersect, cright, cbottom+5);
                }
@@ -370,14 +375,14 @@ public final class VizGraph extends DiGraph {
                if (a.x()<=left) for(int j=i-1; j>=0; j--) { // This edge goes from top-left to bottom-right
                   VizNode c=bottom.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  double ctop=c.y()-c.getUp(), cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getDown();
+                  double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
                   int intersect=e.path().intersectsVertical(cright, ctop-room, cbottom+room, null);
                   if (intersect>=0) e.pathAdd(intersect, cright, ctop-5);
                }
                else if (a.x()>=right) for(int j=i+1; j<bottom.size(); j++) { // This edge goes from top-right to bottom-left
                   VizNode c=bottom.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  double ctop=c.y()-c.getUp(), cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getDown();
+                  double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
                   int intersect=e.path().intersectsVertical(cleft, ctop-room, cbottom+room, null);
                   if (intersect>=0) e.pathAdd(intersect, cleft, ctop-5);
                }
@@ -417,7 +422,7 @@ public final class VizGraph extends DiGraph {
         layout_decideTheOrderPerLayer();
 
         // For each layer, this array stores the height of its tallest node
-        final int[] layerPH = new int[layers];
+        layerPH = new int[layers];
 
         // figure out the Y position of each layer, and also give each component an initial X position
         for(int layer=layers-1; layer>=0; layer--) {
@@ -438,7 +443,26 @@ public final class VizGraph extends DiGraph {
            for(int i=0; i<3; i++) for(int layer=0; layer<layers; layer++) layout_computeX(layer(layer));
         }
 
-        // Find the leftmost and rightmost pixel, then shift the whole graph so that the left edge is 5 pixels from the left edge
+        // Calculate each node's y; we start at y==5 so that we're not touching the top-edge of the window
+        int py=5;
+        for(int layer=layers-1; layer>=0; layer--) {
+           final int ph = layerPH[layer];
+           for(VizNode n:layer(layer)) n.setY(py + ph/2);
+           py = py + ph + yJump;
+        }
+
+        relayout_edges();
+
+        // Since we're doing layout for the first time, we need to explicitly set top and bottom, since
+        // otherwise "recalc_bound" will merely "extend top and bottom" as needed.
+        recalc_bound(true);
+    }
+
+    /** Re-establish top/left/width/height. */
+    public void recalc_bound(boolean fresh) {
+        if (nodes.size()==0) { top=0; bottom=10; totalHeight=10; left=0; totalWidth=10; return; }
+        if (fresh) { top=nodes.get(0).y()-nodes.get(0).getHeight()/2-5; bottom=nodes.get(0).y()+nodes.get(0).getHeight()/2+5; }
+        // Find the leftmost and rightmost pixel
         int minX = (int) (nodes.get(0).x() - nodes.get(0).getWidth()/2 - 5);
         int maxX = (int) (nodes.get(0).x() + nodes.get(0).getWidth()/2 + 5);
         for(VizNode n:nodes) {
@@ -447,27 +471,22 @@ public final class VizGraph extends DiGraph {
         }
         left=minX;
         totalWidth=maxX-minX;
-
-        // Calculate each node's y, and figure out the total width and total height
-        int py=5; // So that we are not touching the top-edge of the window
-        for(int layer=layers-1; layer>=0; layer--) {
-           final int ph = layerPH[layer];
-           for(VizNode n:layer(layer)) n.setY(py + ph/2 - n.getHeight()/2 + n.getUp());
-           py = py + ph + yJump/2;
-           py = py + yJump/2;
+        // Find the topmost and bottommost pixel
+        for(int layer=layers()-1; layer>=0; layer--) {
+           for(VizNode n:layer(layer)) { int ytop=n.y()-n.getHeight()/2-5; int ybottom=n.y()+n.getHeight()/2+5; if (top>ytop) top=ytop; if (bottom<ybottom) bottom=ybottom; }
         }
-        top=0;
-        totalHeight=py;
+        totalHeight=bottom-top;
+    }
 
+    /** Assuming everything was laid out already, but at least one node just moved horizontally or vertical, then this re-layouts ALL edges. */
+    public void relayout_edges() {
         // Now layout the edges, initially as straight lines
         for(VizEdge e:edges) e.resetPath();
-
         // Now, scan layer-by-layer to find edges that intersect nodes improperly, and bend them accordingly
-        for(int layer=layers-1; layer>0; layer--) {
+        for(int layer=layers()-1; layer>0; layer--) {
            List<VizNode> top=layer(layer), bottom=layer(layer-1);
            checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
         }
-
         // Now, for each edge that has an arrow head, move it to the right place
         for(VizEdge e:edges) layout_arrowHead(e);
     }
@@ -488,15 +507,6 @@ public final class VizGraph extends DiGraph {
             checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
             for(VizNode n:top) for(VizEdge e:n.outEdges()) layout_arrowHead(e);
         }
-        // Find the leftmost and rightmost pixel
-        int minX = (int) (nodes.get(0).x() - nodes.get(0).getWidth()/2 - 5);
-        int maxX = (int) (nodes.get(0).x() + nodes.get(0).getWidth()/2 + 5);
-        for(VizNode n:nodes) {
-            int min = (int) (n.x() - n.getWidth()/2                   - 5); if (minX>min) minX=min;
-            int max = (int) (n.x() + n.getWidth()/2 + n.getReserved() + 5); if (maxX<max) maxX=max;
-        }
-        left=minX;
-        totalWidth=maxX-minX;
     }
 
     /** Positions the arrow heads of the given edge properly. */
@@ -528,20 +538,20 @@ public final class VizGraph extends DiGraph {
     //============================================================================================================================//
 
     /** Assuming layout has been performed, this drwas the graph with the given magnification scale. */
-    public void draw(Graphics2D gr, double scale, Object selected, Object highlight) {
+    public void draw(Artist gr, double scale, Object selected, Object highlight) {
         if (highlight==null) highlight=selected;
         VizEdge highFirstEdge=null, highLastEdge=null;
         if (highlight instanceof VizEdge) {
-            highFirstEdge=(VizEdge)highlight;
-            while(highFirstEdge.a().shape()==null) highFirstEdge=highFirstEdge.a().inEdges().get(0);
-            highLastEdge=(VizEdge)highlight;
-            while(highLastEdge.b().shape()==null) highLastEdge=highLastEdge.b().outEdges().get(0);
+           highFirstEdge=(VizEdge)highlight;
+           while(highFirstEdge.a().shape()==null) highFirstEdge=highFirstEdge.a().inEdges().get(0);
+           highLastEdge=(VizEdge)highlight;
+           while(highLastEdge.b().shape()==null) highLastEdge=highLastEdge.b().outEdges().get(0);
         }
         // Since drawing an edge will automatically draw all segments if they're connected via dummy nodes,
         // we must make sure we only draw out edges from non-dummy-nodes
         for(VizNode n:nodes) if (n.shape()!=null) {
-            for(VizEdge e:n.outEdges())  if (e!=highFirstEdge) e.draw(gr, scale, false);
-            for(VizEdge e:n.selfEdges()) if (e!=highFirstEdge) e.draw(gr, scale, false);
+           for(VizEdge e:n.outEdges())  if (e!=highFirstEdge) e.draw(gr, scale, false);
+           for(VizEdge e:n.selfEdges()) if (e!=highFirstEdge) e.draw(gr, scale, false);
         }
         if (highFirstEdge!=null) highFirstEdge.draw(gr, scale, true);
         for(VizNode n:nodes) n.draw(gr, scale, n==highlight);

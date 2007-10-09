@@ -22,7 +22,6 @@ package edu.mit.csail.sdg.alloy4graph;
 
 import static java.awt.Color.BLACK;
 import java.awt.Color;
-import java.awt.Graphics2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.awt.geom.QuadCurve2D;
@@ -126,7 +125,7 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** Reset the path as a straightline from the center of the "from" node to the center of the "to" node. */
     void resetPath() {
         VizNode a=a(), b=b();
-        double ax=a.x(), ay=a.y()-a.getUp()+a.getHeight()/2;
+        double ax=a.x(), ay=a.y();
         if (a==b) {
            int i, n=a.selfEdges().size(), q=selfLoopMinWidth, d=selfLoopXGap;
            for(i=0; i<n; i++) if (a.selfEdges().get(i)==this) break;
@@ -137,7 +136,7 @@ public final class VizEdge extends DiGraph.DiEdge {
            path.add(1, ax+a.getWidth()/2+q+i*d, ay-p);
            path.add(2, ax+a.getWidth()/2+q+i*d, ay+p);
         } else {
-           path=new VizPath(ax, ay, b.x(), b.y()-b.getUp()+b.getHeight()/2);
+           path=new VizPath(ax, ay, b.x(), b.y());
         }
     }
 
@@ -160,10 +159,10 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
-    public void draw(Graphics2D gr, double scale, boolean highlight) {
+    public void draw(Artist gr, double scale, boolean highlight) {
        final int top=((VizGraph)(a().graph)).top, left=((VizGraph)(a().graph)).left;
        gr.translate(-left, -top);
-       if (highlight) { gr.setColor(Color.RED); VizStyle.BOLD.set(gr,scale); } else { gr.setColor(color); style.set(gr, scale); }
+       if (highlight) { gr.setColor(Color.RED); gr.set(VizStyle.BOLD, scale); } else { gr.setColor(color); gr.set(style, scale); }
        if (a()==b()) {
           // Draw the self edge
           double x0=path.getX(0), y0=path.getY(0), x1=path.getX(1), y1=y0, x2=x1, y2=path.getY(2), x3=path.getX(3), y3=y2;
@@ -185,24 +184,25 @@ public final class VizEdge extends DiGraph.DiEdge {
           }
           p.draw(gr);
        }
-       VizStyle.SOLID.set(gr,scale);
+       gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
-    public void drawArrowhead(Graphics2D gr, double scale, boolean highlight) {
+    public void drawArrowhead(Artist gr, double scale, boolean highlight) {
        final int top=((VizGraph)(a().graph)).top, left=((VizGraph)(a().graph)).left;
        // Return if there are no arrow heads to draw
        if (!ahead || a().shape()==null) if (!bhead || b().shape()==null) return;
        // Check to see if this edge is highlighted or not
        double fan;
        if (highlight) {
-          fan=bigFan; gr.setColor(Color.RED); VizStyle.BOLD.set(gr,scale);
+          fan=bigFan; gr.setColor(Color.RED); gr.set(VizStyle.BOLD, scale);
        } else {
-          fan=(style==VizStyle.BOLD?bigFan:smallFan); gr.setColor(color); style.set(gr,scale);
+          fan=(style==VizStyle.BOLD?bigFan:smallFan); gr.setColor(color); gr.set(style, scale);
        }
        // Now, draw the arrow heads if needed
-       double tip = (gr.getFontMetrics().getMaxAscent()+gr.getFontMetrics().getMaxDescent()) / scale * 0.6D; // Length of arrow head
+       VizNode.updateCache(a().fontSize(), false);
+       double tip = (VizNode.cachedFontMetrics.getMaxAscent()+VizNode.cachedFontMetrics.getMaxDescent()) / scale * 0.6D; // Length of arrow head
        int n = path.getPoints();
        if (ahead && a().shape()!=null) {
           double ax=path.getX(0), ay=path.getY(0), bx=path.getX(1), by=path.getY(1);

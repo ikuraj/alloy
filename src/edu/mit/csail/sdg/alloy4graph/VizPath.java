@@ -20,7 +20,6 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-import java.awt.Graphics2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.QuadCurve2D;
@@ -123,7 +122,7 @@ public final class VizPath {
     }
 
     /** Draws the path; we will attempt to round the corner a bit so that the turns are not too sharp. */
-    public void draw(Graphics2D gr) {
+    public void draw(Artist gr) {
        Point2D.Double a=points.get(0);
        for(int i=1; i<points.size(); i++) {
           double gap;

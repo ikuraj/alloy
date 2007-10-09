@@ -78,7 +78,7 @@ public final class VizNode extends DiGraph.DiNode {
     private static Graphics2D cachedGraphics;
 
     /** If nonnull, it caches the FontMetrics object associated with the current font size and font boldness. */
-    private static FontMetrics cachedFontMetrics;
+    static FontMetrics cachedFontMetrics;
 
     /** If nonnull, it caches the Font object associated with the current font size and font boldness. */
     private static Font cachedFont;
@@ -90,7 +90,7 @@ public final class VizNode extends DiGraph.DiNode {
     private static boolean cachedFontBoldness;
 
     /** Updates cached{Image,Graphics,Metrics,Font} based on the given font size and font boldness. */
-    private static void updateCache(int fontSize, boolean fontBoldness) {
+    static void updateCache(int fontSize, boolean fontBoldness) {
        if (cachedFont==null || cachedFontMetrics==null || fontSize!=cachedFontSize || fontBoldness!=cachedFontBoldness) {
           if (cachedImage==null) cachedImage=new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
           if (cachedGraphics==null) cachedGraphics=(Graphics2D)(cachedImage.getGraphics());
@@ -104,10 +104,10 @@ public final class VizNode extends DiGraph.DiNode {
 
     // =============================== per-node settings ==================================================
 
-    /** The X coordinate of the center of the text labels. */
+    /** The X coordinate of the center. */
     private int textX = 0;
 
-    /** The Y coordinate of the center of the text labels. */
+    /** The Y coordinate of the center. */
     private int textY = 0;
 
     /**
@@ -152,6 +152,9 @@ public final class VizNode extends DiGraph.DiNode {
     /** Returns the Y coordinate of the center of the text labels. */
     public int y() { return textY; }
 
+    /** Returns the font size. */
+    public int fontSize() { return fontSize; }
+
     /** Changes the X coordinate of the center of the text labels. */
     public void setX(int x) { textX=x;}
 
@@ -166,7 +169,7 @@ public final class VizNode extends DiGraph.DiNode {
         if (label==null || label.length()==0) return this;
         if (labels==null) labels=new ArrayList<String>();
         labels.add(0,label);
-        up=(-1);
+        updown=(-1);
         return this;
     }
 
@@ -175,38 +178,38 @@ public final class VizNode extends DiGraph.DiNode {
         if (label==null || label.length()==0) return this;
         if (labels==null) labels=new ArrayList<String>();
         labels.add(label);
-        up=(-1);
+        updown=(-1);
         return this;
     }
 
     /** Changes the node color, then invalidate the computed bounds. */
     public VizNode set(Color color) {
-        if (color!=null && this.color!=color) { this.color=color; up=(-1); }
+        if (color!=null && this.color!=color) { this.color=color; updown=(-1); }
         return this;
     }
 
     /** Changes the node shape (where null means change the node into a dummy node), then invalidate the computed bounds. */
     public VizNode set(VizShape shape) {
-        if (this.shape!=shape) { this.shape=shape; up=(-1); }
+        if (this.shape!=shape) { this.shape=shape; updown=(-1); }
         return this;
     }
 
     /** Changes the line style, then invalidate the computed bounds. */
     public VizNode set(VizStyle style) {
-        if (style!=null && this.style!=style) { this.style=style; up=(-1); }
+        if (style!=null && this.style!=style) { this.style=style; updown=(-1); }
         return this;
     }
 
     /** Changes the font boldness, then invalidate the computed bounds. */
     public VizNode setFontBoldness(boolean bold) {
-        if (this.fontBold!=bold) { this.fontBold=bold; up=(-1); }
+        if (this.fontBold!=bold) { this.fontBold=bold; updown=(-1); }
         return this;
     }
 
     /** Changes the font size, then invalidate the computed bounds. */
     public VizNode setFontSize(int fontSize)   {
        if (fontSize<8) fontSize=8; else if (fontSize>72) fontSize=72;
-       if (this.fontSize!=fontSize) { this.fontSize=fontSize; up=(-1); }
+       if (this.fontSize!=fontSize) { this.fontSize=fontSize; updown=(-1); }
        return this;
     }
 
@@ -223,41 +226,35 @@ public final class VizNode extends DiGraph.DiNode {
 
     // ============================ these are computed by calcBounds() =========================================
 
-    /** If (up>=0), this is the distance from the center of the text label to the top edge. */
-    private int up=(-1);
+    /** If (updown>=0), this is the distance from the center to the top edge. */
+    private int updown=(-1);
 
-    /** If (up>=0), this is the distance from the center of the text label to the bottom edge. */
-    private int down;
-
-    /** If (up>=0), this is the distance from the center of the text label to the left edge. */
+    /** If (updown>=0), this is the distance from the center to the left edge. */
     private int side;
 
-    /** If (up>=0), this is the width of the text label. */
+    /** If (updown>=0), this is the vertical distance between the center of the text label and the center of the node. */
+    private int yShift;
+
+    /** If (updown>=0), this is the width of the text label. */
     private int width;
 
-    /** If (up>=0), this is the height of the text label. */
+    /** If (updown>=0), this is the height of the text label. */
     private int height;
 
-    /** If (up>=0 and shape!=null), this is the bounding polygon. */
+    /** If (updown>=0 and shape!=null), this is the bounding polygon. */
     private Shape poly;
 
-    /** If (up>=0 and shape!=null and poly2!=null), then poly2 will also be drawn during the draw() method. */
+    /** If (updown>=0 and shape!=null and poly2!=null), then poly2 will also be drawn during the draw() method. */
     private Shape poly2;
 
-    /** If (up>=0 and shape!=null and poly3!=null), then poly3 will also be drawn during the draw() method. */
+    /** If (updown>=0 and shape!=null and poly3!=null), then poly3 will also be drawn during the draw() method. */
     private Shape poly3;
 
-    /** Returns the distance from the center of the text label to the top edge. */
-    public int getUp() { if (up<0) calcBounds(); return up; }
-
-    /** Returns the distance from the center of the text label to the bottom edge. */
-    public int getDown() { if (up<0) calcBounds(); return down; }
-
     /** Returns the node height. */
-    public int getHeight()  { if (up<0) calcBounds(); return up+down; }
+    public int getHeight()  { if (updown<0) calcBounds(); return updown+updown; }
 
     /** Returns the node width. */
-    public int getWidth()  { if (up<0) calcBounds(); return side+side; }
+    public int getWidth()  { if (updown<0) calcBounds(); return side+side; }
 
     /** Returns the amount of space we need to reserve on the right hand side for the self edges (0 if this has no self edges now) */
     public int getReserved() {
@@ -268,7 +265,7 @@ public final class VizNode extends DiGraph.DiNode {
     /** Returns true if the given point intersects this node or not. */
     public boolean intersects(double x, double y) {
         if (shape==null) return false;
-        if (up<0) calcBounds();
+        if (updown<0) calcBounds();
         return poly.contains(x-textX, y-textY);
     }
 
@@ -279,7 +276,7 @@ public final class VizNode extends DiGraph.DiNode {
      */
     public void intersectsNonhorizontalRay(double rx, double ry, Point2D.Double ans) {
        if (shape==null) { ans.x=textX; ans.y=textY; return; }
-       if (up<0) calcBounds();
+       if (updown<0) calcBounds();
        // Shift the input argument to the center of this node
        rx=rx-textX; ry=ry-textY;
        double slope=rx/ry, step=(ry<0 ? -1 : 1);
@@ -311,7 +308,7 @@ public final class VizNode extends DiGraph.DiNode {
      */
     public void intersectsNonverticalRay(double rx, double ry, Point2D.Double ans) {
        if (shape==null) { ans.x=textX; ans.y=textY; return; }
-       if (up<0) calcBounds();
+       if (updown<0) calcBounds();
        // Shift the input argument to the center of this node
        rx=rx-textX; ry=ry-textY;
        double slope=ry/rx, step=(rx<0 ? -1 : 1);
@@ -338,8 +335,9 @@ public final class VizNode extends DiGraph.DiNode {
 
     /** Return the horizontal point of intersection of this node with a horizontal ray at height y going from this.x() rightward. */
     public double intersectsAtHeight(double y) {
+       // TODO: need better precision for CIRCLE, M_CIRCLE, and DOUBLE_CIRCLE
        if (shape==null) return 0;
-       if (up<0) calcBounds();
+       if (updown<0) calcBounds();
        y=y-textY;
        double x;
        for(x=0;;x=x+1) if (!poly.contains(x,y)) return x+textX;
@@ -349,8 +347,9 @@ public final class VizNode extends DiGraph.DiNode {
 
     /** Calculate this node's bounds. */
     public void calcBounds() {
+       yShift=0;
        width=2*labelPadding; if (width<dummyWidth) side=dummyWidth/2;
-       height=width;         if (height<dummyHeight) down=(up=dummyHeight/2);
+       height=width;         if (height<dummyHeight) updown=dummyHeight/2;
        poly=(poly2=(poly3=null));
        if (shape==null) return;
        Polygon poly=new Polygon();
@@ -366,20 +365,36 @@ public final class VizNode extends DiGraph.DiNode {
           height=height+ad;
        }
        int hw=((width+1)/2)+labelPadding;  if (hw<ad/2) hw=ad/2; width=hw*2; side=hw;
-       int hh=((height+1)/2)+labelPadding; if (hh<ad/2) hh=ad/2; height=hh*2; up=(down=hh);
+       int hh=((height+1)/2)+labelPadding; if (hh<ad/2) hh=ad/2; height=hh*2; updown=hh;
        switch(shape) {
+          case HOUSE:
+             yShift = ad/2;
+             updown = updown + yShift;
+             poly.addPoint(-hw,yShift-hh); poly.addPoint(0,-updown); poly.addPoint(hw,yShift-hh); poly.addPoint(hw,yShift+hh); poly.addPoint(-hw,yShift+hh);
+             break;
+          case INV_HOUSE:
+             yShift = -ad/2;
+             updown = updown - yShift;
+             poly.addPoint(-hw,yShift-hh); poly.addPoint(hw,yShift-hh); poly.addPoint(hw,yShift+hh); poly.addPoint(0,updown); poly.addPoint(-hw,yShift+hh);
+             break;
+          case TRIANGLE:
+          case INV_TRIANGLE: {
+             int dx = (int) (height/sqrt3); dx=dx+1; if (dx<6) dx=6;
+             int dy = (int) (hw*sqrt3);     dy=dy+1; if (dy<6) dy=6; dy=(dy/2)*2;
+             side += dx; updown += dy/2;
+             if (shape==VizShape.TRIANGLE) {
+                yShift = dy/2;
+                poly.addPoint(0, -updown); poly.addPoint(hw+dx, updown); poly.addPoint(-hw-dx, updown);
+             } else {
+                yShift = -dy/2;
+                poly.addPoint(0, updown); poly.addPoint(hw+dx, -updown); poly.addPoint(-hw-dx, -updown);
+             }
+             break;
+          }
           case HEXAGON:
              side += ad;
              poly.addPoint(-hw-ad, 0); poly.addPoint(-hw, -hh); poly.addPoint(hw, -hh);
              poly.addPoint(hw+ad, 0); poly.addPoint(hw, hh); poly.addPoint(-hw, hh);
-             break;
-          case HOUSE:
-             up += ad;
-             poly.addPoint(-hw,-hh); poly.addPoint(0,-hh-ad); poly.addPoint(hw,-hh); poly.addPoint(hw,hh); poly.addPoint(-hw,hh);
-             break;
-          case INV_HOUSE:
-             down += ad;
-             poly.addPoint(-hw,-hh); poly.addPoint(hw,-hh); poly.addPoint(hw,hh); poly.addPoint(0,hh+ad); poly.addPoint(-hw,hh);
              break;
           case TRAPEZOID:
              side += ad;
@@ -393,54 +408,40 @@ public final class VizNode extends DiGraph.DiNode {
              side += ad;
              poly.addPoint(-hw, -hh); poly.addPoint(hw+ad, -hh); poly.addPoint(hw, hh); poly.addPoint(-hw-ad, hh);
              break;
-          case TRIANGLE:
-          case INV_TRIANGLE: {
-             int dx = (int) (height/sqrt3); dx=dx+1; if (dx<5) dx=5;
-             int dy = (int) (hw*sqrt3);     dy=dy+1; if (dy<5) dy=5;
-             if (shape==VizShape.TRIANGLE) {
-                side += dx; up += dy;
-                poly.addPoint(0, -hh-dy); poly.addPoint(hw+dx, hh); poly.addPoint(-hw-dx, hh);
-             } else {
-                side += dx; down += dy;
-                poly.addPoint(-hw-dx, -hh); poly.addPoint(hw+dx, -hh); poly.addPoint(0, hh+dy);
-             }
-             break;
-          }
           case M_DIAMOND:
           case DIAMOND:
              if (shape==VizShape.M_DIAMOND) {
                 if (hw<10) { hw=10; side=10; width=20; }
-                if (hh<10) { hh=10; up=10; down=10; height=20; }
+                if (hh<10) { hh=10; updown=10; height=20; }
              }
-             up += hw; down += hw; side += hh;
+             updown += hw; side += hh;
              poly.addPoint(-hw-hh, 0); poly.addPoint(0, -hh-hw); poly.addPoint(hw+hh, 0); poly.addPoint(0, hh+hw);
              break;
           case M_SQUARE:
              if (hh<hw) hh=hw; else hw=hh;
              if (hh<6) { hh=6; hw=6; }
              this.width=hw*2;  this.side=hw;
-             this.height=hh*2; this.up=hh; this.down=hh;
-             side += 4; up +=4; down += 4;
+             this.height=hh*2; this.updown=hh;
+             side += 4; updown +=4;
              poly.addPoint(-hw-4,-hh-4); poly.addPoint(hw+4,-hh-4); poly.addPoint(hw+4,hh+4); poly.addPoint(-hw-4,hh+4);
              break;
           case OCTAGON:
           case DOUBLE_OCTAGON:
           case TRIPLE_OCTAGON: {
              int dx=(width)/3, dy=ad;
-             up += dy;
-             down += dy;
+             updown += dy;
              poly.addPoint(-hw, -hh); poly.addPoint(-hw+dx, -hh-dy); poly.addPoint(hw-dx, -hh-dy); poly.addPoint(hw, -hh);
              poly.addPoint(hw, hh); poly.addPoint(hw-dx, hh+dy); poly.addPoint(-hw+dx, hh+dy); poly.addPoint(-hw, hh);
              if (shape==VizShape.OCTAGON) break;
              double c=Math.sqrt(dx*dx+dy*dy), a=(dx*dy)/c, k=((a+5)*dy)/dx, r=Math.sqrt((a+5)*(a+5)+k*k)-dy;
              double dx1=((r-5)*dx)/dy, dy1=-(((dx+5D)*dy)/dx-dy-r);
              int x1=(int)(Math.round(dx1)), y1=(int)(Math.round(dy1));
-             up+=5; down+=5; side+=5;
+             updown+=5; side+=5;
              poly2=poly; poly=new Polygon();
              poly.addPoint(-hw-5, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-5); poly.addPoint(hw-dx+x1, -hh-dy-5); poly.addPoint(hw+5, -hh-y1);
              poly.addPoint(hw+5, hh+y1); poly.addPoint(hw-dx+x1, hh+dy+5); poly.addPoint(-hw+dx-x1, hh+dy+5); poly.addPoint(-hw-5, hh+y1);
              if (shape==VizShape.DOUBLE_OCTAGON) break;
-             up+=5; down+=5; side+=5;
+             updown+=5; side+=5;
              poly3=poly; poly=new Polygon(); x1=(int)(Math.round(dx1*2)); y1=(int)(Math.round(dy1*2));
              poly.addPoint(-hw-10, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-10); poly.addPoint(hw-dx+x1, -hh-dy-10); poly.addPoint(hw+10, -hh-y1);
              poly.addPoint(hw+10, hh+y1); poly.addPoint(hw-dx+x1, hh+dy+10); poly.addPoint(-hw+dx-x1, hh+dy+10); poly.addPoint(-hw-10, hh+y1);
@@ -454,25 +455,25 @@ public final class VizNode extends DiGraph.DiNode {
              int L = ((int) (radius / cos18))+2, a = (int) (L * sin36), b = (int) (L * cos36), c = (int) (radius * tan18);
              poly.addPoint(-L,0); poly.addPoint(-b,a); poly.addPoint(-c,L); poly.addPoint(c,L); poly.addPoint(b,a);
              poly.addPoint(L,0); poly.addPoint(b,-a); poly.addPoint(c,-L); poly.addPoint(-c,-L); poly.addPoint(-b,-a);
-             up=L; down=L; side=L;
+             updown=L; side=L;
              break;
           }
           case EGG:
           case ELLIPSE: {
              int pad = ad/2;
              side+=pad;
-             up+=pad;
-             down+=pad;
+             updown+=pad;
              int d = (shape==VizShape.ELLIPSE) ? 0 : (ad/2);
              GeneralPath path=new GeneralPath();
              path.moveTo(-side,d);
-             path.quadTo(-side,-up,0,-up); path.quadTo(side,-up,side,d); path.quadTo(side,up,0,up); path.quadTo(-side,up,-side,d);
+             path.quadTo(-side,-updown,0,-updown); path.quadTo(side,-updown,side,d);
+             path.quadTo(side,updown,0,updown); path.quadTo(-side,updown,-side,d);
              path.closePath();
              this.poly=path;
              return; // We must return, since otherwise "this.poly" will be overwritten by the local variable "poly"
           }
           default: { // BOX
-             if (shape!=VizShape.BOX) { int d=ad/2; hw=hw+d; side=hw; hh=hh+d; up=hh; down=hh; }
+             if (shape!=VizShape.BOX) { int d=ad/2; hw=hw+d; side=hw; hh=hh+d; updown=hh; }
              poly.addPoint(-hw,-hh); poly.addPoint(hw,-hh); poly.addPoint(hw,hh); poly.addPoint(-hw,hh);
           }
        }
@@ -480,11 +481,11 @@ public final class VizNode extends DiGraph.DiNode {
     }
 
     /** Assuming calcBounds() have been called, and (x,y) have been set, then this draws the node. */
-    public void draw(Graphics2D gr, double scale, boolean highlight) {
+    public void draw(Artist gr, double scale, boolean highlight) {
        final int top=((VizGraph)graph).top, left=((VizGraph)graph).left;
        if (shape==null) return;
-       if (up<0) calcBounds();
-       style.set(gr, scale);
+       if (updown<0) calcBounds();
+       gr.set(style, scale);
        updateCache(fontSize, fontBold);
        gr.setFont(cachedFont);
        final int ad = cachedFontMetrics.getMaxAscent() + cachedFontMetrics.getMaxDescent();
@@ -494,24 +495,22 @@ public final class VizNode extends DiGraph.DiNode {
           int hw=width/2, hh=height/2;
           int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
           if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
-          gr.fillArc(-radius, -radius, radius*2, radius*2, 0, 360);
+          gr.fillCircle(radius);
           gr.setColor(BLACK);
-          gr.drawArc(-radius, -radius, radius*2, radius*2, 0, 360);
-          if (style==VizStyle.DOTTED || style==VizStyle.DASHED) VizStyle.SOLID.set(gr, scale);
+          gr.drawCircle(radius);
+          if (style==VizStyle.DOTTED || style==VizStyle.DASHED) gr.set(VizStyle.SOLID, scale);
           if (shape==VizShape.M_CIRCLE && 10*radius>=25 && radius>5) {
              int d = (int) Math.sqrt((double)(10*radius-25));
              if (d>0) { gr.drawLine(-d,-radius+5,d,-radius+5); gr.drawLine(-d,radius-5,d,radius-5); }
           }
-          if (shape==VizShape.DOUBLE_CIRCLE) {
-             int r = radius-5; gr.drawArc(-r, -r, r*2, r*2, 0, 360);
-          }
+          if (shape==VizShape.DOUBLE_CIRCLE) gr.drawCircle(radius-5);
        } else {
           gr.fill(poly);
           gr.setColor(BLACK);
           gr.draw(poly);
           if (poly2!=null) gr.draw(poly2);
           if (poly3!=null) gr.draw(poly3);
-          if (style==VizStyle.DOTTED || style==VizStyle.DASHED) VizStyle.SOLID.set(gr, scale);
+          if (style==VizStyle.DOTTED || style==VizStyle.DASHED) gr.set(VizStyle.SOLID, scale);
           if (shape==VizShape.M_DIAMOND) {
              gr.drawLine(-side+8, -8, -side+8, 8); gr.drawLine(-8, -side+8, 8, -side+8);
              gr.drawLine(side-8, -8, side-8, 8); gr.drawLine(-8, side-8, 8, side-8);
@@ -521,14 +520,14 @@ public final class VizNode extends DiGraph.DiNode {
              gr.drawLine(-side, side-8, -side+8, side); gr.drawLine(side, side-8, side-8, side);
           }
        }
-       VizStyle.SOLID.set(gr, scale);
+       gr.set(VizStyle.SOLID, scale);
        int clr = (color.getRGB() & 0xFFFFFF);
        gr.setColor((clr==0x000000 || clr==0xff0000 || clr==0x0000ff) ? Color.WHITE : Color.BLACK);
        if (labels!=null && labels.size()>0) {
-          int x=(-width/2), y=(-labels.size()*ad/2);
+          int x=(-width/2), y=yShift+(-labels.size()*ad/2);
           for(int i=0; i<labels.size(); i++) {
              String t = labels.get(i);
-             int w = ((int) (cachedFontMetrics.getStringBounds(t, gr).getWidth())) + 1; // Round it up
+             int w = ((int) (cachedFontMetrics.getStringBounds(t, cachedGraphics).getWidth())) + 1; // Round it up
              if (width>w) w=(width-w)/2; else w=0;
              gr.drawString(t, x+w, y+cachedFontMetrics.getMaxAscent());
              y=y+ad;
@@ -537,25 +536,33 @@ public final class VizNode extends DiGraph.DiNode {
        gr.translate(left-textX, top-textY);
     }
 
+    /** Helper method that sets the Y coordinate of every node in a given layer. */
+    private void setY(int layer, int y) {
+        for(VizNode n:graph.layer(layer)) n.textY=y;
+    }
+
     /** Assuming the graph is already laid out, this shifts this node (and re-layouts nearby nodes/edges) */
     public void tweak(int x, int y) {
-       final int xJump=VizGraph.xJump;
-       if (textX==x) return;
-       List<VizNode> layer=graph.layer(layer());
-       int i, n=layer.size();
-       for(i=0; i<n; i++) if (layer.get(i)==this) break;
+       final int[] ph = ((VizGraph)graph).layerPH;
+       if (textX==x && textY==y) return; // If no change, then return right away
+       final int xJump = VizGraph.xJump;
+       final int yJump = VizGraph.yJump/2;
+       List<VizNode> layer = graph.layer(layer());
+       final int n = layer.size();
+       int i;
+       for(i=0; i<n; i++) if (layer.get(i)==this) break; // Figure out this node's position in its layer
        if (textX>x) {
           textX=x;
-          x=x-(shape==null?0:side);
+          x=x-(shape==null?0:side); // x is now the left-most edge of this node
           for(i--;i>=0;i--) {
              VizNode node=layer.get(i);
              int side=(node.shape==null?0:node.side);
              if (node.textX+side+node.getReserved()+xJump>x) node.textX=x-side-node.getReserved()-xJump;
              x=node.textX-side;
           }
-       } else {
+       } else if (textX<x) {
           textX=x;
-          x=x+(shape==null?0:side)+getReserved();
+          x=x+(shape==null?0:side)+getReserved(); // x is now the right most edge of this node
           for(i++;i<n;i++) {
              VizNode node=layer.get(i);
              int side=(node.shape==null?0:node.side);
@@ -563,6 +570,31 @@ public final class VizNode extends DiGraph.DiNode {
              x=node.textX+side+node.getReserved();
           }
        }
-       ((VizGraph)graph).relayout_edges(layer());
+       if (textY>y) {
+           i=layer();
+           setY(i,y);
+           y=y-ph[i]/2; // y is now the top-most edge of this layer
+           for(i++; i<graph.layers(); i++) {
+               List<VizNode> list=graph.layer(i);
+               VizNode first=list.get(0);
+               if (first.textY+ph[i]/2+yJump > y) setY(i, y-ph[i]/2-yJump);
+               y=first.textY-ph[i]/2;
+           }
+           ((VizGraph)graph).relayout_edges();
+       } else if (textY<y) {
+           i=layer();
+           setY(i,y);
+           y=y+ph[i]/2; // y is now the bottom-most edge of this layer
+           for(i--; i>=0; i--) {
+               List<VizNode> list=graph.layer(i);
+               VizNode first=list.get(0);
+               if (first.textY-ph[i]/2-yJump < y) setY(i, y+ph[i]/2+yJump);
+               y=first.textY+ph[i]/2;
+           }
+           ((VizGraph)graph).relayout_edges();
+       } else {
+           ((VizGraph)graph).relayout_edges(layer());
+       }
+       ((VizGraph)graph).recalc_bound(false);
     }
 }
