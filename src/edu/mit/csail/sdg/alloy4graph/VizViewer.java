@@ -51,6 +51,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import edu.mit.csail.sdg.alloy4.OurDialog;
+import edu.mit.csail.sdg.alloy4.OurPDFWriter;
 import edu.mit.csail.sdg.alloy4.OurPNGWriter;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -118,7 +119,7 @@ public final class VizViewer extends JPanel {
         final JMenuItem zoomOut = new JMenuItem("Zoom Out");
         final JMenuItem zoom100 = new JMenuItem("Zoom to 100%");
         final JMenuItem zoomToFit = new JMenuItem("Zoom to Fit");
-        final JMenuItem print = new JMenuItem("Export to PNG");
+        final JMenuItem print = new JMenuItem("Export to PNG or PDF");
         pop.add(zoomIn);
         pop.add(zoomOut);
         pop.add(zoom100);
@@ -128,7 +129,7 @@ public final class VizViewer extends JPanel {
            public void actionPerformed(ActionEvent e) {
               Container c=getParent();
               while(c!=null) { if (c instanceof JViewport) break; else c=c.getParent(); }
-              if (e.getSource() == print) do_saveAsPNG();
+              if (e.getSource() == print) do_saveAs();
               if (e.getSource() == zoom100) scale=1d;
               if (e.getSource() == zoomIn) { scale=scale*1.33d; if (!(scale<500d)) scale=500d; }
               if (e.getSource() == zoomOut) { scale=scale/1.33d; if (!(scale>0.1d)) scale=0.1d; }
@@ -256,8 +257,8 @@ public final class VizViewer extends JPanel {
        }
     }
 
-    /** Export the current drawing as a PNG file by asking the user for the filename and the image resolution. */
-    public void do_saveAsPNG() {
+    /** Export the current drawing as a PNG or PDF file by asking the user for the filename and the image resolution. */
+    public void do_saveAs() {
        // Find the enclosing JFrame if such a JFrame exists
        JFrame me=null;
        for(Container c=getParent(); c!=null; c=c.getParent()) if (c instanceof JFrame) { me=(JFrame)c; break; }
@@ -274,68 +275,81 @@ public final class VizViewer extends JPanel {
        final JTextField w1=new JTextField(""+iw); final JLabel w0=new JLabel("Width: "), w2=new JLabel();
        final JTextField h1=new JTextField(""+ih); final JLabel h0=new JLabel("Height: "), h2=new JLabel();
        final JTextField d1=new JTextField(""+(int)dpi); final JLabel d0=new JLabel("Resolution: "), d2=new JLabel(" dots per inch");
-       Dimension dim = new Dimension(100,20);
-       w1.setMaximumSize(dim); w1.setPreferredSize(dim);
-       h1.setMaximumSize(dim); h1.setPreferredSize(dim);
-       d1.setMaximumSize(dim); d1.setPreferredSize(dim);
+       final JTextField dp1=new JTextField(""+(int)dpi);final JLabel dp0=new JLabel("Resolution: "),dp2=new JLabel(" dots per inch");
        do_refresh(0,ratio,w1,w2,h1,h2,d1,d2,msg);
-       w1.setEnabled(false);
+       Dimension dim = new Dimension(100,20);
+       w1.setMaximumSize(dim); w1.setPreferredSize(dim); w1.setEnabled(false);
+       h1.setMaximumSize(dim); h1.setPreferredSize(dim); h1.setEnabled(false);
+       d1.setMaximumSize(dim); d1.setPreferredSize(dim); d1.setEnabled(false);
+       dp1.setMaximumSize(dim); dp1.setPreferredSize(dim); dp1.setEnabled(false);
        w1.getDocument().addDocumentListener(new DocumentListener() {
           public void changedUpdate(DocumentEvent e) { do_refresh(1,ratio,w1,w2,h1,h2,d1,d2,msg); }
           public void insertUpdate(DocumentEvent e) { changedUpdate(null); }
           public void removeUpdate(DocumentEvent e) { changedUpdate(null); }
        });
-       h1.setEnabled(false);
        h1.getDocument().addDocumentListener(new DocumentListener() {
           public void changedUpdate(DocumentEvent e) { do_refresh(2,ratio,w1,w2,h1,h2,d1,d2,msg); }
           public void insertUpdate(DocumentEvent e) { changedUpdate(null); }
           public void removeUpdate(DocumentEvent e) { changedUpdate(null); }
        });
-       d1.setEnabled(false);
        d1.getDocument().addDocumentListener(new DocumentListener() {
           public void changedUpdate(DocumentEvent e) { do_refresh(3,ratio,w1,w2,h1,h2,d1,d2,msg); }
           public void insertUpdate(DocumentEvent e) { changedUpdate(null); }
           public void removeUpdate(DocumentEvent e) { changedUpdate(null); }
        });
-       final JRadioButton b1 = new JRadioButton("Using the window's current magnification:", true);
-       final JRadioButton b2 = new JRadioButton("Using a specific width, height, and resolution:", false);
+       final JRadioButton b1 = new JRadioButton("As a PNG with the window's current magnification:", true);
+       final JRadioButton b2 = new JRadioButton("As a PNG with a specific width, height, and resolution:", false);
+       final JRadioButton b3 = new JRadioButton("As a PDF with the given resolution:", false);
        b1.addActionListener(new ActionListener() {
           public void actionPerformed(ActionEvent e) {
-             if (b2.isSelected()) b2.setSelected(false);
+             b2.setSelected(false); b3.setSelected(false);
              if (!b1.isSelected()) b1.setSelected(true);
-             w1.setEnabled(false); h1.setEnabled(false); d1.setEnabled(false); msg.setText(" ");
+             w1.setEnabled(false); h1.setEnabled(false); d1.setEnabled(false); dp1.setEnabled(false); msg.setText(" ");
              w1.setBackground(WHITE); h1.setBackground(WHITE); d1.setBackground(WHITE);
           }
        });
        b2.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-             if (b1.isSelected()) b1.setSelected(false);
-             if (!b2.isSelected()) b2.setSelected(true);
-             w1.setEnabled(true); h1.setEnabled(true); d1.setEnabled(true);
-             do_refresh(1,ratio,w1,w2,h1,h2,d1,d2,msg);
-          }
+           public void actionPerformed(ActionEvent e) {
+              b1.setSelected(false); b3.setSelected(false);
+              if (!b2.isSelected()) b2.setSelected(true);
+              w1.setEnabled(true); h1.setEnabled(true); d1.setEnabled(true); dp1.setEnabled(false); msg.setText(" ");
+              do_refresh(1,ratio,w1,w2,h1,h2,d1,d2,msg);
+           }
+       });
+       b3.addActionListener(new ActionListener() {
+           public void actionPerformed(ActionEvent e) {
+              b1.setSelected(false); b2.setSelected(false);
+              if (!b3.isSelected()) b3.setSelected(true);
+              w1.setEnabled(false); h1.setEnabled(false); d1.setEnabled(false); dp1.setEnabled(true); msg.setText(" ");
+              w1.setBackground(WHITE); h1.setBackground(WHITE); d1.setBackground(WHITE);
+           }
        });
        // Ask whether the user wants to change the width, height, and DPI
        double myScale;
        while(true) {
-          if (!OurDialog.getInput(me, "Export as PNG", new Object[]{
+          if (!OurDialog.getInput(me, "Export as PNG or PDF", new Object[]{
              b1, OurUtil.makeH(20, w, null), OurUtil.makeH(20, h, null), " ",
              b2, OurUtil.makeH(20, w0, w1, w2, null),
              OurUtil.makeH(20, h0, h1, h2, null),
              OurUtil.makeH(20, d0, d1, d2, null),
-             OurUtil.makeH(20, msg, null)
+             OurUtil.makeH(20, msg, null),
+             b3, OurUtil.makeH(20, dp0, dp1, dp2, null)
           })) return;
           // Let's validate the values
           if (b2.isSelected()) {
              int widthInPixel=do_refresh(3,ratio,w1,w2,h1,h2,d1,d2,msg);
              String err = msg.getText().trim();
              if (err.length()>0) continue;
-             dpi=Integer.parseInt(d1.getText());
+             dpi=Double.parseDouble(d1.getText());
              myScale=((double)widthInPixel)/graph.totalWidth;
              int heightInPixel=(int)(graph.totalHeight*myScale);
              if (widthInPixel>4000 || heightInPixel>4000)
                 if (!OurDialog.yesno(me, "The image dimension ("+widthInPixel+"x"+heightInPixel+") is very large. Are you sure?"))
                    continue;
+          } else if (b3.isSelected()) {
+             try { dpi=Double.parseDouble(dp1.getText()); } catch(NumberFormatException ex) { dpi=(-1); }
+             if (dpi<50 || dpi>3000) { OurDialog.alert(me, "The DPI must be between 50 and 3000.", "Error"); continue; }
+             myScale=0; // This field is unused for PDF generation
           } else {
              dpi=300;
              myScale=scale;
@@ -343,21 +357,41 @@ public final class VizViewer extends JPanel {
           break;
        }
        // Ask the user for a filename
-       File filename = OurDialog.askFile(me, false, null, ".png", "PNG file");
+       File filename;
+       if (b3.isSelected())
+           filename = OurDialog.askFile(me, false, null, ".pdf", "PDF file");
+       else
+           filename = OurDialog.askFile(me, false, null, ".png", "PNG file");
        if (filename==null) return;
        if (filename.exists() && !OurDialog.askOverwrite(me, filename.getAbsolutePath())) return;
-       // Attempt to write the PNG file
+       // Attempt to write the PNG or PDF file
        try {
           System.gc(); // Try to avoid possible premature out-of-memory exceptions
-          do_saveAsPNG(filename.getAbsolutePath(), myScale, dpi, dpi);
+          if (b3.isSelected())
+             do_saveAsPDF(filename.getAbsolutePath(), (int)dpi);
+          else
+             do_saveAsPNG(filename.getAbsolutePath(), myScale, dpi, dpi);
           synchronized(VizViewer.class) { oldDPI=dpi; }
           Util.setCurrentDirectory(filename.getParentFile());
        } catch(IOException ex) {
-          OurDialog.alert(me, "An error has occured in writing the PNG file:\n"+ex, "Error");
+          OurDialog.alert(me, "An error has occured in writing the output file:\n"+ex, "Error");
        } catch(OutOfMemoryError ex) {
           System.gc();
           OurDialog.alert(me, "Insufficient memory to export a file of that size; please reduce the DPI and try again.", "Error");
        }
+    }
+
+    /** Export the current drawing as a PDF file with the given image resolution. */
+    public void do_saveAsPDF(String filename, int dpi) throws IOException {
+       double xwidth = dpi*8+(dpi/2); // Width is up to 8.5 inch
+       double xheight = dpi*11;       // Height is up to 11 inch
+       double scale1 = ((double)(xwidth-dpi))  / graph.getTotalWidth();  // We leave 0.5 inch on the left and right
+       double scale2 = ((double)(xheight-dpi)) / graph.getTotalHeight(); // We leave 0.5 inch on the left and right
+       if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
+       OurPDFWriter x = new OurPDFWriter(dpi, filename);
+       x.write(""+scale2+" 0 0 "+scale2+" "+(dpi/2)+" "+(dpi/2)+" cm\n");
+       graph.draw(new Artist(x), scale2, null, null);
+       x.close();
     }
 
     /** Export the current drawing as a PNG file with the given file name and image resolution. */

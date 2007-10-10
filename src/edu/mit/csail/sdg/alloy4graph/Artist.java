@@ -166,6 +166,34 @@ public final class Artist {
         }
     }
 
+    /*
+     * Here is a quick summary of various PDF Graphics operations
+     * ==========================================================
+     *
+     * $x $y m                 --> begins a new path at the given coordinate
+     * $x $y l                 --> add the segment (LASTx,LASTy)..($x,$y) to the current path
+     * $cx $cy $x $y v         --> add the bezier curve (LASTx,LASTy)..(LASTx,LASTy)..($cx,$cy)..($x,$y) to the current path
+     * $cx $cy $x $y y         --> add the bezier curve (LASTx,LASTy)....($cx,$cy).....($x,$y)...($x,$y) to the current path
+     * $ax $ay $bx $by $x $y c --> add the bezier curve (LASTx,LASTy)....($ax,$ay)....($bx,$by)..($x,$y) to the current path
+     * h                       --> close the current path by adding a straightline segment from the current point to the start of the path
+     * $x $y $w $h re          --> append a rectangle to the current path as a complete subpath with lower-left corner at $x $y
+     *
+     * PATH S    --> draw that path
+     * PATH f    --> fill that path
+     * PATH B    --> fill then draw the path
+     *
+     * q                      --> saves the current graphics state
+     * 1 J                    --> sets the round cap
+     * 1 j                    --> sets the round joint
+     * [] 0 d                 --> sets the dash pattern as SOLID
+     * [4 6] 0 d              --> sets the dash pattern as 4 UNITS ON then 6 UNITS OFF
+     * 5 w                    --> sets the line width as 5 UNITS
+     * $a $b $c $d $e $f cm   --> appends the given matrix                [1 0 0 1 dx dy] is translate to dx dy
+     * $R $G $B RG            --> sets the stroke color (where 0 <= $R <= 1, etc)
+     * $R $G $B rg            --> sets the fill   color (where 0 <= $R <= 1, etc)
+     * Q                      --> restores the current graphics state
+     */
+
     /** The pattern for dotted line. */
     private static float[] dot = new float[]{1f,3f};
 
