@@ -230,7 +230,7 @@ public final class DotGraph {
     public Pair<String,JPanel> visualize() throws ErrorFatal {
         final String result=write();
         final VizGraph graph=write2();
-        VizViewer gp = new VizViewer(graph);
+        VizViewer gp = new VizViewer(graph, fontSize/12D);
         gp.setBorder(new EmptyBorder(0,0,0,0));
         gp.do_setAnnotation(result);
         return new Pair<String,JPanel>(result,gp);

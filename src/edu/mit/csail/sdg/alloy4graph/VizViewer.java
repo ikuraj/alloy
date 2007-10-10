@@ -115,7 +115,8 @@ public final class VizViewer extends JPanel {
     }
 
     /** Construct a VizViewer that displays the given graph. */
-    public VizViewer(final VizGraph graph) {
+    public VizViewer(final VizGraph graph, final double initialZoom) {
+        scale=initialZoom;
         setOpaque(true);
         setBackground(WHITE);
         setBorder(new EmptyBorder(0,0,0,0));
@@ -123,12 +124,10 @@ public final class VizViewer extends JPanel {
         graph.layout();
         final JMenuItem zoomIn = new JMenuItem("Zoom In");
         final JMenuItem zoomOut = new JMenuItem("Zoom Out");
-        final JMenuItem zoom100 = new JMenuItem("Zoom to 100%");
         final JMenuItem zoomToFit = new JMenuItem("Zoom to Fit");
         final JMenuItem print = new JMenuItem("Export to PNG or PDF");
         pop.add(zoomIn);
         pop.add(zoomOut);
-        pop.add(zoom100);
         pop.add(zoomToFit);
         pop.add(print);
         ActionListener act = new ActionListener() {
@@ -136,7 +135,6 @@ public final class VizViewer extends JPanel {
               Container c=getParent();
               while(c!=null) { if (c instanceof JViewport) break; else c=c.getParent(); }
               if (e.getSource() == print) do_saveAs();
-              if (e.getSource() == zoom100) scale=1d;
               if (e.getSource() == zoomIn) { scale=scale*1.33d; if (!(scale<500d)) scale=500d; }
               if (e.getSource() == zoomOut) { scale=scale/1.33d; if (!(scale>0.1d)) scale=0.1d; }
               if (e.getSource() == zoomToFit) {
@@ -151,7 +149,6 @@ public final class VizViewer extends JPanel {
         };
         zoomIn.addActionListener(act);
         zoomOut.addActionListener(act);
-        zoom100.addActionListener(act);
         zoomToFit.addActionListener(act);
         print.addActionListener(act);
         addMouseMotionListener(new MouseMotionAdapter() {
