@@ -22,6 +22,11 @@ import edu.mit.csail.sdg.alloy4graph.VizViewer;
 /**
  * Graphical convenience methods for producing PDF files.
  *
+ * <p> This implementation explicitly generates a very simple 1-page PDF
+ * which consists of a single stream of graphical operations.
+ * Hopefully this class will no longer be needed in the future,
+ * once Java comes with better PDF support.
+ *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
