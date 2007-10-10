@@ -145,12 +145,11 @@ public final class DotGraph {
 
     /** Generate the entire content of the DOT file. */
     public String write() {
-        String fontname="Lucida Grande";
         StringBuilder sb = new StringBuilder();
         sb.append("digraph \"graph\" {\n");
-        sb.append("graph [fontname=\"" + fontname + "\", fontsize=" + fontSize + "]\n");
-        sb.append("node [fontname=\"" + fontname + "\", fontsize=" + fontSize + "]\n");
-        sb.append("edge [fontname=\"" + fontname + "\", fontsize=" + fontSize + "]\n");
+        sb.append("graph [fontsize=" + fontSize + "]\n");
+        sb.append("node [fontsize=" + fontSize + "]\n");
+        sb.append("edge [fontsize=" + fontSize + "]\n");
         sb.append("rankdir=" + orientation.getDotText(null) + ";\n");
         if (nodes.size()==0) {
             sb.append("A [" +
