@@ -72,6 +72,7 @@ import kodkod.engine.Proof;
 import kodkod.engine.Solution;
 import kodkod.engine.Solver;
 import kodkod.engine.satlab.SATFactory;
+import kodkod.engine.ucore.HybridStrategy;
 import kodkod.engine.ucore.MinTopStrategy;
 import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
@@ -299,12 +300,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         }
         final Instance inst = sol.instance();
         if (inst==null && solver.options().solver()==SATFactory.MiniSatProver) {
-            rep.minimizing(cmd);
             try {
                 kCore=new IdentitySet<Formula>();
                 Proof p=sol.proof();
                 if (sol.outcome()==UNSATISFIABLE) {
-                    try { p.minimize(new MinTopStrategy(p.log())); } catch(Throwable ex) {}
+                    int i=0; for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) { it.next(); i++; }
+                    rep.minimizing(cmd, i);
+                    if (opt.coreMinimization==0) try { p.minimize(new MinTopStrategy(p.log())); } catch(Throwable ex) {}
+                    if (opt.coreMinimization==1) try { p.minimize(new HybridStrategy(p.log())); } catch(Throwable ex) {}
+                    int j=0; for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) { it.next(); j++; }
+                    rep.minimized(cmd, i, j);
                 }
                 for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) {
                     Object n=it.next().node();

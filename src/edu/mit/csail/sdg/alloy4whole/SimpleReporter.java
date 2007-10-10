@@ -131,6 +131,15 @@ final class SimpleReporter extends A4Reporter {
     /** The time that the last action began; we subtract it from System.currentTimeMillis() to determine the elapsed time. */
     private long lastTime=0;
 
+    /** Whether we performed unsat core minimization. */
+    private boolean minimized=false;
+
+    /** The unsat core size before minimization. */
+    private int minimizedBefore;
+
+    /** The unsat core size after minimization. */
+    private int minimizedAfter;
+
     /** The set of warnings */
     private final LinkedHashSet<ErrorWarning> warnings=new LinkedHashSet<ErrorWarning>();
 
@@ -351,6 +360,7 @@ final class SimpleReporter extends A4Reporter {
 
     /** {@inheritDoc} */
     @Override public void solve(final int primaryVars, final int totalVars, final int clauses) {
+        minimized=false;
         log(RESTORE3);
         log("   "+totalVars+" vars. "+primaryVars+" primary vars. "+clauses+" clauses. "
                 +(System.currentTimeMillis()-lastTime)+"ms.\n");
@@ -393,7 +403,7 @@ final class SimpleReporter extends A4Reporter {
     }
 
     /** {@inheritDoc} */
-    @Override public void minimizing(Object command) {
+    @Override public void minimizing(Object command, int before) {
         if (!(command instanceof Command)) return;
         Command cmd = (Command)command;
         log(RESTORE3);
@@ -402,8 +412,17 @@ final class SimpleReporter extends A4Reporter {
         if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
         long t=System.currentTimeMillis();
         log(". "+(t-lastTime)+"ms.\n");
-        logBold("   Minimizing the unsat core...\n");
+        lastTime=t;
+        log(SAVE3);
+        logBold("   Minimizing the unsat core of "+before+" entries...\n");
         log(FLUSH);
+        minimized=true;
+    }
+
+    /** {@inheritDoc} */
+    @Override public void minimized(Object command, int before, int after) {
+        minimizedBefore=before;
+        minimizedAfter=after;
     }
 
     /** {@inheritDoc} */
@@ -436,13 +455,21 @@ final class SimpleReporter extends A4Reporter {
                 Util.close(fs);
             }
         }
-        if (corefilename!=null)
+        if (minimized)
+            logLink("   Core", "CORE: "+corefilename);
+        else if (corefilename!=null)
             logLink(cmd.check ? "   No counterexample found." : "   No instance found.", "CORE: "+corefilename);
         else
             log(cmd.check ? "   No counterexample found." : "   No instance found.");
-        if (cmd.check) log(" Assertion may be valid"); else log(" Predicate may be inconsistent");
-        if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
-        log(".");
+        if (!minimized) {
+            if (cmd.check) log(" Assertion may be valid"); else log(" Predicate may be inconsistent");
+            if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
+            log(".");
+        } else if (minimizedBefore==minimizedAfter){
+            log(" still contains "+minimizedAfter+" entries.");
+        } else {
+            log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" entries.");
+        }
         logLink(" "+(System.currentTimeMillis()-lastTime)+"ms.", (formulafilename==null ? "" : ("CNF: "+formulafilename)));
         if (verbosity>2) for(Pos p:core) log("\n   CORE: "+p);
         log("\n\n");

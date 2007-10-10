@@ -94,11 +94,21 @@ public class A4Reporter {
     public void resultSAT(Object command, long solvingTime, Object solution) {}
 
     /**
-     * If solver!=FILE, this method is called by the translator during unsat core minimization.
+     * If solver!=FILE, this method is called by the translator before starting the unsat core minimization.
      *
      * @param command - this is the original Command used to generate this solution
+     * @param before - the size of the core before calling minimization
      */
-    public void minimizing(Object command) {}
+    public void minimizing(Object command, int before) {}
+
+    /**
+     * If solver!=FILE, this method is called by the translator after performing the unsat core minimization.
+     *
+     * @param command - this is the original Command used to generate this solution
+     * @param before - the size of the core before calling minimization
+     * @param after - the size of the core after calling minimization
+     */
+    public void minimized(Object command, int before, int after) {}
 
     /**
      * If solver!=FILE, this method is called by the translator if the formula is unsatisfiable.

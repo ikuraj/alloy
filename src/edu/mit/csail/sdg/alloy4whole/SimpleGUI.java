@@ -193,6 +193,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** The skolem depth. */
     private static final IntPref SkolemDepth = new IntPref("SkolemDepth",0,0,2);
 
+    /** The unsat core minimization strategy. */
+    private static final IntPref CoreMinimization = new IntPref("CoreMinimization",0,2,2);
+
     /** The amount of memory (in M) to allocate for Kodkod and the SAT solvers. */
     private static final IntPref SubMemory = new IntPref("SubMemory",16,768,65535);
 
@@ -1008,8 +1011,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 public void run() { Welcome.set(showWelcome ? welcomeLevel : 0); }
             });
             //
-            SatSolver now = SatSolver.get();
-            JMenu sat = OurUtil.makeMenu("SAT Solver: "+now);
+            final SatSolver now = SatSolver.get();
+            final JMenu sat = OurUtil.makeMenu("SAT Solver: "+now);
             for(final SatSolver sc:satChoices) {
                 (OurUtil.makeMenuItem(sat, ""+sc, -1, -1, new Runnable() {
                     public final void run() { sc.set(); }
@@ -1022,9 +1025,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 public final void run() { WarningNonfatal.set(mode_warningNonFatal=!mode_warningNonFatal); }
             });
             //
-            int mem = SubMemory.get();
+            final int mem = SubMemory.get();
             boolean memfound = false;
-            JMenu subMemoryMenu = OurUtil.makeMenu("Maximum Memory to Use: "+mem+"M");
+            final JMenu subMemoryMenu = OurUtil.makeMenu("Maximum Memory to Use: "+mem+"M");
             for(final int n: new Integer[]{16,32,64,128,256,512,768,1024,2048,3072,4096}) {
                 (OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", -1, -1, new Runnable() {
                     public final void run() { SubMemory.set(SimpleGUI.this.subMemory = n); }
@@ -1049,8 +1052,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             })).setIcon(memfound ? iconNo : iconYes);
             optmenu.add(subMemoryMenu);
             //
-            Verbosity vnow = Verbosity.get();
-            JMenu verb = OurUtil.makeMenu("Message Verbosity: "+vnow);
+            final Verbosity vnow = Verbosity.get();
+            final JMenu verb = OurUtil.makeMenu("Message Verbosity: "+vnow);
             for(final Verbosity vb:Verbosity.values()) {
                 (OurUtil.makeMenuItem(verb, ""+vb, -1, -1, new Runnable() {
                     public final void run() { vb.set(); }
@@ -1058,8 +1061,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             optmenu.add(verb);
             //
-            int fontSize = FontSize.get();
-            JMenu size = OurUtil.makeMenu("Font Size: "+fontSize);
+            final int fontSize = FontSize.get();
+            final JMenu size = OurUtil.makeMenu("Font Size: "+fontSize);
             for(final int n: new Integer[]{9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72}) {
                 (OurUtil.makeMenuItem(size, ""+n, -1, -1, new Runnable() {
                     public final void run() {
@@ -1073,8 +1076,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             optmenu.add(size);
             //
-            String fontname = FontName.get();
-            JMenuItem fontnameMenu = OurUtil.makeMenuItem("Font: "+fontname+"...", null);
+            final String fontname = FontName.get();
+            final JMenuItem fontnameMenu = OurUtil.makeMenuItem("Font: "+fontname+"...", null);
             fontnameMenu.addActionListener(new ActionListener() {
                 public final void actionPerformed(ActionEvent e) {
                     int size=FontSize.get();
@@ -1088,8 +1091,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             });
             optmenu.add(fontnameMenu);
             //
-            int tabSize = TabSize.get();
-            JMenu tabSizeMenu = OurUtil.makeMenu("Tab Size: "+tabSize);
+            final int tabSize = TabSize.get();
+            final JMenu tabSizeMenu = OurUtil.makeMenu("Tab Size: "+tabSize);
             for(final int n: new Integer[]{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}) {
                 (OurUtil.makeMenuItem(tabSizeMenu, ""+n, -1, -1, new Runnable() {
                     public final void run() { TabSize.set(n); text.setTabSize(n); }
@@ -1097,14 +1100,26 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             optmenu.add(tabSizeMenu);
             //
-            int skDepth = SkolemDepth.get();
-            JMenu skDepthMenu = OurUtil.makeMenu("Skolem Depth: "+skDepth);
+            final int skDepth = SkolemDepth.get();
+            final JMenu skDepthMenu = OurUtil.makeMenu("Skolem Depth: "+skDepth);
             for(final int n: new Integer[]{0,1,2}) {
                 (OurUtil.makeMenuItem(skDepthMenu, ""+n, -1, -1, new Runnable() {
                     public final void run() { SkolemDepth.set(n); }
                 })).setIcon(n==skDepth?iconYes:iconNo);
             }
             optmenu.add(skDepthMenu);
+            //
+            final int min = CoreMinimization.get();
+            final String[] minLabelLong=new String[]{"Slow (guarantees local minimum)", "Medium", "Fast (initial unsat core)"};
+            final String[] minLabelShort=new String[]{"Slow", "Medium", "Fast"};
+            final JMenu cmMenu = OurUtil.makeMenu("Unsat Core Minimization Strategy: "+minLabelShort[min]);
+            for(final int n: new Integer[]{0,1,2}) {
+                (OurUtil.makeMenuItem(cmMenu, minLabelLong[n], -1, -1, new Runnable() {
+                    public final void run() { CoreMinimization.set(n); }
+                })).setIcon(n==min?iconYes:iconNo);
+            }
+            if (now!=SatSolver.MiniSatProverJNI) cmMenu.setEnabled(false);
+            optmenu.add(cmMenu);
             //
             Runnable ext=new Runnable() {
                 public void run() {
@@ -1352,6 +1367,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         opt.solverDirectory = Helper.alloyHome()+fs+"binary";
         opt.recordKodkod = RecordKodkod.get();
         opt.skolemDepth = SkolemDepth.get();
+        opt.coreMinimization = CoreMinimization.get();
         opt.originalFilename = Util.canon(text.getFilename());
         opt.solver = sc;
         if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {

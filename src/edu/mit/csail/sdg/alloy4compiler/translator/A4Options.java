@@ -130,6 +130,12 @@ public final class A4Options implements Serializable {
     public int skolemDepth=0;
 
     /**
+     * This option specifies the unsat core minimization strategy (0=GuaranteedLocalMinimum 1=FasterButLessAccurate 2=EvenFaster...)
+     * <p> Default value is set to the fastest current strategy.
+     */
+    public int coreMinimization=2;
+
+    /**
      * This option specifies the SAT solver to use (SAT4J, MiniSatJNI, MiniSatProverJNI, ZChaffJNI...)
      * <p> Default value is SAT4J.
      */
