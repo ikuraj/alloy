@@ -1,23 +1,9 @@
 package edu.mit.csail.sdg.alloy4;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
-import edu.mit.csail.sdg.alloy4graph.Artist;
-import edu.mit.csail.sdg.alloy4graph.VizEdge;
-import edu.mit.csail.sdg.alloy4graph.VizGraph;
-import edu.mit.csail.sdg.alloy4graph.VizNode;
-import edu.mit.csail.sdg.alloy4graph.VizShape;
-import edu.mit.csail.sdg.alloy4graph.VizStyle;
-import edu.mit.csail.sdg.alloy4graph.VizViewer;
 
 /**
  * Graphical convenience methods for producing PDF files.
@@ -59,9 +45,6 @@ public final class OurPDFWriter {
     /** This stores the exact offset of the start of the content stream. */
     private long startOfContent;
 
-    /** The user-specified DPI. */
-    private long dpi;
-
     /** The width (in terms of dots). */
     private long width;
 
@@ -79,7 +62,6 @@ public final class OurPDFWriter {
     public OurPDFWriter(int dpi, String filename) throws IOException {
         // Initialize various data structures
         if (dpi<72 || dpi>3000) throw new IllegalArgumentException("The DPI must be between 72 and 3000");
-        this.dpi=dpi;
         width=dpi*8+(dpi/2);
         height=dpi*11;
         offset.clear();
@@ -175,68 +157,4 @@ public final class OurPDFWriter {
      * $R $G $B rg            --> sets the fill   color (where 0 <= $R <= 1, etc)
      * Q                      --> restores the current graphics state
      */
-
-    /** Temporary test driver used to test this module. */
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() { OurPDFWriter.run(); }
-        });
-    }
-
-    /** Helper method used by the test driver. */
-    private static void run() {
-        final VizGraph gr = new VizGraph();
-        VizNode n0 = new VizNode(gr, "N0").set(VizShape.CIRCLE).set(Color.RED);
-        VizNode n1 = new VizNode(gr, "N1").set(VizShape.BOX).set(Color.LIGHT_GRAY).setFontBoldness(true);
-        VizNode n2 = new VizNode(gr, "N2").set(VizShape.BOX).set(Color.YELLOW);
-        VizNode n3 = new VizNode(gr, "N3").set(VizShape.HOUSE).set(Color.GREEN);
-        new VizNode(gr, "N4").set(VizShape.INV_HOUSE).set(Color.GRAY);
-        VizNode a=null, b=null;
-        int k=0;
-        for(int jj=1; jj<=1; jj++) for(VizShape s:VizShape.values()) {
-           String n=s.toString();
-           b=new VizNode(gr,n).set(s).set(Color.YELLOW).set(VizStyle.SOLID);
-           //new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b);
-           //new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b);
-           if (a==null) a=b; else if (k<4) { new VizEdge(a,b); a=b; k++; } else { k=0; a=b; }
-        }
-        new VizEdge(n0, n1).set(Color.RED);
-        new VizEdge(n0, n1).set(Color.GREEN);
-        new VizEdge(n0, n2).set(VizStyle.BOLD);
-        new VizEdge(n0, n3).set(VizStyle.DOTTED);
-        new VizEdge(n2, n1).set(VizStyle.DASHED);
-        new VizEdge(n3, n1);
-        new VizEdge(n0, n0);
-        new VizEdge(n2, n2);
-
-        final JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-        final JPanel panel = new VizViewer(gr);
-        final JScrollPane scr=new JScrollPane(panel);
-        scr.getHorizontalScrollBar().setUnitIncrement(20);
-        scr.getVerticalScrollBar().setUnitIncrement(20);
-        scr.setBorder(new EmptyBorder(0,0,0,0));
-        scr.setFocusable(true);
-        scr.requestFocusInWindow();
-        frame.add(scr, BorderLayout.CENTER);
-        frame.pack();
-        frame.setLocation(600,0);
-        frame.setSize(615,650);
-        frame.setVisible(true);
-
-        try {
-        OurPDFWriter x = new OurPDFWriter(300, "/tmp/z.pdf");
-        Artist art = new Artist(x);
-        double scale1 = ((double)(x.width-x.dpi))  / gr.getTotalWidth();  // We leave 0.5 inch on the left and right
-        double scale2 = ((double)(x.height-x.dpi)) / gr.getTotalHeight(); // We leave 0.5 inch on the left and right
-        if (scale1<scale2) scale2=scale1;
-        x.write("q\n");
-        x.write(""+scale2+" 0 0 "+scale2+" "+(x.dpi/2)+" "+(x.dpi/2)+" cm\n");
-        gr.draw(art, scale2, null, null);
-        x.write("Q\n");
-        x.close();
-        Runtime.getRuntime().exec("xpdf -geometry 570x700+0+0 -z page /tmp/z.pdf");
-        } catch(IOException ex) { }
-    }
 }
