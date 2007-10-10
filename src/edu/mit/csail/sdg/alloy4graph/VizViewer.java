@@ -20,6 +20,9 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
+import static java.awt.event.InputEvent.BUTTON1_MASK;
+import static java.awt.event.InputEvent.BUTTON3_MASK;
+import static java.awt.event.InputEvent.CTRL_MASK;
 import static java.awt.Color.WHITE;
 import static java.awt.Color.BLACK;
 import java.awt.Color;
@@ -78,6 +81,9 @@ public final class VizViewer extends JPanel {
 
     /** The currently selected VizNode or VizEdge, or null if there is none. */
     private Object selected = null;
+
+    /** The button that initialized the drag-and-drop; this value is undefined when we're not currently doing drag-and-drop. */
+    private int dragButton = 0;
 
     /** The right-click context menu associated with this JPanel. */
     private final JPopupMenu pop = new JPopupMenu();
@@ -155,7 +161,7 @@ public final class VizViewer extends JPanel {
               if (highlight!=obj) { highlight=obj; do_repaint(); }
            }
            @Override public void mouseDragged(MouseEvent ev) {
-              if (selected instanceof VizNode) {
+              if (selected instanceof VizNode && dragButton==1) {
                  int newX=(int)(oldX+(ev.getX()-oldMouseX)/scale);
                  int newY=(int)(oldY+(ev.getY()-oldMouseY)/scale);
                  VizNode n=(VizNode)selected;
@@ -177,17 +183,20 @@ public final class VizViewer extends JPanel {
                if (selected!=null || highlight!=obj) { graph.recalc_bound(true); selected=null; highlight=obj; do_repaint(); }
            }
            @Override public void mousePressed(MouseEvent ev) {
-               if (ev.getButton()==MouseEvent.BUTTON3) {
+               dragButton=0;
+               int mod = ev.getModifiers();
+               if ((mod & BUTTON3_MASK)!=0) {
                   Object x=do_find(ev.getX(), ev.getY());
                   if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
                   pop.show(VizViewer.this, ev.getX(), ev.getY());
-               } else if (ev.getButton()==MouseEvent.BUTTON1 && ev.isControlDown()) {
+               } else if ((mod & BUTTON1_MASK)!=0 && (mod & CTRL_MASK)!=0) {
                   // This lets Ctrl+LeftClick bring up the popup menu, just like RightClick,
                   // since many Mac mouses do not have a right button.
                   Object x=do_find(ev.getX(), ev.getY());
                   if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
                   pop.show(VizViewer.this, ev.getX(), ev.getY());
-               } else if (ev.getButton()==MouseEvent.BUTTON1 && !ev.isControlDown() && !ev.isShiftDown() && !ev.isAltDown()) {
+               } else if ((mod & BUTTON1_MASK)!=0) {
+                  dragButton=1;
                   Object x=do_find(oldMouseX=ev.getX(), oldMouseY=ev.getY());
                   if (x instanceof VizNode) { oldX=((VizNode)x).x(); oldY=((VizNode)x).y(); }
                   if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
