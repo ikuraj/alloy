@@ -67,8 +67,9 @@ public final class OurPDFWriter {
     private IOException err=null;
 
     /**
-     * Opens the given file for writing (and if it already exists, it's overwritten).
+     * Write the PDF header into the file, then begins a Contents stream; (if the file already exists, it will be overwritten).
      * @throws IllegalArgumentException if dpi is less than 72 or is greater than 3000
+     * @throws IOException if an error occurred in opening or writing to the file
      */
     public OurPDFWriter(int dpi, String filename) throws IOException {
         // Initialize various data structures
@@ -103,7 +104,10 @@ public final class OurPDFWriter {
         try { out.write(x.getBytes("UTF-8")); } catch(IOException ex) { err=ex; }
     }
 
-    /** Finishes writing the PDF file, then flushes and closes the file. */
+    /**
+     * Finishes writing the PDF file, then flushes and closes the file.
+     * @throws IOException if an error occurred in writing or closing the file
+     */
     public void close() throws IOException {
         if (err!=null) throw err;
         // Closes the CONTENT object
@@ -167,13 +171,15 @@ public final class OurPDFWriter {
      * Q                      --> restores the current graphics state
      */
 
-    public static void main(String[] args) throws IOException {
+    /** Temporary test driver used to test this module. */
+    public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() { OurPDFWriter.run(); }
         });
     }
 
-    public static void run() {
+    /** Helper method used by the test driver. */
+    private static void run() {
         final VizGraph gr = new VizGraph();
         VizNode n0 = new VizNode(gr, "N0").set(VizShape.CIRCLE).set(Color.RED);
         VizNode n1 = new VizNode(gr, "N1").set(VizShape.BOX).set(Color.LIGHT_GRAY).setFontBoldness(true);
