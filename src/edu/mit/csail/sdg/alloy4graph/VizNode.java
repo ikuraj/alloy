@@ -241,13 +241,22 @@ public final class VizNode extends DiGraph.DiNode {
     /** If (updown>=0), this is the height of the text label. */
     private int height;
 
-    /** If (updown>=0 and shape!=null), this is the bounding polygon. */
+    /**
+     * If (updown>=0 and shape!=null), this is the bounding polygon.
+     * Note: if not null, it must be either a GeneralPath or a Polygon.
+     */
     private Shape poly;
 
-    /** If (updown>=0 and shape!=null and poly2!=null), then poly2 will also be drawn during the draw() method. */
+    /**
+     * If (updown>=0 and shape!=null and poly2!=null), then poly2 will also be drawn during the draw() method.
+     * Note: if not null, it must be either a GeneralPath or a Polygon.
+     */
     private Shape poly2;
 
-    /** If (updown>=0 and shape!=null and poly3!=null), then poly3 will also be drawn during the draw() method. */
+    /**
+     * If (updown>=0 and shape!=null and poly3!=null), then poly3 will also be drawn during the draw() method.
+     * Note: if not null, it must be either a GeneralPath or a Polygon.
+     */
     private Shape poly3;
 
     /** Returns the node height. */
@@ -295,9 +304,7 @@ public final class VizNode extends DiGraph.DiNode {
        for(ry=0;;ry=ry+step) {
           rx=ry*slope;
           if (poly.contains(rx, ry)) continue;
-          ans.x=rx+centerX;
-          ans.y=ry+centerY;
-          return;
+          ans.x=rx+centerX; ans.y=ry+centerY; return;
        }
     }
 
@@ -510,11 +517,11 @@ public final class VizNode extends DiGraph.DiNode {
           }
           if (shape==VizShape.DOUBLE_CIRCLE) gr.drawCircle(radius-5);
        } else {
-          gr.fill(poly);
+          gr.draw(poly,true);
           gr.setColor(BLACK);
-          gr.draw(poly);
-          if (poly2!=null) gr.draw(poly2);
-          if (poly3!=null) gr.draw(poly3);
+          gr.draw(poly,false);
+          if (poly2!=null) gr.draw(poly2,false);
+          if (poly3!=null) gr.draw(poly3,false);
           if (style==VizStyle.DOTTED || style==VizStyle.DASHED) gr.set(VizStyle.SOLID, scale);
           if (shape==VizShape.M_DIAMOND) {
              gr.drawLine(-side+8, -8, -side+8, 8); gr.drawLine(-8, -side+8, 8, -side+8);

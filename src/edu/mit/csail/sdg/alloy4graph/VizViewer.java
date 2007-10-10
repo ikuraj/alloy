@@ -51,7 +51,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import edu.mit.csail.sdg.alloy4.OurDialog;
-import edu.mit.csail.sdg.alloy4.OurImageUtil;
+import edu.mit.csail.sdg.alloy4.OurPNGWriter;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
 
@@ -372,7 +372,7 @@ public final class VizViewer extends JPanel {
        gr.scale(scale,scale);
        gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
        graph.draw(new Artist(gr), scale, null, null);
-       OurImageUtil.writePNG(bf, filename, dpiX, dpiY);
+       OurPNGWriter.writePNG(bf, filename, dpiX, dpiY);
     }
 
     /** Show the popup menu at location (x,y) */

@@ -20,18 +20,12 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.border.EmptyBorder;
 import edu.mit.csail.sdg.alloy4.Rational;
 import edu.mit.csail.sdg.alloy4.Util;
 
@@ -68,6 +62,18 @@ public final class VizGraph extends DiGraph {
 
     /** The height of each layer. */
     int[] layerPH=null;
+
+    /** Assuming layout() has been called, this returns the left edge. */
+    public int getLeft() { return left; }
+
+    /** Assuming layout() has been called, this returns the top edge. */
+    public int getTop() { return top; }
+
+    /** Assuming layout() has been called, this returns the total width. */
+    public int getTotalWidth() { return totalWidth; }
+
+    /** Assuming layout() has been called, this returns the total height. */
+    public int getTotalHeight() { return totalHeight; }
 
     //=============================== constructors and other methods =============================================================//
 
@@ -555,52 +561,9 @@ public final class VizGraph extends DiGraph {
         }
         if (highFirstEdge!=null) highFirstEdge.draw(gr, scale, true);
         for(VizNode n:nodes) n.draw(gr, scale, n==highlight);
-        for(VizEdge e:edges) if (e!=highFirstEdge && e!=highLastEdge) e.drawArrowhead(gr, scale, false);
-        if (highFirstEdge!=null) highFirstEdge.drawArrowhead(gr, scale, true);
-        if (highLastEdge!=null && highLastEdge!=highFirstEdge) highLastEdge.drawArrowhead(gr, scale, true);
-    }
-
-    //============================================================================================================================//
-
-    /* This is a test driver. */
-    public static final void main(String[] args) {
-        final VizGraph gr = new VizGraph();
-        VizNode n0 = new VizNode(gr, "N0").set(VizShape.CIRCLE).set(Color.RED);
-        VizNode n1 = new VizNode(gr, "N1").set(VizShape.BOX).set(Color.LIGHT_GRAY).setFontBoldness(true);
-        VizNode n2 = new VizNode(gr, "N2").set(VizShape.BOX).set(Color.YELLOW);
-        VizNode n3 = new VizNode(gr, "N3").set(VizShape.HOUSE).set(Color.GREEN);
-        new VizNode(gr, "N4").set(VizShape.INV_HOUSE).set(Color.GRAY);
-        VizNode a=null, b=null;
-        int k=0;
-        for(VizShape s:VizShape.values()) {
-           String n=s.toString();
-           b=new VizNode(gr,n).set(s).set(Color.YELLOW).set(VizStyle.SOLID);
-           // new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b);
-           // new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b); new VizEdge(b,b);
-           if (a==null) a=b; else if (k<4) { new VizEdge(a,b); a=b; k++; } else { k=0; a=b; }
-        }
-        new VizEdge(n0, n1).set(Color.RED);
-        new VizEdge(n0, n1).set(Color.GREEN);
-        new VizEdge(n0, n2).set(VizStyle.BOLD);
-        new VizEdge(n0, n3).set(VizStyle.DOTTED);
-        new VizEdge(n2, n1).set(VizStyle.DASHED);
-        new VizEdge(n3, n1);
-        new VizEdge(n0, n0);
-        new VizEdge(n2, n2);
-        final JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLayout(new BorderLayout());
-        final JPanel panel = new VizViewer(gr);
-        final JScrollPane scr=new JScrollPane(panel);
-        scr.getHorizontalScrollBar().setUnitIncrement(20);
-        scr.getVerticalScrollBar().setUnitIncrement(20);
-        scr.setBorder(new EmptyBorder(0,0,0,0));
-        scr.setFocusable(true);
-        scr.requestFocusInWindow();
-        frame.add(scr, BorderLayout.CENTER);
-        frame.pack();
-        frame.setLocation(50,50);
-        frame.setSize(985,591);
-        frame.setVisible(true);
+        double tip = (VizNode.cachedFontMetrics.getMaxAscent()+VizNode.cachedFontMetrics.getMaxDescent()) * 0.6D;
+        for(VizEdge e:edges) if (e!=highFirstEdge && e!=highLastEdge) e.drawArrowhead(gr, scale, false, tip);
+        if (highFirstEdge!=null) highFirstEdge.drawArrowhead(gr, scale, true, tip);
+        if (highLastEdge!=null && highLastEdge!=highFirstEdge) highLastEdge.drawArrowhead(gr, scale, true, tip);
     }
 }

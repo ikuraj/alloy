@@ -130,12 +130,12 @@ public final class VizPath {
           Point2D.Double c=(i+1<points.size() ? points.get(i+1) : null);
           if (c!=null && b.y-a.y>8 && c.y-b.y>8) gap=8;
              else if (c!=null && b.y-a.y>4 && c.y-b.y>4) gap=4;
-             else { gr.draw(new Line2D.Double(a.x, a.y, b.x, b.y)); a=b; continue; }
+             else { gr.draw(new Line2D.Double(a.x, a.y, b.x, b.y), false); a=b; continue; }
           double m1 = (b.y-a.y)/(b.x-a.x), i1 = ((b.y-gap)-a.y)/m1 + a.x;
           double m2 = (c.y-b.y)/(c.x-b.x), i2 = ((b.y+gap)-b.y)/m2 + b.x;
-          gr.draw(new Line2D.Double(a.x, a.y, i1, b.y-gap));
+          gr.draw(new Line2D.Double(a.x, a.y, i1, b.y-gap), false);
           a=new Point2D.Double(i2, b.y+gap);
-          gr.draw(new QuadCurve2D.Double(i1, b.y-gap, b.x, b.y, a.x, a.y));
+          gr.draw(new QuadCurve2D.Double(i1, b.y-gap, b.x, b.y, a.x, a.y), false);
        }
     }
 }

@@ -167,11 +167,11 @@ public final class VizEdge extends DiGraph.DiEdge {
           // Draw the self edge
           double x0=path.getX(0), y0=path.getY(0), x1=path.getX(1), y1=y0, x2=x1, y2=path.getY(2), x3=path.getX(3), y3=y2;
           double gap=(y2-y1)/3; if (!(gap<5D)) gap=5D;
-          gr.draw(new Line2D.Double(x0, y0, x1-5, y1));
-          gr.draw(new QuadCurve2D.Double(x1-5, y1, x1, y1, x1, y1+gap));
-          gr.draw(new Line2D.Double(x1, y1+gap, x2, y2-gap));
-          gr.draw(new QuadCurve2D.Double(x2, y2-gap, x2, y2, x2-5, y2));
-          gr.draw(new Line2D.Double(x2-5, y2, x3, y3));
+          gr.draw(new Line2D.Double(x0, y0, x1-5, y1), false);
+          gr.draw(new QuadCurve2D.Double(x1-5, y1, x1, y1, x1, y1+gap), false);
+          gr.draw(new Line2D.Double(x1, y1+gap, x2, y2-gap), false);
+          gr.draw(new QuadCurve2D.Double(x2, y2-gap, x2, y2, x2-5, y2), false);
+          gr.draw(new Line2D.Double(x2-5, y2, x3, y3), false);
        } else {
           // Concatenate this path and its connected segments into a single VizPath object, then draw it
           VizPath p=null;
@@ -189,7 +189,7 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
-    public void drawArrowhead(Artist gr, double scale, boolean highlight) {
+    public void drawArrowhead(Artist gr, double scale, boolean highlight, double tipLength) {
        final int top=((VizGraph)(a().graph)).top, left=((VizGraph)(a().graph)).left;
        // Return if there are no arrow heads to draw
        if (!ahead || a().shape()==null) if (!bhead || b().shape()==null) return;
@@ -202,31 +202,30 @@ public final class VizEdge extends DiGraph.DiEdge {
        }
        // Now, draw the arrow heads if needed
        VizNode.updateCache(a().fontSize(), false);
-       double tip = (VizNode.cachedFontMetrics.getMaxAscent()+VizNode.cachedFontMetrics.getMaxDescent()) / scale * 0.6D; // Length of arrow head
        int n = path.getPoints();
        if (ahead && a().shape()!=null) {
-          double ax=path.getX(0), ay=path.getY(0), bx=path.getX(1), by=path.getY(1);
-          double t=Math.PI+Math.atan2(ay-by, ax-bx);
-          double gx1 = ax + tip*Math.cos(t-fan), gy1 = ay + tip*Math.sin(t-fan);
-          double gx2 = ax + tip*Math.cos(t+fan), gy2 = ay + tip*Math.sin(t+fan);
+          double ax = path.getX(0), ay=path.getY(0), bx=path.getX(1), by=path.getY(1);
+          double t = Math.PI+Math.atan2(ay-by, ax-bx);
+          double gx1 = ax + tipLength*Math.cos(t-fan), gy1 = ay + tipLength*Math.sin(t-fan);
+          double gx2 = ax + tipLength*Math.cos(t+fan), gy2 = ay + tipLength*Math.sin(t+fan);
           GeneralPath gp=new GeneralPath();
-          gp.moveTo((float)(gx1-left),(float)(gy1-top));
-          gp.lineTo((float)(ax-left),(float)(ay-top));
+          gp.moveTo((float)(gx1-left), (float)(gy1-top));
+          gp.lineTo((float)(ax-left), (float)(ay-top));
           gp.lineTo((float)(gx2-left), (float)(gy2-top));
           gp.closePath();
-          gr.fill(gp);
+          gr.draw(gp,true);
        }
        if (bhead && b().shape()!=null) {
-          double ax=path.getX(n-2), ay=path.getY(n-2), bx=path.getX(n-1), by=path.getY(n-1);
-          double t=Math.PI+Math.atan2(by-ay, bx-ax);
-          double gx1 = bx + tip*Math.cos(t-fan), gy1 = by + tip*Math.sin(t-fan);
-          double gx2 = bx + tip*Math.cos(t+fan), gy2 = by + tip*Math.sin(t+fan);
+          double ax = path.getX(n-2), ay=path.getY(n-2), bx=path.getX(n-1), by=path.getY(n-1);
+          double t = Math.PI+Math.atan2(by-ay, bx-ax);
+          double gx1 = bx + tipLength*Math.cos(t-fan), gy1 = by + tipLength*Math.sin(t-fan);
+          double gx2 = bx + tipLength*Math.cos(t+fan), gy2 = by + tipLength*Math.sin(t+fan);
           GeneralPath gp=new GeneralPath();
-          gp.moveTo((float)(gx1-left),(float)(gy1-top));
-          gp.lineTo((float)(bx-left),(float)(by-top));
+          gp.moveTo((float)(gx1-left), (float)(gy1-top));
+          gp.lineTo((float)(bx-left), (float)(by-top));
           gp.lineTo((float)(gx2-left), (float)(gy2-top));
           gp.closePath();
-          gr.fill(gp);
+          gr.draw(gp,true);
        }
     }
 
