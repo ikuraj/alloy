@@ -34,6 +34,7 @@ import java.awt.font.GlyphVector;
 import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.QuadCurve2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import edu.mit.csail.sdg.alloy4.OurPDFWriter;
 
@@ -60,8 +61,8 @@ public final class Artist {
 
     /** Shifts the coordinate space by the given amount. */
     public void translate(int x, int y) {
-        if (gr!=null) { gr.translate(x,y); return; }
-        pdf.write("1 0 0 1 ").write(x).writespace().write(y).write(" cm\n");
+        if (gr!=null) gr.translate(x,y);
+        else pdf.write("1 0 0 1 ").write(x).writespace().write(y).write(" cm\n");
     }
 
     /** Draws a circle of the given radius, centered at (0,0) */
@@ -71,10 +72,10 @@ public final class Artist {
         int r=radius;
         double k=(0.55238D*radius);
         pdf.write(r).write(" 0 m ")
-        .write(r).writespace().write(k).writespace().write(k).writespace().write(r).write(" 0 ").write(r).write(" c ")
-        .write(-k).writespace().write(r).writespace().write(-r).writespace().write(k).writespace().write(-r).write(" 0 c ")
-        .write(-r).writespace().write(-k).writespace().write(-k).writespace().write(-r).write(" 0 ").write(-r).write(" c ")
-        .write(k).writespace().write(-r).writespace().write(r).writespace().write(-k).writespace().write(r).write(" 0 c S\n");
+           .write(r).writespace().write(k).writespace().write(k).writespace().write(r).write(" 0 ").write(r).write(" c ")
+           .write(-k).writespace().write(r).writespace().write(-r).writespace().write(k).writespace().write(-r).write(" 0 c ")
+           .write(-r).writespace().write(-k).writespace().write(-k).writespace().write(-r).write(" 0 ").write(-r).write(" c ")
+           .write(k).writespace().write(-r).writespace().write(r).writespace().write(-k).writespace().write(r).write(" 0 c S\n");
     }
 
     /** Fills a circle of the given radius, centered at (0,0) */
@@ -84,16 +85,16 @@ public final class Artist {
         int r=radius;
         double k=(0.55238D*radius);
         pdf.write(r).write(" 0 m ")
-        .write(r).writespace().write(k).writespace().write(k).writespace().write(r).write(" 0 ").write(r).write(" c ")
-        .write(-k).writespace().write(r).writespace().write(-r).writespace().write(k).writespace().write(-r).write(" 0 c ")
-        .write(-r).writespace().write(-k).writespace().write(-k).writespace().write(-r).write(" 0 ").write(-r).write(" c ")
-        .write(k).writespace().write(-r).writespace().write(r).writespace().write(-k).writespace().write(r).write(" 0 c f\n");
+           .write(r).writespace().write(k).writespace().write(k).writespace().write(r).write(" 0 ").write(r).write(" c ")
+           .write(-k).writespace().write(r).writespace().write(-r).writespace().write(k).writespace().write(-r).write(" 0 c ")
+           .write(-r).writespace().write(-k).writespace().write(-k).writespace().write(-r).write(" 0 ").write(-r).write(" c ")
+           .write(k).writespace().write(-r).writespace().write(r).writespace().write(-k).writespace().write(r).write(" 0 c f\n");
     }
 
     /** Draws a line from (x1,y1) to (x2,y2) */
     public void drawLine(int x1, int y1, int x2, int y2) {
-        if (gr!=null) { gr.drawLine(x1,y1,x2,y2); return; }
-        pdf.write(x1).writespace().write(y1).write(" m ").write(x2).writespace().write(y2).write(" l S\n");
+        if (gr!=null) gr.drawLine(x1,y1,x2,y2);
+        else pdf.write(x1).writespace().write(y1).write(" m ").write(x2).writespace().write(y2).write(" l S\n");
     }
 
     /** Changes the current color. */
@@ -159,55 +160,11 @@ public final class Artist {
         }
     }
 
-    /** If nonnull, it caches an empty bitmap. */
-    private static BufferedImage cachedImage;
+    /** The pattern for dotted line. */
+    private static float[] dot = new float[]{1f,3f};
 
-    /** If nonnull, it caches the Graphics2D object associated with the current font size and font boldness. */
-    private static Graphics2D cachedGraphics;
-
-    /** If nonnull, it caches the FontMetrics object associated with the current font size and font boldness. */
-    private static FontMetrics cachedFontMetrics;
-
-    /** If nonnull, it caches the Font object associated with the current font size and font boldness. */
-    private static Font cachedFont;
-
-    /** If cachedFont!=null, this is its font size. */
-    private static int cachedFontSize;
-
-    /** If cachedFont!=null, this is its font boldness. */
-    private static boolean cachedFontBoldness;
-
-    /** Updates cached{Image,Graphics,Metrics,Font} based on the given font size and font boldness, and return the font height. */
-    static int updateCache(int fontSize, boolean fontBoldness) {
-       if (cachedFont==null || cachedFontMetrics==null || fontSize!=cachedFontSize || fontBoldness!=cachedFontBoldness) {
-          if (cachedImage==null) cachedImage=new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-          if (cachedGraphics==null) cachedGraphics=(Graphics2D)(cachedImage.getGraphics());
-          if (fontSize<8) fontSize=8;
-          if (fontSize>72) fontSize=72;
-          cachedFont = new Font("Lucida Grande",
-                       ((cachedFontBoldness=fontBoldness) ? Font.BOLD : Font.PLAIN), cachedFontSize=fontSize);
-          cachedGraphics.setFont(cachedFont);
-          cachedFontMetrics=cachedGraphics.getFontMetrics();
-       }
-       return cachedFontMetrics.getMaxAscent()+cachedFontMetrics.getMaxDescent();
-    }
-
-    /** Changes the current font. */
-    public void setFont(Font fn) {
-        if (gr!=null) { gr.setFont(fn); return; }
-        updateCache(fn.getSize(), (fn.getStyle() & Font.BOLD)!=0);
-    }
-
-    /** Draws the given string at (x,y) */
-    int count=1;
-    public void drawString(String text, int x, int y) {
-        if (text.length()==0) return;
-        if (gr!=null) { gr.drawString(text,x,y); return; }
-        GlyphVector gv=cachedFont.createGlyphVector(new FontRenderContext(null,false,false), text);
-        translate(x,y);
-        draw(gv.getOutline(), true);
-        translate(-x,-y);
-    }
+    /** The pattern for dashed line. */
+    private static float[] dashed = new float[]{6f,3f};
 
     /**
      * Modifies the given Graphics2D object to use the line style representing by this object.
@@ -234,6 +191,29 @@ public final class Artist {
         }
     }
 
+    /** Saves the current font size. */
+    private int fontSize = 12;
+
+    /** Saves the current font boldness. */
+    private boolean fontBoldness = false;
+
+    /** Changes the current font. */
+    public void setFont(int fontSize, boolean fontBoldness) {
+        updateCache(fontSize, fontBoldness);
+        if (gr!=null) gr.setFont(cachedFont); else { this.fontSize=fontSize; this.fontBoldness=fontBoldness; }
+    }
+
+    /** Draws the given string at (x,y) */
+    public void drawString(String text, int x, int y) {
+        if (text.length()==0) return;
+        if (gr!=null) { gr.drawString(text,x,y); return; }
+        updateCache(fontSize, fontBoldness);
+        GlyphVector gv=cachedFont.createGlyphVector(new FontRenderContext(null,false,false), text);
+        translate(x,y);
+        draw(gv.getOutline(), true);
+        translate(-x,-y);
+    }
+
     /*
      * Here is a quick summary of various PDF Graphics operations
      * ==========================================================
@@ -243,7 +223,7 @@ public final class Artist {
      * $cx $cy $x $y v         --> add the bezier curve (LASTx,LASTy)..(LASTx,LASTy)..($cx,$cy)..($x,$y) to the current path
      * $cx $cy $x $y y         --> add the bezier curve (LASTx,LASTy)....($cx,$cy).....($x,$y)...($x,$y) to the current path
      * $ax $ay $bx $by $x $y c --> add the bezier curve (LASTx,LASTy)....($ax,$ay)....($bx,$by)..($x,$y) to the current path
-     * h                       --> close the current path by adding a straightline segment from the current point to the start of the path
+     * h                       --> close the current subpath by straightline segment from current point to the start of this subpath
      * $x $y $w $h re          --> append a rectangle to the current path as a complete subpath with lower-left corner at $x $y
      *
      * PATH S    --> draw that path
@@ -262,9 +242,53 @@ public final class Artist {
      * Q                      --> restores the current graphics state
      */
 
-    /** The pattern for dotted line. */
-    private static float[] dot = new float[]{1f,3f};
+    /** If nonnull, it caches an empty bitmap. */
+    private static BufferedImage cachedImage;
 
-    /** The pattern for dashed line. */
-    private static float[] dashed = new float[]{6f,3f};
+    /** If nonnull, it caches the Graphics2D object associated with the current font size and font boldness. */
+    private static Graphics2D cachedGraphics;
+
+    /** If nonnull, it caches the FontMetrics object associated with the current font size and font boldness. */
+    private static FontMetrics cachedFontMetrics;
+
+    /** If nonnull, it caches the Font object associated with the current font size and font boldness. */
+    private static Font cachedFont;
+
+    /** If cachedFont!=null, this is its font size. */
+    private static int cachedFontSize;
+
+    /** If cachedFont!=null, this is its font boldness. */
+    private static boolean cachedFontBoldness;
+
+    /** Updates cached{Image,Graphics,Metrics,Font} based on the given font size and font boldness, and return max ascent+descent. */
+    private static int updateCache(int fontSize, boolean fontBoldness) {
+       if (cachedFont==null || cachedFontMetrics==null || fontSize!=cachedFontSize || fontBoldness!=cachedFontBoldness) {
+          if (cachedImage==null) cachedImage=new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+          if (cachedGraphics==null) cachedGraphics=(Graphics2D)(cachedImage.getGraphics());
+          if (fontSize<8) fontSize=8;
+          if (fontSize>72) fontSize=72;
+          cachedFont = new Font("Lucida Grande",
+                       ((cachedFontBoldness=fontBoldness) ? Font.BOLD : Font.PLAIN), cachedFontSize=fontSize);
+          cachedGraphics.setFont(cachedFont);
+          cachedFontMetrics=cachedGraphics.getFontMetrics();
+       }
+       return cachedFontMetrics.getMaxAscent()+cachedFontMetrics.getMaxDescent();
+    }
+
+    /** Returns the max ascent when drawing text using the given font size and font boldness settings. */
+    public static int getMaxAscent(int fontSize, boolean fontBoldness) {
+        updateCache(fontSize, fontBoldness);
+        return cachedFontMetrics.getMaxAscent();
+    }
+
+    /** Returns the sum of the max ascent and max descent when drawing text using the given font size and font boldness settings. */
+    public static int getMaxAscentAndDescent(int fontSize, boolean fontBoldness) {
+        return updateCache(fontSize, fontBoldness);
+    }
+
+    /** Returns the bounding box when drawing the given string using the given font size and font boldness settings. */
+    public static Rectangle2D getStringBounds(int fontSize, boolean fontBoldness, String string) {
+        updateCache(fontSize, fontBoldness);
+        return cachedFontMetrics.getStringBounds(string, cachedGraphics);
+    }
 }

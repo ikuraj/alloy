@@ -479,12 +479,17 @@ public final class VizGraph extends DiGraph {
         totalWidth=maxX-minX;
         // Find the topmost and bottommost pixel
         for(int layer=layers()-1; layer>=0; layer--) {
-           for(VizNode n:layer(layer)) { int ytop=n.y()-n.getHeight()/2-5; int ybottom=n.y()+n.getHeight()/2+5; if (top>ytop) top=ytop; if (bottom<ybottom) bottom=ybottom; }
+           for(VizNode n:layer(layer)) {
+              int ytop=n.y()-n.getHeight()/2-5;    if (top>ytop) top=ytop;
+              int ybottom=n.y()+n.getHeight()/2+5; if (bottom<ybottom) bottom=ybottom;
+           }
         }
         totalHeight=bottom-top;
     }
 
-    /** Assuming everything was laid out already, but at least one node just moved horizontally or vertical, then this re-layouts ALL edges. */
+    /**
+     * Assuming everything was laid out already, but at least one node just moved, then this re-layouts ALL edges.
+     */
     public void relayout_edges() {
         // Now layout the edges, initially as straight lines
         for(VizEdge e:edges) e.resetPath();
@@ -497,7 +502,10 @@ public final class VizGraph extends DiGraph {
         for(VizEdge e:edges) layout_arrowHead(e);
     }
 
-    /** Assuming everything was laid out already, and that the nodes in layer[i] just moved horizontally, then this re-layouts the edges going to and from layer i. */
+    /**
+     * Assuming everything was laid out already, and that the nodes in layer[i] just moved horizontally,
+     * this re-layouts the edges going to and from layer i.
+     */
     public void relayout_edges(int i) {
         if (nodes.size()==0) return; // The rest of the code assumes there is at least one node
         for(VizNode n:layer(i)) for(VizEdge e:n.selfEdges()) { e.resetPath(); layout_arrowHead(e); }
@@ -545,6 +553,7 @@ public final class VizGraph extends DiGraph {
 
     /** Assuming layout has been performed, this drwas the graph with the given magnification scale. */
     public void draw(Artist gr, double scale, Object selected, Object highlight) {
+        if (nodes.size()==0) return; // The rest of this procedure assumes there is at least one node
         if (highlight==null) highlight=selected;
         VizEdge highFirstEdge=null, highLastEdge=null;
         if (highlight instanceof VizEdge) {
@@ -561,8 +570,7 @@ public final class VizGraph extends DiGraph {
         }
         if (highFirstEdge!=null) highFirstEdge.draw(gr, scale, true);
         for(VizNode n:nodes) n.draw(gr, scale, n==highlight);
-        double tip=0;
-        for(VizNode n:nodes) { tip=Artist.updateCache(n.fontSize(),false)*0.6D; break; }
+        double tip = Artist.getMaxAscentAndDescent(nodes.get(0).fontSize(), false)*0.6D;
         for(VizEdge e:edges) if (e!=highFirstEdge && e!=highLastEdge) e.drawArrowhead(gr, scale, false, tip);
         if (highFirstEdge!=null) highFirstEdge.drawArrowhead(gr, scale, true, tip);
         if (highLastEdge!=null && highLastEdge!=highFirstEdge) highLastEdge.drawArrowhead(gr, scale, true, tip);

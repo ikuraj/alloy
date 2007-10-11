@@ -23,15 +23,11 @@ package edu.mit.csail.sdg.alloy4graph;
 import static java.awt.Color.BLACK;
 import static java.awt.Color.WHITE;
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,37 +66,6 @@ public final class VizNode extends DiGraph.DiNode {
 
     /** Caches the value of tan(18 degree). The extra digits in the definition will be truncated by the Java compiler. */
     private static final double tan18 = 0.3249196962329063261558714122151344649549034715214751003078D;
-
-    /** If nonnull, it caches an empty bitmap. */
-    private static BufferedImage cachedImage;
-
-    /** If nonnull, it caches the Graphics2D object associated with the current font size and font boldness. */
-    private static Graphics2D cachedGraphics;
-
-    /** If nonnull, it caches the FontMetrics object associated with the current font size and font boldness. */
-    private static FontMetrics cachedFontMetrics;
-
-    /** If nonnull, it caches the Font object associated with the current font size and font boldness. */
-    private static Font cachedFont;
-
-    /** If cachedFont!=null, this is its font size. */
-    private static int cachedFontSize;
-
-    /** If cachedFont!=null, this is its font boldness. */
-    private static boolean cachedFontBoldness;
-
-    /** Updates cached{Image,Graphics,Metrics,Font} based on the given font size and font boldness. */
-    private static void updateCache(int fontSize, boolean fontBoldness) {
-       if (cachedFont==null || cachedFontMetrics==null || fontSize!=cachedFontSize || fontBoldness!=cachedFontBoldness) {
-          if (cachedImage==null) cachedImage=new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-          if (cachedGraphics==null) cachedGraphics=(Graphics2D)(cachedImage.getGraphics());
-          if (fontSize<8) fontSize=8;
-          if (fontSize>72) fontSize=72;
-          cachedFont = new Font("Lucida Grande", ((cachedFontBoldness=fontBoldness) ? Font.BOLD : Font.PLAIN), cachedFontSize=fontSize);
-          cachedGraphics.setFont(cachedFont);
-          cachedFontMetrics=cachedGraphics.getFontMetrics();
-       }
-    }
 
     // =============================== per-node settings ==================================================
 
@@ -365,13 +330,10 @@ public final class VizNode extends DiGraph.DiNode {
        poly=(poly2=(poly3=null));
        if (shape==null) return;
        Polygon poly=new Polygon();
-       updateCache(fontSize, fontBold);
-       final Graphics2D gr = cachedGraphics;
-       final FontMetrics fm = cachedFontMetrics;
-       final int ad = fm.getMaxAscent() + fm.getMaxDescent();
+       final int ad = Artist.getMaxAscentAndDescent(fontSize, fontBold);
        if (labels!=null) for(int i=0; i<labels.size(); i++) {
           String t = labels.get(i);
-          Rectangle2D rect = fm.getStringBounds(t, gr);
+          Rectangle2D rect = Artist.getStringBounds(fontSize, fontBold, t);
           int ww = ((int)(rect.getWidth())) + 1; // Round it up
           if (width<ww) width=ww;
           height=height+ad;
@@ -382,12 +344,14 @@ public final class VizNode extends DiGraph.DiNode {
           case HOUSE:
              yShift = ad/2;
              updown = updown + yShift;
-             poly.addPoint(-hw,yShift-hh); poly.addPoint(0,-updown); poly.addPoint(hw,yShift-hh); poly.addPoint(hw,yShift+hh); poly.addPoint(-hw,yShift+hh);
+             poly.addPoint(-hw,yShift-hh); poly.addPoint(0,-updown); poly.addPoint(hw,yShift-hh);
+             poly.addPoint(hw,yShift+hh); poly.addPoint(-hw,yShift+hh);
              break;
           case INV_HOUSE:
              yShift = -ad/2;
              updown = updown - yShift;
-             poly.addPoint(-hw,yShift-hh); poly.addPoint(hw,yShift-hh); poly.addPoint(hw,yShift+hh); poly.addPoint(0,updown); poly.addPoint(-hw,yShift+hh);
+             poly.addPoint(-hw,yShift-hh); poly.addPoint(hw,yShift-hh); poly.addPoint(hw,yShift+hh);
+             poly.addPoint(0,updown); poly.addPoint(-hw,yShift+hh);
              break;
           case TRIANGLE:
           case INV_TRIANGLE: {
@@ -450,13 +414,15 @@ public final class VizNode extends DiGraph.DiNode {
              int x1=(int)(Math.round(dx1)), y1=(int)(Math.round(dy1));
              updown+=5; side+=5;
              poly2=poly; poly=new Polygon();
-             poly.addPoint(-hw-5, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-5); poly.addPoint(hw-dx+x1, -hh-dy-5); poly.addPoint(hw+5, -hh-y1);
-             poly.addPoint(hw+5, hh+y1); poly.addPoint(hw-dx+x1, hh+dy+5); poly.addPoint(-hw+dx-x1, hh+dy+5); poly.addPoint(-hw-5, hh+y1);
+             poly.addPoint(-hw-5, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-5); poly.addPoint(hw-dx+x1, -hh-dy-5);
+             poly.addPoint(hw+5, -hh-y1); poly.addPoint(hw+5, hh+y1); poly.addPoint(hw-dx+x1, hh+dy+5);
+             poly.addPoint(-hw+dx-x1, hh+dy+5); poly.addPoint(-hw-5, hh+y1);
              if (shape==VizShape.DOUBLE_OCTAGON) break;
              updown+=5; side+=5;
              poly3=poly; poly=new Polygon(); x1=(int)(Math.round(dx1*2)); y1=(int)(Math.round(dy1*2));
-             poly.addPoint(-hw-10, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-10); poly.addPoint(hw-dx+x1, -hh-dy-10); poly.addPoint(hw+10, -hh-y1);
-             poly.addPoint(hw+10, hh+y1); poly.addPoint(hw-dx+x1, hh+dy+10); poly.addPoint(-hw+dx-x1, hh+dy+10); poly.addPoint(-hw-10, hh+y1);
+             poly.addPoint(-hw-10, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-10); poly.addPoint(hw-dx+x1, -hh-dy-10);
+             poly.addPoint(hw+10, -hh-y1); poly.addPoint(hw+10, hh+y1); poly.addPoint(hw-dx+x1, hh+dy+10);
+             poly.addPoint(-hw+dx-x1, hh+dy+10); poly.addPoint(-hw-10, hh+y1);
              break;
           }
           case M_CIRCLE:
@@ -498,10 +464,9 @@ public final class VizNode extends DiGraph.DiNode {
        if (shape==null) return;
        if (updown<0) calcBounds();
        gr.set(style, scale);
-       updateCache(fontSize, fontBold);
-       gr.setFont(cachedFont);
-       final int ad = cachedFontMetrics.getMaxAscent() + cachedFontMetrics.getMaxDescent();
        gr.translate(centerX-left, centerY-top);
+       gr.setFont(fontSize, fontBold);
+       final int ad = Artist.getMaxAscentAndDescent(fontSize, fontBold);
        if (highlight) gr.setColor(Color.RED); else gr.setColor(color);
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
@@ -539,9 +504,9 @@ public final class VizNode extends DiGraph.DiNode {
           int x=(-width/2), y=yShift+(-labels.size()*ad/2);
           for(int i=0; i<labels.size(); i++) {
              String t = labels.get(i);
-             int w = ((int) (cachedFontMetrics.getStringBounds(t, cachedGraphics).getWidth())) + 1; // Round it up
+             int w = ((int) (Artist.getStringBounds(fontSize, fontBold, t).getWidth())) + 1; // Round it up
              if (width>w) w=(width-w)/2; else w=0;
-             gr.drawString(t, x+w, y+cachedFontMetrics.getMaxAscent());
+             gr.drawString(t, x+w, y+Artist.getMaxAscent(fontSize, fontBold));
              y=y+ad;
           }
        }
