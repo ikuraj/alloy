@@ -201,7 +201,6 @@ public final class VizEdge extends DiGraph.DiEdge {
           fan=(style==VizStyle.BOLD?bigFan:smallFan); gr.setColor(color); gr.set(style, scale);
        }
        // Now, draw the arrow heads if needed
-       VizNode.updateCache(a().fontSize(), false);
        int n = path.getPoints();
        if (ahead && a().shape()!=null) {
           double ax = path.getX(0), ay=path.getY(0), bx=path.getX(1), by=path.getY(1);

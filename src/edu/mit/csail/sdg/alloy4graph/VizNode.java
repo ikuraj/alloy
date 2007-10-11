@@ -78,7 +78,7 @@ public final class VizNode extends DiGraph.DiNode {
     private static Graphics2D cachedGraphics;
 
     /** If nonnull, it caches the FontMetrics object associated with the current font size and font boldness. */
-    static FontMetrics cachedFontMetrics;
+    private static FontMetrics cachedFontMetrics;
 
     /** If nonnull, it caches the Font object associated with the current font size and font boldness. */
     private static Font cachedFont;
@@ -90,7 +90,7 @@ public final class VizNode extends DiGraph.DiNode {
     private static boolean cachedFontBoldness;
 
     /** Updates cached{Image,Graphics,Metrics,Font} based on the given font size and font boldness. */
-    static void updateCache(int fontSize, boolean fontBoldness) {
+    private static void updateCache(int fontSize, boolean fontBoldness) {
        if (cachedFont==null || cachedFontMetrics==null || fontSize!=cachedFontSize || fontBoldness!=cachedFontBoldness) {
           if (cachedImage==null) cachedImage=new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
           if (cachedGraphics==null) cachedGraphics=(Graphics2D)(cachedImage.getGraphics());

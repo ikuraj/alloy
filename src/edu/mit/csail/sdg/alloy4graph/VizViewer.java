@@ -104,6 +104,7 @@ public final class VizViewer extends JPanel {
        return null;
     }
 
+    /** Stores the mouse positions needed to calculate drag-and-drop. */
     private int oldMouseX=0, oldMouseY=0, oldX=0, oldY=0;
 
     /** Repaint this component. */
@@ -395,7 +396,7 @@ public final class VizViewer extends JPanel {
        double scale2 = ((double)(xheight-dpi)) / graph.getTotalHeight(); // We leave 0.5 inch on the left and right
        if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
        OurPDFWriter x = new OurPDFWriter(dpi, filename);
-       x.write(""+scale2+" 0 0 "+scale2+" "+(dpi/2)+" "+(dpi/2)+" cm\n");
+       x.write(scale2).write(" 0 0 ").write(scale2).writespace().write(dpi/2).writespace().write(dpi/2).write(" cm\n");
        graph.draw(new Artist(x), scale2, null, null);
        x.close();
     }

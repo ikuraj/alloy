@@ -75,15 +75,15 @@ public final class OurPDFWriter {
           String fontType="Type1", fontFamily="Helvetica", fontEncoding="WinAnsiEncoding";
           fontID=offset.size();
           offset.add(out.getFilePointer());
-          write(""+fontID+" 0 obj\n<<\n/Type /Font\n/Subtype /"+fontType
-                  +"\n/BaseFont /"+fontFamily+"\n/Encoding /"+fontEncoding+"\n>>\nendobj\n\n");
+          write(fontID).write(" 0 obj\n<<\n/Type /Font\n/Subtype /").write(fontType);
+          write("\n/BaseFont /").write(fontFamily).write("\n/Encoding /").write(fontEncoding).write("\n>>\nendobj\n\n");
           // Opens the CONTENT object
           contentID=offset.size();
           offset.add(out.getFilePointer());
           contentSizeID=offset.size();
-          write(""+contentID+" 0 obj\n<< /Length "+contentSizeID+" 0 R>>\nstream\n");
+          write(contentID).write(" 0 obj\n<< /Length ").write(contentSizeID).write(" 0 R>>\nstream\n");
           startOfContent=out.getFilePointer();
-          write("q\n1 J\n1 j\n[] 0 d\n1 w\n1 0 0 -1 0 "+height+" cm\n");
+          write("q\n1 J\n1 j\n[] 0 d\n1 w\n1 0 0 -1 0 ").write(height).write(" cm\n");
         } catch(IOException ex) {
           try { out.close(); } catch(IOException ex2) { } // open files are a scarce resource, so try to close it at all cost
           throw ex;
@@ -94,12 +94,33 @@ public final class OurPDFWriter {
      * Writes the given String into the current Contents stream object.
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
-    public void write(String x) {
+    public OurPDFWriter write(String x) {
         if (err==null && out!=null) try {
             out.write(x.getBytes("UTF-8"));
         } catch(IOException ex) {
             err=ex;
         }
+        return this;
+    }
+
+    public OurPDFWriter writespace() { return write(" "); }
+
+    public OurPDFWriter write(long x) { return write(""+x); }
+
+    public OurPDFWriter write(double x) {
+        // These extreme values shouldn't happen, but we want to protect against them
+        if (Double.isNaN(x)) return write("0 ");
+        if (x==Double.POSITIVE_INFINITY) return write("65535");
+        if (x==Double.NEGATIVE_INFINITY) return write("-65535");
+        // Now, regular doubles...
+        String str=""+((long)(x*1000000d));
+        while(str.length()<6) str="0"+str;
+        return write(str.substring(0, str.length()-6)+"."+str.substring(str.length()-6));
+        // For example:
+        // .000001.. ->   000001
+        // .123456.. ->   123456
+        // 1.23456.. ->  1234560
+        // 12.3456.. -> 12345600
     }
 
     /**
@@ -112,31 +133,33 @@ public final class OurPDFWriter {
           long len = out.getFilePointer() - startOfContent;
           write("endstream\nendobj\n\n");
           offset.add(out.getFilePointer());
-          write(""+contentSizeID+" 0 obj\n"+len+"\nendobj\n\n");
+          write(contentSizeID).write(" 0 obj\n").write(len).write("\nendobj\n\n");
           // Write PAGE and PAGES
           pageID=offset.size();
           offset.add(out.getFilePointer());
           pagesID=offset.size();
-          write(""+pageID+" 0 obj\n<<\n/Type /Page\n/Parent "+pagesID+" 0 R\n/Contents "+contentID+" 0 R\n>>\nendobj\n\n");
+          write(pageID).write(" 0 obj\n<<\n/Type /Page\n/Parent ").write(pagesID);
+          write(" 0 R\n/Contents ").write(contentID).write(" 0 R\n>>\nendobj\n\n");
           offset.add(out.getFilePointer());
-          write("" + pagesID + " 0 obj\n<<\n" + "/Type /Pages\n" + "/Count 1\n" + "/Kids ["+pageID+" 0 R]\n"
-                  + "/MediaBox [0 0 "+width+" "+height+"]\n" + "/Resources\n" + "<<\n"
-                  + "/Font <<\n/F1 "+fontID+" 0 R >>\n>>\n>>\nendobj\n\n");
+          write(pagesID).write(" 0 obj\n<<\n/Type /Pages\n/Count 1\n/Kids [").write(pageID).write(" 0 R]\n");
+          write("/MediaBox [0 0 ").write(width).writespace().write(height).write("]\n/Resources\n<<\n/Font <<\n/F1 ");
+          write(fontID).write(" 0 R >>\n>>\n>>\nendobj\n\n");
           // Write CATALOG
           catalogID=offset.size();
           offset.add(out.getFilePointer());
-          write(""+catalogID+" 0 obj\n" + "<<\n" + "/Type /Catalog\n" + "/Pages " + pagesID + " 0 R\n" + ">>\n" + "endobj\n\n");
+          write(catalogID).write(" 0 obj\n<<\n/Type /Catalog\n/Pages ").write(pagesID).write(" 0 R\n>>\nendobj\n\n");
           // Write XREF
           long xref = out.getFilePointer();
-          write("xref\n" + "0 " + offset.size() + "\n");
+          write("xref\n0 ").write(offset.size()).write("\n");
           for(int i=0; i<offset.size(); i++) {
               long off = offset.get(i);
               String a = ""+off;
               while(a.length()<10) a="0"+a;
-              if (i==0) write(a+" 65535 f\r\n"); else write(a+" 00000 n\r\n");
+              if (i==0) write(a).write(" 65535 f\r\n"); else write(a).write(" 00000 n\r\n");
           }
           // Writer TRAILER
-          write("trailer\n" + "<<\n" + "/Size " + offset.size() + "\n" + "/Root " + catalogID + " 0 R\n" + ">>\n" + "startxref\n" + xref + "\n" + "%%EOF\n");
+          write("trailer\n<<\n/Size ").write(offset.size()).write("\n/Root ").write(catalogID).write(" 0 R\n>>\n");
+          write("startxref\n").write(xref).write("\n%%EOF\n");
         } catch(IOException ex) {
           err=ex;
         }

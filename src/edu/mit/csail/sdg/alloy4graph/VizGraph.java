@@ -561,7 +561,8 @@ public final class VizGraph extends DiGraph {
         }
         if (highFirstEdge!=null) highFirstEdge.draw(gr, scale, true);
         for(VizNode n:nodes) n.draw(gr, scale, n==highlight);
-        double tip = (VizNode.cachedFontMetrics.getMaxAscent()+VizNode.cachedFontMetrics.getMaxDescent()) * 0.6D;
+        double tip=0;
+        for(VizNode n:nodes) { tip=Artist.updateCache(n.fontSize(),false)*0.6D; break; }
         for(VizEdge e:edges) if (e!=highFirstEdge && e!=highLastEdge) e.drawArrowhead(gr, scale, false, tip);
         if (highFirstEdge!=null) highFirstEdge.drawArrowhead(gr, scale, true, tip);
         if (highLastEdge!=null && highLastEdge!=highFirstEdge) highLastEdge.drawArrowhead(gr, scale, true, tip);
