@@ -113,9 +113,12 @@ public final class OurPDFWriter {
         if (x==Double.POSITIVE_INFINITY) return write("65535");
         if (x==Double.NEGATIVE_INFINITY) return write("-65535");
         // Now, regular doubles...
-        String str=""+((long)(x*1000000d));
+        String str = ""+((long)(x*1000000d));
+        String sign = "";
+        if (str.charAt(0)=='-') { str=str.substring(1); sign="-"; }
         while(str.length()<6) str="0"+str;
-        return write(str.substring(0, str.length()-6)+"."+str.substring(str.length()-6));
+        str = sign + str.substring(0, str.length()-6) + "." + str.substring(str.length()-6);
+        return write(str);
         // For example:
         // .000001.. ->   000001
         // .123456.. ->   123456
