@@ -198,6 +198,14 @@ public class DiGraph {
     /** Return the number of layers; always at least 1. */
     public final int layers() { return layerlist.size(); }
 
+    /** Swap the given two nodes in the giver layer. */
+    public final void swapNodes(int layer, int node1, int node2) {
+        List<VizNode> list = layerlist.get(layer);
+        VizNode n1 = list.get(node1), n2 = list.get(node2);
+        list.set(node1, n2);
+        list.set(node2, n1);
+    }
+
     /** Sort the list of nodes according to the order in the given list. */
     public final void sortNodes(Iterable<VizNode> newOrder) {
        // The nodes that are common to this.nodelist and newOrder are moved to the front of the list, in the given order.

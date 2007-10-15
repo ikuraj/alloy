@@ -518,60 +518,100 @@ public final class VizNode extends DiGraph.DiNode {
         for(VizNode n:graph.layer(layer)) n.centerY=y;
     }
 
+    private void shiftUp(int y) {
+        final int[] ph = ((VizGraph)graph).layerPH;
+        final int yJump = VizGraph.yJump/2;
+        int i=layer();
+        setY(i,y);
+        y=y-ph[i]/2; // y is now the top-most edge of this layer
+        for(i++; i<graph.layers(); i++) {
+            List<VizNode> list=graph.layer(i);
+            VizNode first=list.get(0);
+            if (first.centerY+ph[i]/2+yJump > y) setY(i, y-ph[i]/2-yJump);
+            y=first.centerY-ph[i]/2;
+        }
+        ((VizGraph)graph).relayout_edges();
+    }
+
+    private void shiftDown(int y) {
+        final int[] ph = ((VizGraph)graph).layerPH;
+        final int yJump = VizGraph.yJump/2;
+        int i=layer();
+        setY(i,y);
+        y=y+ph[i]/2; // y is now the bottom-most edge of this layer
+        for(i--; i>=0; i--) {
+            List<VizNode> list=graph.layer(i);
+            VizNode first=list.get(0);
+            if (first.centerY-ph[i]/2-yJump < y) setY(i, y+ph[i]/2+yJump);
+            y=first.centerY+ph[i]/2;
+        }
+        ((VizGraph)graph).relayout_edges();
+    }
+
+    private void shiftLeft(List<VizNode> peers, int i, int x) {
+        final int xJump = VizGraph.xJump;
+        centerX=x;
+        x=x-(shape==null?0:side); // x is now the left-most edge of this node
+        for(i--;i>=0;i--) {
+            VizNode node=peers.get(i);
+            int side=(node.shape==null?0:node.side);
+            if (node.centerX+side+node.getReserved()+xJump>x) node.centerX=x-side-node.getReserved()-xJump;
+            x=node.centerX-side;
+        }
+    }
+
+    private void shiftRight(List<VizNode> peers, int i, int x) {
+        final int xJump = VizGraph.xJump;
+        centerX=x;
+        x=x+(shape==null?0:side)+getReserved(); // x is now the right most edge of this node
+        for(i++;i<peers.size();i++) {
+            VizNode node=peers.get(i);
+            int side=(node.shape==null?0:node.side);
+            if (node.centerX-side-xJump<x) node.centerX=x+side+xJump;
+            x=node.centerX+side+node.getReserved();
+        }
+    }
+
+    private void swapLeft(List<VizNode> peers, int i, int x) {
+        int side=(shape==null ? 2 : this.side);
+        int left=x-side;
+        while(true) {
+            if (i==0) { centerX=x; return; } // no clash possible
+            VizNode other=peers.get(i-1);
+            int otherSide=(other.shape==null ? 2 : other.side);
+            int otherRight=other.centerX+otherSide+other.getReserved();
+            if (otherRight<left) { centerX=x; return; } // no clash
+            graph.swapNodes(layer(), i, i-1);
+            i--;
+            other.shiftRight(peers, i+1, x + side + getReserved() + otherSide);
+        }
+    }
+
+    private void swapRight(List<VizNode> peers, int i, int x) {
+        int side = (shape==null ? 2 : this.side);
+        int right=x+side+getReserved();
+        while(true) {
+            if (i==peers.size()-1) { centerX=x; return; } // no clash possible
+            VizNode other=peers.get(i+1);
+            int otherSide=(other.shape==null ? 2 : other.side);
+            int otherLeft=other.centerX-otherSide;
+            if (otherLeft>right) { centerX=x; return; } // no clash
+            graph.swapNodes(layer(), i, i+1);
+            i++;
+            other.shiftLeft(peers, i-1, x - side - other.getReserved() - otherSide);
+        }
+    }
+
     /** Assuming the graph is already laid out, this shifts this node (and re-layouts nearby nodes/edges) */
     public void tweak(int x, int y) {
-       final int[] ph = ((VizGraph)graph).layerPH;
        if (centerX==x && centerY==y) return; // If no change, then return right away
-       final int xJump = VizGraph.xJump;
-       final int yJump = VizGraph.yJump/2;
        List<VizNode> layer = graph.layer(layer());
        final int n = layer.size();
        int i;
        for(i=0; i<n; i++) if (layer.get(i)==this) break; // Figure out this node's position in its layer
-       if (centerX>x) {
-          centerX=x;
-          x=x-(shape==null?0:side); // x is now the left-most edge of this node
-          for(i--;i>=0;i--) {
-             VizNode node=layer.get(i);
-             int side=(node.shape==null?0:node.side);
-             if (node.centerX+side+node.getReserved()+xJump>x) node.centerX=x-side-node.getReserved()-xJump;
-             x=node.centerX-side;
-          }
-       } else if (centerX<x) {
-          centerX=x;
-          x=x+(shape==null?0:side)+getReserved(); // x is now the right most edge of this node
-          for(i++;i<n;i++) {
-             VizNode node=layer.get(i);
-             int side=(node.shape==null?0:node.side);
-             if (node.centerX-side-xJump<x) node.centerX=x+side+xJump;
-             x=node.centerX+side+node.getReserved();
-          }
-       }
-       if (centerY>y) {
-           i=layer();
-           setY(i,y);
-           y=y-ph[i]/2; // y is now the top-most edge of this layer
-           for(i++; i<graph.layers(); i++) {
-               List<VizNode> list=graph.layer(i);
-               VizNode first=list.get(0);
-               if (first.centerY+ph[i]/2+yJump > y) setY(i, y-ph[i]/2-yJump);
-               y=first.centerY-ph[i]/2;
-           }
-           ((VizGraph)graph).relayout_edges();
-       } else if (centerY<y) {
-           i=layer();
-           setY(i,y);
-           y=y+ph[i]/2; // y is now the bottom-most edge of this layer
-           for(i--; i>=0; i--) {
-               List<VizNode> list=graph.layer(i);
-               VizNode first=list.get(0);
-               if (first.centerY-ph[i]/2-yJump < y) setY(i, y+ph[i]/2+yJump);
-               y=first.centerY+ph[i]/2;
-           }
-           ((VizGraph)graph).relayout_edges();
-       } else {
-           ((VizGraph)graph).relayout_edges(layer());
-       }
+       if (centerX>x) swapLeft(layer,i,x); else if (centerX<x) swapRight(layer,i,x);
+       //if (centerX>x) shiftLeft(layer,i,x); else if (centerX<x) shiftRight(layer,i,x);
+       if (centerY>y) shiftUp(y); else if (centerY<y) shiftDown(y); else ((VizGraph)graph).relayout_edges(layer());
        ((VizGraph)graph).recalc_bound(false);
     }
 }
