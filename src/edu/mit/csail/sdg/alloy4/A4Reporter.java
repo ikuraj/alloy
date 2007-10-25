@@ -89,7 +89,7 @@ public class A4Reporter {
      *
      * @param command - this is the original Command used to generate this solution
      * @param solvingTime - this is the number of milliseconds the solver took to obtain this result
-     * @param solution - the satisfying A4Solutio object
+     * @param solution - the satisfying A4Solution object
      */
     public void resultSAT(Object command, long solvingTime, Object solution) {}
 

@@ -129,10 +129,14 @@ public final class ConstList<T> implements Serializable, List<T> {
     @SuppressWarnings("unchecked")
     public static<T> ConstList<T> make(Iterable<? extends T> collection) {
         if (collection instanceof ConstList) return (ConstList<T>)collection;
-        if (collection==null || !collection.iterator().hasNext()) return (ConstList<T>)emptylist;
-        ArrayList<T> ans=new ArrayList<T>();
-        for(T elem:collection) ans.add(elem);
-        return new ConstList<T>(true, ans);
+        if (collection==null) return (ConstList<T>)emptylist;
+        ArrayList<T> ans=null;
+        Iterator<? extends T> it=collection.iterator();
+        while(it.hasNext()) {
+            if (ans==null) ans=new ArrayList<T>();
+            ans.add(it.next());
+        }
+        if (ans==null) return (ConstList<T>)emptylist; else return new ConstList<T>(true, ans);
     }
 
     /**

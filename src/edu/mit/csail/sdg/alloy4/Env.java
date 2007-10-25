@@ -58,7 +58,7 @@ public final class Env<K,V> {
      * <p>
      * For example: if key K is bound to values V1..Vn, then map2.get(K) returns the sublist V2..Vn
      */
-    private final Map<K,LinkedList<V>> map2=new LinkedHashMap<K,LinkedList<V>>();
+    private final Map<K,LinkedList<V>> map2 = new LinkedHashMap<K,LinkedList<V>>();
 
     /** Constructs an initially empty environment. */
     public Env () { }

@@ -21,6 +21,7 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /** Immutable; implements an ordered list where it is very cheap to join two lists or to append an item to a list. */
@@ -72,7 +73,7 @@ public final class JoinableList<E> implements Iterable<E> {
         return new JoinableList<E>(count + that.count, pre, item, that);
     }
 
-    /** Returns a list that represenxts the result of appending the given item onto the end of the this list. */
+    /** Returns a list that represents the result of appending the given item onto the end of the this list. */
     public JoinableList<E> append(E newItem) {
         if (count==0) return new JoinableList<E>(newItem);
         if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);
@@ -81,7 +82,7 @@ public final class JoinableList<E> implements Iterable<E> {
         return new JoinableList<E>(count+1, pre, item, new JoinableList<E>(newItem));
     }
 
-    /** Returns a list that represenxts the result of appending the given item onto the end of the this list if newItem!=null. */
+    /** Returns a list that represents the result of appending the given item onto the end of the this list if newItem!=null. */
     public JoinableList<E> appendIfNotNull(E newItem) {
         if (newItem==null) return this;
         if (count==0) return new JoinableList<E>(newItem);
@@ -117,7 +118,7 @@ public final class JoinableList<E> implements Iterable<E> {
     @Override public String toString() {
         StringBuilder sb=new StringBuilder("[");
         boolean first=true;
-        for(Object x:this) {
+        for(Object x: this) {
             if (first) { first=false; } else { sb.append(", "); }
             if (x==null) sb.append("null");
             else if (x==this) sb.append("(this collection)");
@@ -136,12 +137,12 @@ public final class JoinableList<E> implements Iterable<E> {
         return answer;
     }
 
-    /** Returns true if (that instanceof JoinableList), and that contains the same elements as this list. */
+    /** Returns true if (that instanceof List), and that contains the same elements as this list. */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
-        if (!(that instanceof JoinableList)) return false;
-        JoinableList x=(JoinableList)that;
-        if (count!=x.count) return false;
+        if (!(that instanceof List)) return false;
+        List x=(List)that;
+        if (count!=x.size()) return false;
         Iterator a=iterator(), b=x.iterator();
         for(int i=0; i<count; i++) {
             Object aa=a.next(), bb=b.next();

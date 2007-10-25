@@ -51,7 +51,7 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
         /** The underlying map. */
         private final LinkedHashMap<K,V> map;
         /** Nonnull iff this map is no longer modifiable. */
-        private ConstMap<K,V> cmap=null;
+        private ConstMap<K,V> cmap = null;
         /** Construct a new empty modifiable TempMap. */
         public TempMap()                                 { this.map = new LinkedHashMap<K,V>(); }
         /** Construct a new modifiable TempMap with the initial entries equal to the given map. */

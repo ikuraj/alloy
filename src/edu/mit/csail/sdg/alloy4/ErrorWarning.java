@@ -38,7 +38,7 @@ public final class ErrorWarning extends Err {
      * @param msg - the actual error message
      */
     public ErrorWarning(String msg) {
-        super(null,msg,null);
+        super(null, msg, null);
     }
 
     /**
@@ -47,7 +47,7 @@ public final class ErrorWarning extends Err {
      * @param msg - the actual error message
      */
     public ErrorWarning(Pos pos, String msg) {
-        super(pos,msg,null);
+        super(pos, msg, null);
     }
 
     /**

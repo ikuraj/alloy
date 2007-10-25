@@ -29,7 +29,7 @@ import java.util.IdentityHashMap;
  *
  * <p> Note: it uses n1==n2 for comparing nodes rather than using n1.equals(n2)
  *
- * <p><b>Thread Safety:</b>  Safe
+ * <p><b>Thread Safety:</b>  unsafe
  *
  * @param <N> - the node type
  */
@@ -45,7 +45,7 @@ public final class DirectedGraph<N> {
     /**
      * Adds a directed edge from start node to end node (if there wasn't such an edge already).
      */
-    public synchronized void addEdge (final N start, final N end) {
+    public void addEdge (final N start, final N end) {
         List<N> targets = nodeToTargets.get(start);
         if (targets == null) {
             targets = new ArrayList<N>();
@@ -61,7 +61,7 @@ public final class DirectedGraph<N> {
     /**
      * Returns whether there is a directed path from start node to end node by following 0 or more directed edges.
      */
-    public synchronized boolean hasPath (final N start, final N end) {
+    public boolean hasPath (final N start, final N end) {
         if (start == end) { return true; }
         List<N> todo = new ArrayList<N>();
         IdentityHashMap<N,Object> visited = new IdentityHashMap<N,Object>();

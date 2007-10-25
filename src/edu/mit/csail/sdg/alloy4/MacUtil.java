@@ -50,10 +50,10 @@ public final class MacUtil {
     /**
      * Register a Mac OS X "ApplicationListener"; if there was a previous listener, it will be removed first.
      * @param handler - the application listener
-     * @param reopen - when the user clicks on the Dock icon, we'll call handler.run(reopen)
-     * @param about - when the user clicks on About Alloy4, we'll call handler.run(about)
-     * @param open - when a file needs to be opened, we'll call handler.run(open,filename)
-     * @param quit - when the user clicks on Quit, we'll call handler.run(quit)
+     * @param reopen - when the user clicks on the Dock icon, we'll call handler.run(reopen) using SwingUtilities.invokeLater
+     * @param about - when the user clicks on About Alloy4, we'll call handler.run(about) using SwingUtilities.invokeLater
+     * @param open - when a file needs to be opened, we'll call handler.run(open,filename) using SwingUtilities.invokeLater
+     * @param quit - when the user clicks on Quit, we'll call handler.run(quit) using SwingUtilities.invokeAndWait
      */
     public synchronized static void registerApplicationListener
     (final MultiRunnable handler, final int reopen, final int about, final int open, final int quit) {

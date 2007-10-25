@@ -48,7 +48,7 @@ public final class ConstSet<K> implements Serializable, Set<K> {
     public static final class TempSet<K> {
         /** The underlying set. */
         private final LinkedHashSet<K> set;
-        /** Nonnull iff this set is no longer modifiable; access to this field should be synchronized. */
+        /** Nonnull iff this set is no longer modifiable. */
         private ConstSet<K> cset=null;
         /** Construct a new empty modifiable TempSet. */
         public TempSet()                     { this.set = new LinkedHashSet<K>(); }

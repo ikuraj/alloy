@@ -38,7 +38,7 @@ public final class ErrorFatal extends Err {
      * @param msg - the actual error message
      */
     public ErrorFatal(String msg) {
-        super(null,msg,null);
+        super(null, msg, null);
     }
 
     /**
@@ -47,7 +47,7 @@ public final class ErrorFatal extends Err {
      * @param msg - the actual error message
      */
     public ErrorFatal(Pos pos, String msg) {
-        super(pos,msg,null);
+        super(pos, msg, null);
     }
 
     /**

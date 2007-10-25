@@ -52,7 +52,7 @@ public abstract class Err extends Exception {
     }
 
     /** Returns a copy of the stack trace. */
-    @Override public StackTraceElement[] getStackTrace() {
+    @Override public final StackTraceElement[] getStackTrace() {
         if (other==null) return super.getStackTrace();
         StackTraceElement[] that = other.getStackTrace();
         StackTraceElement[] here = super.getStackTrace();
@@ -72,8 +72,8 @@ public abstract class Err extends Exception {
 
     /** Returns the stack trace as a String. */
     public final String getTotalTrace() {
-        final StringBuilder sb=new StringBuilder();
-        for(StackTraceElement st: getStackTrace()) { sb.append(st.toString()); sb.append("\n"); }
+        final StringBuilder sb = new StringBuilder();
+        for(StackTraceElement st: getStackTrace()) { sb.append(st.toString()).append("\n"); }
         return sb.toString();
     }
 

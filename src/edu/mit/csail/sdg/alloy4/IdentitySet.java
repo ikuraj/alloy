@@ -75,9 +75,10 @@ public final class IdentitySet<T> implements Iterable<T> {
 
     /** Returns a String representation of this set. */
     @Override public synchronized String toString() {
-        StringBuilder sb = new StringBuilder("[");
+        StringBuilder sb=new StringBuilder("[");
+        boolean first=true;
         for(Object x: this) {
-            if (sb.length()!=1) sb.append(", ");
+            if (first) { first=false; } else { sb.append(", "); }
             if (x==null) sb.append("null");
             else if (x==this) sb.append("(this collection)");
             else sb.append(x.toString());
