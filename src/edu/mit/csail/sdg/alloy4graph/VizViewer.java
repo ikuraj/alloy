@@ -93,7 +93,7 @@ public final class VizViewer extends JPanel {
 
     /** Locates the node or edge at the given (X,Y) location. */
     private Object do_find(int mouseX, int mouseY) {
-       double x=mouseX/scale+graph.left, y=mouseY/scale+graph.top;
+       double x=mouseX/scale+graph.getLeft(), y=mouseY/scale+graph.getTop();
        for(VizNode n:graph.nodes) {
            if (n.shape()==null && Math.abs(n.x()-x)<10 && Math.abs(n.y()-y)<10) return n;
            if (n.intersects(x,y)) return n;
@@ -111,7 +111,7 @@ public final class VizViewer extends JPanel {
     private void do_repaint() {
         Container c=getParent();
         while(c!=null) { if (c instanceof JViewport) break; else c=c.getParent(); }
-        setSize((int)(graph.totalWidth*scale), (int)(graph.totalHeight*scale));
+        setSize((int)(graph.getTotalWidth()*scale), (int)(graph.getTotalHeight()*scale));
         if (c!=null) { c.invalidate(); c.repaint(); c.validate(); } else { invalidate(); repaint(); validate(); }
     }
 
@@ -142,7 +142,7 @@ public final class VizViewer extends JPanel {
                  if (c==null) return;
                  int w=c.getWidth()-15, h=c.getHeight()-15; // 15 gives a comfortable round-off margin
                  if (w<=0 || h<=0) return;
-                 double scale1 = ((double)w)/graph.totalWidth, scale2 = ((double)h)/graph.totalHeight;
+                 double scale1 = ((double)w)/graph.getTotalWidth(), scale2 = ((double)h)/graph.getTotalHeight();
                  if (scale1<scale2) scale=scale1; else scale=scale2;
               }
               do_repaint();
@@ -167,8 +167,8 @@ public final class VizViewer extends JPanel {
                     n.tweak(newX,newY);
                     do_repaint();
                     scrollRectToVisible(new Rectangle(
-                      (int)((newX-graph.left)*scale)-n.getWidth()/2-5,
-                      (int)((newY-graph.top)*scale)-n.getHeight()/2-5,
+                      (int)((newX-graph.getLeft())*scale)-n.getWidth()/2-5,
+                      (int)((newY-graph.getTop())*scale)-n.getHeight()/2-5,
                       n.getWidth()+n.getReserved()+10, n.getHeight()+10
                     ));
                  }
@@ -270,15 +270,15 @@ public final class VizViewer extends JPanel {
        JFrame me=null;
        for(Container c=getParent(); c!=null; c=c.getParent()) if (c instanceof JFrame) { me=(JFrame)c; break; }
        // Figure out the initial width, height, and DPI that we might want to suggest to the user
-       final double ratio=((double)(graph.totalWidth))/graph.totalHeight;
+       final double ratio=((double)(graph.getTotalWidth()))/graph.getTotalHeight();
        double dpi, iw=8.5D, ih=((int)(iw*100/ratio))/100D;    // First set the width to be 8.5inch and compute height accordingly
        if (ih>11D) { ih=11D; iw=((int)(ih*100*ratio))/100D; } // If too tall, then set height=11inch, and compute width accordingly
        synchronized(VizViewer.class) { dpi=oldDPI; }
        // Prepare the dialog box
        final JLabel msg=new JLabel(" ");
        msg.setForeground(Color.RED);
-       final JLabel w=new JLabel("Width: "+((int)(graph.totalWidth*scale))+" pixels");
-       final JLabel h=new JLabel("Height: "+((int)(graph.totalHeight*scale))+" pixels");
+       final JLabel w=new JLabel("Width: "+((int)(graph.getTotalWidth()*scale))+" pixels");
+       final JLabel h=new JLabel("Height: "+((int)(graph.getTotalHeight()*scale))+" pixels");
        final JTextField w1=new JTextField(""+iw); final JLabel w0=new JLabel("Width: "), w2=new JLabel();
        final JTextField h1=new JTextField(""+ih); final JLabel h0=new JLabel("Height: "), h2=new JLabel();
        final JTextField d1=new JTextField(""+(int)dpi); final JLabel d0=new JLabel("Resolution: "), d2=new JLabel(" dots per inch");
@@ -348,8 +348,8 @@ public final class VizViewer extends JPanel {
              String err = msg.getText().trim();
              if (err.length()>0) continue;
              dpi=Double.parseDouble(d1.getText());
-             myScale=((double)widthInPixel)/graph.totalWidth;
-             int heightInPixel=(int)(graph.totalHeight*myScale);
+             myScale=((double)widthInPixel)/graph.getTotalWidth();
+             int heightInPixel=(int)(graph.getTotalHeight()*myScale);
              if (widthInPixel>4000 || heightInPixel>4000)
                 if (!OurDialog.yesno(me, "The image dimension ("+widthInPixel+"x"+heightInPixel+") is very large. Are you sure?"))
                    continue;
@@ -403,8 +403,8 @@ public final class VizViewer extends JPanel {
 
     /** Export the current drawing as a PNG file with the given file name and image resolution. */
     public void do_saveAsPNG(String filename, double scale, double dpiX, double dpiY) throws IOException, OutOfMemoryError {
-       int width = (int) (graph.totalWidth*scale);   if (width<10) width=10;
-       int height = (int) (graph.totalHeight*scale); if (height<10) height=10;
+       int width = (int) (graph.getTotalWidth()*scale);   if (width<10) width=10;
+       int height = (int) (graph.getTotalHeight()*scale); if (height<10) height=10;
        BufferedImage bf = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
        Graphics2D gr = (Graphics2D) (bf.getGraphics());
        gr.setColor(WHITE);
@@ -423,7 +423,7 @@ public final class VizViewer extends JPanel {
 
     /** {@inheritDoc} */
     @Override public Dimension getPreferredSize() {
-        return new Dimension((int)(graph.totalWidth*scale), (int)(graph.totalHeight*scale));
+        return new Dimension((int)(graph.getTotalWidth()*scale), (int)(graph.getTotalHeight()*scale));
     }
 
     /** {@inheritDoc} */
@@ -438,7 +438,7 @@ public final class VizViewer extends JPanel {
         if (selected instanceof VizNode && ((VizNode)selected).shape()==null) { c=(VizNode)selected; sel=c.inEdges().get(0); }
         if (highlight instanceof VizNode && ((VizNode)highlight).shape()==null) { c=(VizNode)highlight; sel=c.inEdges().get(0); }
         graph.draw(new Artist(g2), scale, sel, null);
-        if (c!=null) { gr.setColor(Color.RED); gr.fillArc(c.x()-5-graph.left, c.y()-5-graph.top, 10, 10, 0, 360); }
+        if (c!=null) { gr.setColor(Color.RED); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
         g2.setTransform(oldAF);
     }
 }

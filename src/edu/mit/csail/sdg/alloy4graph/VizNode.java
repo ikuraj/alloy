@@ -460,7 +460,7 @@ public final class VizNode extends DiGraph.DiNode {
 
     /** Assuming calcBounds() have been called, and (x,y) have been set, then this draws the node. */
     public void draw(Artist gr, double scale, boolean highlight) {
-       final int top=((VizGraph)graph).top, left=((VizGraph)graph).left;
+       final int top=((VizGraph)graph).getTop(), left=((VizGraph)graph).getLeft();
        if (shape==null) return;
        if (updown<0) calcBounds();
        gr.set(style, scale);

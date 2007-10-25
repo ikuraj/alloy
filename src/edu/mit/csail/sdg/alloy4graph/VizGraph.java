@@ -46,19 +46,19 @@ public final class VizGraph extends DiGraph {
     static final int yJump=30;
 
     /** The left edge. */
-    int left=0;
+    private int left=0;
 
     /** The top edge. */
-    int top=0;
+    private int top=0;
 
     /** The bottom edge. */
-    int bottom=0;
+    private int bottom=0;
 
     /** The total width of the graph; this value is computed by layout(). */
-    int totalWidth=0;
+    private int totalWidth=0;
 
     /** The total height of the graph; this value is computed by layout(). */
-    int totalHeight=0;
+    private int totalHeight=0;
 
     /** The height of each layer. */
     int[] layerPH=null;
@@ -473,6 +473,11 @@ public final class VizGraph extends DiGraph {
         for(VizNode n:nodes) {
             int min = (int) (n.x() - n.getWidth()/2                   - 5); if (minX>min) minX=min;
             int max = (int) (n.x() + n.getWidth()/2 + n.getReserved() + 5); if (maxX<max) maxX=max;
+        }
+        for(VizEdge e:edges) if (e.getLabelW()>0 && e.getLabelH()>0) {
+            int x1=e.getLabelX(), x2=x1+e.getLabelW()-1;
+            if (minX>x1) minX=x1;
+            if (maxX<x2) maxX=x2;
         }
         left=minX;
         totalWidth=maxX-minX;

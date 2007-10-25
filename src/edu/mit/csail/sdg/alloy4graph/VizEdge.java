@@ -57,6 +57,18 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** The location and size of the label box (if it's been calculated) */
     private AvailableSpace.Box labelbox = new AvailableSpace.Box();
 
+    /** Return the X coordinate of the top-left corner of the label box. */
+    public int getLabelX() { return labelbox.x; }
+
+    /** Return the Y coordinate of the top-left corner of the label box. */
+    public int getLabelY() { return labelbox.y; }
+
+    /** Return the width of the label box. */
+    public int getLabelW() { return labelbox.w; }
+
+    /** Return the height of the label box. */
+    public int getLabelH() { return labelbox.h; }
+
     /** Whether to draw an arrow head on the "from" node; default is false. */
     private boolean ahead = false;
 
@@ -167,6 +179,7 @@ public final class VizEdge extends DiGraph.DiEdge {
     void repositionLabel(AvailableSpace sp) {
         if (label.length()==0) return;
         if (a()==b()) return; // TODO: self edge
+        int gap = style==VizStyle.BOLD ? 3 : 0; // If the line is bold, we need to shift the label to the right a little bit
         int ay=a().y()+a().getHeight()/2, by=b().y()-b().getHeight()/2, midy=(ay+by)/2;
         if (b().shape()==null) midy=by-labelbox.h;
         for(int gp=0; ; gp=gp+2) {
@@ -176,7 +189,7 @@ public final class VizEdge extends DiGraph.DiEdge {
                 done = false;
                 int xpre = (int) (path.intersectsHorizontal(y-5));
                 int xpost = (int) (path.intersectsHorizontal(y+5));
-                int x = (int) (path.intersectsHorizontal(xpre>=xpost ? y : y+labelbox.h));
+                int x = (int) (path.intersectsHorizontal(xpre>=xpost ? y : y+labelbox.h)) + gap;
                 if (sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(x, y, labelbox.w, labelbox.h); labelbox.x=x; labelbox.y=y; return; }
             }
             y = midy+gp;
@@ -184,7 +197,7 @@ public final class VizEdge extends DiGraph.DiEdge {
                 done = false;
                 int xpre = (int) (path.intersectsHorizontal(y-5));
                 int xpost = (int) (path.intersectsHorizontal(y+5));
-                int x = (int) (path.intersectsHorizontal(xpre>=xpost ? y : y+labelbox.h));
+                int x = (int) (path.intersectsHorizontal(xpre>=xpost ? y : y+labelbox.h)) + gap;
                 if (sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(x, y, labelbox.w, labelbox.h); labelbox.x=x; labelbox.y=y; return; }
             }
             if (done) break;
@@ -193,7 +206,7 @@ public final class VizEdge extends DiGraph.DiEdge {
         int xpre = (int) (path.intersectsHorizontal(y-5));
         int xpost = (int) (path.intersectsHorizontal(y+5));
         int realY= (xpre>=xpost) ? y : (y+labelbox.h);
-        int x = (int) path.intersectsHorizontal(realY);
+        int x = (int) path.intersectsHorizontal(realY) + gap;
         labelbox.x = (int)x;
         labelbox.y = (int)y;
         sp.add(labelbox.x, labelbox.y, labelbox.w, labelbox.h);
@@ -219,7 +232,7 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
     public void draw(Artist gr, double scale, boolean highlight) {
-       final int top=((VizGraph)(a().graph)).top, left=((VizGraph)(a().graph)).left;
+       final int top=((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
        gr.translate(-left, -top);
        if (highlight) { gr.setColor(Color.RED); gr.set(VizStyle.BOLD, scale); } else { gr.setColor(color); gr.set(style, scale); }
        if (a()==b()) {
@@ -242,15 +255,15 @@ public final class VizEdge extends DiGraph.DiEdge {
              e = e.b().outEdges().get(0);
           }
           p.draw(gr);
+          if (label.length()>0) gr.drawString(label, labelbox.x, labelbox.y + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD)); // TODO: what about self edge?
        }
-       if (label.length()>0) gr.drawString(label, labelbox.x, labelbox.y + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD));
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
     public void drawArrowhead(Artist gr, double scale, boolean highlight, double tipLength) {
-       final int top=((VizGraph)(a().graph)).top, left=((VizGraph)(a().graph)).left;
+       final int top=((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
        // Return if there are no arrow heads to draw
        if (!ahead || a().shape()==null) if (!bhead || b().shape()==null) return;
        // Check to see if this edge is highlighted or not
