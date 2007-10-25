@@ -1,16 +1,45 @@
+/*
+ * Alloy Analyzer
+ * Copyright (c) 2007 Massachusetts Institute of Technology
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA,
+ * 02110-1301, USA
+ */
+
 package edu.mit.csail.sdg.alloy4graph;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/** Mutable; this allows you to compute whether a rectangle overlaps with a set of rectangles or not. */
+
 public final class AvailableSpace {
 
+    /** Mutable; represents a rectangle. */
     public static final class Box {
-        int x, y, w, h; // width must be at least 1; height must be at least 1
+        /** (x,y) is the top-left corner; w is the width; h is the height. */
+        int x, y, w, h;
     }
 
+    /** The list of existing rectangles; we ensure every rectangle in here has width>0 and height>0. */
     private List<Box> list = new ArrayList<Box>();
 
+    /** Construct an empty space. */
+    public AvailableSpace() { }
+
+    /** Returns true if the given rectangle does not overlap with any existing rectangle in this space. */
     public boolean ok(int x, int y, int w, int h) {
         if (w<=0 || h<=0) return true; // always okay
         for(Box box: list) {
@@ -22,6 +51,7 @@ public final class AvailableSpace {
         return true;
     }
 
+    /** Add the given rectangle to the list of rectangles in this space. */
     public void add(int x, int y, int w, int h) {
         if (w<=0 || h<=0) return; // no-op
         Box b = new Box();
@@ -29,5 +59,6 @@ public final class AvailableSpace {
         list.add(b);
     }
 
+    /** Erases the list of rectangles in this space. */
     public void clear() { list.clear(); }
 }
