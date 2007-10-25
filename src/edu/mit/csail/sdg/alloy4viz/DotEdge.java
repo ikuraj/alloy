@@ -58,6 +58,9 @@ public final class DotEdge {
     /** Whether this edge should constrain the graph layout or not. */
     private final boolean constraint;
 
+    /** The group that this edge belongs to; edges in the same group will be highlighted together. */
+    private final Object group;
+
     /**
      * Constructs an edge.
      * @param id - a unique id for this edge
@@ -72,7 +75,7 @@ public final class DotEdge {
      */
     public DotEdge(int id, DotNode from, DotNode to, String label,
             DotStyle style, DotColor color, DotDirection dir,
-            int weight, boolean constraint) {
+            int weight, boolean constraint, Object group) {
         this.id = id;
         this.from = from;
         this.to = to;
@@ -82,14 +85,15 @@ public final class DotEdge {
         this.dir = dir;
         this.weight = weight;
         this.constraint = constraint;
+        this.group = (group==null ? this : group);
     }
 
     /** Write this edge (using the given Edge palette) into a StringBuilder as if writing to a DOT file. */
     public void write2(VizNode from, VizNode to, DotPalette pal) {
         VizEdge e;
-        if (dir==DotDirection.FORWARD) e=new VizEdge(from,to,label).set(false,true);
-           else if (dir==DotDirection.BACK) e=new VizEdge(from,to,label).set(true,false);
-           else e=new VizEdge(from,to,label).set(true,true);
+        if (dir==DotDirection.FORWARD) e=new VizEdge(from,to,label,group).set(false,true);
+           else if (dir==DotDirection.BACK) e=new VizEdge(from,to,label,group).set(true,false);
+           else e=new VizEdge(from,to,label,group).set(true,true);
         e.set(DotColor.name2color(color.getDotText(pal))).set(style.vizStyle).set(weight<1 ? 1 : (weight>100 ? 100 : weight));
         //TODO out.append(", constraint = \"" + (constraint?"true":"false") + "\"");
     }

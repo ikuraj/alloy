@@ -122,16 +122,15 @@ public final class MailBug implements UncaughtExceptionHandler {
                 String value = Preferences.userNodeForPackage(Util.class).get(key,"");
                 pw.printf("%s = %s\n", key, value);
             }
-        } catch(BackingStoreException ignore) {
-            // Not fatal
+        } catch(BackingStoreException bse) {
+            pw.printf("BackingStoreException occurred: %s\n", bse.toString());
         }
         pw.printf("\n========================= System Properties ================");
         pw.printf("\nRuntime.freeMemory() = "+Runtime.getRuntime().freeMemory());
         pw.printf("\nRuntime.totalMemory() = "+Runtime.getRuntime().totalMemory());
         for(Map.Entry<Object,Object> e:System.getProperties().entrySet()) {
             Object k=e.getKey(), v=e.getValue();
-            if (!"line.separator".equals(k)) {
-                // We are skipping "line.separator" since it's useless and it makes the resulting email harder to read
+            if (!"line.separator".equals(k)) { // We skip "line.separator" since it's useless and makes the email harder to read
                 pw.printf("\n%s = %s", (k==null ? "null" : k.toString()), (v==null ? "null" : v.toString()));
             }
         }
@@ -177,13 +176,10 @@ public final class MailBug implements UncaughtExceptionHandler {
         final String BUG_POST_URL = "http://alloy.mit.edu/postbug4.php";
         BufferedReader in = null;
         try {
-            // open the URL connection
             URLConnection connection = (new URL(BUG_POST_URL)).openConnection();
             connection.setDoOutput(true);
-            // write the bug report to the cgi script
             connection.getOutputStream().write(bugReport.getBytes("UTF-8"));
             connection.getOutputStream().flush();
-            // read the response back from the cgi script
             in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
             StringBuilder report = new StringBuilder();
             for (String inputLine = in.readLine(); inputLine != null; inputLine = in.readLine()) {
@@ -196,7 +192,7 @@ public final class MailBug implements UncaughtExceptionHandler {
             +"Please email alloy@mit.edu directly.\n\n"
             +"(Bug posting failed due to Java exception: "+ex.toString()+")";
         } finally {
-            Util.close(in);
+            if (in!=null) Util.close(in);
         }
     }
 }

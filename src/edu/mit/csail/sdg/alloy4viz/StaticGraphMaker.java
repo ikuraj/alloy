@@ -160,7 +160,7 @@ public final class StaticGraphMaker {
         }
         DotDirection dir = bidirectional ? DotDirection.BOTH : (layoutBack ? DotDirection.BACK:DotDirection.FORWARD);
         DotEdge e=new DotEdge(edges.size(), (layoutBack?end:start), (layoutBack?start:end), label,
-                view.edgeStyle(rel,model), view.edgeColor(rel,model), dir, view.weight(rel), view.constraint(rel,model));
+                view.edgeStyle(rel,model), view.edgeColor(rel,model), dir, view.weight(rel), view.constraint(rel,model), rel);
         edges.add(e);
     }
 

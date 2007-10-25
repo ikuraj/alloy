@@ -57,6 +57,9 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** The location and size of the label box (if it's been calculated) */
     private AvailableSpace.Box labelbox = new AvailableSpace.Box();
 
+    /** The group that this edge belongs to. */
+    private final Object group;
+
     /** Return the X coordinate of the top-left corner of the label box. */
     public int getLabelX() { return labelbox.x; }
 
@@ -86,6 +89,9 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     /** The actual path corresponding to this edge; null if we have not assigned the path yet. */
     private VizPath path = null;
+
+    /** Returns the group that this VizEdge belongs to. */
+    public Object group() { return group; }
 
     /** Returns the edge weight (which is always between 1 and 100 inclusively). */
     public int weight() { return weight; }
@@ -136,8 +142,9 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Construct an edge from "from" to "to" with the given arrow head settings, then add the edge to the graph. */
-    public VizEdge(VizNode from, VizNode to, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color) {
+    public VizEdge(VizNode from, VizNode to, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color, Object group) {
        super(from, to); // The parent's constructor will add the edge A->B to the graph
+       this.group = (group==null) ? this : group;
        this.label=label;
        this.ahead=drawArrowHeadOnFrom;
        this.bhead=drawArrowHeadOnTo;
@@ -153,8 +160,8 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Construct an edge from "from" to "to" with the default arrow head settings, then add the edge to the graph. */
-    public VizEdge(VizNode from, VizNode to, String label) {
-       this(from, to, label, false, true, null, null);
+    public VizEdge(VizNode from, VizNode to, String label, Object group) {
+       this(from, to, label, false, true, null, null, group);
     }
 
     /** Reset the path as a straightline from the center of the "from" node to the center of the "to" node. */
@@ -255,7 +262,7 @@ public final class VizEdge extends DiGraph.DiEdge {
              e = e.b().outEdges().get(0);
           }
           p.draw(gr);
-          if (label.length()>0) gr.drawString(label, labelbox.x, labelbox.y + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD)); // TODO: what about self edge?
+          if (highlight) if (label.length()>0) gr.drawString(label, labelbox.x, labelbox.y + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD)); // TODO: what about self edge?
        }
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);

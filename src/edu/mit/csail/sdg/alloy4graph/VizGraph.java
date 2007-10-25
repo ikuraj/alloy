@@ -96,14 +96,14 @@ public final class VizGraph extends DiGraph {
                 if (n1==n2) {
                    n2=new VizNode(this).set((VizShape)null);
                    e2.changeB(n2);
-                   new VizEdge(n2, n1, "", e2.ahead(), e2.bhead(), e2.style(), e2.color());
+                   new VizEdge(n2, n1, "", e2.ahead(), e2.bhead(), e2.style(), e2.color(), e2.group());
                    multiedge=true;
                 }
              }
              if (multiedge) {
                 VizNode n2=new VizNode(this).set((VizShape)null);
                 e1.changeB(n2);
-                new VizEdge(n2, n1, "", e1.ahead(), e1.bhead(), e1.style(), e1.color());
+                new VizEdge(n2, n1, "", e1.ahead(), e1.bhead(), e1.style(), e1.color(), e1.group());
              }
           }
        }
@@ -223,8 +223,8 @@ public final class VizGraph extends DiGraph {
              a = new VizNode(a.graph).set((VizShape)null);
              a.setLayer(tmp.layer()-1);
              // now we have three nodes in the vertical order of "tmp", "a", then "b"
-             e.changeB(a);                                                        // let old edge go from "tmp" to "a"
-             e=new VizEdge(a, b, "", e.ahead(), e.bhead(), e.style(), e.color()); // let new edge go from "a" to "b"
+             e.changeB(a);                                                                   // let old edge go from "tmp" to "a"
+             e=new VizEdge(a, b, "", e.ahead(), e.bhead(), e.style(), e.color(), e.group()); // let new edge go from "a" to "b"
           }
        }
     }
