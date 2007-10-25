@@ -155,7 +155,8 @@ public final class StaticGraphMaker {
                 if (i>1) moreLabel.append(", ");
                 moreLabel.append(atomname(atoms.get(i),false));
             }
-            if (label.length()==0) label=moreLabel.toString(); else label=label+(" ["+moreLabel+"]");
+            if (label.length()==0) { /* label=moreLabel.toString(); */ }
+            else { label=label+(" ["+moreLabel+"]"); }
         }
         DotDirection dir = bidirectional ? DotDirection.BOTH : (layoutBack ? DotDirection.BACK:DotDirection.FORWARD);
         DotEdge e=new DotEdge(edges.size(), (layoutBack?end:start), (layoutBack?start:end), label,
