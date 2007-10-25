@@ -211,6 +211,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         goal = bc.a.b;
         rep.debug("Generating facts...");
         makeFacts(facts);
+        // Kodkod sometimes refuses to enlarge a Relation during solution enumeration
+        // if that Relation is never mentioned in the GOAL formula; so, this ensures that
+        // the said relation is mentioned (and the R==R is optimized away very efficiently, so we don't incur runtime cost)
+        Formula mention = Formula.TRUE;
+        for(Relation r: bounds.relations()) { mention=mention.and(r.eq(r)); }
+        goal = mention.and(goal);
     }
 
     //==============================================================================================================//

@@ -224,21 +224,9 @@ public final class A4SolutionReader {
     /** The list of globals. */
     private TempList<Func> globals = new TempList<Func>();
 
-    /** Step6: add the atoms and skolems so that they can be referred to by the evaluator. */
+    /** Step6: add the skolems so that they can be referred to by the evaluator. */
     private void addSkolems() throws Err {
-        TupleFactory tf = inst.universe().factory();
         List<ExprVar> empty = new ArrayList<ExprVar>();
-        for(Object atom: inst.universe()) {
-            String n = (String)atom;
-            PrimSig ret = atom2sig.get(n);
-            if (ret!=null) {
-                Func func = new Func(null, n, empty, ret);
-                Relation r = Relation.unary(n);
-                inst.add(r, tf.range(tf.tuple(n), tf.tuple(n)));
-                a2k.put(func, r);
-                globals.add(func);
-            }
-        }
         again:
         for(Map.Entry<String,TupleSet> s:skolems.entrySet()) {
             int a = s.getValue().arity();

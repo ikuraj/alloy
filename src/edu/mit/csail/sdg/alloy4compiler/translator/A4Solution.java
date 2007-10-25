@@ -37,6 +37,7 @@ import kodkod.engine.config.Options;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.Tuple;
+import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.util.ints.IndexedEntry;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -55,6 +56,7 @@ import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4.ConstSet.TempSet;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -95,6 +97,9 @@ public final class A4Solution {
     /** The unmodifiable original Kodkod bounds (can be null if unknown) */
     private final Bounds kBounds;
 
+    /** This maps each Alloy4 atom to its corresponding Alloy parameter-less function. */
+    private final ConstMap<String,Func> a2func;
+
     /** This maps each Kodkod atom to its corresponding Alloy atom. */
     private final ConstMap<Object,String> k2atom;
 
@@ -112,9 +117,12 @@ public final class A4Solution {
 
     //============================================================================================================================//
 
+    /** Returns the map that maps each Alloy4 atom to a Alloy4 function whose value is that atom. */
+    public ConstMap<String,Func> getAllAtoms() { return a2func; }
+
     /** Recursively rename all atoms to be of the form "SIGNAME$INDEX" where SIGNAME is the most-specific-sig. */
     private static void rename
-    (Evaluator eval, ConstMap<Object,Expression> bcc, PrimSig s,
+    (Evaluator eval, Map<Object,Expression> bcc, PrimSig s,
     TempMap<Object,String> map, TempMap<Object,PrimSig> map2, UniqueNameGenerator un)
     throws Err {
         for(PrimSig c:s.children()) rename(eval, bcc, c, map, map2, un);
@@ -167,13 +175,14 @@ public final class A4Solution {
      * @param fmap - map from kodkod Formula to Alloy Expr or Alloy Pos; can be empty or null if the map is unavailable
      * @param core - unsat core in terms of Kodkod formulas; can be null or empty if unknown
      */
-    A4Solution(Iterable<Sig> sigs, ConstMap<Object,Expression> bcc, String filename,
+    A4Solution(Iterable<Sig> sigs, Map<Object,Expression> incoming_bcc, String filename,
     String command, Iterator<Solution> kEnumerator, Formula kFormula, Bounds kBounds, int bitwidth,
     Instance kInstance, Map<Relation,Type> rel2type, Map<Formula,Object> fmap, Iterable<Formula> core)
     throws Err {
+        ConstMap.TempMap<Object,Expression> bcc = new ConstMap.TempMap<Object,Expression>(incoming_bcc);
+        if (kInstance!=null) kInstance = kInstance.clone();
         this.sigs = ConstList.make(sigs);
         this.rel2type = ConstMap.make(rel2type);
-        this.bcc = ConstMap.make(bcc);
         this.filename = (filename==null ? "" : filename);
         this.command = (command==null ? "" : command);
         this.kEnumerator = kEnumerator;
@@ -184,22 +193,23 @@ public final class A4Solution {
         if (bitwidth<1 || bitwidth>30) throw new ErrorAPI("The integer bitwidth must be between 1 and 30.");
         TempMap<Object,String> m1 = new TempMap<Object,String>();
         TempMap<Object,PrimSig> m2 = new TempMap<Object,PrimSig>();
+        TempMap<String,Func> m3 = new TempMap<String,Func>();
         if (kInstance==null) {
             kEval = null;
         } else {
             final UniqueNameGenerator un = new UniqueNameGenerator();
             final Options options = new Options();
             options.setBitwidth(bitwidth);
-            kEval = new Evaluator(kInstance.clone(), options);
+            kEval = new Evaluator(kInstance, options);
             // We first process SIGINT
             for(Tuple t:kEval.evaluate(Relation.INTS)) { m2.put(t.atom(0), SIGINT); }
             // We then process SEQIDX so we override the old mapping to SIGINT with the new mapping to SEQIDX
             for(Tuple t:kEval.evaluate(BoundsComputer.SEQ_SEQIDX)) { m2.put(t.atom(0), SEQIDX); }
             // Now, process the non-builtin sigs
-            for(Map.Entry<Object,Expression> e:this.bcc.entrySet()) {
+            for(Map.Entry<Object,Expression> e:incoming_bcc.entrySet()) {
                 if (e.getKey() instanceof PrimSig) {
                     PrimSig s=(PrimSig)(e.getKey());
-                    if (!s.builtin && s.isTopLevel()) rename(kEval, this.bcc, s, m1, m2, un);
+                    if (!s.builtin && s.isTopLevel()) rename(kEval, incoming_bcc, s, m1, m2, un);
                 }
             }
             // These are redundant atoms that were not chosen to be in the final instance
@@ -217,6 +227,23 @@ public final class A4Solution {
             this.formula="";
         }
         this.kFormula = kFormula;
+        if (kInstance!=null) { // add each atom as a macro
+            List<ExprVar> empty = new ArrayList<ExprVar>();
+            TupleFactory tf = kInstance.universe().factory();
+            for(Object atom: kInstance.universe()) {
+                PrimSig ret = k2sig.get(atom);
+                String n = k2atom.get(atom);
+                if (ret!=null && n!=null) { // sanity check
+                    Func func = new Func(null, n, empty, ret);
+                    Relation r = Relation.unary(n);
+                    kInstance.add(r, tf.range(tf.tuple(atom), tf.tuple(atom)));
+                    bcc.put(func, r);
+                    m3.put(n, func);
+                }
+            }
+        }
+        this.bcc = bcc.makeConst();
+        this.a2func = m3.makeConst();
     }
 
     //============================================================================================================================//

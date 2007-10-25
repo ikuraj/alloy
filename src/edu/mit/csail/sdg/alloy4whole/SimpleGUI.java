@@ -1585,6 +1585,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                    root.addGlobal("$"+label, f.call());
                 }
                 for(Func f:ans.b) root.addGlobal(f.label, f.call());
+                for(Map.Entry<String,Func> f:ans.a.getAllAtoms().entrySet()) root.addGlobal(f.getKey(), f.getValue().call());
             } catch(Throwable ex) {
                 throw new ErrorFatal("Failed to read or parse the XML file.");
             } finally {

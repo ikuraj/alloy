@@ -159,7 +159,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** The current display mode. */
     private VisualizerMode currentMode = VisualizerMode.get();
 
-    /** The JFrame for the main GUI window. */
+    /** The JFrame for the main GUI window; or null if we intend to display the graph inside a user-given JPanel instead. */
     private final JFrame frame;
 
     /** The toolbar. */
@@ -381,7 +381,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         mb.add(windowmenu);
         thememenu.setEnabled(false);
         windowmenu.setEnabled(false);
-        frame.setJMenuBar(mb);
+        if (frame!=null) frame.setJMenuBar(mb);
 
         // Create the toolbar
         toolbar = new JToolBar();
@@ -439,23 +439,25 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         splitpane.setBorder(null);
 
         // Display the window, then proceed to load the input file
-        frame.pack();
-        frame.setSize(width,height);
-        frame.setLocation(x,y);
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        frame.addWindowListener(new MultiRunner(this, ev_close));
-        frame.addComponentListener(this);
+        if (frame!=null) {
+           frame.pack();
+           frame.setSize(width,height);
+           frame.setLocation(x,y);
+           frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+           frame.addWindowListener(new MultiRunner(this, ev_close));
+           frame.addComponentListener(this);
+        }
         if (xmlFileName.length()>0) run(evs_loadInstance, xmlFileName);
     }
 
     /** Invoked when the Visualizationwindow is resized. */
     public void componentResized(ComponentEvent e) {
-        VizWidth.set(frame.getWidth()); VizHeight.set(frame.getHeight()); componentMoved(e);
+        if (frame!=null) { VizWidth.set(frame.getWidth()); VizHeight.set(frame.getHeight()); componentMoved(e); }
     }
 
     /** Invoked when the Visualizationwindow is moved. */
     public void componentMoved(ComponentEvent e) {
-        Point p=frame.getLocation(); VizX.set(p.x); VizY.set(p.y);
+        if (frame!=null) { Point p=frame.getLocation(); VizX.set(p.x); VizY.set(p.y); }
     }
 
     /** Invoked when the Visualizationwindow is shown. */
@@ -519,7 +521,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         toolbar.setVisible(true);
         // Now, generate the graph or tree or textarea that we want to display on the right
         JComponent content;
-        frame.setTitle(makeVizTitle());
+        if (frame!=null) frame.setTitle(makeVizTitle());
         switch (currentMode) {
            case Plugin0:
            case Tree:
@@ -560,6 +562,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 myEvaluatorPanel.setCaretPosition(0);
                 myEvaluatorPanel.setCaretPosition(myEvaluatorPanel.getDocument().getLength());
             }
+            // TODO: what to do about frame below
             if (frame.getContentPane()==splitpane) lastDividerPosition=splitpane.getDividerLocation();
             splitpane.setRightComponent(instanceArea);
             splitpane.setLeftComponent(left);
@@ -569,8 +572,11 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             if (settingsOpen==2 && lastDividerPosition>400) lastDividerPosition=400;
             splitpane.setDividerLocation(lastDividerPosition);
             frame.setContentPane(splitpane);
+            // TODO: what to do about frame above
         } else {
+            // TODO: what to do about frame below
             frame.setContentPane(instanceArea);
+            // TODO: what to do about frame above
         }
         if (settingsOpen!=2) {
             content.requestFocusInWindow();
@@ -579,7 +585,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             myEvaluatorPanel.setCaretPosition(myEvaluatorPanel.getDocument().getLength());
         }
         repopulateProjectionPopup();
-        frame.validate();
+        if (frame!=null) frame.validate(); // TODO: should refresh the JPanel otherwise
     }
 
     /** Helper method that creates a button and add it to both the "SolutionButtons" list, as well as the toolbar. */
@@ -641,7 +647,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     //=============================================================================================================================================
 
     /** This event asks the user for a new XML file to load. */
-    private static final int ev_loadInstance = 101;
+    public static final int ev_loadInstance = 101;
 
     /** This event loads a new XML instance file if it's not the current file. */
     public static final int evs_loadInstance = 102;
@@ -654,49 +660,49 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
      * otherwise, this window will set itself as invisible (if not in standalone mode),
      * or it will terminate the entire application (if in standalone mode).
      */
-    private static final int ev_close = 104;
+    public static final int ev_close = 104;
 
     /**
      * This event closes every XML file.
      * if in standalone mode, the JVM will then shutdown; otherwise it will just set the window invisible.
      */
-    private static final int ev_closeAll = 105;
+    public static final int ev_closeAll = 105;
 
     /** This event refreshes the "theme" menu. */
-    private static final int ev_theme = 201;
+    public static final int ev_theme = 201;
 
     /** This events asks the user for a new theme file to load. */
-    private static final int ev_loadTheme = 202;
+    public static final int ev_loadTheme = 202;
 
     /** This events asks the user for a new theme file to load. */
-    private static final int ev_loadProvidedTheme = 203;
+    public static final int ev_loadProvidedTheme = 203;
 
     /** This events loads a specific theme file. */
-    private static final int evs_loadTheme = 204;
+    public static final int evs_loadTheme = 204;
 
     /** This events clears the history of loaded themes. */
-    private static final int ev_clearThemeHistory = 205;
+    public static final int ev_clearThemeHistory = 205;
 
     /** This event saves the current theme; returns true if it succeeded. */
-    private static final int ev_saveTheme = 206;
+    public static final int ev_saveTheme = 206;
 
     /** This event saves a specific current theme; returns true if it succeeded. */
-    private static final int evs_saveTheme = 207;
+    public static final int evs_saveTheme = 207;
 
     /** This event saves the current theme to a new ".thm" file; returns true if it succeeded. */
-    private static final int ev_saveThemeAs = 208;
+    public static final int ev_saveThemeAs = 208;
 
     /** This event resets the current theme. */
-    private static final int ev_resetTheme = 209;
+    public static final int ev_resetTheme = 209;
 
     /** This event saves a specific current theme; returns true if it succeeded. */
-    private static final int evs_saveThemeTS = 210;
+    public static final int evs_saveThemeTS = 210;
 
     /** This event saves the current theme to a new ".thm" file; returns true if it succeeded. */
-    private static final int ev_saveThemeAsTS = 211;
+    public static final int ev_saveThemeAsTS = 211;
 
     /** This event refreshes the window menu. */
-    private static final int ev_window = 301;
+    public static final int ev_window = 301;
 
     /** This event shows the window and bring it to the front (if not already). */
     public static final int ev_show = 302;
@@ -716,7 +722,6 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     private static final int ev_toolbarOpenEvaluator = 1004;
     private static final int ev_toolbarCloseEvaluator = 1005;
     private static final int ev_toolbarEnumerate = 1006;
-
     private static final int ev_toolbarViz = 2001;
     private static final int ev_toolbarXML = 2002;
     private static final int ev_toolbarTree = 2003;
@@ -780,12 +785,14 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             settingsOpen=0;
             thememenu.setEnabled(true);
             windowmenu.setEnabled(true);
-            frame.setVisible(true);
-            frame.setTitle("Alloy Visualizer "+Version.version()+" loading... Please wait...");
-            if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
-                frame.setExtendedState(JFrame.NORMAL);
-            frame.requestFocus();
-            frame.toFront();
+            if (frame!=null) {
+               frame.setVisible(true);
+               frame.setTitle("Alloy Visualizer "+Version.version()+" loading... Please wait...");
+               if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
+                   frame.setExtendedState(JFrame.NORMAL);
+               frame.requestFocus();
+               frame.toFront();
+            }
             updateDisplay();
         }
         if (key==evs_loadTheme) {
@@ -833,13 +840,13 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         if (key==ev_close) {
             xmlLoaded.remove(xmlFileName);
             if (xmlLoaded.size()>0) return run(evs_loadInstance, xmlLoaded.get(xmlLoaded.size()-1));
-            if (standalone) System.exit(0); else frame.setVisible(false);
+            if (standalone) System.exit(0); else if (frame!=null) frame.setVisible(false);
         }
 
         if (key==ev_closeAll) {
             xmlLoaded.clear();
             xmlFileName="";
-            if (standalone) System.exit(0); else frame.setVisible(false);
+            if (standalone) System.exit(0); else if (frame!=null) frame.setVisible(false);
         }
 
         if (key==ev_theme) {
@@ -929,11 +936,11 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             }
         }
 
-        if (key==ev_minimize) {
+        if (key==ev_minimize && frame!=null) {
             frame.setExtendedState(JFrame.ICONIFIED);
         }
 
-        if (key==ev_show) {
+        if (key==ev_show && frame!=null) {
             if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
                 frame.setExtendedState(JFrame.NORMAL);
             else
@@ -943,7 +950,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             frame.toFront();
         }
 
-        if (key==ev_maximize) {
+        if (key==ev_maximize && frame!=null) {
             if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
                 frame.setExtendedState(JFrame.NORMAL);
             else

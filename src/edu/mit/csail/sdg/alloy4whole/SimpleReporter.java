@@ -376,7 +376,7 @@ final class SimpleReporter extends A4Reporter {
     }
 
     /** {@inheritDoc} */
-    @Override public void resultSAT(Object command, long solvingTime, Object solution) { //String formula, String filename) {
+    @Override public void resultSAT(Object command, long solvingTime, Object solution) {
         if (!(solution instanceof A4Solution)) return;
         if (!(command instanceof Command)) return;
         A4Solution sol = (A4Solution)solution;
