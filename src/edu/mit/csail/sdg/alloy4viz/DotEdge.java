@@ -87,11 +87,10 @@ public final class DotEdge {
     /** Write this edge (using the given Edge palette) into a StringBuilder as if writing to a DOT file. */
     public void write2(VizNode from, VizNode to, DotPalette pal) {
         VizEdge e;
-        if (dir==DotDirection.FORWARD) e=new VizEdge(from,to).set(false,true);
-           else if (dir==DotDirection.BACK) e=new VizEdge(from,to).set(true,false);
-           else e=new VizEdge(from,to).set(true,true);
+        if (dir==DotDirection.FORWARD) e=new VizEdge(from,to,label).set(false,true);
+           else if (dir==DotDirection.BACK) e=new VizEdge(from,to,label).set(true,false);
+           else e=new VizEdge(from,to,label).set(true,true);
         e.set(DotColor.name2color(color.getDotText(pal))).set(style.vizStyle).set(weight<1 ? 1 : (weight>100 ? 100 : weight));
-        //TODO out.append(", label = \"" + esc(label) + "\"");
         //TODO out.append(", constraint = \"" + (constraint?"true":"false") + "\"");
     }
 

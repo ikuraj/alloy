@@ -25,6 +25,7 @@ import java.awt.Color;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.awt.geom.QuadCurve2D;
+import java.awt.geom.Rectangle2D;
 
 /**
  * Mutable; represents a graphical edge.
@@ -36,6 +37,9 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     // =============================== adjustable options ==================================================
 
+    /** This determines the font size. */
+    static final int fontSize = 12;
+
     /** This determines the minimum width of a self loop. */
     static final int selfLoopMinWidth = 20;
 
@@ -46,6 +50,12 @@ public final class VizEdge extends DiGraph.DiEdge {
     static final int selfLoopYGap = 10;
 
     // =============================== per-edge settings ===================================================
+
+    /** The label; can be an empty string if there is no label; NOTE: label is only shown if the start node is not a dummy node. */
+    private String label = "";
+
+    /** The location and size of the label box (if it's been calculated) */
+    private AvailableSpace.Box labelbox = new AvailableSpace.Box();
 
     /** Whether to draw an arrow head on the "from" node; default is false. */
     private boolean ahead = false;
@@ -80,6 +90,9 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** Returns true if we will draw an arrow head on the "to" node. */
     public boolean bhead() { return bhead; }
 
+    /** Returns the label on this edge. */
+    public String label() { return label; }
+
     /** Sets the edge weight between 1 and 100. */
     public VizEdge set(int weightBetween1And100) {
         if (weightBetween1And100>=1 && weightBetween1And100<=100) weight=weightBetween1And100;
@@ -106,20 +119,30 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Returns a String representing this edge. */
-    @Override public String toString() { return "Edge " + a() + (ahead?"<--":"---") + (bhead?"-->":"---") + b(); }
+    @Override public String toString() {
+        return "Edge " + a() + (ahead?"<--":"---") + label + (bhead?"-->":"---") + b();
+    }
 
     /** Construct an edge from "from" to "to" with the given arrow head settings, then add the edge to the graph. */
-    public VizEdge(VizNode from, VizNode to, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color) {
+    public VizEdge(VizNode from, VizNode to, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color) {
        super(from, to); // The parent's constructor will add the edge A->B to the graph
+       this.label=label;
        this.ahead=drawArrowHeadOnFrom;
        this.bhead=drawArrowHeadOnTo;
        if (style!=null) this.style=style;
        if (color!=null) this.color=color;
+       if (label.length()>0) {
+           Rectangle2D box = Artist.getStringBounds(fontSize, style==VizStyle.BOLD, label);
+           labelbox.x = 0;
+           labelbox.y = 0;
+           labelbox.w = (int) box.getWidth();
+           labelbox.h = (int) box.getHeight();
+       }
     }
 
     /** Construct an edge from "from" to "to" with the default arrow head settings, then add the edge to the graph. */
-    public VizEdge(VizNode from, VizNode to) {
-       this(from, to, false, true, null, null);
+    public VizEdge(VizNode from, VizNode to, String label) {
+       this(from, to, label, false, true, null, null);
     }
 
     /** Reset the path as a straightline from the center of the "from" node to the center of the "to" node. */
@@ -138,6 +161,42 @@ public final class VizEdge extends DiGraph.DiEdge {
         } else {
            path=new VizPath(ax, ay, b.x(), b.y());
         }
+    }
+
+    /** Given that this edge is already well-laidout, this method moves the label hoping to avoid/minimize overlap. */
+    void repositionLabel(AvailableSpace sp) {
+        if (label.length()==0) return;
+        if (a()==b()) return; // TODO: self edge
+        int ay=a().y()+a().getHeight()/2, by=b().y()-b().getHeight()/2, midy=(ay+by)/2;
+        if (b().shape()==null) midy=by-labelbox.h;
+        for(int gp=0; ; gp=gp+2) {
+            boolean done = true;
+            int y = midy-gp;
+            if (y>ay && y<by) {
+                done = false;
+                int xpre = (int) (path.intersectsHorizontal(y-5));
+                int xpost = (int) (path.intersectsHorizontal(y+5));
+                int x = (int) (path.intersectsHorizontal(xpre>=xpost ? y : y+labelbox.h));
+                if (sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(x, y, labelbox.w, labelbox.h); labelbox.x=x; labelbox.y=y; return; }
+            }
+            y = midy+gp;
+            if (y>ay && y<by) {
+                done = false;
+                int xpre = (int) (path.intersectsHorizontal(y-5));
+                int xpost = (int) (path.intersectsHorizontal(y+5));
+                int x = (int) (path.intersectsHorizontal(xpre>=xpost ? y : y+labelbox.h));
+                if (sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(x, y, labelbox.w, labelbox.h); labelbox.x=x; labelbox.y=y; return; }
+            }
+            if (done) break;
+        }
+        int y = ay+(by-ay)/2;
+        int xpre = (int) (path.intersectsHorizontal(y-5));
+        int xpost = (int) (path.intersectsHorizontal(y+5));
+        int realY= (xpre>=xpost) ? y : (y+labelbox.h);
+        int x = (int) path.intersectsHorizontal(realY);
+        labelbox.x = (int)x;
+        labelbox.y = (int)y;
+        sp.add(labelbox.x, labelbox.y, labelbox.w, labelbox.h);
     }
 
     /** Returns the current path; if the path was not yet assigned, it returns a straight line from "from" node to "to" node. */
@@ -184,6 +243,7 @@ public final class VizEdge extends DiGraph.DiEdge {
           }
           p.draw(gr);
        }
+       if (label.length()>0) gr.drawString(label, labelbox.x, labelbox.y + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD));
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);
     }

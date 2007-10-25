@@ -119,7 +119,7 @@ public final class VizCustomizationPanel extends JPanel {
         setBorder(null);
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         zoomPane=new JPanel();
-        zoomPane.setBorder(new OurBorder(false,false,true,true));
+        zoomPane.setBorder(new OurBorder(false,false,true,false));
         zoomPane.setLayout(new BoxLayout(zoomPane, BoxLayout.Y_AXIS));
         zoomPane.setAlignmentX(0f);
         zoomPane.setBackground(wcolor);

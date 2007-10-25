@@ -96,14 +96,14 @@ public final class VizGraph extends DiGraph {
                 if (n1==n2) {
                    n2=new VizNode(this).set((VizShape)null);
                    e2.changeB(n2);
-                   new VizEdge(n2, n1, e2.ahead(), e2.bhead(), e2.style(), e2.color());
+                   new VizEdge(n2, n1, "", e2.ahead(), e2.bhead(), e2.style(), e2.color());
                    multiedge=true;
                 }
              }
              if (multiedge) {
                 VizNode n2=new VizNode(this).set((VizShape)null);
                 e1.changeB(n2);
-                new VizEdge(n2, n1, e1.ahead(), e1.bhead(), e1.style(), e1.color());
+                new VizEdge(n2, n1, "", e1.ahead(), e1.bhead(), e1.style(), e1.color());
              }
           }
        }
@@ -215,17 +215,16 @@ public final class VizGraph extends DiGraph {
 
     /** Add dummy nodes so that each edge only goes between adjacent layers. */
     private void layout_addDummyNodes() {
-       for(final VizEdge e:new ArrayList<VizEdge>(edges)) if (e.a()!=e.b()) { // Skip the self loops
-          int n=(e.a().layer()-e.b().layer());
-          if (n>1) {
-             VizNode last=e.a();
-             for(int i=1; i<n; i++) {
-                VizNode next=new VizNode(last.graph).set((VizShape)null);
-                next.setLayer(last.layer()-1);
-                new VizEdge(last, next, e.ahead(), e.bhead(), e.style(), e.color());
-                last=next;
-             }
-             e.changeA(last);
+       for(final VizEdge edge:new ArrayList<VizEdge>(edges)) {
+          VizEdge e=edge;
+          VizNode a=e.a(), b=e.b();
+          while(a.layer() - b.layer() > 1) {
+             VizNode tmp = a;
+             a = new VizNode(a.graph).set((VizShape)null);
+             a.setLayer(tmp.layer()-1);
+             // now we have three nodes in the vertical order of "tmp", "a", then "b"
+             e.changeB(a);                                                        // let old edge go from "tmp" to "a"
+             e=new VizEdge(a, b, "", e.ahead(), e.bhead(), e.style(), e.color()); // let new edge go from "a" to "b"
           }
        }
     }
@@ -499,7 +498,9 @@ public final class VizGraph extends DiGraph {
            checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
         }
         // Now, for each edge that has an arrow head, move it to the right place
-        for(VizEdge e:edges) layout_arrowHead(e);
+        AvailableSpace sp = new AvailableSpace();
+        for(VizNode n:nodes) if (n.shape()!=null) sp.add(n.x()-n.getWidth()/2, n.y()-n.getHeight()/2, n.getWidth()+n.getReserved(), n.getHeight());
+        for(VizEdge e:edges) { layout_arrowHead(e); e.repositionLabel(sp); }
     }
 
     /**
@@ -507,19 +508,21 @@ public final class VizGraph extends DiGraph {
      * this re-layouts the edges going to and from layer i.
      */
     public void relayout_edges(int i) {
+        AvailableSpace sp = new AvailableSpace();
+        for(VizNode n:nodes) if (n.shape()!=null) sp.add(n.x()-n.getWidth()/2, n.y()-n.getHeight()/2, n.getWidth()+n.getReserved(), n.getHeight());
         if (nodes.size()==0) return; // The rest of the code assumes there is at least one node
         for(VizNode n:layer(i)) for(VizEdge e:n.selfEdges()) { e.resetPath(); layout_arrowHead(e); }
         if (i>0) {
             List<VizNode> top=layer(i), bottom=layer(i-1);
             for(VizNode n:top) for(VizEdge e:n.outEdges()) e.resetPath();
             checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
-            for(VizNode n:top) for(VizEdge e:n.outEdges()) layout_arrowHead(e);
+            for(VizNode n:top) for(VizEdge e:n.outEdges()) { layout_arrowHead(e); e.repositionLabel(sp); }
         }
         if (i<layers()-1) {
             List<VizNode> top=layer(i+1), bottom=layer(i);
             for(VizNode n:top) for(VizEdge e:n.outEdges()) e.resetPath();
             checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
-            for(VizNode n:top) for(VizEdge e:n.outEdges()) layout_arrowHead(e);
+            for(VizNode n:top) for(VizEdge e:n.outEdges()) { layout_arrowHead(e); e.repositionLabel(sp); }
         }
     }
 

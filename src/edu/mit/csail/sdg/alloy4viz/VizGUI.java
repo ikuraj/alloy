@@ -57,6 +57,7 @@ import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.JTextComponent;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.MultiRunner;
@@ -79,7 +80,12 @@ import edu.mit.csail.sdg.alloy4.Util.StringPref;
 public final class VizGUI implements MultiRunnable, ComponentListener {
 
     /** Simple test driver method. */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
+        // Make sure args.length==1
+        if (args.length!=1) {
+            System.out.println("Syntax error: please specify the XML file name to load.");
+            System.exit(1);
+        }
         // Enable better look-and-feel
         if (Util.onMac() || Util.onWindows()) {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy Analyzer "+Version.version());
@@ -90,58 +96,21 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
             catch (Throwable e) { }
         }
-        Factory f=new Factory(true);
-        for(String a:args) {f.open(a);}
-    }
-
-    /**
-     * Since the entire VizGUI class can be called only by the AWT event thread, it is inconvenient to use;
-     * thus, we created a wrapper class "Factory" for the most common operations: open, close, and closeAll.
-     *
-     * <p><b>Thread Safety:</b> Safe.
-     */
-    public static final class Factory implements Runnable {
-        private final boolean standalone;
-        private VizGUI window=null;
-        /** Make a new factory; standalone indicates whether the JVM should shutdown when the last window closes. */
-        public Factory(final boolean standalone) {
-            this.standalone=standalone;
-            SwingUtilities.invokeLater(this);
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() { main(args); }
+            });
+            return;
         }
-        /** Start up the GUI, if it's not started up already. */
-        public void run() {
-            if (SwingUtilities.isEventDispatchThread()) {
-                if (window==null) window=new VizGUI(standalone,"",null,null,null);
-                window.run(ev_show);
-            }
-            else SwingUtilities.invokeLater(Factory.this);
-        }
-        /**
-         * Load the given XML file.
-         * NOTE: The method may return BEFORE the instance is loaded...
-         */
-        public void open(final String xmlFileName) {
-            if (SwingUtilities.isEventDispatchThread()) window.run(evs_loadInstance, xmlFileName);
-            else SwingUtilities.invokeLater(new MultiRunner(window, evs_loadInstance, xmlFileName));
-        }
-        /**
-         * If the visualizer window is currently showing an instance, then close that instance.
-         * Shuts down the JVM if standalone==true and there are no more instances to show.
-         * NOTE: The method may return BEFORE the instances are closed...
-         */
-        public void close() {
-            if (SwingUtilities.isEventDispatchThread()) window.run(ev_close);
-            else SwingUtilities.invokeLater(new MultiRunner(window, ev_close));
-        }
-        /**
-         * If standalone==true, shutdown the JVM; otherwise, close every instance then hide the visualizer window.
-         * NOTE: The method may return BEFORE the instances are closed...
-         */
-        public void closeAll() {
-            if (standalone) System.exit(0);
-            if (SwingUtilities.isEventDispatchThread()) window.run(ev_closeAll);
-            else SwingUtilities.invokeLater(new MultiRunner(window, ev_closeAll));
-        }
+        JFrame f = new JFrame("Test");
+        VizGUI gui = new VizGUI(false, args[0], null, null, null);
+        f.getContentPane().setLayout(new BorderLayout());
+        f.getContentPane().add(gui.getPanel(), BorderLayout.CENTER);
+        f.pack();
+        f.setSize(700, 500);
+        f.setLocation(0, 0);
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setVisible(true);
     }
 
     /** The background color for the toolbar. */
@@ -168,7 +137,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** The projection popup menu. */
     private final JPopupMenu projectionPopup;
 
-    private final JButton projectionButton, openSettingsButton, closeSettingsButton;
+    private final JButton projectionButton, openSettingsButton, closeSettingsButton, loadSettingsButton, saveSettingsButton, saveAsSettingsButton, resetSettingsButton;
     private final JButton updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton;
     private final JButton magicLayout;
     private final JButton magicColour;
@@ -205,6 +174,9 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
     /** The splitpane between the customization panel and the graph panel. */
     private final JSplitPane splitpane;
+
+    /** Returns the JSplitPane containing the customization/evaluator panel in the left and the graph on the right. */
+    public JSplitPane getPanel() { return splitpane; }
 
     /** The last known divider position between the customization panel and the graph panel. */
     private int lastDividerPosition=0;
@@ -332,7 +304,9 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
      *
      * <p> Note: if standalone==false and xmlFileName.length()==0, then we will initially hide the window.
      */
-    public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu) { this(standalone,xmlFileName,windowmenu,null,null); }
+    public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu) {
+        this(standalone, xmlFileName, windowmenu, null, null);
+    }
 
     /**
      * Creates a new visualization GUI window; this method can only be called by the AWT event thread.
@@ -345,11 +319,26 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
      * <p> Note: if standalone==false and xmlFileName.length()==0, then we will initially hide the window.
      */
     public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu, MultiRunnable enumerator, Computer evaluator) {
+        this(standalone, xmlFileName, windowmenu, enumerator, evaluator, true);
+    }
+
+    /**
+     * Creates a new visualization GUI window; this method can only be called by the AWT event thread.
+     * @param standalone - whether the JVM should shutdown after the last file is closed
+     * @param xmlFileName - the filename of the incoming XML file; "" if there's no file to open
+     * @param windowmenu - if standalone==false and windowmenu!=null, then this will be added as a menu on the menubar
+     * @param enumerator - if it's not null, it provides solution enumeration ability
+     * @param evaluator - if it's not null, it provides solution evaluation ability
+     * @param makeWindow - if false, then we will only construct the JSplitPane, without making the window
+     *
+     * <p> Note: if standalone==false and xmlFileName.length()==0 and makeWindow==true, then we will initially hide the window.
+     */
+    public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu, MultiRunnable enumerator, Computer evaluator, boolean makeWindow) {
 
         this.enumerator=enumerator;
         this.standalone=standalone;
         this.evaluator=evaluator;
-        this.frame=new JFrame("Alloy Visualizer");
+        this.frame = makeWindow ? new JFrame("Alloy Visualizer") : null;
 
         // Figure out the desired x, y, width, and height
         int screenWidth=OurUtil.getScreenWidth(), screenHeight=OurUtil.getScreenHeight();
@@ -404,14 +393,22 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         plugin0Button=makeSolutionButton("Plugin",
                 "Run external plugin", "images/24_graph.gif", ev_toolbarPlugin0);
         addDivider();
-        toolbar.add(openSettingsButton=OurUtil.button("Theme",
-                "Open the theme customization panel", "images/24_settings.gif", this, ev_toolbarOpenTheme));
-        toolbar.add(closeSettingsButton=OurUtil.button("Close Theme",
+        toolbar.add(closeSettingsButton=OurUtil.button("Close",
                 "Close the theme customization panel", "images/24_settings_close2.gif", this, ev_toolbarCloseTheme));
         toolbar.add(updateSettingsButton=OurUtil.button("Apply",
                 "Apply the changes to the current theme", "images/24_settings_apply2.gif", this, ev_toolbarApplyTheme));
+        toolbar.add(openSettingsButton=OurUtil.button("Theme",
+                "Open the theme customization panel", "images/24_settings.gif", this, ev_toolbarOpenTheme));
         toolbar.add(magicLayout=OurUtil.button("Magic Layout",
                 "Automatic theme customization (will reset current theme)", "images/24_settings_apply2.gif", this, ev_magicLayout));
+        toolbar.add(loadSettingsButton=OurUtil.button("Load",
+                "Load the theme customization from a theme file", "images/24_open.gif", this, ev_loadTheme));
+        toolbar.add(saveSettingsButton=OurUtil.button("Save",
+                "Save the current theme customization", "images/24_save.gif", this, ev_saveTheme));
+        toolbar.add(saveAsSettingsButton=OurUtil.button("Save As",
+                "Save the current theme customization", "images/24_save.gif", this, ev_saveThemeAs));
+        toolbar.add(resetSettingsButton=OurUtil.button("Reset",
+                "Reset the theme customization", "images/24_settings_close2.gif", this, ev_resetTheme));
         toolbar.add(magicColour=OurUtil.button("Magic Colour",
                 "Automatic theme colour and shape customization", "images/24_settings_apply2.gif", this, ev_magicColour));
         toolbar.add(openEvaluatorButton=OurUtil.button("Evaluator",
@@ -434,9 +431,11 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
         // Create the horizontal split pane
         splitpane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitpane.setOneTouchExpandable(false);
         splitpane.setResizeWeight(0.);
         splitpane.setContinuousLayout(true);
         splitpane.setBorder(null);
+        ((BasicSplitPaneUI)(splitpane.getUI())).getDivider().setBorder(new OurBorder(false,true,false,false));
 
         // Display the window, then proceed to load the input file
         if (frame!=null) {
@@ -508,12 +507,16 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             default: vizButton.setEnabled(false);
         }
         final boolean isMeta = myState.getOriginalInstance().isMetamodel;
-        magicLayout.setVisible(!isMeta && settingsOpen==0 && currentMode==VisualizerMode.Viz);
-        magicColour.setVisible(false); // hidden for now magicLayout.isVisible());
-        projectionButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
+        magicLayout.setVisible(!isMeta && (settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
+        magicColour.setVisible(false); // hidden for now
+        projectionButton.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
         openSettingsButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
-        closeSettingsButton.setVisible(settingsOpen==1);
-        updateSettingsButton.setVisible(settingsOpen==1);
+        loadSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        saveSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        saveAsSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        resetSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        closeSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        updateSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
         openEvaluatorButton.setVisible(!isMeta && settingsOpen==0 && evaluator!=null);
         closeEvaluatorButton.setVisible(!isMeta && settingsOpen==2 && evaluator!=null);
         enumerateMenu.setEnabled(!isMeta && settingsOpen==0 && enumerator!=null);
@@ -543,13 +546,13 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         instanceArea.add(content, BorderLayout.CENTER);
         instanceArea.setVisible(true);
         if (!Util.onMac()) { instanceTopBox.setBackground(background); instanceArea.setBackground(background); }
-        if (settingsOpen>0) {
+        if (1==1 || settingsOpen>0) { // for now, let's always have the JSplitPane... until we're sure this is what we want
             JComponent left;
             if (settingsOpen==1) {
                 if (myCustomPanel==null) myCustomPanel=new VizCustomizationPanel(splitpane,myState); else
                    myCustomPanel.remakeAll();
                 left=myCustomPanel;
-            } else {
+            } else if (settingsOpen>1) {
                 if (myEvaluatorPanel==null) {
                     myEvaluatorPanel=OurDialog.showConsole(null,
                     "The <b>Alloy Evaluator</b> allows you to type<br>"+
@@ -558,25 +561,25 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 }
                 evaluator.setSourceFile(xmlFileName);
                 left = new JScrollPane(myEvaluatorPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-                left.setBorder(new OurBorder(false,false,false,true));
+                left.setBorder(new OurBorder(false,false,false,false));
                 myEvaluatorPanel.setCaretPosition(0);
                 myEvaluatorPanel.setCaretPosition(myEvaluatorPanel.getDocument().getLength());
+            } else {
+                left=null;
             }
-            // TODO: what to do about frame below
-            if (frame.getContentPane()==splitpane) lastDividerPosition=splitpane.getDividerLocation();
+            if (frame!=null && frame.getContentPane()==splitpane) lastDividerPosition=splitpane.getDividerLocation();
             splitpane.setRightComponent(instanceArea);
             splitpane.setLeftComponent(left);
-            Dimension dim=left.getPreferredSize();
-            if (lastDividerPosition<50) lastDividerPosition=frame.getWidth()/2;
-            if (lastDividerPosition<dim.width) lastDividerPosition=dim.width;
-            if (settingsOpen==2 && lastDividerPosition>400) lastDividerPosition=400;
-            splitpane.setDividerLocation(lastDividerPosition);
-            frame.setContentPane(splitpane);
-            // TODO: what to do about frame above
+            if (left!=null) {
+               Dimension dim=left.getPreferredSize();
+               if (lastDividerPosition<50 && frame!=null) lastDividerPosition=frame.getWidth()/2;
+               if (lastDividerPosition<dim.width) lastDividerPosition=dim.width;
+               if (settingsOpen==2 && lastDividerPosition>400) lastDividerPosition=400;
+               splitpane.setDividerLocation(lastDividerPosition);
+            }
+            if (frame!=null) frame.setContentPane(splitpane);
         } else {
-            // TODO: what to do about frame below
-            frame.setContentPane(instanceArea);
-            // TODO: what to do about frame above
+            if (frame!=null) frame.setContentPane(instanceArea);
         }
         if (settingsOpen!=2) {
             content.requestFocusInWindow();
@@ -585,7 +588,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             myEvaluatorPanel.setCaretPosition(myEvaluatorPanel.getDocument().getLength());
         }
         repopulateProjectionPopup();
-        if (frame!=null) frame.validate(); // TODO: should refresh the JPanel otherwise
+        if (frame!=null) frame.validate(); else splitpane.validate();
     }
 
     /** Helper method that creates a button and add it to both the "SolutionButtons" list, as well as the toolbar. */

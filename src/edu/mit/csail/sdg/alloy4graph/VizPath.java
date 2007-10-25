@@ -77,6 +77,27 @@ public final class VizPath {
     }
 
     /**
+     * If the path intersects the horizontal line segment (anything, y), then return the x coordinate of the intersection,
+     * else return the x coordinate of the end of this path.
+     *
+     * <p> NOTE: this method may fail to find an intersection if the path is too horizontal at the intersection point.
+     */
+    public double intersectsHorizontal(double y) {
+       Point2D.Double a=null;
+       int i=(-1);
+       for(int bi=0; bi<points.size(); bi++) {
+          Point2D.Double b=points.get(bi);
+          i++; // so now, points.get(i)==b
+          if (a==null) {a=b; continue;}
+          if (!in(a.y, y, b.y)) { if (bi==points.size()-1) return b.x; else continue; }
+          double m = (b.y-a.y)/(b.x-a.x);
+          double intersect = (y-a.y)/m + a.x;
+          return intersect;
+       }
+       return 0;
+    }
+
+    /**
      * If the path intersects the horizontal line segment (x1,y)..(x2,y), then return true.
      *
      * <p> NOTE: this method may fail to find an intersection if the path is too horizontal at the intersection point.
