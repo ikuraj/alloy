@@ -97,8 +97,8 @@ public final class OurBinaryCheckbox extends JPanel {
         box = new JCheckBox(on); // Doesn't matter if it's on or off; the paint() method will call gs.get() to decide.
         box.addActionListener(new ActionListener() {
             public final void actionPerformed(ActionEvent e) {
-                boolean v=!gs.get(key);
-                box.setIcon(v?on:off);
+                boolean v = !gs.get(key);
+                box.setIcon(v ? on : off);
                 gs.set(key, v);
             }
         });
@@ -113,31 +113,21 @@ public final class OurBinaryCheckbox extends JPanel {
 
     /** This method is called by Swing to enable/disable a component. */
     @Override public void setEnabled(boolean enabled) {
-        if (box!=null) {
-            box.setEnabled(enabled);
-        }
-        if (jlabel!=null) {
-            jlabel.setEnabled(enabled);
-        }
+        if (box!=null) box.setEnabled(enabled);
+        if (jlabel!=null) jlabel.setEnabled(enabled);
     }
 
     /** This method is called by Swing to change its background color. */
     @Override public void setBackground(Color color) {
         super.setBackground(color);
-        if (box!=null) {
-            box.setBackground(color);
-        }
-        if (jlabel!=null) {
-            jlabel.setBackground(color);
-        }
+        if (box!=null) box.setBackground(color);
+        if (jlabel!=null) jlabel.setBackground(color);
     }
 
     /** This method is called by Swing whenever this component needs to be painted. */
     @Override public void paint(Graphics p) {
         Icon newIcon = gs.get(key) ? on : off;
-        if (box.getIcon() != newIcon) {
-            box.setIcon(newIcon);
-        }
+        if (box.getIcon() != newIcon) box.setIcon(newIcon);
         super.paint(p);
     }
 }

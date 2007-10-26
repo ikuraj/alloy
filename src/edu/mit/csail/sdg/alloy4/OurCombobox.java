@@ -95,11 +95,9 @@ public final class OurCombobox extends JComboBox {
     }
 
     /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
-    private static Vector<Object> copy(List<Object> list, boolean addNull) {
-        Vector<Object> answer=new Vector<Object>(list.size() + (addNull?1:0));
-        if (addNull) {
-            answer.add(null);
-        }
+    private static Vector<Object> copy (List<Object> list, boolean addNull) {
+        Vector<Object> answer = new Vector<Object>(list.size() + (addNull?1:0));
+        if (addNull) { answer.add(null); }
         answer.addAll(list);
         return answer;
     }
@@ -125,23 +123,25 @@ public final class OurCombobox extends JComboBox {
      * @param gs - the GetterSetter associated with this combobox (null if there is no need to call getter/setter)
      * @param addNull - whether we should prepend null onto the beginning of the list of allowed values
      * @param list - the list of allowed values
-     * @param width - the width to use (if width==0 && height==0, then we ignore it)
-     * @param height - the height to use (if width==0 && height==0, then we ignore it)
+     * @param width - the width to use (if width==0 && height==0, then we ignore this parameter)
+     * @param height - the height to use (if width==0 && height==0, then we ignore this parameter)
      * @param key - the key associated with this combobox
      */
     public OurCombobox
     (final ComboGetterSetter gs, boolean addNull, List<Object> list, int width, int height, final Object key) {
-        super(copy(list,addNull));
+        super(copy(list, addNull));
         this.gs = gs;
         this.key = key;
         setFont(OurUtil.getVizFont());
         setRenderer(new OurComboboxRenderer());
         if (width>0 && height>0) {
-            if (Util.onWindows() && height>25) height=25;
+            if (Util.onWindows() && height>25) height=25; // Otherwise, the height is too high on Windows
             setPreferredSize(new Dimension(width,height));
             setMaximumSize(new Dimension(width,height));
         }
-        if (!Util.onWindows() && !Util.onMac() && width>0 && height>0) setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
+        if (!Util.onWindows() && !Util.onMac() && width>0 && height>0) {
+            setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
+        }
         // To avoid useless or harmful synchronization between this GUI and the underlying data,
         // we make sure we set the initial value before adding the ActionListener.
         if (gs!=null) {
