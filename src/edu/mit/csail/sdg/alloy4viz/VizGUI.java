@@ -373,6 +373,15 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         if (frame!=null) frame.setJMenuBar(mb);
 
         // Create the toolbar
+        projectionPopup = new JPopupMenu();
+        projectionButton = new JButton("Projection: none");
+        projectionButton.addActionListener(new ActionListener() {
+            public final void actionPerformed(ActionEvent e) {
+                repopulateProjectionPopup();
+                if (projectionPopup.getComponentCount()>0) projectionPopup.show(projectionButton, 10, 10);
+            }
+        });
+        repopulateProjectionPopup();
         toolbar = new JToolBar();
         toolbar.setVisible(false);
         toolbar.setFloatable(false);
@@ -401,14 +410,6 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 "Open the theme customization panel", "images/24_settings.gif", this, ev_toolbarOpenTheme));
         toolbar.add(magicLayout=OurUtil.button("Magic Layout",
                 "Automatic theme customization (will reset current theme)", "images/24_settings_apply2.gif", this, ev_magicLayout));
-        toolbar.add(loadSettingsButton=OurUtil.button("Load",
-                "Load the theme customization from a theme file", "images/24_open.gif", this, ev_loadTheme));
-        toolbar.add(saveSettingsButton=OurUtil.button("Save",
-                "Save the current theme customization", "images/24_save.gif", this, ev_saveTheme));
-        toolbar.add(saveAsSettingsButton=OurUtil.button("Save As",
-                "Save the current theme customization", "images/24_save.gif", this, ev_saveThemeAs));
-        toolbar.add(resetSettingsButton=OurUtil.button("Reset",
-                "Reset the theme customization", "images/24_settings_close2.gif", this, ev_resetTheme));
         toolbar.add(magicColour=OurUtil.button("Magic Colour",
                 "Automatic theme colour and shape customization", "images/24_settings_apply2.gif", this, ev_magicColour));
         toolbar.add(openEvaluatorButton=OurUtil.button("Evaluator",
@@ -417,16 +418,15 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 "Close the evaluator", "images/24_settings_close2.gif", this, ev_toolbarCloseEvaluator));
         toolbar.add(enumerateButton=OurUtil.button("Next",
                 "Show the next solution", "images/24_history.gif", this, ev_toolbarEnumerate));
-        projectionPopup = new JPopupMenu();
-        projectionButton = new JButton("Projection: none");
-        projectionButton.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) {
-                repopulateProjectionPopup();
-                if (projectionPopup.getComponentCount()>0) projectionPopup.show(projectionButton, 10, 10);
-            }
-        });
-        repopulateProjectionPopup();
         toolbar.add(projectionButton);
+        toolbar.add(loadSettingsButton=OurUtil.button("Load",
+                "Load the theme customization from a theme file", "images/24_open.gif", this, ev_loadTheme));
+        toolbar.add(saveSettingsButton=OurUtil.button("Save",
+                "Save the current theme customization", "images/24_save.gif", this, ev_saveTheme));
+        toolbar.add(saveAsSettingsButton=OurUtil.button("Save As",
+                "Save the current theme customization as a new theme file", "images/24_save.gif", this, ev_saveThemeAs));
+        toolbar.add(resetSettingsButton=OurUtil.button("Reset",
+                "Reset the theme customization", "images/24_settings_close2.gif", this, ev_resetTheme));
         settingsOpen=0;
 
         // Create the horizontal split pane

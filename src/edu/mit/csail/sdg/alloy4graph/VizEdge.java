@@ -37,6 +37,12 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     // =============================== adjustable options ==================================================
 
+    /** The color to use for highlighted edge. */
+    private static Color color1;
+
+    /** The color to use for other edges that are in the same group as the highlighted edge. */
+    private static Color color2;
+
     /** This determines the font size. */
     static final int fontSize = 12;
 
@@ -58,7 +64,7 @@ public final class VizEdge extends DiGraph.DiEdge {
     private AvailableSpace.Box labelbox = new AvailableSpace.Box();
 
     /** The group that this edge belongs to. */
-    private final Object group;
+    final Object group;
 
     /** Return the X coordinate of the top-left corner of the label box. */
     public int getLabelX() { return labelbox.x; }
@@ -144,6 +150,8 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** Construct an edge from "from" to "to" with the given arrow head settings, then add the edge to the graph. */
     public VizEdge(VizNode from, VizNode to, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color, Object group) {
        super(from, to); // The parent's constructor will add the edge A->B to the graph
+       if (color1==null) color1=Color.RED;
+       if (color2==null) color2=new Color(255,120,120);
        this.group = (group==null) ? this : group;
        this.label=label;
        this.ahead=drawArrowHeadOnFrom;
@@ -238,10 +246,12 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
-    public void draw(Artist gr, double scale, boolean highlight) {
+    public void draw(Artist gr, double scale, VizEdge highlight) {
        final int top=((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
        gr.translate(-left, -top);
-       if (highlight) { gr.setColor(Color.RED); gr.set(VizStyle.BOLD, scale); } else { gr.setColor(color); gr.set(style, scale); }
+       if (highlight==this) { gr.setColor(color1); gr.set(VizStyle.BOLD, scale); }
+       else if (highlight!=null && highlight.group==group) { gr.setColor(color2); gr.set(VizStyle.BOLD, scale); }
+       else { gr.setColor(color); gr.set(style, scale); }
        if (a()==b()) {
           // Draw the self edge
           double x0=path.getX(0), y0=path.getY(0), x1=path.getX(1), y1=y0, x2=x1, y2=path.getY(2), x3=path.getX(3), y3=y2;
@@ -262,49 +272,48 @@ public final class VizEdge extends DiGraph.DiEdge {
              e = e.b().outEdges().get(0);
           }
           p.draw(gr);
-          if (highlight) if (label.length()>0) gr.drawString(label, labelbox.x, labelbox.y + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD)); // TODO: what about self edge?
+          //if (highlight==this)
+          if (label.length()>0) gr.drawString(label, labelbox.x, labelbox.y + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD)); // TODO: what about self edge?
        }
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
-    public void drawArrowhead(Artist gr, double scale, boolean highlight, double tipLength) {
+    public void drawArrowhead(Artist gr, double scale, VizEdge highlight, double tipLength) {
        final int top=((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
-       // Return if there are no arrow heads to draw
-       if (!ahead || a().shape()==null) if (!bhead || b().shape()==null) return;
        // Check to see if this edge is highlighted or not
        double fan;
-       if (highlight) {
-          fan=bigFan; gr.setColor(Color.RED); gr.set(VizStyle.BOLD, scale);
+       if (highlight==this) {
+          fan=bigFan; gr.setColor(color1); gr.set(VizStyle.BOLD, scale);
+       } else if (highlight!=null && highlight.group==group) {
+          fan=bigFan; gr.setColor(color2); gr.set(VizStyle.BOLD, scale);
        } else {
-          fan=(style==VizStyle.BOLD?bigFan:smallFan); gr.setColor(color); gr.set(style, scale);
+          fan=(style==VizStyle.BOLD ? bigFan : smallFan); gr.setColor(color); gr.set(style, scale);
        }
-       // Now, draw the arrow heads if needed
-       int n = path.getPoints();
-       if (ahead && a().shape()!=null) {
-          double ax = path.getX(0), ay=path.getY(0), bx=path.getX(1), by=path.getY(1);
-          double t = Math.PI+Math.atan2(ay-by, ax-bx);
-          double gx1 = ax + tipLength*Math.cos(t-fan), gy1 = ay + tipLength*Math.sin(t-fan);
-          double gx2 = ax + tipLength*Math.cos(t+fan), gy2 = ay + tipLength*Math.sin(t+fan);
-          GeneralPath gp=new GeneralPath();
-          gp.moveTo((float)(gx1-left), (float)(gy1-top));
-          gp.lineTo((float)(ax-left), (float)(ay-top));
-          gp.lineTo((float)(gx2-left), (float)(gy2-top));
-          gp.closePath();
-          gr.draw(gp,true);
-       }
-       if (bhead && b().shape()!=null) {
-          double ax = path.getX(n-2), ay=path.getY(n-2), bx=path.getX(n-1), by=path.getY(n-1);
-          double t = Math.PI+Math.atan2(by-ay, bx-ax);
-          double gx1 = bx + tipLength*Math.cos(t-fan), gy1 = by + tipLength*Math.sin(t-fan);
-          double gx2 = bx + tipLength*Math.cos(t+fan), gy2 = by + tipLength*Math.sin(t+fan);
-          GeneralPath gp=new GeneralPath();
-          gp.moveTo((float)(gx1-left), (float)(gy1-top));
-          gp.lineTo((float)(bx-left), (float)(by-top));
-          gp.lineTo((float)(gx2-left), (float)(gy2-top));
-          gp.closePath();
-          gr.draw(gp,true);
+       for(VizEdge e=this; ;e=e.b().outEdges().get(0)) {
+          if ((e.ahead && e.a().shape()!=null) || (e.bhead && e.b().shape()!=null)) {
+             int n = e.path.getPoints();
+             if (e.ahead && e.a().shape()!=null) {
+                double ax = e.path.getX(0), ay=e.path.getY(0), bx=e.path.getX(1), by=e.path.getY(1);
+                double t = Math.PI+Math.atan2(ay-by, ax-bx);
+                double gx1 = ax + tipLength*Math.cos(t-fan), gy1 = ay + tipLength*Math.sin(t-fan);
+                double gx2 = ax + tipLength*Math.cos(t+fan), gy2 = ay + tipLength*Math.sin(t+fan);
+                GeneralPath gp=new GeneralPath();
+                gp.moveTo((float)(gx1-left), (float)(gy1-top)); gp.lineTo((float)(ax-left), (float)(ay-top));
+                gp.lineTo((float)(gx2-left), (float)(gy2-top)); gp.closePath(); gr.draw(gp,true);
+             }
+             if (e.bhead && e.b().shape()!=null) {
+                double ax = e.path.getX(n-2), ay=e.path.getY(n-2), bx=e.path.getX(n-1), by=e.path.getY(n-1);
+                double t = Math.PI+Math.atan2(by-ay, bx-ax);
+                double gx1 = bx + tipLength*Math.cos(t-fan), gy1 = by + tipLength*Math.sin(t-fan);
+                double gx2 = bx + tipLength*Math.cos(t+fan), gy2 = by + tipLength*Math.sin(t+fan);
+                GeneralPath gp=new GeneralPath();
+                gp.moveTo((float)(gx1-left), (float)(gy1-top)); gp.lineTo((float)(bx-left), (float)(by-top));
+                gp.lineTo((float)(gx2-left), (float)(gy2-top)); gp.closePath(); gr.draw(gp,true);
+             }
+          }
+          if (e.b().shape()!=null) break;
        }
     }
 

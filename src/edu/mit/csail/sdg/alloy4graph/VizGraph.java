@@ -563,24 +563,34 @@ public final class VizGraph extends DiGraph {
     public void draw(Artist gr, double scale, Object selected, Object highlight) {
         if (nodes.size()==0) return; // The rest of this procedure assumes there is at least one node
         if (highlight==null) highlight=selected;
+        Object group=null;
+        VizNode highFirstNode=null, highLastNode=null;
         VizEdge highFirstEdge=null, highLastEdge=null;
         if (highlight instanceof VizEdge) {
-           highFirstEdge=(VizEdge)highlight;
-           while(highFirstEdge.a().shape()==null) highFirstEdge=highFirstEdge.a().inEdges().get(0);
-           highLastEdge=(VizEdge)highlight;
-           while(highLastEdge.b().shape()==null) highLastEdge=highLastEdge.b().outEdges().get(0);
+          highFirstEdge=(VizEdge)highlight;
+          highLastEdge=highFirstEdge;
+          group=highFirstEdge.group;
+          while(highFirstEdge.a().shape()==null) highFirstEdge=highFirstEdge.a().inEdges().get(0);
+          while(highLastEdge.b().shape()==null) highLastEdge=highLastEdge.b().outEdges().get(0);
+          highFirstNode=highFirstEdge.a();
+          highLastNode=highLastEdge.b();
         }
         // Since drawing an edge will automatically draw all segments if they're connected via dummy nodes,
         // we must make sure we only draw out edges from non-dummy-nodes
-        for(VizNode n:nodes) if (n.shape()!=null) {
-           for(VizEdge e:n.outEdges())  if (e!=highFirstEdge) e.draw(gr, scale, false);
-           for(VizEdge e:n.selfEdges()) if (e!=highFirstEdge) e.draw(gr, scale, false);
-        }
-        if (highFirstEdge!=null) highFirstEdge.draw(gr, scale, true);
-        for(VizNode n:nodes) n.draw(gr, scale, n==highlight);
         double tip = Artist.getMaxAscentAndDescent(nodes.get(0).fontSize(), false)*0.6D;
-        for(VizEdge e:edges) if (e!=highFirstEdge && e!=highLastEdge) e.drawArrowhead(gr, scale, false, tip);
-        if (highFirstEdge!=null) highFirstEdge.drawArrowhead(gr, scale, true, tip);
-        if (highLastEdge!=null && highLastEdge!=highFirstEdge) highLastEdge.drawArrowhead(gr, scale, true, tip);
+        for(VizNode n:nodes) if (n.shape()!=null) {
+          for(VizEdge e:n.outEdges())  if (e.group!=group) { e.draw(gr, scale, null); e.drawArrowhead(gr, scale, null, tip); }
+          for(VizEdge e:n.selfEdges()) if (e.group!=group) { e.draw(gr, scale, null); e.drawArrowhead(gr, scale, null, tip); }
+        }
+        if (highFirstEdge!=null) {
+          for(VizNode n:nodes) if (n.shape()!=null) {
+            for(VizEdge e:n.outEdges())  if (e.group==group && e!=highFirstEdge) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
+            for(VizEdge e:n.selfEdges()) if (e.group==group && e!=highFirstEdge) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
+          }
+          highFirstEdge.draw(gr, scale, highFirstEdge); highFirstEdge.drawArrowhead(gr, scale, highFirstEdge, tip);
+        }
+        for(VizNode n:nodes) if (highFirstNode!=n && highLastNode!=n) n.draw(gr, scale, n==highlight);
+        if (highFirstNode!=null) highFirstNode.draw(gr, scale, true);
+        if (highLastNode!=null && highLastNode!=highFirstNode) highLastNode.draw(gr, scale, true);
     }
 }
