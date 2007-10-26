@@ -163,7 +163,7 @@ public final class A4Solution {
     /**
      * Construct an A4Solution object representing a satisfiable or unsatisfiable solution from Kodkod.
      * @param sigs - the list of Sigs; must be complete, must contain UNIV+SIGINT+SEQIDX+NONE, and has no duplicates
-     * @param bcc - maps each Sig and Field (and possibly even some parameterless Func) to a Kodkod expression
+     * @param incoming_bcc - maps each Sig and Field (and possibly even some parameterless Func) to a Kodkod expression
      * @param filename - original Alloy main model's file name that generated this solution; can be "" if unknown
      * @param command - original command used to generate this solution; can be "" if unknown
      * @param kEnumerator - if nonnull, we can ask it to get another solution

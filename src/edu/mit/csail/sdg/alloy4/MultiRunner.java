@@ -45,7 +45,7 @@ public final class MultiRunner extends AbstractAction implements Runnable, Windo
     }
 
     /** The runnable encapsulated inside this runner. */
-    private final MultiRunnable runnable;
+    private transient final MultiRunnable runnable;
 
     /** The key to pass to the runnable. */
     private final int key;
@@ -91,9 +91,9 @@ public final class MultiRunner extends AbstractAction implements Runnable, Windo
         if (arg==0) {
             runnable.run(key);
         } else if (arg==1) {
-            runnable.run(key,intArg);
+            runnable.run(key, intArg);
         } else {
-            runnable.run(key,stringArg);
+            runnable.run(key, stringArg);
         }
     }
 
