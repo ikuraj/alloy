@@ -157,7 +157,7 @@ public final class OurDialog {
             f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
             f.setDirectory(dir);
             if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
-                public boolean accept(File dir, String name) { return name.toLowerCase(Locale.US).endsWith(ext); }
+               public boolean accept(File dir, String name) { return name.toLowerCase(Locale.US).endsWith(ext); }
             });
             f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
             if (f.getFile()==null) return null;
@@ -167,8 +167,8 @@ public final class OurDialog {
             open.setDialogTitle(isOpen ? "Open..." : "Save...");
             open.setApproveButtonText(isOpen ? "Open" : "Save");
             if (ext.length()>0) open.setFileFilter(new FileFilter() {
-                public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase(Locale.US).endsWith(ext); }
-                public String getDescription() { return description; }
+               public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase(Locale.US).endsWith(ext); }
+               public String getDescription() { return description; }
             });
             if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION || open.getSelectedFile()==null) { return null; }
             ans = open.getSelectedFile().getPath();

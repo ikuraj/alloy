@@ -151,6 +151,7 @@ public final class OurConsole extends JScrollPane {
            private static final long serialVersionUID = 1L;
            public void actionPerformed(ActionEvent ev) { sub.paste(); }
         };
+        // create the keyboard associations: ctrl-{c,v,x,insert} and shift-{insert,delete}
         for(int i=0; i<=1; i++) {
            InputMap inputMap = (i==0) ? sub.getInputMap() : main.getInputMap();
            ActionMap actionMap = (i==0) ? sub.getActionMap() : main.getActionMap();
@@ -169,13 +170,13 @@ public final class OurConsole extends JScrollPane {
     /** Performs "page up" in the JScrollPane. */
     private void do_pageup() {
         JScrollBar b = getVerticalScrollBar();
-        b.setValue(b.getValue() - 100);
+        b.setValue(b.getValue() - 200);
     }
 
     /** Performs "page down" in the JScrollPane. */
     private void do_pagedown() {
         JScrollBar b = getVerticalScrollBar();
-        b.setValue(b.getValue() + 100);
+        b.setValue(b.getValue() + 200);
     }
 
     /** Insert the given text into the given location and with the given style; if where is -1, then we append the text. */
@@ -195,26 +196,31 @@ public final class OurConsole extends JScrollPane {
     public OurConsole(final Computer computer, final Object... initialMessages) {
         super(VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
         history.add("");
+        main = do_makeTextPane(false,5,5,5);
+        setViewportView(main);
+        final StyledDocument doc = main.getStyledDocument();
+        // construct the various styles
         StyleConstants.setFontFamily(plain = new SimpleAttributeSet(), "Verdana"); StyleConstants.setFontSize(plain, 14);
         StyleConstants.setBold(bold = new SimpleAttributeSet(plain), true);
         StyleConstants.setForeground(blue = new SimpleAttributeSet(plain), Color.BLUE); StyleConstants.setLeftIndent(blue, 15);
         StyleConstants.setForeground(red = new SimpleAttributeSet(plain), Color.RED); StyleConstants.setLeftIndent(red, 15);
-        main = do_makeTextPane(false,5,5,5);
-        sub = do_makeTextPane(true,10,10,0);
-        setViewportView(main);
-        final JPanel divider = new JPanel(); divider.setBackground(Color.LIGHT_GRAY); divider.setPreferredSize(new Dimension(1,1));
-        final StyledDocument doc = main.getStyledDocument();
-        final Style dividerStyle = doc.addStyle("divider", null); StyleConstants.setComponent(dividerStyle, divider);
-        final Style inputStyle = doc.addStyle("input", null); StyleConstants.setComponent(inputStyle, sub);
+        // show the initial message
         SimpleAttributeSet st = plain;
         for(Object x: initialMessages) {
            if (x instanceof Boolean) st = ((Boolean)x) ? bold : plain;
            if (x instanceof String)  do_add(-1, (String)x, st);
         }
+        // insert the divider and the sub JTextPane
+        sub = do_makeTextPane(true,10,10,0);
+        final JPanel divider = new JPanel(); divider.setBackground(Color.LIGHT_GRAY); divider.setPreferredSize(new Dimension(1,1));
+        final Style dividerStyle = doc.addStyle("divider", null); StyleConstants.setComponent(dividerStyle, divider);
+        final Style inputStyle = doc.addStyle("input", null); StyleConstants.setComponent(inputStyle, sub);
         len = doc.getLength();
         do_add(-1, "x\n", dividerStyle);
         do_add(-1, "x\n", inputStyle);
+        // enable cut+copy+paste
         do_CutCopyPaste();
+        // configure so that, upon receiving focus, we always scroll to the sub-JTextPane automatically
         FocusListener focus = new FocusListener() {
            public void focusGained(FocusEvent e) {
               sub.requestFocusInWindow();
@@ -225,10 +231,12 @@ public final class OurConsole extends JScrollPane {
         addFocusListener(focus);
         sub.addFocusListener(focus);
         main.addFocusListener(focus);
+        // configure so that mouse clicks in the main JTextPane will immediately transfer focus to the sub JTextPane
         main.addMouseListener(new MouseAdapter() {
            public void mousePressed(MouseEvent e) { sub.requestFocusInWindow(); }
            public void mouseClicked(MouseEvent e) { sub.requestFocusInWindow(); }
         });
+        // configure the behavior for PAGE_UP, PAGE_DOWN, UP, DOWN, and ENTER
         sub.addKeyListener(new KeyListener() {
            public void keyPressed(KeyEvent e) {
               if (e.getKeyCode()==KeyEvent.VK_ENTER) e.consume();
@@ -272,6 +280,9 @@ public final class OurConsole extends JScrollPane {
                   main.setSelectionEnd(doc.getLength() - old + len);
                   main.setParagraphAttributes(blue, false);
                   len = doc.getLength() - old + len;
+                  invalidate(); repaint(); validate();
+                  sub.scrollRectToVisible(new Rectangle(0, sub.getY(), 1, sub.getHeight()));
+                  do_pagedown(); // need to do this after the validate() so that the scrollbar knows the new limit
               }
            }
         });
