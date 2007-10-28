@@ -41,11 +41,11 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
-import static javax.swing.JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED;
-import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
+import static javax.swing.JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED;
 
 /**
  * Graphical dialog methods for asking the user some questions.

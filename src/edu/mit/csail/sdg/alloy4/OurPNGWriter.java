@@ -34,7 +34,7 @@ import javax.imageio.ImageIO;
 
 public final class OurPNGWriter {
 
-    /** The buffer size; must be at least 21 since we need to have enough prefetch for us to write the pHYs chunk into the file. */
+    /** The buffer size; must be at least 21 since we need to have enough prefetch to write out the pHYs chunk into the file. */
     private static final int BUFSIZE=4096;
 
     /** The constructor is private, since this utility class never needs to be instantiated. */

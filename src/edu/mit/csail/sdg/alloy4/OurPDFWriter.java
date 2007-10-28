@@ -21,7 +21,7 @@ public final class OurPDFWriter {
     /** This is the file we're writing. */
     private RandomAccessFile out;
 
-    /** This stores the exact offset of each PDF object we've written. */
+    /** This maps each PDF Object ID to its exact offset in the file. */
     private List<Long> offset = new ArrayList<Long>();
 
     /** This stores the ID of the "Font" PDF Object. */
