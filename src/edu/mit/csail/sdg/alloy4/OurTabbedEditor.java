@@ -76,7 +76,8 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 /**
  * Graphical tabbed editor.
  *
- * <p><b>Thread Safety:</b> Can be called only by the AWT event thread (except "highlight()" method, which can be called by any thread)
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread (except "highlight()" method,
+ * which can be called by any thread)
  *
  * <p><b>Invariant</b>: list.get(i).filename must not contain duplicate entries.
  */
@@ -85,7 +86,7 @@ public final class OurTabbedEditor {
 
     /** This defines notifyChange and notifyFocusGained events this tabbed editor may send to the parent. */
     public interface Parent {
-        /** This method is called when a tab is added or removed, or we switch to a different tab, or the text is modified, or the text cursor moved. */
+        /** This method is called when a tab is added/removed, we switch to another tab, text is modified, or text cursor moved. */
         public void notifyChange();
         /** This method is called when a tab in this tabbed editor gains the focus. */
         public void notifyFocusGained();

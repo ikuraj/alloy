@@ -241,6 +241,7 @@ public final class OurConsole extends JScrollPane {
         sub.addKeyListener(new KeyListener() {
            public void keyPressed(KeyEvent e) {
               if (e.getKeyCode()==KeyEvent.VK_ENTER) e.consume();
+              if (e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
               if (e.getKeyCode()==KeyEvent.VK_PAGE_UP) { e.consume(); do_pageup(); }
               if (e.getKeyCode()==KeyEvent.VK_PAGE_DOWN) { e.consume(); do_pagedown(); }
               if (e.getKeyCode()==KeyEvent.VK_UP) {
@@ -255,8 +256,12 @@ public final class OurConsole extends JScrollPane {
            }
            public void keyReleased(KeyEvent e) {
               if (e.getKeyCode()==KeyEvent.VK_ENTER) e.consume();
+              if (e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
            }
            public void keyTyped(KeyEvent e) {
+              if (e.getKeyChar()=='\t') {
+                  e.consume();
+              }
               if (e.getKeyChar()=='\n') {
                   e.consume();
                   String x = sub.getText().trim();
