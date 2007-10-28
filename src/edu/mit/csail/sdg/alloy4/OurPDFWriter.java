@@ -86,8 +86,9 @@ public final class OurPDFWriter {
           startOfContent=out.getFilePointer();
           // Write the default settings, and add a default transformation that flips (0,0) into the top-left corner of the page
           write("q\n1 J\n1 j\n[] 0 d\n1 w\n1 0 0 -1 0 ").write(height).write(" cm\n");
-        } finally {
-          try { out.close(); } catch(IOException ex) { } // open files are a scarce resource, so try to close it at all cost
+        } catch(IOException ex) {
+          try { out.close(); } catch(IOException ex2) { } // open files are a scarce resource, so try to close it at all cost
+          throw ex;
         }
     }
 
