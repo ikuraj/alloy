@@ -58,11 +58,11 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
-import javax.swing.text.JTextComponent;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.MultiRunner;
 import edu.mit.csail.sdg.alloy4.OurBinaryCheckbox;
 import edu.mit.csail.sdg.alloy4.OurBorder;
+import edu.mit.csail.sdg.alloy4.OurConsole;
 import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.OurUtil;
@@ -167,7 +167,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     private VizCustomizationPanel myCustomPanel=null;
 
     /** The evaluator panel to the left; null if it is not yet loaded. */
-    private JTextComponent myEvaluatorPanel=null;
+    private OurConsole myEvaluatorPanel=null;
 
     /** The graphical panel to the right; null if it is not yet loaded. */
     private VizGraphPanel myGraphPanel=null;
@@ -553,17 +553,14 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                    myCustomPanel.remakeAll();
                 left=myCustomPanel;
             } else if (settingsOpen>1) {
-                if (myEvaluatorPanel==null) {
-                    myEvaluatorPanel=OurDialog.showConsole(null,
-                    "The <b>Alloy Evaluator</b> allows you to type<br>"+
-                    "in Alloy expressions and see their values.<br>"+
-                    "For example, <b>univ</b> shows the list of all atoms.<br>", evaluator);
-                }
+                if (myEvaluatorPanel==null)
+                    myEvaluatorPanel=new OurConsole(evaluator,
+                       "The ", true, "Alloy Evaluator ", false,
+                       "allows you to type\nin Alloy expressions and see their values.\nFor example, ", true,
+                       "univ", false, " shows the list of all atoms.\n\n");
                 evaluator.setSourceFile(xmlFileName);
-                left = new JScrollPane(myEvaluatorPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                left = myEvaluatorPanel;
                 left.setBorder(new OurBorder(false,false,false,false));
-                myEvaluatorPanel.setCaretPosition(0);
-                myEvaluatorPanel.setCaretPosition(myEvaluatorPanel.getDocument().getLength());
             } else {
                 left=null;
             }
@@ -585,7 +582,6 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             content.requestFocusInWindow();
         } else {
             myEvaluatorPanel.requestFocusInWindow();
-            myEvaluatorPanel.setCaretPosition(myEvaluatorPanel.getDocument().getLength());
         }
         repopulateProjectionPopup();
         if (frame!=null) frame.validate(); else splitpane.validate();
