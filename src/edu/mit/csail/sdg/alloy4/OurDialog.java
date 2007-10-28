@@ -112,9 +112,9 @@ public final class OurDialog {
     public static boolean hasFont(String fontname) {
         if (allFonts==null) allFonts=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
         for(int i=0; i<allFonts.length; i++) {
-            if (fontname.compareToIgnoreCase(allFonts[i])==0) {
-                return true;
-            }
+           if (fontname.compareToIgnoreCase(allFonts[i])==0) {
+              return true;
+           }
         }
         return false;
     }

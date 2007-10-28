@@ -557,7 +557,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                     myEvaluatorPanel=new OurConsole(evaluator,
                        "The ", true, "Alloy Evaluator ", false,
                        "allows you to type\nin Alloy expressions and see their values.\nFor example, ", true,
-                       "univ", false, " shows the list of all atoms.\n\n");
+                       "univ", false, " shows the list of all atoms.\n");
                 evaluator.setSourceFile(xmlFileName);
                 left = myEvaluatorPanel;
                 left.setBorder(new OurBorder(false,false,false,false));

@@ -210,6 +210,7 @@ public final class OurConsole extends JScrollPane {
            if (x instanceof Boolean) st = ((Boolean)x) ? bold : plain;
            if (x instanceof String)  do_add(-1, (String)x, st);
         }
+        do_add(-1, "\n", plain); // we must add a linebreak to ensure that subsequent text belong to a "different paragraph"
         // insert the divider and the sub JTextPane
         sub = do_makeTextPane(true,10,10,0);
         final JPanel divider = new JPanel(); divider.setBackground(Color.LIGHT_GRAY); divider.setPreferredSize(new Dimension(1,1));
