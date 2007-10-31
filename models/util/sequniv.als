@@ -118,7 +118,7 @@ fun delete[s: Int -> univ, i: Int] : s {
  */
 fun append [s1, s2: Int -> univ] : s1+s2 {
   let shift = {i', i: seq/Int | int[i'] = int[i] + int[lastIdx[s1]] + 1 } |
-    s1 + shift.s2
+    no s1 => s2 else (s1 + shift.s2)
 }
 
 /*
