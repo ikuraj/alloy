@@ -42,6 +42,15 @@ public final class ErrorType extends Err {
     }
 
     /**
+     * Constructs a new type error with "cause" as the underlying cause.
+     * @param msg - the actual error message
+     * @param cause - the underlying exception
+     */
+    public ErrorType(String msg, Throwable cause) {
+        super(null, msg, cause);
+    }
+
+    /**
      * Constructs a new type error.
      * @param pos - the filename/line/row information (can be null if unknown)
      * @param msg - the actual error message

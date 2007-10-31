@@ -20,8 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.util.Iterator;
 import java.util.List;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /** Immutable; implements an ordered list where it is very cheap to join two lists or to append an item to a list. */

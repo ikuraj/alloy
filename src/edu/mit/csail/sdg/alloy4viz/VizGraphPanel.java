@@ -45,7 +45,6 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
-import att_grappa_20060427.GrappaPanel;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
@@ -235,15 +234,7 @@ public final class VizGraphPanel extends JPanel {
         }
         currentProjection=new AlloyProjection(map);
         JPanel graph=vizState.getGraph(currentProjection).b;
-        if (seeDot && (graph instanceof GrappaPanel)) {
-            viewer=null;
-            final JTextArea t = OurUtil.textarea(((GrappaPanel)graph).annotation, 10, 10);
-            t.setBackground(Color.WHITE);
-            t.setEditable(false);
-            t.setLineWrap(true);
-            t.setWrapStyleWord(true);
-            diagramScrollPanel.setViewportView(t);
-        } else if (seeDot && (graph instanceof VizViewer)) {
+        if (seeDot && (graph instanceof VizViewer)) {
             viewer=null;
             final JTextArea t = OurUtil.textarea(((VizViewer)graph).do_getAnnotation(), 10, 10);
             t.setBackground(Color.WHITE);

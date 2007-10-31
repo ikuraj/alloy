@@ -31,6 +31,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Version;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.BOLD;
@@ -176,7 +177,7 @@ final class SimpleRunner implements Runnable {
                 logLink("A "+msg+" error has occurred:  ", "POS: "+e.pos.x+" "+e.pos.y+" "+e.pos.x2+" "+e.pos.y2+" "+e.pos.filename);
             if (verbosity>2) {
                 log("(see the ");
-                logLink("stacktrace", "MSG: "+e.getTotalTrace());
+                logLink("stacktrace", "MSG: "+MailBug.dump(e));
                 log(")\n");
             } else {
                 log("\n");
@@ -197,13 +198,11 @@ final class SimpleRunner implements Runnable {
             return;
         }
         catch(Throwable e) {
-            StringBuilder sb=new StringBuilder();
-            for(StackTraceElement st:e.getStackTrace()) { sb.append(st.toString()); sb.append('\n'); }
             log(RESTORE1);
             if (verbosity>2) {
                 logBold("An error has occurred: ");
                 log("(see the ");
-                logLink("stacktrace", "MSG: "+sb.toString());
+                logLink("stacktrace", "MSG: "+MailBug.dump(e));
                 log(")\n");
             } else {
                 logBold("An error has occurred:\n");

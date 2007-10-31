@@ -65,6 +65,22 @@ public final class MailBug implements UncaughtExceptionHandler {
         latestAlloyVersionName=versionName;
     }
 
+    /** Helper method that prints a Throwable's stack trace and all its causes as a String. */
+    public static String dump(Throwable ex) {
+        StringBuilder sb=new StringBuilder();
+        while(ex!=null) {
+           sb.append(ex.getClass().toString());
+           sb.append(": ");
+           sb.append(ex.getMessage());
+           sb.append('\n');
+           StackTraceElement[] trace = ex.getStackTrace();
+           for(int n=trace.length, i=0; i<n; i++) sb.append(trace[i].toString()).append('\n');
+           ex = ex.getCause();
+           if (ex!=null) sb.append("caused by...\n");
+        }
+        return sb.toString();
+    }
+
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException (Thread thread, Throwable ex) {
         final String yes="Send the Bug Report";
@@ -76,7 +92,20 @@ public final class MailBug implements UncaughtExceptionHandler {
         final JScrollPane scroll=OurUtil.scrollpane(problem);
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
-        if (!"yes".equals(System.getProperty("debug")) && latestAlloyVersion>Version.buildNumber()) {
+        if (ex instanceof OutOfMemoryError || ex instanceof StackOverflowError) {
+            JOptionPane.showMessageDialog(null, new Object[] {
+                    "Sorry. Alloy4 has run out of memory.",
+                    " ",
+                    "Try simplifying your model or reducing the scope.",
+                    "And try disabling Options->RecordKodkod.",
+                    "And try reducing Options->SkolemDepth to 0.",
+                    "And try increasing Options->Memory.",
+                    " ",
+                    "There is no way for Alloy4 to continue execution, so pressing OK will shut down Alloy4."
+            }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
+        else if (!"yes".equals(System.getProperty("debug")) && latestAlloyVersion>Version.buildNumber()) {
             JOptionPane.showMessageDialog(null, new Object[] {
                     "Sorry. A fatal internal error has occurred.",
                     " ",
@@ -85,7 +114,9 @@ public final class MailBug implements UncaughtExceptionHandler {
                     "( version "+latestAlloyVersionName+" )",
                     " ",
                     "Please try to upgrade to the newest version",
-                    "as the problem may have already been fixed."
+                    "as the problem may have already been fixed.",
+                    " ",
+                    "There is no way for Alloy4 to continue execution, so pressing OK will shut down Alloy4."
             }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         } else {
@@ -113,8 +144,7 @@ public final class MailBug implements UncaughtExceptionHandler {
         if (ex!=null) {
            pw.printf("========================= Exception ========================\n");
            pw.printf("%s: %s\n\n", ex.getClass().toString(), ex.toString());
-           pw.printf("========================= Stack Trace ======================\n");
-           ex.printStackTrace(pw);
+           pw.printf("========================= Stack Trace ======================\n%s", dump(ex));
         }
         pw.printf("\n========================= Preferences ======================\n");
         try {

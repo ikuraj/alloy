@@ -22,8 +22,8 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Graphics;
 import java.awt.Insets;
+import java.awt.Graphics;
 import javax.swing.border.Border;
 
 /**

@@ -20,13 +20,13 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Iterator;
+import java.io.Serializable;
 
 /**
  * This implements an unmodifiable set.

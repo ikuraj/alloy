@@ -21,8 +21,8 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.event.WindowEvent;
 import javax.swing.AbstractAction;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;

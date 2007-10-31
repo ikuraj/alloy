@@ -42,6 +42,15 @@ public final class ErrorSyntax extends Err {
     }
 
     /**
+     * Constructs a new syntax error with "cause" as the underlying cause.
+     * @param msg - the actual error message
+     * @param cause - the underlying exception
+     */
+    public ErrorSyntax(String msg, Throwable cause) {
+        super(null, msg, cause);
+    }
+
+    /**
      * Constructs a new syntax error.
      * @param pos - the filename/line/row information (can be null if unknown)
      * @param msg - the actual error message

@@ -32,8 +32,6 @@ public interface Computer {
      */
     public String compute(String input) throws Exception;
 
-    /**
-     * This method changes the filename associated with this Computer object.
-     */
+    /** This method changes the filename associated with this Computer object. */
     public void setSourceFile(String filename);
 }

@@ -27,11 +27,11 @@ package edu.mit.csail.sdg.alloy4;
 
 public class A4Reporter {
 
-    /** This is a pre-constructed instance that simply ignores all calls. */
-    public static final A4Reporter NOP = new A4Reporter();
-
     /** Constructs a default A4Reporter object that does nothing. */
     public A4Reporter() {}
+
+    /** This is a pre-constructed instance that simply ignores all calls. */
+    public static final A4Reporter NOP = new A4Reporter();
 
     /**
      * This method is called at various points to report the current progress;

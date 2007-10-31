@@ -1377,7 +1377,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 System.err.flush();
             } catch(Throwable ex) {
                 ErrorFatal err=new ErrorFatal(ex.getMessage(), ex);
-                log.logBold("Unknown exception: "+ex+"\nStackTrace:\n"+err.getTotalTrace());
+                log.logBold("Unknown exception: "+ex+"\nStackTrace:\n"+MailBug.dump(err));
                 System.err.flush();
             }
             run(ev_done);

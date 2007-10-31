@@ -42,6 +42,15 @@ public final class ErrorWarning extends Err {
     }
 
     /**
+     * Constructs a new warning with "cause" as the underlying cause.
+     * @param msg - the actual error message
+     * @param cause - the underlying exception
+     */
+    public ErrorWarning(String msg, Throwable cause) {
+        super(null, msg, cause);
+    }
+
+    /**
      * Constructs a new warning.
      * @param pos - the filename/line/row information (can be null if unknown)
      * @param msg - the actual error message

@@ -2,8 +2,8 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Graphical convenience methods for producing PDF files.

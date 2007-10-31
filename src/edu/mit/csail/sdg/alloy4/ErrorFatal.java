@@ -42,6 +42,15 @@ public final class ErrorFatal extends Err {
     }
 
     /**
+     * Constructs a new fatal error with "cause" as the underlying cause.
+     * @param msg - the actual error message
+     * @param cause - the underlying exception
+     */
+    public ErrorFatal(String msg, Throwable cause) {
+        super(null, msg, cause);
+    }
+
+    /**
      * Constructs a new fatal error.
      * @param pos - the filename/line/row information (can be null if unknown)
      * @param msg - the actual error message
@@ -76,14 +85,5 @@ public final class ErrorFatal extends Err {
             return "Fatal error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
         }
         return "Fatal error at line "+pos.y+" column "+pos.x+":\n"+msg;
-    }
-
-    /**
-     * Constructs a new fatal error with the additional stacktrace entries from "ex" inserted
-     * @param msg - the actual error message
-     * @param ex - the underlying exception
-     */
-    public ErrorFatal(String msg, Throwable ex) {
-        super(null,msg,ex);
     }
 }

@@ -31,6 +31,7 @@ import java.util.TreeSet;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -195,10 +196,8 @@ public final class VizState {
             ans=graph.visualize();
             synchronized(this) { cache.put(projectionChoice,ans); }
         } catch(Throwable ex) {
-            StringBuilder sb=new StringBuilder("An error has occurred: ").append(ex.toString()).append("\n\nStackTrace:\n");
-            for(StackTraceElement st:ex.getStackTrace()) sb.append("at ").append(st.toString()).append('\n');
-            sb.append("\nRaw Dot:\n\n").append(graph.write());
-            JTextArea message = OurUtil.textarea(sb.toString(), 0, 0);
+            String msg = "An error has occurred: "+ex+"\n\nStackTrace:\n"+MailBug.dump(ex)+"\nRaw Dot:\n\n"+graph.write();
+            JTextArea message = OurUtil.textarea(msg, 0, 0);
             JScrollPane scroll = OurUtil.scrollpane(message);
             ans=new Pair<String,JPanel>("",new JPanel());
             ans.b.setLayout(new BorderLayout());

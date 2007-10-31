@@ -36,9 +36,6 @@ public abstract class Err extends Exception {
     /** The actual error message. */
     public final String msg;
 
-    /** The additional stack trace information. */
-    private final Throwable other;
-
     /**
      * Constructs a new Err object.
      * @param pos - the filename/line/row information (can be null if unknown)
@@ -46,39 +43,8 @@ public abstract class Err extends Exception {
      * @param ex - if nonnull, its stack trace will be merged with this exception's stack trace
      */
     Err(Pos pos, String msg, Throwable ex) {
+        super((msg==null ? "" : msg), ex);
         this.pos = (pos==null ? Pos.UNKNOWN : pos);
         this.msg = (msg==null ? "" : msg);
-        this.other = ex;
-    }
-
-    /** Returns a copy of the stack trace. */
-    @Override public final StackTraceElement[] getStackTrace() {
-        if (other==null) return super.getStackTrace();
-        StackTraceElement[] that = other.getStackTrace();
-        StackTraceElement[] here = super.getStackTrace();
-        int same=0;
-        if (here.length>0 && that.length>0) {
-          while(same<here.length && same<that.length) {
-            if (!here[here.length-same-1].equals(that[that.length-same-1])) break;
-            same++;
-          }
-        }
-        StackTraceElement[] ans = new StackTraceElement[that.length + here.length - same];
-        int j=0;
-        for(int i=0; i<that.length-same; i++, j++) ans[j]=that[i];
-        for(int i=0; i<here.length; i++, j++) ans[j]=here[i];
-        return ans;
-    }
-
-    /** Returns the stack trace as a String. */
-    public final String getTotalTrace() {
-        final StringBuilder sb = new StringBuilder();
-        for(StackTraceElement st: getStackTrace()) { sb.append(st.toString()).append("\n"); }
-        return sb.toString();
-    }
-
-    /** Returns a textual description of the error. */
-    @Override public final String getMessage() {
-        return toString();
     }
 }
