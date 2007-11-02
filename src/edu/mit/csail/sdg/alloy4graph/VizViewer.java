@@ -92,7 +92,7 @@ public final class VizViewer extends JPanel {
     private String annotation = "";
 
     /** Locates the node or edge at the given (X,Y) location. */
-    private Object do_find(int mouseX, int mouseY) {
+    private Object alloyFind(int mouseX, int mouseY) {
        double x=mouseX/scale+graph.getLeft(), y=mouseY/scale+graph.getTop();
        for(VizNode n:graph.nodes) {
            if (n.shape()==null && Math.abs(n.x()-x)<10 && Math.abs(n.y()-y)<10) return n;
@@ -105,22 +105,22 @@ public final class VizViewer extends JPanel {
     }
 
     /** Returns the annotation for the node or edge at location x,y (or null if none) */
-    public Object do_getAnnotationAtXY(int mouseX, int mouseY) {
-        Object obj = do_find(mouseX, mouseY);
+    public Object alloyGetAnnotationAtXY(int mouseX, int mouseY) {
+        Object obj = alloyFind(mouseX, mouseY);
         if (obj instanceof VizNode) return ((VizNode)obj).uuid;
         if (obj instanceof VizEdge) return ((VizEdge)obj).uuid;
         return null;
     }
 
     /** Returns the annotation for the currently selected node/edge (or null if none) */
-    public Object do_getSelectedAnnotation() {
+    public Object alloyGetSelectedAnnotation() {
         if (selected instanceof VizNode) return ((VizNode)selected).uuid;
         if (selected instanceof VizEdge) return ((VizEdge)selected).uuid;
         return null;
     }
 
     /** Returns the annotation for the currently highlighted node/edge (or null if none) */
-    public Object do_getHighlightedAnnotation() {
+    public Object alloyGetHighlightedAnnotation() {
         if (highlight instanceof VizNode) return ((VizNode)highlight).uuid;
         if (highlight instanceof VizEdge) return ((VizEdge)highlight).uuid;
         return null;
@@ -130,7 +130,7 @@ public final class VizViewer extends JPanel {
     private int oldMouseX=0, oldMouseY=0, oldX=0, oldY=0;
 
     /** Repaint this component. */
-    public void do_repaint() {
+    public void alloyRepaint() {
         Container c=getParent();
         while(c!=null) { if (c instanceof JViewport) break; else c=c.getParent(); }
         setSize((int)(graph.getTotalWidth()*scale), (int)(graph.getTotalHeight()*scale));
@@ -157,7 +157,7 @@ public final class VizViewer extends JPanel {
            public void actionPerformed(ActionEvent e) {
               Container c=getParent();
               while(c!=null) { if (c instanceof JViewport) break; else c=c.getParent(); }
-              if (e.getSource() == print) do_saveAs();
+              if (e.getSource() == print) alloySaveAs();
               if (e.getSource() == zoomIn) { scale=scale*1.33d; if (!(scale<500d)) scale=500d; }
               if (e.getSource() == zoomOut) { scale=scale/1.33d; if (!(scale>0.1d)) scale=0.1d; }
               if (e.getSource() == zoomToFit) {
@@ -167,7 +167,7 @@ public final class VizViewer extends JPanel {
                  double scale1 = ((double)w)/graph.getTotalWidth(), scale2 = ((double)h)/graph.getTotalHeight();
                  if (scale1<scale2) scale=scale1; else scale=scale2;
               }
-              do_repaint();
+              alloyRepaint();
            }
         };
         zoomIn.addActionListener(act);
@@ -177,8 +177,8 @@ public final class VizViewer extends JPanel {
         addMouseMotionListener(new MouseMotionAdapter() {
            @Override public void mouseMoved(MouseEvent ev) {
               if (pop.isVisible()) return;
-              Object obj=do_find(ev.getX(), ev.getY());
-              if (highlight!=obj) { highlight=obj; do_repaint(); }
+              Object obj = alloyFind(ev.getX(), ev.getY());
+              if (highlight!=obj) { highlight=obj; alloyRepaint(); }
            }
            @Override public void mouseDragged(MouseEvent ev) {
               if (selected instanceof VizNode && dragButton==1) {
@@ -187,7 +187,7 @@ public final class VizViewer extends JPanel {
                  VizNode n=(VizNode)selected;
                  if (n.x()!=newX || n.y()!=newY) {
                     n.tweak(newX,newY);
-                    do_repaint();
+                    alloyRepaint();
                     scrollRectToVisible(new Rectangle(
                       (int)((newX-graph.getLeft())*scale)-n.getWidth()/2-5,
                       (int)((newY-graph.getTop())*scale)-n.getHeight()/2-5,
@@ -199,40 +199,40 @@ public final class VizViewer extends JPanel {
         });
         addMouseListener(new MouseAdapter() {
            @Override public void mouseReleased(MouseEvent ev) {
-               Object obj=do_find(ev.getX(), ev.getY());
-               if (selected!=null || highlight!=obj) { graph.recalc_bound(true); selected=null; highlight=obj; do_repaint(); }
+               Object obj = alloyFind(ev.getX(), ev.getY());
+               if (selected!=null || highlight!=obj) { graph.recalc_bound(true); selected=null; highlight=obj; alloyRepaint(); }
            }
            @Override public void mousePressed(MouseEvent ev) {
                dragButton=0;
                int mod = ev.getModifiers();
                if ((mod & BUTTON3_MASK)!=0) {
-                  Object x=do_find(ev.getX(), ev.getY());
-                  if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
+                  Object x = alloyFind(ev.getX(), ev.getY());
+                  if (selected!=x || highlight!=null) { selected=x; highlight=null; alloyRepaint(); }
                   pop.show(VizViewer.this, ev.getX(), ev.getY());
                } else if ((mod & BUTTON1_MASK)!=0 && (mod & CTRL_MASK)!=0) {
                   // This lets Ctrl+LeftClick bring up the popup menu, just like RightClick,
                   // since many Mac mouses do not have a right button.
-                  Object x=do_find(ev.getX(), ev.getY());
-                  if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
+                  Object x = alloyFind(ev.getX(), ev.getY());
+                  if (selected!=x || highlight!=null) { selected=x; highlight=null; alloyRepaint(); }
                   pop.show(VizViewer.this, ev.getX(), ev.getY());
                } else if ((mod & BUTTON1_MASK)!=0) {
                   dragButton=1;
-                  Object x=do_find(oldMouseX=ev.getX(), oldMouseY=ev.getY());
+                  Object x = alloyFind(oldMouseX=ev.getX(), oldMouseY=ev.getY());
                   if (x instanceof VizNode) { oldX=((VizNode)x).x(); oldY=((VizNode)x).y(); }
-                  if (selected!=x || highlight!=null) { selected=x; highlight=null; do_repaint(); }
+                  if (selected!=x || highlight!=null) { selected=x; highlight=null; alloyRepaint(); }
                }
            }
            @Override public void mouseExited(MouseEvent ev) {
-               if (highlight!=null) { highlight=null; do_repaint(); }
+               if (highlight!=null) { highlight=null; alloyRepaint(); }
            }
         });
     }
 
     /** Retrieves the annotation associated with this object; "" if no annotation has been set yet. */
-    public String do_getAnnotation() { return annotation; }
+    public String alloyGetAnnotation() { return annotation; }
 
     /** Changes the annotation associated with this object. */
-    public void do_setAnnotation(String newAnnotation) { this.annotation=newAnnotation; }
+    public void alloySetAnnotation(String newAnnotation) { this.annotation=newAnnotation; }
 
     /**
      * This color is used as the background for a JTextField that contains bad data.
@@ -248,7 +248,7 @@ public final class VizViewer extends JPanel {
     private boolean recursive=false;
 
     /** This updates the three input boxes and the three accompanying text labels, then return the width in pixels. */
-    private int do_refresh
+    private int alloyRefresh
     (int who, double ratio, JTextField w1, JLabel w2, JTextField h1, JLabel h2, JTextField d1, JLabel d2, JLabel msg) {
        if (recursive) return 0;
        try {
@@ -287,7 +287,7 @@ public final class VizViewer extends JPanel {
     }
 
     /** Export the current drawing as a PNG or PDF file by asking the user for the filename and the image resolution. */
-    public void do_saveAs() {
+    public void alloySaveAs() {
        // Find the enclosing JFrame if such a JFrame exists
        JFrame me=null;
        for(Container c=getParent(); c!=null; c=c.getParent()) if (c instanceof JFrame) { me=(JFrame)c; break; }
@@ -305,24 +305,24 @@ public final class VizViewer extends JPanel {
        final JTextField h1=new JTextField(""+ih); final JLabel h0=new JLabel("Height: "), h2=new JLabel();
        final JTextField d1=new JTextField(""+(int)dpi); final JLabel d0=new JLabel("Resolution: "), d2=new JLabel(" dots per inch");
        final JTextField dp1=new JTextField(""+(int)dpi);final JLabel dp0=new JLabel("Resolution: "),dp2=new JLabel(" dots per inch");
-       do_refresh(0,ratio,w1,w2,h1,h2,d1,d2,msg);
+       alloyRefresh(0,ratio,w1,w2,h1,h2,d1,d2,msg);
        Dimension dim = new Dimension(100,20);
        w1.setMaximumSize(dim); w1.setPreferredSize(dim); w1.setEnabled(false);
        h1.setMaximumSize(dim); h1.setPreferredSize(dim); h1.setEnabled(false);
        d1.setMaximumSize(dim); d1.setPreferredSize(dim); d1.setEnabled(false);
        dp1.setMaximumSize(dim); dp1.setPreferredSize(dim); dp1.setEnabled(false);
        w1.getDocument().addDocumentListener(new DocumentListener() {
-          public void changedUpdate(DocumentEvent e) { do_refresh(1,ratio,w1,w2,h1,h2,d1,d2,msg); }
+          public void changedUpdate(DocumentEvent e) { alloyRefresh(1,ratio,w1,w2,h1,h2,d1,d2,msg); }
           public void insertUpdate(DocumentEvent e) { changedUpdate(null); }
           public void removeUpdate(DocumentEvent e) { changedUpdate(null); }
        });
        h1.getDocument().addDocumentListener(new DocumentListener() {
-          public void changedUpdate(DocumentEvent e) { do_refresh(2,ratio,w1,w2,h1,h2,d1,d2,msg); }
+          public void changedUpdate(DocumentEvent e) { alloyRefresh(2,ratio,w1,w2,h1,h2,d1,d2,msg); }
           public void insertUpdate(DocumentEvent e) { changedUpdate(null); }
           public void removeUpdate(DocumentEvent e) { changedUpdate(null); }
        });
        d1.getDocument().addDocumentListener(new DocumentListener() {
-          public void changedUpdate(DocumentEvent e) { do_refresh(3,ratio,w1,w2,h1,h2,d1,d2,msg); }
+          public void changedUpdate(DocumentEvent e) { alloyRefresh(3,ratio,w1,w2,h1,h2,d1,d2,msg); }
           public void insertUpdate(DocumentEvent e) { changedUpdate(null); }
           public void removeUpdate(DocumentEvent e) { changedUpdate(null); }
        });
@@ -342,7 +342,7 @@ public final class VizViewer extends JPanel {
               b1.setSelected(false); b3.setSelected(false);
               if (!b2.isSelected()) b2.setSelected(true);
               w1.setEnabled(true); h1.setEnabled(true); d1.setEnabled(true); dp1.setEnabled(false); msg.setText(" ");
-              do_refresh(1,ratio,w1,w2,h1,h2,d1,d2,msg);
+              alloyRefresh(1,ratio,w1,w2,h1,h2,d1,d2,msg);
            }
        });
        b3.addActionListener(new ActionListener() {
@@ -366,7 +366,7 @@ public final class VizViewer extends JPanel {
           })) return;
           // Let's validate the values
           if (b2.isSelected()) {
-             int widthInPixel=do_refresh(3,ratio,w1,w2,h1,h2,d1,d2,msg);
+             int widthInPixel=alloyRefresh(3,ratio,w1,w2,h1,h2,d1,d2,msg);
              String err = msg.getText().trim();
              if (err.length()>0) continue;
              dpi=Double.parseDouble(d1.getText());
@@ -397,9 +397,9 @@ public final class VizViewer extends JPanel {
        try {
           System.gc(); // Try to avoid possible premature out-of-memory exceptions
           if (b3.isSelected())
-             do_saveAsPDF(filename.getAbsolutePath(), (int)dpi);
+             alloySaveAsPDF(filename.getAbsolutePath(), (int)dpi);
           else
-             do_saveAsPNG(filename.getAbsolutePath(), myScale, dpi, dpi);
+             alloySaveAsPNG(filename.getAbsolutePath(), myScale, dpi, dpi);
           synchronized(VizViewer.class) { oldDPI=dpi; }
           Util.setCurrentDirectory(filename.getParentFile());
        } catch(IOException ex) {
@@ -411,7 +411,7 @@ public final class VizViewer extends JPanel {
     }
 
     /** Export the current drawing as a PDF file with the given image resolution. */
-    public void do_saveAsPDF(String filename, int dpi) throws IOException {
+    public void alloySaveAsPDF(String filename, int dpi) throws IOException {
        double xwidth = dpi*8+(dpi/2); // Width is up to 8.5 inch
        double xheight = dpi*11;       // Height is up to 11 inch
        double scale1 = ((double)(xwidth-dpi))  / graph.getTotalWidth();  // We leave 0.5 inch on the left and right
@@ -424,7 +424,7 @@ public final class VizViewer extends JPanel {
     }
 
     /** Export the current drawing as a PNG file with the given file name and image resolution. */
-    public void do_saveAsPNG(String filename, double scale, double dpiX, double dpiY) throws IOException, OutOfMemoryError {
+    public void alloySaveAsPNG(String filename, double scale, double dpiX, double dpiY) throws IOException, OutOfMemoryError {
        int width = (int) (graph.getTotalWidth()*scale);   if (width<10) width=10;
        int height = (int) (graph.getTotalHeight()*scale); if (height<10) height=10;
        BufferedImage bf = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -439,7 +439,7 @@ public final class VizViewer extends JPanel {
     }
 
     /** Show the popup menu at location (x,y) */
-    public void do_popup(Component c, int x, int y) {
+    public void alloyPopup(Component c, int x, int y) {
        pop.show(c,x,y);
     }
 

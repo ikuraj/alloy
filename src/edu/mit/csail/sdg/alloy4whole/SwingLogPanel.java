@@ -172,7 +172,7 @@ final class SwingLogPanel {
             if (c>0 && c<32 && c!=10 && c!=13 && c!=8 && c!=9) {
                 String txt="";
                 try {txt=new String(escSb, 0, escSn, "UTF-8");} catch(UnsupportedEncodingException ex) {}
-                if (c==CLICK) handler.run(SimpleGUI.evs_visualize, txt);
+                if (c==CLICK) handler.run(SimpleGUI.EVS_VISUALIZE, txt);
                 else if (c==BOLD) logBold(txt);
                 else if (c==RED) logRed(txt);
                 else if (c==INDENTLONG) { if (handler.isUsingExternalEditor()) logIndented(txt); }
@@ -180,7 +180,7 @@ final class SwingLogPanel {
                 else if (c==SETLINK) escLink=txt;
                 else if (c==LINK) logLink(txt,escLink);
                 else if (c==DELETE_ON_EXIT) (new File(txt)).deleteOnExit();
-                else if (c==DECLARE_INSTANCE) handler.run(SimpleGUI.evs_setLatest, txt);
+                else if (c==DECLARE_INSTANCE) handler.run(SimpleGUI.EVS_SET_LATEST, txt);
                 else if (c==DIVIDER) { log(txt); logDivider(); }
                 else if (c==SAVE1) { log(txt); escLength3=(escLength2=(escLength1=getLength())); }
                 else if (c==RESTORE1) { log(txt); setLength(escLength1); }
@@ -189,9 +189,9 @@ final class SwingLogPanel {
                 else if (c==SAVE3) { log(txt); escLength3=getLength(); }
                 else if (c==RESTORE3) { log(txt); setLength(escLength3); }
                 else if (c==CLEARERROR) { log(txt); clearError(); }
-                else if (c==DONE) { log(txt); handler.run(SimpleGUI.ev_done); }
-                else if (c==FAIL) { log(txt); handler.run(SimpleGUI.ev_fail); }
-                else if (c==VIZMSG) { viz.run(VizGUI.evs_alert, txt); }
+                else if (c==DONE) { log(txt); handler.run(SimpleGUI.EV_DONE); }
+                else if (c==FAIL) { log(txt); handler.run(SimpleGUI.EV_FAIL); }
+                else if (c==VIZMSG) { viz.run(VizGUI.EVS_ALERT, txt); }
                 else { log(txt); } // Everything else is treated as FLUSH
                 flush();
                 escSn=0;
@@ -316,7 +316,7 @@ final class SwingLogPanel {
         log.setEditable(false);
         log.setFont(new Font(fontName, Font.PLAIN, fontSize));
         log.addFocusListener(new FocusListener() {
-            public final void focusGained(FocusEvent e) { if (handler!=null) handler.run(SimpleGUI.ev_logFocused); }
+            public final void focusGained(FocusEvent e) { if (handler!=null) handler.run(SimpleGUI.EV_LOG_IS_FOCUSED); }
             public final void focusLost(FocusEvent e) { }
         });
         StyledDocument doc=log.getStyledDocument();
@@ -359,7 +359,7 @@ final class SwingLogPanel {
         label.setMaximumSize(label.getPreferredSize());
         label.setFont(new Font(fontName, Font.BOLD, fontSize));
         label.addMouseListener(new MouseListener(){
-            public final void mousePressed(MouseEvent e) { if (handler!=null) handler.run(SimpleGUI.evs_visualize, linkDestination); }
+            public final void mousePressed(MouseEvent e) { if (handler!=null) handler.run(SimpleGUI.EVS_VISUALIZE, linkDestination); }
             public final void mouseClicked(MouseEvent e) { }
             public final void mouseReleased(MouseEvent e) { }
             public final void mouseEntered(MouseEvent e) { label.setForeground(hoverColor); }

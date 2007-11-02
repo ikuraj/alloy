@@ -550,144 +550,144 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** Called when this window is hidden. */
     public void componentHidden(ComponentEvent e) {}
 
-    //====== Events =======================================================================//
-    // The return values of events are undefined, except these two: { ev_save, ev_saveAs } //
-    //=====================================================================================//
+    //====== Events ========================================================================//
+    // The return values of events are undefined, except these two: { EV_SAVE, EV_SAVE_AS } //
+    //======================================================================================//
 
     /** This event clears the temporary files and then reinitialize the temporary directory. */
-    private static final int ev_clearTemp = 101;
+    private static final int EV_CLEAR_TEMP = 101;
 
     /** This event displays a message that "updated version of Alloy is available" */
-    private static final int evs_update = 102;
+    private static final int EVS_UPDATE = 102;
 
     /** This event refreshes the "file" menu. */
-    private static final int ev_refreshFile = 103;
+    private static final int EV_REFRESH_FILE = 103;
 
     /** This event occurs when the user clicks "file->new". */
-    private static final int ev_new = 104;
+    private static final int EV_NEW = 104;
 
     /** This event occurs when the user clicks "file->open". */
-    private static final int ev_open = 105;
+    private static final int EV_OPEN = 105;
 
     /** This event occurs when the user clicks "file->OpenBuiltinModels". */
-    private static final int ev_builtin = 106;
+    private static final int EV_BUILTIN = 106;
 
     /** This event occurs when the user clicks "file->save". */
-    private static final int ev_save = 107;
+    private static final int EV_SAVE = 107;
 
     /** This event occurs when the user clicks "file->SaveAs". */
-    private static final int ev_saveAs = 108;
+    private static final int EV_SAVE_AS = 108;
 
     /** This event occurs when the user clicks "file->openRecent->clear" */
-    private static final int ev_clearRecent = 109;
+    private static final int EV_CLEAR_RECENT = 109;
 
     /** This event occurs when the user clicks "file->close". */
-    private static final int ev_close = 110;
+    private static final int EV_CLOSE = 110;
 
     /** This event occurs when the user attempts to close the window via the OS. */
-    private static final int ev_dispose = 111;
+    private static final int EV_DISPOSE = 111;
 
     /** This event occurs when the user clicks "file->quit". */
-    private static final int ev_quit = 112;
+    private static final int EV_QUIT = 112;
 
     /** This event opens a particular file. */
-    private static final int evs_open = 113;
+    private static final int EVS_OPEN = 113;
 
     /** This event refreshes the "edit" menu. */
-    private static final int ev_refreshEdit = 201;
+    private static final int EV_REFRESH_EDIT = 201;
 
     /** This event occurs when the user clicks "edit->undo". */
-    private static final int ev_undo = 202;
+    private static final int EV_UNDO = 202;
 
     /** This event occurs when the user clicks "edit->redo". */
-    private static final int ev_redo = 203;
+    private static final int EV_REDO = 203;
 
     /** This event occurs when the user clicks "edit->copy". */
-    private static final int ev_copy = 204;
+    private static final int EV_COPY = 204;
 
     /** This event occurs when the user clicks "edit->cut". */
-    private static final int ev_cut = 205;
+    private static final int EV_CUT = 205;
 
     /** This event occurs when the user clicks "edit->paste". */
-    private static final int ev_paste = 206;
+    private static final int EV_PASTE = 206;
 
     /** This event occurs when the user clicks "edit->find". */
-    private static final int ev_find = 207;
+    private static final int EV_FIND = 207;
 
     /** This event occurs when the user clicks "edit->FindNext". */
-    private static final int ev_findNext = 208;
+    private static final int EV_FIND_NEXT = 208;
 
     /** This event occurs when the user clicks "edit->GoTo". */
-    private static final int ev_goTo = 209;
+    private static final int EV_GOTO = 209;
 
     /** This event occurs when the user clicks "edit->GoToPrevFile". */
-    private static final int ev_goToPrevFile = 210;
+    private static final int EV_GOTO_PREV_FILE = 210;
 
     /** This event occurs when the user clicks "edit->GoToNextFile". */
-    private static final int ev_goToNextFile = 211;
+    private static final int EV_GOTO_NEXT_FILE = 211;
 
     /** This event occurs when the LOG PANEL gains focus. */
-    static final int ev_logFocused = 212;
+    static final int EV_LOG_IS_FOCUSED = 212;
 
     /** This event refreshes the "run" menu. */
-    private static final int ev_refreshRun = 301;
+    private static final int EV_REFRESH_RUN = 301;
 
     /** This event starts the execution of a "run" or "check" or "metamodel generation". */
-    private static final int evi_execute = 302;
+    private static final int EVI_EXECUTE = 302;
 
     /** This event stops the current run or check. */
-    private static final int ev_stop = 303;
+    private static final int EV_STOP = 303;
 
     /** This event executes the latest command. */
-    private static final int ev_runLatest = 304;
+    private static final int EV_LATEST = 304;
 
     /** This events occurs when the solver has finished all its solvings. */
-    static final int ev_done = 305;
+    static final int EV_DONE = 305;
 
     /** This events occurs when the solver has failed. */
-    static final int ev_fail = 306;
+    static final int EV_FAIL = 306;
 
     /** This event displays the latest instance. */
-    private static final int ev_showLatest = 307;
+    private static final int EV_SHOW_LATEST = 307;
 
     /** This event displays the meta model. */
-    private static final int ev_showMetaModel = 308;
+    private static final int EV_SHOW_METAMODEL = 308;
 
     /** This event displays a particular instance. */
-    static final int evs_visualize = 309;
+    static final int EVS_VISUALIZE = 309;
 
     /** This event changes the latest instance. */
-    static final int evs_setLatest = 310;
+    static final int EVS_SET_LATEST = 310;
 
     /** This event happens when the user tries to load the evaluator from the main GUI. */
-    private static final int ev_loadEvaluator = 311;
+    private static final int EV_LOAD_EVALUATOR = 311;
 
     /** This event refreshes the "Options" menu. */
-    private static final int ev_refreshOption = 401;
+    private static final int EV_REFRESH_OPTION = 401;
 
     /** This event refreshes the main window's "window" menu. */
-    private static final int ev_refreshWindow = 501;
+    private static final int EV_REFRESH_WINDOW = 501;
 
     /** This event refreshes the visualizer window's "window" menu. */
-    private static final int ev_refreshWindow2 = 502;
+    private static final int EV_REFRESH_VIZWINDOW = 502;
 
     /** This event bring this window to the foreground. */
-    private static final int ev_show = 503;
+    private static final int EV_SHOW = 503;
 
     /** This event minimizes the window. */
-    private static final int ev_minimize = 504;
+    private static final int EV_MINIMIZE = 504;
 
     /** This event alternatingly maximizes or restores the window. */
-    private static final int ev_maximize = 505;
+    private static final int EV_MAXIMIZE = 505;
 
     /** This event displays the help html. */
-    private static final int ev_help = 601;
+    private static final int EV_HELP = 601;
 
     /** This event displays the about box. */
-    private static final int ev_about = 602;
+    private static final int EV_ABOUT = 602;
 
     /** This event displays the license box. */
-    private static final int ev_license = 603;
+    private static final int EV_LICENSE = 603;
 
     //====== Event Handler ========================================================================================//
 
@@ -698,7 +698,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     @SuppressWarnings("deprecation")
     public boolean run(final int key) {
 
-        if (key==ev_clearTemp) {
+        if (key==EV_CLEAR_TEMP) {
             Helper.clearTemporarySpace();
             copyFromJAR();
             log.logBold("Temporary directory has been cleared.\n\n");
@@ -706,24 +706,24 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             log.flush();
         }
 
-        if (key==ev_loadEvaluator) {
+        if (key==EV_LOAD_EVALUATOR) {
             log.logRed("Note: the evaluator is now in the visualizer.\n"
             +"Just click the \"Evaluator\" toolbar button\n"
             +"when an instance is shown in the visualizer.\n");
             log.flush();
         }
 
-        if (key==ev_open || key==ev_builtin) {
-            String start = (key==ev_open) ? null : (Helper.alloyHome()+File.separatorChar+"models");
+        if (key==EV_OPEN || key==EV_BUILTIN) {
+            String start = (key==EV_OPEN) ? null : (Helper.alloyHome()+File.separatorChar+"models");
             File file=OurDialog.askFile(frame, true, start, openAlsOnly?".als":"", ".als files");
             if (file==null) return false;
             if (!file.getPath().toLowerCase(Locale.US).endsWith(".als")) openAlsOnly=false;
-            if (key==ev_open) Util.setCurrentDirectory(file.getParentFile());
-            return run(evs_open, file.getPath());
+            if (key==EV_OPEN) Util.setCurrentDirectory(file.getParentFile());
+            return run(EVS_OPEN, file.getPath());
         }
 
-        if ((key==ev_save || key==ev_saveAs) && !mode_externalEditor) {
-            String ans=text.save(key==ev_saveAs);
+        if ((key==EV_SAVE || key==EV_SAVE_AS) && !mode_externalEditor) {
+            String ans=text.save(key==EV_SAVE_AS);
             if (ans==null) return false;
             notifyChange();
             addHistory(ans);
@@ -731,61 +731,61 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             return true;
         }
 
-        if (key==ev_close) {
+        if (key==EV_CLOSE) {
             text.close();
         }
 
-        if (key==ev_quit || key==ev_dispose) {
+        if (key==EV_QUIT || key==EV_DISPOSE) {
             if (text.closeAll()) System.exit(0);
         }
 
-        if (key==ev_refreshEdit) {
+        if (key==EV_REFRESH_EDIT) {
             boolean canUndo = !mode_externalEditor && text.canUndo();
             boolean canRedo = !mode_externalEditor && text.canRedo();
             editmenu.removeAll();
-            OurUtil.makeMenuItem(editmenu, "Undo", canUndo, KeyEvent.VK_Z, KeyEvent.VK_Z, this, ev_undo);
+            OurUtil.makeMenuItem(editmenu, "Undo", canUndo, KeyEvent.VK_Z, KeyEvent.VK_Z, this, EV_UNDO);
             if (Util.onMac())
-                OurUtil.makeMenuItemWithShift(editmenu, "Redo", KeyEvent.VK_Z, new MultiRunner(this,ev_redo)).setEnabled(canRedo);
+                OurUtil.makeMenuItemWithShift(editmenu, "Redo", KeyEvent.VK_Z, new MultiRunner(this,EV_REDO)).setEnabled(canRedo);
             else
-                OurUtil.makeMenuItem(editmenu, "Redo", canRedo, KeyEvent.VK_Y, KeyEvent.VK_Y, this, ev_redo);
+                OurUtil.makeMenuItem(editmenu, "Redo", canRedo, KeyEvent.VK_Y, KeyEvent.VK_Y, this, EV_REDO);
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Cut"           , !mode_externalEditor, KeyEvent.VK_X,        KeyEvent.VK_X,         this, ev_cut);
-            OurUtil.makeMenuItem(editmenu,"Copy"          , true,                 KeyEvent.VK_C,        KeyEvent.VK_C,         this, ev_copy);
-            OurUtil.makeMenuItem(editmenu,"Paste"         , !mode_externalEditor, KeyEvent.VK_V,        KeyEvent.VK_V,         this, ev_paste);
+            OurUtil.makeMenuItem(editmenu,"Cut"           , !mode_externalEditor, KeyEvent.VK_X,        KeyEvent.VK_X,         this, EV_CUT);
+            OurUtil.makeMenuItem(editmenu,"Copy"          , true,                 KeyEvent.VK_C,        KeyEvent.VK_C,         this, EV_COPY);
+            OurUtil.makeMenuItem(editmenu,"Paste"         , !mode_externalEditor, KeyEvent.VK_V,        KeyEvent.VK_V,         this, EV_PASTE);
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Go To..."      , !mode_externalEditor, KeyEvent.VK_T,        KeyEvent.VK_T,         this, ev_goTo);
-            OurUtil.makeMenuItem(editmenu,"Previous File" , text.getTabCount()>1, KeyEvent.VK_PAGE_UP,  KeyEvent.VK_PAGE_UP,   this, ev_goToPrevFile);
-            OurUtil.makeMenuItem(editmenu,"Next File"     , text.getTabCount()>1, KeyEvent.VK_PAGE_DOWN,KeyEvent.VK_PAGE_DOWN, this, ev_goToNextFile);
+            OurUtil.makeMenuItem(editmenu,"Go To..."      , !mode_externalEditor, KeyEvent.VK_T,        KeyEvent.VK_T,         this, EV_GOTO);
+            OurUtil.makeMenuItem(editmenu,"Previous File" , text.getTabCount()>1, KeyEvent.VK_PAGE_UP,  KeyEvent.VK_PAGE_UP,   this, EV_GOTO_PREV_FILE);
+            OurUtil.makeMenuItem(editmenu,"Next File"     , text.getTabCount()>1, KeyEvent.VK_PAGE_DOWN,KeyEvent.VK_PAGE_DOWN, this, EV_GOTO_NEXT_FILE);
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Find..."       , !mode_externalEditor, KeyEvent.VK_F,        KeyEvent.VK_F,         this, ev_find);
-            OurUtil.makeMenuItem(editmenu,"Find Next"     , !mode_externalEditor, KeyEvent.VK_G,        KeyEvent.VK_G,         this, ev_findNext);
+            OurUtil.makeMenuItem(editmenu,"Find..."       , !mode_externalEditor, KeyEvent.VK_F,        KeyEvent.VK_F,         this, EV_FIND);
+            OurUtil.makeMenuItem(editmenu,"Find Next"     , !mode_externalEditor, KeyEvent.VK_G,        KeyEvent.VK_G,         this, EV_FIND_NEXT);
         }
 
-        if (key==ev_undo && !mode_externalEditor && text.canUndo()) text.undo();
+        if (key==EV_UNDO && !mode_externalEditor && text.canUndo()) text.undo();
 
-        if (key==ev_redo && !mode_externalEditor && text.canRedo()) text.redo();
+        if (key==EV_REDO && !mode_externalEditor && text.canRedo()) text.redo();
 
-        if (key==ev_copy) { if (lastFocusIsOnEditor && !mode_externalEditor) text.text().copy(); else log.copy(); }
+        if (key==EV_COPY) { if (lastFocusIsOnEditor && !mode_externalEditor) text.text().copy(); else log.copy(); }
 
-        if (key==ev_cut) if (lastFocusIsOnEditor && !mode_externalEditor) text.text().cut();
+        if (key==EV_CUT) if (lastFocusIsOnEditor && !mode_externalEditor) text.text().cut();
 
-        if (key==ev_paste) if (lastFocusIsOnEditor && !mode_externalEditor) text.text().paste();
+        if (key==EV_PASTE) if (lastFocusIsOnEditor && !mode_externalEditor) text.text().paste();
 
-        if (key==ev_logFocused) lastFocusIsOnEditor=false;
+        if (key==EV_LOG_IS_FOCUSED) lastFocusIsOnEditor=false;
 
-        if (key==ev_goToPrevFile) {
+        if (key==EV_GOTO_PREV_FILE) {
             int i=text.getSelectedIndex()-1;
             if (i<0) i=text.getTabCount()-1;
             text.setSelectedIndex(i);
         }
 
-        if (key==ev_goToNextFile) {
+        if (key==EV_GOTO_NEXT_FILE) {
             int i=text.getSelectedIndex()+1;
             if (i>=text.getTabCount()) i=0;
             text.setSelectedIndex(i);
         }
 
-        if (key==ev_goTo && !mode_externalEditor) {
+        if (key==EV_GOTO && !mode_externalEditor) {
             JTextField y=OurUtil.textfield("",10);
             JTextField x=OurUtil.textfield("",10);
             if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return false;
@@ -808,7 +808,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
         }
 
-        if (key==ev_find && !mode_externalEditor) {
+        if (key==EV_FIND && !mode_externalEditor) {
             JTextField x=OurUtil.textfield(lastFind,30);
             x.selectAll();
             JCheckBox c=new JCheckBox("Case Sensitive?",lastFindCaseSensitive);
@@ -820,10 +820,10 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             lastFind=x.getText();
             lastFindCaseSensitive=c.getModel().isSelected();
             lastFindForward=!b.getModel().isSelected();
-            return run(ev_findNext);
+            return run(EV_FIND_NEXT);
         }
 
-        if (key==ev_findNext && lastFind.length()>0 && !mode_externalEditor) {
+        if (key==EV_FIND_NEXT && lastFind.length()>0 && !mode_externalEditor) {
             JTextArea t=text.text();
             String all=t.getText();
             int i=Util.indexOf(all, lastFind, t.getCaretPosition()+(lastFindForward?0:-1),lastFindForward,lastFindCaseSensitive);
@@ -837,15 +837,15 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             t.requestFocusInWindow();
         }
 
-        if (key==ev_refreshRun) {
+        if (key==EV_REFRESH_RUN) {
             KeyStroke ac=KeyStroke.getKeyStroke(KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
             runmenu.removeAll();
             OurUtil.makeMenuItem(runmenu, "Execute Latest Command",
-                    true, KeyEvent.VK_E, KeyEvent.VK_E, this, ev_runLatest);
+                    true, KeyEvent.VK_E, KeyEvent.VK_E, this, EV_LATEST);
             runmenu.add(new JSeparator());
-            OurUtil.makeMenuItem(runmenu, "Show Latest Instance",  latestInstance.length()>0, KeyEvent.VK_L,  KeyEvent.VK_L, this, ev_showLatest);
-            OurUtil.makeMenuItem(runmenu, "Show Metamodel",        true,                      KeyEvent.VK_M,  KeyEvent.VK_M, this, ev_showMetaModel);
-            OurUtil.makeMenuItem(runmenu, "Open Evaluator",        true,                      KeyEvent.VK_V,  -1,            this, ev_loadEvaluator);
+            OurUtil.makeMenuItem(runmenu, "Show Latest Instance",  latestInstance.length()>0, KeyEvent.VK_L,  KeyEvent.VK_L, this, EV_SHOW_LATEST);
+            OurUtil.makeMenuItem(runmenu, "Show Metamodel",        true,                      KeyEvent.VK_M,  KeyEvent.VK_M, this, EV_SHOW_METAMODEL);
+            OurUtil.makeMenuItem(runmenu, "Open Evaluator",        true,                      KeyEvent.VK_V,  -1,            this, EV_LOAD_EVALUATOR);
             List<Command> cp = (mode_externalEditor ? null : commands);
             if (cp==null) {
                 try {
@@ -893,41 +893,41 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             runmenu.remove(0);
             for(int i=0; i<cp.size(); i++) {
                 JMenuItem y = OurUtil.makeMenuItem(cp.get(i).toString(), null);
-                y.addActionListener(new MultiRunner(this, evi_execute, i));
+                y.addActionListener(new MultiRunner(this, EVI_EXECUTE, i));
                 if (i==latestCommand) { y.setMnemonic(KeyEvent.VK_E); y.setAccelerator(ac); }
                 runmenu.add(y,i);
             }
             if (cp.size()>=2) {
                 JMenuItem y = OurUtil.makeMenuItem("Execute All", null);
                 y.setMnemonic(KeyEvent.VK_A);
-                y.addActionListener(new MultiRunner(this, evi_execute, -1));
+                y.addActionListener(new MultiRunner(this, EVI_EXECUTE, -1));
                 runmenu.add(y,0);
                 runmenu.add(new JSeparator(),1);
             }
         }
 
-        if (key==ev_runLatest) {
-            run(ev_refreshRun);
+        if (key==EV_LATEST) {
+            run(EV_REFRESH_RUN);
             OurUtil.enableAll(runmenu);
             if (commands==null) return false;
             int n=commands.size();
             if (n<=0) { log.logRed("There are no commands to execute.\n\n"); return false; }
             if (latestCommand>=n) latestCommand=n-1;
             if (latestCommand<0) latestCommand=0;
-            run(evi_execute, latestCommand);
+            run(EVI_EXECUTE, latestCommand);
         }
 
-        if (key==ev_showMetaModel) {
-            run(ev_refreshRun);
+        if (key==EV_SHOW_METAMODEL) {
+            run(EV_REFRESH_RUN);
             OurUtil.enableAll(runmenu);
-            if (commands!=null) run(evi_execute, -2);
+            if (commands!=null) run(EVI_EXECUTE, -2);
         }
 
-        if (key==ev_done || key==ev_fail || key==ev_stop) {
-            if (key==ev_stop || key==ev_fail) {
+        if (key==EV_DONE || key==EV_FAIL || key==EV_STOP) {
+            if (key==EV_STOP || key==EV_FAIL) {
                 log.escSetProcess(null); // Prevents the subprocess from writing any more text to the log
                 log.escReset();
-                if (key==ev_stop && subrunning) { log.logBold("\nSolving Stopped.\n"); log.logDivider(); }
+                if (key==EV_STOP && subrunning) { log.logBold("\nSolving Stopped.\n"); log.logDivider(); }
                 if (subprocess!=null) { subprocess.destroy(); subprocess=null; }
             } else if (subrunning && subprocess!=null) {
                 try {
@@ -955,54 +955,54 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             if (latestAutoInstance.length()==0) return true;
             String f=latestAutoInstance;
             latestAutoInstance="";
-            if (subrunningTask==2) viz.run(VizGUI.evs_loadInstanceForcefully, f);
-            else if (mode_autoVisualize || subrunningTask==1) run(evs_visualize, "XML: "+f);
+            if (subrunningTask==2) viz.run(VizGUI.EVS_LOAD_INSTANCE_FORCEFULLY, f);
+            else if (mode_autoVisualize || subrunningTask==1) run(EVS_VISUALIZE, "XML: "+f);
         }
 
-        if (key==ev_refreshFile) {
+        if (key==EV_REFRESH_FILE) {
             JMenu recentmenu;
             String open=(mode_externalEditor?"Load":"Open");
             filemenu.removeAll();
-            if (!mode_externalEditor) OurUtil.makeMenuItem(filemenu, "New", true,KeyEvent.VK_N,KeyEvent.VK_N, this, ev_new);
-            OurUtil.makeMenuItem(filemenu, open+"...",               true,KeyEvent.VK_O,KeyEvent.VK_O, this, ev_open);
-            OurUtil.makeMenuItem(filemenu, open+" Sample Models...", true,KeyEvent.VK_B,-1, this, ev_builtin);
+            if (!mode_externalEditor) OurUtil.makeMenuItem(filemenu, "New", true,KeyEvent.VK_N,KeyEvent.VK_N, this, EV_NEW);
+            OurUtil.makeMenuItem(filemenu, open+"...",               true,KeyEvent.VK_O,KeyEvent.VK_O, this, EV_OPEN);
+            OurUtil.makeMenuItem(filemenu, open+" Sample Models...", true,KeyEvent.VK_B,-1, this, EV_BUILTIN);
             filemenu.add(recentmenu = OurUtil.makeMenu(open+" Recent"));
             if (!mode_externalEditor) {
-                OurUtil.makeMenuItem(filemenu, "Save", true,KeyEvent.VK_S,KeyEvent.VK_S, this, ev_save);
+                OurUtil.makeMenuItem(filemenu, "Save", true,KeyEvent.VK_S,KeyEvent.VK_S, this, EV_SAVE);
                 if (Util.onMac())
-                    OurUtil.makeMenuItemWithShift(filemenu,"Save As...",KeyEvent.VK_S, new MultiRunner(this, ev_saveAs));
+                    OurUtil.makeMenuItemWithShift(filemenu,"Save As...",KeyEvent.VK_S, new MultiRunner(this, EV_SAVE_AS));
                 else
-                    OurUtil.makeMenuItem(filemenu, "Save As...", true, KeyEvent.VK_A, -1, this, ev_saveAs);
+                    OurUtil.makeMenuItem(filemenu, "Save As...", true, KeyEvent.VK_A, -1, this, EV_SAVE_AS);
             }
-            OurUtil.makeMenuItem(filemenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, this, ev_close);
-            OurUtil.makeMenuItem(filemenu, "Clear Temporary Directory", true, -1, -1, this, ev_clearTemp);
-            OurUtil.makeMenuItem(filemenu, "Quit", true, KeyEvent.VK_Q, (Util.onMac()?-1:KeyEvent.VK_Q), this, ev_quit);
+            OurUtil.makeMenuItem(filemenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, this, EV_CLOSE);
+            OurUtil.makeMenuItem(filemenu, "Clear Temporary Directory", true, -1, -1, this, EV_CLEAR_TEMP);
+            OurUtil.makeMenuItem(filemenu, "Quit", true, KeyEvent.VK_Q, (Util.onMac()?-1:KeyEvent.VK_Q), this, EV_QUIT);
             boolean found=false;
             for(Util.StringPref p: new Util.StringPref[]{ Model0, Model1, Model2, Model3 }) {
                 final String name = p.get();
                 if (name.length()==0) continue;
                 found=true;
-                OurUtil.makeMenuItem(recentmenu, name, -1, -1, new MultiRunner(this, evs_open, name));
+                OurUtil.makeMenuItem(recentmenu, name, -1, -1, new MultiRunner(this, EVS_OPEN, name));
             }
             recentmenu.addSeparator();
-            OurUtil.makeMenuItem(recentmenu, "Clear Menu", true, -1, -1, this, ev_clearRecent);
+            OurUtil.makeMenuItem(recentmenu, "Clear Menu", true, -1, -1, this, EV_CLEAR_RECENT);
             recentmenu.setEnabled(found);
         }
 
-        if (key==ev_clearRecent) {Model0.set(""); Model1.set(""); Model2.set(""); Model3.set("");}
+        if (key==EV_CLEAR_RECENT) {Model0.set(""); Model1.set(""); Model2.set(""); Model3.set("");}
 
-        if (key==ev_new && !mode_externalEditor) {
+        if (key==EV_NEW && !mode_externalEditor) {
             text.newTab();
             notifyChange();
-            run(ev_show);
+            run(EV_SHOW);
         }
 
-        if (key==ev_showLatest) {
+        if (key==EV_SHOW_LATEST) {
             if (latestInstance.length()==0) log.logRed("No previous instances are available for viewing.\n\n");
-            else run(evs_visualize, "XML: "+latestInstance);
+            else run(EVS_VISUALIZE, "XML: "+latestInstance);
         }
 
-        if (key==ev_refreshOption) {
+        if (key==EV_REFRESH_OPTION) {
             optmenu.removeAll();
             //
             final boolean showWelcome=Welcome.get() < welcomeLevel;
@@ -1148,7 +1148,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                     all.add(status, BorderLayout.SOUTH);
                     notifyChange();
                     frame.validate();
-                    SimpleGUI.this.run(ev_refreshFile);
+                    SimpleGUI.this.run(EV_REFRESH_FILE);
                     OurUtil.enableAll(filemenu);
                     if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
                     lastFocusIsOnEditor = !mode_externalEditor;
@@ -1169,24 +1169,24 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             if (mode_externalEditor && splitpane.getBottomComponent()!=null) {mode_externalEditor=false; ext.run();}
         }
 
-        if (key==ev_minimize) frame.setExtendedState(JFrame.ICONIFIED);
+        if (key==EV_MINIMIZE) frame.setExtendedState(JFrame.ICONIFIED);
 
-        if (key==ev_maximize) {
+        if (key==EV_MAXIMIZE) {
             if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
                 frame.setExtendedState(JFrame.NORMAL);
             else
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         }
 
-        if (key==ev_refreshWindow || key==ev_refreshWindow2) {
-            JMenu w=(key==ev_refreshWindow)?windowmenu:windowmenu2;
+        if (key==EV_REFRESH_WINDOW || key==EV_REFRESH_VIZWINDOW) {
+            JMenu w=(key==EV_REFRESH_WINDOW)?windowmenu:windowmenu2;
             w.removeAll();
-            if (key==ev_refreshWindow) {
-                OurUtil.makeMenuItem(w, "Minimize", true, KeyEvent.VK_M, -1, this, ev_minimize).setIcon(iconNo);
-                OurUtil.makeMenuItem(w, "Zoom", true, -1, -1, this, ev_maximize).setIcon(iconNo);
+            if (key==EV_REFRESH_WINDOW) {
+                OurUtil.makeMenuItem(w, "Minimize", true, KeyEvent.VK_M, -1, this, EV_MINIMIZE).setIcon(iconNo);
+                OurUtil.makeMenuItem(w, "Zoom", true, -1, -1, this, EV_MAXIMIZE).setIcon(iconNo);
             } else {
-                OurUtil.makeMenuItem(w, "Minimize", true, KeyEvent.VK_M, -1, viz, VizGUI.ev_minimize).setIcon(iconNo);
-                OurUtil.makeMenuItem(w, "Zoom", true, -1, -1, viz, VizGUI.ev_maximize).setIcon(iconNo);
+                OurUtil.makeMenuItem(w, "Minimize", true, KeyEvent.VK_M, -1, viz, VizGUI.EV_MINIMIZE).setIcon(iconNo);
+                OurUtil.makeMenuItem(w, "Zoom", true, -1, -1, viz, VizGUI.EV_MAXIMIZE).setIcon(iconNo);
             }
             w.addSeparator();
             List<String> filenames=text.getFilenames();
@@ -1197,27 +1197,27 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                     it = OurUtil.makeMenuItem("Alloy Analyzer", null);
                 else
                     it = OurUtil.makeMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""), null);
-                it.setIcon((f.equals(text.getFilename()) && key==ev_refreshWindow) ? iconYes : iconNo);
+                it.setIcon((f.equals(text.getFilename()) && key==EV_REFRESH_WINDOW) ? iconYes : iconNo);
                 if (f.equals(text.getFilename()))
-                  it.addActionListener(new MultiRunner(this, ev_show));
+                  it.addActionListener(new MultiRunner(this, EV_SHOW));
                 else
-                  it.addActionListener(new MultiRunner(this, evs_open, f));
+                  it.addActionListener(new MultiRunner(this, EVS_OPEN, f));
                 w.add(it);
             }
             if (viz!=null) for(String f:viz.getInstances()) {
                 JMenuItem it = OurUtil.makeMenuItem("Instance: "+viz.getInstanceTitle(f), null);
-                it.setIcon( (key==ev_refreshWindow2 && f.equals(viz.getXMLfilename())) ? iconYes : iconNo);
-                it.addActionListener(new MultiRunner(this, evs_visualize, "XML: "+f));
+                it.setIcon( (key==EV_REFRESH_VIZWINDOW && f.equals(viz.getXMLfilename())) ? iconYes : iconNo);
+                it.addActionListener(new MultiRunner(this, EVS_VISUALIZE, "XML: "+f));
                 w.add(it);
             }
         }
 
-        if (key==ev_show) {
+        if (key==EV_SHOW) {
             bringup(frame);
             if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
         }
 
-        if (key==ev_help) try {
+        if (key==EV_HELP) try {
             int w=OurUtil.getScreenWidth(), h=OurUtil.getScreenHeight();
             final JFrame frame = new JFrame();
             final JEditorPane html1 = new JEditorPane("text/html", "");
@@ -1255,7 +1255,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             html2.requestFocusInWindow();
         } catch(Throwable ex) { return false; }
 
-        if (key==ev_license) {
+        if (key==EV_LICENSE) {
             JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
             String alloytxt;
             try {alloytxt=Util.readAll(true,"LICENSES/Alloy.txt");} catch(IOException ex) {return false;}
@@ -1302,7 +1302,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             dialog.setVisible(true);
         }
 
-        if (key==ev_about) {
+        if (key==EV_ABOUT) {
             Icon icon=OurUtil.loadIcon("images/logo.gif");
             JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
             Object[] array = {
@@ -1340,7 +1340,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
      * The event handler for events with an int argument.
      */
     public boolean run(final int key, final int index) {
-        if (key != evi_execute) return true;
+        if (key != EVI_EXECUTE) return true;
         if (subrunning) return false;
         if (index==(-2)) subrunningTask=1; else subrunningTask=0;
         latestAutoInstance="";
@@ -1350,7 +1350,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             if (latestCommand<0) latestCommand=0;
         }
         // To update the accelerator to point to the command actually chosen
-        run(ev_refreshRun); OurUtil.enableAll(runmenu);
+        run(EV_REFRESH_RUN); OurUtil.enableAll(runmenu);
         if (commands==null) return false;
         if (commands.size()==0 && index!=-2) { log.logRed("There are no commands to execute.\n\n"); return false; }
         int i=index;
@@ -1380,13 +1380,13 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 log.logBold("Unknown exception: "+ex+"\nStackTrace:\n"+MailBug.dump(err));
                 System.err.flush();
             }
-            run(ev_done);
+            run(EV_DONE);
             return true;
         }
         if (!prepareSubJVM()) {
             log.logBold("Error launching the sub-JVM.\n\"java\" is not in your current program search path.\n");
             log.flush();
-            run(ev_stop);
+            run(EV_STOP);
             return false;
         }
         try {
@@ -1411,7 +1411,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             log.logDivider();
             log.flush();
             subrunning=false;
-            run(ev_stop);
+            run(EV_STOP);
         }
         return true;
     }
@@ -1451,7 +1451,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             return true;
         }
 
-        if (key==evs_update) {
+        if (key==EVS_UPDATE) {
             String result=arg;
             int num=0;
             int len=result.length();
@@ -1473,12 +1473,12 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             log.flush();
         }
 
-        if (key==evs_setLatest) {
+        if (key==EVS_SET_LATEST) {
             latestInstance=arg;
             latestAutoInstance=arg;
         }
 
-        if (key==evs_visualize) {
+        if (key==EVS_VISUALIZE) {
             text.removeAllHighlights();
             if (arg.startsWith("MSG: ")) {
                 OurDialog.showtext("Detailed Message", arg.substring(5), false);
@@ -1526,19 +1526,19 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             if (arg.startsWith("XML: ")) {
                 String filename=Util.canon(arg.substring(5));
-                viz.run(VizGUI.evs_loadInstance, filename);
+                viz.run(VizGUI.EVS_LOAD_INSTANCE, filename);
             }
         }
 
-        if (key==evs_open) {
+        if (key==EVS_OPEN) {
             String f=Util.canon(arg);
             if (!text.newTab(f)) {
-                run(ev_show);
+                run(EV_SHOW);
                 log.logRed("Cannot open the file "+f+"\n\n");
                 return false;
             }
             if (text.isFile()) addHistory(f);
-            run(ev_show);
+            run(EV_SHOW);
             if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
             return true;
         }
@@ -1644,7 +1644,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         // Put up a slash screen
         frame=new JFrame("Alloy Analyzer");
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        frame.addWindowListener(new MultiRunner(this, ev_dispose));
+        frame.addWindowListener(new MultiRunner(this, EV_DISPOSE));
         frame.addComponentListener(this);
         frame.pack();
         frame.setSize(width,height);
@@ -1672,16 +1672,16 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
 
         // Create the menu bar
         JMenuBar bar = OurUtil.makeMenuBar();
-        filemenu = OurUtil.makeMenu(bar, "File", KeyEvent.VK_F, this, ev_refreshFile);
-        editmenu = OurUtil.makeMenu(bar, "Edit", KeyEvent.VK_E, this, ev_refreshEdit);
-        runmenu = OurUtil.makeMenu(bar, "Execute", KeyEvent.VK_X, this, ev_refreshRun);
-        optmenu = OurUtil.makeMenu(bar, "Options", KeyEvent.VK_O, this, ev_refreshOption);
-        windowmenu = OurUtil.makeMenu(bar, "Window", KeyEvent.VK_W, this, ev_refreshWindow);
-        windowmenu2 = OurUtil.makeMenu(null, "Window", KeyEvent.VK_W, this, ev_refreshWindow2);
+        filemenu = OurUtil.makeMenu(bar, "File", KeyEvent.VK_F, this, EV_REFRESH_FILE);
+        editmenu = OurUtil.makeMenu(bar, "Edit", KeyEvent.VK_E, this, EV_REFRESH_EDIT);
+        runmenu = OurUtil.makeMenu(bar, "Execute", KeyEvent.VK_X, this, EV_REFRESH_RUN);
+        optmenu = OurUtil.makeMenu(bar, "Options", KeyEvent.VK_O, this, EV_REFRESH_OPTION);
+        windowmenu = OurUtil.makeMenu(bar, "Window", KeyEvent.VK_W, this, EV_REFRESH_WINDOW);
+        windowmenu2 = OurUtil.makeMenu(null, "Window", KeyEvent.VK_W, this, EV_REFRESH_VIZWINDOW);
         helpmenu = OurUtil.makeMenu(bar, "Help", KeyEvent.VK_H, null, 0);
-        if (!Util.onMac()) OurUtil.makeMenuItem(helpmenu, "About Alloy...", true, KeyEvent.VK_A, -1, this, ev_about);
-        OurUtil.makeMenuItem(helpmenu, "Quick Guide", true, KeyEvent.VK_Q, -1, this, ev_help);
-        OurUtil.makeMenuItem(helpmenu, "See the Copyright Notices...", true, KeyEvent.VK_L, -1, this, ev_license);
+        if (!Util.onMac()) OurUtil.makeMenuItem(helpmenu, "About Alloy...", true, KeyEvent.VK_A, -1, this, EV_ABOUT);
+        OurUtil.makeMenuItem(helpmenu, "Quick Guide", true, KeyEvent.VK_Q, -1, this, EV_HELP);
+        OurUtil.makeMenuItem(helpmenu, "See the Copyright Notices...", true, KeyEvent.VK_L, -1, this, EV_LICENSE);
 
         // Pre-load the visualizer
         viz=new VizGUI(false, "", windowmenu2, this, evaluator);
@@ -1690,15 +1690,15 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         toolbar=new JToolBar();
         toolbar.setFloatable(false);
         if (!Util.onMac()) toolbar.setBackground(background);
-        toolbar.add(newbutton=OurUtil.button("New","Starts a new blank model","images/24_new.gif",this,ev_new));
-        toolbar.add(openbutton=OurUtil.button("Open","Opens an existing model","images/24_open.gif",this,ev_open));
-        toolbar.add(loadbutton=OurUtil.button("Load","Chooses a model to analyze","images/24_open.gif",this,ev_open));
+        toolbar.add(newbutton=OurUtil.button("New","Starts a new blank model","images/24_new.gif",this,EV_NEW));
+        toolbar.add(openbutton=OurUtil.button("Open","Opens an existing model","images/24_open.gif",this,EV_OPEN));
+        toolbar.add(loadbutton=OurUtil.button("Load","Chooses a model to analyze","images/24_open.gif",this,EV_OPEN));
         loadbutton.setVisible(false);
-        toolbar.add(savebutton=OurUtil.button("Save","Saves the current model","images/24_save.gif",this,ev_save));
-        toolbar.add(runbutton=OurUtil.button("Execute","Executes the latest command","images/24_execute.gif",this,ev_runLatest));
-        toolbar.add(stopbutton=OurUtil.button("Stop","Stops the current analysis","images/24_execute_abort2.gif",this,ev_stop));
+        toolbar.add(savebutton=OurUtil.button("Save","Saves the current model","images/24_save.gif",this,EV_SAVE));
+        toolbar.add(runbutton=OurUtil.button("Execute","Executes the latest command","images/24_execute.gif",this,EV_LATEST));
+        toolbar.add(stopbutton=OurUtil.button("Stop","Stops the current analysis","images/24_execute_abort2.gif",this,EV_STOP));
         stopbutton.setVisible(false);
-        toolbar.add(showbutton=OurUtil.button("Show","Shows the latest instance","images/24_graph.gif",this,ev_showLatest));
+        toolbar.add(showbutton=OurUtil.button("Show","Shows the latest instance","images/24_graph.gif",this,EV_SHOW_LATEST));
         toolbar.add(Box.createHorizontalGlue());
         toolbar.setBorder(new OurBorder(false,false,false,false));
 
@@ -1728,7 +1728,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         log.logBold("Alloy Analyzer "+Version.version()+" (build date: "+Version.buildDate()+")\n\n");
 
         // If on Mac, then register an application listener
-        if (Util.onMac()) MacUtil.registerApplicationListener(this, ev_show, ev_about, evs_open, ev_quit);
+        if (Util.onMac()) MacUtil.registerApplicationListener(this, EV_SHOW, EV_ABOUT, EVS_OPEN, EV_QUIT);
 
         // Add the new JNI location to the java.library.path
         try {
@@ -1816,20 +1816,20 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         }
 
         // Refreshes all the menu items
-        run(ev_refreshFile); OurUtil.enableAll(filemenu);
-        run(ev_refreshEdit); OurUtil.enableAll(editmenu);
-        run(ev_refreshRun); OurUtil.enableAll(runmenu);
-        run(ev_refreshOption);
-        run(ev_refreshWindow); OurUtil.enableAll(windowmenu);
+        run(EV_REFRESH_FILE); OurUtil.enableAll(filemenu);
+        run(EV_REFRESH_EDIT); OurUtil.enableAll(editmenu);
+        run(EV_REFRESH_RUN); OurUtil.enableAll(runmenu);
+        run(EV_REFRESH_OPTION);
+        run(EV_REFRESH_WINDOW); OurUtil.enableAll(windowmenu);
         frame.setJMenuBar(bar);
 
         // Open the given file, if a filename is given in the command line
         if (args.length==1) {
             File f=new File(args[0]);
-            if (f.exists()) run(evs_open, f.getPath());
+            if (f.exists()) run(EVS_OPEN, f.getPath());
         } else if (args.length==2 && args[0].equals("-open")) {
             File f=new File(args[1]);
-            if (f.exists()) run(evs_open, f.getPath());
+            if (f.exists()) run(EVS_OPEN, f.getPath());
         }
 
         // Update the title and status bar
@@ -1844,7 +1844,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 // Now that we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 (which consists of Alloy4 BETA1..BETA7)
                 new Subprocess(20000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
                 // Now, display the result of the alloy.mit.edu version polling
-                SwingUtilities.invokeLater(new MultiRunner(SimpleGUI.this, evs_update, result));
+                SwingUtilities.invokeLater(new MultiRunner(SimpleGUI.this, EVS_UPDATE, result));
             }
         };
         (new Thread(r)).start();
@@ -1951,7 +1951,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             log.esc(process, new byte[]{SwingLogPanel.FLUSH}, 1);
             Util.close(input);
-            if (isStdout) SwingUtilities.invokeLater(new MultiRunner(SimpleGUI.this, ev_done));
+            if (isStdout) SwingUtilities.invokeLater(new MultiRunner(SimpleGUI.this, EV_DONE));
         }
     }
 

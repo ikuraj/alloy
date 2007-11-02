@@ -360,17 +360,17 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         // Create the menubar
         JMenuBar mb = OurUtil.makeMenuBar();
         JMenu fileMenu = OurUtil.makeMenu(mb, "File", KeyEvent.VK_F, null, 0);
-        OurUtil.makeMenuItem(fileMenu, "Open...", true, KeyEvent.VK_O, KeyEvent.VK_O, this, ev_loadInstance);
-        OurUtil.makeMenuItem(fileMenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, this, ev_close);
+        OurUtil.makeMenuItem(fileMenu, "Open...", true, KeyEvent.VK_O, KeyEvent.VK_O, this, EV_LOAD_INSTANCE);
+        OurUtil.makeMenuItem(fileMenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, this, EV_CLOSE);
         if (!standalone)
-            OurUtil.makeMenuItem(fileMenu, "Close All", true, KeyEvent.VK_A, -1, this, ev_closeAll);
+            OurUtil.makeMenuItem(fileMenu, "Close All", true, KeyEvent.VK_A, -1, this, EV_CLOSE_ALL);
         else
-            OurUtil.makeMenuItem(fileMenu, "Quit", true, KeyEvent.VK_Q, KeyEvent.VK_Q, this, ev_closeAll);
+            OurUtil.makeMenuItem(fileMenu, "Quit", true, KeyEvent.VK_Q, KeyEvent.VK_Q, this, EV_CLOSE_ALL);
         JMenu instanceMenu = OurUtil.makeMenu(mb, "Instance", KeyEvent.VK_I, null, 0);
-        enumerateMenu = OurUtil.makeMenuItem(instanceMenu, "Show Next Solution", true, KeyEvent.VK_N, KeyEvent.VK_N, this, ev_toolbarEnumerate);
-        thememenu = OurUtil.makeMenu(mb, "Theme", KeyEvent.VK_T, this, ev_theme);
+        enumerateMenu = OurUtil.makeMenuItem(instanceMenu, "Show Next Solution", true, KeyEvent.VK_N, KeyEvent.VK_N, this, EV_BAR_NEXT);
+        thememenu = OurUtil.makeMenu(mb, "Theme", KeyEvent.VK_T, this, EV_THEME);
         if (standalone || windowmenu==null)
-            this.windowmenu=(windowmenu=OurUtil.makeMenu(mb, "Window", KeyEvent.VK_W, this, ev_window));
+            this.windowmenu=(windowmenu=OurUtil.makeMenu(mb, "Window", KeyEvent.VK_W, this, EV_WINDOW));
         else
             this.windowmenu=windowmenu;
         mb.add(windowmenu);
@@ -394,45 +394,45 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         toolbar.setBorder(new EmptyBorder(0,0,0,0));
         if (!Util.onMac()) toolbar.setBackground(background);
         vizButton=makeSolutionButton("Viz",
-                "Show Visualization", "images/24_graph.gif", ev_toolbarViz);
+                "Show Visualization", "images/24_graph.gif", EV_BAR_VIZ);
         dotButton=makeSolutionButton("Dot",
-                "Show the Dot File for the Graph", "images/24_plaintext.gif", ev_toolbarDot);
+                "Show the Dot File for the Graph", "images/24_plaintext.gif", EV_BAR_DOT);
         xmlButton=makeSolutionButton("XML",
-                "Show XML", "images/24_plaintext.gif", ev_toolbarXML);
+                "Show XML", "images/24_plaintext.gif", EV_BAR_XML);
         treeButton=makeSolutionButton("Tree",
-                "Show Tree", "images/24_texttree.gif", ev_toolbarTree);
+                "Show Tree", "images/24_texttree.gif", EV_BAR_TREE);
         kodSrcButton=makeSolutionButton("KK In",
-                "Show KodKod Input", "images/24_plaintext.gif", ev_toolbarKodkodIn);
+                "Show KodKod Input", "images/24_plaintext.gif", EV_BAR_KODKOD_IN);
         kodInstButton=makeSolutionButton("KK Out",
-                "Show KodKod Instance", "images/24_plaintext.gif", ev_toolbarKodkodOut);
+                "Show KodKod Instance", "images/24_plaintext.gif", EV_BAR_KODKOD_OUT);
         plugin0Button=makeSolutionButton("Plugin",
-                "Run external plugin", "images/24_graph.gif", ev_toolbarPlugin0);
+                "Run external plugin", "images/24_graph.gif", EV_BAR_PLUGIN0);
         if (frame!=null) addDivider();
         toolbar.add(closeSettingsButton=OurUtil.button("Close",
-                "Close the theme customization panel", "images/24_settings_close2.gif", this, ev_toolbarCloseTheme));
+                "Close the theme customization panel", "images/24_settings_close2.gif", this, EV_BAR_CLOSE_THEME));
         toolbar.add(updateSettingsButton=OurUtil.button("Apply",
-                "Apply the changes to the current theme", "images/24_settings_apply2.gif", this, ev_toolbarApplyTheme));
+                "Apply the changes to the current theme", "images/24_settings_apply2.gif", this, EV_BAR_APPLY));
         toolbar.add(openSettingsButton=OurUtil.button("Theme",
-                "Open the theme customization panel", "images/24_settings.gif", this, ev_toolbarOpenTheme));
+                "Open the theme customization panel", "images/24_settings.gif", this, EV_BAR_OPEN_THEME));
         toolbar.add(magicLayout=OurUtil.button("Magic Layout",
-                "Automatic theme customization (will reset current theme)", "images/24_settings_apply2.gif", this, ev_magicLayout));
+                "Automatic theme customization (will reset current theme)", "images/24_settings_apply2.gif", this, EV_BAR_MAGIC_LAYOUT));
         toolbar.add(magicColour=OurUtil.button("Magic Colour",
-                "Automatic theme colour and shape customization", "images/24_settings_apply2.gif", this, ev_magicColour));
+                "Automatic theme colour and shape customization", "images/24_settings_apply2.gif", this, EV_BAR_MAGIC_COLOR));
         toolbar.add(openEvaluatorButton=OurUtil.button("Evaluator",
-                "Open the evaluator", "images/24_settings.gif", this, ev_toolbarOpenEvaluator));
+                "Open the evaluator", "images/24_settings.gif", this, EV_BAR_OPEN_EVAL));
         toolbar.add(closeEvaluatorButton=OurUtil.button("Close Evaluator",
-                "Close the evaluator", "images/24_settings_close2.gif", this, ev_toolbarCloseEvaluator));
+                "Close the evaluator", "images/24_settings_close2.gif", this, EV_BAR_CLOSE_EVAL));
         toolbar.add(enumerateButton=OurUtil.button("Next",
-                "Show the next solution", "images/24_history.gif", this, ev_toolbarEnumerate));
+                "Show the next solution", "images/24_history.gif", this, EV_BAR_NEXT));
         toolbar.add(projectionButton);
         toolbar.add(loadSettingsButton=OurUtil.button("Load",
-                "Load the theme customization from a theme file", "images/24_open.gif", this, ev_loadTheme));
+                "Load the theme customization from a theme file", "images/24_open.gif", this, EV_LOAD_THEME));
         toolbar.add(saveSettingsButton=OurUtil.button("Save",
-                "Save the current theme customization", "images/24_save.gif", this, ev_saveTheme));
+                "Save the current theme customization", "images/24_save.gif", this, EV_SAVE_THEME));
         toolbar.add(saveAsSettingsButton=OurUtil.button("Save As",
-                "Save the current theme customization as a new theme file", "images/24_save.gif", this, ev_saveThemeAs));
+                "Save the current theme customization as a new theme file", "images/24_save.gif", this, EV_SAME_THEME_AS));
         toolbar.add(resetSettingsButton=OurUtil.button("Reset",
-                "Reset the theme customization", "images/24_settings_close2.gif", this, ev_resetTheme));
+                "Reset the theme customization", "images/24_settings_close2.gif", this, EV_RESET_THEME));
         settingsOpen=0;
 
         // Create the horizontal split pane
@@ -449,10 +449,10 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
            frame.setSize(width,height);
            frame.setLocation(x,y);
            frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-           frame.addWindowListener(new MultiRunner(this, ev_close));
+           frame.addWindowListener(new MultiRunner(this, EV_CLOSE));
            frame.addComponentListener(this);
         }
-        if (xmlFileName.length()>0) run(evs_loadInstance, xmlFileName);
+        if (xmlFileName.length()>0) run(EVS_LOAD_INSTANCE, xmlFileName);
     }
 
     /** Invoked when the Visualizationwindow is resized. */
@@ -656,7 +656,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** Returns the VizViewer that contains the graph; can be null if the graph hasn't been loaded yet. */
     public VizViewer getViewer() {
         if (null == myGraphPanel) return null;
-        return myGraphPanel.do_getViewer();
+        return myGraphPanel.alloyGetViewer();
     }
 
     //========================================= EVENTS ============================================================================================
@@ -664,90 +664,90 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     //=============================================================================================================================================
 
     /** This event asks the user for a new XML file to load. */
-    public static final int ev_loadInstance = 101;
+    public static final int EV_LOAD_INSTANCE = 101;
 
     /** This event loads a new XML instance file if it's not the current file. */
-    public static final int evs_loadInstance = 102;
+    public static final int EVS_LOAD_INSTANCE = 102;
 
     /** This event loads a new XML instance file (reloading it from disk even if the filename equals the current filename) */
-    public static final int evs_loadInstanceForcefully = 103;
+    public static final int EVS_LOAD_INSTANCE_FORCEFULLY = 103;
 
     /**
      * This event closes the current XML instance; if there are previously loaded files, we will load one of them;
      * otherwise, this window will set itself as invisible (if not in standalone mode),
      * or it will terminate the entire application (if in standalone mode).
      */
-    public static final int ev_close = 104;
+    public static final int EV_CLOSE = 104;
 
     /**
      * This event closes every XML file.
      * if in standalone mode, the JVM will then shutdown; otherwise it will just set the window invisible.
      */
-    public static final int ev_closeAll = 105;
+    public static final int EV_CLOSE_ALL = 105;
 
     /** This event refreshes the "theme" menu. */
-    public static final int ev_theme = 201;
+    public static final int EV_THEME = 201;
 
     /** This events asks the user for a new theme file to load. */
-    public static final int ev_loadTheme = 202;
+    public static final int EV_LOAD_THEME = 202;
 
     /** This events asks the user for a new theme file to load. */
-    public static final int ev_loadProvidedTheme = 203;
+    public static final int EV_LOAD_SAMPLE_THEME = 203;
 
     /** This events loads a specific theme file. */
-    public static final int evs_loadTheme = 204;
+    public static final int EVS_LOAD_THEME = 204;
 
     /** This events clears the history of loaded themes. */
-    public static final int ev_clearThemeHistory = 205;
+    public static final int EV_CLEAR_THEME_HISTORY = 205;
 
     /** This event saves the current theme; returns true if it succeeded. */
-    public static final int ev_saveTheme = 206;
+    public static final int EV_SAVE_THEME = 206;
 
     /** This event saves a specific current theme; returns true if it succeeded. */
-    public static final int evs_saveTheme = 207;
+    public static final int EVS_SAVE_THEME = 207;
 
     /** This event saves the current theme to a new ".thm" file; returns true if it succeeded. */
-    public static final int ev_saveThemeAs = 208;
+    public static final int EV_SAME_THEME_AS = 208;
 
     /** This event resets the current theme. */
-    public static final int ev_resetTheme = 209;
+    public static final int EV_RESET_THEME = 209;
 
     /** This event saves a specific current theme; returns true if it succeeded. */
-    public static final int evs_saveThemeTS = 210;
+    public static final int EVS_SAVE_THEME_AS_TS = 210;
 
     /** This event saves the current theme to a new ".thm" file; returns true if it succeeded. */
-    public static final int ev_saveThemeAsTS = 211;
+    public static final int EV_SAVE_THEME_AS_TS = 211;
 
     /** This event refreshes the window menu. */
-    public static final int ev_window = 301;
+    public static final int EV_WINDOW = 301;
 
     /** This event shows the window and bring it to the front (if not already). */
-    public static final int ev_show = 302;
+    public static final int EV_SHOW = 302;
 
     /** This event minimizes the window. */
-    public static final int ev_minimize = 303;
+    public static final int EV_MINIMIZE = 303;
 
     /** This event alternatingly maximizes or restores the window. */
-    public static final int ev_maximize = 304;
+    public static final int EV_MAXIMIZE = 304;
 
     /** This event brings up an alert message. */
-    public static final int evs_alert = 305;
+    public static final int EVS_ALERT = 305;
 
-    private static final int ev_toolbarOpenTheme = 1001;
-    private static final int ev_toolbarCloseTheme = 1002;
-    private static final int ev_toolbarApplyTheme = 1003;
-    private static final int ev_toolbarOpenEvaluator = 1004;
-    private static final int ev_toolbarCloseEvaluator = 1005;
-    private static final int ev_toolbarEnumerate = 1006;
-    private static final int ev_toolbarViz = 2001;
-    private static final int ev_toolbarXML = 2002;
-    private static final int ev_toolbarTree = 2003;
-    private static final int ev_toolbarKodkodIn = 2004;
-    private static final int ev_toolbarKodkodOut = 2005;
-    private static final int ev_toolbarDot = 2006;
-    private static final int ev_toolbarPlugin0 = 2007;
-    private static final int ev_magicLayout=2008;
-    private static final int ev_magicColour=2009;
+    private static final int EV_BAR_OPEN_THEME = 1001;
+    private static final int EV_BAR_CLOSE_THEME = 1002;
+    private static final int EV_BAR_APPLY = 1003;
+    private static final int EV_BAR_OPEN_EVAL = 1004;
+    private static final int EV_BAR_CLOSE_EVAL = 1005;
+    private static final int EV_BAR_NEXT = 1006;
+    private static final int EV_BAR_VIZ = 2001;
+    private static final int EV_BAR_XML = 2002;
+    private static final int EV_BAR_TREE = 2003;
+    private static final int EV_BAR_KODKOD_IN = 2004;
+    private static final int EV_BAR_KODKOD_OUT = 2005;
+    private static final int EV_BAR_DOT = 2006;
+    private static final int EV_BAR_PLUGIN0 = 2007;
+    private static final int EV_BAR_MAGIC_LAYOUT=2008;
+    private static final int EV_BAR_MAGIC_COLOR=2009;
 
     /** Performs the function given by "key" on the argument "arg"; returns true if it succeeds. */
     public boolean run(final int key, final int arg) {
@@ -756,13 +756,13 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
     /** Performs the function given by "key" on the argument "arg"; returns true if it succeeds. */
     public boolean run(final int key, final String arg) {
-        if (key==evs_alert) {
+        if (key==EVS_ALERT) {
             OurDialog.alert(frame, arg, "Alloy 4");
         }
-        if (key==evs_loadInstance || key==evs_loadInstanceForcefully) {
+        if (key==EVS_LOAD_INSTANCE || key==EVS_LOAD_INSTANCE_FORCEFULLY) {
             String xmlFileName=Util.canon(arg);
             File f=new File(xmlFileName);
-            if (key==evs_loadInstanceForcefully || !xmlFileName.equals(this.xmlFileName)) {
+            if (key==EVS_LOAD_INSTANCE_FORCEFULLY || !xmlFileName.equals(this.xmlFileName)) {
                 AlloyInstance myInstance;
                 try {
                     if (!f.canRead()) throw new Exception("");
@@ -773,8 +773,8 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                     JOptionPane.showMessageDialog(null, "File does not exist or is not a valid Alloy instance: "
                        +e.getMessage()+"\n\nFile: "+xmlFileName,
                        "Error", JOptionPane.ERROR_MESSAGE);
-                    if (xmlLoaded.size()>0) {run(evs_loadInstance, xmlLoaded.get(xmlLoaded.size()-1)); return true;}
-                    run(ev_closeAll);
+                    if (xmlLoaded.size()>0) {run(EVS_LOAD_INSTANCE, xmlLoaded.get(xmlLoaded.size()-1)); return true;}
+                    run(EV_CLOSE_ALL);
                     return true;
                 }
                 if (runPlugin(null)) plugin0Button.setVisible(true);
@@ -812,7 +812,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             }
             updateDisplay();
         }
-        if (key==evs_loadTheme) {
+        if (key==EVS_LOAD_THEME) {
             if (myState==null) return false; // Can only load if there is a VizState loaded
             String filename=Util.canon(arg);
             try {
@@ -828,11 +828,11 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             thmFileName=filename;
             updateDisplay();
         }
-        if (key==evs_saveTheme || key==evs_saveThemeTS) {
+        if (key==EVS_SAVE_THEME || key==EVS_SAVE_THEME_AS_TS) {
             if (myState==null) return false; // Can only save if there is a VizState loaded
             String filename=Util.canon(arg);
             try {
-                if (key==evs_saveTheme) myState.savePaletteXML(filename); else myState.savePaletteTS(filename);
+                if (key==EVS_SAVE_THEME) myState.savePaletteXML(filename); else myState.savePaletteTS(filename);
                 filename=Util.canon(filename); // Since the canon name may have changed
                 addThemeHistory(filename);
             } catch (Throwable er) {
@@ -847,94 +847,94 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** Performs the function given by "key"; returns true if it succeeds. */
     public boolean run(final int key) {
 
-        if (key==ev_loadInstance) {
+        if (key==EV_LOAD_INSTANCE) {
             File file=OurDialog.askFile(frame, true, null, ".xml", ".xml instance files");
             if (file==null) return false;
             Util.setCurrentDirectory(file.getParentFile());
-            run(evs_loadInstanceForcefully, file.getPath());
+            run(EVS_LOAD_INSTANCE_FORCEFULLY, file.getPath());
         }
 
-        if (key==ev_close) {
+        if (key==EV_CLOSE) {
             xmlLoaded.remove(xmlFileName);
-            if (xmlLoaded.size()>0) return run(evs_loadInstance, xmlLoaded.get(xmlLoaded.size()-1));
+            if (xmlLoaded.size()>0) return run(EVS_LOAD_INSTANCE, xmlLoaded.get(xmlLoaded.size()-1));
             if (standalone) System.exit(0); else if (frame!=null) frame.setVisible(false);
         }
 
-        if (key==ev_closeAll) {
+        if (key==EV_CLOSE_ALL) {
             xmlLoaded.clear();
             xmlFileName="";
             if (standalone) System.exit(0); else if (frame!=null) frame.setVisible(false);
         }
 
-        if (key==ev_theme) {
+        if (key==EV_THEME) {
             String defaultTheme=System.getProperty("alloy.theme0");
             thememenu.removeAll();
-            OurUtil.makeMenuItem(thememenu, "Load Theme...",                  true, KeyEvent.VK_L, -1, this, ev_loadTheme);
+            OurUtil.makeMenuItem(thememenu, "Load Theme...",                  true, KeyEvent.VK_L, -1, this, EV_LOAD_THEME);
             if (defaultTheme!=null && defaultTheme.length()>0 && (new File(defaultTheme)).isDirectory())
-               OurUtil.makeMenuItem(thememenu, "Load Sample Theme...",        true, KeyEvent.VK_B, -1, this, ev_loadProvidedTheme);
-            OurUtil.makeMenuItem(thememenu, "Save Theme",                     true, KeyEvent.VK_S, -1, this, ev_saveTheme);
-            OurUtil.makeMenuItem(thememenu, "Save Theme As...",               true, KeyEvent.VK_A, -1, this, ev_saveThemeAs);
-            OurUtil.makeMenuItem(thememenu, "Reset Theme",                    true, KeyEvent.VK_R, -1, this, ev_resetTheme);
+               OurUtil.makeMenuItem(thememenu, "Load Sample Theme...",        true, KeyEvent.VK_B, -1, this, EV_LOAD_SAMPLE_THEME);
+            OurUtil.makeMenuItem(thememenu, "Save Theme",                     true, KeyEvent.VK_S, -1, this, EV_SAVE_THEME);
+            OurUtil.makeMenuItem(thememenu, "Save Theme As...",               true, KeyEvent.VK_A, -1, this, EV_SAME_THEME_AS);
+            OurUtil.makeMenuItem(thememenu, "Reset Theme",                    true, KeyEvent.VK_R, -1, this, EV_RESET_THEME);
         }
 
-        if (key==ev_loadTheme || key==ev_loadProvidedTheme) {
+        if (key==EV_LOAD_THEME || key==EV_LOAD_SAMPLE_THEME) {
             String defaultTheme=System.getProperty("alloy.theme0");
             if (defaultTheme==null) defaultTheme="";
             if (myState==null) return false; // Can only load if there is a VizState loaded
             if (myState.changedSinceLastSave()) {
                 Boolean opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
                 if (opt==null) return false;
-                if (opt.booleanValue() && !run(ev_saveTheme)) return false;
+                if (opt.booleanValue() && !run(EV_SAVE_THEME)) return false;
             }
-            File file=OurDialog.askFile(frame, true, (key==ev_loadTheme ? null : defaultTheme), ".thm", ".thm theme files");
+            File file=OurDialog.askFile(frame, true, (key==EV_LOAD_THEME ? null : defaultTheme), ".thm", ".thm theme files");
             if (file==null) return false;
-            if (key==ev_loadTheme) Util.setCurrentDirectory(file.getParentFile());
-            return run(evs_loadTheme, file.getPath());
+            if (key==EV_LOAD_THEME) Util.setCurrentDirectory(file.getParentFile());
+            return run(EVS_LOAD_THEME, file.getPath());
         }
 
-        if (key==ev_clearThemeHistory) {
+        if (key==EV_CLEAR_THEME_HISTORY) {
             Theme0.set(""); Theme1.set(""); Theme2.set(""); Theme3.set("");
         }
 
-        if (key==ev_saveTheme) {
-            if (thmFileName.length()==0) return run(ev_saveThemeAs); else return run(evs_saveTheme, thmFileName);
+        if (key==EV_SAVE_THEME) {
+            if (thmFileName.length()==0) return run(EV_SAME_THEME_AS); else return run(EVS_SAVE_THEME, thmFileName);
         }
 
-        if (key==ev_saveThemeAs) {
+        if (key==EV_SAME_THEME_AS) {
             File file=OurDialog.askFile(frame, false, null, ".thm", ".thm theme files");
             if (file==null) return false;
             if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return false;
             Util.setCurrentDirectory(file.getParentFile());
-            return run(evs_saveTheme, file.getPath());
+            return run(EVS_SAVE_THEME, file.getPath());
         }
 
-        if (key==ev_saveThemeAsTS) {
+        if (key==EV_SAVE_THEME_AS_TS) {
             File file=OurDialog.askFile(frame, false, null, ".tab", ".tab tab-delimited theme files");
             if (file==null) return false;
             if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return false;
             Util.setCurrentDirectory(file.getParentFile());
-            return run(evs_saveThemeTS, file.getPath());
+            return run(EVS_SAVE_THEME_AS_TS, file.getPath());
         }
 
-        if (key==ev_resetTheme || key==ev_magicLayout) {
+        if (key==EV_RESET_THEME || key==EV_BAR_MAGIC_LAYOUT) {
             if (myState==null) return false;
-            if (key==ev_resetTheme) {
+            if (key==EV_RESET_THEME) {
                 if (!OurDialog.yesno(frame, "Are you sure you wish to clear all your customizations?", "Yes, clear them", "No, keep them")) return false;
             } else {
                 if (!OurDialog.yesno(frame, "This will clear your original customizations. Are you sure?", "Yes, clear them", "No, keep them")) return false;
             }
             myState.resetTheme();
-            if (key==ev_magicLayout) {
+            if (key==EV_BAR_MAGIC_LAYOUT) {
                 try { MagicLayout.magic(myState);  MagicColour.magic(myState); } catch(Throwable ex) { }
             }
             repopulateProjectionPopup();
             if (myCustomPanel!=null) myCustomPanel.remakeAll();
             if (myGraphPanel!=null) myGraphPanel.remakeAll();
-            if (key==ev_resetTheme) thmFileName="";
+            if (key==EV_RESET_THEME) thmFileName="";
             updateDisplay();
         }
 
-        if (key==ev_magicColour) {
+        if (key==EV_BAR_MAGIC_COLOR) {
             try { MagicColour.magic(myState); } catch(Throwable ex) { }
             // same as above for ev_magicLayout
             repopulateProjectionPopup();
@@ -943,21 +943,21 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             updateDisplay();
         }
 
-        if (key==ev_window) {
+        if (key==EV_WINDOW) {
             windowmenu.removeAll();
             for(final String f:getInstances()) {
                 JMenuItem it = OurUtil.makeMenuItem("Instance: "+getInstanceTitle(f), null);
                 it.setIcon(f.equals(getXMLfilename())?iconYes:iconNo);
-                it.addActionListener(new MultiRunner(this, evs_loadInstance, f));
+                it.addActionListener(new MultiRunner(this, EVS_LOAD_INSTANCE, f));
                 windowmenu.add(it);
             }
         }
 
-        if (key==ev_minimize && frame!=null) {
+        if (key==EV_MINIMIZE && frame!=null) {
             frame.setExtendedState(JFrame.ICONIFIED);
         }
 
-        if (key==ev_show && frame!=null) {
+        if (key==EV_SHOW && frame!=null) {
             if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
                 frame.setExtendedState(JFrame.NORMAL);
             else
@@ -967,14 +967,14 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             frame.toFront();
         }
 
-        if (key==ev_maximize && frame!=null) {
+        if (key==EV_MAXIMIZE && frame!=null) {
             if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
                 frame.setExtendedState(JFrame.NORMAL);
             else
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         }
 
-        if (key==ev_toolbarEnumerate && settingsOpen==0) {
+        if (key==EV_BAR_NEXT && settingsOpen==0) {
             if (xmlFileName.length()==0) {
                 OurDialog.alert(frame,"Cannot display the next solution since "
                 +"no instance is currently loaded.", "Error");
@@ -990,18 +990,18 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             }
         }
 
-        if (key==ev_toolbarOpenTheme) { settingsOpen=1; updateDisplay(); }
-        if (key==ev_toolbarCloseTheme) { settingsOpen=0; updateDisplay(); }
-        if (key==ev_toolbarApplyTheme) { updateDisplay(); }
-        if (key==ev_toolbarOpenEvaluator) { settingsOpen=2; updateDisplay(); }
-        if (key==ev_toolbarCloseEvaluator) { settingsOpen=0; updateDisplay(); }
-        if (key==ev_toolbarViz) { currentMode=VisualizerMode.Viz; updateDisplay(); }
-        if (key==ev_toolbarXML) { currentMode=VisualizerMode.XML; updateDisplay(); }
-        if (key==ev_toolbarTree) { currentMode=VisualizerMode.Tree; updateDisplay(); }
-        if (key==ev_toolbarDot) { currentMode=VisualizerMode.DOT; updateDisplay(); }
-        if (key==ev_toolbarKodkodIn) { currentMode=VisualizerMode.KInput; updateDisplay(); }
-        if (key==ev_toolbarKodkodOut) { currentMode=VisualizerMode.KOutput; updateDisplay(); }
-        if (key==ev_toolbarPlugin0) { currentMode=VisualizerMode.Plugin0; updateDisplay(); }
+        if (key==EV_BAR_OPEN_THEME) { settingsOpen=1; updateDisplay(); }
+        if (key==EV_BAR_CLOSE_THEME) { settingsOpen=0; updateDisplay(); }
+        if (key==EV_BAR_APPLY) { updateDisplay(); }
+        if (key==EV_BAR_OPEN_EVAL) { settingsOpen=2; updateDisplay(); }
+        if (key==EV_BAR_CLOSE_EVAL) { settingsOpen=0; updateDisplay(); }
+        if (key==EV_BAR_VIZ) { currentMode=VisualizerMode.Viz; updateDisplay(); }
+        if (key==EV_BAR_XML) { currentMode=VisualizerMode.XML; updateDisplay(); }
+        if (key==EV_BAR_TREE) { currentMode=VisualizerMode.Tree; updateDisplay(); }
+        if (key==EV_BAR_DOT) { currentMode=VisualizerMode.DOT; updateDisplay(); }
+        if (key==EV_BAR_KODKOD_IN) { currentMode=VisualizerMode.KInput; updateDisplay(); }
+        if (key==EV_BAR_KODKOD_OUT) { currentMode=VisualizerMode.KOutput; updateDisplay(); }
+        if (key==EV_BAR_PLUGIN0) { currentMode=VisualizerMode.Plugin0; updateDisplay(); }
         return true;
     }
 

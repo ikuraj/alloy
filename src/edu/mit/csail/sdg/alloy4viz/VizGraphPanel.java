@@ -206,7 +206,7 @@ public final class VizGraphPanel extends JPanel {
                else if (ev.getButton()==MouseEvent.BUTTON3) { }
                else if (ev.getButton()==MouseEvent.BUTTON1 && ev.isControlDown()) { }
                else return;
-               viewer.do_popup(graphPanel, ev.getX(), ev.getY());
+               viewer.alloyPopup(graphPanel, ev.getX(), ev.getY());
            }
         });
         diagramScrollPanel = new JScrollPane(graphPanel);
@@ -236,7 +236,7 @@ public final class VizGraphPanel extends JPanel {
         JPanel graph=vizState.getGraph(currentProjection).b;
         if (seeDot && (graph instanceof VizViewer)) {
             viewer=null;
-            final JTextArea t = OurUtil.textarea(((VizViewer)graph).do_getAnnotation(), 10, 10);
+            final JTextArea t = OurUtil.textarea(((VizViewer)graph).alloyGetAnnotation(), 10, 10);
             t.setBackground(Color.WHITE);
             t.setEditable(false);
             t.setLineWrap(true);
@@ -259,7 +259,7 @@ public final class VizGraphPanel extends JPanel {
     }
 
     /** Retrieves the actual VizViewer object that contains the graph (or null if the graph hasn't loaded yet) */
-    public VizViewer do_getViewer() { return viewer; }
+    public VizViewer alloyGetViewer() { return viewer; }
 
     /** We override the paint method to auto-resize the divider. */
     @Override public void paint(Graphics g) {
