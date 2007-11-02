@@ -86,7 +86,7 @@ public final class VizViewer extends JPanel {
     private int dragButton = 0;
 
     /** The right-click context menu associated with this JPanel. */
-    private final JPopupMenu pop = new JPopupMenu();
+    public final JPopupMenu pop = new JPopupMenu();
 
     /** This allows users to attach a String object to this JPanel. */
     private String annotation = "";
@@ -104,11 +104,26 @@ public final class VizViewer extends JPanel {
        return null;
     }
 
+    /** Returns the annotation for the node or edge at location x,y (or null if none) */
+    public Object do_getAnnotationAtXY(int mouseX, int mouseY) {
+        Object obj = do_find(mouseX, mouseY);
+        if (obj instanceof VizNode) return ((VizNode)obj).uuid;
+        if (obj instanceof VizEdge) return ((VizEdge)obj).uuid;
+        return null;
+    }
+
+    /** Returns the annotation for the currently selected node/edge (or null if none) */
+    public Object do_getSelectedAnnotation() {
+        if (selected instanceof VizNode) return ((VizNode)selected).uuid;
+        if (selected instanceof VizEdge) return ((VizEdge)selected).uuid;
+        return null;
+    }
+
     /** Stores the mouse positions needed to calculate drag-and-drop. */
     private int oldMouseX=0, oldMouseY=0, oldX=0, oldY=0;
 
     /** Repaint this component. */
-    private void do_repaint() {
+    public void do_repaint() {
         Container c=getParent();
         while(c!=null) { if (c instanceof JViewport) break; else c=c.getParent(); }
         setSize((int)(graph.getTotalWidth()*scale), (int)(graph.getTotalHeight()*scale));

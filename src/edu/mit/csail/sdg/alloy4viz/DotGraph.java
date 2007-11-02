@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4graph.VizGraph;
@@ -55,10 +56,10 @@ public final class DotGraph {
     private final DotPalette edgePalette;
 
     /** The set of nodes in the graph. */
-    private final Set<DotNode> nodes;
+    public final ConstSet<DotNode> nodes;
 
     /** The set of edges in the graph. */
-    private final Set<DotEdge> edges;
+    public final ConstSet<DotEdge> edges;
 
     /** The set of set of nodes that should be aligned together. */
     private final Set<Set<DotNode>> ranks;
@@ -71,8 +72,8 @@ public final class DotGraph {
         orientation = DotOrientation.getDefault();
         nodePalette = edgePalette = DotPalette.getDefault();
         fontSize = 12;
-        nodes = new LinkedHashSet<DotNode>();
-        edges = new LinkedHashSet<DotEdge>();
+        nodes = ConstSet.make();
+        edges = ConstSet.make();
         ranks = new LinkedHashSet<Set<DotNode>>();
         attrs = new LinkedHashMap<DotNode,Set<String>>();
     }
@@ -83,13 +84,14 @@ public final class DotGraph {
      * @param orientation - the graph orientation
      * @param nodePalette - the palette for nodes in the graph
      * @param edgePalette - the palette for edges in the graph
-     * @param nodes - the set of nodes in this graph
-     * @param edges - the set of edges in this graph
+     * @param nodes - the map containing all nodes in this graph (and the AlloyAtom each node corresponds to)
+     * @param edges - the map containing all edges in this graph (and the AlloyTuple each edge corresponds to)
      * @param ranks - the set of set of nodes that should be aligned on the same rank in the graph
      * @param attrs - this maps nodes to a set of additional attributes to be printed
      */
     public DotGraph(int fontSize, DotOrientation orientation, DotPalette nodePalette, DotPalette edgePalette,
-            Set<DotNode> nodes, Set<DotEdge> edges, Set<Set<DotNode>> ranks, Map<DotNode,Set<String>> attrs) {
+            Map<DotNode,AlloyAtom> nodes, Map<DotEdge,AlloyTuple> edges,
+            Set<Set<DotNode>> ranks, Map<DotNode,Set<String>> attrs) {
         this.fontSize = fontSize;
         this.orientation = orientation;
         this.nodePalette = nodePalette;
@@ -100,8 +102,8 @@ public final class DotGraph {
         this.attrs = new LinkedHashMap<DotNode,Set<String>>();
         for(Map.Entry<DotNode,Set<String>> e:attrs.entrySet())
             this.attrs.put(e.getKey(), Collections.unmodifiableSet(new LinkedHashSet<String>(e.getValue())));
-        this.nodes = new LinkedHashSet<DotNode>(nodes);
-        this.edges = new LinkedHashSet<DotEdge>(edges);
+        this.nodes = ConstSet.make(nodes.keySet());
+        this.edges = ConstSet.make(edges.keySet());
     }
 
     /** Generate the entire content of the DOT file. */
@@ -109,7 +111,7 @@ public final class DotGraph {
         // TODO: sb.append("rankdir=" + orientation.getDotText(null) + ";\n");
         VizGraph graph=new VizGraph();
         if (nodes.size()==0) {
-            new VizNode(graph, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
+            new VizNode(graph, null, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
         } else {
             IdentityHashMap<DotNode,VizNode> map=new IdentityHashMap<DotNode,VizNode>();
             for (DotNode node:nodes) {

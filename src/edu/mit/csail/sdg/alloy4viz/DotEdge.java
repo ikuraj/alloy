@@ -31,6 +31,9 @@ import edu.mit.csail.sdg.alloy4graph.VizNode;
 
 public final class DotEdge {
 
+    /** a user-provided annotation that will be associated with this edge (can be null) */
+    public final Object uuid;
+
     /** The unique id for this edge. */
     private final int id;
 
@@ -63,6 +66,7 @@ public final class DotEdge {
 
     /**
      * Constructs an edge.
+     * @param uuid - a user-provided annotation that will be associated with this edge (can be null)
      * @param id - a unique id for this edge
      * @param from - the origin node
      * @param to - the destination node
@@ -73,9 +77,10 @@ public final class DotEdge {
      * @param weight - the weight of the edge (edges with higher weights will tend to be shorter and straighter)
      * @param constraint - whether this edge should constrain the graph layout or not
      */
-    public DotEdge(int id, DotNode from, DotNode to, String label,
+    public DotEdge(Object uuid, int id, DotNode from, DotNode to, String label,
             DotStyle style, DotColor color, DotDirection dir,
             int weight, boolean constraint, Object group) {
+        this.uuid = uuid;
         this.id = id;
         this.from = from;
         this.to = to;
@@ -91,9 +96,9 @@ public final class DotEdge {
     /** Write this edge (using the given Edge palette) into a StringBuilder as if writing to a DOT file. */
     public void write2(VizNode from, VizNode to, DotPalette pal) {
         VizEdge e;
-        if (dir==DotDirection.FORWARD) e=new VizEdge(from,to,label,group).set(false,true);
-           else if (dir==DotDirection.BACK) e=new VizEdge(from,to,label,group).set(true,false);
-           else e=new VizEdge(from,to,label,group).set(true,true);
+        if (dir==DotDirection.FORWARD) e=new VizEdge(from,to,uuid,label,group).set(false,true);
+           else if (dir==DotDirection.BACK) e=new VizEdge(from,to,uuid,label,group).set(true,false);
+           else e=new VizEdge(from,to,uuid,label,group).set(true,true);
         e.set(DotColor.name2color(color.getDotText(pal))).set(style.vizStyle).set(weight<1 ? 1 : (weight>100 ? 100 : weight));
         //TODO out.append(", constraint = \"" + (constraint?"true":"false") + "\"");
     }
@@ -104,7 +109,8 @@ public final class DotEdge {
         out.append(" -> ");
         out.append("\"N" + to.getID() + "\"");
         out.append(" [");
-        out.append("color = \"" + color.getDotText(pal) + "\"");
+        out.append("uuid = \"" + (uuid==null ? "" : esc(uuid.toString())) + "\"");
+        out.append(", color = \"" + color.getDotText(pal) + "\"");
         out.append(", fontcolor = \"" + color.getDotText(pal) + "\"");
         out.append(", style = \"" + style.getDotText(pal) + "\"");
         out.append(", label = \"" + esc(label) + "\"");

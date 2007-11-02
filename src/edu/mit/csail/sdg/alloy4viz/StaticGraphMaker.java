@@ -45,11 +45,11 @@ public final class StaticGraphMaker {
     /** The projected model for the graph currently being generated. */
     private final AlloyModel model;
 
-    /** The set of edges for the graph currently being generated. */
-    private final Set<DotEdge> edges=new LinkedHashSet<DotEdge>();
+    /** The map that contains all edges and what the AlloyTuple that each edge corresponds to. */
+    private final Map<DotEdge,AlloyTuple> edges=new LinkedHashMap<DotEdge,AlloyTuple>();
 
-    /** The set of nodes for the graph currently being generated. */
-    private final Set<DotNode> nodes=new LinkedHashSet<DotNode>();
+    /** The map that contains all nodes and what the AlloyAtom that each node corresponds to. */
+    private final Map<DotNode,AlloyAtom> nodes=new LinkedHashMap<DotNode,AlloyAtom>();
 
     /** This maps each atom to the node representing it; if an atom doesn't have a node, it won't be in the map. */
     private final Map<AlloyAtom,DotNode> atom2node=new LinkedHashMap<AlloyAtom,DotNode>();
@@ -113,7 +113,7 @@ public final class StaticGraphMaker {
         DotStyle style = view.nodeStyle(atom, instance);
         DotShape shape = view.shape(atom, instance);
         String label = atomname(atom,false);
-        node = new DotNode(nodes.size(), label, shape, color, style);
+        node = new DotNode(atom, nodes.size(), label, shape, color, style);
         // Get the label based on the sets and relations
         String setsLabel="";
         boolean showLabelByDefault = view.showAsLabel(null);
@@ -128,7 +128,7 @@ public final class StaticGraphMaker {
             if (list==null) attribs.put(node, list=new TreeSet<String>());
             list.add("("+setsLabel+")");
         }
-        nodes.add(node);
+        nodes.put(node,atom);
         atom2node.put(atom,node);
         return node;
     }
@@ -159,9 +159,9 @@ public final class StaticGraphMaker {
             else { label=label+(" ["+moreLabel+"]"); }
         }
         DotDirection dir = bidirectional ? DotDirection.BOTH : (layoutBack ? DotDirection.BACK:DotDirection.FORWARD);
-        DotEdge e=new DotEdge(edges.size(), (layoutBack?end:start), (layoutBack?start:end), label,
+        DotEdge e=new DotEdge(tuple, edges.size(), (layoutBack?end:start), (layoutBack?start:end), label,
                 view.edgeStyle(rel,model), view.edgeColor(rel,model), dir, view.weight(rel), view.constraint(rel,model), rel);
-        edges.add(e);
+        edges.put(e, tuple);
     }
 
     /** Create edges for every visible tuple in the given relation. */

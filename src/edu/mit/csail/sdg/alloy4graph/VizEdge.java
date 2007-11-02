@@ -57,6 +57,9 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     // =============================== per-edge settings ===================================================
 
+    /** a user-provided annotation that will be associated with this edge (can be null) */
+    public final Object uuid;
+
     /** The label; can be an empty string if there is no label; NOTE: label is only shown if the start node is not a dummy node. */
     private String label = "";
 
@@ -148,8 +151,9 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Construct an edge from "from" to "to" with the given arrow head settings, then add the edge to the graph. */
-    public VizEdge(VizNode from, VizNode to, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color, Object group) {
+    public VizEdge(VizNode from, VizNode to, Object uuid, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color, Object group) {
        super(from, to); // The parent's constructor will add the edge A->B to the graph
+       this.uuid = uuid;
        if (color1==null) color1=Color.RED;
        if (color2==null) color2=new Color(255,120,120);
        this.group = (group==null) ? this : group;
@@ -168,8 +172,8 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** Construct an edge from "from" to "to" with the default arrow head settings, then add the edge to the graph. */
-    public VizEdge(VizNode from, VizNode to, String label, Object group) {
-       this(from, to, label, false, true, null, null, group);
+    public VizEdge(VizNode from, VizNode to, Object uuid, String label, Object group) {
+       this(from, to, uuid, label, false, true, null, null, group);
     }
 
     /** Reset the path as a straightline from the center of the "from" node to the center of the "to" node. */

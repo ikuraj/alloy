@@ -69,6 +69,9 @@ public final class VizNode extends DiGraph.DiNode {
 
     // =============================== per-node settings ==================================================
 
+    /** a user-provided annotation that will be associated with this node (can be null) */
+    public final Object uuid;
+
     /** The X coordinate of the center of the node. */
     private int centerX = 0;
 
@@ -179,8 +182,9 @@ public final class VizNode extends DiGraph.DiNode {
     }
 
     /** Create a new node with the given list of labels, then add it to the given graph. */
-    public VizNode(DiGraph graph, String... labels) {
+    public VizNode(DiGraph graph, Object uuid, String... labels) {
         super(graph); // The parent's constructor will add this node to the graph automatically
+        this.uuid = uuid;
         if (labels==null || labels.length==0) return;
         this.labels = new ArrayList<String>(labels.length);
         for(int i=0; i<labels.length; i++) this.labels.add(labels[i]);

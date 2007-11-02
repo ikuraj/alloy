@@ -258,6 +258,9 @@ public final class VizGraphPanel extends JPanel {
         remakeAll();
     }
 
+    /** Retrieves the actual VizViewer object that contains the graph (or null if the graph hasn't loaded yet) */
+    public VizViewer do_getViewer() { return viewer; }
+
     /** We override the paint method to auto-resize the divider. */
     @Override public void paint(Graphics g) {
         super.paint(g);

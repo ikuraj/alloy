@@ -32,6 +32,9 @@ import edu.mit.csail.sdg.alloy4graph.VizNode;
 
 public final class DotNode {
 
+    /** a user-provided annotation that will be associated with this node (can be null) */
+    public final Object uuid;
+
     /** The unique id for this edge. */
     private final int id;
 
@@ -52,18 +55,19 @@ public final class DotNode {
 
     /**
      * Constructs a node.
+     * @param uuid - a user-provided annotation that will be associated with this node (can be null)
      * @param id - the unique ID for this node
      * @param label - the label to show
      * @param shape - the shape
      * @param color - the color
      * @param style - the line style
      */
-    public DotNode(int id, String label, DotShape shape, DotColor color, DotStyle style) {
-        this.id = id; this.label = label; this.shape = shape; this.color = color; this.style = style;
+    public DotNode(Object uuid, int id, String label, DotShape shape, DotColor color, DotStyle style) {
+        this.uuid = uuid; this.id = id; this.label = label; this.shape = shape; this.color = color; this.style = style;
     }
 
     public VizNode write2(DiGraph dotgraph, Set<String> attribs, DotPalette pal) {
-        VizNode n = new VizNode(dotgraph, label);
+        VizNode n = new VizNode(dotgraph, uuid, label);
         if (attribs!=null) for (String a:attribs) if (a.length()>0) n.addAfter(a);
         n.set(DotColor.name2color(color.getDotText(pal))).set(shape.vizShape).set(style.vizStyle);
         return n;
@@ -78,7 +82,9 @@ public final class DotNode {
     public void write(StringBuilder out, Set<String> attribs, DotPalette pal) {
         out.append("\"N" + id + "\"");
         out.append(" [");
-        out.append("label=\"" + esc(label));
+        out.append("uuid=\"");
+        if (uuid!=null) out.append(esc(uuid.toString()));
+        out.append("\", label=\"" + esc(label));
         if (attribs!=null) for (String a:attribs) if (a.length()>0) out.append("\\n"+esc(a));
         out.append("\", color=\"" + color.getDotText(pal) + "\"");
         out.append(", fontcolor = \"" + color.getLabelColorText(pal) + "\"");

@@ -70,6 +70,7 @@ import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
+import edu.mit.csail.sdg.alloy4graph.VizViewer;
 
 /**
  * GUI main window for the visualizer.
@@ -181,9 +182,6 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** The last known divider position between the customization panel and the graph panel. */
     private int lastDividerPosition=0;
 
-    /** The current theme file; "" if there is no theme file loaded. */
-    private String thmFileName="";
-
     /**
      * If nonnull, you can pass in an expression to be evaluated.
      * If it throws an exception, that means an error has occurred.
@@ -194,6 +192,14 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
      * If nonnull, you can call "enumerator.run(-1, XMLFilename)" to tell it to find the next solution.
      */
     private final MultiRunnable enumerator;
+
+    //==============================================================================================//
+
+    /** The current theme file; "" if there is no theme file loaded. */
+    private String thmFileName="";
+
+    /** Returns the current THM filename; "" if no theme file is currently loaded. */
+    public String getThemeFilename() { return thmFileName; }
 
     //==============================================================================================//
 
@@ -639,6 +645,12 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         ans.setBorder(new OurBorder(true,false,true,false));
         return ans;
+    }
+
+    /** Returns the VizViewer that contains the graph; can be null if the graph hasn't been loaded yet. */
+    public VizViewer getViewer() {
+        if (null == myGraphPanel) return null;
+        return myGraphPanel.do_getViewer();
     }
 
     //========================================= EVENTS ============================================================================================
