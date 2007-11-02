@@ -119,6 +119,13 @@ public final class VizViewer extends JPanel {
         return null;
     }
 
+    /** Returns the annotation for the currently highlighted node/edge (or null if none) */
+    public Object do_getHighlightedAnnotation() {
+        if (highlight instanceof VizNode) return ((VizNode)highlight).uuid;
+        if (highlight instanceof VizEdge) return ((VizEdge)highlight).uuid;
+        return null;
+    }
+
     /** Stores the mouse positions needed to calculate drag-and-drop. */
     private int oldMouseX=0, oldMouseY=0, oldX=0, oldY=0;
 

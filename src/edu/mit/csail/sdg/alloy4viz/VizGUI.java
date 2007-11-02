@@ -407,7 +407,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
                 "Show KodKod Instance", "images/24_plaintext.gif", ev_toolbarKodkodOut);
         plugin0Button=makeSolutionButton("Plugin",
                 "Run external plugin", "images/24_graph.gif", ev_toolbarPlugin0);
-        addDivider();
+        if (frame!=null) addDivider();
         toolbar.add(closeSettingsButton=OurUtil.button("Close",
                 "Close the theme customization panel", "images/24_settings_close2.gif", this, ev_toolbarCloseTheme));
         toolbar.add(updateSettingsButton=OurUtil.button("Apply",
@@ -513,14 +513,20 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             default: vizButton.setEnabled(false);
         }
         final boolean isMeta = myState.getOriginalInstance().isMetamodel;
+        vizButton.setVisible(frame!=null);
+        treeButton.setVisible(frame!=null);
+        dotButton.setVisible(frame!=null);
+        xmlButton.setVisible(frame!=null);
+        kodSrcButton.setVisible(myState.getOriginalInstance().kodkod_input.length()>0 && frame!=null);
+        kodInstButton.setVisible(myState.getOriginalInstance().kodkod_output.length()>0 && frame!=null);
         magicLayout.setVisible(!isMeta && (settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
         magicColour.setVisible(false); // hidden for now
         projectionButton.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
-        openSettingsButton.setVisible(settingsOpen==0 && currentMode==VisualizerMode.Viz);
-        loadSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
-        saveSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
-        saveAsSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
-        resetSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        openSettingsButton.setVisible(               settingsOpen==0 && currentMode==VisualizerMode.Viz);
+        loadSettingsButton.setVisible(frame==null && settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        saveSettingsButton.setVisible(frame==null && settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        saveAsSettingsButton.setVisible(frame==null && settingsOpen==1 && currentMode==VisualizerMode.Viz);
+        resetSettingsButton.setVisible(frame==null && settingsOpen==1 && currentMode==VisualizerMode.Viz);
         closeSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
         updateSettingsButton.setVisible(settingsOpen==1 && currentMode==VisualizerMode.Viz);
         openEvaluatorButton.setVisible(!isMeta && settingsOpen==0 && evaluator!=null);
