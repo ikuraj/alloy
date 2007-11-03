@@ -453,22 +453,19 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         // Write a few test files
         try {
             (new File(platformBinary)).mkdirs();
-            Util.writeAll(platformBinary+fs+"tmp.dot", "digraph \"test\" { \"A\" -> \"B\" }\n\n");
             Util.writeAll(platformBinary+fs+"tmp.cnf", "p cnf 3 1\n1 0\n");
         } catch(Err er) {
-            // The error will be caught later by the "dot" test and "minisat" test
+            // The error will be caught later by the "berkmin" test
         }
         // Copy the platform-dependent binaries
         Util.copy(true, false, platformBinary,
            arch+"/libminisat.so", arch+"/libminisat.jnilib",
            arch+"/libminisatprover.so", arch+"/libminisatprover.jnilib",
            arch+"/libzchaff.so", arch+"/libzchaff.jnilib",
-           arch+"/berkmin", arch+"/spear", arch+"/dotbin");
+           arch+"/berkmin");
         Util.copy(false, false, platformBinary,
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
-           arch+"/berkmin.exe", arch+"/spear.exe",
-           arch+"/dotbin.exe", arch+"/jpeg.dll", arch+"/libexpat.dll", arch+"/libexpatw.dll",
-           arch+"/zlib1.dll", arch+"/z.dll", arch+"/freetype6.dll", arch+"/png.dll");
+           arch+"/berkmin.exe");
         // Copy the model files
         Util.copy(false, true, Helper.alloyHome(),
            "models/book/appendixA/addressBook1.als", "models/book/appendixA/addressBook2.als", "models/book/appendixA/barbers.als",
@@ -525,7 +522,6 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
            "models/util/sequniv.als", "models/util/ternary.als"
            );
         // Record the locations
-        System.setProperty("alloy.dotbin0", platformBinary+fs+"dotbin");
         System.setProperty("alloy.theme0", Helper.alloyHome()+fs+"models");
         System.setProperty("alloy.home", Helper.alloyHome());
     }
@@ -1779,30 +1775,6 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             if (!satChoices.contains(now)) now=SatSolver.SAT4J;
             now.set();
         }
-
-        // Testing the platform-dependent "dot" program
-        do {
-            Subprocess test1 = new Subprocess(20000, new String[]{"chmod","700",binary+fs+"dotbin"});
-            test1.getStandardOutputAndError();
-            Subprocess test2 = new Subprocess(20000, new String[]{binary+fs+"dotbin", binary+fs+"tmp.dot"}, 0);
-            String out2 = test2.getStandardOutput().trim();
-            if (!out2.startsWith("digraph")) {
-                Subprocess test3 = new Subprocess(20000, new String[]{"dot", binary+fs+"tmp.dot"}, 0);
-                String out3 = test3.getStandardOutput().trim();
-                if (!out3.startsWith("digraph")) {
-                    log.logBold("Warning: unable to install the graph generator \"dot\".\n");
-                    log.log("This is okay, since you can still solve formulas and examine the output in tree view.\n");
-                    log.log("For more information, please visit the troubleshooting page on http://alloy.mit.edu/alloy4/\n");
-                    log.logBold("\nThe exact error message is:\n");
-                    out2 = test2.getStandardOutputAndError();
-                    out3 = test3.getStandardOutputAndError();
-                    log.logIndented(out2.length()>0 && out3.length()>0 ? (out2+"\n"+out3) : (out2+out3));
-                    log.log("\n");
-                    log.logDivider();
-                    log.flush();
-                }
-            }
-        } while(false);
 
         // If the temporary directory has become too big, then tell the user they can "clear temporary directory".
         long space = Helper.computeTemporarySpaceUsed();
