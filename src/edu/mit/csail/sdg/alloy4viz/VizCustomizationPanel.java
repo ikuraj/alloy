@@ -166,7 +166,7 @@ public final class VizCustomizationPanel extends JPanel {
      * Custom TreeCellRenderer to print the tree nodes better.
      * The idea of using JLabel is inspired by the DefaultTreeCellRenderer implementation.
      */
-    private class OurRenderer extends JLabel implements TreeCellRenderer {
+    private final class OurRenderer extends JLabel implements TreeCellRenderer {
         /** This suppresses javac's warning about missing serialVersionUID. */
         private static final long serialVersionUID = 1L;
         /** This stores the height of one line of text. */

@@ -21,16 +21,21 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.TreeModelListener;
-import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
@@ -161,12 +166,50 @@ public final class StaticTreeMaker {
     }
 
     /**
+     * Custom TreeCellRenderer to print the tree nodes better.
+     * The idea of using JLabel is inspired by the DefaultTreeCellRenderer implementation.
+     */
+    private static final class OurRenderer extends JLabel implements TreeCellRenderer {
+        /** This suppresses javac's warning about missing serialVersionUID. */
+        private static final long serialVersionUID = 1L;
+        /** Whether the current object is selected or not. */
+        private boolean isSelected;
+        /** Whether the current object is focused or not. */
+        private boolean isFocused;
+        /** Constructs the Renderer. */
+        public OurRenderer() {
+            setVerticalAlignment(JLabel.BOTTOM);
+            setBorder(new EmptyBorder(0, 3, 0, 3));
+            setFont(OurUtil.getVizFont());
+        }
+        /** Returns an object to be drawn. */
+        public Component getTreeCellRendererComponent(JTree tree, Object value,
+                boolean isSelected, boolean expanded, boolean isLeaf, int row, boolean isFocused) {
+            if (value instanceof DefaultMutableTreeNode) value=((DefaultMutableTreeNode)value).getUserObject();
+            String string = tree.convertValueToText(value, isSelected, expanded, isLeaf, row, isFocused);
+            this.isFocused = isFocused;
+            this.isSelected = isSelected;
+            this.setText(string);
+            this.setForeground(UIManager.getColor(isSelected ? "Tree.selectionForeground" : "Tree.textForeground"));
+            return this;
+        }
+        /** We override the paint() method. */
+        @Override public void paint(Graphics g) {
+            int w=getWidth(), h=getHeight();
+            Color background = isSelected ? UIManager.getColor("Tree.selectionBackground") : Color.WHITE;
+            Color border = isFocused ? UIManager.getColor("Tree.selectionBorderColor") : null;
+            if (background!=null) { g.setColor(background); g.fillRect(0,0,w,h); }
+            if (border!=null && isSelected) { g.setColor(border); g.drawRect(0,0,w-1,h-1); }
+            super.paint(g);
+        }
+    }
+
+    /**
      * Generate a scrollpane containing a JTree (showing the sigs, sets, and relations in the given instance)
      * @param instance - the instance to display
      * @param theme - the theme for displaying the atom labels (can be null if we don't want to use a theme)
      */
     public static JScrollPane makeTree(AlloyInstance instance, String title, VizState theme) {
-        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
         final JTree tree = new StaticJTree(instance,title,theme);
         tree.setBorder(new EmptyBorder(2,2,2,2));
         tree.setFont(OurUtil.getVizFont());
@@ -175,7 +218,7 @@ public final class StaticTreeMaker {
         tree.setRootVisible(true);
         tree.setBackground(Color.WHITE);
         tree.setOpaque(true);
-        tree.setCellRenderer(renderer);
+        tree.setCellRenderer(new OurRenderer());
         final JScrollPane scroll=OurUtil.scrollpane(tree);
         scroll.addFocusListener(new FocusListener() {
             public final void focusGained(FocusEvent e) { tree.requestFocusInWindow(); }
