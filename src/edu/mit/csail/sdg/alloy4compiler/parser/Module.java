@@ -124,15 +124,15 @@ public final class Module {
     //============================================================================================================================//
 
     /** Mutable; this class represents an untypechecked Alloy module import statement; equals() uses object identity. */
-    static final class Open {
+    public static final class Open {
         /** The position in the original model where this "open" statement was declared; never null. */
-        final Pos pos;
+        public final Pos pos;
         /** The alias for this open declaration; always a nonempty string. */
-        final String alias;
+        public final String alias;
         /** The unmodifiable list of instantiating arguments. */
-        final ConstList<String> args;
+        public final ConstList<String> args;
         /** The relative filename for the file being imported, without the final ".als" part; always a nonempty string. */
-        final String filename;
+        public final String filename;
         /** The actual Module object that it points to; null until we resolve it. */
         private Module realModule=null;
         /** Constructs an Open object. */
@@ -432,13 +432,13 @@ public final class Module {
     //============================================================================================================================//
 
     /** Returns a pointer to the root module in this world. */
-    Module getRootModule() { return world; }
+    public Module getRootModule() { return world; }
 
     /** Returns the text of the "MODULE" line at the top of the file; "unknown" if the line has not be parsed from the file yet. */
-    String getModelName() { return moduleName; }
+    public String getModelName() { return moduleName; }
 
     /** Returns an unmodifiable copy of the current list of OPEN statements. */
-    ConstList<Open> getOpens() {
+    public ConstList<Open> getOpens() {
         TempList<Open> ans = new TempList<Open>(opens.size());
         for(Map.Entry<String,Open> e: opens.entrySet()) ans.add(e.getValue());
         return ans.makeConst();
