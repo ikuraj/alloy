@@ -524,7 +524,7 @@ public final class VizNode extends DiGraph.DiNode {
 
     private void shiftUp(int y) {
         final int[] ph = ((VizGraph)graph).layerPH;
-        final int yJump = VizGraph.yJump/2;
+        final int yJump = VizGraph.yJump/6;
         int i=layer();
         setY(i,y);
         y=y-ph[i]/2; // y is now the top-most edge of this layer
@@ -539,7 +539,7 @@ public final class VizNode extends DiGraph.DiNode {
 
     private void shiftDown(int y) {
         final int[] ph = ((VizGraph)graph).layerPH;
-        final int yJump = VizGraph.yJump/2;
+        final int yJump = VizGraph.yJump/6;
         int i=layer();
         setY(i,y);
         y=y+ph[i]/2; // y is now the bottom-most edge of this layer
@@ -553,7 +553,7 @@ public final class VizNode extends DiGraph.DiNode {
     }
 
     private void shiftLeft(List<VizNode> peers, int i, int x) {
-        final int xJump = VizGraph.xJump;
+        final int xJump = VizGraph.xJump/3;
         centerX=x;
         x=x-(shape==null?0:side); // x is now the left-most edge of this node
         for(i--;i>=0;i--) {
@@ -565,7 +565,7 @@ public final class VizNode extends DiGraph.DiNode {
     }
 
     private void shiftRight(List<VizNode> peers, int i, int x) {
-        final int xJump = VizGraph.xJump;
+        final int xJump = VizGraph.xJump/3;
         centerX=x;
         x=x+(shape==null?0:side)+getReserved(); // x is now the right most edge of this node
         for(i++;i<peers.size();i++) {

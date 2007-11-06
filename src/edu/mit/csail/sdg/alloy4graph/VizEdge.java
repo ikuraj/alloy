@@ -251,11 +251,12 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
     public void draw(Artist gr, double scale, VizEdge highlight) {
+       Color cl;
        final int top=((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
        gr.translate(-left, -top);
-       if (highlight==this) { gr.setColor(color1); gr.set(VizStyle.BOLD, scale); }
-       else if (highlight!=null && highlight.group==group) { gr.setColor(color2); gr.set(VizStyle.BOLD, scale); }
-       else { gr.setColor(color); gr.set(style, scale); }
+       if (highlight==this) { gr.setColor(cl=color1); gr.set(VizStyle.BOLD, scale); }
+       else if (highlight!=null && highlight.group==group) { gr.setColor(cl=color2); gr.set(VizStyle.BOLD, scale); }
+       else { gr.setColor(cl=color); gr.set(style, scale); }
        if (a()==b()) {
           // Draw the self edge
           double x0=path.getX(0), y0=path.getY(0), x1=path.getX(1), y1=y0, x2=x1, y2=path.getY(2), x3=path.getX(3), y3=y2;
@@ -276,8 +277,12 @@ public final class VizEdge extends DiGraph.DiEdge {
              e = e.b().outEdges().get(0);
           }
           p.draw(gr);
-          //if (highlight==this)
-          if (label.length()>0) gr.drawString(label, labelbox.x, labelbox.y + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD)); // TODO: what about self edge?
+          if (highlight==this) if (label.length()>0) {
+              Rectangle2D.Double rect = new Rectangle2D.Double(labelbox.x+5, labelbox.y+5, labelbox.w+10, labelbox.h+10);
+              gr.setColor(Color.WHITE); gr.draw(rect, true);
+              gr.setColor(cl); gr.draw(rect, false);
+              gr.drawString(label, labelbox.x + 10, labelbox.y + 10 + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD)); // TODO: what about self edge?
+          }
        }
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);

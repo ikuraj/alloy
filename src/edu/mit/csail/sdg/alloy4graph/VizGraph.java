@@ -40,10 +40,10 @@ public final class VizGraph extends DiGraph {
     //================================ adjustable options ========================================================================//
 
     /** Minimum horizontal distance between adjacent nodes. */
-    static final int xJump=15;
+    static final int xJump=15*3;
 
     /** Minimum vertical distance between adjacent layers. */
-    static final int yJump=30;
+    static final int yJump=30*3;
 
     /** The left edge. */
     private int left=0;
