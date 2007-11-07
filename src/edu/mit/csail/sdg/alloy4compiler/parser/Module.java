@@ -135,6 +135,8 @@ public final class Module {
         public final String filename;
         /** The actual Module object that it points to; null until we resolve it. */
         private Module realModule=null;
+        /** Returns the actual Module object that it points to; null if we have not resolved it. */
+        public Module getRealModule() { return realModule; }
         /** Constructs an Open object. */
         private Open(Pos pos, String alias, ConstList<String> args, String filename) {
             this.pos=pos; this.alias=alias; this.args=args; this.filename=filename;
