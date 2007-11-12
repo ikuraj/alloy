@@ -112,7 +112,7 @@ public final class VizState {
         mergeArrows.clear(); mergeArrows.put(null, true);
         constraint.clear(); constraint.put(null, true);
         layoutBack.clear(); layoutBack.put(null, false);
-        edgeColor.clear(); edgeColor.put(null, DotColor.BLACK);
+        edgeColor.clear(); edgeColor.put(null, DotColor.MAGIC);
         edgeStyle.clear(); edgeStyle.put(null, DotStyle.getDefault());
         edgeVisible.clear(); edgeVisible.put(null, true);
         edgeSameRank.clear(); edgeSameRank.put(null, false);
@@ -185,8 +185,28 @@ public final class VizState {
     /** Caches previously generated graphs. */
     private LinkedHashMap<AlloyProjection,Pair<String,JPanel>> cache=new LinkedHashMap<AlloyProjection,Pair<String,JPanel>>();
 
+    //private LinkedHashMap<AlloyProjection,DotGraph> cache2=new LinkedHashMap<AlloyProjection,DotGraph>();
+
+    /*
+    private void generateAllGraphs(List<AlloyType> projectedType, int i, Map<AlloyType,AlloyAtom> projection) {
+        if (projection==null) { cache2.clear(); projection=new LinkedHashMap<AlloyType,AlloyAtom>(); }
+        if (i>=projectedType.size()) {
+            AlloyProjection p = new AlloyProjection(projection);
+            DotGraph graph = StaticGraphMaker.produceGraph(originalInstance, this, p);
+            cache2.put(p, graph);
+            return;
+        }
+        AlloyType type=projectedType.get(i);
+        for(AlloyAtom atom: originalInstance.type2atoms(type)) {
+            projection.put(type, atom);
+            generateAllGraphs(projectedType, i+1, projection);
+        }
+    }
+    */
+
     /** Generate a VizGraphPanel for a given projection choice, using the current settings. */
     public Pair<String,JPanel> getGraph(AlloyProjection projectionChoice) {
+        //if (cache2.size()==0) generateAllGraphs(new ArrayList<AlloyType>(projectedTypes), 0, null);
         Pair<String,JPanel> ans;
         AlloyInstance inst;
         synchronized(this) { ans=cache.get(projectionChoice); inst=originalInstance; }

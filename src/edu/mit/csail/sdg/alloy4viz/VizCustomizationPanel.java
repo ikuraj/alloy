@@ -426,13 +426,13 @@ public final class VizCustomizationPanel extends JPanel {
             public final void focusGained(FocusEvent e) { }
             public final void focusLost(FocusEvent e) { vizState.label(elt, labelText.getText()); }
         });
-        JComboBox color = new OurCombobox(cgs, true, DotColor.values(), 100, 35, Field.COLOR);
-        JComboBox shape = new OurCombobox(cgs, true, DotShape.values(), 125, 35, Field.SHAPE);
-        JComboBox style = new OurCombobox(cgs, true, DotStyle.values(),  95, 35, Field.STYLE);
+        JComboBox color = new OurCombobox(cgs, true, DotColor.values(DotColor.MAGIC), 100, 35, Field.COLOR);
+        JComboBox shape = new OurCombobox(cgs, true, DotShape.values(),               125, 35, Field.SHAPE);
+        JComboBox style = new OurCombobox(cgs, true, DotStyle.values(),                95, 35, Field.STYLE);
         answer.add(OurUtil.makeH(10, labelText, wcolor, color, style, shape, 2, null));
         if (elt instanceof AlloyType) {
             JPanel vis =new OurTristateCheckbox(gs, Field.VISIBLE,         "Show",                   "Display members as nodes");
-            JPanel rank=new OurTristateCheckbox(gs, Field.SAMERANK,        "Align members",          "Aligns nodes of this type");
+            //JPanel rank=new OurTristateCheckbox(gs, Field.SAMERANK,        "Align members",          "Aligns nodes of this type");
             JPanel con =new OurTristateCheckbox(gs, Field.HIDEUNCONNECTED, "Hide unconnected nodes", "Hide nodes without arcs");
             JPanel num =new OurTristateCheckbox(gs, Field.NUMBER,          "Number nodes",           "Attach atom number to node label as suffix");
             JPanel proj;
@@ -444,19 +444,19 @@ public final class VizCustomizationPanel extends JPanel {
             shape.setEnabled(enabled);
             style.setEnabled(enabled);
             vis.setEnabled(enabled);
-            rank.setEnabled(enabled);
+            //rank.setEnabled(enabled);
             con.setEnabled(enabled);
             num.setEnabled(enabled && !vizState.useOriginalName());
             JPanel a=OurUtil.makeVR(wcolor,vis,num),b;
-            if (proj!=null) b=OurUtil.makeVR(wcolor,rank,con,proj); else b=OurUtil.makeVR(wcolor,rank,con);
+            if (proj!=null) b=OurUtil.makeVR(wcolor,/*rank,*/con,proj); else b=OurUtil.makeVR(wcolor,/*rank,*/con);
             answer.add(OurUtil.makeHT(wcolor, 15,a,15,b,2,null));
         } else {
             JPanel vis =new OurTristateCheckbox(gs, Field.VISIBLE,         "Show",                        "Include members of set as nodes");
-            JPanel rank=new OurTristateCheckbox(gs, Field.SAMERANK,        "Align members",               "Aligns members of this set");
+            //JPanel rank=new OurTristateCheckbox(gs, Field.SAMERANK,        "Align members",               "Aligns members of this set");
             JPanel attr=new OurTristateCheckbox(gs, Field.SHOWINATTR,      "Show in relation attributes", "Show set membership in relation attributes");
             JPanel lab =new OurTristateCheckbox(gs, Field.SHOWLABEL,       "Show as labels",              "Show membership in set by labeling nodes");
             JPanel con =new OurTristateCheckbox(gs, Field.HIDEUNCONNECTED, "Hide unconnected nodes",      "Hide nodes without arcs");
-            JPanel a=OurUtil.makeVR(wcolor,vis,lab), b=OurUtil.makeVR(wcolor,rank,con,attr);
+            JPanel a=OurUtil.makeVR(wcolor,vis,lab), b=OurUtil.makeVR(wcolor,/*rank,*/con,attr);
             answer.add(OurUtil.makeHT(wcolor, 15,a,15,b,2,null));
         }
     }
@@ -548,16 +548,16 @@ public final class VizCustomizationPanel extends JPanel {
         weightPanel.setBorder(new EmptyBorder(5,5,5,5));
         weightPanel.setAlignmentY(0.5f);
         weightPanel.setToolTipText("A higher weight will cause the edge to be shorter and straighter.");
-        OurCombobox color = new OurCombobox(cgs, true, DotColor.values(), 110, 35, Field.COLOR);
-        OurCombobox style = new OurCombobox(cgs, true, DotStyle.values(), 105, 35, Field.STYLE);
+        OurCombobox color = new OurCombobox(cgs, true, DotColor.values(DotColor.WHITE), 110, 35, Field.COLOR);
+        OurCombobox style = new OurCombobox(cgs, true, DotStyle.values(),               105, 35, Field.STYLE);
         JPanel visible=new OurTristateCheckbox(gs, Field.VISIBLE,     "Show as arcs",      "Show relation as arcs");
         JPanel attr=new OurTristateCheckbox(gs,    Field.ATTRIBUTE,   "Show as attribute", "Additionally display this relation as an attribute on the nodes' labels");
-        JPanel rank=new OurTristateCheckbox(gs,    Field.SAMERANK,    "Align endpoints",   "Align nodes connected by this relation's arcs");
+        //JPanel rank=new OurTristateCheckbox(gs,    Field.SAMERANK,    "Align endpoints",   "Align nodes connected by this relation's arcs");
         JPanel back=new OurTristateCheckbox(gs,    Field.LAYOUTBACK,  "Layout backwards",  "Layout graph as if arcs were reversed");
         JPanel merge=new OurTristateCheckbox(gs,   Field.MERGEARROWS, "Merge arrows",      "Merge opposing arrows between the same nodes as one bidirectional arrow");
         JPanel constraint=new OurTristateCheckbox(gs,Field.CONSTRAINT, "Influence layout",      "Whether this edge influences the graph layout");
         JPanel panel1=OurUtil.makeVR(wcolor, visible, attr, constraint);
-        JPanel panel2=OurUtil.makeVR(wcolor, rank, back, merge);
+        JPanel panel2=OurUtil.makeVR(wcolor, /*rank,*/ back, merge);
         parent.add(makelabel(rel.toString()));
         parent.add(OurUtil.makeH(10, labelText, wcolor, 5, color, 5, style, 3, weightPanel, 2, null));
         parent.add(OurUtil.makeHT(wcolor, 10, panel1, 15, panel2, 2, null));
@@ -592,19 +592,19 @@ public final class VizCustomizationPanel extends JPanel {
         };
         JLabel nLabel = OurUtil.label(OurUtil.getVizFont(), "Node Color Palette:");
         JLabel eLabel = OurUtil.label(OurUtil.getVizFont(), "Edge Color Palette:");
-        JLabel oLabel = OurUtil.label(OurUtil.getVizFont(), "Orientation:");
+        //JLabel oLabel = OurUtil.label(OurUtil.getVizFont(), "Orientation:");
         JLabel aLabel = OurUtil.label(OurUtil.getVizFont(), "Use original atom names:");
-        JLabel fLabel = OurUtil.label(OurUtil.getVizFont(), "Font Size:");
-        JComboBox fontSize= new OurCombobox(cgs, false, fontSizes,                60, 32, "0");
-        JComboBox orient  = new OurCombobox(cgs, false, DotOrientation.values(), 140, 32, "1");
+        //JLabel fLabel = OurUtil.label(OurUtil.getVizFont(), "Font Size:");
+        //JComboBox fontSize= new OurCombobox(cgs, false, fontSizes,                60, 32, "0");
+        //JComboBox orient  = new OurCombobox(cgs, false, DotOrientation.values(), 140, 32, "1");
         JComboBox nodepal = new OurCombobox(cgs, false, DotPalette.values(),     100, 32, "2");
         JComboBox edgepal = new OurCombobox(cgs, false, DotPalette.values(),     100, 32, "3");
         JPanel name = new OurBinaryCheckbox(bgs, null, "", "Whether the visualizer should use the original atom names as-is.");
         parent.add(makelabel(" General Graph Settings:"));
         parent.add(OurUtil.makeBox(6,6,wcolor));
         parent.add(OurUtil.makeH(wcolor, 25, nLabel, 5, nodepal, 8, aLabel, 5, name, 2, null));
-        parent.add(OurUtil.makeH(wcolor, 25, eLabel, 5, edgepal, 8, fLabel, 5, fontSize, 2, null));
-        parent.add(OurUtil.makeH(wcolor, 25, oLabel, 5, orient,  2, null));
+        parent.add(OurUtil.makeH(wcolor, 25, eLabel, 5, edgepal, /*8, fLabel, 5, fontSize,*/ 2, null));
+        //parent.add(OurUtil.makeH(wcolor, 25, oLabel, 5, orient,  2, null));
     }
 
     //=============================================================================================================//
@@ -647,19 +647,19 @@ public final class VizCustomizationPanel extends JPanel {
                 if (key==Field.SHOWINATTR) vizState.showAsAttr(null, value);
             }
         };
-        JComboBox color = new OurCombobox(cgs, false, DotColor.values(), 110, 35, Field.COLOR);
-        JComboBox shape = new OurCombobox(cgs, false, DotShape.values(), 135, 35, Field.SHAPE);
-        JComboBox style = new OurCombobox(cgs, false, DotStyle.values(), 110, 35, Field.STYLE);
+        JComboBox color = new OurCombobox(cgs, false, DotColor.values(DotColor.MAGIC), 110, 35, Field.COLOR);
+        JComboBox shape = new OurCombobox(cgs, false, DotShape.values(),               135, 35, Field.SHAPE);
+        JComboBox style = new OurCombobox(cgs, false, DotStyle.values(),               110, 35, Field.STYLE);
         JPanel vis  = new OurBinaryCheckbox(gs, Field.VISIBLE,         "Show",                   "Show members of type as nodes");
-        JPanel rank = new OurBinaryCheckbox(gs, Field.SAMERANK,        "Align members",          "Align nodes of the same type");
+        //JPanel rank = new OurBinaryCheckbox(gs, Field.SAMERANK,        "Align members",          "Align nodes of the same type");
         JPanel hide = new OurBinaryCheckbox(gs, Field.HIDEUNCONNECTED, "Hide unconnected nodes", "Hide nodes without arcs");
         JPanel num  = new OurBinaryCheckbox(gs, Field.NUMBER,          "Number nodes",           "Attach atom number to node label as suffix");
         JPanel label= new OurBinaryCheckbox(gs, Field.SHOWLABEL,  "Show as labels", "Show members as labels");
         JPanel attr = new OurBinaryCheckbox(gs, Field.SHOWINATTR, "Show in relation attributes", "Show set membership of endpoints when relation attributes are enabled");
         parent.add(makelabel(" Default Type and Set Settings:"));
         parent.add(OurUtil.makeH(wcolor, 10, color, 7, style, 7, shape, 2, null));
-        JPanel a=OurUtil.makeVL(wcolor,vis,num,label), b=OurUtil.makeVL(wcolor,rank,hide,attr);
-        parent.add(OurUtil.makeH(wcolor, 10, a, 10, b, 2, null));
+        JPanel a=OurUtil.makeVL(wcolor,vis,num,label), b=OurUtil.makeVL(wcolor,/*rank,*/hide,attr);
+        parent.add(OurUtil.makeHT(wcolor, 10, a, 10, b, 2, null));
     }
 
     //=============================================================================================================//
@@ -700,17 +700,17 @@ public final class VizCustomizationPanel extends JPanel {
                 if (key==Field.LAYOUTBACK) vizState.layoutBack(null, value);
             }
         };
-        JComboBox colorComboE   = new OurCombobox(cgs, false, DotColor.values(), 110, 35, Field.COLOR);
-        JComboBox outlineComboE = new OurCombobox(cgs, false, DotStyle.values(), 110, 35, Field.STYLE);
+        JComboBox colorComboE   = new OurCombobox(cgs, false, DotColor.values(DotColor.WHITE), 110, 35, Field.COLOR);
+        JComboBox outlineComboE = new OurCombobox(cgs, false, DotStyle.values(),               110, 35, Field.STYLE);
         JPanel dispCBE       = new OurBinaryCheckbox(gs, Field.VISIBLE,     "Show as arcs", "Show relations as arcs");
-        JPanel rankCBE       = new OurBinaryCheckbox(gs, Field.SAMERANK,    "Align endpoints", "Align nodes connected by the same relationships' arcs");
+        //JPanel rankCBE       = new OurBinaryCheckbox(gs, Field.SAMERANK,    "Align endpoints", "Align nodes connected by the same relationships' arcs");
         JPanel mergeCBE      = new OurBinaryCheckbox(gs, Field.MERGEARROWS, "Merge arrows", "Merge opposing arrows of the same relation");
         JPanel constraintCBE = new OurBinaryCheckbox(gs, Field.CONSTRAINT,  "Influence layout", "Whether this edge influences the graph layout");
         JPanel attrCBE       = new OurBinaryCheckbox(gs, Field.ATTRIBUTE,   "Show as attributes", "Show relations as attributes on nodes");
         JPanel laybackCBE    = new OurBinaryCheckbox(gs, Field.LAYOUTBACK,  "Layout backwards", "Layout graph as if arcs were reversed");
         parent.add(makelabel(" Default Relation Settings:"));
         parent.add(OurUtil.makeH(wcolor, 10, colorComboE, 8, outlineComboE, 2, null));
-        JPanel a=OurUtil.makeVL(wcolor,dispCBE,attrCBE,constraintCBE,10), b=OurUtil.makeVL(wcolor,rankCBE,laybackCBE,mergeCBE);
+        JPanel a=OurUtil.makeVL(wcolor,dispCBE,attrCBE,constraintCBE,10), b=OurUtil.makeVL(wcolor,/*rankCBE,*/laybackCBE,mergeCBE);
         parent.add(OurUtil.makeHT(wcolor, 10, a, 10, b, 2, null));
     }
 

@@ -20,12 +20,20 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Rational;
 import edu.mit.csail.sdg.alloy4.Util;
 
@@ -35,15 +43,15 @@ import edu.mit.csail.sdg.alloy4.Util;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class VizGraph extends DiGraph {
+public final strictfp class VizGraph extends DiGraph {
 
     //================================ adjustable options ========================================================================//
 
     /** Minimum horizontal distance between adjacent nodes. */
-    static final int xJump=15*3;
+    static final int xJump=30;
 
     /** Minimum vertical distance between adjacent layers. */
-    static final int yJump=30*3;
+    static final int yJump=60;
 
     /** The left edge. */
     private int left=0;
@@ -75,39 +83,19 @@ public final class VizGraph extends DiGraph {
     /** Assuming layout() has been called, this returns the total height. */
     public int getTotalHeight() { return totalHeight; }
 
-    //=============================== constructors and other methods =============================================================//
+    //=============================== constructors and additional fields =========================================================//
+
+    /** A list of legends; each legend is an Object with the associated text label and color. */
+    private final SortedMap<Comparable,Pair<String,Color>> legends = new TreeMap<Comparable,Pair<String,Color>>();
+
+    /**
+     * Add a legend with the given object and the associated text label; if color==null, that means we will
+     * still add this legend into the list of legends, but this legend will be hidden.
+     */
+    public void addLegend(Comparable object, String label, Color color) { legends.put(object, new Pair<String,Color>(label,color)); }
 
     /** Constructs an empty VizGraph object. */
     public VizGraph() { }
-
-    //============================================================================================================================//
-
-    /** Convert multiedges into unique edges by inserting dummy nodes. */
-    private void layout_remoteMultiEdges() {
-       for(VizNode n:new ArrayList<VizNode>(nodes)) {
-          List<VizEdge> outs=n.outEdges();
-          for(int i=0; i<outs.size(); i++) {
-             VizEdge e1=outs.get(i);
-             VizNode n1=e1.b();
-             boolean multiedge=false;
-             for(int j=i+1; j<outs.size(); j++) {
-                VizEdge e2=outs.get(j);
-                VizNode n2=e2.b();
-                if (n1==n2) {
-                   n2=new VizNode(this, e2.uuid).set((VizShape)null);
-                   e2.changeB(n2);
-                   new VizEdge(n2, n1, e2.uuid, "", e2.ahead(), e2.bhead(), e2.style(), e2.color(), e2.group());
-                   multiedge=true;
-                }
-             }
-             if (multiedge) {
-                VizNode n2=new VizNode(this, e1.uuid).set((VizShape)null);
-                e1.changeB(n2);
-                new VizEdge(n2, n1, e1.uuid, "", e1.ahead(), e1.bhead(), e1.style(), e1.color(), e1.group());
-             }
-          }
-       }
-    }
 
     //============================================================================================================================//
 
@@ -419,7 +407,6 @@ public final class VizGraph extends DiGraph {
         }
 
         // Layout the nodes
-        layout_remoteMultiEdges();
         layout_assignOrder();
         layout_reverseAllBackwardEdges();
         final int layers = layout_assignNodesIntoLayers();
@@ -479,8 +466,8 @@ public final class VizGraph extends DiGraph {
             if (minX>x1) minX=x1;
             if (maxX<x2) maxX=x2;
         }
-        left=minX;
-        totalWidth=maxX-minX;
+        left=minX-100;            // leave 100 pixels on the left, so that we hopefully don't draw edgelabels off screen
+        totalWidth=maxX-minX+200; // leave 100 pixels on the right, so that we hopefully don't draw edgelabels off screen
         // Find the topmost and bottommost pixel
         for(int layer=layers()-1; layer>=0; layer--) {
            for(VizNode n:layer(layer)) {
@@ -559,10 +546,9 @@ public final class VizGraph extends DiGraph {
 
     //============================================================================================================================//
 
-    /** Assuming layout has been performed, this drwas the graph with the given magnification scale. */
-    public void draw(Artist gr, double scale, Object selected, Object highlight) {
+    /** Assuming layout has been performed, this draws the graph with the given magnification scale. */
+    public void draw(Artist gr, double scale, Object highlight) {
         if (nodes.size()==0) return; // The rest of this procedure assumes there is at least one node
-        if (highlight==null) highlight=selected;
         Object group=null;
         VizNode highFirstNode=null, highLastNode=null;
         VizEdge highFirstEdge=null, highLastEdge=null;
@@ -577,20 +563,67 @@ public final class VizGraph extends DiGraph {
         }
         // Since drawing an edge will automatically draw all segments if they're connected via dummy nodes,
         // we must make sure we only draw out edges from non-dummy-nodes
-        double tip = Artist.getMaxAscentAndDescent(nodes.get(0).fontSize(), false)*0.6D;
+        int maxAscentDescent = Artist.getMaxAscentAndDescent(nodes.get(0).fontSize(), false);
+        double tip = maxAscentDescent*0.6D;
         for(VizNode n:nodes) if (n.shape()!=null) {
-          for(VizEdge e:n.outEdges())  if (e.group!=group) { e.draw(gr, scale, null); e.drawArrowhead(gr, scale, null, tip); }
-          for(VizEdge e:n.selfEdges()) if (e.group!=group) { e.draw(gr, scale, null); e.drawArrowhead(gr, scale, null, tip); }
+          for(VizEdge e:n.outEdges())  if (e.group!=group) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
+          for(VizEdge e:n.selfEdges()) if (e.group!=group) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
         }
         if (highFirstEdge!=null) {
           for(VizNode n:nodes) if (n.shape()!=null) {
             for(VizEdge e:n.outEdges())  if (e.group==group && e!=highFirstEdge) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
             for(VizEdge e:n.selfEdges()) if (e.group==group && e!=highFirstEdge) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
           }
-          highFirstEdge.draw(gr, scale, highFirstEdge); highFirstEdge.drawArrowhead(gr, scale, highFirstEdge, tip);
+          highFirstEdge.draw(gr, scale, highFirstEdge);
+          highFirstEdge.drawArrowhead(gr, scale, highFirstEdge, tip);
         }
         for(VizNode n:nodes) if (highFirstNode!=n && highLastNode!=n) n.draw(gr, scale, n==highlight);
         if (highFirstNode!=null) highFirstNode.draw(gr, scale, true);
         if (highLastNode!=null && highLastNode!=highFirstNode) highLastNode.draw(gr, scale, true);
+        if (highFirstEdge!=null) highFirstEdge.drawLabel(gr, highFirstEdge.color(), Color.WHITE);
     }
+
+    /** Paint the legends onto the Graphics2D object. */
+    public void drawLegends(Graphics2D gr) {
+        if (nodes.size()==0 || legends.size()==0) return; // No need to continue otherwise
+        gr.setFont(new Font("Dialog", Font.BOLD, nodes.get(0).fontSize()));
+        FontMetrics fm = gr.getFontMetrics();
+        int maxAscent = fm.getMaxAscent(), maxAscentDescent = maxAscent + fm.getMaxDescent(), y=8, maxWidth=0;
+        for(Map.Entry<Comparable,Pair<String,Color>> e:legends.entrySet()) {
+            if (e.getValue().b==null) continue;
+            int w = fm.stringWidth(e.getValue().a);
+            if (maxWidth<w) maxWidth=w;
+            y = y + maxAscentDescent;
+        }
+        if (y==8) return; // This means no legends need to be drawn
+        gr.setColor(new Color(255,255,255,128));
+        gr.fillRoundRect(5, 5, 8+maxWidth+3, y, 5, 5);
+        gr.setColor(Color.BLACK);
+        gr.drawRoundRect(5, 5, 8+maxWidth+3, y, 5, 5);
+        y=8;
+        for(Map.Entry<Comparable,Pair<String,Color>> e:legends.entrySet()) {
+            Color color = e.getValue().b;
+            if (color==null) continue;
+            gr.setColor(color);
+            gr.drawString(e.getValue().a, 8, y+maxAscent);
+            y = y + maxAscentDescent;
+        }
+    }
+
+    /*
+     * TODO:
+     * legend should have right color, and be highlightable
+     * straighten
+     * reloadEditorTabs
+     * some Pos are off
+     * ---futurework---
+     * draggableEdgeLabel
+     * UnsatCore tightening
+     * FuncCallBadErrorMessage
+     * left-to-right layout orientation
+     * node-aligned and/or edge-aligned
+     * flag for turning most (maybe even all) bounds into less efficient explicit constraints, to aid unsat-core-highlighting
+     * pred { someField := someConstant }
+     * Warn user if their customization is not saved
+     */
 }

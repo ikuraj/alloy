@@ -45,7 +45,7 @@ import edu.mit.csail.sdg.alloy4.OurPDFWriter;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class Artist {
+public final strictfp class Artist {
 
     /** The corresponding Graphics2D object. */
     private Graphics2D gr;
@@ -175,19 +175,21 @@ public final class Artist {
         if (gr!=null) {
            BasicStroke bs;
            switch(style) {
-              case BOLD:   bs=new BasicStroke(scale>1 ? (float)(2.5d/scale) : 2.5f); break;
-              case DOTTED: bs=new BasicStroke(scale>1 ? (float)(1.0d/scale) : 1f, CAP_ROUND, JOIN_ROUND, 15f, dot, 0f); break;
-              case DASHED: bs=new BasicStroke(scale>1 ? (float)(1.0d/scale) : 1f, CAP_ROUND, JOIN_ROUND, 15f, dashed, 5f); break;
-              default:     bs=new BasicStroke(scale>1 ? (float)(1.0d/scale) : 1f);
+              case SELECTED: bs=new BasicStroke(scale>1 ? (float)(3.9d/scale) : 3.9f); break;
+              case BOLD:     bs=new BasicStroke(scale>1 ? (float)(2.6d/scale) : 2.6f); break;
+              case DOTTED:   bs=new BasicStroke(scale>1 ? (float)(1.3d/scale) : 1.3f, CAP_ROUND, JOIN_ROUND, 15f, dot, 0f); break;
+              case DASHED:   bs=new BasicStroke(scale>1 ? (float)(1.3d/scale) : 1.3f, CAP_ROUND, JOIN_ROUND, 15f, dashed, 5f); break;
+              default:       bs=new BasicStroke(scale>1 ? (float)(1.3d/scale) : 1.3f);
            }
            gr.setStroke(bs);
            return;
         }
         switch(style) {
-          case BOLD:   pdf.write("2 w [] 0 d\n"); return;
-          case DOTTED: pdf.write("1 w [1 3] 0 d\n"); return;
-          case DASHED: pdf.write("1 w [6 3] 0 d\n"); return;
-          default:     pdf.write("1 w [] 0 d\n"); return;
+          case SELECTED: pdf.write("3 w [] 0 d\n"); return;
+          case BOLD:     pdf.write("2 w [] 0 d\n"); return;
+          case DOTTED:   pdf.write("1 w [1 3] 0 d\n"); return;
+          case DASHED:   pdf.write("1 w [6 3] 0 d\n"); return;
+          default:       pdf.write("1 w [] 0 d\n"); return;
         }
     }
 

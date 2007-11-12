@@ -20,11 +20,15 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import java.awt.Color;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import edu.mit.csail.sdg.alloy4.Util;
 
@@ -71,14 +75,48 @@ public final class StaticGraphMaker {
         return answer.graph;
     }
 
+    /** The list of colors, in order, to assign each legend. */
+    private static final List<Color> colors = Collections.unmodifiableList(Arrays.asList(
+       new Color(204,0,51)    // bright red
+       ,new Color(0,102,51)    // strong green
+       ,new Color(0,0,255)     // strong blue
+       ,new Color(102,0,204)   // purple
+       ,new Color(255,51,255)  // pink
+       ,new Color(102,102,102) // gray
+       ,new Color(255,120,0)   // strong oragne
+       ,new Color(102,204,0)   // light green
+       ,new Color(51,153,204)  // medium blue
+       ,new Color(0,255,255)   // pale blue
+    ));
+
     /** The constructor takes an Instance and a View, then insert the generate graph(s) into a blank cartoon. */
     private StaticGraphMaker (AlloyInstance originalInstance, VizState view, AlloyProjection proj) {
+        Map<AlloyRelation,Color> magicColor = new TreeMap<AlloyRelation,Color>();
+        Map<AlloyRelation,Integer> rels = new TreeMap<AlloyRelation,Integer>();
         this.view = view;
         instance = StaticProjector.project(originalInstance,proj);
         model = instance.model;
-        for (AlloyRelation rel:model.getRelations())
-            if (view.edgeVisible(rel,model))
-                edgesAsArcs(rel);
+        for (AlloyRelation rel: model.getRelations()) {
+            rels.put(rel,null);
+        }
+        for (AlloyRelation rel: rels.keySet()) {
+            DotColor c = view.edgeColor(rel, model);
+            if (c==DotColor.MAGIC) {
+                int i = magicColor.size();
+                if (i>=colors.size()) magicColor.put(rel,Color.BLACK); else magicColor.put(rel, colors.get(i));
+            } else {
+                magicColor.put(rel, DotColor.name2color(c.getDotText(view.getEdgePalette())));
+            }
+            // We intentionally set a color for every relation, so that the layout algorithm will always
+            // see the same set of relations (even for different slices of the same graph,
+            // or if the user changes some settings, or if the user views a different instance of the same model...)
+            // That is, as long as the user has not changed the set of Sig to project over, then the rels.keySet() is unchanged
+            // This way, the layout algorithm can assign colors to each relation in a robust way
+        }
+        for (AlloyRelation rel: model.getRelations()) {
+            int count = view.edgeVisible(rel,model) ? edgesAsArcs(rel, magicColor.get(rel)) : 0;
+            rels.put(rel,count);
+        }
         for (AlloyAtom atom:instance.getAllAtoms()) {
             List<AlloySet> sets=instance.atom2sets(atom);
             if (sets.size()>0) {
@@ -97,7 +135,7 @@ public final class StaticGraphMaker {
         rankSets(rank);
         rankEdges(rank);
         graph=new DotGraph(view.getFontSize(), view.getOrientation(),
-                view.getNodePalette(), view.getEdgePalette(), nodes, edges, rank, attribs);
+                view.getNodePalette(), view.getEdgePalette(), rels, magicColor, nodes, edges, rank, attribs);
     }
 
     /**
@@ -134,7 +172,7 @@ public final class StaticGraphMaker {
     }
 
     /** Create an edge for a given tuple from a relation (if neither start nor end node is explicitly invisible) */
-    private void createEdge(AlloyRelation rel, AlloyTuple tuple, boolean bidirectional) {
+    private boolean createEdge(AlloyRelation rel, AlloyTuple tuple, boolean bidirectional, Color magicColor) {
         // This edge represents a given tuple from a given relation.
         //
         // If the tuple's arity==2, then the label is simply the label of the relation.
@@ -142,10 +180,10 @@ public final class StaticGraphMaker {
         // If the tuple's arity>2, then we append the node labels for all the intermediate nodes.
         // eg. Say a given tuple is (A,B,C,D) from the relation R.
         // An edge will be drawn from A to D, with the label "R [B, C]"
-        if (!view.nodeVisible(tuple.getStart(), instance)) return;
-        if (!view.nodeVisible(tuple.getEnd(), instance)) return;
+        if (!view.nodeVisible(tuple.getStart(), instance)) return false;
+        if (!view.nodeVisible(tuple.getEnd(), instance)) return false;
         DotNode start=createNode(tuple.getStart()), end=createNode(tuple.getEnd());
-        if (start==null || end==null) return;
+        if (start==null || end==null) return false;
         boolean layoutBack=view.layoutBack(rel,model);
         String label=view.label(rel);
         if (tuple.getArity() > 2) {
@@ -160,16 +198,19 @@ public final class StaticGraphMaker {
         }
         DotDirection dir = bidirectional ? DotDirection.BOTH : (layoutBack ? DotDirection.BACK:DotDirection.FORWARD);
         DotEdge e=new DotEdge(tuple, edges.size(), (layoutBack?end:start), (layoutBack?start:end), label,
-                view.edgeStyle(rel,model), view.edgeColor(rel,model), dir, view.weight(rel), view.constraint(rel,model), rel);
+                view.edgeStyle(rel,model), view.edgeColor(rel,model), magicColor,
+                dir, view.weight(rel), view.constraint(rel,model), rel);
         edges.put(e, tuple);
+        return true;
     }
 
     /** Create edges for every visible tuple in the given relation. */
-    private void edgesAsArcs(AlloyRelation rel) {
+    private int edgesAsArcs(AlloyRelation rel, Color magicColor) {
+        int count = 0;
         if (!view.mergeArrows(rel,model)) {
             // If we're not merging bidirectional arrows, simply create an edge for each tuple.
-            for (AlloyTuple tuple: instance.relation2tuples(rel)) createEdge(rel, tuple, false);
-            return;
+            for (AlloyTuple tuple: instance.relation2tuples(rel)) if (createEdge(rel, tuple, false, magicColor)) count++;
+            return count;
         }
         // Otherwise, find bidirectional arrows and only create one edge for each pair.
         Set<AlloyTuple> tuples = instance.relation2tuples(rel);
@@ -180,12 +221,13 @@ public final class StaticGraphMaker {
                 // If the reverse tuple is in the same relation, and it is not a self-edge, then draw it as a <-> arrow.
                 if (reverse!=null && tuples.contains(reverse) && !reverse.equals(tuple)) {
                     ignore.add(reverse);
-                    createEdge(rel,tuple,true);
+                    if (createEdge(rel,tuple,true,magicColor)) count++;
                 } else {
-                    createEdge(rel,tuple,false);
+                    if (createEdge(rel,tuple,false,magicColor)) count++;
                 }
             }
         }
+        return count;
     }
 
     /** Attach tuple values as attributes to existing nodes. */

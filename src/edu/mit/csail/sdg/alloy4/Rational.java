@@ -139,5 +139,5 @@ public final class Rational {
     }
 
     /** Returns the value as an approximate floating point number. */
-    public double doubleValue() { return a.doubleValue() / b.doubleValue(); }
+    public strictfp double doubleValue() { return a.doubleValue() / b.doubleValue(); }
 }

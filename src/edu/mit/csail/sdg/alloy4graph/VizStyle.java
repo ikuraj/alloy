@@ -34,7 +34,10 @@ public enum VizStyle {
     DOTTED("Dotted", "dotted"),
 
     /** Bold line. */
-    BOLD("Bold", "bold");
+    BOLD("Bold", "bold"),
+
+    /** Selected line. */
+    SELECTED("Selected", "selected");
 
     /** The brief description of this line style. */
     private final String longName;

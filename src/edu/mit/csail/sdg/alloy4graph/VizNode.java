@@ -30,6 +30,8 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
+import static java.lang.StrictMath.sqrt;
+import static java.lang.StrictMath.round;
 
 /**
  * Mutable; represents a graphical node.
@@ -37,7 +39,7 @@ import java.util.List;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class VizNode extends DiGraph.DiNode {
+public final strictfp class VizNode extends DiGraph.DiNode {
 
     // =============================== adjustable options ==================================================
 
@@ -261,10 +263,10 @@ public final class VizNode extends DiGraph.DiNode {
        // Use the radius to directly compute the intersection, if the shape is CIRCLE, M_CIRCLE, or DOUBLE_CIRCLE
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
-          int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
+          int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
           if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
           // x^2+y^2=radius^2  and x=y*slope, thus (1+slope^2)(y^2)=radius^2
-          ry=Math.sqrt((radius*radius)/(1+slope*slope)); if (step<0) ry=(-ry);
+          ry=sqrt((radius*radius)/(1+slope*slope)); if (step<0) ry=(-ry);
           ans.x=ry*slope + centerX;
           ans.y=ry + centerY;
           return;
@@ -291,10 +293,10 @@ public final class VizNode extends DiGraph.DiNode {
        // Use the radius to directly compute the intersection, if the shape is CIRCLE, M_CIRCLE, or DOUBLE_CIRCLE
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
-          int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
+          int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
           if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
           // x^2+y^2=radius^2  and y=x*slope, thus (1+slope^2)(x^2)=radius^2
-          rx=Math.sqrt((radius*radius)/(1+slope*slope)); if (step<0) rx=(-rx);
+          rx=sqrt((radius*radius)/(1+slope*slope)); if (step<0) rx=(-rx);
           ans.y=rx*slope + centerY;
           ans.x=rx + centerX;
           return;
@@ -316,9 +318,9 @@ public final class VizNode extends DiGraph.DiNode {
        y=y-centerY;
        if (shape==VizShape.CIRCLE || shape==VizShape.DOUBLE_CIRCLE || shape==VizShape.M_CIRCLE) {
           int hw=width/2, hh=height/2;
-          int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
+          int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
           if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
-          return Math.sqrt(radius*radius - y*y) + centerX;
+          return sqrt(radius*radius - y*y) + centerX;
        } else {
           for(double x=0;;x=x+1) if (!poly.contains(x,y)) return x+centerX;
        }
@@ -413,9 +415,9 @@ public final class VizNode extends DiGraph.DiNode {
              poly.addPoint(-hw, -hh); poly.addPoint(-hw+dx, -hh-dy); poly.addPoint(hw-dx, -hh-dy); poly.addPoint(hw, -hh);
              poly.addPoint(hw, hh); poly.addPoint(hw-dx, hh+dy); poly.addPoint(-hw+dx, hh+dy); poly.addPoint(-hw, hh);
              if (shape==VizShape.OCTAGON) break;
-             double c=Math.sqrt(dx*dx+dy*dy), a=(dx*dy)/c, k=((a+5)*dy)/dx, r=Math.sqrt((a+5)*(a+5)+k*k)-dy;
+             double c=sqrt(dx*dx+dy*dy), a=(dx*dy)/c, k=((a+5)*dy)/dx, r=sqrt((a+5)*(a+5)+k*k)-dy;
              double dx1=((r-5)*dx)/dy, dy1=-(((dx+5D)*dy)/dx-dy-r);
-             int x1=(int)(Math.round(dx1)), y1=(int)(Math.round(dy1));
+             int x1=(int)(round(dx1)), y1=(int)(round(dy1));
              updown+=5; side+=5;
              poly2=poly; poly=new Polygon();
              poly.addPoint(-hw-5, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-5); poly.addPoint(hw-dx+x1, -hh-dy-5);
@@ -423,7 +425,7 @@ public final class VizNode extends DiGraph.DiNode {
              poly.addPoint(-hw+dx-x1, hh+dy+5); poly.addPoint(-hw-5, hh+y1);
              if (shape==VizShape.DOUBLE_OCTAGON) break;
              updown+=5; side+=5;
-             poly3=poly; poly=new Polygon(); x1=(int)(Math.round(dx1*2)); y1=(int)(Math.round(dy1*2));
+             poly3=poly; poly=new Polygon(); x1=(int)(round(dx1*2)); y1=(int)(round(dy1*2));
              poly.addPoint(-hw-10, -hh-y1); poly.addPoint(-hw+dx-x1, -hh-dy-10); poly.addPoint(hw-dx+x1, -hh-dy-10);
              poly.addPoint(hw+10, -hh-y1); poly.addPoint(hw+10, hh+y1); poly.addPoint(hw-dx+x1, hh+dy+10);
              poly.addPoint(-hw+dx-x1, hh+dy+10); poly.addPoint(-hw-10, hh+y1);
@@ -432,7 +434,7 @@ public final class VizNode extends DiGraph.DiNode {
           case M_CIRCLE:
           case CIRCLE:
           case DOUBLE_CIRCLE: {
-             int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
+             int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
              if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
              int L = ((int) (radius / cos18))+2, a = (int) (L * sin36), b = (int) (L * cos36), c = (int) (radius * tan18);
              poly.addPoint(-L,0); poly.addPoint(-b,a); poly.addPoint(-c,L); poly.addPoint(c,L); poly.addPoint(b,a);
@@ -474,14 +476,14 @@ public final class VizNode extends DiGraph.DiNode {
        if (highlight) gr.setColor(Color.RED); else gr.setColor(color);
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
-          int radius = ((int) (Math.sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
+          int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
           if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
           gr.fillCircle(radius);
           gr.setColor(BLACK);
           gr.drawCircle(radius);
           if (style==VizStyle.DOTTED || style==VizStyle.DASHED) gr.set(VizStyle.SOLID, scale);
           if (shape==VizShape.M_CIRCLE && 10*radius>=25 && radius>5) {
-             int d = (int) Math.sqrt((double)(10*radius-25));
+             int d = (int) sqrt((double)(10*radius-25));
              if (d>0) { gr.drawLine(-d,-radius+5,d,-radius+5); gr.drawLine(-d,radius-5,d,radius-5); }
           }
           if (shape==VizShape.DOUBLE_CIRCLE) gr.drawCircle(radius-5);

@@ -32,7 +32,7 @@ import java.util.List;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class VizPath {
+public final strictfp class VizPath {
 
     /** The list of points. */
     private List<Point2D.Double> points = new ArrayList<Point2D.Double>();

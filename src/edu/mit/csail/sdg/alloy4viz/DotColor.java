@@ -38,8 +38,9 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 public final class DotColor extends DotAttribute {
 
     /** The list of values that the user can select from a combobox. */
-    static final List<DotColor> values;
+    private static final List<DotColor> values;
 
+    public static final DotColor MAGIC = new DotColor("Magic", "magic");
     public static final DotColor WHITE = new DotColor("White", "white");
     public static final DotColor GRAY = new DotColor("Gray", "lightgray");
     public static final DotColor BLACK = new DotColor("Black", "black");
@@ -53,6 +54,7 @@ public final class DotColor extends DotAttribute {
 
     static {
         List<DotColor> list = new ArrayList<DotColor>();
+        list.add(MAGIC);
         list.add(YELLOW);
         list.add(GREEN);
         list.add(BLUE);
@@ -67,6 +69,7 @@ public final class DotColor extends DotAttribute {
     public static Color name2color(String name) {
         Color ans = name2color.get(name);
         if (ans!=null) return ans;
+        else if (name.equals("magic"))           ans=Color.WHITE;
         else if (name.equals("palevioletred"))   ans=new Color(222,113,148);
         else if (name.equals("red"))             ans=new Color(255,0,0);
         else if (name.equals("salmon"))          ans=new Color(255,130,115);
@@ -118,7 +121,12 @@ public final class DotColor extends DotAttribute {
 
     /** Returns the list of values that the user is allowed to select from. */
     @SuppressWarnings("unchecked")
-    public static List<Object> values() { List raw = values; return raw; }
+    public static List<Object> values(DotColor... excludes) {
+        if (excludes==null || excludes.length==0) { List raw = values; return raw; }
+        List<Object> ans = new ArrayList<Object>(values);
+        for(int i=0; i<excludes.length; i++) ans.remove(excludes[i]);
+        return ans;
+    }
 
     /** Returns the icon to use, based on the given palette. */
     @Override public Icon getIcon(DotPalette pal) {

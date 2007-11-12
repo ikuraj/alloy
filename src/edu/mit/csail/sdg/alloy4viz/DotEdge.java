@@ -20,6 +20,7 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import java.awt.Color;
 import edu.mit.csail.sdg.alloy4graph.VizEdge;
 import edu.mit.csail.sdg.alloy4graph.VizNode;
 
@@ -45,6 +46,9 @@ public final class DotEdge {
 
     /** The color. */
     private final DotColor color;
+
+    /** The magic color, if the user specified that this edge should use magic color. */
+    private final Color magicColor;
 
     /** The starting node. */
     public final DotNode from;
@@ -78,7 +82,7 @@ public final class DotEdge {
      * @param constraint - whether this edge should constrain the graph layout or not
      */
     public DotEdge(Object uuid, int id, DotNode from, DotNode to, String label,
-            DotStyle style, DotColor color, DotDirection dir,
+            DotStyle style, DotColor color, Color magicColor, DotDirection dir,
             int weight, boolean constraint, Object group) {
         this.uuid = uuid;
         this.id = id;
@@ -87,24 +91,26 @@ public final class DotEdge {
         this.label = label;
         this.style = style;
         this.color = color;
+        this.magicColor = magicColor;
         this.dir = dir;
         this.weight = weight;
         this.constraint = constraint;
         this.group = (group==null ? this : group);
     }
 
-    /** Write this edge (using the given Edge palette) into a StringBuilder as if writing to a DOT file. */
-    public void write2(VizNode from, VizNode to, DotPalette pal) {
+    /** Write this edge (using the given Edge palette) into a DotGraph object. */
+    void write2(VizNode from, VizNode to, DotPalette pal) {
         VizEdge e;
         if (dir==DotDirection.FORWARD) e=new VizEdge(from,to,uuid,label,group).set(false,true);
            else if (dir==DotDirection.BACK) e=new VizEdge(from,to,uuid,label,group).set(true,false);
            else e=new VizEdge(from,to,uuid,label,group).set(true,true);
-        e.set(DotColor.name2color(color.getDotText(pal))).set(style.vizStyle).set(weight<1 ? 1 : (weight>100 ? 100 : weight));
-        //TODO out.append(", constraint = \"" + (constraint?"true":"false") + "\"");
+        if (color==DotColor.MAGIC && magicColor!=null) e.set(magicColor); else e.set(DotColor.name2color(color.getDotText(pal)));
+        e.set(style.vizStyle);
+        if (constraint) e.set(weight<1 ? 1 : (weight>100 ? 10000 : 100*weight)); else e.set(1);
     }
 
     /** Write this edge (using the given Edge palette) into a StringBuilder as if writing to a DOT file. */
-    public void write(StringBuilder out, DotPalette pal) {
+    void write(StringBuilder out, DotPalette pal) {
         out.append("\"N" + from.getID() + "\"");
         out.append(" -> ");
         out.append("\"N" + to.getID() + "\"");

@@ -65,7 +65,7 @@ import edu.mit.csail.sdg.alloy4.Util;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class VizViewer extends JPanel {
+public final strictfp class VizViewer extends JPanel {
 
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
@@ -419,7 +419,7 @@ public final class VizViewer extends JPanel {
        if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
        OurPDFWriter x = new OurPDFWriter(dpi, filename);
        x.write(scale2).write(" 0 0 ").write(scale2).writespace().write(dpi/2).writespace().write(dpi/2).write(" cm\n");
-       graph.draw(new Artist(x), scale2, null, null);
+       graph.draw(new Artist(x), scale2, null);
        x.close();
     }
 
@@ -434,7 +434,7 @@ public final class VizViewer extends JPanel {
        gr.setColor(BLACK);
        gr.scale(scale,scale);
        gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-       graph.draw(new Artist(gr), scale, null, null);
+       graph.draw(new Artist(gr), scale, null);
        OurPNGWriter.writePNG(bf, filename, dpiX, dpiY);
     }
 
@@ -459,8 +459,13 @@ public final class VizViewer extends JPanel {
         VizNode c=null;
         if (selected instanceof VizNode && ((VizNode)selected).shape()==null) { c=(VizNode)selected; sel=c.inEdges().get(0); }
         if (highlight instanceof VizNode && ((VizNode)highlight).shape()==null) { c=(VizNode)highlight; sel=c.inEdges().get(0); }
-        graph.draw(new Artist(g2), scale, sel, null);
+        graph.draw(new Artist(g2), scale, sel);
         if (c!=null) { gr.setColor(Color.RED); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
         g2.setTransform(oldAF);
+    }
+
+    /** Paint the legends onto the Graphics2D object. */
+    public void alloyPaintOver(Graphics2D gr) {
+        graph.drawLegends(gr);
     }
 }

@@ -32,7 +32,7 @@ import javax.imageio.ImageIO;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class OurPNGWriter {
+public final strictfp class OurPNGWriter {
 
     /** The buffer size; must be at least 21 since we need to have enough prefetch to write out the pHYs chunk into the file. */
     private static final int BUFSIZE=4096;

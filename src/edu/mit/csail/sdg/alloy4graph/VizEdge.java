@@ -26,6 +26,11 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
 import java.awt.geom.QuadCurve2D;
 import java.awt.geom.Rectangle2D;
+import static java.lang.StrictMath.PI;
+import static java.lang.StrictMath.sin;
+import static java.lang.StrictMath.cos;
+import static java.lang.StrictMath.atan2;
+import static java.lang.StrictMath.toRadians;
 
 /**
  * Mutable; represents a graphical edge.
@@ -33,15 +38,15 @@ import java.awt.geom.Rectangle2D;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public final class VizEdge extends DiGraph.DiEdge {
+public final strictfp class VizEdge extends DiGraph.DiEdge {
 
     // =============================== adjustable options ==================================================
 
-    /** The color to use for highlighted edge. */
-    private static Color color1;
+    // /** The color to use for highlighted edge. */
+    // private static Color color1 = Color.RED;
 
-    /** The color to use for other edges that are in the same group as the highlighted edge. */
-    private static Color color2;
+    // /** The color to use for other edges that are in the same group as the highlighted edge. */
+    // private static Color color2 = new Color(255,120,120);
 
     /** This determines the font size. */
     static final int fontSize = 12;
@@ -93,7 +98,7 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** The line-style of the edge; default is SOLID; never null. */
     private VizStyle style = VizStyle.SOLID;
 
-    /** The edge weight; always between 1 and 100 inclusively. */
+    /** The edge weight; always between 1 and 10000 inclusively. */
     private int weight = 1;
 
     /** The actual path corresponding to this edge; null if we have not assigned the path yet. */
@@ -102,7 +107,7 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** Returns the group that this VizEdge belongs to. */
     public Object group() { return group; }
 
-    /** Returns the edge weight (which is always between 1 and 100 inclusively). */
+    /** Returns the edge weight (which is always between 1 and 10000 inclusively). */
     public int weight() { return weight; }
 
     /** Returns the line style; never null. */
@@ -120,9 +125,11 @@ public final class VizEdge extends DiGraph.DiEdge {
     /** Returns the label on this edge. */
     public String label() { return label; }
 
-    /** Sets the edge weight between 1 and 100. */
-    public VizEdge set(int weightBetween1And100) {
-        if (weightBetween1And100>=1 && weightBetween1And100<=100) weight=weightBetween1And100;
+    /** Sets the edge weight between 1 and 10000. */
+    public VizEdge set(int weightBetween1And10000) {
+        if (weightBetween1And10000<1) weightBetween1And10000=1;
+        if (weightBetween1And10000>10000) weightBetween1And10000=10000;
+        weight=weightBetween1And10000;
         return this;
     }
 
@@ -154,8 +161,6 @@ public final class VizEdge extends DiGraph.DiEdge {
     public VizEdge(VizNode from, VizNode to, Object uuid, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color, Object group) {
        super(from, to); // The parent's constructor will add the edge A->B to the graph
        this.uuid = uuid;
-       if (color1==null) color1=Color.RED;
-       if (color2==null) color2=new Color(255,120,120);
        this.group = (group==null) ? this : group;
        this.label=label;
        this.ahead=drawArrowHeadOnFrom;
@@ -190,14 +195,24 @@ public final class VizEdge extends DiGraph.DiEdge {
            path.add(1, ax+a.getWidth()/2+q+i*d, ay-p);
            path.add(2, ax+a.getWidth()/2+q+i*d, ay+p);
         } else {
-           path=new VizPath(ax, ay, b.x(), b.y());
+           int i=0, n=0;
+           for(VizEdge e:a.outEdges()) {
+               if (e==this) i=n;
+               if (e.b()==b) n++;
+           }
+           double cx=b.x(), cy=b.y(), bx=(ax+cx)/2, by=(ay+cy)/2;
+           path=new VizPath(ax, ay, cx, cy);
+           if (n>1) {
+               if (i<n/2) bx=bx-(n/2-i)*10; else bx=bx+(i-n/2+1)*10; // the spacing between edges that share the same endpoints
+               path.add(1, bx, by);
+           }
         }
     }
 
     /** Given that this edge is already well-laidout, this method moves the label hoping to avoid/minimize overlap. */
     void repositionLabel(AvailableSpace sp) {
         if (label.length()==0) return;
-        if (a()==b()) return; // TODO: self edge
+        if (a()==b()) return; // self edge
         int gap = style==VizStyle.BOLD ? 3 : 0; // If the line is bold, we need to shift the label to the right a little bit
         int ay=a().y()+a().getHeight()/2, by=b().y()-b().getHeight()/2, midy=(ay+by)/2;
         if (b().shape()==null) midy=by-labelbox.h;
@@ -251,12 +266,12 @@ public final class VizEdge extends DiGraph.DiEdge {
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
     public void draw(Artist gr, double scale, VizEdge highlight) {
-       Color cl;
-       final int top=((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
+       final int top = ((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
        gr.translate(-left, -top);
-       if (highlight==this) { gr.setColor(cl=color1); gr.set(VizStyle.BOLD, scale); }
-       else if (highlight!=null && highlight.group==group) { gr.setColor(cl=color2); gr.set(VizStyle.BOLD, scale); }
-       else { gr.setColor(cl=color); gr.set(style, scale); }
+       if (highlight==this) { gr.setColor(color); gr.set(VizStyle.SELECTED, scale); }
+          else if (highlight!=null && highlight.group==group) { gr.setColor(color); gr.set(VizStyle.SELECTED, scale); }
+          else if (highlight!=null) { gr.setColor(Color.BLACK); gr.set(/*style!=VizStyle.BOLD ? style :*/ VizStyle.SOLID, scale); }
+          else { gr.setColor(color); gr.set(style, scale); }
        if (a()==b()) {
           // Draw the self edge
           double x0=path.getX(0), y0=path.getY(0), x1=path.getX(1), y1=y0, x2=x1, y2=path.getY(2), x3=path.getX(3), y3=y2;
@@ -277,15 +292,30 @@ public final class VizEdge extends DiGraph.DiEdge {
              e = e.b().outEdges().get(0);
           }
           p.draw(gr);
-          if (highlight==this) if (label.length()>0) {
-              Rectangle2D.Double rect = new Rectangle2D.Double(labelbox.x+5, labelbox.y+5, labelbox.w+10, labelbox.h+10);
-              gr.setColor(Color.WHITE); gr.draw(rect, true);
-              gr.setColor(cl); gr.draw(rect, false);
-              gr.drawString(label, labelbox.x + 10, labelbox.y + 10 + Artist.getMaxAscent(fontSize, style==VizStyle.BOLD)); // TODO: what about self edge?
-          }
        }
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);
+       //if (highlight==null && label.length()>0) drawLabel(gr, color, null);
+    }
+
+    /** Draw the edge label using the given color. */
+    void drawLabel(Artist gr, Color color, Color erase) {
+        if (label.length()>0) {
+            final int top = ((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
+            int x, y, n = path.getPoints();
+            if ((n&1)==0) x=(int)(path.getX(n/2-1)+path.getX(n/2))/2; else x=(int)path.getX(n/2);
+            if ((n&1)==0) y=(int)(path.getY(n/2-1)+path.getY(n/2))/2; else y=(int)path.getY(n/2);
+            x=x-labelbox.w/2-3;
+            y=y-labelbox.h/2-3;
+            gr.translate(-left, -top);
+            if (erase!=null) {
+               Rectangle2D.Double rect = new Rectangle2D.Double(x, y, labelbox.w+6, labelbox.h+6);
+               gr.setColor(erase); gr.draw(rect, true);
+               gr.setColor(color); gr.draw(rect, false);
+            }
+            gr.drawString(label, x+3, y+3+Artist.getMaxAscent(fontSize, false));
+            gr.translate(left, top);
+        }
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
@@ -294,9 +324,11 @@ public final class VizEdge extends DiGraph.DiEdge {
        // Check to see if this edge is highlighted or not
        double fan;
        if (highlight==this) {
-          fan=bigFan; gr.setColor(color1); gr.set(VizStyle.BOLD, scale);
+          fan=selectedFan; gr.setColor(color); gr.set(VizStyle.SELECTED, scale);
        } else if (highlight!=null && highlight.group==group) {
-          fan=bigFan; gr.setColor(color2); gr.set(VizStyle.BOLD, scale);
+          fan=selectedFan; gr.setColor(color); gr.set(VizStyle.SELECTED, scale);
+       } else if (highlight!=null) {
+          fan=smallFan; gr.setColor(Color.BLACK); gr.set(VizStyle.SOLID /*style==VizStyle.BOLD ? VizStyle.SOLID : style*/, scale);
        } else {
           fan=(style==VizStyle.BOLD ? bigFan : smallFan); gr.setColor(color); gr.set(style, scale);
        }
@@ -305,18 +337,18 @@ public final class VizEdge extends DiGraph.DiEdge {
              int n = e.path.getPoints();
              if (e.ahead && e.a().shape()!=null) {
                 double ax = e.path.getX(0), ay=e.path.getY(0), bx=e.path.getX(1), by=e.path.getY(1);
-                double t = Math.PI+Math.atan2(ay-by, ax-bx);
-                double gx1 = ax + tipLength*Math.cos(t-fan), gy1 = ay + tipLength*Math.sin(t-fan);
-                double gx2 = ax + tipLength*Math.cos(t+fan), gy2 = ay + tipLength*Math.sin(t+fan);
+                double t = PI + atan2(ay-by, ax-bx);
+                double gx1 = ax + tipLength*cos(t-fan), gy1 = ay + tipLength*sin(t-fan);
+                double gx2 = ax + tipLength*cos(t+fan), gy2 = ay + tipLength*sin(t+fan);
                 GeneralPath gp=new GeneralPath();
                 gp.moveTo((float)(gx1-left), (float)(gy1-top)); gp.lineTo((float)(ax-left), (float)(ay-top));
                 gp.lineTo((float)(gx2-left), (float)(gy2-top)); gp.closePath(); gr.draw(gp,true);
              }
              if (e.bhead && e.b().shape()!=null) {
                 double ax = e.path.getX(n-2), ay=e.path.getY(n-2), bx=e.path.getX(n-1), by=e.path.getY(n-1);
-                double t = Math.PI+Math.atan2(by-ay, bx-ax);
-                double gx1 = bx + tipLength*Math.cos(t-fan), gy1 = by + tipLength*Math.sin(t-fan);
-                double gx2 = bx + tipLength*Math.cos(t+fan), gy2 = by + tipLength*Math.sin(t+fan);
+                double t = PI + atan2(by-ay, bx-ax);
+                double gx1 = bx + tipLength*cos(t-fan), gy1 = by + tipLength*sin(t-fan);
+                double gx2 = bx + tipLength*cos(t+fan), gy2 = by + tipLength*sin(t+fan);
                 GeneralPath gp=new GeneralPath();
                 gp.moveTo((float)(gx1-left), (float)(gy1-top)); gp.lineTo((float)(bx-left), (float)(by-top));
                 gp.lineTo((float)(gx2-left), (float)(gy2-top)); gp.closePath(); gr.draw(gp,true);
@@ -327,8 +359,11 @@ public final class VizEdge extends DiGraph.DiEdge {
     }
 
     /** The angle (in radian) to fan out the arrow head, if the line is not bold. */
-    private final double smallFan = Math.toRadians(16);
+    private final double smallFan = toRadians(16);
 
     /** The angle (in radian) to fan out the arrow head, if the line is bold. */
-    private final double bigFan = Math.toRadians(32);
+    private final double bigFan = toRadians(32);
+
+    /** The angle (in radian) to fan out the arrow head, if the line is selected. */
+    private final double selectedFan = toRadians(48);
 }

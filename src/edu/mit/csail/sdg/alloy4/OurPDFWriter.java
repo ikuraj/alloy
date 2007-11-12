@@ -16,7 +16,7 @@ import java.util.ArrayList;
  * <p><b>Thread Safety:</b> unsafe.
  */
 
-public final class OurPDFWriter {
+public final strictfp class OurPDFWriter {
 
     /** This is the file we're writing. */
     private RandomAccessFile out;

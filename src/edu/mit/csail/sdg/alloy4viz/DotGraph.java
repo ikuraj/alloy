@@ -20,6 +20,7 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import java.awt.Color;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pair;
@@ -67,6 +69,12 @@ public final class DotGraph {
     /** The set of additional attributes to be printed for each node. */
     private final Map<DotNode,Set<String>> attrs;
 
+    /** The list of relations (and the number of edges in it) in this graph. */
+    public final ConstMap<AlloyRelation,Integer> relations;
+
+    /** The list of relations (and the inferred color to use for it) in this graph. */
+    public final ConstMap<AlloyRelation,Color> magicColor;
+
     /** Creates an empty Graph. */
     public DotGraph() {
         orientation = DotOrientation.getDefault();
@@ -76,6 +84,8 @@ public final class DotGraph {
         edges = ConstSet.make();
         ranks = new LinkedHashSet<Set<DotNode>>();
         attrs = new LinkedHashMap<DotNode,Set<String>>();
+        relations = ConstMap.make();
+        magicColor = ConstMap.make();
     }
 
     /**
@@ -90,6 +100,8 @@ public final class DotGraph {
      * @param attrs - this maps nodes to a set of additional attributes to be printed
      */
     public DotGraph(int fontSize, DotOrientation orientation, DotPalette nodePalette, DotPalette edgePalette,
+            Map<AlloyRelation,Integer> rels,
+            Map<AlloyRelation,Color> magicColor,
             Map<DotNode,AlloyAtom> nodes, Map<DotEdge,AlloyTuple> edges,
             Set<Set<DotNode>> ranks, Map<DotNode,Set<String>> attrs) {
         this.fontSize = fontSize;
@@ -104,11 +116,13 @@ public final class DotGraph {
             this.attrs.put(e.getKey(), Collections.unmodifiableSet(new LinkedHashSet<String>(e.getValue())));
         this.nodes = ConstSet.make(nodes.keySet());
         this.edges = ConstSet.make(edges.keySet());
+        this.relations = ConstMap.make(rels);
+        this.magicColor = ConstMap.make(magicColor);
     }
 
     /** Generate the entire content of the DOT file. */
     public VizGraph write2() {
-        // TODO: sb.append("rankdir=" + orientation.getDotText(null) + ";\n");
+        // rankdir = orientation.getDotText(null)
         VizGraph graph=new VizGraph();
         if (nodes.size()==0) {
             new VizNode(graph, null, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
@@ -123,11 +137,14 @@ public final class DotGraph {
                 VizNode b = map.get(edge.to);
                 if (a!=null && b!=null) edge.write2(a,b,edgePalette);
             }
-            // TODO for (Set<DotNode> set:ranks) if (set.size()>0) {
-            //     sb.append("{ rank=same;");
-            //     for (DotNode node:set) sb.append(" \"N" + node.getID() + "\";");
-            //     sb.append(" }\n");
-            //}
+            // for (Set<DotNode> set:ranks) if (set.size()>0) { add the constraints that they should be on same rank }
+        }
+        for(Map.Entry<AlloyRelation,Integer> e:relations.entrySet()) {
+            Color c = magicColor.get(e.getKey());
+            if (c==null) c = Color.BLACK;
+            int n = e.getValue();
+            if (n>0) graph.addLegend(e.getKey(), e.getKey().getName()+": "+n, c);
+            else graph.addLegend(e.getKey(), e.getKey().getName(), null);
         }
         return graph;
     }
