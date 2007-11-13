@@ -256,7 +256,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     private final JToolBar toolbar;
 
     /** The various toolbar buttons. */
-    private final JButton newbutton, openbutton, loadbutton, savebutton, runbutton, stopbutton, showbutton;
+    private final JButton newbutton, openbutton, loadbutton, reloadbutton, savebutton, runbutton, stopbutton, showbutton;
 
     /** The Splitpane. */
     private final JSplitPane splitpane;
@@ -589,6 +589,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** This event opens a particular file. */
     private static final int EVS_OPEN = 113;
 
+    /** This event occurs when the user clicks Reload All. */
+    private static final int EV_RELOADALL = 114;
+
     /** This event refreshes the "edit" menu. */
     private static final int EV_REFRESH_EDIT = 201;
 
@@ -725,6 +728,10 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             addHistory(ans);
             log.clearError();
             return true;
+        }
+
+        if (key==EV_RELOADALL && !mode_externalEditor) {
+            for(int i=0; i<text.getTabCount(); i++) if (!text.refresh(i)) return false;
         }
 
         if (key==EV_CLOSE) {
@@ -964,7 +971,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             OurUtil.makeMenuItem(filemenu, open+" Sample Models...", true,KeyEvent.VK_B,-1, this, EV_BUILTIN);
             filemenu.add(recentmenu = OurUtil.makeMenu(open+" Recent"));
             if (!mode_externalEditor) {
-                OurUtil.makeMenuItem(filemenu, "Save", true,KeyEvent.VK_S,KeyEvent.VK_S, this, EV_SAVE);
+                OurUtil.makeMenuItem(filemenu, "Reload all", true, KeyEvent.VK_R, KeyEvent.VK_R, this, EV_RELOADALL);
+                OurUtil.makeMenuItem(filemenu, "Save",       true, KeyEvent.VK_S, KeyEvent.VK_S, this, EV_SAVE);
                 if (Util.onMac())
                     OurUtil.makeMenuItemWithShift(filemenu,"Save As...",KeyEvent.VK_S, new MultiRunner(this, EV_SAVE_AS));
                 else
@@ -1129,6 +1137,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                     openbutton.setVisible(!mode_externalEditor);
                     savebutton.setVisible(!mode_externalEditor);
                     loadbutton.setVisible(mode_externalEditor);
+                    reloadbutton.setVisible(!mode_externalEditor);
                     if (mode_externalEditor) {
                         log.setBackground(Color.WHITE);
                         ((JPanel)(splitpane.getTopComponent())).remove(toolbar);
@@ -1689,6 +1698,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         toolbar.add(newbutton=OurUtil.button("New","Starts a new blank model","images/24_new.gif",this,EV_NEW));
         toolbar.add(openbutton=OurUtil.button("Open","Opens an existing model","images/24_open.gif",this,EV_OPEN));
         toolbar.add(loadbutton=OurUtil.button("Load","Chooses a model to analyze","images/24_open.gif",this,EV_OPEN));
+        toolbar.add(reloadbutton=OurUtil.button("Reload","Reload all the models from disk","images/24_open.gif",this,EV_RELOADALL));
         loadbutton.setVisible(false);
         toolbar.add(savebutton=OurUtil.button("Save","Saves the current model","images/24_save.gif",this,EV_SAVE));
         toolbar.add(runbutton=OurUtil.button("Execute","Executes the latest command","images/24_execute.gif",this,EV_LATEST));

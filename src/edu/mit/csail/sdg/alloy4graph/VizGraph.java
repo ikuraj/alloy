@@ -609,21 +609,4 @@ public final strictfp class VizGraph extends DiGraph {
             y = y + maxAscentDescent;
         }
     }
-
-    /*
-     * TODO:
-     * legend should have right color, and be highlightable
-     * straighten
-     * reloadEditorTabs
-     * some Pos are off
-     * ---futurework---
-     * draggableEdgeLabel
-     * UnsatCore tightening
-     * FuncCallBadErrorMessage
-     * left-to-right layout orientation
-     * node-aligned and/or edge-aligned
-     * flag for turning most (maybe even all) bounds into less efficient explicit constraints, to aid unsat-core-highlighting
-     * pred { someField := someConstant }
-     * Warn user if their customization is not saved
-     */
 }

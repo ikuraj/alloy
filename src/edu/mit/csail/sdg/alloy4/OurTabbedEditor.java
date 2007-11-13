@@ -249,7 +249,7 @@ public final class OurTabbedEditor {
         tabBar.scrollRectToVisible(new Rectangle(0,0,0,0)); // Forces recalculation
         Point p=tabs.get(me).panel.getLocation();
         Dimension r=tabs.get(me).panel.getSize();
-        tabBar.scrollRectToVisible(new Rectangle(p.x, 0, r.width, 1));
+        tabBar.scrollRectToVisible(new Rectangle(p.x, 0, r.width+200, 1));
     }
 
     /** Switch to the tab with the given filename then return true; returns false if no tab has that filename. */
@@ -284,23 +284,50 @@ public final class OurTabbedEditor {
         label.setText("  "+x+(modified?" *  ":"  "));
     }
 
+    /** Refresh the given tab; return true if no error occurred. */
+    public boolean refresh(int i) {
+        if (!allowIO || i<0 || i>=tabs.size()) return true;
+        Tab t = tabs.get(i);
+        if (!t.isFile) return true; // a totally "untitled" text buffer does not have a on-disk file to refresh from
+        if (t.modified) {
+            boolean ans=OurDialog.yesno(parentFrame,
+                "You have unsaved changes to \""+getShorterTitle(t.filename)
+                +"\"\nAre you sure you wish to discard your changes and reload it from disk?");
+            if (!ans) return false;
+        }
+        String content;
+        try {
+            content = Util.readAll(t.filename);
+        } catch(Throwable ex) {
+            OurDialog.alert(parentFrame, "Error reading the file \""+t.filename+"\"", "Error");
+            return false;
+        }
+        int caret = t.text.getCaretPosition();
+        t.text.setText(content);
+        try { t.text.setCaretPosition(caret); } catch(IllegalArgumentException ex) { t.text.setCaretPosition(0); }
+        t.modified=false;
+        setTitle(t.label, t.filename);
+        parent.notifyChange();
+        return true;
+    }
+
     /** Save the current tab to a file. */
     public boolean saveAs(String filename) {
         if (!allowIO || me<0 || me>=tabs.size()) return false;
         filename=Util.canon(filename);
-        for(int j=0; j<tabs.size(); j++) {
-            if (j!=me && tabs.get(j).filename.equals(filename)) {
+        for(int i=0; i<tabs.size(); i++) {
+            if (i!=me && tabs.get(i).filename.equals(filename)) {
                 OurDialog.alert(parentFrame, "Error. The filename \""+filename+"\"\nis already open in one of the tab.", "Error");
                 return false;
             }
         }
         try {
             Util.writeAll(filename, tabs.get(me).text.getText());
-        } catch (Err e) {
+        } catch (Throwable e) {
             OurDialog.alert(parentFrame, "Error writing to the file \""+filename+"\"", "Error");
             return false;
         }
-        filename=Util.canon(filename); // We need this since after writing the canonical form of the filename may have changed
+        filename=Util.canon(filename); // We need this since after writing, the canonical form of the filename may have changed
         setTitle(tabs.get(me).label, filename);
         tabs.get(me).filename=filename;
         tabs.get(me).modified=false;
@@ -381,31 +408,33 @@ public final class OurTabbedEditor {
 
     /** Close every tab, then create a new empty tab. */
     public boolean closeAll() {
+        // first attempt to close all the unmodified files
         for(int i=tabs.size()-1; i>=0; i--) {
-            if (tabs.get(i).modified==false && close(i)==false) { return false; }
+            if (tabs.get(i).modified==false && close(i)==false) return false;
         }
+        // then close the modified files one-by-one until an error occurred or if the user refuses to save nor discard a file
         for(int i=tabs.size()-1; i>=0; i--) {
-            if (close(i)==false) { return false; }
+            if (close(i)==false) return false;
         }
         return true;
     }
 
     /**
      * Create a new tab with the given filename and initial content.
-     * <p> Note: if a text buffer with that filename already exists, we will switch to it and ignore "content" and "isFile"
+     * <p> Note: if a text buffer with that filename already exists, we will switch to it and ignore "fileContent" and "isFile"
      */
     private void newTab(String filename, String fileContent, boolean isFile) {
         // If exists, then switch to that tab directly
         if (switchToFilename(filename)) return;
-        // Make the tab on top
-        final JLabel lb=OurUtil.label(OurUtil.getVizFont().deriveFont(Font.BOLD), "");
+        // Make the new tab
+        final JLabel lb = OurUtil.label(OurUtil.getVizFont().deriveFont(Font.BOLD), "");
         lb.setOpaque(true);
         lb.setBorder(new OurBorder(BORDER, BORDER, WHITE, BORDER));
         lb.setBackground(WHITE);
         lb.setForeground(BLACK);
         lb.addMouseListener(new MouseAdapter() {
             @Override public final void mousePressed(MouseEvent e) {
-                for(int i=0;i<tabs.size();i++) {
+                for(int i=0; i<tabs.size(); i++) {
                     if (tabs.get(i).label==lb) {
                         setSelectedIndex(i);
                         break;
@@ -650,7 +679,7 @@ public final class OurTabbedEditor {
             return;
         }
         if (clearOldHighlightsFirst) removeAllHighlights();
-        if (allowIO && p!=null && p.filename!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
+        if (allowIO && p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
                 String f=Util.canon(p.filename);
                 if (!switchToFilename(f)) {
