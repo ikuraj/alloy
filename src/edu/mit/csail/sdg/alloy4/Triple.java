@@ -70,7 +70,7 @@ public final class Triple<A,B,C> {
         if (c!=null) {
             return c.toString();
         }
-        return "null";
+        return "<null,null,null>";
     }
 
     /** Triples (a1,b1,c1) and (a2,b2,c2) are equal iff a1.equals(a2) and b1.equals(b2) and c1.equals(c2). */
@@ -88,6 +88,6 @@ public final class Triple<A,B,C> {
         int i = (a==null) ? 0 : a.hashCode();
         int j = (b==null) ? 0 : b.hashCode();
         int k = (c==null) ? 0 : c.hashCode();
-        return i*173124 + j*131 + k;
+        return i*173123 + j*131 + k;
     }
 }

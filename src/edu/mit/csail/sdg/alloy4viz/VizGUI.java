@@ -23,7 +23,6 @@ package edu.mit.csail.sdg.alloy4viz;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
@@ -54,20 +53,17 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import edu.mit.csail.sdg.alloy4.Computer;
-import edu.mit.csail.sdg.alloy4.MultiRunner;
 import edu.mit.csail.sdg.alloy4.OurBinaryCheckbox;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurConsole;
 import edu.mit.csail.sdg.alloy4.OurDialog;
+import edu.mit.csail.sdg.alloy4.Runner;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Version;
-import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
 import edu.mit.csail.sdg.alloy4graph.VizViewer;
@@ -78,41 +74,7 @@ import edu.mit.csail.sdg.alloy4graph.VizViewer;
  * <p><b>Thread Safety:</b>  Can be called only by the AWT event thread.
  */
 
-public final class VizGUI implements MultiRunnable, ComponentListener {
-
-    /** Simple test driver method. */
-    public static void main(final String[] args) {
-        // Make sure args.length==1
-        if (args.length!=1) {
-            System.out.println("Syntax error: please specify the XML file name to load.");
-            System.exit(1);
-        }
-        // Enable better look-and-feel
-        if (Util.onMac() || Util.onWindows()) {
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy Analyzer "+Version.version());
-            System.setProperty("com.apple.mrj.application.growbox.intrudes","true");
-            System.setProperty("com.apple.mrj.application.live-resize","true");
-            System.setProperty("com.apple.macos.useScreenMenuBar","true");
-            System.setProperty("apple.laf.useScreenMenuBar","true");
-            try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
-            catch (Throwable e) { }
-        }
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() { main(args); }
-            });
-            return;
-        }
-        JFrame f = new JFrame("Test");
-        VizGUI gui = new VizGUI(false, args[0], null, null, null);
-        f.getContentPane().setLayout(new BorderLayout());
-        f.getContentPane().add(gui.getPanel(), BorderLayout.CENTER);
-        f.pack();
-        f.setSize(700, 500);
-        f.setLocation(0, 0);
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setVisible(true);
-    }
+public final class VizGUI implements ComponentListener {
 
     /** The background color for the toolbar. */
     private static final Color background = new Color(0.9f, 0.9f, 0.9f);
@@ -138,13 +100,11 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     /** The projection popup menu. */
     private final JPopupMenu projectionPopup;
 
-    private final JButton projectionButton, openSettingsButton, closeSettingsButton, loadSettingsButton, saveSettingsButton, saveAsSettingsButton, resetSettingsButton;
-    private final JButton updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton;
-    private final JButton magicLayout;
-    private final JButton magicColour;
-
-    /** The buttons for switching the display modes. */
-    private final JButton vizButton, xmlButton, treeButton, dotButton, kodSrcButton, kodInstButton, plugin0Button;
+    /** The buttons on the toolbar. */
+    private final JButton projectionButton, openSettingsButton, closeSettingsButton,
+        magicLayout, loadSettingsButton, saveSettingsButton, saveAsSettingsButton,
+        resetSettingsButton, updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton,
+        vizButton, xmlButton, treeButton, dotButton, kodSrcButton, kodInstButton;
 
     /** This list must contain all the display mode buttons (that is, vizButton, xmlButton...) */
     private final List<JButton> solutionButtons = new ArrayList<JButton>();
@@ -189,9 +149,9 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
     private final Computer evaluator;
 
     /**
-     * If nonnull, you can call "enumerator.run(-1, XMLFilename)" to tell it to find the next solution.
+     * If nonnull, you can pass in an XML file to find the next solution.
      */
-    private final MultiRunnable enumerator;
+    private final Computer enumerator;
 
     //==============================================================================================//
 
@@ -224,8 +184,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
     /** Returns a short descriptive title associated with an XML file. */
     public String getInstanceTitle(String xmlFileName) {
-        xmlFileName=Util.canon(xmlFileName);
-        String answer=xml2title.get(xmlFileName);
+        String answer = xml2title.get(Util.canon(xmlFileName));
         return (answer==null) ? "(unknown)" : answer;
     }
 
@@ -233,7 +192,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
     /** Add a vertical divider to the toolbar. */
     private void addDivider() {
-        JPanel divider=OurUtil.makeBox(1,40,Color.LIGHT_GRAY);
+        JPanel divider = OurUtil.makeBox(1, 40, Color.LIGHT_GRAY);
         divider.setAlignmentY(0.5f);
         if (!Util.onMac()) toolbar.add(OurUtil.makeH(5,background)); else toolbar.add(OurUtil.makeH(5));
         toolbar.add(divider);
@@ -250,17 +209,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         /** See the XML file content. */        XML("xml"),
         /** See the instance as a tree. */      Tree("tree"),
         /** See the raw input to Kodkod. */     KInput("kodkodJava"),
-        /** See the raw output from Kodkod. */  KOutput("kodkodInstance"),
-        /** Execute external plugin #0. */      Plugin0("plugin0"),
-        /** Execute external plugin #1. */      Plugin1("plugin1"),
-        /** Execute external plugin #2. */      Plugin2("plugin2"),
-        /** Execute external plugin #3. */      Plugin3("plugin3"),
-        /** Execute external plugin #4. */      Plugin4("plugin4"),
-        /** Execute external plugin #5. */      Plugin5("plugin5"),
-        /** Execute external plugin #6. */      Plugin6("plugin6"),
-        /** Execute external plugin #7. */      Plugin7("plugin7"),
-        /** Execute external plugin #8. */      Plugin8("plugin8"),
-        /** Execute external plugin #9. */      Plugin9("plugin9");
+        /** See the raw output from Kodkod. */  KOutput("kodkodInstance");
         /** This is a unique String for this value; it should be kept consistent in future versions. */
         private final String id;
         /** Constructs a new VisualizerMode value with the given id. */
@@ -302,6 +251,55 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
     //==============================================================================================//
 
+    /** If true, that means the event handlers should return a Runner encapsulating them, rather than perform the actual work. */
+    private boolean wrap = false;
+
+    /** Wraps the calling method into a Runnable whose run() will call the calling method with (false) as the only argument. */
+    private Runner wrapMe() {
+        final String name;
+        try { throw new Exception(); } catch(Exception ex) { name = ex.getStackTrace()[1].getMethodName(); }
+        Method[] methods = getClass().getDeclaredMethods();
+        Method m=null;
+        for(int i=0; i<methods.length; i++) if (methods[i].getName().equals(name)) { m=methods[i]; break; }
+        final Method method=m;
+        return new Runner() {
+            private static final long serialVersionUID = 1L;
+            public void run() {
+                try {
+                    method.setAccessible(true);
+                    method.invoke(VizGUI.this, new Object[]{});
+                } catch (Throwable ex) {
+                    ex = new IllegalArgumentException("Failed call to "+name+"()", ex);
+                    Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), ex);
+                }
+            }
+            public void run(Object arg) { run(); }
+        };
+    }
+
+    /** Wraps the calling method into a Runnable whose run() will call the calling method with (false,argument) as the two arguments. */
+    private Runner wrapMe(final Object argument) {
+        final String name;
+        try { throw new Exception(); } catch(Exception ex) { name = ex.getStackTrace()[1].getMethodName(); }
+        Method[] methods = getClass().getDeclaredMethods();
+        Method m=null;
+        for(int i=0; i<methods.length; i++) if (methods[i].getName().equals(name)) { m=methods[i]; break; }
+        final Method method=m;
+        return new Runner() {
+            private static final long serialVersionUID = 1L;
+            public void run(Object arg) {
+                try {
+                    method.setAccessible(true);
+                    method.invoke(VizGUI.this, new Object[]{arg});
+                } catch (Throwable ex) {
+                    ex = new IllegalArgumentException("Failed call to "+name+"("+arg+")", ex);
+                    Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), ex);
+                }
+            }
+            public void run() { run(argument); }
+        };
+    }
+
     /**
      * Creates a new visualization GUI window; this method can only be called by the AWT event thread.
      * @param standalone - whether the JVM should shutdown after the last file is closed
@@ -324,7 +322,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
      *
      * <p> Note: if standalone==false and xmlFileName.length()==0, then we will initially hide the window.
      */
-    public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu, MultiRunnable enumerator, Computer evaluator) {
+    public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu, Computer enumerator, Computer evaluator) {
         this(standalone, xmlFileName, windowmenu, enumerator, evaluator, true);
     }
 
@@ -339,7 +337,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
      *
      * <p> Note: if standalone==false and xmlFileName.length()==0 and makeWindow==true, then we will initially hide the window.
      */
-    public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu, MultiRunnable enumerator, Computer evaluator, boolean makeWindow) {
+    public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu, Computer enumerator, Computer evaluator, boolean makeWindow) {
 
         this.enumerator=enumerator;
         this.standalone=standalone;
@@ -358,21 +356,25 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         int y=VizY.get(); if (y<0 || y>screenHeight-10) y=0;
 
         // Create the menubar
-        JMenuBar mb = OurUtil.makeMenuBar();
-        JMenu fileMenu = OurUtil.makeMenu(mb, "File", KeyEvent.VK_F, null, 0);
-        OurUtil.makeMenuItem(fileMenu, "Open...", true, KeyEvent.VK_O, KeyEvent.VK_O, this, EV_LOAD_INSTANCE);
-        OurUtil.makeMenuItem(fileMenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, this, EV_CLOSE);
-        if (!standalone)
-            OurUtil.makeMenuItem(fileMenu, "Close All", true, KeyEvent.VK_A, -1, this, EV_CLOSE_ALL);
-        else
-            OurUtil.makeMenuItem(fileMenu, "Quit", true, KeyEvent.VK_Q, KeyEvent.VK_Q, this, EV_CLOSE_ALL);
-        JMenu instanceMenu = OurUtil.makeMenu(mb, "Instance", KeyEvent.VK_I, null, 0);
-        enumerateMenu = OurUtil.makeMenuItem(instanceMenu, "Show Next Solution", true, KeyEvent.VK_N, KeyEvent.VK_N, this, EV_BAR_NEXT);
-        thememenu = OurUtil.makeMenu(mb, "Theme", KeyEvent.VK_T, this, EV_THEME);
-        if (standalone || windowmenu==null)
-            this.windowmenu=(windowmenu=OurUtil.makeMenu(mb, "Window", KeyEvent.VK_W, this, EV_WINDOW));
-        else
+        JMenuBar mb = new JMenuBar();
+        try {
+            wrap=true;
+            JMenu fileMenu = OurUtil.makeMenu(mb, "File", KeyEvent.VK_F, null);
+            OurUtil.makeMenuItem(fileMenu, "Open...", true, KeyEvent.VK_O, KeyEvent.VK_O, doLoad());
+            OurUtil.makeMenuItem(fileMenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, doClose());
+            if (!standalone)
+                OurUtil.makeMenuItem(fileMenu, "Close All", true, KeyEvent.VK_A, -1, doCloseAll());
+            else
+                OurUtil.makeMenuItem(fileMenu, "Quit", true, KeyEvent.VK_Q, KeyEvent.VK_Q, doCloseAll());
+            JMenu instanceMenu = OurUtil.makeMenu(mb, "Instance", KeyEvent.VK_I, null);
+            enumerateMenu = OurUtil.makeMenuItem(instanceMenu, "Show Next Solution", true, KeyEvent.VK_N, KeyEvent.VK_N, doNext());
+            thememenu = OurUtil.makeMenu(mb, "Theme", KeyEvent.VK_T, doRefreshTheme());
+            if (standalone || windowmenu==null)
+                windowmenu = OurUtil.makeMenu(mb, "Window", KeyEvent.VK_W, doRefreshWindow());
             this.windowmenu=windowmenu;
+        } finally {
+            wrap=false;
+        }
         mb.add(windowmenu);
         thememenu.setEnabled(false);
         windowmenu.setEnabled(false);
@@ -393,46 +395,30 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         toolbar.setFloatable(false);
         toolbar.setBorder(new EmptyBorder(0,0,0,0));
         if (!Util.onMac()) toolbar.setBackground(background);
-        vizButton=makeSolutionButton("Viz",
-                "Show Visualization", "images/24_graph.gif", EV_BAR_VIZ);
-        dotButton=makeSolutionButton("Dot",
-                "Show the Dot File for the Graph", "images/24_plaintext.gif", EV_BAR_DOT);
-        xmlButton=makeSolutionButton("XML",
-                "Show XML", "images/24_plaintext.gif", EV_BAR_XML);
-        treeButton=makeSolutionButton("Tree",
-                "Show Tree", "images/24_texttree.gif", EV_BAR_TREE);
-        kodSrcButton=makeSolutionButton("KK In",
-                "Show KodKod Input", "images/24_plaintext.gif", EV_BAR_KODKOD_IN);
-        kodInstButton=makeSolutionButton("KK Out",
-                "Show KodKod Instance", "images/24_plaintext.gif", EV_BAR_KODKOD_OUT);
-        plugin0Button=makeSolutionButton("Plugin",
-                "Run external plugin", "images/24_graph.gif", EV_BAR_PLUGIN0);
-        if (frame!=null) addDivider();
-        toolbar.add(closeSettingsButton=OurUtil.button("Close",
-                "Close the theme customization panel", "images/24_settings_close2.gif", this, EV_BAR_CLOSE_THEME));
-        toolbar.add(updateSettingsButton=OurUtil.button("Apply",
-                "Apply the changes to the current theme", "images/24_settings_apply2.gif", this, EV_BAR_APPLY));
-        toolbar.add(openSettingsButton=OurUtil.button("Theme",
-                "Open the theme customization panel", "images/24_settings.gif", this, EV_BAR_OPEN_THEME));
-        toolbar.add(magicLayout=OurUtil.button("Magic Layout",
-                "Automatic theme customization (will reset current theme)", "images/24_settings_apply2.gif", this, EV_BAR_MAGIC_LAYOUT));
-        toolbar.add(magicColour=OurUtil.button("Magic Colour",
-                "Automatic theme colour and shape customization", "images/24_settings_apply2.gif", this, EV_BAR_MAGIC_COLOR));
-        toolbar.add(openEvaluatorButton=OurUtil.button("Evaluator",
-                "Open the evaluator", "images/24_settings.gif", this, EV_BAR_OPEN_EVAL));
-        toolbar.add(closeEvaluatorButton=OurUtil.button("Close Evaluator",
-                "Close the evaluator", "images/24_settings_close2.gif", this, EV_BAR_CLOSE_EVAL));
-        toolbar.add(enumerateButton=OurUtil.button("Next",
-                "Show the next solution", "images/24_history.gif", this, EV_BAR_NEXT));
-        toolbar.add(projectionButton);
-        toolbar.add(loadSettingsButton=OurUtil.button("Load",
-                "Load the theme customization from a theme file", "images/24_open.gif", this, EV_LOAD_THEME));
-        toolbar.add(saveSettingsButton=OurUtil.button("Save",
-                "Save the current theme customization", "images/24_save.gif", this, EV_SAVE_THEME));
-        toolbar.add(saveAsSettingsButton=OurUtil.button("Save As",
-                "Save the current theme customization as a new theme file", "images/24_save.gif", this, EV_SAME_THEME_AS));
-        toolbar.add(resetSettingsButton=OurUtil.button("Reset",
-                "Reset the theme customization", "images/24_settings_close2.gif", this, EV_RESET_THEME));
+        try {
+            wrap = true;
+            vizButton=makeSolutionButton("Viz", "Show Visualization", "images/24_graph.gif", doShowViz());
+            dotButton=makeSolutionButton("Dot", "Show the Dot File for the Graph", "images/24_plaintext.gif", doShowDot());
+            xmlButton=makeSolutionButton("XML", "Show XML", "images/24_plaintext.gif", doShowXML());
+            treeButton=makeSolutionButton("Tree", "Show Tree", "images/24_texttree.gif", doShowTree());
+            kodSrcButton=makeSolutionButton("KK In", "Show KodKod Input", "images/24_plaintext.gif", doShowInput());
+            kodInstButton=makeSolutionButton("KK Out", "Show KodKod Instance", "images/24_plaintext.gif", doShowOutput());
+            if (frame!=null) addDivider();
+            toolbar.add(closeSettingsButton=OurUtil.button("Close", "Close the theme customization panel", "images/24_settings_close2.gif", doCloseThemePanel()));
+            toolbar.add(updateSettingsButton=OurUtil.button("Apply", "Apply the changes to the current theme", "images/24_settings_apply2.gif", doApply()));
+            toolbar.add(openSettingsButton=OurUtil.button("Theme", "Open the theme customization panel", "images/24_settings.gif", doOpenThemePanel()));
+            toolbar.add(magicLayout=OurUtil.button("Magic Layout", "Automatic theme customization (will reset current theme)", "images/24_settings_apply2.gif", doMagicLayout()));
+            toolbar.add(openEvaluatorButton=OurUtil.button("Evaluator", "Open the evaluator", "images/24_settings.gif", doOpenEvalPanel()));
+            toolbar.add(closeEvaluatorButton=OurUtil.button("Close Evaluator", "Close the evaluator", "images/24_settings_close2.gif", doCloseEvalPanel()));
+            toolbar.add(enumerateButton=OurUtil.button("Next", "Show the next solution", "images/24_history.gif", doNext()));
+            toolbar.add(projectionButton);
+            toolbar.add(loadSettingsButton=OurUtil.button("Load", "Load the theme customization from a theme file", "images/24_open.gif", doLoadTheme()));
+            toolbar.add(saveSettingsButton=OurUtil.button("Save", "Save the current theme customization", "images/24_save.gif", doSaveTheme()));
+            toolbar.add(saveAsSettingsButton=OurUtil.button("Save As", "Save the current theme customization as a new theme file", "images/24_save.gif", doSaveThemeAs()));
+            toolbar.add(resetSettingsButton=OurUtil.button("Reset", "Reset the theme customization", "images/24_settings_close2.gif", doResetTheme()));
+        } finally {
+            wrap = false;
+        }
         settingsOpen=0;
 
         // Create the horizontal split pane
@@ -449,10 +435,10 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
            frame.setSize(width,height);
            frame.setLocation(x,y);
            frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-           frame.addWindowListener(new MultiRunner(this, EV_CLOSE));
+           try { wrap=true; frame.addWindowListener(doClose()); } finally { wrap=false; }
            frame.addComponentListener(this);
         }
-        if (xmlFileName.length()>0) run(EVS_LOAD_INSTANCE, xmlFileName);
+        if (xmlFileName.length()>0) doLoadInstance(xmlFileName);
     }
 
     /** Invoked when the Visualizationwindow is resized. */
@@ -462,31 +448,28 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
 
     /** Invoked when the Visualizationwindow is moved. */
     public void componentMoved(ComponentEvent e) {
-        if (frame!=null) { Point p=frame.getLocation(); VizX.set(p.x); VizY.set(p.y); }
+        if (frame!=null) { VizX.set(frame.getX()); VizY.set(frame.getY()); }
     }
 
     /** Invoked when the Visualizationwindow is shown. */
-    public void componentShown(ComponentEvent e) {}
+    public void componentShown(ComponentEvent e) { }
 
     /** Invoked when the Visualizationwindow is hidden. */
-    public void componentHidden(ComponentEvent e) {}
+    public void componentHidden(ComponentEvent e) { }
 
     /** Helper method that repopulates the Porjection popup menu. */
     private void repopulateProjectionPopup() {
         int num=0;
         String label="Projection: none";
-        if (myState==null) {
-            projectionButton.setEnabled(false);
-            return;
-        }
+        if (myState==null) { projectionButton.setEnabled(false); return; }
         projectionButton.setEnabled(true);
         projectionPopup.removeAll();
         final Set<AlloyType> projected = myState.getProjectedTypes();
         for(final AlloyType t: myState.getOriginalModel().getTypes()) if (myState.canProject(t)) {
             final boolean on = projected.contains(t);
-            final JMenuItem m = OurUtil.makeMenuItem(t.getName(), on ? OurBinaryCheckbox.on : OurBinaryCheckbox.off);
+            final JMenuItem m = new JMenuItem(t.getName(), on ? OurBinaryCheckbox.on : OurBinaryCheckbox.off);
             m.addActionListener(new ActionListener() {
-                public final void actionPerformed(ActionEvent e) {
+                public void actionPerformed(ActionEvent e) {
                     if (on) myState.deproject(t); else myState.project(t);
                     updateDisplay();
                 }
@@ -509,7 +492,6 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
             case KOutput: kodInstButton.setEnabled(false); break;
             case XML: xmlButton.setEnabled(false); break;
             case DOT: dotButton.setEnabled(false); break;
-            case Plugin0: plugin0Button.setEnabled(false); break;
             default: vizButton.setEnabled(false);
         }
         final boolean isMeta = myState.getOriginalInstance().isMetamodel;
@@ -520,7 +502,6 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         kodSrcButton.setVisible(myState.getOriginalInstance().kodkod_input.length()>0 && frame!=null);
         kodInstButton.setVisible(myState.getOriginalInstance().kodkod_output.length()>0 && frame!=null);
         magicLayout.setVisible(!isMeta && (settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
-        magicColour.setVisible(false); // hidden for now
         projectionButton.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
         openSettingsButton.setVisible(               settingsOpen==0 && currentMode==VisualizerMode.Viz);
         loadSettingsButton.setVisible(frame==null && settingsOpen==1 && currentMode==VisualizerMode.Viz);
@@ -538,10 +519,7 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         JComponent content;
         if (frame!=null) frame.setTitle(makeVizTitle());
         switch (currentMode) {
-           case Plugin0:
-           case Tree:
-               if (currentMode!=VisualizerMode.Tree) runPlugin(myState);
-               content=StaticTreeMaker.makeTree(myState.getOriginalInstance(), makeVizTitle(), myState); break;
+           case Tree: content=StaticTreeMaker.makeTree(myState.getOriginalInstance(), makeVizTitle(), myState); break;
            case XML: content=getTextComponent(xmlFileName); break;
            case KInput: content=makeTextArea(myState.getOriginalInstance().kodkod_input); break;
            case KOutput: content=makeTextArea(myState.getOriginalInstance().kodkod_output); break;
@@ -561,8 +539,8 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         if (1==1 || settingsOpen>0) { // for now, let's always have the JSplitPane... until we're sure this is what we want
             JComponent left;
             if (settingsOpen==1) {
-                if (myCustomPanel==null) myCustomPanel=new VizCustomizationPanel(splitpane,myState); else
-                   myCustomPanel.remakeAll();
+                if (myCustomPanel==null) myCustomPanel=new VizCustomizationPanel(splitpane,myState);
+                   else myCustomPanel.remakeAll();
                 left=myCustomPanel;
             } else if (settingsOpen>1) {
                 if (myEvaluatorPanel==null)
@@ -590,18 +568,14 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         } else {
             if (frame!=null) frame.setContentPane(instanceArea);
         }
-        if (settingsOpen!=2) {
-            content.requestFocusInWindow();
-        } else {
-            myEvaluatorPanel.requestFocusInWindow();
-        }
+        if (settingsOpen!=2) content.requestFocusInWindow(); else myEvaluatorPanel.requestFocusInWindow();
         repopulateProjectionPopup();
         if (frame!=null) frame.validate(); else splitpane.validate();
     }
 
     /** Helper method that creates a button and add it to both the "SolutionButtons" list, as well as the toolbar. */
-    private JButton makeSolutionButton(String label, String toolTip, String image, int mode) {
-        JButton button = OurUtil.button(label, toolTip, image, this, mode);
+    private JButton makeSolutionButton(String label, String toolTip, String image, ActionListener mode) {
+        JButton button = OurUtil.button(label, toolTip, image, mode);
         solutionButtons.add(button);
         toolbar.add(button);
         return button;
@@ -659,363 +633,371 @@ public final class VizGUI implements MultiRunnable, ComponentListener {
         return myGraphPanel.alloyGetViewer();
     }
 
-    //========================================= EVENTS ============================================================================================
-    // The return values of events are undefined, except these five: { ev_saveTheme evs_saveTheme evs_saveThemeTS ev_saveThemeAs ev_saveThemeAsTS }
-    //=============================================================================================================================================
-
-    /** This event asks the user for a new XML file to load. */
-    public static final int EV_LOAD_INSTANCE = 101;
-
-    /** This event loads a new XML instance file if it's not the current file. */
-    public static final int EVS_LOAD_INSTANCE = 102;
-
-    /** This event loads a new XML instance file (reloading it from disk even if the filename equals the current filename) */
-    public static final int EVS_LOAD_INSTANCE_FORCEFULLY = 103;
-
-    /**
-     * This event closes the current XML instance; if there are previously loaded files, we will load one of them;
-     * otherwise, this window will set itself as invisible (if not in standalone mode),
-     * or it will terminate the entire application (if in standalone mode).
-     */
-    public static final int EV_CLOSE = 104;
-
-    /**
-     * This event closes every XML file.
-     * if in standalone mode, the JVM will then shutdown; otherwise it will just set the window invisible.
-     */
-    public static final int EV_CLOSE_ALL = 105;
-
-    /** This event refreshes the "theme" menu. */
-    public static final int EV_THEME = 201;
-
-    /** This events asks the user for a new theme file to load. */
-    public static final int EV_LOAD_THEME = 202;
-
-    /** This events asks the user for a new theme file to load. */
-    public static final int EV_LOAD_SAMPLE_THEME = 203;
-
-    /** This events loads a specific theme file. */
-    public static final int EVS_LOAD_THEME = 204;
-
-    /** This events clears the history of loaded themes. */
-    public static final int EV_CLEAR_THEME_HISTORY = 205;
-
-    /** This event saves the current theme; returns true if it succeeded. */
-    public static final int EV_SAVE_THEME = 206;
-
-    /** This event saves a specific current theme; returns true if it succeeded. */
-    public static final int EVS_SAVE_THEME = 207;
-
-    /** This event saves the current theme to a new ".thm" file; returns true if it succeeded. */
-    public static final int EV_SAME_THEME_AS = 208;
-
-    /** This event resets the current theme. */
-    public static final int EV_RESET_THEME = 209;
-
-    /** This event saves a specific current theme; returns true if it succeeded. */
-    public static final int EVS_SAVE_THEME_AS_TS = 210;
-
-    /** This event saves the current theme to a new ".thm" file; returns true if it succeeded. */
-    public static final int EV_SAVE_THEME_AS_TS = 211;
-
-    /** This event refreshes the window menu. */
-    public static final int EV_WINDOW = 301;
-
-    /** This event shows the window and bring it to the front (if not already). */
-    public static final int EV_SHOW = 302;
-
-    /** This event minimizes the window. */
-    public static final int EV_MINIMIZE = 303;
-
-    /** This event alternatingly maximizes or restores the window. */
-    public static final int EV_MAXIMIZE = 304;
-
-    /** This event brings up an alert message. */
-    public static final int EVS_ALERT = 305;
-
-    private static final int EV_BAR_OPEN_THEME = 1001;
-    private static final int EV_BAR_CLOSE_THEME = 1002;
-    private static final int EV_BAR_APPLY = 1003;
-    private static final int EV_BAR_OPEN_EVAL = 1004;
-    private static final int EV_BAR_CLOSE_EVAL = 1005;
-    private static final int EV_BAR_NEXT = 1006;
-    private static final int EV_BAR_VIZ = 2001;
-    private static final int EV_BAR_XML = 2002;
-    private static final int EV_BAR_TREE = 2003;
-    private static final int EV_BAR_KODKOD_IN = 2004;
-    private static final int EV_BAR_KODKOD_OUT = 2005;
-    private static final int EV_BAR_DOT = 2006;
-    private static final int EV_BAR_PLUGIN0 = 2007;
-    private static final int EV_BAR_MAGIC_LAYOUT=2008;
-    private static final int EV_BAR_MAGIC_COLOR=2009;
-
-    /** Performs the function given by "key" on the argument "arg"; returns true if it succeeds. */
-    public boolean run(final int key, final int arg) {
-        return true;
-    }
-
-    /** Performs the function given by "key" on the argument "arg"; returns true if it succeeds. */
-    public boolean run(final int key, final String arg) {
-        if (key==EVS_ALERT) {
-            OurDialog.alert(frame, arg, "Alloy 4");
-        }
-        if (key==EVS_LOAD_INSTANCE || key==EVS_LOAD_INSTANCE_FORCEFULLY) {
-            String xmlFileName=Util.canon(arg);
-            File f=new File(xmlFileName);
-            if (key==EVS_LOAD_INSTANCE_FORCEFULLY || !xmlFileName.equals(this.xmlFileName)) {
-                AlloyInstance myInstance;
-                try {
-                    if (!f.canRead()) throw new Exception("");
-                    myInstance = StaticInstanceReader.parseInstance(f);
-                } catch (Throwable e) {
-                    xmlLoaded.remove(arg);
-                    xmlLoaded.remove(xmlFileName);
-                    JOptionPane.showMessageDialog(null, "File does not exist or is not a valid Alloy instance: "
-                       +e.getMessage()+"\n\nFile: "+xmlFileName,
-                       "Error", JOptionPane.ERROR_MESSAGE);
-                    if (xmlLoaded.size()>0) {run(EVS_LOAD_INSTANCE, xmlLoaded.get(xmlLoaded.size()-1)); return true;}
-                    run(EV_CLOSE_ALL);
-                    return true;
-                }
-                if (runPlugin(null)) plugin0Button.setVisible(true);
-                else {
-                    plugin0Button.setVisible(false);
-                    if (currentMode==VisualizerMode.Plugin0) currentMode=VisualizerMode.Tree;
-                }
-                if (myInstance.kodkod_input.length()>0) kodSrcButton.setVisible(true);
-                else {
-                    kodSrcButton.setVisible(false);
-                    if (currentMode==VisualizerMode.KInput) currentMode=VisualizerMode.Tree;
-                }
-                if (myInstance.kodkod_output.length()>0) kodInstButton.setVisible(true);
-                else {
-                    kodInstButton.setVisible(false);
-                    if (currentMode==VisualizerMode.KOutput) currentMode=VisualizerMode.Tree;
-                }
-                if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
-                repopulateProjectionPopup();
-                xml2title.put(xmlFileName, makeVizTitle());
-                this.xmlFileName = xmlFileName;
-            }
-            if (!xmlLoaded.contains(xmlFileName)) xmlLoaded.add(xmlFileName);
-            toolbar.setEnabled(true);
-            settingsOpen=0;
-            thememenu.setEnabled(true);
-            windowmenu.setEnabled(true);
-            if (frame!=null) {
-               frame.setVisible(true);
-               frame.setTitle("Alloy Visualizer "+Version.version()+" loading... Please wait...");
-               if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
-                   frame.setExtendedState(JFrame.NORMAL);
-               frame.requestFocus();
-               frame.toFront();
-            }
-            updateDisplay();
-        }
-        if (key==EVS_LOAD_THEME) {
-            if (myState==null) return false; // Can only load if there is a VizState loaded
-            String filename=Util.canon(arg);
+    /** Load the XML instance. */
+    public void loadXML(final String fileName, boolean forcefully) {
+        final String xmlFileName=Util.canon(fileName);
+        File f=new File(xmlFileName);
+        if (forcefully || !xmlFileName.equals(this.xmlFileName)) {
+            AlloyInstance myInstance;
             try {
-                myState.loadPaletteXML(filename);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(null,"Exception: "+ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                return false;
+                if (!f.canRead()) throw new Exception("");
+                myInstance = StaticInstanceReader.parseInstance(f);
+            } catch (Throwable e) {
+                xmlLoaded.remove(fileName);
+                xmlLoaded.remove(xmlFileName);
+                JOptionPane.showMessageDialog(null, "File does not exist or is not a valid Alloy instance: "
+                   +e.getMessage()+"\n\nFile: "+xmlFileName,
+                   "Error", JOptionPane.ERROR_MESSAGE);
+                if (xmlLoaded.size()>0) { loadXML(xmlLoaded.get(xmlLoaded.size()-1), false); return; }
+                doCloseAll();
+                return;
             }
+            if (myInstance.kodkod_input.length()>0) kodSrcButton.setVisible(true);
+            else {
+                kodSrcButton.setVisible(false);
+                if (currentMode==VisualizerMode.KInput) currentMode=VisualizerMode.Tree;
+            }
+            if (myInstance.kodkod_output.length()>0) kodInstButton.setVisible(true);
+            else {
+                kodInstButton.setVisible(false);
+                if (currentMode==VisualizerMode.KOutput) currentMode=VisualizerMode.Tree;
+            }
+            if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
             repopulateProjectionPopup();
-            if (myCustomPanel!=null) myCustomPanel.remakeAll();
-            if (myGraphPanel!=null) myGraphPanel.remakeAll();
-            addThemeHistory(filename);
-            thmFileName=filename;
-            updateDisplay();
+            xml2title.put(xmlFileName, makeVizTitle());
+            this.xmlFileName = xmlFileName;
         }
-        if (key==EVS_SAVE_THEME || key==EVS_SAVE_THEME_AS_TS) {
-            if (myState==null) return false; // Can only save if there is a VizState loaded
-            String filename=Util.canon(arg);
-            try {
-                if (key==EVS_SAVE_THEME) myState.savePaletteXML(filename); else myState.savePaletteTS(filename);
-                filename=Util.canon(filename); // Since the canon name may have changed
-                addThemeHistory(filename);
-            } catch (Throwable er) {
-                JOptionPane.showMessageDialog(null, "Error saving the theme: "+er.toString(), "Error", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-            thmFileName = filename;
+        if (!xmlLoaded.contains(xmlFileName)) xmlLoaded.add(xmlFileName);
+        toolbar.setEnabled(true);
+        settingsOpen=0;
+        thememenu.setEnabled(true);
+        windowmenu.setEnabled(true);
+        if (frame!=null) {
+           frame.setVisible(true);
+           frame.setTitle("Alloy Visualizer "+Version.version()+" loading... Please wait...");
+           if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
+              frame.setExtendedState(JFrame.NORMAL);
+           frame.requestFocus();
+           frame.toFront();
         }
+        updateDisplay();
+    }
+
+    /** This method loads a specific theme file. */
+    public boolean loadThemeFile(String filename) {
+        if (myState==null) return false; // Can only load if there is a VizState loaded
+        filename=Util.canon(filename);
+        try {
+            myState.loadPaletteXML(filename);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(null,"Exception: "+ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        repopulateProjectionPopup();
+        if (myCustomPanel!=null) myCustomPanel.remakeAll();
+        if (myGraphPanel!=null) myGraphPanel.remakeAll();
+        addThemeHistory(filename);
+        thmFileName=filename;
+        updateDisplay();
         return true;
     }
 
-    /** Performs the function given by "key"; returns true if it succeeds. */
-    public boolean run(final int key) {
-
-        if (key==EV_LOAD_INSTANCE) {
-            File file=OurDialog.askFile(frame, true, null, ".xml", ".xml instance files");
-            if (file==null) return false;
-            Util.setCurrentDirectory(file.getParentFile());
-            run(EVS_LOAD_INSTANCE_FORCEFULLY, file.getPath());
-        }
-
-        if (key==EV_CLOSE) {
-            xmlLoaded.remove(xmlFileName);
-            if (xmlLoaded.size()>0) return run(EVS_LOAD_INSTANCE, xmlLoaded.get(xmlLoaded.size()-1));
-            if (standalone) System.exit(0); else if (frame!=null) frame.setVisible(false);
-        }
-
-        if (key==EV_CLOSE_ALL) {
-            xmlLoaded.clear();
-            xmlFileName="";
-            if (standalone) System.exit(0); else if (frame!=null) frame.setVisible(false);
-        }
-
-        if (key==EV_THEME) {
-            String defaultTheme=System.getProperty("alloy.theme0");
-            thememenu.removeAll();
-            OurUtil.makeMenuItem(thememenu, "Load Theme...",                  true, KeyEvent.VK_L, -1, this, EV_LOAD_THEME);
-            if (defaultTheme!=null && defaultTheme.length()>0 && (new File(defaultTheme)).isDirectory())
-               OurUtil.makeMenuItem(thememenu, "Load Sample Theme...",        true, KeyEvent.VK_B, -1, this, EV_LOAD_SAMPLE_THEME);
-            OurUtil.makeMenuItem(thememenu, "Save Theme",                     true, KeyEvent.VK_S, -1, this, EV_SAVE_THEME);
-            OurUtil.makeMenuItem(thememenu, "Save Theme As...",               true, KeyEvent.VK_A, -1, this, EV_SAME_THEME_AS);
-            OurUtil.makeMenuItem(thememenu, "Reset Theme",                    true, KeyEvent.VK_R, -1, this, EV_RESET_THEME);
-        }
-
-        if (key==EV_LOAD_THEME || key==EV_LOAD_SAMPLE_THEME) {
-            String defaultTheme=System.getProperty("alloy.theme0");
-            if (defaultTheme==null) defaultTheme="";
-            if (myState==null) return false; // Can only load if there is a VizState loaded
-            if (myState.changedSinceLastSave()) {
-                Boolean opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
-                if (opt==null) return false;
-                if (opt.booleanValue() && !run(EV_SAVE_THEME)) return false;
-            }
-            File file=OurDialog.askFile(frame, true, (key==EV_LOAD_THEME ? null : defaultTheme), ".thm", ".thm theme files");
-            if (file==null) return false;
-            if (key==EV_LOAD_THEME) Util.setCurrentDirectory(file.getParentFile());
-            return run(EVS_LOAD_THEME, file.getPath());
-        }
-
-        if (key==EV_CLEAR_THEME_HISTORY) {
-            Theme0.set(""); Theme1.set(""); Theme2.set(""); Theme3.set("");
-        }
-
-        if (key==EV_SAVE_THEME) {
-            if (thmFileName.length()==0) return run(EV_SAME_THEME_AS); else return run(EVS_SAVE_THEME, thmFileName);
-        }
-
-        if (key==EV_SAME_THEME_AS) {
+    /** This method saves a specific current theme (if filename==null, it asks the user); returns true if it succeeded. */
+    public boolean saveThemeFile(String filename) {
+        if (myState==null) return false; // Can only save if there is a VizState loaded
+        if (filename==null) {
             File file=OurDialog.askFile(frame, false, null, ".thm", ".thm theme files");
             if (file==null) return false;
             if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return false;
             Util.setCurrentDirectory(file.getParentFile());
-            return run(EVS_SAVE_THEME, file.getPath());
+            filename = file.getPath();
         }
-
-        if (key==EV_SAVE_THEME_AS_TS) {
-            File file=OurDialog.askFile(frame, false, null, ".tab", ".tab tab-delimited theme files");
-            if (file==null) return false;
-            if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return false;
-            Util.setCurrentDirectory(file.getParentFile());
-            return run(EVS_SAVE_THEME_AS_TS, file.getPath());
+        filename=Util.canon(filename);
+        try {
+            myState.savePaletteXML(filename);
+            filename=Util.canon(filename); // Since the canon name may have changed
+            addThemeHistory(filename);
+        } catch (Throwable er) {
+            JOptionPane.showMessageDialog(null, "Error saving the theme: "+er.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
         }
+        thmFileName = filename;
+        return true;
+    }
 
-        if (key==EV_RESET_THEME || key==EV_BAR_MAGIC_LAYOUT) {
-            if (myState==null) return false;
-            if (key==EV_RESET_THEME) {
-                if (!OurDialog.yesno(frame, "Are you sure you wish to clear all your customizations?", "Yes, clear them", "No, keep them")) return false;
-            } else {
-                if (!OurDialog.yesno(frame, "This will clear your original customizations. Are you sure?", "Yes, clear them", "No, keep them")) return false;
-            }
-            myState.resetTheme();
-            if (key==EV_BAR_MAGIC_LAYOUT) {
-                try { MagicLayout.magic(myState);  MagicColour.magic(myState); } catch(Throwable ex) { }
-            }
-            repopulateProjectionPopup();
-            if (myCustomPanel!=null) myCustomPanel.remakeAll();
-            if (myGraphPanel!=null) myGraphPanel.remakeAll();
-            if (key==EV_RESET_THEME) thmFileName="";
-            updateDisplay();
+    //========================================= EVENTS ============================================================================================
+
+    /** This method asks the user for a new XML instance file to load. */
+    private Runner doLoad() {
+        if (wrap) return wrapMe();
+        File file=OurDialog.askFile(frame, true, null, ".xml", ".xml instance files");
+        if (file==null) return null;
+        Util.setCurrentDirectory(file.getParentFile());
+        loadXML(file.getPath(), true);
+        return null;
+    }
+
+    /** This method loads a new XML instance file if it's not the current file. */
+    private Runner doLoadInstance(String fileName) {
+        if (!wrap) loadXML(fileName, false);
+        return wrapMe(fileName);
+    }
+
+    /**
+     * This method closes the current instance; if there are previously loaded files, we will load one of them;
+     * otherwise, this window will set itself as invisible (if not in standalone mode),
+     * or it will terminate the entire application (if in standalone mode).
+     */
+    private Runner doClose() {
+        if (wrap) return wrapMe();
+        xmlLoaded.remove(xmlFileName);
+        if (xmlLoaded.size()>0) { doLoadInstance(xmlLoaded.get(xmlLoaded.size()-1)); return null; }
+        if (standalone) System.exit(0); else if (frame!=null) frame.setVisible(false);
+        return null;
+    }
+
+    /**
+     * This method closes every XML file.
+     * If in standalone mode, the JVM will then shutdown, otherwise it will just set the window invisible.
+     */
+    private Runner doCloseAll() {
+        if (wrap) return wrapMe();
+        xmlLoaded.clear();
+        xmlFileName="";
+        if (standalone) System.exit(0); else if (frame!=null) frame.setVisible(false);
+        return null;
+    }
+
+    /** This method refreshes the "theme" menu. */
+    private Runner doRefreshTheme() {
+        if (wrap) return wrapMe();
+        String defaultTheme=System.getProperty("alloy.theme0");
+        thememenu.removeAll();
+        try {
+            wrap=true;
+            OurUtil.makeMenuItem(thememenu, "Load Theme...",            true, KeyEvent.VK_L, -1, doLoadTheme());
+            if (defaultTheme!=null && defaultTheme.length()>0 && (new File(defaultTheme)).isDirectory())
+                OurUtil.makeMenuItem(thememenu, "Load Sample Theme...", true, KeyEvent.VK_B, -1, doLoadSampleTheme());
+            OurUtil.makeMenuItem(thememenu, "Save Theme",               true, KeyEvent.VK_S, -1, doSaveTheme());
+            OurUtil.makeMenuItem(thememenu, "Save Theme As...",         true, KeyEvent.VK_A, -1, doSaveThemeAs());
+            OurUtil.makeMenuItem(thememenu, "Reset Theme",              true, KeyEvent.VK_R, -1, doResetTheme());
+        } finally {
+            wrap=false;
         }
+        return null;
+    }
 
-        if (key==EV_BAR_MAGIC_COLOR) {
-            try { MagicColour.magic(myState); } catch(Throwable ex) { }
-            // same as above for ev_magicLayout
-            repopulateProjectionPopup();
-            if (myCustomPanel!=null) myCustomPanel.remakeAll();
-            if (myGraphPanel!=null) myGraphPanel.remakeAll();
-            updateDisplay();
+    /** This method asks the user for a new theme file to load. */
+    private Runner doLoadTheme() {
+        if (wrap) return wrapMe();
+        String defaultTheme=System.getProperty("alloy.theme0");
+        if (defaultTheme==null) defaultTheme="";
+        if (myState==null) return null; // Can only load if there is a VizState loaded
+        if (myState.changedSinceLastSave()) {
+            Boolean opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
+            if (opt==null) return null;
+            if (opt.booleanValue()) if (!saveThemeFile(thmFileName.length()==0 ? null : thmFileName)) return null;
         }
+        File file=OurDialog.askFile(frame, true, null, ".thm", ".thm theme files");
+        if (file!=null) { Util.setCurrentDirectory(file.getParentFile()); loadThemeFile(file.getPath()); }
+        return null;
+    }
 
-        if (key==EV_WINDOW) {
-            windowmenu.removeAll();
+    /** This method asks the user for a new theme file (from the default Alloy4 distribution) to load. */
+    private Runner doLoadSampleTheme() {
+        if (wrap) return wrapMe();
+        String defaultTheme=System.getProperty("alloy.theme0");
+        if (defaultTheme==null) defaultTheme="";
+        if (myState==null) return null; // Can only load if there is a VizState loaded
+        if (myState.changedSinceLastSave()) {
+            Boolean opt = OurDialog.askSaveDiscardCancel(frame, "The current theme");
+            if (opt==null) return null;
+            if (opt.booleanValue()) if (!saveThemeFile(thmFileName.length()==0 ? null : thmFileName)) return null;
+        }
+        File file=OurDialog.askFile(frame, true, defaultTheme, ".thm", ".thm theme files");
+        if (file!=null) loadThemeFile(file.getPath());
+        return null;
+    }
+
+    /** This method saves the current theme. */
+    private Runner doSaveTheme() {
+        if (!wrap) saveThemeFile(thmFileName.length()==0 ? null : thmFileName);
+        return wrapMe();
+    }
+
+    /** This method saves the current theme to a new ".thm" file. */
+    private Runner doSaveThemeAs() {
+        if (wrap) return wrapMe();
+        File file=OurDialog.askFile(frame, false, null, ".thm", ".thm theme files");
+        if (file==null) return null;
+        if (file.exists()) if (!OurDialog.askOverwrite(frame, Util.canon(file.getPath()))) return null;
+        Util.setCurrentDirectory(file.getParentFile());
+        saveThemeFile(file.getPath());
+        return null;
+    }
+
+    /** This method resets the current theme. */
+    private Runner doResetTheme() {
+        if (wrap) return wrapMe();
+        if (myState==null) return null;
+        if (!OurDialog.yesno(frame, "Are you sure you wish to clear all your customizations?", "Yes, clear them", "No, keep them")) return null;
+        myState.resetTheme();
+        repopulateProjectionPopup();
+        if (myCustomPanel!=null) myCustomPanel.remakeAll();
+        if (myGraphPanel!=null) myGraphPanel.remakeAll();
+        thmFileName="";
+        updateDisplay();
+        return null;
+    }
+
+    /** This method modifies the theme using a set of heuristics. */
+    private Runner doMagicLayout() {
+        if (wrap) return wrapMe();
+        if (myState==null) return null;
+        if (!OurDialog.yesno(frame, "This will clear your original customizations. Are you sure?", "Yes, clear them", "No, keep them")) return null;
+        myState.resetTheme();
+        try { MagicLayout.magic(myState);  MagicColour.magic(myState); } catch(Throwable ex) { }
+        repopulateProjectionPopup();
+        if (myCustomPanel!=null) myCustomPanel.remakeAll();
+        if (myGraphPanel!=null) myGraphPanel.remakeAll();
+        updateDisplay();
+        return null;
+    }
+
+    /** This method refreshes the "window" menu. */
+    private Runner doRefreshWindow() {
+        if (wrap) return wrapMe();
+        windowmenu.removeAll();
+        try {
+            wrap=true;
             for(final String f:getInstances()) {
-                JMenuItem it = OurUtil.makeMenuItem("Instance: "+getInstanceTitle(f), null);
+                JMenuItem it = new JMenuItem("Instance: "+getInstanceTitle(f), null);
                 it.setIcon(f.equals(getXMLfilename())?iconYes:iconNo);
-                it.addActionListener(new MultiRunner(this, EVS_LOAD_INSTANCE, f));
+                it.addActionListener(doLoadInstance(f));
                 windowmenu.add(it);
             }
+        } finally {
+            wrap=false;
         }
+        return null;
+    }
 
-        if (key==EV_MINIMIZE && frame!=null) {
-            frame.setExtendedState(JFrame.ICONIFIED);
+    /** This method inserts "Minimize" and "Maximize" entries into a JMenu. */
+    public void addMinMaxActions(JMenu menu) {
+        try {
+            wrap=true;
+            OurUtil.makeMenuItem(menu, "Minimize", true, KeyEvent.VK_M, -1, doMinimize()).setIcon(iconNo);
+            OurUtil.makeMenuItem(menu, "Zoom", true, -1, -1, doMaximize()).setIcon(iconNo);
+        } finally {
+            wrap=false;
         }
+    }
 
-        if (key==EV_SHOW && frame!=null) {
-            if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
-                frame.setExtendedState(JFrame.NORMAL);
-            else
-                frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            frame.setVisible(true);
-            frame.requestFocus();
-            frame.toFront();
-        }
+    /** This method minimizes the window. */
+    private Runner doMinimize() {
+        if (!wrap && frame!=null) frame.setExtendedState(JFrame.ICONIFIED);
+        return wrapMe();
+    }
 
-        if (key==EV_MAXIMIZE && frame!=null) {
+    /** This method alternatingly maximizes or restores the window. */
+    private Runner doMaximize() {
+        if (!wrap && frame!=null) {
             if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
                 frame.setExtendedState(JFrame.NORMAL);
             else
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         }
-
-        if (key==EV_BAR_NEXT && settingsOpen==0) {
-            if (xmlFileName.length()==0) {
-                OurDialog.alert(frame,"Cannot display the next solution since "
-                +"no instance is currently loaded.", "Error");
-            } else if (enumerator==null) {
-                OurDialog.alert(frame,"Cannot display the next solution since "
-                +"the analysis engine is not loaded with the visualizer.", "Error");
-            } else {
-                try {
-                  enumerator.run(-1, xmlFileName);
-                } catch(Throwable ex) {
-                  OurDialog.alert(frame, ex.getMessage(), "Error");
-                }
-            }
-        }
-
-        if (key==EV_BAR_OPEN_THEME) { settingsOpen=1; updateDisplay(); }
-        if (key==EV_BAR_CLOSE_THEME) { settingsOpen=0; updateDisplay(); }
-        if (key==EV_BAR_APPLY) { updateDisplay(); }
-        if (key==EV_BAR_OPEN_EVAL) { settingsOpen=2; updateDisplay(); }
-        if (key==EV_BAR_CLOSE_EVAL) { settingsOpen=0; updateDisplay(); }
-        if (key==EV_BAR_VIZ) { currentMode=VisualizerMode.Viz; updateDisplay(); }
-        if (key==EV_BAR_XML) { currentMode=VisualizerMode.XML; updateDisplay(); }
-        if (key==EV_BAR_TREE) { currentMode=VisualizerMode.Tree; updateDisplay(); }
-        if (key==EV_BAR_DOT) { currentMode=VisualizerMode.DOT; updateDisplay(); }
-        if (key==EV_BAR_KODKOD_IN) { currentMode=VisualizerMode.KInput; updateDisplay(); }
-        if (key==EV_BAR_KODKOD_OUT) { currentMode=VisualizerMode.KOutput; updateDisplay(); }
-        if (key==EV_BAR_PLUGIN0) { currentMode=VisualizerMode.Plugin0; updateDisplay(); }
-        return true;
+        return wrapMe();
     }
 
-    private boolean runPlugin(VizState s) {
-        try {
-            String cname = System.getProperty("alloy.viz.plugin0");
-            if (cname==null || cname.length()==0) return false;
-            Class<?> c = Class.forName(cname);
-            Method m = c.getMethod("plugin", new Class[]{VizState.class});
-            if (s==null) return true;
-            m.invoke(null, new Object[]{s});
-            return true;
-        } catch(Throwable ex) {
-            return false;
+    /** This method displays an alert message. */
+    public void doAlert(String message) {
+        OurDialog.alert(frame, message, "Alloy 4");
+    }
+
+    /** This method attempts to derive the next satisfying instance. */
+    private Runner doNext() {
+        if (wrap) return wrapMe();
+        if (settingsOpen!=0) return null;
+        if (xmlFileName.length()==0) {
+            OurDialog.alert(frame,"Cannot display the next solution since "
+            +"no instance is currently loaded.", "Error");
+        } else if (enumerator==null) {
+            OurDialog.alert(frame,"Cannot display the next solution since "
+            +"the analysis engine is not loaded with the visualizer.", "Error");
+        } else {
+            try {
+              enumerator.compute(xmlFileName);
+            } catch(Throwable ex) {
+              OurDialog.alert(frame, ex.getMessage(), "Error");
+            }
         }
+        return null;
+    }
+
+    /** This method updates the graph with the current theme customization. */
+    private Runner doApply() {
+        if (!wrap) updateDisplay();
+        return wrapMe();
+    }
+
+    /** This method opens the theme customization panel if closed. */
+    private Runner doOpenThemePanel() {
+        if (!wrap) { settingsOpen=1; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method closes the theme customization panel if open. */
+    private Runner doCloseThemePanel() {
+        if (!wrap) { settingsOpen=0; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method opens the evaluator panel if closed. */
+    private Runner doOpenEvalPanel() {
+        if (!wrap) { settingsOpen=2; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method closes the evaluator panel if open. */
+    private Runner doCloseEvalPanel() {
+        if (!wrap) { settingsOpen=0; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method shows the instance as a graph. */
+    private Runner doShowViz() {
+        if (!wrap) { currentMode=VisualizerMode.Viz; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method shows the instance as XML. */
+    private Runner doShowXML() {
+        if (!wrap) { currentMode=VisualizerMode.XML; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method shows the instance as a tree. */
+    private Runner doShowTree() {
+        if (!wrap) { currentMode=VisualizerMode.Tree; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method shows the equivalent dot text. */
+    private Runner doShowDot() {
+        if (!wrap) { currentMode=VisualizerMode.DOT; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method shows the Kodkod input. */
+    private Runner doShowInput() {
+        if (!wrap) { currentMode=VisualizerMode.KInput; updateDisplay(); }
+        return wrapMe();
+    }
+
+    /** This method shows the Kodkod output. */
+    private Runner doShowOutput() {
+        if (!wrap) { currentMode=VisualizerMode.KOutput; updateDisplay(); }
+        return wrapMe();
     }
 }

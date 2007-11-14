@@ -28,8 +28,6 @@ import java.awt.Color;
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import javax.swing.JButton;
@@ -110,19 +108,25 @@ public final class OurDialog {
 
     /** Returns true if a font with that name exists on the system. */
     public static boolean hasFont(String fontname) {
-        if (allFonts==null) allFonts=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-        for(int i=0; i<allFonts.length; i++) {
-           if (fontname.compareToIgnoreCase(allFonts[i])==0) {
-              return true;
-           }
+        String[] f;
+        synchronized(OurDialog.class) {
+            f=allFonts;
+            if (f==null) allFonts=(f=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+        }
+        for(int i=0; i<f.length; i++) {
+           if (fontname.compareToIgnoreCase(f[i])==0) return true;
         }
         return false;
     }
 
     /** Asks the user to choose a font; returns "" if the user cancels the request. */
     public static String askFont(Frame parentFrame) {
-        if (allFonts==null) allFonts=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-        JComboBox jcombo = new OurCombobox(allFonts);
+        String[] f;
+        synchronized(OurDialog.class) {
+            f=allFonts;
+            if (f==null) allFonts=(f=GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+        }
+        JComboBox jcombo = new OurCombobox(f);
         int ans=JOptionPane.showOptionDialog(parentFrame,
             new Object[]{"Please choose the new font:", jcombo},
             "Font",
@@ -235,9 +239,7 @@ public final class OurDialog {
     public static JFrame showtext(String title, String text, boolean autoLineWrap) {
         final JFrame window = new JFrame(title);
         final JButton done = new JButton("Close");
-        done.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { window.dispose(); }
-        });
+        done.addActionListener(Runner.createDispose(window));
         JTextArea textarea = OurUtil.textarea(text,20,60);
         textarea.setBackground(Color.WHITE);
         textarea.setEditable(false);

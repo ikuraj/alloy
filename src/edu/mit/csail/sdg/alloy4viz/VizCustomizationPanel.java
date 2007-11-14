@@ -703,7 +703,7 @@ public final class VizCustomizationPanel extends JPanel {
         JComboBox colorComboE   = new OurCombobox(cgs, false, DotColor.values(DotColor.WHITE), 110, 35, Field.COLOR);
         JComboBox outlineComboE = new OurCombobox(cgs, false, DotStyle.values(),               110, 35, Field.STYLE);
         JPanel dispCBE       = new OurBinaryCheckbox(gs, Field.VISIBLE,     "Show as arcs", "Show relations as arcs");
-        //JPanel rankCBE       = new OurBinaryCheckbox(gs, Field.SAMERANK,    "Align endpoints", "Align nodes connected by the same relationships' arcs");
+        //JPanel rankCBE     = new OurBinaryCheckbox(gs, Field.SAMERANK,    "Align endpoints", "Align nodes connected by the same relationships' arcs");
         JPanel mergeCBE      = new OurBinaryCheckbox(gs, Field.MERGEARROWS, "Merge arrows", "Merge opposing arrows of the same relation");
         JPanel constraintCBE = new OurBinaryCheckbox(gs, Field.CONSTRAINT,  "Influence layout", "Whether this edge influences the graph layout");
         JPanel attrCBE       = new OurBinaryCheckbox(gs, Field.ATTRIBUTE,   "Show as attributes", "Show relations as attributes on nodes");

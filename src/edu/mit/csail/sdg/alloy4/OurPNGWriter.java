@@ -20,8 +20,8 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.File;
 import java.io.RandomAccessFile;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
@@ -95,7 +95,7 @@ public final strictfp class OurPNGWriter {
           f.close();
           f=null;
        } finally {
-          if (f!=null) { try { f.close(); } catch(IOException ex) { } }
+          Util.close(f);
        }
     }
 

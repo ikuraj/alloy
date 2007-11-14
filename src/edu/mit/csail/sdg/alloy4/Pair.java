@@ -43,16 +43,16 @@ public final class Pair<A,B> {
     /** If either or both "a" and "b" are String, we'll return it as-is; otherwise, we call toString() on them. */
     @Override public String toString() {
         if (a instanceof String) {
-            if (b instanceof String) return ((String)a)+" "+((String)b);
+            if (b instanceof String) return ((String)a)+" "+b;
             return (String)a;
         }
         if (b instanceof String) {
             return (String)b;
         }
         if (a==null) {
-            return (b!=null) ? b.toString() : "null";
+            return (b!=null) ? b.toString() : "<null,null>";
         } else {
-            return (b!=null) ? (a.toString()+" "+b.toString()) : a.toString();
+            return (b!=null) ? (a.toString()+" "+b) : a.toString();
         }
     }
 
@@ -60,17 +60,13 @@ public final class Pair<A,B> {
     @Override public int hashCode() {
         int i = (a==null) ? 0 : a.hashCode();
         int j = (b==null) ? 0 : b.hashCode();
-        return i*173124+j;
+        return i*173123+j;
     }
 
     /** Pairs (a1,b1) and (a2,b2) are equal iff a1.equals(a2) and b1.equals(b2). */
     @Override public boolean equals(Object that) {
-        if (this==that) {
-            return true;
-        }
-        if (!(that instanceof Pair)) {
-            return false;
-        }
+        if (this==that) return true;
+        if (!(that instanceof Pair)) return false;
         Pair p=(Pair)that;
         return (a==null ? p.a==null : a.equals(p.a)) && (b==null ? p.b==null : b.equals(p.b));
     }

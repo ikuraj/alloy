@@ -98,7 +98,7 @@ public final class ExampleUsingTheCompiler {
                     if (viz==null) {
                         viz = new VizGUI(false, "alloy_example_output.xml", null);
                     } else {
-                        viz.run(VizGUI.EVS_LOAD_INSTANCE_FORCEFULLY, "alloy_example_output.xml");
+                        viz.loadXML("alloy_example_output.xml", true);
                     }
                 }
             }

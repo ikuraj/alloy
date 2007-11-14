@@ -184,7 +184,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     }
 
     /** Create a new node with the given list of labels, then add it to the given graph. */
-    public VizNode(DiGraph graph, Object uuid, String... labels) {
+    public VizNode(VizGraph graph, Object uuid, String... labels) {
         super(graph); // The parent's constructor will add this node to the graph automatically
         this.uuid = uuid;
         if (labels==null || labels.length==0) return;
@@ -198,37 +198,37 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     // ============================ these are computed by calcBounds() =========================================
 
     /** If (updown>=0), this is the distance from the center to the top edge. */
-    private int updown=(-1);
+    private int updown = (-1);
 
     /** If (updown>=0), this is the distance from the center to the left edge. */
-    private int side;
+    private int side = 0;
 
     /** If (updown>=0), this is the vertical distance between the center of the text label and the center of the node. */
-    private int yShift;
+    private int yShift = 0;
 
     /** If (updown>=0), this is the width of the text label. */
-    private int width;
+    private int width = 0;
 
     /** If (updown>=0), this is the height of the text label. */
-    private int height;
+    private int height = 0;
 
     /**
      * If (updown>=0 and shape!=null), this is the bounding polygon.
      * Note: if not null, it must be either a GeneralPath or a Polygon.
      */
-    private Shape poly;
+    private Shape poly = null;
 
     /**
      * If (updown>=0 and shape!=null and poly2!=null), then poly2 will also be drawn during the draw() method.
      * Note: if not null, it must be either a GeneralPath or a Polygon.
      */
-    private Shape poly2;
+    private Shape poly2 = null;
 
     /**
      * If (updown>=0 and shape!=null and poly3!=null), then poly3 will also be drawn during the draw() method.
      * Note: if not null, it must be either a GeneralPath or a Polygon.
      */
-    private Shape poly3;
+    private Shape poly3 = null;
 
     /** Returns the node height. */
     public int getHeight()  { if (updown<0) calcBounds(); return updown+updown; }
@@ -466,7 +466,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
 
     /** Assuming calcBounds() have been called, and (x,y) have been set, then this draws the node. */
     public void draw(Artist gr, double scale, boolean highlight) {
-       final int top=((VizGraph)graph).getTop(), left=((VizGraph)graph).getLeft();
+       final int top = graph.getTop(), left = graph.getLeft();
        if (shape==null) return;
        if (updown<0) calcBounds();
        gr.set(style, scale);
@@ -525,7 +525,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     }
 
     private void shiftUp(int y) {
-        final int[] ph = ((VizGraph)graph).layerPH;
+        final int[] ph = graph.layerPH;
         final int yJump = VizGraph.yJump/6;
         int i=layer();
         setY(i,y);
@@ -536,11 +536,11 @@ public final strictfp class VizNode extends DiGraph.DiNode {
             if (first.centerY+ph[i]/2+yJump > y) setY(i, y-ph[i]/2-yJump);
             y=first.centerY-ph[i]/2;
         }
-        ((VizGraph)graph).relayout_edges();
+        graph.relayout_edges();
     }
 
     private void shiftDown(int y) {
-        final int[] ph = ((VizGraph)graph).layerPH;
+        final int[] ph = graph.layerPH;
         final int yJump = VizGraph.yJump/6;
         int i=layer();
         setY(i,y);
@@ -551,7 +551,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
             if (first.centerY-ph[i]/2-yJump < y) setY(i, y+ph[i]/2+yJump);
             y=first.centerY+ph[i]/2;
         }
-        ((VizGraph)graph).relayout_edges();
+        graph.relayout_edges();
     }
 
     private void shiftLeft(List<VizNode> peers, int i, int x) {
@@ -617,7 +617,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
        for(i=0; i<n; i++) if (layer.get(i)==this) break; // Figure out this node's position in its layer
        if (centerX>x) swapLeft(layer,i,x); else if (centerX<x) swapRight(layer,i,x);
        //if (centerX>x) shiftLeft(layer,i,x); else if (centerX<x) shiftRight(layer,i,x);
-       if (centerY>y) shiftUp(y); else if (centerY<y) shiftDown(y); else ((VizGraph)graph).relayout_edges(layer());
-       ((VizGraph)graph).recalc_bound(false);
+       if (centerY>y) shiftUp(y); else if (centerY<y) shiftDown(y); else graph.relayout_edges(layer());
+       graph.recalc_bound(false);
     }
 }

@@ -37,7 +37,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -55,7 +54,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
-import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 
 /**
  * Graphical convenience methods.
@@ -104,11 +102,10 @@ public final class OurUtil {
      * @param tip - the tooltip to show when the mouse hovers over the button
      * @param iconname - the filename of the icon to show (it will be loaded from an accompanying jar file)
      * @param func - the function to call when the button is pressed (null if we don't want to call any function)
-     * @param key - the parameter to pass to func() when the button is pressed
      */
-    public static JButton button(String label, String tip, String iconname, MultiRunnable func, int key) {
+    public static JButton button(String label, String tip, String iconname, ActionListener func) {
         JButton button = new JButton(label, (iconname!=null && iconname.length()>0) ? loadIcon(iconname) : null);
-        if (func!=null) button.addActionListener(new MultiRunner(func,key));
+        if (func!=null) button.addActionListener(func);
         button.setVerticalTextPosition(JButton.BOTTOM);
         button.setHorizontalTextPosition(JButton.CENTER);
         button.setBorderPainted(false);
@@ -125,14 +122,9 @@ public final class OurUtil {
         return answer;
     }
 
-    /** Make a JEditorPane. */
-    public static JEditorPane editorPane(String type, String text) {
-        return new JEditorPane(type, text);
-    }
-
     /** Make a JTextArea. */
     public static JTextArea textarea(String text, int rows, int columns) {
-        JTextArea answer = new JTextArea(text,rows,columns);
+        JTextArea answer = new JTextArea(text, rows, columns);
         return answer;
     }
 
@@ -175,7 +167,7 @@ public final class OurUtil {
      * <br> If a component is Integer, we will insert an "n*1" rigid area (or "1*n" rigid area) instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be center-aligned.
-     * <br> Note: if the first component is a Color, we will set everything's background color to that color.
+     * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
      */
     public static JPanel makeBox(int w, int h, Object... a) {
         JPanel ans=makeBox(w>=h ? BoxLayout.X_AXIS : BoxLayout.Y_AXIS);
@@ -201,13 +193,8 @@ public final class OurUtil {
             } else {
                 continue;
             }
-            if (color!=null) {
-                c.setBackground(color);
-            }
-            if (c instanceof JComponent) {
-                ((JComponent)c).setAlignmentX(0.5f);
-                ((JComponent)c).setAlignmentY(0.5f);
-            }
+            if (color!=null) c.setBackground(color);
+            if (c instanceof JComponent) { ((JComponent)c).setAlignmentX(0.5f); ((JComponent)c).setAlignmentY(0.5f); }
             ans.add(c);
         }
         return ans;
@@ -219,7 +206,7 @@ public final class OurUtil {
      * <br> If a component is Integer, we will insert an "n*1" (or "1*n") rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be aligned by xAlign and yAlign.
-     * <br> Note: if the first component is a Color, we will set everything's background color to that color.
+     * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
      */
     private static JPanel makeBox(boolean horizontal, float xAlign, float yAlign, Object[] a) {
         JPanel ans=makeBox(horizontal ? BoxLayout.X_AXIS : BoxLayout.Y_AXIS);
@@ -243,13 +230,8 @@ public final class OurUtil {
             } else {
                 continue;
             }
-            if (color!=null) {
-                c.setBackground(color);
-            }
-            if (c instanceof JComponent) {
-                ((JComponent)c).setAlignmentX(xAlign);
-                ((JComponent)c).setAlignmentY(yAlign);
-            }
+            if (color!=null) c.setBackground(color);
+            if (c instanceof JComponent) { ((JComponent)c).setAlignmentX(xAlign); ((JComponent)c).setAlignmentY(yAlign); }
             ans.add(c);
         }
         return ans;
@@ -261,7 +243,7 @@ public final class OurUtil {
      * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be center-aligned.
-     * <br> Note: if the first component is a Color, we will set everything's background color to that color.
+     * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
      */
     public static JPanel makeH(Object... a) { return makeBox(true, 0.5f, 0.5f, a); }
 
@@ -271,7 +253,7 @@ public final class OurUtil {
      * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be top-aligned.
-     * <br> Note: if the first component is a Color, we will set everything's background color to that color.
+     * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
      */
     public static JPanel makeHT(Object... a) { return makeBox(true, 0.5f, 0.0f, a); }
 
@@ -281,7 +263,7 @@ public final class OurUtil {
      * <br> If a component is Integer, we will insert an "n*1" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be bottom-aligned.
-     * <br> Note: if the first component is a Color, we will set everything's background color to that color.
+     * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
      */
     public static JPanel makeHB(Object... a) { return makeBox(true, 0.5f, 1.0f, a); }
 
@@ -291,7 +273,7 @@ public final class OurUtil {
      * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be center-aligned.
-     * <br> Note: if the first component is a Color, we will set everything's background color to that color.
+     * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
      */
     public static JPanel makeV(Object... a) { return makeBox(false, 0.5f, 0.5f, a); }
 
@@ -301,7 +283,7 @@ public final class OurUtil {
      * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be left-aligned.
-     * <br> Note: if the first component is a Color, we will set everything's background color to that color.
+     * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
      */
     public static JPanel makeVL(Object... a) { return makeBox(false, 0.0f, 0.5f, a); }
 
@@ -311,7 +293,7 @@ public final class OurUtil {
      * <br> If a component is Integer, we will insert an "1*n" rigid area instead.
      * <br> If a component is String, we will insert a JLabel with it as the label.
      * <br> Each component will be right-aligned.
-     * <br> Note: if the first component is a Color, we will set everything's background color to that color.
+     * <br> Note: if a component is a Color, we will set it as the background of every component after it (until we encounter another Color object).
      */
     public static JPanel makeVR(Object... a) { return makeBox(false, 1.0f, 0.5f, a); }
 
@@ -369,21 +351,6 @@ public final class OurUtil {
         }
     }
 
-    /** Constructs a JMenuBar */
-    public static JMenuBar makeMenuBar() {
-        return new JMenuBar();
-    }
-
-    /** Constructs a JMenu */
-    public static JMenu makeMenu(String label) {
-        return new JMenu(label, false);
-    }
-
-    /** Constructs a JMenuItem */
-    public static JMenuItem makeMenuItem(String label, Icon icon) {
-        return new JMenuItem(label, icon);
-    }
-
     /**
      * Construct a new JMenu and add it to an existing JMenuBar.
      *
@@ -394,29 +361,16 @@ public final class OurUtil {
      * @param label - the label to show on screen
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
      * @param func - the function to call if the user expands this menu (or null if there is no function to call)
-     * @param key - the argument to pass to func() when the user expands this menu
      */
-    public static JMenu makeMenu(JMenuBar parent, String label, int mnemonic, final MultiRunnable func, final int key) {
-        final JMenu x = makeMenu(label);
-        if (mnemonic!=-1 && !Util.onMac()) {
-            x.setMnemonic(mnemonic);
-        }
+    public static JMenu makeMenu(JMenuBar parent, String label, int mnemonic, final Runnable func) {
+        final JMenu x = new JMenu(label, false);
+        if (mnemonic!=-1 && !Util.onMac()) x.setMnemonic(mnemonic);
         x.addMenuListener(new MenuListener() {
-            public final void menuSelected (MenuEvent e) {
-                if (func!=null) {
-                    func.run(key);
-                }
-            }
-            public final void menuDeselected (MenuEvent e) {
-                OurUtil.enableAll(x);
-            }
-            public final void menuCanceled (MenuEvent e) {
-                OurUtil.enableAll(x);
-            }
+            public final void menuSelected (MenuEvent e) { if (func!=null) func.run(); }
+            public final void menuDeselected (MenuEvent e) { OurUtil.enableAll(x); }
+            public final void menuCanceled (MenuEvent e) { OurUtil.enableAll(x); }
         });
-        if (parent!=null) {
-            parent.add(x);
-        }
+        if (parent!=null) parent.add(x);
         return x;
     }
 
@@ -429,24 +383,18 @@ public final class OurUtil {
      * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
      */
     public static JMenuItem makeMenuItem(JMenu parent, String label, int mnemonic, int accel, final Runnable func) {
-        JMenuItem x = makeMenuItem(label,null);
-        if (mnemonic!=-1) {
-            x.setMnemonic(mnemonic);
-        }
+        JMenuItem x = new JMenuItem(label, null);
+        if (mnemonic!=-1) x.setMnemonic(mnemonic);
         if (accel!=-1) {
             int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
             x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
         }
         if (func!=null) {
             x.addActionListener(new ActionListener() {
-                public final void actionPerformed(ActionEvent e) {
-                    func.run();
-                }
+                public final void actionPerformed(ActionEvent e) { func.run(); }
             });
         }
-        if (parent!=null) {
-            parent.add(x);
-        }
+        if (parent!=null) parent.add(x);
         return x;
     }
 
@@ -458,30 +406,18 @@ public final class OurUtil {
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want a mnemonic
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want an accelerator
      * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
-     * @param key - the argument to pass to func() when the user clicks this item
      */
-    public static JMenuItem makeMenuItem(JMenu parent, String label, boolean enabled, int mnemonic, int accel, final MultiRunnable func, final int key) {
-        JMenuItem x = makeMenuItem(label,null);
-        if (mnemonic!=-1) {
-            x.setMnemonic(mnemonic);
-        }
+    public static JMenuItem makeMenuItem
+    (JMenu parent, String label, boolean enabled, int mnemonic, int accel, final ActionListener func) {
+        JMenuItem x = new JMenuItem(label, null);
+        if (mnemonic!=-1) x.setMnemonic(mnemonic);
         if (accel!=-1) {
             int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
             x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask));
         }
-        if (func!=null) {
-            x.addActionListener(new ActionListener() {
-                public final void actionPerformed(ActionEvent e) {
-                    func.run(key);
-                }
-            });
-        }
-        if (parent!=null) {
-            parent.add(x);
-        }
-        if (!enabled) {
-            x.setEnabled(false);
-        }
+        if (func!=null) x.addActionListener(func);
+        if (parent!=null) parent.add(x);
+        if (!enabled) x.setEnabled(false);
         return x;
     }
 
@@ -493,15 +429,11 @@ public final class OurUtil {
      * @param func - the action listener to call if the user clicks this item (or null if there is no action to do)
      */
     public static JMenuItem makeMenuItemWithShift(JMenu parent, String label, int accel, ActionListener func) {
-        JMenuItem x = makeMenuItem(label,null);
+        JMenuItem x = new JMenuItem(label, null);
         int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
         x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.SHIFT_MASK));
-        if (func!=null) {
-            x.addActionListener(func);
-        }
-        if (parent!=null) {
-            parent.add(x);
-        }
+        if (func!=null) x.addActionListener(func);
+        if (parent!=null) parent.add(x);
         return x;
     }
 }

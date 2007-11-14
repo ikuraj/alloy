@@ -192,8 +192,8 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
            if (!(p<=selfLoopYGap)) p=selfLoopYGap;
            p=i*p+(p/2D);
            path=new VizPath(ax, ay-p, ax, ay+p);
-           path.add(1, ax+a.getWidth()/2+q+i*d, ay-p);
-           path.add(2, ax+a.getWidth()/2+q+i*d, ay+p);
+           path.add(1, ax+a.getWidth()/2D+q+i*d, ay-p);
+           path.add(2, ax+a.getWidth()/2D+q+i*d, ay+p);
         } else {
            int i=0, n=0;
            for(VizEdge e:a.outEdges()) {
@@ -266,12 +266,11 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
     public void draw(Artist gr, double scale, VizEdge highlight) {
-       final int top = ((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
+       final int top = a().graph.getTop(), left = a().graph.getLeft();
        gr.translate(-left, -top);
-       if (highlight==this) { gr.setColor(color); gr.set(VizStyle.SELECTED, scale); }
-          else if (highlight!=null && highlight.group==group) { gr.setColor(color); gr.set(VizStyle.SELECTED, scale); }
-          else if (highlight!=null) { gr.setColor(Color.BLACK); gr.set(/*style!=VizStyle.BOLD ? style :*/ VizStyle.SOLID, scale); }
-          else { gr.setColor(color); gr.set(style, scale); }
+       if (highlight==this) { gr.setColor(color); gr.set(VizStyle.BOLD, scale); }
+          else if (highlight==null || highlight.group==group) { gr.setColor(color); gr.set(style, scale); }
+          else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
        if (a()==b()) {
           // Draw the self edge
           double x0=path.getX(0), y0=path.getY(0), x1=path.getX(1), y1=y0, x2=x1, y2=path.getY(2), x3=path.getX(3), y3=y2;
@@ -301,7 +300,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     /** Draw the edge label using the given color. */
     void drawLabel(Artist gr, Color color, Color erase) {
         if (label.length()>0) {
-            final int top = ((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
+            final int top = a().graph.getTop(), left = a().graph.getLeft();
             int x, y, n = path.getPoints();
             if ((n&1)==0) x=(int)(path.getX(n/2-1)+path.getX(n/2))/2; else x=(int)path.getX(n/2);
             if ((n&1)==0) y=(int)(path.getY(n/2-1)+path.getY(n/2))/2; else y=(int)path.getY(n/2);
@@ -320,18 +319,12 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
     public void drawArrowhead(Artist gr, double scale, VizEdge highlight, double tipLength) {
-       final int top=((VizGraph)(a().graph)).getTop(), left=((VizGraph)(a().graph)).getLeft();
+       final int top = a().graph.getTop(), left = a().graph.getLeft();
        // Check to see if this edge is highlighted or not
-       double fan;
-       if (highlight==this) {
-          fan=selectedFan; gr.setColor(color); gr.set(VizStyle.SELECTED, scale);
-       } else if (highlight!=null && highlight.group==group) {
-          fan=selectedFan; gr.setColor(color); gr.set(VizStyle.SELECTED, scale);
-       } else if (highlight!=null) {
-          fan=smallFan; gr.setColor(Color.BLACK); gr.set(VizStyle.SOLID /*style==VizStyle.BOLD ? VizStyle.SOLID : style*/, scale);
-       } else {
-          fan=(style==VizStyle.BOLD ? bigFan : smallFan); gr.setColor(color); gr.set(style, scale);
-       }
+       double fan = (style==VizStyle.BOLD ? bigFan : smallFan);
+       if (highlight==this) { fan=bigFan; gr.setColor(color); gr.set(VizStyle.BOLD, scale); }
+          else if (highlight==null || highlight.group==group) { gr.setColor(color); gr.set(style, scale); }
+          else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
        for(VizEdge e=this; ;e=e.b().outEdges().get(0)) {
           if ((e.ahead && e.a().shape()!=null) || (e.bhead && e.b().shape()!=null)) {
              int n = e.path.getPoints();
@@ -363,7 +356,4 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
 
     /** The angle (in radian) to fan out the arrow head, if the line is bold. */
     private final double bigFan = toRadians(32);
-
-    /** The angle (in radian) to fan out the arrow head, if the line is selected. */
-    private final double selectedFan = toRadians(48);
 }

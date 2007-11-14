@@ -131,10 +131,8 @@ public final class VizState {
         AlloyRelation in=new AlloyRelation("in", Util.asList(set,sig));
         shape.put(null,DotShape.BOX); nodeColor.put(null,DotColor.YELLOW); nodeStyle.put(null,DotStyle.SOLID);
         shape.put(set,DotShape.ELLIPSE); nodeColor.put(set,DotColor.BLUE); label.put(set,"");
-        edgeColor.put(ext,DotColor.BLACK); edgeStyle.put(ext,DotStyle.BOLD);
-        edgeColor.put(in,DotColor.BLACK); edgeStyle.put(in,DotStyle.BOLD);
-        weight.put(ext,100); layoutBack.put(ext,true);
-        weight.put(in,100);  layoutBack.put(in,true);
+        edgeColor.put(ext,DotColor.BLACK); weight.put(ext,100); layoutBack.put(ext,true);
+        edgeColor.put(in,DotColor.BLACK); weight.put(in,100); layoutBack.put(in,true);
         // Done
         cache.clear();
         changedSinceLastSave=false;

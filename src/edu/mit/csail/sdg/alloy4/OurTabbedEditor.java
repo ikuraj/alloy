@@ -20,10 +20,10 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Point;
@@ -556,17 +556,11 @@ public final class OurTabbedEditor {
      * <p> If a text buffer with that filename already exists, we will just switch to it.
      * <p> Otherwise, we will create a new empty tab (and if allowIO==true, we'll populate the new tab with the content from disk).
      */
-    public boolean newTab(String filename) {
+    public void newTab(String filename) throws IOException {
         filename=Util.canon(filename);
-        if (switchToFilename(filename)) { return true; }
-        try {
-            String content = allowIO ? Util.readAll(filename) : "";
-            newTab(filename, content, true);
-            return true;
-        }
-        catch(IOException e) {
-            return false;
-        }
+        if (switchToFilename(filename)) return;
+        String content = allowIO ? Util.readAll(filename) : "";
+        newTab(filename, content, true);
     }
 
     /** Returns the number of tabs. */
@@ -684,7 +678,14 @@ public final class OurTabbedEditor {
                 String f=Util.canon(p.filename);
                 if (!switchToFilename(f)) {
                     String content;
-                    try { content=Util.readAll(f); } catch(IOException ex) { return; } // Highlight is not critical
+                    try {
+                        content=Util.readAll(f);
+                    } catch(IOException ex) {
+                        // Highlight is not critical
+                        adjustLabelColor();
+                        parent.notifyChange();
+                        return;
+                    }
                     newTab(f, content, true);
                 }
                 int c=text().getLineStartOffset(p.y-1)+p.x-1;

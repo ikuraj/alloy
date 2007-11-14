@@ -31,7 +31,7 @@ import java.util.NoSuchElementException;
  * This list allows add() but disallows remove() and set(); null values are allowed.
  *
  * <p>
- * By making this sacrifice, we are able to provide a very cheap "copy constructor"
+ * By making this sacrifice, we are able to provide a very cheap "duplicate method"
  * that simulates making a copy without actually making a copy.
  *
  * <p>
@@ -99,46 +99,28 @@ public final class SafeList<T> implements Collection<T>, Serializable {
         // while allowing other threads to add to this list. Since existing elements in SafeList will never change,
         // we can safely interleave the read and insertion without putting a grand lock on the entire loop.
         for(Object obj:this) {
-            if (i>=n) {
-                break;
-            }
+            if (i>=n) break;
             i++;
             answer=31*answer;
-            if (obj!=null) {
-                answer=answer+obj.hashCode();
-            }
+            if (obj!=null) answer=answer+obj.hashCode();
         }
         return answer;
     }
 
-    /** Returns true if (that instanceof SafeList), and that contains the same elements as this list. */
+    /** Returns true if (that instanceof List), and that contains the same elements as this list. */
     @Override public boolean equals(Object that) {
-        if (this==that) {
-            return true;
-        }
-        if (!(that instanceof SafeList)) {
-            return false;
-        }
-        SafeList x=(SafeList)that;
-        int n; Iterator a,b;
-        synchronized(SafeList.class) {
-            n=size();
-            if (n!=x.size()) {
-                return false;
-            }
-            a=iterator();
-            b=x.iterator();
-        }
+        if (this==that) return true;
+        if (!(that instanceof List)) return false;
+        List x=(List)that;
+        int n=size(); // the size() method is synchronized, so we are safe in calling it
+        if (n!=x.size()) return false;
+        Iterator a=iterator(), b=x.iterator();
         for(int i=0; i<n; i++) { // We must read up to n elements only
             Object aa=a.next(), bb=b.next();
             if (aa==null) {
-                if (bb!=null) {
-                    return false;
-                }
+                if (bb!=null) return false;
             } else {
-                if (!aa.equals(bb)) {
-                    return false;
-                }
+                if (!aa.equals(bb)) return false;
             }
         }
         return true;
@@ -148,13 +130,9 @@ public final class SafeList<T> implements Collection<T>, Serializable {
     public boolean contains(Object item) {
         for(T entry:this) {
             if (entry==null) {
-                if (item==null) {
-                    return true;
-                }
+                if (item==null) return true;
             } else {
-                if (entry.equals(item)) {
-                    return true;
-                }
+                if (entry.equals(item)) return true;
             }
         }
         return false;
@@ -162,33 +140,21 @@ public final class SafeList<T> implements Collection<T>, Serializable {
 
     /** Add an element into the list. */
     public boolean add(T item) {
-        if (max>=0) {
-            throw new UnsupportedOperationException();
-        }
-        synchronized(SafeList.class) {
-            list.add(item);
-            return true;
-        }
+        if (max>=0) throw new UnsupportedOperationException();
+        synchronized(SafeList.class) { list.add(item); }
+        return true;
     }
 
     /** Get an element from the list. */
     public T get(int i) {
-        if (max>=0 && i>=max) {
-            throw new IndexOutOfBoundsException();
-        }
-        synchronized(SafeList.class) {
-            return list.get(i);
-        }
+        if (max>=0 && i>=max) throw new IndexOutOfBoundsException();
+        synchronized(SafeList.class) { return list.get(i); }
     }
 
     /** Returns the size of the list. */
     public int size() {
-        if (max>=0) {
-            return max;
-        }
-        synchronized(SafeList.class) {
-            return list.size();
-        }
+        if (max>=0) return max;
+        synchronized(SafeList.class) { return list.size(); }
     }
 
     /** Returns true if the list is empty. */
@@ -210,22 +176,16 @@ public final class SafeList<T> implements Collection<T>, Serializable {
             return new Iterator<T>() {
                 private final int imax=(max>=0 ? max : list.size());
                 private int now=0;
-                public final boolean hasNext() {
-                    return now<imax;
-                }
                 public final T next() {
-                    if (now>=imax) {
-                        throw new NoSuchElementException();
-                    }
+                    if (now>=imax) throw new NoSuchElementException();
                     synchronized(SafeList.class) {
                         T answer=list.get(now);
                         now++;
                         return answer;
                     }
                 }
-                public final void remove() {
-                    throw new UnsupportedOperationException();
-                }
+                public final boolean hasNext() { return now<imax; }
+                public final void remove() { throw new UnsupportedOperationException(); }
             };
         }
     }
@@ -238,9 +198,7 @@ public final class SafeList<T> implements Collection<T>, Serializable {
         // we can safely interleave the read and insertion without putting a grand lock on the entire loop.
         Object[] answer=new Object[n];
         for(Object obj:this) {
-            if (i>=n) {
-                break;
-            }
+            if (i>=n) break;
             answer[i]=obj;
             i++;
         }
@@ -255,12 +213,10 @@ public final class SafeList<T> implements Collection<T>, Serializable {
         // while allowing other threads to add to this list. Since existing elements in SafeList will never change,
         // we can safely interleave the read and insertion without putting a grand lock on the entire loop.
         if (answer.length<n) {
-            answer=(S[])java.lang.reflect.Array.newInstance(answer.getClass().getComponentType(),n);
+            answer = (S[]) java.lang.reflect.Array.newInstance(answer.getClass().getComponentType(), n);
         }
         for(Object obj:this) {
-            if (i>=n) {
-                break;
-            }
+            if (i>=n) break;
             answer[i]=(S)obj;
             i++;
         }
@@ -274,9 +230,7 @@ public final class SafeList<T> implements Collection<T>, Serializable {
     /** True if this list contains everything from that collection; we return true if that collection is empty. */
     public boolean containsAll(Collection<?> collection) {
         for(Object obj:collection) {
-            if (!contains(obj)) {
-                return false;
-            }
+            if (!contains(obj)) return false;
         }
         return true;
     }
@@ -296,24 +250,16 @@ public final class SafeList<T> implements Collection<T>, Serializable {
     }
 
     /** This operation is not supported by SafeList. */
-    public boolean remove(Object object) {
-        throw new UnsupportedOperationException();
-    }
+    public boolean remove(Object object) { throw new UnsupportedOperationException(); }
 
     /** This operation is not supported by SafeList. */
-    public boolean removeAll(Collection<?> collection) {
-        throw new UnsupportedOperationException();
-    }
+    public boolean removeAll(Collection<?> collection) { throw new UnsupportedOperationException(); }
 
     /** This operation is not supported by SafeList. */
-    public boolean retainAll(Collection<?> collection) {
-        throw new UnsupportedOperationException();
-    }
+    public boolean retainAll(Collection<?> collection) { throw new UnsupportedOperationException(); }
 
     /** This operation is not supported by SafeList. */
-    public void clear() {
-        throw new UnsupportedOperationException();
-    }
+    public void clear() { throw new UnsupportedOperationException(); }
 
     /** Returns a String representation of this list. */
     @Override public String toString() {

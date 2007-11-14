@@ -78,11 +78,11 @@ public class DemoFileSystem {
 
     /* Here are definitions common to all instances. */
 
-    PrimSig obj, dir, file, root;
+    PrimSig obj=null, dir=null, file=null, root=null;
 
-    Field parent, contains;
+    Field parent=null, contains=null;
 
-    Expr fact = ExprConstant.TRUE;
+    Expr fact=ExprConstant.TRUE;
 
     void makeDomain() throws Err {
         // abstract sig Obj { parent: lone Dir }

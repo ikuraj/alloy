@@ -70,8 +70,13 @@ final class SimpleRunner implements Runnable {
         });
         System.setOut(nullOut);
         System.setErr(nullOut);
-        PrintStream tmp=null;
-        try { tmp=new PrintStream(new FileOutputStream(FileDescriptor.out), false, "UTF-8"); } catch(UnsupportedEncodingException ex) { }
+        PrintStream tmp;
+        try {
+            tmp=new PrintStream(new FileOutputStream(FileDescriptor.out), false, "UTF-8");
+        } catch(UnsupportedEncodingException ex) {
+            // should not happen
+            tmp=null;
+        }
         out=tmp;
     }
 

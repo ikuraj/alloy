@@ -32,10 +32,10 @@ public final class Rational {
     // Invariant: if a.equals(0) and !b.equals(0), then a==BigInteger.ZERO and b==BigInteger.ONE
 
     /** The numerator. */
-    final BigInteger a;
+    private final BigInteger a;
 
     /** The denominator. */
-    final BigInteger b;
+    private final BigInteger b;
 
     /** The rational number that results from dividing by 0. */
     public static final Rational NAN = new Rational(BigInteger.ZERO, BigInteger.ZERO);
@@ -55,17 +55,24 @@ public final class Rational {
 
     /** Constructs a new Rational number representing the given integer. */
     public static Rational make(int a) {
-        if (a==0) return ZERO; else return new Rational(new BigInteger(""+a), BigInteger.ONE);
+        if (a==0) return ZERO;
+        if (a==1) return ONE;
+        return new Rational(new BigInteger(""+a), BigInteger.ONE);
     }
 
     /** Constructs a new Rational number representing the given numerator divided by the given denomenator. */
     public static Rational make(int a, int b) {
-        return b==0 ? NAN : (a==0 ? ZERO : new Rational(new BigInteger(""+a), new BigInteger(""+b)));
+        if (b==0) return NAN;
+        if (a==0) return ZERO;
+        if (a==b) return ONE;
+        return new Rational(new BigInteger(""+a), new BigInteger(""+b));
     }
 
     /** Constructs a new Rational number representing the given integer. */
     public static Rational make(BigInteger a) {
-        if (a.equals(BigInteger.ZERO)) return ZERO; else return new Rational(a, BigInteger.ONE);
+        if (a.equals(BigInteger.ZERO)) return ZERO;
+        if (a.equals(BigInteger.ONE)) return ONE;
+        return new Rational(a, BigInteger.ONE);
     }
 
     /** Constructs a new Rational number representing the given numerator divided by the given denomenator. */
@@ -86,27 +93,35 @@ public final class Rational {
 
     /** Returns the result of adding this number with the given number. */
     public Rational add(Rational r) {
-        if (b==BigInteger.ZERO || r.b==BigInteger.ZERO) return NAN; else if (b.equals(r.b)) return make(a.add(r.a), b); else return make(a.multiply(r.b).add(b.multiply(r.a)), b.multiply(r.b));
+        if (b==BigInteger.ZERO || r.b==BigInteger.ZERO) return NAN;
+        if (b.equals(r.b)) return make(a.add(r.a), b);
+        return make(a.multiply(r.b).add(b.multiply(r.a)), b.multiply(r.b));
     }
 
     /** Returns the result of subtracting this number by the given number. */
     public Rational sub(Rational r) {
-        if (b==BigInteger.ZERO || r.b==BigInteger.ZERO) return NAN; else if (b.equals(r.b)) return make(a.subtract(r.a), b); else return make(a.multiply(r.b).subtract(b.multiply(r.a)), b.multiply(r.b));
+        if (b==BigInteger.ZERO || r.b==BigInteger.ZERO) return NAN;
+        if (b.equals(r.b)) return make(a.subtract(r.a), b);
+        return make(a.multiply(r.b).subtract(b.multiply(r.a)), b.multiply(r.b));
     }
 
     /** Returns the result of multiplying this number by the given number. */
     public Rational mul(Rational r) {
-        if (b==BigInteger.ZERO || r.b==BigInteger.ZERO) return NAN; else return make(a.multiply(r.a), b.multiply(r.b));
+        if (b==BigInteger.ZERO || r.b==BigInteger.ZERO) return NAN;
+        return make(a.multiply(r.a), b.multiply(r.b));
     }
 
     /** Returns the result of dividing this number by the given number. */
     public Rational div(Rational r) {
-        if (b==BigInteger.ZERO || r.b==BigInteger.ZERO) return NAN; else return make(a.multiply(r.b), b.multiply(r.a));
+        if (b==BigInteger.ZERO || r.b==BigInteger.ZERO || r.a==BigInteger.ZERO) return NAN;
+        return make(a.multiply(r.b), b.multiply(r.a));
     }
 
     /** Returns the result of multiplying this number by the given number. */
     public Rational div(int r) {
-        if (b==BigInteger.ZERO || r==0) return NAN; else return make(a, b.multiply(new BigInteger(""+r)));
+        if (b==BigInteger.ZERO || r==0) return NAN;
+        if (r==1) return this;
+        return make(a, b.multiply(new BigInteger(""+r)));
     }
 
     /** Returns true if this number is undefined (such as that which results from dividing by zero) */

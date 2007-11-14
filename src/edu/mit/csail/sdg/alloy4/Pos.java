@@ -79,17 +79,11 @@ public final class Pos implements Serializable {
         this.filename=(filename==null?"":filename);
         this.x=(x>0?x:1);
         this.y=(y>0?y:1);
-        if (y2<(this.y)) {
-            y2=this.y;
-        }
+        if (y2<(this.y)) y2=this.y;
         if (y2==this.y) {
-            if (x2<(this.x)) {
-                x2=this.x;
-            }
+           if (x2<(this.x)) x2=this.x;
         } else {
-            if (x2<1) {
-                x2=1;
-            }
+           if (x2<1) x2=1;
         }
         this.x2=x2;
         this.y2=y2;
@@ -137,13 +131,11 @@ public final class Pos implements Serializable {
         int a=f.lastIndexOf('/'), b=f.lastIndexOf('\\');
         if (a<b) a=b;
         if (a>=0) f=f.substring(a+1);
-        if (f.length()==0) return "line "+y+", column "+x;
-        return "line "+y+", column "+x+", filename="+f;
+        if (f.length()==0) return "line "+y+", column "+x; else return "line "+y+", column "+x+", filename="+f;
     }
 
     /** Returns a String representation of this position value. */
     @Override public String toString() {
-        if (filename.length()==0) return "line "+y+", column "+x;
-        return "line "+y+", column "+x+", filename="+filename;
+        if (filename.length()==0) return "line "+y+", column "+x; else return "line "+y+", column "+x+", filename="+filename;
     }
 }

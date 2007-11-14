@@ -1,9 +1,9 @@
 package edu.mit.csail.sdg.alloy4;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
  * Graphical convenience methods for producing PDF files.
@@ -62,8 +62,8 @@ public final strictfp class OurPDFWriter {
     public OurPDFWriter(int dpi, String filename) throws IOException {
         // Initialize various data structures
         if (dpi<50 || dpi>3000) throw new IllegalArgumentException("The DPI must be between 50 and 3000");
-        width = dpi*8 + (dpi/2);
-        height = dpi*11;
+        width = dpi*8L + (dpi/2L);
+        height = dpi*11L;
         offset.clear();
         offset.add(0L); // this reserves a spot in the array for ID 0 (which is NOT used in a PDF file)
         out = new RandomAccessFile(filename, "rw");
@@ -87,7 +87,7 @@ public final strictfp class OurPDFWriter {
           // Write the default settings, and add a default transformation that flips (0,0) into the top-left corner of the page
           write("q\n1 J\n1 j\n[] 0 d\n1 w\n1 0 0 -1 0 ").write(height).write(" cm\n");
         } catch(IOException ex) {
-          try { out.close(); } catch(IOException ex2) { } // open files are a scarce resource, so try to close it at all cost
+          Util.close(out); // open files are a scarce resource, so try to close it at all cost
           throw ex;
         }
     }

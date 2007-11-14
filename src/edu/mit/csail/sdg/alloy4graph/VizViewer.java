@@ -200,26 +200,23 @@ public final strictfp class VizViewer extends JPanel {
         addMouseListener(new MouseAdapter() {
            @Override public void mouseReleased(MouseEvent ev) {
                Object obj = alloyFind(ev.getX(), ev.getY());
-               if (selected!=null || highlight!=obj) { graph.recalc_bound(true); selected=null; highlight=obj; alloyRepaint(); }
+               graph.recalc_bound(true); selected=null; highlight=obj; alloyRepaint();
            }
            @Override public void mousePressed(MouseEvent ev) {
                dragButton=0;
                int mod = ev.getModifiers();
                if ((mod & BUTTON3_MASK)!=0) {
-                  Object x = alloyFind(ev.getX(), ev.getY());
-                  if (selected!=x || highlight!=null) { selected=x; highlight=null; alloyRepaint(); }
+                  selected=alloyFind(ev.getX(), ev.getY()); highlight=null; alloyRepaint();
                   pop.show(VizViewer.this, ev.getX(), ev.getY());
                } else if ((mod & BUTTON1_MASK)!=0 && (mod & CTRL_MASK)!=0) {
                   // This lets Ctrl+LeftClick bring up the popup menu, just like RightClick,
                   // since many Mac mouses do not have a right button.
-                  Object x = alloyFind(ev.getX(), ev.getY());
-                  if (selected!=x || highlight!=null) { selected=x; highlight=null; alloyRepaint(); }
+                  selected=alloyFind(ev.getX(), ev.getY()); highlight=null; alloyRepaint();
                   pop.show(VizViewer.this, ev.getX(), ev.getY());
                } else if ((mod & BUTTON1_MASK)!=0) {
                   dragButton=1;
-                  Object x = alloyFind(oldMouseX=ev.getX(), oldMouseY=ev.getY());
-                  if (x instanceof VizNode) { oldX=((VizNode)x).x(); oldY=((VizNode)x).y(); }
-                  if (selected!=x || highlight!=null) { selected=x; highlight=null; alloyRepaint(); }
+                  selected=alloyFind(oldMouseX=ev.getX(), oldMouseY=ev.getY()); highlight=null; alloyRepaint();
+                  if (selected instanceof VizNode) { oldX=((VizNode)selected).x(); oldY=((VizNode)selected).y(); }
                }
            }
            @Override public void mouseExited(MouseEvent ev) {
@@ -457,8 +454,7 @@ public final strictfp class VizViewer extends JPanel {
         g2.scale(scale, scale);
         Object sel=(selected!=null ? selected : highlight);
         VizNode c=null;
-        if (selected instanceof VizNode && ((VizNode)selected).shape()==null) { c=(VizNode)selected; sel=c.inEdges().get(0); }
-        if (highlight instanceof VizNode && ((VizNode)highlight).shape()==null) { c=(VizNode)highlight; sel=c.inEdges().get(0); }
+        if (sel instanceof VizNode && ((VizNode)sel).shape()==null) { c=(VizNode)sel; sel=c.inEdges().get(0); }
         graph.draw(new Artist(g2), scale, sel);
         if (c!=null) { gr.setColor(Color.RED); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
         g2.setTransform(oldAF);

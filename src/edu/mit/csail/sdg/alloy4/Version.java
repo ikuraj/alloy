@@ -35,12 +35,12 @@ public final class Version {
 
     /** Returns the build number. */
     public static int buildNumber() {
-        return 0;
+        return Integer.MAX_VALUE;
     }
 
     /** Returns the version string. */
     public static String version() {
-        return "4.0";
+        return "4.0 RC?";
     }
 
     /** Returns the build date. */

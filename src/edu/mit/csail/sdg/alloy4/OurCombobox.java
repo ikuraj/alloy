@@ -22,10 +22,10 @@ package edu.mit.csail.sdg.alloy4;
 
 import java.awt.Dimension;
 import java.awt.Component;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
+import java.awt.event.ActionEvent;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Vector;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;

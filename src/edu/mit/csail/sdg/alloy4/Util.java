@@ -105,7 +105,7 @@ public final class Util {
         private final int def;
         /** If min>n, we return min; else if n>max, we return max; otherwise we return n. */
         private int bound(int n) { return n<min ? min : (n>max? max : n); }
-        /** Constructs a new IntPref object with the given id; you must ensure max >= min */
+        /** Constructs a new IntPref object with the given id; you must ensure max >= min, but def does not have to be between min..max */
         public IntPref(String id, int min, int def, int max) {this.id=id; this.min=min; this.def=def; this.max=max;}
         /** Sets the value for this preference. */
         public void set(int value) { Preferences.userNodeForPackage(Util.class).putInt(id,bound(value)); }
@@ -221,8 +221,9 @@ public final class Util {
             max=(int)maxL;
             if ((long)max != maxL) throw new IOException("File too big to fit in memory");
         }
+        byte[] buf;
         try {
-            byte[] buf=new byte[max];
+            buf=new byte[max];
             fis = fromJar ? Util.class.getClassLoader().getResourceAsStream(filename) : new FileInputStream(filename);
             if (fis==null) throw new FileNotFoundException("File \""+filename+"\" cannot be found");
             while(true) {
@@ -237,10 +238,13 @@ public final class Util {
                 if (r<0) break;
                 now = now + r;
             }
-            return new Pair<byte[],Integer>(buf,now);
+        } catch(OutOfMemoryError ex) {
+            System.gc();
+            throw new IOException("There is insufficient memory.");
         } finally {
             close(fis);
         }
+        return new Pair<byte[],Integer>(buf,now);
     }
 
     /** Read everything into a String; throws IOException if an error occurred. */
@@ -270,7 +274,7 @@ public final class Util {
     /** Read everything into a String; throws IOException if an error occurred. */
     public static String readAll(String filename) throws FileNotFoundException, IOException { return readAll(false,filename); }
 
-    /** Open then overwrite the file with the given content; throws IOException if an error occurred. */
+    /** Open then overwrite the file with the given content; throws Err if an error occurred. */
     public static void writeAll(String filename, String content) throws Err {
         final FileOutputStream fos;
         try {
@@ -392,7 +396,7 @@ public final class Util {
             String name=names[i];
             String destname=name;
             if (!keepPath) { int ii=destname.lastIndexOf('/'); if (ii>=0) destname=destname.substring(ii+1); }
-            destname=(destdir + File.separatorChar + destname).replace('/', File.separatorChar);
+            destname=(destdir+'/'+destname).replace('/', File.separatorChar);
             int last=destname.lastIndexOf(File.separatorChar);
             new File(destname.substring(0,last+1)).mkdirs(); // Error will be caught later by the file copy
             if (copy(name, destname)) { args[j]=destname; j++; }
@@ -484,15 +488,16 @@ public final class Util {
         return -1;
     }
 
-    /** Returns the substring before the last "/" */
-    public static String head(String string) { int i=string.lastIndexOf('/'); return (i<0) ? string : string.substring(0,i); }
+    /** Returns true iff running on Windows **/
+    public static boolean onWindows() {
+        return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows");
+    };
+
+    /** Returns true iff running on Mac OS X. **/
+    public static boolean onMac() {
+        return System.getProperty("mrj.version")!=null || System.getProperty("os.name").toLowerCase(Locale.US).startsWith("mac ");
+    }
 
     /** Returns the substring after the last "/" */
     public static String tail(String string) { int i=string.lastIndexOf('/'); return (i<0) ? string : string.substring(i+1); }
-
-    /** Returns true iff running on Windows **/
-    public static boolean onWindows() { return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows"); };
-
-    /** Returns true iff running on Mac OS X. **/
-    public static boolean onMac() { return System.getProperty("mrj.version")!=null; }
 }

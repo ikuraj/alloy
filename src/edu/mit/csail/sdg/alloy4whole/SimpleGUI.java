@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -103,7 +104,6 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.MacUtil;
-import edu.mit.csail.sdg.alloy4.MultiRunner;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurDialog;
@@ -111,10 +111,10 @@ import edu.mit.csail.sdg.alloy4.OurTabbedEditor;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.Runner;
 import edu.mit.csail.sdg.alloy4.Subprocess;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
-import edu.mit.csail.sdg.alloy4.MultiRunner.MultiRunnable;
 import edu.mit.csail.sdg.alloy4.Util.BooleanPref;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
@@ -130,7 +130,7 @@ import edu.mit.csail.sdg.alloy4viz.VizGUI;
  * <br> (2) the run() method in the instance watcher (in constructor) is launched from a fresh thread
  */
 
-public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTabbedEditor.Parent {
+public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Parent {
 
     /** The latest welcome screen; each time we update the welcome screen, we increment this number. */
     private static final int welcomeLevel = 1;
@@ -267,9 +267,6 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** Whether the editor has the focus, or the log window has the focus. */
     private boolean lastFocusIsOnEditor = true;
 
-    /** Sets the flag "lastFocusIsOnEditor" to be true. */
-    public void notifyFocusGained() { lastFocusIsOnEditor=true; }
-
     /** The text editor. */
     private final OurTabbedEditor text;
 
@@ -303,7 +300,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** Whether we should force ".als" when opening a file. */
     private boolean openAlsOnly = true;
 
-    /** If true, that means we are currently generating a metamodel or running a SAT solve. */
+    /** If true, that means we are currently generating a metamodel or running a SAT solve or doing solution enumeration. */
     private boolean subrunning = false;
 
     /** If subrunning==true: 0 means SAT solving; 1 means metamodel; 2 means enumeration. */
@@ -315,10 +312,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** The amount of memory (in MB) currently allocated for this.subprocess */
     private int subMemoryNow = 0;
 
-    /** The amount of memory (in MB) to allocate for this.subprocess */
-    private int subMemory = SubMemory.get();
-
-    /** The list of commands (this field will be cleared to null when the text buffer is edited) */
+    /** The list of commands (this field will be cleared to null when the text buffer is edited). */
     private List<Command> commands = null;
 
     /** The latest executed command. */
@@ -327,23 +321,18 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** The current choices of SAT solver. */
     private final List<SatSolver> satChoices;
 
-    /** Whether the system is using external editor or not. */
-    private boolean mode_externalEditor = ExternalEditor.get();
+    /**
+     * Whether the system is using external editor or not. We cache this value per SimpleGUI instance
+     * because it is tied to the GUI component layout and must not be changed outside of this instance's control;
+     * (with multiple instances, they could all change the Preference flag without notifying each other...)
+     */
+    private boolean mode_externalEditor = false;
 
-    /** Returns true if the system is using external editor or not. */
-    boolean isUsingExternalEditor() { return mode_externalEditor; }
-
-    /** Whether the system should automatically visualize the latest instance. */
-    private boolean mode_autoVisualize = AutoVisualize.get();
-
-    /** Whether warnings are nonfatal. */
-    private boolean mode_warningNonFatal = WarningNonfatal.get();
-
-    /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
-    private int latestAlloyVersion=(-1);
+     /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
+    private int latestAlloyVersion = (-1);
 
     /** The most recent Alloy version name (as queried from alloy.mit.edu); "unknown" if alloy.mit.edu has not replied yet. */
-    private String latestAlloyVersionName="unknown";
+    private String latestAlloyVersionName = "unknown";
 
     /** If it's not "", then it is the XML filename for the latest satisfying instance or the latest metamodel. */
     private String latestInstance = "";
@@ -351,7 +340,13 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** If it's not "", then it is the latest instance or metamodel during the most recent click of "Execute". */
     private String latestAutoInstance = "";
 
+    /** If true, that means the event handlers should return a Runner encapsulating them, rather than perform the actual work. */
+    private boolean wrap = false;
+
     //====== helper methods =================================================//
+
+    /** Returns true if the system is using external editor or not. */
+    boolean isUsingExternalEditor() { return mode_externalEditor; }
 
     /** Inserts "filename" into the "recently opened file list". */
     private void addHistory(String filename) {
@@ -360,6 +355,12 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         if (name1.equals(filename)) return; else Model2.set(name1);
         if (name2.equals(filename)) return; else Model3.set(name2);
     }
+
+    /** Sets the flag "lastFocusIsOnEditor" to be true. */
+    public void notifyFocusGained() { lastFocusIsOnEditor=true; }
+
+    /** Sets the flag "lastFocusIsOnEditor" to be false. */
+    void notifyFocusLost() { lastFocusIsOnEditor=false; }
 
     /** Updates the status bar at the bottom of the screen. */
     public void notifyChange() {
@@ -419,29 +420,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         return name;
     }
 
-    /** Query the server to get the version number of the latest version of the Alloy Analyzer. */
-    private static String checkForUpdate() {
-        final String NEW_LINE = System.getProperty("line.separator");
-        final String URL = "http://alloy.mit.edu/alloy4/download/alloy4.txt?buildnum="+Version.buildNumber()+"&builddate="+Version.buildDate();
-        BufferedReader in = null;
-        try {
-            URL url = new URL(URL);
-            URLConnection connection = url.openConnection();
-            connection.connect();
-            in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
-            StringBuilder result = new StringBuilder();
-            for (String inputLine = in.readLine(); inputLine != null; inputLine = in.readLine()) {
-                result.append(inputLine);
-                result.append(NEW_LINE);
-            }
-            return result.toString();
-        } catch (Throwable ex) {
-            return "";
-        } finally {
-            Util.close(in);
-        }
-    }
-
+    /** Copy the required files from the JAR into a temporary directory. */
     private void copyFromJAR() {
         // Compute the appropriate platform
         String os = System.getProperty("os.name").toLowerCase(Locale.US).replace(' ','-');
@@ -546,652 +525,584 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     /** Called when this window is hidden. */
     public void componentHidden(ComponentEvent e) {}
 
-    //====== Events ========================================================================//
-    // The return values of events are undefined, except these two: { EV_SAVE, EV_SAVE_AS } //
-    //======================================================================================//
-
-    /** This event clears the temporary files and then reinitialize the temporary directory. */
-    private static final int EV_CLEAR_TEMP = 101;
-
-    /** This event displays a message that "updated version of Alloy is available" */
-    private static final int EVS_UPDATE = 102;
-
-    /** This event refreshes the "file" menu. */
-    private static final int EV_REFRESH_FILE = 103;
-
-    /** This event occurs when the user clicks "file->new". */
-    private static final int EV_NEW = 104;
-
-    /** This event occurs when the user clicks "file->open". */
-    private static final int EV_OPEN = 105;
-
-    /** This event occurs when the user clicks "file->OpenBuiltinModels". */
-    private static final int EV_BUILTIN = 106;
-
-    /** This event occurs when the user clicks "file->save". */
-    private static final int EV_SAVE = 107;
-
-    /** This event occurs when the user clicks "file->SaveAs". */
-    private static final int EV_SAVE_AS = 108;
-
-    /** This event occurs when the user clicks "file->openRecent->clear" */
-    private static final int EV_CLEAR_RECENT = 109;
-
-    /** This event occurs when the user clicks "file->close". */
-    private static final int EV_CLOSE = 110;
-
-    /** This event occurs when the user attempts to close the window via the OS. */
-    private static final int EV_DISPOSE = 111;
-
-    /** This event occurs when the user clicks "file->quit". */
-    private static final int EV_QUIT = 112;
-
-    /** This event opens a particular file. */
-    private static final int EVS_OPEN = 113;
-
-    /** This event occurs when the user clicks Reload All. */
-    private static final int EV_RELOADALL = 114;
-
-    /** This event refreshes the "edit" menu. */
-    private static final int EV_REFRESH_EDIT = 201;
-
-    /** This event occurs when the user clicks "edit->undo". */
-    private static final int EV_UNDO = 202;
-
-    /** This event occurs when the user clicks "edit->redo". */
-    private static final int EV_REDO = 203;
-
-    /** This event occurs when the user clicks "edit->copy". */
-    private static final int EV_COPY = 204;
-
-    /** This event occurs when the user clicks "edit->cut". */
-    private static final int EV_CUT = 205;
-
-    /** This event occurs when the user clicks "edit->paste". */
-    private static final int EV_PASTE = 206;
-
-    /** This event occurs when the user clicks "edit->find". */
-    private static final int EV_FIND = 207;
-
-    /** This event occurs when the user clicks "edit->FindNext". */
-    private static final int EV_FIND_NEXT = 208;
-
-    /** This event occurs when the user clicks "edit->GoTo". */
-    private static final int EV_GOTO = 209;
-
-    /** This event occurs when the user clicks "edit->GoToPrevFile". */
-    private static final int EV_GOTO_PREV_FILE = 210;
-
-    /** This event occurs when the user clicks "edit->GoToNextFile". */
-    private static final int EV_GOTO_NEXT_FILE = 211;
-
-    /** This event occurs when the LOG PANEL gains focus. */
-    static final int EV_LOG_IS_FOCUSED = 212;
-
-    /** This event refreshes the "run" menu. */
-    private static final int EV_REFRESH_RUN = 301;
-
-    /** This event starts the execution of a "run" or "check" or "metamodel generation". */
-    private static final int EVI_EXECUTE = 302;
-
-    /** This event stops the current run or check. */
-    private static final int EV_STOP = 303;
-
-    /** This event executes the latest command. */
-    private static final int EV_LATEST = 304;
-
-    /** This events occurs when the solver has finished all its solvings. */
-    static final int EV_DONE = 305;
-
-    /** This events occurs when the solver has failed. */
-    static final int EV_FAIL = 306;
-
-    /** This event displays the latest instance. */
-    private static final int EV_SHOW_LATEST = 307;
-
-    /** This event displays the meta model. */
-    private static final int EV_SHOW_METAMODEL = 308;
-
-    /** This event displays a particular instance. */
-    static final int EVS_VISUALIZE = 309;
-
-    /** This event changes the latest instance. */
-    static final int EVS_SET_LATEST = 310;
-
-    /** This event happens when the user tries to load the evaluator from the main GUI. */
-    private static final int EV_LOAD_EVALUATOR = 311;
-
-    /** This event refreshes the "Options" menu. */
-    private static final int EV_REFRESH_OPTION = 401;
-
-    /** This event refreshes the main window's "window" menu. */
-    private static final int EV_REFRESH_WINDOW = 501;
-
-    /** This event refreshes the visualizer window's "window" menu. */
-    private static final int EV_REFRESH_VIZWINDOW = 502;
-
-    /** This event bring this window to the foreground. */
-    private static final int EV_SHOW = 503;
-
-    /** This event minimizes the window. */
-    private static final int EV_MINIMIZE = 504;
-
-    /** This event alternatingly maximizes or restores the window. */
-    private static final int EV_MAXIMIZE = 505;
-
-    /** This event displays the help html. */
-    private static final int EV_HELP = 601;
-
-    /** This event displays the about box. */
-    private static final int EV_ABOUT = 602;
-
-    /** This event displays the license box. */
-    private static final int EV_LICENSE = 603;
-
-    //====== Event Handler ========================================================================================//
-
-    /**
-     * The event handler for events without arguments.
-     * <p> Eg. ev_close, ev_quit...
-     */
-    @SuppressWarnings("deprecation")
-    public boolean run(final int key) {
-
-        if (key==EV_CLEAR_TEMP) {
-            Helper.clearTemporarySpace();
-            copyFromJAR();
-            log.logBold("Temporary directory has been cleared.\n\n");
-            log.logDivider();
-            log.flush();
-        }
-
-        if (key==EV_LOAD_EVALUATOR) {
-            log.logRed("Note: the evaluator is now in the visualizer.\n"
-            +"Just click the \"Evaluator\" toolbar button\n"
-            +"when an instance is shown in the visualizer.\n");
-            log.flush();
-        }
-
-        if (key==EV_OPEN || key==EV_BUILTIN) {
-            String start = (key==EV_OPEN) ? null : (Helper.alloyHome()+File.separatorChar+"models");
-            File file=OurDialog.askFile(frame, true, start, openAlsOnly?".als":"", ".als files");
-            if (file==null) return false;
-            if (!file.getPath().toLowerCase(Locale.US).endsWith(".als")) openAlsOnly=false;
-            if (key==EV_OPEN) Util.setCurrentDirectory(file.getParentFile());
-            return run(EVS_OPEN, file.getPath());
-        }
-
-        if ((key==EV_SAVE || key==EV_SAVE_AS) && !mode_externalEditor) {
-            String ans=text.save(key==EV_SAVE_AS);
-            if (ans==null) return false;
-            notifyChange();
-            addHistory(ans);
-            log.clearError();
-            return true;
-        }
-
-        if (key==EV_RELOADALL && !mode_externalEditor) {
-            for(int i=0; i<text.getTabCount(); i++) if (!text.refresh(i)) return false;
-        }
-
-        if (key==EV_CLOSE) {
-            text.close();
-        }
-
-        if (key==EV_QUIT || key==EV_DISPOSE) {
-            if (text.closeAll()) System.exit(0);
-        }
-
-        if (key==EV_REFRESH_EDIT) {
-            boolean canUndo = !mode_externalEditor && text.canUndo();
-            boolean canRedo = !mode_externalEditor && text.canRedo();
-            editmenu.removeAll();
-            OurUtil.makeMenuItem(editmenu, "Undo", canUndo, KeyEvent.VK_Z, KeyEvent.VK_Z, this, EV_UNDO);
-            if (Util.onMac())
-                OurUtil.makeMenuItemWithShift(editmenu, "Redo", KeyEvent.VK_Z, new MultiRunner(this,EV_REDO)).setEnabled(canRedo);
-            else
-                OurUtil.makeMenuItem(editmenu, "Redo", canRedo, KeyEvent.VK_Y, KeyEvent.VK_Y, this, EV_REDO);
-            editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Cut"           , !mode_externalEditor, KeyEvent.VK_X,        KeyEvent.VK_X,         this, EV_CUT);
-            OurUtil.makeMenuItem(editmenu,"Copy"          , true,                 KeyEvent.VK_C,        KeyEvent.VK_C,         this, EV_COPY);
-            OurUtil.makeMenuItem(editmenu,"Paste"         , !mode_externalEditor, KeyEvent.VK_V,        KeyEvent.VK_V,         this, EV_PASTE);
-            editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Go To..."      , !mode_externalEditor, KeyEvent.VK_T,        KeyEvent.VK_T,         this, EV_GOTO);
-            OurUtil.makeMenuItem(editmenu,"Previous File" , text.getTabCount()>1, KeyEvent.VK_PAGE_UP,  KeyEvent.VK_PAGE_UP,   this, EV_GOTO_PREV_FILE);
-            OurUtil.makeMenuItem(editmenu,"Next File"     , text.getTabCount()>1, KeyEvent.VK_PAGE_DOWN,KeyEvent.VK_PAGE_DOWN, this, EV_GOTO_NEXT_FILE);
-            editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Find..."       , !mode_externalEditor, KeyEvent.VK_F,        KeyEvent.VK_F,         this, EV_FIND);
-            OurUtil.makeMenuItem(editmenu,"Find Next"     , !mode_externalEditor, KeyEvent.VK_G,        KeyEvent.VK_G,         this, EV_FIND_NEXT);
-        }
-
-        if (key==EV_UNDO && !mode_externalEditor && text.canUndo()) text.undo();
-
-        if (key==EV_REDO && !mode_externalEditor && text.canRedo()) text.redo();
-
-        if (key==EV_COPY) { if (lastFocusIsOnEditor && !mode_externalEditor) text.text().copy(); else log.copy(); }
-
-        if (key==EV_CUT) if (lastFocusIsOnEditor && !mode_externalEditor) text.text().cut();
-
-        if (key==EV_PASTE) if (lastFocusIsOnEditor && !mode_externalEditor) text.text().paste();
-
-        if (key==EV_LOG_IS_FOCUSED) lastFocusIsOnEditor=false;
-
-        if (key==EV_GOTO_PREV_FILE) {
-            int i=text.getSelectedIndex()-1;
-            if (i<0) i=text.getTabCount()-1;
-            text.setSelectedIndex(i);
-        }
-
-        if (key==EV_GOTO_NEXT_FILE) {
-            int i=text.getSelectedIndex()+1;
-            if (i>=text.getTabCount()) i=0;
-            text.setSelectedIndex(i);
-        }
-
-        if (key==EV_GOTO && !mode_externalEditor) {
-            JTextField y=OurUtil.textfield("",10);
-            JTextField x=OurUtil.textfield("",10);
-            if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return false;
-            try {
-                JTextArea t=text.text();
-                int xx=1, yy=Integer.parseInt(y.getText());
-                if (yy<1) return false;
-                if (yy>t.getLineCount()) {log.logRed("This file only has "+t.getLineCount()+" line(s)."); return false;}
-                if (x.getText().length()!=0) xx=Integer.parseInt(x.getText());
-                if (xx<1) {log.logRed("If the column number is specified, it must be 1 or greater."); return false;}
-                int caret=t.getLineStartOffset(yy-1);
-                int len=t.getLineEndOffset(yy-1)-caret;
-                if (xx>len) xx=len;
-                if (xx<1) xx=1;
-                t.setSelectionStart(caret+xx-1);
-                t.setSelectionEnd(caret+xx-1);
-                t.requestFocusInWindow();
-            } catch(NumberFormatException ex) { log.logRed("The number must be 1 or greater."); return false;
-            } catch(Throwable ex) { return false;
-            }
-        }
-
-        if (key==EV_FIND && !mode_externalEditor) {
-            JTextField x=OurUtil.textfield(lastFind,30);
-            x.selectAll();
-            JCheckBox c=new JCheckBox("Case Sensitive?",lastFindCaseSensitive);
-            c.setMnemonic('c');
-            JCheckBox b=new JCheckBox("Search Backward?",!lastFindForward);
-            b.setMnemonic('b');
-            if (!OurDialog.getInput(frame, "Find", "Text:", x, " ", c, b)) return false;
-            if (x.getText().length()==0) return false;
-            lastFind=x.getText();
-            lastFindCaseSensitive=c.getModel().isSelected();
-            lastFindForward=!b.getModel().isSelected();
-            return run(EV_FIND_NEXT);
-        }
-
-        if (key==EV_FIND_NEXT && lastFind.length()>0 && !mode_externalEditor) {
-            JTextArea t=text.text();
-            String all=t.getText();
-            int i=Util.indexOf(all, lastFind, t.getCaretPosition()+(lastFindForward?0:-1),lastFindForward,lastFindCaseSensitive);
-            if (i<0) {
-                i=Util.indexOf(all, lastFind, lastFindForward?0:(all.length()-1), lastFindForward, lastFindCaseSensitive);
-                if (i<0) {log.logRed("The specified search string cannot be found."); return false;}
-                log.logRed("Search wrapped.");
-            } else log.clearError();
-            if (lastFindForward) { t.setCaretPosition(i); t.moveCaretPosition(i+lastFind.length()); }
-            else { t.setCaretPosition(i+lastFind.length()); t.moveCaretPosition(i); }
-            t.requestFocusInWindow();
-        }
-
-        if (key==EV_REFRESH_RUN) {
-            KeyStroke ac=KeyStroke.getKeyStroke(KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
-            runmenu.removeAll();
-            OurUtil.makeMenuItem(runmenu, "Execute Latest Command",
-                    true, KeyEvent.VK_E, KeyEvent.VK_E, this, EV_LATEST);
-            runmenu.add(new JSeparator());
-            OurUtil.makeMenuItem(runmenu, "Show Latest Instance",  latestInstance.length()>0, KeyEvent.VK_L,  KeyEvent.VK_L, this, EV_SHOW_LATEST);
-            OurUtil.makeMenuItem(runmenu, "Show Metamodel",        true,                      KeyEvent.VK_M,  KeyEvent.VK_M, this, EV_SHOW_METAMODEL);
-            OurUtil.makeMenuItem(runmenu, "Open Evaluator",        true,                      KeyEvent.VK_V,  -1,            this, EV_LOAD_EVALUATOR);
-            List<Command> cp = (mode_externalEditor ? null : commands);
-            if (cp==null) {
+    /** Wraps the calling method into a Runnable whose run() will call the calling method with (false) as the only argument. */
+    private Runner wrapMe() {
+        final String name;
+        try { throw new Exception(); } catch(Exception ex) { name = ex.getStackTrace()[1].getMethodName(); }
+        Method[] methods = getClass().getDeclaredMethods();
+        Method m=null;
+        for(int i=0; i<methods.length; i++) if (methods[i].getName().equals(name)) { m=methods[i]; break; }
+        final Method method=m;
+        return new Runner() {
+            private static final long serialVersionUID = 1L;
+            public void run() {
                 try {
-                    List<Command> u=null;
-                    if (!mode_externalEditor)
-                        u=CompUtil.parseOneModule_fromString(text.text().getText());
-                    else if (text.isFile() && text.getFilename().length()>0)
-                        u=CompUtil.parseOneModule_fromFile(text.getFilename());
-                    cp=u;
+                    method.setAccessible(true);
+                    method.invoke(SimpleGUI.this, new Object[]{});
+                } catch (Throwable ex) {
+                    ex = new IllegalArgumentException("Failed call to "+name+"()", ex);
+                    Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), ex);
                 }
-                catch(Err e) {
-                    commands = null;
-                    runmenu.getItem(0).setEnabled(false);
-                    runmenu.getItem(3).setEnabled(false);
-                    if (!mode_externalEditor) {
-                        Err e2 = new ErrorFatal(new Pos(text.getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2),"");
-                        text.highlight(e2);
-                    }
-                    log.logRed(e.toString()+"\n\n");
-                    return true;
-                }
-                catch(Throwable e) {
-                    commands = null;
-                    runmenu.getItem(0).setEnabled(false);
-                    runmenu.getItem(3).setEnabled(false);
-                    log.logRed("Cannot parse the model.\n"+e.toString()+"\n\n");
-                    return true;
-                }
-                commands=cp;
             }
-            text.removeAllHighlights();
-            log.clearError(); // To clear any residual error message
-            if (cp==null) {
-                runmenu.getItem(0).setEnabled(false);
-                runmenu.getItem(3).setEnabled(false);
-                return true;
-            }
-            if (cp.size()==0) {
-                runmenu.getItem(0).setEnabled(false);
-                return true;
-            }
-            if (latestCommand>=cp.size()) {
-                latestCommand=cp.size()-1;
-            }
-            runmenu.remove(0);
-            for(int i=0; i<cp.size(); i++) {
-                JMenuItem y = OurUtil.makeMenuItem(cp.get(i).toString(), null);
-                y.addActionListener(new MultiRunner(this, EVI_EXECUTE, i));
-                if (i==latestCommand) { y.setMnemonic(KeyEvent.VK_E); y.setAccelerator(ac); }
-                runmenu.add(y,i);
-            }
-            if (cp.size()>=2) {
-                JMenuItem y = OurUtil.makeMenuItem("Execute All", null);
-                y.setMnemonic(KeyEvent.VK_A);
-                y.addActionListener(new MultiRunner(this, EVI_EXECUTE, -1));
-                runmenu.add(y,0);
-                runmenu.add(new JSeparator(),1);
-            }
-        }
+            public void run(Object arg) { run(); }
+        };
+    }
 
-        if (key==EV_LATEST) {
-            run(EV_REFRESH_RUN);
-            OurUtil.enableAll(runmenu);
-            if (commands==null) return false;
-            int n=commands.size();
-            if (n<=0) { log.logRed("There are no commands to execute.\n\n"); return false; }
-            if (latestCommand>=n) latestCommand=n-1;
-            if (latestCommand<0) latestCommand=0;
-            run(EVI_EXECUTE, latestCommand);
-        }
-
-        if (key==EV_SHOW_METAMODEL) {
-            run(EV_REFRESH_RUN);
-            OurUtil.enableAll(runmenu);
-            if (commands!=null) run(EVI_EXECUTE, -2);
-        }
-
-        if (key==EV_DONE || key==EV_FAIL || key==EV_STOP) {
-            if (key==EV_STOP || key==EV_FAIL) {
-                log.escSetProcess(null); // Prevents the subprocess from writing any more text to the log
-                log.escReset();
-                if (key==EV_STOP && subrunning) { log.logBold("\nSolving Stopped.\n"); log.logDivider(); }
-                if (subprocess!=null) { subprocess.destroy(); subprocess=null; }
-            } else if (subrunning && subprocess!=null) {
+    /** Wraps the calling method into a Runnable whose run() will call the calling method with (false,argument) as the two arguments. */
+    private Runner wrapMe(final Object argument) {
+        final String name;
+        try { throw new Exception(); } catch(Exception ex) { name = ex.getStackTrace()[1].getMethodName(); }
+        Method[] methods = getClass().getDeclaredMethods();
+        Method m=null;
+        for(int i=0; i<methods.length; i++) if (methods[i].getName().equals(name)) { m=methods[i]; break; }
+        final Method method=m;
+        return new Runner() {
+            private static final long serialVersionUID = 1L;
+            public void run(Object arg) {
                 try {
-                    int r=subprocess.exitValue();
-                    // If we can get to this line, that means the process has terminated abnormally.
-                    log.escSetProcess(null); // Prevents the subprocess from writing any more text to the log
-                    log.escReset();
-                    subprocess.destroy();
-                    subprocess=null;
-                    if (r==SimpleRunner.EXIT_OUT_OF_MEMORY)
-                        log.logBold("Fatal Error: Solver ran out of memory.\n" +
-                        "Please go to the \"Options\" menu to specify a different memory size.\n");
-                    else
-                        log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
-                        "One possible cause is that, in the Options menu, your specified\n" +
-                        "memory size is larger than the amount allowed by your OS.\n");
-                    log.logDivider();
-                } catch(IllegalThreadStateException ex) {}
+                    method.setAccessible(true);
+                    method.invoke(SimpleGUI.this, new Object[]{arg});
+                } catch (Throwable ex) {
+                    ex = new IllegalArgumentException("Failed call to "+name+"("+arg+")", ex);
+                    Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), ex);
+                }
             }
-            subrunning=false;
-            runmenu.setEnabled(true);
-            runbutton.setVisible(true);
-            showbutton.setEnabled(true);
-            stopbutton.setVisible(false);
-            if (latestAutoInstance.length()==0) return true;
-            String f=latestAutoInstance;
-            latestAutoInstance="";
-            if (subrunningTask==2) viz.run(VizGUI.EVS_LOAD_INSTANCE_FORCEFULLY, f);
-            else if (mode_autoVisualize || subrunningTask==1) run(EVS_VISUALIZE, "XML: "+f);
-        }
+            public void run() { run(argument); }
+        };
+    }
 
-        if (key==EV_REFRESH_FILE) {
-            JMenu recentmenu;
-            String open=(mode_externalEditor?"Load":"Open");
+    //===============================================================================================================//
+
+    /** This method refreshes the "file" menu. */
+    private Runner doRefreshFile() {
+        if (wrap) return wrapMe();
+        try {
+            wrap = true;
+            String open = (mode_externalEditor?"Load":"Open");
             filemenu.removeAll();
-            if (!mode_externalEditor) OurUtil.makeMenuItem(filemenu, "New", true,KeyEvent.VK_N,KeyEvent.VK_N, this, EV_NEW);
-            OurUtil.makeMenuItem(filemenu, open+"...",               true,KeyEvent.VK_O,KeyEvent.VK_O, this, EV_OPEN);
-            OurUtil.makeMenuItem(filemenu, open+" Sample Models...", true,KeyEvent.VK_B,-1, this, EV_BUILTIN);
-            filemenu.add(recentmenu = OurUtil.makeMenu(open+" Recent"));
+            if (!mode_externalEditor)
+               OurUtil.makeMenuItem(filemenu, "New",                    true, KeyEvent.VK_N, KeyEvent.VK_N, doNew());
+            OurUtil.makeMenuItem(filemenu,    open+"...",               true, KeyEvent.VK_O, KeyEvent.VK_O, doOpen());
+            OurUtil.makeMenuItem(filemenu,    open+" Sample Models...", true, KeyEvent.VK_B, -1,            doBuiltin());
+            JMenu recentmenu;
+            filemenu.add(recentmenu = new JMenu(open+" Recent"));
             if (!mode_externalEditor) {
-                OurUtil.makeMenuItem(filemenu, "Reload all", true, KeyEvent.VK_R, KeyEvent.VK_R, this, EV_RELOADALL);
-                OurUtil.makeMenuItem(filemenu, "Save",       true, KeyEvent.VK_S, KeyEvent.VK_S, this, EV_SAVE);
+                OurUtil.makeMenuItem(filemenu, "Reload all", true, KeyEvent.VK_R, KeyEvent.VK_R, doReloadAll());
+                OurUtil.makeMenuItem(filemenu, "Save",       true, KeyEvent.VK_S, KeyEvent.VK_S, doSave());
                 if (Util.onMac())
-                    OurUtil.makeMenuItemWithShift(filemenu,"Save As...",KeyEvent.VK_S, new MultiRunner(this, EV_SAVE_AS));
+                   OurUtil.makeMenuItemWithShift(filemenu,"Save As...",KeyEvent.VK_S, doSaveAs());
                 else
-                    OurUtil.makeMenuItem(filemenu, "Save As...", true, KeyEvent.VK_A, -1, this, EV_SAVE_AS);
+                   OurUtil.makeMenuItem(filemenu, "Save As...", true, KeyEvent.VK_A, -1, doSaveAs());
             }
-            OurUtil.makeMenuItem(filemenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, this, EV_CLOSE);
-            OurUtil.makeMenuItem(filemenu, "Clear Temporary Directory", true, -1, -1, this, EV_CLEAR_TEMP);
-            OurUtil.makeMenuItem(filemenu, "Quit", true, KeyEvent.VK_Q, (Util.onMac()?-1:KeyEvent.VK_Q), this, EV_QUIT);
+            OurUtil.makeMenuItem(filemenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, doClose());
+            OurUtil.makeMenuItem(filemenu, "Clear Temporary Directory", true, -1, -1, doClearTemp());
+            OurUtil.makeMenuItem(filemenu, "Quit", true, KeyEvent.VK_Q, (Util.onMac()?-1:KeyEvent.VK_Q), doQuit());
             boolean found=false;
             for(Util.StringPref p: new Util.StringPref[]{ Model0, Model1, Model2, Model3 }) {
                 final String name = p.get();
                 if (name.length()==0) continue;
                 found=true;
-                OurUtil.makeMenuItem(recentmenu, name, -1, -1, new MultiRunner(this, EVS_OPEN, name));
+                OurUtil.makeMenuItem(recentmenu, name, -1, -1, doOpenFile(name));
             }
             recentmenu.addSeparator();
-            OurUtil.makeMenuItem(recentmenu, "Clear Menu", true, -1, -1, this, EV_CLEAR_RECENT);
+            OurUtil.makeMenuItem(recentmenu, "Clear Menu", true, -1, -1, doClearRecent());
             recentmenu.setEnabled(found);
+        } finally {
+            wrap = false;
         }
+        return null;
+    }
 
-        if (key==EV_CLEAR_RECENT) {Model0.set(""); Model1.set(""); Model2.set(""); Model3.set("");}
+    /** This method performs File->New. */
+    private Runner doNew() {
+        if (!wrap && !mode_externalEditor) { text.newTab(); notifyChange(); doShow(); }
+        return wrapMe();
+    }
 
-        if (key==EV_NEW && !mode_externalEditor) {
-            text.newTab();
-            notifyChange();
-            run(EV_SHOW);
+    /** This method performs File->Open. */
+    private Runner doOpen() {
+        if (wrap) return wrapMe();
+        File file=OurDialog.askFile(frame, true, null, openAlsOnly?".als":"", ".als files");
+        if (file!=null) {
+            if (!file.getPath().toLowerCase(Locale.US).endsWith(".als")) openAlsOnly=false;
+            Util.setCurrentDirectory(file.getParentFile());
+            doOpenFile(file.getPath());
         }
+        return null;
+    }
 
-        if (key==EV_SHOW_LATEST) {
-            if (latestInstance.length()==0) log.logRed("No previous instances are available for viewing.\n\n");
-            else run(EVS_VISUALIZE, "XML: "+latestInstance);
+    /** This method performs File->OpenBuiltinModels. */
+    private Runner doBuiltin() {
+        if (wrap) return wrapMe();
+        File file=OurDialog.askFile(frame, true, Helper.alloyHome()+fs+"models", openAlsOnly?".als":"", ".als files");
+        if (file!=null) {
+            if (!file.getPath().toLowerCase(Locale.US).endsWith(".als")) openAlsOnly=false;
+            doOpenFile(file.getPath());
         }
+        return null;
+    }
 
-        if (key==EV_REFRESH_OPTION) {
-            optmenu.removeAll();
-            //
-            final boolean showWelcome=Welcome.get() < welcomeLevel;
-            OurUtil.makeMenuItem(optmenu, "Welcome Message at Start Up: "+(showWelcome?"Yes":"No")
-            ,-1,-1, new Runnable(){
-                public void run() { Welcome.set(showWelcome ? welcomeLevel : 0); }
-            });
-            //
-            final SatSolver now = SatSolver.get();
-            final JMenu sat = OurUtil.makeMenu("SAT Solver: "+now);
-            for(final SatSolver sc:satChoices) {
-                (OurUtil.makeMenuItem(sat, ""+sc, -1, -1, new Runnable() {
-                    public final void run() { sc.set(); }
-                })).setIcon(sc==now?iconYes:iconNo);
-            }
-            optmenu.add(sat);
-            //
-            OurUtil.makeMenuItem(optmenu,"Warnings are Fatal: "+(mode_warningNonFatal?"No":"Yes")
-            ,-1,-1,new Runnable(){
-                public final void run() { WarningNonfatal.set(mode_warningNonFatal=!mode_warningNonFatal); }
-            });
-            //
-            final int mem = SubMemory.get();
-            boolean memfound = false;
-            final JMenu subMemoryMenu = OurUtil.makeMenu("Maximum Memory to Use: "+mem+"M");
-            for(final int n: new Integer[]{16,32,64,128,256,512,768,1024,2048,3072,4096}) {
-                (OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", -1, -1, new Runnable() {
-                    public final void run() { SubMemory.set(SimpleGUI.this.subMemory = n); }
-                })).setIcon(n==mem?iconYes:iconNo);
-                if (n==mem) memfound=true;
-            }
-            (OurUtil.makeMenuItem(subMemoryMenu, "Other...", -1, -1, new Runnable() {
-                public final void run() {
-                    String ans;
-                    while(true) {
-                        ans=JOptionPane.showInputDialog(frame, "What amount of memory do you want to use for SAT solving?", "Maximum Memory", JOptionPane.PLAIN_MESSAGE);
-                        if (ans==null || ans.length()==0) return;
-                        try {
-                            int m=Integer.parseInt(ans);
-                            SubMemory.set(SimpleGUI.this.subMemory = m);
-                            break;
-                        } catch(NumberFormatException ex) {
-                            OurDialog.alert(frame, "Error: \""+(ans.trim())+"\" is not a valid integer.", "Error");
-                        }
-                    }
-                }
-            })).setIcon(memfound ? iconNo : iconYes);
-            optmenu.add(subMemoryMenu);
-            //
-            final Verbosity vnow = Verbosity.get();
-            final JMenu verb = OurUtil.makeMenu("Message Verbosity: "+vnow);
-            for(final Verbosity vb:Verbosity.values()) {
-                (OurUtil.makeMenuItem(verb, ""+vb, -1, -1, new Runnable() {
-                    public final void run() { vb.set(); }
-                })).setIcon(vb==vnow?iconYes:iconNo);
-            }
-            optmenu.add(verb);
-            //
-            final int fontSize = FontSize.get();
-            final JMenu size = OurUtil.makeMenu("Font Size: "+fontSize);
-            for(final int n: new Integer[]{9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72}) {
-                (OurUtil.makeMenuItem(size, ""+n, -1, -1, new Runnable() {
-                    public final void run() {
-                        FontSize.set(n);
-                        String family=FontName.get();
-                        text.setFont(new Font(family, Font.PLAIN, n));
-                        status.setFont(new Font(family, Font.PLAIN, n));
-                        log.setFontSize(n);
-                    }
-                })).setIcon(n==fontSize?iconYes:iconNo);
-            }
-            optmenu.add(size);
-            //
-            final String fontname = FontName.get();
-            final JMenuItem fontnameMenu = OurUtil.makeMenuItem("Font: "+fontname+"...", null);
-            fontnameMenu.addActionListener(new ActionListener() {
-                public final void actionPerformed(ActionEvent e) {
-                    int size=FontSize.get();
-                    String family=OurDialog.askFont(frame);
-                    if (family.length()==0) return;
-                    FontName.set(family);
-                    text.setFont(new Font(family, Font.PLAIN, size));
-                    status.setFont(new Font(family, Font.PLAIN, size));
-                    log.setFontName(family);
-                }
-            });
-            optmenu.add(fontnameMenu);
-            //
-            final int tabSize = TabSize.get();
-            final JMenu tabSizeMenu = OurUtil.makeMenu("Tab Size: "+tabSize);
-            for(final int n: new Integer[]{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16}) {
-                (OurUtil.makeMenuItem(tabSizeMenu, ""+n, -1, -1, new Runnable() {
-                    public final void run() { TabSize.set(n); text.setTabSize(n); }
-                })).setIcon(n==tabSize?iconYes:iconNo);
-            }
-            optmenu.add(tabSizeMenu);
-            //
-            final int skDepth = SkolemDepth.get();
-            final JMenu skDepthMenu = OurUtil.makeMenu("Skolem Depth: "+skDepth);
-            for(final int n: new Integer[]{0,1,2}) {
-                (OurUtil.makeMenuItem(skDepthMenu, ""+n, -1, -1, new Runnable() {
-                    public final void run() { SkolemDepth.set(n); }
-                })).setIcon(n==skDepth?iconYes:iconNo);
-            }
-            optmenu.add(skDepthMenu);
-            //
-            final int min = CoreMinimization.get();
-            final String[] minLabelLong=new String[]{"Slow (guarantees local minimum)", "Medium", "Fast (initial unsat core)"};
-            final String[] minLabelShort=new String[]{"Slow", "Medium", "Fast"};
-            final JMenu cmMenu = OurUtil.makeMenu("Unsat Core Minimization Strategy: "+minLabelShort[min]);
-            for(final int n: new Integer[]{0,1,2}) {
-                (OurUtil.makeMenuItem(cmMenu, minLabelLong[n], -1, -1, new Runnable() {
-                    public final void run() { CoreMinimization.set(n); }
-                })).setIcon(n==min?iconYes:iconNo);
-            }
-            if (now!=SatSolver.MiniSatProverJNI) cmMenu.setEnabled(false);
-            optmenu.add(cmMenu);
-            //
-            Runnable ext=new Runnable() {
-                public void run() {
-                    if (!text.closeAll()) return;
-                    log.clearError();
-                    ExternalEditor.set(mode_externalEditor = !mode_externalEditor);
-                    if (mode_externalEditor) text.disableIO(); else text.enableIO();
-                    Container all=frame.getContentPane();
-                    all.removeAll();
-                    newbutton.setVisible(!mode_externalEditor);
-                    openbutton.setVisible(!mode_externalEditor);
-                    savebutton.setVisible(!mode_externalEditor);
-                    loadbutton.setVisible(mode_externalEditor);
-                    reloadbutton.setVisible(!mode_externalEditor);
-                    if (mode_externalEditor) {
-                        log.setBackground(Color.WHITE);
-                        ((JPanel)(splitpane.getTopComponent())).remove(toolbar);
-                        splitpane.setBottomComponent(null);
-                        all.add(toolbar, BorderLayout.NORTH);
-                        all.add(logpane, BorderLayout.CENTER);
-                    } else {
-                        log.setBackground(background);
-                        ((JPanel)(splitpane.getTopComponent())).add(toolbar, BorderLayout.NORTH);
-                        splitpane.setBottomComponent(logpane);
-                        all.add(splitpane, BorderLayout.CENTER);
-                    }
-                    all.add(status, BorderLayout.SOUTH);
-                    notifyChange();
-                    frame.validate();
-                    SimpleGUI.this.run(EV_REFRESH_FILE);
-                    OurUtil.enableAll(filemenu);
-                    if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
-                    lastFocusIsOnEditor = !mode_externalEditor;
-                }
-            };
-            OurUtil.makeMenuItem(optmenu,"Use an External Editor: "+(mode_externalEditor?"Yes":"No")
-                ,-1,-1,ext);
-            OurUtil.makeMenuItem(optmenu,"Visualize Automatically: "+(mode_autoVisualize?"Yes":"No")
-                ,-1,-1,new Runnable(){
-                public final void run() { AutoVisualize.set(mode_autoVisualize=!mode_autoVisualize); }
-            });
-            final boolean recordKK=RecordKodkod.get();
-            OurUtil.makeMenuItem(optmenu, "Record the Kodkod Input/Output: "+(recordKK?"Yes":"No")
-                ,-1,-1, new Runnable(){
-                public void run() { RecordKodkod.set(!recordKK); }
-            });
-            // The following line is needed if we need to "go into EXTERNAL TEXT EDITOR MODE" upon program start up
-            if (mode_externalEditor && splitpane.getBottomComponent()!=null) {mode_externalEditor=false; ext.run();}
+    /** This method performs File->ReloadAll. */
+    private Runner doReloadAll() {
+        if (!wrap && !mode_externalEditor) { for(int i=0; i<text.getTabCount(); i++) if (!text.refresh(i)) break; }
+        return wrapMe();
+    }
+
+    /** This method performs File->ClearRecentFiles. */
+    private Runner doClearRecent() {
+        if (!wrap) { Model0.set(""); Model1.set(""); Model2.set(""); Model3.set(""); }
+        return wrapMe();
+    }
+
+    /** This method performs File->Save. */
+    private Runner doSave() {
+        if (!wrap && !mode_externalEditor) {
+           String ans=text.save(false);
+           if (ans==null) return null;
+           notifyChange();
+           addHistory(ans);
+           log.clearError();
         }
+        return wrapMe();
+    }
 
-        if (key==EV_MINIMIZE) frame.setExtendedState(JFrame.ICONIFIED);
+    /** This method performs File->SaveAs. */
+    private Runner doSaveAs() {
+        if (!wrap && !mode_externalEditor) {
+           String ans=text.save(true);
+           if (ans==null) return null;
+           notifyChange();
+           addHistory(ans);
+           log.clearError();
+        }
+        return wrapMe();
+    }
 
-        if (key==EV_MAXIMIZE) {
-            if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
-                frame.setExtendedState(JFrame.NORMAL);
+    /** This method clears the temporary files and then reinitialize the temporary directory. */
+    private Runner doClearTemp() {
+        if (!wrap) {
+           Helper.clearTemporarySpace();
+           copyFromJAR();
+           log.logBold("Temporary directory has been cleared.\n\n");
+           log.logDivider();
+           log.flush();
+        }
+        return wrapMe();
+    }
+
+    /** This method performs File->Close. */
+    private Runner doClose() {
+        if (!wrap) text.close();
+        return wrapMe();
+    }
+
+    /** This method performs File->Quit. */
+    private Runner doQuit() {
+        if (!wrap) if (text.closeAll()) System.exit(0);
+        return wrapMe();
+    }
+
+    //===============================================================================================================//
+
+    /** This method refreshes the "edit" menu. */
+    private Runner doRefreshEdit() {
+        if (wrap) return wrapMe();
+        try {
+            wrap = true;
+            boolean canUndo = !mode_externalEditor && text.canUndo();
+            boolean canRedo = !mode_externalEditor && text.canRedo();
+            editmenu.removeAll();
+            OurUtil.makeMenuItem(editmenu, "Undo", canUndo, KeyEvent.VK_Z, KeyEvent.VK_Z, doUndo());
+            if (Util.onMac())
+                OurUtil.makeMenuItemWithShift(editmenu, "Redo", KeyEvent.VK_Z, doRedo()).setEnabled(canRedo);
             else
-                frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                OurUtil.makeMenuItem(editmenu, "Redo", canRedo, KeyEvent.VK_Y, KeyEvent.VK_Y, doRedo());
+            editmenu.addSeparator();
+            OurUtil.makeMenuItem(editmenu,"Cut"           , !mode_externalEditor, KeyEvent.VK_X,        KeyEvent.VK_X,         doCut());
+            OurUtil.makeMenuItem(editmenu,"Copy"          , true,                 KeyEvent.VK_C,        KeyEvent.VK_C,         doCopy());
+            OurUtil.makeMenuItem(editmenu,"Paste"         , !mode_externalEditor, KeyEvent.VK_V,        KeyEvent.VK_V,         doPaste());
+            editmenu.addSeparator();
+            OurUtil.makeMenuItem(editmenu,"Go To..."      , !mode_externalEditor, KeyEvent.VK_T,        KeyEvent.VK_T,         doGoto());
+            OurUtil.makeMenuItem(editmenu,"Previous File" , text.getTabCount()>1, KeyEvent.VK_PAGE_UP,  KeyEvent.VK_PAGE_UP,   doGotoPrevFile());
+            OurUtil.makeMenuItem(editmenu,"Next File"     , text.getTabCount()>1, KeyEvent.VK_PAGE_DOWN,KeyEvent.VK_PAGE_DOWN, doGotoNextFile());
+            editmenu.addSeparator();
+            OurUtil.makeMenuItem(editmenu,"Find..."       , !mode_externalEditor, KeyEvent.VK_F,        KeyEvent.VK_F,         doFind());
+            OurUtil.makeMenuItem(editmenu,"Find Next"     , !mode_externalEditor, KeyEvent.VK_G,        KeyEvent.VK_G,         doFindNext());
+        } finally {
+            wrap = false;
         }
+        return null;
+    }
 
-        if (key==EV_REFRESH_WINDOW || key==EV_REFRESH_VIZWINDOW) {
-            JMenu w=(key==EV_REFRESH_WINDOW)?windowmenu:windowmenu2;
+    /** This method performs Edit->Undo. */
+    private Runner doUndo() {
+        if (!wrap && !mode_externalEditor && text.canUndo()) text.undo();
+        return wrapMe();
+    }
+
+    /** This method performs Edit->Redo. */
+    private Runner doRedo() {
+        if (!wrap && !mode_externalEditor && text.canRedo()) text.redo();
+        return wrapMe();
+    }
+
+    /** This method performs Edit->Copy. */
+    private Runner doCopy() {
+        if (!wrap) { if (lastFocusIsOnEditor && !mode_externalEditor) text.text().copy(); else log.copy(); }
+        return wrapMe();
+    }
+
+    /** This method performs Edit->Cut. */
+    private Runner doCut() {
+        if (!wrap && lastFocusIsOnEditor && !mode_externalEditor) text.text().cut();
+        return wrapMe();
+    }
+
+    /** This method performs Edit->Paste. */
+    private Runner doPaste() {
+        if (!wrap && lastFocusIsOnEditor && !mode_externalEditor) text.text().paste();
+        return wrapMe();
+    }
+
+    /** This method performs Edit->Find. */
+    private Runner doFind() {
+        if (wrap) return wrapMe();
+        if (mode_externalEditor) return null;
+        JTextField x=OurUtil.textfield(lastFind,30);
+        x.selectAll();
+        JCheckBox c=new JCheckBox("Case Sensitive?",lastFindCaseSensitive);
+        c.setMnemonic('c');
+        JCheckBox b=new JCheckBox("Search Backward?",!lastFindForward);
+        b.setMnemonic('b');
+        if (!OurDialog.getInput(frame, "Find", "Text:", x, " ", c, b)) return null;
+        if (x.getText().length()==0) return null;
+        lastFind=x.getText();
+        lastFindCaseSensitive=c.getModel().isSelected();
+        lastFindForward=!b.getModel().isSelected();
+        doFindNext();
+        return null;
+    }
+
+    /** This method performs Edit->FindNext. */
+    private Runner doFindNext() {
+        if (wrap) return wrapMe();
+        if (lastFind.length()==0 || mode_externalEditor) return null;
+        JTextArea t=text.text();
+        String all=t.getText();
+        int i=Util.indexOf(all, lastFind, t.getCaretPosition()+(lastFindForward?0:-1),lastFindForward,lastFindCaseSensitive);
+        if (i<0) {
+            i=Util.indexOf(all, lastFind, lastFindForward?0:(all.length()-1), lastFindForward, lastFindCaseSensitive);
+            if (i<0) { log.logRed("The specified search string cannot be found."); return null; }
+            log.logRed("Search wrapped.");
+        } else {
+            log.clearError();
+        }
+        if (lastFindForward) {
+            t.setCaretPosition(i); t.moveCaretPosition(i+lastFind.length());
+        } else {
+            t.setCaretPosition(i+lastFind.length()); t.moveCaretPosition(i);
+        }
+        t.requestFocusInWindow();
+        return null;
+    }
+
+    /** This method performs Edit->Goto. */
+    private Runner doGoto() {
+        if (wrap) return wrapMe();
+        if (mode_externalEditor) return null;
+        JTextField y = OurUtil.textfield("", 10);
+        JTextField x = OurUtil.textfield("", 10);
+        if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return null;
+        try {
+            JTextArea t = text.text();
+            int xx = 1, yy = Integer.parseInt(y.getText());
+            if (yy<1) return null;
+            if (yy>t.getLineCount()) {log.logRed("This file only has "+t.getLineCount()+" line(s)."); return null;}
+            if (x.getText().length()!=0) xx=Integer.parseInt(x.getText());
+            if (xx<1) {log.logRed("If the column number is specified, it must be 1 or greater."); return null;}
+            int caret = t.getLineStartOffset(yy-1);
+            int len = t.getLineEndOffset(yy-1)-caret;
+            if (xx>len) xx=len;
+            if (xx<1) xx=1;
+            t.setSelectionStart(caret+xx-1);
+            t.setSelectionEnd(caret+xx-1);
+            t.requestFocusInWindow();
+        } catch(NumberFormatException ex) {
+            log.logRed("The number must be 1 or greater.");
+        } catch(Throwable ex) {
+            // This error is not important
+        }
+        return null;
+    }
+
+    /** This method performs Edit->GotoPrevFile. */
+    private Runner doGotoPrevFile() {
+        if (wrap) return wrapMe();
+        int i=text.getSelectedIndex()-1;
+        if (i<0) i=text.getTabCount()-1;
+        text.setSelectedIndex(i);
+        return null;
+    }
+
+    /** This method performs Edit->GotoNextFile. */
+    private Runner doGotoNextFile() {
+        if (wrap) return wrapMe();
+        int i=text.getSelectedIndex()+1;
+        if (i>=text.getTabCount()) i=0;
+        text.setSelectedIndex(i);
+        return null;
+    }
+
+    //===============================================================================================================//
+
+    /** This method refreshes the "run" menu. */
+    private Runner doRefreshRun() {
+        if (wrap) return wrapMe();
+        KeyStroke ac = KeyStroke.getKeyStroke(KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+        try {
+            wrap = true;
+            runmenu.removeAll();
+            OurUtil.makeMenuItem(runmenu, "Execute Latest Command", true,                      KeyEvent.VK_E, KeyEvent.VK_E,  doExecuteLatest());
+            runmenu.add(new JSeparator());
+            OurUtil.makeMenuItem(runmenu, "Show Latest Instance",   latestInstance.length()>0, KeyEvent.VK_L,  KeyEvent.VK_L, doShowLatest());
+            OurUtil.makeMenuItem(runmenu, "Show Metamodel",         true,                      KeyEvent.VK_M,  KeyEvent.VK_M, doShowMetaModel());
+            OurUtil.makeMenuItem(runmenu, "Open Evaluator",         true,                      KeyEvent.VK_V,  -1,            doLoadEvaluator());
+        } finally {
+            wrap = false;
+        }
+        List<Command> cp = (mode_externalEditor ? null : commands);
+        if (cp==null) {
+            try {
+                List<Command> u=null;
+                if (!mode_externalEditor)
+                    u=CompUtil.parseOneModule_fromString(text.text().getText());
+                else if (text.isFile() && text.getFilename().length()>0)
+                    u=CompUtil.parseOneModule_fromFile(text.getFilename());
+                cp=u;
+            }
+            catch(Err e) {
+                commands = null;
+                runmenu.getItem(0).setEnabled(false);
+                runmenu.getItem(3).setEnabled(false);
+                if (!mode_externalEditor) {
+                    Err e2 = new ErrorFatal(new Pos(text.getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2),"");
+                    text.highlight(e2);
+                }
+                log.logRed(e.toString()+"\n\n");
+                return null;
+            }
+            catch(Throwable e) {
+                commands = null;
+                runmenu.getItem(0).setEnabled(false);
+                runmenu.getItem(3).setEnabled(false);
+                log.logRed("Cannot parse the model.\n"+e.toString()+"\n\n");
+                return null;
+            }
+            commands=cp;
+        }
+        text.removeAllHighlights();
+        log.clearError(); // To clear any residual error message
+        if (cp==null) { runmenu.getItem(0).setEnabled(false); runmenu.getItem(3).setEnabled(false); return null; }
+        if (cp.size()==0) { runmenu.getItem(0).setEnabled(false); return null; }
+        if (latestCommand>=cp.size()) latestCommand=cp.size()-1;
+        runmenu.remove(0);
+        try {
+            wrap = true;
+            for(int i=0; i<cp.size(); i++) {
+                JMenuItem y = new JMenuItem(cp.get(i).toString(), null);
+                y.addActionListener(doRun(i));
+                if (i==latestCommand) { y.setMnemonic(KeyEvent.VK_E); y.setAccelerator(ac); }
+                runmenu.add(y,i);
+            }
+            if (cp.size()>=2) {
+                JMenuItem y = new JMenuItem("Execute All", null);
+                y.setMnemonic(KeyEvent.VK_A);
+                y.addActionListener(doRun(-1));
+                runmenu.add(y,0);
+                runmenu.add(new JSeparator(),1);
+            }
+        } finally {
+            wrap = false;
+        }
+        return null;
+    }
+
+    /** This method executes a particular RUN or CHECK command. */
+    private Runner doRun(Integer commandIndex) {
+        if (wrap) return wrapMe(commandIndex);
+        final int index = commandIndex;
+        if (subrunning) return null;
+        if (index==(-2)) subrunningTask=1; else subrunningTask=0;
+        latestAutoInstance="";
+        if (index>=0) latestCommand=index;
+        if (index==-1 && commands!=null) {
+            latestCommand=commands.size()-1;
+            if (latestCommand<0) latestCommand=0;
+        }
+        // To update the accelerator to point to the command actually chosen
+        doRefreshRun();
+        OurUtil.enableAll(runmenu);
+        if (commands==null) return null;
+        if (commands.size()==0 && index!=-2) { log.logRed("There are no commands to execute.\n\n"); return null; }
+        int i=index;
+        if (i>=commands.size()) i=commands.size()-1;
+        // Now we begin the execution; make sure you trap all possible exceptions, so that we can turn subrunning to false
+        subrunning=true;
+        runmenu.setEnabled(false);
+        runbutton.setVisible(false);
+        showbutton.setEnabled(false);
+        stopbutton.setVisible(true);
+        final SatSolver sc = SatSolver.get();
+        final A4Options opt = new A4Options();
+        opt.tempDirectory = Helper.alloyHome()+fs+"tmp";
+        opt.solverDirectory = Helper.alloyHome()+fs+"binary";
+        opt.recordKodkod = RecordKodkod.get();
+        opt.skolemDepth = SkolemDepth.get();
+        opt.coreMinimization = CoreMinimization.get();
+        opt.originalFilename = Util.canon(text.getFilename());
+        opt.solver = sc;
+        if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
+            try {
+                final String tempdir = Helper.maketemp();
+                SimpleReporter.performRegularCommand(null, text.takeSnapshot(), i, opt, WarningNonfatal.get(), tempdir, Verbosity.get().ordinal());
+                System.err.flush();
+            } catch(Throwable ex) {
+                ErrorFatal err=new ErrorFatal(ex.getMessage(), ex);
+                log.logBold("Unknown exception: "+ex+"\nStackTrace:\n"+MailBug.dump(err));
+                System.err.flush();
+            }
+            doStop(0);
+            return null;
+        }
+        if (!prepareSubJVM()) {
+            log.logBold("Error launching the sub-JVM.\n\"java\" is not in your current program search path.\n");
+            log.flush();
+            doStop(2);
+            return null;
+        }
+        try {
+            final String tempdir = Helper.maketemp();
+            final String cache = tempdir + fs + "cache";
+            final SimpleRunnerBundle b = new SimpleRunnerBundle(
+                opt,
+                text.takeSnapshot(),
+                i,
+                Verbosity.get().ordinal(),
+                WarningNonfatal.get());
+            (new File(cache)).deleteOnExit();
+            b.write(cache);
+            byte[] bytes=("S"+tempdir).getBytes("UTF-8");
+            subprocess.getOutputStream().write(bytes, 0, bytes.length);
+            subprocess.getOutputStream().write(new byte[]{0}, 0, 1);
+            subprocess.getOutputStream().flush();
+        } catch(Throwable ex) {
+            log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
+            "One possible cause is that, in the Options menu, your specified\n" +
+            "memory size is larger than the amount allowed by your OS.\n");
+            log.logDivider();
+            log.flush();
+            subrunning=false;
+            doStop(2);
+        }
+        return null;
+    }
+
+    /** This method stops the current run or check (how==0 means DONE, how==1 means FAIL, how==2 means STOP). */
+    Runner doStop(Integer how) {
+        if (wrap) return wrapMe(how);
+        int h = how;
+        if (h!=0) {
+            log.escSetProcess(null); // Prevents the subprocess from writing any more text to the log
+            log.escReset();
+            if (h==2 && subrunning) { log.logBold("\nSolving Stopped.\n"); log.logDivider(); }
+            if (subprocess!=null) { subprocess.destroy(); subprocess=null; }
+        } else if (subrunning && subprocess!=null) {
+            try {
+                int r=subprocess.exitValue();
+                // If we can get to this line, that means the process has terminated abnormally.
+                log.escSetProcess(null); // Prevents the subprocess from writing any more text to the log
+                log.escReset();
+                subprocess.destroy();
+                subprocess=null;
+                if (r==SimpleRunner.EXIT_OUT_OF_MEMORY)
+                    log.logBold("Fatal Error: Solver ran out of memory.\n" +
+                    "Please go to the \"Options\" menu to specify a different memory size.\n");
+                else
+                    log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
+                    "One possible cause is that, in the Options menu, your specified\n" +
+                    "memory size is larger than the amount allowed by your OS.\n");
+                log.logDivider();
+            } catch(IllegalThreadStateException ex) {}
+        }
+        subrunning=false;
+        runmenu.setEnabled(true);
+        runbutton.setVisible(true);
+        showbutton.setEnabled(true);
+        stopbutton.setVisible(false);
+        if (latestAutoInstance.length()>0) {
+           String f=latestAutoInstance;
+           latestAutoInstance="";
+           if (subrunningTask==2) viz.loadXML(f, true); else if (AutoVisualize.get() || subrunningTask==1) doVisualize("XML: "+f);
+        }
+        return null;
+    }
+
+    /** This method executes the latest command. */
+    private Runner doExecuteLatest() {
+        if (wrap) return wrapMe();
+        doRefreshRun();
+        OurUtil.enableAll(runmenu);
+        if (commands==null) return null;
+        int n=commands.size();
+        if (n<=0) { log.logRed("There are no commands to execute.\n\n"); return null; }
+        if (latestCommand>=n) latestCommand=n-1;
+        if (latestCommand<0) latestCommand=0;
+        return doRun(latestCommand);
+    }
+
+    /** This method displays the meta model. */
+    private Runner doShowMetaModel() {
+        if (wrap) return wrapMe();
+        doRefreshRun();
+        OurUtil.enableAll(runmenu);
+        if (commands!=null) doRun(-2);
+        return null;
+    }
+
+    /** This method displays the latest instance. */
+    private Runner doShowLatest() {
+        if (wrap) return wrapMe();
+        if (latestInstance.length()==0)
+           log.logRed("No previous instances are available for viewing.\n\n");
+        else
+           doVisualize("XML: "+latestInstance);
+        return null;
+    }
+
+    /** This method happens when the user tries to load the evaluator from the main GUI. */
+    private Runner doLoadEvaluator() {
+        if (wrap) return wrapMe();
+        log.logRed("Note: the evaluator is now in the visualizer.\n"
+           +"Just click the \"Evaluator\" toolbar button\n"
+           +"when an instance is shown in the visualizer.\n");
+        log.flush();
+        return null;
+    }
+
+    //===============================================================================================================//
+
+    /** This method refreshes the "Window" menu for either the SimpleGUI window (isViz==false) or the VizGUI window (isViz==true). */
+    private Runner doRefreshWindow(Boolean isViz) {
+        if (wrap) return wrapMe(isViz);
+        try {
+            wrap = true;
+            JMenu w = (isViz ? windowmenu2 : windowmenu);
             w.removeAll();
-            if (key==EV_REFRESH_WINDOW) {
-                OurUtil.makeMenuItem(w, "Minimize", true, KeyEvent.VK_M, -1, this, EV_MINIMIZE).setIcon(iconNo);
-                OurUtil.makeMenuItem(w, "Zoom", true, -1, -1, this, EV_MAXIMIZE).setIcon(iconNo);
+            if (isViz) {
+                viz.addMinMaxActions(w);
             } else {
-                OurUtil.makeMenuItem(w, "Minimize", true, KeyEvent.VK_M, -1, viz, VizGUI.EV_MINIMIZE).setIcon(iconNo);
-                OurUtil.makeMenuItem(w, "Zoom", true, -1, -1, viz, VizGUI.EV_MAXIMIZE).setIcon(iconNo);
+                OurUtil.makeMenuItem(w, "Minimize", true, KeyEvent.VK_M, -1, doMinimize()).setIcon(iconNo);
+                OurUtil.makeMenuItem(w, "Zoom", true, -1, -1, doMaximize()).setIcon(iconNo);
             }
             w.addSeparator();
             List<String> filenames=text.getFilenames();
@@ -1199,30 +1110,273 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 String f=filenames.get(i);
                 JMenuItem it;
                 if (mode_externalEditor && !text.isFile(i))
-                    it = OurUtil.makeMenuItem("Alloy Analyzer", null);
+                    it = new JMenuItem("Alloy Analyzer", null);
                 else
-                    it = OurUtil.makeMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""), null);
-                it.setIcon((f.equals(text.getFilename()) && key==EV_REFRESH_WINDOW) ? iconYes : iconNo);
-                if (f.equals(text.getFilename()))
-                  it.addActionListener(new MultiRunner(this, EV_SHOW));
-                else
-                  it.addActionListener(new MultiRunner(this, EVS_OPEN, f));
+                    it = new JMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""), null);
+                it.setIcon((f.equals(text.getFilename()) && !isViz) ? iconYes : iconNo);
+                it.addActionListener(f.equals(text.getFilename()) ? doShow() : doOpenFile(f));
                 w.add(it);
             }
             if (viz!=null) for(String f:viz.getInstances()) {
-                JMenuItem it = OurUtil.makeMenuItem("Instance: "+viz.getInstanceTitle(f), null);
-                it.setIcon( (key==EV_REFRESH_VIZWINDOW && f.equals(viz.getXMLfilename())) ? iconYes : iconNo);
-                it.addActionListener(new MultiRunner(this, EVS_VISUALIZE, "XML: "+f));
+                JMenuItem it = new JMenuItem("Instance: "+viz.getInstanceTitle(f), null);
+                it.setIcon((isViz && f.equals(viz.getXMLfilename())) ? iconYes : iconNo);
+                it.addActionListener(doVisualize("XML: "+f));
                 w.add(it);
             }
+        } finally {
+            wrap = false;
         }
+        return null;
+    }
 
-        if (key==EV_SHOW) {
-            bringup(frame);
-            if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
+    /** This method minimizes the window. */
+    private Runner doMinimize() {
+        if (wrap) return wrapMe();
+        frame.setExtendedState(JFrame.ICONIFIED);
+        return null;
+    }
+
+    /** This method alternatingly maximizes or restores the window. */
+    private Runner doMaximize() {
+        if (wrap) return wrapMe();
+        if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
+            frame.setExtendedState(JFrame.NORMAL);
+        else
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        return null;
+    }
+
+    /** This method bring this window to the foreground. */
+    private Runner doShow() {
+        if (wrap) return wrapMe();
+        bringup(frame);
+        if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
+        return null;
+    }
+
+    //===============================================================================================================//
+
+    /** This method refreshes the "Option" menu. */
+    private Runner doRefreshOption() {
+        if (wrap) return wrapMe();
+        try {
+            wrap = true;
+            optmenu.removeAll();
+            OurUtil.makeMenuItem(optmenu, "Welcome Message at Start Up: "+(Welcome.get() < welcomeLevel ? "Yes" : "No"), -1, -1, doOptWelcome());
+            //
+            final SatSolver now = SatSolver.get();
+            final JMenu sat = new JMenu("SAT Solver: "+now);
+            for(SatSolver sc:satChoices) { OurUtil.makeMenuItem(sat, ""+sc, -1, -1, doOptSolver(sc)).setIcon(sc==now?iconYes:iconNo); }
+            optmenu.add(sat);
+            //
+            OurUtil.makeMenuItem(optmenu, "Warnings are Fatal: "+(WarningNonfatal.get()?"No":"Yes"), -1, -1, doOptWarning());
+            //
+            final int mem = SubMemory.get();
+            final JMenu subMemoryMenu = new JMenu("Maximum Memory to Use: " + mem + "M");
+            for(int n: new Integer[]{16,32,64,128,256,512,768,1024,2048,3072,4096}) {
+                OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", -1, -1, doOptMemory(n)).setIcon(n==mem?iconYes:iconNo);
+            }
+            optmenu.add(subMemoryMenu);
+            //
+            final Verbosity vnow = Verbosity.get();
+            final JMenu verb = new JMenu("Message Verbosity: "+vnow);
+            for(Verbosity vb:Verbosity.values()) { OurUtil.makeMenuItem(verb, ""+vb, -1, -1, doOptVerbosity(vb)).setIcon(vb==vnow?iconYes:iconNo); }
+            optmenu.add(verb);
+            //
+            final int fontSize = FontSize.get();
+            final JMenu size = new JMenu("Font Size: "+fontSize);
+            for(int n: new Integer[]{9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72}) {
+                OurUtil.makeMenuItem(size, ""+n, -1, -1, doOptFontsize(n)).setIcon(n==fontSize?iconYes:iconNo);
+            }
+            optmenu.add(size);
+            //
+            OurUtil.makeMenuItem(optmenu, "Font: "+FontName.get()+"...", -1, -1, doOptFontname());
+            //
+            final int tabSize = TabSize.get();
+            final JMenu tabSizeMenu = new JMenu("Tab Size: "+tabSize);
+            for(int n=1; n<=12; n++) { OurUtil.makeMenuItem(tabSizeMenu, ""+n, -1, -1, doOptTabsize(n)).setIcon(n==tabSize?iconYes:iconNo); }
+            optmenu.add(tabSizeMenu);
+            //
+            final int skDepth = SkolemDepth.get();
+            final JMenu skDepthMenu = new JMenu("Skolem Depth: "+skDepth);
+            for(int n=0; n<=2; n++) { OurUtil.makeMenuItem(skDepthMenu, ""+n, -1, -1, doOptSkolemDepth(n)).setIcon(n==skDepth?iconYes:iconNo); }
+            optmenu.add(skDepthMenu);
+            //
+            final int min = CoreMinimization.get();
+            final String[] minLabelLong=new String[]{"Slow (guarantees local minimum)", "Medium", "Fast (initial unsat core)"};
+            final String[] minLabelShort=new String[]{"Slow", "Medium", "Fast"};
+            final JMenu cmMenu = new JMenu("Unsat Core Minimization Strategy: "+minLabelShort[min]);
+            for(int n=0; n<=2; n++) { OurUtil.makeMenuItem(cmMenu, minLabelLong[n], -1, -1, doOptCore(n)).setIcon(n==min?iconYes:iconNo); }
+            if (now!=SatSolver.MiniSatProverJNI) cmMenu.setEnabled(false);
+            optmenu.add(cmMenu);
+            //
+            OurUtil.makeMenuItem(optmenu,"Use an External Editor: "+(mode_externalEditor?"Yes":"No"), -1, -1, doOptExternal());
+            OurUtil.makeMenuItem(optmenu,"Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), -1, -1, doOptAutoVisualize());
+            OurUtil.makeMenuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), -1, -1, doOptRecordKodkod());
+        } finally {
+            wrap = false;
         }
+        return null;
+    }
 
-        if (key==EV_HELP) try {
+    /** This method toggles the "show welcome message at startup" checkbox. */
+    private Runner doOptWelcome() {
+        if (!wrap) Welcome.set(Welcome.get() < welcomeLevel ? welcomeLevel : 0);
+        return wrapMe();
+    }
+
+    /** This method toggles the "warning is fatal" checkbox. */
+    private Runner doOptWarning() {
+        if (!wrap) WarningNonfatal.set(!WarningNonfatal.get());
+        return wrapMe();
+    }
+
+    /** This method changes the SAT solver to the given solver. */
+    private Runner doOptSolver(SatSolver solver) {
+        if (!wrap) solver.set();
+        return wrapMe(solver);
+    }
+
+    /** This method changes the amount of memory to use. */
+    private Runner doOptMemory(Integer size) {
+        if (!wrap) SubMemory.set(size);
+        return wrapMe(size);
+    }
+
+    /** This method changes the message verbosity. */
+    private Runner doOptVerbosity(Verbosity verbosity) {
+        if (!wrap) verbosity.set();
+        return wrapMe(verbosity);
+    }
+
+    /** This method changes the font name. */
+    private Runner doOptFontname() {
+        if (wrap) return wrapMe();
+        int size=FontSize.get();
+        String family=OurDialog.askFont(frame);
+        if (family.length()>0) {
+           FontName.set(family);
+           text.setFont(new Font(family, Font.PLAIN, size));
+           status.setFont(new Font(family, Font.PLAIN, size));
+           log.setFontName(family);
+        }
+        return null;
+    }
+
+    /** This method changes the font size. */
+    private Runner doOptFontsize(Integer size) {
+        if (wrap) return wrapMe(size);
+        int n=size;
+        FontSize.set(n);
+        String family=FontName.get();
+        text.setFont(new Font(family, Font.PLAIN, n));
+        status.setFont(new Font(family, Font.PLAIN, n));
+        log.setFontSize(n);
+        return null;
+    }
+
+    /** This method changes the tab size. */
+    private Runner doOptTabsize(Integer size) {
+        if (!wrap) { TabSize.set(size.intValue()); text.setTabSize(size.intValue()); }
+        return wrapMe(size);
+    }
+
+    /** This method changes the skolem depth. */
+    private Runner doOptSkolemDepth(Integer size) {
+        if (!wrap) SkolemDepth.set(size.intValue());
+        return wrapMe(size);
+    }
+
+    /** This method changes the speed of unsat core minimization (larger integer means faster but less optimal). */
+    private Runner doOptCore(Integer speed) {
+        if (!wrap) CoreMinimization.set(speed.intValue());
+        return wrapMe(speed);
+    }
+
+    /** This method toggles the "use an external editor" checkbox. */
+    private Runner doOptExternal() {
+        if (wrap) return wrapMe();
+        if (!text.closeAll()) return null;
+        log.clearError();
+        ExternalEditor.set(mode_externalEditor = !mode_externalEditor);
+        if (mode_externalEditor) text.disableIO(); else text.enableIO();
+        Container all=frame.getContentPane();
+        all.removeAll();
+        newbutton.setVisible(!mode_externalEditor);
+        openbutton.setVisible(!mode_externalEditor);
+        savebutton.setVisible(!mode_externalEditor);
+        loadbutton.setVisible(mode_externalEditor);
+        reloadbutton.setVisible(!mode_externalEditor);
+        if (mode_externalEditor) {
+            log.setBackground(Color.WHITE);
+            ((JPanel)(splitpane.getTopComponent())).remove(toolbar);
+            splitpane.setBottomComponent(null);
+            all.add(toolbar, BorderLayout.NORTH);
+            all.add(logpane, BorderLayout.CENTER);
+        } else {
+            log.setBackground(background);
+            ((JPanel)(splitpane.getTopComponent())).add(toolbar, BorderLayout.NORTH);
+            splitpane.setBottomComponent(logpane);
+            all.add(splitpane, BorderLayout.CENTER);
+        }
+        all.add(status, BorderLayout.SOUTH);
+        notifyChange();
+        frame.validate();
+        doRefreshFile();
+        OurUtil.enableAll(filemenu);
+        if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
+        lastFocusIsOnEditor = !mode_externalEditor;
+        return null;
+    }
+
+    /** This method toggles the "visualize automatically" checkbox. */
+    private Runner doOptAutoVisualize() {
+        if (!wrap) AutoVisualize.set(!AutoVisualize.get());
+        return wrapMe();
+    }
+
+    /** This method toggles the "record Kodkod input/output" checkbox. */
+    private Runner doOptRecordKodkod() {
+        if (!wrap) RecordKodkod.set(!RecordKodkod.get());
+        return wrapMe();
+    }
+
+    //===============================================================================================================//
+
+    /** This method displays the about box. */
+    private Runner doAbout() {
+        if (wrap) return wrapMe();
+        Icon icon=OurUtil.loadIcon("images/logo.gif");
+        JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
+        Object[] array = {
+            icon,
+            "Alloy Analyzer "+Version.version(),
+            "Build date: "+Version.buildDate(),
+            " ",
+            "Lead developer: Felix Chang",
+            "Engine developer: Emina Torlak",
+            "Graphic design: Julie Pelaez",
+            "Project lead: Daniel Jackson",
+            " ",
+            "More information at: http://alloy.mit.edu/",
+            "Comments and questions to: alloy@mit.edu",
+            " ",
+            "Thanks to: Ilya Shlyakhter, Manu Sridharan, Derek Rayside, Jonathan Edwards, Gregory Dennis,",
+            "Robert Seater, Edmond Lau, Vincent Yeung, Sam Daitch, Andrew Yip, Jongmin Baek, Ning Song,",
+            "Arturo Arizpe, Li-kuo (Brian) Lin, Joseph Cohen, Jesse Pavel, Ian Schechter, and Uriel Schafer.",
+            OurUtil.makeH(null,dismiss,null)};
+        final JOptionPane about = new JOptionPane(array,
+            JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
+        final JDialog dialog = about.createDialog(null, "About Alloy Analyzer "+Version.version());
+        dismiss.addActionListener(Runner.createDispose(dialog));
+        dialog.setVisible(true);
+        return null;
+    }
+
+    /** This method displays the help html. */
+    private Runner doHelp() {
+        if (wrap) return wrapMe();
+        try {
             int w=OurUtil.getScreenWidth(), h=OurUtil.getScreenHeight();
             final JFrame frame = new JFrame();
             final JEditorPane html1 = new JEditorPane("text/html", "");
@@ -1258,179 +1412,201 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
             frame.setVisible(true);
             html2.requestFocusInWindow();
-        } catch(Throwable ex) { return false; }
-
-        if (key==EV_LICENSE) {
-            JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
-            String alloytxt;
-            try {alloytxt=Util.readAll(true,"LICENSES/Alloy.txt");} catch(IOException ex) {return false;}
-            final JTextArea text = OurUtil.textarea(alloytxt,15,85);
-            text.setEditable(false);
-            text.setLineWrap(false);
-            text.setBorder(new EmptyBorder(2,2,2,2));
-            text.setFont(new Font("Monospaced", Font.PLAIN, 12));
-            final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","NanoXML","JavaCup","SAT4J","ZChaff","MiniSat"});
-            combo.addActionListener(new ActionListener() {
-                public final void actionPerformed(ActionEvent e) {
-                    Object value = combo.getSelectedItem();
-                    if (value instanceof String) {
-                        try {
-                            String content = Util.readAll(true,"LICENSES/"+value+".txt");
-                            text.setText(content);
-                        } catch(IOException ex) {
-                            text.setText("Sorry: an error has occurred in displaying the license file.");
-                        }
-                    }
-                    text.setCaretPosition(0);
-                }
-            });
-            JScrollPane scroll = OurUtil.scrollpane(text);
-            scroll.setBorder(new LineBorder(Color.DARK_GRAY, 1));
-            Object[] array = {
-                    "The source code for the Alloy Analyzer is available",
-                    "under the GNU General Public License version 2.",
-                    " ",
-                    "The Alloy Analyzer utilizes several third-party packages whose code may",
-                    "be distributed under a different license. We are extremely grateful to",
-                    "the authors of these packages for making their source code freely available.",
-                    " ",
-                    OurUtil.makeH(null, "See the copyright notice for: ", combo, null),
-                    " ",
-                    scroll,
-                    OurUtil.makeH(null, dismiss, null)};
-            final JOptionPane about = new JOptionPane(array,
-                    JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
-            final JDialog dialog = about.createDialog(null, "The Copyright Notices");
-            dismiss.addActionListener(new ActionListener() {
-                public final void actionPerformed(ActionEvent e) { dialog.dispose(); }
-            });
-            dialog.setVisible(true);
-        }
-
-        if (key==EV_ABOUT) {
-            Icon icon=OurUtil.loadIcon("images/logo.gif");
-            JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
-            Object[] array = {
-                    icon,
-                    "Alloy Analyzer "+Version.version(),
-                    "Build date: "+Version.buildDate(),
-                    " ",
-                    "Lead developer: Felix Chang",
-                    "Engine developer: Emina Torlak",
-                    "Graphic design: Julie Pelaez",
-                    "Project lead: Daniel Jackson",
-                    " ",
-                    "More information at: http://alloy.mit.edu/",
-                    "Comments and questions to: alloy@mit.edu",
-                    " ",
-                    "Thanks to: Ilya Shlyakhter, Manu Sridharan, Derek Rayside, Jonathan Edwards, Gregory Dennis,",
-                    "Robert Seater, Edmond Lau, Vincent Yeung, Sam Daitch, Andrew Yip, Jongmin Baek, Ning Song,",
-                    "Arturo Arizpe, Li-kuo (Brian) Lin, Joseph Cohen, Jesse Pavel, Ian Schechter, and Uriel Schafer.",
-                    OurUtil.makeH(null,dismiss,null)};
-            final JOptionPane about = new JOptionPane(array,
-                    JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
-            final JDialog dialog = about.createDialog(null, "About Alloy Analyzer "+Version.version());
-            dismiss.addActionListener(new ActionListener() {
-                public final void actionPerformed(ActionEvent e) { dialog.dispose(); }
-            });
-            dialog.setVisible(true);
-        }
-
-        return true;
+        } catch(Throwable ex) { return null; }
+        return null;
     }
 
-    //====== Event Handler ========================================================================================//
+    /** This method displays the license box. */
+    private Runner doLicense() {
+        if (wrap) return wrapMe();
+        JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
+        String alloytxt;
+        try {alloytxt=Util.readAll(true,"LICENSES/Alloy.txt");} catch(IOException ex) {return null;}
+        final JTextArea text = OurUtil.textarea(alloytxt,15,85);
+        text.setEditable(false);
+        text.setLineWrap(false);
+        text.setBorder(new EmptyBorder(2,2,2,2));
+        text.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","NanoXML","JavaCup","SAT4J","ZChaff","MiniSat"});
+        combo.addActionListener(new ActionListener() {
+           public void actionPerformed(ActionEvent e) {
+              Object value = combo.getSelectedItem();
+              if (value instanceof String) {
+                 try {
+                     String content = Util.readAll(true,"LICENSES/"+value+".txt");
+                     text.setText(content);
+                 } catch(IOException ex) {
+                     text.setText("Sorry: an error has occurred in displaying the license file.");
+                 }
+              }
+              text.setCaretPosition(0);
+           }
+        });
+        JScrollPane scroll = OurUtil.scrollpane(text);
+        scroll.setBorder(new LineBorder(Color.DARK_GRAY, 1));
+        Object[] array = {
+           "The source code for the Alloy Analyzer is available",
+           "under the GNU General Public License version 2.",
+           " ",
+           "The Alloy Analyzer utilizes several third-party packages whose code may",
+           "be distributed under a different license. We are extremely grateful to",
+           "the authors of these packages for making their source code freely available.",
+           " ",
+           OurUtil.makeH(null, "See the copyright notice for: ", combo, null),
+           " ",
+           scroll,
+           OurUtil.makeH(null, dismiss, null)};
+        final JOptionPane about = new JOptionPane(array,
+           JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
+        final JDialog dialog = about.createDialog(null, "The Copyright Notices");
+        dismiss.addActionListener(Runner.createDispose(dialog));
+        dialog.setVisible(true);
+        return null;
+    }
 
-    /**
-     * The event handler for events with an int argument.
-     */
-    public boolean run(final int key, final int index) {
-        if (key != EVI_EXECUTE) return true;
-        if (subrunning) return false;
-        if (index==(-2)) subrunningTask=1; else subrunningTask=0;
-        latestAutoInstance="";
-        if (index>=0) latestCommand=index;
-        if (index==-1 && commands!=null) {
-            latestCommand=commands.size()-1;
-            if (latestCommand<0) latestCommand=0;
-        }
-        // To update the accelerator to point to the command actually chosen
-        run(EV_REFRESH_RUN); OurUtil.enableAll(runmenu);
-        if (commands==null) return false;
-        if (commands.size()==0 && index!=-2) { log.logRed("There are no commands to execute.\n\n"); return false; }
-        int i=index;
-        if (i>=commands.size()) i=commands.size()-1;
-        // Now we begin the execution; make sure you trap all possible exceptions, so that we can turn subrunning to false
-        subrunning=true;
-        runmenu.setEnabled(false);
-        runbutton.setVisible(false);
-        showbutton.setEnabled(false);
-        stopbutton.setVisible(true);
-        final SatSolver sc = SatSolver.get();
-        final A4Options opt = new A4Options();
-        opt.tempDirectory = Helper.alloyHome()+fs+"tmp";
-        opt.solverDirectory = Helper.alloyHome()+fs+"binary";
-        opt.recordKodkod = RecordKodkod.get();
-        opt.skolemDepth = SkolemDepth.get();
-        opt.coreMinimization = CoreMinimization.get();
-        opt.originalFilename = Util.canon(text.getFilename());
-        opt.solver = sc;
-        if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
-            try {
-                final String tempdir = Helper.maketemp();
-                SimpleReporter.performRegularCommand(null, text.takeSnapshot(), i, opt, WarningNonfatal.get(), tempdir, Verbosity.get().ordinal());
-                System.err.flush();
-            } catch(Throwable ex) {
-                ErrorFatal err=new ErrorFatal(ex.getMessage(), ex);
-                log.logBold("Unknown exception: "+ex+"\nStackTrace:\n"+MailBug.dump(err));
-                System.err.flush();
-            }
-            run(EV_DONE);
-            return true;
-        }
-        if (!prepareSubJVM()) {
-            log.logBold("Error launching the sub-JVM.\n\"java\" is not in your current program search path.\n");
-            log.flush();
-            run(EV_STOP);
-            return false;
-        }
+    /** This method checks alloy.mit.edu to see if there is a newer version. */
+    private Runner doCheckForUpdates() {
+        if (wrap) return wrapMe();
+        final String NEW_LINE = System.getProperty("line.separator");
+        final String URL = "http://alloy.mit.edu/alloy4/download/alloy4.txt?buildnum="+Version.buildNumber()+"&builddate="+Version.buildDate();
+        long now=System.currentTimeMillis();
+        BufferedReader in = null;
+        String result;
         try {
-            final String tempdir = Helper.maketemp();
-            final String cache = tempdir + File.separatorChar + "cache";
-            final SimpleRunnerBundle b = new SimpleRunnerBundle(
-                opt,
-                text.takeSnapshot(),
-                i,
-                Verbosity.get().ordinal(),
-                WarningNonfatal.get());
-            (new File(cache)).deleteOnExit();
-            b.write(cache);
-            byte[] bytes=("S"+tempdir).getBytes("UTF-8");
-            subprocess.getOutputStream().write(bytes, 0, bytes.length);
-            subprocess.getOutputStream().write(new byte[]{0}, 0, 1);
-            subprocess.getOutputStream().flush();
-        } catch(Throwable ex) {
-            log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
-            "One possible cause is that, in the Options menu, your specified\n" +
-            "memory size is larger than the amount allowed by your OS.\n");
-            log.logDivider();
-            log.flush();
-            subrunning=false;
-            run(EV_STOP);
+            URL url = new URL(URL);
+            URLConnection connection = url.openConnection();
+            connection.connect();
+            in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+            StringBuilder buf = new StringBuilder();
+            for (String inputLine = in.readLine(); inputLine != null; inputLine = in.readLine()) {
+                buf.append(inputLine);
+                buf.append(NEW_LINE);
+            }
+            result=buf.toString();
+        } catch (Throwable ex) {
+            result="";
+        } finally {
+            Util.close(in);
         }
-        return true;
+        // If the "check for update" took too long, then don't display the message, since it clutters up the message panel
+        if (System.currentTimeMillis()-now >= 5000 || !result.startsWith("Alloy Build ")) return null;
+        // Now that we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 (which consists of Alloy4 BETA1..BETA7)
+        new Subprocess(20000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
+        // Now, display the result of the alloy.mit.edu version polling
+        try {
+            wrap=true;
+            SwingUtilities.invokeLater(doUpdate(result));
+        } finally {
+            wrap=false;
+        }
+        return null;
     }
 
-    //====== Event Handler ========================================================================================//
+    /** This method displays a message that "updated version of Alloy is available". */
+    private Runner doUpdate(String arg) {
+        if (wrap) return wrapMe(arg);
+        String result=arg;
+        int num=0;
+        int len=result.length();
+        boolean found=false;
+        for(int i=0; ; i++) {
+            if (i>=len) return null;
+            char c=result.charAt(i);
+            if (!(c>='0' && c<='9')) { if (!found) continue; result=result.substring(i); break; }
+            found=true;
+            num=num*10+(int)(c-'0');
+        }
+        latestAlloyVersionName=result.trim();
+        latestAlloyVersion=num;
+        exitReporter.setLatestAlloyVersion(latestAlloyVersion, latestAlloyVersionName);
+        if (latestAlloyVersion<=Version.buildNumber()) return null;
+        log.logBold("An updated version of Alloy Analyzer has been released.\n");
+        log.log("Please visit alloy.mit.edu to download the latest version:\nVersion "+latestAlloyVersionName+"\n");
+        log.logDivider();
+        log.flush();
+        return null;
+    }
 
-    /**
-     * The event handler for events with a String argument.
-     * <p> Eg. evs_visualize, evs_open...
-     */
-    public boolean run(final int key, final String arg) {
+    /** This method changes the latest instance. */
+    void doSetLatest(String arg) {
+        latestInstance=arg;
+        latestAutoInstance=arg;
+    }
 
-        if (key<0) {
-            // Solution Enumeration
+    /** This method displays a particular instance or message. */
+    Runner doVisualize(String arg) {
+        if (wrap) return wrapMe(arg);
+        text.removeAllHighlights();
+        if (arg.startsWith("MSG: ")) {
+            OurDialog.showtext("Detailed Message", arg.substring(5), false);
+        }
+        if (arg.startsWith("CORE: ")) {
+            String filename = Util.canon(arg.substring(6));
+            String alloyfilename = null;
+            Set<Pos> core = new LinkedHashSet<Pos>();
+            InputStream is = null;
+            ObjectInputStream ois = null;
+            try {
+                is = new FileInputStream(filename);
+                ois = new ObjectInputStream(is);
+                int n = (Integer) (ois.readObject());
+                alloyfilename = Util.canon((String) (ois.readObject()));
+                for(int i=0; i<n; i++) { core.add((Pos) (ois.readObject())); }
+            } catch(Throwable ex) {
+                log.logRed("Error reading or parsing the core \""+filename+"\"\n");
+                return null;
+            } finally {
+                Util.close(ois);
+                Util.close(is);
+            }
+            text.removeAllHighlights();
+            try {
+               text.newTab(alloyfilename);
+            } catch(IOException ex) {
+               log.logRed("Error reading the file \""+alloyfilename+"\"\n");
+               return null;
+            }
+            for(Pos p:core) text.highlight(p,false);
+        }
+        if (arg.startsWith("POS: ")) {
+            Scanner s=new Scanner(arg.substring(5));
+            int x1=s.nextInt(), y1=s.nextInt(), x2=s.nextInt(), y2=s.nextInt();
+            String f=s.nextLine();
+            if (f.length()>0 && f.charAt(0)==' ') f=f.substring(1); // Get rid of the space after Y2
+            Pos p=new Pos(Util.canon(f), x1, y1, x2, y2);
+            if (!mode_externalEditor) text.highlight(new ErrorSyntax(p,""));
+        }
+        if (arg.startsWith("CNF: ")) {
+            String filename=Util.canon(arg.substring(5));
+            try { String text=Util.readAll(filename); OurDialog.showtext("Text Viewer", text, false); }
+            catch(IOException ex) { log.logRed("Error reading the file \""+filename+"\"\n"); }
+        }
+        if (arg.startsWith("XML: ")) {
+            viz.loadXML(Util.canon(arg.substring(5)), false);
+        }
+        return null;
+    }
+
+    /** This method opens a particular file. */
+    private Runner doOpenFile(String arg) {
+        if (wrap) return wrapMe(arg);
+        String f=Util.canon(arg);
+        try {
+            text.newTab(f);
+        } catch(IOException ex) {
+            doShow();
+            log.logRed("Cannot open the file "+f+"\nError message: "+(ex.getMessage().trim())+"\n");
+            return null;
+        }
+        if (text.isFile()) addHistory(f);
+        doShow();
+        if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
+        return null;
+    }
+
+    /** This object performs solution enumeration. */
+    private final Computer enumerator = new Computer() {
+        public String compute(String arg) {
             bringup(frame);
             if (subrunning)
                 throw new RuntimeException("Alloy4 is currently executing a SAT solver command. Please wait until that command has finished.");
@@ -1443,8 +1619,8 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 subprocess.getOutputStream().flush();
             } catch(Throwable ex) {
                 throw new RuntimeException("Solver failed due to unknown reason.\n" +
-                "One possible cause is that, in the Options menu,\n" +
-                "your specified memory size is larger than the\n" +
+                        "One possible cause is that, in the Options menu,\n" +
+                        "your specified memory size is larger than the\n" +
                 "amount allowed by your OS.\n");
             }
             subrunning=true;
@@ -1453,106 +1629,12 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             runbutton.setVisible(false);
             showbutton.setEnabled(false);
             stopbutton.setVisible(true);
-            return true;
+            return arg;
         }
+        public void setSourceFile(String filename) { }
+    };
 
-        if (key==EVS_UPDATE) {
-            String result=arg;
-            int num=0;
-            int len=result.length();
-            boolean found=false;
-            for(int i=0; ; i++) {
-                if (i>=len) return true;
-                char c=result.charAt(i);
-                if (!(c>='0' && c<='9')) { if (!found) continue; result=result.substring(i); break; }
-                found=true;
-                num=num*10+(int)(c-'0');
-            }
-            latestAlloyVersionName=result.trim();
-            latestAlloyVersion=num;
-            exitReporter.setLatestAlloyVersion(latestAlloyVersion, latestAlloyVersionName);
-            if (latestAlloyVersion<=Version.buildNumber()) return true;
-            log.logBold("An updated version of Alloy Analyzer has been released.\n");
-            log.log("Please visit alloy.mit.edu to download the latest version:\nVersion "+latestAlloyVersionName+"\n");
-            log.logDivider();
-            log.flush();
-        }
-
-        if (key==EVS_SET_LATEST) {
-            latestInstance=arg;
-            latestAutoInstance=arg;
-        }
-
-        if (key==EVS_VISUALIZE) {
-            text.removeAllHighlights();
-            if (arg.startsWith("MSG: ")) {
-                OurDialog.showtext("Detailed Message", arg.substring(5), false);
-            }
-            if (arg.startsWith("CORE: ")) {
-                String filename = Util.canon(arg.substring(6));
-                String alloyfilename = null;
-                Set<Pos> core = new LinkedHashSet<Pos>();
-                InputStream is=null;
-                ObjectInputStream ois=null;
-                try {
-                    is = new FileInputStream(filename);
-                    ois = new ObjectInputStream(is);
-                    int n = (Integer) (ois.readObject());
-                    alloyfilename = Util.canon((String) (ois.readObject()));
-                    for(int i=0; i<n; i++) { core.add((Pos) (ois.readObject())); }
-                } catch(Throwable ex) {
-                    log.logRed("Error reading or parsing the core \""+filename+"\"\n");
-                    return false;
-                } finally {
-                    Util.close(ois);
-                    Util.close(is);
-                }
-                text.newTab(alloyfilename);
-                text.removeAllHighlights();
-                for(Pos p:core) text.highlight(p,false);
-            }
-            if (arg.startsWith("POS: ")) {
-                Scanner s = new Scanner(arg.substring(5));
-                int x1 = s.nextInt();
-                int y1 = s.nextInt();
-                int x2 = s.nextInt();
-                int y2 = s.nextInt();
-                String f = s.nextLine();
-                if (f.length()>0 && f.charAt(0)==' ') f=f.substring(1); // Get rid of the space after Y2
-                Pos p=new Pos(Util.canon(f), x1, y1, x2, y2);
-                if (!mode_externalEditor) text.highlight(new ErrorSyntax(p,""));
-                return true;
-            }
-            if (arg.startsWith("CNF: ")) {
-                String filename=Util.canon(arg.substring(5));
-                String text;
-                try { text=Util.readAll(filename); OurDialog.showtext("Text Viewer", text, false); }
-                catch(IOException ex) { log.logRed("Error reading the file \""+filename+"\"\n"); }
-            }
-            if (arg.startsWith("XML: ")) {
-                String filename=Util.canon(arg.substring(5));
-                viz.run(VizGUI.EVS_LOAD_INSTANCE, filename);
-            }
-        }
-
-        if (key==EVS_OPEN) {
-            String f=Util.canon(arg);
-            if (!text.newTab(f)) {
-                run(EV_SHOW);
-                log.logRed("Cannot open the file "+f+"\n\n");
-                return false;
-            }
-            if (text.isFile()) addHistory(f);
-            run(EV_SHOW);
-            if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
-            return true;
-        }
-
-        return true;
-    }
-
-    //====== Evaluator ======================================================//
-
+    /** This object performs expression evaluation. */
     private static Computer evaluator = new Computer() {
         private String filename=null;
         public final void setSourceFile(String filename) {
@@ -1609,9 +1691,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
     //====== Main Method ====================================================//
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
-    public static final void main(final String[] args) {
+    public static void main(final String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
-            public final void run() { new SimpleGUI(args); }
+            public void run() { new SimpleGUI(args); }
         });
     }
 
@@ -1647,9 +1729,14 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         int y=AnalyzerY.get(); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
 
         // Put up a slash screen
-        frame=new JFrame("Alloy Analyzer");
+        frame = new JFrame("Alloy Analyzer");
+        try {
+            wrap = true;
+            frame.addWindowListener(doQuit());
+        } finally {
+            wrap = false;
+        }
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        frame.addWindowListener(new MultiRunner(this, EV_DISPOSE));
         frame.addComponentListener(this);
         frame.pack();
         frame.setSize(width,height);
@@ -1676,37 +1763,47 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         final String binary = Helper.alloyHome()+fs+"binary";
 
         // Create the menu bar
-        JMenuBar bar = OurUtil.makeMenuBar();
-        filemenu = OurUtil.makeMenu(bar, "File", KeyEvent.VK_F, this, EV_REFRESH_FILE);
-        editmenu = OurUtil.makeMenu(bar, "Edit", KeyEvent.VK_E, this, EV_REFRESH_EDIT);
-        runmenu = OurUtil.makeMenu(bar, "Execute", KeyEvent.VK_X, this, EV_REFRESH_RUN);
-        optmenu = OurUtil.makeMenu(bar, "Options", KeyEvent.VK_O, this, EV_REFRESH_OPTION);
-        windowmenu = OurUtil.makeMenu(bar, "Window", KeyEvent.VK_W, this, EV_REFRESH_WINDOW);
-        windowmenu2 = OurUtil.makeMenu(null, "Window", KeyEvent.VK_W, this, EV_REFRESH_VIZWINDOW);
-        helpmenu = OurUtil.makeMenu(bar, "Help", KeyEvent.VK_H, null, 0);
-        if (!Util.onMac()) OurUtil.makeMenuItem(helpmenu, "About Alloy...", true, KeyEvent.VK_A, -1, this, EV_ABOUT);
-        OurUtil.makeMenuItem(helpmenu, "Quick Guide", true, KeyEvent.VK_Q, -1, this, EV_HELP);
-        OurUtil.makeMenuItem(helpmenu, "See the Copyright Notices...", true, KeyEvent.VK_L, -1, this, EV_LICENSE);
+        JMenuBar bar = new JMenuBar();
+        try {
+            wrap = true;
+            filemenu = OurUtil.makeMenu(bar, "File", KeyEvent.VK_F, doRefreshFile());
+            editmenu = OurUtil.makeMenu(bar, "Edit", KeyEvent.VK_E, doRefreshEdit());
+            runmenu = OurUtil.makeMenu(bar, "Execute", KeyEvent.VK_X, doRefreshRun());
+            optmenu = OurUtil.makeMenu(bar, "Options", KeyEvent.VK_O, doRefreshOption());
+            windowmenu = OurUtil.makeMenu(bar, "Window", KeyEvent.VK_W, doRefreshWindow(false));
+            windowmenu2 = OurUtil.makeMenu(null, "Window", KeyEvent.VK_W, doRefreshWindow(true));
+            helpmenu = OurUtil.makeMenu(bar, "Help", KeyEvent.VK_H, null);
+            if (!Util.onMac()) OurUtil.makeMenuItem(helpmenu, "About Alloy...", true, KeyEvent.VK_A, -1, doAbout());
+            OurUtil.makeMenuItem(helpmenu, "Quick Guide", true, KeyEvent.VK_Q, -1, doHelp());
+            OurUtil.makeMenuItem(helpmenu, "See the Copyright Notices...", true, KeyEvent.VK_L, -1, doLicense());
+        } finally {
+            wrap = false;
+        }
 
         // Pre-load the visualizer
-        viz=new VizGUI(false, "", windowmenu2, this, evaluator);
+        viz = new VizGUI(false, "", windowmenu2, enumerator, evaluator);
 
         // Create the toolbar
-        toolbar=new JToolBar();
-        toolbar.setFloatable(false);
-        if (!Util.onMac()) toolbar.setBackground(background);
-        toolbar.add(newbutton=OurUtil.button("New","Starts a new blank model","images/24_new.gif",this,EV_NEW));
-        toolbar.add(openbutton=OurUtil.button("Open","Opens an existing model","images/24_open.gif",this,EV_OPEN));
-        toolbar.add(loadbutton=OurUtil.button("Load","Chooses a model to analyze","images/24_open.gif",this,EV_OPEN));
-        toolbar.add(reloadbutton=OurUtil.button("Reload","Reload all the models from disk","images/24_open.gif",this,EV_RELOADALL));
-        loadbutton.setVisible(false);
-        toolbar.add(savebutton=OurUtil.button("Save","Saves the current model","images/24_save.gif",this,EV_SAVE));
-        toolbar.add(runbutton=OurUtil.button("Execute","Executes the latest command","images/24_execute.gif",this,EV_LATEST));
-        toolbar.add(stopbutton=OurUtil.button("Stop","Stops the current analysis","images/24_execute_abort2.gif",this,EV_STOP));
-        stopbutton.setVisible(false);
-        toolbar.add(showbutton=OurUtil.button("Show","Shows the latest instance","images/24_graph.gif",this,EV_SHOW_LATEST));
-        toolbar.add(Box.createHorizontalGlue());
-        toolbar.setBorder(new OurBorder(false,false,false,false));
+        try {
+            wrap = true;
+            toolbar = new JToolBar();
+            toolbar.setFloatable(false);
+            if (!Util.onMac()) toolbar.setBackground(background);
+            toolbar.add(newbutton=OurUtil.button("New", "Starts a new blank model", "images/24_new.gif", doNew()));
+            toolbar.add(openbutton=OurUtil.button("Open", "Opens an existing model", "images/24_open.gif", doOpen()));
+            toolbar.add(loadbutton=OurUtil.button("Load", "Chooses a model to analyze", "images/24_open.gif", doOpen()));
+            toolbar.add(reloadbutton=OurUtil.button("Reload", "Reload all the models from disk", "images/24_open.gif", doReloadAll()));
+            loadbutton.setVisible(false);
+            toolbar.add(savebutton=OurUtil.button("Save", "Saves the current model", "images/24_save.gif", doSave()));
+            toolbar.add(runbutton=OurUtil.button("Execute", "Executes the latest command", "images/24_execute.gif", doExecuteLatest()));
+            toolbar.add(stopbutton=OurUtil.button("Stop", "Stops the current analysis", "images/24_execute_abort2.gif", doStop(2)));
+            stopbutton.setVisible(false);
+            toolbar.add(showbutton=OurUtil.button("Show", "Shows the latest instance", "images/24_graph.gif", doShowLatest()));
+            toolbar.add(Box.createHorizontalGlue());
+            toolbar.setBorder(new OurBorder(false,false,false,false));
+        } finally {
+            wrap = false;
+        }
 
         // Create the message area
         logpane = OurUtil.scrollpane();
@@ -1734,7 +1831,12 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         log.logBold("Alloy Analyzer "+Version.version()+" (build date: "+Version.buildDate()+")\n\n");
 
         // If on Mac, then register an application listener
-        if (Util.onMac()) MacUtil.registerApplicationListener(this, EV_SHOW, EV_ABOUT, EVS_OPEN, EV_QUIT);
+        try {
+            wrap = true;
+            if (Util.onMac()) MacUtil.registerApplicationListener(doShow(), doAbout(), doOpenFile(""), doQuit()); // TODO
+        } finally {
+            wrap = false;
+        }
 
         // Add the new JNI location to the java.library.path
         try {
@@ -1798,38 +1900,35 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
         }
 
         // Refreshes all the menu items
-        run(EV_REFRESH_FILE); OurUtil.enableAll(filemenu);
-        run(EV_REFRESH_EDIT); OurUtil.enableAll(editmenu);
-        run(EV_REFRESH_RUN); OurUtil.enableAll(runmenu);
-        run(EV_REFRESH_OPTION);
-        run(EV_REFRESH_WINDOW); OurUtil.enableAll(windowmenu);
+        doRefreshFile(); OurUtil.enableAll(filemenu);
+        doRefreshEdit(); OurUtil.enableAll(editmenu);
+        doRefreshRun(); OurUtil.enableAll(runmenu);
+        doRefreshOption();
+        doRefreshWindow(false); OurUtil.enableAll(windowmenu);
         frame.setJMenuBar(bar);
+
+        // Go into the external text editor mode if needed
+        if (ExternalEditor.get() && splitpane.getBottomComponent()!=null) doOptExternal();
 
         // Open the given file, if a filename is given in the command line
         if (args.length==1) {
             File f=new File(args[0]);
-            if (f.exists()) run(EVS_OPEN, f.getPath());
+            if (f.exists()) doOpenFile(f.getPath());
         } else if (args.length==2 && args[0].equals("-open")) {
             File f=new File(args[1]);
-            if (f.exists()) run(EVS_OPEN, f.getPath());
+            if (f.exists()) doOpenFile(f.getPath());
         }
 
         // Update the title and status bar
         notifyChange();
 
         // Start a separate thread to query alloy.mit.edu to see if an updated version of Alloy has been released or not
-        Runnable r = new Runnable() {
-            public final void run() {
-                long now=System.currentTimeMillis();
-                String result=checkForUpdate();
-                if (System.currentTimeMillis()-now >= 5000 || !result.startsWith("Alloy Build ")) return;
-                // Now that we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 (which consists of Alloy4 BETA1..BETA7)
-                new Subprocess(20000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
-                // Now, display the result of the alloy.mit.edu version polling
-                SwingUtilities.invokeLater(new MultiRunner(SimpleGUI.this, EVS_UPDATE, result));
-            }
-        };
-        (new Thread(r)).start();
+        try {
+            wrap = true;
+            new Thread(doCheckForUpdates()).start();
+        } finally {
+            wrap = false;
+        }
 
         // Launch the welcome screen if needed
         if (Welcome.get() < welcomeLevel) {
@@ -1862,8 +1961,10 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
 
     //=============================================================================================================//
 
+    /** This method loads the sub JVM if not already loaded. */
     private boolean prepareSubJVM() {
-        if (subMemory!=subMemoryNow && subprocess!=null) { subprocess.destroy(); subprocess=null; }
+        final int newmem = SubMemory.get();
+        if (newmem!=subMemoryNow && subprocess!=null) { subprocess.destroy(); subprocess=null; }
         try {
             if (subprocess!=null) { subprocess.exitValue(); subprocess=null; }
         } catch(IllegalThreadStateException ex) {
@@ -1882,7 +1983,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             subprocess=Runtime.getRuntime().exec(new String[]{
                 java,
-                "-Xmx"+subMemory+"m",
+                "-Xmx"+newmem+"m",
                 "-Djava.library.path="+Helper.alloyHome()+fs+"binary",
                 "-cp",
                 System.getProperty("java.class.path"),
@@ -1891,7 +1992,7 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
                 Integer.toString(latestAlloyVersion),
                 latestAlloyVersionName
             });
-            subMemoryNow=subMemory;
+            subMemoryNow=newmem;
         } catch (IOException ex) {
             return false;
         }
@@ -1933,8 +2034,9 @@ public final class SimpleGUI implements MultiRunnable, ComponentListener, OurTab
             }
             log.esc(process, new byte[]{SwingLogPanel.FLUSH}, 1);
             Util.close(input);
-            if (isStdout) SwingUtilities.invokeLater(new MultiRunner(SimpleGUI.this, EV_DONE));
+            if (isStdout) SwingUtilities.invokeLater(new Runnable() {
+                public void run() { doStop(0); }
+            });
         }
     }
-
 }

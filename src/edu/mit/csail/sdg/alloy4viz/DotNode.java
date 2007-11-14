@@ -21,7 +21,7 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.util.Set;
-import edu.mit.csail.sdg.alloy4graph.DiGraph;
+import edu.mit.csail.sdg.alloy4graph.VizGraph;
 import edu.mit.csail.sdg.alloy4graph.VizNode;
 
 /**
@@ -68,11 +68,11 @@ public final class DotNode {
 
     /**
      * Writes the node into a DotGraph object.
-     * @param out - the StringBuilder object that will receive the text
+     * @param dotgraph - the graph
      * @param attribs - a set of additional labels to append to the node (can be null if we don't have any to append)
      * @param pal - the color palette to use
      */
-    VizNode write2(DiGraph dotgraph, Set<String> attribs, DotPalette pal) {
+    VizNode write2(VizGraph dotgraph, Set<String> attribs, DotPalette pal) {
         VizNode n = new VizNode(dotgraph, uuid, label);
         if (attribs!=null) for (String a:attribs) if (a.length()>0) n.addAfter(a);
         n.set(DotColor.name2color(color.getDotText(pal))).set(shape.vizShape).set(style.vizStyle);

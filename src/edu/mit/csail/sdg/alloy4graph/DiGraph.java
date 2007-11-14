@@ -34,7 +34,7 @@ public class DiGraph {
     public static abstract class DiNode {
 
         /** The graph that this node belongs to. */
-        final DiGraph graph;
+        final VizGraph graph;
 
         /** Stores the layer that this node is in. */
         private int layer=0;
@@ -70,11 +70,12 @@ public class DiGraph {
         public final List<VizEdge> selfEdges() { return selfView; }
 
         /** Constructs a new node. */
-        DiNode(DiGraph graph) {
+        DiNode(VizGraph graph) {
+            DiGraph d = (DiGraph)graph;
             this.graph=graph;
-            this.pos=graph.nodelist.size();
-            graph.nodelist.add((VizNode)this);
-            graph.layerlist.get(0).add((VizNode)this);
+            this.pos=d.nodelist.size();
+            d.nodelist.add((VizNode)this);
+            d.layerlist.get(0).add((VizNode)this);
         }
 
         /** {@inheritDoc} */
@@ -95,12 +96,13 @@ public class DiGraph {
          * <p> If a node is added to a new layer, then it is added to the right of the original rightmost node in that layer.
          */
         public final void setLayer(final int newLayer) {
+            DiGraph d = (DiGraph)graph;
             if (newLayer<0) throw new IllegalArgumentException("The layer cannot be negative!");
             if (layer==newLayer) return;
-            graph.layerlist.get(layer).remove(this);
+            d.layerlist.get(layer).remove(this);
             layer=newLayer;
-            while(layer >= graph.layerlist.size()) graph.layerlist.add(new ArrayList<VizNode>());
-            graph.layerlist.get(layer).add((VizNode)this);
+            while(layer >= d.layerlist.size()) d.layerlist.add(new ArrayList<VizNode>());
+            d.layerlist.get(layer).add((VizNode)this);
         }
     }
 
@@ -118,7 +120,7 @@ public class DiGraph {
             if (a.graph!=b.graph) throw new IllegalArgumentException("You cannot draw an edge between two different graphs.");
             this.a=a; this.b=b;
             if (a==b) { a.selfs.add((VizEdge)this); } else { a.outs.add((VizEdge)this); b.ins.add((VizEdge)this); }
-            a.graph.edgelist.add((VizEdge)this);
+            ((DiGraph)(a.graph)).edgelist.add((VizEdge)this);
         }
 
         /** {@inheritDoc} */

@@ -21,9 +21,9 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.Event;
 import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.Font;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
