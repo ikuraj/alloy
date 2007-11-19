@@ -181,9 +181,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("%n");
         String result=make(x);
         file.printf("%nSolver solver = new Solver();");
-        file.printf("%nsolver.options().setLogTranslation(true);");
-        file.printf("%nsolver.options().setSolver(SATFactory.DefaultSAT4J);"
-                   +" // Or \"SATFactory.MiniSatProver\" if you want unsat core");
+        file.printf("%nsolver.options().setSolver(SATFactory.DefaultSAT4J);");
         file.printf("%nsolver.options().setBitwidth(%d);",bitwidth);
         file.printf("%nsolver.options().setIntEncoding(Options.IntEncoding.BINARY);");
         file.printf("%nsolver.options().setSymmetryBreaking(20);");
