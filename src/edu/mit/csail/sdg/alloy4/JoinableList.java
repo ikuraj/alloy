@@ -65,7 +65,6 @@ public final class JoinableList<E> implements Iterable<E> {
     }
 
     /** Returns a list that represents the concatenation of this and that. */
-    @SuppressWarnings("unchecked")
     public JoinableList<E> join(JoinableList<E> that) {
         if (that==null || that.count==0) return this;
         if (count==0) return that;
@@ -141,9 +140,9 @@ public final class JoinableList<E> implements Iterable<E> {
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof List)) return false;
-        List x=(List)that;
+        List<?> x=(List<?>)that;
         if (count!=x.size()) return false;
-        Iterator a=iterator(), b=x.iterator();
+        Iterator<?> a=iterator(), b=x.iterator();
         for(int i=0; i<count; i++) {
             Object aa=a.next(), bb=b.next();
             if (aa==null) {

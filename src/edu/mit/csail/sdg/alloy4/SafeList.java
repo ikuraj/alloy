@@ -111,10 +111,10 @@ public final class SafeList<T> implements Collection<T>, Serializable {
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof List)) return false;
-        List x=(List)that;
+        List<?> x=(List<?>)that;
         int n=size(); // the size() method is synchronized, so we are safe in calling it
         if (n!=x.size()) return false;
-        Iterator a=iterator(), b=x.iterator();
+        Iterator<?> a=iterator(), b=x.iterator();
         for(int i=0; i<n; i++) { // We must read up to n elements only
             Object aa=a.next(), bb=b.next();
             if (aa==null) {

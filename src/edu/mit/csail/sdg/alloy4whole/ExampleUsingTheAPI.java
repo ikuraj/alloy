@@ -43,7 +43,6 @@ import static edu.mit.csail.sdg.alloy4.A4Reporter.NOP;
 
 public final class ExampleUsingTheAPI {
 
-    @SuppressWarnings("unused")
     public static void main(String[] args) throws Err {
 
         // Chooses the Alloy4 options

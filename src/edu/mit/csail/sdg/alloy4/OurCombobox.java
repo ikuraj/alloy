@@ -95,8 +95,8 @@ public final class OurCombobox extends JComboBox {
     }
 
     /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
-    private static Vector<Object> copy (List<Object> list, boolean addNull) {
-        Vector<Object> answer = new Vector<Object>(list.size() + (addNull?1:0));
+    private static<T> Vector<T> copy (List<T> list, boolean addNull) {
+        Vector<T> answer = new Vector<T>(list.size() + (addNull?1:0));
         if (addNull) { answer.add(null); }
         answer.addAll(list);
         return answer;
@@ -128,7 +128,7 @@ public final class OurCombobox extends JComboBox {
      * @param key - the key associated with this combobox
      */
     public OurCombobox
-    (final ComboGetterSetter gs, boolean addNull, List<Object> list, int width, int height, final Object key) {
+    (final ComboGetterSetter gs, boolean addNull, List<?> list, int width, int height, final Object key) {
         super(copy(list, addNull));
         this.gs = gs;
         this.key = key;

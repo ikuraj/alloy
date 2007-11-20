@@ -86,13 +86,13 @@ public final strictfp class VizGraph extends DiGraph {
     //=============================== constructors and additional fields =========================================================//
 
     /** A list of legends; each legend is an Object with the associated text label and color. */
-    private final SortedMap<Comparable,Pair<String,Color>> legends = new TreeMap<Comparable,Pair<String,Color>>();
+    private final SortedMap<Comparable<?>,Pair<String,Color>> legends = new TreeMap<Comparable<?>,Pair<String,Color>>();
 
     /**
      * Add a legend with the given object and the associated text label; if color==null, that means we will
      * still add this legend into the list of legends, but this legend will be hidden.
      */
-    public void addLegend(Comparable object, String label, Color color) { legends.put(object, new Pair<String,Color>(label,color)); }
+    public void addLegend(Comparable<?> object, String label, Color color) { legends.put(object, new Pair<String,Color>(label,color)); }
 
     /** Constructs an empty VizGraph object. */
     public VizGraph() { }
@@ -589,7 +589,7 @@ public final strictfp class VizGraph extends DiGraph {
         gr.setFont(new Font("Dialog", Font.BOLD, nodes.get(0).fontSize()));
         FontMetrics fm = gr.getFontMetrics();
         int maxAscent = fm.getMaxAscent(), maxAscentDescent = maxAscent + fm.getMaxDescent(), y=8, maxWidth=0;
-        for(Map.Entry<Comparable,Pair<String,Color>> e:legends.entrySet()) {
+        for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
             if (e.getValue().b==null) continue;
             int w = fm.stringWidth(e.getValue().a);
             if (maxWidth<w) maxWidth=w;
@@ -601,7 +601,7 @@ public final strictfp class VizGraph extends DiGraph {
         gr.setColor(Color.BLACK);
         gr.drawRoundRect(5, 5, 8+maxWidth+3, y, 5, 5);
         y=8;
-        for(Map.Entry<Comparable,Pair<String,Color>> e:legends.entrySet()) {
+        for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
             Color color = e.getValue().b;
             if (color==null) continue;
             gr.setColor(color);

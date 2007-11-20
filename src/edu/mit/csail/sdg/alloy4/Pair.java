@@ -67,7 +67,7 @@ public final class Pair<A,B> {
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof Pair)) return false;
-        Pair p=(Pair)that;
+        Pair<?,?> p=(Pair<?,?>)that;
         return (a==null ? p.a==null : a.equals(p.a)) && (b==null ? p.b==null : b.equals(p.b));
     }
 }

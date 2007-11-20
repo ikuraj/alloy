@@ -120,11 +120,7 @@ public final class DotShape extends DotAttribute {
     public static DotShape getDefault() { return ELLIPSE; }
 
     /** Returns the list of values that the user is allowed to select from. */
-    @SuppressWarnings("unchecked")
-    public static List<Object> values() {
-        final List raw = values;
-        return raw;
-    }
+    public static List<?> values() { return values; }
 
     /** This method is used in parsing the XML value into a valid DotShape; returns null if there is no match. */
     public static DotShape valueOf(String x) {

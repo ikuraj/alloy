@@ -1651,7 +1651,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 Map<String,String> fc = new LinkedHashMap<String,String>();
                 fis = new FileInputStream(filename);
                 reader = new InputStreamReader(fis, "UTF-8");
-                XMLElement x = new XMLElement(new Hashtable(), true, false);
+                XMLElement x = new XMLElement(new Hashtable<Object,Object>(), true, false);
                 x.parseFromReader(reader);
                 if (!x.is("alloy")) throw new Exception();
                 String mainname=null;

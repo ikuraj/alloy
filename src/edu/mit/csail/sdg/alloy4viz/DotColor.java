@@ -120,9 +120,8 @@ public final class DotColor extends DotAttribute {
     }
 
     /** Returns the list of values that the user is allowed to select from. */
-    @SuppressWarnings("unchecked")
-    public static List<Object> values(DotColor... excludes) {
-        if (excludes==null || excludes.length==0) { List raw = values; return raw; }
+    public static List<?> values(DotColor... excludes) {
+        if (excludes==null || excludes.length==0) { List<?> raw = values; return raw; }
         List<Object> ans = new ArrayList<Object>(values);
         for(int i=0; i<excludes.length; i++) ans.remove(excludes[i]);
         return ans;

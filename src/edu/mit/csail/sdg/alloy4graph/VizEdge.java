@@ -42,12 +42,6 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
 
     // =============================== adjustable options ==================================================
 
-    // /** The color to use for highlighted edge. */
-    // private static Color color1 = Color.RED;
-
-    // /** The color to use for other edges that are in the same group as the highlighted edge. */
-    // private static Color color2 = new Color(255,120,120);
-
     /** This determines the font size. */
     static final int fontSize = 12;
 
@@ -202,8 +196,11 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
            }
            double cx=b.x(), cy=b.y(), bx=(ax+cx)/2, by=(ay+cy)/2;
            path=new VizPath(ax, ay, cx, cy);
-           if (n>1) {
-               if (i<n/2) bx=bx-(n/2-i)*10; else bx=bx+(i-n/2+1)*10; // the spacing between edges that share the same endpoints
+           if (n>1 && (n&1)==1) {
+               if (i<n/2) bx=bx-(n/2-i)*10; else if (i>n/2) bx=bx+(i-n/2)*10;
+               path.add(1, bx, by);
+           } else if (n>1) {
+               if (i<n/2) bx=bx-(n/2-i)*10+5; else bx=bx+(i-n/2)*10+5;
                path.add(1, bx, by);
            }
         }

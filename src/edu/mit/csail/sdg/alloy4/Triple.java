@@ -77,7 +77,7 @@ public final class Triple<A,B,C> {
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         if (!(that instanceof Triple)) return false;
-        Triple p=(Triple)that;
+        Triple<?,?,?> p=(Triple<?,?,?>)that;
         return (a==null ? p.a==null : a.equals(p.a))
             && (b==null ? p.b==null : b.equals(p.b))
             && (c==null ? p.c==null : c.equals(p.c));
