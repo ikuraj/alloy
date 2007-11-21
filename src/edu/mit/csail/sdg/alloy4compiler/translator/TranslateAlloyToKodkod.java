@@ -205,6 +205,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Writes: bitwidth, maxseq, bcc, bounds, goal
      */
     private void makeFormula (Expr facts) throws Err {
+        facts = (Expr) (new ConvToConjunction()).visitThis(facts);
         rep.debug("Generating bounds...\n");
         final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
         bitwidth = sc.getBitwidth();

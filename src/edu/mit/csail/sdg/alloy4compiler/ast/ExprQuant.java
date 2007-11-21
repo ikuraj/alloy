@@ -135,13 +135,6 @@ public final class ExprQuant extends Expr {
          * @param sub - the body of the expression
          */
         public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) {
-            if (this==ALL && sub instanceof ExprBinary && ((ExprBinary)sub).op==ExprBinary.Op.AND) {
-               // This provides better resolution for unsat core extraction, especially for Appended Facts paragraph
-               ExprBinary bin = (ExprBinary)sub;
-               Expr a = make(pos, closingBracket, vars, bin.left);
-               Expr b = make(pos, closingBracket, vars, bin.right);
-               return a.and(b);
-            }
             Type t = this==SUM ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
             if (this!=SUM) sub=sub.typecheck_as_formula(); else sub=sub.typecheck_as_int();
             JoinableList<Err> errs = sub.errors;
