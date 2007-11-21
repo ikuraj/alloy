@@ -109,6 +109,7 @@ public final class SimpleCLI {
                 A4Options options = new A4Options();
                 options.originalFilename = filename;
                 options.solver = A4Options.SatSolver.MiniSatJNI;
+                options.solverDirectory = "/zweb/zweb/tmp/alloy4/x86-freebsd";
                 if (args.length!=1) continue;
                 for (int i=0; i<cmds.size(); i++) {
                     Command c = cmds.get(i).a;

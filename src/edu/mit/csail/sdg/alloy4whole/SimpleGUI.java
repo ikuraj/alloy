@@ -33,7 +33,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -435,17 +434,17 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             (new File(platformBinary)).mkdirs();
             Util.writeAll(platformBinary+fs+"tmp.cnf", "p cnf 3 1\n1 0\n");
         } catch(Err er) {
-            // The error will be caught later by the "berkmin" test
+            // The error will be caught later by the "berkmin" or "spear" test
         }
         // Copy the platform-dependent binaries
         Util.copy(true, false, platformBinary,
            arch+"/libminisat.so", arch+"/libminisat.jnilib",
            arch+"/libminisatprover.so", arch+"/libminisatprover.jnilib",
            arch+"/libzchaff.so", arch+"/libzchaff.jnilib",
-           arch+"/berkmin");
+           arch+"/berkmin", arch+"/spear");
         Util.copy(false, false, platformBinary,
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
-           arch+"/berkmin.exe");
+           arch+"/berkmin.exe", arch="/spear.exe");
         // Copy the model files
         Util.copy(false, true, Helper.alloyHome(),
            "models/book/appendixA/addressBook1.als", "models/book/appendixA/addressBook2.als", "models/book/appendixA/barbers.als",
@@ -1863,43 +1862,29 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             old.set(null,newarray);
         } catch (Throwable ex) { }
 
-        // Testing the platform-dependent SAT solvers
+        // Testing the SAT solvers
         if (1==1) {
-            satChoices = new ArrayList<SatSolver>(SatSolver.values());
-            SatSolver now = SatSolver.get();
-            Subprocess test = new Subprocess(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
-            String output = test.getStandardOutput();
-            if (!output.startsWith("s SATISFIABLE")) {
-                log.logBold("Warning: non-Java based SAT solver does not work on this platform.\n");
+            satChoices = SatSolver.values().makeCopy();
+            Subprocess test1 = new Subprocess(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
+            if (!test1.getStandardOutput().startsWith("s SATISFIABLE")) satChoices.remove(SatSolver.BerkMinPIPE);
+            Subprocess test2 = new Subprocess(20000, new String[]{binary+fs+"spear", binary+fs+"tmp.cnf"});
+            if (!test2.getStandardOutput().startsWith("s SATISFIABLE")) satChoices.remove(SatSolver.SpearPIPE);
+            try { System.loadLibrary("minisat"); } catch(UnsatisfiedLinkError e) {
+                log.logBold("Warning: JNI-based SAT solver does not work on this platform.\n");
                 log.log("This is okay, since you can still use SAT4J as the solver.\n"+
-                        "For more information, please visit http://alloy.mit.edu/alloy4/\n");
-                //log.logBold("\nThe exact error message is:\n");
-                //log.logIndented(test.getStandardOutputAndError());
+                "For more information, please visit http://alloy.mit.edu/alloy4/\n");
                 log.logDivider();
                 log.flush();
-                satChoices.clear();
-                satChoices.add(SatSolver.SAT4J);
-                satChoices.add(SatSolver.FILE);
-            } else {
-                try { System.loadLibrary("minisat"); } catch(UnsatisfiedLinkError e) {
-                    log.logBold("Warning: JNI-based SAT solver does not work on this platform.\n");
-                    log.log("This is okay, since you can still use SAT4J as the solver.\n"+
-                    "For more information, please visit http://alloy.mit.edu/alloy4/\n");
-                    // log.logIndented(e.toString().trim());
-                    log.logDivider();
-                    log.flush();
-                    satChoices.remove(SatSolver.MiniSatJNI);
-                }
-                try { System.loadLibrary("minisatprover"); } catch(UnsatisfiedLinkError e) {
-                    satChoices.remove(SatSolver.MiniSatProverJNI);
-                }
-                try { System.loadLibrary("zchaff"); } catch(UnsatisfiedLinkError e) {
-                    satChoices.remove(SatSolver.ZChaffJNI);
-                }
+                satChoices.remove(SatSolver.MiniSatJNI);
             }
-            if (!satChoices.contains(now)) now=SatSolver.ZChaffJNI;
-            if (!satChoices.contains(now)) now=SatSolver.SAT4J;
-            now.set();
+            try { System.loadLibrary("minisatprover"); } catch(UnsatisfiedLinkError e) { satChoices.remove(SatSolver.MiniSatProverJNI); }
+            try { System.loadLibrary("zchaff"); } catch(UnsatisfiedLinkError e) { satChoices.remove(SatSolver.ZChaffJNI); }
+            SatSolver now = SatSolver.get();
+            if (!satChoices.contains(now)) {
+                now=SatSolver.ZChaffJNI;
+                if (!satChoices.contains(now)) now=SatSolver.SAT4J;
+                now.set();
+            }
         }
 
         // If the temporary directory has become too big, then tell the user they can "clear temporary directory".

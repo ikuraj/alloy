@@ -34,17 +34,11 @@ public final class Version {
     private Version() { }
 
     /** Returns the build number. */
-    public static int buildNumber() {
-        return Integer.MAX_VALUE;
-    }
+    public static int buildNumber() { return Integer.MAX_VALUE; }
 
     /** Returns the version string. */
-    public static String version() {
-        return "4.0 RC?";
-    }
+    public static String version() { return "4.0 RC?"; }
 
     /** Returns the build date. */
-    public static String buildDate() {
-        return "unknown";
-    }
+    public static String buildDate() { return "unknown"; }
 }

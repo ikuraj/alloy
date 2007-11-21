@@ -259,9 +259,7 @@ public final class OurConsole extends JScrollPane {
               if (e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
            }
            public void keyTyped(KeyEvent e) {
-              if (e.getKeyChar()=='\t') {
-                  e.consume();
-              }
+              if (e.getKeyChar()=='\t') e.consume();
               if (e.getKeyChar()=='\n') {
                   e.consume();
                   String x = sub.getText().trim();

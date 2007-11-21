@@ -40,19 +40,19 @@ public final class Subprocess {
     // Invariant: process==null => (stdout!=null && stderr!=null)
 
     /** The actual subprocess (null if the subprocess never started, or if we detected it has terminated already) */
-    private Process process=null;
+    private Process process = null;
 
     /** This field will store the stdout output from the program. */
-    private String stdout=null;
+    private String stdout = null;
 
     /** This field will store the stderr output from the program. */
-    private String stderr=null;
+    private String stderr = null;
 
     /** If >= 0, that means we expect and demand it to be the process exit code. */
     private final int expect;
 
     /** Timer used to schedule a timeout for the process. */
-    private static final Timer stopper=new Timer();
+    private static final Timer stopper = new Timer();
 
     /**
      * Executes the given command line, and returns a "Subprocess" object that allows us to query the subprocess.

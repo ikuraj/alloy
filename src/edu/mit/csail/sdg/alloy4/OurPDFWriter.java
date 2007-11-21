@@ -177,7 +177,7 @@ public final strictfp class OurPDFWriter {
         }
         // Close the file at all cost, since open files are a scarce system resource
         try { if (out!=null) out.close(); } catch(IOException ex) { if (err==null) err=ex; }
-        out=null;
+        out = null;
         // If any errors occurred during writing or flushing or closing the file, then re-throw the exception
         if (err!=null) throw err;
     }

@@ -48,7 +48,7 @@ import javax.swing.JPanel;
 public final class OurTristateCheckbox extends JPanel {
 
     /** This silences javac's warning about missing serialVersionUID. */
-    private static final long serialVersionUID = 1;
+    private static final long serialVersionUID = 1L;
 
     /** The icon to use when the checkbox is off entirely. */
     private static final Icon off = OurUtil.loadIcon("images/tcb01.gif");

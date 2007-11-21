@@ -65,13 +65,13 @@ public final class OurCombobox extends JComboBox {
      */
     public interface ComboGetterSetter {
         /** Given a key and a value, this returns a suitable icon to display; returns null if no icon is needed. */
-        public Icon getIcon(Object key, Object value);
+        public Icon getIcon (Object key, Object value);
         /** Given a key and a value, this returns a suitable text to display. */
-        public String getText(Object key, Object value);
+        public String getText (Object key, Object value);
         /** This retrieves the current value for that key. */
-        public Object getValue(Object key);
+        public Object getValue (Object key);
         /** This sets the current value for that key. */
-        public void setValue(Object key, Object value);
+        public void setValue (Object key, Object value);
     }
 
     /**

@@ -83,10 +83,7 @@ public final class OurUtil {
 
     /** Run r.run() using the AWT event thread; if it's not the AWT event thread, use SwingUtilities.invokeAndWait() on it. */
     public static void invokeAndWait(Runnable r) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            r.run();
-            return;
-        }
+        if (SwingUtilities.isEventDispatchThread()) { r.run(); return; }
         try {
             SwingUtilities.invokeAndWait(r);
         } catch (InterruptedException e) {

@@ -61,14 +61,13 @@ public final class ConstSet<K> implements Serializable, Set<K> {
         /** Return true if the given key is in the set. */
         public boolean contains(Object k)    { return set.contains(k); }
         /** Remove the element (if it exists). */
-        public void remove(K k)                            { if (cset!=null) throw new UnsupportedOperationException(); set.remove(k); }
+        public void remove(K k)                  { if (cset!=null) throw new UnsupportedOperationException(); set.remove(k); }
         /** Remove every element that appears in the given collection. */
-        public void removeAll(Collection<? extends K> set) { if (cset!=null) throw new UnsupportedOperationException(); this.set.removeAll(set); }
+        public void removeAll(Collection<K> set) { if (cset!=null) throw new UnsupportedOperationException(); this.set.removeAll(set); }
         /** Add the given element to the set. */
-        public void add(K k)                               { if (cset!=null) throw new UnsupportedOperationException(); set.add(k); }
+        public void add(K k)                     { if (cset!=null) throw new UnsupportedOperationException(); set.add(k); }
         /** Turn this TempSet unmodifiable, then construct a ConstSet backed by this TempSet. */
-        @SuppressWarnings("unchecked")
-        public ConstSet<K> makeConst() { if (cset==null) cset=set.isEmpty()?(ConstSet<K>)emptyset:new ConstSet<K>(set); return cset; }
+        public ConstSet<K> makeConst()           { if (cset==null) { if (set.isEmpty()) cset=make(); else cset=new ConstSet<K>(set); } return cset; }
     }
 
     /** This ensures the class can be serialized reliably. */
@@ -95,10 +94,9 @@ public final class ConstSet<K> implements Serializable, Set<K> {
      * Return an unmodifiable set with the same elements as the given set.
      * (If set==null, we'll return an unmodifiable empty set)
      */
-    @SuppressWarnings("unchecked")
-    public static<K> ConstSet<K> make(Set<? extends K> set) {
+    public static<K> ConstSet<K> make(Set<K> set) {
         if (set instanceof ConstSet) return (ConstSet<K>)set;
-        if (set==null || set.isEmpty()) return (ConstSet<K>)emptyset;
+        if (set==null || set.isEmpty()) return make();
         return new ConstSet<K>(new LinkedHashSet<K>(set));
     }
 

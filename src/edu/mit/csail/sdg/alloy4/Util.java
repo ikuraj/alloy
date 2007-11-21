@@ -63,13 +63,13 @@ public final class Util {
         /** The default value for this preference. */
         private final String defaultValue;
         /** Constructs a new StringPref object with the given id. */
-        public StringPref(String id) {this.id=id; this.defaultValue="";}
+        public StringPref (String id) {this.id=id; this.defaultValue="";}
         /** Constructs a new StringPref object with the given id and the given default value. */
-        public StringPref(String id, String defaultValue) {this.id=id; this.defaultValue=defaultValue;}
+        public StringPref (String id, String defaultValue) {this.id=id; this.defaultValue=defaultValue;}
         /** Sets the value for this preference. */
-        public void set(String value) { Preferences.userNodeForPackage(Util.class).put(id,value); }
+        public void set (String value) { Preferences.userNodeForPackage(Util.class).put(id,value); }
         /** Reads the value for this preference; if not set or is empty, we return the default value. */
-        public String get() {
+        public String get () {
             String ans=Preferences.userNodeForPackage(Util.class).get(id,"");
             return (ans==null || ans.length()==0) ? defaultValue : ans;
         }
@@ -83,11 +83,11 @@ public final class Util {
         /** The id associated with this preference. */
         private final String id;
         /** Constructurs a new BooleanPref object with the given id. */
-        public BooleanPref(String id) { this.id=id; }
+        public BooleanPref (String id) { this.id=id; }
         /** Sets the value for this preference. */
-        public void set(boolean value) { Preferences.userNodeForPackage(Util.class).put(id, value?"y":""); }
+        public void set (boolean value) { Preferences.userNodeForPackage(Util.class).put(id, value?"y":""); }
         /** Reads the value for this preference; if not set, we return false. */
-        public boolean get() { return Preferences.userNodeForPackage(Util.class).get(id,"").length()>0; }
+        public boolean get () { return Preferences.userNodeForPackage(Util.class).get(id,"").length()>0; }
     }
 
     /**
@@ -104,13 +104,13 @@ public final class Util {
         /** The default value for this preference. */
         private final int def;
         /** If min>n, we return min; else if n>max, we return max; otherwise we return n. */
-        private int bound(int n) { return n<min ? min : (n>max? max : n); }
+        private int bound (int n) { return n<min ? min : (n>max? max : n); }
         /** Constructs a new IntPref object with the given id; you must ensure max >= min, but def does not have to be between min..max */
-        public IntPref(String id, int min, int def, int max) {this.id=id; this.min=min; this.def=def; this.max=max;}
+        public IntPref (String id, int min, int def, int max) {this.id=id; this.min=min; this.def=def; this.max=max;}
         /** Sets the value for this preference. */
-        public void set(int value) { Preferences.userNodeForPackage(Util.class).putInt(id,bound(value)); }
+        public void set (int value) { Preferences.userNodeForPackage(Util.class).putInt(id,bound(value)); }
         /** Reads the value for this preference; if not set, we return the default value. */
-        public int get() {
+        public int get () {
             int n;
             String t=Preferences.userNodeForPackage(Util.class).get(id,"");
             if (t==null || t.length()==0) return def;

@@ -44,7 +44,7 @@ public final class ErrorFatal extends Err {
     /**
      * Constructs a new fatal error with "cause" as the underlying cause.
      * @param msg - the actual error message
-     * @param cause - the underlying exception
+     * @param cause - if nonnull, it is the cause of this exception
      */
     public ErrorFatal(String msg, Throwable cause) {
         super(null, msg, cause);

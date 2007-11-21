@@ -40,7 +40,7 @@ public abstract class Err extends Exception {
      * Constructs a new Err object.
      * @param pos - the filename/line/row information (can be null if unknown)
      * @param msg - the actual error message
-     * @param ex - if nonnull, its stack trace will be merged with this exception's stack trace
+     * @param ex - if nonnull, it will be recorded as the cause of this exception
      */
     Err(Pos pos, String msg, Throwable ex) {
         super((msg==null ? "" : msg), ex);

@@ -41,10 +41,10 @@ public final class MacUtil {
     private MacUtil() { }
 
     /** The cached Application object. */
-    private static Application application=null;
+    private static Application application = null;
 
     /** The previous listener (or null if there was none). */
-    private static ApplicationListener listener=null;
+    private static ApplicationListener listener = null;
 
     /**
      * Register a Mac OS X "ApplicationListener"; if there was a previous listener, it will be removed first.

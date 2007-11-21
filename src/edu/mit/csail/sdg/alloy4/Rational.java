@@ -138,9 +138,9 @@ public final class Rational {
      * NOTE: two NaN are considered equal, and NaN is considered smaller than all non-NaN.
      */
     public int cmp(Rational that) {
-        if (this==that) return 0;
-        if (this.b==BigInteger.ZERO) return (that.b==BigInteger.ZERO ? 0 : -1);
-        if (that.b==BigInteger.ZERO) return 1;
+        if (this == that) return 0;
+        if (this.b == BigInteger.ZERO) return (that.b==BigInteger.ZERO ? 0 : -1);
+        if (that.b == BigInteger.ZERO) return 1;
         Rational diff = sub(that);
         if (diff.isZero()) return 0; else if (diff.isNeg()) return -1; else return 1;
     }

@@ -51,9 +51,9 @@ public final strictfp class OurPNGWriter {
        RandomAccessFile f = null;
        try {
           f = new RandomAccessFile(filename, "rw");
-          byte[] buf1=new byte[BUFSIZE], buf2=new byte[BUFSIZE];
-          int fill=0;
-          long total=f.length(), rOffset=8, wOffset;
+          byte[] buf1 = new byte[BUFSIZE], buf2 = new byte[BUFSIZE];
+          int fill = 0;
+          long total = f.length(), rOffset = 8, wOffset;
           // Jump to the appropriate place for inserting the pHYs chunk, then insert it
           while(true) {
              if (rOffset>=total) throw new IOException("PNG is missing the IDAT chunk.");

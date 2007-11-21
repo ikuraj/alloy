@@ -77,9 +77,9 @@ public final class OurBinaryCheckbox extends JPanel {
      */
     public interface BinaryGetterSetter {
         /** This method reads the boolean value associated with the key; this must be called only by the AWT event thread. */
-        public boolean get(Object key);
+        public boolean get (Object key);
         /** This method sets the boolean value associated with the key; this must be called only by the AWT event thread. */
-        public void set(Object key, boolean value);
+        public void set (Object key, boolean value);
     }
 
     /**

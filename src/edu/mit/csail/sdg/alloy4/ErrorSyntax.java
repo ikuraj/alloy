@@ -44,7 +44,7 @@ public final class ErrorSyntax extends Err {
     /**
      * Constructs a new syntax error with "cause" as the underlying cause.
      * @param msg - the actual error message
-     * @param cause - the underlying exception
+     * @param cause - if nonnull, it is the cause of this exception
      */
     public ErrorSyntax(String msg, Throwable cause) {
         super(null, msg, cause);

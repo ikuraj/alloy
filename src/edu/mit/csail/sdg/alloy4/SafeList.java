@@ -46,7 +46,7 @@ import java.util.NoSuchElementException;
  * @param <T> - the type of element
  */
 
-public final class SafeList<T> implements Collection<T>, Serializable {
+public final class SafeList<T> implements Iterable<T>, Serializable {
 
     /** This ensures the class can be serialized reliably. */
     private static final long serialVersionUID = 1L;
@@ -59,26 +59,26 @@ public final class SafeList<T> implements Collection<T>, Serializable {
 
     /** Constructs a modifiable empty list. */
     public SafeList() {
-        list=new ArrayList<T>();
-        max=(-1);
+        list = new ArrayList<T>();
+        max = (-1);
     }
 
     /** Constructs a modifiable empty list with the initial capacity. */
     public SafeList(int initialCapacity) {
-        list=new ArrayList<T>(initialCapacity);
-        max=(-1);
+        list = new ArrayList<T>(initialCapacity);
+        max = (-1);
     }
 
     /** Constructs a modifiable list containing the elements from the given collection. */
     public SafeList(Collection<? extends T> initialValue) {
-        list=new ArrayList<T>(initialValue);
-        max=(-1);
+        list = new ArrayList<T>(initialValue);
+        max = (-1);
     }
 
     /** Private constructor for assigning exact values to "list" and "max". */
     private SafeList(List<T> list, int max) {
-        this.list=list;
-        this.max=max;
+        this.list = list;
+        this.max = max;
     }
 
     /** Constructs an unmodifiable copy of an existing SafeList. */
@@ -90,6 +90,17 @@ public final class SafeList<T> implements Collection<T>, Serializable {
             mymax=size();
         }
         return new SafeList<T>(mylist,mymax);
+    }
+
+    /** Constructs a modifiable ArrayList containing the same elements as this list. */
+    public List<T> makeCopy() {
+        int n = size();
+        // size() is synchronized; by reading the size up front, we can then read each element one-by-one
+        // while allowing other threads to add to this list. Since existing elements in SafeList will never change,
+        // we can safely interleave the read and insertion without putting a grand lock on the entire loop.
+        ArrayList<T> ans = new ArrayList<T>(n);
+        for(int i=0; i<n; i++) ans.add(get(i));
+        return ans;
     }
 
     /** Computes a hash code that is consistent with SafeList's equals() and java.util.List's hashCode() methods. */
@@ -190,43 +201,6 @@ public final class SafeList<T> implements Collection<T>, Serializable {
         }
     }
 
-    /** Returns an array containing every element from this list. */
-    public Object[] toArray() {
-        int i=0, n=size();
-        // size() is synchronized; by reading the size up front, we can then read each element one-by-one
-        // while allowing other threads to add to this list. Since existing elements in SafeList will never change,
-        // we can safely interleave the read and insertion without putting a grand lock on the entire loop.
-        Object[] answer=new Object[n];
-        for(Object obj:this) {
-            if (i>=n) break;
-            answer[i]=obj;
-            i++;
-        }
-        return answer;
-    }
-
-    /** See java.util.Collection for more information on this method. */
-    @SuppressWarnings("unchecked")
-    public <S> S[] toArray(S[] answer) {
-        int i=0, n=size();
-        // size() is synchronized; by reading the size up front, we can then read each element one-by-one
-        // while allowing other threads to add to this list. Since existing elements in SafeList will never change,
-        // we can safely interleave the read and insertion without putting a grand lock on the entire loop.
-        if (answer.length<n) {
-            answer = (S[]) java.lang.reflect.Array.newInstance(answer.getClass().getComponentType(), n);
-        }
-        for(Object obj:this) {
-            if (i>=n) break;
-            answer[i]=(S)obj;
-            i++;
-        }
-        while(i < answer.length) {
-            answer[i]=null;
-            i++;
-        }
-        return answer;
-    }
-
     /** True if this list contains everything from that collection; we return true if that collection is empty. */
     public boolean containsAll(Collection<?> collection) {
         for(Object obj:collection) {
@@ -248,18 +222,6 @@ public final class SafeList<T> implements Collection<T>, Serializable {
         }
         return changed;
     }
-
-    /** This operation is not supported by SafeList. */
-    public boolean remove(Object object) { throw new UnsupportedOperationException(); }
-
-    /** This operation is not supported by SafeList. */
-    public boolean removeAll(Collection<?> collection) { throw new UnsupportedOperationException(); }
-
-    /** This operation is not supported by SafeList. */
-    public boolean retainAll(Collection<?> collection) { throw new UnsupportedOperationException(); }
-
-    /** This operation is not supported by SafeList. */
-    public void clear() { throw new UnsupportedOperationException(); }
 
     /** Returns a String representation of this list. */
     @Override public String toString() {

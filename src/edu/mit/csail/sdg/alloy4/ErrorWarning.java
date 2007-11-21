@@ -44,7 +44,7 @@ public final class ErrorWarning extends Err {
     /**
      * Constructs a new warning with "cause" as the underlying cause.
      * @param msg - the actual error message
-     * @param cause - the underlying exception
+     * @param cause - if nonnull, it is the cause of this exception
      */
     public ErrorWarning(String msg, Throwable cause) {
         super(null, msg, cause);

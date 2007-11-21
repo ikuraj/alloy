@@ -81,8 +81,8 @@ public abstract class Runner extends AbstractAction implements Runnable, WindowL
     public static final Runner createDispose(final Window window) {
         return new Runner() {
             private static final long serialVersionUID = 1L;
-            public void run() { window.dispose(); }
-            public void run(Object arg) { window.dispose(); }
+            public final void run() { window.dispose(); }
+            public final void run(Object arg) { window.dispose(); }
         };
     }
 }

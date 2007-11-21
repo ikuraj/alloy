@@ -39,9 +39,9 @@ public final class Triple<A,B,C> {
 
     /** Constructs a new Triple object (a,b,c). */
     public Triple(A a, B b, C c) {
-        this.a=a;
-        this.b=b;
-        this.c=c;
+        this.a = a;
+        this.b = b;
+        this.c = c;
     }
 
     /** If any or all of "a", "b", "c" are String, we'll return it as-is; otherwise, we call toString() on them. */

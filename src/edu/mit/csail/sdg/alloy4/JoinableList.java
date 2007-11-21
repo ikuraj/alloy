@@ -103,7 +103,7 @@ public final class JoinableList<E> implements Iterable<E> {
             if (i<a) { x=x.pre; continue; }
             int b = (x.post==null) ? 0 : x.post.count;
             if (a+b==x.count) { i=i-a; } else if (i!=a) { i=i-a-1; } else { return x.item; }
-            x=x.post;
+            x = x.post;
         }
     }
 

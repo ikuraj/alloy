@@ -778,7 +778,7 @@ public final class Type implements Iterable<Type.ProductType> {
         PrimSig parent = a.get(i).parent;
         SafeList<PrimSig> children;
         try { children=parent.children(); } catch(Err ex) { return null; } // Exception only occurs if a[i].parent==UNIV
-        ArrayList<PrimSig> subs = new ArrayList<PrimSig>(children);
+        List<PrimSig> subs = children.makeCopy();
         ArrayList<List<PrimSig>> toDelete = new ArrayList<List<PrimSig>>();
         for(int bi=entries.size()-1; bi>=0; bi--) {
             List<PrimSig> b=entries.get(bi);

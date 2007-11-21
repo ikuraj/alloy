@@ -78,9 +78,7 @@ public final class OurBorder implements Border {
 
     /** This method is called by Swing to actually draw the borders. */
     public void paintBorder (Component component, Graphics graphics, int x, int y, int width, int height) {
-        if (width<1 || height<1) {
-            return;
-        }
+        if (width<1 || height<1) return;
         Color oldColor = graphics.getColor();
         if (top!=null) {
             graphics.setColor(top);

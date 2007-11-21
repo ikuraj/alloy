@@ -36,8 +36,8 @@ public final class Pair<A,B> {
 
     /** Constructs a new Pair object (a,b). */
     public Pair(A a, B b) {
-        this.a=a;
-        this.b=b;
+        this.a = a;
+        this.b = b;
     }
 
     /** If either or both "a" and "b" are String, we'll return it as-is; otherwise, we call toString() on them. */

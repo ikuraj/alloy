@@ -69,8 +69,7 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
         /** Add the given key and value into the map. */
         public void put(K k, V v)             { if (cmap!=null) throw new UnsupportedOperationException(); map.put(k,v); }
         /** Turn this TempMap unmodifiable, then construct a ConstMap backed by this TempMap. */
-        @SuppressWarnings("unchecked")
-        public ConstMap<K,V> makeConst()      { if (cmap==null) cmap=map.isEmpty()?(ConstMap<K,V>)emptymap:new ConstMap<K,V>(map); return cmap; }
+        public ConstMap<K,V> makeConst()      { if (cmap==null) { if (map.isEmpty()) cmap=make(); else cmap=new ConstMap<K,V>(map); } return cmap; }
     }
 
     /** This ensures the class can be serialized reliably. */
@@ -97,10 +96,9 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
      * Return an unmodifiable map with the same entries as the given map.
      * (If map==null, we'll return an unmodifiable empty map)
      */
-    @SuppressWarnings("unchecked")
-    public static<K,V> ConstMap<K,V> make(Map<? extends K,? extends V> map) {
+    public static<K,V> ConstMap<K,V> make(Map<K,V> map) {
         if (map instanceof ConstMap) return (ConstMap<K,V>)map;
-        if (map==null || map.isEmpty()) return (ConstMap<K,V>)emptymap;
+        if (map==null || map.isEmpty()) return make();
         return new ConstMap<K,V>(new LinkedHashMap<K,V>(map));
     }
 

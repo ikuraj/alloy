@@ -60,7 +60,7 @@ public final class UniqueNameGenerator {
      * then it is returned as is. Otherwise, we append ' to it until the name becomes unique.
      */
     public synchronized String make(String name) {
-        while(names.contains(name)) name=name+"'";
+        while(names.contains(name)) { name=name+"'"; }
         names.add(name);
         return name;
     }

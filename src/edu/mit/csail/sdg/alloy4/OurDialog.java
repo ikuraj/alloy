@@ -84,8 +84,8 @@ public final class OurDialog {
             null,
             new Object[]{save, discard, cancel},
             cancel);
-        if (ans==JOptionPane.YES_OPTION) return Boolean.TRUE;
-        if (ans!=JOptionPane.NO_OPTION) return null;
+        if (ans == JOptionPane.YES_OPTION) return Boolean.TRUE;
+        if (ans != JOptionPane.NO_OPTION) return null;
         return Boolean.FALSE;
     }
 

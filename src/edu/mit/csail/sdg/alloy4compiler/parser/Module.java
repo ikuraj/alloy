@@ -378,7 +378,7 @@ public final class Module {
         for(Module m:getAllReachableModules()) {
             if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) ans.add(x); }
             if ((r&2)!=0) { Object x=m.asserts.get(name); if (x instanceof Expr) ans.add(x); }
-            if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) ans.addAll(x); }
+            if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) for(FunAST y:x) ans.add(y); }
         }
         return ans;
     }
@@ -394,7 +394,7 @@ public final class Module {
             if (i<0) {
                 if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) ans.add(x); }
                 if ((r&2)!=0) { Object x=u.asserts.get(name); if (x instanceof Expr) ans.add(x); }
-                if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) ans.addAll(x); }
+                if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) ans.add(y); }
                 return ans;
             }
             String alias=name.substring(0,i);
@@ -906,7 +906,7 @@ public final class Module {
 
     /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
     static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
-        List<Module> modules = new ArrayList<Module>(root.getAllReachableModules());
+        List<Module> modules = root.getAllReachableModules().makeCopy();
         resolveParams(rep, modules);
         resolveModules(rep, modules);
         JoinableList<Err> errors = new JoinableList<Err>();

@@ -51,7 +51,7 @@ public final class Pos implements Serializable {
     public final int y2;
 
     /** The default "unknown" location. */
-    public static final Pos UNKNOWN=new Pos("",1,1);
+    public static final Pos UNKNOWN = new Pos("",1,1);
 
     /**
      * Constructs a new Pos object.

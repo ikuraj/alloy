@@ -87,9 +87,9 @@ public final class OurTabbedEditor {
     /** This defines notifyChange and notifyFocusGained events this tabbed editor may send to the parent. */
     public interface Parent {
         /** This method is called when a tab is added/removed, we switch to another tab, text is modified, or text cursor moved. */
-        public void notifyChange();
+        public void notifyChange ();
         /** This method is called when a tab in this tabbed editor gains the focus. */
-        public void notifyFocusGained();
+        public void notifyFocusGained ();
     }
 
     /** This defines the data associated with each tab. */
