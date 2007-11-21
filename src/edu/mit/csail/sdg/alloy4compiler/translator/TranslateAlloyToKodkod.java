@@ -172,12 +172,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 if (e==null || e.isOrdered==null) break;
                 Expression ee = bcc.get(e);
                 if (!(ee instanceof Relation)) break;
-                for(int i=0; i<ar.size()-3; i++) if (findOrder(e,sig,f1,f2,f3, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3))) {
-                    rep.debug("Found: util/ordering\n");
-                    ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i); // The remaining elements are not re-arranged
-                    Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                    goal = fmap(f, e.isOrdered).and(goal);
-                    continue again;
+                for(int i=0; i+5<ar.size(); i++) {
+                    if (findOrder(e,sig,f1,f2,f3, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3), ar.get(i+4), ar.get(i+5))) {
+                        rep.debug("Found: util/ordering\n");
+                        // Remove ar[i..i+5]; the remaining elements are not re-arranged
+                        ar.remove(i+5); ar.remove(i+4); ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i);
+                        Formula f = nxt.totalOrder((Relation)ee, fst, lst);
+                        goal = fmap(f, e.isOrdered).and(goal);
+                        continue again;
+                    }
                 }
                 break;
             }
@@ -584,21 +587,21 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     }
 
     /**
-     * Returns true if we can determine that "e1 && e2 && e3 && e4" says "total order on elem".
+     * Returns true if we can determine that "e1 && e2 && e3 && e4 && e5 && e6" says "total order on elem".
      *
      * <p> In particular, that means:
      * <br> e1 == elem in First.*Next
      * <br> e2 == no First.(~Next)
      * <br> e3 == no Last.Next
-     * <br> e4 == all e: one elem | (s1 && (s2 && s3))
-     * <br> where
-     * <br> s1 == (e = First || one e.(~Next))
-     * <br> s2 == (e = Last || one e.Next)
-     * <br> s3 == (e !in e.^Next)
+     * <br> e4 == all e: one elem | (e = First || one e.(~Next))
+     * <br> e5 == all e: one elem | (e = Last || one e.Next)
+     * <br> e6 == all e: one elem | (e !in e.^Next)
      */
-    private static boolean findOrder(Sig elem, Sig ord, Expr first, Expr last, Expr next, Expr e1, Expr e2, Expr e3, Expr e4) {
+    private static boolean findOrder
+    (Sig elem, Sig ord, Expr first, Expr last, Expr next, Expr e1, Expr e2, Expr e3, Expr e4, Expr e5, Expr e6) {
         Expr prev;
-        ExprBinary bin;
+        ExprQuant qt;
+        ExprVar e;
         first = ord.join(first);
         last = ord.join(last);
         next = ord.join(next);
@@ -607,17 +610,19 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (!first.join(prev).no().isSame(e2)) return false;
         if (!last.join(next).no().isSame(e3)) return false;
         if (!(e4 instanceof ExprQuant)) return false;
-        ExprQuant qt=(ExprQuant)e4;
-        if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1 || !(qt.sub instanceof ExprBinary)) return false;
-        ExprVar e=qt.vars.get(0);
-        if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
-        bin=(ExprBinary)(qt.sub);
-        if (bin.op!=ExprBinary.Op.AND || !(bin.right instanceof ExprBinary)) return false;
-        if (!e.equal(first).or(e.join(prev).one()).isSame(bin.left)) return false;
-        bin=(ExprBinary)(bin.right);
-        if (bin.op!=ExprBinary.Op.AND) return false;
-        if (!e.equal(last).or(e.join(next).one()).isSame(bin.left)) return false;
-        if (!e.in(e.join(next.closure())).not().isSame(bin.right)) return false;
+        //
+        qt=(ExprQuant)e4; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
+        e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
+        if (!e.equal(first).or(e.join(prev).one()).isSame(qt.sub)) return false;
+        //
+        qt=(ExprQuant)e5; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
+        e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
+        if (!e.equal(last).or(e.join(next).one()).isSame(qt.sub)) return false;
+        //
+        qt=(ExprQuant)e6; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
+        e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
+        if (!e.in(e.join(next.closure())).not().isSame(qt.sub)) return false;
+        //
         return true;
     }
 
@@ -1013,13 +1018,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==1) {
             ExprVar a=x.vars.get(0);
-            if (a.expr.isSame(Sig.SIGINT)) {
+            if (a.expr.isSame(Sig.SIGINT.oneOf())) {
                 if (a.gte(ZERO).and(a.plus(ONE).lt(ZERO)).isSame(x.sub)) {
-                    rep.debug("Found: Int/max\n");
+                    rep.debug("Found: util/integer/max\n");
                     return BoundsComputer.SIGINT_MAX;
                 }
                 if (a.lt(ZERO).and(a.minus(ONE).gte(ZERO)).isSame(x.sub)) {
-                    rep.debug("Found: Int/min\n");
+                    rep.debug("Found: util/integer/min\n");
                     return BoundsComputer.SIGINT_MIN;
                 }
             }
@@ -1027,9 +1032,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==2) {
             ExprVar a=x.vars.get(0), b=x.vars.get(1);
-            if (a.expr.isSame(Sig.SIGINT) && b.expr.isSame(Sig.SIGINT)) {
+            if (a.expr.isSame(Sig.SIGINT.oneOf()) && b.expr.isSame(Sig.SIGINT.oneOf())) {
                 if (b.gt(a).and(b.equal(a.plus(ONE))).isSame(x.sub)) {
-                    rep.debug("Found: Int/next\n");
+                    rep.debug("Found: util/integer/next\n");
                     return BoundsComputer.SIGINT_NEXT;
                 }
             }
