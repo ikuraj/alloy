@@ -1805,7 +1805,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             toolbar.add(newbutton=OurUtil.button("New", "Starts a new blank model", "images/24_new.gif", doNew()));
             toolbar.add(openbutton=OurUtil.button("Open", "Opens an existing model", "images/24_open.gif", doOpen()));
             toolbar.add(loadbutton=OurUtil.button("Load", "Chooses a model to analyze", "images/24_open.gif", doOpen()));
-            toolbar.add(reloadbutton=OurUtil.button("Reload", "Reload all the models from disk", "images/24_open.gif", doReloadAll()));
+            toolbar.add(reloadbutton=OurUtil.button("Reload", "Reload all the models from disk", "images/24_reload.gif", doReloadAll()));
             loadbutton.setVisible(false);
             toolbar.add(savebutton=OurUtil.button("Save", "Saves the current model", "images/24_save.gif", doSave()));
             toolbar.add(runbutton=OurUtil.button("Execute", "Executes the latest command", "images/24_execute.gif", doExecuteLatest()));
@@ -1846,7 +1846,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         // If on Mac, then register an application listener
         try {
             wrap = true;
-            if (Util.onMac()) MacUtil.registerApplicationListener(doShow(), doAbout(), doOpenFile(""), doQuit()); // TODO
+            if (Util.onMac()) MacUtil.registerApplicationListener(doShow(), doAbout(), doOpenFile(""), doQuit());
         } finally {
             wrap = false;
         }
