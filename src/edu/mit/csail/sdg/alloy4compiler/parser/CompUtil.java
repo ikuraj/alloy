@@ -216,6 +216,7 @@ public final class CompUtil {
      */
     public static Module parseEverything_fromFile (A4Reporter rep, Map<String,String> loaded, String filename) throws Err {
         try {
+            //System.setProperty("AlloyFileName",filename);
             filename = Util.canon(filename);
             Set<String> thispath = new LinkedHashSet<String>();
             if (loaded==null) loaded = new LinkedHashMap<String,String>();

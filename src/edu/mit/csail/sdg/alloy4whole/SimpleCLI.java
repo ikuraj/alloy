@@ -47,6 +47,8 @@ public final class SimpleCLI {
 
         private final List<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
 
+        @Override public void debug(String msg) { sb.append(msg); }
+
         @Override public void parse(String msg) { sb.append(msg); }
 
         @Override public void typecheck(String msg) { sb.append(msg); }

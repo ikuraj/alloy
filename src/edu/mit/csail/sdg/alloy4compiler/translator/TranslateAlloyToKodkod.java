@@ -133,10 +133,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Writes: rep, sigs, cmd
      */
     private TranslateAlloyToKodkod (A4Reporter rep, Iterable<Sig> sigs, Command cmd) {
+        this.rep = (rep != null) ? rep : A4Reporter.NOP;
         IdentitySet<Sig> set = new IdentitySet<Sig>();
         set.add(Sig.UNIV); set.add(Sig.SIGINT); set.add(Sig.SEQIDX); set.add(Sig.NONE);
         if (sigs!=null) for(Sig s:sigs) set.add(s);
-        this.rep = (rep != null) ? rep : A4Reporter.NOP;
         this.sigs = ConstList.make(set);
         this.cmd = cmd;
     }
@@ -173,6 +173,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 Expression ee = bcc.get(e);
                 if (!(ee instanceof Relation)) break;
                 for(int i=0; i<ar.size()-3; i++) if (findOrder(e,sig,f1,f2,f3, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3))) {
+                    rep.debug("Found: util/ordering\n");
                     ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i); // The remaining elements are not re-arranged
                     Formula f = nxt.totalOrder((Relation)ee, fst, lst);
                     goal = fmap(f, e.isOrdered).and(goal);
@@ -201,7 +202,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Writes: bitwidth, maxseq, bcc, bounds, goal
      */
     private void makeFormula (Expr facts) throws Err {
-        rep.debug("Generating bounds...");
+        rep.debug("Generating bounds...\n");
         final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
         bitwidth = sc.getBitwidth();
         maxseq = sc.getMaxSeq();
@@ -209,7 +210,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         bcc = bc.b;
         bounds = bc.a.a;
         goal = bc.a.b;
-        rep.debug("Generating facts...");
+        rep.debug("Generating facts...\n");
         makeFacts(facts);
         // Kodkod sometimes refuses to enlarge a Relation during solution enumeration
         // if that Relation is never mentioned in the GOAL formula; so, this ensures that
@@ -233,7 +234,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Writes: solver, tmpCNF
      */
     private void makeSolver (A4Options opt) throws Err, IOException {
-        rep.debug("Assigning kodkod options...");
+        rep.debug("Assigning kodkod options...\n");
         int sym = (cmd.expects==1 ? 0 : opt.symmetry);
         solver = new Solver();
         if (opt.solver.external()!=null) {
@@ -276,7 +277,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             }
             @Override public void solvingCNF(int primaryVars, int vars, int clauses) { rep.solve(primaryVars, vars, clauses); }
         });
-        rep.debug("Simplifying the bounds...");
+        rep.debug("Simplifying the bounds...\n");
         if (!Simplifier.simplify(bounds, goal, solver.options())) goal=Formula.FALSE;
         rep.translate(opt.solver.id(), bitwidth, maxseq, opt.skolemDepth, sym);
     }
@@ -289,7 +290,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Writes: all
      */
     private A4Solution solve (boolean tryBookExamples, A4Options opt) throws Err {
-        rep.debug("Generating the solution...");
+        rep.debug("Generating the solution...\n");
         long time = System.currentTimeMillis();
         Iterator<Solution> sols;
         Solution sol = null;
@@ -1013,15 +1014,24 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==1) {
             ExprVar a=x.vars.get(0);
             if (a.expr.isSame(Sig.SIGINT)) {
-                if (a.gte(ZERO).and(a.plus(ONE).lt(ZERO)).isSame(x.sub)) return BoundsComputer.SIGINT_MAX;
-                if (a.lt(ZERO).and(a.minus(ONE).gte(ZERO)).isSame(x.sub)) return BoundsComputer.SIGINT_MIN;
+                if (a.gte(ZERO).and(a.plus(ONE).lt(ZERO)).isSame(x.sub)) {
+                    rep.debug("Found: Int/max\n");
+                    return BoundsComputer.SIGINT_MAX;
+                }
+                if (a.lt(ZERO).and(a.minus(ONE).gte(ZERO)).isSame(x.sub)) {
+                    rep.debug("Found: Int/min\n");
+                    return BoundsComputer.SIGINT_MIN;
+                }
             }
         }
         // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==2) {
             ExprVar a=x.vars.get(0), b=x.vars.get(1);
             if (a.expr.isSame(Sig.SIGINT) && b.expr.isSame(Sig.SIGINT)) {
-                if (b.gt(a).and(b.equal(a.plus(ONE))).isSame(x.sub)) return BoundsComputer.SIGINT_NEXT;
+                if (b.gt(a).and(b.equal(a.plus(ONE))).isSame(x.sub)) {
+                    rep.debug("Found: Int/next\n");
+                    return BoundsComputer.SIGINT_NEXT;
+                }
             }
         }
         // All else, invoke the helper method to translate this quantification expression
