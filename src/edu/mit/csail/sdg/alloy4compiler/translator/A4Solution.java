@@ -269,9 +269,14 @@ public final class A4Solution {
             addAllSubrelation(rels, bcc.get(s));
             for(Field f:s.getFields()) addAllSubrelation(rels, bcc.get(f));
         }
+        rels.add(BoundsComputer.SEQ_SEQIDX);
+        rels.add(BoundsComputer.SIGINT_MAX);
+        rels.add(BoundsComputer.SIGINT_MIN);
+        rels.add(BoundsComputer.SIGINT_ZERO);
+        rels.add(BoundsComputer.SIGINT_NEXT);
         for(final Relation r:inst.relations()) if (!rels.contains(r)) {
             Type t=rel2type.get(r);
-            if (t==null) continue; // That means we don't know its type
+            if (t==null) t=UNIV.type; // That means we don't know its type; this should NOT have happened, but let's be safe
             while (t.arity() < r.arity()) t=UNIV.type.product(t);
             if (t.arity() > r.arity()) continue; // That means something terrible has happened, so let's skip it
             String n=r.name();
