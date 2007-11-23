@@ -276,7 +276,7 @@ public final class A4Solution {
         rels.add(BoundsComputer.SIGINT_NEXT);
         for(final Relation r:inst.relations()) if (!rels.contains(r)) {
             Type t=rel2type.get(r);
-            if (t==null) t=UNIV.type; // That means we don't know its type; this should NOT have happened, but let's be safe
+            if (t==null) continue; // That means we don't know its type; this should NOT have happened, but let's be safe
             while (t.arity() < r.arity()) t=UNIV.type.product(t);
             if (t.arity() > r.arity()) continue; // That means something terrible has happened, so let's skip it
             String n=r.name();

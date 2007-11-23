@@ -105,8 +105,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** This maps each Kodkod formula we generate to a Alloy Pos or Alloy Expr. */
     private final IdentityHashMap<Formula,Object> fmap = new IdentityHashMap<Formula,Object>();
 
-    /** This maps each Kodkod Decl we generate to an Alloy Type and Alloy Pos. */
-    private final Map<Decl,Pair<Type,Pos>> decl2type = new IdentityHashMap<Decl,Pair<Type,Pos>>();
+    /** This maps each Kodkod Variable we generate to an Alloy Type and Alloy Pos. */
+    private final Map<Variable,Pair<Type,Pos>> decl2type = new IdentityHashMap<Variable,Pair<Type,Pos>>();
 
     /** This maps each Kodkod skolem relation we generate to an Alloy Type. */
     private final Map<Relation,Type> rel2type = new IdentityHashMap<Relation,Type>();
@@ -268,11 +268,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         solver.options().setReporter(new AbstractReporter() {
             @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
                 try {
-                    Pair<Type,Pos> p=decl2type.get(decl);
+                    Pair<Type,Pos> p=decl2type.get(decl.variable());
                     if (p==null) return;
                     Type t=p.a;
                     for(int i=(predecl==null ? -1 : predecl.size()-1); i>=0; i--) {
-                        Pair<Type,Pos> pp=decl2type.get(predecl.get(i));
+                        Pair<Type,Pos> pp=decl2type.get(predecl.get(i).variable());
                         if (pp==null) return; else t=(pp.a).product(t);
                     }
                     while(t.arity() > skolem.arity()) t=UNIV.type.join(t); // Should not happen, but just to be safe...
@@ -377,7 +377,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
-            Pair<Type,Pos> x = tr!=null ? tr.decl2type.get(ex.decl()) : null;
+            Pair<Type,Pos> x = tr!=null ? tr.decl2type.get(ex.decl().variable()) : null;
             Pos p = x!=null ? x.b : Pos.UNKNOWN;
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order " +
                "quantification that could not be skolemized.");
@@ -421,7 +421,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
-            Pair<Type,Pos> x = tr!=null ? tr.decl2type.get(ex.decl()) : null;
+            Pair<Type,Pos> x = tr!=null ? tr.decl2type.get(ex.decl().variable()) : null;
             Pos p = x!=null ? x.b : Pos.UNKNOWN;
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order " +
                "quantification that could not be skolemized.");
@@ -1002,7 +1002,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 guard=isIn(v, dexexpr).and(guard);
                 newd=v.setOf(dv);
             }
-            decl2type.put(newd, new Pair<Type,Pos>(dex.type, dex.pos));
+            decl2type.put(v, new Pair<Type,Pos>(dex.type, dex.pos));
             if (dd==null) dd=newd; else dd=dd.and(newd);
             decls.add(newd);
         }
