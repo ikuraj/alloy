@@ -21,10 +21,8 @@
 package edu.mit.csail.sdg.alloy4graph;
 
 import java.awt.Color;
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
@@ -547,7 +545,7 @@ public final strictfp class VizGraph extends DiGraph {
     //============================================================================================================================//
 
     /** Assuming layout has been performed, this draws the graph with the given magnification scale. */
-    public void draw(Artist gr, double scale, Object highlight) {
+    public void draw(Artist gr, double scale, Object highlight, boolean showLegends) {
         if (nodes.size()==0) return; // The rest of this procedure assumes there is at least one node
         Object group=null;
         VizNode highFirstNode=null, highLastNode=null;
@@ -563,6 +561,7 @@ public final strictfp class VizGraph extends DiGraph {
         }
         // Since drawing an edge will automatically draw all segments if they're connected via dummy nodes,
         // we must make sure we only draw out edges from non-dummy-nodes
+        int maxAscent = Artist.getMaxAscent(nodes.get(0).fontSize(), false);
         int maxAscentDescent = Artist.getMaxAscentAndDescent(nodes.get(0).fontSize(), false);
         double tip = maxAscentDescent*0.6D;
         for(VizNode n:nodes) if (n.shape()!=null) {
@@ -580,26 +579,23 @@ public final strictfp class VizGraph extends DiGraph {
         for(VizNode n:nodes) if (highFirstNode!=n && highLastNode!=n) n.draw(gr, scale, n==highlight);
         if (highFirstNode!=null) highFirstNode.draw(gr, scale, true);
         if (highLastNode!=null && highLastNode!=highFirstNode) highLastNode.draw(gr, scale, true);
-        if (highFirstEdge!=null) highFirstEdge.drawLabel(gr, highFirstEdge.color(), Color.WHITE);
-    }
-
-    /** Paint the legends onto the Graphics2D object. */
-    public void drawLegends(Graphics2D gr) {
+        if (highFirstEdge!=null) highFirstEdge.drawLabel(gr, highFirstEdge.color(), new Color(255,255,255,160));
+        if (!showLegends) return;
+        //
         if (nodes.size()==0 || legends.size()==0) return; // No need to continue otherwise
-        gr.setFont(new Font("Dialog", Font.BOLD, nodes.get(0).fontSize()));
-        FontMetrics fm = gr.getFontMetrics();
-        int maxAscent = fm.getMaxAscent(), maxAscentDescent = maxAscent + fm.getMaxDescent(), y=8, maxWidth=0;
+        int fs = nodes.get(0).fontSize();
+        int y=8, maxWidth=0;
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
             if (e.getValue().b==null) continue;
-            int w = fm.stringWidth(e.getValue().a);
+            int w = (int) Artist.getStringBounds(fs, false, e.getValue().a).getWidth();
             if (maxWidth<w) maxWidth=w;
             y = y + maxAscentDescent;
         }
         if (y==8) return; // This means no legends need to be drawn
         gr.setColor(new Color(255,255,255,128));
-        gr.fillRoundRect(5, 5, 8+maxWidth+3, y, 5, 5);
+        gr.draw(new RoundRectangle2D.Double(5, 5, 8+maxWidth+3, y, 5, 5), true);
         gr.setColor(Color.BLACK);
-        gr.drawRoundRect(5, 5, 8+maxWidth+3, y, 5, 5);
+        gr.draw(new RoundRectangle2D.Double(5, 5, 8+maxWidth+3, y, 5, 5), false);
         y=8;
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
             Color color = e.getValue().b;

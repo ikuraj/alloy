@@ -416,7 +416,7 @@ public final strictfp class VizViewer extends JPanel {
        if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
        OurPDFWriter x = new OurPDFWriter(dpi, filename);
        x.write(scale2).write(" 0 0 ").write(scale2).writespace().write(dpi/2).writespace().write(dpi/2).write(" cm\n");
-       graph.draw(new Artist(x), scale2, null);
+       graph.draw(new Artist(x), scale2, null, false);
        x.close();
     }
 
@@ -431,7 +431,7 @@ public final strictfp class VizViewer extends JPanel {
        gr.setColor(BLACK);
        gr.scale(scale,scale);
        gr.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-       graph.draw(new Artist(gr), scale, null);
+       graph.draw(new Artist(gr), scale, null, false);
        OurPNGWriter.writePNG(bf, filename, dpiX, dpiY);
     }
 
@@ -455,13 +455,8 @@ public final strictfp class VizViewer extends JPanel {
         Object sel=(selected!=null ? selected : highlight);
         VizNode c=null;
         if (sel instanceof VizNode && ((VizNode)sel).shape()==null) { c=(VizNode)sel; sel=c.inEdges().get(0); }
-        graph.draw(new Artist(g2), scale, sel);
+        graph.draw(new Artist(g2), scale, sel, true);
         if (c!=null) { gr.setColor(Color.RED); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
         g2.setTransform(oldAF);
-    }
-
-    /** Paint the legends onto the Graphics2D object. */
-    public void alloyPaintOver(Graphics2D gr) {
-        graph.drawLegends(gr);
     }
 }

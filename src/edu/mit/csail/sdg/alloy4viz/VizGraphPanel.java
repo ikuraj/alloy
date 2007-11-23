@@ -23,7 +23,6 @@ package edu.mit.csail.sdg.alloy4viz;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -212,13 +211,7 @@ public final class VizGraphPanel extends JPanel {
                viewer.alloyPopup(graphPanel, ev.getX(), ev.getY());
            }
         });
-        diagramScrollPanel = new JScrollPane(graphPanel) {
-            private static final long serialVersionUID = 1L;
-            public void paint(Graphics gr) {
-                super.paint(gr);
-                if (gr instanceof Graphics2D && viewer!=null) viewer.alloyPaintOver((Graphics2D)gr);
-            }
-        };
+        diagramScrollPanel = new JScrollPane(graphPanel);
         diagramScrollPanel.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
             public void adjustmentValueChanged(AdjustmentEvent e) {
                 diagramScrollPanel.invalidate(); diagramScrollPanel.repaint(); diagramScrollPanel.validate();

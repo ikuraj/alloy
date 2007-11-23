@@ -291,7 +291,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
        }
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);
-       //if (highlight==null && label.length()>0) drawLabel(gr, color, null);
+       if (highlight==null && label.length()>0) drawLabel(gr, color, null);
     }
 
     /** Draw the edge label using the given color. */
@@ -301,15 +301,15 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
             int x, y, n = path.getPoints();
             if ((n&1)==0) x=(int)(path.getX(n/2-1)+path.getX(n/2))/2; else x=(int)path.getX(n/2);
             if ((n&1)==0) y=(int)(path.getY(n/2-1)+path.getY(n/2))/2; else y=(int)path.getY(n/2);
-            x=x-labelbox.w/2-3;
-            y=y-labelbox.h/2-3;
+            x=x-labelbox.w/2;
+            y=y-labelbox.h/2;
             gr.translate(-left, -top);
             if (erase!=null) {
-               Rectangle2D.Double rect = new Rectangle2D.Double(x, y, labelbox.w+6, labelbox.h+6);
+               Rectangle2D.Double rect = new Rectangle2D.Double(x-1, y-1, labelbox.w+2, labelbox.h+2);
                gr.setColor(erase); gr.draw(rect, true);
-               gr.setColor(color); gr.draw(rect, false);
+               gr.setColor(color);
             }
-            gr.drawString(label, x+3, y+3+Artist.getMaxAscent(fontSize, false));
+            gr.drawString(label, x, y+Artist.getMaxAscent(fontSize, false));
             gr.translate(left, top);
         }
     }
