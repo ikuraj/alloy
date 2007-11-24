@@ -51,6 +51,9 @@ public final strictfp class VizGraph extends DiGraph {
     /** Minimum vertical distance between adjacent layers. */
     static final int yJump=60;
 
+    /** The maximum ascent and descent. We deliberately do NOT make this field "static" because only AWT thread can call Artist. */
+    private final int ad = Artist.getMaxAscentAndDescent();
+
     /** The left edge. */
     private int left=0;
 
@@ -480,12 +483,18 @@ public final strictfp class VizGraph extends DiGraph {
            }
         }
         totalHeight=bottom-top;
-        int widestLegend=0;
+        int widestLegend=0, legendHeight=30;
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e: legends.entrySet()) {
+            if (e.getValue().b==null) continue; // that means this legend is not visible
             int widthOfLegend = (int) Artist.getStringBounds(true, e.getValue().a).getWidth();
             if (widestLegend < widthOfLegend) widestLegend = widthOfLegend;
+            legendHeight += ad;
         }
-        if (widestLegend>0) { left -= (widestLegend+10); totalWidth += (widestLegend+10); }
+        if (widestLegend>0) {
+            left -= (widestLegend+10);
+            totalWidth += (widestLegend+10);
+            if (totalHeight<legendHeight) { bottom=bottom+(legendHeight-totalHeight); totalHeight=legendHeight; }
+        }
     }
 
     /**
@@ -558,7 +567,7 @@ public final strictfp class VizGraph extends DiGraph {
 
     /** Locates the node or edge at the given (X,Y) location. */
     Object alloyFind(double scale, int mouseX, int mouseY) {
-       int ad=Artist.getMaxAscentAndDescent(), h=10-ad;
+       int h=getTop()+10-ad;
        double x=mouseX/scale+getLeft(), y=mouseY/scale+getTop();
        for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
            if (e.getValue().b==null) continue;
@@ -597,7 +606,6 @@ public final strictfp class VizGraph extends DiGraph {
         // Since drawing an edge will automatically draw all segments if they're connected via dummy nodes,
         // we must make sure we only draw out edges from non-dummy-nodes
         int maxAscent = Artist.getMaxAscent();
-        int maxAscentDescent = Artist.getMaxAscentAndDescent();
         for(VizNode n:nodes) if (n.shape()!=null) {
           for(VizEdge e:n.outEdges())  if (e.group!=group) e.draw(gr, scale, highFirstEdge, group);
           for(VizEdge e:n.selfEdges()) if (e.group!=group) e.draw(gr, scale, highFirstEdge, group);
@@ -622,7 +630,7 @@ public final strictfp class VizGraph extends DiGraph {
             if (group!=null && e.getKey()==group) groupFound=true;
             int w = (int) Artist.getStringBounds(true, e.getValue().a).getWidth();
             if (maxWidth<w) maxWidth=w;
-            y = y + maxAscentDescent;
+            y = y + ad;
         }
         if (y==0) return; // This means no legends need to be drawn
         gr.setColor(Color.BLACK);
@@ -634,7 +642,7 @@ public final strictfp class VizGraph extends DiGraph {
             gr.setFont((groupFound && e.getKey()==group) || !groupFound);
             gr.setColor((!groupFound || e.getKey()==group) ? color : Color.GRAY);
             gr.drawString(e.getValue().a, 8, y+maxAscent);
-            y = y + maxAscentDescent;
+            y = y + ad;
         }
     }
 }
