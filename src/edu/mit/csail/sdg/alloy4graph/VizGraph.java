@@ -92,8 +92,14 @@ public final strictfp class VizGraph extends DiGraph {
      */
     public void addLegend(Comparable<?> object, String label, Color color) { legends.put(object, new Pair<String,Color>(label,color)); }
 
+    /** The default magnification. */
+    private double defaultScale = 1;
+
+    /** Retrieves the default magnification. */
+    public double getDefaultScale() { return defaultScale; }
+
     /** Constructs an empty VizGraph object. */
-    public VizGraph() { }
+    public VizGraph(double defaultScale) { this.defaultScale = defaultScale; }
 
     //============================================================================================================================//
 

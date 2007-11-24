@@ -123,7 +123,7 @@ public final class DotGraph {
     /** Generate the entire content of the DOT file. */
     public VizGraph write2() {
         // rankdir = orientation.getDotText(null)
-        VizGraph graph=new VizGraph();
+        VizGraph graph=new VizGraph(fontSize / 12.0D);
         if (nodes.size()==0) {
             new VizNode(graph, null, "Due to your theme settings, every atom is hidden.", "Please click Theme and adjust your settings.");
         } else {
@@ -186,7 +186,7 @@ public final class DotGraph {
     public Pair<String,JPanel> visualize() throws ErrorFatal {
         final String result=write();
         final VizGraph graph=write2();
-        VizViewer gp = new VizViewer(graph, fontSize/12D);
+        VizViewer gp = new VizViewer(graph);
         gp.setBorder(new EmptyBorder(0,0,0,0));
         gp.alloySetAnnotation(result);
         return new Pair<String,JPanel>(result,gp);

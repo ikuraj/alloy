@@ -128,8 +128,8 @@ public final strictfp class VizViewer extends JPanel {
     }
 
     /** Construct a VizViewer that displays the given graph. */
-    public VizViewer(final VizGraph graph, final double initialZoom) {
-        scale=initialZoom;
+    public VizViewer(final VizGraph graph) {
+        scale=graph.getDefaultScale();
         setOpaque(true);
         setBackground(WHITE);
         setBorder(new EmptyBorder(0,0,0,0));

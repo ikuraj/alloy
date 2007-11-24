@@ -594,8 +594,8 @@ public final class VizCustomizationPanel extends JPanel {
         JLabel eLabel = OurUtil.label(OurUtil.getVizFont(), "Edge Color Palette:");
         //JLabel oLabel = OurUtil.label(OurUtil.getVizFont(), "Orientation:");
         JLabel aLabel = OurUtil.label(OurUtil.getVizFont(), "Use original atom names:");
-        //JLabel fLabel = OurUtil.label(OurUtil.getVizFont(), "Font Size:");
-        //JComboBox fontSize= new OurCombobox(cgs, false, fontSizes,                60, 32, "0");
+        JLabel fLabel = OurUtil.label(OurUtil.getVizFont(), "Font Size:");
+        JComboBox fontSize= new OurCombobox(cgs, false, fontSizes,                60, 32, "0");
         //JComboBox orient  = new OurCombobox(cgs, false, DotOrientation.values(), 140, 32, "1");
         JComboBox nodepal = new OurCombobox(cgs, false, DotPalette.values(),     100, 32, "2");
         JComboBox edgepal = new OurCombobox(cgs, false, DotPalette.values(),     100, 32, "3");
@@ -603,7 +603,7 @@ public final class VizCustomizationPanel extends JPanel {
         parent.add(makelabel(" General Graph Settings:"));
         parent.add(OurUtil.makeBox(6,6,wcolor));
         parent.add(OurUtil.makeH(wcolor, 25, nLabel, 5, nodepal, 8, aLabel, 5, name, 2, null));
-        parent.add(OurUtil.makeH(wcolor, 25, eLabel, 5, edgepal, /*8, fLabel, 5, fontSize,*/ 2, null));
+        parent.add(OurUtil.makeH(wcolor, 25, eLabel, 5, edgepal, 8, fLabel, 5, fontSize, 2, null));
         //parent.add(OurUtil.makeH(wcolor, 25, oLabel, 5, orient,  2, null));
     }
 

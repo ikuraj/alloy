@@ -40,7 +40,7 @@ import edu.mit.csail.sdg.alloy4.OurPDFWriter;
 
 /**
  * This class abstracts the drawing operations so that we can (potentially)
- * draw the graph using different frameworks; eg. Java2D, asPNG, asPDF...
+ * draw the graph using different frameworks; eg. Java2D, asPDF...
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
