@@ -208,7 +208,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     /** Given that this edge is already well-laidout, this method moves the label hoping to avoid/minimize overlap. */
     void repositionLabel(AvailableSpace sp) {
         if (label.length()==0) return;
-        if (a()==b()) return; // self edge
+        if (a()==b()) { labelbox.x=a().x(); labelbox.y=a().y(); return; } // self edge
         int gap = style==VizStyle.BOLD ? 3 : 0; // If the line is bold, we need to shift the label to the right a little bit
         int ay=a().y()+a().getHeight()/2, by=b().y()-b().getHeight()/2, midy=(ay+by)/2;
         if (b().shape()==null) midy=by-labelbox.h;

@@ -463,7 +463,7 @@ public final strictfp class VizGraph extends DiGraph {
         if (fresh) { top=nodes.get(0).y()-nodes.get(0).getHeight()/2-5; bottom=nodes.get(0).y()+nodes.get(0).getHeight()/2+5; }
         // Find the leftmost and rightmost pixel
         int minX = (int) (nodes.get(0).x() - nodes.get(0).getWidth()/2 - 5);
-        int maxX = (int) (nodes.get(0).x() + nodes.get(0).getWidth()/2 + 5);
+        int maxX = (int) (nodes.get(0).x() + nodes.get(0).getWidth()/2 + nodes.get(0).getReserved() + 5);
         for(VizNode n:nodes) {
             int min = (int) (n.x() - n.getWidth()/2                   - 5); if (minX>min) minX=min;
             int max = (int) (n.x() + n.getWidth()/2 + n.getReserved() + 5); if (maxX<max) maxX=max;
