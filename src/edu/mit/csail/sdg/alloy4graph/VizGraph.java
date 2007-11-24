@@ -625,7 +625,7 @@ public final strictfp class VizGraph extends DiGraph {
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
             Color color = e.getValue().b;
             if (color==null) continue;
-            gr.setFont(groupFound && e.getKey()==group);
+            gr.setFont((groupFound && e.getKey()==group) || !groupFound);
             gr.setColor((!groupFound || e.getKey()==group) ? color : Color.GRAY);
             gr.drawString(e.getValue().a, 8, y+maxAscent);
             y = y + maxAscentDescent;
