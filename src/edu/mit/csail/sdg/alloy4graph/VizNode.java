@@ -87,12 +87,6 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     private boolean fontBold = false;
 
     /**
-     * The font size.
-     * <p> When this value changes, we automatically invalidate the previously computed bounds information.
-     */
-    private int fontSize = 12;
-
-    /**
      * The node labels; if null or empty, then the node has no labels.
      * <p> When this value changes, we automatically invalidate the previously computed bounds information.
      */
@@ -121,9 +115,6 @@ public final strictfp class VizNode extends DiGraph.DiNode {
 
     /** Returns the Y coordinate of the center of the node. */
     public int y() { return centerY; }
-
-    /** Returns the font size. */
-    public int fontSize() { return fontSize; }
 
     /** Changes the X coordinate of the center of the node. */
     public void setX(int x) { centerX=x;}
@@ -174,13 +165,6 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     public VizNode setFontBoldness(boolean bold) {
         if (this.fontBold!=bold) { this.fontBold=bold; updown=(-1); }
         return this;
-    }
-
-    /** Changes the font size, then invalidate the computed bounds. */
-    public VizNode setFontSize(int fontSize)   {
-       if (fontSize<8) fontSize=8; else if (fontSize>72) fontSize=72;
-       if (this.fontSize!=fontSize) { this.fontSize=fontSize; updown=(-1); }
-       return this;
     }
 
     /** Create a new node with the given list of labels, then add it to the given graph. */
@@ -336,10 +320,10 @@ public final strictfp class VizNode extends DiGraph.DiNode {
        poly=(poly2=(poly3=null));
        if (shape==null) return;
        Polygon poly=new Polygon();
-       final int ad = Artist.getMaxAscentAndDescent(fontSize, fontBold);
+       final int ad = Artist.getMaxAscentAndDescent();
        if (labels!=null) for(int i=0; i<labels.size(); i++) {
           String t = labels.get(i);
-          Rectangle2D rect = Artist.getStringBounds(fontSize, fontBold, t);
+          Rectangle2D rect = Artist.getStringBounds(fontBold, t);
           int ww = ((int)(rect.getWidth())) + 1; // Round it up
           if (width<ww) width=ww;
           height=height+ad;
@@ -471,8 +455,8 @@ public final strictfp class VizNode extends DiGraph.DiNode {
        if (updown<0) calcBounds();
        gr.set(style, scale);
        gr.translate(centerX-left, centerY-top);
-       gr.setFont(fontSize, fontBold);
-       final int ad = Artist.getMaxAscentAndDescent(fontSize, fontBold);
+       gr.setFont(fontBold);
+       final int ad = Artist.getMaxAscentAndDescent();
        if (highlight) gr.setColor(Color.RED); else gr.setColor(color);
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
@@ -510,9 +494,9 @@ public final strictfp class VizNode extends DiGraph.DiNode {
           int x=(-width/2), y=yShift+(-labels.size()*ad/2);
           for(int i=0; i<labels.size(); i++) {
              String t = labels.get(i);
-             int w = ((int) (Artist.getStringBounds(fontSize, fontBold, t).getWidth())) + 1; // Round it up
+             int w = ((int) (Artist.getStringBounds(fontBold, t).getWidth())) + 1; // Round it up
              if (width>w) w=(width-w)/2; else w=0;
-             gr.drawString(t, x+w, y+Artist.getMaxAscent(fontSize, fontBold));
+             gr.drawString(t, x+w, y+Artist.getMaxAscent());
              y=y+ad;
           }
        }

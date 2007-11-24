@@ -42,9 +42,6 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
 
     // =============================== adjustable options ==================================================
 
-    /** This determines the font size. */
-    static final int fontSize = 12;
-
     /** This determines the minimum width of a self loop. */
     static final int selfLoopMinWidth = 20;
 
@@ -154,15 +151,17 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     /** Construct an edge from "from" to "to" with the given arrow head settings, then add the edge to the graph. */
     public VizEdge(VizNode from, VizNode to, Object uuid, String label, boolean drawArrowHeadOnFrom, boolean drawArrowHeadOnTo, VizStyle style, Color color, Object group) {
        super(from, to); // The parent's constructor will add the edge A->B to the graph
+       if (group instanceof VizNode) throw new IllegalArgumentException("group cannot be a VizNode");
+       if (group instanceof VizEdge) throw new IllegalArgumentException("group cannot be a VizEdge");
        this.uuid = uuid;
-       this.group = (group==null) ? this : group;
+       this.group = (group==null) ? (new Object()) : group;
        this.label=label;
        this.ahead=drawArrowHeadOnFrom;
        this.bhead=drawArrowHeadOnTo;
        if (style!=null) this.style=style;
        if (color!=null) this.color=color;
        if (label.length()>0) {
-           Rectangle2D box = Artist.getStringBounds(fontSize, style==VizStyle.BOLD, label);
+           Rectangle2D box = Artist.getStringBounds(false, label);
            labelbox.x = 0;
            labelbox.y = 0;
            labelbox.w = (int) box.getWidth();
@@ -261,12 +260,14 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
         return path.intersectsVertical(px, py-fudge, py+fudge, null)>=0 || path.intersectsHorizontal(px-fudge, px+fudge, py);
     }
 
-    /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge. */
-    public void draw(Artist gr, double scale, VizEdge highlight) {
+    /**
+     * Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the edge.
+     */
+    public void draw(Artist gr, double scale, VizEdge highEdge, Object highGroup) {
        final int top = a().graph.getTop(), left = a().graph.getLeft();
        gr.translate(-left, -top);
-       if (highlight==this) { gr.setColor(color); gr.set(VizStyle.BOLD, scale); }
-          else if (highlight==null || highlight.group==group) { gr.setColor(color); gr.set(style, scale); }
+       if (highEdge==this) { gr.setColor(color); gr.set(VizStyle.BOLD, scale); }
+          else if ((highEdge==null && highGroup==null) || highGroup==group) { gr.setColor(color); gr.set(style, scale); }
           else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
        if (a()==b()) {
           // Draw the self edge
@@ -291,7 +292,8 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
        }
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);
-       if (highlight==null && label.length()>0) drawLabel(gr, color, null);
+       if (highEdge==null && highGroup==null && label.length()>0) drawLabel(gr, color, null);
+       drawArrowhead(gr, scale, highEdge, highGroup);
     }
 
     /** Draw the edge label using the given color. */
@@ -309,18 +311,19 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
                gr.setColor(erase); gr.draw(rect, true);
                gr.setColor(color);
             }
-            gr.drawString(label, x, y+Artist.getMaxAscent(fontSize, false));
+            gr.drawString(label, x, y+Artist.getMaxAscent());
             gr.translate(left, top);
         }
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
-    public void drawArrowhead(Artist gr, double scale, VizEdge highlight, double tipLength) {
+    private void drawArrowhead(Artist gr, double scale, VizEdge highEdge, Object highGroup) {
+       final double tipLength = Artist.getMaxAscentAndDescent() * 0.6D;
        final int top = a().graph.getTop(), left = a().graph.getLeft();
        // Check to see if this edge is highlighted or not
        double fan = (style==VizStyle.BOLD ? bigFan : smallFan);
-       if (highlight==this) { fan=bigFan; gr.setColor(color); gr.set(VizStyle.BOLD, scale); }
-          else if (highlight==null || highlight.group==group) { gr.setColor(color); gr.set(style, scale); }
+       if (highEdge==this) { fan=bigFan; gr.setColor(color); gr.set(VizStyle.BOLD, scale); }
+          else if ((highEdge==null && highGroup==null) || highGroup==group) { gr.setColor(color); gr.set(style, scale); }
           else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
        for(VizEdge e=this; ;e=e.b().outEdges().get(0)) {
           if ((e.ahead && e.a().shape()!=null) || (e.bhead && e.b().shape()!=null)) {

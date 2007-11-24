@@ -464,8 +464,8 @@ public final strictfp class VizGraph extends DiGraph {
             if (minX>x1) minX=x1;
             if (maxX<x2) maxX=x2;
         }
-        left=minX-100;            // leave 100 pixels on the left, so that we hopefully don't draw edgelabels off screen
-        totalWidth=maxX-minX+200; // leave 100 pixels on the right, so that we hopefully don't draw edgelabels off screen
+        left=minX-100;            // leave 100 pixels on the left,  so that we hopefully don't draw edgelabels off screen
+        totalWidth=maxX-minX+100; // leave 100 pixels on the right, so that we hopefully don't draw edgelabels off screen
         // Find the topmost and bottommost pixel
         for(int layer=layers()-1; layer>=0; layer--) {
            for(VizNode n:layer(layer)) {
@@ -474,6 +474,12 @@ public final strictfp class VizGraph extends DiGraph {
            }
         }
         totalHeight=bottom-top;
+        int widestLegend=0;
+        for(Map.Entry<Comparable<?>,Pair<String,Color>> e: legends.entrySet()) {
+            int widthOfLegend = (int) Artist.getStringBounds(true, e.getValue().a).getWidth();
+            if (widestLegend < widthOfLegend) widestLegend = widthOfLegend;
+        }
+        if (widestLegend>0) { left -= (widestLegend+10); totalWidth += (widestLegend+10); }
     }
 
     /**
@@ -544,6 +550,27 @@ public final strictfp class VizGraph extends DiGraph {
 
     //============================================================================================================================//
 
+    /** Locates the node or edge at the given (X,Y) location. */
+    Object alloyFind(double scale, int mouseX, int mouseY) {
+       int ad=Artist.getMaxAscentAndDescent(), h=10-ad;
+       double x=mouseX/scale+getLeft(), y=mouseY/scale+getTop();
+       for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
+           if (e.getValue().b==null) continue;
+           h=h+ad;
+           if (y<h || y>=h+ad) continue;
+           int w = (int) Artist.getStringBounds(true, e.getValue().a).getWidth();
+           if (x>=getLeft()+10 && x<=getLeft()+10+w) return e.getKey();
+       }
+       for(VizNode n:nodes) {
+           if (n.shape()==null && Math.abs(n.x()-x)<10 && Math.abs(n.y()-y)<10) return n;
+           if (n.intersects(x,y)) return n;
+       }
+       for(VizEdge e:edges) {
+           if (e.intersects(x,y,scale)) return e;
+       }
+       return null;
+    }
+
     /** Assuming layout has been performed, this draws the graph with the given magnification scale. */
     public void draw(Artist gr, double scale, Object highlight, boolean showLegends) {
         if (nodes.size()==0) return; // The rest of this procedure assumes there is at least one node
@@ -558,49 +585,48 @@ public final strictfp class VizGraph extends DiGraph {
           while(highLastEdge.b().shape()==null) highLastEdge=highLastEdge.b().outEdges().get(0);
           highFirstNode=highFirstEdge.a();
           highLastNode=highLastEdge.b();
+        } else if (!(highlight instanceof VizNode) && highlight!=null) {
+          group=highlight;
         }
         // Since drawing an edge will automatically draw all segments if they're connected via dummy nodes,
         // we must make sure we only draw out edges from non-dummy-nodes
-        int maxAscent = Artist.getMaxAscent(nodes.get(0).fontSize(), false);
-        int maxAscentDescent = Artist.getMaxAscentAndDescent(nodes.get(0).fontSize(), false);
-        double tip = maxAscentDescent*0.6D;
+        int maxAscent = Artist.getMaxAscent();
+        int maxAscentDescent = Artist.getMaxAscentAndDescent();
         for(VizNode n:nodes) if (n.shape()!=null) {
-          for(VizEdge e:n.outEdges())  if (e.group!=group) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
-          for(VizEdge e:n.selfEdges()) if (e.group!=group) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
+          for(VizEdge e:n.outEdges())  if (e.group!=group) e.draw(gr, scale, highFirstEdge, group);
+          for(VizEdge e:n.selfEdges()) if (e.group!=group) e.draw(gr, scale, highFirstEdge, group);
         }
-        if (highFirstEdge!=null) {
+        if (group!=null) {
           for(VizNode n:nodes) if (n.shape()!=null) {
-            for(VizEdge e:n.outEdges())  if (e.group==group && e!=highFirstEdge) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
-            for(VizEdge e:n.selfEdges()) if (e.group==group && e!=highFirstEdge) { e.draw(gr, scale, highFirstEdge); e.drawArrowhead(gr, scale, highFirstEdge, tip); }
+            for(VizEdge e:n.outEdges())  if (e.group==group && e!=highFirstEdge) e.draw(gr, scale, highFirstEdge, group);
+            for(VizEdge e:n.selfEdges()) if (e.group==group && e!=highFirstEdge) e.draw(gr, scale, highFirstEdge, group);
           }
-          highFirstEdge.draw(gr, scale, highFirstEdge);
-          highFirstEdge.drawArrowhead(gr, scale, highFirstEdge, tip);
+          if (highFirstEdge!=null) highFirstEdge.draw(gr, scale, highFirstEdge, group);
         }
         for(VizNode n:nodes) if (highFirstNode!=n && highLastNode!=n) n.draw(gr, scale, n==highlight);
         if (highFirstNode!=null) highFirstNode.draw(gr, scale, true);
         if (highLastNode!=null && highLastNode!=highFirstNode) highLastNode.draw(gr, scale, true);
         if (highFirstEdge!=null) highFirstEdge.drawLabel(gr, highFirstEdge.color(), new Color(255,255,255,160));
-        if (!showLegends) return;
-        //
-        if (nodes.size()==0 || legends.size()==0) return; // No need to continue otherwise
-        int fs = nodes.get(0).fontSize();
-        int y=8, maxWidth=0;
+        // show legends?
+        if (!showLegends || legends.size()==0) return;
+        boolean groupFound=false;
+        int y=0, maxWidth=0;
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
             if (e.getValue().b==null) continue;
-            int w = (int) Artist.getStringBounds(fs, false, e.getValue().a).getWidth();
+            if (group!=null && e.getKey()==group) groupFound=true;
+            int w = (int) Artist.getStringBounds(true, e.getValue().a).getWidth();
             if (maxWidth<w) maxWidth=w;
             y = y + maxAscentDescent;
         }
-        if (y==8) return; // This means no legends need to be drawn
-        gr.setColor(new Color(255,255,255,128));
-        gr.draw(new RoundRectangle2D.Double(5, 5, 8+maxWidth+3, y, 5, 5), true);
+        if (y==0) return; // This means no legends need to be drawn
         gr.setColor(Color.BLACK);
-        gr.draw(new RoundRectangle2D.Double(5, 5, 8+maxWidth+3, y, 5, 5), false);
-        y=8;
+        gr.draw(new RoundRectangle2D.Double(5, 5, maxWidth+10, y+10, 5, 5), false);
+        y=10;
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
             Color color = e.getValue().b;
             if (color==null) continue;
-            gr.setColor(color);
+            gr.setFont(groupFound && e.getKey()==group);
+            gr.setColor((!groupFound || e.getKey()==group) ? color : Color.GRAY);
             gr.drawString(e.getValue().a, 8, y+maxAscent);
             y = y + maxAscentDescent;
         }

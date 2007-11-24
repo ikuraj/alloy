@@ -47,6 +47,12 @@ import edu.mit.csail.sdg.alloy4.OurPDFWriter;
 
 public final strictfp class Artist {
 
+    /** The font name. */
+    private static final String fontName = "Lucida Grande";
+
+    /** The font size. */
+    private static final int fontSize = 12;
+
     /** The corresponding Graphics2D object. */
     private Graphics2D gr;
 
@@ -61,8 +67,7 @@ public final strictfp class Artist {
 
     /** Shifts the coordinate space by the given amount. */
     public void translate(int x, int y) {
-        if (gr!=null) gr.translate(x,y);
-        else pdf.write("1 0 0 1 ").write(x).writespace().write(y).write(" cm\n");
+        if (gr!=null) gr.translate(x,y); else pdf.write("1 0 0 1 ").write(x).writespace().write(y).write(" cm\n");
     }
 
     /** Draws a circle of the given radius, centered at (0,0) */
@@ -191,24 +196,22 @@ public final strictfp class Artist {
         }
     }
 
-    /** Saves the current font size. */
-    private int fontSize = 12;
-
     /** Saves the current font boldness. */
     private boolean fontBoldness = false;
 
     /** Changes the current font. */
-    public void setFont(int fontSize, boolean fontBoldness) {
-        updateCache(fontSize, fontBoldness);
-        if (gr!=null) gr.setFont(cachedFont); else { this.fontSize=fontSize; this.fontBoldness=fontBoldness; }
+    public void setFont(boolean fontBoldness) {
+        calc();
+        if (gr!=null) gr.setFont(fontBoldness ? cachedBoldFont : cachedPlainFont); else this.fontBoldness=fontBoldness;
     }
 
     /** Draws the given string at (x,y) */
     public void drawString(String text, int x, int y) {
         if (text.length()==0) return;
         if (gr!=null) { gr.drawString(text,x,y); return; }
-        updateCache(fontSize, fontBoldness);
-        GlyphVector gv=cachedFont.createGlyphVector(new FontRenderContext(null,false,false), text);
+        calc();
+        Font font = (fontBoldness ? cachedBoldFont : cachedPlainFont);
+        GlyphVector gv = font.createGlyphVector(new FontRenderContext(null,false,false), text);
         translate(x,y);
         draw(gv.getOutline(), true);
         translate(-x,-y);
@@ -242,53 +245,54 @@ public final strictfp class Artist {
      * Q                      --> restores the current graphics state
      */
 
-    /** If nonnull, it caches an empty bitmap. */
-    private static BufferedImage cachedImage;
+    /** If nonnull, it caches a Graphics2D object for calculating string bounds. */
+    private static Graphics2D cachedGraphics = null;
 
-    /** If nonnull, it caches the Graphics2D object associated with the current font size and font boldness. */
-    private static Graphics2D cachedGraphics;
+    /** If nonnull, it caches a FontMetrics object associated with the nonbold font. */
+    private static FontMetrics cachedPlainMetrics = null;
 
-    /** If nonnull, it caches the FontMetrics object associated with the current font size and font boldness. */
-    private static FontMetrics cachedFontMetrics;
+    /** If nonnull, it caches a FontMetrics object associated with the bold font. */
+    private static FontMetrics cachedBoldMetrics = null;
 
-    /** If nonnull, it caches the Font object associated with the current font size and font boldness. */
-    private static Font cachedFont;
+    /** If nonnull, it caches the nonbold Font. */
+    private static Font cachedPlainFont = null;
 
-    /** If cachedFont!=null, this is its font size. */
-    private static int cachedFontSize;
+    /** If nonnull, it caches the bold Font. */
+    private static Font cachedBoldFont = null;
 
-    /** If cachedFont!=null, this is its font boldness. */
-    private static boolean cachedFontBoldness;
+    /** If nonnegative, it caches the maximum ascent of the font. */
+    private static int cachedMaxAscent = -1;
 
-    /** Updates cached{Image,Graphics,Metrics,Font} based on the given font size and font boldness, and return max ascent+descent. */
-    private static int updateCache(int fontSize, boolean fontBoldness) {
-       if (cachedFont==null || cachedFontMetrics==null || fontSize!=cachedFontSize || fontBoldness!=cachedFontBoldness) {
-          if (cachedImage==null) cachedImage=new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-          if (cachedGraphics==null) cachedGraphics=(Graphics2D)(cachedImage.getGraphics());
-          if (fontSize<8) fontSize=8;
-          if (fontSize>72) fontSize=72;
-          cachedFont = new Font("Lucida Grande",
-                       ((cachedFontBoldness=fontBoldness) ? Font.BOLD : Font.PLAIN), cachedFontSize=fontSize);
-          cachedGraphics.setFont(cachedFont);
-          cachedFontMetrics=cachedGraphics.getFontMetrics();
-       }
-       return cachedFontMetrics.getMaxAscent()+cachedFontMetrics.getMaxDescent();
+    /** If nonnegative, it caches the maximum descent of the font. */
+    private static int cachedMaxDescent = -1;
+
+    /** Allocates the nonbold and bold fonts, then calculates the max ascent and descent. */
+    private static void calc() {
+       if (cachedMaxDescent >= 0) return; // already done
+       BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+       cachedGraphics = (Graphics2D)(image.getGraphics());
+       cachedPlainMetrics = cachedGraphics.getFontMetrics(cachedPlainFont = new Font(fontName, Font.PLAIN, fontSize));
+       cachedBoldMetrics  = cachedGraphics.getFontMetrics(cachedBoldFont  = new Font(fontName, Font.BOLD,  fontSize));
+       cachedGraphics.setFont(cachedPlainFont);
+       cachedMaxAscent = cachedPlainMetrics.getMaxAscent();
+       cachedMaxDescent = cachedPlainMetrics.getMaxDescent();
     }
 
     /** Returns the max ascent when drawing text using the given font size and font boldness settings. */
-    public static int getMaxAscent(int fontSize, boolean fontBoldness) {
-        updateCache(fontSize, fontBoldness);
-        return cachedFontMetrics.getMaxAscent();
+    public static int getMaxAscent() {
+        calc();
+        return cachedMaxAscent;
     }
 
     /** Returns the sum of the max ascent and max descent when drawing text using the given font size and font boldness settings. */
-    public static int getMaxAscentAndDescent(int fontSize, boolean fontBoldness) {
-        return updateCache(fontSize, fontBoldness);
+    public static int getMaxAscentAndDescent() {
+        calc();
+        return cachedMaxAscent + cachedMaxDescent;
     }
 
     /** Returns the bounding box when drawing the given string using the given font size and font boldness settings. */
-    public static Rectangle2D getStringBounds(int fontSize, boolean fontBoldness, String string) {
-        updateCache(fontSize, fontBoldness);
-        return cachedFontMetrics.getStringBounds(string, cachedGraphics);
+    public static Rectangle2D getStringBounds(boolean fontBoldness, String string) {
+        calc();
+        return (fontBoldness ? cachedBoldMetrics : cachedPlainMetrics).getStringBounds(string, cachedGraphics);
     }
 }

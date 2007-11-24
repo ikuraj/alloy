@@ -76,10 +76,10 @@ public final strictfp class VizViewer extends JPanel {
     /** The current amount of zoom. */
     private double scale = 1d;
 
-    /** The currently hovered VizNode or VizEdge, or null if there is none. */
+    /** The currently hovered VizNode or VizEdge or group, or null if there is none. */
     private Object highlight = null;
 
-    /** The currently selected VizNode or VizEdge, or null if there is none. */
+    /** The currently selected VizNode or VizEdge or group, or null if there is none. */
     private Object selected = null;
 
     /** The button that initialized the drag-and-drop; this value is undefined when we're not currently doing drag-and-drop. */
@@ -92,17 +92,7 @@ public final strictfp class VizViewer extends JPanel {
     private String annotation = "";
 
     /** Locates the node or edge at the given (X,Y) location. */
-    private Object alloyFind(int mouseX, int mouseY) {
-       double x=mouseX/scale+graph.getLeft(), y=mouseY/scale+graph.getTop();
-       for(VizNode n:graph.nodes) {
-           if (n.shape()==null && Math.abs(n.x()-x)<10 && Math.abs(n.y()-y)<10) return n;
-           if (n.intersects(x,y)) return n;
-       }
-       for(VizEdge e:graph.edges) {
-           if (e.intersects(x,y,scale)) return e;
-       }
-       return null;
-    }
+    private Object alloyFind(int mouseX, int mouseY) { return graph.alloyFind(scale, mouseX, mouseY); }
 
     /** Returns the annotation for the node or edge at location x,y (or null if none) */
     public Object alloyGetAnnotationAtXY(int mouseX, int mouseY) {
