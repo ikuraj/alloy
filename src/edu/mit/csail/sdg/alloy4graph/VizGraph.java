@@ -21,6 +21,7 @@
 package edu.mit.csail.sdg.alloy4graph;
 
 import java.awt.Color;
+import java.awt.geom.Line2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -443,7 +444,7 @@ public final strictfp class VizGraph extends DiGraph {
            py = py + ph + yJump;
         }
 
-        relayout_edges();
+        relayout_edges(true);
 
         // Since we're doing layout for the first time, we need to explicitly set top and bottom, since
         // otherwise "recalc_bound" will merely "extend top and bottom" as needed.
@@ -490,10 +491,60 @@ public final strictfp class VizGraph extends DiGraph {
         }
     }
 
+    /** Returns true if a direct line between a and b will not intersect any other node. */
+    private boolean free(VizNode a, VizNode b) {
+        if (a.layer() > b.layer()) { VizNode tmp=a; a=b; b=tmp; }
+        Line2D.Double line = new Line2D.Double(a.x(), a.y(), b.x(), b.y());
+        for(VizNode n:nodes) if (n!=a && n!=b && a.layer()<n.layer() && n.layer()<b.layer() && n.shape()!=null) {
+            if (line.intersects(n.getBoundingBox(10,10))) return false;
+        }
+        return true;
+    }
+
     /**
      * Assuming everything was laid out already, but at least one node just moved, then this re-layouts ALL edges.
      */
-    public void relayout_edges() {
+    void relayout_edges(boolean straighten) {
+        // Move pairs of virtual nodes to straighten the lines if possible
+        if (straighten) for(int i=0; i<5; i++) for(VizNode n:nodes) if (n.shape()==null) {
+            VizEdge e1=n.inEdges().get(0), e2=n.outEdges().get(0);
+            if (!free(e1.a(), e2.b())) continue;
+            double slope = (e2.b().x()-e1.a().x()) / ((double)(e2.b().y()-e1.a().y()));
+            double xx = (n.y()-e1.a().y())*slope + e1.a().x();
+            n.setX((int)xx);
+        }
+        // Move the virtual nodes between endpoints to straighten the lines if possible
+        if (straighten) for(VizEdge e:edges) if (e.a().shape()!=null && e.b().shape()==null) {
+            VizNode a=e.a(), b;
+            for(VizEdge ee=e;;) {
+                b=ee.b();
+                if (b.shape()!=null) break;
+                ee=b.outEdges().get(0);
+            }
+            if (!free(a,b)) continue;
+            double slope = (b.x()-a.x()) / ((double)(b.y()-a.y()));
+            for(VizEdge ee=e;;) {
+                b=ee.b();
+                if (b.shape()!=null) break;
+                double xx = (b.y()-a.y())*slope + a.x();
+                b.setX((int)xx);
+                ee=b.outEdges().get(0);
+            }
+        }
+        // Now give each node some minimum distance from its neighbors
+        if (straighten) for(int i=0; i<layers(); i++) {
+            sortLayer(i, new Comparator<VizNode>() {
+                public int compare(VizNode o1, VizNode o2) {
+                    if (o1.x()<o2.x()) return -1; else if (o1.x()>o2.x()) return 1;
+                    return 0;
+                }
+            });
+            List<VizNode> layer=new ArrayList<VizNode>(layer(i));
+            for(int j=0; j<layer.size()-1; j++) {
+                VizNode a=layer.get(j), b=layer.get(j+1);
+                if (b.x()<=a.x() || b.x()-a.x()<10) b.setX(a.x()+10);
+            }
+        }
         // Now layout the edges, initially as straight lines
         for(VizEdge e:edges) e.resetPath();
         // Now, scan layer-by-layer to find edges that intersect nodes improperly, and bend them accordingly
