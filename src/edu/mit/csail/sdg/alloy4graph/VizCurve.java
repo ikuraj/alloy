@@ -56,9 +56,16 @@ final class VizCurve {
         return ans;
     }
 
+    /** Produce a cubic bezier curve representing a straightline segment from (x1,y1) to (x2,y2) */
+    private static CubicCurve2D.Double makeline(double x1, double y1, double x2, double y2) {
+        return new CubicCurve2D.Double(x1, y1, (x2-x1)*0.3+x1, (y2-y1)*0.3+y1, (x2-x1)*0.6+x1, (y2-y1)*0.6+y1, x2, y2);
+    }
+
     /** Add a straightline segment to (ax,ay) */
     public void lineTo(double ax, double ay) {
-        cubicTo((ax-endX)*0.3D+endX, (ay-endY)*0.3D+endY, (ax-endX)*0.6D+endX, (ay-endY)*0.6D+endY, ax, ay);
+        list.add(makeline(endX, endY, ax, ay));
+        this.endX=ax;
+        this.endY=ay;
     }
 
     /** Add a cubic bezier segment to (cx,cy) using (ax,ay) and (bx,by) as the two control points. */
@@ -66,6 +73,37 @@ final class VizCurve {
         list.add(new CubicCurve2D.Double(endX, endY, ax, ay, bx, by, cx, cy));
         this.endX=cx;
         this.endY=cy;
+    }
+
+    /** Returns true if (x1,y1)..(x2,y2) intersects (x,y3)..(x,y4) */
+    private static boolean intersects(double x1, double y1, double x2, double y2, double x, double y3, double y4) {
+        if (!(y3<y4)) { double tmp=y3; y3=y4; y4=tmp; }
+        if (!((x1<=x && x<=x2) || (x2<=x && x<=x1))) return false;
+        double m = (y2-y1)/(x2-x1);
+        double i = (x-x1)*m + y1;
+        if ((y3<=i && i<=y4) || (y4<=i && i<=y3)) return true; else return false;
+    }
+
+    void bendUp(double x, double y1, double y2, double gap) {
+        for(int i=0; i<list.size(); i++) {
+            CubicCurve2D.Double c=list.get(i);
+            if (intersects(c.x1, c.y1, c.x2, c.y2, x, y1, y2)) {
+                list.set(i, makeline(c.x1, c.y1, x, y1-gap));
+                list.add(i+1, makeline(x, y1-gap, c.x2, c.y2));
+                return;
+            }
+        }
+    }
+
+    void bendDown(double x, double y1, double y2, double gap) {
+        for(int i=0; i<list.size(); i++) {
+            CubicCurve2D.Double c=list.get(i);
+            if (intersects(c.x1, c.y1, c.x2, c.y2, x, y1, y2)) {
+                list.set(i, makeline(c.x1, c.y1, x, y2+gap));
+                list.add(i+1, makeline(x, y2+gap, c.x2, c.y2));
+                return;
+            }
+        }
     }
 
     /** Chop the start of this curve. */

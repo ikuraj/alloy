@@ -111,6 +111,8 @@ public final strictfp class Artist {
         pdf.write(r/255D).writespace().write(g/255D).writespace().write(b/255D).write(" rg\n");
     }
 
+    private static boolean in(double left, double x, double right) { return (left<=x && x<=right) || (right<=x && x<=left); }
+
     /** Draws the given curve smoothly (assuming the curve is monotonic vertically) */
     public void drawSmoothly(VizCurve curve) {
         final int smooth=15;
@@ -121,10 +123,10 @@ public final strictfp class Artist {
             if (i>0) { c.ctrlx1=cx; c.ctrly1=cy; }
             if (c2==null) { draw(c,false); return; }
             if ((c.x1<c.x2 && c2.x2<c2.x1) || (c.x1>c.x2 && c2.x2>c2.x1)) slope=0; else slope=(c2.x2-c.x1)/(c2.y2-c.y1);
-            c.ctrly2 = c.y2 - smooth;
-            c.ctrlx2 = c.x2 - smooth*slope;
-            cy = c2.y1 + smooth;
-            cx = c2.x1 + smooth*slope;
+            double tmp=c.y2-smooth, tmpx=c.x2-smooth*slope;
+            if (tmp>c.ctrly1 && tmp<c.y2 && in(c.x1, tmpx, c.x2)) { c.ctrly2=tmp; c.ctrlx2=tmpx; }
+            double tmp2=c2.y1+smooth, tmp2x=c2.x1+smooth*slope;
+            if (tmp2>c2.y1 && tmp2<c2.ctrly2 && in(c2.x1, tmp2x, c2.x2)) { cy=tmp2; cx=tmp2x; } else { cy=c2.ctrly1; cx=c2.ctrlx1; }
             draw(c,false);
         }
     }

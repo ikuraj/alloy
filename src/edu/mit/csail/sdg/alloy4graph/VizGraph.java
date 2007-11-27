@@ -349,7 +349,7 @@ public final strictfp class VizGraph extends DiGraph {
 
     /** For each edge coming out of this layer of nodes, add bends to it if it currently overlaps some nodes inappropriately. */
     private void checkUpperCollision(List<VizNode> top) {
-        //final int room=2; // This is how much we need to stay clear of a node's boundary
+        final int room=2; // This is how much we need to stay clear of a node's boundary
         for(int i=0; i<top.size(); i++) {
             VizNode a=top.get(i); double left=a.x()-a.getWidth()/2, right=a.x()-a.getWidth()/2;
             for(VizEdge e:a.outEdges()) {
@@ -357,16 +357,14 @@ public final strictfp class VizGraph extends DiGraph {
                if (b.x()>=right) for(int j=i+1; j<top.size(); j++) { // This edge goes from top-left to bottom-right
                   VizNode c=top.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  //double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2; TODO
-                  //int intersect=e.superpath().intersectsVertical(cleft, ctop-room, cbottom+room, null);
-                  //if (intersect>=0) e.pathAdd(intersect, cleft, cbottom+5);
+                  double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
+                  e.path().bendDown(cleft, ctop-room, cbottom+room, 3);
                }
                else if (b.x()<=left) for(int j=i-1; j>=0; j--) { // This edge goes from top-right to bottom-left
                   VizNode c=top.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  //double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
-                  //int intersect=e.superpath().intersectsVertical(cright, ctop-room, cbottom+room, null);
-                  //if (intersect>=0) e.pathAdd(intersect, cright, cbottom+5);
+                  double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
+                  e.path().bendDown(cright, ctop-room, cbottom+room, 3);
                }
             }
          }
@@ -376,7 +374,7 @@ public final strictfp class VizGraph extends DiGraph {
 
     /** For each edge going into this layer of nodes, add bends to it if it currently overlaps some nodes inappropriately. */
     private void checkLowerCollision(List<VizNode> bottom) {
-        //final int room=2; // This is how much we need to stay clear of a node's boundary
+        final int room=2; // This is how much we need to stay clear of a node's boundary
         for(int i=0; i<bottom.size(); i++) {
             VizNode b=bottom.get(i); double left=b.x()-b.getWidth()/2, right=b.x()-b.getWidth()/2;
             for(VizEdge e:b.inEdges()) {
@@ -384,16 +382,14 @@ public final strictfp class VizGraph extends DiGraph {
                if (a.x()<=left) for(int j=i-1; j>=0; j--) { // This edge goes from top-left to bottom-right
                   VizNode c=bottom.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  //double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2; TODO
-                  //int intersect=e.superpath().intersectsVertical(cright, ctop-room, cbottom+room, null);
-                  //if (intersect>=0) e.pathAdd(intersect, cright, ctop-5);
+                  double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
+                  e.path().bendUp(cright, ctop-room, cbottom+room, 3);
                }
                else if (a.x()>=right) for(int j=i+1; j<bottom.size(); j++) { // This edge goes from top-right to bottom-left
                   VizNode c=bottom.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  //double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
-                  //int intersect=e.superpath().intersectsVertical(cleft, ctop-room, cbottom+room, null);
-                  //if (intersect>=0) e.pathAdd(intersect, cleft, ctop-5);
+                  double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
+                  e.path().bendUp(cleft, ctop-room, cbottom+room, 3);
                }
             }
          }
