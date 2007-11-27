@@ -26,12 +26,15 @@ import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 import static java.lang.StrictMath.sqrt;
 import static java.lang.StrictMath.round;
+import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
+import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopA;
+import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGL;
+import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGR;
 
 /**
  * Mutable; represents a graphical node.
@@ -53,6 +56,9 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     private static final int labelPadding = 5;
 
     // =============================== cached for performance efficiency ===================================
+
+    /** The maximum ascent and descent. We deliberately do NOT make this field "static" because only AWT thread can call Artist. */
+    private final int ad = Artist.getMaxAscentAndDescent();
 
     /** Caches the value of sqrt(3.0). The extra digits in the definition will be truncated by the Java compiler. */
     private static final double sqrt3 = 1.7320508075688772935274463415058723669428052538103806280558D;
@@ -196,6 +202,9 @@ public final strictfp class VizNode extends DiGraph.DiNode {
     /** If (updown>=0), this is the height of the text label. */
     private int height = 0;
 
+    /** If (updown>=0), this is the amount of space on the right set-aside for self-loops (which is 0 if node has no self loops) */
+    private int reserved = 0;
+
     /**
      * If (updown>=0 and shape!=null), this is the bounding polygon.
      * Note: if not null, it must be either a GeneralPath or a Polygon.
@@ -222,108 +231,31 @@ public final strictfp class VizNode extends DiGraph.DiNode {
 
     /** Returns the amount of space we need to reserve on the right hand side for the self edges (0 if this has no self edges now) */
     public int getReserved() {
-        int n=selfEdges().size();
-        if (n==0) return 0; else return VizEdge.selfLoopMinWidth + VizEdge.selfLoopXGap*(n-1);
+        if (selfEdges().isEmpty()) return 0;
+        if (updown<0) calcBounds();
+        return reserved;
     }
 
-    /** Returns true if the given point intersects this node or not. */
-    public boolean intersects(double x, double y) {
+    /** Returns true if the node contains the given point or not. */
+    public boolean contains(double x, double y) {
         if (shape==null) return false;
         if (updown<0) calcBounds();
         return poly.contains(x-centerX, y-centerY);
-    }
-
-    /**
-     * Find the point of intersection between this node and a given ray, and store the point of intersection into ans.
-     * <p> The ray starts from this node's center, and goes through the point (rx,ry) given as arguments.
-     * <p> Note: this method may find the wrong point of intersection if the ray is too horizontal.
-     */
-    public void intersectsNonhorizontalRay(double rx, double ry, Point2D.Double ans) {
-       if (shape==null) { ans.x=centerX; ans.y=centerY; return; }
-       if (updown<0) calcBounds();
-       // Shift the input argument to the center of this node
-       rx=rx-centerX; ry=ry-centerY;
-       double slope=rx/ry, step=(ry<0 ? -1 : 1);
-       // Use the radius to directly compute the intersection, if the shape is CIRCLE, M_CIRCLE, or DOUBLE_CIRCLE
-       if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
-          int hw=width/2, hh=height/2;
-          int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
-          if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
-          // x^2+y^2=radius^2  and x=y*slope, thus (1+slope^2)(y^2)=radius^2
-          ry=sqrt((radius*radius)/(1+slope*slope)); if (step<0) ry=(-ry);
-          ans.x=ry*slope + centerX;
-          ans.y=ry + centerY;
-          return;
-       }
-       // Check for intersection
-       for(ry=0;;ry=ry+step) {
-          rx=ry*slope;
-          if (poly.contains(rx, ry)) continue;
-          ans.x=rx+centerX; ans.y=ry+centerY; return;
-       }
-    }
-
-    /**
-     * Find the point of intersection between this node and a given ray, and store the point of intersection into ans.
-     * <p> The ray starts from this node's center, and goes through the point (rx,ry) given as arguments.
-     * <p> Note: this method may find the wrong point of intersection if the ray is too vertical.
-     */
-    public void intersectsNonverticalRay(double rx, double ry, Point2D.Double ans) {
-       if (shape==null) { ans.x=centerX; ans.y=centerY; return; }
-       if (updown<0) calcBounds();
-       // Shift the input argument to the center of this node
-       rx=rx-centerX; ry=ry-centerY;
-       double slope=ry/rx, step=(rx<0 ? -1 : 1);
-       // Use the radius to directly compute the intersection, if the shape is CIRCLE, M_CIRCLE, or DOUBLE_CIRCLE
-       if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
-          int hw=width/2, hh=height/2;
-          int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
-          if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
-          // x^2+y^2=radius^2  and y=x*slope, thus (1+slope^2)(x^2)=radius^2
-          rx=sqrt((radius*radius)/(1+slope*slope)); if (step<0) rx=(-rx);
-          ans.y=rx*slope + centerY;
-          ans.x=rx + centerX;
-          return;
-       }
-       // Check for intersection
-       for(rx=0;;rx=rx+step) {
-          ry=rx*slope;
-          if (poly.contains(rx, ry)) continue;
-          ans.x=rx+centerX;
-          ans.y=ry+centerY;
-          return;
-       }
-    }
-
-    /** Return the horizontal point of intersection of this node with a horizontal ray at height y going from this.x() rightward. */
-    public double intersectsAtHeight(double y) {
-       if (shape==null) return 0;
-       if (updown<0) calcBounds();
-       y=y-centerY;
-       if (shape==VizShape.CIRCLE || shape==VizShape.DOUBLE_CIRCLE || shape==VizShape.M_CIRCLE) {
-          int hw=width/2, hh=height/2;
-          int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;
-          if (shape==VizShape.DOUBLE_CIRCLE) radius=radius+5;
-          return sqrt(radius*radius - y*y) + centerX;
-       } else {
-          for(double x=0;;x=x+1) if (!poly.contains(x,y)) return x+centerX;
-       }
     }
 
     //===================================================================================================
 
     /** Calculate this node's bounds. */
     public void calcBounds() {
-       yShift=0;
+       reserved=(yShift=0);
        width=2*labelPadding; if (width<dummyWidth) side=dummyWidth/2;
        height=width;         if (height<dummyHeight) updown=dummyHeight/2;
        poly=(poly2=(poly3=null));
        if (shape==null) return;
        Polygon poly=new Polygon();
-       final int ad = Artist.getMaxAscentAndDescent();
        if (labels!=null) for(int i=0; i<labels.size(); i++) {
           String t = labels.get(i);
-          Rectangle2D rect = Artist.getStringBounds(fontBold, t);
+          Rectangle2D rect = getBounds(fontBold, t);
           int ww = ((int)(rect.getWidth())) + 1; // Round it up
           if (width<ww) width=ww;
           height=height+ad;
@@ -438,14 +370,22 @@ public final strictfp class VizNode extends DiGraph.DiNode {
              path.quadTo(side,updown,0,updown); path.quadTo(-side,updown,-side,d);
              path.closePath();
              this.poly=path;
-             return; // We must return, since otherwise "this.poly" will be overwritten by the local variable "poly"
           }
           default: { // BOX
              if (shape!=VizShape.BOX) { int d=ad/2; hw=hw+d; side=hw; hh=hh+d; updown=hh; }
              poly.addPoint(-hw,-hh); poly.addPoint(hw,-hh); poly.addPoint(hw,hh); poly.addPoint(-hw,hh);
           }
        }
-       this.poly=poly;
+       if (shape!=VizShape.EGG && shape!=VizShape.ELLIPSE) this.poly=poly;
+       for(int i=0; i<selfEdges().size(); i++) {
+           if (i==0) { reserved=side+selfLoopA; continue; }
+           String label = selfEdges().get(i-1).label();
+           reserved=reserved+(int)(getBounds(false,label).getWidth())+selfLoopGL+selfLoopGR;
+       }
+       if (reserved>0) {
+           String label = selfEdges().get(selfEdges().size()-1).label();
+           reserved=reserved+(int)(getBounds(false,label).getWidth())+selfLoopGL+selfLoopGR;
+       }
     }
 
     /** Assuming calcBounds() have been called, and (x,y) have been set, then this draws the node. */
@@ -456,7 +396,6 @@ public final strictfp class VizNode extends DiGraph.DiNode {
        gr.set(style, scale);
        gr.translate(centerX-left, centerY-top);
        gr.setFont(fontBold);
-       final int ad = Artist.getMaxAscentAndDescent();
        if (highlight) gr.setColor(Color.RED); else gr.setColor(color);
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
@@ -494,7 +433,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
           int x=(-width/2), y=yShift+(-labels.size()*ad/2);
           for(int i=0; i<labels.size(); i++) {
              String t = labels.get(i);
-             int w = ((int) (Artist.getStringBounds(fontBold, t).getWidth())) + 1; // Round it up
+             int w = ((int) (getBounds(fontBold, t).getWidth())) + 1; // Round it up
              if (width>w) w=(width-w)/2; else w=0;
              gr.drawString(t, x+w, y+Artist.getMaxAscent());
              y=y+ad;

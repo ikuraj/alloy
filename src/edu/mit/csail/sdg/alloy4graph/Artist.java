@@ -31,6 +31,7 @@ import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
+import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.QuadCurve2D;
@@ -108,6 +109,29 @@ public final strictfp class Artist {
         int rgb=c.getRGB(), r=(rgb>>16)&0xFF, g=(rgb>>8)&0xFF, b=(rgb&0xFF);
         pdf.write(r/255D).writespace().write(g/255D).writespace().write(b/255D).write(" RG\n");
         pdf.write(r/255D).writespace().write(g/255D).writespace().write(b/255D).write(" rg\n");
+    }
+
+    /** Draws the given curve smoothly (assuming the curve is monotonic vertically) */
+    public void drawSmoothly(VizCurve curve) {
+        final int smooth=15;
+        double cx=0, cy=0, slope;
+        for(int n=curve.list.size(), i=0; i<n; i++) {
+            CubicCurve2D.Double c=new CubicCurve2D.Double(), c2=(i+1<n)?curve.list.get(i+1):null;
+            c.setCurve(curve.list.get(i));
+            if (i>0) { c.ctrlx1=cx; c.ctrly1=cy; }
+            if (c2==null) { draw(c,false); return; }
+            if ((c.x1<c.x2 && c2.x2<c2.x1) || (c.x1>c.x2 && c2.x2>c2.x1)) slope=0; else slope=(c2.x2-c.x1)/(c2.y2-c.y1);
+            c.ctrly2 = c.y2 - smooth;
+            c.ctrlx2 = c.x2 - smooth*slope;
+            cy = c2.y1 + smooth;
+            cx = c2.x1 + smooth*slope;
+            draw(c,false);
+        }
+    }
+
+    /** Draws the given curve. */
+    public void draw(VizCurve curve) {
+        for(CubicCurve2D.Double c: curve.list) draw(c,false);
     }
 
     /** Draws the outline of the given shape. */
@@ -291,7 +315,7 @@ public final strictfp class Artist {
     }
 
     /** Returns the bounding box when drawing the given string using the given font size and font boldness settings. */
-    public static Rectangle2D getStringBounds(boolean fontBoldness, String string) {
+    public static Rectangle2D getBounds(boolean fontBoldness, String string) {
         calc();
         return (fontBoldness ? cachedBoldMetrics : cachedPlainMetrics).getStringBounds(string, cachedGraphics);
     }

@@ -21,7 +21,6 @@
 package edu.mit.csail.sdg.alloy4graph;
 
 import java.awt.Color;
-import java.awt.geom.Point2D;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -34,6 +33,7 @@ import java.util.TreeMap;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Rational;
 import edu.mit.csail.sdg.alloy4.Util;
+import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
 
 /**
  * Mutable; represents a graph.
@@ -50,6 +50,15 @@ public final strictfp class VizGraph extends DiGraph {
 
     /** Minimum vertical distance between adjacent layers. */
     static final int yJump=60;
+
+    /** The horizontal distance between the first self-loop and the node itself. */
+    static final int selfLoopA=40;
+
+    /** The horizontal padding to put on the left side of a self-loop's edge label. */
+    static final int selfLoopGL=2;
+
+    /** The horizontal padding to put on the right side of a self-loop's edge label. */
+    static final int selfLoopGR=20;
 
     /** The maximum ascent and descent. We deliberately do NOT make this field "static" because only AWT thread can call Artist. */
     private final int ad = Artist.getMaxAscentAndDescent();
@@ -340,7 +349,7 @@ public final strictfp class VizGraph extends DiGraph {
 
     /** For each edge coming out of this layer of nodes, add bends to it if it currently overlaps some nodes inappropriately. */
     private void checkUpperCollision(List<VizNode> top) {
-        final int room=2; // This is how much we need to stay clear of a node's boundary
+        //final int room=2; // This is how much we need to stay clear of a node's boundary
         for(int i=0; i<top.size(); i++) {
             VizNode a=top.get(i); double left=a.x()-a.getWidth()/2, right=a.x()-a.getWidth()/2;
             for(VizEdge e:a.outEdges()) {
@@ -348,16 +357,16 @@ public final strictfp class VizGraph extends DiGraph {
                if (b.x()>=right) for(int j=i+1; j<top.size(); j++) { // This edge goes from top-left to bottom-right
                   VizNode c=top.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
-                  int intersect=e.path().intersectsVertical(cleft, ctop-room, cbottom+room, null);
-                  if (intersect>=0) e.pathAdd(intersect, cleft, cbottom+5);
+                  //double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2; TODO
+                  //int intersect=e.superpath().intersectsVertical(cleft, ctop-room, cbottom+room, null);
+                  //if (intersect>=0) e.pathAdd(intersect, cleft, cbottom+5);
                }
                else if (b.x()<=left) for(int j=i-1; j>=0; j--) { // This edge goes from top-right to bottom-left
                   VizNode c=top.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
-                  int intersect=e.path().intersectsVertical(cright, ctop-room, cbottom+room, null);
-                  if (intersect>=0) e.pathAdd(intersect, cright, cbottom+5);
+                  //double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
+                  //int intersect=e.superpath().intersectsVertical(cright, ctop-room, cbottom+room, null);
+                  //if (intersect>=0) e.pathAdd(intersect, cright, cbottom+5);
                }
             }
          }
@@ -367,7 +376,7 @@ public final strictfp class VizGraph extends DiGraph {
 
     /** For each edge going into this layer of nodes, add bends to it if it currently overlaps some nodes inappropriately. */
     private void checkLowerCollision(List<VizNode> bottom) {
-        final int room=2; // This is how much we need to stay clear of a node's boundary
+        //final int room=2; // This is how much we need to stay clear of a node's boundary
         for(int i=0; i<bottom.size(); i++) {
             VizNode b=bottom.get(i); double left=b.x()-b.getWidth()/2, right=b.x()-b.getWidth()/2;
             for(VizEdge e:b.inEdges()) {
@@ -375,16 +384,16 @@ public final strictfp class VizGraph extends DiGraph {
                if (a.x()<=left) for(int j=i-1; j>=0; j--) { // This edge goes from top-left to bottom-right
                   VizNode c=bottom.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
-                  int intersect=e.path().intersectsVertical(cright, ctop-room, cbottom+room, null);
-                  if (intersect>=0) e.pathAdd(intersect, cright, ctop-5);
+                  //double ctop=c.y()-c.getHeight()/2, cright=c.x()+c.getWidth()/2, cbottom=c.y()+c.getHeight()/2; TODO
+                  //int intersect=e.superpath().intersectsVertical(cright, ctop-room, cbottom+room, null);
+                  //if (intersect>=0) e.pathAdd(intersect, cright, ctop-5);
                }
                else if (a.x()>=right) for(int j=i+1; j<bottom.size(); j++) { // This edge goes from top-right to bottom-left
                   VizNode c=bottom.get(j);
                   if (c.shape()==null) continue; // You can intersect thru a dummy node
-                  double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
-                  int intersect=e.path().intersectsVertical(cleft, ctop-room, cbottom+room, null);
-                  if (intersect>=0) e.pathAdd(intersect, cleft, ctop-5);
+                  //double ctop=c.y()-c.getHeight()/2, cleft=c.x()-c.getWidth()/2, cbottom=c.y()+c.getHeight()/2;
+                  //int intersect=e.superpath().intersectsVertical(cleft, ctop-room, cbottom+room, null);
+                  //if (intersect>=0) e.pathAdd(intersect, cleft, ctop-5);
                }
             }
          }
@@ -400,18 +409,6 @@ public final strictfp class VizGraph extends DiGraph {
 
         // Calculate each node's width and height
         for(VizNode n:nodes) n.calcBounds();
-
-        // If a node has too many self-edges, we add blank labels to the node's label until there is a reasonable vertical gap.
-        for(VizNode n:nodes) {
-           int num=n.selfEdges().size();
-           while(true) {
-             double y=n.getHeight()/(1D+2*num);
-             if (!(y<VizEdge.selfLoopYGap)) break;
-             n.addBefore(" ");
-             n.addAfter(" ");
-             n.calcBounds();
-           }
-        }
 
         // Layout the nodes
         layout_assignOrder();
@@ -486,7 +483,7 @@ public final strictfp class VizGraph extends DiGraph {
         int widestLegend=0, legendHeight=30;
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e: legends.entrySet()) {
             if (e.getValue().b==null) continue; // that means this legend is not visible
-            int widthOfLegend = (int) Artist.getStringBounds(true, e.getValue().a).getWidth();
+            int widthOfLegend = (int) getBounds(true, e.getValue().a).getWidth();
             if (widestLegend < widthOfLegend) widestLegend = widthOfLegend;
             legendHeight += ad;
         }
@@ -508,10 +505,10 @@ public final strictfp class VizGraph extends DiGraph {
            List<VizNode> top=layer(layer), bottom=layer(layer-1);
            checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
         }
-        // Now, for each edge that has an arrow head, move it to the right place
+        // Now, for each edge, adjust its arrowhead and label.
         AvailableSpace sp = new AvailableSpace();
         for(VizNode n:nodes) if (n.shape()!=null) sp.add(n.x()-n.getWidth()/2, n.y()-n.getHeight()/2, n.getWidth()+n.getReserved(), n.getHeight());
-        for(VizEdge e:edges) { layout_arrowHead(e); e.repositionLabel(sp); }
+        for(VizEdge e:edges) { e.layout_arrowHead(); e.repositionLabel(sp); }
     }
 
     /**
@@ -519,48 +516,22 @@ public final strictfp class VizGraph extends DiGraph {
      * this re-layouts the edges going to and from layer i.
      */
     public void relayout_edges(int i) {
-        AvailableSpace sp = new AvailableSpace();
-        for(VizNode n:nodes) if (n.shape()!=null) sp.add(n.x()-n.getWidth()/2, n.y()-n.getHeight()/2, n.getWidth()+n.getReserved(), n.getHeight());
         if (nodes.size()==0) return; // The rest of the code assumes there is at least one node
-        for(VizNode n:layer(i)) for(VizEdge e:n.selfEdges()) { e.resetPath(); layout_arrowHead(e); }
+        for(VizNode n:layer(i)) for(VizEdge e:n.selfEdges()) { e.resetPath(); e.layout_arrowHead(); }
         if (i>0) {
             List<VizNode> top=layer(i), bottom=layer(i-1);
             for(VizNode n:top) for(VizEdge e:n.outEdges()) e.resetPath();
             checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
-            for(VizNode n:top) for(VizEdge e:n.outEdges()) { layout_arrowHead(e); e.repositionLabel(sp); }
         }
         if (i<layers()-1) {
             List<VizNode> top=layer(i+1), bottom=layer(i);
             for(VizNode n:top) for(VizEdge e:n.outEdges()) e.resetPath();
             checkUpperCollision(top); checkLowerCollision(bottom); checkUpperCollision(top);
-            for(VizNode n:top) for(VizEdge e:n.outEdges()) { layout_arrowHead(e); e.repositionLabel(sp); }
         }
-    }
-
-    /** Positions the arrow heads of the given edge properly. */
-    private void layout_arrowHead(VizEdge e) {
-        VizPath p=e.path();
-        if (e.a()==e.b()) {
-           if (e.ahead() && e.a().shape()!=null) {
-              double y=p.getY(0), x=e.a().intersectsAtHeight(y);
-              p.move(0, x, y);
-           }
-           if (e.bhead() && e.b().shape()!=null) {
-              double y=p.getY(p.getPoints()-1), x=e.a().intersectsAtHeight(y);
-              p.move(p.getPoints()-1, x, y);
-           }
-        } else {
-           if (e.ahead() && e.a().shape()!=null) {
-              Point2D.Double ans = new Point2D.Double();
-              e.a().intersectsNonhorizontalRay(p.getX(1), p.getY(1), ans);
-              p.move(0, ans.x, ans.y);
-           }
-           if (e.bhead() && e.b().shape()!=null) {
-              Point2D.Double ans = new Point2D.Double();
-              e.b().intersectsNonhorizontalRay(p.getX(p.getPoints()-2), p.getY(p.getPoints()-2), ans);
-              p.move(p.getPoints()-1, ans.x, ans.y);
-           }
-        }
+        // Now, for each edge, adjust its arrowhead and label.
+        AvailableSpace sp = new AvailableSpace();
+        for(VizNode n:nodes) if (n.shape()!=null) sp.add(n.x()-n.getWidth()/2, n.y()-n.getHeight()/2, n.getWidth()+n.getReserved(), n.getHeight());
+        for(VizEdge e:edges) { e.layout_arrowHead(); e.repositionLabel(sp); }
     }
 
     //============================================================================================================================//
@@ -573,15 +544,23 @@ public final strictfp class VizGraph extends DiGraph {
            if (e.getValue().b==null) continue;
            h=h+ad;
            if (y<h || y>=h+ad) continue;
-           int w = (int) Artist.getStringBounds(true, e.getValue().a).getWidth();
+           int w = (int) getBounds(true, e.getValue().a).getWidth();
            if (x>=getLeft()+10 && x<=getLeft()+10+w) return e.getKey();
        }
        for(VizNode n:nodes) {
            if (n.shape()==null && Math.abs(n.x()-x)<10 && Math.abs(n.y()-y)<10) return n;
-           if (n.intersects(x,y)) return n;
+           if (n.contains(x,y)) return n;
        }
        for(VizEdge e:edges) {
-           if (e.intersects(x,y,scale)) return e;
+           if (e.a()!=e.b()) {
+              double dx;
+              dx=e.path().getXatY(y, 0, 1, Double.NaN); if (dx!=Double.NaN && StrictMath.abs(x-dx)<12/scale) return e;
+           } else {
+              double dx;
+              dx=e.path().getXatY(y, 0.25, 0.75, Double.NaN); if (dx!=Double.NaN && StrictMath.abs(x-dx)<12/scale) return e;
+              dx=e.path().getXatY(y, 0,    0.25, Double.NaN); if (dx!=Double.NaN && StrictMath.abs(x-dx)<12/scale) return e;
+              dx=e.path().getXatY(y, 0.75, 1,    Double.NaN); if (dx!=Double.NaN && StrictMath.abs(x-dx)<12/scale) return e;
+           }
        }
        return null;
     }
@@ -628,7 +607,7 @@ public final strictfp class VizGraph extends DiGraph {
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {
             if (e.getValue().b==null) continue;
             if (group!=null && e.getKey()==group) groupFound=true;
-            int w = (int) Artist.getStringBounds(true, e.getValue().a).getWidth();
+            int w = (int) getBounds(true, e.getValue().a).getWidth();
             if (maxWidth<w) maxWidth=w;
             y = y + ad;
         }

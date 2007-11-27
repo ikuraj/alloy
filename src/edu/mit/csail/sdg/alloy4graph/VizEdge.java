@@ -22,15 +22,18 @@ package edu.mit.csail.sdg.alloy4graph;
 
 import static java.awt.Color.BLACK;
 import java.awt.Color;
+import java.awt.geom.CubicCurve2D;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Line2D;
-import java.awt.geom.QuadCurve2D;
 import java.awt.geom.Rectangle2D;
 import static java.lang.StrictMath.PI;
 import static java.lang.StrictMath.sin;
 import static java.lang.StrictMath.cos;
 import static java.lang.StrictMath.atan2;
 import static java.lang.StrictMath.toRadians;
+import static edu.mit.csail.sdg.alloy4graph.Artist.getBounds;
+import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopA;
+import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGL;
+import static edu.mit.csail.sdg.alloy4graph.VizGraph.selfLoopGR;
 
 /**
  * Mutable; represents a graphical edge.
@@ -40,16 +43,10 @@ import static java.lang.StrictMath.toRadians;
 
 public final strictfp class VizEdge extends DiGraph.DiEdge {
 
-    // =============================== adjustable options ==================================================
+    // =============================== cached for performance efficiency ===================================
 
-    /** This determines the minimum width of a self loop. */
-    static final int selfLoopMinWidth = 20;
-
-    /** This determines how much farther to the right you need to go, for each subsequent self loop on the same node. */
-    static final int selfLoopXGap = 10;
-
-    /** This determines the prefered vertical gap between self loops. */
-    static final int selfLoopYGap = 10;
+    /** The maximum ascent and descent. We deliberately do NOT make this field "static" because only AWT thread can call Artist. */
+    private final int ad = Artist.getMaxAscentAndDescent();
 
     // =============================== per-edge settings ===================================================
 
@@ -93,7 +90,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     private int weight = 1;
 
     /** The actual path corresponding to this edge; null if we have not assigned the path yet. */
-    private VizPath path = null;
+    private VizCurve path = null;
 
     /** Returns the group that this VizEdge belongs to. */
     public Object group() { return group; }
@@ -161,7 +158,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
        if (style!=null) this.style=style;
        if (color!=null) this.color=color;
        if (label.length()>0) {
-           Rectangle2D box = Artist.getStringBounds(false, label);
+           Rectangle2D box = getBounds(false, label);
            labelbox.x = 0;
            labelbox.y = 0;
            labelbox.w = (int) box.getWidth();
@@ -179,14 +176,22 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
         VizNode a=a(), b=b();
         double ax=a.x(), ay=a.y();
         if (a==b) {
-           int i, n=a.selfEdges().size(), q=selfLoopMinWidth, d=selfLoopXGap;
-           for(i=0; i<n; i++) if (a.selfEdges().get(i)==this) break;
-           double p=a.getHeight()/(2*n+1D);
-           if (!(p<=selfLoopYGap)) p=selfLoopYGap;
-           p=i*p+(p/2D);
-           path=new VizPath(ax, ay-p, ax, ay+p);
-           path.add(1, ax+a.getWidth()/2D+q+i*d, ay-p);
-           path.add(2, ax+a.getWidth()/2D+q+i*d, ay+p);
+           double w=0;
+           for(int n=a.selfEdges().size(), i=0; i<n; i++) {
+               if (i==0) w = a.getWidth()/2 + selfLoopA;
+               else w = w + getBounds(false, a.selfEdges().get(i-1).label()).getWidth() + selfLoopGL + selfLoopGR;
+               VizEdge e = a.selfEdges().get(i);
+               if (e!=this) continue;
+               double h=a.getHeight()/2D*0.7D, k=0.55238D, wa=a.getWidth()/2, wb=w-wa;
+               e.path = new VizCurve(ax, ay);
+               e.path.cubicTo(ax, ay-k*h, ax+wa-k*wa, ay-h, ax+wa, ay-h);
+               e.path.cubicTo(ax+wa+k*wb, ay-h, ax+wa+wb, ay-k*h, ax+wa+wb, ay);
+               e.path.cubicTo(ax+wa+wb, ay+k*h, ax+wa+k*wb, ay+h, ax+wa, ay+h);
+               e.path.cubicTo(ax+wa-k*wa, ay+h, ax, ay+k*h, ax, ay);
+               e.labelbox.x = (int) (ax + w + selfLoopGL);
+               e.labelbox.y = (int) (ay - getBounds(false, e.label()).getHeight()/2);
+               break;
+           }
         } else {
            int i=0, n=0;
            for(VizEdge e:a.outEdges()) {
@@ -194,70 +199,45 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
                if (e.b()==b) n++;
            }
            double cx=b.x(), cy=b.y(), bx=(ax+cx)/2, by=(ay+cy)/2;
-           path=new VizPath(ax, ay, cx, cy);
+           path=new VizCurve(ax, ay);
            if (n>1 && (n&1)==1) {
                if (i<n/2) bx=bx-(n/2-i)*10; else if (i>n/2) bx=bx+(i-n/2)*10;
-               path.add(1, bx, by);
+               path.lineTo(bx, by);
+               path.lineTo(cx, cy);
            } else if (n>1) {
                if (i<n/2) bx=bx-(n/2-i)*10+5; else bx=bx+(i-n/2)*10+5;
-               path.add(1, bx, by);
+               path.lineTo(bx, by);
+               path.lineTo(cx, cy);
+           } else {
+               path.lineTo(cx, cy);
            }
         }
     }
 
     /** Given that this edge is already well-laidout, this method moves the label hoping to avoid/minimize overlap. */
     void repositionLabel(AvailableSpace sp) {
-        if (label.length()==0) return;
-        if (a()==b()) { labelbox.x=a().x(); labelbox.y=a().y(); return; } // self edge
-        int gap = style==VizStyle.BOLD ? 3 : 0; // If the line is bold, we need to shift the label to the right a little bit
-        int ay=a().y()+a().getHeight()/2, by=b().y()-b().getHeight()/2, midy=(ay+by)/2;
-        if (b().shape()==null) midy=by-labelbox.h;
-        for(int gp=0; ; gp=gp+2) {
-            boolean done = true;
-            int y = midy-gp;
-            if (y>ay && y<by) {
-                done = false;
-                int xpre = (int) (path.intersectsHorizontal(y-5));
-                int xpost = (int) (path.intersectsHorizontal(y+5));
-                int x = (int) (path.intersectsHorizontal(xpre>=xpost ? y : y+labelbox.h)) + gap;
-                if (sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(x, y, labelbox.w, labelbox.h); labelbox.x=x; labelbox.y=y; return; }
-            }
-            y = midy+gp;
-            if (y>ay && y<by) {
-                done = false;
-                int xpre = (int) (path.intersectsHorizontal(y-5));
-                int xpost = (int) (path.intersectsHorizontal(y+5));
-                int x = (int) (path.intersectsHorizontal(xpre>=xpost ? y : y+labelbox.h)) + gap;
-                if (sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(x, y, labelbox.w, labelbox.h); labelbox.x=x; labelbox.y=y; return; }
-            }
-            if (done) break;
+        if (label.length()==0 || a()==b()) return;
+        final int gap = style==VizStyle.BOLD ? 4 : 2; // If the line is bold, we need to shift the label to the right a little bit
+        boolean failed = false;
+        VizCurve p = path;
+        for(VizNode a=a(); a.shape()==null;) { VizEdge e=a.inEdges().get(0); a=e.a(); p=e.path().join(p); }
+        for(VizNode b=b(); b.shape()==null;) { VizEdge e=b.outEdges().get(0); b=e.b(); p=p.join(e.path()); }
+        for(double t=0.5D; ; t=t+0.05D) {
+            if (t>=1D) { failed=true; t=0.7D; }
+            double x1 = p.getX(t), x2 = p.getX(t+0.01D);
+            int x = (int) (x1<x2 ? x2+gap : x1+gap), y = (int)(p.getY(t));
+            if (failed || sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(labelbox.x=x, labelbox.y=y, labelbox.w, labelbox.h); return; }
+            double t2=1D-t;
+            x1 = p.getX(t2); x2 = p.getX(t2+0.01D);
+            x = (int) (x1<x2 ? x2+gap : x1+gap); y = (int)(p.getY(t2));
+            if (sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(labelbox.x=x, labelbox.y=y, labelbox.w, labelbox.h); return; }
         }
-        int y = ay+(by-ay)/2;
-        int xpre = (int) (path.intersectsHorizontal(y-5));
-        int xpost = (int) (path.intersectsHorizontal(y+5));
-        int realY= (xpre>=xpost) ? y : (y+labelbox.h);
-        int x = (int) path.intersectsHorizontal(realY) + gap;
-        labelbox.x = (int)x;
-        labelbox.y = (int)y;
-        sp.add(labelbox.x, labelbox.y, labelbox.w, labelbox.h);
     }
 
     /** Returns the current path; if the path was not yet assigned, it returns a straight line from "from" node to "to" node. */
-    VizPath path() {
+    VizCurve path() {
         if (path==null) resetPath();
         return path;
-    }
-
-    /** Add the given (x,y) point into the path at the i-th position in the path (where i counts from 0...) */
-    void pathAdd(int i, double x, double y) {
-        if (path==null) resetPath();
-        path.add(i,x,y);
-    }
-
-    /** Returns true iff the edge intersects the given point (px,py), given the current zoom scale. */
-    public boolean intersects(double px, double py, double scale) {
-        double fudge=10/scale; // we enlarge (px,py) into a square of size (fudge*2) x (fudge*2) when testing for intersection
-        return path.intersectsVertical(px, py-fudge, py+fudge, null)>=0 || path.intersectsHorizontal(px-fudge, px+fudge, py);
     }
 
     /**
@@ -270,25 +250,18 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
           else if ((highEdge==null && highGroup==null) || highGroup==group) { gr.setColor(color); gr.set(style, scale); }
           else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
        if (a()==b()) {
-          // Draw the self edge
-          double x0=path.getX(0), y0=path.getY(0), x1=path.getX(1), y1=y0, x2=x1, y2=path.getY(2), x3=path.getX(3), y3=y2;
-          double gap=(y2-y1)/3; if (!(gap<5D)) gap=5D;
-          gr.draw(new Line2D.Double(x0, y0, x1-5, y1), false);
-          gr.draw(new QuadCurve2D.Double(x1-5, y1, x1, y1, x1, y1+gap), false);
-          gr.draw(new Line2D.Double(x1, y1+gap, x2, y2-gap), false);
-          gr.draw(new QuadCurve2D.Double(x2, y2-gap, x2, y2, x2-5, y2), false);
-          gr.draw(new Line2D.Double(x2-5, y2, x3, y3), false);
+          gr.draw(path);
        } else {
           // Concatenate this path and its connected segments into a single VizPath object, then draw it
-          VizPath p=null;
+          VizCurve p=null;
           VizEdge e=this;
           while(e.a().shape()==null) e=e.a().inEdges().get(0); // Let e be the first segment of this chain of connected segments
           while(true) {
-             p = (p==null) ? e.path : new VizPath(p, e.path);
+             p = (p==null) ? e.path : p.join(e.path);
              if (e.b().shape()!=null) break;
              e = e.b().outEdges().get(0);
           }
-          p.draw(gr);
+          gr.drawSmoothly(p);
        }
        gr.set(VizStyle.SOLID, scale);
        gr.translate(left, top);
@@ -300,25 +273,43 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     void drawLabel(Artist gr, Color color, Color erase) {
         if (label.length()>0) {
             final int top = a().graph.getTop(), left = a().graph.getLeft();
-            int x, y, n = path.getPoints();
-            if ((n&1)==0) x=(int)(path.getX(n/2-1)+path.getX(n/2))/2; else x=(int)path.getX(n/2);
-            if ((n&1)==0) y=(int)(path.getY(n/2-1)+path.getY(n/2))/2; else y=(int)path.getY(n/2);
-            x=x-labelbox.w/2;
-            y=y-labelbox.h/2;
             gr.translate(-left, -top);
-            if (erase!=null) {
-               Rectangle2D.Double rect = new Rectangle2D.Double(x-1, y-1, labelbox.w+2, labelbox.h+2);
-               gr.setColor(erase); gr.draw(rect, true);
-               gr.setColor(color);
+            if (erase!=null && a()!=b()) {
+                Rectangle2D.Double rect = new Rectangle2D.Double(labelbox.x, labelbox.y, labelbox.w, labelbox.h);
+                gr.setColor(erase);
+                gr.draw(rect, true);
             }
-            gr.drawString(label, x, y+Artist.getMaxAscent());
+            gr.setColor(color);
+            gr.drawString(label, labelbox.x, labelbox.y+Artist.getMaxAscent());
             gr.translate(left, top);
+            return;
+        }
+    }
+
+    /** Positions the arrow heads of the given edge properly. */
+    void layout_arrowHead() {
+        VizCurve c=path();
+        if (ahead() && a().shape()!=null) {
+            double in=0D, out=1D;
+            while(StrictMath.abs(out-in)>0.0001D) {
+                double t=(in+out)/2;
+                if (a().contains(c.getX(t), c.getY(t))) in=t; else out=t;
+            }
+            c.chopStart(in);
+        }
+        if (bhead() && b().shape()!=null) {
+            double in=1D, out=(a()==b() ? 0.5D : 0D);
+            while(StrictMath.abs(out-in)>0.0001D) {
+                double t=(in+out)/2;
+                if (b().contains(c.getX(t), c.getY(t))) in=t; else out=t;
+            }
+            c.chopEnd(in);
         }
     }
 
     /** Assuming this edge's coordinates have been assigned, and given the current zoom scale, draw the arrow heads if any. */
     private void drawArrowhead(Artist gr, double scale, VizEdge highEdge, Object highGroup) {
-       final double tipLength = Artist.getMaxAscentAndDescent() * 0.6D;
+       final double tipLength = ad * 0.6D;
        final int top = a().graph.getTop(), left = a().graph.getLeft();
        // Check to see if this edge is highlighted or not
        double fan = (style==VizStyle.BOLD ? bigFan : smallFan);
@@ -327,9 +318,10 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
           else { gr.setColor(Color.LIGHT_GRAY); gr.set(style, scale); }
        for(VizEdge e=this; ;e=e.b().outEdges().get(0)) {
           if ((e.ahead && e.a().shape()!=null) || (e.bhead && e.b().shape()!=null)) {
-             int n = e.path.getPoints();
+             VizCurve cv=e.path();
              if (e.ahead && e.a().shape()!=null) {
-                double ax = e.path.getX(0), ay=e.path.getY(0), bx=e.path.getX(1), by=e.path.getY(1);
+                CubicCurve2D.Double bez = cv.list.get(0);
+                double ax = bez.x1, ay = bez.y1, bx = bez.ctrlx1, by = bez.ctrly1;
                 double t = PI + atan2(ay-by, ax-bx);
                 double gx1 = ax + tipLength*cos(t-fan), gy1 = ay + tipLength*sin(t-fan);
                 double gx2 = ax + tipLength*cos(t+fan), gy2 = ay + tipLength*sin(t+fan);
@@ -338,7 +330,8 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
                 gp.lineTo((float)(gx2-left), (float)(gy2-top)); gp.closePath(); gr.draw(gp,true);
              }
              if (e.bhead && e.b().shape()!=null) {
-                double ax = e.path.getX(n-2), ay=e.path.getY(n-2), bx=e.path.getX(n-1), by=e.path.getY(n-1);
+                CubicCurve2D.Double bez = cv.list.get(cv.list.size()-1);
+                double bx = bez.x2, by = bez.y2, ax = bez.ctrlx2, ay = bez.ctrly2;
                 double t = PI + atan2(by-ay, bx-ax);
                 double gx1 = bx + tipLength*cos(t-fan), gy1 = by + tipLength*sin(t-fan);
                 double gx2 = bx + tipLength*cos(t+fan), gy2 = by + tipLength*sin(t+fan);
