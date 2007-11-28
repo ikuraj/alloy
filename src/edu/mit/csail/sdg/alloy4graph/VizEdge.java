@@ -224,13 +224,13 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
         for(VizNode b=b(); b.shape()==null;) { VizEdge e=b.outEdges().get(0); b=e.b(); p=p.join(e.path()); }
         for(double t=0.5D; ; t=t+0.05D) {
             if (t>=1D) { failed=true; t=0.7D; }
-            double x1 = p.getX(t), x2 = p.getX(t+0.01D);
-            int x = (int) (x1<x2 ? x2+gap : x1+gap), y = (int)(p.getY(t));
-            if (failed || sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(labelbox.x=x, labelbox.y=y, labelbox.w, labelbox.h); return; }
+            double x1 = p.getX(t), y = p.getY(t), x2 = p.getXatY(y+labelbox.h, t, 1D, x1);
+            int x = (int) (x1<x2 ? x2+gap : x1+gap);
+            if (failed || sp.ok(x, (int)y, labelbox.w, labelbox.h)) { sp.add(labelbox.x=x, labelbox.y=(int)y, labelbox.w, labelbox.h); return; }
             double t2=1D-t;
-            x1 = p.getX(t2); x2 = p.getX(t2+0.01D);
-            x = (int) (x1<x2 ? x2+gap : x1+gap); y = (int)(p.getY(t2));
-            if (sp.ok(x, y, labelbox.w, labelbox.h)) { sp.add(labelbox.x=x, labelbox.y=y, labelbox.w, labelbox.h); return; }
+            x1 = p.getX(t2); y = p.getY(t2); x2 = p.getXatY(y+labelbox.h, t2, 1D, x1);
+            x = (int) (x1<x2 ? x2+gap : x1+gap);
+            if (sp.ok(x, (int)y, labelbox.w, labelbox.h)) { sp.add(labelbox.x=x, labelbox.y=(int)y, labelbox.w, labelbox.h); return; }
         }
     }
 

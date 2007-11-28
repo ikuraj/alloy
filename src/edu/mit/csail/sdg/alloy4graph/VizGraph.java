@@ -531,7 +531,7 @@ public final strictfp class VizGraph extends DiGraph {
                 ee=b.outEdges().get(0);
             }
         }
-        // Now give each node some minimum distance from its neighbors
+        // Now restore the invariant that nodes in each layer is ordered by x
         if (straighten) for(int i=0; i<layers(); i++) {
             sortLayer(i, new Comparator<VizNode>() {
                 public int compare(VizNode o1, VizNode o2) {
@@ -539,11 +539,23 @@ public final strictfp class VizGraph extends DiGraph {
                     return 0;
                 }
             });
+            /*
+            // The code below attempts to ensure that nodes are not bunched up together horizontally;
+            // unfortunately, it causes the straightened edges to become bent again, so I've disabled it.
             List<VizNode> layer=new ArrayList<VizNode>(layer(i));
-            for(int j=0; j<layer.size()-1; j++) {
+            for(int j=layer.size()/2; j>=0 && j<layer.size()-1; j++) {
                 VizNode a=layer.get(j), b=layer.get(j+1);
-                if (b.x()<=a.x() || b.x()-a.x()<10) b.setX(a.x()+10);
+                int ax=a.x()+a.getWidth()/2+a.getReserved();
+                int bx=b.x()-b.getWidth()/2;
+                if (bx<=ax || bx-ax<10) b.setX(ax+10+b.getWidth()/2);
             }
+            for(int j=layer.size()/2; j>0 && j<layer.size(); j--) {
+                VizNode a=layer.get(j-1), b=layer.get(j);
+                int ax=a.x()+a.getWidth()/2+a.getReserved();
+                int bx=b.x()-b.getWidth()/2;
+                if (bx<=ax || bx-ax<10) a.setX(bx-10-a.getWidth()/2-a.getReserved());
+            }
+            */
         }
         // Now layout the edges, initially as straight lines
         for(VizEdge e:edges) e.resetPath();
