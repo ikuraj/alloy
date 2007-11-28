@@ -40,7 +40,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 /**
  * This utility class contains methods to read and write VizState customizations.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class StaticThemeReaderWriter {
@@ -62,12 +62,10 @@ public final class StaticThemeReaderWriter {
             } catch (XMLParseException e) {
                 throw new IOException("The file \""+file.getPath()+"\" is not a valid XML file.");
             }
-            synchronized(theme) {
-                try {
-                    for(XMLElement sub: elem.getChildren("view")) parseView(sub,theme);
-                } catch(Throwable e) {
-                    throw new IOException("An error occurred in reading or parsing the file \""+file.getPath()+"\"");
-                }
+            try {
+                for(XMLElement sub: elem.getChildren("view")) parseView(sub,theme);
+            } catch(Throwable e) {
+                throw new IOException("An error occurred in reading or parsing the file \""+file.getPath()+"\"");
             }
         } finally {
             Util.close(reader);
@@ -81,7 +79,7 @@ public final class StaticThemeReaderWriter {
         bw.write("<?xml version=\"1.0\"?>\n<alloy>\n\n");
         if (theme!=null) {
             try {
-                synchronized(theme) { writeView(bw, theme); }
+                writeView(bw, theme);
             } catch(IOException ex) {
                 Util.close(bw);
                 throw new IOException("Error writing to the file \""+filename+"\"");

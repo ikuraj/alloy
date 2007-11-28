@@ -25,7 +25,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 /**
  * Immutable; represents an Alloy set in an instance.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloySet extends AlloyNodeElement {

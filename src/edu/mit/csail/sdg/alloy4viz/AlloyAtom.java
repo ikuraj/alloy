@@ -23,7 +23,7 @@ package edu.mit.csail.sdg.alloy4viz;
 /**
  * Immutable; represents an Alloy atom in an instance.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloyAtom implements Comparable<AlloyAtom> {

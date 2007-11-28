@@ -33,7 +33,7 @@ import java.util.TreeSet;
 /**
  * Immutable; represents an Alloy model.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloyModel {

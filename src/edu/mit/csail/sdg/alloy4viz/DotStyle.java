@@ -29,7 +29,7 @@ import edu.mit.csail.sdg.alloy4graph.VizStyle;
 /**
  * Immutable; this defines the set of line styles that dot can produce.
  *
- * <p><b>Thread Safety:</b>  Safe (since everything is constructed statically)
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotStyle extends DotAttribute {

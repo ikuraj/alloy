@@ -28,7 +28,7 @@ import java.util.TreeMap;
 /**
  * Immutable; represents a set of types to be projected, plus the exact atom chosen for each type to be projected.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloyProjection {

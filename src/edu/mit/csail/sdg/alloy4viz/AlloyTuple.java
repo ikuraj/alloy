@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Immutable; represents an Alloy tuple.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloyTuple implements Comparable<AlloyTuple> {

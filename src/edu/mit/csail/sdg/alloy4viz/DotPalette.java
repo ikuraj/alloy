@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Immutable; this defines the set of color palettes that the user can choose from.
  *
- * <p><b>Thread Safety:</b>  Safe (since everything is constructed statically)
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotPalette extends DotAttribute {

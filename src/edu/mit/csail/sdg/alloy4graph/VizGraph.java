@@ -20,9 +20,6 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-import java.awt.Color;
-import java.awt.geom.Line2D;
-import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
@@ -31,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.awt.Color;
+import java.awt.geom.Line2D;
+import java.awt.geom.RoundRectangle2D;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Rational;
 import edu.mit.csail.sdg.alloy4.Util;

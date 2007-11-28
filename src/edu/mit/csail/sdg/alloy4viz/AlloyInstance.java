@@ -38,7 +38,7 @@ import edu.mit.csail.sdg.alloy4viz.AlloyType;
 /**
  * Immutable; represents an Alloy instance that can be displayed in the visualizer.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloyInstance {

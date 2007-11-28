@@ -352,7 +352,7 @@ public final class A4Solution {
 
     //============================================================================================================================//
 
-    /** This caches the toString() output. */
+    /** This caches the toString() output; this field must be synchronized. */
     private String toStringCache = null;
 
     /** Dumps the Kodkod solution into String. */

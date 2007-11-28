@@ -71,7 +71,7 @@ import edu.mit.csail.sdg.alloy4graph.VizViewer;
 /**
  * GUI main window for the visualizer.
  *
- * <p><b>Thread Safety:</b>  Can be called only by the AWT event thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class VizGUI implements ComponentListener {

@@ -20,11 +20,11 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-import static java.awt.Color.BLACK;
 import java.awt.Color;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
+import static java.awt.Color.BLACK;
 import static java.lang.StrictMath.PI;
 import static java.lang.StrictMath.sin;
 import static java.lang.StrictMath.cos;

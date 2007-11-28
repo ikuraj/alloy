@@ -32,7 +32,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 /**
  * Immutable; this defines the set of colors that dot can produce.
  *
- * <p><b>Thread Safety:</b>  Safe (since everything is constructed statically)
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotColor extends DotAttribute {

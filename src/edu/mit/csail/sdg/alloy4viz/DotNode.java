@@ -27,7 +27,7 @@ import edu.mit.csail.sdg.alloy4graph.VizNode;
 /**
  * Immutable; this represents a node to be written out to the DOT file.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotNode {

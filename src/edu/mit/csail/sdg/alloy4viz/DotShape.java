@@ -30,7 +30,7 @@ import edu.mit.csail.sdg.alloy4graph.VizShape;
 /**
  * Immutable; this defines the set of shapes that dot can produce.
  *
- * <p><b>Thread Safety:</b>  Safe (since everything is constructed statically)
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotShape extends DotAttribute {

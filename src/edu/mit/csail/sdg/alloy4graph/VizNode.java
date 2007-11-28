@@ -20,13 +20,13 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-import static java.awt.Color.BLACK;
-import static java.awt.Color.WHITE;
 import java.awt.Color;
 import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
+import static java.awt.Color.BLACK;
+import static java.awt.Color.WHITE;
 import java.util.ArrayList;
 import java.util.List;
 import static java.lang.StrictMath.sqrt;

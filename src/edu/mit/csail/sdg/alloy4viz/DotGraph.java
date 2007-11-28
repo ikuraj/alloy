@@ -40,7 +40,7 @@ import edu.mit.csail.sdg.alloy4graph.VizViewer;
 /**
  * Immutable; this represents a graph to be written out to the DOT file.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotGraph {

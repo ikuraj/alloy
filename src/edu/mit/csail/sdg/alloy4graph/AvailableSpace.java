@@ -23,7 +23,11 @@ package edu.mit.csail.sdg.alloy4graph;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Mutable; this allows you to compute whether a rectangle overlaps with a set of rectangles or not. */
+/**
+ * Mutable; this allows you to compute whether a rectangle overlaps with a set of rectangles or not.
+ *
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
+ */
 
 public final class AvailableSpace {
 

@@ -25,7 +25,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 /**
  * Immutable; represents an Alloy toplevel signature or an Alloy subsignature.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloyType extends AlloyNodeElement {

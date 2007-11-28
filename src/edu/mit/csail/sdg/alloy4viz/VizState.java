@@ -39,7 +39,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 /**
  * Mutable; this stores an unprojected model as well as the current theme customization.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class VizState {
@@ -56,40 +56,38 @@ public final class VizState {
 
     /** Make a copy of an existing VizState object. */
     public VizState(VizState old) {
-        synchronized(old) {
-            originalInstance=old.originalInstance;
-            currentModel=old.currentModel;
-            projectedTypes=new TreeSet<AlloyType>(old.projectedTypes);
-            useOriginalNames=old.useOriginalNames;
-            fontSize=old.fontSize;
-            orientation=old.orientation;
-            nodePalette=old.nodePalette;
-            edgePalette=old.edgePalette;
-            nodeColor=new LinkedHashMap<AlloyNodeElement,DotColor>(old.nodeColor);
-            nodeStyle=new LinkedHashMap<AlloyNodeElement,DotStyle>(old.nodeStyle);
-            nodeVisible=new LinkedHashMap<AlloyNodeElement,Boolean>(old.nodeVisible);
-            nodeSameRank=new LinkedHashMap<AlloyNodeElement,Boolean>(old.nodeSameRank);
-            label=new LinkedHashMap<AlloyElement,String>(old.label);
-            number=new LinkedHashMap<AlloyType,Boolean>(old.number);
-            hideUnconnected=new LinkedHashMap<AlloyNodeElement,Boolean>(old.hideUnconnected);
-            showAsAttr=new LinkedHashMap<AlloySet,Boolean>(old.showAsAttr);
-            showAsLabel=new LinkedHashMap<AlloySet,Boolean>(old.showAsLabel);
-            shape=new LinkedHashMap<AlloyNodeElement,DotShape>(old.shape);
-            weight=new LinkedHashMap<AlloyRelation,Integer>(old.weight);
-            attribute=new LinkedHashMap<AlloyRelation,Boolean>(old.attribute);
-            mergeArrows=new LinkedHashMap<AlloyRelation,Boolean>(old.mergeArrows);
-            constraint=new LinkedHashMap<AlloyRelation,Boolean>(old.constraint);
-            layoutBack=new LinkedHashMap<AlloyRelation,Boolean>(old.layoutBack);
-            edgeColor=new LinkedHashMap<AlloyRelation,DotColor>(old.edgeColor);
-            edgeStyle=new LinkedHashMap<AlloyRelation,DotStyle>(old.edgeStyle);
-            edgeVisible=new LinkedHashMap<AlloyRelation,Boolean>(old.edgeVisible);
-            edgeSameRank=new LinkedHashMap<AlloyRelation,Boolean>(old.edgeSameRank);
-        }
+        originalInstance=old.originalInstance;
+        currentModel=old.currentModel;
+        projectedTypes=new TreeSet<AlloyType>(old.projectedTypes);
+        useOriginalNames=old.useOriginalNames;
+        fontSize=old.fontSize;
+        orientation=old.orientation;
+        nodePalette=old.nodePalette;
+        edgePalette=old.edgePalette;
+        nodeColor=new LinkedHashMap<AlloyNodeElement,DotColor>(old.nodeColor);
+        nodeStyle=new LinkedHashMap<AlloyNodeElement,DotStyle>(old.nodeStyle);
+        nodeVisible=new LinkedHashMap<AlloyNodeElement,Boolean>(old.nodeVisible);
+        nodeSameRank=new LinkedHashMap<AlloyNodeElement,Boolean>(old.nodeSameRank);
+        label=new LinkedHashMap<AlloyElement,String>(old.label);
+        number=new LinkedHashMap<AlloyType,Boolean>(old.number);
+        hideUnconnected=new LinkedHashMap<AlloyNodeElement,Boolean>(old.hideUnconnected);
+        showAsAttr=new LinkedHashMap<AlloySet,Boolean>(old.showAsAttr);
+        showAsLabel=new LinkedHashMap<AlloySet,Boolean>(old.showAsLabel);
+        shape=new LinkedHashMap<AlloyNodeElement,DotShape>(old.shape);
+        weight=new LinkedHashMap<AlloyRelation,Integer>(old.weight);
+        attribute=new LinkedHashMap<AlloyRelation,Boolean>(old.attribute);
+        mergeArrows=new LinkedHashMap<AlloyRelation,Boolean>(old.mergeArrows);
+        constraint=new LinkedHashMap<AlloyRelation,Boolean>(old.constraint);
+        layoutBack=new LinkedHashMap<AlloyRelation,Boolean>(old.layoutBack);
+        edgeColor=new LinkedHashMap<AlloyRelation,DotColor>(old.edgeColor);
+        edgeStyle=new LinkedHashMap<AlloyRelation,DotStyle>(old.edgeStyle);
+        edgeVisible=new LinkedHashMap<AlloyRelation,Boolean>(old.edgeVisible);
+        edgeSameRank=new LinkedHashMap<AlloyRelation,Boolean>(old.edgeSameRank);
         changedSinceLastSave=false;
     }
 
     /** Clears the current theme. */
-    public synchronized void resetTheme() {
+    public void resetTheme() {
         currentModel = originalInstance.model;
         projectedTypes.clear();
         useOriginalNames = false;
@@ -142,7 +140,7 @@ public final class VizState {
      * Load a new instance into this VizState object (the input argument is treated as a new unprojected instance);
      * if world!=null, it is the root of the AST
      */
-    public synchronized void loadInstance(AlloyInstance unprojectedInstance) {
+    public void loadInstance(AlloyInstance unprojectedInstance) {
         this.originalInstance=unprojectedInstance;
         for (AlloyType t:getProjectedTypes()) if (!unprojectedInstance.model.hasType(t)) projectedTypes.remove(t);
         currentModel = StaticProjector.project(unprojectedInstance.model, projectedTypes);
@@ -153,7 +151,7 @@ public final class VizState {
      * Erase the current theme customizations and then load it from a file.
      * @throws IOException - if an error occurred
      */
-    public synchronized void loadPaletteXML(String filename) throws IOException {
+    public void loadPaletteXML(String filename) throws IOException {
         resetTheme();
         StaticThemeReaderWriter.readAlloy(filename,this);
         cache.clear();
@@ -164,7 +162,7 @@ public final class VizState {
      * Saves the current theme to a file (which will be overwritten if it exists already).
      * @throws IOException - if an error occurred
      */
-    public synchronized void savePaletteXML(String filename) throws IOException {
+    public void savePaletteXML(String filename) throws IOException {
         StaticThemeReaderWriter.writeAlloy(filename,this);
         changedSinceLastSave=false;
     }
@@ -173,7 +171,7 @@ public final class VizState {
      * Saves the current theme to a file using Tab-Separatred format (which will be overwritten if it exists already).
      * @throws IOException - if an error occurred
      */
-    public synchronized void savePaletteTS(String filename) throws IOException {
+    public void savePaletteTS(String filename) throws IOException {
         PrintWriter bw = new PrintWriter(filename,"UTF-8");
         bw.write(StaticThemeReaderWriter.dumpView(this));
         if (!Util.close(bw)) throw new IOException("Error writing to the file \""+filename+"\"");
@@ -205,14 +203,13 @@ public final class VizState {
     /** Generate a VizGraphPanel for a given projection choice, using the current settings. */
     public Pair<String,JPanel> getGraph(AlloyProjection projectionChoice) {
         //if (cache2.size()==0) generateAllGraphs(new ArrayList<AlloyType>(projectedTypes), 0, null);
-        Pair<String,JPanel> ans;
-        AlloyInstance inst;
-        synchronized(this) { ans=cache.get(projectionChoice); inst=originalInstance; }
+        Pair<String,JPanel> ans=cache.get(projectionChoice);
+        AlloyInstance inst=originalInstance;
         if (ans!=null) return ans;
         DotGraph graph = StaticGraphMaker.produceGraph(inst, this, projectionChoice);
         try {
             ans=graph.visualize();
-            synchronized(this) { cache.put(projectionChoice,ans); }
+            cache.put(projectionChoice,ans);
         } catch(Throwable ex) {
             String msg = "An error has occurred: "+ex+"\n\nStackTrace:\n"+MailBug.dump(ex)+"\nRaw Dot:\n\n"+graph.write();
             JTextArea message = OurUtil.textarea(msg, 0, 0);
@@ -230,13 +227,13 @@ public final class VizState {
     private boolean changedSinceLastSave=false;
 
     /** True if the theme has been modified since last save. */
-    public synchronized boolean changedSinceLastSave() { return changedSinceLastSave; }
+    public boolean changedSinceLastSave() { return changedSinceLastSave; }
 
     /** Sets the "changed since last save" flag, then flush any cached generated graphs. */
-    private synchronized void change() { changedSinceLastSave=true; cache.clear(); }
+    private void change() { changedSinceLastSave=true; cache.clear(); }
 
     /** If oldValue is different from newValue, then sets the "changed since last save" flag and flush the cache. */
-    private synchronized void changeIf(Object oldValue, Object newValue) {
+    private void changeIf(Object oldValue, Object newValue) {
         if (oldValue==null) { if (newValue==null) return; } else { if (oldValue.equals(newValue)) return; }
         change();
     }
@@ -248,7 +245,7 @@ public final class VizState {
      * If x is an AlloySet, then return x's type;
      * All else, return null.
      */
-    private synchronized AlloyType parent(AlloyNodeElement x, AlloyModel model) {
+    private AlloyType parent(AlloyNodeElement x, AlloyModel model) {
         if (x instanceof AlloySet) return ((AlloySet)x).getType();
         if (x instanceof AlloyType) return model.getSuperType((AlloyType)x);
         return null;
@@ -260,10 +257,10 @@ public final class VizState {
     private AlloyInstance originalInstance;
 
     /** Returns the original unprojected model. */
-    public synchronized AlloyInstance getOriginalInstance() { return originalInstance; }
+    public AlloyInstance getOriginalInstance() { return originalInstance; }
 
     /** Returns the original unprojected model. */
-    public synchronized AlloyModel getOriginalModel() { return originalInstance.model; }
+    public AlloyModel getOriginalModel() { return originalInstance.model; }
 
     /*============================================================================================*/
 
@@ -271,7 +268,7 @@ public final class VizState {
     private AlloyModel currentModel;
 
     /** Returns the current (possibly projected) model. */
-    public synchronized AlloyModel getCurrentModel() { return currentModel; }
+    public AlloyModel getCurrentModel() { return currentModel; }
 
     /*============================================================================================*/
 
@@ -279,22 +276,22 @@ public final class VizState {
     private Set<AlloyType> projectedTypes = new TreeSet<AlloyType>();
 
     /** Gets an unmodifiable copy of the set of types we are currently projecting over. */
-    public synchronized Set<AlloyType> getProjectedTypes() {
+    public Set<AlloyType> getProjectedTypes() {
         return Collections.unmodifiableSet(new TreeSet<AlloyType>(projectedTypes));
     }
 
     /** Returns true iff the type is not univ, and it is a toplevel type. */
-    public synchronized boolean canProject(final AlloyType type) {
+    public boolean canProject(final AlloyType type) {
         return isTopLevel(type);
     }
 
     /** Returns true iff the type is not univ, and it is a toplevel type. */
-    public synchronized boolean isTopLevel(final AlloyType type) {
+    public boolean isTopLevel(final AlloyType type) {
         return AlloyType.UNIV.equals(originalInstance.model.getSuperType(type));
     }
 
     /** Adds type to the list of projected types if it's a toplevel type. */
-    public synchronized void project(AlloyType type) {
+    public void project(AlloyType type) {
         if (canProject(type)) if (projectedTypes.add(type)) {
             currentModel = StaticProjector.project(originalInstance.model, projectedTypes);
             change();
@@ -302,7 +299,7 @@ public final class VizState {
     }
 
     /** Removes type from the list of projected types if it is currently projected. */
-    public synchronized void deproject(AlloyType type) {
+    public void deproject(AlloyType type) {
         if (projectedTypes.remove(type)) {
             currentModel = StaticProjector.project(originalInstance.model, projectedTypes);
             change();
@@ -310,7 +307,7 @@ public final class VizState {
     }
 
     /** Removes every entry from the list of projected types. */
-    public synchronized void deprojectAll() {
+    public void deprojectAll() {
         if (projectedTypes.size()>0) {
             projectedTypes.clear();
             currentModel = StaticProjector.project(originalInstance.model, projectedTypes);
@@ -324,10 +321,10 @@ public final class VizState {
     private boolean useOriginalNames = false;
 
     /** Returns whether we will use original atom names. */
-    public synchronized boolean useOriginalName() { return useOriginalNames; }
+    public boolean useOriginalName() { return useOriginalNames; }
 
     /** Sets whether we will use original atom names or not. */
-    public synchronized void useOriginalName(Boolean newValue) {
+    public void useOriginalName(Boolean newValue) {
         if (newValue!=null && useOriginalNames!=newValue) { change(); useOriginalNames=newValue; }
     }
 
@@ -337,10 +334,10 @@ public final class VizState {
     private int fontSize = 12;
 
     /** Returns the font size. */
-    public synchronized int getFontSize() { return fontSize; }
+    public int getFontSize() { return fontSize; }
 
     /** Sets the font size. */
-    public synchronized void setFontSize(int n) { if (fontSize!=n && fontSize>0) { change(); fontSize=n; } }
+    public void setFontSize(int n) { if (fontSize!=n && fontSize>0) { change(); fontSize=n; } }
 
     /*============================================================================================*/
 
@@ -348,10 +345,10 @@ public final class VizState {
     private DotOrientation orientation = DotOrientation.getDefault();
 
     /** Gets the graph orientation. */
-    public synchronized DotOrientation getOrientation() { return orientation; }
+    public DotOrientation getOrientation() { return orientation; }
 
     /** Sets the graph orientation. */
-    public synchronized void setOrientation(DotOrientation x) {
+    public void setOrientation(DotOrientation x) {
         if (orientation!=x && x!=null) {change(); orientation=x;}
     }
 
@@ -361,10 +358,10 @@ public final class VizState {
     private DotPalette nodePalette = DotPalette.getDefault();
 
     /** Gets the default node palette. */
-    public synchronized DotPalette getNodePalette() { return nodePalette; }
+    public DotPalette getNodePalette() { return nodePalette; }
 
     /** Sets the default node palette. */
-    public synchronized void setNodePalette(DotPalette x) {
+    public void setNodePalette(DotPalette x) {
         if (nodePalette!=x && x!=null) {change(); nodePalette=x;}
     }
 
@@ -374,10 +371,10 @@ public final class VizState {
     private DotPalette edgePalette = DotPalette.getDefault();
 
     /** Gets the default edge palette. */
-    public synchronized DotPalette getEdgePalette() { return edgePalette; }
+    public DotPalette getEdgePalette() { return edgePalette; }
 
     /** Sets the default edge palette. */
-    public synchronized void setEdgePalette(DotPalette x) {
+    public void setEdgePalette(DotPalette x) {
         if (edgePalette!=x && x!=null) {change(); edgePalette=x;}
     }
 
@@ -408,31 +405,31 @@ public final class VizState {
     // If x==null, then we guarantee the return value is nonnull
     // If x!=null, then it may return null (which means "inherited")
     // (Note: "label" and "weight" will never return null)
-    public synchronized DotColor nodeColor       (AlloyNodeElement x)  { return nodeColor.get(x); }
-    public synchronized DotStyle nodeStyle       (AlloyNodeElement x)  { return nodeStyle.get(x); }
-    public synchronized Boolean  nodeVisible     (AlloyNodeElement x)  { return nodeVisible.get(x); }
-    public synchronized Boolean  nodeSameRank    (AlloyNodeElement x)  { return nodeSameRank.get(x); }
-    public synchronized String   label           (AlloyElement x)      { String ans=label.get(x); if (ans==null) ans=x.getName().trim(); return ans; }
-    public synchronized Boolean  number          (AlloyType x)         { return number.get(x); }
-    public synchronized Boolean  hideUnconnected (AlloyNodeElement x)  { return hideUnconnected.get(x); }
-    public synchronized Boolean  showAsAttr      (AlloySet x)          { return showAsAttr.get(x); }
-    public synchronized Boolean  showAsLabel     (AlloySet x)          { return showAsLabel.get(x); }
-    public synchronized DotShape shape           (AlloyNodeElement x)  { return shape.get(x); }
-    public synchronized int      weight          (AlloyRelation x)     { Integer ans=weight.get(x); if (ans==null) ans=0; return ans; }
-    public synchronized Boolean  attribute       (AlloyRelation x)     { return attribute.get(x); }
-    public synchronized Boolean  mergeArrows     (AlloyRelation x)     { return mergeArrows.get(x); }
-    public synchronized Boolean  constraint      (AlloyRelation x)     { return constraint.get(x); }
-    public synchronized Boolean  layoutBack      (AlloyRelation x)     { return layoutBack.get(x); }
-    public synchronized DotColor edgeColor       (AlloyRelation x)     { return edgeColor.get(x); }
-    public synchronized DotStyle edgeStyle       (AlloyRelation x)     { return edgeStyle.get(x); }
-    public synchronized Boolean  edgeVisible     (AlloyRelation x)     { return edgeVisible.get(x); }
-    public synchronized Boolean  edgeSameRank    (AlloyRelation x)     { return edgeSameRank.get(x); }
+    public DotColor nodeColor       (AlloyNodeElement x)  { return nodeColor.get(x); }
+    public DotStyle nodeStyle       (AlloyNodeElement x)  { return nodeStyle.get(x); }
+    public Boolean  nodeVisible     (AlloyNodeElement x)  { return nodeVisible.get(x); }
+    public Boolean  nodeSameRank    (AlloyNodeElement x)  { return nodeSameRank.get(x); }
+    public String   label           (AlloyElement x)      { String ans=label.get(x); if (ans==null) ans=x.getName().trim(); return ans; }
+    public Boolean  number          (AlloyType x)         { return number.get(x); }
+    public Boolean  hideUnconnected (AlloyNodeElement x)  { return hideUnconnected.get(x); }
+    public Boolean  showAsAttr      (AlloySet x)          { return showAsAttr.get(x); }
+    public Boolean  showAsLabel     (AlloySet x)          { return showAsLabel.get(x); }
+    public DotShape shape           (AlloyNodeElement x)  { return shape.get(x); }
+    public int      weight          (AlloyRelation x)     { Integer ans=weight.get(x); if (ans==null) ans=0; return ans; }
+    public Boolean  attribute       (AlloyRelation x)     { return attribute.get(x); }
+    public Boolean  mergeArrows     (AlloyRelation x)     { return mergeArrows.get(x); }
+    public Boolean  constraint      (AlloyRelation x)     { return constraint.get(x); }
+    public Boolean  layoutBack      (AlloyRelation x)     { return layoutBack.get(x); }
+    public DotColor edgeColor       (AlloyRelation x)     { return edgeColor.get(x); }
+    public DotStyle edgeStyle       (AlloyRelation x)     { return edgeStyle.get(x); }
+    public Boolean  edgeVisible     (AlloyRelation x)     { return edgeVisible.get(x); }
+    public Boolean  edgeSameRank    (AlloyRelation x)     { return edgeSameRank.get(x); }
 
     // Reads the value for that atom based on an existing AlloyInstance; return value is never null.
-    public synchronized DotColor nodeColor   (AlloyAtom a, AlloyInstance i) { for(AlloySet s:i.atom2sets(a)) {DotColor v=nodeColor(s); if (v!=null) return v;} return nodeColor  (a.getType(), i.model); }
-    public synchronized DotStyle nodeStyle   (AlloyAtom a, AlloyInstance i) { for(AlloySet s:i.atom2sets(a)) {DotStyle v=nodeStyle(s); if (v!=null) return v;} return nodeStyle  (a.getType(), i.model); }
-    public synchronized DotShape shape       (AlloyAtom a, AlloyInstance i) { for(AlloySet s:i.atom2sets(a)) {DotShape v=shape(s);     if (v!=null) return v;} return shape      (a.getType(), i.model); }
-    public synchronized boolean  nodeVisible (AlloyAtom a, AlloyInstance i) {
+    public DotColor nodeColor   (AlloyAtom a, AlloyInstance i) { for(AlloySet s:i.atom2sets(a)) {DotColor v=nodeColor(s); if (v!=null) return v;} return nodeColor  (a.getType(), i.model); }
+    public DotStyle nodeStyle   (AlloyAtom a, AlloyInstance i) { for(AlloySet s:i.atom2sets(a)) {DotStyle v=nodeStyle(s); if (v!=null) return v;} return nodeStyle  (a.getType(), i.model); }
+    public DotShape shape       (AlloyAtom a, AlloyInstance i) { for(AlloySet s:i.atom2sets(a)) {DotShape v=shape(s);     if (v!=null) return v;} return shape      (a.getType(), i.model); }
+    public boolean  nodeVisible (AlloyAtom a, AlloyInstance i) {
         // If it's in 1 or more set, then TRUE if at least one of them is TRUE.
         // If it's in 0 set, then travel up the chain of AlloyType and return the first non-null value.
         if (i.atom2sets(a).size()>0) {
@@ -443,42 +440,42 @@ public final class VizState {
     }
 
     // Reads the value for that type/set/relation; return value is never null.
-    public synchronized boolean  nodeVisible     (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { Boolean v=nodeVisible.get(x);     if (v!=null) return v; } }
-    public synchronized boolean  nodeSameRank    (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { Boolean v=nodeSameRank.get(x);    if (v!=null) return v; } }
-    public synchronized DotColor nodeColor       (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { DotColor v=nodeColor.get(x);      if (v!=null) return v; } }
-    public synchronized DotStyle nodeStyle       (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { DotStyle v=nodeStyle.get(x);      if (v!=null) return v; } }
-    public synchronized DotShape shape           (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { DotShape v=shape.get(x);          if (v!=null) return v; } }
-    public synchronized boolean  number          (AlloyType x,        AlloyModel m) { for(;;x=parent(x,m)) { Boolean v=number.get(x);          if (v!=null) return v; } }
-    public synchronized boolean  hideUnconnected (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { Boolean v=hideUnconnected.get(x); if (v!=null) return v; } }
-    public synchronized boolean  showAsAttr      (AlloySet x,         AlloyModel m) { Boolean v=showAsAttr.get(x);   return (v!=null) ? v : showAsAttr.get(null);  }
-    public synchronized boolean  showAsLabel     (AlloySet x,         AlloyModel m) { Boolean v=showAsLabel.get(x);  return (v!=null) ? v : showAsLabel.get(null); }
-    public synchronized boolean  attribute       (AlloyRelation x,    AlloyModel m) { Boolean v=attribute.get(x);    return (v!=null) ? v : attribute.get(null);  }
-    public synchronized boolean  mergeArrows     (AlloyRelation x,    AlloyModel m) { Boolean v=mergeArrows.get(x);  return (v!=null) ? v : mergeArrows.get(null); }
-    public synchronized boolean  constraint      (AlloyRelation x,    AlloyModel m) { Boolean v=constraint.get(x);   return (v!=null) ? v : constraint.get(null); }
-    public synchronized boolean  layoutBack      (AlloyRelation x,    AlloyModel m) { Boolean v=layoutBack.get(x);   return (v!=null) ? v : layoutBack.get(null); }
-    public synchronized DotColor edgeColor       (AlloyRelation x,    AlloyModel m) { DotColor v=edgeColor.get(x);   return (v!=null) ? v : edgeColor.get(null); }
-    public synchronized DotStyle edgeStyle       (AlloyRelation x,    AlloyModel m) { DotStyle v=edgeStyle.get(x);   return (v!=null) ? v : edgeStyle.get(null); }
-    public synchronized boolean  edgeVisible     (AlloyRelation x,    AlloyModel m) { Boolean v=edgeVisible.get(x);  return (v!=null) ? v : edgeVisible.get(null); }
-    public synchronized boolean  edgeSameRank    (AlloyRelation x,    AlloyModel m) { Boolean v=edgeSameRank.get(x); return (v!=null) ? v : edgeSameRank.get(null); }
+    public boolean  nodeVisible     (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { Boolean v=nodeVisible.get(x);     if (v!=null) return v; } }
+    public boolean  nodeSameRank    (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { Boolean v=nodeSameRank.get(x);    if (v!=null) return v; } }
+    public DotColor nodeColor       (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { DotColor v=nodeColor.get(x);      if (v!=null) return v; } }
+    public DotStyle nodeStyle       (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { DotStyle v=nodeStyle.get(x);      if (v!=null) return v; } }
+    public DotShape shape           (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { DotShape v=shape.get(x);          if (v!=null) return v; } }
+    public boolean  number          (AlloyType x,        AlloyModel m) { for(;;x=parent(x,m)) { Boolean v=number.get(x);          if (v!=null) return v; } }
+    public boolean  hideUnconnected (AlloyNodeElement x, AlloyModel m) { for(;;x=parent(x,m)) { Boolean v=hideUnconnected.get(x); if (v!=null) return v; } }
+    public boolean  showAsAttr      (AlloySet x,         AlloyModel m) { Boolean v=showAsAttr.get(x);   return (v!=null) ? v : showAsAttr.get(null);  }
+    public boolean  showAsLabel     (AlloySet x,         AlloyModel m) { Boolean v=showAsLabel.get(x);  return (v!=null) ? v : showAsLabel.get(null); }
+    public boolean  attribute       (AlloyRelation x,    AlloyModel m) { Boolean v=attribute.get(x);    return (v!=null) ? v : attribute.get(null);  }
+    public boolean  mergeArrows     (AlloyRelation x,    AlloyModel m) { Boolean v=mergeArrows.get(x);  return (v!=null) ? v : mergeArrows.get(null); }
+    public boolean  constraint      (AlloyRelation x,    AlloyModel m) { Boolean v=constraint.get(x);   return (v!=null) ? v : constraint.get(null); }
+    public boolean  layoutBack      (AlloyRelation x,    AlloyModel m) { Boolean v=layoutBack.get(x);   return (v!=null) ? v : layoutBack.get(null); }
+    public DotColor edgeColor       (AlloyRelation x,    AlloyModel m) { DotColor v=edgeColor.get(x);   return (v!=null) ? v : edgeColor.get(null); }
+    public DotStyle edgeStyle       (AlloyRelation x,    AlloyModel m) { DotStyle v=edgeStyle.get(x);   return (v!=null) ? v : edgeStyle.get(null); }
+    public boolean  edgeVisible     (AlloyRelation x,    AlloyModel m) { Boolean v=edgeVisible.get(x);  return (v!=null) ? v : edgeVisible.get(null); }
+    public boolean  edgeSameRank    (AlloyRelation x,    AlloyModel m) { Boolean v=edgeSameRank.get(x); return (v!=null) ? v : edgeSameRank.get(null); }
 
     // Sets the value for that type/set/relation; v can be null (which means "inherit")
-    public synchronized void nodeColor       (AlloyNodeElement x, DotColor v) { if (v==null && x==null) v=DotColor.WHITE;         changeIf(nodeColor      .put(x,v), v); }
-    public synchronized void nodeStyle       (AlloyNodeElement x, DotStyle v) { if (v==null && x==null) v=DotStyle.getDefault();  changeIf(nodeStyle      .put(x,v), v); }
-    public synchronized void nodeVisible     (AlloyNodeElement x, Boolean  v) { if (v==null && x==null) v=true;                   changeIf(nodeVisible    .put(x,v), v); }
-    public synchronized void nodeSameRank    (AlloyNodeElement x, Boolean  v) { if (v==null && x==null) v=false;                  changeIf(nodeSameRank   .put(x,v), v); }
-    public synchronized void label           (AlloyElement x,     String   v) { if (v==null && x==null) v=""; if (x!=null && x.getName().equals(v)) v=null; changeIf(label.put(x,v), v); }
-    public synchronized void number          (AlloyType x,        Boolean  v) { if (v==null && x==null) v=true;                   changeIf(number         .put(x,v), v); }
-    public synchronized void hideUnconnected (AlloyNodeElement x, Boolean  v) { if (v==null && x==null) v=false;                  changeIf(hideUnconnected.put(x,v), v); }
-    public synchronized void showAsAttr      (AlloySet x,         Boolean  v) { if (v==null && x==null) v=false;                  changeIf(showAsAttr     .put(x,v), v); }
-    public synchronized void showAsLabel     (AlloySet x,         Boolean  v) { if (v==null && x==null) v=true;                   changeIf(showAsLabel    .put(x,v), v); }
-    public synchronized void shape           (AlloyNodeElement x, DotShape v) { if (v==null && x==null) v=DotShape.getDefault();  changeIf(shape          .put(x,v), v); }
-    public synchronized void weight          (AlloyRelation x,    int      v) { if (v<0) v=0; changeIf(weight.put(x,v), v); }
-    public synchronized void attribute       (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=false;                  changeIf(attribute   .put(x,v), v); }
-    public synchronized void mergeArrows     (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=true;                   changeIf(mergeArrows .put(x,v), v); }
-    public synchronized void constraint      (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=true;                   changeIf(constraint  .put(x,v), v); }
-    public synchronized void layoutBack      (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=false;                  changeIf(layoutBack  .put(x,v), v); }
-    public synchronized void edgeColor       (AlloyRelation x,    DotColor v) { if (v==null && x==null) v=DotColor.BLACK;         changeIf(edgeColor   .put(x,v), v); }
-    public synchronized void edgeStyle       (AlloyRelation x,    DotStyle v) { if (v==null && x==null) v=DotStyle.getDefault();  changeIf(edgeStyle   .put(x,v), v); }
-    public synchronized void edgeVisible     (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=true;                   changeIf(edgeVisible .put(x,v), v); }
-    public synchronized void edgeSameRank    (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=false;                  changeIf(edgeSameRank.put(x,v), v); }
+    public void nodeColor       (AlloyNodeElement x, DotColor v) { if (v==null && x==null) v=DotColor.WHITE;         changeIf(nodeColor      .put(x,v), v); }
+    public void nodeStyle       (AlloyNodeElement x, DotStyle v) { if (v==null && x==null) v=DotStyle.getDefault();  changeIf(nodeStyle      .put(x,v), v); }
+    public void nodeVisible     (AlloyNodeElement x, Boolean  v) { if (v==null && x==null) v=true;                   changeIf(nodeVisible    .put(x,v), v); }
+    public void nodeSameRank    (AlloyNodeElement x, Boolean  v) { if (v==null && x==null) v=false;                  changeIf(nodeSameRank   .put(x,v), v); }
+    public void label           (AlloyElement x,     String   v) { if (v==null && x==null) v=""; if (x!=null && x.getName().equals(v)) v=null; changeIf(label.put(x,v), v); }
+    public void number          (AlloyType x,        Boolean  v) { if (v==null && x==null) v=true;                   changeIf(number         .put(x,v), v); }
+    public void hideUnconnected (AlloyNodeElement x, Boolean  v) { if (v==null && x==null) v=false;                  changeIf(hideUnconnected.put(x,v), v); }
+    public void showAsAttr      (AlloySet x,         Boolean  v) { if (v==null && x==null) v=false;                  changeIf(showAsAttr     .put(x,v), v); }
+    public void showAsLabel     (AlloySet x,         Boolean  v) { if (v==null && x==null) v=true;                   changeIf(showAsLabel    .put(x,v), v); }
+    public void shape           (AlloyNodeElement x, DotShape v) { if (v==null && x==null) v=DotShape.getDefault();  changeIf(shape          .put(x,v), v); }
+    public void weight          (AlloyRelation x,    int      v) { if (v<0) v=0; changeIf(weight.put(x,v), v); }
+    public void attribute       (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=false;                  changeIf(attribute   .put(x,v), v); }
+    public void mergeArrows     (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=true;                   changeIf(mergeArrows .put(x,v), v); }
+    public void constraint      (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=true;                   changeIf(constraint  .put(x,v), v); }
+    public void layoutBack      (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=false;                  changeIf(layoutBack  .put(x,v), v); }
+    public void edgeColor       (AlloyRelation x,    DotColor v) { if (v==null && x==null) v=DotColor.BLACK;         changeIf(edgeColor   .put(x,v), v); }
+    public void edgeStyle       (AlloyRelation x,    DotStyle v) { if (v==null && x==null) v=DotStyle.getDefault();  changeIf(edgeStyle   .put(x,v), v); }
+    public void edgeVisible     (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=true;                   changeIf(edgeVisible .put(x,v), v); }
+    public void edgeSameRank    (AlloyRelation x,    Boolean  v) { if (v==null && x==null) v=false;                  changeIf(edgeSameRank.put(x,v), v); }
 }

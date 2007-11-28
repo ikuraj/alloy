@@ -26,7 +26,11 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
-/** Mutable; represents a digraph. */
+/**
+ * Mutable; represents a digraph.
+ *
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
+ */
 
 public class DiGraph {
 

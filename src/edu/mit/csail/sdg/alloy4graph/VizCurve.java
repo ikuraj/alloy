@@ -20,9 +20,9 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-import java.awt.geom.CubicCurve2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.awt.geom.CubicCurve2D;
 
 /**
  * Mutable; represents a connected path.

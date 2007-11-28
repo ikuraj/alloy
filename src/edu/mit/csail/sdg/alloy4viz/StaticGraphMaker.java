@@ -33,9 +33,9 @@ import java.util.TreeSet;
 import edu.mit.csail.sdg.alloy4.Util;
 
 /**
- * This utility class generates a graph for a particular index of the projection).
+ * This utility class generates a graph for a particular index of the projection.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class StaticGraphMaker {
@@ -66,11 +66,8 @@ public final class StaticGraphMaker {
 
     /** Produces a single Graph from the given Instance and View and choice of Projection */
     public static DotGraph produceGraph(AlloyInstance instance, VizState view, AlloyProjection proj) {
-        // This allows us to work on our private copy of VizState without worrying about locking and blocking
-        // other threads (eg. GUI threads) from displaying stuff on screen, for example.
-        view=new VizState(view);
-        if (proj==null) proj=new AlloyProjection();
-        // Now, generate the cartoon.
+        view = new VizState(view);
+        if (proj == null) proj = new AlloyProjection();
         StaticGraphMaker answer = new StaticGraphMaker(instance,view,proj);
         return answer.graph;
     }

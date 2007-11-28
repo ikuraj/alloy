@@ -40,8 +40,8 @@ import java.awt.image.BufferedImage;
 import edu.mit.csail.sdg.alloy4.OurPDFWriter;
 
 /**
- * This class abstracts the drawing operations so that we can (potentially)
- * draw the graph using different frameworks; eg. Java2D, asPDF...
+ * This class abstracts the drawing operations so that we can
+ * draw the graph using different frameworks such as Java2D or PDF.
  *
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */

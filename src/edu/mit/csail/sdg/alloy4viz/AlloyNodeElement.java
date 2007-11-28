@@ -20,7 +20,11 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-/** Immutable; it's the abstract superclass extended by both AlloyType and AlloySet. */
+/**
+ * Immutable; it's the abstract superclass extended by both AlloyType and AlloySet.
+ *
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
+ */
 
 public abstract class AlloyNodeElement extends AlloyElement {
 

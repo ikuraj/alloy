@@ -229,7 +229,7 @@ public final strictfp class VizViewer extends JPanel {
     private final Color badColor = new Color(255,200,200);
 
     /** This synchronized field stores the most recent DPI value. */
-    private static double oldDPI=300;
+    private static volatile double oldDPI=300;
 
     /** True if we are currently in the middle of a DocumentListener already. */
     private boolean recursive=false;

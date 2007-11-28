@@ -29,7 +29,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 /**
  * Immutable; represents an Alloy relation of 2 or higher arity.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class AlloyRelation extends AlloyElement {

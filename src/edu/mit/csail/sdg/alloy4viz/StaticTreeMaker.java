@@ -48,7 +48,7 @@ import edu.mit.csail.sdg.alloy4.Util;
  * This utility class takes an AlloyInstance and generates a JTree showing
  * the types, sets, and relation tuples from it.
  *
- * <p><b>Thread Safety:</b>  Can be called only by the AWT event thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class StaticTreeMaker {

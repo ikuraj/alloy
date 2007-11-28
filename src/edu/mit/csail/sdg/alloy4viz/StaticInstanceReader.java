@@ -40,7 +40,7 @@ import nanoxml_2_2_3.XMLElement;
 /**
  * This utility class parses an XML file into an AlloyInstance object.
  *
- * <p><b>Thread Safety:</b>  Safe.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class StaticInstanceReader {

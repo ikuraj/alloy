@@ -27,7 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** This class implements the automatic visualization inference. */
+/**
+ * This class implements the automatic visualization inference.
+ *
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
+ */
 
 final class MagicLayout {
 

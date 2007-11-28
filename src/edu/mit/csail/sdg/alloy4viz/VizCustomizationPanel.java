@@ -68,7 +68,7 @@ import edu.mit.csail.sdg.alloy4.OurTristateCheckbox.GetterSetter;
 /**
  * GUI panel for making customization changes.
  *
- * <p><b>Thread Safety</b>:  Can be called only by the AWT event thread.
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class VizCustomizationPanel extends JPanel {

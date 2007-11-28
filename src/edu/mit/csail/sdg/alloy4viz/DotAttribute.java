@@ -25,7 +25,7 @@ import javax.swing.Icon;
 /**
  * Immutable; this is the abstract class for all attributes used in generating dot files.
  *
- * <p><b>Thread Safety:</b>  Safe (since the fields here are immutable, and every subclass is immutable too)
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 abstract class DotAttribute {

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 /**
  * Immutable; this defines the set of orientations that dot can use: horizontal and vertical.
  *
- * <p><b>Thread Safety:</b>  Safe (since everything is constructed statically)
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final class DotOrientation extends DotAttribute {

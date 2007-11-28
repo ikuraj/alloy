@@ -20,7 +20,11 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-/** Immutable; enumerates the possible node shapes (BOX, CIRCLE, ELLIPSE...) */
+/**
+ * Immutable; enumerates the possible node shapes (BOX, CIRCLE, ELLIPSE...)
+ *
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
+ */
 
 public enum VizShape {
 

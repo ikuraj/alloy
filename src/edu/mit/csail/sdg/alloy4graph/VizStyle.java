@@ -20,7 +20,11 @@
 
 package edu.mit.csail.sdg.alloy4graph;
 
-/** Immutable; enumerates the possible line styles (SOLID, DASHED, DOTTED...) */
+/**
+ * Immutable; enumerates the possible line styles (SOLID, DASHED, DOTTED...)
+ *
+ * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
+ */
 
 public enum VizStyle {
 
