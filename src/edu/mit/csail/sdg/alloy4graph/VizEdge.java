@@ -59,6 +59,9 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
     /** The location and size of the label box (if it's been calculated) */
     private AvailableSpace.Box labelbox = new AvailableSpace.Box();
 
+    /** The horzontal coordinate of the edge that the label is attached to. */
+    private int labelAttach = 0;
+
     /** The group that this edge belongs to. */
     final Object group;
 
@@ -159,6 +162,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
        if (color!=null) this.color=color;
        if (label.length()>0) {
            Rectangle2D box = getBounds(false, label);
+           labelAttach = 0;
            labelbox.x = 0;
            labelbox.y = 0;
            labelbox.w = (int) box.getWidth();
@@ -188,6 +192,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
                e.path.cubicTo(ax+wa+k*wb, ay-h, ax+wa+wb, ay-k*h, ax+wa+wb, ay);
                e.path.cubicTo(ax+wa+wb, ay+k*h, ax+wa+k*wb, ay+h, ax+wa, ay+h);
                e.path.cubicTo(ax+wa-k*wa, ay+h, ax, ay+k*h, ax, ay);
+               e.labelAttach = (int) (ax + w);
                e.labelbox.x = (int) (ax + w + selfLoopGL);
                e.labelbox.y = (int) (ay - getBounds(false, e.label()).getHeight()/2);
                break;
@@ -226,11 +231,11 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
             if (t>=1D) { failed=true; t=0.7D; }
             double x1 = p.getX(t), y = p.getY(t), x2 = p.getXatY(y+labelbox.h, t, 1D, x1);
             int x = (int) (x1<x2 ? x2+gap : x1+gap);
-            if (failed || sp.ok(x, (int)y, labelbox.w, labelbox.h)) { sp.add(labelbox.x=x, labelbox.y=(int)y, labelbox.w, labelbox.h); return; }
+            if (failed || sp.ok(x, (int)y, labelbox.w, labelbox.h)) { labelAttach=(int)((x1+x2)/2); sp.add(labelbox.x=x, labelbox.y=(int)y, labelbox.w, labelbox.h); return; }
             double t2=1D-t;
             x1 = p.getX(t2); y = p.getY(t2); x2 = p.getXatY(y+labelbox.h, t2, 1D, x1);
             x = (int) (x1<x2 ? x2+gap : x1+gap);
-            if (sp.ok(x, (int)y, labelbox.w, labelbox.h)) { sp.add(labelbox.x=x, labelbox.y=(int)y, labelbox.w, labelbox.h); return; }
+            if (sp.ok(x, (int)y, labelbox.w, labelbox.h)) { labelAttach=(int)((x1+x2)/2); sp.add(labelbox.x=x, labelbox.y=(int)y, labelbox.w, labelbox.h); return; }
         }
     }
 
@@ -280,6 +285,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
                 gr.draw(rect, true);
             }
             gr.setColor(color);
+            if (1==0) gr.drawLine(labelAttach, labelbox.y+(labelbox.h/2), labelbox.x, labelbox.y+(labelbox.h/2));
             gr.drawString(label, labelbox.x, labelbox.y+Artist.getMaxAscent());
             gr.translate(left, top);
             return;
