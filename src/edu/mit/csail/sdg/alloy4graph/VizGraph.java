@@ -539,23 +539,20 @@ public final strictfp class VizGraph extends DiGraph {
                     return 0;
                 }
             });
-            /*
-            // The code below attempts to ensure that nodes are not bunched up together horizontally;
-            // unfortunately, it causes the straightened edges to become bent again, so I've disabled it.
+            // Ensure that nodes are not bunched up together horizontally.
             List<VizNode> layer=new ArrayList<VizNode>(layer(i));
             for(int j=layer.size()/2; j>=0 && j<layer.size()-1; j++) {
                 VizNode a=layer.get(j), b=layer.get(j+1);
-                int ax=a.x()+a.getWidth()/2+a.getReserved();
-                int bx=b.x()-b.getWidth()/2;
-                if (bx<=ax || bx-ax<10) b.setX(ax+10+b.getWidth()/2);
+                int ax = a.shape()==null ? a.x() : (a.x()+a.getWidth()/2+a.getReserved());
+                int bx = b.shape()==null ? b.x() : (b.x()-b.getWidth()/2);
+                if (bx<=ax || bx-ax<5) b.setX(ax+5+b.getWidth()/2);
             }
             for(int j=layer.size()/2; j>0 && j<layer.size(); j--) {
                 VizNode a=layer.get(j-1), b=layer.get(j);
-                int ax=a.x()+a.getWidth()/2+a.getReserved();
-                int bx=b.x()-b.getWidth()/2;
-                if (bx<=ax || bx-ax<10) a.setX(bx-10-a.getWidth()/2-a.getReserved());
+                int ax = a.shape()==null ? a.x() : (a.x()+a.getWidth()/2+a.getReserved());
+                int bx = b.shape()==null ? b.x() : (b.x()-b.getWidth()/2);
+                if (bx<=ax || bx-ax<5) a.setX(bx-5-a.getWidth()/2-a.getReserved());
             }
-            */
         }
         // Now layout the edges, initially as straight lines
         for(VizEdge e:edges) e.resetPath();
