@@ -133,6 +133,9 @@ public final class StaticTreeMaker {
             this.onWindows = Util.onWindows();
             this.renderer = new OurRenderer();
             renderer.setFont(font);
+            renderer.invalidate();
+            renderer.validate();
+            setRowHeight(renderer.getPreferredSize().height);
             setModel(new StaticTreeModel(instance));
             setCellRenderer(renderer);
             setFont(font);
@@ -189,6 +192,8 @@ public final class StaticTreeMaker {
         private boolean isFocused;
         /** Constructs the Renderer. */
         public OurRenderer() {
+            super("Anything"); // This ensures that the height is calculated properly
+            setFont(OurUtil.getVizFont().deriveFont((float)80));
             setVerticalAlignment(JLabel.BOTTOM);
             setBorder(new EmptyBorder(0, 3, 0, 3));
         }
@@ -201,6 +206,7 @@ public final class StaticTreeMaker {
             this.isSelected = isSelected;
             this.setText(string);
             this.setForeground(UIManager.getColor(isSelected ? "Tree.selectionForeground" : "Tree.textForeground"));
+            this.setSize(getPreferredSize());
             return this;
         }
         /** We override the paint() method. */
