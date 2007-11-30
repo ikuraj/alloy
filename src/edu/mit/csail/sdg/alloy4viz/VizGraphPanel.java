@@ -22,6 +22,7 @@ package edu.mit.csail.sdg.alloy4viz;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -249,6 +250,7 @@ public final class VizGraphPanel extends JPanel {
         if (seeDot && (graph instanceof VizViewer)) {
             viewer=null;
             final JTextArea t = OurUtil.textarea(((VizViewer)graph).alloyGetAnnotation(), 10, 10);
+            t.setFont(getFont());
             t.setBackground(Color.WHITE);
             t.setEditable(false);
             t.setLineWrap(true);
@@ -261,6 +263,12 @@ public final class VizGraphPanel extends JPanel {
             diagramScrollPanel.setViewportView(graphPanel);
             diagramScrollPanel.invalidate(); diagramScrollPanel.repaint(); diagramScrollPanel.validate();
         }
+    }
+
+    /** Changes the font. */
+    @Override public void setFont(Font font) {
+        super.setFont(font);
+        if (diagramScrollPanel!=null) diagramScrollPanel.getViewport().getView().setFont(font);
     }
 
     /** Changes whether we are seeing the DOT source or not. */

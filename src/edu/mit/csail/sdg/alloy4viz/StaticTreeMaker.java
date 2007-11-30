@@ -20,8 +20,12 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
+import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -120,11 +124,18 @@ public final class StaticTreeMaker {
         private final String title;
         private final VizState theme;
         private final boolean onWindows;
-        public StaticJTree(AlloyInstance instance, String title, VizState theme) {
-            this.title=title;
-            this.theme=theme;
-            this.onWindows=Util.onWindows();
+        private final Font font;
+        private final OurRenderer renderer;
+        public StaticJTree(AlloyInstance instance, String title, VizState theme, int fontSize) {
+            this.font = OurUtil.getVizFont().deriveFont((float)fontSize);
+            this.title = title;
+            this.theme = theme;
+            this.onWindows = Util.onWindows();
+            this.renderer = new OurRenderer();
+            renderer.setFont(font);
             setModel(new StaticTreeModel(instance));
+            setCellRenderer(renderer);
+            setFont(font);
         }
         @Override public String convertValueToText(Object val,boolean selected,boolean expanded,boolean leaf,int row,boolean focus) {
             String c = ">";
@@ -180,7 +191,6 @@ public final class StaticTreeMaker {
         public OurRenderer() {
             setVerticalAlignment(JLabel.BOTTOM);
             setBorder(new EmptyBorder(0, 3, 0, 3));
-            setFont(OurUtil.getVizFont());
         }
         /** Returns an object to be drawn. */
         public Component getTreeCellRendererComponent(JTree tree, Object value,
@@ -209,23 +219,23 @@ public final class StaticTreeMaker {
      * @param instance - the instance to display
      * @param theme - the theme for displaying the atom labels (can be null if we don't want to use a theme)
      */
-    public static JScrollPane makeTree(AlloyInstance instance, String title, VizState theme) {
-        final JTree tree = new StaticJTree(instance,title,theme);
+    public static JScrollPane makeTree(AlloyInstance instance, String title, VizState theme, int fontSize) {
+        final JTree tree = new StaticJTree(instance, title, theme, fontSize);
         tree.setBorder(new EmptyBorder(2,2,2,2));
-        tree.setFont(OurUtil.getVizFont());
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.putClientProperty("JTree.lineStyle", "Angled");
         tree.setRootVisible(true);
         tree.setBackground(Color.WHITE);
         tree.setOpaque(true);
-        tree.setCellRenderer(new OurRenderer());
-        final JScrollPane scroll=OurUtil.scrollpane(tree);
+        final JScrollPane scroll = new JScrollPane(tree, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scroll.setMinimumSize(new Dimension(50, 50));
+        scroll.setBorder(new EmptyBorder(0,0,0,0));
+        scroll.setBorder(new OurBorder(true,false,true,false));
+        scroll.setBackground(Color.WHITE);
         scroll.addFocusListener(new FocusListener() {
             public final void focusGained(FocusEvent e) { tree.requestFocusInWindow(); }
             public final void focusLost(FocusEvent e) { }
         });
-        scroll.setBorder(new OurBorder(true,false,true,false));
-        scroll.setBackground(Color.WHITE);
         return scroll;
     }
 }

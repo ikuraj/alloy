@@ -583,7 +583,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             if (!mode_externalEditor)
                OurUtil.makeMenuItem(filemenu, "New",                    true, KeyEvent.VK_N, KeyEvent.VK_N, doNew());
             OurUtil.makeMenuItem(filemenu,    open+"...",               true, KeyEvent.VK_O, KeyEvent.VK_O, doOpen());
-            OurUtil.makeMenuItem(filemenu,    open+" Sample Models...", true, KeyEvent.VK_B, -1,            doBuiltin());
+            OurUtil.makeMenuItem(filemenu,    open+" Sample Models...", true, KeyEvent.VK_B, KeyEvent.VK_B, doBuiltin());
             JMenu recentmenu;
             filemenu.add(recentmenu = new JMenu(open+" Recent"));
             if (!mode_externalEditor) {
@@ -1272,6 +1272,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         text.setFont(new Font(family, Font.PLAIN, n));
         status.setFont(new Font(family, Font.PLAIN, n));
         log.setFontSize(n);
+        viz.doSetFontSize(n);
         return null;
     }
 
@@ -1795,6 +1796,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
         // Pre-load the visualizer
         viz = new VizGUI(false, "", windowmenu2, enumerator, evaluator);
+        viz.doSetFontSize(FontSize.get());
 
         // Create the toolbar
         try {

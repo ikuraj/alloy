@@ -23,6 +23,7 @@ package edu.mit.csail.sdg.alloy4viz;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
@@ -118,6 +119,9 @@ public final class VizGUI implements ComponentListener {
     /** The "show next" menu item. */
     private final JMenuItem enumerateMenu;
 
+    /** Current font size. */
+    private int fontSize=12;
+
     /** 0: theme and evaluator are both invisible; 1: theme is visible; 2: evaluator is visible. */
     private int settingsOpen=0;
 
@@ -135,6 +139,9 @@ public final class VizGUI implements ComponentListener {
 
     /** The splitpane between the customization panel and the graph panel. */
     private final JSplitPane splitpane;
+
+    /** The tree or graph or text being displayed on the right hand side. */
+    private JComponent content=null;
 
     /** Returns the JSplitPane containing the customization/evaluator panel in the left and the graph on the right. */
     public JSplitPane getPanel() { return splitpane; }
@@ -516,10 +523,9 @@ public final class VizGUI implements ComponentListener {
         enumerateButton.setVisible(!isMeta && settingsOpen==0 && enumerator!=null);
         toolbar.setVisible(true);
         // Now, generate the graph or tree or textarea that we want to display on the right
-        JComponent content;
         if (frame!=null) frame.setTitle(makeVizTitle());
         switch (currentMode) {
-           case Tree: content=StaticTreeMaker.makeTree(myState.getOriginalInstance(), makeVizTitle(), myState); break;
+           case Tree: content=StaticTreeMaker.makeTree(myState.getOriginalInstance(), makeVizTitle(), myState, fontSize); break;
            case XML: content=getTextComponent(xmlFileName); break;
            case KInput: content=makeTextArea(myState.getOriginalInstance().kodkod_input); break;
            case KOutput: content=makeTextArea(myState.getOriginalInstance().kodkod_output); break;
@@ -527,6 +533,13 @@ public final class VizGUI implements ComponentListener {
                 if (myGraphPanel==null) myGraphPanel=new VizGraphPanel(myState, currentMode == VisualizerMode.DOT);
                 else {myGraphPanel.seeDot(currentMode==VisualizerMode.DOT); myGraphPanel.remakeAll();}
                 content=myGraphPanel;
+        }
+        // Now that we've re-constructed "content", let's set its font size
+        if (currentMode != VisualizerMode.Tree) {
+            content.setFont(OurUtil.getVizFont().deriveFont((float)fontSize));
+            content.invalidate();
+            content.repaint();
+            content.validate();
         }
         // Now, display them!
         final Box instanceTopBox = Box.createHorizontalBox();
@@ -622,7 +635,12 @@ public final class VizGUI implements ComponentListener {
         t.setWrapStyleWord(true);
         JScrollPane ans=new JScrollPane(t,
             JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED) {
+                private static final long serialVersionUID = 1L;
+                @Override public void setFont(Font font) {
+                    t.setFont(font);
+                }
+        };
         ans.setBorder(new OurBorder(true,false,true,false));
         return ans;
     }
@@ -726,6 +744,12 @@ public final class VizGUI implements ComponentListener {
     }
 
     //========================================= EVENTS ============================================================================================
+
+    /** This method changes the font size for everything (except the graph) */
+    public void doSetFontSize(int fontSize) {
+        this.fontSize = fontSize;
+        if (!(content instanceof VizGraphPanel)) updateDisplay(); else content.setFont(OurUtil.getVizFont().deriveFont((float)fontSize));
+    }
 
     /** This method asks the user for a new XML instance file to load. */
     private Runner doLoad() {
