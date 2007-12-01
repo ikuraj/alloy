@@ -583,7 +583,10 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             if (!mode_externalEditor)
                OurUtil.makeMenuItem(filemenu, "New",                    true, KeyEvent.VK_N, KeyEvent.VK_N, doNew());
             OurUtil.makeMenuItem(filemenu,    open+"...",               true, KeyEvent.VK_O, KeyEvent.VK_O, doOpen());
-            OurUtil.makeMenuItem(filemenu,    open+" Sample Models...", true, KeyEvent.VK_B, KeyEvent.VK_B, doBuiltin());
+            if (!Util.onMac())
+                OurUtil.makeMenuItemWithAlt(filemenu, open+" Sample Models...", KeyEvent.VK_O, doBuiltin());
+            else
+                OurUtil.makeMenuItem(filemenu, open+" Sample Models...", true, -1, -1, doBuiltin());
             JMenu recentmenu;
             filemenu.add(recentmenu = new JMenu(open+" Recent"));
             if (!mode_externalEditor) {

@@ -433,4 +433,20 @@ public final class OurUtil {
         if (parent!=null) parent.add(x);
         return x;
     }
+
+    /**
+     * Construct a new JMenuItem then add it to an existing JMenu with ALT+accelerator.
+     * @param parent - the JMenu to add this JMenuItem into (or null if you don't want to add it to any JMenu yet)
+     * @param label - the text to show on the menu
+     * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the "ALT" mask on top of it
+     * @param func - the action listener to call if the user clicks this item (or null if there is no action to do)
+     */
+    public static JMenuItem makeMenuItemWithAlt(JMenu parent, String label, int accel, ActionListener func) {
+        JMenuItem x = new JMenuItem(label, null);
+        int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+        x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.ALT_MASK));
+        if (func!=null) x.addActionListener(func);
+        if (parent!=null) parent.add(x);
+        return x;
+    }
 }
