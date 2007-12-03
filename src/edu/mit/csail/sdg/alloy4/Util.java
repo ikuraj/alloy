@@ -204,7 +204,10 @@ public final class Util {
 
     /** Modifies the current "default directory" which is used by the FileOpen and FileSave dialogs. */
     public synchronized static void setCurrentDirectory(File newDirectory) {
-        currentDirectory = canon(newDirectory.getAbsolutePath());
+        if (newDirectory==null) // this can actually happen
+            currentDirectory = canon(System.getProperty("user.home"));
+        else
+            currentDirectory = canon(newDirectory.getAbsolutePath());
     }
 
     /** Returns the current "default directory" which is used by the FileOpen and FileSave dialogs. */
