@@ -6,4 +6,4 @@ sig N { N0: NULL+N }
 
 one sig NULL {}
 
-check concat { L0.H0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0=NULL } for 20 expect 1
+check { L0.H0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0.N0=NULL } for 20 expect 1
