@@ -137,7 +137,7 @@ public final class CompUtil {
                     content=Util.readAll(true, "models/"+x.filename+".als");
                     cp=x.filename;
                 } catch(IOException ex) {
-                    throw new ErrorSyntax(pos,
+                    throw new ErrorSyntax(x.pos,
                     "This module cannot be found.\nIt is not a built-in library module, and it cannot be found at \""+cp+"\".\n");
                 }
             }
