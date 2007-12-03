@@ -28,7 +28,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
@@ -38,8 +37,8 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 public final class ExprChoice extends Expr {
 
-    /** The unmodifiable list of Expr(s) that this ExprChoice can refer to; this list always has 2 or more entries. */
-    final ConstList<Expr> choices;
+    /** The unmodifiable list of Expr(s) that this ExprChoice can refer to. */
+    public final ConstList<Expr> choices;
 
     /** Caches the span() result. */
     private Pos span=null;
@@ -95,15 +94,10 @@ public final class ExprChoice extends Expr {
     /** Construct an ExprChoice node. */
     public static Expr make(Pos pos, ConstList<Expr> choices) {
         if (choices.size()==0) return new ExprBad(pos, "", new ErrorType(pos, "This expression failed to be typechecked."));
-        if (choices.size()==1) return choices.get(0); // Shortcut
-        TempList<Expr> legal = new TempList<Expr>(choices.size());
+        if (choices.size()==1 && choices.get(0).errors.isEmpty()) return choices.get(0); // Shortcut
         Type type=EMPTY;
-        for(Expr x:choices) if (x.errors.isEmpty()) { legal.add(x); type=x.type.merge(type); }
-        if (legal.size()>0) choices=legal.makeConst();
-        if (choices.size()==1) return choices.get(0);
-        // At this point, either every choice is legal... or every choice is illegal
         long weight=choices.get(0).weight;
-        for(int i=1; i<choices.size(); i++) if (weight > choices.get(i).weight) weight = choices.get(i).weight;
+        for(Expr x:choices) { type=x.type.merge(type); if (weight>x.weight) weight=x.weight; }
         return new ExprChoice(pos, choices, type, weight);
     }
 

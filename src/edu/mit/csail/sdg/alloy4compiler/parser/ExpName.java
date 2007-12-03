@@ -68,13 +68,13 @@ final class ExpName extends Exp {
             } else if (ch instanceof Func) {
                 Func f = (Func)ch;
                 int fn = f.params.size();
-                if (fn==1 && THIS!=null && THIS.type.hasArity(1) && f.params.get(0).type.intersects(THIS.type)) {
+                if (fn>0 && THIS!=null && THIS.type.hasArity(1) && f.params.get(0).type.intersects(THIS.type)) {
                     // If we're inside a sig, and there is a unary variable bound to "this",
                     // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
-                    objects.add(ExprCall.make(pos, null, f, Util.asList(THIS), 1));
-                    continue;
+                    ConstList<Expr> t = Util.asList(THIS);
+                    objects.add(fn==1 ? ExprCall.make(pos,null,f,t,1) : ExprBadCall.make(pos,null,f,t,1));
                 }
-                objects.add(fn==0 ? ExprCall.make(pos,null,f,emptyList,0) : ExprBadCall.make(pos,null,f,emptyList));
+                objects.add(fn==0 ? ExprCall.make(pos,null,f,emptyList,0) : ExprBadCall.make(pos,null,f,emptyList,0));
             }
         }
         if (objects.size()==0) return new ExprBad(pos, name, hint(pos, name));

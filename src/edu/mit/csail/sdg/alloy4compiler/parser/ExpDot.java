@@ -20,7 +20,6 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -32,7 +31,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -91,68 +89,36 @@ final class ExpDot extends Exp {
         return true;
     }
 
-    /**
-     * Construct the result of calling "ch" with the given list of arguments
-     * <br> <b>Precondition</b>: (ch instanceof Expr) or (ch instanceof Func)
-     * <br> <b>Postcondition:</b>: returns either "null" or an "Expr"
-     */
-    private static Expr makeCallIfPossible(Pos pos, Object ch, ConstList<Expr> args, Expr THISorNULL) {
-        final int argN = args.size();
-        if (ch instanceof Expr) {
-            if (argN>0) return null; else return (Expr)ch;
-        } else {
-            final Func f = (Func)ch;
-            final int paramN = f.params.size();
-            if (paramN==argN+1 && THISorNULL!=null && THISorNULL.type.hasArity(1)) {
-                // If we're inside a sig, and there is a unary variable bound to "this",
-                // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
-                ConstList<Expr> args2 = Util.prepend(args, THISorNULL);
-                if (applicable(f,args2)) return ExprCall.make(pos,null,f,args2,1);
-            }
-            if (paramN < argN) return null;
-            return applicable(f,args) ? ExprCall.make(pos,null,f,args,0) : ExprBadCall.make(pos,null,f,args);
-        }
-    }
-
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
-        // First, check whether it could be a legal function/predicate call
-        final int warningSize = warnings.size();
-        final TempList<Expr> objects = new TempList<Expr>();
-        int n=1;
-        Exp ptr=right;
-        while (ptr instanceof ExpDot) { n++; ptr=((ExpDot)ptr).right; }
-        if (ptr instanceof ExpName && !cx.has(((ExpName)ptr).name)) {
-            Collection<Object> choices = cx.resolve(ptr.pos, ((ExpName)ptr).name);
-            TempList<Expr> tempargs = new TempList<Expr>(n);
-            for(Exp x=this; x instanceof ExpDot; x=((ExpDot)x).right) {
-                Expr y = ((ExpDot)x).left.check(cx, warnings).typecheck_as_set();
-                tempargs.add(0, y);
-            }
-            ConstList<Expr> args = tempargs.makeConst();
-            // If we're inside a sig, and there is a unary variable bound to "this", we should
-            // consider it as a possible FIRST ARGUMENT of a fun/pred call
-            Expr THISorNULL = (cx.rootsig!=null) ? cx.get("this", ptr.pos) : null;
-            boolean hasValidBound=false;
-            for(Object ch:choices) {
-                Expr x=makeCallIfPossible(ptr.pos, ch, args, THISorNULL);
-                if (x!=null) { objects.add(x); if (x.type!=Type.EMPTY) hasValidBound=true; }
-            }
-            if (hasValidBound) return ExprChoice.make(ptr.pos, objects.makeConst());
-        }
-        // Now, since we'll re-typecheck the args, let's undo any changes to the Warning List
-        while(warnings.size() > warningSize) warnings.remove(warnings.size()-1);
-        // Next, check to see if it is the special builtin function "Int[]"
         Expr left = this.left.check(cx, warnings);
         Expr right = this.right.check(cx, warnings);
-        if (left.type.is_int && right instanceof ExprUnary && ((ExprUnary)right).op==ExprUnary.Op.NOOP && ((ExprUnary)right).sub==Sig.SIGINT)
-            return left.cast2sigint();
-        if (left.type.is_int && right instanceof Sig && ((Sig)right)==Sig.SIGINT)
-            return left.cast2sigint();
-        // All else, we treat it as a relational join
-        if (left  instanceof ExprBadCall) return left;  // This hopefully gives better error message
-        if (right instanceof ExprBadCall) return right; // This hopefully gives better error message
-        objects.add(ExprBinary.Op.JOIN.make(pos, closingBracket, left, right));
-        return ExprChoice.make(ptr.pos, objects.makeConst());
+        // check to see if it is the special builtin function "Int[]"
+        if (left.type.is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();
+        // otherwise, process as regular join or as method call
+        left = left.typecheck_as_set();
+        if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) {
+            return ExprBinary.Op.JOIN.make(pos, closingBracket, left, right);
+        }
+        TempList<Expr> list = new TempList<Expr>(((ExprChoice)right).choices.size());
+        for(Expr x: ((ExprChoice)right).choices) {
+            Expr y;
+            if (x instanceof ExprBadCall) {
+                ExprBadCall bc = (ExprBadCall)x;
+                if (bc.args.size() < bc.fun.params.size()) {
+                    ConstList<Expr> newargs = Util.append(bc.args, left);
+                    if (applicable(bc.fun, newargs))
+                        y=ExprCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.weight);
+                    else
+                        y=ExprBadCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.weight);
+                } else {
+                    y=ExprBinary.Op.JOIN.make(pos, closingBracket, left, x);
+                }
+            } else {
+                y=ExprBinary.Op.JOIN.make(pos, closingBracket, left, x);
+            }
+            list.add(y);
+        }
+        return ExprChoice.make(pos, list.makeConst());
     }
 }

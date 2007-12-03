@@ -38,10 +38,10 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 public final class ExprBadCall extends Expr {
 
     /** The function. */
-    private final Func fun;
+    public final Func fun;
 
     /** The unmodifiable list of arguments. */
-    private final ConstList<Expr> args;
+    public final ConstList<Expr> args;
 
     /** Caches the span() result. */
     private Pos span=null;
@@ -71,14 +71,14 @@ public final class ExprBadCall extends Expr {
     }
 
     /** Constructs an ExprBadCall object. */
-    private ExprBadCall(Pos pos, Pos closingBracket, boolean ambiguous, Func fun, ConstList<Expr> args, JoinableList<Err> errors) {
-        super(pos, closingBracket, ambiguous, EMPTY, 0, 0, errors);
+    private ExprBadCall(Pos pos, Pos closingBracket, boolean ambiguous, Func fun, ConstList<Expr> args, JoinableList<Err> errors, long weight) {
+        super(pos, closingBracket, ambiguous, EMPTY, 0, weight, errors);
         this.fun=fun;
         this.args=args;
     }
 
     /** Constructs an ExprBadCall object. */
-    public static Expr make(final Pos pos, final Pos closingBracket, final Func fun, ConstList<Expr> args) {
+    public static Expr make(final Pos pos, final Pos closingBracket, final Func fun, ConstList<Expr> args, long weight) {
         if (args==null) args=ConstList.make();
         boolean ambiguous = false;
         JoinableList<Err> errors = emptyListOfErrors;
@@ -102,7 +102,7 @@ public final class ExprBadCall extends Expr {
             }
             errors = errors.append(new ErrorType(pos, sb.toString()));
         }
-        return new ExprBadCall(pos, closingBracket, ambiguous, fun, args, errors);
+        return new ExprBadCall(pos, closingBracket, ambiguous, fun, args, errors, weight);
     }
 
     /** {@inheritDoc} */
