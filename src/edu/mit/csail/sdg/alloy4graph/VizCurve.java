@@ -44,6 +44,18 @@ final class VizCurve {
         this.startY=startY; this.endY=startY;
     }
 
+    /** Make a deep copy of this VizCurve object. */
+    public VizCurve dup() {
+        VizCurve ans = new VizCurve(startX, startY);
+        ans.endX = endX;
+        ans.endY = endY;
+        for(CubicCurve2D.Double x:list) {
+            CubicCurve2D.Double c = new CubicCurve2D.Double();
+            c.setCurve(x);
+            ans.list.add(c);
+        }
+        return ans;
+    }
     /**
      * Precondition: this.lastX==next.firstX and this.lastY==next.firstY.
      * Note: the resulting VizCurve will still share the same CubicCurve2D objects as this and that. */

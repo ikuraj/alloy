@@ -668,7 +668,7 @@ public final strictfp class VizGraph extends DiGraph {
             y = y + ad;
         }
         if (y==0) return; // This means no legends need to be drawn
-        gr.setColor(Color.BLACK);
+        gr.setColor(Color.GRAY);
         gr.draw(new RoundRectangle2D.Double(5, 5, maxWidth+10, y+10, 5, 5), false);
         y=10;
         for(Map.Entry<Comparable<?>,Pair<String,Color>> e:legends.entrySet()) {

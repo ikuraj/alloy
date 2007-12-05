@@ -73,17 +73,51 @@ public final class StaticGraphMaker {
     }
 
     /** The list of colors, in order, to assign each legend. */
-    private static final List<Color> colors = Collections.unmodifiableList(Arrays.asList(
-       new Color(204,0,51)    // bright red
-       ,new Color(0,102,51)    // strong green
-       ,new Color(0,0,255)     // strong blue
-       ,new Color(102,0,204)   // purple
-       ,new Color(255,51,255)  // pink
-       ,new Color(102,102,102) // gray
-       ,new Color(255,120,0)   // strong oragne
-       ,new Color(102,204,0)   // light green
-       ,new Color(51,153,204)  // medium blue
-       ,new Color(0,255,255)   // pale blue
+    private static final List<Color> colorsClassic = Collections.unmodifiableList(Arrays.asList(
+       new Color(228,26,28)
+       ,new Color(166,86,40)
+       ,new Color(255,127,0)
+       ,new Color(77,175,74)
+       ,new Color(55,126,184)
+       ,new Color(152,78,163)
+       //,new Color(255,255,51)
+       //,new Color(247,129,191)
+    ));
+
+    /** The list of colors, in order, to assign each legend. */
+    private static final List<Color> colorsStandard = Collections.unmodifiableList(Arrays.asList(
+       new Color(227,26,28)
+       ,new Color(255,127,0)
+       ,new Color(251*8/10,154*8/10,153*8/10)
+       //new Color(166,206,227)
+       //,new Color(178,223,138)
+       ,new Color(51,160,44)
+       ,new Color(31,120,180)
+       //,new Color(253,191,111)
+    ));
+
+    /** The list of colors, in order, to assign each legend. */
+    private static final List<Color> colorsMartha = Collections.unmodifiableList(Arrays.asList(
+       new Color(231,138,195)
+       ,new Color(252,141,98)
+       ,new Color(166,216,84)
+       ,new Color(102,194,165)
+       ,new Color(141,160,203)
+       //,new Color(255,217,47)
+       //,new Color(229,196,148)
+       //,new Color(179,179,179)
+    ));
+
+    /** The list of colors, in order, to assign each legend. */
+    private static final List<Color> colorsNeon = Collections.unmodifiableList(Arrays.asList(
+       new Color(231,41,138)
+       ,new Color(217,95,2)
+       ,new Color(166,118,29)
+       ,new Color(102,166,30)
+       ,new Color(27,158,119)
+       ,new Color(117,112,179)
+       //,new Color(230,171,2)
+       //,new Color(102,102,102)
     ));
 
     /** The constructor takes an Instance and a View, then insert the generate graph(s) into a blank cartoon. */
@@ -96,23 +130,19 @@ public final class StaticGraphMaker {
         for (AlloyRelation rel: model.getRelations()) {
             rels.put(rel,null);
         }
-        for (AlloyRelation rel: rels.keySet()) {
-            DotColor c = view.edgeColor(rel, model);
-            if (c==DotColor.MAGIC) {
-                int i = magicColor.size();
-                if (i>=colors.size()) magicColor.put(rel,Color.BLACK); else magicColor.put(rel, colors.get(i));
-            } else {
-                magicColor.put(rel, DotColor.name2color(c.getDotText(view.getEdgePalette())));
-            }
-            // We intentionally set a color for every relation, so that the layout algorithm will always
-            // see the same set of relations (even for different slices of the same graph,
-            // or if the user changes some settings, or if the user views a different instance of the same model...)
-            // That is, as long as the user has not changed the set of Sig to project over, then the rels.keySet() is unchanged
-            // This way, the layout algorithm can assign colors to each relation in a robust way
-        }
+        List<Color> colors;
+          if (view.getEdgePalette() == DotPalette.CLASSIC) colors = colorsClassic;
+          else if (view.getEdgePalette() == DotPalette.STANDARD) colors = colorsStandard;
+          else if (view.getEdgePalette() == DotPalette.MARTHA) colors = colorsMartha;
+          else colors = colorsNeon;
+        int ci=0;
         for (AlloyRelation rel: model.getRelations()) {
-            int count = view.edgeVisible(rel,model) ? edgesAsArcs(rel, magicColor.get(rel)) : 0;
-            rels.put(rel,count);
+            DotColor c = view.edgeColor(rel, model);
+            Color cc = (c==DotColor.MAGIC) ? colors.get(ci) : DotColor.name2color(c.getDotText(view.getEdgePalette()));
+            int count = view.edgeVisible(rel, model) ? edgesAsArcs(rel, colors.get(ci)) : 0;
+            rels.put(rel, count);
+            magicColor.put(rel, cc);
+            if (count>0) ci=(ci+1)%(colors.size());
         }
         for (AlloyAtom atom:instance.getAllAtoms()) {
             List<AlloySet> sets=instance.atom2sets(atom);
