@@ -450,12 +450,17 @@ public final class VizGUI implements ComponentListener {
 
     /** Invoked when the Visualizationwindow is resized. */
     public void componentResized(ComponentEvent e) {
-        if (frame!=null) { VizWidth.set(frame.getWidth()); VizHeight.set(frame.getHeight()); componentMoved(e); }
+        componentMoved(e);
     }
 
     /** Invoked when the Visualizationwindow is moved. */
     public void componentMoved(ComponentEvent e) {
-        if (frame!=null) { VizX.set(frame.getX()); VizY.set(frame.getY()); }
+        if (frame!=null) {
+           VizWidth.set(frame.getWidth());
+           VizHeight.set(frame.getHeight());
+           VizX.set(frame.getX());
+           VizY.set(frame.getY());
+        }
     }
 
     /** Invoked when the Visualizationwindow is shown. */

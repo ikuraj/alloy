@@ -47,7 +47,6 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
-import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -507,16 +506,15 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** Called when this window is resized. */
     public void componentResized(ComponentEvent e) {
-        AnalyzerWidth.set(frame.getWidth());
-        AnalyzerHeight.set(frame.getHeight());
         componentMoved(e);
     }
 
     /** Called when this window is moved. */
     public void componentMoved(ComponentEvent e) {
-        Point p=frame.getLocation();
-        AnalyzerX.set(p.x);
-        AnalyzerY.set(p.y);
+        AnalyzerWidth.set(frame.getWidth());
+        AnalyzerHeight.set(frame.getHeight());
+        AnalyzerX.set(frame.getX());
+        AnalyzerY.set(frame.getY());
     }
 
     /** Called when this window is shown. */
