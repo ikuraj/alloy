@@ -3665,8 +3665,10 @@ class CUP$CompParser$actions {
           case 97: // Super ::= LBRACE SuperP RBRACE
             {
               Exp RESULT =null;
+        Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp x = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
-         RESULT=x;
+        Pos b = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
+         RESULT=new ExpUnary(a.merge(b), ExprUnary.Op.NOOP, x);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Super",13, RESULT);
             }
           return CUP$CompParser$result;
@@ -4114,10 +4116,13 @@ class CUP$CompParser$actions {
         List<ExpName> b = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-5)).value;
         List<ExpName> c = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
    ExpName cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
-   for(ExpName bb:b) parser.alloymodule.addSig(h, bb.pos, bb.name, a.get(0), a.get(1), a.get(2), a.get(3), cc, c, d, e);
+   for(ExpName bb:b) {
+      parser.alloymodule.addSig(h, bb.pos.merge(e==null ? o : e.span()), bb.name, a.get(0), a.get(1), a.get(2), a.get(3), cc, c, d, e);
+   }
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Sig",37, RESULT);
             }
@@ -4146,10 +4151,11 @@ class CUP$CompParser$actions {
           case 52: // Predicate ::= PRED SigRef DOT Name Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         ExpName f = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<Decl>(), null, v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , new ArrayList<Decl>(), null, v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Predicate",33, RESULT);
             }
           return CUP$CompParser$result;
@@ -4158,11 +4164,12 @@ class CUP$CompParser$actions {
           case 51: // Predicate ::= PRED SigRef DOT Name LBRACKET Decls RBRACKET Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-7)).value;
         ExpName f = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-6)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , null, v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , null, v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Predicate",33, RESULT);
             }
           return CUP$CompParser$result;
@@ -4171,11 +4178,12 @@ class CUP$CompParser$actions {
           case 50: // Predicate ::= PRED SigRef DOT Name LPAREN Decls RPAREN Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-7)).value;
         ExpName f = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-6)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , null, v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , null, v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Predicate",33, RESULT);
             }
           return CUP$CompParser$result;
@@ -4184,9 +4192,10 @@ class CUP$CompParser$actions {
           case 49: // Predicate ::= PRED Name Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<Decl>(), null, v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, new ArrayList<Decl>(), null, v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Predicate",33, RESULT);
             }
           return CUP$CompParser$result;
@@ -4195,10 +4204,11 @@ class CUP$CompParser$actions {
           case 48: // Predicate ::= PRED Name LBRACKET Decls RBRACKET Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-5)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, null, d                    , null, v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , null, v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Predicate",33, RESULT);
             }
           return CUP$CompParser$result;
@@ -4207,10 +4217,11 @@ class CUP$CompParser$actions {
           case 47: // Predicate ::= PRED Name LPAREN Decls RPAREN Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-5)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, null, d                    , null, v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , null, v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Predicate",33, RESULT);
             }
           return CUP$CompParser$result;
@@ -4219,11 +4230,12 @@ class CUP$CompParser$actions {
           case 46: // Function ::= FUN SigRef DOT Name COLON Expr Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-6)).value;
         ExpName f = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-5)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp r = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, f   , new ArrayList<Decl>(), mult(r), v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , new ArrayList<Decl>(), mult(r), v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Function",19, RESULT);
             }
           return CUP$CompParser$result;
@@ -4232,12 +4244,13 @@ class CUP$CompParser$actions {
           case 45: // Function ::= FUN SigRef DOT Name LBRACKET Decls RBRACKET COLON Expr Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-9)).value;
         ExpName f = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-8)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-6)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         Exp r = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , mult(r), v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , mult(r), v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Function",19, RESULT);
             }
           return CUP$CompParser$result;
@@ -4246,12 +4259,13 @@ class CUP$CompParser$actions {
           case 44: // Function ::= FUN SigRef DOT Name LPAREN Decls RPAREN COLON Expr Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-9)).value;
         ExpName f = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-8)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-6)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         Exp r = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, f   , d                    , mult(r), v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , mult(r), v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Function",19, RESULT);
             }
           return CUP$CompParser$result;
@@ -4260,10 +4274,11 @@ class CUP$CompParser$actions {
           case 43: // Function ::= FUN Name COLON Expr Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp r = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, null, new ArrayList<Decl>(), mult(r), v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, new ArrayList<Decl>(), mult(r), v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Function",19, RESULT);
             }
           return CUP$CompParser$result;
@@ -4272,11 +4287,12 @@ class CUP$CompParser$actions {
           case 42: // Function ::= FUN Name LBRACKET Decls RBRACKET COLON Expr Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-7)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-6)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         Exp r = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , mult(r), v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Function",19, RESULT);
             }
           return CUP$CompParser$result;
@@ -4285,11 +4301,12 @@ class CUP$CompParser$actions {
           case 41: // Function ::= FUN Name LPAREN Decls RPAREN COLON Expr Super
             {
               Object RESULT =null;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-7)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-6)).value;
         List<Decl> d = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         Exp r = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp v = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.addFunc(n.pos, n.name, null, d                    , mult(r), v);
+         parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , mult(r), v);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Function",19, RESULT);
             }
           return CUP$CompParser$result;
@@ -4510,9 +4527,9 @@ class CUP$CompParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 20: // CmdLabel ::= DOT ID
             {
-              String RESULT =null;
+              ExpName RESULT =null;
         ExpName i = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=i.name;
+         RESULT=i;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("CmdLabel",4, RESULT);
             }
           return CUP$CompParser$result;
@@ -4520,8 +4537,8 @@ class CUP$CompParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 19: // CmdLabel ::=
             {
-              String RESULT =null;
-         RESULT="";
+              ExpName RESULT =null;
+         RESULT=null;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("CmdLabel",4, RESULT);
             }
           return CUP$CompParser$result;
@@ -4531,13 +4548,13 @@ class CUP$CompParser$actions {
             {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
-        String x = (String)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
+        ExpName x = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Pair<Sig,Integer>> s = (List<Pair<Sig,Integer>>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExpConstant c = (ExpConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
   int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.merge(c==null ? null : c.pos);
+  Pos p=o.merge(c==null ? null : c.pos).merge(n.pos);
   for(int i=s.size()-1; i>=0; i--) {
     Sig j=s.get(i).a;
     p=p.merge(j.pos);
@@ -4556,7 +4573,7 @@ class CUP$CompParser$actions {
             {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
-        String x = (String)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
+        ExpName x = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Pair<Sig,Integer>> s = (List<Pair<Sig,Integer>>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExpConstant c = (ExpConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
@@ -4581,13 +4598,13 @@ class CUP$CompParser$actions {
             {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
-        String x = (String)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
+        ExpName x = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         ExpName n = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Pair<Sig,Integer>> s = (List<Pair<Sig,Integer>>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExpConstant c = (ExpConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
   int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.merge(c==null ? null : c.pos);
+  Pos p=o.merge(c==null ? null : c.pos).merge(n.pos);
   for(int i=s.size()-1; i>=0; i--) {
     Sig j=s.get(i).a;
     p=p.merge(j.pos);
@@ -4606,7 +4623,7 @@ class CUP$CompParser$actions {
             {
               Object RESULT =null;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
-        String x = (String)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
+        ExpName x = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Pair<Sig,Integer>> s = (List<Pair<Sig,Integer>>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExpConstant c = (ExpConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;

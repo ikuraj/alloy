@@ -547,11 +547,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     /** Break a tree of conjunction into a list of formula. */
     private static void makelist(ArrayList<Expr> list, Expr input) {
-        while(input instanceof ExprBinary && ((ExprBinary)input).op==ExprBinary.Op.AND) {
-            makelist(list, ((ExprBinary)input).left);
-            input = ((ExprBinary)input).right;
-        }
-        list.add(input);
+       input = deNOP(input);
+       while(input instanceof ExprBinary && ((ExprBinary)input).op==ExprBinary.Op.AND) {
+          makelist(list, ((ExprBinary)input).left);
+          input = ((ExprBinary)input).right;
+          input = deNOP(input);
+       }
+       if (!input.isSame(ExprConstant.TRUE)) list.add(input);
     }
 
     /** Remove the "ExprUnary NOP" in front of an expression. */

@@ -238,6 +238,29 @@ final class SimpleReporter extends A4Reporter {
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
         final Module world = CompUtil.parseEverything_fromFile(rep, bundleCache, rep.mainAlloyFileName);
+        /*
+        if (1==1) {
+            for(Pair<String,Expr> p: world.getAllAssertions()) {
+                System.out.println("Assertion "+p.a+" ("+p.b.pos.y+","+p.b.pos.x+")..("+p.b.pos.y2+","+p.b.pos.x2+")");
+            }
+            for(Pair<String,Expr> p: world.getAllFacts()) {
+                System.out.println("Fact "+p.a+" ("+p.b.pos.y+","+p.b.pos.x+")..("+p.b.pos.y2+","+p.b.pos.x2+")");
+            }
+            for(Func p: world.getAllFunc()) {
+                System.out.println("Func "+p.label+" ("+p.pos.y+","+p.pos.x+")..("+p.pos.y2+","+p.pos.x2+")");
+            }
+            for(Pair<Command,Expr> pp: world.getAllCommandsWithFormulas()) {
+                Command p=pp.a;
+                System.out.print("Cmd "+p.label+" ("+p.pos.y+","+p.pos.x+")..("+p.pos.y2+","+p.pos.x2+")");
+                Expr b=pp.b;
+                System.out.println(" ("+b.pos.y+","+b.pos.x+")..("+b.pos.y2+","+b.pos.x2+")");
+            }
+            for(Sig p: world.getAllSigs()) {
+                System.out.println("Sig "+p.label+" ("+p.pos.y+","+p.pos.x+")..("+p.pos.y2+","+p.pos.x2+")");
+            }
+            System.out.flush();
+        }
+        */
         final List<Sig> sigs = world.getAllReachableSigs();
         final ConstList<Pair<Command,Expr>> cmds = world.getAllCommandsWithFormulas();
         if (rep.warnings.size()>0) {

@@ -589,6 +589,7 @@ public final class Module {
     /** Add a sig declaration. */
     SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome,
     ExpName par, List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
+        pos = pos.merge(isAbstract).merge(isLone).merge(isOne).merge(isSome);
         if (name.indexOf('$')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'$\' character");
         status=3;
         dup(pos, name, true);
@@ -743,7 +744,7 @@ public final class Module {
         status=3;
         if (name==null || name.length()==0) name="assert$"+(1+asserts.size());
         dup(pos, name, true);
-        asserts.put(name, value);
+        asserts.put(name, new ExpUnary(value.span().merge(pos), ExprUnary.Op.NOOP, value));
         return name;
     }
 
@@ -782,7 +783,7 @@ public final class Module {
         status=3;
         if (name==null || name.length()==0) name="fact$"+(1+facts.size());
         dup(pos, name, true);
-        facts.put(name,value);
+        facts.put(name, new ExpUnary(value.span().merge(pos), ExprUnary.Op.NOOP, value));
     }
 
     /** Each fact name now points to a typechecked Expr rather than an untypechecked Exp; we'll also add the sig appended facts. */
@@ -834,21 +835,24 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, String label) throws Err {
+    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, ExpName label) throws Err {
+        if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
-        if (label==null || label.length()==0) label=n;
-        commands.add(new Triple<String,Command,Expr>(n, new Command(p, label, c, o, b, seq, exp, s), ExprConstant.TRUE));
+        String labelName = (label==null || label.name.length()==0) ? n : label.name;
+        commands.add(new Triple<String,Command,Expr>(n, new Command(p, labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
     }
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, Exp e, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, String label) throws Err {
+    void addCommand(Pos p, Exp e, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, ExpName label) throws Err {
+        if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         String n;
-        if (c) n=addAssertion(p,"",e); else addFunc(e.span(),n="run$"+(1+commands.size()),null,new ArrayList<Decl>(),null,e);
-        if (label==null || label.length()==0) label=n;
-        commands.add(new Triple<String,Command,Expr>(n, new Command(p, label, c, o, b, seq, exp, s), ExprConstant.TRUE));
+        if (c) n=addAssertion(p,"",e);
+           else addFunc(e.span().merge(p), n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
+        String labelName = (label==null || label.name.length()==0) ? n : label.name;
+        commands.add(new Triple<String,Command,Expr>(n, new Command(e.span().merge(p), labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
     }
 
     /** Each command now points to a typechecked Expr. */

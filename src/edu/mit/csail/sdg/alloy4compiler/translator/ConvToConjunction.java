@@ -54,11 +54,12 @@ public final class ConvToConjunction extends VisitReturn {
 
     /** {@inheritDoc} */
     @Override public Object visit(ExprQuant x) throws Err {
-        if (x.op == ExprQuant.Op.ALL && x.sub instanceof ExprBinary) {
-            ExprBinary bin = (ExprBinary)(x.sub);
-            if (bin.op == ExprBinary.Op.AND) {
-                Expr a = (Expr) visitThis(x.op.make(x.pos, x.closingBracket, x.vars, bin.left));
-                Expr b = (Expr) visitThis(x.op.make(x.pos, x.closingBracket, x.vars, bin.right));
+        if (x.op == ExprQuant.Op.ALL) {
+            Expr s = x.sub;
+            while(s instanceof ExprUnary && ((ExprUnary)s).op==ExprUnary.Op.NOOP) s=((ExprUnary)s).sub;
+            if (s instanceof ExprBinary && ((ExprBinary)s).op==ExprBinary.Op.AND) {
+                Expr a = (Expr) visitThis(x.op.make(x.pos, x.closingBracket, x.vars, ((ExprBinary)s).left));
+                Expr b = (Expr) visitThis(x.op.make(x.pos, x.closingBracket, x.vars, ((ExprBinary)s).right));
                 return a.and(b);
             }
         }
@@ -67,6 +68,9 @@ public final class ConvToConjunction extends VisitReturn {
 
     /** {@inheritDoc} */
     @Override public Object visit(ExprUnary x) throws Err {
+        if (x.op == ExprUnary.Op.NOOP) {
+            return (Expr) visitThis(x.sub);
+        }
         if (x.op == ExprUnary.Op.NOT && x.sub instanceof ExprBinary) {
             ExprBinary bin = (ExprBinary)(x.sub);
             if (bin.op == ExprBinary.Op.OR) {
