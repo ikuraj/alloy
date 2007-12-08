@@ -849,7 +849,7 @@ public final class Module {
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         String n;
-        if (c) n=addAssertion(p,"",e);
+        if (c) n=addAssertion(p,"check$"+(1+commands.size()),e);
            else addFunc(e.span().merge(p), n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
         String labelName = (label==null || label.name.length()==0) ? n : label.name;
         commands.add(new Triple<String,Command,Expr>(n, new Command(e.span().merge(p), labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
