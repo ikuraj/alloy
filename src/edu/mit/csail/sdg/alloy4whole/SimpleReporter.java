@@ -488,7 +488,7 @@ final class SimpleReporter extends A4Reporter {
             if (cmd.check) log(" Assertion may be valid"); else log(" Predicate may be inconsistent");
             if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
             log(".");
-        } else if (minimizedBefore==minimizedAfter){
+        } else if (minimizedBefore<=minimizedAfter){
             log(" still contains "+minimizedAfter+" entries.");
         } else {
             log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" entries.");
