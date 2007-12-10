@@ -156,7 +156,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     private Bounds bounds;
 
     /** This is the formula we want to satisfy. */
-    private Formula goal;
+    private final List<Formula> goal = new ArrayList<Formula>();
 
     /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
     private void makeFacts(Expr facts) throws Err {
@@ -178,7 +178,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                         // Remove ar[i..i+5]; the remaining elements are not re-arranged
                         ar.remove(i+5); ar.remove(i+4); ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i);
                         Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                        goal = fmap(f, e.isOrdered).and(goal);
+                        goal.add(fmap(f, e.isOrdered));
                         continue again;
                     }
                 }
@@ -186,17 +186,17 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             }
             for(Field f:sig.getFields()) {
                 // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
-                goal = fmap(cform(f.boundingFormula), f).and(goal);
+                goal.add(fmap(cform(f.boundingFormula), f));
                 // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
                 // Thus, we need to add a bound that the first column is a subset of s.
                 if (sig.isOne==null) {
                     Expression sr=bcc.get(sig), fr=bcc.get(f);
                     for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
-                    goal = fmap(fr.in(sr), f).and(goal);
+                    goal.add(fmap(fr.in(sr), f));
                 }
             }
         }
-        for(Expr e:ar) goal = fmap(cform(e), e).and(goal);
+        for(Expr e:ar) goal.add(fmap(cform(e), e));
     }
 
     /**
@@ -210,18 +210,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
         bitwidth = sc.getBitwidth();
         maxseq = sc.getMaxSeq();
-        final Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>> bc = BoundsComputer.compute(sc,rep,sigs,fmap);
+        final Pair<Pair<Bounds,List<Formula>>,ConstMap<Object,Expression>> bc = BoundsComputer.compute(sc,rep,sigs,fmap);
         bcc = bc.b;
         bounds = bc.a.a;
-        goal = bc.a.b;
+        goal.addAll(bc.a.b);
         rep.debug("Generating facts...\n");
         makeFacts(facts);
         // Kodkod sometimes refuses to enlarge a Relation during solution enumeration
         // if that Relation is never mentioned in the GOAL formula; so, this ensures that
         // the said relation is mentioned (and the R==R is optimized away very efficiently, so we don't incur runtime cost)
-        Formula mention = Formula.TRUE;
-        for(Relation r: bounds.relations()) { mention=mention.and(r.eq(r)); }
-        goal = mention.and(goal);
+        for(Relation r: bounds.relations()) goal.add(r.eq(r));
     }
 
     //==============================================================================================================//
@@ -282,11 +280,23 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             @Override public void solvingCNF(int primaryVars, int vars, int clauses) { rep.solve(primaryVars, vars, clauses); }
         });
         rep.debug("Simplifying the bounds...\n");
-        if (!Simplifier.simplify(bounds, goal, solver.options())) goal=Formula.FALSE;
+        if (!Simplifier.simplify(bounds, goal, solver.options())) { goal.clear(); goal.add(Formula.FALSE); }
         rep.translate(opt.solver.id(), bitwidth, maxseq, opt.skolemDepth, sym);
     }
 
     //==============================================================================================================//
+
+    /** Given a list of Formula, construct a balanced binary tree (actually a "binary heap" where node X's two children are node 2X and node 2X+1) then conjoin into a single formula. */
+    private static Formula make(List<Formula> list, int i) {
+        if (i<1 || i>list.size()) return Formula.TRUE;
+        Formula me = list.get(i-1);
+        int child1=i+i, child2=child1+1;
+        if (child1<i || child1>list.size()) return me;
+        me = me.and(make(list, child1));
+        if (child2<child1 || child2>list.size()) return me;
+        me = me.and(make(list, child2));
+        return me;
+    }
 
     /**
      * Step4: solve for the solution
@@ -294,19 +304,20 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * <p> Writes: all
      */
     private A4Solution solve (boolean tryBookExamples, A4Options opt) throws Err {
+        Formula fgoal = make(goal,1);
         rep.debug("Generating the solution...\n");
         long time = System.currentTimeMillis();
         Iterator<Solution> sols;
         Solution sol = null;
         IdentitySet<Formula> kCore = null;
         if (tryBookExamples && solver.options().solver()!=SATFactory.MiniSatProver) {
-            try { sol=BookExamples.trial(sigs, bcc, bounds, goal, solver, cmd.check); } catch(Throwable ex) { }
+            try { sol=BookExamples.trial(sigs, bcc, bounds, fgoal, solver, cmd.check); } catch(Throwable ex) { }
         }
         if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
             sols=null;
-            if (sol==null) sol=solver.solve(goal, bounds);
+            if (sol==null) sol=solver.solve(fgoal, bounds);
         } else {
-            sols=solver.solveAll(goal, bounds);
+            sols=solver.solveAll(fgoal, bounds);
             if (sol==null) sol=sols.next();
         }
         final Instance inst = sol.instance();
@@ -342,7 +353,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             return null;
         }
         A4Solution answer = new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(),
-           sols, (opt.recordKodkod ? goal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
+           sols, (opt.recordKodkod ? fgoal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
         time = System.currentTimeMillis() - time;
         if (answer.satisfiable()) rep.resultSAT(cmd, time, answer); else rep.resultUNSAT(cmd, time, answer);
         return answer;

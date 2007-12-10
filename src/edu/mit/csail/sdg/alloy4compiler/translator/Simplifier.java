@@ -20,6 +20,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
+import java.util.List;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Expression;
@@ -62,7 +63,7 @@ final class Simplifier {
     }
 
     /** Simplify the bounds based on the fact that "form is true"; return false if we discover the formula is unsat. */
-    static boolean simplify(Bounds bounds, Formula form, Options opt) {
+    private static boolean simplify(Bounds bounds, Formula form, Options opt) {
         boolean flag1=true, flag2=true;
         if (form instanceof BinaryFormula) {
             BinaryFormula f=(BinaryFormula)form;
@@ -76,5 +77,12 @@ final class Simplifier {
             if (f.op() == ComparisonFormula.Operator.EQUALS) flag2=simplify_in(bounds, f.right(), f.left(), opt);
         }
         return flag1 && flag2;
+    }
+
+    /** Simplify the bounds based on the fact that "every formula in list is true"; return false if we discover the formula is unsat. */
+    static boolean simplify(Bounds bounds, List<Formula> list, Options opt) {
+        boolean ans = true;
+        for(Formula f: list) ans = ans && simplify(bounds, f, opt);
+        return ans;
     }
 }

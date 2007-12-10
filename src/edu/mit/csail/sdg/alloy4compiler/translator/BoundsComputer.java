@@ -269,7 +269,7 @@ final class BoundsComputer {
      * Stores the additional set of constraints that are needed to bound everything correctly.
      * This field is initialized by the constructor and will not be modified afterwards.
      */
-    private Formula fact = Formula.TRUE;
+    private final List<Formula> fact = new ArrayList<Formula>();
 
     /** Query the Bounds object to find the lower/upper bound; throws Err if expr is not Relation, nor a union of Relations. */
     private TupleSet query(boolean findUpper, Expression expr, boolean makeMutable) throws Err {
@@ -326,7 +326,7 @@ final class BoundsComputer {
             Expression childexpr=allocatePrimSig(child, fmap);
             if (sum==null) { sum=childexpr; continue; }
             // subsigs are disjoint
-            fact = add(sum.intersection(childexpr).no(), child.isSubsig, fmap).and(fact);
+            fact.add(add(sum.intersection(childexpr).no(), child.isSubsig, fmap));
             sum = sum.union(childexpr);
         }
         TupleSet lower=convert(sig2lower.get(sig)), upper=convert(sig2upper.get(sig));
@@ -372,7 +372,7 @@ final class BoundsComputer {
         bounds.bound(r, ts);
         a2k.put(sig, r);
         // Add a constraint that it is INDEED a subset of the union of its parents
-        fact = add(r.in(sum), sig.isSubset, fmap).and(fact);
+        fact.add(add(r.in(sum), sig.isSubset, fmap));
         return r;
     }
 
@@ -434,25 +434,25 @@ final class BoundsComputer {
             final int n=sc.sig2scope(s);
             if (s.isOne!=null && (lower.size()!=1 || upper.size()!=1)) {
                 rep.bound("Sig "+s+" in "+upper+" with size==1\n");
-                fact=add(exp.one(), s.isOne, fmap).and(fact);
+                fact.add(add(exp.one(), s.isOne, fmap));
                 continue;
             }
-            if (s.isSome!=null && lower.size()<1) fact=add(exp.some(), s.isSome, fmap).and(fact);
-            if (s.isLone!=null && upper.size()>1) fact=add(exp.lone(), s.isLone, fmap).and(fact);
+            if (s.isSome!=null && lower.size()<1) fact.add(add(exp.some(), s.isSome, fmap));
+            if (s.isLone!=null && upper.size()>1) fact.add(add(exp.lone(), s.isLone, fmap));
             if (n<0) continue; // This means no scope was specified
             if (sc.isExact(s) && lower.size()==n && upper.size()==n) {
                 rep.bound("Sig "+s+" == "+upper+"\n");
             }
             else if (sc.isExact(s)) {
                 rep.bound("Sig "+s+" in "+upper+" with size=="+n+"\n");
-                fact=size(s,n,true,fmap).and(fact);
+                fact.add(size(s,n,true,fmap));
             }
             else if (upper.size()<=n){
                 rep.bound("Sig "+s+" in "+upper+"\n");
             }
             else {
                 rep.bound("Sig "+s+" in "+upper+" with size<="+n+"\n");
-                fact=size(s,n,false,fmap).and(fact);
+                fact.add(size(s,n,false,fmap));
             }
         }
         // Turn everything read-only
@@ -463,7 +463,7 @@ final class BoundsComputer {
      * Computes the bounds, constraints, and the Sig/Field-to-Expression map:
      * <br> 1) The map maps each sig and field to a Kodkod Expression
      * <br> 2) The Bounds defines lower and upper bound for any Kodkod relation mentioned in the map
-     * <br> 3) The Formula, when combined with the Map and Bounds, fully expresses the user's intent
+     * <br> 3) The list of Formula, when combined with the Map and Bounds, fully expresses the user's intent
      * <p>
      *
      * @param sc - the ScopeComputer that bounds each PrimSig to a scope
@@ -471,10 +471,10 @@ final class BoundsComputer {
      * @param sigs - the list of all sigs
      * @param fmap - this map will receive additional mappings between each constraint to a Pos object
      */
-    static Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>> compute
+    static Pair<Pair<Bounds,List<Formula>>,ConstMap<Object,Expression>> compute
     (ScopeComputer sc, A4Reporter rep, Iterable<Sig> sigs, Map<Formula,Object> fmap) throws Err {
         BoundsComputer bc = new BoundsComputer(sc, rep, sigs, fmap);
-        Pair<Bounds,Formula> a = new Pair<Bounds,Formula>(bc.bounds, bc.fact);
-        return new Pair<Pair<Bounds,Formula>,ConstMap<Object,Expression>>(a, bc.a2k.makeConst());
+        Pair<Bounds,List<Formula>> a = new Pair<Bounds,List<Formula>>(bc.bounds, bc.fact);
+        return new Pair<Pair<Bounds,List<Formula>>,ConstMap<Object,Expression>>(a, bc.a2k.makeConst());
     }
 }
