@@ -310,8 +310,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Iterator<Solution> sols;
         Solution sol = null;
         IdentitySet<Formula> kCore = null;
-        if (tryBookExamples && solver.options().solver()!=SATFactory.MiniSatProver) {
-            try { sol=BookExamples.trial(sigs, bcc, bounds, fgoal, solver, cmd.check); } catch(Throwable ex) { }
+        if (tryBookExamples) {
+            A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
+            try { sol=BookExamples.trial(r, sigs, bcc, bounds, fgoal, solver, cmd.check); } catch(Throwable ex) { }
         }
         if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
             sols=null;
@@ -914,7 +915,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
            case ANY_ARROW_ONE:  case SOME_ARROW_ONE:  case ONE_ARROW_ONE:  case LONE_ARROW_ONE:  ans1=ar.one().and(ans1);  break;
            case ANY_ARROW_SOME: case SOME_ARROW_SOME: case ONE_ARROW_SOME: case LONE_ARROW_SOME: ans1=ar.some().and(ans1); break;
         }
-        if (a.arity()==1) ans1=ans1.forAll(d); else ans1=isIn(atuple, ab.left).implies(ans1).forAll(d);
+        if (a.arity()>1) { Formula tmp=isIn(atuple, ab.left); if (tmp!=Formula.TRUE) ans1=tmp.implies(ans1); }
+        ans1=ans1.forAll(d);
         // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
         Expression btuple=null, rb=r;
         for(int i=b.arity(); i>0; i--) {
@@ -929,7 +931,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
            case ONE_ARROW_ANY:  case ONE_ARROW_SOME:  case ONE_ARROW_ONE:  case ONE_ARROW_LONE:  ans2=rb.one().and(ans2);  break;
            case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE: ans2=rb.some().and(ans2); break;
         }
-        if (b.arity()==1) ans2=ans2.forAll(d2); else ans2=isIn(btuple, ab.right).implies(ans2).forAll(d2);
+        if (b.arity()>1) { Formula tmp=isIn(btuple, ab.right); if (tmp!=Formula.TRUE) ans2=tmp.implies(ans2); }
+        ans2=ans2.forAll(d2);
         // Now, put everything together
         Formula ans=r.in(a.product(b)).and(ans1).and(ans2);
         if (ab.op==ExprBinary.Op.ISSEQ_ARROW_LONE) {
@@ -1024,7 +1027,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         for(ExprVar dex:xvars) env.remove(dex);
         if (op==ExprQuant.Op.COMPREHENSION) return ans.comprehension(dd); // guard==Formula.TRUE, since each var has to be unary
         if (op==ExprQuant.Op.SUM) return ians.sum(dd);                    // guard==Formula.TRUE, since each var has to be unary
-        if (op==ExprQuant.Op.SOME) return guard.and(ans).forSome(dd); else return guard.implies(ans).forAll(dd);
+        if (op==ExprQuant.Op.SOME) {
+            return guard==Formula.TRUE ? ans.forSome(dd) : guard.and(ans).forSome(dd);
+        } else {
+            return guard==Formula.TRUE ? ans.forAll(dd) : guard.implies(ans).forAll(dd);
+        }
     }
 
     /** {@inheritDoc} */
