@@ -40,7 +40,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
  * of toplevel conjunctions. This helps improve the precision of the unsat core result.
  */
 
-public final class ConvToConjunction extends VisitReturn {
+final class ConvToConjunction extends VisitReturn {
 
     /** {@inheritDoc} */
     @Override public Object visit(ExprBinary x) throws Err {
