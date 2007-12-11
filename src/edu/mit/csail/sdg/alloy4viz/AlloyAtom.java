@@ -54,11 +54,11 @@ public final class AlloyAtom implements Comparable<AlloyAtom> {
     public String getVizName(VizState theme, boolean numberAtoms) {
         if (theme!=null) {
             if (theme.useOriginalName()) return originalName;
-            if (type.getName().equals("Int") && index==Integer.MAX_VALUE && theme.label(type).length()==0) {
+            if (index==Integer.MAX_VALUE && type.getName().equals("Int") && theme.label(type).length()==0) {
                 // Special handling for Meta Model. (Only meta model could have index==MAX_VALUE)
                 return "Int";
             }
-            if (type.getName().equals("seq/Int") && index==Integer.MIN_VALUE && theme.label(type).length()==0) {
+            if (index==Integer.MAX_VALUE && type.getName().equals("seq/Int") && theme.label(type).length()==0) {
                 // Special handling for Meta Model. (Only meta model could have index==MIN_VALUE)
                 return "seq/Int";
             }

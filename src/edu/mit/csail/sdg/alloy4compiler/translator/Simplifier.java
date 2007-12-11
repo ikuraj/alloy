@@ -82,7 +82,7 @@ final class Simplifier {
     /** Simplify the bounds based on the fact that "every formula in list is true"; return false if we discover the formula is unsat. */
     static boolean simplify(Bounds bounds, List<Formula> list, Options opt) {
         boolean ans = true;
-        for(Formula f: list) ans = ans && simplify(bounds, f, opt);
+        for(Formula f: list) ans = simplify(bounds, f, opt) && ans; // Note: even if we get false, we want to keep going so that we simplify bounds further
         return ans;
     }
 }

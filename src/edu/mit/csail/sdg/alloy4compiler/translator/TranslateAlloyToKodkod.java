@@ -395,7 +395,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                "quantification that could not be skolemized.");
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex;
-            if (ex.toString().contains("nosuchprogram") && tr!=null && tr.tmpCNF!=null) {
+            if (tr!=null && tr.tmpCNF!=null && ex.toString().contains("nosuchprogram")) {
                 rep.resultCNF(tr.tmpCNF.getAbsolutePath());
                 return null;
             }
@@ -439,7 +439,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                "quantification that could not be skolemized.");
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex;
-            if (ex.toString().contains("nosuchprogram") && tr!=null && tr.tmpCNF!=null) {
+            if (tr!=null && tr.tmpCNF!=null && ex.toString().contains("nosuchprogram")) {
                 rep.resultCNF(tr.tmpCNF.getAbsolutePath());
                 return null;
             }
@@ -456,7 +456,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     public static Object alloy2kodkod(ConstMap<Object,Expression> bcc, int bitwidth, Expr expr)
     throws Err {
         if (bitwidth<1 || bitwidth>30) throw new ErrorType("The integer bitwidth must be between 1 and 30.");
-        if (!expr.errors.isEmpty() && expr.ambiguous) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
+        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
         TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(null, null, null);
         tr.bcc = bcc;

@@ -230,7 +230,7 @@ public final class ExprUnary extends Expr {
             if (op!=Op.TRANSPOSE && type.join(type).hasNoTuple())
                w1=new ErrorWarning(pos, this+" is redundant since its domain and range are disjoint: "+sub.type.extract(2));
             s = (op!=Op.TRANSPOSE) ? resolveClosure(p, sub.type) : sub.type.transpose().intersect(p).transpose() ;
-            if (p.hasTuple() && s==EMPTY)
+            if (s==EMPTY && p.hasTuple())
                w2=new ErrorWarning(sub.span(),
                "The value of this expression does not contribute to the value of the parent.\nParent's relevant type = "
                +p+"\nThis expression's type = "+sub.type.extract(2));

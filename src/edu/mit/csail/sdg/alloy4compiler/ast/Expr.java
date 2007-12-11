@@ -253,7 +253,7 @@ public abstract class Expr {
 
     /** Returns true if the node is well-typed, unambiguous, and contains a predicate/function call. */
     final boolean hasCall() {
-        boolean ans=errors.isEmpty() && !ambiguous;
+        boolean ans = !ambiguous && errors.isEmpty();
         if (ans) { try { ans=accept(hasCall)!=null; } catch(Err ex) { ans=false; } } // This exception should not occur
         return ans;
     }

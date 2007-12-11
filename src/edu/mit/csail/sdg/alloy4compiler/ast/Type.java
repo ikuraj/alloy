@@ -620,7 +620,7 @@ public final class Type implements Iterable<Type.ProductType> {
             for(ProductType x:that) if (this.hasArity(x.types.length)) aa=add(ee,aa,x);
         }
         // So now, if nothing changed, we want to return "this" as-is
-        if (!is_int && !is_bool && ee.size()==this.entries.size() && aa==this.arities) {
+        if (!is_int && !is_bool && aa==this.arities && ee.size()==this.entries.size()) {
             for(int i=ee.size()-1; ; i--) {
                 if (i<0) return this;
                 if (ee.get(i) != this.entries.get(i)) break;

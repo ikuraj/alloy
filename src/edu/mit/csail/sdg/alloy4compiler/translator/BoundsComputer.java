@@ -440,7 +440,7 @@ final class BoundsComputer {
             if (s.isSome!=null && lower.size()<1) fact.add(add(exp.some(), s.isSome, fmap));
             if (s.isLone!=null && upper.size()>1) fact.add(add(exp.lone(), s.isLone, fmap));
             if (n<0) continue; // This means no scope was specified
-            if (sc.isExact(s) && lower.size()==n && upper.size()==n) {
+            if (lower.size()==n && upper.size()==n && sc.isExact(s)) {
                 rep.bound("Sig "+s+" == "+upper+"\n");
             }
             else if (sc.isExact(s)) {

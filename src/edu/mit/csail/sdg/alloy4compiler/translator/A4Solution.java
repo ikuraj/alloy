@@ -321,7 +321,7 @@ public final class A4Solution {
      */
     public Object eval(Expr expr) throws Err {
         if (!satisfiable()) throw new ErrorAPI("This solution is unsatisfiable, so no eval() is allowed.");
-        if (!expr.errors.isEmpty() && expr.ambiguous) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
+        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
         Object result = TranslateAlloyToKodkod.alloy2kodkod(bcc, bitwidth, expr);
         if (result instanceof IntExpression) return kEval.evaluate((IntExpression)result);
