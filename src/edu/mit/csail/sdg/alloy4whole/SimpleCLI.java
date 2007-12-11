@@ -123,7 +123,7 @@ public final class SimpleCLI {
                     rep.sb.append("Executing \""+c+"\"\n");
                     Expr facts = ExprConstant.TRUE;
                     for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
-                    TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
+                    TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
                 }
             } catch(Throwable ex) {
                 rep.sb.append("\n\nException: "+ex);
