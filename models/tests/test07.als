@@ -23,13 +23,13 @@ check { #X=2 => (some a,b,c:X | c.(b.(a.disj))) } expect 1
 check { #X>2 => (some a,b,c:X | disj[a,b,c]) } expect 0
 check { #X>2 => (some a,b,c:X | c.(b.(a.disj))) } expect 0
 
-check { some X => (some x:X | X =  X) } expect 0
-check { some X => (some x:X | X != X) } expect 1
-check {   no X => (some x:X | X =  X) } expect 1
-check {   no X => (some x:X | X != X) } expect 1
+check { some X => (some x:X | X+none =  X) } expect 0
+check { some X => (some x:X | X+none != X) } expect 1
+check {   no X => (some x:X | X+none =  X) } expect 1
+check {   no X => (some x:X | X+none != X) } expect 1
 
-check { some X => (all x:X | X =  X) } expect 0
-check { some X => (all x:X | X != X) } expect 1
-check {   no X => (all x:X | X =  X) } expect 0
-check {   no X => (all x:X | X != X) } expect 0
+check { some X => (all x:X | X+none =  X) } expect 0
+check { some X => (all x:X | X+none != X) } expect 1
+check {   no X => (all x:X | X+none =  X) } expect 0
+check {   no X => (all x:X | X+none != X) } expect 0
 

@@ -3,6 +3,6 @@ module trivial
 
 sig S {}
 
-fact {S != S}
+fact { 1=2 }
 
 run {some S} expect 0

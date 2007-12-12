@@ -46,7 +46,7 @@ assert addIdempotent {
 
 assert addLocal {
 	all b, b': Book, n, n': Name, a: Addr |
-		add [b, b', n, a] and n != n
+		add [b, b', n, a] and n != n'
 		implies
 		lookup [b, n'] = lookup [b', n']
 }
