@@ -327,12 +327,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 lCore=new IdentitySet<Formula>();
                 Proof p=sol.proof();
                 if (sol.outcome()==UNSATISFIABLE) {
-                    int i=0; for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) { it.next(); i++; }
+                    int i = p.highLevelCore().size();
                     rep.minimizing(cmd, i);
                     if (opt.coreMinimization==0) try { p.minimize(new RCEStrategy(p.log())); } catch(Throwable ex) {}
                     if (opt.coreMinimization==1) try { p.minimize(new HybridStrategy(p.log())); } catch(Throwable ex) {}
-                    int j=0; for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) { it.next(); j++; }
-                    rep.minimized(cmd, i, j);
+                    rep.minimized(cmd, i, p.highLevelCore().size());
                 }
                 for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) {
                     Object n=it.next().node();
