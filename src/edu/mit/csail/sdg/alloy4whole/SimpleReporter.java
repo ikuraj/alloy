@@ -308,7 +308,7 @@ final class SimpleReporter extends A4Reporter {
                 result.add(null);
             }
             else if (!ai.satisfiable()) {
-                if (ai.core().size()>0) { rep.deleteOnExit(tempCNF+".core"); result.add(tempCNF+".core"); } else result.add("");
+                if (ai.highLevelCore().a.size()>0) { rep.deleteOnExit(tempCNF+".core"); result.add(tempCNF+".core"); } else result.add("");
             }
             else {
                 rep.deleteOnExit(tempXML);
@@ -460,17 +460,15 @@ final class SimpleReporter extends A4Reporter {
             formulafilename=tempfile+".java";
             try { Util.writeAll(formulafilename, sol.formula); } catch(Throwable ex) { formulafilename=null; }
         }
-        ConstSet<Pos> core = sol.core();
-        if (core.size()>0 && tempfile!=null) {
+        Pair<ConstSet<Pos>,ConstSet<Pos>> core = sol.highLevelCore();
+        if ((core.a.size()>0 || core.b.size()>0) && tempfile!=null) {
             corefilename=tempfile+".core";
             OutputStream fs=null;
             ObjectOutputStream os=null;
             try {
                 fs=new FileOutputStream(corefilename);
                 os=new ObjectOutputStream(fs);
-                os.writeObject(Integer.valueOf(core.size()));
-                os.writeObject(mainAlloyFileName);
-                for(Pos p:core) os.writeObject(p);
+                os.writeObject(core);
             } catch(Throwable ex) {
                 corefilename=null;
             } finally {
@@ -494,7 +492,6 @@ final class SimpleReporter extends A4Reporter {
             log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" entries.");
         }
         logLink(" "+(System.currentTimeMillis()-lastTime)+"ms.", (formulafilename==null ? "" : ("CNF: "+formulafilename)));
-        if (verbosity>2) for(Pos p:core) log("\n   CORE: "+p);
         log("\n\n");
     }
 

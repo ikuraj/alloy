@@ -35,12 +35,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.prefs.Preferences;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -98,6 +96,7 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.MailBug;
@@ -1536,6 +1535,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     }
 
     /** This method displays a particular instance or message. */
+    @SuppressWarnings("unchecked")
     Runner doVisualize(String arg) {
         if (wrap) return wrapMe(arg);
         text.removeAllHighlights();
@@ -1544,16 +1544,13 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         }
         if (arg.startsWith("CORE: ")) {
             String filename = Util.canon(arg.substring(6));
-            String alloyfilename = null;
-            Set<Pos> core = new LinkedHashSet<Pos>();
+            Pair<ConstSet<Pos>,ConstSet<Pos>> core;
             InputStream is = null;
             ObjectInputStream ois = null;
             try {
                 is = new FileInputStream(filename);
                 ois = new ObjectInputStream(is);
-                int n = (Integer) (ois.readObject());
-                alloyfilename = Util.canon((String) (ois.readObject()));
-                for(int i=0; i<n; i++) { core.add((Pos) (ois.readObject())); }
+                core = (Pair<ConstSet<Pos>,ConstSet<Pos>>) ois.readObject();
             } catch(Throwable ex) {
                 log.logRed("Error reading or parsing the core \""+filename+"\"\n");
                 return null;
@@ -1562,13 +1559,8 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 Util.close(is);
             }
             text.removeAllHighlights();
-            try {
-               text.newTab(alloyfilename);
-            } catch(IOException ex) {
-               log.logRed("Error reading the file \""+alloyfilename+"\"\n");
-               return null;
-            }
-            for(Pos p:core) text.highlight(p,false);
+            for(Pos p:core.b) text.highlight(p,false,false);
+            for(Pos p:core.a) text.highlight(p,true,false);
         }
         if (arg.startsWith("POS: ")) {
             Scanner s=new Scanner(arg.substring(5));

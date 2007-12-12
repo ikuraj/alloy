@@ -271,7 +271,7 @@ public final class A4SolutionReader {
             String command = x.xml.getAttribute("command");
             String filename = x.xml.getAttribute("filename");
             ConstMap<Object,Expression> a2k = ConstMap.make(x.a2k);
-            A4Solution sol = new A4Solution(sigs, a2k, filename, command, null, null, null, bitwidth, x.inst, null, null, null);
+            A4Solution sol = new A4Solution(sigs, a2k, filename, command, null, null, null, bitwidth, x.inst, null, null, null, null);
             return new Pair<A4Solution,ConstList<Func>>(sol, x.globals.makeConst());
         } catch(Throwable ex) {
             if (ex instanceof Err) throw ((Err)ex);

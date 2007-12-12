@@ -215,6 +215,37 @@ public final class OurTabbedEditor {
         }
     };
 
+    /** The HighlightPainter to use to paint the highlights. */
+    private final HighlightPainter highlightPainter2=new Highlighter.HighlightPainter() {
+        private final Color color = new Color(0.9f, 0.7f, 0.7f);
+        public void paint(Graphics g, int start, int end, Shape shape, JTextComponent text) {
+            Color oldcolor=g.getColor();
+            g.setColor(color);
+            try {
+                Rectangle box = shape.getBounds();
+                Rectangle a = text.getUI().modelToView(text,start);
+                Rectangle b = text.getUI().modelToView(text,end);
+                if (a.y == b.y) {
+                    // same line; if start==end, then draw all the way to the right edge.
+                    Rectangle r = a.union(b);
+                    g.fillRect(r.x, r.y, (r.width<=1 ? (box.x+box.width-r.x) : r.width), r.height);
+                } else {
+                    // On the first line, draw from "start" and extends to the right-most edge
+                    g.fillRect(a.x, a.y, box.x+box.width-a.x, a.height);
+                    // If there are line(s) between the first line and the last line, then draw them
+                    if (a.y+a.height != b.y) {
+                        g.fillRect(box.x, a.y+a.height, box.width, b.y-(a.y+a.height));
+                    }
+                    // Draw the last line
+                    g.fillRect(box.x, b.y, b.x-box.x, b.height);
+                }
+            } catch (BadLocationException e) {
+                // Failure to highlight is not fatal
+            }
+            g.setColor(oldcolor);
+        }
+    };
+
     /** Adjusts the background and foreground of all labels. */
     private void adjustLabelColor() {
         int i=me;
@@ -665,10 +696,10 @@ public final class OurTabbedEditor {
      * Highlights the text editor, based on the location information in the Pos object.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
-    public void highlight(final Pos p, final boolean clearOldHighlightsFirst) {
+    public void highlight(final Pos p, final boolean strongRed, final boolean clearOldHighlightsFirst) {
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() {
-                public final void run() { highlight(p, clearOldHighlightsFirst); }
+                public final void run() { highlight(p, strongRed, clearOldHighlightsFirst); }
             });
             return;
         }
@@ -690,7 +721,7 @@ public final class OurTabbedEditor {
                 }
                 int c=text().getLineStartOffset(p.y-1)+p.x-1;
                 int d=text().getLineStartOffset(p.y2-1)+p.x2-1;
-                tabs.get(me).highlighter.addHighlight(c, d+1, highlightPainter);
+                tabs.get(me).highlighter.addHighlight(c, d+1, strongRed ? highlightPainter : highlightPainter2);
                 // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
                 text().setSelectionStart(0);
                 text().setSelectionEnd(0);
@@ -709,7 +740,7 @@ public final class OurTabbedEditor {
      * Highlights the text editor, based on the location information in the Err object.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
-    public void highlight(final Err e) { highlight(e.pos, true); }
+    public void highlight(final Err e) { highlight(e.pos, true, true); }
 
     /** Constructs a tabbed editor pane. */
     public OurTabbedEditor(final Parent parent, final JFrame parentFrame, final Font font, final int tabSize) {

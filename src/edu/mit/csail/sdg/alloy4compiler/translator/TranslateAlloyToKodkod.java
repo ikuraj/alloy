@@ -309,7 +309,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         long time = System.currentTimeMillis();
         Iterator<Solution> sols;
         Solution sol = null;
-        IdentitySet<Formula> kCore = null;
+        IdentitySet<Formula> lCore = null, hCore = null;
         if (tryBookExamples) {
             A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
             try { sol=BookExamples.trial(r, sigs, bcc, bounds, fgoal, solver, cmd.check); } catch(Throwable ex) { }
@@ -324,7 +324,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final Instance inst = sol.instance();
         if (inst==null && solver.options().solver()==SATFactory.MiniSatProver) {
             try {
-                kCore=new IdentitySet<Formula>();
+                lCore=new IdentitySet<Formula>();
                 Proof p=sol.proof();
                 if (sol.outcome()==UNSATISFIABLE) {
                     int i=0; for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) { it.next(); i++; }
@@ -336,10 +336,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 }
                 for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) {
                     Object n=it.next().node();
-                    if (n instanceof Formula) kCore.add((Formula)n);
+                    if (n instanceof Formula) lCore.add((Formula)n);
                 }
+                hCore=new IdentitySet<Formula>(p.highLevelCore());
             } catch(Throwable ex) {
-                kCore=null; // Failure is not fatal
+                lCore=hCore=null;
             }
         }
         solver.options().setReporter(blankReporter); // To ensure no more output during SolutionEnumeration
@@ -354,7 +355,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             return null;
         }
         A4Solution answer = new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(),
-           sols, (opt.recordKodkod ? fgoal : null), bounds, bitwidth, inst, rel2type, fmap, kCore);
+           sols, (opt.recordKodkod ? fgoal : null), bounds, bitwidth, inst, rel2type, fmap, lCore, hCore);
         time = System.currentTimeMillis() - time;
         if (answer.satisfiable()) rep.resultSAT(cmd, time, answer); else rep.resultUNSAT(cmd, time, answer);
         return answer;
