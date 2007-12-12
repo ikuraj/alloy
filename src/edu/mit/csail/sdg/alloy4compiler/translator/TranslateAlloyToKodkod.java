@@ -114,7 +114,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     //==============================================================================================================//
 
     /** The current reporter. */
-    private final A4Reporter rep;
+    private A4Reporter rep;
 
     /** The list of all Sigs. */
     private final ConstList<Sig> sigs;
@@ -277,7 +277,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                     rel2type.put(skolem,t);
                 } catch(Throwable ex) { } // Exception here is not fatal
             }
-            @Override public void solvingCNF(int primaryVars, int vars, int clauses) { rep.solve(primaryVars, vars, clauses); }
+            @Override public void solvingCNF(int primaryVars, int vars, int clauses) {
+                if (rep!=null) rep.solve(primaryVars, vars, clauses);
+            }
         });
         rep.debug("Simplifying the bounds...\n");
         if (!Simplifier.simplify(bounds, goal, solver.options())) { goal.clear(); goal.add(Formula.FALSE); }
@@ -312,14 +314,17 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         IdentitySet<Formula> lCore = null, hCore = null;
         if (tryBookExamples) {
             A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
+            A4Reporter save = rep;
+            rep = null;
             try { sol=BookExamples.trial(r, sigs, bcc, bounds, fgoal, solver, cmd.check); } catch(Throwable ex) { }
+            rep = save;
         }
         if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
             sols=null;
-            if (sol==null) sol=solver.solve(fgoal, bounds);
+            if (sol==null) { rel2type.clear(); sol=solver.solve(fgoal, bounds); }
         } else {
             sols=solver.solveAll(fgoal, bounds);
-            if (sol==null) sol=sols.next();
+            if (sol==null) { rel2type.clear(); sol=sols.next(); }
         }
         final Instance inst = sol.instance();
         if (inst==null && solver.options().solver()==SATFactory.MiniSatProver) {
