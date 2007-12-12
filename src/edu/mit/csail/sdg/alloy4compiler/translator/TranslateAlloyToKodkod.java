@@ -316,7 +316,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
             A4Reporter save = rep;
             rep = null;
-            try { sol=BookExamples.trial(r, sigs, bcc, bounds, fgoal, solver, cmd.check); } catch(Throwable ex) { }
+            try { sol=BookExamples.trial(rel2type, r, sigs, bcc, bounds, fgoal, solver, cmd.check); } catch(Throwable ex) { }
             rep = save;
         }
         if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
