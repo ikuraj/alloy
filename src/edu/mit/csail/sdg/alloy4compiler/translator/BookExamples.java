@@ -32,8 +32,6 @@ import kodkod.ast.Relation;
 import kodkod.ast.Expression;
 import kodkod.engine.Solver;
 import kodkod.engine.Solution;
-import kodkod.engine.config.AbstractReporter;
-import kodkod.engine.config.Reporter;
 import kodkod.engine.satlab.SATFactory;
 import kodkod.instance.Bounds;
 import kodkod.instance.Tuple;
@@ -47,9 +45,6 @@ import kodkod.instance.TupleSet;
  */
 
 final class BookExamples {
-
-    /** The reporter that does nothing. */
-    private static AbstractReporter blankReporter = new AbstractReporter(){};
 
     /** Returns the Sig if the list of sig contains a sig with the given label, else returns null. */
     private static Sig hasSig(Iterable<Sig> sigs, String label) {
@@ -364,15 +359,12 @@ final class BookExamples {
              }
           }
           SATFactory sat = solver.options().solver();
-          Reporter reporter = solver.options().reporter();
           Solution sol;
           try {
               solver.options().setSolver(SATFactory.DefaultSAT4J);
-              solver.options().setReporter(blankReporter);
               sol = solver.solve(f,b);
           } finally {
               solver.options().setSolver(sat);
-              solver.options().setReporter(reporter);
           }
           if (sol==null || (sol.outcome()!=SATISFIABLE && sol.outcome()!=TRIVIALLY_SATISFIABLE)) return null;
           if (rep!=null) rep.debug("Comment: "+t[0]+"\n");
