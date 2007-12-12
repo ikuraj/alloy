@@ -20,13 +20,18 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.io.Serializable;
+
 /**
  * Immutable; stores a pair of object references; Pair.equals() compares by value.
  *
  * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
 
-public final class Pair<A,B> {
+public final class Pair<A,B> implements Serializable {
+
+    /** This ensures the class can be serialized reliably. */
+    private static final long serialVersionUID = 1L;
 
     /** The first half of the pair. */
     public final A a;
