@@ -710,36 +710,25 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** {@inheritDoc} */
     @Override public Object visit(ExprUnary x) throws Err {
         switch(x.op) {
-            case NOOP:
-                return visitThis(x.sub);
-            case SOMEOF: case LONEOF: case ONEOF: case SETOF:
-                return cset(x.sub);
-            case NOT:
-                if (x.sub instanceof ExprBinary && ((ExprBinary)(x.sub)).op==ExprBinary.Op.OR) {
-                    // This transformation is not required; but it should give you better unsat core
-                    Expr left = ((ExprBinary)(x.sub)).left;
-                    Expr right = ((ExprBinary)(x.sub)).right;
-                    Formula leftF = fmap( cform(left.not()) , left );
-                    Formula rightF = fmap( cform(right.not()) , right );
-                    return fmap( leftF.and(rightF) , x );
-                }
-                return fmap( cform(x.sub).not() , x );
+            case SOMEOF: case LONEOF: case ONEOF: case SETOF: return cset(x.sub);
+            case NOOP: return visitThis(x.sub);
+            case NOT: return fmap( cform(x.sub).not() , x );
             case SOME: return fmap( cset(x.sub).some() , x);
             case LONE: return fmap( cset(x.sub).lone() , x);
             case ONE: return fmap( cset(x.sub).one() , x);
             case NO: return fmap( cset(x.sub).no() , x);
+            case TRANSPOSE: return cset(x.sub).transpose();
+            case CARDINALITY: return cset(x.sub).count();
+            case CAST2SIGINT: return cint(x.sub).toExpression();
             case CAST2INT:
                 // Efficiency shortcut that simplifies int[Int[x]] to x.
                 Expression sub=cset(x.sub);
                 if (sub instanceof IntToExprCast) return ((IntToExprCast)sub).intExpr();
                 return sub.sum();
-            case CAST2SIGINT: return cint(x.sub).toExpression();
-            case TRANSPOSE: return cset(x.sub).transpose();
             case RCLOSURE:
                 Expression iden=Expression.IDEN.intersection(bcc.get(UNIV).product(Relation.UNIV));
                 return cset(x.sub).closure().union(iden);
             case CLOSURE: return cset(x.sub).closure();
-            case CARDINALITY: return cset(x.sub).count();
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprUnary.visit()");
     }

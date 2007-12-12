@@ -21,6 +21,7 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
@@ -58,8 +59,8 @@ final class ConvToConjunction extends VisitReturn {
             Expr s = x.sub;
             while(s instanceof ExprUnary && ((ExprUnary)s).op==ExprUnary.Op.NOOP) s=((ExprUnary)s).sub;
             if (s instanceof ExprBinary && ((ExprBinary)s).op==ExprBinary.Op.AND) {
-                Expr a = (Expr) visitThis(x.op.make(x.pos, x.closingBracket, x.vars, ((ExprBinary)s).left));
-                Expr b = (Expr) visitThis(x.op.make(x.pos, x.closingBracket, x.vars, ((ExprBinary)s).right));
+                Expr a = (Expr) visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.vars, ((ExprBinary)s).left));
+                Expr b = (Expr) visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.vars, ((ExprBinary)s).right));
                 return a.and(b);
             }
         }

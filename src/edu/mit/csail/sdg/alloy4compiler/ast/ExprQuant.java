@@ -72,7 +72,9 @@ public final class ExprQuant extends Expr {
         Pos p=span;
         if (p==null) {
             p=pos.merge(closingBracket).merge(sub.span());
-            for(Expr v:vars) p=p.merge(v.span());
+            // We intentionally do NOT merge the VAR's position into the span.
+            // That allows us to control the highlighting of this component
+            // simply by deciding this.pos and this.closingBracket
             span=p;
         }
         return p;
