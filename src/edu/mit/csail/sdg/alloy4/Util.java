@@ -307,7 +307,7 @@ public final class Util {
      * <p> Note: if filename=="", we return "".
      */
     public static final String canon(String filename) {
-        if (filename.length()==0) return "";
+        if (filename==null || filename.length()==0) return "";
         File file=new File(filename);
         String answer;
         try {
