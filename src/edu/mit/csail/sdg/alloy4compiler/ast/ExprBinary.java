@@ -319,6 +319,8 @@ public final class ExprBinary extends Expr {
                a=Type.makeInt(a); b=Type.makeInt(b);
             } else if (left.type.hasTuple() && right.type.hasTuple() && !(left.type.intersects(right.type))) {
                w=warn("== is redundant, because the left and right expressions are always disjoint.");
+            } else if (left.isSame(right)) {
+               w=warn("== is redundant, because the left and right expressions are always the same.");
             }
             break;
           }
@@ -333,6 +335,8 @@ public final class ExprBinary extends Expr {
                w=warn("Subset operator is redundant, because the right subexpression is always empty.");
             else if (b.hasNoTuple())
                w=warn("Subset operator is redundant, because the left and right subexpressions are always disjoint.");
+            else if (left.isSame(right))
+               w=warn("Subset operator is redundant, because the left and right expressions are always the same.");
             break;
           }
           case INTERSECT: {
