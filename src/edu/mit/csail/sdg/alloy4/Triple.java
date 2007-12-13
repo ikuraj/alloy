@@ -20,13 +20,18 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.io.Serializable;
+
 /**
  * Immutable; stores a triple of object references; Triple.equals() compares by value.
  *
  * <p><b>Thread Safety:</b>  Safe (since objects of this class are immutable).
  */
 
-public final class Triple<A,B,C> {
+public final class Triple<A,B,C> implements Serializable {
+
+    /** This ensures the class can be serialized reliably. */
+    private static final long serialVersionUID = 1L;
 
     /** The first part of the triple. */
     public final A a;
