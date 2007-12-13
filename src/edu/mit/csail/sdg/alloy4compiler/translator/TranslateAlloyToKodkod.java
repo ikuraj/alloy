@@ -300,6 +300,24 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         return me;
     }
 
+    private static final class Peeker<T> implements Iterator<T> {
+        private Iterator<T> iterator;
+        private boolean hasFirst;
+        private T first;
+        private Peeker(Iterator<T> it) {
+            iterator = it;
+            hasFirst = it.hasNext();
+            if (hasFirst) first=it.next(); else first=null;
+        }
+        public boolean hasNext() {
+            return hasFirst || iterator.hasNext();
+        }
+        public T next() {
+            if (hasFirst) { hasFirst=false; T ans=first; first=null; return ans; } else return iterator.next();
+        }
+        public void remove() { throw new UnsupportedOperationException(); }
+    }
+
     /**
      * Step4: solve for the solution
      * <p> Reads: all
@@ -310,7 +328,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         rep.debug("Generating the solution...\n");
         long time = System.currentTimeMillis();
         Iterator<Solution> sols;
-        Solution sol = null;
+        Solution sol=null;
         IdentitySet<Formula> lCore = null, hCore = null;
         if (tryBookExamples) {
             A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
@@ -321,10 +339,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         }
         if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
             sols=null;
-            if (sol==null) { rel2type.clear(); sol=solver.solve(fgoal, bounds); }
+            if (sol==null) sol=solver.solve(fgoal, bounds);
         } else {
-            sols=solver.solveAll(fgoal, bounds);
-            if (sol==null) { rel2type.clear(); sol=sols.next(); }
+            sols=new Peeker<Solution>(solver.solveAll(fgoal, bounds));
+            if (sol==null) sol=sols.next();
         }
         final Instance inst = sol.instance();
         if (inst==null && solver.options().solver()==SATFactory.MiniSatProver) {

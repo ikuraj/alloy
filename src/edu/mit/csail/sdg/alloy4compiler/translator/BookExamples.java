@@ -318,6 +318,7 @@ final class BookExamples {
     private static Solution trial
     (Map<Relation,Type> rel2type, A4Reporter rep, Solver solver, Iterable<Sig> sigs, ConstMap<Object,Expression> bc, Formula f, final Bounds bb, Object[] t) {
        try {
+          rel2type.clear();
           TupleFactory fac=bb.universe().factory();
           Bounds b = null;
           TupleSet ts = null;
@@ -365,7 +366,6 @@ final class BookExamples {
           Solution sol;
           try {
               solver.options().setSolver(SATFactory.DefaultSAT4J);
-              rel2type.clear();
               sol = solver.solve(f,b);
           } finally {
               solver.options().setSolver(sat);
