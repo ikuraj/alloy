@@ -1544,13 +1544,15 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         }
         if (arg.startsWith("CORE: ")) {
             String filename = Util.canon(arg.substring(6));
-            Pair<ConstSet<Pos>,ConstSet<Pos>> core;
+            Pair<ConstSet<Pos>,ConstSet<Pos>> hCore;
+            ConstSet<Pos> lCore;
             InputStream is = null;
             ObjectInputStream ois = null;
             try {
                 is = new FileInputStream(filename);
                 ois = new ObjectInputStream(is);
-                core = (Pair<ConstSet<Pos>,ConstSet<Pos>>) ois.readObject();
+                hCore = (Pair<ConstSet<Pos>,ConstSet<Pos>>) ois.readObject();
+                lCore = (ConstSet<Pos>) ois.readObject();
             } catch(Throwable ex) {
                 log.logRed("Error reading or parsing the core \""+filename+"\"\n");
                 return null;
@@ -1559,8 +1561,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 Util.close(is);
             }
             text.removeAllHighlights();
-            for(Pos p:core.b) text.highlight(p,false,false);
-            for(Pos p:core.a) text.highlight(p,true,false);
+            for(Pos p:hCore.b) text.highlight(p,false,false);
+            for(Pos p:hCore.a) text.highlight(p,true,false);
+            if (1==2) for(Pos p:lCore) text.highlight(p,true,false); // we are currently not highlighting the lowlevel core
         }
         if (arg.startsWith("POS: ")) {
             Scanner s=new Scanner(arg.substring(5));

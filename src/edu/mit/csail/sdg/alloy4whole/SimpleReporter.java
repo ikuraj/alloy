@@ -469,6 +469,7 @@ final class SimpleReporter extends A4Reporter {
                 fs=new FileOutputStream(corefilename);
                 os=new ObjectOutputStream(fs);
                 os.writeObject(core);
+                os.writeObject(sol.lowLevelCore());
             } catch(Throwable ex) {
                 corefilename=null;
             } finally {

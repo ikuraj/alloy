@@ -339,20 +339,18 @@ public final class A4Solution {
     //============================================================================================================================//
 
     /** This caches the result of lowLevelCore(); this field must be synchronized. */
-    private Pair<ConstSet<Pos>,ConstSet<Pos>> lCoreCache = null;
+    private ConstSet<Pos> lCoreCache = null;
 
     /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
-    public synchronized Pair<ConstSet<Pos>,ConstSet<Pos>> lowLevelCore() {
-        Pair<ConstSet<Pos>,ConstSet<Pos>> answer = lCoreCache;
+    public synchronized ConstSet<Pos> lowLevelCore() {
+        ConstSet<Pos> answer = lCoreCache;
         if (answer!=null) return answer;
         TempSet<Pos> ans1 = new TempSet<Pos>();
-        ConstSet<Pos> ans2 = ConstSet.make();
         if (kEval==null) for(Formula f: core) {
            Object y = fmap.get(f);
            if (y instanceof Pos) ans1.add( (Pos)y ); else if (y instanceof Expr) ans1.add( ((Expr)y).span() );
         }
-        answer = new Pair<ConstSet<Pos>,ConstSet<Pos>>(ans1.makeConst(), ans2);
-        return lCoreCache = answer;
+        return lCoreCache = (answer = ans1.makeConst());
     }
 
     //============================================================================================================================//
