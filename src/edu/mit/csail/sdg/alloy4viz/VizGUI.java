@@ -128,6 +128,12 @@ public final class VizGUI implements ComponentListener {
     /** The current instance and visualization settings; null if none is loaded. */
     private VizState myState=null;
 
+    /**
+     * Returns the current visualization settings (and you can call getOriginalInstance() on it to get the current instance).
+     * If you make changes to the state, you should call doApply() on the VizGUI object to refresh the screen.
+     */
+    public VizState getVizState() { return myState; }
+
     /** The customization panel to the left; null if it is not yet loaded. */
     private VizCustomizationPanel myCustomPanel=null;
 
