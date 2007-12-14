@@ -29,7 +29,7 @@ import kodkod.engine.config.Options;
 
 /**
  * This class is a convenient place for the developers to test various things with the API,
- * and is not intended nor needed for general use. 
+ * and is not intended nor needed for general use.
  */
 
 final class InternalTest {
