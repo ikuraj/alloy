@@ -58,7 +58,7 @@ public final class AlloyAtom implements Comparable<AlloyAtom> {
                 // Special handling for Meta Model. (Only meta model could have index==MAX_VALUE)
                 return "Int";
             }
-            if (index==Integer.MAX_VALUE && type.getName().equals("seq/Int") && theme.label(type).length()==0) {
+            if (index==Integer.MIN_VALUE && type.getName().equals("seq/Int") && theme.label(type).length()==0) {
                 // Special handling for Meta Model. (Only meta model could have index==MIN_VALUE)
                 return "seq/Int";
             }
