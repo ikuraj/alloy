@@ -142,7 +142,7 @@ public final class ExprUnary extends Expr {
          * <br> Alloy4 does allow "variable : set (X lone-> Y)", where we ignore the word "set".
          * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary's constructor never sees it)
          */
-        public final Expr make(Pos pos, Expr sub) { return make(pos, sub, sub.weight, null); }
+        public final Expr make(Pos pos, Expr sub) { return make(pos, sub, null, 0); }
 
         /**
          * Construct an ExprUnary node.
@@ -156,7 +156,7 @@ public final class ExprUnary extends Expr {
          * <br> Alloy4 does allow "variable : set (X lone-> Y)", where we ignore the word "set".
          * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary's constructor never sees it)
          */
-        public final Expr make(Pos pos, Expr sub, long weight, Err extraError) {
+        public final Expr make(Pos pos, Expr sub, Err extraError, long extraWeight) {
             JoinableList<Err> errors = sub.errors.appendIfNotNull(extraError);
             if (sub.mult!=0) {
                if (this==SETOF) return sub;
@@ -208,7 +208,7 @@ public final class ExprUnary extends Expr {
                 type=SIGINT.type;
                 break;
             }
-            return new ExprUnary(pos, this, sub, type, ((weight<sub.weight)?sub.weight:weight), errors.appendIfNotNull(extraError));
+            return new ExprUnary(pos, this, sub, type, extraWeight + sub.weight, errors.appendIfNotNull(extraError));
         }
 
         /** Returns the human readable label for this operator */
@@ -251,7 +251,7 @@ public final class ExprUnary extends Expr {
         Expr sub = this.sub.resolve(s, warns);
         if (w1!=null) warns.add(w1);
         if (w2!=null) warns.add(w2);
-        return (sub==this.sub) ? this : op.make(pos, sub, weight-(this.sub.weight)+sub.weight, null);
+        return (sub==this.sub) ? this : op.make(pos, sub, null, weight-(this.sub.weight));
     }
 
     //============================================================================================================//

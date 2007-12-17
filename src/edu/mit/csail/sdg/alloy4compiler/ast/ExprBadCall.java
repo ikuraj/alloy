@@ -43,6 +43,9 @@ public final class ExprBadCall extends Expr {
     /** The unmodifiable list of arguments. */
     public final ConstList<Expr> args;
 
+    /** The extra weight added to this node on top of the combined weights of the arguments. */
+    public final long extraWeight;
+
     /** Caches the span() result. */
     private Pos span=null;
 
@@ -71,18 +74,22 @@ public final class ExprBadCall extends Expr {
     }
 
     /** Constructs an ExprBadCall object. */
-    private ExprBadCall(Pos pos, Pos closingBracket, boolean ambiguous, Func fun, ConstList<Expr> args, JoinableList<Err> errors, long weight) {
+    private ExprBadCall(Pos pos, Pos closingBracket, boolean ambiguous, Func fun, ConstList<Expr> args, JoinableList<Err> errors, long extraWeight, long weight) {
         super(pos, closingBracket, ambiguous, EMPTY, 0, weight, errors);
         this.fun=fun;
         this.args=args;
+        this.extraWeight=extraWeight;
     }
 
     /** Constructs an ExprBadCall object. */
-    public static Expr make(final Pos pos, final Pos closingBracket, final Func fun, ConstList<Expr> args, long weight) {
+    public static Expr make(final Pos pos, final Pos closingBracket, final Func fun, ConstList<Expr> args, long extraPenalty) {
+        if (extraPenalty<0) extraPenalty=0;
         if (args==null) args=ConstList.make();
+        long weight = extraPenalty;
         boolean ambiguous = false;
         JoinableList<Err> errors = emptyListOfErrors;
         for(Expr x:args) {
+            weight = weight + x.weight;
             ambiguous = ambiguous || x.ambiguous;
             errors = errors.join(x.errors);
         }
@@ -102,7 +109,7 @@ public final class ExprBadCall extends Expr {
             }
             errors = errors.append(new ErrorType(pos, sb.toString()));
         }
-        return new ExprBadCall(pos, closingBracket, ambiguous, fun, args, errors, weight);
+        return new ExprBadCall(pos, closingBracket, ambiguous, fun, args, errors, extraPenalty, weight);
     }
 
     /** {@inheritDoc} */

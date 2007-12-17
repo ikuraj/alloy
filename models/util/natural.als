@@ -17,8 +17,8 @@ module util/natural
  * @author Greg Dennis
  */
 
-open util/ordering[Natural] as ord
-open util/integer as integer
+open util/ordering[Natural] as _ord
+open util/integer as _integer
 
 sig Natural {}
 
@@ -34,45 +34,45 @@ fact {
 }
 
 /* returns n + 1 */
-fun inc [n: Natural] : lone Natural { ord/next[n] }
+fun inc [n: Natural] : lone Natural { _ord/next[n] }
 
 /* returns n - 1 */
-fun dec [n: Natural] : lone Natural { ord/prev[n] }
+fun dec [n: Natural] : lone Natural { _ord/prev[n] }
 
 /* returns n1 + n2 */
 fun add [n1, n2: Natural] : lone Natural {
-  {n: Natural | #ord/prevs[n] = #ord/prevs[n1] + #ord/prevs[n2]}
+  {n: Natural | #_ord/prevs[n] = #_ord/prevs[n1] + #_ord/prevs[n2]}
 }
 
 /* returns n1 - n2 */
 fun sub [n1, n2: Natural] : lone Natural {
-  {n: Natural | #ord/prevs[n1] = #ord/prevs[n2] + #ord/prevs[n]}
+  {n: Natural | #_ord/prevs[n1] = #_ord/prevs[n2] + #_ord/prevs[n]}
 }
 
 /* returns n1 * n2 */
 fun mul [n1, n2: Natural] : lone Natural {
-  {n: Natural | #ord/prevs[n] = #(ord/prevs[n1]->ord/prevs[n2])}
+  {n: Natural | #_ord/prevs[n] = #(_ord/prevs[n1]->_ord/prevs[n2])}
 }
 
 /* returns n1 / n2 */
 fun div [n1, n2: Natural] : lone Natural {
-  {n: Natural | #ord/prevs[n1] = #(ord/prevs[n2]->ord/prevs[n])}
+  {n: Natural | #_ord/prevs[n1] = #(_ord/prevs[n2]->_ord/prevs[n])}
 }
 
 /* greater than */
-pred gt  [n1, n2: Natural] { ord/gt [n1, n2] }
+pred gt  [n1, n2: Natural] { _ord/gt [n1, n2] }
 
 /* less than */
-pred lt  [n1, n2: Natural] { ord/lt [n1, n2] }
+pred lt  [n1, n2: Natural] { _ord/lt [n1, n2] }
 
 /* greater than or equal to*/
-pred gte [n1, n2: Natural] { ord/gte[n1, n2] }
+pred gte [n1, n2: Natural] { _ord/gte[n1, n2] }
 
 /* less than or equal to */
-pred lte [n1, n2: Natural] { ord/lte[n1, n2] }
+pred lte [n1, n2: Natural] { _ord/lte[n1, n2] }
 
 /* returns the maximum integer in ns */
-fun max [ns: set Natural] : lone Natural { ord/max[ns] }
+fun max [ns: set Natural] : lone Natural { _ord/max[ns] }
 
 /* returns the minimum integer in ns */
-fun min [ns: set Natural] : lone Natural { ord/min[ns] }
+fun min [ns: set Natural] : lone Natural { _ord/min[ns] }

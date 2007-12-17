@@ -84,6 +84,15 @@ public final class ExprITE extends Expr {
         this.right=right;
     }
 
+    /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
+    @Override public boolean isSame(Expr obj) {
+        while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
+        if (obj==this) return true;
+        if (!(obj instanceof ExprITE)) return false;
+        ExprITE x=(ExprITE)obj;
+        return cond.isSame(x.cond) && left.isSame(x.left) && right.isSame(x.right);
+    }
+
     /**
      * Constructs a ExprITE expression.
      *

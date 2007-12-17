@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import edu.mit.csail.sdg.alloy4.Util;
+import static edu.mit.csail.sdg.alloy4viz.VizGUI.priv;
 
 /**
  * This utility class generates a graph for a particular index of the projection.
@@ -172,7 +173,7 @@ public final class StaticGraphMaker {
     private DotNode createNode(final AlloyAtom atom) {
         DotNode node=atom2node.get(atom);
         if (node!=null) return node;
-        if (!view.nodeVisible(atom, instance)) return null;
+        if (priv(atom.getType().getName()) || !view.nodeVisible(atom, instance)) return null;
         // Make the node
         DotColor color = view.nodeColor(atom, instance);
         DotStyle style = view.nodeStyle(atom, instance);
@@ -207,8 +208,8 @@ public final class StaticGraphMaker {
         // If the tuple's arity>2, then we append the node labels for all the intermediate nodes.
         // eg. Say a given tuple is (A,B,C,D) from the relation R.
         // An edge will be drawn from A to D, with the label "R [B, C]"
-        if (!view.nodeVisible(tuple.getStart(), instance)) return false;
-        if (!view.nodeVisible(tuple.getEnd(), instance)) return false;
+        if (priv(tuple.getStart().getType().getName()) || !view.nodeVisible(tuple.getStart(), instance)) return false;
+        if (priv(tuple.getEnd().getType().getName()) || !view.nodeVisible(tuple.getEnd(), instance)) return false;
         DotNode start=createNode(tuple.getStart()), end=createNode(tuple.getEnd());
         if (start==null || end==null) return false;
         boolean layoutBack=view.layoutBack(rel,model);
@@ -233,6 +234,7 @@ public final class StaticGraphMaker {
 
     /** Create edges for every visible tuple in the given relation. */
     private int edgesAsArcs(AlloyRelation rel, Color magicColor) {
+        if (priv(rel.getName())) return 0;
         int count = 0;
         if (!view.mergeArrows(rel,model)) {
             // If we're not merging bidirectional arrows, simply create an edge for each tuple.
@@ -273,6 +275,7 @@ public final class StaticGraphMaker {
         //   and SET2's "show in relational attribute" is on,
         //   then the A node would have a line that says "F: B (SET1, SET2)->C, D->E"
         //
+        if (priv(rel.getName())) return;
         Map<DotNode,String> map = new LinkedHashMap<DotNode,String>();
         for (AlloyTuple tuple: instance.relation2tuples(rel)) {
             DotNode start=atom2node.get(tuple.getStart());

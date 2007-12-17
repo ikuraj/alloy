@@ -22,43 +22,43 @@ module util/ordering[elem]
  * revisions: Daniel jackson
  */
 
-one sig Ord {
-   First, Last: set elem,
-   Next: elem -> elem
+one sig _Ord {
+   _first, _last: set elem,
+   _next: elem -> elem
 }{
   // every element is in the total order
-  elem in First.*Next
+  elem in _first.*_next
   // first element has no predecessor
-  no First.(~Next)
+  no _first.(~_next)
   // last element has no successor
-  no Last.Next
+  no _last._next
   (all e: elem | {
     // each element (except the first) has one predecessor
-    (e = First || one e.(~Next))
+    (e = _first || one e.(~_next))
     // each element (except the last) has one successor
-    (e = Last || one e.Next)
+    (e = _last || one e._next)
     // there are no cycles
-    (e !in e.^Next)
+    (e !in e.^_next)
   })
 }
 
 // first
-fun first: elem { Ord.First }
+fun first: elem { _Ord._first }
 
 // last
-fun last: elem { Ord.Last }
+fun last: elem { _Ord._last }
 
-// return the predecessor of e, or empty set if e is the first element
-fun prev [e: elem]: lone elem { e.~(Ord.Next) }
+// return a mapping from each element to its predecessor
+fun prev : elem->elem { ~(_Ord._next) }
 
-// return the successor of e, or empty set of e is the last element
-fun next [e: elem]: lone elem { e.(Ord.Next) }
+// return a mapping from each element to its successor
+fun next : elem->elem { _Ord._next }
 
 // return elements prior to e in the ordering
-fun prevs [e: elem]: set elem { e.^(~(Ord.Next)) }
+fun prevs [e: elem]: set elem { e.^(~(_Ord._next)) }
 
 // return elements following e in the ordering
-fun nexts [e: elem]: set elem { e.^(Ord.Next) }
+fun nexts [e: elem]: set elem { e.^(_Ord._next) }
 
 // e1 is less than e2 in the ordering
 pred lt [e1, e2: elem] { e1 in prevs[e2] }
@@ -80,14 +80,14 @@ fun smaller [e1, e2: elem]: elem { lt[e1,e2] => e1 else e2 }
 
 // returns the largest element in es
 // or the empty set if es is empty
-fun max [es: set elem]: lone elem { es - es.^(~(Ord.Next)) }
+fun max [es: set elem]: lone elem { es - es.^(~(_Ord._next)) }
 
 // returns the smallest element in es
 // or the empty set if es is empty
-fun min [es: set elem]: lone elem { es - es.^(Ord.Next) }
+fun min [es: set elem]: lone elem { es - es.^(_Ord._next) }
 
-assert correct {
-  let mynext = Ord.Next |
+assert _correct {
+  let mynext = _Ord._next |
   let myprev = ~mynext | {
      ( all b:elem | (lone b.next) && (lone b.prev) && (b !in b.^mynext) )
      ( (no first.prev) && (no last.next) )
@@ -104,9 +104,9 @@ assert correct {
   }
 }
 
-check correct for exactly 0 elem
-check correct for exactly 1 elem
-check correct for exactly 2 elem
-check correct for exactly 3 elem
-check correct for exactly 4 elem
-check correct for exactly 5 elem
+check _correct for exactly 0 elem
+check _correct for exactly 1 elem
+check _correct for exactly 2 elem
+check _correct for exactly 3 elem
+check _correct for exactly 4 elem
+check _correct for exactly 5 elem

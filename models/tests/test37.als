@@ -21,10 +21,10 @@ some idxOf[S3, B2]
 no lastIdxOf[S3, B3]
 some indsOf[S3, B2]
 S3=S2.add[B5]
-T1=S1.insert[first,B1]
-T2=T1.delete[first]
+T1=S1.insert[firstIdx,B1]
+T2=T1.delete[firstIdx]
 T3=T1.append[T2]
-T4=T3.subseq[sq/next[first],sq/next[sq/next[first]]]
+T4=T3.subseq[sq/next[firstIdx],sq/next[sq/next[firstIdx]]]
 }}
 
 run {} for 3 int, 3 SeqIdx, exactly 5 B expect 1

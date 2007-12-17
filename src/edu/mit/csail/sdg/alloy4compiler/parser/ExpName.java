@@ -20,20 +20,14 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
-import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 /** Immutable; represents an unresolved name in the AST. */
@@ -54,31 +48,11 @@ final class ExpName extends Exp {
         return pos;
     }
 
-    /** This caches an unmodifiable empty list of Expr objects. */
-    private static final ConstList<Expr> emptyList = ConstList.make();
-
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
-        Collection<Object> choices = cx.resolve(pos, name);
-        TempList<Expr> objects = new TempList<Expr>(choices.size());
-        Expr THIS = (cx.rootsig!=null) ? cx.get("this",pos) : null;
-        for(Object ch:choices) {
-            if (ch instanceof Expr) {
-                objects.add((Expr)ch);
-            } else if (ch instanceof Func) {
-                Func f = (Func)ch;
-                int fn = f.params.size();
-                if (fn>0 && THIS!=null && THIS.type.hasArity(1) && f.params.get(0).type.intersects(THIS.type)) {
-                    // If we're inside a sig, and there is a unary variable bound to "this",
-                    // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
-                    ConstList<Expr> t = Util.asList(THIS);
-                    objects.add(fn==1 ? ExprCall.make(pos,null,f,t,1) : ExprBadCall.make(pos,null,f,t,1));
-                }
-                objects.add(fn==0 ? ExprCall.make(pos,null,f,emptyList,0) : ExprBadCall.make(pos,null,f,emptyList,0));
-            }
-        }
-        if (objects.size()==0) return new ExprBad(pos, name, hint(pos, name));
-        return ExprChoice.make(pos, objects.makeConst());
+        ConstList<Expr> list = cx.resolve(pos, name);
+        if (list.size()==0) return new ExprBad(pos, name, hint(pos, name));
+        return ExprChoice.make(pos, list);
     }
 
     /**

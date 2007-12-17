@@ -743,17 +743,18 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case TRANSPOSE: return cset(x.sub).transpose();
             case CARDINALITY: return cset(x.sub).count();
             case CAST2SIGINT: return cint(x.sub).toExpression();
-            case CAST2INT:
-                // Efficiency shortcut that simplifies int[Int[x]] to x.
-                Expression sub=cset(x.sub);
-                if (sub instanceof IntToExprCast) return ((IntToExprCast)sub).intExpr();
-                return sub.sum();
+            case CAST2INT: return sum(cset(x.sub));
             case RCLOSURE:
                 Expression iden=Expression.IDEN.intersection(bcc.get(UNIV).product(Relation.UNIV));
                 return cset(x.sub).closure().union(iden);
             case CLOSURE: return cset(x.sub).closure();
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprUnary.visit()");
+    }
+
+    /** Performs int[x]; contains an efficiency shortcut that simplifies int[Int[x]] to x. */
+    private IntExpression sum(Expression x) {
+        if (x instanceof IntToExprCast) return ((IntToExprCast)x).intExpr(); else return x.sum();
     }
 
     /*============================*/
@@ -793,6 +794,90 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /* Evaluates an ExprCall node. */
     /*=============================*/
 
+    private boolean is_mul(Func f) {
+        // fun mul [n1, n2: Int] : Int {
+        //     let s1 = { p:Int | (n1<0 && p<0 && p>=n1) || (n1>0 && p>0 && p<=n1) } |
+        //     let s2 = { q:Int | (n2<0 && q<0 && q>=n2) || (n2>0 && q>0 && q<=n2) } |
+        //     #(s1->s2)
+        // }
+        if (f.params.size()!=2 || !(f.label.equals("mul") || f.label.endsWith("/mul"))) return false;
+        final Expr cast = deNOP(f.getBody());
+        if (!(cast instanceof ExprUnary) || ((ExprUnary)cast).op != ExprUnary.Op.CAST2SIGINT) return false;
+        final Expr let1 = deNOP(((ExprUnary)cast).sub); if (!(let1 instanceof ExprLet)) return false;
+        final Expr let2 = deNOP(((ExprLet)let1).sub);   if (!(let2 instanceof ExprLet)) return false;
+        final Expr card = deNOP(((ExprLet)let2).sub);
+        if (!(card instanceof ExprUnary) || ((ExprUnary)card).op != ExprUnary.Op.CARDINALITY) return false;
+        final Expr product = deNOP(((ExprUnary)card).sub);
+        if (!(product instanceof ExprBinary) || ((ExprBinary)product).op != ExprBinary.Op.ARROW) return false;
+        final ExprVar s1 = ((ExprLet)let1).var; if (!((ExprBinary)product).left.isSame(s1)) return false;
+        final ExprVar s2 = ((ExprLet)let2).var; if (!((ExprBinary)product).right.isSame(s2)) return false;
+        final Expr q1 = deNOP(((ExprVar)s1).expr); if (!(q1 instanceof ExprQuant)) return false;
+        final Expr q2 = deNOP(((ExprVar)s2).expr); if (!(q2 instanceof ExprQuant)) return false;
+        final ExprQuant qt1 = (ExprQuant)q1; if (qt1.op != ExprQuant.Op.COMPREHENSION || qt1.vars.size()!=1) return false;
+        final ExprQuant qt2 = (ExprQuant)q2; if (qt2.op != ExprQuant.Op.COMPREHENSION || qt2.vars.size()!=1) return false;
+        final ExprVar n1=f.params.get(0), p=qt1.vars.get(0); if (!p.expr.isSame(Sig.SIGINT.oneOf())) return false;
+        final ExprVar n2=f.params.get(1), q=qt2.vars.get(0); if (!q.expr.isSame(Sig.SIGINT.oneOf())) return false;
+        if (!qt1.sub.isSame(n1.lt(ZERO).and(p.lt(ZERO)).and(p.gte(n1)).or(n1.gt(ZERO).and(p.gt(ZERO)).and(p.lte(n1))))) return false;
+        if (!qt2.sub.isSame(n2.lt(ZERO).and(q.lt(ZERO)).and(q.gte(n2)).or(n2.gt(ZERO).and(q.gt(ZERO)).and(q.lte(n2))))) return false;
+        return true;
+    }
+
+    private boolean is_div(Func f) {
+        // fun div [a, b: Int] : Int {
+        //     let sn = (((a>=0 && b>=0) || (a<0 && b<0)) => 1 else 0-1) |
+        //     let na = (a>0 => 0-a else int[a]) |
+        //     let nb = (b>0 => 0-b else int[b]) |
+        //     let r = div[na-nb, nb] |
+        //     (na=0 || na>nb) => 0 else
+        //     nb=0 => 0-sn else
+        //     na=nb => sn else (sn>0 => 1+r else (0-1)-r)
+        // }
+        if (f.params.size()!=2 || !(f.label.equals("div") || f.label.endsWith("/div"))) return false;
+        final ExprVar a = f.params.get(0), b = f.params.get(1);
+        final Expr cast = deNOP(f.getBody());
+        if (!(cast instanceof ExprUnary) || ((ExprUnary)cast).op != ExprUnary.Op.CAST2SIGINT) return false;
+        final Expr let1 = deNOP(((ExprUnary)cast).sub); if (!(let1 instanceof ExprLet)) return false;
+        final Expr let2 = deNOP(((ExprLet)let1).sub);   if (!(let2 instanceof ExprLet)) return false;
+        final Expr let3 = deNOP(((ExprLet)let2).sub);   if (!(let3 instanceof ExprLet)) return false;
+        final Expr let4 = deNOP(((ExprLet)let3).sub);   if (!(let4 instanceof ExprLet)) return false;
+        final Expr if1  = deNOP(((ExprLet)let4).sub);   if (!(if1  instanceof ExprITE)) return false;
+        final Expr if2  = deNOP(((ExprITE)if1).right);  if (!(if2  instanceof ExprITE)) return false;
+        final Expr if3  = deNOP(((ExprITE)if2).right);  if (!(if3  instanceof ExprITE)) return false;
+        final Expr if4  = deNOP(((ExprITE)if3).right);  if (!(if4  instanceof ExprITE)) return false;
+        final ExprVar sn = ((ExprLet)let1).var; if (!a.gte(ZERO).and(b.gte(ZERO)).or(a.lt(ZERO).and(b.lt(ZERO))).ite(ONE,ZERO.minus(ONE)).isSame(sn.expr)) return false;
+        final ExprVar na = ((ExprLet)let2).var; if (!a.gt(ZERO).ite(ZERO.minus(a), a).isSame(na.expr)) return false;
+        final ExprVar nb = ((ExprLet)let3).var; if (!b.gt(ZERO).ite(ZERO.minus(b), b).isSame(nb.expr)) return false;
+        final ExprVar r  = ((ExprLet)let4).var; if (!f.call(na.minus(nb),nb).isSame(r.expr)) return false;
+        if (!na.equal(ZERO).or(na.gt(nb)).isSame(((ExprITE)if1).cond)) return false; if (!ZERO.isSame(((ExprITE)if1).left)) return false;
+        if (!nb.equal(ZERO)              .isSame(((ExprITE)if2).cond)) return false; if (!ZERO.minus(sn).isSame(((ExprITE)if2).left)) return false;
+        if (!na.equal(nb)                .isSame(((ExprITE)if3).cond)) return false; if (!sn.isSame(((ExprITE)if3).left)) return false;
+        if (!sn.gt(ZERO)                 .isSame(((ExprITE)if4).cond)) return false; if (!ONE.plus(r).isSame(((ExprITE)if4).left)) return false;
+        return ZERO.minus(ONE).minus(r).isSame(((ExprITE)if4).right);
+    }
+
+    private boolean is_rem(Func f) {
+        // fun rem [a, b: Int] : Int {
+        //     int[a] - (a.div[b].mul[b])
+        // }
+        if (f.params.size()!=2 || !(f.label.equals("rem") || f.label.endsWith("/rem"))) return false;
+        final ExprVar a = f.params.get(0), b = f.params.get(1);
+        final Expr cast = deNOP(f.getBody());
+        if (!(cast instanceof ExprUnary) || ((ExprUnary)cast).op != ExprUnary.Op.CAST2SIGINT) return false;
+        final Expr sub = deNOP(((ExprUnary)cast).sub); if (!(sub instanceof ExprBinary)) return false;
+        final ExprBinary bin = (ExprBinary)sub;
+        if (bin.op != ExprBinary.Op.MINUS || !a.cast2int().isSame(bin.left)) return false;
+        final Expr tmp0 = deNOP(bin.right);
+        if (!(tmp0 instanceof ExprUnary) || ((ExprUnary)tmp0).op != ExprUnary.Op.CAST2INT) return false;
+        final Expr tmp1 = deNOP(((ExprUnary)tmp0).sub);
+        if (!(tmp1 instanceof ExprCall)) return false;
+        final ExprCall call1 = (ExprCall)tmp1;
+        if (!is_mul(call1.fun) || !call1.args.get(1).isSame(b)) return false;
+        final Expr tmp2 = deNOP(call1.args.get(0));
+        if (!(tmp2 instanceof ExprCall)) return false;
+        final ExprCall call2 = (ExprCall)tmp2;
+        return is_div(call2.fun) && call2.args.get(0).isSame(a) && call2.args.get(1).isSame(b);
+    }
+
     /** {@inheritDoc} */
     @Override public Object visit(ExprCall x) throws Err {
         Func f=x.fun;
@@ -801,7 +886,37 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             Object ans=bcc.get(f); // Try looking it up; it may have been pre-bound to some value
             if (ans!=null) return ans;
         }
-        for(Func ff:current_function) if (ff==f) throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
+        //int maxRecursion=12;
+        for(Func ff:current_function) if (ff==f) {
+            throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
+            /*
+            maxRecursion--;
+            if (maxRecursion==0) {
+                Type t = f.returnDecl.type;
+                if (t.is_bool) return Formula.FALSE;
+                if (t.is_int) return IntConstant.constant(0);
+                int i = t.arity();
+                Expression ans = Expression.NONE;
+                while(i>1) { ans = ans.product(Expression.NONE); i--; }
+                return ans;
+            }
+            */
+        }
+        if (is_mul(f)) {
+            rep.debug("Found: util/integer/mul\n");
+            final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
+            return a.multiply(b).toExpression();
+        }
+        if (is_div(f)) {
+            rep.debug("Found: util/integer/div\n");
+            final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
+            return a.divide(b).toExpression();
+        }
+        if (is_rem(f)) {
+            rep.debug("Found: util/integer/rem\n");
+            final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
+            return a.modulo(b).toExpression();
+        }
         Env<ExprVar,Object> newenv=new Env<ExprVar,Object>();
         for(int i=0; i<n; i++) newenv.put(f.params.get(i), cset(x.args.get(i)));
         Env<ExprVar,Object> oldenv=env;
@@ -1066,7 +1181,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==2) {
             ExprVar a=x.vars.get(0), b=x.vars.get(1);
             if (a.expr.isSame(Sig.SIGINT.oneOf()) && b.expr.isSame(Sig.SIGINT.oneOf())) {
-                if (b.gt(a).and(b.equal(a.plus(ONE))).isSame(x.sub)) {
+                if (b.gt(a).and(b.equal(ONE.plus(a))).isSame(x.sub)) {
                     rep.debug("Found: util/integer/next\n");
                     return BoundsComputer.SIGINT_NEXT;
                 }

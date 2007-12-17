@@ -48,6 +48,9 @@ public final class ExprCall extends Expr {
     /** The list of arguments to the call. */
     public final ConstList<Expr> args;
 
+    /** The extra weight added to this node on top of the combined weights of the arguments. */
+    public final long extraWeight;
+
     /** Caches the span() result. */
     private Pos span=null;
 
@@ -150,20 +153,35 @@ public final class ExprCall extends Expr {
 
     /** Constructs an ExprCall node with the given function "pred/fun" and the list of arguments "args". */
     private ExprCall (Pos pos, Pos closingBracket, boolean ambiguous, Type type,
-        Func fun, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+        Func fun, ConstList<Expr> args, long extraWeight, long weight, JoinableList<Err> errs) {
         super(pos, closingBracket, ambiguous, type, 0, weight, errs);
         this.fun = fun;
         this.args = args;
+        this.extraWeight = extraWeight;
+    }
+
+    //============================================================================================================//
+
+    /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
+    @Override public boolean isSame(Expr obj) {
+        while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
+        if (obj==this) return true;
+        if (!(obj instanceof ExprCall)) return false;
+        ExprCall x=(ExprCall)obj;
+        if (fun!=x.fun || args.size()!=x.args.size()) return false;
+        for(int i=0; i<args.size(); i++) if (!args.get(i).isSame(x.args.get(i))) return false;
+        return true;
     }
 
     //============================================================================================================//
 
     /** Constructs an ExprCall node with the given predicate/function "fun" and the list of arguments "args". */
-    public static Expr make(Pos pos, Pos closingBracket, Func fun, List<Expr> args, long extraWeight) {
+    public static Expr make(Pos pos, Pos closingBracket, Func fun, List<Expr> args, long extraPenalty) {
+        if (extraPenalty<0) extraPenalty=0;
         if (args==null) args=ConstList.make();
+        long weight = extraPenalty;
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
-        if (extraWeight<0) extraWeight=0;
         TempList<Expr> newargs=new TempList<Expr>(args.size());
         if (args.size() != fun.params.size()) {
             errs = errs.append(
@@ -174,7 +192,7 @@ public final class ExprCall extends Expr {
             final Expr x = args.get(i).typecheck_as_set();
             ambiguous = ambiguous || x.ambiguous;
             errs = errs.join(x.errors);
-            extraWeight = extraWeight + x.weight;
+            weight = weight + x.weight;
             if (x.mult!=0) errs = errs.append(new ErrorSyntax(x.span(), "Multiplicity expression not allowed here."));
             if (a>0 && x.errors.isEmpty() && !x.type.hasArity(a))
               errs=errs.append(new ErrorType(x.span(), "This should have arity "+a+" but instead its possible type(s) are "+x.type));
@@ -197,7 +215,7 @@ public final class ExprCall extends Expr {
                 t=tt; // Just in case an error occurred...
             }
         }
-        return new ExprCall(pos, closingBracket, ambiguous, t, fun, newargs.makeConst(), extraWeight, errs);
+        return new ExprCall(pos, closingBracket, ambiguous, t, fun, newargs.makeConst(), extraPenalty, weight, errs);
     }
 
     //============================================================================================================//
@@ -207,16 +225,14 @@ public final class ExprCall extends Expr {
         if (errors.size()>0) return this;
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         boolean changed=false;
-        long w=0;
         for(int i=0; i<this.args.size(); i++) {
             Expr x=this.args.get(i);
             // Use the function's param type to narrow down the choices
             Expr y=x.resolve(fun.params.get(i).type, warns).typecheck_as_set();
             if (x!=y) changed=true;
             args.add(y);
-            w = w + y.weight;
         }
-        return changed ? make(pos, closingBracket, fun, args.makeConst(), weight-w) : this;
+        return changed ? make(pos, closingBracket, fun, args.makeConst(), extraWeight) : this;
     }
 
     //============================================================================================================//

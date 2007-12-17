@@ -24,12 +24,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Set;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,6 +48,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
@@ -108,14 +106,14 @@ public final class Module {
             this.rootmodule=rootModule;
         }
         /** Resolve the given name to get a collection of Expr and Func objects. */
-        public Collection<Object> resolve(Pos pos, String name) {
+        public ConstList<Expr> resolve(Pos pos, String name) {
             Expr match = env.get(name);
             if (match==null) match=rootmodule.globals.get(name);
             if (match!=null) {
                 match=ExprUnary.Op.NOOP.make(pos,match);
-                List<Object> ans=new ArrayList<Object>(1);
+                TempList<Expr> ans = new TempList<Expr>(1);
                 ans.add(match);
-                return ans;
+                return ans.makeConst();
             }
             return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
         }
@@ -154,13 +152,16 @@ public final class Module {
     private static final class FunAST {
         /** Only initialized by typechecker. */ private Func realFunc=null;
         /** Only initialized by typechecker. */ private Expr realFormula=null;
+        /** The original module.             */ private final Module realModule;
         /** The original position.           */ private final Pos pos;
         /** The short name.                  */ private final String name;
         /** The parameters.                  */ private final ConstList<Decl> params;
         /** The return type.                 */ private final Exp returnType;
         /** The body.                        */ private final Exp body;
-        private FunAST(Pos pos, String name, List<Decl> params, Exp returnType, Exp body) {
-            this.pos=pos; this.name=name; this.params=ConstList.make(params); this.returnType=returnType; this.body=body;
+        private FunAST(Pos pos, Module realModule, String name, List<Decl> params, Exp returnType, Exp body) {
+            this.pos=pos;
+            this.realModule=realModule;
+            this.name=name; this.params=ConstList.make(params); this.returnType=returnType; this.body=body;
         }
         @Override public String toString() { return name; }
     }
@@ -218,6 +219,9 @@ public final class Module {
     private static final SigAST NONEast = new SigAST("none", "none", null, NONE);
 
     //============================================================================================================================//
+
+    /** Returns true if the name is a private name. */
+    private boolean priv(String name) { return name.length()>0 && name.charAt(0)=='_'; }
 
     /** This field is used during a depth-first search of the dag-of-module(s) to mark which modules have been visited. */
     private Object visitedBy=null;
@@ -343,17 +347,28 @@ public final class Module {
     }
 
     /** Returns a list containing THIS MODULE and all modules reachable from this module. */
-    private void getHelper(SafeList<Module> ans, Object key) {
+    private void getHelper(int level, SafeList<Module> ans, Object key) {
         if (visitedBy==key) return;
         visitedBy=key;
         ans.add(this);
-        for(Map.Entry<String,Open> i:opens.entrySet()) {Module m=i.getValue().realModule; if (m!=null) m.getHelper(ans,key);}
+        for(Map.Entry<String,Open> i:opens.entrySet()) {
+            if (level>0 && priv(i.getKey())) continue;
+            Module m=i.getValue().realModule;
+            if (m!=null) m.getHelper(level<0 ? (-1) : (level+1), ans, key);
+        }
     }
 
     /** Return the list containing THIS MODULE and all modules reachable from this module. */
     public SafeList<Module> getAllReachableModules() {
         SafeList<Module> ans=new SafeList<Module>();
-        getHelper(ans, new Object()); // The object must be new, since we need it to be a unique key
+        getHelper(-1, ans, new Object()); // The object must be new, since we need it to be a unique key
+        return ans.dup();
+    }
+
+    /** Return the list containing THIS MODULE and all modules nameable from this module. */
+    private SafeList<Module> getAllNameableModules() {
+        SafeList<Module> ans=new SafeList<Module>();
+        getHelper(0, ans, new Object()); // The object must be new, since we need it to be a unique key
         return ans.dup();
     }
 
@@ -371,11 +386,12 @@ public final class Module {
         return x.makeConst();
     }
 
-    /** It looks up non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
+    /** Lookup non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
     private List<Object> getRawNQS (int r, String name) {
-        // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar with expr is the value of an assertion    (r&4)!=0 => FunAST
+        // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar whose expr is the value of an assertion    (r&4)!=0 => FunAST
         List<Object> ans=new ArrayList<Object>();
-        for(Module m:getAllReachableModules()) {
+        for(Module m:getAllNameableModules()) {
+            if (m!=this && priv(name)) continue;
             if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) ans.add(x); }
             if ((r&2)!=0) { Object x=m.asserts.get(name); if (x instanceof Expr) ans.add(x); }
             if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) for(FunAST y:x) ans.add(y); }
@@ -383,21 +399,23 @@ public final class Module {
         return ans;
     }
 
-    /** It looks up fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
+    /** Lookup a fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
     private List<Object> getRawQS (int r, String name) {
-        // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar with expr is the value of an assertion    (r&4)!=0 => FunAST
+        // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar whose expr is the value of an assertion    (r&4)!=0 => FunAST
         List<Object> ans=new ArrayList<Object>();
         Module u=this;
         if (name.startsWith("this/")) name=name.substring(5);
-        while(true) {
+        for(int level=0; ;level++) {
             int i=name.indexOf('/');
             if (i<0) {
+                if (level>0 && priv(name)) return ans;
                 if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) ans.add(x); }
                 if ((r&2)!=0) { Object x=u.asserts.get(name); if (x instanceof Expr) ans.add(x); }
                 if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) ans.add(y); }
                 return ans;
             }
             String alias=name.substring(0,i);
+            if (level>0 && priv(alias)) return ans;
             Open uu=u.opens.get(alias);
             if (uu==null || uu.realModule==null) return ans;
             u=uu.realModule;
@@ -405,7 +423,7 @@ public final class Module {
         }
     }
 
-    /** Looks up a SigAST from the current module (and it will also search this.params) */
+    /** Lookup a SigAST from the current module (and it will also search this.params) */
     private SigAST getRawSIG (Pos pos, String name) throws Err {
         List<Object> s;
         SigAST s2=null;
@@ -657,7 +675,7 @@ public final class Module {
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
         d=new ArrayList<Decl>(d);
         if (f!=null) d.add(0, new Decl(null, Util.asList(new ExpName(f.span(), "this")), f));
-        FunAST ans = new FunAST(p, n, d, t, v);
+        FunAST ans = new FunAST(p, this, n, d, t, v);
         SafeList<FunAST> list = funcs.get(n);
         if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
         list.add(ans);
@@ -1001,66 +1019,60 @@ public final class Module {
         globals.put(name, value);
     }
 
-    /** Look up a field from any visible sig (and returns an empty set if there is no match) */
-    private Set<Field> lookupField(String name) {
-        Set<Field> ans=new LinkedHashSet<Field>();
-        for(Module m:getAllReachableModules())
-          for(Map.Entry<String,SigAST> s:m.sigs.entrySet())
-            for(Field f:s.getValue().realSig.getFields())
-              if (f.label.equals(name))
-                 ans.add(f);
-        return ans;
-    }
-
     /** Resolve the name based on the current context and this module. */
-    private Collection<Object> populate(boolean rootfield, SigAST rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
+    private ConstList<Expr> populate(boolean rootfield, SigAST rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
         // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
         boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfun);
-        List<Object> ans;
-        if (name.equals("univ"))    { ans=new ArrayList<Object>(); ans.add(ExprUnary.Op.NOOP.make(pos, UNIV));   return ans; }
-        if (name.equals("Int"))     { ans=new ArrayList<Object>(); ans.add(ExprUnary.Op.NOOP.make(pos, SIGINT)); return ans; }
-        if (name.equals("seq/Int")) { ans=new ArrayList<Object>(); ans.add(ExprUnary.Op.NOOP.make(pos, SEQIDX)); return ans; }
-        if (name.equals("none"))    { ans=new ArrayList<Object>(); ans.add(ExprUnary.Op.NOOP.make(pos, NONE));   return ans; }
-        if (name.equals("iden"))    { ans=new ArrayList<Object>(); ans.add(ExprConstant.Op.IDEN.make(pos, 0));   return ans; }
-        ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1,name) : getRawNQS(fun?5:1,name);
-        Object param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
-        if (rootsig!=null) {
-            // Within a field decl
-            // (1) Can refer to any visible sig/param (but you cannot call any function or predicates)
-            // (2) Can refer to field in this sig (defined earlier than you), and fields in any visible ancestor sig
-            // Within an appended facts
-            // (1) Can refer to any visible sig/param/func/predicate
-            // (2) Can refer to any visible field (but if it is in this sig or a parent sig, we'll prepend "this." unless it has '@')
-            for(Field f:lookupField(name)) {
-                boolean isAncestor = rootsig.realSig.isSameOrDescendentOf(f.sig);
-                if (isAncestor) { Expr ee=ExprUnary.Op.NOOP.make(pos,f); ans.add(fullname.charAt(0)=='@' ? ee : THIS.join(ee)); }
-                else if (!rootfield) { Expr ee=ExprUnary.Op.NOOP.make(pos,f,f.weight+1,null); ans.add(ee); }
-            }
-        }
-        else {
-            // If within a function paramDecl/returnDecl, we cannot call, but can refer to anything else visible.
-            // Else we can call, and can refer to anything visible.
-            for(Field f:lookupField(name)) ans.add(ExprUnary.Op.NOOP.make(pos,f));
-        }
-        // Convert SigAST/FunAST/Field/Expr into Expr
-        List<Object> realAns=new ArrayList<Object>();
-        for(Object x:ans) {
+        if (name.equals("univ"))    { Expr a = ExprUnary.Op.NOOP.make(pos, UNIV);   return ConstList.make(1,a); }
+        if (name.equals("Int"))     { Expr a = ExprUnary.Op.NOOP.make(pos, SIGINT); return ConstList.make(1,a); }
+        if (name.equals("seq/Int")) { Expr a = ExprUnary.Op.NOOP.make(pos, SEQIDX); return ConstList.make(1,a); }
+        if (name.equals("none"))    { Expr a = ExprUnary.Op.NOOP.make(pos, NONE);   return ConstList.make(1,a); }
+        if (name.equals("iden"))    { Expr a = ExprConstant.Op.IDEN.make(pos, 0);   return ConstList.make(1,a); }
+        final TempList<Expr> ans1 = new TempList<Expr>();
+        final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1,name) : getRawNQS(fun?5:1,name);
+        final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
+        for(Object x: ans) {
             if (x instanceof SigAST) {
-               SigAST y=(SigAST)x;
-               realAns.add(ExprUnary.Op.NOOP.make(pos, y.realSig));
+                SigAST y=(SigAST)x;
+                ans1.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, y.realModule==this?0:1000)); // penalty of 1000
             }
             else if (x instanceof FunAST) {
-               FunAST y=(FunAST)x;
-               if (y.realFunc.params.isEmpty()) realAns.add(ExprCall.make(pos,null,y.realFunc,null,0)); else realAns.add(y.realFunc);
-            }
-            else if (x instanceof Field) {
-               realAns.add(ExprUnary.Op.NOOP.make(pos, (Field)x));
-            }
-            else if (x instanceof Expr) {
-               realAns.add(x);
+                FunAST y=(FunAST)x;
+                Func f = y.realFunc;
+                int fn = f.params.size();
+                int penalty = (y.realModule==this ? 0 : 1000); // penalty of 1000
+                if (fn>0 && rootsig!=null && THIS!=null && THIS.type.hasArity(1) && f.params.get(0).type.intersects(THIS.type)) {
+                    // If we're inside a sig, and there is a unary variable bound to "this",
+                    // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
+                    ConstList<Expr> t = Util.asList(THIS);
+                    ans1.add(fn==1 ? ExprCall.make(pos,null,f,t,1+penalty) : ExprBadCall.make(pos,null,f,t,1+penalty)); // penalty of 1
+                }
+                ans1.add(fn==0 ? ExprCall.make(pos,null,f,null,penalty) : ExprBadCall.make(pos,null,f,null,penalty));
             }
         }
-        return realAns;
+        // Within a field decl
+        // (1) Can refer to any visible sig/param (but you cannot call any function or predicates)
+        // (2) Can refer to field in this sig (defined earlier than you), and fields in any visible ancestor sig
+        // Within an appended facts
+        // (1) Can refer to any visible sig/param/func/predicate
+        // (2) Can refer to any visible field (but if it is in this sig or a parent sig, we'll prepend "this." unless it has '@')
+        // Within a function paramDecl/returnDecl
+        // (1) Cannot call
+        // (2) But can refer to anything else visible.
+        // All else: we can call, and can refer to anything visible.
+        for(Module m: priv(name) ? Util.asList(this) : getAllNameableModules()) {
+          for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || !priv(s.getKey())) {
+            for(Field f:s.getValue().realSig.getFields()) if (f.label.equals(name)) {
+              Expr x=null;
+              int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
+              if (rootsig==null) x=ExprUnary.Op.NOOP.make(pos,f,null,penalty);
+              else if (rootsig.realSig.isSameOrDescendentOf(f.sig)) { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
+              else if (!rootfield) x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); // penalty of 1
+              if (x!=null) ans1.add(x);
+            }
+          }
+        }
+        return ans1.makeConst();
     }
 }

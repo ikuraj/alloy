@@ -37,7 +37,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 public final class ExprChoice extends Expr {
 
-    /** The unmodifiable list of Expr(s) that this ExprChoice can refer to. */
+    /** The unmodifiable list of Expr(s) from that this ExprChoice can refer to. */
     public final ConstList<Expr> choices;
 
     /** Caches the span() result. */
@@ -61,7 +61,13 @@ public final class ExprChoice extends Expr {
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            choices.get(0).toString(out,indent); // Each choice's textual form is probably similar, so the first one would do
+            // Each choice's textual form is probably similar, so the first one would do
+            //choices.get(0).toString(out,indent);
+            //
+            out.append("<");
+            for(Expr e:choices) { e.toString(out,-1); out.append(";"); }
+            out.append(">");
+            //
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
             out.append(""+choices.size()+" choices with combined type=").append(type).append('\n');
@@ -96,16 +102,19 @@ public final class ExprChoice extends Expr {
         if (choices.size()==0) return new ExprBad(pos, "", new ErrorType(pos, "This expression failed to be typechecked."));
         if (choices.size()==1 && choices.get(0).errors.isEmpty()) return choices.get(0); // Shortcut
         Type type=EMPTY;
-        long weight=choices.get(0).weight;
-        for(Expr x:choices) { type=x.type.merge(type); if (weight>x.weight) weight=x.weight; }
+        boolean first=true;
+        long weight=0;
+        // TODO: what should the weight be?
+        for(Expr x:choices) {
+            type=x.type.merge(type);
+            if (first || weight>x.weight) if (x.type!=EMPTY) { weight=x.weight; first=false; }
+        }
         return new ExprChoice(pos, choices, type, weight);
     }
 
     //============================================================================================================//
 
-    /** {@inheritDoc} */
-    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
-        if (errors.size()>0) return this;
+    private Expr resolveHelper(boolean firstPass, Type t, List<Expr> choices, Collection<ErrorWarning> warns) {
         List<Expr> match=new ArrayList<Expr>(choices.size());
         // We first prefer exact matches
         for(Expr ch:choices) {
@@ -124,7 +133,7 @@ public final class ExprChoice extends Expr {
         if (match.size()==0 && Type.INT2SIGINT && t.hasArity(1)) {
             for(Expr ch:choices) if (ch.type.is_int) match.add(ch.cast2sigint());
         }
-        // If there are multiple choices, then keep the choices with the smallest weight
+        // If too many, then keep the choices with the smallest weight
         if (match.size()>1) {
             List<Expr> newmatch=new ArrayList<Expr>(match.size());
             long w=0;
@@ -133,21 +142,33 @@ public final class ExprChoice extends Expr {
                 else if (x.weight==w) { newmatch.add(x); }
             }
             match=newmatch;
+            // If still too many, but this is the first pass, then try to resolve them all and try again
+            if (firstPass && match.size()>1) {
+                newmatch = new ArrayList<Expr>(match.size());
+                for(Expr x:match) newmatch.add(x.resolve(t, sink));
+                return resolveHelper(false, t, newmatch, warns);
+            }
         }
         // If we are down to exactly 1 match, return it
         if (match.size()==1) return match.get(0).resolve(t, warns);
         // Otherwise, complain!
         String txt;
-        if (match.size()>1)
+        if (match.size()>1) {
             txt="\nThe expression is ambiguous due to multiple matches:";
-        else {
+        } else {
             txt="\nThe expression cannot be resolved; its relevant type does not intersect with any of the following candidates:";
-            match=choices;
+            match.clear();
+            match.addAll(choices);
         }
         StringBuilder msg=new StringBuilder(txt);
         for(Expr ch:match) { msg.append("\n\n"); ch.toString(msg,-1); msg.append(" (type: ").append(ch.type).append(")"); }
         Pos span=span();
         return new ExprBad(span, toString(), new ErrorType(span, msg.toString()));
+    }
+
+    /** {@inheritDoc} */
+    @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
+        if (errors.size()>0) return this; else return resolveHelper(true, t, choices, warns);
     }
 
     //============================================================================================================//

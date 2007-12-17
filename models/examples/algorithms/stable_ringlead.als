@@ -20,7 +20,7 @@ sig Val {
 
 fact {
   graph/ring[rightNeighbor]
-  vo/Ord.Next + (vo/last -> vo/first) = nextVal
+  vo/next + (vo/last -> vo/first) = nextVal
   # Val = # Process
 }
 

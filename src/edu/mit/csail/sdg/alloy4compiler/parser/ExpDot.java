@@ -89,6 +89,29 @@ final class ExpDot extends Exp {
         return true;
     }
 
+    private ConstList<Expr> process(List<Expr> choices, Expr arg) {
+        TempList<Expr> list = new TempList<Expr>(choices.size());
+        for(Expr x: choices) {
+            Expr y;
+            if (x instanceof ExprBadCall) {
+                ExprBadCall bc = (ExprBadCall)x;
+                if (bc.args.size() < bc.fun.params.size()) {
+                    ConstList<Expr> newargs = Util.append(bc.args, arg);
+                    if (applicable(bc.fun, newargs))
+                        y=ExprCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.extraWeight);
+                    else
+                        y=ExprBadCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.extraWeight);
+                } else {
+                    y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, x);
+                }
+            } else {
+                y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, x);
+            }
+            list.add(y);
+        }
+        return list.makeConst();
+    }
+
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
         Expr left = this.left.check(cx, warnings);
@@ -100,25 +123,7 @@ final class ExpDot extends Exp {
         if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) {
             return ExprBinary.Op.JOIN.make(pos, closingBracket, left, right);
         }
-        TempList<Expr> list = new TempList<Expr>(((ExprChoice)right).choices.size());
-        for(Expr x: ((ExprChoice)right).choices) {
-            Expr y;
-            if (x instanceof ExprBadCall) {
-                ExprBadCall bc = (ExprBadCall)x;
-                if (bc.args.size() < bc.fun.params.size()) {
-                    ConstList<Expr> newargs = Util.append(bc.args, left);
-                    if (applicable(bc.fun, newargs))
-                        y=ExprCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.weight);
-                    else
-                        y=ExprBadCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.weight);
-                } else {
-                    y=ExprBinary.Op.JOIN.make(pos, closingBracket, left, x);
-                }
-            } else {
-                y=ExprBinary.Op.JOIN.make(pos, closingBracket, left, x);
-            }
-            list.add(y);
-        }
-        return ExprChoice.make(pos, list.makeConst());
+        ConstList<Expr> list = process(((ExprChoice)right).choices, left);
+        return ExprChoice.make(pos, list);
     }
 }

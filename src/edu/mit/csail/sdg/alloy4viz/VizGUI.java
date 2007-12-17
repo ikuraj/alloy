@@ -77,6 +77,13 @@ import edu.mit.csail.sdg.alloy4graph.VizViewer;
 
 public final class VizGUI implements ComponentListener {
 
+    /** Defines whether a name should be hidden or not. */
+    static final boolean priv(String name) {
+        int i = name.lastIndexOf('/');
+        if (i<0) i=0; else i=i+1;
+        return i<name.length() && name.charAt(i)=='_';
+    }
+
     /** The background color for the toolbar. */
     private static final Color background = new Color(0.9f, 0.9f, 0.9f);
 

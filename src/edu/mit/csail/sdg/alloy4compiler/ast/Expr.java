@@ -70,7 +70,7 @@ public abstract class Expr {
     public final Expr typecheck_as_formula() {
         if (!errors.isEmpty() || type.is_bool) return this;
         String msg = "This must be a formula expression.\nInstead, it has the following possible type(s):\n" + type;
-        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+        return NOOP.make(null, this, new ErrorType(span(), msg), 0);
     }
 
     /** Converts this into an "integer expression" if possible; otherwise, returns an Expr with a nonempty error list */
@@ -78,7 +78,7 @@ public abstract class Expr {
         if (!errors.isEmpty() || type.is_int) return this;
         if (Type.SIGINT2INT && type.intersects(SIGINT.type)) return cast2int();
         String msg = "This must be an integer expression.\nInstead, it has the following possible type(s):\n"+type;
-        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+        return NOOP.make(null, this, new ErrorType(span(), msg), 0);
     }
 
     /** Converts this into a "set or relation" if possible; otherwise, returns an Expr with a nonempty error list */
@@ -86,7 +86,7 @@ public abstract class Expr {
         if (!errors.isEmpty() || type.size()>0) return this;
         if (Type.INT2SIGINT && type.is_int) return cast2sigint();
         String msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+type;
-        return NOOP.make(null, this, 0, new ErrorType(span(), msg));
+        return NOOP.make(null, this, new ErrorType(span(), msg), 0);
     }
 
     /**

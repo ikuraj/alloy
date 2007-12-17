@@ -24,7 +24,7 @@ module util/sequence[elem]
  * revisions: Greg Dennis
  */
 
-open util/ordering[SeqIdx] as ord
+open util/ordering[SeqIdx] as _ord
 
 sig SeqIdx {}
 
@@ -34,7 +34,7 @@ sig Seq {
 {
   // Ensure that elems covers only an initial segment of SeqIdx,
   // equal to the length of the signature
-  all i: SeqIdx - ord/first | some i.seqElems => some ord/prev[i].seqElems
+  all i: SeqIdx - _ord/first | some i.seqElems => some _ord/prev[i].seqElems
 }
 
 /* no two sequences are identical */
@@ -69,7 +69,7 @@ fun Seq.at [i: SeqIdx]: lone elem { i.(this.seqElems) }
 fun Seq.elems: set elem { SeqIdx.(this.seqElems) }
 
 /* returns the first element in the sequence */
-fun Seq.first : lone elem { this.at[ord/first] }
+fun Seq.first : lone elem { this.at[_ord/first] }
 
 /* returns the last element in the sequence */
 fun Seq.last : lone elem { this.at[this.lastIdx] }
@@ -80,7 +80,7 @@ fun Seq.last : lone elem { this.at[this.lastIdx] }
  */
 pred Seq.rest [r: Seq] {
    !this.isEmpty
-   all i: SeqIdx | r.at[i] = this.at[ord/next[i]]
+   all i: SeqIdx | r.at[i] = this.at[_ord/next[i]]
 }
 
 /* true if the sequence is empty */
@@ -93,7 +93,7 @@ pred Seq.hasDups { # elems[this] < # inds[this] }
 fun Seq.inds : set SeqIdx { elem.~(this.seqElems) }
 
 /* returns last index occupied by this sequence */
-fun Seq.lastIdx: lone SeqIdx { ord/max[this.inds] }
+fun Seq.lastIdx: lone SeqIdx { _ord/max[this.inds] }
 
 /*
  * returns the index after the last index
@@ -101,14 +101,14 @@ fun Seq.lastIdx: lone SeqIdx { ord/max[this.inds] }
  * if this sequence is full, returns empty set
  */
 fun Seq.afterLastIdx : lone SeqIdx {
-  ord/min[SeqIdx - this.inds]
+  _ord/min[SeqIdx - this.inds]
 }
 
 /* returns first index at which given element appears or the empty set if it doesn't */
-fun Seq.idxOf [e: elem] : lone SeqIdx { ord/min[this.indsOf[e]] }
+fun Seq.idxOf [e: elem] : lone SeqIdx { _ord/min[this.indsOf[e]] }
 
 /* returns last index at which given element appears or the empty set if it doesn't */
-fun Seq.lastIdxOf [e: elem] : lone SeqIdx { ord/max[this.indsOf[e]] }
+fun Seq.lastIdxOf [e: elem] : lone SeqIdx { _ord/max[this.indsOf[e]] }
 
 /* returns set of indices at which given element appears or the empty set if it doesn't */
 fun Seq.indsOf [e: elem] : set SeqIdx { (this.seqElems).e }
@@ -133,17 +133,17 @@ pred Seq.setAt [idx: SeqIdx, e: elem, setted: Seq] {
 /* inserts is the result of inserting value e at index i */
 pred Seq.insert [idx: SeqIdx, e: elem, inserted: Seq] {
   inserted.at[idx] = e
-  all i: ord/prevs[idx] | inserted.at[i] = this.at[i]
-  all i: ord/nexts[idx] | inserted.at[i] = this.at[ord/prev[i]]
+  all i: _ord/prevs[idx] | inserted.at[i] = this.at[i]
+  all i: _ord/nexts[idx] | inserted.at[i] = this.at[_ord/prev[i]]
   #inserted.inds = #this.inds + 1
 }
 
 /* copies source into dest starting at destStart */
 pred copy [source, dest: Seq, destStart: SeqIdx] {
   all sourceIdx : source.inds | some destIdx: SeqIdx {
-    ord/gte[destIdx, destStart]
+    _ord/gte[destIdx, destStart]
     dest.at[destIdx] = source.at[sourceIdx]
-    #ord/prevs[sourceIdx] = #(ord/prevs[destIdx] - ord/prevs[destStart])
+    #_ord/prevs[sourceIdx] = #(_ord/prevs[destIdx] - _ord/prevs[destStart])
   }
 }
 
@@ -156,25 +156,25 @@ pred append [s1, s2, appended: Seq] {
 
 /* sub is the subsequence of s between from and to, inclusive */
 pred subseq [s, sub: Seq, from, to: SeqIdx] {
-  ord/lte[from, to]
+  _ord/lte[from, to]
   copy[sub, s, from]
-  #sub.inds = #(to + ord/prevs[to] - ord/prevs[from])
+  #sub.inds = #(to + _ord/prevs[to] - _ord/prevs[from])
 }
 
-//
 // following operations provide all the ord operations for SeqIdx
-//
-fun firstIdx: SeqIdx { ord/first }
-fun finalIdx: SeqIdx { ord/last }
-fun prev [i: SeqIdx]: lone SeqIdx { ord/prev[i] }
-fun next [i: SeqIdx]: lone SeqIdx { ord/next[i] }
-fun prevs [i: SeqIdx]: set SeqIdx { ord/prevs[i] }
-fun nexts [i: SeqIdx]: set SeqIdx { ord/nexts[i] }
-pred lt [i1, i2: SeqIdx] { ord/lt[i1,i2] }
-pred gt [i1, i2: SeqIdx] { ord/gt[i1,i2] }
-pred lte [i1, i2: SeqIdx] { ord/lte[i1,i2] }
-pred gte [i1, i2: SeqIdx] { ord/gte[i1,i2] }
-fun larger  [i1, i2: SeqIdx]: SeqIdx { ord/larger [i1,i2] }
-fun smaller [i1, i2: SeqIdx]: SeqIdx { ord/smaller[i1,i2] }
-fun max [s: set SeqIdx]: lone SeqIdx { ord/max[s] }
-fun min [s: set SeqIdx]: lone SeqIdx { ord/min[s] }
+fun first: SeqIdx { _ord/first }
+fun last: SeqIdx { _ord/last }
+fun firstIdx: SeqIdx { _ord/first }
+fun finalIdx: SeqIdx { _ord/last }
+fun prev: SeqIdx->SeqIdx { _ord/prev }
+fun next: SeqIdx->SeqIdx { _ord/next }
+fun prevs [i: SeqIdx]: set SeqIdx { _ord/prevs[i] }
+fun nexts [i: SeqIdx]: set SeqIdx { _ord/nexts[i] }
+pred lt [i1, i2: SeqIdx] { _ord/lt[i1,i2] }
+pred gt [i1, i2: SeqIdx] { _ord/gt[i1,i2] }
+pred lte [i1, i2: SeqIdx] { _ord/lte[i1,i2] }
+pred gte [i1, i2: SeqIdx] { _ord/gte[i1,i2] }
+fun larger  [i1, i2: SeqIdx]: SeqIdx { _ord/larger [i1,i2] }
+fun smaller [i1, i2: SeqIdx]: SeqIdx { _ord/smaller[i1,i2] }
+fun max [s: set SeqIdx]: lone SeqIdx { _ord/max[s] }
+fun min [s: set SeqIdx]: lone SeqIdx { _ord/min[s] }

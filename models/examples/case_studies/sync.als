@@ -14,7 +14,7 @@ module examples/case_studies/sync
  * author: Tina Nolte
  */
 
-open util/graph[Name] as graph
+open util/graph[Name] as _graph
 
 // The Name atom represents the hierarchy of all name sequences
 // used in the model. A Name atom represents the name, and the path
@@ -23,7 +23,7 @@ sig Name {
   children: set Name
 }
 
-fact { graph/tree[children] }
+fact { _graph/tree[children] }
 
 one sig RootName extends Name { }
 
