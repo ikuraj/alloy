@@ -133,6 +133,9 @@ fun subseq [s: Int -> univ, from, to: Int] : s {
 // provides the available methods from util/integer
 fun add [n1, n2: Int] : Int { _ui/add[n1,n2] }
 fun sub [n1, n2: Int] : Int { _ui/sub[n1,n2] }
+fun mul [n1, n2: Int] : Int { _ui/mul[n1,n2] }
+fun div [n1, n2: Int] : Int { _ui/div[n1,n2] }
+fun rem [n1, n2: Int] : Int { _ui/rem[n1,n2] }
 fun negate [n: Int] : Int { _ui/negate[n] }
 pred eq [n1, n2: Int] { _ui/eq[n1,n2] }
 pred gt [n1, n2: Int] { _ui/gt[n1,n2] }

@@ -436,17 +436,17 @@ nonterminal Exp                        UnopExpr;
 
 //===========================================================================//
 
-Spec ::= Spec FACT:o          Super:e {: parser.alloymodule.addFact      (o , ""     , e); :};
-Spec ::= Spec FACT:o   Name:n Super:e {: parser.alloymodule.addFact      (o , n.name , e); :};
-Spec ::= Spec ASSERT:o        Super:e {: parser.alloymodule.addAssertion (o , ""     , e); :};
-Spec ::= Spec ASSERT:o Name:n Super:e {: parser.alloymodule.addAssertion (o , n.name , e); :};
+Spec ::= Spec Hint   FACT:o          Super:e {: parser.alloymodule.addFact      (o , ""     , e); :};
+Spec ::= Spec Hint   FACT:o   Name:n Super:e {: parser.alloymodule.addFact      (o , n.name , e); :};
+Spec ::= Spec Hint   ASSERT:o        Super:e {: parser.alloymodule.addAssertion (o , ""     , e); :};
+Spec ::= Spec Hint   ASSERT:o Name:n Super:e {: parser.alloymodule.addAssertion (o , n.name , e); :};
 Spec ::= Spec Sig             ;
 Spec ::= Spec Function        ;
 Spec ::= Spec Predicate       ;
-Spec ::= Spec OPEN:o Name:a                                         {: parser.alloymodule.addOpen(o.merge(a.pos), a, null, null); :};
-Spec ::= Spec OPEN:o Name:a                               AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, null, c);    :};
-Spec ::= Spec OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c           {: parser.alloymodule.addOpen(o.merge(c),     a, b,    null); :};
-Spec ::= Spec OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, b,    c);    :};
+Spec ::= Spec Hint   OPEN:o Name:a                                         {: parser.alloymodule.addOpen(o.merge(a.pos), a, null, null); :};
+Spec ::= Spec Hint   OPEN:o Name:a                               AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, null, c);    :};
+Spec ::= Spec Hint   OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c           {: parser.alloymodule.addOpen(o.merge(c),     a, b,    null); :};
+Spec ::= Spec Hint   OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c {: parser.alloymodule.addOpen(o.merge(c.pos), a, b,    c);    :};
 Spec ::= Spec MODULE:o Name:n                                       {: parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
 Spec ::= Spec MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r         {: parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
 Spec ::= ;
@@ -530,19 +530,19 @@ Typescope  ::= EXACTLY:e NUMBER   SIGINT:f  {: if (1==1) throw new ErrorSyntax(e
 Typescope  ::=           NUMBER:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none.");                                                                                  :};
 Typescope  ::= EXACTLY:e NUMBER   NONE:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on none.");                                                                                  :};
 
-Function ::= FUN:o              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , mult(r), v); :};
-Function ::= FUN:o              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , mult(r), v); :};
-Function ::= FUN:o              Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, new ArrayList<Decl>(), mult(r), v); :};
-Function ::= FUN:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , mult(r), v); :};
-Function ::= FUN:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , mult(r), v); :};
-Function ::= FUN:o SigRef:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , new ArrayList<Decl>(), mult(r), v); :};
+Function ::= Hint   FUN:o              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , mult(r), v); :};
+Function ::= Hint   FUN:o              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , mult(r), v); :};
+Function ::= Hint   FUN:o              Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, new ArrayList<Decl>(), mult(r), v); :};
+Function ::= Hint   FUN:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , mult(r), v); :};
+Function ::= Hint   FUN:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , mult(r), v); :};
+Function ::= Hint   FUN:o SigRef:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , new ArrayList<Decl>(), mult(r), v); :};
 
-Predicate ::= PRED:o              Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , null, v); :};
-Predicate ::= PRED:o              Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , null, v); :};
-Predicate ::= PRED:o              Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, new ArrayList<Decl>(), null, v); :};
-Predicate ::= PRED:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , null, v); :};
-Predicate ::= PRED:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , null, v); :};
-Predicate ::= PRED:o SigRef:f DOT Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , new ArrayList<Decl>(), null, v); :};
+Predicate ::= Hint   PRED:o              Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , null, v); :};
+Predicate ::= Hint   PRED:o              Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, d                    , null, v); :};
+Predicate ::= Hint   PRED:o              Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, null, new ArrayList<Decl>(), null, v); :};
+Predicate ::= Hint   PRED:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , null, v); :};
+Predicate ::= Hint   PRED:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , d                    , null, v); :};
+Predicate ::= Hint   PRED:o SigRef:f DOT Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), n.name, f   , new ArrayList<Decl>(), null, v); :};
 
 Hint ::=             {: RESULT=null;           :};
 Hint ::= HASH Name:e {: RESULT=Util.asList(e); :};
@@ -594,7 +594,6 @@ Names ::= Names:a COMMA Name:b     {: a.add(b); RESULT=a;                       
 
 Decla ::= PART:k Names   COLON Expr   {: if (1==1) throw ExpName.hint(k,"part"); :};
 Decla ::= EXH:k  Names   COLON Expr   {: if (1==1) throw ExpName.hint(k,"exh");  :};
-
 Decla ::= DISJ:k Names:a COLON Expr:b {: RESULT=new Decl(k,    a, mult(b)); :};
 Decla ::=        Names:a COLON Expr:b {: RESULT=new Decl(null, a, mult(b)); :};
 
