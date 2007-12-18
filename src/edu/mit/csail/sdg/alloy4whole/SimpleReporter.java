@@ -477,20 +477,22 @@ final class SimpleReporter extends A4Reporter {
                 Util.close(fs);
             }
         }
-        if (minimized)
+        if (minimized && corefilename==null) {
+            log("   No unsat core is available in this case.");
+        } else if (minimized) {
             logLink("   Core", "CORE: "+corefilename);
-        else if (corefilename!=null)
-            logLink(cmd.check ? "   No counterexample found." : "   No instance found.", "CORE: "+corefilename);
-        else
-            log(cmd.check ? "   No counterexample found." : "   No instance found.");
-        if (!minimized) {
+            if (minimizedBefore<=minimizedAfter)
+                log(" still contains "+minimizedAfter+" entries.");
+            else
+                log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" entries.");
+        } else {
+            if (corefilename!=null)
+                logLink(cmd.check ? "   No counterexample found." : "   No instance found.", "CORE: "+corefilename);
+            else
+                log(cmd.check ? "   No counterexample found." : "   No instance found.");
             if (cmd.check) log(" Assertion may be valid"); else log(" Predicate may be inconsistent");
             if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
             log(".");
-        } else if (minimizedBefore<=minimizedAfter){
-            log(" still contains "+minimizedAfter+" entries.");
-        } else {
-            log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" entries.");
         }
         logLink(" "+(System.currentTimeMillis()-lastTime)+"ms.", (formulafilename==null ? "" : ("CNF: "+formulafilename)));
         log("\n\n");
