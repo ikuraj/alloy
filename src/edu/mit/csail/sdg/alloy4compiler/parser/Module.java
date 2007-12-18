@@ -1061,7 +1061,14 @@ public final class Module {
         // (1) Cannot call
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
-        for(Module m: priv(name) ? Util.asList(this) : getAllNameableModules()) {
+        SafeList<Module> list;
+        if (priv(name)) {
+            list = new SafeList<Module>(1);
+            list.add(this);
+        } else {
+            list = getAllNameableModules();
+        }
+        for(Module m:list) {
           for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || !priv(s.getKey())) {
             for(Field f:s.getValue().realSig.getFields()) if (f.label.equals(name)) {
               Expr x=null;
