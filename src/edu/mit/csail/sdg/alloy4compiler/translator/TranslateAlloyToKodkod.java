@@ -239,6 +239,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         rep.debug("Assigning kodkod options...\n");
         int sym = (cmd.expects==1 ? 0 : opt.symmetry);
         solver = new Solver();
+        solver.options().setFlatten(false); // added for now, since multiplication and division circuit takes forever to flatten
         if (opt.solver.external()!=null) {
             String ext = opt.solver.external();
             if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
