@@ -7,7 +7,7 @@ module util/graph[node]
  * author: Greg Dennis
  */
 
-open util/relation as _rel
+open util/relation as rel
 
 // graph in undirected
 pred undirected [r: node->node] {
@@ -76,25 +76,3 @@ fun leaves [r: node->node] : set node {
 fun  innerNodes [r: node->node] : set node {
   node - leaves[r]
 }
-
-// following operations transparently provide all the functionality in util/relation
-fun dom [r: univ->univ] : set (r.univ) { _rel/dom[r] }
-fun ran [r: univ->univ] : set (univ.r) { _rel/ran[r] }
-pred total [r: univ->univ, s: set univ] { _rel/total[r,s] }
-pred functional [r: univ->univ, s: set univ] { _rel/functional[r,s] }
-pred function [r: univ->univ, s: set univ] { _rel/function[r,s] }
-pred surjective [r: univ->univ, s: set univ] { _rel/surjective[r,s] }
-pred injective [r: univ->univ, s: set univ] { _rel/injective[r,s] }
-pred bijective[r: univ->univ, s: set univ] { _rel/bijective[r,s] }
-pred bijection[r: univ->univ, d, c: set univ] { _rel/bijection[r,d,c] }
-pred reflexive [r: univ -> univ, s: set univ] { _rel/reflexive[r,s] }
-pred irreflexive [r: univ -> univ] { _rel/irreflexive[r] }
-pred symmetric [r: univ -> univ] { _rel/symmetric[r] }
-pred antisymmetric [r: univ -> univ] { _rel/antisymmetric[r] }
-pred transitive [r: univ -> univ] { _rel/transitive[r] }
-pred acyclic[r: univ->univ, s: set univ] { _rel/acyclic[r,s] }
-pred complete[r: univ->univ, s: univ] { _rel/complete[r,s] }
-pred preorder [r: univ -> univ, s: set univ] { _rel/preorder[r,s] }
-pred equivalence [r: univ->univ, s: set univ] { _rel/equivalence[r,s] }
-pred partialOrder [r: univ -> univ, s: set univ] { _rel/partialOrder[r,s] }
-pred totalOrder [r: univ -> univ, s: set univ] { _rel/totalOrder[r,s] }

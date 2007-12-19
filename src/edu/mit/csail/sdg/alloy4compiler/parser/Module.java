@@ -412,6 +412,7 @@ public final class Module {
                 if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) ans.add(x); }
                 if ((r&2)!=0) { Object x=u.asserts.get(name); if (x instanceof Expr) ans.add(x); }
                 if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) ans.add(y); }
+                if (ans.size()==0) return getRawNQS(r,name); // If nothing at this module, then do a non-qualified search from this module
                 return ans;
             }
             String alias=name.substring(0,i);
