@@ -501,18 +501,16 @@ public final class Module {
         if (as.indexOf('@')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'@\' character");
         if (as.indexOf('/')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'/\' character");
         if (as.length()==0) {
-            if (args!=null && args.size()!=0)
-                throw new ErrorSyntax(pos,
-                "The module being imported has parameters, so you must supply an alias using the AS keyword.");
-            for(int i=0; i<name.name.length(); i++) {
+            as="open$"+(1+opens.size());
+            if (args==null || args.size()==0) {
+              for(int i=0; ; i++) {
+                if (i>=name.name.length()) { as=name.name; break; }
                 char c=name.name.charAt(i);
                 if ((c>='a' && c<='z') || (c>='A' && c<='Z')) continue;
-                if (i==0) throw new ErrorSyntax(pos, "This filename does not start with a-z or A-Z,\n"
-                   + "so you must supply an alias using the AS keyword.");
-                if (!(c>='0' && c<='9') && c!='_' && c!='\'' && c!='\"') throw new ErrorSyntax(pos, "Filename contains \'"
-                   + c + "\' which is illegal in an alias,\n" + "so you must supply an alias using the AS keyword.");
+                if (i==0) break;
+                if (!(c>='0' && c<='9') && c!='_' && c!='\'' && c!='\"') break;
+              }
             }
-            as=name.name;
         }
         final TempList<String> newlist = new TempList<String>(args==null ? 0 : args.size());
         if (args!=null) for(int i=0; i<args.size(); i++) {
