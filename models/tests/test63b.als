@@ -1,5 +1,5 @@
 module tests/test
 
-open tests/test63a as _hidden
+private open tests/test63a as x
 sig n { }
-run { some s && some _hidden/s && some f } expect 1
+run { some sa && some x/sa && some fa } expect 1

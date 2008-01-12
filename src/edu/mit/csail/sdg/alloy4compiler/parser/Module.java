@@ -131,13 +131,15 @@ public final class Module {
         public final ConstList<String> args;
         /** The relative filename for the file being imported, without the final ".als" part; always a nonempty string. */
         public final String filename;
+        /** Whether this is a private open or not. */
+        final boolean isPrivate;
         /** The actual Module object that it points to; null until we resolve it. */
         private Module realModule=null;
         /** Returns the actual Module object that it points to; null if we have not resolved it. */
         public Module getRealModule() { return realModule; }
         /** Constructs an Open object. */
-        private Open(Pos pos, String alias, ConstList<String> args, String filename) {
-            this.pos=pos; this.alias=alias; this.args=args; this.filename=filename;
+        private Open(Pos pos, boolean isPrivate, String alias, ConstList<String> args, String filename) {
+            this.pos=pos; this.isPrivate=isPrivate; this.alias=alias; this.args=args; this.filename=filename;
         }
         /** Connect this OPEN statement to a module that it points to. */
         void connect(Module realModule) throws Err {
@@ -152,14 +154,16 @@ public final class Module {
     private static final class FunAST {
         /** Only initialized by typechecker. */ private Func realFunc=null;
         /** Only initialized by typechecker. */ private Expr realFormula=null;
+        /** Whether it is private.           */ private final boolean isPrivate;
         /** The original module.             */ private final Module realModule;
         /** The original position.           */ private final Pos pos;
         /** The short name.                  */ private final String name;
         /** The parameters.                  */ private final ConstList<Decl> params;
         /** The return type.                 */ private final Exp returnType;
         /** The body.                        */ private final Exp body;
-        private FunAST(Pos pos, Module realModule, String name, List<Decl> params, Exp returnType, Exp body) {
+        private FunAST(Pos pos, boolean isPrivate, Module realModule, String name, List<Decl> params, Exp returnType, Exp body) {
             this.pos=pos;
+            this.isPrivate=isPrivate;
             this.realModule=realModule;
             this.name=name; this.params=ConstList.make(params); this.returnType=returnType; this.body=body;
         }
@@ -171,6 +175,7 @@ public final class Module {
     /** Mutable; this class represents an untypechecked Alloy signature; equals() uses object identity. */
     static final class SigAST {
         private boolean topo=false;             // This flag is set to "true" during resolving
+        private final boolean isPrivate;
         private final Module realModule;        // This value is set to its Module during resolving
         private Sig realSig=null;               // This value is set to its corresponding Sig during resolving
         private final List<SigAST> realParents; // This value is set to its corresponding Sig during resolving
@@ -182,9 +187,10 @@ public final class Module {
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
         private Pos isOrdered=null;
-        private SigAST(Pos pos, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
+        private SigAST(Pos pos, boolean isPrivate, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
             List<ExpName> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
+            this.isPrivate=isPrivate;
             this.fullname=fullname;
             this.name=name;
             this.abs=abs;
@@ -201,7 +207,7 @@ public final class Module {
             this.realParents=new ArrayList<SigAST>(this.parents.size());
         }
         private SigAST(String fullname, String name, List<ExpName> parents, Sig realSig) {
-            this(null, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig);
+            this(null, false, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig);
         }
         @Override public String toString() { return fullname; }
     }
@@ -219,9 +225,6 @@ public final class Module {
     private static final SigAST NONEast = new SigAST("none", "none", null, NONE);
 
     //============================================================================================================================//
-
-    /** Returns true if the name is a private name. */
-    private boolean priv(String name) { return name.length()>0 && name.charAt(0)=='_'; }
 
     /** This field is used during a depth-first search of the dag-of-module(s) to mark which modules have been visited. */
     private Object visitedBy=null;
@@ -352,7 +355,7 @@ public final class Module {
         visitedBy=key;
         ans.add(this);
         for(Map.Entry<String,Open> i:opens.entrySet()) {
-            if (level>0 && priv(i.getKey())) continue;
+            if (level>0 && i.getValue().isPrivate) continue;
             Module m=i.getValue().realModule;
             if (m!=null) m.getHelper(level<0 ? (-1) : (level+1), ans, key);
         }
@@ -387,14 +390,13 @@ public final class Module {
     }
 
     /** Lookup non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
-    private List<Object> getRawNQS (int r, String name) {
+    private List<Object> getRawNQS (Module start, int r, String name) {
         // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar whose expr is the value of an assertion    (r&4)!=0 => FunAST
         List<Object> ans=new ArrayList<Object>();
         for(Module m:getAllNameableModules()) {
-            if (m!=this && priv(name)) continue;
-            if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) ans.add(x); }
+            if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) if (m==start || !x.isPrivate) ans.add(x); }
             if ((r&2)!=0) { Object x=m.asserts.get(name); if (x instanceof Expr) ans.add(x); }
-            if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) for(FunAST y:x) ans.add(y); }
+            if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) for(FunAST y:x) if (m==start || !y.isPrivate) ans.add(y); }
         }
         return ans;
     }
@@ -408,17 +410,16 @@ public final class Module {
         for(int level=0; ;level++) {
             int i=name.indexOf('/');
             if (i<0) {
-                if (level>0 && priv(name)) return ans;
-                if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) ans.add(x); }
+                if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) if (level==0 || !x.isPrivate) ans.add(x); }
                 if ((r&2)!=0) { Object x=u.asserts.get(name); if (x instanceof Expr) ans.add(x); }
-                if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) ans.add(y); }
-                if (ans.size()==0) return getRawNQS(r,name); // If nothing at this module, then do a non-qualified search from this module
+                if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) if (level==0 || !y.isPrivate) ans.add(y); }
+                if (ans.size()==0) return u.getRawNQS(this,r,name); // If nothing at this module, then do a non-qualified search from this module
                 return ans;
             }
             String alias=name.substring(0,i);
-            if (level>0 && priv(alias)) return ans;
             Open uu=u.opens.get(alias);
-            if (uu==null || uu.realModule==null) return ans;
+            if (level>0 && uu.isPrivate) return ans;
+            if (uu==null || uu.realModule==null) return ans; // may happen during the initial "module"
             u=uu.realModule;
             name=name.substring(i+1);
         }
@@ -433,7 +434,7 @@ public final class Module {
         if (name.equals("seq/Int")) return SEQIDXast;
         if (name.equals("none"))    return NONEast;
         if (name.indexOf('/')<0) {
-            s=getRawNQS(1, name);
+            s=getRawNQS(this, 1, name);
             s2=params.get(name);
         } else {
             if (name.startsWith("this/")) { name=name.substring(5); s2=params.get(name); }
@@ -474,7 +475,7 @@ public final class Module {
         if (list!=null) for(ExpName expr: list) {
             String name=expr.name;
             dup(expr.span(), name, true);
-            if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null, null);
+            if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null);
             else params.put(name, null);
         }
         this.status=1; // This line must be at the end, since "addSig" will otherwise bump the status value to 3
@@ -485,14 +486,14 @@ public final class Module {
         int oldStatus=status;
         status=0;
         try {
-            addOpen(pos, new ExpName(pos,"util/sequniv"), null, new ExpName(pos,"seq"));
+            addOpen(pos, "", new ExpName(pos,"util/sequniv"), null, new ExpName(pos,"seq"));
         } finally {
             status=oldStatus;
         }
     }
 
     /** Add an OPEN declaration. */
-    void addOpen(Pos pos, ExpName name, List<ExpName> args, ExpName alias) throws Err {
+    void addOpen(Pos pos, String isPrivate, ExpName name, List<ExpName> args, ExpName alias) throws Err {
         if (status>2) throw new ErrorSyntax(pos,
            "The \"open\" declaration must occur before any\n" + "sig/pred/fun/fact/assert/check/run command.");
         status=2;
@@ -525,7 +526,7 @@ public final class Module {
             if (x.args.equals(newlist.makeConst()) && x.filename.equals(name.name)) return;
             throw new ErrorSyntax(pos, "You cannot import two different modules\n" + "using the same alias.");
         }
-        x=new Open(pos, as, newlist.makeConst(), name.name);
+        x=new Open(pos, isPrivate.length()>0, as, newlist.makeConst(), name.name);
         opens.put(as,x);
     }
 
@@ -604,7 +605,7 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a sig declaration. */
-    SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome,
+    SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate,
     ExpName par, List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
         pos = pos.merge(isAbstract).merge(isLone).merge(isOne).merge(isSome);
         if (name.indexOf('$')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'$\' character");
@@ -616,7 +617,7 @@ public final class Module {
             if (par.name.charAt(0)=='e') { subsig=par.span().merge(parents.get(0).span()); }
             else { subset=par.span(); for(ExpName p:parents) subset=p.span().merge(subset); }
         }
-        SigAST obj=new SigAST(pos,full,name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null);
+        SigAST obj=new SigAST(pos, isPrivate!=null, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null);
         if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
@@ -667,14 +668,14 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a FUN or PRED declaration. */
-    void addFunc(Pos p, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
+    void addFunc(Pos p, String isPrivate, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
         status=3;
         dup(p, n, false);
         ExpName dup = Decl.findDuplicateName(d);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
         d=new ArrayList<Decl>(d);
-        if (f!=null) d.add(0, new Decl(null, Util.asList(new ExpName(f.span(), "this")), f));
-        FunAST ans = new FunAST(p, this, n, d, t, v);
+        if (f!=null) d.add(0, new Decl(false, null, Util.asList(new ExpName(f.span(), "this")), f));
+        FunAST ans = new FunAST(p, isPrivate.length()>0, this, n, d, t, v);
         SafeList<FunAST> list = funcs.get(n);
         if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
         list.add(ans);
@@ -867,7 +868,7 @@ public final class Module {
         status=3;
         String n;
         if (c) n=addAssertion(p,"check$"+(1+commands.size()),e);
-           else addFunc(e.span().merge(p), n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
+           else addFunc(e.span().merge(p), "private", n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
         String labelName = (label==null || label.name.length()==0) ? n : label.name;
         commands.add(new Triple<String,Command,Expr>(n, new Command(e.span().merge(p), labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
     }
@@ -880,13 +881,13 @@ public final class Module {
             Expr e=null;
             if (cmd.check) {
                 List<Object> m=getRawQS(2, cname); // We prefer assertion in the topmost module
-                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(2, cname);
+                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(this, 2, cname);
                 if (m.size()>1) unique(cmd.pos, cname, m);
                 if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
                 e = ((ExprVar)(m.get(0))).expr.not();
             } else {
                 List<Object> m=getRawQS(4, cname); // We prefer fun/pred in the topmost module
-                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(4, cname);
+                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(this, 4, cname);
                 if (m.size()>1) unique(cmd.pos, cname, m);
                 if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
                 e = ((FunAST)(m.get(0))).realFormula;
@@ -1029,7 +1030,7 @@ public final class Module {
         if (name.equals("none"))    { Expr a = ExprUnary.Op.NOOP.make(pos, NONE);   return ConstList.make(1,a); }
         if (name.equals("iden"))    { Expr a = ExprConstant.Op.IDEN.make(pos, 0);   return ConstList.make(1,a); }
         final TempList<Expr> ans1 = new TempList<Expr>();
-        final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1,name) : getRawNQS(fun?5:1,name);
+        final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1, name) : getRawNQS(this, fun?5:1, name);
         final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
         for(Object x: ans) {
             if (x instanceof SigAST) {
@@ -1060,22 +1061,25 @@ public final class Module {
         // (1) Cannot call
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
-        SafeList<Module> list;
-        if (priv(name)) {
-            list = new SafeList<Module>(1);
-            list.add(this);
-        } else {
-            list = getAllNameableModules();
-        }
-        for(Module m:list) {
-          for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || !priv(s.getKey())) {
-            for(Field f:s.getValue().realSig.getFields()) if (f.label.equals(name)) {
-              Expr x=null;
-              int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
-              if (rootsig==null) x=ExprUnary.Op.NOOP.make(pos,f,null,penalty);
-              else if (rootsig.realSig.isSameOrDescendentOf(f.sig)) { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
-              else if (!rootfield) x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); // penalty of 1
-              if (x!=null) ans1.add(x);
+        for(Module m: getAllNameableModules()) {
+          for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || !s.getValue().isPrivate) {
+            int fi=(-1), fn=s.getValue().realSig.getFields().size(); // fn is the number of fields that are typechecked so far
+            for(Decl d: s.getValue().fields) {
+              for(ExpName label: d.names) {
+                fi++;
+                if (fi<fn && (m==this || !d.isPrivate) && label.name.equals(name)) {
+                   Field f=s.getValue().realSig.getFields().get(fi);
+                   Expr x=null;
+                   int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
+                   if (rootsig==null)
+                      { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); }
+                   else if (rootsig.realSig.isSameOrDescendentOf(f.sig))
+                      { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
+                   else if (!rootfield)
+                      { x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); } // penalty of 1
+                   if (x!=null) ans1.add(x);
+                }
+              }
             }
           }
         }
