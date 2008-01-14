@@ -277,7 +277,7 @@ public final class StaticThemeReaderWriter {
         String name=x.getAttribute("name"), type=x.getAttribute("type");
         if (name.length()==0 || type.length()==0) return null;
         AlloyType t=now.getOriginalModel().hasType(type);
-        if (t==null) return null; else return new AlloySet(name, t);
+        if (t==null) return null; else return now.getOriginalModel().hasSet(name, t);
     }
 
     /** Writes nothing if the argument is null. */
@@ -310,7 +310,7 @@ public final class StaticThemeReaderWriter {
             if (t==null) return null;
             ans.add(t);
         }
-        if (ans.size()<2) return null; else return new AlloyRelation(name,ans);
+        if (ans.size()<2) return null; else return now.getOriginalModel().hasRelation(name, ans);
     }
 
     /** Writes nothing if the argument is null. */

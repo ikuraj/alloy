@@ -41,6 +41,9 @@ public final class Func {
     /** The location in the original file where this predicate/function is declared; never null. */
     public final Pos pos;
 
+    /** If nonnull, then this predicate/function is private (and this.isPrivate is the location of the "private" keyword) */
+    public final Pos isPrivate;
+
     /** The label of this predicate/function; it does not need to be unique. */
     public final String label;
 
@@ -73,8 +76,33 @@ public final class Func {
      * @throws ErrorSyntax if this function's return type declaration contains a predicate/function call
      */
     public Func(Pos pos, String label, List<ExprVar> vars, Expr returnDecl) throws Err {
+        this(pos, null, label, vars, returnDecl);
+    }
+
+    /**
+     * Constructs a new predicate/function.
+     *
+     * <p>  The first parameter's bound should be an expression with no free variables.
+     * <br> The second parameter's bound should be an expression with no free variables, except possibly the first parameter.
+     * <br> The third parameter's bound should be an expression with no free variables, except possibly the first two parameters.
+     * <br> etc.
+     * <br> The return declaration should have no free variables, except possibly the list of input parameters.
+     *
+     * @param pos - the original position in the file
+     * @param isPrivate - if nonnull, then the user intended this func/pred to be "private"
+     * @param label - the label for this predicate/function (does not have to be unique)
+     * @param vars - the list of parameters (can be null or an empty list if this predicate/function has no parameters)
+     * @param returnDecl - the return declaration (null if this is a predicate rather than a function)
+     *
+     * @throws ErrorType if returnType!=null and returnType cannot be unambiguously typechecked to be a set/relation
+     * @throws ErrorSyntax if the list of parameters contain duplicates
+     * @throws ErrorSyntax if at least one of the parameter declaration contains a predicate/function call
+     * @throws ErrorSyntax if this function's return type declaration contains a predicate/function call
+     */
+    public Func(Pos pos, Pos isPrivate, String label, List<ExprVar> vars, Expr returnDecl) throws Err {
         if (pos==null) pos=Pos.UNKNOWN;
         this.pos=pos;
+        this.isPrivate=isPrivate;
         this.label=(label==null ? "" : label);
         this.isPred=(returnDecl==null);
         if (returnDecl==null) {

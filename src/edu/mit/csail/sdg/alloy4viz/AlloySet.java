@@ -33,8 +33,11 @@ public final class AlloySet extends AlloyNodeElement {
     /** The parent type of this AlloySet. */
     private final AlloyType type;
 
+    /** Records whether this relation is known to be "private"; NOTE: this value is NOT USED during equals() comparison. */
+    public final boolean isPrivate;
+
     /** Constructs a new AlloySet object. */
-    public AlloySet(String name, AlloyType type) { super(name); this.type=type; }
+    public AlloySet(String name, boolean isPrivate, AlloyType type) { super(name); this.type=type; this.isPrivate=isPrivate; }
 
     /** Returns the parent type of the AlloySet. */
     public AlloyType getType() { return type; }

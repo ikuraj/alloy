@@ -104,7 +104,8 @@ public final class StaticInstanceReader {
                     sub.getAttribute("isOne").length()>0,
                     sub.getAttribute("isAbstract").length()>0,
                     sub.getAttribute("isBuiltin").length()>0,
-                    sub.getAttribute("isOrdered").length()>0);
+                    sub.getAttribute("isOrdered").length()>0,
+                    sub.getAttribute("isPrivate").length()>0);
             if (types.put(name,type)!=null)
                 throw new RuntimeException("<sig name=\""+name+"\"> appeared more than once.");
         }
@@ -127,7 +128,7 @@ public final class StaticInstanceReader {
             AlloyType type=types.get(typename);
             if (type==null) throw new RuntimeException("<set name=\""+name+"\"> cannot be a subset of a nonexisting type \""+typename+"\"");
             Set<AlloyAtom> atoms=parseAlloyAtomS(sub, atomname2atom);
-            AlloySet set=new AlloySet(name,type);
+            AlloySet set=new AlloySet(name, sub.getAttribute("isPrivate").length()>0, type);
             sets.add(set);
             for(AlloyAtom atom:atoms) {
                 Set<AlloySet> temp=atom2sets.get(atom);
@@ -139,14 +140,15 @@ public final class StaticInstanceReader {
         Map<AlloyRelation,Set<AlloyTuple>> rel2tuples = new LinkedHashMap<AlloyRelation,Set<AlloyTuple>>();
         Set<AlloyRelation> rels=new LinkedHashSet<AlloyRelation>();
         for(XMLElement sub:x.getChildren("field")) {
-            String name=sub.getAttribute("name");
+            String name = sub.getAttribute("name");
+            boolean isPrivate = sub.getAttribute("isPrivate").length()>0;
             if (name.length()==0) throw new RuntimeException("<field> name cannot be empty.");
             if (sub.getChildren().isEmpty())
                 throw new RuntimeException("<field name=\""+name+"\"> must declare its type.");
             XMLElement sub1=sub.getChildren().get(0);
             if (!sub1.is("type"))
                 throw new RuntimeException("<field name=\""+name+"\"> must have <type> as its first subnode.");
-            AlloyRelation r=parseAlloyRelation(name, types, sub1);
+            AlloyRelation r=parseAlloyRelation(name, types, sub1, isPrivate);
             rels.add(r);
             Set<AlloyTuple> tuples=parseAlloyTupleS(sub, atomname2atom);
             Set<AlloyTuple> temp=rel2tuples.get(r);
@@ -239,7 +241,7 @@ public final class StaticInstanceReader {
     }
 
     /** Parses XML to generate an AlloyRelation object. */
-    private static AlloyRelation parseAlloyRelation(String relName, Map<String,AlloyType> types, XMLElement xml) {
+    private static AlloyRelation parseAlloyRelation(String relName, Map<String,AlloyType> types, XMLElement xml, boolean isPrivate) {
         // parses one or more <sig name=".."/>
         List<AlloyType> list=new ArrayList<AlloyType>();
         for(XMLElement type:xml.getChildren("sig")) {
@@ -250,7 +252,7 @@ public final class StaticInstanceReader {
             list.add(t);
         }
         if (list.size()<2) throw new RuntimeException("<type> must contain at least two <sig> subnode.");
-        return new AlloyRelation(relName, list);
+        return new AlloyRelation(relName, isPrivate, list);
     }
 
     /** Parses XML to generate a set of AlloyTuple objects. */

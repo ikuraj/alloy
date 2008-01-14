@@ -154,14 +154,14 @@ public final class Module {
     private static final class FunAST {
         /** Only initialized by typechecker. */ private Func realFunc=null;
         /** Only initialized by typechecker. */ private Expr realFormula=null;
-        /** Whether it is private.           */ private final boolean isPrivate;
+        /** Whether it is private.           */ private final Pos isPrivate;
         /** The original module.             */ private final Module realModule;
         /** The original position.           */ private final Pos pos;
         /** The short name.                  */ private final String name;
         /** The parameters.                  */ private final ConstList<Decl> params;
         /** The return type.                 */ private final Exp returnType;
         /** The body.                        */ private final Exp body;
-        private FunAST(Pos pos, boolean isPrivate, Module realModule, String name, List<Decl> params, Exp returnType, Exp body) {
+        private FunAST(Pos pos, Pos isPrivate, Module realModule, String name, List<Decl> params, Exp returnType, Exp body) {
             this.pos=pos;
             this.isPrivate=isPrivate;
             this.realModule=realModule;
@@ -175,7 +175,7 @@ public final class Module {
     /** Mutable; this class represents an untypechecked Alloy signature; equals() uses object identity. */
     static final class SigAST {
         private boolean topo=false;             // This flag is set to "true" during resolving
-        private final boolean isPrivate;
+        private final Pos isPrivate;
         private final Module realModule;        // This value is set to its Module during resolving
         private Sig realSig=null;               // This value is set to its corresponding Sig during resolving
         private final List<SigAST> realParents; // This value is set to its corresponding Sig during resolving
@@ -187,7 +187,7 @@ public final class Module {
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
         private Pos isOrdered=null;
-        private SigAST(Pos pos, boolean isPrivate, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
+        private SigAST(Pos pos, Pos isPrivate, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
             List<ExpName> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
             this.isPrivate=isPrivate;
@@ -207,7 +207,7 @@ public final class Module {
             this.realParents=new ArrayList<SigAST>(this.parents.size());
         }
         private SigAST(String fullname, String name, List<ExpName> parents, Sig realSig) {
-            this(null, false, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig);
+            this(null, null, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig);
         }
         @Override public String toString() { return fullname; }
     }
@@ -394,9 +394,9 @@ public final class Module {
         // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar whose expr is the value of an assertion    (r&4)!=0 => FunAST
         List<Object> ans=new ArrayList<Object>();
         for(Module m:getAllNameableModules()) {
-            if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) if (m==start || !x.isPrivate) ans.add(x); }
+            if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) if (m==start || x.isPrivate==null) ans.add(x); }
             if ((r&2)!=0) { Object x=m.asserts.get(name); if (x instanceof Expr) ans.add(x); }
-            if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) for(FunAST y:x) if (m==start || !y.isPrivate) ans.add(y); }
+            if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) for(FunAST y:x) if (m==start || y.isPrivate==null) ans.add(y); }
         }
         return ans;
     }
@@ -410,9 +410,9 @@ public final class Module {
         for(int level=0; ;level++) {
             int i=name.indexOf('/');
             if (i<0) {
-                if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) if (level==0 || !x.isPrivate) ans.add(x); }
+                if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) if (level==0 || x.isPrivate==null) ans.add(x); }
                 if ((r&2)!=0) { Object x=u.asserts.get(name); if (x instanceof Expr) ans.add(x); }
-                if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) if (level==0 || !y.isPrivate) ans.add(y); }
+                if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) if (level==0 || y.isPrivate==null) ans.add(y); }
                 if (ans.size()==0) return u.getRawNQS(this,r,name); // If nothing at this module, then do a non-qualified search from this module
                 return ans;
             }
@@ -486,14 +486,14 @@ public final class Module {
         int oldStatus=status;
         status=0;
         try {
-            addOpen(pos, "", new ExpName(pos,"util/sequniv"), null, new ExpName(pos,"seq"));
+            addOpen(pos, null, new ExpName(pos,"util/sequniv"), null, new ExpName(pos,"seq"));
         } finally {
             status=oldStatus;
         }
     }
 
     /** Add an OPEN declaration. */
-    void addOpen(Pos pos, String isPrivate, ExpName name, List<ExpName> args, ExpName alias) throws Err {
+    void addOpen(Pos pos, Pos isPrivate, ExpName name, List<ExpName> args, ExpName alias) throws Err {
         if (status>2) throw new ErrorSyntax(pos,
            "The \"open\" declaration must occur before any\n" + "sig/pred/fun/fact/assert/check/run command.");
         status=2;
@@ -526,7 +526,7 @@ public final class Module {
             if (x.args.equals(newlist.makeConst()) && x.filename.equals(name.name)) return;
             throw new ErrorSyntax(pos, "You cannot import two different modules\n" + "using the same alias.");
         }
-        x=new Open(pos, isPrivate.length()>0, as, newlist.makeConst(), name.name);
+        x=new Open(pos, isPrivate!=null, as, newlist.makeConst(), name.name);
         opens.put(as,x);
     }
 
@@ -617,7 +617,7 @@ public final class Module {
             if (par.name.charAt(0)=='e') { subsig=par.span().merge(parents.get(0).span()); }
             else { subset=par.span(); for(ExpName p:parents) subset=p.span().merge(subset); }
         }
-        SigAST obj=new SigAST(pos, isPrivate!=null, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null);
+        SigAST obj=new SigAST(pos, isPrivate, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null);
         if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
@@ -640,7 +640,7 @@ public final class Module {
                oldS.realParents.add(parentAST);
                parents.add(resolveSig(sorted, parentAST));
             }
-            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered);
+            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.isPrivate);
         } else {
             ExpName sup = null;
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.name.length()==0) sup=null;}
@@ -652,7 +652,7 @@ public final class Module {
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
                + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
-            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isOrdered, oldS.hint_isLeaf);
+            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isOrdered, oldS.isPrivate, oldS.hint_isLeaf);
         }
         sorted.add(oldS);
         return oldS.realSig;
@@ -668,14 +668,14 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a FUN or PRED declaration. */
-    void addFunc(Pos p, String isPrivate, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
+    void addFunc(Pos p, Pos isPrivate, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
         status=3;
         dup(p, n, false);
         ExpName dup = Decl.findDuplicateName(d);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
         d=new ArrayList<Decl>(d);
-        if (f!=null) d.add(0, new Decl(false, null, Util.asList(new ExpName(f.span(), "this")), f));
-        FunAST ans = new FunAST(p, isPrivate.length()>0, this, n, d, t, v);
+        if (f!=null) d.add(0, new Decl(null, null, Util.asList(new ExpName(f.span(), "this")), f));
+        FunAST ans = new FunAST(p, isPrivate, this, n, d, t, v);
         SafeList<FunAST> list = funcs.get(n);
         if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
         list.add(ans);
@@ -708,7 +708,7 @@ public final class Module {
             }
             if (err) continue;
             try {
-                f.realFunc = new Func(f.pos, fullname, tmpvars.makeConst(), ret);
+                f.realFunc = new Func(f.pos, f.isPrivate, fullname, tmpvars.makeConst(), ret);
                 rep.typecheck(""+f.realFunc+", RETURN: "+f.realFunc.returnDecl.type+"\n");
             } catch(Err ex) { errors = errors.append(ex); }
         }
@@ -868,7 +868,7 @@ public final class Module {
         status=3;
         String n;
         if (c) n=addAssertion(p,"check$"+(1+commands.size()),e);
-           else addFunc(e.span().merge(p), "private", n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
+           else addFunc(e.span().merge(p), Pos.UNKNOWN, n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
         String labelName = (label==null || label.name.length()==0) ? n : label.name;
         commands.add(new Triple<String,Command,Expr>(n, new Command(e.span().merge(p), labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
     }
@@ -962,7 +962,7 @@ public final class Module {
               Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
               for(final ExpName n:d.names) {
-                 final Field f=s.addTrickyField(d.span(), n.name, THIS, bound);
+                 final Field f=s.addTrickyField(d.span(), d.isPrivate, n.name, THIS, bound);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint==null) continue;
                  if (disjA==null) { disjA=f; continue; }
@@ -1062,12 +1062,12 @@ public final class Module {
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
         for(Module m: getAllNameableModules()) {
-          for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || !s.getValue().isPrivate) {
+          for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null) {
             int fi=(-1), fn=s.getValue().realSig.getFields().size(); // fn is the number of fields that are typechecked so far
             for(Decl d: s.getValue().fields) {
               for(ExpName label: d.names) {
                 fi++;
-                if (fi<fn && (m==this || !d.isPrivate) && label.name.equals(name)) {
+                if (fi<fn && (m==this || d.isPrivate==null) && label.name.equals(name)) {
                    Field f=s.getValue().realSig.getFields().get(fi);
                    Expr x=null;
                    int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000

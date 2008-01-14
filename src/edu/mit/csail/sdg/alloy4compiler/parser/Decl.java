@@ -28,8 +28,8 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 
 final class Decl {
 
-    /** If true, then this decl is a private decl that is only visible within the current module. */
-    public final boolean isPrivate;
+    /** If nonnull, then this decl is private (and this.isPrivate is the location of the "private" keyword) */
+    public final Pos isPrivate;
 
     /** If nonnull, then this Decl is disjoint (and this.disjoint is the location of the "disjoint" keyword) */
     public final Pos disjoint;
@@ -55,7 +55,7 @@ final class Decl {
     }
 
     /** This constructs a declaration. */
-    public Decl(boolean isPrivate, Pos disjoint, List<ExpName> names, Exp expr) {
+    public Decl(Pos isPrivate, Pos disjoint, List<ExpName> names, Exp expr) {
         this.isPrivate = isPrivate;
         this.disjoint = disjoint;
         this.names = ConstList.make(names);

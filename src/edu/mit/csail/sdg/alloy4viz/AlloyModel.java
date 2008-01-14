@@ -235,7 +235,19 @@ public final class AlloyModel {
     public boolean hasType(AlloyType type) { return types.contains(type); }
 
     /** Returns the AlloyType object if this model contains the given type; or return null otherwise. */
-    public AlloyType hasType(String type) { return name2types.get(type); }
+    public AlloyType hasType(String name) { return name2types.get(name); }
+
+    /** Returns the AlloyRelation object if this model contains the given relation; or return null otherwise. */
+    public AlloySet hasSet(String name, AlloyType type) {
+        for(AlloySet s:sets) if (s.getName().equals(name) && s.getType().equals(type)) return s;
+        return null;
+    }
+
+    /** Returns the AlloyRelation object if this model contains the given relation; or return null otherwise. */
+    public AlloyRelation hasRelation(String name, List<AlloyType> types) {
+        for(AlloyRelation r:relations) if (r.getName().equals(name) && r.getTypes().equals(types)) return r;
+        return null;
+    }
 
     /** Returns an unmodifiable sorted set of all AlloyType(s) in this model. */
     public Set<AlloyType> getTypes() { return types; }

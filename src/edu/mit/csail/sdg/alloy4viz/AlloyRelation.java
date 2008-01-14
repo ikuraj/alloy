@@ -37,12 +37,16 @@ public final class AlloyRelation extends AlloyElement {
     /** The unmodifiable list of types. */
     private final List<AlloyType> types;
 
+    /** Records whether this relation is known to be "private"; NOTE: this value is NOT USED during equals() comparison. */
+    public final boolean isPrivate;
+
     /** Constructs a new AlloyRelation with that name and that list of types; types.size() must be 2 or above. */
-    public AlloyRelation(String name, List<AlloyType> types) {
+    public AlloyRelation(String name, boolean isPrivate, List<AlloyType> types) {
         super(name);
         if (types==null || types.size()<2)
             throw new RuntimeException("An AlloyRelation object must have 2 or more types.");
         this.types = Collections.unmodifiableList(new ArrayList<AlloyType>(types));
+        this.isPrivate = isPrivate;
     }
 
     /**

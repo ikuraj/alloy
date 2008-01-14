@@ -117,6 +117,12 @@ public abstract class Sig extends Expr {
      */
     public final Pos isSome;
 
+    /**
+     * Nonnull if the user wanted this sig to be private.
+     * <p> Note: this value is always null for builtin sigs.
+     */
+    public final Pos isPrivate;
+
     /** The label for this sig; this name does not need to be unique. */
     public final String label;
 
@@ -137,10 +143,11 @@ public abstract class Sig extends Expr {
         this.isSubset=null;
         this.isSubsig=null;
         this.isOrdered=null;
+        this.isPrivate=null;
     }
 
     /** Constructs a new PrimSig or SubsetSig. */
-    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isOrdered)
+    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isOrdered, Pos isPrivate)
     throws Err {
         super(pos, type);
         if (lone!=null && one!=null)  throw new ErrorSyntax(lone.merge(one),  "You cannot delcare a sig to be both lone and one.");
@@ -148,6 +155,7 @@ public abstract class Sig extends Expr {
         if (one!=null  && some!=null) throw new ErrorSyntax(one.merge(some),  "You cannot delcare a sig to be both one and some.");
         this.builtin=false;
         this.isOrdered=isOrdered;
+        this.isPrivate=isPrivate;
         this.isAbstract=abs;
         this.isLone=lone;
         this.isOne=one;
@@ -223,13 +231,13 @@ public abstract class Sig extends Expr {
          * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
          */
         public PrimSig
-        (Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos subsig, Pos ordered, boolean isLeaf)
+        (Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos subsig, Pos ordered, Pos isPrivate, boolean isLeaf)
         throws Err {
             super(pos,
                 (parent!=null && parent.hint_isLeaf) ? parent.type : null,
                 label, isAbstract, lone, one, some,
                 (parent!=null && parent!=UNIV) ? Pos.UNKNOWN.merge(subsig) : null,
-                null, ordered);
+                null, ordered, isPrivate);
             if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
             if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
             if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"none\" signature");
@@ -256,7 +264,7 @@ public abstract class Sig extends Expr {
         public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some,
         boolean isLeaf) throws Err {
             this(pos, parent, label, isAbstract?Pos.UNKNOWN:null,
-               lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, null, isLeaf);
+               lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, null, null, isLeaf);
         }
 
         /**
@@ -264,7 +272,7 @@ public abstract class Sig extends Expr {
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param label - the name of this sig (it does not need to be unique)
          */
-        public PrimSig(Pos pos, String label) throws Err { this(pos, null, label, null,null,null,null,null,null, false); }
+        public PrimSig(Pos pos, String label) throws Err { this(pos, null, label, null,null,null,null,null,null,null, false); }
 
         /** {@inheritDoc} */
         @Override public boolean isSameOrDescendentOf(Sig that) {
@@ -341,8 +349,8 @@ public abstract class Sig extends Expr {
          * @throws ErrorSyntax if the signature has two or more multiplicities
          * @throws ErrorType if parents contains NONE or SIGINT or SEQIDX
          */
-        public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos ordered) throws Err {
-            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), ordered);
+        public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos ordered, Pos isPrivate) throws Err {
+            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), ordered, isPrivate);
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
             if (parents!=null) for(Sig parent:parents) if (!temp.contains(parent)) temp.add(parent);
             if (temp.size()==0) temp.add(UNIV);
@@ -367,6 +375,9 @@ public abstract class Sig extends Expr {
         /** The sig that this field belongs to; never null. */
         public final Sig sig;
 
+        /** Nonnull if the user wanted this field to be private. */
+        public final Pos isPrivate;
+
         /** The label for this field; this name does not need to be unique. */
         public final String label;
 
@@ -374,11 +385,12 @@ public abstract class Sig extends Expr {
         public final Expr boundingFormula;
 
         /** Constructs a new Field object. */
-        private Field(Pos pos, Sig sig, String label, ExprVar var, Expr bound) throws Err {
+        private Field(Pos pos, Pos isPrivate, Sig sig, String label, ExprVar var, Expr bound) throws Err {
             super(pos, null, false, sig.type.product(bound.type), 0, 0, bound.errors);
             if (sig.builtin) throw new ErrorSyntax("Builtin sig \""+sig+"\" cannot have fields.");
-            this.sig=sig;
-            this.label=label;
+            this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
+            this.sig = sig;
+            this.label = label;
             // If the field declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (bound.mult==0 && bound.type.arity()==1) bound=ExprUnary.Op.ONEOF.make(null, bound);
             if (var==null) var = ExprVar.make(null, "this", sig.oneOf());
@@ -431,6 +443,7 @@ public abstract class Sig extends Expr {
      * <p> Note: the bound must be fully-typechecked and have exactly 0 free variable, or have "x" as its sole free variable.
      *
      * @param pos - the position in the original file where this field was defined (can be null if unknown)
+     * @param isPrivate - if nonnull, that means the user intended this field to be "private"
      * @param label - the name of this field (it does not need to be unique)
      * @param x - a quantified variable "x: one ThisSig"
      * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in bound"
@@ -439,10 +452,10 @@ public abstract class Sig extends Expr {
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
-    public final Field addTrickyField(Pos pos, String label, ExprVar x, Expr bound) throws Err {
+    public final Field addTrickyField(Pos pos, Pos isPrivate, String label, ExprVar x, Expr bound) throws Err {
         bound=bound.typecheck_as_set();
         if (bound.ambiguous) bound=bound.resolve_as_set(Expr.sink);
-        final Field f=new Field(pos, this, label, x, bound);
+        final Field f=new Field(pos, isPrivate, this, label, x, bound);
         fields.add(f);
         return f;
     }
@@ -460,6 +473,6 @@ public abstract class Sig extends Expr {
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field addField(Pos pos, String label, Expr bound) throws Err {
-        return addTrickyField(pos, label, null, bound);
+        return addTrickyField(pos, null, label, null, bound);
     }
 }

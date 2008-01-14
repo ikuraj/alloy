@@ -64,7 +64,6 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.OurCombobox.ComboGetterSetter;
 import edu.mit.csail.sdg.alloy4.OurBinaryCheckbox.BinaryGetterSetter;
 import edu.mit.csail.sdg.alloy4.OurTristateCheckbox.GetterSetter;
-import static edu.mit.csail.sdg.alloy4viz.VizGUI.priv;
 
 /**
  * GUI panel for making customization changes.
@@ -252,12 +251,12 @@ public final class VizCustomizationPanel extends JPanel {
         path=path.pathByAddingChild(rad);
         if (type.equals(lastElement)) last=path;
         // Generate the nodes for all AlloySet(s) whose types == this type
-        for (AlloySet s:now.getSets()) if (!priv(s.getName()) && s.getType().equals(type)) {
+        for (AlloySet s:now.getSets()) if (!s.isPrivate && s.getType().equals(type)) {
             rad.add(rad2=new DefaultMutableTreeNode(s));
             if (s.equals(lastElement)) last=path.pathByAddingChild(rad2);
         }
         // Generate the nodes for all AlloyType that inherit from this
-        for(AlloyType t:old.getDirectSubTypes(type)) if (!priv(t.getName())) {
+        for(AlloyType t:old.getDirectSubTypes(type)) if (!t.isPrivate) {
             TreePath possibleLast=remakeForType(path, t);
             if (possibleLast!=null) last=possibleLast;
         }
@@ -289,7 +288,7 @@ public final class VizCustomizationPanel extends JPanel {
         DefaultMutableTreeNode radR = new DefaultMutableTreeNode(3);
         top.add(radR);
         if (Integer.valueOf(3).equals(lastElement)) last=new TreePath(new Object[]{top,radR});
-        for (AlloyRelation rel:vizState.getCurrentModel().getRelations()) if (!priv(rel.getName())) {
+        for (AlloyRelation rel:vizState.getCurrentModel().getRelations()) if (!rel.isPrivate) {
             DefaultMutableTreeNode rad;
             radR.add(rad=new DefaultMutableTreeNode(rel));
             if (rel.equals(lastElement)) last=new TreePath(new Object[]{top,radR,rad});
