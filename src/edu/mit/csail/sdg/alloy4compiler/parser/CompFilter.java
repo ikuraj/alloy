@@ -164,6 +164,7 @@ final class CompFilter implements Scanner {
 
     private Symbol decl(Symbol a,Symbol b,int c) throws Err {
         LinkedList<Symbol> temp=new LinkedList<Symbol>();
+        if (b.sym==PRIVATE) {temp.add(b); b=myread();}
         if (b.sym==DISJ || b.sym==PART || b.sym==EXH) {temp.add(b); b=myread();}
         temp.add(b);
         if (b.sym==ID) {
