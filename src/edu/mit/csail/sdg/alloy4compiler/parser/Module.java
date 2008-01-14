@@ -668,14 +668,18 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a FUN or PRED declaration. */
-    void addFunc(Pos p, Pos isPrivate, String n, Exp f, List<Decl> d, Exp t, Exp v) throws Err {
+    void addFunc(Pos p, Pos isPrivate, String n, Exp f, List<Decl> decls, Exp t, Exp v) throws Err {
+        for(Decl d:decls) if (d.isPrivate!=null) {
+            ExpName name=d.names.get(0);
+            throw new ErrorSyntax(d.isPrivate.merge(name.pos), "Function parameter \""+name.name+"\" is always private already.");
+        }
         status=3;
         dup(p, n, false);
-        ExpName dup = Decl.findDuplicateName(d);
+        ExpName dup = Decl.findDuplicateName(decls);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
-        d=new ArrayList<Decl>(d);
-        if (f!=null) d.add(0, new Decl(null, null, Util.asList(new ExpName(f.span(), "this")), f));
-        FunAST ans = new FunAST(p, isPrivate, this, n, d, t, v);
+        decls=new ArrayList<Decl>(decls);
+        if (f!=null) decls.add(0, new Decl(null, null, Util.asList(new ExpName(f.span(), "this")), f));
+        FunAST ans = new FunAST(p, isPrivate, this, n, decls, t, v);
         SafeList<FunAST> list = funcs.get(n);
         if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
         list.add(ans);

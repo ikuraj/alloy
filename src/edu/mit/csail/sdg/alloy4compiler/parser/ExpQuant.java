@@ -23,6 +23,8 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
@@ -65,12 +67,16 @@ final class ExpQuant extends Exp {
     public final Exp sub;
 
     /** Constructs a new quantified expression. */
-    public ExpQuant(Pos pos, Pos closingBracket, Op op, List<Decl> decls, Exp sub) {
+    public ExpQuant(Pos pos, Pos closingBracket, Op op, List<Decl> decls, Exp sub) throws Err {
         super(pos);
         this.closingBracket=closingBracket;
         this.op=op;
         this.decls=ConstList.make(decls);
         this.sub=sub;
+        for(Decl d:decls) if (d.isPrivate!=null) {
+            ExpName n=d.names.get(0);
+            throw new ErrorSyntax(d.isPrivate.merge(n.pos), "Local variable \""+n.name+"\" is always private already.");
+        }
     }
 
     /** Caches the span() result. */
