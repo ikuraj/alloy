@@ -343,14 +343,13 @@ public final class A4Solution {
 
     /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
     public synchronized ConstSet<Pos> lowLevelCore() {
-        ConstSet<Pos> answer = lCoreCache;
-        if (answer!=null) return answer;
+        if (lCoreCache!=null) return lCoreCache;
         TempSet<Pos> ans1 = new TempSet<Pos>();
         if (kEval==null) for(Formula f: core) {
            Object y = fmap.get(f);
            if (y instanceof Pos) ans1.add( (Pos)y ); else if (y instanceof Expr) ans1.add( ((Expr)y).span() );
         }
-        return lCoreCache = (answer = ans1.makeConst());
+        return (lCoreCache = ans1.makeConst());
     }
 
     //============================================================================================================================//
