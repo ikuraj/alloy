@@ -148,8 +148,8 @@ public final class ExprUnary extends Expr {
          * Construct an ExprUnary node.
          * @param pos - the original position of the "unary operator" in the file (can be null if unknown)
          * @param sub - the subexpression
-         * @param weight - the weight
          * @param extraError - if nonnull, it will be appended as an extra error
+         * @param extraWeight - it's the amount of extra weight
          *
          * <p>  Alloy4 disallows multiplicity like this:   "variable : one (X lone-> Y)",
          * <br> that is, a some/lone/one in front of an arrow multiplicity declaration.
