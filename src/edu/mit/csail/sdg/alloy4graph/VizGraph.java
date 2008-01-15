@@ -610,12 +610,12 @@ public final strictfp class VizGraph extends DiGraph {
        for(VizEdge e:edges) {
            if (e.a()!=e.b()) {
               double dx;
-              dx=e.path().getXatY(y, 0, 1, Double.NaN); if (dx!=Double.NaN && StrictMath.abs(x-dx)<12/scale) return e;
+              dx=e.path().getXatY(y, 0, 1, Double.NaN); if (!Double.isNaN(dx) && StrictMath.abs(x-dx)<12/scale) return e;
            } else {
               double dx;
-              dx=e.path().getXatY(y, 0.25, 0.75, Double.NaN); if (dx!=Double.NaN && StrictMath.abs(x-dx)<12/scale) return e;
-              dx=e.path().getXatY(y, 0,    0.25, Double.NaN); if (dx!=Double.NaN && StrictMath.abs(x-dx)<12/scale) return e;
-              dx=e.path().getXatY(y, 0.75, 1,    Double.NaN); if (dx!=Double.NaN && StrictMath.abs(x-dx)<12/scale) return e;
+              dx=e.path().getXatY(y, 0.25, 0.75, Double.NaN); if (!Double.isNaN(dx) && StrictMath.abs(x-dx)<12/scale) return e;
+              dx=e.path().getXatY(y, 0,    0.25, Double.NaN); if (!Double.isNaN(dx) && StrictMath.abs(x-dx)<12/scale) return e;
+              dx=e.path().getXatY(y, 0.75, 1,    Double.NaN); if (!Double.isNaN(dx) && StrictMath.abs(x-dx)<12/scale) return e;
            }
        }
        return null;
