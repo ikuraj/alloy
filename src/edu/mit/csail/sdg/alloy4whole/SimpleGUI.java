@@ -1883,6 +1883,13 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 if (!satChoices.contains(now)) now=SatSolver.SAT4J;
                 now.set();
             }
+            if (now==SatSolver.SAT4J && satChoices.size()>2 && satChoices.contains(SatSolver.FILE)) {
+                log.logBold("Warning: Alloy4 defaults to SAT4J since it is pure Java and very reliable.\n");
+                log.log("For faster performance, go to Options menu and try another solver like MiniSat.\n");
+                log.log("If these native solvers fail on your computer, remember to change back to SAT4J.\n");
+                log.logDivider();
+                log.flush();
+            }
         }
 
         // If the temporary directory has become too big, then tell the user they can "clear temporary directory".
