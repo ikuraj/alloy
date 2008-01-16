@@ -178,7 +178,19 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) { return this; }
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
+        if (op!=Op.COMPREHENSION) {
+            again:
+            for(int i=0; i<vars.size(); i++) {
+                ExprVar a=vars.get(i);
+                for(int j=i+1; j<vars.size(); j++) {
+                    if (vars.get(j).expr.hasVar(a)) continue again;
+                }
+                if (!sub.hasVar(a)) warnings.add(new ErrorWarning(a.pos, "This variable is unused."));
+            }
+        }
+        return this;
+    }
 
     //=============================================================================================================//
 

@@ -258,6 +258,19 @@ public abstract class Expr {
         return ans;
     }
 
+    /** Returns true if the node is well-typed, unambiguous, and contains the given variable. */
+    final boolean hasVar(final ExprVar goal) {
+        if (ambiguous || !errors.isEmpty()) return false;
+        VisitQuery hasVar = new VisitQuery() {
+            @Override public final Object visit(ExprVar x) throws Err {
+                if (x==goal) return this; else return x.expr.accept(this);
+            }
+        };
+        boolean ans;
+        try { ans=accept(hasVar)!=null; } catch(Err ex) { return false; } // This exception should not occur
+        return ans;
+    }
+
     /** Transitively returns a set that contains all predicates/functions that this expression calls directly or indirectly. */
     public final Iterable<Func> findAllFunctions() {
         final IdentitySet<Func> seen = new IdentitySet<Func>();

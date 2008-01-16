@@ -5,7 +5,7 @@ module tests/test
 abstract sig B {}
 one sig B1,B2,B3,B4,B5 extends B {}
 
-fact { some S1,S2,S3,T1,T2,T3,T4,V:seq B | {
+fact { some S1,S2,S3,T1,T2,T3,T4:seq B | {
 
 
 #S1=1
