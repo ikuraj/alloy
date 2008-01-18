@@ -202,13 +202,6 @@ pred FindSuccessor[s: State] {
         }}
 
 
-fact { all s : State {
-        --      ClosestPrecedingFinger(s)
-        --      FindPredecessor(s)
-        --      FindSuccessor(s)
-        }}
-
-
 // should be able to check that closest_p_f, etc returns
 // only active nodes if FingersCorrect.
 
