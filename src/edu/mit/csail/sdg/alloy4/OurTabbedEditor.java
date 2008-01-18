@@ -289,7 +289,7 @@ public final class OurTabbedEditor {
     public boolean switchToFilename(String filename) {
         for(int i=0; i<tabs.size(); i++) {
             if (tabs.get(i).filename.equals(filename)) {
-                setSelectedIndex(i);
+                if (i!=me) setSelectedIndex(i);
                 return true;
             }
         }
@@ -736,6 +736,55 @@ public final class OurTabbedEditor {
             adjustLabelColor();
             parent.notifyChange();
         }
+    }
+
+    /**
+     * Highlights the text editor, based on the location information in the set of Pos objects.
+     * <p> Note: this method can be called by any thread (not just the AWT event thread)
+     */
+    public void highlight(final Iterable<Pos> set, final boolean strongRed, final boolean clearOldHighlightsFirst) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            OurUtil.invokeAndWait(new Runnable() {
+                public final void run() { highlight(set, strongRed, clearOldHighlightsFirst); }
+            });
+            return;
+        }
+        if (clearOldHighlightsFirst) removeAllHighlights();
+        JTextArea text=null;
+        int c=0, d;
+        if (allowIO) for(Pos p:set) if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
+            try {
+                String f=Util.canon(p.filename);
+                if (!switchToFilename(f)) {
+                    String content;
+                    try {
+                        content=Util.readAll(f);
+                    } catch(IOException ex) {
+                        // Highlight is not critical
+                        adjustLabelColor();
+                        parent.notifyChange();
+                        return;
+                    }
+                    newTab(f, content, true);
+                }
+                text = text();
+                c = text.getLineStartOffset(p.y-1)+p.x-1;
+                d = text.getLineStartOffset(p.y2-1)+p.x2-1;
+                tabs.get(me).highlighter.addHighlight(c, d+1, strongRed ? highlightPainter : highlightPainter2);
+            } catch(BadLocationException ex) {
+                // Failure to highlight is not fatal
+            }
+        }
+        if (text!=null) {
+            // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
+            text.setSelectionStart(0);
+            text.setSelectionEnd(0);
+            text.setSelectionStart(c);
+            text.setSelectionEnd(c);
+            text.requestFocusInWindow();
+        }
+        adjustLabelColor();
+        parent.notifyChange();
     }
 
     /**

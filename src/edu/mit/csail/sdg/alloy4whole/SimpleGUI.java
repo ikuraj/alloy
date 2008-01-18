@@ -1563,9 +1563,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 Util.close(is);
             }
             text.removeAllHighlights();
-            for(Pos p:hCore.b) text.highlight(p,false,false);
-            for(Pos p:hCore.a) text.highlight(p,true,false);
-            if (1==2) for(Pos p:lCore) text.highlight(p,true,false); // we are currently not highlighting the lowlevel core
+            text.highlight(hCore.b, false, false);
+            text.highlight(hCore.a, true, false);
+            if (1==2) text.highlight(lCore, true, false); // we are currently not highlighting the lowlevel core
         }
         if (arg.startsWith("POS: ")) {
             Scanner s=new Scanner(arg.substring(5));
