@@ -403,8 +403,8 @@ public final strictfp class VizViewer extends JPanel {
     public void alloySaveAsPDF(String filename, int dpi) throws IOException {
        double xwidth = dpi*8+(dpi/2); // Width is up to 8.5 inch
        double xheight = dpi*11;       // Height is up to 11 inch
-       double scale1 = ((double)(xwidth-dpi))  / graph.getTotalWidth();  // We leave 0.5 inch on the left and right
-       double scale2 = ((double)(xheight-dpi)) / graph.getTotalHeight(); // We leave 0.5 inch on the left and right
+       double scale1 = (xwidth-dpi)  / graph.getTotalWidth();  // We leave 0.5 inch on the left and right
+       double scale2 = (xheight-dpi) / graph.getTotalHeight(); // We leave 0.5 inch on the left and right
        if (scale1<scale2) scale2=scale1; // Choose the scale such that the image does not exceed the page in either direction
        OurPDFWriter x = new OurPDFWriter(dpi, filename);
        x.write(scale2).write(" 0 0 ").write(scale2).writespace().write(dpi/2).writespace().write(dpi/2).write(" cm\n");

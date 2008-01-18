@@ -72,7 +72,7 @@ final class ConvToConjunction extends VisitReturn {
     /** {@inheritDoc} */
     @Override public Object visit(ExprUnary x) throws Err {
         if (x.op == ExprUnary.Op.NOOP) {
-            return (Expr) visitThis(x.sub);
+            return visitThis(x.sub);
         }
         if (x.op == ExprUnary.Op.NOT && x.sub instanceof ExprBinary) {
             ExprBinary bin = (ExprBinary)(x.sub);

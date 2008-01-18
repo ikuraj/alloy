@@ -814,8 +814,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (!(product instanceof ExprBinary) || ((ExprBinary)product).op != ExprBinary.Op.ARROW) return false;
         final ExprVar s1 = ((ExprLet)let1).var; if (!((ExprBinary)product).left.isSame(s1)) return false;
         final ExprVar s2 = ((ExprLet)let2).var; if (!((ExprBinary)product).right.isSame(s2)) return false;
-        final Expr q1 = deNOP(((ExprVar)s1).expr); if (!(q1 instanceof ExprQuant)) return false;
-        final Expr q2 = deNOP(((ExprVar)s2).expr); if (!(q2 instanceof ExprQuant)) return false;
+        final Expr q1 = deNOP(s1.expr); if (!(q1 instanceof ExprQuant)) return false;
+        final Expr q2 = deNOP(s2.expr); if (!(q2 instanceof ExprQuant)) return false;
         final ExprQuant qt1 = (ExprQuant)q1; if (qt1.op != ExprQuant.Op.COMPREHENSION || qt1.vars.size()!=1) return false;
         final ExprQuant qt2 = (ExprQuant)q2; if (qt2.op != ExprQuant.Op.COMPREHENSION || qt2.vars.size()!=1) return false;
         final ExprVar n1=f.params.get(0), p=qt1.vars.get(0); if (!p.expr.isSame(Sig.SIGINT.oneOf())) return false;

@@ -414,7 +414,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
           gr.drawCircle(radius);
           if (style==VizStyle.DOTTED || style==VizStyle.DASHED) gr.set(VizStyle.SOLID, scale);
           if (shape==VizShape.M_CIRCLE && 10*radius>=25 && radius>5) {
-             int d = (int) sqrt((double)(10*radius-25));
+             int d = (int) sqrt(10*radius - 25.0D);
              if (d>0) { gr.drawLine(-d,-radius+5,d,-radius+5); gr.drawLine(-d,radius-5,d,radius-5); }
           }
           if (shape==VizShape.DOUBLE_CIRCLE) gr.drawCircle(radius-5);

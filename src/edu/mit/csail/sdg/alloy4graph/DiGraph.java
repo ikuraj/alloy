@@ -77,9 +77,9 @@ public class DiGraph {
 
         /** Constructs a new node. */
         DiNode(VizGraph graph) {
-            DiGraph d = (DiGraph)graph;
-            this.graph=graph;
-            this.pos=d.nodelist.size();
+            DiGraph d = graph;
+            this.graph = graph;
+            this.pos = d.nodelist.size();
             d.nodelist.add((VizNode)this);
             d.layerlist.get(0).add((VizNode)this);
         }
@@ -102,7 +102,7 @@ public class DiGraph {
          * <p> If a node is added to a new layer, then it is added to the right of the original rightmost node in that layer.
          */
         public final void setLayer(final int newLayer) {
-            DiGraph d = (DiGraph)graph;
+            DiGraph d = graph;
             if (newLayer<0) throw new IllegalArgumentException("The layer cannot be negative!");
             if (layer==newLayer) return;
             d.layerlist.get(layer).remove(this);

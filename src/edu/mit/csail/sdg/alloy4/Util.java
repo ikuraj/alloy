@@ -224,7 +224,7 @@ public final class Util {
         if (!fromJar) {
             long maxL=new File(filename).length();
             max=(int)maxL;
-            if ((long)max != maxL) throw new IOException("File too big to fit in memory");
+            if (max != maxL) throw new IOException("File too big to fit in memory");
         }
         byte[] buf;
         try {
@@ -439,7 +439,7 @@ public final class Util {
             if (c=='\"') { out.write("&quot;"); continue; }
             if (c>=32 && c<=126) { out.write(c); continue; }
             out.write("&#x");
-            String v=Integer.toString((int)c, 16);
+            String v=Integer.toString(c, 16);
             for(int j=v.length(); j<4; j++) out.write('0');
             out.write(v);
             out.write(';');

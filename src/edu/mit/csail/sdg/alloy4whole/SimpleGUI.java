@@ -1517,7 +1517,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             char c=result.charAt(i);
             if (!(c>='0' && c<='9')) { if (!found) continue; result=result.substring(i); break; }
             found=true;
-            num=num*10+(int)(c-'0');
+            num=num*10+(c-'0');
         }
         latestAlloyVersionName=result.trim();
         latestAlloyVersion=num;

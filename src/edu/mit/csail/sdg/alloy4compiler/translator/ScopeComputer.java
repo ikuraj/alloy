@@ -119,7 +119,7 @@ final class ScopeComputer {
     /** Make the given sig "exact". */
     private void makeExact(Sig sig) throws Err {
         if (sig instanceof SubsetSig) throw new ErrorSyntax(cmd.pos, "Cannot specify a scope for a subset signature \""+sig+"\"");
-        exact.add((PrimSig)sig);
+        exact.add(sig);
     }
 
     /**
