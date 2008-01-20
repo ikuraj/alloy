@@ -29,15 +29,13 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import nanoxml_2_2_3.XMLElement;
-import nanoxml_2_2_3.XMLParseException;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.XMLNode;
 
 /**
  * This utility class contains methods to read and write VizState customizations.
@@ -58,14 +56,14 @@ public final class StaticThemeReaderWriter {
         try {
             fis = new FileInputStream(file);
             reader = new InputStreamReader(fis,"UTF-8");
-            XMLElement elem = new XMLElement(new Hashtable<Object,Object>(), true, false);
+            XMLNode elem;
             try {
-                elem.parseFromReader(reader);
-            } catch (XMLParseException e) {
-                throw new IOException("The file \""+file.getPath()+"\" is not a valid XML file.");
+                elem = new XMLNode(reader);
+            } catch (IOException e) {
+                throw new IOException("The file \""+file.getPath()+"\" is not a valid XML file, or an error occurred in reading.");
             }
             try {
-                for(XMLElement sub: elem.getChildren("view")) parseView(sub,theme);
+                for(XMLNode sub: elem.getChildren("view")) parseView(sub,theme);
             } catch(Throwable e) {
                 throw new IOException("An error occurred in reading or parsing the file \""+file.getPath()+"\"");
             }
@@ -94,7 +92,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Does nothing if the element is malformed. */
-    private static void parseView(XMLElement x, VizState now) {
+    private static void parseView(XMLNode x, VizState now) {
         /*
          * <view orientation=".." nodetheme=".." edgetheme=".." useOriginalAtomNames="yes/no" fontsize="12">
          *   <projection> .. </projection>
@@ -109,7 +107,7 @@ public final class StaticThemeReaderWriter {
         if (has(x,"orientation")) now.setOrientation(parseDotOrientation(x));
         if (has(x,"nodetheme")) now.setNodePalette(parseDotPalette(x,"nodetheme"));
         if (has(x,"edgetheme")) now.setEdgePalette(parseDotPalette(x,"edgetheme"));
-        for(XMLElement xml:x.getChildren()) {
+        for(XMLNode xml:x) {
             if (xml.is("projection")) {
                 now.deprojectAll();
                 for(AlloyType t:parseProjectionList(now,xml)) now.project(t);
@@ -117,15 +115,15 @@ public final class StaticThemeReaderWriter {
             else if (xml.is("defaultnode")) parseNodeViz(xml, now, null);
             else if (xml.is("defaultedge")) parseEdgeViz(xml, now, null);
             else if (xml.is("node")) {
-                for(XMLElement sub:xml.getChildren("type")) {
+                for(XMLNode sub:xml.getChildren("type")) {
                     AlloyType t=parseAlloyType(now,sub); if (t!=null) parseNodeViz(xml, now, t);
                 }
-                for(XMLElement sub:xml.getChildren("set")) {
+                for(XMLNode sub:xml.getChildren("set")) {
                     AlloySet s=parseAlloySet(now,sub); if (s!=null) parseNodeViz(xml, now, s);
                 }
             }
             else if (xml.is("edge")) {
-                for(XMLElement sub:xml.getChildren("relation")) {
+                for(XMLNode sub:xml.getChildren("relation")) {
                     AlloyRelation r=parseAlloyRelation(now,sub); if (r!=null) parseEdgeViz(xml, now, r);
                 }
             }
@@ -244,7 +242,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Return null if the element is malformed. */
-    private static AlloyType parseAlloyType(VizState now, XMLElement x) {
+    private static AlloyType parseAlloyType(VizState now, XMLNode x) {
         /* class AlloyType implements AlloyNodeElement {
          *      String name;
          * }
@@ -268,7 +266,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Return null if the element is malformed. */
-    private static AlloySet parseAlloySet(VizState now, XMLElement x) {
+    private static AlloySet parseAlloySet(VizState now, XMLNode x) {
         /* class AlloySet implements AlloyNodeElement {
          *   String name;
          *   AlloyType type;
@@ -295,7 +293,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Return null if the element is malformed. */
-    private static AlloyRelation parseAlloyRelation(VizState now, XMLElement x) {
+    private static AlloyRelation parseAlloyRelation(VizState now, XMLNode x) {
         /*
          * <relation name="name">
          *   2 or more <type name=".."/>
@@ -305,7 +303,7 @@ public final class StaticThemeReaderWriter {
         if (!x.is("relation")) return null;
         String name=x.getAttribute("name");
         if (name.length()==0) return null;
-        for(XMLElement sub:x.getChildren("type")) {
+        for(XMLNode sub:x.getChildren("type")) {
             String typename=sub.getAttribute("name");
             if (typename.length()==0) return null;
             AlloyType t = now.getOriginalModel().hasType(typename);
@@ -334,14 +332,14 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Always returns a nonnull (though possibly empty) set of AlloyType. */
-    private static Set<AlloyType> parseProjectionList(VizState now, XMLElement x) {
+    private static Set<AlloyType> parseProjectionList(VizState now, XMLNode x) {
         /*
         * <projection>
         *   0 or more <type name=".."/>
         * </projection>
         */
         Set<AlloyType> ans=new TreeSet<AlloyType>();
-        if (x.is("projection")) for(XMLElement sub:x.getChildren("type")) {
+        if (x.is("projection")) for(XMLNode sub:x.getChildren("type")) {
             String name=sub.getAttribute("name");
             if (name.length()==0) continue;
             AlloyType t = now.getOriginalModel().hasType(name);
@@ -361,7 +359,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Do nothing if the element is malformed; note: x can be null. */
-    private static void parseNodeViz(XMLElement xml, VizState view, AlloyNodeElement x) {
+    private static void parseNodeViz(XMLNode xml, VizState view, AlloyNodeElement x) {
         /*
          * <node visible="inherit/yes/no"  label=".."  color=".."  shape=".."  style=".."
          * samerank="inherit/yes/no"  showlabel="inherit/yes/no"  showinattr="inherit/yes/no"
@@ -439,7 +437,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Do nothing if the element is malformed; note: x can be null. */
-    private static void parseEdgeViz(XMLElement xml, VizState view, AlloyRelation x) {
+    private static void parseEdgeViz(XMLNode xml, VizState view, AlloyRelation x) {
         /*
          * <edge visible="inherit/yes/no"  label=".."  color=".."  style=".."  weight=".."  constraint=".."
          * attribute="inherit/yes/no", samerank="inherit/yes/no"  merge="inherit/yes/no" layout="inherit/yes/no">
@@ -502,7 +500,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotPalette parseDotPalette(XMLElement x, String key) {
+    private static DotPalette parseDotPalette(XMLNode x, String key) {
         return DotPalette.valueOf(x.getAttribute(key));
     }
 
@@ -514,7 +512,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotOrientation parseDotOrientation(XMLElement x) {
+    private static DotOrientation parseDotOrientation(XMLNode x) {
         return DotOrientation.valueOf(x.getAttribute("orientation"));
     }
 
@@ -526,7 +524,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotColor parseDotColor(XMLElement x) { return DotColor.valueOf(x.getAttribute("color")); }
+    private static DotColor parseDotColor(XMLNode x) { return DotColor.valueOf(x.getAttribute("color")); }
 
     /** Writes nothing if value==defaultValue. */
     private static void writeDotColor(PrintWriter out, DotColor value, DotColor defaultValue) throws IOException {
@@ -541,7 +539,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotShape parseDotShape(XMLElement x) { return DotShape.valueOf(x.getAttribute("shape")); }
+    private static DotShape parseDotShape(XMLNode x) { return DotShape.valueOf(x.getAttribute("shape")); }
 
     /** Writes nothing if value==defaultValue. */
     private static void writeDotShape(PrintWriter out, DotShape value, DotShape defaultValue) throws IOException {
@@ -556,7 +554,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static DotStyle parseDotStyle(XMLElement x) { return DotStyle.valueOf(x.getAttribute("style")); }
+    private static DotStyle parseDotStyle(XMLNode x) { return DotStyle.valueOf(x.getAttribute("style")); }
 
     /** Writes nothing if value==defaultValue. */
     private static void writeDotStyle(PrintWriter out, DotStyle value, DotStyle defaultValue) throws IOException {
@@ -571,7 +569,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
-    private static Boolean getbool(XMLElement x, String attr) {
+    private static Boolean getbool(XMLNode x, String attr) {
         String value=x.getAttribute(attr);
         if (value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("true")) return Boolean.TRUE;
         if (value.equalsIgnoreCase("no") || value.equalsIgnoreCase("false")) return Boolean.FALSE;
@@ -597,12 +595,12 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Returns true if the XML element has the given attribute. */
-    private static boolean has(XMLElement x, String attr) {
+    private static boolean has(XMLNode x, String attr) {
         return x.getAttribute(attr,null)!=null;
     }
 
     /** Returns 0 if the attribute doesn't exist, or is malformed. */
-    private static int getint(XMLElement x, String attr) {
+    private static int getint(XMLNode x, String attr) {
         String value=x.getAttribute(attr);
         int i;
         try {

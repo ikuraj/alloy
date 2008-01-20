@@ -35,7 +35,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -83,7 +82,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.html.HTMLDocument;
-import nanoxml_2_2_3.XMLElement;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -115,6 +113,7 @@ import edu.mit.csail.sdg.alloy4.Runner;
 import edu.mit.csail.sdg.alloy4.Subprocess;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
+import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4.Util.BooleanPref;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
@@ -1649,16 +1648,15 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 Map<String,String> fc = new LinkedHashMap<String,String>();
                 fis = new FileInputStream(filename);
                 reader = new InputStreamReader(fis, "UTF-8");
-                XMLElement x = new XMLElement(new Hashtable<Object,Object>(), true, false);
-                x.parseFromReader(reader);
+                XMLNode x = new XMLNode(reader);
                 if (!x.is("alloy")) throw new Exception();
                 String mainname=null;
-                for(XMLElement sub: x.getChildren()) if (sub.is("instance")) {
+                for(XMLNode sub: x) if (sub.is("instance")) {
                    mainname=sub.getAttribute("filename");
                    break;
                 }
                 if (mainname==null) throw new Exception();
-                for(XMLElement sub: x.getChildren()) if (sub.is("source")) {
+                for(XMLNode sub: x) if (sub.is("source")) {
                    String name = sub.getAttribute("filename");
                    String content = sub.getAttribute("content");
                    fc.put(name, content);

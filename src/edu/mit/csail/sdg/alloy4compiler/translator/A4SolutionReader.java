@@ -38,7 +38,6 @@ import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import kodkod.instance.Universe;
-import nanoxml_2_2_3.XMLElement;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -46,6 +45,7 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
+import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
@@ -60,15 +60,15 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 public final class A4SolutionReader {
 
     /** The root of the XML document. */
-    private XMLElement xml = null;
+    private XMLNode xml = null;
 
     /** This stores the list of sigs. */
     private ConstList<Sig> sigs = null;
 
     /** Step1: parse the original Alloy model. */
-    private A4SolutionReader(Iterable<Sig> sigs, XMLElement xml) throws Err {
+    private A4SolutionReader(Iterable<Sig> sigs, XMLNode xml) throws Err {
         if (!xml.is("alloy")) throw new ErrorSyntax("The XML file's root node must be <alloy>.");
-        for(XMLElement sub: xml.getChildren()) if (sub.is("instance")) { this.xml=sub; break; }
+        for(XMLNode sub: xml) if (sub.is("instance")) { this.xml=sub; break; }
         if (this.xml==null) throw new ErrorSyntax("The XML file must contain an <instance> element.");
         TempList<Sig> newsigs = new TempList<Sig>();
         newsigs.add(UNIV); newsigs.add(SIGINT); newsigs.add(SEQIDX); newsigs.add(NONE);
@@ -108,9 +108,9 @@ public final class A4SolutionReader {
         final int min=0-(1<<(bitwidth-1));
         final int max=(1<<(bitwidth-1))-1;
         LinkedHashSet<String> atoms = new LinkedHashSet<String>();
-        for(XMLElement sub: xml.getChildren()) {
+        for(XMLNode sub: xml) {
             if (sub.is("sig") || sub.is("set")) {
-                for(XMLElement atom:sub.getChildren()) if (atom.is("atom")) atoms.add(atom.getAttribute("name"));
+                for(XMLNode atom: sub) if (atom.is("atom")) atoms.add(atom.getAttribute("name"));
             }
         }
         for(int i=min; i<=max; i++) atoms.add(""+i);
@@ -152,10 +152,10 @@ public final class A4SolutionReader {
     private void processSigAndSet() throws Err {
         TupleFactory tf = inst.universe().factory();
         again:
-        for(XMLElement sub:xml.getChildren()) if (sub.is("sig") || sub.is("set")) {
+        for(XMLNode sub: xml) if (sub.is("sig") || sub.is("set")) {
            // Parse the tuple set
            TupleSet ts = tf.noneOf(1);
-           for(XMLElement atom:sub.getChildren()) if (atom.is("atom")) {
+           for(XMLNode atom: sub) if (atom.is("atom")) {
               String atomname = atom.getAttribute("name");
               Tuple tuple = tf.tuple(atomname);
               ts.add(tuple);
@@ -188,20 +188,20 @@ public final class A4SolutionReader {
     private void processField() {
         TupleFactory tf=inst.universe().factory();
         again:
-        for(XMLElement sub:xml.getChildren()) if (sub.is("field")) {
+        for(XMLNode sub: xml) if (sub.is("field")) {
            // Parse the type
            String name=sub.getAttribute("name");
            Type type=Type.EMPTY;
-           for(XMLElement t:sub.getChildren()) if (t.is("type")) for(XMLElement s:t.getChildren()) if (s.is("sig")) {
+           for(XMLNode t:sub) if (t.is("type")) for(XMLNode s:t) if (s.is("sig")) {
                Sig sg = name2sig.get(s.getAttribute("name"));
                if (sg == null) continue again; // This field contains nonexistent sig!
                if (type == Type.EMPTY) type=sg.type; else type=type.product(sg.type);
            }
            // Parse the tuple set
            TupleSet ts = tf.noneOf(type.arity());
-           for(XMLElement t:sub.getChildren()) if (t.is("tuple")) {
+           for(XMLNode t: sub) if (t.is("tuple")) {
               Tuple tp = null;
-              for(XMLElement s:t.getChildren()) if (s.is("atom")) {
+              for(XMLNode s: t) if (s.is("atom")) {
                  Tuple tp2 = tf.tuple(s.getAttribute("name"));
                  if (tp==null) tp=tp2; else tp=tp.product(tp2);
               }
@@ -261,7 +261,7 @@ public final class A4SolutionReader {
      * <br> if there's a sig X in the list but not in the XML, then X's tuple set will be regarded as empty;
      * <br> if there's a sig X in the XML but not in the list, then X will be added to the solution as a Skolem.
      */
-    public static Pair<A4Solution,ConstList<Func>> read(Iterable<Sig> sigs, XMLElement xml) throws Err {
+    public static Pair<A4Solution,ConstList<Func>> read(Iterable<Sig> sigs, XMLNode xml) throws Err {
         try {
             A4SolutionReader x = new A4SolutionReader(sigs, xml);
             x.makeSigsAndFields();

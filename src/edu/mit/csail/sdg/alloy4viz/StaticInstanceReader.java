@@ -27,7 +27,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,7 +37,7 @@ import java.util.TreeSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Util;
-import nanoxml_2_2_3.XMLElement;
+import edu.mit.csail.sdg.alloy4.XMLNode;
 
 /**
  * This utility class parses an XML file into an AlloyInstance object.
@@ -50,16 +50,14 @@ public final class StaticInstanceReader {
     /** Constructor is private, since this utility class never needs to be instantiated. */
     private StaticInstanceReader() { }
 
-    /** Use the XML library to parse the file into an XMLElement object. */
-    private static XMLElement readElement(File file) {
+    /** Use the XML library to parse the file into an XMLNode object. */
+    private static XMLNode readElement(File file) {
         FileInputStream fis=null;
         InputStreamReader reader=null;
         try {
             fis = new FileInputStream(file);
             reader = new InputStreamReader(fis,"UTF-8");
-            XMLElement xml = new XMLElement(new Hashtable<Object,Object>(),true,false);
-            xml.parseFromReader(reader);
-            return xml;
+            return new XMLNode(reader);
         } catch(IOException ex) {
             throw new RuntimeException("I/O error: "+ex);
         } finally {
@@ -74,15 +72,15 @@ public final class StaticInstanceReader {
      * @throws ErrorSyntax - if there is a syntax error in the XML file.
      */
     public static AlloyInstance parseInstance(File file) throws ErrorFatal, ErrorSyntax {
-        XMLElement xml=readElement(file);
+        XMLNode xml=readElement(file);
         if (!xml.is("alloy")) throw new ErrorSyntax("The XML file's root node must be <alloy>.");
         AlloyInstance instance=null;
         String kinput="", koutput="";
-        for(XMLElement sub: xml.getChildren()) {
+        for(XMLNode sub: xml) {
             if (sub.is("kinput")) kinput = sub.getAttribute("value");
             else if (sub.is("koutput")) koutput = sub.getAttribute("value");
         }
-        for(XMLElement sub: xml.getChildren("instance")) { instance = parseInstance(sub, kinput, koutput); break; }
+        for(XMLNode sub: xml.getChildren("instance")) { instance = parseInstance(sub, kinput, koutput); break; }
         if (instance==null) throw new ErrorSyntax("The XML file does not have an <instance> element.");
         return instance;
     }
@@ -93,13 +91,13 @@ public final class StaticInstanceReader {
      * @param kinput - the kodkod input we want to include with the AlloyInstance object
      * @param koutput - the kodkod output we want to include with the AlloyInstance object
      */
-    private static AlloyInstance parseInstance(XMLElement x, String kinput, String koutput) {
+    private static AlloyInstance parseInstance(XMLNode x, String kinput, String koutput) {
         boolean isMetamodel = x.getAttribute("isMetamodel").length()>0;
         String filename = x.getAttribute("filename");
         String commandname = x.getAttribute("command");
         // Generate "types"
         Map<String,AlloyType> types=new LinkedHashMap<String,AlloyType>();
-        for(XMLElement sub:x.getChildren("sig")) {
+        for(XMLNode sub:x.getChildren("sig")) {
             String name=sub.getAttribute("name");
             if (name.length()==0) throw new RuntimeException("<sig> name cannot be empty.");
             AlloyType type=new AlloyType(name,
@@ -122,7 +120,7 @@ public final class StaticInstanceReader {
             atom2sets.put(e.getValue(), new LinkedHashSet<AlloySet>());
         }
         Set<AlloySet> sets=new LinkedHashSet<AlloySet>();
-        for(XMLElement sub:x.getChildren("set")) {
+        for(XMLNode sub:x.getChildren("set")) {
             String name=sub.getAttribute("name");
             if (name.length()==0) throw new RuntimeException("<set> name cannot be empty.");
             String typename=sub.getAttribute("type");
@@ -141,13 +139,14 @@ public final class StaticInstanceReader {
         // Generate "rels" and "rel2tuples"
         Map<AlloyRelation,Set<AlloyTuple>> rel2tuples = new LinkedHashMap<AlloyRelation,Set<AlloyTuple>>();
         Set<AlloyRelation> rels=new LinkedHashSet<AlloyRelation>();
-        for(XMLElement sub:x.getChildren("field")) {
+        for(XMLNode sub:x.getChildren("field")) {
             String name = sub.getAttribute("name");
             boolean isPrivate = sub.getAttribute("isPrivate").length()>0;
             if (name.length()==0) throw new RuntimeException("<field> name cannot be empty.");
-            if (sub.getChildren().isEmpty())
+            Iterator<XMLNode> it = sub.iterator();
+            if (!it.hasNext())
                 throw new RuntimeException("<field name=\""+name+"\"> must declare its type.");
-            XMLElement sub1=sub.getChildren().get(0);
+            XMLNode sub1 = it.next();
             if (!sub1.is("type"))
                 throw new RuntimeException("<field name=\""+name+"\"> must have <type> as its first subnode.");
             AlloyRelation r=parseAlloyRelation(name, types, sub1, isPrivate);
@@ -166,15 +165,15 @@ public final class StaticInstanceReader {
      * @param xml - the XML node
      * @param ts - the "extends" relationship computed from parseTypeStructure()
      */
-    private static Map<String,AlloyAtom> parseAllAtoms(boolean isMeta, XMLElement xml, Map<String,AlloyType> types, Map<AlloyType,AlloyType> ts) {
+    private static Map<String,AlloyAtom> parseAllAtoms(boolean isMeta, XMLNode xml, Map<String,AlloyType> types, Map<AlloyType,AlloyType> ts) {
         Map<String,AlloyType> atom2type=new LinkedHashMap<String,AlloyType>();
         Map<AlloyType,Set<String>> type2atoms=new LinkedHashMap<AlloyType,Set<String>>();
         // Compute the atom2type and type2atom maps
-        for(XMLElement node:xml.getChildren("sig")) {
+        for(XMLNode node:xml.getChildren("sig")) {
             AlloyType sig = types.get(node.getAttribute("name")); // We already know this will not be null
             if (!type2atoms.containsKey(sig))
                 type2atoms.put(sig, new TreeSet<String>()); // Must be LinkedHashSet since we want atoms in order
-            for(XMLElement atom:node.getChildren("atom")) {
+            for(XMLNode atom:node.getChildren("atom")) {
                 String name=atom.getAttribute("name");
                 if (name.length()==0) throw new RuntimeException("<atom> name cannot be empty.");
                 AlloyType type=atom2type.get(name);
@@ -221,9 +220,9 @@ public final class StaticInstanceReader {
      * <br> We throw an exception if a sig tries to extend an undeclared sig
      * <br> We throw an exception if there is a cycle in the extends relationship
      */
-    private static Map<AlloyType,AlloyType> parseTypeStructure (XMLElement xml, Map<String,AlloyType> allTypes) {
+    private static Map<AlloyType,AlloyType> parseTypeStructure (XMLNode xml, Map<String,AlloyType> allTypes) {
         Map<AlloyType,AlloyType> ts = new LinkedHashMap<AlloyType,AlloyType>();
-        for(XMLElement sig:xml.getChildren("sig")) {
+        for(XMLNode sig:xml.getChildren("sig")) {
             String name = sig.getAttribute("name");
             String ext = sig.getAttribute("extends");
             if (name.equals("univ")) continue; // "univ" must not be in the keyset
@@ -243,10 +242,10 @@ public final class StaticInstanceReader {
     }
 
     /** Parses XML to generate an AlloyRelation object. */
-    private static AlloyRelation parseAlloyRelation(String relName, Map<String,AlloyType> types, XMLElement xml, boolean isPrivate) {
+    private static AlloyRelation parseAlloyRelation(String relName, Map<String,AlloyType> types, XMLNode xml, boolean isPrivate) {
         // parses one or more <sig name=".."/>
         List<AlloyType> list=new ArrayList<AlloyType>();
-        for(XMLElement type:xml.getChildren("sig")) {
+        for(XMLNode type:xml.getChildren("sig")) {
             String name=type.getAttribute("name");
             if (name.length()==0) throw new RuntimeException("<sig> name cannot be empty.");
             AlloyType t = types.get(name);
@@ -258,18 +257,18 @@ public final class StaticInstanceReader {
     }
 
     /** Parses XML to generate a set of AlloyTuple objects. */
-    private static Set<AlloyTuple> parseAlloyTupleS(XMLElement xml, Map<String,AlloyAtom> atomname2atom) {
+    private static Set<AlloyTuple> parseAlloyTupleS(XMLNode xml, Map<String,AlloyAtom> atomname2atom) {
         // parses zero or more <tuple>..</tuple>
         Set<AlloyTuple> ans=new LinkedHashSet<AlloyTuple>();
-        for(XMLElement node:xml.getChildren("tuple")) ans.add(parseAlloyTuple(node,atomname2atom));
+        for(XMLNode node:xml.getChildren("tuple")) ans.add(parseAlloyTuple(node,atomname2atom));
         return ans;
     }
 
     /** Parses XML to generate an AlloyTuple object. */
-    private static AlloyTuple parseAlloyTuple(XMLElement xml, Map<String,AlloyAtom> atomname2atom) {
+    private static AlloyTuple parseAlloyTuple(XMLNode xml, Map<String,AlloyAtom> atomname2atom) {
         // parses one or more <atom name=".."/>
         List<AlloyAtom> ans=new ArrayList<AlloyAtom>();
-        for(XMLElement node:xml.getChildren("atom")) {
+        for(XMLNode node:xml.getChildren("atom")) {
             String name=node.getAttribute("name");
             AlloyAtom atom=atomname2atom.get(name);
             if (atom==null) throw new RuntimeException("<atom> "+name+" is undeclared!");
@@ -280,10 +279,10 @@ public final class StaticInstanceReader {
     }
 
     /** Parses XML to generate a set of AlloyAtom objects. */
-    private static Set<AlloyAtom> parseAlloyAtomS(XMLElement xml, Map<String,AlloyAtom> atomname2atom) {
+    private static Set<AlloyAtom> parseAlloyAtomS(XMLNode xml, Map<String,AlloyAtom> atomname2atom) {
         // parses zero or more <atom name=".."/>
         Set<AlloyAtom> ans = new LinkedHashSet<AlloyAtom>();
-        for(XMLElement node:xml.getChildren("atom")) {
+        for(XMLNode node:xml.getChildren("atom")) {
             String name=node.getAttribute("name");
             AlloyAtom atom=atomname2atom.get(name);
             if (atom==null) throw new RuntimeException("<atom> "+name+" is undeclared!");
