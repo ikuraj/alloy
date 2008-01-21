@@ -20,6 +20,14 @@
  * THE SOFTWARE.
  */
 
+/*
+ * Warning: this file alone is not enough to correctly parse Alloy4 since the actual
+ * language is not LALR(1); instead, we have to pre-process the token stream
+ * using CompFilter.java to rearrange/transform the token stream, and then we can
+ * parse the transformed token stream using this LALR(1) grammar.  For more information,
+ * please refer to CompFilter.java
+ */
+
 import java.util.Stack;
 import java.util.List;
 import java.util.ArrayList;
