@@ -70,7 +70,7 @@ public final class XMLNode implements Iterable<XMLNode> {
         /** The current "readahead" character; -2 if the readahead cache is empty; -1 if EOF is detected; otherwise it is one char. */
         private int read = (-2);
 
-        /** Constructor is private, since we only want XMLNode to be able to construct an instance of this class. */
+        /** Constructor is private, since we want only XMLNode to be able to construct an instance of this class. */
         private XMLParser(Reader reader) { this.reader = reader; }
 
         /**
@@ -96,7 +96,7 @@ public final class XMLNode implements Iterable<XMLNode> {
         }
 
         /**
-         * Skip up to and including the consecutive characters "char1" and "char2".
+         * Consume up to and including the consecutive characters "char1" and "char2".
          * @throws IOException if we reached end-of-file without seeing the pattern.
          * @throws IOException if an I/O error occurred.
          */
@@ -134,6 +134,7 @@ public final class XMLNode implements Iterable<XMLNode> {
         /**
          * Skip as much nondata as possible, then return the first character after that (or -1 if we end up at end-of-file).
          * Specifically, this method consumes as many instances of XMLDecl/doctypedecl/intSubset/extSubsetDecl as possible.
+         * If skipText==true, then this method is being called recursively to consume the inner text of XMLDecl/doctypedecl/intSubset/extSubsetDecl.
          * @throws IOException if the XML input is malformed.
          * @throws IOException if an I/O error occurred.
          */
@@ -149,17 +150,16 @@ public final class XMLNode implements Iterable<XMLNode> {
                  if (ch != '!') { read = ch ; return '<'; }
                  if (peek() == '-') {
                      read = -2;
-                     if (read()!='-') malform("Expects start of comment.");
+                     if (read()!='-') malform("Expects start of <!--...-->");
                      skipUntil('-', '-');
-                     if (read()!='>') malform("Expects end of comment.");
+                     if (read()!='>') malform("Expects end of <!--...-->");
                      continue;
                  }
                  if (skipNondata(true)!='>') malform("Expects end of <!...>");
               }
-              else if (!skipText) { return ch; }
+              else if (!skipText || ch == ']' || ch=='>') { return ch; }
               else if (ch == '[') { if (skipNondata(true)!=']') malform("Expects end of [...]"); }
               else if (ch == '\'' || ch == '\"') { while(read()!=ch) { } }
-              else if (ch == ']' || ch=='>') { return ch; }
            }
         }
 
@@ -171,23 +171,26 @@ public final class XMLNode implements Iterable<XMLNode> {
         private void parseElement(XMLNode target) throws IOException {
             target.type = parseName();
             while(true) {
-                read = parseSpace();
-                if (read == '=') malform("Unexpected '='");
-                if (read == '/') {
-                    read = -2;
-                    if (read()!='>') malform("Expects '/>'");
-                    break;
+                boolean space = false;
+                int ch = read();
+                if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') { space=true; ch=parseSpace(); }
+                if (ch == '=') malform("Unexpected '='");
+                if (ch == '/') {
+                   if (read()!='>') malform("Expects '/>'");
+                   break;
                 }
-                if (read == '>') {
-                    read = -2;
-                    parseContent(target);
-                    if (!target.type.equals(parseName())) malform("Start tag and end tag must have matching types.");
-                    if (parseSpace()!='>') malform("Expects '</"+target.type+">'");
-                    break;
+                if (ch == '>') {
+                   parseContent(target);
+                   if (!target.type.equals(parseName())) malform("Start tag and end tag must have matching types.");
+                   if (parseSpace()!='>') malform("Expects '</"+target.type+">'");
+                   break;
                 }
+                if (!space) malform("Space needed between element type and element attributes.");
+                read = ch;
                 String key = parseName();
+                if (key.length()==0) malform("Attribute name cannot be empty.");
                 if (parseSpace()!='=') malform("Expects = after the attribute name.");
-                int ch = parseSpace();
+                ch = parseSpace();
                 if (ch != '\'' && ch != '\"') malform("Expects \' or \" as the start of the attribute value.");
                 String value = parseValue(ch);
                 target.map.put(key, value);
@@ -195,7 +198,7 @@ public final class XMLNode implements Iterable<XMLNode> {
         }
 
         /**
-         * Parse a name.
+         * Parse an element name or attribute name.
          * @throws IOException if the XML input is malformed.
          * @throws IOException if an I/O error occurred.
          */
@@ -203,7 +206,10 @@ public final class XMLNode implements Iterable<XMLNode> {
             StringBuilder sb = new StringBuilder();
             while(true) {
                 int ch = read();
-                if (ch==' ' || ch=='\t' || ch=='\r' || ch=='\n' || ch=='=' || ch=='/' || ch=='>') { read=ch; return sb.toString(); }
+                if (ch==' ' || ch=='\t' || ch=='\r' || ch=='\n' || ch=='=' || ch=='/' || ch=='<' || ch=='>' || ch=='[' || ch==']') {
+                   read=ch;
+                   return sb.toString();
+                }
                 sb.append((char)ch);
             }
         }
@@ -255,9 +261,9 @@ public final class XMLNode implements Iterable<XMLNode> {
               if (ch=='!') {
                  ch=read();
                  if (ch=='-') {
-                    if (read()!='-')  malform("Expects start of comment.");
+                    if (read()!='-')  malform("Expects start of <!--...-->");
                     skipUntil('-', '-');
-                    if (read()!='>')  malform("Expects end of comment.");
+                    if (read()!='>')  malform("Expects end of <!--...-->");
                     continue;
                  }
                  if (ch!='[') malform("Expects <![CDATA[...]]>");
