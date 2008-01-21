@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,167 +31,99 @@ import java.util.Map;
 import java.io.IOException;
 import java.io.Reader;
 
+/** Immutable; this class represents an XML element node. */
+
 public final class XMLNode implements Iterable<XMLNode> {
 
-    /**
-     * The attributes given to the element; key and values are never null.
-     *
-     * <dl><dt><b>Invariants:</b></dt><dd>
-     * <ul><li>The field can be empty.
-     *     <li>The field is never <code>null</code>.
-     *     <li>The keys and the values are strings.
-     * </ul></dd></dl>
-     */
-    private final Map<String,String> attributes = new LinkedHashMap<String,String>();
+    /** The type of the element; never null. */
+    private String type = "";
 
+    /** The set of (key,value) pairs; never null. */
+    private final Map<String,String> map = new LinkedHashMap<String,String>();
 
-    /**
-     * Child elements of the element.
-     *
-     * <dl><dt><b>Invariants:</b></dt><dd>
-     * <ul><li>The field can be empty.
-     *     <li>The field is never <code>null</code>.
-     *     <li>The elements are instances of <code>XMLNode</code>
-     *         or a subclass of <code>XMLNode</code>.
-     * </ul></dd></dl>
-     */
-    private final List<XMLNode> children = new ArrayList<XMLNode>();
+    /** The list of direct children nodes. */
+    private final List<XMLNode> sub = new ArrayList<XMLNode>();
 
-
-    /**
-     * The name of the element; never null.
-     *
-     * <dl><dt><b>Invariants:</b></dt><dd>
-     * <ul><li>The field is <code>null</code> iff the element is not
-     *         initialized by either parse or setName.
-     *     <li>If the field is not <code>null</code>, it's not empty.
-     *     <li>If the field is not <code>null</code>, it contains a valid
-     *         XML identifier.
-     * </ul></dd></dl>
-     */
-    private String name = "";
-
-    /**
-     * Creates and initializes a new XML element.
-     */
+    /** Constructs an empty XMLNode object. */
     private XMLNode() { }
 
-
-    public Iterator<XMLNode> iterator() { return children.iterator(); }
-
-    public List<XMLNode> getChildren(String name) {
-        List<XMLNode> answer = new ArrayList<XMLNode>(children.size());
-        for(int i=0; i<children.size(); i++) {
-            XMLNode sub = children.get(i);
-            if (name.equalsIgnoreCase(sub.name)) answer.add(sub);
-        }
-        return answer;
-    }
-
-    /** Returns an attribute of the element; if the attribute doesn't exist, return "". */
-    public String getAttribute(String name) {
-        String ans = this.attributes.get(name);
-        return (ans==null) ? "" : ans;
-    }
-
-
-    /** Returns an attribute of the element; if the attribute doesn't exist, return the defaultValue. */
-    public String getAttribute(String name, String defaultValue) {
-        String ans = this.attributes.get(name);
-        return (ans==null) ? defaultValue : ans;
-    }
-
-    /** Returns the name of the element. */
-    public String getName() { return name; }
-
-    public boolean is(String name) { return this.name.equalsIgnoreCase(name); }
-
-    /** Parse an entire document. */
+    /** Constructs the root XMLNode by parsing an entire XML document. */
     public XMLNode(Reader r) throws IOException {
-        XMLParser parser = new XMLParser();
-        parser.reader = r;
-        if (parser.skipNondata()!='<') parser.malform("Expect start of root node.");
+        XMLParser parser = new XMLParser(r);
+        if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
         parser.parseElement(this);
-        if (parser.skipNondata()!=(-1)) parser.malform("Expect end of file.");
+        if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
     }
 
-    public static final class XMLParser {
+    /** Simple parser based on XML Specification 1.0 taking into account XML Specification Errata up to 2008/Jan/18. */
+    private static final class XMLParser {
+
+        /** The reader for the input XML file. */
+        private final Reader reader;
+
+        /** The current x position in the file. */
+        private int x = 1;
+
+        /** The current y position in the file. */
+        private int y = 1;
+
+        /** The current "readahead" character; -2 if the readahead cache is empty; -1 if EOF is detected; otherwise it is one char. */
+        private int read = (-2);
+
+        /** Constructor is private, since we only want XMLNode to be able to construct an instance of this class. */
+        private XMLParser(Reader reader) { this.reader = reader; }
+
         /**
-         * The reader provided by the caller of the parse method.
-         *
-         * <dl><dt><b>Invariants:</b></dt><dd>
-         * <ul><li>The field is not <code>null</code> while the parse method
-         *         is running.
-         * </ul></dd></dl>
+         * Read the next character.
+         * @throws IOException if end-of-file is reached.
+         * @throws IOException if an I/O error occurred.
          */
-        private Reader reader;
-
-        private void malform(String msg) throws IOException { throw new IOException("Error at line "+y+" column "+x+": "+msg); }
-
-        private void malform() throws IOException { malform(""); }
-
-        private int x=1, y=1, read = (-2); // -2:unused -1:EOFdetected >=0:used
-
-        /** Read the next character, or return -1 if end-of-file is reached. */
         private int read() throws IOException {
-            if (read==(-1)) return -1;
-            if (read>=0) { int answer=read; read=(-2); return answer; }
-            int ans = reader.read();
-            if (ans<0) read=(-1); else if (ans=='\n') { x=1; y++; } else { x++; }
+            if (read<(-1)) read=reader.read();
+            if (read<0) { malform("Unexpected end of file."); } else if (read=='\n') { x=1; y++; } else { x++; }
+            int ans = read;
+            read = -2;
             return ans;
         }
 
-        /** Peek without consuming the next character, or return -1 if end-of-file is reached. */
+        /**
+         * Peek without consuming the next character, or return -1 if end-of-file is reached.
+         * @throws IOException if an I/O error occurred.
+         */
         private int peek() throws IOException {
             if (read<(-1)) read=reader.read();
             return read;
         }
 
-        /** Skip up to and including the character "char1" */
-        private void skipUntil(int char1) throws IOException {
-            while(true) {
-                int ch = read();
-                if (ch<0 || ch==char1) return;
-            }
-        }
-
-        /** Skip up to and including the consecutive characters "char1" and "char2" */
+        /**
+         * Skip up to and including the consecutive characters "char1" and "char2".
+         * @throws IOException if we reached end-of-file without seeing the pattern.
+         * @throws IOException if an I/O error occurred.
+         */
         private void skipUntil(int char1, int char2) throws IOException {
             while(true) {
                 int ch = read();
-                if (ch<0 || (ch==char1 && peek()==char2)) { read=(-2); return; }
+                if (ch==char1 && peek()==char2) { read=(-2); return; }
             }
         }
 
+        /**
+         * If the next N characters match the given string (where N == length of string), then consume them, else throw IOException.
+         * @throws IOException if the next N characters do not match the given string.
+         * @throws IOException if an I/O error occurred.
+         */
         private void expect(String string) throws IOException {
+            int saveX=x, saveY=y;
             for(int i=0; i<string.length(); i++) {
-                if (read()!=string.charAt(i)) malform("Expects "+string);
+                if (read()!=string.charAt(i)) { x=saveX; y=saveY; malform("Expects the string \""+string+"\""); }
             }
         }
 
-        /** Skip as much nondata as possible, then return the first character after that. */
-        private int skipNondata() throws IOException {
-           while(true) {
-              int ch = read();
-              if (ch == '<') {
-                 ch = read();
-                 if (ch == '?') { skipUntil('?', '>'); continue; }
-                 if (ch != '!') { read = ch ; return '<'; }
-                 ch = peek();
-                 if (ch == '-') { read(); if (read()!='-') malform("Expects comment."); skipUntil('-', '-'); if (read()!='>') malform("Expects end of comment."); continue; }
-                 if (skipNondata()!='>') malform("Expects end of <!...>");
-                 continue;
-              }
-              if (ch == '[') {
-                 if (skipNondata()!=']') malform("Expects end of [...]");
-                 continue;
-              }
-              if (ch == '\'' || ch == '\"') { skipUntil(ch); continue; }
-              if (ch < 0 || ch == ']' || ch=='>') return ch;
-           }
-        }
-
-        /** Skip whitespace if any, then return the character after that. */
+        /**
+         * Skip whitespace if any, then return the first non-whitespace character after that.
+         * @throws IOException if after skipping 0 or more white space character we reach end-of-file.
+         * @throws IOException if an I/O error occurred.
+         */
         private int parseSpace() throws IOException {
             while(true) {
                 int ch=read();
@@ -198,60 +131,100 @@ public final class XMLNode implements Iterable<XMLNode> {
             }
         }
 
-        /** Parse an element, assuming the initial '<' has already been consumed. */
+        /**
+         * Skip as much nondata as possible, then return the first character after that (or -1 if we end up at end-of-file).
+         * Specifically, this method consumes as many instances of XMLDecl/doctypedecl/intSubset/extSubsetDecl as possible.
+         * @throws IOException if the XML input is malformed.
+         * @throws IOException if an I/O error occurred.
+         */
+        private int skipNondata(boolean skipText) throws IOException {
+           while(true) {
+              int ch = peek();
+              if (ch<0) return -1;
+              read = -2;
+              if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') continue;
+              if (ch == '<') {
+                 ch = read();
+                 if (ch == '?') { skipUntil('?', '>'); continue; }
+                 if (ch != '!') { read = ch ; return '<'; }
+                 if (peek() == '-') {
+                     read = -2;
+                     if (read()!='-') malform("Expects start of comment.");
+                     skipUntil('-', '-');
+                     if (read()!='>') malform("Expects end of comment.");
+                     continue;
+                 }
+                 if (skipNondata(true)!='>') malform("Expects end of <!...>");
+              }
+              else if (!skipText) { return ch; }
+              else if (ch == '[') { if (skipNondata(true)!=']') malform("Expects end of [...]"); }
+              else if (ch == '\'' || ch == '\"') { while(read()!=ch) { } }
+              else if (ch == ']' || ch=='>') { return ch; }
+           }
+        }
+
+        /**
+         * Parse an element (and all its subelements), assuming the initial "less than" sign has already been consumed.
+         * @throws IOException if the XML input is malformed.
+         * @throws IOException if an I/O error occurred.
+         */
         private void parseElement(XMLNode target) throws IOException {
-            target.name = parseName();
+            target.type = parseName();
             while(true) {
                 read = parseSpace();
                 if (read == '=') malform("Unexpected '='");
                 if (read == '/') {
-                    read();
+                    read = -2;
                     if (read()!='>') malform("Expects '/>'");
                     break;
                 }
                 if (read == '>') {
-                    read();
+                    read = -2;
                     parseContent(target);
-                    if (!target.name.equals(parseName())) malform("Start tag and end tag must have matching names.");
-                    if (parseSpace()!='>') malform("Expects '</"+target.name+">'");
+                    if (!target.type.equals(parseName())) malform("Start tag and end tag must have matching types.");
+                    if (parseSpace()!='>') malform("Expects '</"+target.type+">'");
                     break;
                 }
                 String key = parseName();
-                if (parseSpace()!='=') malform();
-                read = parseSpace();
-                if (read != '\'' && read != '\"') malform();
-                String value = parseValue(read());
-                target.attributes.put(key, value);
+                if (parseSpace()!='=') malform("Expects = after the attribute name.");
+                int ch = parseSpace();
+                if (ch != '\'' && ch != '\"') malform("Expects \' or \" as the start of the attribute value.");
+                String value = parseValue(ch);
+                target.map.put(key, value);
             }
         }
 
-        /** Parse a name. */
+        /**
+         * Parse a name.
+         * @throws IOException if the XML input is malformed.
+         * @throws IOException if an I/O error occurred.
+         */
         private String parseName() throws IOException {
             StringBuilder sb = new StringBuilder();
             while(true) {
                 int ch = read();
-                if (ch<0) malform();
                 if (ch==' ' || ch=='\t' || ch=='\r' || ch=='\n' || ch=='=' || ch=='/' || ch=='>') { read=ch; return sb.toString(); }
                 sb.append((char)ch);
             }
         }
 
-        /** Parse a value up to delim (which is always either ' or "), assuming the initial ' or " has already been consumed. */
+        /**
+         * Parse a value up to delim (which is always either ' or "), assuming the initial ' or " has already been consumed.
+         * @throws IOException if the XML input is malformed.
+         * @throws IOException if an I/O error occurred.
+         */
         private String parseValue(int delim) throws IOException {
             StringBuilder sb = new StringBuilder(), sb2 = null;
             while(true) {
                 int ch=read();
-                if (ch<0) malform();
                 if (ch==delim) return sb.toString();
                 if (ch=='&') {
                     if (sb2==null) sb2=new StringBuilder(); else sb2.setLength(0);
-                    while(true) {
-                        if ((ch=read())<0) malform(); else if (ch!=';') sb2.append((char)ch); else break;
-                    }
+                    while((ch=read()) != ';') sb2.append((char)ch);
                     if (sb2.length()>2 && sb2.charAt(0)=='#' && sb2.charAt(1)=='x') {
-                        try { ch=Integer.parseInt(sb2.substring(2), 16); } catch(NumberFormatException ex) { malform(); }
+                        try { ch=Integer.parseInt(sb2.substring(2), 16); } catch(NumberFormatException ex) { ch=(-1); }
                     } else if (sb2.length()>1 && sb2.charAt(0)=='#'){
-                        try { ch=Integer.parseInt(sb2.substring(1)); } catch(NumberFormatException ex) { malform(); }
+                        try { ch=Integer.parseInt(sb2.substring(1)); } catch(NumberFormatException ex) { ch=(-1); }
                     } else {
                         String name = sb2.toString();
                         if (name.equals("amp")) ch='&';
@@ -259,46 +232,80 @@ public final class XMLNode implements Iterable<XMLNode> {
                         else if (name.equals("apos")) ch='\'';
                         else if (name.equals("lt")) ch='<';
                         else if (name.equals("gt")) ch='>';
-                        else malform("The entity \"&"+name+";\" is unknown.");
+                        else ch=(-1);
                     }
+                    if (ch<0) malform("The entity \"&"+sb2.toString()+";\" is unknown.");
                 }
                 sb.append((char)ch);
             }
         }
 
-        /** Parses the content until the rightful closing "</" are consumed. */
+        /**
+         * Parses the content until the rightful closing "LESS THAN SIGN followed by FORWARD SLASH" are both consumed.
+         * @throws IOException if the XML input is malformed.
+         * @throws IOException if an I/O error occurred.
+         */
         private void parseContent(XMLNode parent) throws IOException {
-            again:
-            while(true) {
-                int ch=read();
-                if (ch=='<') {
-                    ch=read();
-                    if (ch=='/') return;
-                    if (ch=='?') { skipUntil('?', '>'); continue; }
-                    if (ch=='!') {
-                        ch=read();
-                        if (ch=='-') { if (read()!='-') malform(); skipUntil('-', '-'); if (read()!='>') malform(); continue; }
-                        if (ch!='[') malform();
-                        expect("CDATA[");
-                        int ah=0, bh=0;
-                        while(true) {
-                            if ((ch=read())<0) malform();
-                            if (ah==']' && bh==']' && ch=='>') continue again;
-                            ah=bh; bh=ch;
-                        }
-                    }
-                    read=ch;
-                    XMLNode newElem = new XMLNode();
-                    parseElement(newElem);
-                    parent.children.add(newElem);
+           again:
+           while(true) {
+              if (read()!='<') continue;
+              int ch=read();
+              if (ch=='/') return;
+              if (ch=='?') { skipUntil('?', '>'); continue; }
+              if (ch=='!') {
+                 ch=read();
+                 if (ch=='-') {
+                    if (read()!='-')  malform("Expects start of comment.");
+                    skipUntil('-', '-');
+                    if (read()!='>')  malform("Expects end of comment.");
                     continue;
-                }
-            }
+                 }
+                 if (ch!='[') malform("Expects <![CDATA[...]]>");
+                 expect("CDATA[");
+                 for(int ah=0,bh=0; ;) {
+                    ch=read();
+                    if (ah==']' && bh==']' && ch=='>') { continue again; } else { ah=bh; bh=ch; }
+                 }
+              }
+              read=ch;
+              XMLNode newElem = new XMLNode();
+              parseElement(newElem);
+              parent.sub.add(newElem);
+           }
         }
 
+        /** Throws an IOException with the given msg, and associate with it the current line and column location. */
+        private void malform(String msg) throws IOException { throw new IOException("Error at line "+y+" column "+x+": "+msg); }
     }
 
+    /** Returns the type of the element. */
+    public String getType() { return type; }
 
+    /** Returns true if the type of this element is equal to the given type. */
+    public boolean is(String type) { return this.type.equals(type); }
 
+    /** Returns a read-only iterator over the immediate subelements. */
+    public Iterator<XMLNode> iterator() { return Collections.unmodifiableList(sub).iterator(); }
 
+    /** Returns a read-only list of the immediate subelements whose type is equal to the given type. */
+    public List<XMLNode> getChildren(String type) {
+        List<XMLNode> answer = new ArrayList<XMLNode>(sub.size());
+        for(int i=0; i<sub.size(); i++) {
+           XMLNode x = sub.get(i);
+           if (x.type.equals(type)) answer.add(x);
+        }
+        return Collections.unmodifiableList(answer);
+    }
+
+    /** Returns the value associated with the given attribute name; if the attribute doesn't exist, return "". */
+    public String getAttribute(String name) {
+        String ans = map.get(name);
+        return (ans==null) ? "" : ans;
+    }
+
+    /** Returns the value associated with the given attribute name; if the attribute doesn't exist, return the defaultValue. */
+    public String getAttribute(String name, String defaultValue) {
+        String ans = map.get(name);
+        return (ans==null) ? defaultValue : ans;
+    }
 }

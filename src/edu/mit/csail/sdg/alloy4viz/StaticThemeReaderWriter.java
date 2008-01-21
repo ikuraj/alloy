@@ -101,7 +101,7 @@ public final class StaticThemeReaderWriter {
          *   0 or more NODE or EDGE
          * </view>
          */
-        if (!"view".equals(x.getName())) return;
+        if (!x.is("view")) return;
         if (has(x,"useOriginalAtomNames")) now.useOriginalName(getbool(x,"useOriginalAtomNames"));
         if (has(x,"fontsize")) now.setFontSize(getint(x,"fontsize"));
         if (has(x,"orientation")) now.setOrientation(parseDotOrientation(x));
