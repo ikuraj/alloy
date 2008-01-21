@@ -1429,7 +1429,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         text.setLineWrap(false);
         text.setBorder(new EmptyBorder(2,2,2,2));
         text.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","NanoXML","JavaCup","SAT4J","ZChaff","MiniSat"});
+        final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","JavaCup","SAT4J","ZChaff","MiniSat"});
         combo.addActionListener(new ActionListener() {
            public void actionPerformed(ActionEvent e) {
               Object value = combo.getSelectedItem();
