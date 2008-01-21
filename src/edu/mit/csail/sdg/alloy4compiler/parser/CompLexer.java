@@ -1,4 +1,5 @@
 
+
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import edu.mit.csail.sdg.alloy4.Err;
@@ -582,7 +583,6 @@ yyline=yycolumn=0;
     int zzInput;
     int zzAction;
 
-    // cached fields:
     int zzCurrentPosL;
     int zzMarkedPosL;
     int zzEndReadL = zzEndRead;
@@ -629,7 +629,6 @@ yyline=yycolumn=0;
       }
 
       if (zzR) {
-        // peek one character ahead if it is \n (if we have counted one line too much)
         boolean zzPeek;
         if (zzMarkedPosL < zzEndReadL)
           zzPeek = zzBufferL[zzMarkedPosL] == '\n';
@@ -664,11 +663,9 @@ yyline=yycolumn=0;
             break zzForAction;
           }
           else {
-            // store back cached positions
             zzCurrentPos  = zzCurrentPosL;
             zzMarkedPos   = zzMarkedPosL;
             boolean eof = zzRefill();
-            // get translated positions and possibly new buffer
             zzCurrentPosL  = zzCurrentPos;
             zzMarkedPosL   = zzMarkedPos;
             zzBufferL      = zzBuffer;
@@ -695,7 +692,6 @@ yyline=yycolumn=0;
         }
       }
 
-      // store back cached position
       zzMarkedPos = zzMarkedPosL;
 
       switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
