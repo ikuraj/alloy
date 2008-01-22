@@ -469,8 +469,8 @@ public final strictfp class VizGraph extends DiGraph {
             if (minX>x1) minX=x1;
             if (maxX<x2) maxX=x2;
         }
-        left=minX-100;            // leave 100 pixels on the left,  so that we hopefully don't draw edgelabels off screen
-        totalWidth=maxX-minX+100; // leave 100 pixels on the right, so that we hopefully don't draw edgelabels off screen
+        left=minX;
+        totalWidth=maxX-minX;
         // Find the topmost and bottommost pixel
         for(int layer=layers()-1; layer>=0; layer--) {
            for(VizNode n:layer(layer)) {
@@ -488,7 +488,7 @@ public final strictfp class VizGraph extends DiGraph {
         }
         if (widestLegend>0) {
             left -= (widestLegend+10);
-            totalWidth += (widestLegend+10);
+            totalWidth += (widestLegend*2+10);
             if (totalHeight<legendHeight) { bottom=bottom+(legendHeight-totalHeight); totalHeight=legendHeight; }
         }
     }
