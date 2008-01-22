@@ -280,7 +280,7 @@ public final class Util {
     public static String readAll(String filename) throws FileNotFoundException, IOException { return readAll(false,filename); }
 
     /** Open then overwrite the file with the given content; throws Err if an error occurred. */
-    public static void writeAll(String filename, String content) throws Err {
+    public static long writeAll(String filename, String content) throws Err {
         final FileOutputStream fos;
         try {
             fos=new FileOutputStream(filename);
@@ -294,8 +294,10 @@ public final class Util {
         // Now, convert the line break into the local platform's line break, then write it to the file
         try {
             final String NL=System.getProperty("line.separator");
-            fos.write(content.replace("\n",NL).getBytes("UTF-8"));
+            byte[] array = content.replace("\n",NL).getBytes("UTF-8");
+            fos.write(array);
             fos.close();
+            return array.length;
         } catch(IOException ex) {
             close(fos);
             throw new ErrorFatal("Cannot write to the file "+filename);
