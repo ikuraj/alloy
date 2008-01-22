@@ -415,15 +415,16 @@ final class SimpleReporter extends A4Reporter {
             latestKodkodXML=filename;
         }
         String formulafilename=null;
+        long formulaLength=0;
         if (formula!=null && formula.length()>0 && tempfile!=null) {
             formulafilename=tempfile+".java";
-            try { Util.writeAll(formulafilename,formula); } catch(Throwable ex) { formulafilename=null; }
+            try { formulaLength=Util.writeAll(formulafilename,formula); } catch(Throwable ex) { formulafilename=null; }
         }
         logLink(cmd.check ? "   Counterexample found. " : "   Instance found. ", (filename==null||filename.length()==0)?"":("XML: "+filename));
         if (cmd.check) log("Assertion is invalid"); else log("Predicate is consistent");
         if (cmd.expects==0) log(", contrary to expectation"); else if (cmd.expects==1) log(", as expected");
-        log(".");
-        logLink(" "+(System.currentTimeMillis()-lastTime)+"ms.", (formulafilename==null?"":("CNF: "+formulafilename)));
+        log(". "+(System.currentTimeMillis()-lastTime)+"ms.");
+        if (formulafilename!=null) { log("\n   "); logLink("Translation", "CNF: "+formulafilename); log(" log file: "+formulaLength+" bytes."); }
         log("\n\n");
     }
 
@@ -458,9 +459,10 @@ final class SimpleReporter extends A4Reporter {
         Command cmd = (Command)command;
         log(RESTORE3);
         String corefilename=null, formulafilename=null;
+        long formulaLength=0;
         if (sol.formula.length()>0 && tempfile!=null) {
             formulafilename=tempfile+".java";
-            try { Util.writeAll(formulafilename, sol.formula); } catch(Throwable ex) { formulafilename=null; }
+            try { formulaLength=Util.writeAll(formulafilename, sol.formula); } catch(Throwable ex) { formulafilename=null; }
         }
         Pair<ConstSet<Pos>,ConstSet<Pos>> core = sol.highLevelCore();
         if ((core.a.size()>0 || core.b.size()>0) && tempfile!=null) {
@@ -484,9 +486,9 @@ final class SimpleReporter extends A4Reporter {
         } else if (minimized) {
             logLink("   Core", "CORE: "+corefilename);
             if (minimizedBefore<=minimizedAfter)
-                log(" still contains "+minimizedAfter+" entries.");
+                log(" contains "+minimizedAfter+" toplevel formulas.");
             else
-                log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" entries.");
+                log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" toplevel formulas.");
         } else {
             if (corefilename!=null)
                 logLink(cmd.check ? "   No counterexample found." : "   No instance found.", "CORE: "+corefilename);
@@ -496,7 +498,8 @@ final class SimpleReporter extends A4Reporter {
             if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
             log(".");
         }
-        logLink(" "+(System.currentTimeMillis()-lastTime)+"ms.", (formulafilename==null ? "" : ("CNF: "+formulafilename)));
+        log(" "+(System.currentTimeMillis()-lastTime)+"ms.");
+        if (formulafilename!=null) { log("\n   "); logLink("Translation", "CNF: "+formulafilename); log(" log file: "+formulaLength+" bytes."); }
         log("\n\n");
     }
 
