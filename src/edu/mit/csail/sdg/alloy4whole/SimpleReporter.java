@@ -133,8 +133,8 @@ final class SimpleReporter extends A4Reporter {
     /** The time that the last action began; we subtract it from System.currentTimeMillis() to determine the elapsed time. */
     private long lastTime=0;
 
-    /** Whether we performed unsat core minimization. */
-    private boolean minimized=false;
+    /** If we performed unsat core minimization, then this is the start of the minimization, else this is 0. */
+    private long minimized = 0;
 
     /** The unsat core size before minimization. */
     private int minimizedBefore;
@@ -385,7 +385,7 @@ final class SimpleReporter extends A4Reporter {
 
     /** {@inheritDoc} */
     @Override public void solve(final int primaryVars, final int totalVars, final int clauses) {
-        minimized=false;
+        minimized=0;
         log(RESTORE3);
         log("   "+totalVars+" vars. "+primaryVars+" primary vars. "+clauses+" clauses. "
                 +(System.currentTimeMillis()-lastTime)+"ms.\n");
@@ -414,18 +414,20 @@ final class SimpleReporter extends A4Reporter {
             latestKodkod=sol;
             latestKodkodXML=filename;
         }
-        String formulafilename=null;
-        long formulaLength=0;
+        String formulafilename = "";
         if (formula!=null && formula.length()>0 && tempfile!=null) {
-            formulafilename=tempfile+".java";
-            try { formulaLength=Util.writeAll(formulafilename,formula); } catch(Throwable ex) { formulafilename=null; }
+            formulafilename = tempfile+".java";
+            try { Util.writeAll(formulafilename,formula); formulafilename="CNF: "+formulafilename; } catch(Throwable ex) { formulafilename=""; }
         }
-        logLink(cmd.check ? "   Counterexample found. " : "   Instance found. ", (filename==null||filename.length()==0)?"":("XML: "+filename));
-        if (cmd.check) log("Assertion is invalid"); else log("Predicate is consistent");
+        logLink(cmd.check ? "   Counterexample" : "   Instance", (filename==null||filename.length()==0)?"":("XML: "+filename));
+        log(" found. ");
+        if (cmd.check) {
+            logLink("Assertion", formulafilename); log(" is invalid");
+        } else {
+            logLink("Predicate", formulafilename); log(" is consistent");
+        }
         if (cmd.expects==0) log(", contrary to expectation"); else if (cmd.expects==1) log(", as expected");
-        log(". "+(System.currentTimeMillis()-lastTime)+"ms.");
-        if (formulafilename!=null) { log("\n   "); logLink("Translation", "CNF: "+formulafilename); log(" log file: "+formulaLength+" bytes."); }
-        log("\n\n");
+        log(". "+(System.currentTimeMillis()-lastTime)+"ms.\n\n");
     }
 
     /** {@inheritDoc} */
@@ -436,13 +438,10 @@ final class SimpleReporter extends A4Reporter {
         log(cmd.check ? "   No counterexample found." : "   No instance found.");
         if (cmd.check) log(" Assertion may be valid"); else log(" Predicate may be inconsistent");
         if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
-        long t=System.currentTimeMillis();
-        log(". "+(t-lastTime)+"ms.\n");
-        lastTime=t;
-        log(SAVE3);
+        minimized=System.currentTimeMillis();
+        log(". "+(minimized-lastTime)+"ms.\n");
         logBold("   Minimizing the unsat core of "+before+" entries...\n");
         log(FLUSH);
-        minimized=true;
     }
 
     /** {@inheritDoc} */
@@ -458,11 +457,10 @@ final class SimpleReporter extends A4Reporter {
         A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
         log(RESTORE3);
-        String corefilename=null, formulafilename=null;
-        long formulaLength=0;
+        String corefilename="", formulafilename="";
         if (sol.formula.length()>0 && tempfile!=null) {
             formulafilename=tempfile+".java";
-            try { formulaLength=Util.writeAll(formulafilename, sol.formula); } catch(Throwable ex) { formulafilename=null; }
+            try { Util.writeAll(formulafilename, sol.formula); formulafilename="CNF: "+formulafilename; } catch(Throwable ex) { formulafilename=""; }
         }
         Pair<ConstSet<Pos>,ConstSet<Pos>> core = sol.highLevelCore();
         if ((core.a.size()>0 || core.b.size()>0) && tempfile!=null) {
@@ -474,33 +472,33 @@ final class SimpleReporter extends A4Reporter {
                 os=new ObjectOutputStream(fs);
                 os.writeObject(core);
                 os.writeObject(sol.lowLevelCore());
+                corefilename="CORE: "+corefilename;
             } catch(Throwable ex) {
-                corefilename=null;
+                corefilename="";
             } finally {
                 Util.close(os);
                 Util.close(fs);
             }
         }
-        if (minimized && corefilename==null) {
-            log("   No unsat core is available in this case.");
-        } else if (minimized) {
-            logLink("   Core", "CORE: "+corefilename);
-            if (minimizedBefore<=minimizedAfter)
-                log(" contains "+minimizedAfter+" toplevel formulas.");
-            else
-                log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" toplevel formulas.");
+        log(cmd.check ? "   No counterexample found. " : "   No instance found. ");
+        logLink(cmd.check ? "Assertion" : "Predicate", formulafilename);
+        log(cmd.check? " may be valid" : "may be inconsistent");
+        if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
+        if (minimized==0) {
+            log(". "+(System.currentTimeMillis()-lastTime)+"ms.\n\n");
         } else {
-            if (corefilename!=null)
-                logLink(cmd.check ? "   No counterexample found." : "   No instance found.", "CORE: "+corefilename);
-            else
-                log(cmd.check ? "   No counterexample found." : "   No instance found.");
-            if (cmd.check) log(" Assertion may be valid"); else log(" Predicate may be inconsistent");
-            if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
-            log(".");
+            log(". "+(minimized-lastTime)+"ms.\n");
+            if (corefilename.length()==0) {
+                log("   No unsat core is available in this case");
+            } else {
+                logLink("   Core", corefilename);
+                if (minimizedBefore<=minimizedAfter)
+                    log(" contains "+minimizedAfter+" top-level formulas");
+                else
+                    log(" reduced from "+minimizedBefore+" to "+minimizedAfter+" top-level formulas");
+            }
+            log(". "+(System.currentTimeMillis()-minimized)+"ms.\n\n");
         }
-        log(" "+(System.currentTimeMillis()-lastTime)+"ms.");
-        if (formulafilename!=null) { log("\n   "); logLink("Translation", "CNF: "+formulafilename); log(" log file: "+formulaLength+" bytes."); }
-        log("\n\n");
     }
 
     /** {@inheritDoc} */
