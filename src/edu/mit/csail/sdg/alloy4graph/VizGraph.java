@@ -469,8 +469,8 @@ public final strictfp class VizGraph extends DiGraph {
             if (minX>x1) minX=x1;
             if (maxX<x2) maxX=x2;
         }
-        left=minX;
-        totalWidth=maxX-minX;
+        left=minX-20;
+        totalWidth=maxX-minX+20;
         // Find the topmost and bottommost pixel
         for(int layer=layers()-1; layer>=0; layer--) {
            for(VizNode n:layer(layer)) {
