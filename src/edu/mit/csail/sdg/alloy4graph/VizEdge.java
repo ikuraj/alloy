@@ -184,7 +184,7 @@ public final strictfp class VizEdge extends DiGraph.DiEdge {
                else w = w + getBounds(false, a.selfEdges().get(i-1).label()).getWidth() + selfLoopGL + selfLoopGR;
                VizEdge e = a.selfEdges().get(i);
                if (e!=this) continue;
-               double h=a.getHeight()/2D*0.7D, k=0.55238D, wa=a.getWidth()/2, wb=w-wa;
+               double h=a.getHeight()/2D*0.7D, k=0.55238D, wa=(double)(a.getWidth()/2), wb=w-wa;
                e.path = new VizCurve(ax, ay);
                e.path.cubicTo(ax, ay-k*h, ax+wa-k*wa, ay-h, ax+wa, ay-h);
                e.path.cubicTo(ax+wa+k*wb, ay-h, ax+wa+wb, ay-k*h, ax+wa+wb, ay);
