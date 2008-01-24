@@ -94,7 +94,7 @@ public final class StaticThemeReaderWriter {
     /** Does nothing if the element is malformed. */
     private static void parseView(XMLNode x, VizState now) {
         /*
-         * <view orientation=".." nodetheme=".." edgetheme=".." useOriginalAtomNames="yes/no" fontsize="12">
+         * <view orientation=".." nodetheme=".." edgetheme=".." hidePrivate="yes/no" useOriginalAtomNames="yes/no" fontsize="12">
          *   <projection> .. </projection>
          *   <defaultnode../>
          *   <defaultedge../>
@@ -103,6 +103,7 @@ public final class StaticThemeReaderWriter {
          */
         if (!x.is("view")) return;
         if (has(x,"useOriginalAtomNames")) now.useOriginalName(getbool(x,"useOriginalAtomNames"));
+        if (has(x,"hidePrivate")) now.hidePrivate(getbool(x,"hidePrivate"));
         if (has(x,"fontsize")) now.setFontSize(getint(x,"fontsize"));
         if (has(x,"orientation")) now.setOrientation(parseDotOrientation(x));
         if (has(x,"nodetheme")) now.setNodePalette(parseDotPalette(x,"nodetheme"));
@@ -143,6 +144,11 @@ public final class StaticThemeReaderWriter {
         if (view.useOriginalName()!=defaultView.useOriginalName()) {
             out.write(" useOriginalAtomNames=\"");
             out.write(view.useOriginalName() ? "yes" : "no");
+            out.write("\"");
+        }
+        if (view.hidePrivate()!=defaultView.hidePrivate()) {
+            out.write(" hidePrivate=\"");
+            out.write(view.hidePrivate() ? "yes" : "no");
             out.write("\"");
         }
         if (view.getFontSize()!=defaultView.getFontSize()) {

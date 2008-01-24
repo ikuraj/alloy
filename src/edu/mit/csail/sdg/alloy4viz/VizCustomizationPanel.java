@@ -243,7 +243,7 @@ public final class VizCustomizationPanel extends JPanel {
     //=============================================================================================================//
 
     /** Generate nodes for that type, all its subtypes and subsets. */
-    private TreePath remakeForType(TreePath path, AlloyType type) {
+    private TreePath remakeForType(final boolean hidePrivate, TreePath path, AlloyType type) {
         TreePath last=null; // If nonnull, that means we've found which entry we should highlight
         AlloyModel old=vizState.getOriginalModel(), now=vizState.getCurrentModel();
         DefaultMutableTreeNode rad=null, rad2;
@@ -253,13 +253,13 @@ public final class VizCustomizationPanel extends JPanel {
         path=path.pathByAddingChild(rad);
         if (type.equals(lastElement)) last=path;
         // Generate the nodes for all AlloySet(s) whose types == this type
-        for (AlloySet s:now.getSets()) if (!s.isPrivate && s.getType().equals(type)) {
+        for (AlloySet s:now.getSets()) if (!(hidePrivate && s.isPrivate) && s.getType().equals(type)) {
             rad.add(rad2=new DefaultMutableTreeNode(s));
             if (s.equals(lastElement)) last=path.pathByAddingChild(rad2);
         }
         // Generate the nodes for all AlloyType that inherit from this
-        for(AlloyType t:old.getDirectSubTypes(type)) if (!t.isPrivate) {
-            TreePath possibleLast=remakeForType(path, t);
+        for(AlloyType t:old.getDirectSubTypes(type)) if (!(hidePrivate && t.isPrivate)) {
+            TreePath possibleLast=remakeForType(hidePrivate, path, t);
             if (possibleLast!=null) last=possibleLast;
         }
         return last;
@@ -273,6 +273,7 @@ public final class VizCustomizationPanel extends JPanel {
         JPanel elementsPanel = new JPanel();
         elementsPanel.setBorder(null);
         elementsPanel.setLayout(new BoxLayout(elementsPanel, BoxLayout.Y_AXIS));
+        final boolean hidePrivate = vizState.hidePrivate();
 
         // Generate the nodes of the tree
         DefaultMutableTreeNode top = new DefaultMutableTreeNode("Theme Customizations");
@@ -284,13 +285,13 @@ public final class VizCustomizationPanel extends JPanel {
         DefaultMutableTreeNode radTS = new DefaultMutableTreeNode(2);
         top.add(radTS);
         if (Integer.valueOf(2).equals(lastElement)) last=new TreePath(new Object[]{top,radTS});
-        TreePath possibleLast=remakeForType(new TreePath(new Object[]{top,radTS}), AlloyType.UNIV);
+        TreePath possibleLast=remakeForType(hidePrivate, new TreePath(new Object[]{top,radTS}), AlloyType.UNIV);
         if (possibleLast!=null) last=possibleLast;
         // Relations
         DefaultMutableTreeNode radR = new DefaultMutableTreeNode(3);
         top.add(radR);
         if (Integer.valueOf(3).equals(lastElement)) last=new TreePath(new Object[]{top,radR});
-        for (AlloyRelation rel:vizState.getCurrentModel().getRelations()) if (!rel.isPrivate) {
+        for (AlloyRelation rel:vizState.getCurrentModel().getRelations()) if (!(hidePrivate && rel.isPrivate)) {
             DefaultMutableTreeNode rad;
             radR.add(rad=new DefaultMutableTreeNode(rel));
             if (rel.equals(lastElement)) last=new TreePath(new Object[]{top,radR,rad});
@@ -592,21 +593,25 @@ public final class VizCustomizationPanel extends JPanel {
             public boolean get(Object key) { return vizState.useOriginalName(); }
             public void set(Object key, boolean value) { vizState.useOriginalName(value); }
         };
+        final BinaryGetterSetter pgs = new BinaryGetterSetter() {
+            public boolean get(Object key) { return vizState.hidePrivate(); }
+            public void set(Object key, boolean value) { vizState.hidePrivate(value); remakeAll(); }
+        };
         JLabel nLabel = OurUtil.label(OurUtil.getVizFont(), "Node Color Palette:");
         JLabel eLabel = OurUtil.label(OurUtil.getVizFont(), "Edge Color Palette:");
-        //JLabel oLabel = OurUtil.label(OurUtil.getVizFont(), "Orientation:");
         JLabel aLabel = OurUtil.label(OurUtil.getVizFont(), "Use original atom names:");
+        JLabel pLabel = OurUtil.label(OurUtil.getVizFont(), "Hide private sigs/relations:");
         JLabel fLabel = OurUtil.label(OurUtil.getVizFont(), "Font Size:");
         JComboBox fontSize= new OurCombobox(cgs, false, fontSizes,                60, 32, "0");
-        //JComboBox orient  = new OurCombobox(cgs, false, DotOrientation.values(), 140, 32, "1");
         JComboBox nodepal = new OurCombobox(cgs, false, DotPalette.values(),     100, 32, "2");
         JComboBox edgepal = new OurCombobox(cgs, false, DotPalette.values(),     100, 32, "3");
         JPanel name = new OurBinaryCheckbox(bgs, null, "", "Whether the visualizer should use the original atom names as-is.");
+        JPanel priv = new OurBinaryCheckbox(pgs, null, "", "Whether the visualizer should hide private sigs, sets, and relations by default.");
         parent.add(makelabel(" General Graph Settings:"));
         parent.add(OurUtil.makeBox(6,6,wcolor));
         parent.add(OurUtil.makeH(wcolor, 25, nLabel, 5, nodepal, 8, aLabel, 5, name, 2, null));
         parent.add(OurUtil.makeH(wcolor, 25, eLabel, 5, edgepal, 8, fLabel, 5, fontSize, 2, null));
-        //parent.add(OurUtil.makeH(wcolor, 25, oLabel, 5, orient,  2, null));
+        parent.add(OurUtil.makeH(wcolor, 25, pLabel, 5, priv,  2, null));
     }
 
     //=============================================================================================================//

@@ -62,6 +62,7 @@ public final class VizState {
         currentModel=old.currentModel;
         projectedTypes=new TreeSet<AlloyType>(old.projectedTypes);
         useOriginalNames=old.useOriginalNames;
+        hidePrivate=old.hidePrivate;
         fontSize=old.fontSize;
         orientation=old.orientation;
         nodePalette=old.nodePalette;
@@ -93,6 +94,7 @@ public final class VizState {
         currentModel = originalInstance.model;
         projectedTypes.clear();
         useOriginalNames = false;
+        hidePrivate = true;
         fontSize = 12;
         orientation = DotOrientation.getDefault();
         nodePalette = DotPalette.getDefault();
@@ -328,6 +330,19 @@ public final class VizState {
     /** Sets whether we will use original atom names or not. */
     public void useOriginalName(Boolean newValue) {
         if (newValue!=null && useOriginalNames!=newValue) { change(); useOriginalNames=newValue; }
+    }
+
+    /*============================================================================================*/
+
+    /** Whether to hide private sigs/fields/relations. */
+    private boolean hidePrivate = false;
+
+    /** Returns whether we will hide private sigs/fields/relations. */
+    public boolean hidePrivate() { return hidePrivate; }
+
+    /** Sets whether we will hide private sigs/fields/relations. */
+    public void hidePrivate(Boolean newValue) {
+        if (newValue!=null && hidePrivate!=newValue) { change(); hidePrivate=newValue; }
     }
 
     /*============================================================================================*/
