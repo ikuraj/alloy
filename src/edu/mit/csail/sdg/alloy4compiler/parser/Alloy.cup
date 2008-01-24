@@ -732,11 +732,11 @@ AndExprA ::= AndExprB:a AND:o Bind:b      {: RESULT=new ExpBinary(o, ExprBinary.
 AndExprB ::=                  NegExprB:b  {: RESULT=b;                                         :};
 AndExprB ::= AndExprB:a AND:o NegExprB:b  {: RESULT=new ExpBinary(o, ExprBinary.Op.AND, a, b); :};
 
-NegExprA ::=       CompareExprA:b         {: RESULT=b;                                    :};
-NegExprA ::= NOT:o Bind:b                 {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
-NegExprA ::= NOT:o NegExprA:b             {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
-NegExprB ::=       CompareExprB:b         {: RESULT=b;                                    :};
-NegExprB ::= NOT:o NegExprB:b             {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
+NegExprA ::=         CompareExprA:b         {: RESULT=b;                                    :};
+NegExprA ::= NOT:o   Bind:b                 {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
+NegExprA ::= NOT:o   NegExprA:b             {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
+NegExprB ::=         CompareExprB:b         {: RESULT=b;                                    :};
+NegExprB ::= NOT:o   NegExprB:b             {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
 
 CompareExprA ::= CompareExprB:a EQUALS:o    UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b);         :};
 CompareExprA ::= CompareExprB:a IN:o        UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b));       :};
