@@ -420,8 +420,8 @@ public final class Module {
             }
             String alias=name.substring(0,i);
             Open uu=u.opens.get(alias);
-            if (level>0 && uu.isPrivate) return ans;
             if (uu==null || uu.realModule==null) return ans; // may happen during the initial "module"
+            if (level>0 && uu.isPrivate) return ans; // that means the module is imported privately
             u=uu.realModule;
             name=name.substring(i+1);
         }
