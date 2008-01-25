@@ -969,6 +969,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             case OR: f=cform(a); f=f.or(cform(b)); return fmap(f,x);
             case IFF: f=cform(a); f=f.iff(cform(b)); return fmap(f,x);
             case PLUSPLUS: s=cset(a); return s.override(cset(b));
+            case SHL: i=cint(a); return i.shl(cint(b));
+            case SHR: i=cint(a); return i.shr(cint(b));
+            case SHA: i=cint(a); return i.sha(cint(b));
             case PLUS:
                 obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.plus(cint(b)); }

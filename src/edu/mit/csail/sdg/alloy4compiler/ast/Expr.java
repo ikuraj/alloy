@@ -393,6 +393,24 @@ public abstract class Expr {
     public final Expr gte(Expr x) { return ExprBinary.Op.GTE.make(span().merge(x.span()), null, this, x); }
 
     /**
+     * Returns the integer expression (this &lt;&lt; x)
+     * <p> this and x must both be integer expressions
+     */
+    public final Expr shl(Expr x) { return ExprBinary.Op.SHL.make(span().merge(x.span()), null, this, x); }
+
+    /**
+     * Returns the integer expression (this &gt;&gt;&gt; x)
+     * <p> this and x must both be integer expressions
+     */
+    public final Expr shr(Expr x) { return ExprBinary.Op.SHR.make(span().merge(x.span()), null, this, x); }
+
+    /**
+     * Returns the integer expression (this &gt;&gt; x)
+     * <p> this and x must both be integer expressions
+     */
+    public final Expr sha(Expr x) { return ExprBinary.Op.SHA.make(span().merge(x.span()), null, this, x); }
+
+    /**
      * Returns the formula (this in x)
      * <p> this must be a set or relation
      * <p> x must be a set or relation or multiplicity constraint

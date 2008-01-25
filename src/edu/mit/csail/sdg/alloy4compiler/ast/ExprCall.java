@@ -99,6 +99,7 @@ public final class ExprCall extends Expr {
         @Override public Object visit(ExprBinary x) throws Err {
             switch(x.op) {
               case GT: case GTE: case LT: case LTE: case IFF: case EQUALS: case IN: case OR: case AND: return Type.FORMULA;
+              case SHL: case SHR: case SHA: return Type.INT;
             }
             Type a=(Type)(x.left.accept(this));
             Type b=(Type)(x.right.accept(this));

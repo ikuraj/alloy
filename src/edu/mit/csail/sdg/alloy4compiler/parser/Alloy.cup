@@ -194,6 +194,9 @@ parser code {:
     ch.put(CompSym.RBRACE          , "}");
     ch.put(CompSym.RBRACKET        , "]");
     ch.put(CompSym.RPAREN          , ")");
+    ch.put(CompSym.SHL             , "<<");
+    ch.put(CompSym.SHR             , ">>>");
+    ch.put(CompSym.SHA             , ">>");
     ch.put(CompSym.SLASH           , "/");
     ch.put(CompSym.STAR            , "*");
     ch.put(CompSym.TILDE           , "~");
@@ -397,6 +400,9 @@ terminal Pos RPAREN;           //  )
 terminal Pos RUN;              //  run
 terminal Pos SEQ;              //  seq
 terminal Pos SET;              //  set
+terminal Pos SHL;              //  <<
+terminal Pos SHR;              //  >>>
+terminal Pos SHA;              //  >>
 terminal Pos SIG;              //  sig
 terminal Pos SIGINT;           //  Int
 terminal Pos SLASH;            //  /
@@ -480,6 +486,8 @@ nonterminal List<ExpName>              SigRefu;
 nonterminal                            Spec;
 nonterminal List<Pair<Sig,Integer>>    Typescopes;
 nonterminal Pair<Sig,Integer>          Typescope;
+nonterminal Exp                        ShiftExprA;
+nonterminal Exp                        ShiftExprB;
 nonterminal Exp                        UnionDiffExprA;
 nonterminal Exp                        UnionDiffExprB;
 nonterminal Exp                        UnopExprA;
@@ -738,47 +746,56 @@ NegExprA ::= NOT:o   NegExprA:b             {: RESULT=new ExpUnary(o, ExprUnary.
 NegExprB ::=         CompareExprB:b         {: RESULT=b;                                    :};
 NegExprB ::= NOT:o   NegExprB:b             {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
 
-CompareExprA ::= CompareExprB:a EQUALS:o    UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b);         :};
-CompareExprA ::= CompareExprB:a IN:o        UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b));       :};
-CompareExprA ::= CompareExprB:a LT:o        UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
-CompareExprA ::= CompareExprB:a GT:o        UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
-CompareExprA ::= CompareExprB:a LTE:o       UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
-CompareExprA ::= CompareExprB:a GTE:o       UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
-CompareExprA ::= CompareExprB:a NOTEQUALS:o UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b).not();   :};
-CompareExprA ::= CompareExprB:a NOTIN:o     UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b)).not(); :};
-CompareExprA ::= CompareExprB:a NOTLT:o     UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
-CompareExprA ::= CompareExprB:a NOTGT:o     UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
-CompareExprA ::= CompareExprB:a NOTLTE:o    UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
-CompareExprA ::= CompareExprB:a NOTGTE:o    UnionDiffExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
-CompareExprA ::= ALL:o  UnionDiffExprA                         {: if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
-CompareExprA ::= NO:o   UnionDiffExprA:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.NO,    b);   :};
-CompareExprA ::= SOME:o UnionDiffExprA:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.SOME,  b);   :};
-CompareExprA ::= LONE:o UnionDiffExprA:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
-CompareExprA ::= ONE:o  UnionDiffExprA:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
-CompareExprA ::= SET:o  UnionDiffExprA:b                       {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
-CompareExprA ::= SEQ:o  UnionDiffExprA:b                       {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addSeq(o); :};
-CompareExprA ::=        UnionDiffExprA:b                       {: RESULT=b;                                        :};
+CompareExprA ::= CompareExprB:a EQUALS:o    ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b);         :};
+CompareExprA ::= CompareExprB:a IN:o        ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b));       :};
+CompareExprA ::= CompareExprB:a LT:o        ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
+CompareExprA ::= CompareExprB:a GT:o        ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
+CompareExprA ::= CompareExprB:a LTE:o       ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
+CompareExprA ::= CompareExprB:a GTE:o       ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
+CompareExprA ::= CompareExprB:a NOTEQUALS:o ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b).not();   :};
+CompareExprA ::= CompareExprB:a NOTIN:o     ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b)).not(); :};
+CompareExprA ::= CompareExprB:a NOTLT:o     ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
+CompareExprA ::= CompareExprB:a NOTGT:o     ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
+CompareExprA ::= CompareExprB:a NOTLTE:o    ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
+CompareExprA ::= CompareExprB:a NOTGTE:o    ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
+CompareExprA ::= ALL:o  ShiftExprA                          {: if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
+CompareExprA ::= NO:o   ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.NO,    b);   :};
+CompareExprA ::= SOME:o ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SOME,  b);   :};
+CompareExprA ::= LONE:o ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
+CompareExprA ::= ONE:o  ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
+CompareExprA ::= SET:o  ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
+CompareExprA ::= SEQ:o  ShiftExprA:b                        {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addSeq(o); :};
+CompareExprA ::=        ShiftExprA:b                        {: RESULT=b;                                        :};
 
-CompareExprB ::= CompareExprB:a EQUALS:o    UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b);         :};
-CompareExprB ::= CompareExprB:a IN:o        UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b));       :};
-CompareExprB ::= CompareExprB:a LT:o        UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
-CompareExprB ::= CompareExprB:a GT:o        UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
-CompareExprB ::= CompareExprB:a LTE:o       UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
-CompareExprB ::= CompareExprB:a GTE:o       UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
-CompareExprB ::= CompareExprB:a NOTEQUALS:o UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b).not();   :};
-CompareExprB ::= CompareExprB:a NOTIN:o     UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b)).not(); :};
-CompareExprB ::= CompareExprB:a NOTLT:o     UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
-CompareExprB ::= CompareExprB:a NOTGT:o     UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
-CompareExprB ::= CompareExprB:a NOTLTE:o    UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
-CompareExprB ::= CompareExprB:a NOTGTE:o    UnionDiffExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
-CompareExprB ::= ALL:o  UnionDiffExprB                          {: if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
-CompareExprB ::= NO:o   UnionDiffExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.NO,    b);   :};
-CompareExprB ::= SOME:o UnionDiffExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SOME,  b);   :};
-CompareExprB ::= LONE:o UnionDiffExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
-CompareExprB ::= ONE:o  UnionDiffExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
-CompareExprB ::= SET:o  UnionDiffExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
-CompareExprB ::= SEQ:o  UnionDiffExprB:b                        {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addSeq(o); :};
-CompareExprB ::=        UnionDiffExprB:b                        {: RESULT=b;                                        :};
+CompareExprB ::= CompareExprB:a EQUALS:o    ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b);         :};
+CompareExprB ::= CompareExprB:a IN:o        ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b));       :};
+CompareExprB ::= CompareExprB:a LT:o        ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
+CompareExprB ::= CompareExprB:a GT:o        ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
+CompareExprB ::= CompareExprB:a LTE:o       ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
+CompareExprB ::= CompareExprB:a GTE:o       ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
+CompareExprB ::= CompareExprB:a NOTEQUALS:o ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b).not();   :};
+CompareExprB ::= CompareExprB:a NOTIN:o     ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b)).not(); :};
+CompareExprB ::= CompareExprB:a NOTLT:o     ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
+CompareExprB ::= CompareExprB:a NOTGT:o     ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
+CompareExprB ::= CompareExprB:a NOTLTE:o    ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
+CompareExprB ::= CompareExprB:a NOTGTE:o    ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
+CompareExprB ::= ALL:o  ShiftExprB                          {: if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
+CompareExprB ::= NO:o   ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.NO,    b);   :};
+CompareExprB ::= SOME:o ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SOME,  b);   :};
+CompareExprB ::= LONE:o ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
+CompareExprB ::= ONE:o  ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
+CompareExprB ::= SET:o  ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
+CompareExprB ::= SEQ:o  ShiftExprB:b                        {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addSeq(o); :};
+CompareExprB ::=        ShiftExprB:b                        {: RESULT=b;                                        :};
+
+ShiftExprA ::=                    UnionDiffExprA:b        {: RESULT=b;                                                 :};
+ShiftExprA ::= ShiftExprB:a SHL:o Bind:b                  {: RESULT=new ExpBinary(o, ExprBinary.Op.SHL, a, b);         :};
+ShiftExprA ::= ShiftExprB:a SHR:o Bind:b                  {: RESULT=new ExpBinary(o, ExprBinary.Op.SHR, a, b);         :};
+ShiftExprA ::= ShiftExprB:a SHA:o Bind:b                  {: RESULT=new ExpBinary(o, ExprBinary.Op.SHA, a, b);         :};
+ShiftExprB ::=                    UnionDiffExprB:b        {: RESULT=b;                                                 :};
+ShiftExprB ::= ShiftExprB:a SHL:o UnionDiffExprB:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.SHL, a, b);         :};
+ShiftExprB ::= ShiftExprB:a SHR:o UnionDiffExprB:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.SHR, a, b);         :};
+ShiftExprB ::= ShiftExprB:a SHA:o UnionDiffExprB:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.SHA, a, b);         :};
 
 UnionDiffExprA ::=                          NumUnopExprA:b        {: RESULT=b;                                                   :};
 UnionDiffExprA ::= UnionDiffExprB:a PLUS:o  Bind:b                {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUS,  a, b);         :};

@@ -180,6 +180,9 @@ public final class ExprBinary extends Expr {
         /** =&lt;           */  LTE("=<",false),
         /** &gt;            */  GT(">",false),
         /** &gt;=           */  GTE(">=",false),
+        /** &lt;&lt;        */  SHL("<<",false),
+        /** &gt;&gt;        */  SHA(">>",false),
+        /** &gt;&gt;&gt;    */  SHR(">>>",false),
         /** in              */  IN("in",false),
         /** &amp;&amp;      */  AND("&&",false),
         /** ||              */  OR("||",false),
@@ -212,7 +215,7 @@ public final class ExprBinary extends Expr {
          */
         public final Expr make(Pos pos, Pos closingBracket, Expr left, Expr right) {
             switch(this) {
-              case LT: case LTE: case GT: case GTE: {
+              case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA: {
                 left = left.typecheck_as_int();
                 right = right.typecheck_as_int();
                 break;
@@ -246,6 +249,9 @@ public final class ExprBinary extends Expr {
             if (errs.isEmpty()) switch(this) {
               case LT: case LTE: case GT: case GTE: case AND: case OR: case IFF:
                   type = Type.FORMULA;
+                  break;
+              case SHL: case SHR: case SHA:
+                  type = Type.INT;
                   break;
               case PLUSPLUS:
                   type = left.type.unionWithCommonArity(right.type);
@@ -306,7 +312,7 @@ public final class ExprBinary extends Expr {
         ErrorWarning w=null;
         Type a=left.type, b=right.type;
         switch(op) {
-          case LT: case LTE: case GT: case GTE: {
+          case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA: {
             a=(b=Type.INT);
             break;
           }
