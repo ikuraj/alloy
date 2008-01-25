@@ -267,7 +267,7 @@ public final class A4Solution {
         if (ex instanceof Relation) set.add((Relation)ex);
     }
 
-    /** Return the list of all skolems (each skolem has a name, a Type, and its tupleset. */
+    /** Return the list of all skolems (each skolem has a name, a Type, and its tupleset) */
     public List<Pair<String,Pair<Type,A4TupleSet>>> skolems() {
         List<Pair<String,Pair<Type,A4TupleSet>>> ans = new ArrayList<Pair<String,Pair<Type,A4TupleSet>>>();
         if (kEval==null) return ans; // That means the solution is unsatisfiable, so there are no skolem values at all
