@@ -151,6 +151,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** The maximum sequence length. */
     private int maxseq;
 
+    /** The maximum possible integer with the given bitwidth. */
+    private int max;
+
+    /** The minimum possible integer with the given bitwidth. */
+    private int min;
+
     /** This maps each AlloySig, each AlloyField, and possibly even some parameterless AlloyFunc to a Kodkod Expression. */
     private ConstMap<Object,Expression> bcc;
 
@@ -211,6 +217,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         rep.debug("Generating bounds...\n");
         final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
         bitwidth = sc.getBitwidth();
+        max=(1<<(bitwidth-1))-1;
+        min=(0-max)-1;
         maxseq = sc.getMaxSeq();
         final Pair<Pair<Bounds,List<Formula>>,ConstMap<Object,Expression>> bc = BoundsComputer.compute(sc,rep,sigs,fmap);
         bcc = bc.b;
@@ -487,6 +495,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(null, null, null);
         tr.bcc = bcc;
         tr.bitwidth = bitwidth;
+        tr.max=(1<<(bitwidth-1))-1;
+        tr.min=(0-tr.max)-1;
         Object ans;
         try {
             ans = tr.visitThis(expr);
@@ -716,7 +726,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     @Override public Object visit(ExprConstant x) throws Err {
         switch(x.op) {
           case NUMBER:
-            int n=x.num(), max=(1<<(bitwidth-1))-1, min=(0-max)-1;
+            int n=x.num();
             if (n<min) throw new ErrorType(x.pos,
                "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
             if (n>max) throw new ErrorType(x.pos,
@@ -977,6 +987,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.plus(cint(b)); }
                 s=(Expression)obj; return s.union(cset(b));
             case MINUS:
+                // Special exception to allow "0-8" to not throw an exception, where 7 is the maximum allowed integer (when bitwidth==4)
+                // (likewise, when bitwidth==5, then +15 is the maximum allowed integer, and we want to allow 0-16 without throwing an exception)
+                if (a instanceof ExprConstant && ((ExprConstant)a).op==ExprConstant.Op.NUMBER && ((ExprConstant)a).num()==0)
+                   if (b instanceof ExprConstant && ((ExprConstant)b).op==ExprConstant.Op.NUMBER && ((ExprConstant)b).num()==(1+max))
+                      return IntConstant.constant(0-max-1);
                 obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.minus(cint(b));}
                 s=(Expression)obj; return s.difference(cset(b));
