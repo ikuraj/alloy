@@ -177,8 +177,7 @@ final class SwingLogPanel {
                 if (c==CLICK) handler.doVisualize(txt);
                 else if (c==BOLD) logBold(txt);
                 else if (c==RED) logRed(txt);
-                else if (c==INDENTLONG) { if (handler.isUsingExternalEditor()) logIndented(txt); }
-                else if (c==INDENTSHORT) { if (!handler.isUsingExternalEditor()) logIndented(txt); }
+                else if (c==INDENTLONG || c==INDENTSHORT) { logIndented(txt); }
                 else if (c==SETLINK) escLink=txt;
                 else if (c==LINK) logLink(txt,escLink);
                 else if (c==DELETE_ON_EXIT) (new File(txt)).deleteOnExit();
