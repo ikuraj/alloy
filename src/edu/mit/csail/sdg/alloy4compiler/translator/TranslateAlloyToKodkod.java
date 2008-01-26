@@ -891,18 +891,23 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         return is_div(call2.fun) && call2.args.get(0).isSame(a) && call2.args.get(1).isSame(b);
     }
 
+    /** Caches functions that we have matched to be one of the builtin ones. */
+    private final Map<Func,Pair<Expr,String>> cacheForExprCall = new IdentityHashMap<Func,Pair<Expr,String>>();
+
     /** {@inheritDoc} */
     @Override public Object visit(ExprCall x) throws Err {
-        Func f=x.fun;
-        int n=f.params.size();
+        final Func f=x.fun;
+        final Pair<Expr,String> cache = cacheForExprCall.get(f);
+        final Expr body = f.getBody();
+        final int n=f.params.size();
         if (n==0) {
             Object ans=bcc.get(f); // Try looking it up; it may have been pre-bound to some value
             if (ans!=null) return ans;
         }
-        //int maxRecursion=12;
         for(Func ff:current_function) if (ff==f) {
             throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
             /*
+            int maxRecursion=12;
             maxRecursion--;
             if (maxRecursion==0) {
                 Type t = f.returnDecl.type;
@@ -915,17 +920,20 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             }
             */
         }
-        if (is_mul(f)) {
+        if (n==2) if ((cache!=null && cache.a==body && cache.b=="util/integer/mul") || is_mul(f)) {
+            cacheForExprCall.put(f, new Pair<Expr,String>(body, "util/integer/mul"));
             rep.debug("Found: util/integer/mul\n");
             final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
             return a.multiply(b).toExpression();
         }
-        if (is_div(f)) {
+        if (n==2) if ((cache!=null && cache.a==body && cache.b=="util/integer/div") || is_div(f)) {
+            cacheForExprCall.put(f, new Pair<Expr,String>(body, "util/integer/div"));
             rep.debug("Found: util/integer/div\n");
             final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
             return a.divide(b).toExpression();
         }
-        if (is_rem(f)) {
+        if (n==2) if ((cache!=null && cache.a==body && cache.b=="util/integer/rem") || is_rem(f)) {
+            cacheForExprCall.put(f, new Pair<Expr,String>(body, "util/integer/rem"));
             rep.debug("Found: util/integer/rem\n");
             final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
             return a.modulo(b).toExpression();
@@ -935,7 +943,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Env<ExprVar,Object> oldenv=env;
         env=newenv;
         current_function.add(f);
-        Object ans=visitThis(f.getBody());
+        Object ans=visitThis(body);
         env=oldenv;
         current_function.remove(current_function.size()-1);
         if (ans instanceof Formula) fmap(ans, x);
