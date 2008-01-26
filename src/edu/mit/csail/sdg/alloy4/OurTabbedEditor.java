@@ -483,15 +483,15 @@ public final class OurTabbedEditor {
         if (!Util.onMac()) {
             text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
                 private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.copy(); }
+                public final void actionPerformed(ActionEvent e) { text.copy(); parent.notifyChange(); }
             });
             text.getActionMap().put("my_cut", new AbstractAction("my_cut") {
                 private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.cut(); }
+                public final void actionPerformed(ActionEvent e) { text.cut(); parent.notifyChange(); }
             });
             text.getActionMap().put("my_paste", new AbstractAction("my_paste") {
                 private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.paste(); }
+                public final void actionPerformed(ActionEvent e) { text.paste(); parent.notifyChange(); }
             });
             text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "my_copy");
             text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "my_cut");
