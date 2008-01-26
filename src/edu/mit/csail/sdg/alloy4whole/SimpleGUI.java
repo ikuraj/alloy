@@ -156,9 +156,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     /** True if Alloy Analyzer should let warning be nonfatal. */
     private static final BooleanPref WarningNonfatal = new BooleanPref("WarningNonfatal");
 
-    /** True if Alloy Analyzer should use an external text editor rather than the builtin editor. */
-    private static final BooleanPref ExternalEditor = new BooleanPref("ExternalEditor");
-
     /** True if Alloy Analyzer should automatically visualize the latest instance. */
     private static final BooleanPref AutoVisualize = new BooleanPref("AutoVisualize");
 
@@ -255,7 +252,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     private final JToolBar toolbar;
 
     /** The various toolbar buttons. */
-    private final JButton newbutton, openbutton, loadbutton, reloadbutton, savebutton, runbutton, stopbutton, showbutton;
+    private final JButton runbutton, stopbutton, showbutton;
 
     /** The Splitpane. */
     private final JSplitPane splitpane;
@@ -320,13 +317,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     /** The current choices of SAT solver. */
     private final List<SatSolver> satChoices;
 
-    /**
-     * Whether the system is using external editor or not. We cache this value per SimpleGUI instance
-     * because it is tied to the GUI component layout and must not be changed outside of this instance's control;
-     * (with multiple instances, they could all change the Preference flag without notifying each other...)
-     */
-    private boolean mode_externalEditor = false;
-
      /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
     private int latestAlloyVersion = (-1);
 
@@ -343,9 +333,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     private boolean wrap = false;
 
     //====== helper methods =================================================//
-
-    /** Returns true if the system is using external editor or not. */
-    boolean isUsingExternalEditor() { return mode_externalEditor; }
 
     /** Inserts "filename" into the "recently opened file list". */
     private void addHistory(String filename) {
@@ -367,14 +354,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (text==null) return; // If this was called prior to the "text" being fully initialized
         if (Util.onMac()) frame.getRootPane().putClientProperty("windowModified", Boolean.valueOf(text.modified()));
         if (text.isFile()) frame.setTitle(text.getFilename()); else frame.setTitle("Alloy Analyzer "+Version.version());
-        if (mode_externalEditor) {
-            toolbar.setBorder(new OurBorder(false,false,true,false));
-            if (text.isFile())
-                status.setText("<html><b>&nbsp; Current file:&nbsp; "+text.getFilename()+"</b></html>");
-            else
-                status.setText("<html><b>&nbsp; Current file:&nbsp; None</b></html>");
-            return;
-        }
         toolbar.setBorder(new OurBorder(false, false, text.getTabCount()<=1, false));
         try {
             int c=text.text().getCaretPosition();
@@ -576,25 +555,21 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (wrap) return wrapMe();
         try {
             wrap = true;
-            String open = (mode_externalEditor?"Load":"Open");
             filemenu.removeAll();
-            if (!mode_externalEditor)
-               OurUtil.makeMenuItem(filemenu, "New",                    true, KeyEvent.VK_N, KeyEvent.VK_N, doNew());
-            OurUtil.makeMenuItem(filemenu,    open+"...",               true, KeyEvent.VK_O, KeyEvent.VK_O, doOpen());
+            OurUtil.makeMenuItem(filemenu, "New",     true, KeyEvent.VK_N, KeyEvent.VK_N, doNew());
+            OurUtil.makeMenuItem(filemenu, "Open...", true, KeyEvent.VK_O, KeyEvent.VK_O, doOpen());
             if (!Util.onMac())
-                OurUtil.makeMenuItemWithAlt(filemenu, open+" Sample Models...", KeyEvent.VK_O, doBuiltin());
+                OurUtil.makeMenuItemWithAlt(filemenu, "Open Sample Models...", KeyEvent.VK_O, doBuiltin());
             else
-                OurUtil.makeMenuItem(filemenu, open+" Sample Models...", true, -1, -1, doBuiltin());
+                OurUtil.makeMenuItem(filemenu, "Open Sample Models...", true, -1, -1, doBuiltin());
             JMenu recentmenu;
-            filemenu.add(recentmenu = new JMenu(open+" Recent"));
-            if (!mode_externalEditor) {
-                OurUtil.makeMenuItem(filemenu, "Reload all", true, KeyEvent.VK_R, KeyEvent.VK_R, doReloadAll());
-                OurUtil.makeMenuItem(filemenu, "Save",       true, KeyEvent.VK_S, KeyEvent.VK_S, doSave());
-                if (Util.onMac())
-                   OurUtil.makeMenuItemWithShift(filemenu,"Save As...",KeyEvent.VK_S, doSaveAs());
-                else
-                   OurUtil.makeMenuItem(filemenu, "Save As...", true, KeyEvent.VK_A, -1, doSaveAs());
-            }
+            filemenu.add(recentmenu = new JMenu("Open Recent"));
+            OurUtil.makeMenuItem(filemenu, "Reload all", true, KeyEvent.VK_R, KeyEvent.VK_R, doReloadAll());
+            OurUtil.makeMenuItem(filemenu, "Save",       true, KeyEvent.VK_S, KeyEvent.VK_S, doSave());
+            if (Util.onMac())
+                OurUtil.makeMenuItemWithShift(filemenu,"Save As...",KeyEvent.VK_S, doSaveAs());
+            else
+                OurUtil.makeMenuItem(filemenu, "Save As...", true, KeyEvent.VK_A, -1, doSaveAs());
             OurUtil.makeMenuItem(filemenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, doClose());
             OurUtil.makeMenuItem(filemenu, "Clear Temporary Directory", true, -1, -1, doClearTemp());
             OurUtil.makeMenuItem(filemenu, "Quit", true, KeyEvent.VK_Q, (Util.onMac()?-1:KeyEvent.VK_Q), doQuit());
@@ -616,7 +591,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** This method performs File->New. */
     private Runner doNew() {
-        if (!wrap && !mode_externalEditor) { text.newTab(); notifyChange(); doShow(); }
+        if (!wrap) { text.newTab(); notifyChange(); doShow(); }
         return wrapMe();
     }
 
@@ -645,7 +620,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** This method performs File->ReloadAll. */
     private Runner doReloadAll() {
-        if (!wrap && !mode_externalEditor) { for(int i=0; i<text.getTabCount(); i++) if (!text.refresh(i)) break; }
+        if (!wrap) { for(int i=0; i<text.getTabCount(); i++) if (!text.refresh(i)) break; }
         return wrapMe();
     }
 
@@ -657,7 +632,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** This method performs File->Save. */
     private Runner doSave() {
-        if (!wrap && !mode_externalEditor) {
+        if (!wrap) {
            String ans=text.save(false);
            if (ans==null) return null;
            notifyChange();
@@ -669,7 +644,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** This method performs File->SaveAs. */
     private Runner doSaveAs() {
-        if (!wrap && !mode_externalEditor) {
+        if (!wrap) {
            String ans=text.save(true);
            if (ans==null) return null;
            notifyChange();
@@ -710,8 +685,8 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (wrap) return wrapMe();
         try {
             wrap = true;
-            boolean canUndo = !mode_externalEditor && text.canUndo();
-            boolean canRedo = !mode_externalEditor && text.canRedo();
+            boolean canUndo = text.canUndo();
+            boolean canRedo = text.canRedo();
             editmenu.removeAll();
             OurUtil.makeMenuItem(editmenu, "Undo", canUndo, KeyEvent.VK_Z, KeyEvent.VK_Z, doUndo());
             if (Util.onMac())
@@ -719,16 +694,16 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             else
                 OurUtil.makeMenuItem(editmenu, "Redo", canRedo, KeyEvent.VK_Y, KeyEvent.VK_Y, doRedo());
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Cut"           , !mode_externalEditor, KeyEvent.VK_X,        KeyEvent.VK_X,         doCut());
+            OurUtil.makeMenuItem(editmenu,"Cut"           , true, KeyEvent.VK_X,        KeyEvent.VK_X,         doCut());
             OurUtil.makeMenuItem(editmenu,"Copy"          , true,                 KeyEvent.VK_C,        KeyEvent.VK_C,         doCopy());
-            OurUtil.makeMenuItem(editmenu,"Paste"         , !mode_externalEditor, KeyEvent.VK_V,        KeyEvent.VK_V,         doPaste());
+            OurUtil.makeMenuItem(editmenu,"Paste"         , true, KeyEvent.VK_V,        KeyEvent.VK_V,         doPaste());
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Go To..."      , !mode_externalEditor, KeyEvent.VK_T,        KeyEvent.VK_T,         doGoto());
+            OurUtil.makeMenuItem(editmenu,"Go To..."      , true, KeyEvent.VK_T,        KeyEvent.VK_T,         doGoto());
             OurUtil.makeMenuItem(editmenu,"Previous File" , text.getTabCount()>1, KeyEvent.VK_PAGE_UP,  KeyEvent.VK_PAGE_UP,   doGotoPrevFile());
             OurUtil.makeMenuItem(editmenu,"Next File"     , text.getTabCount()>1, KeyEvent.VK_PAGE_DOWN,KeyEvent.VK_PAGE_DOWN, doGotoNextFile());
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Find..."       , !mode_externalEditor, KeyEvent.VK_F,        KeyEvent.VK_F,         doFind());
-            OurUtil.makeMenuItem(editmenu,"Find Next"     , !mode_externalEditor, KeyEvent.VK_G,        KeyEvent.VK_G,         doFindNext());
+            OurUtil.makeMenuItem(editmenu,"Find..."       , true, KeyEvent.VK_F,        KeyEvent.VK_F,         doFind());
+            OurUtil.makeMenuItem(editmenu,"Find Next"     , true, KeyEvent.VK_G,        KeyEvent.VK_G,         doFindNext());
         } finally {
             wrap = false;
         }
@@ -737,38 +712,37 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** This method performs Edit->Undo. */
     private Runner doUndo() {
-        if (!wrap && !mode_externalEditor && text.canUndo()) text.undo();
+        if (!wrap && text.canUndo()) text.undo();
         return wrapMe();
     }
 
     /** This method performs Edit->Redo. */
     private Runner doRedo() {
-        if (!wrap && !mode_externalEditor && text.canRedo()) text.redo();
+        if (!wrap && text.canRedo()) text.redo();
         return wrapMe();
     }
 
     /** This method performs Edit->Copy. */
     private Runner doCopy() {
-        if (!wrap) { if (lastFocusIsOnEditor && !mode_externalEditor) text.text().copy(); else log.copy(); }
+        if (!wrap) { if (lastFocusIsOnEditor) text.text().copy(); else log.copy(); }
         return wrapMe();
     }
 
     /** This method performs Edit->Cut. */
     private Runner doCut() {
-        if (!wrap && lastFocusIsOnEditor && !mode_externalEditor) text.text().cut();
+        if (!wrap && lastFocusIsOnEditor) text.text().cut();
         return wrapMe();
     }
 
     /** This method performs Edit->Paste. */
     private Runner doPaste() {
-        if (!wrap && lastFocusIsOnEditor && !mode_externalEditor) text.text().paste();
+        if (!wrap && lastFocusIsOnEditor) text.text().paste();
         return wrapMe();
     }
 
     /** This method performs Edit->Find. */
     private Runner doFind() {
         if (wrap) return wrapMe();
-        if (mode_externalEditor) return null;
         JTextField x=OurUtil.textfield(lastFind,30);
         x.selectAll();
         JCheckBox c=new JCheckBox("Case Sensitive?",lastFindCaseSensitive);
@@ -787,7 +761,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     /** This method performs Edit->FindNext. */
     private Runner doFindNext() {
         if (wrap) return wrapMe();
-        if (lastFind.length()==0 || mode_externalEditor) return null;
+        if (lastFind.length()==0) return null;
         JTextArea t=text.text();
         String all=t.getText();
         int i=Util.indexOf(all, lastFind, t.getCaretPosition()+(lastFindForward?0:-1),lastFindForward,lastFindCaseSensitive);
@@ -810,7 +784,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     /** This method performs Edit->Goto. */
     private Runner doGoto() {
         if (wrap) return wrapMe();
-        if (mode_externalEditor) return null;
         JTextField y = OurUtil.textfield("", 10);
         JTextField x = OurUtil.textfield("", 10);
         if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return null;
@@ -871,24 +844,17 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         } finally {
             wrap = false;
         }
-        List<Command> cp = (mode_externalEditor ? null : commands);
+        List<Command> cp = commands;
         if (cp==null) {
             try {
-                List<Command> u=null;
-                if (!mode_externalEditor)
-                    u=CompUtil.parseOneModule_fromString(text.text().getText());
-                else if (text.isFile() && text.getFilename().length()>0)
-                    u=CompUtil.parseOneModule_fromFile(text.getFilename());
-                cp=u;
+                cp=CompUtil.parseOneModule_fromString(text.text().getText());
             }
             catch(Err e) {
                 commands = null;
                 runmenu.getItem(0).setEnabled(false);
                 runmenu.getItem(3).setEnabled(false);
-                if (!mode_externalEditor) {
-                    Err e2 = new ErrorFatal(new Pos(text.getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2),"");
-                    text.highlight(e2);
-                }
+                Err e2 = new ErrorFatal(new Pos(text.getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2),"");
+                text.highlight(e2);
                 log.logRed(e.toString()+"\n\n");
                 return null;
             }
@@ -1109,11 +1075,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             List<String> filenames=text.getFilenames();
             for(int i=0; i<filenames.size(); i++) {
                 String f=filenames.get(i);
-                JMenuItem it;
-                if (mode_externalEditor && !text.isFile(i))
-                    it = new JMenuItem("Alloy Analyzer", null);
-                else
-                    it = new JMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""), null);
+                JMenuItem it = new JMenuItem("Model: "+slightlyShorterFilename(f)+(text.modified(i) ? " *" : ""), null);
                 it.setIcon((f.equals(text.getFilename()) && !isViz) ? iconYes : iconNo);
                 it.addActionListener(f.equals(text.getFilename()) ? doShow() : doOpenFile(f));
                 w.add(it);
@@ -1151,7 +1113,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     private Runner doShow() {
         if (wrap) return wrapMe();
         bringup(frame);
-        if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
+        text.text().requestFocusInWindow();
         return null;
     }
 
@@ -1211,7 +1173,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             if (now!=SatSolver.MiniSatProverJNI) cmMenu.setEnabled(false);
             optmenu.add(cmMenu);
             //
-            OurUtil.makeMenuItem(optmenu,"Use an External Editor: "+(mode_externalEditor?"Yes":"No"), -1, -1, doOptExternal());
             OurUtil.makeMenuItem(optmenu,"Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), -1, -1, doOptAutoVisualize());
             OurUtil.makeMenuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), -1, -1, doOptRecordKodkod());
         } finally {
@@ -1293,42 +1254,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     private Runner doOptCore(Integer speed) {
         if (!wrap) CoreMinimization.set(speed.intValue());
         return wrapMe(speed);
-    }
-
-    /** This method toggles the "use an external editor" checkbox. */
-    private Runner doOptExternal() {
-        if (wrap) return wrapMe();
-        if (!text.closeAll()) return null;
-        log.clearError();
-        ExternalEditor.set(mode_externalEditor = !mode_externalEditor);
-        if (mode_externalEditor) text.disableIO(); else text.enableIO();
-        Container all=frame.getContentPane();
-        all.removeAll();
-        newbutton.setVisible(!mode_externalEditor);
-        openbutton.setVisible(!mode_externalEditor);
-        savebutton.setVisible(!mode_externalEditor);
-        loadbutton.setVisible(mode_externalEditor);
-        reloadbutton.setVisible(!mode_externalEditor);
-        if (mode_externalEditor) {
-            log.setBackground(Color.WHITE);
-            ((JPanel)(splitpane.getTopComponent())).remove(toolbar);
-            splitpane.setBottomComponent(null);
-            all.add(toolbar, BorderLayout.NORTH);
-            all.add(logpane, BorderLayout.CENTER);
-        } else {
-            log.setBackground(background);
-            ((JPanel)(splitpane.getTopComponent())).add(toolbar, BorderLayout.NORTH);
-            splitpane.setBottomComponent(logpane);
-            all.add(splitpane, BorderLayout.CENTER);
-        }
-        all.add(status, BorderLayout.SOUTH);
-        notifyChange();
-        frame.validate();
-        doRefreshFile();
-        OurUtil.enableAll(filemenu);
-        if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
-        lastFocusIsOnEditor = !mode_externalEditor;
-        return null;
     }
 
     /** This method toggles the "visualize automatically" checkbox. */
@@ -1572,7 +1497,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             String f=s.nextLine();
             if (f.length()>0 && f.charAt(0)==' ') f=f.substring(1); // Get rid of the space after Y2
             Pos p=new Pos(Util.canon(f), x1, y1, x2, y2);
-            if (!mode_externalEditor) text.highlight(new ErrorSyntax(p,""));
+            text.highlight(new ErrorSyntax(p,""));
         }
         if (arg.startsWith("CNF: ")) {
             String filename=Util.canon(arg.substring(5));
@@ -1598,7 +1523,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         }
         if (text.isFile()) addHistory(f);
         doShow();
-        if (mode_externalEditor) logpane.requestFocusInWindow(); else text.text().requestFocusInWindow();
+        text.text().requestFocusInWindow();
         return null;
     }
 
@@ -1800,12 +1725,10 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             toolbar = new JToolBar();
             toolbar.setFloatable(false);
             if (!Util.onMac()) toolbar.setBackground(background);
-            toolbar.add(newbutton=OurUtil.button("New", "Starts a new blank model", "images/24_new.gif", doNew()));
-            toolbar.add(openbutton=OurUtil.button("Open", "Opens an existing model", "images/24_open.gif", doOpen()));
-            toolbar.add(loadbutton=OurUtil.button("Load", "Chooses a model to analyze", "images/24_open.gif", doOpen()));
-            toolbar.add(reloadbutton=OurUtil.button("Reload", "Reload all the models from disk", "images/24_reload.gif", doReloadAll()));
-            loadbutton.setVisible(false);
-            toolbar.add(savebutton=OurUtil.button("Save", "Saves the current model", "images/24_save.gif", doSave()));
+            toolbar.add(OurUtil.button("New", "Starts a new blank model", "images/24_new.gif", doNew()));
+            toolbar.add(OurUtil.button("Open", "Opens an existing model", "images/24_open.gif", doOpen()));
+            toolbar.add(OurUtil.button("Reload", "Reload all the models from disk", "images/24_reload.gif", doReloadAll()));
+            toolbar.add(OurUtil.button("Save", "Saves the current model", "images/24_save.gif", doSave()));
             toolbar.add(runbutton=OurUtil.button("Execute", "Executes the latest command", "images/24_execute.gif", doExecuteLatest()));
             toolbar.add(stopbutton=OurUtil.button("Stop", "Stops the current analysis", "images/24_execute_abort2.gif", doStop(2)));
             stopbutton.setVisible(false);
@@ -1910,9 +1833,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         doRefreshOption();
         doRefreshWindow(false); OurUtil.enableAll(windowmenu);
         frame.setJMenuBar(bar);
-
-        // Go into the external text editor mode if needed
-        if (ExternalEditor.get() && splitpane.getBottomComponent()!=null) doOptExternal();
 
         // Open the given file, if a filename is given in the command line
         if (args.length==1) {
