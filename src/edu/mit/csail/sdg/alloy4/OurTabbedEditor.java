@@ -173,19 +173,6 @@ public final class OurTabbedEditor {
     /** The anonymous filename to give to the next unnamed text buffer. */
     private int nextNumber=1;
 
-    /** Whether we are currently allowed to read/write files. */
-    private boolean allowIO=true;
-
-    /** Grant the permission for this class to read/write files. */
-    public void enableIO() {
-        allowIO=true;
-    }
-
-    /** Deny the permission for this class to read/write files. */
-    public void disableIO() {
-        allowIO=false;
-    }
-
     /** The HighlightPainter to use to paint the highlights. */
     private final HighlightPainter highlightPainter=new Highlighter.HighlightPainter() {
         private final Color color = new Color(0.9f, 0.4f, 0.4f);
@@ -319,7 +306,7 @@ public final class OurTabbedEditor {
 
     /** Refresh the given tab; return true if no error occurred. */
     public boolean refresh(int i) {
-        if (!allowIO || i<0 || i>=tabs.size()) return true;
+        if (i<0 || i>=tabs.size()) return true;
         Tab t = tabs.get(i);
         if (!t.isFile) return true; // a totally "untitled" text buffer does not have a on-disk file to refresh from
         if (t.modified) {
@@ -346,7 +333,7 @@ public final class OurTabbedEditor {
 
     /** Save the current tab to a file. */
     public boolean saveAs(String filename) {
-        if (!allowIO || me<0 || me>=tabs.size()) return false;
+        if (me<0 || me>=tabs.size()) return false;
         filename=Util.canon(filename);
         for(int i=0; i<tabs.size(); i++) {
             if (i!=me && tabs.get(i).filename.equals(filename)) {
@@ -375,7 +362,7 @@ public final class OurTabbedEditor {
      * @return null if an error occurred (otherwise, return the filename)
      */
     public String save(final boolean alwaysPickNewName) {
-        if (!allowIO || me<0 || me>=tabs.size()) { return null; }
+        if (me<0 || me>=tabs.size()) { return null; }
         String filename = tabs.get(me).filename;
         if (tabs.get(me).isFile==false || alwaysPickNewName) {
             File file=OurDialog.askFile(parentFrame, false, null, ".als", ".als files");
@@ -414,7 +401,7 @@ public final class OurTabbedEditor {
     private boolean close(int i) {
         removeAllHighlights();
         String filename=tabs.get(i).filename;
-        if (allowIO && tabs.get(i).modified) {
+        if (tabs.get(i).modified) {
             Boolean ans=OurDialog.askSaveDiscardCancel(parentFrame, "The file \""+getShorterTitle(filename)+"\"");
             if (ans==null || (ans.booleanValue() && save(false)==null)) { return false; }
         }
@@ -592,7 +579,7 @@ public final class OurTabbedEditor {
     public void newTab(String filename) throws IOException {
         filename=Util.canon(filename);
         if (switchToFilename(filename)) return;
-        String content = allowIO ? Util.readAll(filename) : "";
+        String content = Util.readAll(filename);
         newTab(filename, content, true);
     }
 
@@ -608,9 +595,7 @@ public final class OurTabbedEditor {
      */
     public Map<String,String> takeSnapshot() {
         Map<String,String> map = new LinkedHashMap<String,String>();
-        if (allowIO) {
-            for(Tab t:tabs) { map.put(t.filename, t.text.getText()); }
-        }
+        for(Tab t:tabs) { map.put(t.filename, t.text.getText()); }
         return map;
     }
 
@@ -706,7 +691,7 @@ public final class OurTabbedEditor {
             return;
         }
         if (clearOldHighlightsFirst) removeAllHighlights();
-        if (allowIO && p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
+        if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
                 String f=Util.canon(p.filename);
                 if (!switchToFilename(f)) {
@@ -752,7 +737,7 @@ public final class OurTabbedEditor {
         if (clearOldHighlightsFirst) removeAllHighlights();
         JTextArea text=null;
         int c=0, d;
-        if (allowIO) for(Pos p:set) if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
+        for(Pos p:set) if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
                 String f=Util.canon(p.filename);
                 if (!switchToFilename(f)) {
