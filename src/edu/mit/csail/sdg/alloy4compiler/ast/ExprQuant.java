@@ -141,7 +141,7 @@ public final class ExprQuant extends Expr {
         public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) {
             Type t = this==SUM ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
             if (this!=SUM) sub=sub.typecheck_as_formula(); else sub=sub.typecheck_as_int();
-            JoinableList<Err> errs = sub.errors;
+            JoinableList<Err> errs = new JoinableList<Err>();
             if (sub.mult!=0) errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             long weight = sub.weight;
             if (vars.size()==0) errs = errs.append(new ErrorSyntax(pos, "List of variables cannot be empty."));
@@ -170,6 +170,7 @@ public final class ExprQuant extends Expr {
                 }
                 if (this==COMPREHENSION) { Type t1=v.type.extract(1); if (t==EMPTY) t=t1; else t=t.product(t1); }
             }
+            if (errs.isEmpty()) errs = sub.errors; // if the vars have errors, then the subexpression's errors will be too confusing, so let's skip them
             return new ExprQuant(pos, closingBracket, this, t, ConstList.make(vars), sub, weight, errs);
         }
 
