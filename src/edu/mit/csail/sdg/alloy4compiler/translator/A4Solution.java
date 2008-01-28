@@ -368,9 +368,11 @@ public final class A4Solution {
            Object y = fmap.get(f);
            if (y instanceof Pos) {
                ans1.add( (Pos)y );
+               // System.out.println("CORE: "+y); System.out.flush();
            } else if (y instanceof Expr) {
                Expr expr = (Expr)y;
                ans1.add(expr.span());
+               // System.out.println("CORE: "+expr.span()); System.out.flush();
                for (Func func: expr.findAllFunctions()) ans2.add(func.getBody().span());
            }
         }
