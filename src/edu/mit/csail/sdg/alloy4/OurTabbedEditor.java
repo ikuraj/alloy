@@ -737,6 +737,7 @@ public final class OurTabbedEditor {
         if (clearOldHighlightsFirst) removeAllHighlights();
         JTextArea text=null;
         int c=0, d;
+        again:
         for(Pos p:set) if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
                 String f=Util.canon(p.filename);
@@ -745,10 +746,9 @@ public final class OurTabbedEditor {
                     try {
                         content=Util.readAll(f);
                     } catch(IOException ex) {
+                        System.out.println(p.filename); System.out.flush();
                         // Highlight is not critical
-                        adjustLabelColor();
-                        parent.notifyChange();
-                        return;
+                        continue again;
                     }
                     newTab(f, content, true);
                 }
