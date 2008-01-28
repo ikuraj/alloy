@@ -105,6 +105,7 @@ public final class ExprLet extends Expr {
         if (errors.size()>0) return this;
         // If errors.size()==0, then the variable is always already fully resolved, so we only need to resolve sub
         Expr newSub = sub.resolve(p, warnings);
+        if (!newSub.hasVar(var)) warnings.add(new ErrorWarning(var.pos, "This variable is unused."));
         return (sub==newSub) ? this : make(pos, var, newSub);
     }
 
