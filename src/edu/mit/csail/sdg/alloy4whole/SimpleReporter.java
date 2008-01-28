@@ -482,7 +482,7 @@ final class SimpleReporter extends A4Reporter {
         }
         log(cmd.check ? "   No counterexample found. " : "   No instance found. ");
         logLink(cmd.check ? "Assertion" : "Predicate", formulafilename);
-        log(cmd.check? " may be valid" : "may be inconsistent");
+        log(cmd.check? " may be valid" : " may be inconsistent");
         if (cmd.expects==1) log(", contrary to expectation"); else if (cmd.expects==0) log(", as expected");
         if (minimized==0) {
             log(". "+(System.currentTimeMillis()-lastTime)+"ms.\n\n");
