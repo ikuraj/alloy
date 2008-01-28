@@ -1046,7 +1046,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
            log.logRed("No previous instances are available for viewing.\n\n");
         else
            doVisualize("XML: "+latestInstance);
-        welcomeBox.setVisible(true); // TODO
         return null;
     }
 
