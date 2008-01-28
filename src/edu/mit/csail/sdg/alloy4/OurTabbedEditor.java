@@ -746,7 +746,6 @@ public final class OurTabbedEditor {
                     try {
                         content=Util.readAll(f);
                     } catch(IOException ex) {
-                        System.out.println(p.filename); System.out.flush();
                         // Highlight is not critical
                         continue again;
                     }
