@@ -47,8 +47,6 @@ fact  Transitions {
         let p1 = p.AP1, p2 = p.AP2, pS = tp.S, pT=tp.T, nS=tn.S, nT=tn.T |
            let S1p=p1.pS, S2p=p2.pS,
                T1p=p1.pT, T2p=p2.pT,
-               S1n=p1.nS, S2n=p2.nS,
-               T1n=p1.nT, T2n=p2.nT,
                Sp = p.pS, Sn=p.nS,
                Tp = p.pT, Tn=p.nT,
                dirp = p.(tp.dir), dirn = p.(tn.dir) | {
