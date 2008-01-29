@@ -29,6 +29,8 @@ import java_cup_11a.runtime.Scanner;
 import java_cup_11a.runtime.Symbol;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
+import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import static edu.mit.csail.sdg.alloy4compiler.parser.CompSym.*;
 
 /**
@@ -86,15 +88,30 @@ final class CompFilter implements Scanner {
       }
     }
 
+    /** The symbols that can be at the end of a UnionDiffExpr. */
+    private int[] follow = new int[] {RBRACE, RBRACKET, NUMBER, IDEN, THIS, DISJ, INT, SUM, UNIV, SIGINT, NONE, ID, RPAREN};
+
     /** Reads one or more tokens from the underlying lexer, transform them, then give it to phase 2. */
     public Symbol next_token() throws Err {
-      Symbol a=myread(), b;
+      Symbol a=myread(), b, c;
+      for(int i=0; i<=follow.length; i++) {
+          if (i==follow.length) {
+              if ((b=myread()).sym!=MINUS)  { undo.add(0,b); break; }
+              if ((c=myread()).sym!=NUMBER) { undo.add(0,c); undo.add(0,b); break; }
+              ExpConstant num = (ExpConstant)(c.value);
+              Pos pos = ((Pos)(b.value)).merge(num.span());
+              c.value = new ExpConstant(pos, ExprConstant.Op.NUMBER, 0-num.num);
+              undo.add(0,c);
+              break;
+          }
+          if (a.sym == follow[i]) break;
+      }
       if (a.sym==ID)
        {
         b=myread();
         if (b.sym==COLON)
          {
-          Symbol c; c=myread();
+          c=myread();
           if (c.sym==RUN || c.sym==CHECK) {
               undo.add(0,a);
               undo.add(0,change(b,DOT));
