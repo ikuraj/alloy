@@ -22,7 +22,6 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -558,9 +557,8 @@ public final class Module {
                chg=true;
                p.setValue(vv);
                // TODO: This detects for the Alloy3 behavior of util/ordering.als
-               String sn=sub.modulePos.filename.toLowerCase(Locale.US);
-               if (kn.equals("elem") && sub.sigs.size()==1 &&
-                  (sn.endsWith("util"+File.separatorChar+"ordering.als") || sn.equals("util/ordering")) &&
+               String sn=sub.modulePos.filename.toLowerCase(Locale.US).replace('\\', '/');
+               if (kn.equals("elem") && sub.sigs.size()==1 && sn.endsWith("/util/ordering.als") &&
                   vv!=Module.UNIVast && vv!=Module.SIGINTast && vv!=Module.SEQIDXast && vv!=Module.NONEast)
                      vv.isOrdered = open.pos;
                rep.parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
