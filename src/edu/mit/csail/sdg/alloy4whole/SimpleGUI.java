@@ -1351,7 +1351,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (wrap) return wrapMe();
         JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
         String alloytxt;
-        try {alloytxt=Util.readAll(true,"LICENSES/Alloy.txt");} catch(IOException ex) {return null;}
+        try {alloytxt=Util.readAll(Util.JAR + "LICENSES" + File.separator + "Alloy.txt");} catch(IOException ex) {return null;}
         final JTextArea text = OurUtil.textarea(alloytxt,15,85);
         text.setEditable(false);
         text.setLineWrap(false);
@@ -1363,7 +1363,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
               Object value = combo.getSelectedItem();
               if (value instanceof String) {
                  try {
-                     String content = Util.readAll(true,"LICENSES/"+value+".txt");
+                     String content = Util.readAll(Util.JAR + "LICENSES" + File.separator + value + ".txt");
                      text.setText(content);
                  } catch(IOException ex) {
                      text.setText("Sorry: an error has occurred in displaying the license file.");
@@ -1375,8 +1375,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         JScrollPane scroll = OurUtil.scrollpane(text);
         scroll.setBorder(new LineBorder(Color.DARK_GRAY, 1));
         Object[] array = {
-           "The source code for the Alloy Analyzer is available",
-           "under the GNU General Public License version 2.",
+           "The source code for the Alloy Analyzer is available under the MIT license.",
            " ",
            "The Alloy Analyzer utilizes several third-party packages whose code may",
            "be distributed under a different license. We are extremely grateful to",
