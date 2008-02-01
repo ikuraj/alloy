@@ -179,9 +179,9 @@ public final class Util {
        };
     }
 
-    /** Helper method that converts Windows/Mac/Unix linebreaks into "\n" */
+    /** Helper method that converts Windows/Mac/Unix linebreaks into "\n", and replace non-tab non-linebreak control characters into space characters. */
     public static String convertLineBreak(String input) {
-        return input.replace("\r\n","\n").replace('\r','\n');
+        return input.replace("\r\n","\n").replace('\r','\n').replaceAll("[\000-\010\013\014\016-\037]"," ");
     }
 
     /**
@@ -292,7 +292,7 @@ public final class Util {
         } catch(IOException ex) {
             throw new ErrorFatal("Cannot write to the file "+filename);
         }
-        // Convert the line break into the UNIX line break
+        // Convert the line break into the UNIX line break, and remove ^L, ^F... and other characters that confuse JTextArea
         content = convertLineBreak(content);
         // If the last line does not have a LINEBREAK, add it
         if (content.length()>0 && content.charAt(content.length()-1)!='\n') content=content+"\n";
