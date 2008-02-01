@@ -3500,6 +3500,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
         if (content==null && loaded!=null) content = loaded.get(filename);
         if (content==null) content = Util.readAll(filename);
         if (loaded!=null) loaded.put(filename,content);
+        content = Util.convertLineBreak(content);
         isr=new StringReader(content);
         CompFilter s=new CompFilter(allowDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p=new CompParser(s);
