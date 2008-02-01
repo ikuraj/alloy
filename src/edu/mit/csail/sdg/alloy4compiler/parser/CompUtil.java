@@ -136,8 +136,9 @@ public final class CompUtil {
                 if (content==null) { content=Util.readAll(cp); }
             } catch(IOException ex1) {
                 try {
-                    content=Util.readAll(true, "models/"+x.filename+".als");
-                    cp=x.filename;
+                    String newCp = Util.JAR + "models" + File.separatorChar + x.filename + ".als";
+                    content = Util.readAll(newCp);
+                    cp = newCp;
                 } catch(IOException ex) {
                     throw new ErrorSyntax(x.pos,
                     "This module cannot be found.\nIt is not a built-in library module, and it cannot be found at \""+cp+"\".\n");
