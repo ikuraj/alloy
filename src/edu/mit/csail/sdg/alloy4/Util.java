@@ -252,8 +252,16 @@ public final class Util {
         return new Pair<byte[],Integer>(buf,now);
     }
 
-    /** Read everything into a String; throws IOException if an error occurred. */
-    public static String readAll(boolean fromJar, String filename) throws FileNotFoundException, IOException {
+    /** This is a constant prefix to denote whether Util.readAll() should read from a JAR or read from the file system. */
+    public static String JAR = File.separator + "$alloy4$" + File.separator;
+
+    /**
+     * Read everything into a String; throws IOException if an error occurred.
+     * (If filename begins with Util.JAR, then we read from the JAR instead)
+     */
+    public static String readAll(String filename) throws FileNotFoundException, IOException {
+        boolean fromJar=false;
+        if (filename.startsWith(JAR)) { fromJar=true; filename=filename.substring(JAR.length()).replace('\\', '/'); }
         final CodingErrorAction r=CodingErrorAction.REPORT;
         final Pair<byte[],Integer> p=readEntireFile(fromJar,filename);
         ByteBuffer bbuf;
@@ -275,9 +283,6 @@ public final class Util {
         }
         return ans;
     }
-
-    /** Read everything into a String; throws IOException if an error occurred. */
-    public static String readAll(String filename) throws FileNotFoundException, IOException { return readAll(false,filename); }
 
     /** Open then overwrite the file with the given content; throws Err if an error occurred. */
     public static long writeAll(String filename, String content) throws Err {
