@@ -700,6 +700,7 @@ public final class OurTabbedEditor {
                         content=Util.readAll(f);
                     } catch(IOException ex) {
                         // Highlight is not critical
+                        if (1==1) { OurDialog.alert(parentFrame, "Error reading the file \""+f+"\"", "Error"); return; }
                         adjustLabelColor();
                         parent.notifyChange();
                         return;
@@ -747,6 +748,7 @@ public final class OurTabbedEditor {
                         content=Util.readAll(f);
                     } catch(IOException ex) {
                         // Highlight is not critical
+                        if (1==1) { OurDialog.alert(parentFrame, "Error reading the file \""+f+"\"", "Error"); break again; }
                         continue again;
                     }
                     newTab(f, content, true);
