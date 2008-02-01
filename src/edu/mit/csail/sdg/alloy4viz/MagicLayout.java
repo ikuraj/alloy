@@ -39,8 +39,8 @@ final class MagicLayout {
 
     /** This method logs the progress */
     private static final void log(String msg) {
-        System.err.println(msg);
-        System.err.flush();
+        //System.err.println(msg);
+        //System.err.flush();
     }
 
     /** The VizState object that we're going to configure. */
