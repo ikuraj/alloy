@@ -136,7 +136,7 @@ public final class CompUtil {
                 if (content==null) { content=Util.readAll(cp); }
             } catch(IOException ex1) {
                 try {
-                    String newCp = Util.jarPrefix() + "models" + File.separatorChar + x.filename + ".als";
+                    String newCp = (Util.jarPrefix()+"models/"+x.filename+".als").replace('/', File.separatorChar);
                     content = Util.readAll(newCp);
                     cp = newCp;
                 } catch(IOException ex) {

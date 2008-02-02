@@ -324,8 +324,8 @@ public final class Util {
     public static final String canon(String filename) {
         if (filename==null || filename.length()==0) return "";
         if (filename.startsWith(jarPrefix())) {
-           //if (filename.indexOf('\\')>=0) return filename.replace('\\', '/'); else
-           return filename;
+           char sep = File.separatorChar, other = (sep=='/' ? '\\' : '/');
+           return filename.replace(other, sep);
         }
         File file=new File(filename);
         String answer;
