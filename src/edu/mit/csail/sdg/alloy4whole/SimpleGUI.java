@@ -1616,6 +1616,10 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
     public static void main(final String[] args) {
+        if ("yes".equals(System.getProperty("debug"))) {
+        	System.out.println("Starting...");
+        	System.out.flush();
+        }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() { new SimpleGUI(args); }
         });
