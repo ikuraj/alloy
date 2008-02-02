@@ -316,6 +316,10 @@ public final class Util {
      * <p> Note: if filename=="", we return "".
      */
     public static final String canon(String filename) {
+        if (filename.startsWith(JAR)) {
+           //if (filename.indexOf('\\')>=0) return filename.replace('\\', '/'); else
+           return filename;
+        }
         if (filename==null || filename.length()==0) return "";
         File file=new File(filename);
         String answer;
