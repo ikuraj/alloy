@@ -1350,8 +1350,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     private Runner doLicense() {
         if (wrap) return wrapMe();
         JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
+        final String JAR = Util.jarPrefix();
         String alloytxt;
-        try {alloytxt=Util.readAll(Util.JAR + "LICENSES" + File.separator + "Alloy.txt");} catch(IOException ex) {return null;}
+        try {alloytxt=Util.readAll(JAR + "LICENSES" + File.separator + "Alloy.txt");} catch(IOException ex) {return null;}
         final JTextArea text = OurUtil.textarea(alloytxt,15,85);
         text.setEditable(false);
         text.setLineWrap(false);
@@ -1363,7 +1364,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
               Object value = combo.getSelectedItem();
               if (value instanceof String) {
                  try {
-                     String content = Util.readAll(Util.JAR + "LICENSES" + File.separator + value + ".txt");
+                     String content = Util.readAll(JAR + "LICENSES" + File.separator + value + ".txt");
                      text.setText(content);
                  } catch(IOException ex) {
                      text.setText("Sorry: an error has occurred in displaying the license file.");
@@ -1616,10 +1617,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
     public static void main(final String[] args) {
-        if ("yes".equals(System.getProperty("debug"))) {
-        	System.out.println("Starting...");
-        	System.out.flush();
-        }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() { new SimpleGUI(args); }
         });

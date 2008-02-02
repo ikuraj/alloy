@@ -252,14 +252,20 @@ public final class Util {
         return new Pair<byte[],Integer>(buf,now);
     }
 
-    /** This is a constant prefix to denote whether Util.readAll() should read from a JAR or read from the file system. */
-    public static String JAR = File.separator + "$alloy4$" + File.separator;
+    /**
+     * This returns the constant prefix to denote whether Util.readAll() should read from a JAR or read from the file system.
+     * (The reason we made this into a "method" rather than a constant String is that it is used
+     * by Util.canon() which is called by many static initializer blocks... so if we made this into a static field
+     * of Util, then it may not be initialized yet when we need it!)
+     */
+    public static String jarPrefix() { return File.separator + "$alloy4$" + File.separator; }
 
     /**
      * Read everything into a String; throws IOException if an error occurred.
      * (If filename begins with Util.JAR, then we read from the JAR instead)
      */
     public static String readAll(String filename) throws FileNotFoundException, IOException {
+        String JAR = jarPrefix();
         boolean fromJar=false;
         if (filename.startsWith(JAR)) { fromJar=true; filename=filename.substring(JAR.length()).replace('\\', '/'); }
         final CodingErrorAction r=CodingErrorAction.REPORT;
@@ -317,7 +323,7 @@ public final class Util {
      */
     public static final String canon(String filename) {
         if (filename==null || filename.length()==0) return "";
-        if (filename.startsWith(JAR)) {
+        if (filename.startsWith(jarPrefix())) {
            //if (filename.indexOf('\\')>=0) return filename.replace('\\', '/'); else
            return filename;
         }
