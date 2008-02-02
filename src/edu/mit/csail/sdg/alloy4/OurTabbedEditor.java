@@ -364,7 +364,7 @@ public final class OurTabbedEditor {
     public String save(final boolean alwaysPickNewName) {
         if (me<0 || me>=tabs.size()) { return null; }
         String filename = tabs.get(me).filename;
-        if (tabs.get(me).isFile==false || alwaysPickNewName) {
+        if (tabs.get(me).isFile==false || filename.startsWith(Util.jarPrefix()) || alwaysPickNewName) {
             File file=OurDialog.askFile(parentFrame, false, null, ".als", ".als files");
             if (file==null) return null;
             filename=Util.canon(file.getPath());
