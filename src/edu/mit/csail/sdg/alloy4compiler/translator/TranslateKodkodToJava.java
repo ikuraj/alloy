@@ -185,7 +185,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("%nSolver solver = new Solver();");
         file.printf("%nsolver.options().setSolver(SATFactory.DefaultSAT4J);");
         file.printf("%nsolver.options().setBitwidth(%d);",bitwidth);
-        file.printf("%nsolver.options().setIntEncoding(Options.IntEncoding.BINARY);");
+        file.printf("%nsolver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);");
         file.printf("%nsolver.options().setSymmetryBreaking(20);");
         file.printf("%nsolver.options().setSkolemDepth(0);");
         file.printf("%nSolution sol = solver.solve(%s,bounds);", result);
@@ -361,7 +361,11 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     public void visit(IntToExprCast x) {
         String newname=makename(x); if (newname==null) return;
         String sub=make(x.intExpr());
-        file.printf("Expression %s=%s.toExpression();%n", newname, sub);
+        switch(x.op()) {
+           case INTCAST: file.printf("Expression %s=%s.toExpression();%n", newname, sub); break;
+           case BITSETCAST: file.printf("Expression %s=%s.toBitset();%n", newname, sub); break;
+           default: throw new RuntimeException("Unknown kodkod operator \""+x.op()+"\" encountered");
+        }
     }
 
     /** {@inheritDoc} */

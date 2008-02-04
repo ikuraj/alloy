@@ -273,7 +273,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         solver.options().setSymmetryBreaking(sym);
         solver.options().setSkolemDepth(opt.skolemDepth);
         solver.options().setBitwidth(bitwidth);
-        solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+        solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
         solver.options().setReporter(new AbstractReporter() {
             @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
                 try {

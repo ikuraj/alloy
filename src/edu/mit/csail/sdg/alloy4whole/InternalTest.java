@@ -50,13 +50,13 @@ final class InternalTest {
         Solver solver = new Solver();
         solver.options().setSolver(SATFactory.DefaultSAT4J);
         solver.options().setBitwidth(4);
-        solver.options().setIntEncoding(Options.IntEncoding.BINARY);
+        solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
         solver.options().setSymmetryBreaking(20);
         solver.options().setSkolemDepth(0);
         Solution sol = solver.solve(Formula.TRUE, bounds);
         Evaluator ev = new Evaluator(sol.instance());
         ev.options().setBitwidth(4);
-        ev.options().setIntEncoding(Options.IntEncoding.BINARY);
+        ev.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
         for(int a=-8; a<=7; a++) for(int b=-8; b<=7; b++) {
             String real = "" + ext(a*b);
             String kk = ""+ev.evaluate(n(a).multiply(n(b)));
