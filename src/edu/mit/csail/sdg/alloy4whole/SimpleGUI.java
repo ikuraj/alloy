@@ -1831,7 +1831,10 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             Subprocess test1 = new Subprocess(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
             if (!test1.getStandardOutput().startsWith("s SATISFIABLE")) satChoices.remove(SatSolver.BerkMinPIPE);
             Subprocess test2 = new Subprocess(20000, new String[]{binary+fs+"spear", "--model", "--dimacs", binary+fs+"tmp.cnf"});
-            if (!test2.getStandardOutput().startsWith("s SATISFIABLE")) satChoices.remove(SatSolver.SpearPIPE);
+            if (!test2.getStandardOutput().startsWith("s SATISFIABLE")) {
+            	log.logBold(test2.getStandardOutputAndError());
+            	satChoices.remove(SatSolver.SpearPIPE);
+            }
             try { System.loadLibrary("minisat"); } catch(UnsatisfiedLinkError e) {
                 log.logBold("Warning: JNI-based SAT solver does not work on this platform.\n");
                 log.log("This is okay, since you can still use SAT4J as the solver.\n"+
