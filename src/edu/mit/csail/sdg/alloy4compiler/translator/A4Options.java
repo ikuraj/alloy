@@ -44,17 +44,21 @@ public final class A4Options implements Serializable {
         private final String toString;
         /** If not null, this is the external command-line solver to use. */
         private final String external;
+        /** If not null, this is the set of options to use with the command-line solver. */
+        private final String[] options;
         /** Constructs a new SatSolver value. */
-        private SatSolver(String id, String toString, String external, boolean add) {
+        private SatSolver(String id, String toString, String external, String[] options, boolean add) {
             this.id=id;
             this.toString=toString;
             this.external=external;
+            this.options=new String[options!=null ? options.length : 0];
+            for(int i=0; i<this.options.length; i++) this.options[i] = options[i];
             if (add) { synchronized(SatSolver.class) { values.add(this); } }
         }
         /** Constructs a new SatSolver value that uses a command-line solver; throws ErrorAPI if the ID is already in use. */
-        public static SatSolver make(String id, String toString, String external) throws ErrorAPI {
+        public static SatSolver make(String id, String toString, String external, String[] options) throws ErrorAPI {
             if (id==null || toString==null || external==null) throw new ErrorAPI("NullPointerException in SatSolver.make()");
-            SatSolver ans = new SatSolver(id, toString, external, false);
+            SatSolver ans = new SatSolver(id, toString, external, options, false);
             synchronized(SatSolver.class) {
                for(SatSolver x: values)
                   if (x.id.equals(id))
@@ -63,8 +67,17 @@ public final class A4Options implements Serializable {
             }
             return ans;
         }
-        /** Returns the external command-line solver to use (or null if this solver does not use an external commandline solver) */
+        /** Constructs a new SatSolver value that uses a command-line solver; throws ErrorAPI if the ID is already in use. */
+        public static SatSolver make(String id, String toString, String external) throws ErrorAPI { return make(id, toString, external, null); }
+        /** Returns the executable for the external command-line solver to use (or null if this solver does not use an external commandline solver) */
         public String external() { return external; }
+        /** Returns the options for the external command-line solver to use (or empty array if this solver does not use an external commandline solver) */
+        public String[] options() {
+            if (external==null || options.length==0) return new String[0];
+            String[] ans = new String[options.length];
+            for(int i=0; i<ans.length; i++) ans[i] = options[i];
+            return ans;
+        }
         /** Returns the unique String for this value; it will be kept consistent in future versions. */
         public String id() { return id; }
         /** Returns the list of SatSolver values. */
@@ -93,19 +106,19 @@ public final class A4Options implements Serializable {
         /** Reads the current value of the Java preference object (if it's not set, then return SAT4J). */
         public static SatSolver get() { return parse(Preferences.userNodeForPackage(Util.class).get("SatSolver2","")); }
         /** BerkMin via pipe */
-        public static final SatSolver BerkMinPIPE = new SatSolver("berkmin", "BerkMin", "berkmin", true);
+        public static final SatSolver BerkMinPIPE = new SatSolver("berkmin", "BerkMin", "berkmin", null, true);
         /** Spear via pipe */
-        public static final SatSolver SpearPIPE = new SatSolver("spear", "Spear", "spear", true);
+        public static final SatSolver SpearPIPE = new SatSolver("spear", "Spear", "spear", null, true);
         /** MiniSat1 via JNI */
-        public static final SatSolver MiniSatJNI = new SatSolver("minisat(jni)", "MiniSat", null, true);
+        public static final SatSolver MiniSatJNI = new SatSolver("minisat(jni)", "MiniSat", null, null, true);
         /** MiniSatProver1 via JNI */
-        public static final SatSolver MiniSatProverJNI = new SatSolver("minisatprover(jni)", "MiniSat with Unsat Core", null, true);
+        public static final SatSolver MiniSatProverJNI = new SatSolver("minisatprover(jni)", "MiniSat with Unsat Core", null, null, true);
         /** ZChaff via JNI */
-        public static final SatSolver ZChaffJNI = new SatSolver("zchaff(jni)", "ZChaff", null, true);
+        public static final SatSolver ZChaffJNI = new SatSolver("zchaff(jni)", "ZChaff", null, null, true);
         /** SAT4J using native Java */
-        public static final SatSolver SAT4J = new SatSolver("sat4j", "SAT4J", null, true);
+        public static final SatSolver SAT4J = new SatSolver("sat4j", "SAT4J", null, null, true);
         /** Outputs the raw CNF file only */
-        public static final SatSolver FILE = new SatSolver("file", "Output to file", null, true);
+        public static final SatSolver FILE = new SatSolver("file", "Output to file", null, null, true);
     }
 
     /** This ensures the class can be serialized reliably. */
@@ -125,25 +138,25 @@ public final class A4Options implements Serializable {
      *
      * <p> Default value is 20.
      */
-    public int symmetry=20;
+    public int symmetry = 20;
 
     /**
      * This option specifies the maximum skolem-function depth.
      * <p> Default value is 0, which means it will only generate skolem constants, and will not generate skolem functions.
      */
-    public int skolemDepth=0;
+    public int skolemDepth = 0;
 
     /**
      * This option specifies the unsat core minimization strategy (0=GuaranteedLocalMinimum 1=FasterButLessAccurate 2=EvenFaster...)
      * <p> Default value is set to the fastest current strategy.
      */
-    public int coreMinimization=2;
+    public int coreMinimization = 2;
 
     /**
      * This option specifies the SAT solver to use (SAT4J, MiniSatJNI, MiniSatProverJNI, ZChaffJNI...)
      * <p> Default value is SAT4J.
      */
-    public SatSolver solver=SatSolver.SAT4J;
+    public SatSolver solver = SatSolver.SAT4J;
 
     /**
      * When this.solver is external, and the solver filename is a relative filename, then this option specifies
@@ -161,12 +174,12 @@ public final class A4Options implements Serializable {
      * it is only used for generating comments and other diagnostic messages.
      * <p> Default value is "".
      */
-    public String originalFilename="";
+    public String originalFilename = "";
 
     /**
      * This option specifies whether the compiler should record
      * the original Kodkod formula being generated and the resulting Kodkod instances.
      * <p> Default value is false.
      */
-    public boolean recordKodkod=false;
+    public boolean recordKodkod = false;
 }
