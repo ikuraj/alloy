@@ -1624,16 +1624,16 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** Returns true iff the output says "s SATISFIABLE" (while ignoring comment lines and value lines) */
     private static boolean isSat(String output) {
-    	int i=0, n=output.length();
-		// skip COMMENT lines and VALUE lines
-    	while(i<n && (output.charAt(i)=='c' || output.charAt(i)=='v')) {
-    		while(i<n && (output.charAt(i)!='\r' && output.charAt(i)!='\n')) i++;
-    		while(i<n && (output.charAt(i)=='\r' || output.charAt(i)=='\n')) i++;
-    		continue;
-    	}
-		return output.substring(i).startsWith("s SATISFIABLE");
+        int i=0, n=output.length();
+        // skip COMMENT lines and VALUE lines
+        while(i<n && (output.charAt(i)=='c' || output.charAt(i)=='v')) {
+            while(i<n && (output.charAt(i)!='\r' && output.charAt(i)!='\n')) i++;
+            while(i<n && (output.charAt(i)=='\r' || output.charAt(i)=='\n')) i++;
+            continue;
+        }
+        return output.substring(i).startsWith("s SATISFIABLE");
     }
-    
+
     //====== Main Method ====================================================//
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
