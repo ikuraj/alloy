@@ -254,7 +254,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             String ext = opt.solver.external();
             if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
             File tmp = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
-            solver.options().setSolver(SATFactory.externalFactory(ext, "", tmp.getAbsolutePath(), ""));
+            solver.options().setSolver(SATFactory.externalFactory(ext, opt.solver.options(), tmp.getAbsolutePath(), ""));
         } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
             solver.options().setSolver(SATFactory.ZChaff);
         } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
