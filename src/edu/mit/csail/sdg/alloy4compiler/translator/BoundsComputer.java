@@ -295,7 +295,7 @@ final class BoundsComputer {
     }
 
     /** Add the constraint that the sig has exactly "n" elements, or at most "n" elements */
-    private Formula size(Sig sig, int n, boolean exact, Map<Formula,Object> fmap) {
+    private Formula size(Sig sig, int n, boolean exact) {
         Expression a = a2k.get(sig);
         if (n<=0) return a.no();
         if (n==1) return exact ? a.one() : a.lone();
@@ -447,14 +447,14 @@ final class BoundsComputer {
             }
             else if (sc.isExact(s)) {
                 rep.bound("Sig "+s+" in "+upper+" with size=="+n+"\n");
-                fact.add(size(s,n,true,fmap));
+                fact.add(size(s,n,true));
             }
             else if (upper.size()<=n){
                 rep.bound("Sig "+s+" in "+upper+"\n");
             }
             else {
                 rep.bound("Sig "+s+" in "+upper+" with size<="+n+"\n");
-                fact.add(size(s,n,false,fmap));
+                fact.add(size(s,n,false));
             }
         }
         // Turn everything read-only

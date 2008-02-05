@@ -1463,6 +1463,15 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         latestAutoInstance=arg;
     }
 
+    /** The color to use for functions/predicate/paragraphs that contains part of the unsat core. */
+    final Color supCoreColor = new Color(0.95f, 0.1f, 0.1f);
+
+    /** The color to use for the unsat core. */
+    final Color coreColor = new Color(0.9f, 0.4f, 0.4f);
+
+    /** The color to use for functions/predicate used by the Unsat core. */
+    final Color subCoreColor = new Color(0.9f, 0.7f, 0.7f);
+
     /** This method displays a particular instance or message. */
     @SuppressWarnings("unchecked")
     Runner doVisualize(String arg) {
@@ -1490,9 +1499,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 Util.close(is);
             }
             text.removeAllHighlights();
-            text.highlight(hCore.b, false, false);
-            text.highlight(hCore.a, true, false);
-            if (1==2) text.highlight(lCore, true, false); // we are currently not highlighting the lowlevel core
+            text.highlight(hCore.b, subCoreColor, false);
+            text.highlight(hCore.a, coreColor, false);
+            if (1==2) text.highlight(lCore, coreColor, false); // we are currently not highlighting the lowlevel core
         }
         if (arg.startsWith("POS: ")) {
             Scanner s=new Scanner(arg.substring(5));

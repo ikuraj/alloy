@@ -311,6 +311,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         return me;
     }
 
+    /** This wraps an iterator up where it will pre-fetch the first element; (it will not prefetch subsequent elements). */
     private static final class Peeker<T> implements Iterator<T> {
         private Iterator<T> iterator;
         private boolean hasFirst;
@@ -568,11 +569,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** If f is a formula, and it hasn't been associated with any location information, then associate it with x. */
     private Formula fmap(Object f, Expr x) {
         if (!(f instanceof Formula)) return null;
-        Formula ff=(Formula)f;
+        Formula ff = (Formula)f;
         if (fmap.containsKey(ff)) return ff;
         fmap.put(ff, x);
         if (ff instanceof BinaryFormula) {
-            BinaryFormula b=(BinaryFormula)ff;
+            BinaryFormula b = (BinaryFormula)ff;
             if (b.op() == BinaryFormula.Operator.AND) { fmap(b.left(), x); fmap(b.right(), x); }
         }
         return ff;
@@ -581,11 +582,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** If f is a formula, and it hasn't been associated with any location information, then associate it with x. */
     private Formula fmap(Object f, Pos x) {
         if (!(f instanceof Formula)) return null;
-        Formula ff=(Formula)f;
+        Formula ff = (Formula)f;
         if (x==null || x==Pos.UNKNOWN || fmap.containsKey(f)) return ff;
         fmap.put(ff, x);
         if (ff instanceof BinaryFormula) {
-            BinaryFormula b=(BinaryFormula)ff;
+            BinaryFormula b = (BinaryFormula)ff;
             if (b.op() == BinaryFormula.Operator.AND) { fmap(b.left(), x); fmap(b.right(), x); }
         }
         return ff;
@@ -696,9 +697,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Formula c=cform(x.cond);
         Object l=visitThis(x.left);
         if (l instanceof Formula) {
-            Formula c1 = fmap( c.implies((Formula)l) , x );
-            Formula c2 = fmap( c.not().implies(cform(x.right)) , x );
-            return fmap(c1.and(c2) , x );
+            Formula c1 = c.implies((Formula)l);
+            Formula c2 = c.not().implies(cform(x.right));
+            return fmap(c1.and(c2), x);
         }
         if (l instanceof Expression) {
             return c.thenElse((Expression)l, cset(x.right));
@@ -902,7 +903,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final int n=f.params.size();
         if (n==0) {
             Object ans=bcc.get(f); // Try looking it up; it may have been pre-bound to some value
-            if (ans!=null) return ans;
+            if (ans!=null) { if (ans instanceof Formula) {fmap(ans,x);} return ans; }
         }
         for(Func ff:current_function) if (ff==f) {
             throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
@@ -938,13 +939,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
             return a.modulo(b).toExpression();
         }
-        Env<ExprVar,Object> newenv=new Env<ExprVar,Object>();
+        Env<ExprVar,Object> newenv = new Env<ExprVar,Object>();
         for(int i=0; i<n; i++) newenv.put(f.params.get(i), cset(x.args.get(i)));
-        Env<ExprVar,Object> oldenv=env;
-        env=newenv;
+        Env<ExprVar,Object> oldenv = env;
+        env = newenv;
         current_function.add(f);
-        Object ans=visitThis(body);
-        env=oldenv;
+        Object ans = visitThis(body);
+        env = oldenv;
         current_function.remove(current_function.size()-1);
         if (ans instanceof Formula) fmap(ans, x);
         return ans;
@@ -963,10 +964,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         for(Expr arg:x.args) {
             Expression b=cset(arg);
             if (a==null) {a=b;continue;}
-            if (answer==null) answer=fmap(a.intersection(b).no(), x); else answer=fmap(a.intersection(b).no(), x).and(answer);
+            if (answer==null) answer=a.intersection(b).no(); else answer=a.intersection(b).no().and(answer);
             a=a.union(b);
         }
-        if (answer!=null) return fmap(answer,x); else return Formula.TRUE;
+        if (answer!=null) return fmap(answer, x); else return Formula.TRUE;
     }
 
     /*===============================*/
