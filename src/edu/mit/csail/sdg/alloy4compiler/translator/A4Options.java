@@ -108,7 +108,7 @@ public final class A4Options implements Serializable {
         /** BerkMin via pipe */
         public static final SatSolver BerkMinPIPE = new SatSolver("berkmin", "BerkMin", "berkmin", null, true);
         /** Spear via pipe */
-        public static final SatSolver SpearPIPE = new SatSolver("spear", "Spear", "spear", null, true);
+        public static final SatSolver SpearPIPE = new SatSolver("spear", "Spear", "spear", new String[]{"--model", "--dimacs"}, true);
         /** MiniSat1 via JNI */
         public static final SatSolver MiniSatJNI = new SatSolver("minisat(jni)", "MiniSat", null, null, true);
         /** MiniSatProver1 via JNI */
