@@ -1622,6 +1622,18 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         }
     };
 
+    /** Returns true iff the output says "s SATISFIABLE" (while ignoring comment lines and value lines) */
+    private static boolean isSat(String output) {
+    	int i=0, n=output.length();
+		// skip COMMENT lines and VALUE lines
+    	while(i<n && (output.charAt(i)=='c' || output.charAt(i)=='v')) {
+    		while(i<n && (output.charAt(i)!='\r' && output.charAt(i)!='\n')) i++;
+    		while(i<n && (output.charAt(i)=='\r' || output.charAt(i)=='\n')) i++;
+    		continue;
+    	}
+		return output.substring(i).startsWith("s SATISFIABLE");
+    }
+    
     //====== Main Method ====================================================//
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
@@ -1829,12 +1841,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (1==1) {
             satChoices = SatSolver.values().makeCopy();
             Subprocess test1 = new Subprocess(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
-            if (!test1.getStandardOutput().startsWith("s SATISFIABLE")) satChoices.remove(SatSolver.BerkMinPIPE);
+            if (!isSat(test1.getStandardOutput())) satChoices.remove(SatSolver.BerkMinPIPE);
             Subprocess test2 = new Subprocess(20000, new String[]{binary+fs+"spear", "--model", "--dimacs", binary+fs+"tmp.cnf"});
-            if (!test2.getStandardOutput().startsWith("s SATISFIABLE")) {
-            	log.logBold(test2.getStandardOutputAndError());
-            	satChoices.remove(SatSolver.SpearPIPE);
-            }
+            if (!isSat(test2.getStandardOutput())) satChoices.remove(SatSolver.SpearPIPE);
             try { System.loadLibrary("minisat"); } catch(UnsatisfiedLinkError e) {
                 log.logBold("Warning: JNI-based SAT solver does not work on this platform.\n");
                 log.log("This is okay, since you can still use SAT4J as the solver.\n"+
