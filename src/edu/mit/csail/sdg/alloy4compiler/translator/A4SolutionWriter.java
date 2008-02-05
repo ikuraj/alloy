@@ -262,11 +262,14 @@ public final class A4SolutionWriter {
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the A4Solution XML file.",ex);
         }
-        if (out.checkError()) throw new ErrorFatal("Error writing the A4Solution XML file.");
+        if (out.checkError()) throw new ErrorFatal("Error writing the XML instance file.");
     }
 
     /**
      * Write the metamodel as &lt;instance&gt;..&lt;/instance&gt; in XML format.
+     *
+     * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
+     * <p> If two or more fields have the same name and overlapping type, we append ' to the names until no more conflict.
      */
     public static void writeMetamodel(ConstList<Sig> sigs, String originalFilename, PrintWriter out) throws Err {
         try {
@@ -274,6 +277,6 @@ public final class A4SolutionWriter {
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the A4Solution XML file.",ex);
         }
-        if (out.checkError()) throw new ErrorFatal("Error writing the A4Solution XML file.");
+        if (out.checkError()) throw new ErrorFatal("Error writing the XML instance file.");
     }
 }

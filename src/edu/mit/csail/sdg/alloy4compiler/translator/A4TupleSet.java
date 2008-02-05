@@ -25,7 +25,6 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import edu.mit.csail.sdg.alloy4.ConstMap;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import kodkod.instance.Tuple;
 import kodkod.instance.TupleSet;
@@ -51,21 +50,6 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
         this.tuples = tuples;
         this.atomMap = atomMap;
         this.sigMap = sigMap;
-    }
-
-    /**
-     * Construct a new TupleSet as the merge of this TupleSet and that TupleSet.
-     * @throws ErrorAPI if this.atomMap != that.atomMap
-     * @throws ErrorAPI if this.sigMap != that.atomMap
-     * @throws ErrorAPI if this.tuples.universe() != that.tuples.universe()
-     */
-    A4TupleSet merge(A4TupleSet that) throws ErrorAPI {
-        if (atomMap!=that.atomMap) throw new ErrorAPI("Cannot combine A4TupleSet from different universe.");
-        if (sigMap!=that.sigMap) throw new ErrorAPI("Cannot combine A4TupleSet from different universe.");
-        if (tuples.universe()!=that.tuples.universe()) throw new ErrorAPI("Cannot combine A4TupleSet from different universe.");
-        TupleSet x = tuples.clone();
-        x.addAll(that.tuples);
-        return new A4TupleSet(x, atomMap, sigMap);
     }
 
     /** Returns a read-only iterator that iterates over each tuple in this TupleSet. */

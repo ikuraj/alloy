@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -47,6 +48,7 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -87,7 +89,7 @@ final class BoundsComputer {
     static final Relation SEQ_SEQIDX = Relation.unary("seq/Int");
 
     /** This caches a readonly empty list of String. */
-    private static final ArrayList<String> empty = new ArrayList<String>(0);
+    private static final List<String> empty = Collections.unmodifiableList(new ArrayList<String>(0));
 
     /** Associate the given formula with the given Pos object, then return the given formula. */
     private static Formula add(Formula f, Pos x, Map<Formula,Object> fmap) {
@@ -135,19 +137,19 @@ final class BoundsComputer {
     private final Map<PrimSig,ArrayList<String>> sig2upper = new LinkedHashMap<PrimSig,ArrayList<String>>();
 
     /** Returns the current lowerbound (as a list of String) */
-    private ArrayList<String> sig2lower(PrimSig sig) {
-        ArrayList<String> ans=sig2lower.get(sig);
+    private List<String> sig2lower(PrimSig sig) {
+        ArrayList<String> ans = sig2lower.get(sig);
         if (ans==null) return empty; else return ans;
     }
 
     /** Returns the current upperbound (as a list of String) */
-    private ArrayList<String> sig2upper(PrimSig sig) {
-        ArrayList<String> ans=sig2upper.get(sig);
+    private List<String> sig2upper(PrimSig sig) {
+        ArrayList<String> ans = sig2upper.get(sig);
         if (ans==null) return empty; else return ans;
     }
 
     /** Given a sig, make N atoms for it (Note: SIGINT and SEQIDX atom names are different, and must not use this method) */
-    private static void makeAtom(Sig sig, ArrayList<String> list1, ArrayList<String> list2, int n) {
+    private static void makeAtom(UniqueNameGenerator un, Sig sig, ArrayList<String> list1, ArrayList<String> list2, int n) {
         if (n<=0) return;
         String name=sig.toString();
         if (name.startsWith("this/")) name=name.substring(5);
@@ -165,19 +167,19 @@ final class BoundsComputer {
             int xlen = x.length();
             while(xlen < width) {sb.append('0'); xlen++;}
             sb.append(x);
-            x=sb.toString();
+            x=un.make(sb.toString());
             if (list1!=null) list1.add(x);
             if (list2!=null) list2.add(x);
         }
     }
 
     /** Computes the lowerbound from bottom-up; it will also set a suitable initial value for each sig's upperbound. */
-    private ArrayList<String> computeLowerBound(ScopeComputer sc, PrimSig sig) throws Err {
+    private List<String> computeLowerBound(UniqueNameGenerator un, ScopeComputer sc, PrimSig sig) throws Err {
         if (sig.builtin) return empty;
         int n=sc.sig2scope(sig);
         final ArrayList<String> lower=new ArrayList<String>();
         // First, figure out what atoms *MUST* be in this sig
-        for(PrimSig c:sig.children()) lower.addAll(computeLowerBound(sc,c));
+        for(PrimSig c:sig.children()) lower.addAll(computeLowerBound(un, sc, c));
         // If MUST>SCOPE, then something went wrong!
         if (n<lower.size()) {
             StringBuilder msg=new StringBuilder();
@@ -189,10 +191,10 @@ final class BoundsComputer {
         ArrayList<String> upper=new ArrayList<String>(lower);
         if (n>upper.size() && sc.isExact(sig)) {
             // If MUST<SCOPE and s is exact, then add fresh atoms to both LOWERBOUND and UPPERBOUND, then return.
-            makeAtom(sig, lower, upper, n-upper.size());
+            makeAtom(un, sig, lower, upper, n-upper.size());
         } else if (n>upper.size() && sig.isTopLevel()) {
             // If MUST<SCOPE and s is inexact but toplevel, then add fresh atoms to the UPPERBOUND, then return.
-            makeAtom(sig, null, upper, n-upper.size());
+            makeAtom(un, sig, null, upper, n-upper.size());
         }
         sig2lower.put(sig, lower);
         sig2upper.put(sig, upper);
@@ -200,7 +202,7 @@ final class BoundsComputer {
     }
 
     /** Computes the upperbound from top-down. */
-    private ArrayList<String> computeUpperBound(ScopeComputer sc, PrimSig sig) throws Err {
+    private List<String> computeUpperBound(ScopeComputer sc, PrimSig sig) throws Err {
         if (sig.builtin) return empty;
         // Sig's upperbound is fully computed. We recursively compute the upperbound for children...
         Set<String> x=new LinkedHashSet<String>(sig2upper(sig));
@@ -234,8 +236,9 @@ final class BoundsComputer {
         sig2lower.put(SIGINT, ilist);
         sig2upper.put(SIGINT, new ArrayList<String>(ilist));
         // Generate other atoms
-        for(Sig s:sigs) if (s.isTopLevel()) computeLowerBound( sc , (PrimSig)s );
-        for(Sig s:sigs) if (s.isTopLevel()) atoms.addAll( computeUpperBound(sc , (PrimSig)s) );
+        UniqueNameGenerator un = new UniqueNameGenerator();
+        for(Sig s:sigs) if (s.isTopLevel()) computeLowerBound(un, sc, (PrimSig)s);
+        for(Sig s:sigs) if (s.isTopLevel()) atoms.addAll(computeUpperBound(sc, (PrimSig)s));
         this.universe = new Universe(atoms);
     }
 

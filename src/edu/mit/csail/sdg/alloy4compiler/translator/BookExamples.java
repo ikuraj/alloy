@@ -70,7 +70,7 @@ final class BookExamples {
     static Solution trial
     (Map<Relation,Type> rel2type, A4Reporter rep, Iterable<Sig> sigs, ConstMap<Object,Expression> bc, Bounds bounds, Formula formula, Solver solver, boolean check) {
         TupleFactory fac = bounds.universe().factory();
-        Solution sol=null;
+        Solution sol = null;
         if (hasSig(sigs, "this/Book")!=null) {
             Tuple B0N0A0 = t_tuple(fac, "Book$0", "Name$0", "Addr$0");
             Tuple B0N1A0 = t_tuple(fac, "Book$0", "Name$1", "Addr$0");
@@ -389,5 +389,4 @@ final class BookExamples {
             return null;
         }
     }
-
 }
