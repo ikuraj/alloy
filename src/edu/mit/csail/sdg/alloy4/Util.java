@@ -316,6 +316,21 @@ public final class Util {
     }
 
     /**
+     * Indent every line in the input stream with the given indentation.
+     */
+    public static final String indent(String text, String prefix) {
+        StringBuilder sb = new StringBuilder();
+        boolean lineStarted = false;
+        for(int i=0, n=text.length(); i<n; i++) {
+            char c=text.charAt(i);
+            if (c=='\n') { lineStarted=false; } else if (!lineStarted) { sb.append(prefix); lineStarted=true; }
+            sb.append(c);
+        }
+        if (sb.length()>0 && sb.charAt(sb.length()-1)!='\n') sb.append('\n');
+        return sb.toString();
+    }
+
+    /**
      * Returns the canonical absolute path for a file.
      * If an IO error occurred, or if the file doesn't exist yet,
      * we will at least return a noncanonical but absolute path for it.
