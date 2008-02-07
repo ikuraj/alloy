@@ -23,7 +23,6 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
-
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
