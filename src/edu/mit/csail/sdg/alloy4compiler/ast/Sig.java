@@ -410,7 +410,9 @@ public abstract class Sig extends Expr {
         }
 
         /** Returns a human-readable description of this field's name. */
-        @Override public String toString() { return "field ("+sig+" <: "+label+")"; }
+        @Override public String toString() {
+            if (sig.label.length()==0) return label; else return "field ("+sig+" <: "+label+")";
+        }
 
         /** {@inheritDoc} */
         @Override public void toString(StringBuilder out, int indent) {
