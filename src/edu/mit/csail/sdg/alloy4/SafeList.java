@@ -77,6 +77,13 @@ public final class SafeList<T> implements Iterable<T>, Serializable {
         max = (-1);
     }
 
+    /** Constructs a modifiable list containing the elements from the given iterable. */
+    public SafeList(Iterable<? extends T> initialValue) {
+        list = new ArrayList<T>();
+        max = (-1);
+        for(T obj: initialValue) list.add(obj);
+    }
+
     /** Private constructor for assigning exact values to "list" and "max". */
     private SafeList(List<T> list, int max) {
         this.list = list;
