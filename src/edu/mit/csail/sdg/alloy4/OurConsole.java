@@ -280,7 +280,13 @@ public final class OurConsole extends JScrollPane {
                   len = doc.getLength() - old + len;
                   old = doc.getLength();
                   boolean bad = false;
-                  try { x=computer.compute(x); } catch(Throwable ex) { x=ex.toString(); bad=true; }
+                  try {
+                      x=computer.compute(x);
+                  } catch(Throwable ex) {
+                      x=ex.toString();
+                      MailBug.dump(ex);
+                      bad=true;
+                  }
                   do_add(len, x.trim()+"\n\n", (bad ? red : blue));
                   main.setSelectionStart(len+1);
                   main.setSelectionEnd(doc.getLength() - old + len);
