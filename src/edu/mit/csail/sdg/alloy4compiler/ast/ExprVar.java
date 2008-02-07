@@ -23,6 +23,8 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
+
+import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -61,8 +63,8 @@ public final class ExprVar extends Expr {
     }
 
     /** Constructs an ExprVar object */
-    private ExprVar(Pos pos, String label, Expr expr) {
-        super(pos, null, false, expr.type, 0, expr.weight, expr.errors);
+    private ExprVar(Pos pos, String label, Type type, Expr expr) {
+        super(pos, null, false, type, 0, expr.weight, expr.errors);
         this.label = (label==null ? "" : label);
         this.expr = expr;
     }
@@ -75,7 +77,21 @@ public final class ExprVar extends Expr {
      */
     public static ExprVar make(Pos pos, String label, Expr expr) {
         if (expr.ambiguous) expr=expr.resolve(expr.type, sink);
-        return new ExprVar(pos, label, expr);
+        return new ExprVar(pos, label, expr.type, expr);
+    }
+
+    /**
+     * Constructs an ExprVar variable bound to the empty set or relation with the given type
+     * @param pos - the original position in the source file (can be null if unknown)
+     * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
+     * @param type - the type; <b> it must be an unambiguous set or relation </b>
+     */
+    public static ExprVar make(Pos pos, String label, Type type) throws ErrorType {
+        int a = type.arity();
+        if (a<=0) throw new ErrorType(pos, "The variable's type must be an unambiguous set or relation.");
+        Expr expr = Sig.NONE;
+        while(a>1) { expr=expr.product(Sig.NONE); a--; }
+        return new ExprVar(pos, label, type, expr);
     }
 
     /** {@inheritDoc} */
