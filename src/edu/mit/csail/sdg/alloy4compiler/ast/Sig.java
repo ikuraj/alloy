@@ -479,4 +479,21 @@ public abstract class Sig extends Expr {
     public final Field addField(Pos pos, String label, Expr bound) throws Err {
         return addTrickyField(pos, null, label, null, bound);
     }
+
+    /**
+     * Add then return a new field F, where "all x: ThisSig | x.F in bound"
+     * <p> Note: the bound must be fully-typechecked and have exactly 0 free variables.
+     *
+     * @param pos - the position in the original file where this field was defined (can be null if unknown)
+     * @param isPrivate - if nonnull, that means this field should be marked as private
+     * @param label - the name of this field (it does not need to be unique)
+     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
+     *
+     * @throws ErrorSyntax  if the sig is one of the builtin sig
+     * @throws ErrorSyntax  if the bound contains a predicate/function call
+     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
+     */
+    public final Field addField(Pos pos, Pos isPrivate, String label, Expr bound) throws Err {
+        return addTrickyField(pos, isPrivate, label, null, bound);
+    }
 }
