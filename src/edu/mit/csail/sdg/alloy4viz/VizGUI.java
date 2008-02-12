@@ -1002,39 +1002,39 @@ public final class VizGUI implements ComponentListener {
         return wrapMe();
     }
 
-    /** This method shows the instance as a graph. */
-    private Runner doShowViz() {
-        if (!wrap) { currentMode=VisualizerMode.Viz; updateDisplay(); }
+    /** This method changes the display mode to show the instance as a graph (the return value is always null). */
+    public Runner doShowViz() {
+        if (!wrap) { currentMode=VisualizerMode.Viz; updateDisplay(); return null; }
         return wrapMe();
     }
 
-    /** This method shows the instance as XML. */
-    private Runner doShowXML() {
-        if (!wrap) { currentMode=VisualizerMode.XML; updateDisplay(); }
+    /** This method changes the display mode to show the instance as XML (the return value is always null). */
+    public Runner doShowXML() {
+        if (!wrap) { currentMode=VisualizerMode.XML; updateDisplay(); return null; }
         return wrapMe();
     }
 
-    /** This method shows the instance as a tree. */
-    private Runner doShowTree() {
-        if (!wrap) { currentMode=VisualizerMode.Tree; updateDisplay(); }
+    /** This method changes the display mode to show the instance as a tree (the return value is always null). */
+    public Runner doShowTree() {
+        if (!wrap) { currentMode=VisualizerMode.Tree; updateDisplay(); return null; }
         return wrapMe();
     }
 
-    /** This method shows the equivalent dot text. */
-    private Runner doShowDot() {
-        if (!wrap) { currentMode=VisualizerMode.DOT; updateDisplay(); }
+    /** This method changes the display mode to show the equivalent dot text (the return value is always null). */
+    public Runner doShowDot() {
+        if (!wrap) { currentMode=VisualizerMode.DOT; updateDisplay(); return null; }
         return wrapMe();
     }
 
-    /** This method shows the Kodkod input. */
-    private Runner doShowInput() {
-        if (!wrap) { currentMode=VisualizerMode.KInput; updateDisplay(); }
+    /** This method changes the display mode to show the Kodkod input (the return value is always null). */
+    public Runner doShowInput() {
+        if (!wrap) { currentMode=VisualizerMode.KInput; updateDisplay(); return null; }
         return wrapMe();
     }
 
-    /** This method shows the Kodkod output. */
-    private Runner doShowOutput() {
-        if (!wrap) { currentMode=VisualizerMode.KOutput; updateDisplay(); }
+    /** This method changes the display mode to show the Kodkod output (the return value is always null). */
+    public Runner doShowOutput() {
+        if (!wrap) { currentMode=VisualizerMode.KOutput; updateDisplay(); return null; }
         return wrapMe();
     }
 }
