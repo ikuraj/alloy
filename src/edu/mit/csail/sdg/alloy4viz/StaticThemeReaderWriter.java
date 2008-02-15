@@ -23,9 +23,7 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -50,26 +48,12 @@ public final class StaticThemeReaderWriter {
 
     /** Read the XML file and merge its settings into an existing VizState object. */
     public static void readAlloy(String filename, VizState theme) throws IOException {
-        File file=new File(filename);
-        FileInputStream fis=null;
-        InputStreamReader reader=null;
+        File file = new File(filename);
         try {
-            fis = new FileInputStream(file);
-            reader = new InputStreamReader(fis,"UTF-8");
-            XMLNode elem;
-            try {
-                elem = new XMLNode(reader);
-            } catch (IOException e) {
-                throw new IOException("The file \""+file.getPath()+"\" is not a valid XML file, or an error occurred in reading.");
-            }
-            try {
-                for(XMLNode sub: elem.getChildren("view")) parseView(sub,theme);
-            } catch(Throwable e) {
-                throw new IOException("An error occurred in reading or parsing the file \""+file.getPath()+"\"");
-            }
-        } finally {
-            Util.close(reader);
-            Util.close(fis);
+            XMLNode elem = new XMLNode(file);
+            for(XMLNode sub: elem.getChildren("view")) parseView(sub,theme);
+        } catch(Throwable e) {
+            throw new IOException("The file \""+file.getPath()+"\" is not a valid XML file, or an error occurred in reading.");
         }
     }
 
