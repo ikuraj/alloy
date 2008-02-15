@@ -28,7 +28,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 
 /** Immutable; this class represents an XML element node. */
@@ -53,6 +56,23 @@ public final class XMLNode implements Iterable<XMLNode> {
         if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
         parser.parseElement(this);
         if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
+    }
+
+    /** Constructs the root XMLNode by parsing an entire XML document. */
+    public XMLNode(File file) throws IOException {
+        FileInputStream fis = null;
+        InputStreamReader reader = null;
+        try {
+            fis = new FileInputStream(file);
+            reader = new InputStreamReader(fis,"UTF-8");
+            XMLParser parser = new XMLParser(reader);
+            if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
+            parser.parseElement(this);
+            if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
+        } finally {
+            Util.close(reader);
+            Util.close(fis);
+        }
     }
 
     /** Simple parser based on XML Specification 1.0 taking into account XML Specification Errata up to 2008/Jan/18. */
