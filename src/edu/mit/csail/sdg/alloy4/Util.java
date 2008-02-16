@@ -38,6 +38,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -155,6 +156,13 @@ public final class Util {
         TempList<T> ans = new TempList<T>(array.length);
         for(int i=0; i<array.length; i++) { ans.add(array[i]); }
         return ans.makeConst();
+    }
+
+    /** Returns a newly created LinkedHashMap mapping each key to its corresponding value, in the given order. */
+    public static<K,V> LinkedHashMap<K,V> asMap(K[] keys, V... values) {
+        LinkedHashMap<K,V> ans = new LinkedHashMap<K,V>();
+        for(int i=0; i<keys.length && i<values.length; i++) ans.put(keys[i], values[i]);
+        return ans;
     }
 
     /** Return an iterable whose iterator is a read-only iterator that first iterate over Collection1, and then Collection2. */
