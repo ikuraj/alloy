@@ -36,6 +36,12 @@ import edu.mit.csail.sdg.alloy4.Util;
 
 public final class AlloyRelation extends AlloyElement {
 
+    /** This caches an instance of the "extends" AlloyRelation, so we don't have to keep re-constructing it. */
+    public static final AlloyRelation EXTENDS=new AlloyRelation("extends", false, Util.asList(AlloyType.UNIV, AlloyType.UNIV));
+
+    /** This caches an instance of the "in" AlloyRelation, so we don't have to keep re-constructing it. */
+    public static final AlloyRelation IN=new AlloyRelation("in", false, Util.asList(AlloyType.SET, AlloyType.UNIV));
+
     /** The unmodifiable list of types. */
     private final List<AlloyType> types;
 
