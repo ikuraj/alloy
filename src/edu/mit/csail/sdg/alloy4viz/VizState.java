@@ -128,9 +128,8 @@ public final class VizState {
         number.put(seqidx,true);
         hideUnconnected.put(seqidx,true);
         // Provide some nice defaults for meta model stuff
-        AlloyType sig=AlloyType.UNIV, set=AlloyType.SET;
-        AlloyRelation ext=new AlloyRelation("extends", false, Util.asList(sig,sig));
-        AlloyRelation in=new AlloyRelation("in", false, Util.asList(set,sig));
+        AlloyType set=AlloyType.SET;
+        AlloyRelation ext=AlloyRelation.EXTENDS, in=AlloyRelation.IN;
         shape.put(null,DotShape.BOX); nodeColor.put(null,DotColor.YELLOW); nodeStyle.put(null,DotStyle.SOLID);
         shape.put(set,DotShape.ELLIPSE); nodeColor.put(set,DotColor.BLUE); label.put(set,"");
         edgeColor.put(ext,DotColor.BLACK); weight.put(ext,100); layoutBack.put(ext,true);
