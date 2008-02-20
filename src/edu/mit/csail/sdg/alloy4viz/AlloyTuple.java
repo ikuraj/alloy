@@ -22,6 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -43,6 +44,13 @@ public final class AlloyTuple implements Comparable<AlloyTuple> {
         if (atoms==null || atoms.size()<2)
             throw new RuntimeException("An AlloyTuple object must have 2 or more atoms.");
         this.atoms = Collections.unmodifiableList(new ArrayList<AlloyAtom>(atoms));
+    }
+
+    /** Creates a new AlloyTuple containing the atoms specified by the list; atoms.size() must be 2 or above. */
+    public AlloyTuple(AlloyAtom... atoms) {
+        if (atoms==null || atoms.length<2)
+            throw new RuntimeException("An AlloyTuple object must have 2 or more atoms.");
+        this.atoms = Collections.unmodifiableList(new ArrayList<AlloyAtom>(Arrays.asList(atoms)));
     }
 
     /**
