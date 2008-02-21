@@ -25,7 +25,6 @@ package edu.mit.csail.sdg.alloy4viz;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Set;
@@ -36,7 +35,6 @@ import javax.swing.JTextArea;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
-import edu.mit.csail.sdg.alloy4.Util;
 
 /**
  * Mutable; this stores an unprojected model as well as the current theme customization.
@@ -170,38 +168,8 @@ public final class VizState {
         changedSinceLastSave=false;
     }
 
-    /**
-     * Saves the current theme to a file using Tab-Separatred format (which will be overwritten if it exists already).
-     * @throws IOException - if an error occurred
-     */
-    public void savePaletteTS(String filename) throws IOException {
-        PrintWriter bw = new PrintWriter(filename,"UTF-8");
-        bw.write(StaticThemeReaderWriter.dumpView(this));
-        if (!Util.close(bw)) throw new IOException("Error writing to the file \""+filename+"\"");
-        changedSinceLastSave=false;
-    }
-
     /** Caches previously generated graphs. */
     private LinkedHashMap<AlloyProjection,Pair<String,JPanel>> cache=new LinkedHashMap<AlloyProjection,Pair<String,JPanel>>();
-
-    //private LinkedHashMap<AlloyProjection,DotGraph> cache2=new LinkedHashMap<AlloyProjection,DotGraph>();
-
-    /*
-    private void generateAllGraphs(List<AlloyType> projectedType, int i, Map<AlloyType,AlloyAtom> projection) {
-        if (projection==null) { cache2.clear(); projection=new LinkedHashMap<AlloyType,AlloyAtom>(); }
-        if (i>=projectedType.size()) {
-            AlloyProjection p = new AlloyProjection(projection);
-            DotGraph graph = StaticGraphMaker.produceGraph(originalInstance, this, p);
-            cache2.put(p, graph);
-            return;
-        }
-        AlloyType type=projectedType.get(i);
-        for(AlloyAtom atom: originalInstance.type2atoms(type)) {
-            projection.put(type, atom);
-            generateAllGraphs(projectedType, i+1, projection);
-        }
-    }
-    */
 
     /** Generate a VizGraphPanel for a given projection choice, using the current settings. */
     public Pair<String,JPanel> getGraph(AlloyProjection projectionChoice) {
