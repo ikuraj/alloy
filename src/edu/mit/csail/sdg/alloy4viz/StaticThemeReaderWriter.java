@@ -76,7 +76,7 @@ public final class StaticThemeReaderWriter {
     /*============================================================================================*/
 
     /** Does nothing if the element is malformed. */
-    private static void parseView(XMLNode x, VizState now) {
+    private static void parseView(final XMLNode x, VizState now) {
         /*
          * <view orientation=".." nodetheme=".." edgetheme=".." hidePrivate="yes/no" useOriginalAtomNames="yes/no" fontsize="12">
          *   <projection> .. </projection>
@@ -86,6 +86,12 @@ public final class StaticThemeReaderWriter {
          * </view>
          */
         if (!x.is("view")) return;
+        for(XMLNode xml:x) {
+            if (xml.is("projection")) {
+                now.deprojectAll();
+                for(AlloyType t:parseProjectionList(now,xml)) now.project(t);
+            }
+        }
         if (has(x,"useOriginalAtomNames")) now.useOriginalName(getbool(x,"useOriginalAtomNames"));
         if (has(x,"hidePrivate")) now.hidePrivate(getbool(x,"hidePrivate"));
         if (has(x,"fontsize")) now.setFontSize(getint(x,"fontsize"));
@@ -93,11 +99,7 @@ public final class StaticThemeReaderWriter {
         if (has(x,"nodetheme")) now.setNodePalette(parseDotPalette(x,"nodetheme"));
         if (has(x,"edgetheme")) now.setEdgePalette(parseDotPalette(x,"edgetheme"));
         for(XMLNode xml:x) {
-            if (xml.is("projection")) {
-                now.deprojectAll();
-                for(AlloyType t:parseProjectionList(now,xml)) now.project(t);
-            }
-            else if (xml.is("defaultnode")) parseNodeViz(xml, now, null);
+            if (xml.is("defaultnode")) parseNodeViz(xml, now, null);
             else if (xml.is("defaultedge")) parseEdgeViz(xml, now, null);
             else if (xml.is("node")) {
                 for(XMLNode sub:xml.getChildren("type")) {
@@ -152,7 +154,6 @@ public final class StaticThemeReaderWriter {
         Map<String,Set<AlloyNodeElement>> viz2node=new TreeMap<String,Set<AlloyNodeElement>>();
         for(AlloyNodeElement t:types) {
             String str=writeNodeViz(view,defaultView,t);
-            //if (str.length()==0) continue;
             Set<AlloyNodeElement> nodes=viz2node.get(str);
             if (nodes==null) viz2node.put(str, nodes=new TreeSet<AlloyNodeElement>());
             nodes.add(t);
@@ -188,49 +189,6 @@ public final class StaticThemeReaderWriter {
 
     /*============================================================================================*/
 
-    /** Writes nothing if the argument is null. */
-    public static String dumpView(VizState view) throws IOException {
-        StringWriter sw=new StringWriter();
-        PrintWriter out=new PrintWriter(sw);
-        out.write("#defaultnode" + saveNodeViz(view,null) + "\tprojected=\"no\"\n");
-        Set<AlloyElement> types = new TreeSet<AlloyElement>();
-        types.addAll(view.getOriginalModel().getTypes());
-        types.addAll(view.getCurrentModel().getTypes());
-        types.addAll(view.getOriginalModel().getSets());
-        types.addAll(view.getCurrentModel().getSets());
-        for(AlloyElement x:types) {
-            if (x instanceof AlloyType) {
-                AlloyType t=(AlloyType)x;
-                saveAlloyType(out,t);
-                out.write(saveNodeViz(view,t));
-                if (view.getProjectedTypes().contains(t)) out.write("\tprojected=\"yes\""); else out.write("\tprojected=\"no\"");
-                out.write("\n");
-            }
-            else if (x instanceof AlloySet) {
-                AlloySet s=(AlloySet)x;
-                saveAlloySet(out,s);
-                out.write(saveNodeViz(view,s));
-                out.write("\tprojected=\"no\"\n");
-            }
-        }
-        out.write("#defaultedge" + saveEdgeViz(view,null) + "\n");
-        types.clear();
-        types.addAll(view.getOriginalModel().getRelations());
-        types.addAll(view.getCurrentModel().getRelations());
-        for(AlloyElement x:types) {
-            if (x instanceof AlloyRelation) {
-                AlloyRelation r=(AlloyRelation)x;
-                saveAlloyRelation(out,r);
-                out.write(saveEdgeViz(view,r));
-                out.write("\n");
-            }
-        }
-        if (out.checkError()) throw new IOException("Output Failure");
-        return sw.toString();
-    }
-
-    /*============================================================================================*/
-
     /** Return null if the element is malformed. */
     private static AlloyType parseAlloyType(VizState now, XMLNode x) {
         /* class AlloyType implements AlloyNodeElement {
@@ -240,17 +198,12 @@ public final class StaticThemeReaderWriter {
          */
         if (!x.is("type")) return null;
         String name=x.getAttribute("name");
-        if (name.length()==0) return null; else return now.getOriginalModel().hasType(name);
+        if (name.length()==0) return null; else return now.getCurrentModel().hasType(name);
     }
 
     /** Writes nothing if the argument is null. */
     private static void writeAlloyType(PrintWriter out, AlloyType x) throws IOException {
         if (x!=null) Util.encodeXMLs(out, "   <type name=\"", x.getName(), "\"/>\n");
-    }
-
-    /** Writes nothing if the argument is null. */
-    private static void saveAlloyType(PrintWriter out, AlloyType x) throws IOException {
-        if (x!=null) Util.encodeXMLs(out, "sig(", x.getName(), ")");
     }
 
     /*============================================================================================*/
@@ -266,18 +219,13 @@ public final class StaticThemeReaderWriter {
         if (!x.is("set")) return null;
         String name=x.getAttribute("name"), type=x.getAttribute("type");
         if (name.length()==0 || type.length()==0) return null;
-        AlloyType t=now.getOriginalModel().hasType(type);
-        if (t==null) return null; else return now.getOriginalModel().hasSet(name, t);
+        AlloyType t=now.getCurrentModel().hasType(type);
+        if (t==null) return null; else return now.getCurrentModel().hasSet(name, t);
     }
 
     /** Writes nothing if the argument is null. */
     private static void writeAlloySet(PrintWriter out, AlloySet x) throws IOException {
         if (x!=null) Util.encodeXMLs(out,"   <set name=\"",x.getName(),"\" type=\"",x.getType().getName(),"\"/>\n");
-    }
-
-    /** Writes nothing if the argument is null. */
-    private static void saveAlloySet(PrintWriter out, AlloySet x) throws IOException {
-        if (x!=null) Util.encodeXMLs(out, "set(", x.getName(), ".", x.getType().getName(), ")");
     }
 
     /*============================================================================================*/
@@ -296,11 +244,11 @@ public final class StaticThemeReaderWriter {
         for(XMLNode sub:x.getChildren("type")) {
             String typename=sub.getAttribute("name");
             if (typename.length()==0) return null;
-            AlloyType t = now.getOriginalModel().hasType(typename);
+            AlloyType t = now.getCurrentModel().hasType(typename);
             if (t==null) return null;
             ans.add(t);
         }
-        if (ans.size()<2) return null; else return now.getOriginalModel().hasRelation(name, ans);
+        if (ans.size()<2) return null; else return now.getCurrentModel().hasRelation(name, ans);
     }
 
     /** Writes nothing if the argument is null. */
@@ -309,14 +257,6 @@ public final class StaticThemeReaderWriter {
         Util.encodeXMLs(out, "   <relation name=\"", x.getName(), "\">");
         for(AlloyType t:x.getTypes()) Util.encodeXMLs(out, " <type name=\"", t.getName(), "\"/>");
         out.write(" </relation>\n");
-    }
-
-    /** Writes nothing if the argument is null. */
-    private static void saveAlloyRelation(PrintWriter out, AlloyRelation x) throws IOException {
-        if (x==null) return;
-        Util.encodeXMLs(out, "rel(", x.getName());
-        for(AlloyType t:x.getTypes()) Util.encodeXMLs(out, ".", t.getName());
-        out.write(")");
     }
 
     /*============================================================================================*/
@@ -403,27 +343,6 @@ public final class StaticThemeReaderWriter {
         return sw.toString();
     }
 
-    /** Returns the String representation of an AlloyNodeElement's settings. */
-    private static String saveNodeViz(VizState view, AlloyNodeElement x) throws IOException {
-        AlloyModel am = view.getCurrentModel();
-        AlloySet s = (x instanceof AlloySet) ? ((AlloySet)x) : null;
-        AlloyType t = (x instanceof AlloyType) ? ((AlloyType)x): null;
-        StringWriter sw=new StringWriter();
-        PrintWriter out=new PrintWriter(sw);
-        saveBool(out, "visible",   view.nodeVisible(x,am));
-        saveBool(out, "samerank",  view.nodeSameRank(x,am));
-        saveBool(out, "hideunconnected", view.hideUnconnected(x,am));
-        saveBool(out, "showlabel",  view.showAsLabel(s,am));
-        saveBool(out, "showinattr", view.showAsAttr(s,am));
-        saveBool(out, "numberatoms", view.number(t,am));
-        saveDotStyle(out, view.nodeStyle(x,am));
-        saveDotShape(out, view.shape(x,am));
-        saveDotColor(out, view.nodeColor(x,am));
-        Util.encodeXMLs(out, "\tlabel=\"", x==null ? "" : view.label(x), "\"");
-        if (out.checkError()) throw new IOException("PrintWriter IO Exception!");
-        return sw.toString();
-    }
-
     /*============================================================================================*/
 
     /** Do nothing if the element is malformed; note: x can be null. */
@@ -468,25 +387,6 @@ public final class StaticThemeReaderWriter {
         return sw.toString();
     }
 
-    /** Returns the String representation of an AlloyRelation's settings. */
-    private static String saveEdgeViz(VizState view, AlloyRelation x) throws IOException {
-        AlloyModel am=view.getCurrentModel();
-        StringWriter sw=new StringWriter();
-        PrintWriter out=new PrintWriter(sw);
-        saveDotColor(out, view.edgeColor(x,am));
-        saveDotStyle(out, view.edgeStyle(x,am));
-        saveBool(out, "samerank",  view.edgeSameRank(x,am));
-        saveBool(out, "visible",   view.edgeVisible(x,am));
-        saveBool(out, "merge",     view.mergeArrows(x,am));
-        saveBool(out, "layout",    view.layoutBack(x,am));
-        saveBool(out, "attribute", view.attribute(x,am));
-        saveBool(out, "constraint",view.constraint(x,am));
-        out.write("\tweight=\"" + view.weight(x) + "\"");
-        Util.encodeXMLs(out, "\tlabel=\"", x==null ? "" : view.label(x), "\"");
-        if (out.checkError()) throw new IOException("PrintWriter IO Exception!");
-        return sw.toString();
-    }
-
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
@@ -521,11 +421,6 @@ public final class StaticThemeReaderWriter {
         if (value!=defaultValue) Util.encodeXMLs(out, " color=\"", value==null?"inherit":value.toString(), "\"");
     }
 
-    /** Writes regardless. */
-    private static void saveDotColor(PrintWriter out, DotColor value) throws IOException {
-        Util.encodeXMLs(out, "\tcolor=\"", value.toString(), "\"");
-    }
-
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
@@ -536,11 +431,6 @@ public final class StaticThemeReaderWriter {
         if (value!=defaultValue) Util.encodeXMLs(out, " shape=\"", value==null?"inherit":value.toString(), "\"");
     }
 
-    /** Writes regardless. */
-    private static void saveDotShape(PrintWriter out, DotShape value) throws IOException {
-        Util.encodeXMLs(out, "\tshape=\"", value.toString(), "\"");
-    }
-
     /*============================================================================================*/
 
     /** Returns null if the attribute doesn't exist, or is malformed. */
@@ -549,11 +439,6 @@ public final class StaticThemeReaderWriter {
     /** Writes nothing if value==defaultValue. */
     private static void writeDotStyle(PrintWriter out, DotStyle value, DotStyle defaultValue) throws IOException {
         if (value!=defaultValue) Util.encodeXMLs(out, " style=\"", value==null?"inherit":value.toString(), "\"");
-    }
-
-    /** Writes regardless. */
-    private static void saveDotStyle(PrintWriter out, DotStyle value) throws IOException {
-        Util.encodeXMLs(out, "\tstyle=\"", value.toString(), "\"");
     }
 
     /*============================================================================================*/
@@ -573,13 +458,6 @@ public final class StaticThemeReaderWriter {
         out.write(' ');
         out.write(key);
         if (value==null) out.write("=\"inherit\""); else out.write(value ? "=\"yes\"":"=\"no\"");
-    }
-
-    /** Writes regardless. */
-    private static void saveBool(PrintWriter out, String key, boolean value) throws IOException {
-        out.write('\t');
-        out.write(key);
-        out.write(value ? "=\"yes\"":"=\"no\"");
     }
 
     /*============================================================================================*/
