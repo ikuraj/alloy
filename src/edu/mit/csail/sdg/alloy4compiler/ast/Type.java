@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -764,6 +765,24 @@ public final class Type implements Iterable<Type.ProductType> {
     }
 
     /**
+     * Convert this type into a UNION of PRODUCT of sigs.
+     * @throws ErrorType if it does not contain exactly one arity
+     * @throws ErrorType if is_int is true
+     * @throws ErrorType if is_bool is true
+     */
+    public Expr toExpr() throws Err {
+        int arity = arity();
+        if (is_int || is_bool || arity<1) throw new ErrorType("Cannot convert this type into a bounding expression.");
+        Expr ans = null;
+        for(ProductType pt:this) {
+            Expr pro = null;
+            for(int i=0; i<arity; i++) if (pro==null) pro=pt.types[i]; else pro=pro.product(pt.types[i]);
+            if (ans==null) ans=pro; else ans = ans.plus(pro);
+        }
+        return ans;
+    }
+
+    /**
      * Merge "a" into the set of entries.
      *
      * <p>  If {a}+this.entries contain a set of entries X1..Xn, such that
@@ -809,7 +828,7 @@ public final class Type implements Iterable<Type.ProductType> {
      *
      * <p> Note: the result is only current with respect to the current existing sig objects
      */
-    public Iterable<List<PrimSig>> fold() {
+    public List<List<PrimSig>> fold() {
         ArrayList<List<PrimSig>> e = new ArrayList<List<PrimSig>>();
         for(ProductType xx:entries) {
             List<PrimSig> x=Arrays.asList(xx.types);
