@@ -39,6 +39,7 @@ import java.nio.charset.CodingErrorAction;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -156,6 +157,13 @@ public final class Util {
         TempList<T> ans = new TempList<T>(array.length);
         for(int i=0; i<array.length; i++) { ans.add(array[i]); }
         return ans.makeConst();
+    }
+
+    /** Returns a newly created LinkedHashSet containing the given elements in the given order. */
+    public static<V> LinkedHashSet<V> asSet(V... values) {
+        LinkedHashSet<V> ans = new LinkedHashSet<V>();
+        for(int i=0; i<values.length; i++) ans.add(values[i]);
+        return ans;
     }
 
     /** Returns a newly created LinkedHashMap mapping each key to its corresponding value, in the given order. */
