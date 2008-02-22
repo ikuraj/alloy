@@ -77,9 +77,13 @@ public final class A4SolutionWriter {
     }
 
     /** Write the given Expr and its Type. */
-    private void writeExpr(Expr expr) throws Err {
+    private boolean writeExpr(String prefix, Expr expr) throws Err {
        Type type = expr.type;
        if (sol!=null) {
+          // Intersect with univ->univ->univ to get rid of any hidden atoms
+          Expr univAll = Sig.UNIV;
+          for(int i=type.arity(); i>1; i--) univAll=univAll.product(Sig.UNIV);
+          expr = expr.intersect(univAll);
           // Check to see if the tupleset is *really* fully contained inside "type".
           // If not, then grow "type" until the tupleset is fully contained inside "type"
           Expr sum = type.toExpr();
@@ -93,17 +97,20 @@ public final class A4SolutionWriter {
           // Now, write out the tupleset
           A4TupleSet ts = (A4TupleSet)(sol.eval(expr));
           for(A4Tuple t: ts) {
+             if (prefix.length()>0) { out.print(prefix); prefix=""; }
              out.print("   <tuple>");
              for(int i=0; i<t.arity(); i++) Util.encodeXMLs(out, " <atom label=\"", t.atom(i), "\"/>");
              out.print(" </tuple>\n");
           }
        }
        // Now, write out the type
+       if (prefix.length()>0) return false;
        for(List<PrimSig> ps: type.fold()) {
           out.print("   <types>");
           for(PrimSig sig: ps) Util.encodeXMLs(out, " <type ID=\"", map(sig), "\"/>");
           out.print(" </types>\n");
        }
+       return true;
     }
 
     /** Write the given Sig. */
@@ -135,7 +142,7 @@ public final class A4SolutionWriter {
        try {
           Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
           if (x.isPrivate!=null) out.print("\" private=\"yes\">\n"); else out.print("\">\n");
-          writeExpr(x);
+          writeExpr("", x);
           out.print("</field>\n");
        } catch(Throwable ex) {
           throw new ErrorFatal("Error evaluating field "+x.sig.label+"."+x.label, ex);
@@ -145,11 +152,9 @@ public final class A4SolutionWriter {
     /** Write the given Skolem. */
     private void writeSkolem(ExprVar x) throws Err {
        try {
-          A4TupleSet ts = (A4TupleSet)(sol.eval(x));
-          if (ts.size()==0) return; // Since we do not allow "none" in the <TYPE> or <TYPES> declaration
-          Util.encodeXMLs(out, "\n<skolem label=\"", label(x.label), "\" ID=\"", map(x), "\">\n");
-          writeExpr(x);
-          out.print("</skolem>\n");
+          StringBuilder sb = new StringBuilder();
+          Util.encodeXMLs(sb, "\n<skolem label=\"", label(x.label), "\" ID=\"", map(x), "\">\n");
+          if (writeExpr(sb.toString(), x)) { out.print("</skolem>\n"); }
        } catch(Throwable ex) {
           throw new ErrorFatal("Error evaluating skolem "+x.label, ex);
        }
@@ -177,9 +182,9 @@ public final class A4SolutionWriter {
             try {
                 A4TupleSet ts = (A4TupleSet)(sol.eval(f.call()));
                 if (ts.size()==0) return; // Since we do not allow "none" in the <TYPE> or <TYPES> declaration
-                Util.encodeXMLs(out, "\n<skolem label=\"", label, "\" ID=\"m"+m+"\">\n");
-                writeExpr(f.call());
-                out.print("</skolem>\n");
+                StringBuilder sb = new StringBuilder();
+                Util.encodeXMLs(sb, "\n<skolem label=\"", label, "\" ID=\"m"+m+"\">\n");
+                if (writeExpr(sb.toString(), f.call())) { out.print("</skolem>\n"); }
                 m++;
             } catch(Throwable ex) {
                 throw new ErrorFatal("Error evaluating skolem "+label, ex);
