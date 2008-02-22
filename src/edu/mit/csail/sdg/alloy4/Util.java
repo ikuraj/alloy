@@ -495,13 +495,42 @@ public final class Util {
     }
 
     /**
+     * Write a String into a StringBuilder, and encode special characters using XML-specific encoding.
+     *
+     * <p>
+     * In particular, it changes LESS THAN, GREATER THAN, AMPERSAND, SINGLE QUOTE, and DOUBLE QUOTE
+     * into "&amp;lt;" "&amp;gt;" "&amp;amp;" "&amp;apos;" and "&amp;quot;" and turns any characters
+     * outside of the 32..126 range into the "&amp;#xHHHH;" encoding
+     * (where HHHH is the 4 digit lowercase hexadecimal representation of the character value).
+     *
+     * @param out - the StringBuilder to write into
+     * @param str - the String to write out
+     */
+    public static void encodeXML(StringBuilder out, String str) {
+        int n=str.length();
+        for(int i=0; i<n; i++) {
+            char c=str.charAt(i);
+            if (c=='<') { out.append("&lt;"); continue; }
+            if (c=='>') { out.append("&gt;"); continue; }
+            if (c=='&') { out.append("&amp;"); continue; }
+            if (c=='\'') { out.append("&apos;"); continue; }
+            if (c=='\"') { out.append("&quot;"); continue; }
+            if (c>=32 && c<=126) { out.append(c); continue; }
+            out.append("&#x");
+            String v=Integer.toString(c, 16);
+            for(int j=v.length(); j<4; j++) out.append('0');
+            out.append(v).append(';');
+        }
+    }
+
+    /**
      * Write a list of Strings into a PrintWriter, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
      *
      * <p> For example, if you call encodeXML(out, A, B, C, D, E), it is equivalent to the following:
      * <br> out.print(A);
-     * <br> out.encodeXML(B);
+     * <br> encodeXML(out, B);
      * <br> out.print(C);
-     * <br> out.encodeXML(D);
+     * <br> encodeXML(out, D);
      * <br> out.print(E);
      * <br> In other words, it writes the even entries as-is, and writes the odd entries using XML encoding.
      *
@@ -511,6 +540,26 @@ public final class Util {
     public static void encodeXMLs(PrintWriter out, String... strs) {
         for(int i=0; i<strs.length; i++) {
             if ((i%2)==0) out.print(strs[i]); else encodeXML(out,strs[i]);
+        }
+    }
+
+    /**
+     * Write a list of Strings into a StringBuilder, where strs[2n] are written as-is, and strs[2n+1] are XML-encoded.
+     *
+     * <p> For example, if you call encodeXML(out, A, B, C, D, E), it is equivalent to the following:
+     * <br> out.append(A);
+     * <br> encodeXML(out, B);
+     * <br> out.append(C);
+     * <br> encodeXML(out, D);
+     * <br> out.append(E);
+     * <br> In other words, it writes the even entries as-is, and writes the odd entries using XML encoding.
+     *
+     * @param out - the StringBuilder to write into
+     * @param strs - the list of Strings to write out
+     */
+    public static void encodeXMLs(StringBuilder out, String... strs) {
+        for(int i=0; i<strs.length; i++) {
+            if ((i%2)==0) out.append(strs[i]); else encodeXML(out,strs[i]);
         }
     }
 
