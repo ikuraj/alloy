@@ -75,6 +75,8 @@ public final class ConstList<T> implements Serializable, List<T> {
         public T remove(int index)                 { if (clist!=null) throw new UnsupportedOperationException(); return list.remove(index); }
         /** Removes the first occurrence of the element (if it exists). */
         public boolean remove(T elem)              { if (clist!=null) throw new UnsupportedOperationException(); return list.remove(elem); }
+        /** Removes every element. */
+        public void clear()                        { if (clist!=null) throw new UnsupportedOperationException(); list.clear(); }
         /** Add the given element at the given index. */
         public void add(int index, T elem)         { if (clist!=null) throw new UnsupportedOperationException(); list.add(index,elem); }
         /** Append the given element to the list. */
