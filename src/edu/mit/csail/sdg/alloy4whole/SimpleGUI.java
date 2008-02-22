@@ -186,7 +186,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     private static final IntPref Welcome = new IntPref("Welcome",0,0,1000);
 
     /** The skolem depth. */
-    private static final IntPref SkolemDepth = new IntPref("SkolemDepth",0,0,2);
+    private static final IntPref SkolemDepth = new IntPref("SkolemDepth2",0,0,2);
 
     /** The unsat core minimization strategy. */
     private static final IntPref CoreMinimization = new IntPref("CoreMinimization",0,2,2);
