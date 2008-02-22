@@ -521,7 +521,7 @@ public final class VizGUI implements ComponentListener {
         xmlButton.setVisible(frame!=null);
         kodSrcButton.setVisible(myState.getOriginalInstance().kodkod_input.length()>0 && frame!=null);
         kodInstButton.setVisible(myState.getOriginalInstance().kodkod_output.length()>0 && frame!=null);
-        magicLayout.setVisible(!isMeta && (settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
+        magicLayout.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
         projectionButton.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
         openSettingsButton.setVisible(               settingsOpen==0 && currentMode==VisualizerMode.Viz);
         loadSettingsButton.setVisible(frame==null && settingsOpen==1 && currentMode==VisualizerMode.Viz);
