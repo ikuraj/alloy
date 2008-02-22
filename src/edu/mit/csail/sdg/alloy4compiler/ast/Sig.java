@@ -327,7 +327,7 @@ public abstract class Sig extends Expr {
             Type ans=null;
             if (parents!=null) {
                 for(Sig parent: parents) {
-                    if (parent==UNIV)   throw new ErrorSyntax(pos, "sig "+label+" is already implicitly a subset of the builtin \"univ\" signature");
+                    if (parent==UNIV)   return UNIV.type;
                     if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"Int\" signature");
                     if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"seq/Int\" signature");
                     if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"none\" signature");
@@ -354,7 +354,7 @@ public abstract class Sig extends Expr {
         public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos ordered, Pos isPrivate) throws Err {
             super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), ordered, isPrivate);
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
-            if (parents!=null) for(Sig parent:parents) if (!temp.contains(parent)) temp.add(parent);
+            if (parents!=null) for(Sig parent:parents) if (parent==Sig.UNIV) {temp.clear(); break;} else if (!temp.contains(parent)) temp.add(parent);
             if (temp.size()==0) temp.add(UNIV);
             this.parents = temp.makeConst();
         }
