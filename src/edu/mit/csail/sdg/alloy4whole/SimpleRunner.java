@@ -154,6 +154,7 @@ final class SimpleRunner implements Runnable {
                 verbosity = bundle.verbosity;
                 SimpleReporter.performRegularCommand(out, bundle.cache, bundle.index, bundle.options, bundle.warningNonFatal, tempdir, bundle.verbosity);
             } else {
+                verbosity = 3;
                 String ans=SimpleReporter.performEnumeration(out, tempdir);
                 log(RESTORE1);
                 if (ans.length()>0) logViz(ans);

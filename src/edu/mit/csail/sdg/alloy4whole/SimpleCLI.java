@@ -22,19 +22,28 @@
 
 package edu.mit.csail.sdg.alloy4whole;
 
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pair;
+import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
+import edu.mit.csail.sdg.alloy4viz.StaticInstanceReader;
 
 /**
  * This class is used by the Alloy developers to drive the regression test suite.
@@ -99,7 +108,19 @@ public final class SimpleCLI {
 
     private SimpleCLI() { }
 
+    private static void validate(A4Solution sol) throws Exception {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        sol.writeXML(pw, null, null);
+        pw.flush();
+        sw.flush();
+        String txt = sw.toString();
+        A4SolutionReader.read(new ArrayList<Sig>(), new XMLNode(new StringReader(txt)));
+        StaticInstanceReader.parseInstance(new StringReader(txt));
+    }
+
     public static void main(String[] args) throws Exception {
+        SatSolver solver = A4Options.SatSolver.make("mem", "mem", "/tmp/sat/mem");
         final SimpleReporter rep = new SimpleReporter();
         for(String filename:args) {
             try {
@@ -112,8 +133,9 @@ public final class SimpleCLI {
                 rep.warnings.clear();
                 A4Options options = new A4Options();
                 options.originalFilename = filename;
-                options.solver = A4Options.SatSolver.MiniSatJNI;
                 options.solverDirectory = "/zweb/zweb/tmp/alloy4/x86-freebsd";
+                options.solver = solver;
+                options.solver = A4Options.SatSolver.MiniSatJNI;
                 if (args.length!=1) continue;
                 for (int i=0; i<cmds.size(); i++) {
                     Command c = cmds.get(i).a;
@@ -125,7 +147,8 @@ public final class SimpleCLI {
                     rep.sb.append("Executing \""+c+"\"\n");
                     Expr facts = ExprConstant.TRUE;
                     for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
-                    TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
+                    A4Solution s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
+                    if (s.satisfiable()) { validate(s); s=s.next(); if (s.satisfiable()) validate(s); }
                 }
             } catch(Throwable ex) {
                 rep.sb.append("\n\nException: "+ex);

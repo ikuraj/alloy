@@ -24,8 +24,7 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import edu.mit.csail.sdg.alloy4.ConstMap;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import kodkod.instance.Tuple;
 import kodkod.instance.TupleSet;
 
@@ -36,20 +35,17 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
     /** The Kodkod tupleset. */
     private final TupleSet tuples;
 
-    /** The KodkodAtom_to_AlloyAtom rename map. */
-    private final ConstMap<Object,String> atomMap;
-
-    /** The kodkodAtom_to_MostSpecificSig map. */
-    private final ConstMap<Object,PrimSig> sigMap;
+    /** The A4Solution that this came from. */
+    private final A4Solution sol;
 
     /**
-     * Construct a TupleSet from the kodkod TupleSet, while renaming each atom using the given atomMap.
+     * Construct a TupleSet from the kodkod TupleSet, while renaming each atom using the atom2name map in sol.
      * <br> NOTE: caller must ensure the Kodkod tupleset is not modified, since we expect the resulting A4Tupleset to be constant.
      */
-    A4TupleSet(TupleSet tuples, ConstMap<Object,String> atomMap, ConstMap<Object,PrimSig> sigMap) {
+    A4TupleSet(TupleSet tuples, A4Solution sol) throws ErrorAPI {
+        if (!sol.satisfiable()) throw new ErrorAPI("This solution is unsatisfiable.");
         this.tuples = tuples;
-        this.atomMap = atomMap;
-        this.sigMap = sigMap;
+        this.sol = sol;
     }
 
     /** Returns a read-only iterator that iterates over each tuple in this TupleSet. */
@@ -59,7 +55,7 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
             public final boolean hasNext() { return it.hasNext(); }
             public final A4Tuple next() {
                 if (!it.hasNext()) throw new NoSuchElementException();
-                return new A4Tuple(it.next(), atomMap, sigMap);
+                return new A4Tuple(it.next(), sol);
             }
             public final void remove() { throw new UnsupportedOperationException(); }
         };
@@ -76,7 +72,7 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
         StringBuilder sb=new StringBuilder("{");
         for(A4Tuple t:this) {
             if (sb.length()>1) sb.append(", ");
-            sb.append(t.toString());
+            sb.append(t);
         }
         return sb.append('}').toString();
     }

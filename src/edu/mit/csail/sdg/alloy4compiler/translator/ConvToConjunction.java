@@ -39,8 +39,8 @@ import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
 /**
- * This class converts AST into AST while attempting to maximize the number
- * of toplevel conjunctions. This helps improve the precision of the unsat core result.
+ * Immutable; this class rearranges the AST to promote as many clauses up to the top level as possible
+ * (in order to get better precision unsat core results)
  */
 
 final class ConvToConjunction extends VisitReturn {

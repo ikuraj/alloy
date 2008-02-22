@@ -22,11 +22,6 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import static edu.mit.csail.sdg.alloy4.Util.tail;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -36,9 +31,10 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
-import edu.mit.csail.sdg.alloy4.Pair;
-import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.Version;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
@@ -50,233 +46,175 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 
 public final class A4SolutionWriter {
 
-    /** If a sig label is "", or a field label is "", we use this as the name instead. */
-    private static final String BLANK = "x";
-
-    /** This maps each Sig to a name we've chosen for it. */
-    private final IdentityHashMap<Sig,String> sig2name = new IdentityHashMap<Sig,String>();
-
-    /** This maps each Field to a name we've chosen for it. */
-    private final IdentityHashMap<Field,String> field2name = new IdentityHashMap<Field,String>();
-
-    /** This is the set of unique names we've generated so far. */
-    private final UniqueNameGenerator un = new UniqueNameGenerator();
-
-    /** Whether we've seen a SubsetSig so far. */
-    private boolean subset = false;
+    /** Maps each Sig, Field, and Skolem to a unique id. */
+    private final IdentityHashMap<Expr,String> map = new IdentityHashMap<Expr,String>();
 
     /** This is the solution we're writing out. */
     private final A4Solution sol;
 
+    /** This is the list of toplevel sigs. */
+    private final List<PrimSig> toplevels = new ArrayList<PrimSig>();
+
     /** This is the output file. */
     private final PrintWriter out;
 
-    /** Convenience helper method that writes out a metafield. */
-    private void writeMetaTS(String me, String name, Type type) throws Err {
-        int n=type.arity();
-        for(List<PrimSig> sigs:type.fold()) {
-            Util.encodeXMLs(out, "\n<field name=\"", name, "\">\n");
-            out.print("    <type>");
-            for(int i=0; i<n; i++) Util.encodeXMLs(out, " <sig name=\"", i==0 ? me : sig2name.get(sigs.get(i)), "\"/>");
-            out.print(" </type>\n");
-            out.print("    <tuple>");
-            for(int i=0; i<n; i++) Util.encodeXMLs(out, " <atom name=\"", i==0 ? me : sig2name.get(sigs.get(i)), "\"/>");
-            out.print(" </tuple>\n");
-            out.print("</field>\n");
-        }
+    /** Helper method that returns a unique id for the given Sig, Field, or Skolem. */
+    private String map(Expr obj) {
+       String id = map.get(obj);
+       if (id==null) { id=Integer.toString(map.size()); map.put(obj, id); }
+       return id;
     }
 
-    /** Convenience helper method that writes out a field or a skolem set. */
-    private void writeTS(A4TupleSet r, String name, Type type, boolean isPrivate) throws Err {
-        int n=r.arity();
-        for(List<PrimSig> sigs:type.fold()) {
-            if (n>1) {
-                Util.encodeXMLs(out, "\n<field name=\"", name, (isPrivate ? "\" isPrivate=\"true\">\n" : "\">\n"));
-                out.print("    <type>");
-                for(int i=0; i<n; i++) Util.encodeXMLs(out, " <sig name=\"", sig2name.get(sigs.get(i)), "\"/>");
-                out.print(" </type>\n");
-            } else {
-                Util.encodeXMLs(out, "\n<set name=\"", name, "\" type=\"", sig2name.get(sigs.get(0)), (isPrivate ? "\" isPrivate=\"true\">\n" : "\">\n"));
-            }
-            again2:
-            for(A4Tuple t:r) {
-                for(int i=0; i<n; i++) {
-                    PrimSig s=t.sig(i);
-                    if (!s.intersects(sigs.get(i))) continue again2;
-                }
-                if (n>1) {
-                    out.print("    <tuple>");
-                    for(int i=0; i<n; i++) Util.encodeXMLs(out, " <atom name=\"", t.atom(i), "\"/>");
-                    out.print(" </tuple>\n");
-                } else {
-                    Util.encodeXMLs(out, "  <atom name=\"", t.atom(0), "\"/>\n");
-                }
-            }
-            out.print(n>1 ? "</field>\n" : "</set>\n");
-        }
+    /** Helper method that returns a shorter label. */
+    private static String label(String label) {
+        return label.startsWith("this/") ? label.substring(5) : label;
     }
 
-    /** Convenience helper method that writes out sig "s", and records all its field values. */
-    private void writeSig(Sig s) throws Err {
-        if (s==UNIV || s==NONE) return;
-        A4TupleSet ts = sol==null ? null : ((A4TupleSet)(sol.eval(s)));
-        if (s instanceof SubsetSig) {
-            if (ts==null) {
-                Util.encodeXMLs(out, "\n<sig name=\"", sig2name.get(s), "\" extends=\"set\"> <atom name=\"", sig2name.get(s), "\"/> </sig>\n");
-                subset=true;
-            } else {
-                writeTS(ts, sig2name.get(s), s.type, s.isPrivate!=null);
-            }
-        } else {
-            Util.encodeXMLs(out, "\n<sig name=\"", sig2name.get(s), "\" extends=\"", sig2name.get(((PrimSig)s).parent), "\"");
-            if (s.isOne!=null) out.printf(" isOne=\"true\"");
-            if (s.isAbstract!=null) out.printf(" isAbstract=\"true\"");
-            if (s.builtin) out.printf(" isBuiltin=\"true\"");
-            if (s.isOrdered!=null) out.printf(" isOrdered=\"true\"");
-            if (s.isPrivate!=null) out.printf(" isPrivate=\"true\"");
-            out.printf(">\n");
-            if (ts!=null) {
-                for(A4Tuple t:ts) Util.encodeXMLs(out, "  <atom name=\"", t.atom(0), "\"/>\n");
-            } else {
-                Util.encodeXMLs(out, "  <atom name=\"", sig2name.get(s), "\"/>\n");
-            }
-            out.printf("</sig>\n");
-        }
-        for(Field f:s.getFields()) {
-            if (sol!=null) {
-                ts = (A4TupleSet)(sol.eval(f));
-                writeTS(ts, field2name.get(f), f.type, f.isPrivate!=null);
-            } else {
-                writeMetaTS(sig2name.get(s), field2name.get(f), f.type);
-            }
-        }
+    /** Helper method that returns the list of direct subsignatures. */
+    private Iterable<PrimSig> children(PrimSig x) throws Err {
+       if (x==Sig.NONE) return new ArrayList<PrimSig>();
+       if (x!=Sig.UNIV) return x.children(); else return toplevels;
     }
 
-    /**
-     * If sol==null, write the list of Sigs as a Metamodel, else write the solution as an XML file.
-     *
-     * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
-     * <p> If two or more fields have the same name and overlapping first column, we append ' to the names until no more conflict.
-     */
-    private A4SolutionWriter(A4Solution sol, ConstList<Sig> sigs, String originalFileName, PrintWriter out, Iterable<Func> allMacros) throws Err {
+    /** Write the given Expr and its Type. */
+    private void writeExpr(Expr expr) throws Err {
+       Type type = expr.type;
+       if (sol!=null) {
+          // Check to see if the tupleset is *really* fully contained inside "type".
+          // If not, then grow "type" until the tupleset is fully contained inside "type"
+          Expr sum = type.toExpr();
+          while(true) {
+             A4TupleSet ts = (A4TupleSet)(sol.eval(expr.minus(sum)));
+             if (ts.size()==0) break;
+             Type extra = ts.iterator().next().type();
+             type = type.merge(extra);
+             sum = sum.plus(extra.toExpr());
+          }
+          // Now, write out the tupleset
+          A4TupleSet ts = (A4TupleSet)(sol.eval(expr));
+          for(A4Tuple t: ts) {
+             out.print("   <tuple>");
+             for(int i=0; i<t.arity(); i++) Util.encodeXMLs(out, " <atom label=\"", t.atom(i), "\"/>");
+             out.print(" </tuple>\n");
+          }
+       }
+       // Now, write out the type
+       for(List<PrimSig> ps: type.fold()) {
+          out.print("   <types>");
+          for(PrimSig sig: ps) Util.encodeXMLs(out, " <type ID=\"", map(sig), "\"/>");
+          out.print(" </types>\n");
+       }
+    }
+
+    /** Write the given Sig. */
+    private void writesig(final Sig x) throws Err {
+       if (x==Sig.NONE) return; // should not happen, but we test for it anyway
+       Util.encodeXMLs(out, "\n<sig label=\"", label(x.label), "\" ID=\"", map(x));
+       if (x instanceof PrimSig && x!=Sig.UNIV) Util.encodeXMLs(out, "\" parentID=\"", map(((PrimSig)x).parent));
+       if (x.builtin) out.print("\" builtin=\"yes");
+       if (x.isAbstract!=null) out.print("\" abstract=\"yes");
+       if (x.isOne!=null) out.print("\" one=\"yes");
+       if (x.isLone!=null) out.print("\" lone=\"yes");
+       if (x.isSome!=null) out.print("\" some=\"yes");
+       if (x.isPrivate!=null) out.print("\" private=\"yes");
+       if (x.isOrdered!=null) out.print("\" ordered=\"yes");
+       out.print("\">\n");
+       try {
+           if (sol!=null) for(A4Tuple t: (A4TupleSet)(sol.eval(x)))  Util.encodeXMLs(out, "   <atom label=\"", t.atom(0), "\"/>\n");
+       } catch(Throwable ex) {
+           throw new ErrorFatal("Error evaluating sig "+x.label, ex);
+       }
+       if (x instanceof SubsetSig) for(Sig p:((SubsetSig)x).parents) Util.encodeXMLs(out, "   <type ID=\"", map(p), "\"/>\n");
+       out.print("</sig>\n");
+       for(Field field: x.getFields()) writeField(field);
+       if (x instanceof PrimSig) for(final PrimSig sub:children((PrimSig)x)) writesig(sub);
+    }
+
+    /** Write the given Field. */
+    private void writeField(Field x) throws Err {
+       try {
+          Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
+          if (x.isPrivate!=null) out.print("\" private=\"yes\">\n"); else out.print("\">\n");
+          writeExpr(x);
+          out.print("</field>\n");
+       } catch(Throwable ex) {
+          throw new ErrorFatal("Error evaluating field "+x.sig.label+"."+x.label, ex);
+       }
+    }
+
+    /** Write the given Skolem. */
+    private void writeSkolem(ExprVar x) throws Err {
+       try {
+          A4TupleSet ts = (A4TupleSet)(sol.eval(x));
+          if (ts.size()==0) return; // Since we do not allow "none" in the <TYPE> or <TYPES> declaration
+          Util.encodeXMLs(out, "\n<skolem label=\"", label(x.label), "\" ID=\"", map(x), "\">\n");
+          writeExpr(x);
+          out.print("</skolem>\n");
+       } catch(Throwable ex) {
+          throw new ErrorFatal("Error evaluating skolem "+x.label, ex);
+       }
+    }
+
+    /** If sol==null, write the list of Sigs as a Metamodel, else write the solution as an XML file. */
+    private A4SolutionWriter(A4Solution sol, Iterable<Sig> sigs, int bitwidth, int maxseq, String originalCommand, String originalFileName, PrintWriter out, Iterable<Func> extraSkolems) throws Err {
+        for (Sig s:sigs) if (s instanceof PrimSig && ((PrimSig)s).parent==Sig.UNIV) toplevels.add((PrimSig)s);
         this.out=out;
         this.sol=sol;
-        // We only write out satisfiable instance
-        if (sol!=null && !sol.satisfiable())
-           throw new ErrorAPI("This solution is unsatisfiable, so there is nothing to write to an XML file.");
-        // Add all sig names into the "has seen" set; along the way, rename the sigs so that we don't have duplicate names
-        sig2name.put(UNIV,   un.seen(UNIV.label));
-        sig2name.put(SIGINT, un.seen(SIGINT.label));
-        sig2name.put(SEQIDX, un.seen(SEQIDX.label));
-        sig2name.put(NONE,   un.seen(NONE.label));
-        un.seen("set");
-        for(Sig s:sigs) if (!s.builtin) { // Then we add the non-builtin sigs
-            String label = s.label;
-            // Many A4Solution objects will have the repetitive "this/" in front of the sig names (since that is
-            // the convention of alloy4compiler), so removing "this/" will make the output look nicer.
-            // This renaming is safe, since we'll pass it into UniqueNameGenerator to ensure no name clash anyway.
-            if (label.startsWith("this/")) label=label.substring(5);
-            sig2name.put(s, un.make(label.length()==0 ? BLANK : label));
-        }
-        // Rename the fields if necessary, and add the field names into the "has seen" set
-        un.seen("extends");
-        un.seen("in");
-        for(Sig s:sigs) for(Field f:s.getFields()) {
-           String fl = f.label.length()==0 ? BLANK : f.label;
-           again:
-           while(true) {
-             for(Map.Entry<Field,String> e:field2name.entrySet())
-                if (fl.equals("extends") || fl.equals("in") || (fl.equals(e.getValue()) && e.getKey().type.firstColumnOverlaps(f.type)))
-                   {fl=fl+"'"; continue again;}
-             field2name.put(f, fl);
-             un.seen(fl);
-             break;
-           }
-        }
-        // Write out every sig and field
-        Util.encodeXMLs(out, "<instance filename=\"", originalFileName);
-        if (sol!=null) {
-            Util.encodeXMLs(out, "\" bitwidth=\"", Integer.toString(sol.getBitwidth()),
-              "\" command=\"", sol.getOriginalCommand(), "\">\n");
-        } else {
-            Util.encodeXMLs(out, "\" isMetamodel=\"true\" command=\"show metamodel\">\n");
-        }
-        writeSig(SIGINT);
-        writeSig(SEQIDX);
-        for(Sig s:sigs) if (!s.builtin) writeSig(s);
-        // Write out all non-private parameter-less Function in the main module
-        if (sol!=null) for(final Func pf:allMacros) if (!pf.isPred && pf.isPrivate==null && pf.params.size()==0) {
-            String rname=tail(pf.label);
-            while(rname.length()>0 && rname.charAt(0)=='$') rname=rname.substring(1);
-            if (rname.length()==0) rname=BLANK;
-            rname=un.make("$"+rname);
-            A4TupleSet ts;
+        out.print("<instance bitwidth=\""); out.print(bitwidth);
+        out.print("\" maxseq=\""); out.print(maxseq);
+        out.print("\" command=\""); Util.encodeXML(out, originalCommand);
+        out.print("\" filename=\""); Util.encodeXML(out, originalFileName);
+        if (sol==null) out.print("\" metamodel=\"yes");
+        out.print("\">\n");
+        writesig(Sig.UNIV);
+        for (Sig s:sigs) if (s instanceof SubsetSig) writesig(s);
+        if (sol!=null) for (ExprVar s:sol.getAllSkolems()) writeSkolem(s);
+        int m=0;
+        if (extraSkolems!=null) for(Func f:extraSkolems) if (f.params.size()==0 && !f.isPred) {
+            String label=label(f.label);
+            while(label.length()>0 && label.charAt(0)=='$') label=label.substring(1);
+            label="$"+label;
             try {
-                final Object obj=sol.eval(pf.getBody());
-                if (!(obj instanceof A4TupleSet)) continue;
-                ts=(A4TupleSet)obj;
-            } catch(Throwable ex) { continue; } // This is not fatal
-            writeTS(ts, rname, pf.returnDecl.type, false);
-        }
-        // Write out any Skolem relations that were generated by Kodkod
-        if (sol!=null) for(Pair<String,Pair<Type,A4TupleSet>> r:sol.skolems()) {
-            String rname=tail(r.a);
-            while(rname.length()>0 && rname.charAt(0)=='$') rname=rname.substring(1);
-            if (rname.length()==0) rname=BLANK;
-            writeTS(r.b.b, un.make("$"+rname), r.b.a, false);
-        }
-        // Write UNIV, and then write the "extends" and "in" relations
-        if (sol==null) {
-            String univ = sig2name.get(UNIV);
-            Util.encodeXMLs(out, "<sig name=\"", univ, "\"> <atom name=\"", univ, "\"/> </sig>\n\n");
-            if (subset) {
-               Util.encodeXMLs(out, "<sig name=\"set\"> </sig>\n\n");
-               Util.encodeXMLs(out, "<field name=\"in\">\n  <type> <sig name=\"set\"/> <sig name=\"", univ, "\"/> </type>\n");
-               for(Sig s:sigs) if (s instanceof SubsetSig)
-                 for(Sig p:((SubsetSig)s).parents) if (p!=UNIV)
-                   Util.encodeXMLs(out, "  <tuple> <atom name=\"", sig2name.get(s), "\"/> <atom name=\"", sig2name.get(p), "\"/> </tuple>\n");
-               out.print("</field>\n\n");
+                A4TupleSet ts = (A4TupleSet)(sol.eval(f.call()));
+                if (ts.size()==0) return; // Since we do not allow "none" in the <TYPE> or <TYPES> declaration
+                Util.encodeXMLs(out, "\n<skolem label=\"", label, "\" ID=\"m"+m+"\">\n");
+                writeExpr(f.call());
+                out.print("</skolem>\n");
+                m++;
+            } catch(Throwable ex) {
+                throw new ErrorFatal("Error evaluating skolem "+label, ex);
             }
-            Util.encodeXMLs(out, "<field name=\"extends\">\n  <type> <sig name=\"", univ, "\"/> <sig name=\"", univ, "\"/> </type>\n");
-            for(Sig s:sigs) if (s!=UNIV && s!=NONE && s instanceof PrimSig)
-               Util.encodeXMLs(out,"  <tuple> <atom name=\"", sig2name.get(s),"\"/> <atom name=\"", sig2name.get(((PrimSig)s).parent),"\"/> </tuple>\n");
-            out.print("</field>\n\n");
         }
-        // Done!
         out.print("\n</instance>\n");
-        if (sol!=null && sol.getOriginalFormula().length()>0) {
-            Util.encodeXMLs(out, "\n<koutput value=\"", sol.toString(), "\"/>\n\n<kinput value=\"", sol.getOriginalFormula(), "\"/>\n");
-        }
     }
 
     /**
-     * If this solution is a satisfiable solution,
-     * this method will write it out as &lt;instance&gt;..&lt;/instance&gt; in XML format.
-     *
-     * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
-     * <p> If two or more fields have the same name and overlapping type, we append ' to the names until no more conflict.
+     * If this solution is a satisfiable solution, this method will write it out in XML format.
      */
-    public static void writeInstance(A4Solution sol, PrintWriter out, Iterable<Func> macros) throws Err {
+    static void writeInstance(A4Solution sol, PrintWriter out, Iterable<Func> extraSkolems, Map<String,String> sources) throws Err {
+        if (!sol.satisfiable()) throw new ErrorAPI("This solution is unsatisfiable.");
         try {
-            new A4SolutionWriter(sol, sol.getAllReachableSigs(), sol.getOriginalFilename(), out, macros);
+            Util.encodeXMLs(out, "<alloy builddate=\"", Version.buildDate(), "\">\n\n");
+            new A4SolutionWriter(sol, sol.getAllReachableSigs(), sol.getBitwidth(), sol.getMaxSeq(), sol.getOriginalCommand(), sol.getOriginalFilename(), out, extraSkolems);
+            if (sources!=null) for(Map.Entry<String,String> e: sources.entrySet()) {
+                Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
+            }
+            out.print("\n</alloy>\n");
         } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the A4Solution XML file.",ex);
+            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the solution XML file.", ex);
         }
-        if (out.checkError()) throw new ErrorFatal("Error writing the XML instance file.");
+        if (out.checkError()) throw new ErrorFatal("Error writing the solution XML file.");
     }
 
     /**
      * Write the metamodel as &lt;instance&gt;..&lt;/instance&gt; in XML format.
-     *
-     * <p> If two or more sig have the same name, we append ' to the names until no more conflict.
-     * <p> If two or more fields have the same name and overlapping type, we append ' to the names until no more conflict.
      */
     public static void writeMetamodel(ConstList<Sig> sigs, String originalFilename, PrintWriter out) throws Err {
         try {
-            new A4SolutionWriter(null, sigs, originalFilename, out, new ArrayList<Func>(1));
+            new A4SolutionWriter(null, sigs, 4, 4, "show metamodel", originalFilename, out, null);
         } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the A4Solution XML file.",ex);
+            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the solution XML file.", ex);
         }
-        if (out.checkError()) throw new ErrorFatal("Error writing the XML instance file.");
+        if (out.checkError()) throw new ErrorFatal("Error writing the solution XML file.");
     }
 }

@@ -22,122 +22,687 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
+import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
+import java.awt.image.RasterFormatException;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import kodkod.ast.BinaryExpression;
+import kodkod.ast.BinaryFormula;
+import kodkod.ast.Decl;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Relation;
+import kodkod.ast.Variable;
 import kodkod.engine.Evaluator;
+import kodkod.engine.Proof;
 import kodkod.engine.Solution;
+import kodkod.engine.Solver;
+import kodkod.engine.config.AbstractReporter;
 import kodkod.engine.config.Options;
+import kodkod.engine.config.Reporter;
+import kodkod.engine.fol2sat.TranslationRecord;
+import kodkod.engine.fol2sat.Translator;
+import kodkod.engine.satlab.SATFactory;
+import kodkod.engine.ucore.HybridStrategy;
+import kodkod.engine.ucore.RCEStrategy;
 import kodkod.instance.Bounds;
 import kodkod.instance.Instance;
 import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
+import kodkod.instance.Universe;
 import kodkod.util.ints.IndexedEntry;
-import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
+import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.Version;
-import edu.mit.csail.sdg.alloy4.ConstMap.TempMap;
 import edu.mit.csail.sdg.alloy4.ConstSet.TempSet;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
-import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 
-/** Immutable; represents an Alloy solution (which is either satisfiable or unsatisfiable). */
+/**
+ * This class stores a SATISFIABLE or UNSATISFIABLE solution.
+ * It is also used as a staging area for the solver before generating the solution.
+ * Once solve() has been called, then this object becomes immutable after that.
+ */
 
 public final class A4Solution {
 
-    /** The integer bitwidth of this solution's model; always between 1 and 30. */
+    //====== static immutable fields ====================================================================//
+
+    /** The constant unary relation representing the smallest Int atom. */
+    static final Relation SIGINT_MIN = Relation.unary("Int/min");
+
+    /** The constant unary relation representing the Int atom "0". */
+    static final Relation SIGINT_ZERO = Relation.unary("Int/zero");
+
+    /** The constant unary relation representing the largest Int atom. */
+    static final Relation SIGINT_MAX = Relation.unary("Int/max");
+
+    /** The constant binary relation representing the "next" relation from each Int atom to its successor. */
+    static final Relation SIGINT_NEXT = Relation.binary("Int/next");
+
+    /** The constant unary relation representing the set of all seq/Int atoms. */
+    static final Relation SEQ_SEQIDX = Relation.unary("seq/Int");
+
+    //====== immutable fields ===========================================================================//
+
+    /** The original Alloy options that generated this solution. */
+    private final A4Options originalOptions;
+
+    /** The original Alloy command that generated this solution; can be "" if unknown. */
+    private final String originalCommand;
+
+    /** The bitwidth; always between 1 and 30. */
     private final int bitwidth;
 
-    /** The original Alloy main model's file name that generated this solution; can be "" if unknown. */
-    private final String filename;
+    /** The maximum allowed sequence length; always between 0 and 2^(bitwidth-1)-1. */
+    private final int maxseq;
 
-    /** The original command used to generate this solution; can be "" if unknown. */
-    private final String command;
+    /** The collection of all atoms; immutable. */
+    private final List<String> kAtoms;
 
-    /** The original formula (in Java source code format) used to generate this solution; can be "" if unknown. */
-    public final String formula;
+    /** The Kodkod TupleFactory object. */
+    private final TupleFactory factory;
 
-    /** The original formula (as a Kodkod formula object) used to generate this solution; can be null if unknown. */
-    private final Formula kFormula;
+    /** The set of all Int atoms; immutable. */
+    private final TupleSet sigintBounds;
 
-    /** The list of all sigs in this solution's model; always complete, has UNIV+SIGINT+SEQIDX+NONE, and has no duplciates. */
-    private final ConstList<Sig> sigs;
+    /** The set of all seq/Int atoms; immutable. */
+    private final TupleSet seqidxBounds;
 
-    /** If not empty, it maps each Sig/Field (and possibly even some parameterless Func) to a Kodkod expression. */
-    private final ConstMap<Object,Expression> bcc;
+    /** The Kodkod Solver object. */
+    private final Solver solver;
 
-    /** If satisfiable, then kEval!=null and can be used to evaluate; if unsatisfiable, then kEval==null. */
-    private final Evaluator kEval;
+    //====== mutable fields (immutable after solve() has been called) ===================================//
 
-    /** The unmodifiable original Kodkod bounds (can be null if unknown) */
-    private final Bounds kBounds;
+    /** True iff the problem is solved. */
+    private boolean solved = false;
 
-    /** This maps each Alloy4 atom to its corresponding Alloy parameter-less function. */
-    private final ConstMap<String,Func> a2func;
+    /** The Kodkod Bounds object. */
+    private Bounds bounds;
 
-    /** This maps each Kodkod atom to its corresponding Alloy atom. */
-    private final ConstMap<Object,String> k2atom;
+    /** The list of Kodkod formulas; can be empty if unknown. */
+    private SafeList<Formula> formulas = new SafeList<Formula>();
 
-    /** This maps each Kodkod atom to its Most-Specific-Sig. */
-    private final ConstMap<Object,PrimSig> k2sig;
+    /** The list of known Alloy4 sigs. */
+    private SafeList<Sig> sigs;
 
-    /** The unmomdifiable original kodkod low-level unsat core (can be empty if unknown) */
-    private final ConstList<Formula> core;
+    /** If solved==true and is satisfiable, then this is the list of known skolems. */
+    private SafeList<ExprVar> skolems = new SafeList<ExprVar>();
 
-    /** The unmomdifiable original kodkod high-level unsat core (can be empty if unknown) */
-    private final ConstList<Formula> hcore;
+    /** If solved==true and is satisfiable, then this is the list of actually used atoms. */
+    private SafeList<ExprVar> atoms = new SafeList<ExprVar>();
 
-    /** The map from kodkod Formula to Alloy Expr or Alloy Pos (can be empty if unknown) */
-    private final ConstMap<Formula,Object> fmap;
+    /** If solved==true and is satisfiable, then this maps each Kodkod atom to a short name. */
+    private Map<Object,String> atom2name = new LinkedHashMap<Object,String>();
 
-    /** The map from Kodkod Relation to Alloy Type (can be empty or incomplete if unknown) */
-    private final ConstMap<Relation,Type> rel2type;
+    /** If solved==true and is satisfiable, then this maps each Kodkod atom to its most specific sig. */
+    private Map<Object,PrimSig> atom2sig = new LinkedHashMap<Object,PrimSig>();
 
-    //============================================================================================================================//
+    /** If solved==true and is satisfiable, then this is the Kodkod evaluator. */
+    private Evaluator eval = null;
 
-    /** Returns the map that maps each Alloy4 atom to a Alloy4 function whose value is that atom. */
-    public ConstMap<String,Func> getAllAtoms() { return a2func; }
+    /** If not null, you can ask it to get another solution. */
+    private Iterator<Solution> kEnumerator = null;
 
-    /** Recursively rename all atoms to be of the form "SIGNAME$INDEX" where SIGNAME is the most-specific-sig. */
-    private static void rename
-    (Evaluator eval, Map<Object,Expression> bcc, PrimSig s,
-    TempMap<Object,String> map, TempMap<Object,PrimSig> map2, UniqueNameGenerator un)
-    throws Err {
-        for(PrimSig c:s.children()) rename(eval, bcc, c, map, map2, un);
-        List<String> list=null;
-        for(Tuple t:eval.evaluate(bcc.get(s))) {
-            String a=t.atom(0).toString();
-            if (map2.containsKey(a)) continue; // This means one of the subsig has already claimed this atom.
-            map2.put(t.atom(0), s);
-            if (list==null) list=new ArrayList<String>();
-            list.add(a);
+    /** The map from each Sig/Field/Skolem/Atom to its corresponding Kodkod expression. */
+    private Map<Expr,Expression> a2k;
+
+    /** The map from each kodkod Formula to Alloy Expr or Alloy Pos (can be empty if unknown) */
+    private Map<Formula,Object> k2pos;
+
+    /** The map from each Kodkod Relation to Alloy Type (can be empty or incomplete if unknown) */
+    private Map<Relation,Type> rel2type;
+
+    /** The map from each Kodkod Variable to an Alloy Type and Alloy Pos. */
+    private Map<Variable,Pair<Type,Pos>> decl2type;
+
+    //===================================================================================================//
+
+    /**
+     * Construct a blank A4Solution containing just UNIV, SIGINT, SEQIDX, and NONE as its only known sigs.
+     * @param originalCommand  - the original Alloy command that generated this solution; can be "" if unknown
+     * @param bitwidth - the bitwidth; must be between 1 and 30
+     * @param maxseq - the maximum allowed sequence length; must be between 0 and (2^(bitwidth-1))-1
+     * @param atoms - the set of atoms
+     * @param rep - the reporter that will receive diagnostic and progress messages
+     * @param opt - the Alloy options that will affect the solution and the solver
+     * @param expected - whether the user expected an instance or not (1 means yes, 0 means no, -1 means the user did not express an expectation)
+     */
+    A4Solution(String originalCommand, int bitwidth, int maxseq, Collection<String> atoms, final A4Reporter rep, A4Options opt, int expected) throws Err {
+        opt = opt.dup();
+        this.sigs = new SafeList<Sig>(Arrays.asList(UNIV, SIGINT, SEQIDX, NONE));
+        this.a2k = Util.asMap(new Expr[]{UNIV, SIGINT, SEQIDX, NONE}, Relation.INTS, Relation.INTS, (Expression)SEQ_SEQIDX, Relation.NONE);
+        this.k2pos = new LinkedHashMap<Formula,Object>();
+        this.rel2type = new LinkedHashMap<Relation,Type>();
+        this.decl2type = new LinkedHashMap<Variable,Pair<Type,Pos>>();
+        this.originalOptions = opt;
+        this.originalCommand = (originalCommand==null ? "" : originalCommand);
+        this.bitwidth = bitwidth;
+        this.maxseq = maxseq;
+        int max = max();
+        int min = min();
+        if (bitwidth < 1)  throw new ErrorSyntax("Cannot specify a bitwidth less than 1");
+        if (bitwidth > 30) throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
+        if (maxseq < 0)   throw new ErrorSyntax("The maximum sequence length cannot be negative.");
+        if (maxseq > max) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max);
+        kAtoms = Collections.unmodifiableList(new ArrayList<String>(atoms));
+        bounds = new Bounds(new Universe(kAtoms));
+        factory = bounds.universe().factory();
+        TupleSet sigintBounds = factory.noneOf(1);
+        TupleSet seqidxBounds = factory.noneOf(1);
+        final TupleSet next = factory.noneOf(2);
+        for(int i=min; i<=max; i++) { // Safe since we know 1 <= bitwidth <= 30
+           Tuple ii = factory.tuple(""+i);
+           TupleSet is = factory.range(ii, ii);
+           bounds.boundExactly(i, is);
+           sigintBounds.add(ii);
+           if (i>=0 && i<maxseq) seqidxBounds.add(ii);
+           if (i+1<=max) next.add(factory.tuple(""+i, ""+(i+1)));
+           if (i==min) bounds.boundExactly(SIGINT_MIN,  is);
+           if (i==max) bounds.boundExactly(SIGINT_MAX,  is);
+           if (i==0)   bounds.boundExactly(SIGINT_ZERO, is);
+        }
+        this.sigintBounds = sigintBounds.unmodifiableView();
+        this.seqidxBounds = seqidxBounds.unmodifiableView();
+        bounds.boundExactly(SIGINT_NEXT, next);
+        bounds.boundExactly(SEQ_SEQIDX, this.seqidxBounds);
+        int sym = (expected==1 ? 0 : opt.symmetry);
+        solver = new Solver();
+        solver.options().setFlatten(false); // added for now, since multiplication and division circuit takes forever to flatten
+        if (opt.solver.external()!=null) {
+            String ext = opt.solver.external();
+            if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
+            try {
+                File tmp = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
+                tmp.deleteOnExit();
+                solver.options().setSolver(SATFactory.externalFactory(ext, tmp.getAbsolutePath(), "", opt.solver.options()));
+            } catch(IOException ex) { throw new ErrorFatal("Cannot create temporary directory.", ex); }
+        } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
+            solver.options().setSolver(SATFactory.ZChaff);
+        } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
+            solver.options().setSolver(SATFactory.MiniSat);
+        } else if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
+            sym=20;
+            solver.options().setSolver(SATFactory.MiniSatProver);
+            solver.options().setLogTranslation(2);
+        } else {
+            solver.options().setSolver(SATFactory.DefaultSAT4J); // Even for "FILE", we choose SAT4J here; later, just before solving, we'll change it to ExternalSolver with a nonexistent binary
+        }
+        solver.options().setSymmetryBreaking(sym);
+        solver.options().setSkolemDepth(opt.skolemDepth);
+        solver.options().setBitwidth(bitwidth);
+        solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
+     }
+
+    /** Construct a new A4Solution that is the continuation of the old one, but with the "next" instance. */
+    private A4Solution(A4Solution old) throws Err {
+        if (!old.solved) throw new ErrorAPI("This solution is not yet solved, so next() is not allowed.");
+        if (old.kEnumerator==null) throw new ErrorAPI("This solution was not generated by an incremental SAT solver.\n" + "Solution enumeration is currently only implemented for MiniSat and SAT4J.");
+        if (old.eval==null) throw new ErrorAPI("This solution is already unsatisfiable, so you cannot call next() to get the next solution.");
+        Instance inst = old.kEnumerator.next().instance();
+        originalOptions = old.originalOptions;
+        originalCommand = old.originalCommand;
+        bitwidth = old.bitwidth;
+        maxseq = old.maxseq;
+        kAtoms = old.kAtoms;
+        factory = old.factory;
+        sigintBounds = old.sigintBounds;
+        seqidxBounds = old.seqidxBounds;
+        solver = old.solver;
+        bounds = old.bounds;
+        formulas = old.formulas;
+        sigs = old.sigs;
+        kEnumerator = old.kEnumerator;
+        k2pos = old.k2pos;
+        rel2type = old.rel2type;
+        decl2type = old.decl2type;
+        if (inst!=null) {
+           eval = new Evaluator(inst, old.solver.options());
+           a2k = new LinkedHashMap<Expr,Expression>(old.a2k); // this is because rename() needs to modify it
+           UniqueNameGenerator un = new UniqueNameGenerator();
+           rename(this, null, un);
+           a2k = ConstMap.make(a2k);
+        } else {
+           skolems = old.skolems;
+           eval = null;
+           a2k = old.a2k;
+        }
+        atoms = atoms.dup();
+        atom2name = ConstMap.make(atom2name);
+        atom2sig = ConstMap.make(atom2sig);
+        solved = true;
+    }
+
+    /** Turn the solved flag to be true, and make all remaining fields immutable. */
+    private void solved() {
+        if (solved) return; // already solved
+        bounds = bounds.clone().unmodifiableView();
+        formulas = formulas.dup();
+        sigs = sigs.dup();
+        skolems = skolems.dup();
+        atoms = atoms.dup();
+        atom2name = ConstMap.make(atom2name);
+        atom2sig = ConstMap.make(atom2sig);
+        a2k = ConstMap.make(a2k);
+        k2pos = ConstMap.make(k2pos);
+        rel2type = ConstMap.make(rel2type);
+        decl2type = ConstMap.make(decl2type);
+        solved = true;
+    }
+
+    //===================================================================================================//
+
+    /** Returns the bitwidth; always between 1 and 30. */
+    public int getBitwidth() { return bitwidth; }
+
+    /** Returns the maximum allowed sequence length; always between 0 and 2^(bitwidth-1)-1. */
+    public int getMaxSeq() { return maxseq; }
+
+    /** Returns the largest allowed integer. */
+    public int max() { return (1<<(bitwidth-1)) - 1; }
+
+    /** Returns the smallest allowed integer. */
+    public int min() { return 0 - (1<<(bitwidth-1)); }
+
+    //===================================================================================================//
+
+    /** Returns the original Alloy file name that generated this solution; can be "" if unknown. */
+    public String getOriginalFilename() { return originalOptions.originalFilename; }
+
+    /** Returns the original command that generated this solution; can be "" if unknown. */
+    public String getOriginalCommand() { return originalCommand; }
+
+    //===================================================================================================//
+
+    /** Returns the original formula used to generate this solution; can be "" if unknown. */
+    public String deriveEquivalentKodkodInput() {
+       if (solved)
+          return TranslateKodkodToJava.convert(getSingleFormula(1), bitwidth, kAtoms, bounds, atom2name);
+       else
+          return TranslateKodkodToJava.convert(getSingleFormula(1), bitwidth, kAtoms, bounds.unmodifiableView(), null);
+    }
+
+    //===================================================================================================//
+
+    /** Returns the Kodkod TupleFactory object. */
+    TupleFactory getFactory() { return factory; }
+
+    /** Returns a modifiable copy of the Kodkod Bounds object. */
+    Bounds getBounds() { return bounds.clone(); }
+
+    /**
+     * Add a new relation with the given label and the given lower and upper bound.
+     * @param label - the label for the new relation; need not be unique
+     * @param lower - the lowerbound; can be null if you want it to be the empty set
+     * @param upper - the upperbound; cannot be null; must contain everything in lowerbound
+     */
+    Relation addRel(String label, TupleSet lower, TupleSet upper) throws ErrorFatal {
+       if (solved) throw new ErrorFatal("Cannot add a Kodkod relation since solve() has completed.");
+       Relation rel = Relation.nary(label, upper.arity());
+       if (lower == upper) {
+          bounds.boundExactly(rel, upper);
+       } else if (lower == null) {
+          bounds.bound(rel, upper);
+       } else {
+          if (lower.arity() != upper.arity()) throw new ErrorFatal("Relation "+label+" must have same arity for lowerbound and upperbound.");
+          bounds.bound(rel, lower, upper);
+       }
+       return rel;
+    }
+
+    /**
+     * Add a new sig to this solution and associate it with the given expression (and if s.isTopLevel then add this expression into Sig.UNIV).
+     * <br> The expression must contain only constant Relations or Relations that are already bound in this solution.
+     * <br> (If the sig was already added by a previous call to addSig(), then this call will return immediately without altering what it is associated with)
+     */
+    void addSig(Sig s, Expression expr) throws ErrorFatal {
+       if (solved) throw new ErrorFatal("Cannot add an additional sig since solve() has completed.");
+       if (expr.arity()!=1) throw new ErrorFatal("Sig "+s+" must be associated with a unary relational value.");
+       if (a2k.containsKey(s)) return;
+       a2k.put(s, expr);
+       sigs.add(s);
+       if (s.isTopLevel()) a2k.put(UNIV, a2k.get(UNIV).union(expr));
+    }
+
+    /**
+     * Add a new field to this solution and associate it with the given expression.
+     * <br> The expression must contain only constant Relations or Relations that are already bound in this solution.
+     * <br> (If the field was already added by a previous call to addField(), then this call will return immediately without altering what it is associated with)
+     */
+    void addField(Field f, Expression expr) throws ErrorFatal {
+       if (solved) throw new ErrorFatal("Cannot add an additional field since solve() has completed.");
+       if (expr.arity()!=f.type.arity()) throw new ErrorFatal("Field "+f+" must be associated with an "+f.type.arity()+"-ary relational value.");
+       if (a2k.containsKey(f)) return;
+       a2k.put(f, expr);
+    }
+
+    /**
+     * Add a new skolem to this solution and associate it with the given expression.
+     * <br> The expression must contain only constant Relations or Relations that are already bound in this solution.
+     */
+    private ExprVar addSkolem(String label, Type type, Expression expr) throws Err {
+       if (solved) throw new ErrorFatal("Cannot add an additional skolem since solve() has completed.");
+       int a = type.arity();
+       if (a<1) throw new ErrorFatal("Skolem "+label+" must be associated with a relational value.");
+       if (a!=expr.arity()) throw new ErrorFatal("Skolem "+label+" must be associated with an "+a+"-ary relational value.");
+       ExprVar v = ExprVar.make(Pos.UNKNOWN, label, type);
+       a2k.put(v, expr);
+       skolems.add(v);
+       return v;
+    }
+
+    /** Returns an unmodifiable copy of the map from each Sig/Field/Skolem/Atom to its corresponding Kodkod expression. */
+    ConstMap<Expr,Expression> a2k()  { return ConstMap.make(a2k); }
+
+    /** Returns the corresponding Kodkod expression for the given Sig, or null if it is not associated with anything. */
+    Expression a2k(Sig sig)  { return a2k.get(sig); }
+
+    /** Returns the corresponding Kodkod expression for the given Field, or null if it is not associated with anything. */
+    Expression a2k(Field field)  { return a2k.get(field); }
+
+    /** Returns the corresponding Kodkod expression for the given Atom/Skolem, or null if it is not associated with anything. */
+    Expression a2k(ExprVar var)  { return a2k.get(var); }
+
+    /** Return a modifiable TupleSet representing a sound overapproximation of the given expression. */
+    TupleSet approximate(Expression expression) {
+       return factory.setOf(expression.arity(), Translator.approximate(expression, bounds, solver.options()).denseIndices());
+    }
+
+    /** Query the Bounds object to find the lower/upper bound; throws ErrorFatal if expr is not Relation, nor a union of Relations. */
+    TupleSet query(boolean findUpper, Expression expr, boolean makeMutable) throws ErrorFatal {
+       if (expr==Relation.NONE) return factory.noneOf(1);
+       if (expr==Relation.INTS) return makeMutable ? sigintBounds.clone() : sigintBounds;
+       if (expr==SEQ_SEQIDX) return makeMutable ? seqidxBounds.clone() : seqidxBounds;
+       if (expr instanceof Relation) {
+          TupleSet ans = findUpper ? bounds.upperBound((Relation)expr) : bounds.lowerBound((Relation)expr);
+          if (ans!=null) return makeMutable ? ans.clone() : ans;
+       }
+       else if (expr instanceof BinaryExpression) {
+          BinaryExpression b = (BinaryExpression)expr;
+          if (b.op() == BinaryExpression.Operator.UNION) {
+             TupleSet left = query(findUpper, b.left(), true);
+             TupleSet right = query(findUpper, b.right(), false);
+             left.addAll(right);
+             return left;
+          }
+       }
+       throw new ErrorFatal("Unknown expression encountered during bounds computation: "+expr);
+    }
+
+    /** Shrink the bounds for the given relation; throws an exception if the new bounds is not sameAs/subsetOf the old bounds. */
+    void shrink(Relation relation, TupleSet lowerBound, TupleSet upperBound) throws Err {
+       if (solved) throw new ErrorFatal("Cannot shrink a Kodkod relation since solve() has completed.");
+       TupleSet oldL = bounds.lowerBound(relation);
+       TupleSet oldU = bounds.upperBound(relation);
+       if (oldU.containsAll(upperBound) && upperBound.containsAll(lowerBound) && lowerBound.containsAll(oldL)) {
+          bounds.bound(relation, lowerBound, upperBound);
+       } else {
+          throw new ErrorAPI("Inconsistent bounds shrinking on relation: "+relation);
+       }
+    }
+
+    //===================================================================================================//
+
+    /** Returns true iff the problem has been solved and the result is satisfiable. */
+    public boolean satisfiable() { return eval!=null; }
+
+    /** Returns an unmodifiable copy of the list of all sigs in this solution's model; always contains UNIV+SIGINT+SEQIDX+NONE and has no duplicates. */
+    public SafeList<Sig> getAllReachableSigs() { return sigs.dup(); }
+
+    /** Returns an unmodifiable copy of the list of all skolems if the problem is solved and is satisfiable; else returns an empty list. */
+    public Iterable<ExprVar> getAllSkolems() { return skolems.dup(); }
+
+    /** Returns an unmodifiable copy of the list of all atoms if the problem is solved and is satisfiable; else returns an empty list. */
+    public Iterable<ExprVar> getAllAtoms() { return atoms.dup(); }
+
+    /** Returns the short unique name corresponding to the given atom if the problem is solved and is satisfiable; else returns atom.toString(). */
+    String atom2name(Object atom) { String ans=atom2name.get(atom); return ans==null ? atom.toString() : ans; }
+
+    /** Returns the most specific sig corresponding to the given atom if the problem is solved and is satisfiable; else returns UNIV. */
+    PrimSig atom2sig(Object atom) { PrimSig sig=atom2sig.get(atom); return sig==null ? UNIV : sig; }
+
+    /**
+     * If this solution is solved and satisfiable, evaluates the given expression and returns an A4TupleSet, a java Integer, or a java Boolean.
+     * @throws Err if the expression has syntax error, type error, or other errors, or is not fully typechecked
+     * @throws Err if this solution is not yet solved or it is not satisfiable
+     */
+    public Object eval(Expr expr) throws Err {
+        if (!solved) throw new ErrorAPI("This solution is not yet solved, so eval() is not allowed.");
+        if (eval==null) throw new ErrorAPI("This solution is unsatisfiable, so eval() is not allowed.");
+        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
+        if (!expr.errors.isEmpty()) throw expr.errors.get(0);
+        Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
+        if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
+        if (result instanceof Formula) return eval.evaluate((Formula)result);
+        if (result instanceof Expression) return new A4TupleSet(eval.evaluate((Expression)result), this);
+        throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
+    }
+
+    //===================================================================================================//
+
+    /** Maps a Kodkod formula to an Alloy Expr or Alloy Pos (or null if no such mapping) */
+    Object k2pos(Formula formula) { return k2pos.get(formula); }
+
+    /** Associates the Kodkod formula to a particular Alloy Expr (if the Kodkod formula is not already associated with an Alloy Expr or Alloy Pos) */
+    Formula k2pos(Formula formula, Expr expr) throws Err {
+        if (solved) throw new ErrorFatal("Cannot alter the k->pos mapping since solve() has completed.");
+        if (formula==null || expr==null || k2pos.containsKey(formula)) return formula;
+        k2pos.put(formula, expr);
+        if (formula instanceof BinaryFormula) {
+            BinaryFormula b = (BinaryFormula)formula;
+            if (b.op() == BinaryFormula.Operator.AND) { k2pos(b.left(), expr); k2pos(b.right(), expr); }
+        }
+        return formula;
+    }
+
+    /** Associates the Kodkod formula to a particular Alloy Pos (if the Kodkod formula is not already associated with an Alloy Expr or Alloy Pos) */
+    Formula k2pos(Formula formula, Pos pos) throws Err {
+        if (solved) throw new ErrorFatal("Cannot alter the k->pos mapping since solve() has completed.");
+        if (formula==null || pos==null || pos==Pos.UNKNOWN || k2pos.containsKey(formula)) return formula;
+        k2pos.put(formula, pos);
+        if (formula instanceof BinaryFormula) {
+            BinaryFormula b = (BinaryFormula)formula;
+            if (b.op() == BinaryFormula.Operator.AND) { k2pos(b.left(), pos); k2pos(b.right(), pos); }
+        }
+        return formula;
+    }
+
+    //===================================================================================================//
+
+    /** Maps a Kodkod relation to an Alloy Type (or null if unknown) */
+    Type kr2type(Relation relation) { return rel2type.get(relation); }
+
+    /** Associates the Kodkod relation to a particular Alloy Type (if it is not already associated with something) */
+    void kr2type(Relation relation, Type newType) throws Err {
+       if (solved) throw new ErrorFatal("Cannot alter the k->type mapping since solve() has completed.");
+       if (!rel2type.containsKey(relation)) rel2type.put(relation, newType);
+    }
+
+    /** Remove all mapping from Kodkod relation to Alloy Type. */
+    void kr2typeCLEAR() throws Err {
+       if (solved) throw new ErrorFatal("Cannot clear the k->type mapping since solve() has completed.");
+       rel2type.clear();
+    }
+
+    //===================================================================================================//
+
+    /** Caches a constant pair of Type.EMPTY and Pos.UNKNOWN */
+    private Pair<Type,Pos> cachedPAIR = null;
+
+    /** Maps a Kodkod variable to an Alloy Type and Alloy Pos (if no association exists, it will return (Type.EMPTY , Pos.UNKNOWN) */
+    Pair<Type,Pos> kv2typepos(Variable var) {
+       Pair<Type,Pos> ans=decl2type.get(var);
+       if (ans!=null) return ans;
+       if (cachedPAIR==null) cachedPAIR=new Pair<Type,Pos>(Type.EMPTY, Pos.UNKNOWN);
+       return cachedPAIR;
+    }
+
+    /** Associates the Kodkod variable to a particular Alloy Type and Alloy Pos (if it is not already associated with something) */
+    void kv2typepos(Variable var, Type type, Pos pos) throws Err {
+       if (solved) throw new ErrorFatal("Cannot alter the k->type mapping since solve() has completed.");
+       if (type==null) type=Type.EMPTY;
+       if (pos==null) pos=Pos.UNKNOWN;
+       if (!decl2type.containsKey(var)) decl2type.put(var, new Pair<Type,Pos>(type, pos));
+    }
+
+    //===================================================================================================//
+
+    /** Conjoin the list of formulas into a single balanced formula; external caller should call this method with i==1. */
+    private Formula getSingleFormula(int i) {
+        // We actually build a "binary heap" where node X's two children are node 2X and node 2X+1
+        int n = formulas.size();
+        if (n==0) return Formula.TRUE;
+        Formula me = formulas.get(i-1);
+        int child1=i+i, child2=child1+1;
+        if (child1<i || child1>n) return me;
+        me = me.and(getSingleFormula(child1));
+        if (child2<1 || child2>n) return me;
+        me = me.and(getSingleFormula(child2));
+        return me;
+    }
+
+    /** Add the given formula to the list of Kodkod formulas, and associate it with the given Pos object (pos can be null if unknown). */
+    void addFormula(Formula newFormula, Pos pos) throws Err {
+        if (solved) throw new ErrorFatal("Cannot add an additional formula since solve() has completed.");
+        if (formulas.size()>0 && formulas.get(0)==Formula.FALSE) return; // If one formula is false, we don't need the others
+        if (newFormula==Formula.FALSE) formulas=new SafeList<Formula>(); // If one formula is false, we don't need the others
+        formulas.add(newFormula);
+        if (pos!=null && pos!=Pos.UNKNOWN) k2pos(newFormula, pos);
+    }
+
+    /** Add the given formula to the list of Kodkod formulas, and associate it with the given Expr object (expr can be null if unknown) */
+    void addFormula(Formula newFormula, Expr expr) throws Err {
+        if (solved) throw new ErrorFatal("Cannot add an additional formula since solve() has completed.");
+        if (formulas.size()>0 && formulas.get(0)==Formula.FALSE) return; // If one formula is false, we don't need the others
+        if (newFormula==Formula.FALSE) formulas=new SafeList<Formula>(); // If one formula is false, we don't need the others
+        formulas.add(newFormula);
+        if (expr!=null) k2pos(newFormula, expr);
+    }
+
+    //===================================================================================================//
+
+    /** Helper class that wraps an iterator up where it will pre-fetch the first element (note: it will not prefetch subsequent elements). */
+    private static final class Peeker<T> implements Iterator<T> {
+        /** The encapsulated iterator. */
+        private Iterator<T> iterator;
+        /** True iff we have captured the first element. */
+        private boolean hasFirst;
+        /** If hasFirst is true, then this is the captured first element. */
+        private T first;
+        /** Constructrs a Peeker object. */
+        private Peeker(Iterator<T> it) {
+            iterator = it;
+            if (it.hasNext()) { hasFirst=true; first=it.next(); }
+        }
+        /** {@inheritDoc} */
+        public boolean hasNext() {
+            return hasFirst || iterator.hasNext();
+        }
+        /** {@inheritDoc} */
+        public T next() {
+            if (hasFirst) { hasFirst=false; T ans=first; first=null; return ans; } else return iterator.next();
+        }
+        /** {@inheritDoc} */
+        public void remove() { throw new UnsupportedOperationException(); }
+    }
+
+    //===================================================================================================//
+
+    /** Helper method that adds every mentioned Relation into set (assuming "ex" is a Relation, or a binary composition of Relations) */
+    private static void addAllSubrelation(IdentitySet<Relation> set, Expression ex) {
+        while(ex instanceof BinaryExpression) {
+            BinaryExpression b = (BinaryExpression)ex;
+            addAllSubrelation(set, b.left());
+            ex = b.right();
+        }
+        if (ex instanceof Relation) set.add((Relation)ex);
+    }
+
+    //===================================================================================================//
+
+    /** Helper method that chooses a name for each atom based on its most specific sig; (external caller should call this method with s==null) */
+    private static void rename (A4Solution frame, PrimSig s, UniqueNameGenerator un) throws Err {
+        if (s==null) {
+            for(ExprVar sk:frame.skolems) un.seen(sk.label);
+            // Store up the skolems
+            List<Object> skolems = new ArrayList<Object>();
+            IdentitySet<Relation> rels = new IdentitySet<Relation>(Arrays.asList(SEQ_SEQIDX, SIGINT_MAX, SIGINT_MIN, SIGINT_ZERO, SIGINT_NEXT));
+            for(final Sig s2:frame.getAllReachableSigs()) {
+               addAllSubrelation(rels, frame.a2k(s2));
+               for(Field f:s2.getFields()) addAllSubrelation(rels, frame.a2k(f));
+            }
+            for(final Relation r:frame.eval.instance().relations()) if (!rels.contains(r)) {
+               Type t=frame.kr2type(r);
+               if (t==null) t=UNIV.type;
+               while (t.arity() < r.arity()) t=UNIV.type.product(t);
+               if (t.arity() > r.arity()) continue; // That means something terrible has happened, so let's skip it
+               String n = Util.tail(r.name());
+               while(n.length()>0 && n.charAt(0)=='$') n=n.substring(1);
+               skolems.add(n);
+               skolems.add(t);
+               skolems.add(r);
+            }
+            // Add the atoms then the skolems (we want to make sure atom names that precedence over skolem names)
+            // Assign atom->name and atom->MostSignificantSig
+            for(Tuple t:frame.eval.evaluate(Relation.INTS)) { frame.atom2sig.put(t.atom(0), SIGINT); }
+            for(Tuple t:frame.eval.evaluate(SEQ_SEQIDX))    { frame.atom2sig.put(t.atom(0), SEQIDX); }
+            for(Sig sig:frame.sigs) if (sig instanceof PrimSig && !sig.builtin && ((PrimSig)sig).isTopLevel()) rename(frame, (PrimSig)sig, un);
+            // These are redundant atoms that were not chosen to be in the final instance
+            int unused=0;
+            for(Tuple tuple:frame.eval.evaluate(Relation.UNIV)) {
+               Object atom = tuple.atom(0);
+               if (!frame.atom2sig.containsKey(atom)) { frame.atom2name.put(atom, "unused"+unused); unused++; }
+            }
+            // Add the skolems
+            for(int num=skolems.size(), i=0; i<num-2; i=i+3) {
+                String n = (String) skolems.get(i);
+                while(n.length()>0 && n.charAt(0)=='$') n=n.substring(1);
+                Type t = (Type) skolems.get(i+1);
+                Relation r = (Relation) skolems.get(i+2);
+                frame.addSkolem(un.make("$"+n), t, r);
+            }
+            return;
+        }
+        for(PrimSig c: s.children()) rename(frame, c, un);
+        List<Tuple> list=null;
+        for(Tuple t: frame.eval.evaluate(frame.a2k(s))) {
+           if (frame.atom2sig.containsKey(t.atom(0))) continue; // This means one of the subsig has already claimed this atom.
+           frame.atom2sig.put(t.atom(0), s);
+           if (list==null) list=new ArrayList<Tuple>();
+           list.add(t);
         }
         if (list==null) return;
         // Compute the width of the index (eg. width("0")=1,  width("7")=1,  width("23")=2, etc)
@@ -145,317 +710,290 @@ public final class A4Solution {
         for(int i=list.size()-1; i>=10; i=i/10) width++;
         // Now, generate the new name. By prepending enough 0 to line up the numbers, we ensure the atoms will sort lexicographically
         StringBuilder sb = new StringBuilder();
-        String signame = s.toString();
+        String signame = s.label;
         // Many A4Solution objects will have the repetitive "this/" in front of the sig names (since that is
         // the convention of alloy4compiler), so removing "this/" will make the output look nicer.
         // This renaming is safe, since we'll pass it into UniqueNameGenerator to ensure no name clash anyway.
         if (signame.startsWith("this/")) signame=signame.substring(5);
         signame=un.make(signame);
-        for(int i=0; i<list.size(); i++) {
-            sb.delete(0, sb.length());
-            sb.append(signame);
-            sb.append('$');
-            String x=Integer.toString(i);
-            int xlen=x.length();
-            while(xlen<width) {sb.append('0'); xlen++;}
-            sb.append(x);
-            map.put(list.get(i), sb.toString());
+        int i=0;
+        for(Tuple t:list) {
+           sb.delete(0, sb.length()).append(signame).append('$');
+           String x=Integer.toString(i);
+           int xlen=x.length();
+           while(xlen < width) { xlen++; sb.append('0'); }
+           x=sb.append(x).toString();
+           frame.atom2name.put(t.atom(0), x);
+           ExprVar v = ExprVar.make(Pos.UNKNOWN, x, s.type);
+           TupleSet ts = t.universe().factory().range(t,t);
+           Relation r = Relation.unary(x);
+           frame.eval.instance().add(r, ts);
+           frame.a2k.put(v, r);
+           frame.atoms.add(v);
+           i++;
         }
     }
 
-    //============================================================================================================================//
+    //===================================================================================================//
 
-    /**
-     * Construct an A4Solution object representing a satisfiable or unsatisfiable solution from Kodkod.
-     * @param sigs - the list of Sigs; must be complete, must contain UNIV+SIGINT+SEQIDX+NONE, and has no duplicates
-     * @param incoming_bcc - maps each Sig and Field (and possibly even some parameterless Func) to a Kodkod expression
-     * @param filename - original Alloy main model's file name that generated this solution; can be "" if unknown
-     * @param command - original command used to generate this solution; can be "" if unknown
-     * @param kEnumerator - if nonnull, we can ask it to get another solution
-     * @param kFormula - original formula (as a Kodkod formula object) used to generate this solution; can be null if unknown
-     * @param kBounds - original Kodkod bounds used to generate this solution; can be null if unknown
-     * @param bitwidth - the integer bitwidth of this solution's model; must be between 1 and 30
-     * @param kInstance - the Kodkod instance represented by this A4Solution; nonnull iff this solution is satisfiable
-     * @param rel2type - this maps each known Skolem Relation to its Alloy type (can be empty or null if unknown or incomplete)
-     * @param fmap - map from kodkod Formula to Alloy Expr or Alloy Pos; can be empty or null if the map is unavailable
-     * @param core - low-level unsat core in terms of Kodkod formulas; can be null or empty if unknown
-     * @param hcore - high-level unsat core in terms of Kodkod formulas; can be null or empty if unknown
-     */
-    A4Solution(Iterable<Sig> sigs, Map<Object,Expression> incoming_bcc, String filename,
-    String command, Iterator<Solution> kEnumerator, Formula kFormula, Bounds kBounds, int bitwidth,
-    Instance kInstance, Map<Relation,Type> rel2type, Map<Formula,Object> fmap,
-    Iterable<Formula> core, Iterable<Formula> hcore)
-    throws Err {
-        ConstMap.TempMap<Object,Expression> bcc = new ConstMap.TempMap<Object,Expression>(incoming_bcc);
-        if (kInstance!=null) kInstance = kInstance.clone();
-        this.sigs = ConstList.make(sigs);
-        this.rel2type = ConstMap.make(rel2type);
-        this.filename = (filename==null ? "" : filename);
-        this.command = (command==null ? "" : command);
-        this.kEnumerator = kEnumerator;
-        this.kBounds = (kBounds!=null ? kBounds.clone() : null);
-        this.fmap = ConstMap.make(fmap);
-        this.core = ConstList.make(core);
-        this.hcore = ConstList.make(hcore);
-        this.bitwidth = bitwidth;
-        if (bitwidth<1 || bitwidth>30) throw new ErrorAPI("The integer bitwidth must be between 1 and 30.");
-        TempMap<Object,String> m1 = new TempMap<Object,String>();
-        TempMap<Object,PrimSig> m2 = new TempMap<Object,PrimSig>();
-        TempMap<String,Func> m3 = new TempMap<String,Func>();
-        if (kInstance==null) {
-            kEval = null;
+    /** Solve for the solution if not solved already; if cmd==null, we will simply use the lowerbound of each relation as its value. */
+    A4Solution solve(final A4Reporter rep, Command cmd, boolean tryBookExamples) throws Err, IOException {
+        // If already solved, then return this object as is
+        if (solved) return this;
+        // If cmd==null, then all four arguments are ignored, and we simply use the lower bound of each relation
+        if (cmd==null) {
+           Instance inst = new Instance(bounds.universe());
+           for(int max=max(), i=min(); i<=max; i++) {
+              Tuple it = factory.tuple(""+i);
+              inst.add(i, factory.range(it, it));
+           }
+           for(Relation r: bounds.relations()) inst.add(r, bounds.lowerBound(r));
+           eval = new Evaluator(inst, solver.options());
+           rename(this, null, new UniqueNameGenerator());
+           solved();
+           return this;
+        }
+        // Otherwise, prepare to do the solve...
+        final A4Options opt = originalOptions;
+        long time = System.currentTimeMillis();
+        rep.debug("Simplifying the bounds...\n");
+        if (formulas.size()>0 && !Simplifier.simplify(rep, this, formulas.dup())) addFormula(Formula.FALSE, Pos.UNKNOWN);
+        rep.translate(opt.solver.id(), bitwidth, maxseq, solver.options().skolemDepth(), solver.options().symmetryBreaking());
+        Formula fgoal = getSingleFormula(1);
+        rep.debug("Generating the solution...\n");
+        kEnumerator = null;
+        Solution sol = null;
+        // Set up a reporter to catch the type+pos of skolems
+        final Reporter oldReporter = solver.options().reporter();
+        solver.options().setReporter(new AbstractReporter() {
+            @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
+                try {
+                    Type t=kv2typepos(decl.variable()).a;
+                    if (t==Type.EMPTY) return;
+                    for(int i=(predecl==null ? -1 : predecl.size()-1); i>=0; i--) {
+                        Type pp=kv2typepos(predecl.get(i).variable()).a;
+                        if (pp==Type.EMPTY) return;
+                        t=pp.product(t);
+                    }
+                    kr2type(skolem, t);
+                } catch(Throwable ex) { } // Exception here is not fatal
+            }
+        });
+        // Try the book examples
+        if (!opt.solver.equals(SatSolver.FILE) && tryBookExamples) {
+           A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
+           try { sol=BookExamples.trial(r, this, fgoal, solver, cmd.check); } catch(Throwable ex) { }
+        }
+        // Set up a reporter to catch the type+pos of skolems, this time allowing the reporter to report the # of vars and clauses
+        solver.options().setReporter(new AbstractReporter() {
+            @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
+                try {
+                    Type t=kv2typepos(decl.variable()).a;
+                    if (t==Type.EMPTY) return;
+                    for(int i=(predecl==null ? -1 : predecl.size()-1); i>=0; i--) {
+                        Type pp=kv2typepos(predecl.get(i).variable()).a;
+                        if (pp==Type.EMPTY) return;
+                        t=pp.product(t);
+                    }
+                    kr2type(skolem, t);
+                } catch(Throwable ex) { } // Exception here is not fatal
+            }
+            @Override public void solvingCNF(int primaryVars, int vars, int clauses) {
+                if (rep!=null) rep.solve(primaryVars, vars, clauses);
+            }
+        });
+        // Kodkod refuses to enlarge a Relation during solution enumeration
+        // if that Relation is never mentioned in the GOAL formula; so, this ensures that
+        // the said relation is mentioned (and the R==R is optimized away very efficiently, so we don't incur runtime cost)
+        for(Relation r: bounds.relations()) { formulas.add(r.eq(r)); }
+        fgoal = getSingleFormula(1);
+        // Now pick the solver and solve it!
+        if (opt.solver.equals(SatSolver.FILE)) {
+           File tmpCNF = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
+           String out = tmpCNF.getAbsolutePath();
+           solver.options().setSolver(SATFactory.externalFactory(null, out, "", new String[0]));
+           try { sol = solver.solve(fgoal, bounds); } catch(RasterFormatException ex) { rep.resultCNF(out); return null; }
+           // The formula is trivial (otherwise, it would have thrown an exception)
+           // Since the user wants it in CNF format, we manually generate a trivially satisfiable (or unsatisfiable) CNF file.
+           Util.writeAll(out, sol.instance()!=null ? "p cnf 1 1\n1 0\n" : "p cnf 1 2\n1 0\n-1 0\n");
+           rep.resultCNF(out);
+           return null;
+        }
+        if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
+           if (sol==null) sol = solver.solve(fgoal, bounds);
         } else {
-            final UniqueNameGenerator un = new UniqueNameGenerator();
-            final Options options = new Options();
-            options.setBitwidth(bitwidth);
-            kEval = new Evaluator(kInstance, options);
-            // We first process SIGINT
-            for(Tuple t:kEval.evaluate(Relation.INTS)) { m2.put(t.atom(0), SIGINT); }
-            // We then process SEQIDX so we override the old mapping to SIGINT with the new mapping to SEQIDX
-            for(Tuple t:kEval.evaluate(BoundsComputer.SEQ_SEQIDX)) { m2.put(t.atom(0), SEQIDX); }
-            // Now, process the non-builtin sigs
-            for(Map.Entry<Object,Expression> e:incoming_bcc.entrySet()) {
-                if (e.getKey() instanceof PrimSig) {
-                    PrimSig s=(PrimSig)(e.getKey());
-                    if (!s.builtin && s.isTopLevel()) rename(kEval, incoming_bcc, s, m1, m2, un);
-                }
-            }
-            // These are redundant atoms that were not chosen to be in the final instance
-            int unused=0;
-            for(Tuple tuple: kEval.evaluate(Relation.UNIV)) {
-                Object atom = tuple.atom(0);
-                if (!m2.containsKey(atom)) { m1.put(atom, "unused"+unused); unused++; }
-            }
+           kEnumerator = new Peeker<Solution>(solver.solveAll(fgoal, bounds));
+           if (sol==null) sol = kEnumerator.next();
         }
-        k2atom = m1.makeConst();
-        k2sig = m2.makeConst();
-        if (kFormula!=null && this.kBounds!=null) {
-            this.formula=TranslateKodkodToJava.convert(kFormula, bitwidth, this.kBounds.universe().iterator(), this.kBounds, k2atom);
-        } else {
-            this.formula="";
-        }
-        this.kFormula = kFormula;
-        if (kInstance!=null) { // add each atom as a macro
-            List<ExprVar> empty = new ArrayList<ExprVar>();
-            TupleFactory tf = kInstance.universe().factory();
-            for(Object atom: kInstance.universe()) {
-                PrimSig ret = k2sig.get(atom);
-                String n = k2atom.get(atom);
-                if (ret!=null && n!=null) { // sanity check
-                    Func func = new Func(null, n, empty, ret);
-                    Relation r = Relation.unary(n);
-                    kInstance.add(r, tf.range(tf.tuple(atom), tf.tuple(atom)));
-                    bcc.put(func, r);
-                    m3.put(n, func);
-                }
-            }
-        }
-        this.bcc = bcc.makeConst();
-        this.a2func = m3.makeConst();
-    }
-
-    //============================================================================================================================//
-
-    /** Assuming "ex" is a product and/or union of Relations, add every mentioned Relation into "set". */
-    private static void addAllSubrelation(IdentitySet<Relation> set, Expression ex) {
-        while(ex instanceof BinaryExpression) {
-            BinaryExpression b = (BinaryExpression)ex;
-            if (b.op() != BinaryExpression.Operator.UNION && b.op() != BinaryExpression.Operator.PRODUCT) return;
-            addAllSubrelation(set, b.left());
-            ex = b.right();
-        }
-        if (ex instanceof Relation) set.add((Relation)ex);
-    }
-
-    /** Return the list of all skolems (each skolem has a name, a Type, and its tupleset) */
-    public List<Pair<String,Pair<Type,A4TupleSet>>> skolems() {
-        List<Pair<String,Pair<Type,A4TupleSet>>> ans = new ArrayList<Pair<String,Pair<Type,A4TupleSet>>>();
-        if (kEval==null) return ans; // That means the solution is unsatisfiable, so there are no skolem values at all
-        Instance inst = kEval.instance();
-        IdentitySet<Relation> rels = new IdentitySet<Relation>();
-        for(Sig s:getAllReachableSigs()) {
-            addAllSubrelation(rels, bcc.get(s));
-            for(Field f:s.getFields()) addAllSubrelation(rels, bcc.get(f));
-        }
-        rels.add(BoundsComputer.SEQ_SEQIDX);
-        rels.add(BoundsComputer.SIGINT_MAX);
-        rels.add(BoundsComputer.SIGINT_MIN);
-        rels.add(BoundsComputer.SIGINT_ZERO);
-        rels.add(BoundsComputer.SIGINT_NEXT);
-        for(final Relation r:inst.relations()) if (!rels.contains(r)) {
-            Type t=rel2type.get(r);
-            if (t==null) continue; // That means we don't know its type; this should NOT have happened, but let's be safe
-            while (t.arity() < r.arity()) t=UNIV.type.product(t);
-            if (t.arity() > r.arity()) continue; // That means something terrible has happened, so let's skip it
-            String n=r.name();
-            while(n.length()>0 && n.charAt(0)=='$') n=n.substring(1);
-            Pair<Type,A4TupleSet> ta = new Pair<Type,A4TupleSet>(t, new A4TupleSet(inst.tuples(r), k2atom, k2sig));
-            ans.add( new Pair<String,Pair<Type,A4TupleSet>>(n, ta) );
-        }
-        return ans;
-    }
-
-    //============================================================================================================================//
-
-    /** If not null, you can ask it to get another solution; this field must be synchronized. */
-    private final Iterator<Solution> kEnumerator;
-
-    /** If nonnull, it caches the result of calling "next()"; this field must be synchronized. */
-    private A4Solution nextCache = null;
-
-    /**
-     * If this solution is UNSAT, return itself; else return the next solution (which could be SAT or UNSAT).
-     * @throws ErrorAPI if the solver was not an incremental solver
-     */
-    public synchronized A4Solution next() throws Err {
-        if (kEval==null) return this; // Since the solution is UNSAT, just return myself
-        if (nextCache!=null) return nextCache; // Since the result was already computed, return it
-        if (kEnumerator==null) throw new ErrorAPI("This solution was not generated by an incremental SAT solver.\n"
-            +"Solution enumeration is currently only implemented for MiniSat and SAT4J.");
-        nextCache = new A4Solution(sigs, bcc, filename, command, kEnumerator, kFormula,
-            kBounds, bitwidth, kEnumerator.next().instance(), rel2type, fmap, null, null);
-        return nextCache;
-    }
-
-    /** Returns true if this solution was generated by an incremental SAT solver. */
-    public synchronized boolean isIncremental() { return kEnumerator!=null; }
-
-    //============================================================================================================================//
-
-    /**
-     * If this solution is satisfiable, evaluates the given expression and returns an A4TupleSet, a java Integer, or a java Boolean.
-     * @throws Err if the expression has syntax error, type error, or other errors, or is not fully typechecked
-     * @throws Err if this solution is not a satisfiable solution
-     */
-    public Object eval(Expr expr) throws Err {
-        if (!satisfiable()) throw new ErrorAPI("This solution is unsatisfiable, so no eval() is allowed.");
-        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
-        if (!expr.errors.isEmpty()) throw expr.errors.get(0);
-        Object result = TranslateAlloyToKodkod.alloy2kodkod(bcc, bitwidth, expr);
-        if (result instanceof IntExpression) return kEval.evaluate((IntExpression)result);
-        if (result instanceof Formula) return kEval.evaluate((Formula)result);
-        if (result instanceof Expression) return new A4TupleSet(kEval.evaluate((Expression)result), k2atom, k2sig);
-        throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
-    }
-
-    //============================================================================================================================//
-
-    /** This caches the result of lowLevelCore(); this field must be synchronized. */
-    private ConstSet<Pos> lCoreCache = null;
-
-    /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
-    public synchronized ConstSet<Pos> lowLevelCore() {
-        if (lCoreCache!=null) return lCoreCache;
-        TempSet<Pos> ans1 = new TempSet<Pos>();
-        if (kEval==null) for(Formula f: core) {
-           Object y = fmap.get(f);
-           if (y instanceof Pos) ans1.add( (Pos)y ); else if (y instanceof Expr) ans1.add( ((Expr)y).span() );
-        }
-        return (lCoreCache = ans1.makeConst());
-    }
-
-    //============================================================================================================================//
-
-    /** This caches the result of highLevelCore(); this field must be synchronized. */
-    private Pair<ConstSet<Pos>,ConstSet<Pos>> hCoreCache = null;
-
-    /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
-    public synchronized Pair<ConstSet<Pos>,ConstSet<Pos>> highLevelCore() {
-        Pair<ConstSet<Pos>,ConstSet<Pos>> answer = hCoreCache;
-        if (answer!=null) return answer;
-        TempSet<Pos> ans1 = new TempSet<Pos>(), ans2 = new TempSet<Pos>();
-        if (kEval==null) for(Formula f: hcore) {
-           Object y = fmap.get(f);
-           if (y instanceof Pos) {
-               ans1.add( (Pos)y );
-               // System.out.println("CORE: "+y); System.out.flush();
-           } else if (y instanceof Expr) {
-               Expr expr = (Expr)y;
-               ans1.add(expr.span());
-               // System.out.println("CORE: "+expr.span()); System.out.flush();
-               for (Func func: expr.findAllFunctions()) ans2.add(func.getBody().span());
+        final Instance inst = sol.instance();
+        // To ensure no more output during SolutionEnumeration
+        solver.options().setReporter(oldReporter);
+        // If unsatisfiable, then retreive the unsat core if desired
+        if (inst==null && solver.options().solver()==SATFactory.MiniSatProver) {
+           try {
+              lCore = new IdentitySet<Formula>();
+              Proof p = sol.proof();
+              if (sol.outcome()==UNSATISFIABLE) {
+                 // only perform the minimization if it was UNSATISFIABLE, rather than TRIVIALLY_UNSATISFIABLE
+                 int i = p.highLevelCore().size();
+                 rep.minimizing(cmd, i);
+                 if (opt.coreMinimization==0) try { p.minimize(new RCEStrategy(p.log())); } catch(Throwable ex) {}
+                 if (opt.coreMinimization==1) try { p.minimize(new HybridStrategy(p.log())); } catch(Throwable ex) {}
+                 rep.minimized(cmd, i, p.highLevelCore().size());
+              }
+              for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) {
+                 Object n=it.next().node();
+                 if (n instanceof Formula) lCore.add((Formula)n);
+              }
+              hCore = new IdentitySet<Formula>(p.highLevelCore());
+           } catch(Throwable ex) {
+              lCore = hCore = null;
            }
         }
-        answer = new Pair<ConstSet<Pos>,ConstSet<Pos>>(ans1.makeConst(), ans2.makeConst());
-        return hCoreCache = answer;
+        // If satisfiable, then add/rename the atoms and skolems
+        if (inst!=null) {
+           eval = new Evaluator(inst, solver.options());
+           rename(this, null, new UniqueNameGenerator());
+        }
+        // report the result
+        solved();
+        time = System.currentTimeMillis() - time;
+        if (inst!=null) rep.resultSAT(cmd, time, this); else rep.resultUNSAT(cmd, time, this);
+        return this;
     }
 
-    //============================================================================================================================//
+    //===================================================================================================//
 
-    /** This caches the toString() output; this field must be synchronized. */
+    /** This caches the toString() output. */
     private String toStringCache = null;
 
     /** Dumps the Kodkod solution into String. */
-    @Override public synchronized String toString() {
-        if (kEval==null) return "---OUTCOME---\nUnsatisfiable.\n";
+    @Override public String toString() {
+        if (!solved) return "---OUTCOME---\nUnknown.\n";
+        if (eval == null) return "---OUTCOME---\nUnsatisfiable.\n";
         String answer = toStringCache;
-        if (answer!=null) return answer;
-        Instance sol = kEval.instance();
+        if (answer != null) return answer;
+        Instance sol = eval.instance();
         StringBuilder sb = new StringBuilder();
         sb.append("---INSTANCE---\n" + "integers={");
-        boolean firstTuple=true;
+        boolean firstTuple = true;
         for(IndexedEntry<TupleSet> e:sol.intTuples()) {
             if (firstTuple) firstTuple=false; else sb.append(", ");
             // No need to print e.index() since we've ensured the Int atom's String representation is always equal to ""+e.index()
             Object atom = e.value().iterator().next().atom(0);
-            String aname = k2atom.get(atom);
-            sb.append(aname==null ? atom.toString() : aname);
+            sb.append(atom2name(atom));
         }
         sb.append("}\n");
         for(Map.Entry<Relation,TupleSet> e:sol.relationTuples().entrySet()) {
-            if (e.getKey() == BoundsComputer.SIGINT_MAX) continue; // Not interesting
-            if (e.getKey() == BoundsComputer.SIGINT_MIN) continue; // Not interesting
-            if (e.getKey() == BoundsComputer.SIGINT_NEXT) continue; // Not interesting
-            if (e.getKey() == BoundsComputer.SIGINT_ZERO) continue; // Not interesting
+            if (e.getKey() == SIGINT_MAX) continue;  // Not interesting
+            if (e.getKey() == SIGINT_MIN) continue;  // Not interesting
+            if (e.getKey() == SIGINT_NEXT) continue; // Not interesting
+            if (e.getKey() == SIGINT_ZERO) continue; // Not interesting
             sb.append(e.getKey().name()).append("={");
             firstTuple=true;
             for(Tuple t:e.getValue()) {
                 if (firstTuple) firstTuple=false; else sb.append(", ");
                 for(int i=0; i<t.arity(); i++) {
                     if (i>0) sb.append("->");
-                    String aname = k2atom.get(t.atom(i));
-                    sb.append(aname==null ? t.atom(i).toString() : aname);
+                    sb.append(atom2name(t.atom(i)));
                 }
             }
             sb.append("}\n");
         }
-        answer = (sb.append("\n")).toString();
-        toStringCache = answer;
-        return answer;
+        return toStringCache = sb.toString();
     }
 
-    //============================================================================================================================//
+    //===================================================================================================//
 
-    /** Returns true iff the problem is satisfiable. */
-    public boolean satisfiable() { return kEval!=null; }
+    /** If nonnull, it caches the result of calling "next()". */
+    private A4Solution nextCache = null;
 
-    /** Returns the list of all sigs in this solution's model; always contains UNIV+SIGINT+SEQIDX+NONE and has no duplicates. */
-    public ConstList<Sig> getAllReachableSigs() { return sigs; }
+    /**
+     * If this solution is UNSAT, return itself; else return the next solution (which could be SAT or UNSAT).
+     * @throws ErrorAPI if the solver was not an incremental solver
+     */
+    public A4Solution next() throws Err {
+        if (!solved) throw new ErrorAPI("This solution is not yet solved, so next() is not allowed.");
+        if (eval==null) return this;
+        if (nextCache==null) nextCache=new A4Solution(this);
+        return nextCache;
+    }
 
-    /** Returns the integer bitwidth of this solution's model; always between 1 and 30. */
-    public int getBitwidth() { return bitwidth; }
+    /** Returns true if this solution was generated by an incremental SAT solver. */
+    public boolean isIncremental() { return kEnumerator!=null; }
 
-    /** Returns the original formula (in Java source code format) used to generate this solution; can be "" if unknown. */
-    public String getOriginalFormula() { return formula; }
+    //===================================================================================================//
 
-    /** Returns the original command used to generate this solution; can be "" if unknown. */
-    public String getOriginalCommand() { return command; }
+    /** The low-level unsat core; null if it is not available. */
+    private IdentitySet<Formula> lCore = null;
 
-    /** Returns the original Alloy main model's file name that generated this solution; can be "" if unknown. */
-    public String getOriginalFilename() { return filename; }
+    /** This caches the result of lowLevelCore(). */
+    private ConstSet<Pos> lCoreCache = null;
+
+    /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
+    public ConstSet<Pos> lowLevelCore() {
+       if (lCoreCache!=null) return lCoreCache;
+       TempSet<Pos> ans1 = new TempSet<Pos>();
+       if (lCore!=null) for(Formula f: lCore) {
+          Object y = k2pos(f);
+          if (y instanceof Pos) ans1.add( (Pos)y ); else if (y instanceof Expr) ans1.add( ((Expr)y).span() );
+       }
+       return lCoreCache = ans1.makeConst();
+    }
+
+    //===================================================================================================//
+
+    /** The high-level unsat core; null if it is not available. */
+    private IdentitySet<Formula> hCore = null;
+
+    /** This caches the result of highLevelCore(). */
+    private Pair<ConstSet<Pos>,ConstSet<Pos>> hCoreCache = null;
+
+    /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
+    public Pair<ConstSet<Pos>,ConstSet<Pos>> highLevelCore() {
+       if (hCoreCache!=null) return hCoreCache;
+       TempSet<Pos> ans1 = new TempSet<Pos>(), ans2 = new TempSet<Pos>();
+       if (hCore!=null) for(Formula f: hCore) {
+          Object x = k2pos(f);
+          if (x instanceof Pos) {
+             ans1.add((Pos)x);
+          } else if (x instanceof Expr) {
+             Expr expr = (Expr)x;
+             ans1.add(expr.span());
+             for(Func func: expr.findAllFunctions()) ans2.add(func.getBody().span());
+          }
+       }
+       return hCoreCache = new Pair<ConstSet<Pos>,ConstSet<Pos>>(ans1.makeConst(), ans2.makeConst());
+    }
+
+    //===================================================================================================//
 
     /** Helper method to write out a full XML file. */
     public void writeXML(String filename) throws Err {
+        writeXML(filename, null, null);
+    }
+
+    /** Helper method to write out a full XML file. */
+    public void writeXML(String filename, Iterable<Func> macros) throws Err {
+        writeXML(filename, macros, null);
+    }
+
+    /** Helper method to write out a full XML file. */
+    public void writeXML(String filename, Iterable<Func> macros, Map<String,String> sourceFiles) throws Err {
         PrintWriter out=null;
         try {
             out=new PrintWriter(filename,"UTF-8");
-            Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
-            A4SolutionWriter.writeInstance(this, out, new ArrayList<Func>());
-            out.print("\n</alloy>\n");
-            if (!Util.close(out)) throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
+            writeXML(out, macros, sourceFiles);
+            if (!Util.close(out)) throw new ErrorFatal("Error writing the solution XML file.");
         } catch(IOException ex) {
             Util.close(out);
-            throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
+            throw new ErrorFatal("Error writing the solution XML file.", ex);
         }
+    }
+
+    /** Helper method to write out a full XML file. */
+    public void writeXML(PrintWriter writer, Iterable<Func> macros, Map<String,String> sourceFiles) throws Err {
+        A4SolutionWriter.writeInstance(this, writer, macros, sourceFiles);
+        if (writer.checkError()) throw new ErrorFatal("Error writing the solution XML file.");
     }
 }

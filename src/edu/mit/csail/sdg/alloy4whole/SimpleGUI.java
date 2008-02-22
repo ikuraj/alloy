@@ -43,20 +43,16 @@ import java.util.Scanner;
 import java.util.prefs.Preferences;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
 import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -64,9 +60,7 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
-import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -92,7 +86,7 @@ import kodkod.engine.fol2sat.HigherOrderDeclException;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.Func;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -101,7 +95,6 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Computer;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
@@ -136,6 +129,9 @@ import edu.mit.csail.sdg.alloy4viz.VizGUI;
  */
 
 public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Parent {
+
+    /** The latest welcome screen; each time we update the welcome screen, we increment this number. */
+    private static final int welcomeLevel = 2;
 
     // Verify that the graphics environment is set up
     static {
@@ -185,6 +181,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** The latest tab distance of the Alloy Analyzer. */
     private static final IntPref TabSize = new IntPref("TabSize",1,2,16);
+
+    /** The latest welcome screen that the user has seen. */
+    private static final IntPref Welcome = new IntPref("Welcome",0,0,1000);
 
     /** The skolem depth. */
     private static final IntPref SkolemDepth = new IntPref("SkolemDepth",0,0,2);
@@ -350,7 +349,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** Updates the status bar at the bottom of the screen. */
     public void notifyChange() {
-        doHideWelcome();
         commands=null;
         if (text==null) return; // If this was called prior to the "text" being fully initialized
         if (Util.onMac()) frame.getRootPane().putClientProperty("windowModified", Boolean.valueOf(text.modified()));
@@ -515,7 +513,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             private static final long serialVersionUID = 1L;
             public void run() {
                 try {
-                    doHideWelcome();
                     method.setAccessible(true);
                     method.invoke(SimpleGUI.this, new Object[]{});
                 } catch (Throwable ex) {
@@ -539,7 +536,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             private static final long serialVersionUID = 1L;
             public void run(Object arg) {
                 try {
-                    doHideWelcome();
                     method.setAccessible(true);
                     method.invoke(SimpleGUI.this, new Object[]{arg});
                 } catch (Throwable ex) {
@@ -677,7 +673,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** This method performs File->Quit. */
     private Runner doQuit() {
-        if (!wrap) if (text.closeAll()) System.exit(0);
+        if (!wrap) if (text.closeAll()) {
+            try { if (subprocess!=null) subprocess.destroy(); } finally { System.exit(0); }
+        }
         return wrapMe();
     }
 
@@ -1061,13 +1059,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     //===============================================================================================================//
 
-    /** This method refreshes the "Help" menu. */
-    private Runner doRefreshHelp() {
-        return wrapMe();
-    }
-
-    //===============================================================================================================//
-
     /** This method refreshes the "Window" menu for either the SimpleGUI window (isViz==false) or the VizGUI window (isViz==true). */
     private Runner doRefreshWindow(Boolean isViz) {
         if (wrap) return wrapMe(isViz);
@@ -1135,6 +1126,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         try {
             wrap = true;
             optmenu.removeAll();
+            OurUtil.makeMenuItem(optmenu, "Welcome Message at Start Up: "+(Welcome.get() < welcomeLevel ? "Yes" : "No"), -1, -1, doOptWelcome());
             //
             final SatSolver now = SatSolver.get();
             final JMenu sat = new JMenu("SAT Solver: "+now);
@@ -1188,6 +1180,12 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             wrap = false;
         }
         return null;
+    }
+
+    /** This method toggles the "show welcome message at startup" checkbox. */
+    private Runner doOptWelcome() {
+        if (!wrap) Welcome.set(Welcome.get() < welcomeLevel ? welcomeLevel : 0);
+        return wrapMe();
     }
 
     /** This method toggles the "warning is fatal" checkbox. */
@@ -1395,7 +1393,8 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     }
 
     /** This method checks alloy.mit.edu to see if there is a newer version. */
-    private void doCheckForUpdates() {
+    private Runner doCheckForUpdates() {
+        if (wrap) return wrapMe();
         final String NEW_LINE = System.getProperty("line.separator");
         final String URL = "http://alloy.mit.edu/alloy4/download/alloy4.txt?buildnum="+Version.buildNumber()+"&builddate="+Version.buildDate();
         long now=System.currentTimeMillis();
@@ -1418,24 +1417,28 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             Util.close(in);
         }
         // If the "check for update" took too long, then don't display the message, since it clutters up the message panel
-        if (System.currentTimeMillis()-now >= 5000 || !result.startsWith("Alloy Build ")) return;
+        if (System.currentTimeMillis()-now >= 5000 || !result.startsWith("Alloy Build ")) return null;
         // Now that we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 (which consists of Alloy4 BETA1..BETA7)
         new Subprocess(20000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
         // Now, display the result of the alloy.mit.edu version polling
-        final String finalResult = result;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() { doUpdate(finalResult); }
-        });
+        try {
+            wrap=true;
+            SwingUtilities.invokeLater(doUpdate(result));
+        } finally {
+            wrap=false;
+        }
+        return null;
     }
 
     /** This method displays a message that "updated version of Alloy is available". */
-    private void doUpdate(String arg) {
+    private Runner doUpdate(String arg) {
+        if (wrap) return wrapMe(arg);
         String result=arg;
         int num=0;
         int len=result.length();
         boolean found=false;
         for(int i=0; ; i++) {
-            if (i>=len) return;
+            if (i>=len) return null;
             char c=result.charAt(i);
             if (!(c>='0' && c<='9')) { if (!found) continue; result=result.substring(i); break; }
             found=true;
@@ -1444,17 +1447,12 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         latestAlloyVersionName=result.trim();
         latestAlloyVersion=num;
         exitReporter.setLatestAlloyVersion(latestAlloyVersion, latestAlloyVersionName);
-        if (latestAlloyVersion<=Version.buildNumber()) return;
+        if (latestAlloyVersion<=Version.buildNumber()) return null;
         log.logBold("An updated version of Alloy Analyzer has been released.\n");
         log.log("Please visit alloy.mit.edu to download the latest version:\nVersion "+latestAlloyVersionName+"\n");
         log.logDivider();
         log.flush();
-    }
-
-    private JInternalFrame welcomeBox = null;
-    /** This method hides the welcome box. */
-    private void doHideWelcome() {
-        if (welcomeBox!=null) welcomeBox.setVisible(false);
+        return null;
     }
 
     /** This method changes the latest instance. */
@@ -1577,15 +1575,11 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         }
         public final String compute(String input) throws Exception {
             if (input.trim().length()==0) return ""; // Empty line
-            FileInputStream fis = null;
-            InputStreamReader reader = null;
             Module root = null;
-            Pair<A4Solution,ConstList<Func>> ans = null;
+            A4Solution ans = null;
             try {
                 Map<String,String> fc = new LinkedHashMap<String,String>();
-                fis = new FileInputStream(filename);
-                reader = new InputStreamReader(fis, "UTF-8");
-                XMLNode x = new XMLNode(reader);
+                XMLNode x = new XMLNode(new File(filename));
                 if (!x.is("alloy")) throw new Exception();
                 String mainname=null;
                 for(XMLNode sub: x) if (sub.is("instance")) {
@@ -1600,22 +1594,14 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 }
                 root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, mainname);
                 ans = A4SolutionReader.read(root.getAllReachableSigs(), x);
-                for(Func f:root.getAllFunc()) if (f.params.size()==0) {
-                   String label = f.label;
-                   while(label.startsWith("this/")) label=label.substring(5);
-                   root.addGlobal("$"+label, f.call());
-                }
-                for(Func f:ans.b) root.addGlobal(f.label, f.call());
-                for(Map.Entry<String,Func> f:ans.a.getAllAtoms().entrySet()) root.addGlobal(f.getKey(), f.getValue().call());
+                for(ExprVar a:ans.getAllAtoms())   { root.addGlobal(a.label, a); }
+                for(ExprVar a:ans.getAllSkolems()) { root.addGlobal(a.label, a); }
             } catch(Throwable ex) {
                 throw new ErrorFatal("Failed to read or parse the XML file.");
-            } finally {
-                Util.close(reader);
-                Util.close(fis);
             }
             try {
                 Expr e = CompUtil.parseOneExpression_fromString(root, input);
-                return ans.a.eval(e).toString();
+                return ans.eval(e).toString();
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");
             }
@@ -1637,7 +1623,10 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     //====== Main Method ====================================================//
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws Exception {
+        if ("yes".equals(System.getProperty("debug"))) {
+            InternalTest.main(new String[0]);
+        }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() { new SimpleGUI(args); }
         });
@@ -1731,7 +1720,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             optmenu = OurUtil.makeMenu(bar, "Options", KeyEvent.VK_O, doRefreshOption());
             windowmenu = OurUtil.makeMenu(bar, "Window", KeyEvent.VK_W, doRefreshWindow(false));
             windowmenu2 = OurUtil.makeMenu(null, "Window", KeyEvent.VK_W, doRefreshWindow(true));
-            helpmenu = OurUtil.makeMenu(bar, "Help", KeyEvent.VK_H, doRefreshHelp());
+            helpmenu = OurUtil.makeMenu(bar, "Help", KeyEvent.VK_H, null);
             if (!Util.onMac()) OurUtil.makeMenuItem(helpmenu, "About Alloy...", true, KeyEvent.VK_A, -1, doAbout());
             OurUtil.makeMenuItem(helpmenu, "Quick Guide", true, KeyEvent.VK_Q, -1, doHelp());
             OurUtil.makeMenuItem(helpmenu, "See the Copyright Notices...", true, KeyEvent.VK_L, -1, doLicense());
@@ -1770,8 +1759,8 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         // Create the text area
         text = new OurTabbedEditor(this, frame, new Font(fontName, Font.PLAIN, fontSize), TabSize.get());
 
-        // Add everything to a JPanel
-        final Container all=new JPanel();//frame.getContentPane();
+        // Add everything to the frame, then display the frame
+        Container all=frame.getContentPane();
         all.setLayout(new BorderLayout());
         all.removeAll();
         JPanel lefthalf=new JPanel();
@@ -1779,41 +1768,12 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         lefthalf.add(toolbar, BorderLayout.NORTH);
         lefthalf.add(text.getUI(), BorderLayout.CENTER);
         splitpane = OurUtil.splitpane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, logpane, width/2);
+        splitpane.setResizeWeight(0.5D);
         all.add(splitpane, BorderLayout.CENTER);
         all.add(status=OurUtil.label(new Font(fontName, Font.PLAIN, fontSize)," "), BorderLayout.SOUTH);
         status.setBackground(background);
         status.setOpaque(true);
         status.setBorder(new OurBorder(true,false,false,false));
-
-        // Put the JPanel and the WelcomeFrame on top of each other inside a JLayeredPane
-        welcomeBox = new JInternalFrame("Welcome to Alloy Analyzer 4");
-        welcomeBox.setVisible(false);
-        welcomeBox.setClosable(false);
-        welcomeBox.setIconifiable(false);
-        welcomeBox.setResizable(false);
-        welcomeBox.setMaximizable(false);
-        welcomeBox.setFrameIcon(null);
-        welcomeBox.pack();
-        welcomeBox.setSize(300, 300);
-        final JLayeredPane lp = new JLayeredPane();
-        frame.setContentPane(lp);
-        lp.add(all);
-        lp.add(welcomeBox);
-        lp.addComponentListener(new ComponentAdapter() {
-            public void componentResized(ComponentEvent e) {
-                int w = frame.getContentPane().getWidth(), h = frame.getContentPane().getHeight();
-                for(int i=lp.getComponentCount()-1; i>=0; i--) {
-                    Component c=lp.getComponent(i);
-                    if (c!=welcomeBox) {
-                        c.setLocation(0,0); c.setSize(w,h);
-                        c.invalidate(); c.repaint(); c.validate();
-                    } else {
-                        c.setLocation((w-c.getWidth())/2, (h-c.getHeight())/2);
-                    }
-                }
-                welcomeBox.moveToFront();
-            }
-        });
 
         // Generate some informative log messages
         log.logBold("Alloy Analyzer "+Version.version()+" (build date: "+Version.buildDate()+")\n\n");
@@ -1901,48 +1861,40 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         notifyChange();
 
         // Start a separate thread to query alloy.mit.edu to see if an updated version of Alloy has been released or not
-        new Thread(new Runnable() {
-            public void run() { doCheckForUpdates(); }
-        }).start();
-
-        // Launch the welcome screen
-        if (1==1) {
-           Container cp = welcomeBox.getContentPane();
-           cp.setLayout(new BoxLayout(cp, BoxLayout.Y_AXIS));
-           for(String s: new String[]{
-              "  ",
-              "  Thank you for using the Alloy Analyzer 4.0.",
-              "  ",
-              "  Version 4.0 of the Alloy Analyzer is a complete rewrite,",
-              "  offering improvements in robustness, performance and usability.",
-              "  Models written in Alloy 3 will require some small alterations to run in Alloy 4.",
-              "  ",
-              "  Here are some quick tips:",
-              "  ",
-              "  * Function calls now use [ ] instead of ( )",
-              "    For more details, please see http://alloy.mit.edu/alloy4/quickguide/",
-              "  ",
-              "  * The Execute button always executes the latest command.",
-              "    To choose which command to execute, go to the Execute menu.",
-              "  ",
-              "  * The Alloy Analyzer comes with a variety of sample models.",
-              "    To see them, go to the File menu and click Open Sample Models.",
-           }) {
-               JLabel lab = new JLabel(s);
-               lab.setAlignmentX(0);
-               lab.setAlignmentY(0.5f);
-               cp.add(lab);
-           }
-           cp.invalidate();
-           cp.repaint();
-           cp.validate();
-           Dimension dim = cp.getPreferredSize();
-           welcomeBox.setSize(dim.width+30, dim.height+50); // To account for window decorations and stuff
-           welcomeBox.setVisible(true);
+        try {
+            wrap = true;
+            new Thread(doCheckForUpdates()).start();
+        } finally {
+            wrap = false;
         }
 
-        // Let the text editor have the initial focus
-        text.text().requestFocusInWindow();
+        // Launch the welcome screen if needed
+        if (Welcome.get() < welcomeLevel) {
+            String dismiss = Util.onMac() ? "Dismiss" : "Close";
+            JCheckBox again = new JCheckBox("Show this message every time you start Alloy 4");
+            again.setSelected(true);
+            JOptionPane.showOptionDialog(frame, new Object[]{
+                "Thank you for using the Alloy Analyzer 4.0.",
+                " ",
+                "Version 4.0 of the Alloy Analyzer is a complete rewrite,",
+                "offering improvements in robustness, performance and usability.",
+                "Models written in Alloy 3 will require some small alterations to run in Alloy 4.",
+                " ",
+                "Here are some quick tips:",
+                " ",
+                "* Function calls now use [ ] instead of ( )",
+                "  For more details, please see http://alloy.mit.edu/alloy4/quickguide/",
+                " ",
+                "* The Execute button always executes the latest command.",
+                "  To choose which command to execute, go to the Execute menu.",
+                " ",
+                "* The Alloy Analyzer comes with a variety of sample models.",
+                "  To see them, go to the File menu and click Open Sample Models.",
+                " ",
+                again
+            }, "Welcome", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]{dismiss}, dismiss);
+            if (!again.isSelected()) Welcome.set(welcomeLevel);
+        }
     }
 
     //=============================================================================================================//

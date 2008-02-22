@@ -23,21 +23,29 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.XMLNode;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Tuple;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4TupleSet;
 
 /**
  * This utility class parses an XML file into an AlloyInstance object.
@@ -47,261 +55,226 @@ import edu.mit.csail.sdg.alloy4.XMLNode;
 
 public final class StaticInstanceReader {
 
-    /** Constructor is private, since this utility class never needs to be instantiated. */
-    private StaticInstanceReader() { }
+    /** The resulting AlloyInstance object. */
+    private final AlloyInstance ans;
 
-    /** Use the XML library to parse the file into an XMLNode object. */
-    private static XMLNode readElement(File file) {
-        FileInputStream fis=null;
-        InputStreamReader reader=null;
-        try {
-            fis = new FileInputStream(file);
-            reader = new InputStreamReader(fis,"UTF-8");
-            return new XMLNode(reader);
-        } catch(IOException ex) {
-            throw new RuntimeException("I/O error: "+ex);
-        } finally {
-            Util.close(reader);
-            Util.close(fis);
+    /** This is the list of toplevel sigs. */
+    private final List<PrimSig> toplevels = new ArrayList<PrimSig>();
+
+    /** This maps each Sig to its corresponding Visualizer AlloyType. */
+    private final Map<Sig,AlloyType> sig2type = new LinkedHashMap<Sig,AlloyType>();
+
+    /** This maps each Sig ot its corresponding unique VIsualizer AlloyAtom (if isMeta is true). */
+    private final Map<Sig,AlloyAtom> sig2atom = new LinkedHashMap<Sig,AlloyAtom>();
+
+    /** This stores the "extends" relationship among sigs (if isMeta is true). */
+    private final LinkedHashSet<AlloyTuple> exts = new LinkedHashSet<AlloyTuple>();
+
+    /** This stores the "in" relationship among sigs (if isMeta is true). */
+    private final LinkedHashSet<AlloyTuple> ins  = new LinkedHashSet<AlloyTuple>();
+
+    /** This stores the set of Visualizer AlloySet objects we created. */
+    private final Set<AlloySet> sets = new LinkedHashSet<AlloySet>();
+
+    /** This maps each Visualizer AlloyRelation to its set of (possibly 0) tuples. */
+    private final Map<AlloyRelation,Set<AlloyTuple>> rels = new LinkedHashMap<AlloyRelation,Set<AlloyTuple>>();
+
+    /** For each sig A and B, if A extends B, and B is not univ, then (A,B) will be in this map. */
+    private final Map<AlloyType,AlloyType> ts = new LinkedHashMap<AlloyType,AlloyType>();
+
+    /** This maps each Visualizer AlloyAtom to its set of (possibly 0) AlloySet that contains it. */
+    private final Map<AlloyAtom,Set<AlloySet>> atom2sets = new LinkedHashMap<AlloyAtom,Set<AlloySet>>();
+
+    /** This maps each AlloyAtom label to the AlloyAtom we created for it. */
+    private final Map<String,AlloyAtom> string2atom = new LinkedHashMap<String,AlloyAtom>();
+
+    /** Create a new AlloyType whose label is unambiguous with any existing one. */
+    private AlloyType makeType(String label, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isOrdered, boolean isPrivate) {
+        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label)) label=label+"'";
+        while(true) {
+            AlloyType ans = new AlloyType(label, isOne, isAbstract, isBuiltin, isOrdered, isPrivate);
+            if (!sig2type.values().contains(ans)) return ans;
+            label=label+"'";
         }
     }
 
-    /**
-     * Parse the file into an AlloyInstance if possible.
-     * @throws ErrorFatal - if an error occurred in reading of the XML file.
-     * @throws ErrorSyntax - if there is a syntax error in the XML file.
-     */
-    public static AlloyInstance parseInstance(File file) throws ErrorFatal, ErrorSyntax {
-        XMLNode xml=readElement(file);
-        if (!xml.is("alloy")) throw new ErrorSyntax("The XML file's root node must be <alloy>.");
-        AlloyInstance instance=null;
-        String kinput="", koutput="";
-        for(XMLNode sub: xml) {
-            if (sub.is("kinput")) kinput = sub.getAttribute("value");
-            else if (sub.is("koutput")) koutput = sub.getAttribute("value");
+    /** Create a new AlloySet whose label is unambiguous with any existing one. */
+    private AlloySet makeSet(String label, boolean isPrivate, AlloyType type) {
+        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label)) label=label+"'";
+        while(true) {
+            AlloySet ans = new AlloySet(label, isPrivate, type);
+            if (!sets.contains(ans)) return ans;
+            label=label+"'";
         }
-        for(XMLNode sub: xml.getChildren("instance")) { instance = parseInstance(sub, kinput, koutput); break; }
-        if (instance==null) throw new ErrorSyntax("The XML file does not have an <instance> element.");
-        return instance;
     }
 
-    /**
-     * Parse the XML element into an AlloyInstance if possible
-     * @param x - the XML element labeled "instance"
-     * @param kinput - the kodkod input we want to include with the AlloyInstance object
-     * @param koutput - the kodkod output we want to include with the AlloyInstance object
-     */
-    private static AlloyInstance parseInstance(XMLNode x, String kinput, String koutput) {
-        boolean isMetamodel = x.getAttribute("isMetamodel").length()>0;
-        String filename = x.getAttribute("filename");
-        String commandname = x.getAttribute("command");
-        // Generate "types"
-        Map<String,AlloyType> types=new LinkedHashMap<String,AlloyType>();
-        for(XMLNode sub:x.getChildren("sig")) {
-            String name=sub.getAttribute("name");
-            if (name.length()==0) throw new RuntimeException("<sig> name cannot be empty.");
-            AlloyType type=new AlloyType(name,
-                    sub.getAttribute("isOne").length()>0,
-                    sub.getAttribute("isAbstract").length()>0,
-                    sub.getAttribute("isBuiltin").length()>0,
-                    sub.getAttribute("isOrdered").length()>0,
-                    sub.getAttribute("isPrivate").length()>0);
-            if (types.put(name,type)!=null)
-                throw new RuntimeException("<sig name=\""+name+"\"> appeared more than once.");
+    /** Create a new AlloyRelation whose label is unambiguous with any existing one. */
+    private AlloyRelation makeRel(String label, boolean isPrivate, List<AlloyType> types) {
+        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label)) label=label+"'";
+        while(true) {
+            AlloyRelation ans = new AlloyRelation(label, isPrivate, types);
+            if (!rels.containsKey(ans)) return ans;
+            label=label+"'";
         }
-        types.put("univ", AlloyType.UNIV);
-        // Generate the extends relationship and all the atoms
-        Map<AlloyType,AlloyType> ts = parseTypeStructure(x, types);
-        Map<String,AlloyAtom> atomname2atom = parseAllAtoms(isMetamodel, x, types, ts);
-        // Generate "sets" and "atom2sets"
-        Map<AlloyAtom,Set<AlloySet>> atom2sets = new LinkedHashMap<AlloyAtom,Set<AlloySet>>();
-        for(Map.Entry<String,AlloyAtom> e:atomname2atom.entrySet()) {
-            // The following is needed since atom2sets's KeySet is considered the universe of all atoms
-            atom2sets.put(e.getValue(), new LinkedHashSet<AlloySet>());
+    }
+
+    /** Returns the AlloyType corresponding to the given sig; create an AlloyType for it if none existed before. */
+    private AlloyType sig(PrimSig s) throws Err {
+        if (s==Sig.NONE) throw new ErrorFatal("Unexpected sig \"none\" encountered.");
+        AlloyType ans = sig2type.get(s);
+        if (ans == null) {
+           ans = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isOrdered!=null, s.isPrivate!=null);
+           sig2type.put(s, ans);
+           if (s.parent!=Sig.UNIV) ts.put(ans, sig(s.parent));
         }
-        Set<AlloySet> sets=new LinkedHashSet<AlloySet>();
-        for(XMLNode sub:x.getChildren("set")) {
-            String name=sub.getAttribute("name");
-            if (name.length()==0) throw new RuntimeException("<set> name cannot be empty.");
-            String typename=sub.getAttribute("type");
-            if (typename.length()==0) typename="univ";
-            AlloyType type=types.get(typename);
-            if (type==null) throw new RuntimeException("<set name=\""+name+"\"> cannot be a subset of a nonexisting type \""+typename+"\"");
-            Set<AlloyAtom> atoms=parseAlloyAtomS(sub, atomname2atom);
-            AlloySet set=new AlloySet(name, sub.getAttribute("isPrivate").length()>0, type);
-            sets.add(set);
-            for(AlloyAtom atom:atoms) {
-                Set<AlloySet> temp=atom2sets.get(atom);
-                if (temp==null) { temp=new LinkedHashSet<AlloySet>(); atom2sets.put(atom,temp); }
-                temp.add(set);
+        return ans;
+    }
+
+    /** Returns the AlloyType corresponding to the given sig; create an AlloyType for it if none existed before. */
+    private AlloyType sigMETA(PrimSig s) throws Err {
+        if (s==Sig.NONE) throw new ErrorFatal("Unexpected sig \"none\" encountered.");
+        AlloyType type = sig2type.get(s);
+        if (type != null) return type;
+        if (s==Sig.UNIV) type=AlloyType.UNIV;
+           else if (s==Sig.SIGINT) type=AlloyType.INT;
+           else if (s==Sig.SEQIDX) type=AlloyType.SEQINT;
+           else type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isOrdered!=null, s.isPrivate!=null);
+        sig2type.put(s, type);
+        AlloyAtom atom = new AlloyAtom(type, (type==AlloyType.SEQINT ? Integer.MIN_VALUE : Integer.MAX_VALUE), s.label);
+        atom2sets.put(atom, new LinkedHashSet<AlloySet>());
+        sig2atom.put(s, atom);
+        if (s.parent!=Sig.UNIV && s.parent!=null)
+           ts.put(type, sigMETA(s.parent));
+        if (s.parent!=null)
+           exts.add(new AlloyTuple(atom, sig2atom.get(s.parent)));
+        Iterable<PrimSig> children = (s==Sig.UNIV ? toplevels : s.children());
+        for(PrimSig sub:children) sigMETA(sub);
+        return type;
+    }
+
+    /** Returns the AlloyType corresponding to the given sig; create an AlloyType for it if none existed before. */
+    private void sigMETA(SubsetSig s) throws Err {
+        AlloyAtom atom;
+        AlloyType type = sig2type.get(s);
+        if (type != null) return;
+        type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isOrdered!=null, s.isPrivate!=null);
+        atom = new AlloyAtom(type, Integer.MAX_VALUE, s.label);
+        atom2sets.put(atom, new LinkedHashSet<AlloySet>());
+        sig2atom.put(s, atom);
+        sig2type.put(s, type);
+        ts.put(type, AlloyType.SET);
+        for(Sig p: ((SubsetSig)s).parents) {
+            if (p instanceof SubsetSig) sigMETA((SubsetSig)p); else sigMETA((PrimSig)p);
+            ins.add(new AlloyTuple(atom, sig2atom.get(p)));
+        }
+    }
+
+    /** Constructs the atoms corresponding to the given sig. */
+    private void atoms(A4Solution sol, PrimSig s) throws Err {
+        if (s.builtin) throw new ErrorFatal("atoms() method cannot be called on a builtin sig.");
+        Expr sum=Sig.NONE;
+        for(PrimSig c:s.children()) { sum=sum.plus(c); atoms(sol, c); }
+        A4TupleSet ts = (A4TupleSet) (sol.eval(s.minus(sum))); // This ensures that atoms will be associated with the most specific sig
+        int i=0;
+        for(A4Tuple z: ts) {
+           String atom = z.atom(0);
+           AlloyAtom at = new AlloyAtom(sig(s), ts.size()==1 ? Integer.MAX_VALUE : i, atom);
+           atom2sets.put(at, new LinkedHashSet<AlloySet>());
+           string2atom.put(atom, at);
+           i++;
+        }
+    }
+
+    /** Construct an AlloySet or AlloyRelation corresponding to the given expression. */
+    private void setOrRel(A4Solution sol, String label, Expr expr, boolean isPrivate) throws Err {
+        for(List<PrimSig> ps:expr.type.fold()) {
+            if (ps.size()==1) {
+                PrimSig t = ps.get(0);
+                AlloySet set = makeSet(label, isPrivate, sig(t));
+                sets.add(set);
+                for(A4Tuple tp: (A4TupleSet)(sol.eval(expr.intersect(t)))) {
+                    atom2sets.get(string2atom.get(tp.atom(0))).add(set);
+                }
+            } else {
+                Expr mask = null;
+                List<AlloyType> types = new ArrayList<AlloyType>(ps.size());
+                for(int i=0; i<ps.size(); i++) {
+                    types.add(sig(ps.get(i)));
+                    if (mask==null) mask=ps.get(i); else mask=mask.product(ps.get(i));
+                }
+                AlloyRelation rel = makeRel(label, isPrivate, types);
+                Set<AlloyTuple> ts = new LinkedHashSet<AlloyTuple>();
+                for(A4Tuple tp: (A4TupleSet)(sol.eval(expr.intersect(mask)))) {
+                    AlloyAtom[] atoms = new AlloyAtom[tp.arity()];
+                    for(int i=0; i<tp.arity(); i++) atoms[i] = string2atom.get(tp.atom(i));
+                    ts.add(new AlloyTuple(atoms));
+                }
+                rels.put(rel, ts);
             }
         }
-        // Generate "rels" and "rel2tuples"
-        Map<AlloyRelation,Set<AlloyTuple>> rel2tuples = new LinkedHashMap<AlloyRelation,Set<AlloyTuple>>();
-        Set<AlloyRelation> rels=new LinkedHashSet<AlloyRelation>();
-        for(XMLNode sub:x.getChildren("field")) {
-            String name = sub.getAttribute("name");
-            boolean isPrivate = sub.getAttribute("isPrivate").length()>0;
-            if (name.length()==0) throw new RuntimeException("<field> name cannot be empty.");
-            Iterator<XMLNode> it = sub.iterator();
-            if (!it.hasNext())
-                throw new RuntimeException("<field name=\""+name+"\"> must declare its type.");
-            XMLNode sub1 = it.next();
-            if (!sub1.is("type"))
-                throw new RuntimeException("<field name=\""+name+"\"> must have <type> as its first subnode.");
-            AlloyRelation r=parseAlloyRelation(name, types, sub1, isPrivate);
-            rels.add(r);
-            Set<AlloyTuple> tuples=parseAlloyTupleS(sub, atomname2atom);
-            Set<AlloyTuple> temp=rel2tuples.get(r);
-            if (temp==null) { temp=new LinkedHashSet<AlloyTuple>(); rel2tuples.put(r,temp); }
-            temp.addAll(tuples);
-        }
-        AlloyModel model = new AlloyModel(types.values(), sets, rels, ts);
-        return new AlloyInstance(filename, commandname, kinput, koutput, model, atom2sets, rel2tuples, isMetamodel);
     }
 
-    /**
-     * Generate all the AlloyAtom objects.
-     * @param xml - the XML node
-     * @param ts - the "extends" relationship computed from parseTypeStructure()
-     */
-    private static Map<String,AlloyAtom> parseAllAtoms(boolean isMeta, XMLNode xml, Map<String,AlloyType> types, Map<AlloyType,AlloyType> ts) {
-        Map<String,AlloyType> atom2type=new LinkedHashMap<String,AlloyType>();
-        Map<AlloyType,Set<String>> type2atoms=new LinkedHashMap<AlloyType,Set<String>>();
-        // Compute the atom2type and type2atom maps
-        for(XMLNode node:xml.getChildren("sig")) {
-            AlloyType sig = types.get(node.getAttribute("name")); // We already know this will not be null
-            if (!type2atoms.containsKey(sig))
-                type2atoms.put(sig, new TreeSet<String>()); // Must be LinkedHashSet since we want atoms in order
-            for(XMLNode atom:node.getChildren("atom")) {
-                String name=atom.getAttribute("name");
-                if (name.length()==0) throw new RuntimeException("<atom> name cannot be empty.");
-                AlloyType type=atom2type.get(name);
-                if (type==null || isSubtype(ts,sig,type)) {
-                    atom2type.put(name, sig);
-                    if (type!=null) { Set<String> set=type2atoms.get(type); if (set!=null) set.remove(name); }
-                    type2atoms.get(sig).add(name);
+    /** Parse the file into an AlloyInstance if possible. */
+    private StaticInstanceReader(XMLNode root) throws Err {
+        XMLNode inst = null;
+        for(XMLNode sub: root) if (sub.is("instance")) { inst=sub; break; }
+        if (inst==null) throw new ErrorSyntax("The XML file must contain an <instance> element.");
+        boolean isMeta = "yes".equals(inst.getAttribute("metamodel"));
+        A4Solution sol = A4SolutionReader.read(new ArrayList<Sig>(), root);
+        for (Sig s:sol.getAllReachableSigs()) if (s instanceof PrimSig && ((PrimSig)s).parent==Sig.UNIV) toplevels.add((PrimSig)s);
+        if (!isMeta) {
+            sig2type.put(Sig.UNIV, AlloyType.UNIV);
+            sig2type.put(Sig.SIGINT, AlloyType.INT);
+            sig2type.put(Sig.SEQIDX, AlloyType.SEQINT);
+            ts.put(AlloyType.SEQINT, AlloyType.INT);
+            for(int i=sol.min(), max=sol.max(), maxseq=sol.getMaxSeq(); i<=max; i++) {
+                AlloyAtom at = new AlloyAtom(i>=0 && i<maxseq ? AlloyType.SEQINT : AlloyType.INT, i, ""+i);
+                atom2sets.put(at, new LinkedHashSet<AlloySet>());
+                string2atom.put(""+i, at);
+            }
+            for(Sig s:sol.getAllReachableSigs()) if (!s.builtin && s instanceof PrimSig) sig((PrimSig)s);
+            for(Sig s:toplevels)                 if (!s.builtin)                         atoms(sol, (PrimSig)s);
+            for(Sig s:sol.getAllReachableSigs()) if (s instanceof SubsetSig)             setOrRel(sol, s.label, s, s.isPrivate!=null);
+            for(Sig s:sol.getAllReachableSigs()) for(Field f:s.getFields())              setOrRel(sol, f.label, f, f.isPrivate!=null);
+            for(ExprVar s:sol.getAllSkolems())   setOrRel(sol, s.label, s, false);
+        }
+        if (isMeta) {
+            sigMETA(Sig.UNIV);
+            for(Sig s:sol.getAllReachableSigs()) if (s instanceof SubsetSig) sigMETA((SubsetSig)s);
+            for(Sig s:sol.getAllReachableSigs()) for(Field f:s.getFields()) {
+                for(List<PrimSig> ps:f.type.fold()) {
+                    List<AlloyType> types = new ArrayList<AlloyType>(ps.size());
+                    AlloyAtom[] tuple = new AlloyAtom[ps.size()];
+                    for(int i=0; i<ps.size(); i++) {
+                        types.add(sig(ps.get(i)));
+                        tuple[i] = sig2atom.get(ps.get(i));
+                    }
+                    AlloyRelation rel = makeRel(f.label, f.isPrivate!=null, types);
+                    rels.put(rel, Util.asSet(new AlloyTuple(tuple)));
                 }
             }
+            rels.put(AlloyRelation.EXTENDS, exts);
+            if (ins.size()>0) { sig2type.put(null, AlloyType.SET); rels.put(AlloyRelation.IN, ins); }
         }
-        // Now that we know the most specific type that an atom belongs to, we can create the AlloyAtom objects
-        Map<String,AlloyAtom> ans=new LinkedHashMap<String,AlloyAtom>();
-        for(Map.Entry<AlloyType,Set<String>> e:type2atoms.entrySet()) {
-            AlloyType type=e.getKey();
-            int n=e.getValue().size(), i=0;
-            for(String atom:e.getValue()) {
-                int j=i;
-                if (atom.charAt(0)=='-' || (atom.charAt(0)>='0' && atom.charAt(0)<='9')) j=parseInt(atom);
-                else if (n==1 && type.getName().equals("seq/Int")) j=Integer.MIN_VALUE;
-                else if (n==1) j=Integer.MAX_VALUE;
-                ans.put(atom, new AlloyAtom(type, j, atom));
-                i++;
-            }
-        }
-        return ans;
+        AlloyModel am = new AlloyModel(sig2type.values(), sets, rels.keySet(), ts);
+        ans=new AlloyInstance(sol.getOriginalFilename(), sol.getOriginalCommand(), "", "", am, atom2sets, rels, isMeta);
     }
 
-    /** Parses the String to get an integer, and throw an appropriate exception if it is not parsable. */
-    private static int parseInt(String text) {
-        int n;
-        try {n=Integer.parseInt(text);}
-        catch(NumberFormatException ex) {throw new RuntimeException("\""+text+"\" is not a valid integer.");}
-        return n;
+    /** Parse the file into an AlloyInstance if possible. */
+    public static AlloyInstance parseInstance(File file) throws Err {
+        try {
+            return (new StaticInstanceReader(new XMLNode(file))).ans;
+        } catch(IOException ex) {
+            throw new ErrorFatal("Error reading the XML file: " + ex, ex);
+        }
     }
 
-    /**
-     * Generate the extends relation: "If A extends B, and B is not univ, then (A,B) will be in the answer".
-     * <p>  We guarantee the following:
-     * <br> (1) reply.keySet() is always equal or subset of the set of "sig" declarations we see
-     * <br> (2) reply.valueSet() is always equal or subset of the set of "sig" declarations we see
-     * <br> (3) "univ" is never in the keySet nor valueSet
-     * <br> (4) null is never in the keySet nor valueSet
-     * <br> (5) there is no cycle in this relation
-     * <br> We throw an exception if a sig tries to extend an undeclared sig
-     * <br> We throw an exception if there is a cycle in the extends relationship
-     */
-    private static Map<AlloyType,AlloyType> parseTypeStructure (XMLNode xml, Map<String,AlloyType> allTypes) {
-        Map<AlloyType,AlloyType> ts = new LinkedHashMap<AlloyType,AlloyType>();
-        for(XMLNode sig:xml.getChildren("sig")) {
-            String name = sig.getAttribute("name");
-            String ext = sig.getAttribute("extends");
-            if (name.equals("univ")) continue; // "univ" must not be in the keyset
-            if (ext.length()==0) ext="univ";
-            AlloyType sup=allTypes.get(ext);
-            if (sup==null) throw new RuntimeException("<sig name=\""+name+"\"> tries to extend an undeclared sig \""+ext+"\"");
-            AlloyType me=allTypes.get(name);
-            if (me==null) throw new RuntimeException("<sig name=\""+name+"\"> does not exist");
-            ts.put(me, sup);
+    /** Parse the file into an AlloyInstance if possible. */
+    public static AlloyInstance parseInstance(Reader reader) throws Err {
+        try {
+            return (new StaticInstanceReader(new XMLNode(reader))).ans;
+        } catch(IOException ex) {
+            throw new ErrorFatal("Error reading the XML file: " + ex, ex);
         }
-        for(Map.Entry<AlloyType,AlloyType> e:ts.entrySet()) {
-            AlloyType me=e.getKey();
-            if (AlloyModel.isCycle(ts,me)) throw new RuntimeException(
-                    "sig \""+me.getName()+"\" has an infinite cycle in its extends relation.");
-        }
-        return ts;
-    }
-
-    /** Parses XML to generate an AlloyRelation object. */
-    private static AlloyRelation parseAlloyRelation(String relName, Map<String,AlloyType> types, XMLNode xml, boolean isPrivate) {
-        // parses one or more <sig name=".."/>
-        List<AlloyType> list=new ArrayList<AlloyType>();
-        for(XMLNode type:xml.getChildren("sig")) {
-            String name=type.getAttribute("name");
-            if (name.length()==0) throw new RuntimeException("<sig> name cannot be empty.");
-            AlloyType t = types.get(name);
-            if (t==null) throw new RuntimeException("<field> cannot reference a non-existing sig \""+name+"\"");
-            list.add(t);
-        }
-        if (list.size()<2) throw new RuntimeException("<type> must contain at least two <sig> subnode.");
-        return new AlloyRelation(relName, isPrivate, list);
-    }
-
-    /** Parses XML to generate a set of AlloyTuple objects. */
-    private static Set<AlloyTuple> parseAlloyTupleS(XMLNode xml, Map<String,AlloyAtom> atomname2atom) {
-        // parses zero or more <tuple>..</tuple>
-        Set<AlloyTuple> ans=new LinkedHashSet<AlloyTuple>();
-        for(XMLNode node:xml.getChildren("tuple")) ans.add(parseAlloyTuple(node,atomname2atom));
-        return ans;
-    }
-
-    /** Parses XML to generate an AlloyTuple object. */
-    private static AlloyTuple parseAlloyTuple(XMLNode xml, Map<String,AlloyAtom> atomname2atom) {
-        // parses one or more <atom name=".."/>
-        List<AlloyAtom> ans=new ArrayList<AlloyAtom>();
-        for(XMLNode node:xml.getChildren("atom")) {
-            String name=node.getAttribute("name");
-            AlloyAtom atom=atomname2atom.get(name);
-            if (atom==null) throw new RuntimeException("<atom> "+name+" is undeclared!");
-            ans.add(atom);
-        }
-        if (ans.size()<2) throw new RuntimeException("<tuple> must contain two or more <atom>.");
-        return new AlloyTuple(ans);
-    }
-
-    /** Parses XML to generate a set of AlloyAtom objects. */
-    private static Set<AlloyAtom> parseAlloyAtomS(XMLNode xml, Map<String,AlloyAtom> atomname2atom) {
-        // parses zero or more <atom name=".."/>
-        Set<AlloyAtom> ans = new LinkedHashSet<AlloyAtom>();
-        for(XMLNode node:xml.getChildren("atom")) {
-            String name=node.getAttribute("name");
-            AlloyAtom atom=atomname2atom.get(name);
-            if (atom==null) throw new RuntimeException("<atom> "+name+" is undeclared!");
-            ans.add(atom);
-        }
-        return ans;
-    }
-
-    /**
-     * Returns true if "subType" is a direct or indirect subsig of "superType".
-     * <br> If subType==null or superType==null, it always returns false.
-     */
-    private static boolean isSubtype(Map<AlloyType,AlloyType> map, AlloyType subType, AlloyType superType) {
-        if (superType==null) return false;
-        if (superType.equals(AlloyType.UNIV) && subType!=null && !subType.equals(superType)) return true;
-        while(subType!=null) {
-            subType = map.get(subType); // We call map.get() before equal(), since we want isSubtype(A,A) to be false
-            if (superType.equals(subType)) return true;
-        }
-        return false;
     }
 }

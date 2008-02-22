@@ -22,9 +22,6 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -38,10 +35,8 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
@@ -56,10 +51,8 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import kodkod.ast.BinaryExpression;
-import kodkod.ast.BinaryFormula;
 import kodkod.ast.Decl;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
@@ -70,30 +63,15 @@ import kodkod.ast.Variable;
 import kodkod.ast.Relation;
 import kodkod.ast.Formula;
 import kodkod.ast.Expression;
-import kodkod.engine.Proof;
-import kodkod.engine.Solution;
-import kodkod.engine.Solver;
-import kodkod.engine.satlab.SATFactory;
-import kodkod.engine.ucore.HybridStrategy;
-import kodkod.engine.ucore.RCEStrategy;
-import kodkod.engine.config.AbstractReporter;
-import kodkod.engine.config.Options;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
-import kodkod.engine.fol2sat.TranslationRecord;
-import kodkod.instance.Bounds;
-import kodkod.instance.Instance;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ONE;
-import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
 
 /** Translate an Alloy AST into Kodkod AST then attempt to solve it using Kodkod. */
 
 public final class TranslateAlloyToKodkod extends VisitReturn {
-
-    /** The reporter that does nothing. */
-    private static AbstractReporter blankReporter = new AbstractReporter(){};
 
     /**
      * This is used to detect "function recursion" (which we currently do not allow);
@@ -104,81 +82,93 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual Kodkod Expression/IntExpression/Formula. */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
-    /** This maps each Kodkod formula we generate to a Alloy Pos or Alloy Expr. */
-    private final IdentityHashMap<Formula,Object> fmap = new IdentityHashMap<Formula,Object>();
+    /** If frame!=null, it stores the scope, bounds, and other settings necessary for performing a solve. */
+    private final A4Solution frame;
 
-    /** This maps each Kodkod Variable we generate to an Alloy Type and Alloy Pos. */
-    private final Map<Variable,Pair<Type,Pos>> decl2type = new IdentityHashMap<Variable,Pair<Type,Pos>>();
-
-    /** This maps each Kodkod skolem relation we generate to an Alloy Type. */
-    private final Map<Relation,Type> rel2type = new IdentityHashMap<Relation,Type>();
-
-    //==============================================================================================================//
+    /** If frame==null, it stores the mapping from each Sig/Field/Skolem/Atom to its corresponding Kodkod expression. */
+    private final ConstMap<Expr,Expression> a2k;
 
     /** The current reporter. */
     private A4Reporter rep;
 
-    /** The list of all Sigs. */
-    private final ConstList<Sig> sigs;
-
     /** If nonnull, it's the current command. */
     private final Command cmd;
 
+    /** The bitwidth. */
+    private final int bitwidth;
+
+    /** The minimum allowed integer. */
+    private final int min;
+
+    /** The maximum allowed integer. */
+    private final int max;
+
     /**
-     * Step1: Initialize the list of sigs and the command to check.
-     *
+     * Construct a translator based on the given list of sigs and the given command.
      * @param rep - if nonnull, it's the reporter that will receive diagnostics and progress reports
-     * @param sigs - the list of sigs (this list must be complete)
-     * @param cmd - the command to solve
-     *
-     * <p> Reads: none
-     * <p> Writes: rep, sigs, cmd
+     * @param opt - the solving options (must not be null)
+     * @param sigs - the list of sigs (must not be null, and must be a complete list)
+     * @param cmd - the command to solve (must not be null)
      */
-    private TranslateAlloyToKodkod (A4Reporter rep, Iterable<Sig> sigs, Command cmd) {
+    private TranslateAlloyToKodkod (A4Reporter rep, A4Options opt, Iterable<Sig> sigs, Command cmd) throws Err {
         this.rep = (rep != null) ? rep : A4Reporter.NOP;
-        IdentitySet<Sig> set = new IdentitySet<Sig>();
-        set.add(Sig.UNIV); set.add(Sig.SIGINT); set.add(Sig.SEQIDX); set.add(Sig.NONE);
-        if (sigs!=null) for(Sig s:sigs) set.add(s);
-        this.sigs = ConstList.make(set);
         this.cmd = cmd;
+        Pair<A4Solution, ScopeComputer> pair = ScopeComputer.compute(this.rep, opt, sigs, cmd);
+        this.frame = pair.a;
+        this.bitwidth = pair.a.getBitwidth();
+        this.min = pair.a.min();
+        this.max = pair.a.max();
+        this.a2k = null;
+        BoundsComputer.compute(rep, frame, pair.b, sigs);
     }
+
+    /** Construct a translator based on a already-fully-constructed association map. */
+    private TranslateAlloyToKodkod (int bitwidth, Map<Expr,Expression> a2k) throws Err {
+        if (bitwidth<1)  throw new ErrorSyntax("Cannot specify a bitwidth less than 1");
+        if (bitwidth>30) throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
+        this.rep = A4Reporter.NOP;
+        this.cmd = null;
+        this.frame = null;
+        this.bitwidth = bitwidth;
+        this.max = (1<<(bitwidth-1)) - 1;
+        this.min = 0 - (1<<(bitwidth-1));
+        this.a2k = ConstMap.make(a2k);
+    }
+
+    /** Associate the given formula with the given expression, then return the formula as-is. */
+    private Formula k2pos(Formula f, Expr e) throws Err {
+        if (frame!=null) frame.k2pos(f, e);
+        return f;
+    }
+
+    /** Returns the expression corresponding to the given sig. */
+    private Expression a2k(Sig x)     throws Err { if (a2k!=null) return a2k.get(x); else return frame.a2k(x); }
+
+    /** Returns the expression corresponding to the given field. */
+    private Expression a2k(Field x)   throws Err { if (a2k!=null) return a2k.get(x); else return frame.a2k(x); }
+
+    /** Returns the expression corresponding to the given skolem/atom. */
+    private Expression a2k(ExprVar x) throws Err { if (a2k!=null) return a2k.get(x); else return frame.a2k(x); }
 
     //==============================================================================================================//
 
-    /** The integer bitwidth. */
-    private int bitwidth;
-
-    /** The maximum sequence length. */
-    private int maxseq;
-
-    /** The maximum possible integer with the given bitwidth. */
-    private int max;
-
-    /** The minimum possible integer with the given bitwidth. */
-    private int min;
-
-    /** This maps each AlloySig, each AlloyField, and possibly even some parameterless AlloyFunc to a Kodkod Expression. */
-    private ConstMap<Object,Expression> bcc;
-
-    /** This maps each KodkodRelation to an upperbound and a lowerbound. */
-    private Bounds bounds;
-
-    /** This is the formula we want to satisfy. */
-    private final List<Formula> goal = new ArrayList<Formula>();
-
     /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
     private void makeFacts(Expr facts) throws Err {
+        rep.debug("Generating facts...\n");
+        // convert into a form that hopefully gives better unsat core
+        facts = (Expr) (new ConvToConjunction()).visitThis(facts);
+        // now go over each of them
         ArrayList<Expr> ar = new ArrayList<Expr>();
         makelist(ar, facts);
         again:
-        for(Sig sig: sigs) {
+        for(Sig sig: frame.getAllReachableSigs()) {
             while(sig.isOne!=null && sig.getFields().size()==3) {
-                Field f1 = sig.getFields().get(0); Relation fst = right(bcc.get(f1)); if (fst==null) break;
-                Field f2 = sig.getFields().get(1); Relation lst = right(bcc.get(f2)); if (lst==null) break;
-                Field f3 = sig.getFields().get(2); Relation nxt = right(bcc.get(f3)); if (nxt==null) break;
+                Field f1 = sig.getFields().get(0); Relation fst = right(a2k(f1)); if (fst==null) break;
+                Field f2 = sig.getFields().get(1); Relation lst = right(a2k(f2)); if (lst==null) break;
+                Field f3 = sig.getFields().get(2); Relation nxt = right(a2k(f3)); if (nxt==null) break;
                 Sig e = findElem(sig,f1,f2,f3);
                 if (e==null || e.isOrdered==null) break;
-                Expression ee = bcc.get(e);
+                Expression ee = a2k(e);
                 if (!(ee instanceof Relation)) break;
                 for(int i=0; i+5<ar.size(); i++) {
                     if (findOrder(e,sig,f1,f2,f3, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3), ar.get(i+4), ar.get(i+5))) {
@@ -186,7 +176,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                         // Remove ar[i..i+5]; the remaining elements are not re-arranged
                         ar.remove(i+5); ar.remove(i+4); ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i);
                         Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                        goal.add(fmap(f, e.isOrdered));
+                        frame.addFormula(f, e.isOrdered);
                         continue again;
                     }
                 }
@@ -194,205 +184,17 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             }
             for(Field f:sig.getFields()) {
                 // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
-                goal.add(fmap(cform(f.boundingFormula), f));
+                frame.addFormula(cform(f.boundingFormula), f);
                 // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
                 // Thus, we need to add a bound that the first column is a subset of s.
                 if (sig.isOne==null) {
-                    Expression sr=bcc.get(sig), fr=bcc.get(f);
+                    Expression sr=a2k(sig), fr=a2k(f);
                     for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
-                    goal.add(fmap(fr.in(sr), f));
+                    frame.addFormula(fr.in(sr), f);
                 }
             }
         }
-        for(Expr e:ar) goal.add(fmap(cform(e), e));
-    }
-
-    /**
-     * Step2: construct the bounds and the formula we want to satisfy.
-     * <p> Reads: rep, sigs, cmd
-     * <p> Writes: bitwidth, maxseq, bcc, bounds, goal
-     */
-    private void makeFormula (Expr facts) throws Err {
-        facts = (Expr) (new ConvToConjunction()).visitThis(facts);
-        rep.debug("Generating bounds...\n");
-        final ScopeComputer sc = new ScopeComputer(rep,sigs,cmd);
-        bitwidth = sc.getBitwidth();
-        max=(1<<(bitwidth-1))-1;
-        min=(0-max)-1;
-        maxseq = sc.getMaxSeq();
-        final Pair<Pair<Bounds,List<Formula>>,ConstMap<Object,Expression>> bc = BoundsComputer.compute(sc,rep,sigs,fmap);
-        bcc = bc.b;
-        bounds = bc.a.a;
-        goal.addAll(bc.a.b);
-        rep.debug("Generating facts...\n");
-        makeFacts(facts);
-        // Kodkod sometimes refuses to enlarge a Relation during solution enumeration
-        // if that Relation is never mentioned in the GOAL formula; so, this ensures that
-        // the said relation is mentioned (and the R==R is optimized away very efficiently, so we don't incur runtime cost)
-        for(Relation r: bounds.relations()) goal.add(r.eq(r));
-    }
-
-    //==============================================================================================================//
-
-    /** The Kodkod solver object. */
-    private Solver solver;
-
-    /** The temporary file that may receive the CNF (or null if we are not writing the CNF out) */
-    private File tmpCNF = null;
-
-    /**
-     * Step3: construct the Kodkod solver object, and chooses the temporary file name
-     * <p> Reads: rep, cmd, bitwidth, maxseq
-     * <p> Writes: solver, tmpCNF
-     */
-    private void makeSolver (A4Options opt) throws Err, IOException {
-        rep.debug("Assigning kodkod options...\n");
-        int sym = (cmd.expects==1 ? 0 : opt.symmetry);
-        solver = new Solver();
-        solver.options().setFlatten(false); // added for now, since multiplication and division circuit takes forever to flatten
-        if (opt.solver.external()!=null) {
-            String ext = opt.solver.external();
-            if (opt.solverDirectory.length()>0 && ext.indexOf(File.separatorChar)<0) ext=opt.solverDirectory+File.separatorChar+ext;
-            File tmp = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
-            solver.options().setSolver(SATFactory.externalFactory(ext, opt.solver.options(), tmp.getAbsolutePath(), ""));
-        } else if (opt.solver.equals(A4Options.SatSolver.ZChaffJNI)) {
-            solver.options().setSolver(SATFactory.ZChaff);
-        } else if (opt.solver.equals(A4Options.SatSolver.MiniSatJNI)) {
-            solver.options().setSolver(SATFactory.MiniSat);
-        } else if (opt.solver.equals(A4Options.SatSolver.MiniSatProverJNI)) {
-            sym=20;
-            solver.options().setSolver(SATFactory.MiniSatProver);
-            solver.options().setLogTranslation(2);
-        } else if (opt.solver.equals(A4Options.SatSolver.FILE)) {
-            tmpCNF = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
-            String name = System.getProperty("user.home")+File.separatorChar+"nosuchprogram"+File.separatorChar;
-            solver.options().setSolver(SATFactory.externalFactory(name, "", tmpCNF.getAbsolutePath(), ""));
-        } else {
-            solver.options().setSolver(SATFactory.DefaultSAT4J);
-        }
-        solver.options().setSymmetryBreaking(sym);
-        solver.options().setSkolemDepth(opt.skolemDepth);
-        solver.options().setBitwidth(bitwidth);
-        solver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);
-        solver.options().setReporter(new AbstractReporter() {
-            @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
-                try {
-                    Pair<Type,Pos> p=decl2type.get(decl.variable());
-                    if (p==null) return;
-                    Type t=p.a;
-                    for(int i=(predecl==null ? -1 : predecl.size()-1); i>=0; i--) {
-                        Pair<Type,Pos> pp=decl2type.get(predecl.get(i).variable());
-                        if (pp==null) return; else t=(pp.a).product(t);
-                    }
-                    while(t.arity() > skolem.arity()) t=UNIV.type.join(t); // Should not happen, but just to be safe...
-                    rel2type.put(skolem,t);
-                } catch(Throwable ex) { } // Exception here is not fatal
-            }
-            @Override public void solvingCNF(int primaryVars, int vars, int clauses) {
-                if (rep!=null) rep.solve(primaryVars, vars, clauses);
-            }
-        });
-        rep.debug("Simplifying the bounds...\n");
-        if (!Simplifier.simplify(bounds, goal, solver.options())) { goal.clear(); goal.add(Formula.FALSE); }
-        rep.translate(opt.solver.id(), bitwidth, maxseq, opt.skolemDepth, sym);
-    }
-
-    //==============================================================================================================//
-
-    /** Given a list of Formula, construct a balanced binary tree (actually a "binary heap" where node X's two children are node 2X and node 2X+1) then conjoin into a single formula. */
-    private static Formula make(List<Formula> list, int i) {
-        if (i<1 || i>list.size()) return Formula.TRUE;
-        Formula me = list.get(i-1);
-        int child1=i+i, child2=child1+1;
-        if (child1<i || child1>list.size()) return me;
-        me = me.and(make(list, child1));
-        if (child2<child1 || child2>list.size()) return me;
-        me = me.and(make(list, child2));
-        return me;
-    }
-
-    /** This wraps an iterator up where it will pre-fetch the first element; (it will not prefetch subsequent elements). */
-    private static final class Peeker<T> implements Iterator<T> {
-        private Iterator<T> iterator;
-        private boolean hasFirst;
-        private T first;
-        private Peeker(Iterator<T> it) {
-            iterator = it;
-            hasFirst = it.hasNext();
-            if (hasFirst) first=it.next(); else first=null;
-        }
-        public boolean hasNext() {
-            return hasFirst || iterator.hasNext();
-        }
-        public T next() {
-            if (hasFirst) { hasFirst=false; T ans=first; first=null; return ans; } else return iterator.next();
-        }
-        public void remove() { throw new UnsupportedOperationException(); }
-    }
-
-    /**
-     * Step4: solve for the solution
-     * <p> Reads: all
-     * <p> Writes: all
-     */
-    private A4Solution solve (boolean tryBookExamples, A4Options opt) throws Err {
-        Formula fgoal = make(goal,1);
-        rep.debug("Generating the solution...\n");
-        long time = System.currentTimeMillis();
-        Iterator<Solution> sols;
-        Solution sol=null;
-        IdentitySet<Formula> lCore = null, hCore = null;
-        if (tryBookExamples) {
-            A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
-            A4Reporter save = rep;
-            rep = null;
-            try { sol=BookExamples.trial(rel2type, r, sigs, bcc, bounds, fgoal, solver, cmd.check); } catch(Throwable ex) { }
-            rep = save;
-        }
-        if (solver.options().solver()==SATFactory.ZChaff || !solver.options().solver().incremental()) {
-            sols=null;
-            if (sol==null) sol=solver.solve(fgoal, bounds);
-        } else {
-            sols=new Peeker<Solution>(solver.solveAll(fgoal, bounds));
-            if (sol==null) sol=sols.next();
-        }
-        final Instance inst = sol.instance();
-        if (inst==null && solver.options().solver()==SATFactory.MiniSatProver) {
-            try {
-                lCore=new IdentitySet<Formula>();
-                Proof p=sol.proof();
-                if (sol.outcome()==UNSATISFIABLE) {
-                    int i = p.highLevelCore().size();
-                    rep.minimizing(cmd, i);
-                    if (opt.coreMinimization==0) try { p.minimize(new RCEStrategy(p.log())); } catch(Throwable ex) {}
-                    if (opt.coreMinimization==1) try { p.minimize(new HybridStrategy(p.log())); } catch(Throwable ex) {}
-                    rep.minimized(cmd, i, p.highLevelCore().size());
-                }
-                for(Iterator<TranslationRecord> it=p.core(); it.hasNext();) {
-                    Object n=it.next().node();
-                    if (n instanceof Formula) lCore.add((Formula)n);
-                }
-                hCore=new IdentitySet<Formula>(p.highLevelCore());
-            } catch(Throwable ex) {
-                lCore=hCore=null;
-            }
-        }
-        solver.options().setReporter(blankReporter); // To ensure no more output during SolutionEnumeration
-        if (opt.solver.equals(A4Options.SatSolver.FILE)) {
-            // The formula is trivial! (otherwise, since we used a nonexistent solver name, it would have thrown an exception.
-            // Since the user wants it in CNF format, we manually generate
-            // a trivially satisfiable (or unsatisfiable) CNF file.
-            String txt = inst!=null ? "p cnf 1 1\n1 0\n" : "p cnf 1 2\n1 0\n-1 0\n";
-            String out = tmpCNF.getAbsolutePath();
-            Util.writeAll(out, txt);
-            rep.resultCNF(out);
-            return null;
-        }
-        A4Solution answer = new A4Solution(sigs, bcc, opt.originalFilename, cmd.toString(),
-           sols, (opt.recordKodkod ? fgoal : null), bounds, bitwidth, inst, rel2type, fmap, lCore, hCore);
-        time = System.currentTimeMillis() - time;
-        if (answer.satisfiable()) rep.resultSAT(cmd, time, answer); else rep.resultUNSAT(cmd, time, answer);
-        return answer;
+        for(Expr e:ar) frame.addFormula(cform(e), e);
     }
 
     //==============================================================================================================//
@@ -417,24 +219,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (fact==null) fact=ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
-            tr = new TranslateAlloyToKodkod(rep, sigs, cmd);
-            tr.makeFormula(fact);
-            tr.makeSolver(opt);
-            return tr.solve(false, opt);
+            tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
+            tr.makeFacts(fact);
+            return tr.frame.solve(rep, cmd, false);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
-            Pair<Type,Pos> x = tr!=null ? tr.decl2type.get(ex.decl().variable()) : null;
-            Pos p = x!=null ? x.b : Pos.UNKNOWN;
-            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order " +
-               "quantification that could not be skolemized.");
+            Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
+            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            if (tr!=null && tr.tmpCNF!=null && ex.toString().contains("nosuchprogram")) {
-                rep.resultCNF(tr.tmpCNF.getAbsolutePath());
-                return null;
-            }
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
     }
 
@@ -461,51 +255,35 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (fact==null) fact=ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
-            tr = new TranslateAlloyToKodkod(rep, sigs, cmd);
-            tr.makeFormula(fact);
-            tr.makeSolver(opt);
-            return tr.solve(true, opt);
+            tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
+            tr.makeFacts(fact);
+            return tr.frame.solve(rep, cmd, true);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
-            Pair<Type,Pos> x = tr!=null ? tr.decl2type.get(ex.decl().variable()) : null;
-            Pos p = x!=null ? x.b : Pos.UNKNOWN;
-            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order " +
-               "quantification that could not be skolemized.");
+            Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
+            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(Throwable ex) {
-            if (ex instanceof Err) throw (Err)ex;
-            if (tr!=null && tr.tmpCNF!=null && ex.toString().contains("nosuchprogram")) {
-                rep.resultCNF(tr.tmpCNF.getAbsolutePath());
-                return null;
-            }
-            throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
+            if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
         }
     }
 
     /**
      * Translate the Alloy expression into an equivalent Kodkod Expression or IntExpression or Formula object.
-     * @param bcc - this must map every Sig and every Field to an equivalent Kodkod Expression
-     * @param bitwidth - this specifies the integer bitwidth and must be between 1 and 30
+     * @param sol - an existing satisfiable A4Solution object
      * @param expr - this is the Alloy expression we want to translate
      */
-    public static Object alloy2kodkod(ConstMap<Object,Expression> bcc, int bitwidth, Expr expr)
-    throws Err {
-        if (bitwidth<1 || bitwidth>30) throw new ErrorType("The integer bitwidth must be between 1 and 30.");
+    public static Object alloy2kodkod(A4Solution sol, Expr expr) throws Err {
         if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
-        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(null, null, null);
-        tr.bcc = bcc;
-        tr.bitwidth = bitwidth;
-        tr.max=(1<<(bitwidth-1))-1;
-        tr.min=(0-tr.max)-1;
+        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.a2k());
         Object ans;
         try {
             ans = tr.visitThis(expr);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
-            throw new ErrorType("Analysis cannot be performed since it requires higher-order " +
-               "quantification that could not be skolemized.");
+            throw new ErrorType("Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex;
             throw new ErrorFatal("Unknown exception occurred: "+ex, ex);
@@ -562,34 +340,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Func last=current_function.get(current_function.size()-1);
         String funcname=tail(last.label);
         if (funcname.indexOf('$')<0) return funcname+"_"+name; else return name;
-    }
-
-    //==============================================================================================================//
-
-    /** If f is a formula, and it hasn't been associated with any location information, then associate it with x. */
-    private Formula fmap(Object f, Expr x) {
-        if (!(f instanceof Formula)) return null;
-        Formula ff = (Formula)f;
-        if (fmap.containsKey(ff)) return ff;
-        fmap.put(ff, x);
-        if (ff instanceof BinaryFormula) {
-            BinaryFormula b = (BinaryFormula)ff;
-            if (b.op() == BinaryFormula.Operator.AND) { fmap(b.left(), x); fmap(b.right(), x); }
-        }
-        return ff;
-    }
-
-    /** If f is a formula, and it hasn't been associated with any location information, then associate it with x. */
-    private Formula fmap(Object f, Pos x) {
-        if (!(f instanceof Formula)) return null;
-        Formula ff = (Formula)f;
-        if (x==null || x==Pos.UNKNOWN || fmap.containsKey(f)) return ff;
-        fmap.put(ff, x);
-        if (ff instanceof BinaryFormula) {
-            BinaryFormula b = (BinaryFormula)ff;
-            if (b.op() == BinaryFormula.Operator.AND) { fmap(b.left(), x); fmap(b.right(), x); }
-        }
-        return ff;
     }
 
     //==============================================================================================================//
@@ -699,7 +449,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (l instanceof Formula) {
             Formula c1 = c.implies((Formula)l);
             Formula c2 = c.not().implies(cform(x.right));
-            return fmap(c1.and(c2), x);
+            return k2pos(c1.and(c2), x);
         }
         if (l instanceof Expression) {
             return c.thenElse((Expression)l, cset(x.right));
@@ -728,14 +478,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         switch(x.op) {
           case NUMBER:
             int n=x.num();
-            if (n<min) throw new ErrorType(x.pos,
-               "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
-            if (n>max) throw new ErrorType(x.pos,
-               "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
+            if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
+            if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
             return IntConstant.constant(n);
           case TRUE: return Formula.TRUE;
           case FALSE: return Formula.FALSE;
-          case IDEN: return Expression.IDEN.intersection(bcc.get(UNIV).product(Relation.UNIV));
+          case IDEN: return Expression.IDEN.intersection(a2k(UNIV).product(Relation.UNIV));
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprConstant.accept()");
     }
@@ -749,17 +497,17 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         switch(x.op) {
             case SOMEOF: case LONEOF: case ONEOF: case SETOF: return cset(x.sub);
             case NOOP: return visitThis(x.sub);
-            case NOT: return fmap( cform(x.sub).not() , x );
-            case SOME: return fmap( cset(x.sub).some() , x);
-            case LONE: return fmap( cset(x.sub).lone() , x);
-            case ONE: return fmap( cset(x.sub).one() , x);
-            case NO: return fmap( cset(x.sub).no() , x);
-            case TRANSPOSE: return cset(x.sub).transpose();
+            case NOT:  return k2pos( cform(x.sub).not() , x );
+            case SOME: return k2pos( cset(x.sub).some() , x);
+            case LONE: return k2pos( cset(x.sub).lone() , x);
+            case ONE:  return k2pos( cset(x.sub).one() , x);
+            case NO:   return k2pos( cset(x.sub).no() , x);
+            case TRANSPOSE:   return cset(x.sub).transpose();
             case CARDINALITY: return cset(x.sub).count();
             case CAST2SIGINT: return cint(x.sub).toExpression();
-            case CAST2INT: return sum(cset(x.sub));
+            case CAST2INT:    return sum(cset(x.sub));
             case RCLOSURE:
-                Expression iden=Expression.IDEN.intersection(bcc.get(UNIV).product(Relation.UNIV));
+                Expression iden=Expression.IDEN.intersection(a2k(UNIV).product(Relation.UNIV));
                 return cset(x.sub).closure().union(iden);
             case CLOSURE: return cset(x.sub).closure();
         }
@@ -778,6 +526,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** {@inheritDoc} */
     @Override public Object visit(ExprVar x) throws Err {
         Object ans=env.get(x);
+        if (ans==null) ans=a2k(x);
         if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
     }
@@ -788,7 +537,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     /** {@inheritDoc} */
     @Override public Object visit(Field x) throws Err {
-        Expression ans=bcc.get(x);
+        Expression ans = a2k(x);
         if (ans==null) throw new ErrorFatal(x.pos, "Field \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
     }
@@ -799,7 +548,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
 
     /** {@inheritDoc} */
     @Override public Object visit(Sig x) throws Err {
-        Expression ans=bcc.get(x);
+        Expression ans = a2k(x);
         if (ans==null) throw new ErrorFatal(x.pos, "Sig \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
     }
@@ -901,26 +650,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final Pair<Expr,String> cache = cacheForExprCall.get(f);
         final Expr body = f.getBody();
         final int n=f.params.size();
-        if (n==0) {
-            Object ans=bcc.get(f); // Try looking it up; it may have been pre-bound to some value
-            if (ans!=null) { if (ans instanceof Formula) {fmap(ans,x);} return ans; }
-        }
-        for(Func ff:current_function) if (ff==f) {
-            throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
-            /*
-            int maxRecursion=12;
-            maxRecursion--;
-            if (maxRecursion==0) {
-                Type t = f.returnDecl.type;
-                if (t.is_bool) return Formula.FALSE;
-                if (t.is_int) return IntConstant.constant(0);
-                int i = t.arity();
-                Expression ans = Expression.NONE;
-                while(i>1) { ans = ans.product(Expression.NONE); i--; }
-                return ans;
-            }
-            */
-        }
+        for(Func ff:current_function) if (ff==f) throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
         if (n==2) if ((cache!=null && cache.a==body && cache.b=="util/integer/mul") || is_mul(f)) {
             cacheForExprCall.put(f, new Pair<Expr,String>(body, "util/integer/mul"));
             rep.debug("Found: util/integer/mul\n");
@@ -947,7 +677,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Object ans = visitThis(body);
         env = oldenv;
         current_function.remove(current_function.size()-1);
-        if (ans instanceof Formula) fmap(ans, x);
+        if (ans instanceof Formula) k2pos((Formula)ans, x);
         return ans;
     }
 
@@ -967,7 +697,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             if (answer==null) answer=a.intersection(b).no(); else answer=a.intersection(b).no().and(answer);
             a=a.union(b);
         }
-        if (answer!=null) return fmap(answer, x); else return Formula.TRUE;
+        if (answer!=null) return k2pos(answer, x); else return Formula.TRUE;
     }
 
     /*===============================*/
@@ -979,14 +709,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         Expr a=x.left, b=x.right;
         Expression s, s2; IntExpression i; Formula f; Object obj;
         switch(x.op) {
-            case IN: return fmap(isIn(cset(a),b), x);
-            case LT: i=cint(a); f=i.lt(cint(b)); return fmap(f,x);
-            case LTE: i=cint(a); f=i.lte(cint(b)); return fmap(f,x);
-            case GT: i=cint(a); f=i.gt(cint(b)); return fmap(f,x);
-            case GTE: i=cint(a); f=i.gte(cint(b)); return fmap(f,x);
-            case AND: f=cform(a); f=f.and(cform(b)); return fmap(f,x);
-            case OR: f=cform(a); f=f.or(cform(b)); return fmap(f,x);
-            case IFF: f=cform(a); f=f.iff(cform(b)); return fmap(f,x);
+            case IN:  return k2pos(isIn(cset(a),b), x);
+            case LT:  i=cint(a);  f=i.lt(cint(b));   return k2pos(f,x);
+            case LTE: i=cint(a);  f=i.lte(cint(b));  return k2pos(f,x);
+            case GT:  i=cint(a);  f=i.gt(cint(b));   return k2pos(f,x);
+            case GTE: i=cint(a);  f=i.gte(cint(b));  return k2pos(f,x);
+            case AND: f=cform(a); f=f.and(cform(b)); return k2pos(f,x);
+            case OR:  f=cform(a); f=f.or(cform(b));  return k2pos(f,x);
+            case IFF: f=cform(a); f=f.iff(cform(b)); return k2pos(f,x);
             case PLUSPLUS: s=cset(a); return s.override(cset(b));
             case SHL: i=cint(a); return i.shl(cint(b));
             case SHR: i=cint(a); return i.shr(cint(b));
@@ -999,8 +729,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 // Special exception to allow "0-8" to not throw an exception, where 7 is the maximum allowed integer (when bitwidth==4)
                 // (likewise, when bitwidth==5, then +15 is the maximum allowed integer, and we want to allow 0-16 without throwing an exception)
                 if (a instanceof ExprConstant && ((ExprConstant)a).op==ExprConstant.Op.NUMBER && ((ExprConstant)a).num()==0)
-                   if (b instanceof ExprConstant && ((ExprConstant)b).op==ExprConstant.Op.NUMBER && ((ExprConstant)b).num()==(1+max))
-                      return IntConstant.constant(0-max-1);
+                   if (b instanceof ExprConstant && ((ExprConstant)b).op==ExprConstant.Op.NUMBER && ((ExprConstant)b).num()==max+1)
+                      return IntConstant.constant(min);
                 obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.minus(cint(b));}
                 s=(Expression)obj; return s.difference(cset(b));
@@ -1019,7 +749,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b));}
                 else { s=(Expression)obj; f=s.eq(cset(b)); }
-                return fmap(f,x);
+                return k2pos(f,x);
             case DOMAIN:
                 s=cset(a);
                 s2=cset(b);
@@ -1095,7 +825,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         if (ab.op==ExprBinary.Op.ISSEQ_ARROW_LONE) {
             Expression rr=r;
             while(rr.arity()>1) rr=rr.join(Relation.UNIV);
-            ans=rr.difference(rr.join(BoundsComputer.SIGINT_NEXT)).in(BoundsComputer.SIGINT_ZERO).and(ans);
+            ans=rr.difference(rr.join(A4Solution.SIGINT_NEXT)).in(A4Solution.SIGINT_ZERO).and(ans);
         }
         return ans;
     }
@@ -1175,7 +905,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 guard=isIn(v, dexexpr).and(guard);
                 newd=v.setOf(dv);
             }
-            decl2type.put(v, new Pair<Type,Pos>(dex.type, dex.pos));
+            if (frame!=null) frame.kv2typepos(v, dex.type, dex.pos);
             if (dd==null) dd=newd; else dd=dd.and(newd);
             decls.add(newd);
         }
@@ -1199,11 +929,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             if (a.expr.isSame(Sig.SIGINT.oneOf())) {
                 if (a.gte(ZERO).and(a.plus(ONE).lt(ZERO)).isSame(x.sub)) {
                     rep.debug("Found: util/integer/max\n");
-                    return BoundsComputer.SIGINT_MAX;
+                    return A4Solution.SIGINT_MAX;
                 }
                 if (a.lt(ZERO).and(a.minus(ONE).gte(ZERO)).isSame(x.sub)) {
                     rep.debug("Found: util/integer/min\n");
-                    return BoundsComputer.SIGINT_MIN;
+                    return A4Solution.SIGINT_MIN;
                 }
             }
         }
@@ -1213,13 +943,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
             if (a.expr.isSame(Sig.SIGINT.oneOf()) && b.expr.isSame(Sig.SIGINT.oneOf())) {
                 if (b.gt(a).and(b.equal(ONE.plus(a))).isSame(x.sub)) {
                     rep.debug("Found: util/integer/next\n");
-                    return BoundsComputer.SIGINT_NEXT;
+                    return A4Solution.SIGINT_NEXT;
                 }
             }
         }
         // All else, invoke the helper method to translate this quantification expression
         Object ans = visit_qt(x.op, x.vars, x.sub);
-        if (ans instanceof Formula) fmap(ans, x);
+        if (ans instanceof Formula) k2pos((Formula)ans, x);
         return ans;
     }
 }

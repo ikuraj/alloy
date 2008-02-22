@@ -182,4 +182,20 @@ public final class A4Options implements Serializable {
      * <p> Default value is false.
      */
     public boolean recordKodkod = false;
+
+    /**
+     * This method makes a copy of this Options object.
+     */
+    public A4Options dup() {
+        A4Options x = new A4Options();
+        x.symmetry = symmetry;
+        x.skolemDepth = skolemDepth;
+        x.coreMinimization = coreMinimization;
+        x.solver = solver;
+        x.solverDirectory = solverDirectory;
+        x.tempDirectory = tempDirectory;
+        x.originalFilename = originalFilename;
+        x.recordKodkod = recordKodkod;
+        return x;
+    }
 }

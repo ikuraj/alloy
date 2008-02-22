@@ -26,11 +26,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import edu.mit.csail.sdg.alloy4.ConstMap;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.BinaryIntExpression;
@@ -88,7 +86,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
      * @param atomMap - if nonnull, it is used to map the atom name before printing
      */
     public static String convert
-    (Formula formula, int bitwidth, Iterator<Object> atoms, Bounds bounds, ConstMap<Object,String> atomMap) {
+    (Formula formula, int bitwidth, Iterable<String> atoms, Bounds bounds, Map<Object,String> atomMap) {
         StringWriter string=new StringWriter();
         PrintWriter file=new PrintWriter(string);
         new TranslateKodkodToJava(file, formula, bitwidth, atoms, bounds, atomMap);
@@ -118,7 +116,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
 
     /** Constructor is private, so that the only way to access this class is via the static convert() method. */
     private TranslateKodkodToJava
-    (PrintWriter pw, Formula x, int bitwidth, Iterator<Object> atoms, Bounds bounds, Map<Object,String> atomMap) {
+    (PrintWriter pw, Formula x, int bitwidth, Iterable<String> atoms, Bounds bounds, Map<Object,String> atomMap) {
         file=pw;
         file.printf("import java.util.Arrays;%n");
         file.printf("import java.util.List;%n");
@@ -130,8 +128,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("public final class Test {%n%n");
         file.printf("public static void main(String[] args) throws Exception {%n%n");
         ArrayList<String> atomlist=new ArrayList<String>();
-        while(atoms.hasNext()) {
-            Object a = atoms.next();
+        for(Object a:atoms) {
             String b = atomMap==null ? null : atomMap.get(a);
             atomlist.add(b==null ? a.toString() : b);
         }

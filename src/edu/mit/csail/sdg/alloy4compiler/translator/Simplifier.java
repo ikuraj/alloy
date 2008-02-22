@@ -22,22 +22,19 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import java.util.List;
+import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.MailBug;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
-import kodkod.engine.config.Options;
-import kodkod.engine.fol2sat.Translator;
-import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
 
 /**
- * This class simplfies the Kodkod bounds by trying to infer as much partial instance information as possible.
+ * Immutable; this class shrinks the unknowns as much as possible in order to reduce the number of variables in final CNF.
  *
- * <p>
- * Currently it recognizes two forms:
+ * <p> Currently it recognizes the following patterns:
  *
  * <p> (1) When it sees "A in B", it will try to derive a safe upperbound for B, and then remove
  *         any excess unknowns from A's upperbound.
@@ -47,44 +44,55 @@ import kodkod.instance.TupleSet;
 
 final class Simplifier {
 
+    // It calls the following methods on A4Solution: query(), approximate(), shrink()
+
+    /** Reporter for receiving debug messages. */
+    private final A4Reporter rep;
+
+    /** The A4Solution object we are attempting to simplify. */
+    private final A4Solution sol;
+
     /** Constructor is private, since this class never needs to be instantiated. */
-    private Simplifier() { }
+    private Simplifier(A4Reporter rep, A4Solution sol) { this.rep=rep; this.sol=sol; }
 
     /** Simplify the bounds based on the fact that "a is subset of b"; return false if we discover the formula is unsat. */
-    private static boolean simplify_in(Bounds bounds, Expression a, Expression b, Options opt) {
-        if (a instanceof Relation) {
-            Relation r=(Relation)a;
-            TupleSet u=bounds.upperBound(r);
-            TupleSet l=bounds.lowerBound(r);
-            TupleSet t=u.universe().factory().setOf(b.arity(), Translator.approximate(b,bounds,opt).denseIndices());
-            t.retainAll(u);
-            if (!t.containsAll(l)) return false; // This means the upperbound is shrunk BELOW the lowerbound.
-            bounds.bound(r,l,t);
-        }
-        return true;
+    private boolean simplify_in(Expression a, Expression b) {
+       if (a instanceof Relation) {
+          try {
+             Relation r = (Relation)a;
+             TupleSet ub = sol.query(true, r, false), lb = sol.query(false, r, false), t = sol.approximate(b);
+             t.retainAll(ub);
+             if (!t.containsAll(lb)) { rep.debug("Comment: Simplify "+a+" "+ub.size()+"->false\n"); return false; } // This means the upperbound is shrunk BELOW the lowerbound.
+             if (t.size() < ub.size()) { rep.debug("Comment: Simplify "+a+" "+ub.size()+"->"+lb.size()+"\n"); sol.shrink(r,lb,t); }
+          } catch(Throwable ex) {
+             rep.debug("Comment: Simplify "+a+" exception: "+ex+"\n"+MailBug.dump(ex).trim()+"\n"); // Not fatal; let's report it to the debug() reporter
+          }
+       }
+       return true;
     }
 
     /** Simplify the bounds based on the fact that "form is true"; return false if we discover the formula is unsat. */
-    private static boolean simplify(Bounds bounds, Formula form, Options opt) {
-        boolean flag1=true, flag2=true;
-        if (form instanceof BinaryFormula) {
-            BinaryFormula f=(BinaryFormula)form;
-            if (f.op() == BinaryFormula.Operator.AND) {
-                flag1=simplify(bounds, f.left(), opt);
-                flag2=simplify(bounds, f.right(), opt);
-            }
-        } else if (form instanceof ComparisonFormula) {
-            ComparisonFormula f=(ComparisonFormula)form;
-            flag1=simplify_in(bounds, f.left(), f.right(), opt);
-            if (f.op() == ComparisonFormula.Operator.EQUALS) flag2=simplify_in(bounds, f.right(), f.left(), opt);
-        }
-        return flag1 && flag2;
+    private boolean simplify (Formula form) {
+       boolean flag1=true, flag2=true;
+       if (form instanceof BinaryFormula) {
+          BinaryFormula f=(BinaryFormula)form;
+          if (f.op() == BinaryFormula.Operator.AND) {
+             flag1=simplify(f.left());
+             flag2=simplify(f.right());
+          }
+       } else if (form instanceof ComparisonFormula) {
+          ComparisonFormula f=(ComparisonFormula)form;
+          flag1=simplify_in(f.left(), f.right());
+          if (f.op() == ComparisonFormula.Operator.EQUALS) flag2=simplify_in(f.right(), f.left());
+       }
+       return flag1 && flag2;
     }
 
-    /** Simplify the bounds based on the fact that "every formula in list is true"; return false if we discover the formula is unsat. */
-    static boolean simplify(Bounds bounds, List<Formula> list, Options opt) {
-        boolean ans = true;
-        for(Formula f: list) ans = simplify(bounds, f, opt) && ans; // Note: even if we get false, we want to keep going so that we simplify bounds further
-        return ans;
+    /** Simplify sol.bounds() based on the existing set of formulas in frame.formulas() */
+    static boolean simplify(A4Reporter rep, A4Solution sol, Iterable<Formula> formulas) {
+       Simplifier simp = new Simplifier(rep, sol);
+       boolean ans = true;
+       for(Formula f: formulas) ans = simp.simplify(f) && ans; // Note: even if we get false, we want to keep going so that we simplify bounds further
+       return ans;
     }
 }

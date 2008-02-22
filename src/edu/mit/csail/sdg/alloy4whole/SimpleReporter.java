@@ -52,22 +52,22 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
+import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
-import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionWriter;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 
@@ -130,6 +130,9 @@ final class SimpleReporter extends A4Reporter {
     /** The message verbosity level (0, 1, 2, or higher) */
     private int verbosity=0;
 
+    /** Whether we should record Kodkod input/output. */
+    private boolean recordKodkod=false;
+
     /** The time that the last action began; we subtract it from System.currentTimeMillis() to determine the elapsed time. */
     private long lastTime=0;
 
@@ -172,15 +175,12 @@ final class SimpleReporter extends A4Reporter {
     private SimpleReporter(PrintStream out) { this.out=out; }
 
     /** Helper method to write out a full XML file. */
-    private static void writeXML(String filename, A4Solution sol, SafeList<Func> macros, Map<String,String> sources) throws IOException, Err {
-        final PrintWriter out=new PrintWriter(filename,"UTF-8");
-        Util.encodeXMLs(out, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
-        A4SolutionWriter.writeInstance(sol, out, macros);
-        for(Map.Entry<String,String> e: sources.entrySet()) {
-            Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
+    private static void writeXML(Module mod, String filename, A4Solution sol, Map<String,String> sources) throws IOException, Err {
+        sol.writeXML(filename, mod.getAllFunc(), sources);
+        if ("yes".equals(System.getProperty("debug"))) {
+            // When in debug mode, try reading the file right back so that we can catch some errors right away
+            A4SolutionReader.read(new ArrayList<Sig>(), new XMLNode(new File(filename))).toString();
         }
-        out.print("\n</alloy>\n");
-        if (!Util.close(out)) throw new ErrorFatal("Error writing to the A4Solution XML file "+filename);
     }
 
     /**
@@ -215,7 +215,7 @@ final class SimpleReporter extends A4Reporter {
             return "There are no more satisfying instances.\n\n" +
             "Note: due to symmetry breaking and other optimizations,\n" +
             "some equivalent solutions may have been omitted.";
-        synchronized(SimpleReporter.class) { writeXML(filename, sol, mod.getAllFunc(), latestKodkodSRC); latestKodkod=sol; }
+        synchronized(SimpleReporter.class) { writeXML(mod, filename, sol, latestKodkodSRC); latestKodkod=sol; }
         rep.declareInstance(filename);
         return "";
     }
@@ -236,6 +236,7 @@ final class SimpleReporter extends A4Reporter {
         throws Exception {
         SimpleReporter rep = new SimpleReporter(out);
         rep.verbosity = verbosity;
+        rep.recordKodkod = options.recordKodkod;
         rep.mainAlloyFileName = Util.canon(options.originalFilename);
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
@@ -406,16 +407,22 @@ final class SimpleReporter extends A4Reporter {
         if (!(command instanceof Command)) return;
         A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
-        String formula = sol.formula;
+        String formula = recordKodkod ? sol.deriveEquivalentKodkodInput() : "";
         log(RESTORE3);
         String filename = tempfile+".xml";
         synchronized(SimpleReporter.class) {
-            try { writeXML(filename, sol, latestModule.getAllFunc(), latestKodkodSRC); } catch(Throwable ex) { }
+            try {
+                writeXML(latestModule, filename, sol, latestKodkodSRC);
+            } catch(Throwable ex) {
+                logBold(Util.indent(ex.toString().trim() + "\nStackTrace:\n" + (MailBug.dump(ex).trim()), "   "));
+                log("\n");
+                return;
+            }
             latestKodkod=sol;
             latestKodkodXML=filename;
         }
         String formulafilename = "";
-        if (formula!=null && formula.length()>0 && tempfile!=null) {
+        if (formula.length()>0 && tempfile!=null) {
             formulafilename = tempfile+".java";
             try { Util.writeAll(formulafilename,formula); formulafilename="CNF: "+formulafilename; } catch(Throwable ex) { formulafilename=""; }
         }
@@ -457,10 +464,11 @@ final class SimpleReporter extends A4Reporter {
         A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
         log(RESTORE3);
+        String originalFormula = recordKodkod ? sol.deriveEquivalentKodkodInput() : "";
         String corefilename="", formulafilename="";
-        if (sol.formula.length()>0 && tempfile!=null) {
+        if (originalFormula.length()>0 && tempfile!=null) {
             formulafilename=tempfile+".java";
-            try { Util.writeAll(formulafilename, sol.formula); formulafilename="CNF: "+formulafilename; } catch(Throwable ex) { formulafilename=""; }
+            try { Util.writeAll(formulafilename, originalFormula); formulafilename="CNF: "+formulafilename; } catch(Throwable ex) { formulafilename=""; }
         }
         Pair<ConstSet<Pos>,ConstSet<Pos>> core = sol.highLevelCore();
         if ((core.a.size()>0 || core.b.size()>0) && tempfile!=null) {

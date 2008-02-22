@@ -24,11 +24,8 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import static kodkod.engine.Solution.Outcome.SATISFIABLE;
 import static kodkod.engine.Solution.Outcome.TRIVIALLY_SATISFIABLE;
-import java.util.Map;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
-import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.Formula;
@@ -43,34 +40,26 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 
 /**
- * This class stores the set of solutions from the book, for teaching purpose, so that
- * users of the tool will see the same illustration as the book and not get confused by the
- * nondeterminism of SAT solving.
+ * Immutable; this class stores the set of solutions from the book, for teaching purpose,
+ * so that users of the tool will see the same illustration as the book and not get confused by SAT solver nondeterminism.
  */
 
 final class BookExamples {
 
+    // It calls the following methods on a bounds-computed A4Solution object:
+    // getAllReachableSigs(), getFactory(), getBounds(), a2k(), kr2typeCLEAR()
+
     /** Returns the Sig if the list of sig contains a sig with the given label, else returns null. */
-    private static Sig hasSig(Iterable<Sig> sigs, String label) {
+    private static Sig hasSig (Iterable<Sig> sigs, String label) {
         for(Sig s:sigs) if (s.label.equals(label)) return s;
         return null;
     }
 
-    /**
-     * If one of the solution is a solution to the given problem, return it, else return null.
-     * @param rel2type - the map that will receive any skolem mappings that we find
-     * @param rep - if nonnull then it is the reporter that will receive diagnostic messages
-     * @param sigs - the list of sigs
-     * @param bc - this maps each Sig and Field to a Kodkod expression
-     * @param bounds - this bounds each Kodkod relation
-     * @param formula - this is the formula we want to solve
-     * @param solver - this is the solver object we will use to solve the formula
-     * @param check - if true, it was a "check", else it was a "run"
-     */
-    static Solution trial
-    (Map<Relation,Type> rel2type, A4Reporter rep, Iterable<Sig> sigs, ConstMap<Object,Expression> bc, Bounds bounds, Formula formula, Solver solver, boolean check) {
-        TupleFactory fac = bounds.universe().factory();
+    /** If one of the solution is a solution to the given problem, return it, else return null. */
+    static Solution trial (A4Reporter rep, A4Solution frame, Formula formula, Solver solver, boolean check) {
+        TupleFactory fac = frame.getFactory();
         Solution sol = null;
+        Iterable<Sig> sigs = frame.getAllReachableSigs();
         if (hasSig(sigs, "this/Book")!=null) {
             Tuple B0N0A0 = t_tuple(fac, "Book$0", "Name$0", "Addr$0");
             Tuple B0N1A0 = t_tuple(fac, "Book$0", "Name$1", "Addr$0");
@@ -94,7 +83,7 @@ final class BookExamples {
             Tuple B310 = t_tuple(fac, "Book$3", "Target$1", "Target$0");
             Tuple B312 = t_tuple(fac, "Book$3", "Target$1", "Target$2");
             if (sol==null && B000!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.9",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.9",
                     "Book$0", "", "this/Book", "",
                     "Target$0", "", "this/Alias", "",
                     "", "this/Group", "",
@@ -102,7 +91,7 @@ final class BookExamples {
                     B000, "", "this/Book", "addr",
             });
             if (sol==null && B001!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.10",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.10",
                     "Book$0", "", "this/Book", "",
                     "", "this/Alias", "",
                     "Target$0", "", "this/Group", "",
@@ -110,7 +99,7 @@ final class BookExamples {
                     B001, B002, "", "this/Book", "addr",
             });
             if (sol==null && B001!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.11",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.11",
                     "Book$0", "", "this/Book", "",
                     "Target$0", "", "this/Alias", "",
                     "", "this/Group", "",
@@ -118,7 +107,7 @@ final class BookExamples {
                     B001, B002, "", "this/Book", "addr",
             });
             if (sol==null && B001!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.12",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.12",
                     "Book$0", "", "this/Book", "",
                     "Target$0", "", "this/Alias", "",
                     "Target$1", "", "this/Group", "",
@@ -126,7 +115,7 @@ final class BookExamples {
                     B001, "", "this/Book", "addr",
             });
             if (sol==null && B010!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.13",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.13",
                     "Book$0", "Book$1", "", "this/Book", "",
                     "", "this/Alias", "",
                     "Target$0", "Target$1", "", "this/Group", "",
@@ -134,7 +123,7 @@ final class BookExamples {
                     B010, B110, B102, "", "this/Book", "addr",
             });
             if (sol==null && B312!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.15",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.15",
                     "Book$0", "Book$1", "Book$2", "Book$3", "", "this/Book", "",
                     "", "this/Alias", "",
                     "Target$0", "Target$1", "", "this/Group", "",
@@ -142,7 +131,7 @@ final class BookExamples {
                     B102, B210, B202, B212, B302, B312, "", "this/Book", "addr",
             });
             if (sol==null && B101!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.16",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.16",
                     "Book$0", "Book$1", "Book$2", "Book$3", "", "this/Book", "",
                     "Target$1", "", "this/Alias", "",
                     "Target$0", "", "this/Group", "",
@@ -150,7 +139,7 @@ final class BookExamples {
                     B101, "", "this/Book", "addr",
             });
             if (sol==null && B102!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.17",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.17",
                     "Book$0", "Book$1", "Book$2", "Book$3", "", "this/Book", "",
                     "Target$0", "", "this/Alias", "",
                     "Target$1", "", "this/Group", "",
@@ -158,56 +147,56 @@ final class BookExamples {
                     B102, B210, B310, B302, "", "this/Book", "addr",
             });
             if (sol==null && B0N0A0!=null && check)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.6",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.6",
                     "Book$0", "Book$1", "", "this/Book", "",
                     "Addr$0", "", "this/Addr", "",
                     "Name$0", "", "this/Name", "",
                     B0N0A0, "", "this/Book", "addr",
             });
             if (sol==null && B1N0A0!=null && !check)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.4",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.4",
                     "Book$0", "Book$1", "", "this/Book", "",
                     "Addr$0", "", "this/Addr", "",
                     "Name$0", "", "this/Name", "",
                     B1N0A0, "", "this/Book", "addr",
             });
             if (sol==null && B0N2A1!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.5",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.5",
                     "Book$0", "Book$1", "", "this/Book", "",
                     "Addr$0", "Addr$1", "", "this/Addr", "",
                     "Name$0", "Name$1", "Name$2", "", "this/Name", "",
                     B0N2A1, B0N1A1, B1N2A1, B1N1A1, B1N0A0, "", "this/Book", "addr",
             });
             if (sol==null && B0N0A0!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.1",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.1",
                     "Book$0", "", "this/Book", "",
                     "Addr$0", "", "this/Addr", "",
                     "Name$0", "", "this/Name", "",
                     B0N0A0, "", "this/Book", "addr",
             });
             if (sol==null && B0N0A0!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.2",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.2",
                     "Book$0", "", "this/Book", "",
                     "Addr$0", "", "this/Addr", "",
                     "Name$0", "Name$1", "Name$2", "", "this/Name", "",
                     B0N0A0, B0N1A0, B0N2A0, "", "this/Book", "addr",
             });
             if (sol==null && B0N0A0!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 2.3",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 2.3",
                     "Book$0", "", "this/Book", "",
                     "Addr$0", "Addr$1", "", "this/Addr", "",
                     "Name$0", "Name$1", "Name$2", "", "this/Name", "",
                     B0N0A0, B0N1A0, B0N2A1, "", "this/Book", "addr",
             });
             if (sol==null && B001!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 5.2",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 5.2",
                     "Book$0", "Book$1", "", "this/Book", "",
                     "Target$0", "", "this/Name", "",
                     "Target$1", "", "this/Addr", "",
                     B001, B101, "", "this/Book", "addr",
             });
             if (sol==null && B102!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 5.3",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 5.3",
                     "Book$0", "Book$1", "", "this/Book", "",
                     "Target$0", "Target$1", "", "this/Name", "",
                     "Target$2", "", "this/Addr", "",
@@ -220,7 +209,7 @@ final class BookExamples {
             Tuple man0_woman1 = t_tuple(fac, "Person$1", "Person$3");
             Tuple man1_woman1 = t_tuple(fac, "Person$2", "Person$3");
             if (sol==null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 4.2",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 4.2",
                     "Person$1", "", "this/Man", "",
                     "Person$0", "", "this/Woman", "",
                     man0_woman0, "", "this/Man", "wife",
@@ -228,7 +217,7 @@ final class BookExamples {
                     "", "this/Person", "father",
             });
             if (sol==null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 4.3",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 4.3",
                     "Person$1", "Person$2", "", "this/Man", "",
                     "Person$0", "Person$3", "", "this/Woman", "",
                     man1_woman0, man0_woman1, "", "this/Man", "wife",
@@ -245,7 +234,7 @@ final class BookExamples {
             Tuple d002=t_tuple(fac,p0,p0,t2), d112=t_tuple(fac,p1,p1,t2), d122=t_tuple(fac,p1,p2,t2);
             Tuple d003=t_tuple(fac,p0,p0,t3), d113=t_tuple(fac,p1,p1,t3), d223=t_tuple(fac,p2,p2,t3);
             if (sol==null && d000!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.4",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 6.4",
                 s20, s01, s12, "", "this/Process", "succ",
                 d000,d110,d220,d001,d021,d111,d002,d112,d122,d003,d113,d223,"","this/Process","toSend",
                 t_tuple(fac,p2,t3),"","this/Process","elected",
@@ -256,7 +245,7 @@ final class BookExamples {
             String t0="Time$0", t1="Time$1", t2="Time$2", t3="Time$3", t4="Time$4", t5="Time$5";
             String c0="Card$0", c1="Card$1";
             if (sol==null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig E.3",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig E.3",
                 t_tuple(fac,c0,k0), t_tuple(fac,c1,k1), "", "this/Card", "fst",
                 t_tuple(fac,c0,k1), t_tuple(fac,c1,k0), "", "this/Card", "snd",
                 t_tuple(fac,g0,c0,t1),
@@ -288,7 +277,7 @@ final class BookExamples {
             Tuple GK4=t_tuple(fac,g1,k2,t3), GK5=t_tuple(fac,g0,k1,t4), GK6=t_tuple(fac,g1,k2,t4);
             Tuple O1=t_tuple(fac,r,g0,t1), O2=t_tuple(fac,r,g1,t3), O3=t_tuple(fac,r,g1,t4);
             if (sol==null && K0T0!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.13",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 6.13",
                 G0, G1, "", "this/Guest", "",
                 K0, K1, K2, "", "this/Room", "keys",
                 K0T0, K0T1, K0T2, K0T3, K1T4, "", "this/Room", "currentKey",
@@ -304,7 +293,7 @@ final class BookExamples {
                 t_tuple(fac,"Event$3",t3), "", "this/Event", "pre",
             });
             if (sol==null && K0T0!=null)
-                sol=trial(rel2type, rep, solver, sigs, bc, formula, bounds, new Object[]{"Fig 6.6",
+                sol=trial(rep, fac, solver, sigs, formula, frame, new Object[]{"Fig 6.6",
                 G0, G1, "", "this/Guest", "",
                 K0, K1, K2, "", "this/Room", "keys",
                 K0T0, K0T1, K0T2, K0T3, K1T4, "", "this/Room", "currentKey",
@@ -317,11 +306,9 @@ final class BookExamples {
     }
 
     /** This tries a particular solution against the formula. */
-    private static Solution trial
-    (Map<Relation,Type> rel2type, A4Reporter rep, Solver solver, Iterable<Sig> sigs, ConstMap<Object,Expression> bc, Formula f, final Bounds bb, Object[] t) {
+    private static Solution trial (A4Reporter rep, TupleFactory fac, Solver solver, Iterable<Sig> sigs, Formula f, A4Solution frame, Object[] t) {
        try {
-          rel2type.clear();
-          TupleFactory fac=bb.universe().factory();
+          frame.kr2typeCLEAR();
           Bounds b = null;
           TupleSet ts = null;
           for(int i=1; i<t.length; i++) {
@@ -349,14 +336,17 @@ final class BookExamples {
                 if (first==null) return null;
                 Expression expr = null;
                 if (fieldName.length()==0) {
-                    expr=bc.get(first);
+                    expr=frame.a2k(first);
                 } else {
-                    for(Field field:first.getFields()) if (field.label.equals(fieldName)) { expr=bc.get(field); break; }
-                    while(expr instanceof BinaryExpression) expr=((BinaryExpression)expr).right();
+                    for(Field field:first.getFields()) if (field.label.equals(fieldName)) {
+                        expr=frame.a2k(field);
+                        while(expr instanceof BinaryExpression) expr=((BinaryExpression)expr).right();
+                        break;
+                    }
                 }
                 if (!(expr instanceof Relation)) return null;
-                if (b==null) b=bb.clone(); // We delay the expansive Bounds.clone() until we really find a possible match
-                if (ts==null) ts=fac.noneOf(expr.arity());
+                if (b==null) b = frame.getBounds(); // We delay the expansive Bounds.clone() until we really find a possible match
+                if (ts==null) ts = fac.noneOf(expr.arity());
                 if (!ts.containsAll(b.lowerBound((Relation)expr))) return null; // Sanity check
                 if (!b.upperBound((Relation)expr).containsAll(ts)) return null; // Sanity check
                 b.boundExactly((Relation)expr, ts);
@@ -381,7 +371,7 @@ final class BookExamples {
     }
 
     /** This constructs a Kodkod Tuple from the list of atoms, and returns null if no such Tuple can be constructed. */
-    private static Tuple t_tuple(TupleFactory factory, Object... atoms) {
+    private static Tuple t_tuple (TupleFactory factory, Object... atoms) {
         try {
             if (atoms.length <= 0) return null;
             return factory.tuple(atoms);

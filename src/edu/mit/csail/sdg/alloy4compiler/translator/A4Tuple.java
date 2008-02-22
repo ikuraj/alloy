@@ -22,7 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
-import edu.mit.csail.sdg.alloy4.ConstMap;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import kodkod.instance.Tuple;
 
@@ -33,30 +33,33 @@ public final class A4Tuple {
     /** The Kodkod tuple. */
     private final Tuple tuple;
 
-    /** The KodkodAtom_to_AlloyAtom rename map. */
-    private final ConstMap<Object,String> atomMap;
-
-    /** The kodkodAtom_to_MostSpecificSig map. */
-    private final ConstMap<Object,PrimSig> sigMap;
+    /** The A4Solution that this came from. */
+    private final A4Solution sol;
 
     /**
-     * Construct a Tuple from the kodkod Tuple, while renaming each atom using the given atomMap.
+     * Construct a Tuple from the kodkod Tuple, while renaming each atom using the atom2name map in sol.
      * <br> NOTE: caller must ensure the Kodkod tuple is not modified, since we expect the resulting A4Tuple to be constant.
      */
-    A4Tuple(Tuple tuple, ConstMap<Object,String> atomMap, ConstMap<Object,PrimSig> sigMap) {
-        this.tuple=tuple;
-        this.atomMap=atomMap;
-        this.sigMap=sigMap;
+    A4Tuple(Tuple tuple, A4Solution sol) {
+        this.tuple = tuple;
+        this.sol = sol;
     }
 
     /** Returns the arity. */
     public int arity() { return tuple.arity(); }
 
+    /** Returns the type constructed by taking the product for each sig in this tuple. */
+    public Type type() {
+        Type ans = null;
+        for(int i=0; i<tuple.arity(); i++) if (ans==null) ans=sig(0).type; else ans=ans.product(sig(i).type);
+        return ans;
+    }
+
     /** Returns the i-th atom in this Tuple. */
-    public String atom(int i) { Object t=tuple.atom(i); String n=atomMap.get(t); return n==null ? t.toString() : n; }
+    public String atom(int i) { return sol.atom2name(tuple.atom(i)); }
 
     /** Return the most-specific-sig for the i-th atom in this Tuple. */
-    public PrimSig sig(int i) { Object t=tuple.atom(i); return sigMap.get(t); }
+    public PrimSig sig(int i) { return sol.atom2sig(tuple.atom(i)); }
 
     /** Prints a human-readable description of this Tuple. */
     @Override public String toString() {
