@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -253,8 +254,29 @@ public final class StaticInstanceReader {
                     rels.put(rel, Util.asSet(new AlloyTuple(tuple)));
                 }
             }
-            rels.put(AlloyRelation.EXTENDS, exts);
             if (ins.size()>0) { sig2type.put(null, AlloyType.SET); rels.put(AlloyRelation.IN, ins); }
+            AlloyAtom univAtom = sig2atom.get(Sig.UNIV);
+            AlloyAtom intAtom = sig2atom.get(Sig.SIGINT);
+            AlloyAtom seqAtom = sig2atom.get(Sig.SEQIDX);
+            for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(univAtom)) { univAtom=null; break; }
+            for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(intAtom)) { intAtom=null; break; }
+            for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(seqAtom)) { seqAtom=null; break; }
+            if (univAtom!=null) {
+                for(Iterator<AlloyTuple> it=exts.iterator(); it.hasNext();) {
+                    AlloyTuple at=it.next();
+                    if (at.getStart()==univAtom || at.getEnd()==univAtom) it.remove();
+                }
+                atom2sets.remove(univAtom);
+            }
+            if (intAtom!=null && seqAtom!=null) {
+                for(Iterator<AlloyTuple> it=exts.iterator(); it.hasNext();) {
+                    AlloyTuple at=it.next();
+                    if (at.getStart()==intAtom || at.getEnd()==intAtom || at.getStart()==seqAtom || at.getEnd()==seqAtom) it.remove();
+                }
+                atom2sets.remove(intAtom);
+                atom2sets.remove(seqAtom);
+            }
+            if (exts.size()>0) { rels.put(AlloyRelation.EXTENDS, exts); }
         }
         AlloyModel am = new AlloyModel(sig2type.values(), sets, rels.keySet(), ts);
         ans=new AlloyInstance(sol.getOriginalFilename(), sol.getOriginalCommand(), "", "", am, atom2sets, rels, isMeta);
