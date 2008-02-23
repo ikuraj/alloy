@@ -135,7 +135,7 @@ public final class SimpleCLI {
                 options.originalFilename = filename;
                 options.solverDirectory = "/zweb/zweb/tmp/alloy4/x86-freebsd";
                 options.solver = solver;
-                options.solver = A4Options.SatSolver.MiniSatJNI;
+                //options.solver = A4Options.SatSolver.MiniSatJNI;
                 if (args.length!=1) continue;
                 for (int i=0; i<cmds.size(); i++) {
                     Command c = cmds.get(i).a;
@@ -147,8 +147,12 @@ public final class SimpleCLI {
                     rep.sb.append("Executing \""+c+"\"\n");
                     Expr facts = ExprConstant.TRUE;
                     for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
+                    options.skolemDepth=0;
                     A4Solution s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
-                    if (s.satisfiable()) { validate(s); s=s.next(); if (s.satisfiable()) validate(s); }
+                    if (s.satisfiable()) { validate(s); if (s.isIncremental()) { s=s.next(); if (s.satisfiable()) validate(s); } }
+                    options.skolemDepth=2;
+                    s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
+                    if (s.satisfiable()) { validate(s); if (s.isIncremental()) { s=s.next(); if (s.satisfiable()) validate(s); } }
                 }
             } catch(Throwable ex) {
                 rep.sb.append("\n\nException: "+ex);
