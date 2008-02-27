@@ -80,4 +80,9 @@ final class ExpLet extends Exp {
         cx.remove(this.left.name);
         return ExprLet.make(pos, left, sub);
     }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return "(let " + left.name + "=... | " + sub + ')';
+    }
 }

@@ -125,4 +125,19 @@ final class ExpQuant extends Exp {
         }
         return op.make(pos, closingBracket, tempvars.makeConst(), sub);
     }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        boolean first=true;
+        String ans;
+        if (op!=Op.COMPREHENSION) ans="("+op+' '; else ans="{";
+        for(Decl d:decls) {
+            for(ExpName n:d.names) {
+                if (first) { first=false; } else { ans=ans+", "; }
+                ans=ans+n.name;
+            }
+        }
+        ans=ans+" | "+sub;
+        return (op!=Op.COMPREHENSION) ? (ans+')') : (ans+'}');
+    }
 }

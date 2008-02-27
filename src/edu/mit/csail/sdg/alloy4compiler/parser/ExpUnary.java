@@ -64,4 +64,20 @@ final class ExpUnary extends Exp {
         Expr newSub = sub.check(cx, warnings);
         return op.make(pos, newSub);
     }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        String ans;
+        switch(op) {
+          case SOMEOF: ans="some "; break;
+          case LONEOF: ans="lone "; break;
+          case ONEOF: ans="one "; break;
+          case SETOF: ans="set "; break;
+          case CAST2INT: return "int[" + sub + "]";
+          case CAST2SIGINT: return "Int[" + sub + "]";
+          case NOOP: ans=""; break;
+          default: ans=op.toString()+' ';
+        }
+        return ans+sub;
+    }
 }

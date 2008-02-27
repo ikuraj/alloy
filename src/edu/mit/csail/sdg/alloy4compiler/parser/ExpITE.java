@@ -70,4 +70,9 @@ final class ExpITE extends Exp {
         Expr b = right.check(cx, warnings);
         return ExprITE.make(f, a, b);
     }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return "(" + formula + " => " + left + " else " + right + ")";
+    }
 }

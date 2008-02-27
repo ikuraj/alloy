@@ -71,4 +71,14 @@ final class ExpBuiltin extends Exp {
         }
         return ExprBuiltin.makeDISJOINT(pos, closingBracket, temp.makeConst());
     }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        String ans = "disjoint[";
+        for(int i=0; i<args.size(); i++) {
+            if (i>0) ans = ans + ", ";
+            ans = ans + args.get(i);
+        }
+        return ans + ']';
+    }
 }

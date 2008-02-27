@@ -69,4 +69,9 @@ final class ExpBinary extends Exp {
         Expr b=right.check(cx, warnings);
         return op.make(pos, null, a, b);
     }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return (op==Op.ISSEQ_ARROW_LONE) ? ("seq "+right) : (left.toString()+' '+op+' '+right);
+    }
 }

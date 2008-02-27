@@ -51,4 +51,9 @@ final class ExpConstant extends Exp {
 
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) { return op.make(pos, num); }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return (op==Op.NUMBER) ? Integer.toString(num) : op.toString();
+    }
 }
