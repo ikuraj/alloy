@@ -184,6 +184,11 @@ public final class A4Options implements Serializable {
     public boolean recordKodkod = false;
 
     /**
+     * This option constrols how deep we unroll loops and unroll recursive predicate/function/macros (negative means it's disallowed)
+     */
+    public int unrolls = (-1);
+
+    /**
      * This method makes a copy of this Options object.
      */
     public A4Options dup() {

@@ -48,6 +48,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -103,6 +104,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     /** The maximum allowed integer. */
     private final int max;
 
+    /** The maximum allowed loop unrolling and recursion. */
+    private final int unrolls;
+
     /**
      * Construct a translator based on the given list of sigs and the given command.
      * @param rep - if nonnull, it's the reporter that will receive diagnostics and progress reports
@@ -111,6 +115,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @param cmd - the command to solve (must not be null)
      */
     private TranslateAlloyToKodkod (A4Reporter rep, A4Options opt, Iterable<Sig> sigs, Command cmd) throws Err {
+        this.unrolls = opt.unrolls;
         this.rep = (rep != null) ? rep : A4Reporter.NOP;
         this.cmd = cmd;
         Pair<A4Solution, ScopeComputer> pair = ScopeComputer.compute(this.rep, opt, sigs, cmd);
@@ -122,8 +127,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         BoundsComputer.compute(rep, frame, pair.b, sigs);
     }
 
-    /** Construct a translator based on a already-fully-constructed association map. */
-    private TranslateAlloyToKodkod (int bitwidth, Map<Expr,Expression> a2k) throws Err {
+    /**
+     * Construct a translator based on a already-fully-constructed association map.
+     * @param bitwidth - the integer bitwidth to use
+     * @param unrolls - the maximum number of loop unrolling and recursion allowed
+     * @param a2k - the mapping from Alloy sig/field/skolem/atom to the corresponding Kodkod expression
+     */
+    private TranslateAlloyToKodkod (int bitwidth, int unrolls, Map<Expr,Expression> a2k) throws Err {
+        this.unrolls = unrolls;
         if (bitwidth<1)  throw new ErrorSyntax("Cannot specify a bitwidth less than 1");
         if (bitwidth>30) throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
         this.rep = A4Reporter.NOP;
@@ -276,7 +287,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
     public static Object alloy2kodkod(A4Solution sol, Expr expr) throws Err {
         if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
-        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.a2k());
+        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.unrolls(), sol.a2k());
         Object ans;
         try {
             ans = tr.visitThis(expr);
@@ -650,7 +661,22 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
         final Pair<Expr,String> cache = cacheForExprCall.get(f);
         final Expr body = f.getBody();
         final int n=f.params.size();
-        for(Func ff:current_function) if (ff==f) throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
+        int maxRecursion = unrolls;
+        for(Func ff:current_function) if (ff==f) {
+            if (maxRecursion<0) {
+                throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
+            }
+            if (maxRecursion==0) {
+                Type t = f.returnDecl.type;
+                if (t.is_bool) return Formula.FALSE;
+                if (t.is_int) return IntConstant.constant(0);
+                int i = t.arity();
+                Expression ans = Expression.NONE;
+                while(i>1) { ans = ans.product(Expression.NONE); i--; }
+                return ans;
+            }
+            maxRecursion--;
+        }
         if (n==2) if ((cache!=null && cache.a==body && cache.b=="util/integer/mul") || is_mul(f)) {
             cacheForExprCall.put(f, new Pair<Expr,String>(body, "util/integer/mul"));
             rep.debug("Found: util/integer/mul\n");

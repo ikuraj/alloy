@@ -96,7 +96,7 @@ final class ExpQuant extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) {
+    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr guard=null;
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
         for(Decl d: decls) {

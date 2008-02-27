@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -51,8 +52,9 @@ final class ExpName extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) {
+    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         ConstList<Expr> list = cx.resolve(pos, name);
+        if (list.size()==1) if (list.get(0) instanceof Macro) return ((Macro)(list.get(0))).instantiate(cx, warnings);
         if (list.size()==0) return new ExprBad(pos, name, hint(pos, name));
         return ExprChoice.make(pos, list);
     }
@@ -71,5 +73,10 @@ final class ExpName extends Exp {
             msg=msg+" If you are migrating from Alloy 3, please see Help->QuickGuide on how to translate models that use the \""
             +name+"\" keyword.";
         return new ErrorSyntax(pos, msg);
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return name;
     }
 }

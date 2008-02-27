@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -60,7 +61,7 @@ final class ExpUnary extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) {
+    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr newSub = sub.check(cx, warnings);
         return op.make(pos, newSub);
     }

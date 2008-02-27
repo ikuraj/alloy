@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -33,6 +34,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -94,9 +96,14 @@ final class ExpDot extends Exp {
     private ConstList<Expr> process(List<Expr> choices, Expr arg) {
         TempList<Expr> list = new TempList<Expr>(choices.size());
         for(Expr x: choices) {
-            Expr y;
-            if (x instanceof ExprBadCall) {
-                ExprBadCall bc = (ExprBadCall)x;
+            Expr y=x;
+            while(true) {
+               if (y instanceof ExprUnary && ((ExprUnary)y).op==ExprUnary.Op.NOOP) y=((ExprUnary)y).sub;
+               else if (y instanceof ExprChoice && ((ExprChoice)y).choices.size()==1) y=((ExprChoice)y).choices.get(0);
+               else break;
+            }
+            if (y instanceof ExprBadCall) {
+                ExprBadCall bc = (ExprBadCall)y;
                 if (bc.args.size() < bc.fun.params.size()) {
                     ConstList<Expr> newargs = Util.append(bc.args, arg);
                     if (applicable(bc.fun, newargs))
@@ -104,10 +111,10 @@ final class ExpDot extends Exp {
                     else
                         y=ExprBadCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.extraWeight);
                 } else {
-                    y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, x);
+                    y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, y);
                 }
             } else {
-                y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, x);
+                y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, y);
             }
             list.add(y);
         }
@@ -115,9 +122,14 @@ final class ExpDot extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) {
+    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr left = this.left.check(cx, warnings);
         Expr right = this.right.check(cx, warnings);
+        // check to see if it is a macro invocation
+        if (right instanceof Macro) {
+            // If we get here, that means it is a partial macro call
+            return ((Macro)right).addArg(left).instantiate(cx, warnings);
+        }
         // check to see if it is the special builtin function "Int[]"
         if (left.type.is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();
         // otherwise, process as regular join or as method call
@@ -127,5 +139,10 @@ final class ExpDot extends Exp {
         }
         ConstList<Expr> list = process(((ExprChoice)right).choices, left);
         return ExprChoice.make(pos, list);
+    }
+
+    /** {@inheritDoc} */
+    @Override public String toString() {
+        return left.toString()+'.'+right;
     }
 }

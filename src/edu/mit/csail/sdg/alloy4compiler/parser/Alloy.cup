@@ -458,6 +458,8 @@ nonterminal Exp                        ImpliesExprOpenB;
 nonterminal Exp                        IntersectExprA;
 nonterminal Exp                        IntersectExprB;
 nonterminal Exp                        Let;
+nonterminal                            Macro;
+nonterminal Exp                        MacroBody;
 nonterminal ExpName                    Name;
 nonterminal ExpName                    NameHelper;
 nonterminal List<ExpName>              Names;
@@ -510,6 +512,7 @@ Spec ::= Spec       ASSERT:o Name:n Super:e {: parser.alloymodule.addAssertion (
 Spec ::= Spec Sig             ;
 Spec ::= Spec Function        ;
 Spec ::= Spec Predicate       ;
+Spec ::= Spec Macro           ;
 Spec ::= ;
 
 Spec ::= Spec CHECK:o CmdLabel:x Super:e  Scope:s  Expects:c {:
@@ -591,19 +594,28 @@ Typescope  ::= EXACTLY:e NUMBER   SIGINT:f  {: if (1==1) throw new ErrorSyntax(e
 Typescope  ::=           NUMBER:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none.");                                                                                  :};
 Typescope  ::= EXACTLY:e NUMBER   NONE:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on none.");                                                                                  :};
 
-Function ::= Vis:p FUN:o              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d                    , mult(r), v); :};
-Function ::= Vis:p FUN:o              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d                    , mult(r), v); :};
-Function ::= Vis:p FUN:o              Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, new ArrayList<Decl>(), mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d                    , mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d                    , mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , new ArrayList<Decl>(), mult(r), v); :};
+Macro ::= Vis:p LET:o              Name:n LPAREN   Names:d RPAREN   MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, d     , v); :};
+Macro ::= Vis:p LET:o              Name:n LPAREN           RPAREN   MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
+Macro ::= Vis:p LET:o              Name:n LBRACKET Names:d RBRACKET MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, d     , v); :};
+Macro ::= Vis:p LET:o              Name:n LBRACKET         RBRACKET MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
+Macro ::= Vis:p LET:o              Name:n                           MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
 
-Predicate ::= Vis:p PRED:o              Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d                    , null, v); :};
-Predicate ::= Vis:p PRED:o              Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d                    , null, v); :};
-Predicate ::= Vis:p PRED:o              Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, new ArrayList<Decl>(), null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d                    , null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d                    , null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , new ArrayList<Decl>(), null, v); :};
+MacroBody ::= Super:a       {: RESULT=a; :};
+MacroBody ::= EQUALS Expr:a {: RESULT=a; :};
+
+Function ::= Vis:p FUN:o              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , mult(r), v); :};
+Function ::= Vis:p FUN:o              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , mult(r), v); :};
+Function ::= Vis:p FUN:o              Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, null , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , null , mult(r), v); :};
+
+Predicate ::= Vis:p PRED:o              Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , null, v); :};
+Predicate ::= Vis:p PRED:o              Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , null, v); :};
+Predicate ::= Vis:p PRED:o              Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, null , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , null , null, v); :};
 
 Vis ::=           {: RESULT=null; :};
 Vis ::= PRIVATE:p {: RESULT=p;    :};

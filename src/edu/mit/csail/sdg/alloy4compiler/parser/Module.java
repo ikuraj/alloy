@@ -85,15 +85,8 @@ public final class Module {
         private boolean rootfun=false;
         /** This maps local names (eg. let/quantification variables and function parameters) to the objects they refer to. */
         private final Env<String,Expr> env=new Env<String,Expr>();
-        /** Returns true if the name is in scope. */
-        final boolean has(String name) {
-            return env.has(name);
-        }
-        /** Returns the expression corresbonding to the given name, or returns null if the name is not in scope. */
-        final Expr get(String name, Pos pos) {
-            Expr ans = env.get(name);
-            if (ans!=null) return ExprUnary.Op.NOOP.make(pos,ans); else return null;
-        }
+        /** The level of macro substitution recursion. */
+        public final int unrolls;
         /** Associates the given name with the given expression in the current lexical scope. */
         final void put(String name, Expr value) {
             env.put(name,value);
@@ -104,19 +97,46 @@ public final class Module {
         }
         /** Construct a new Context with an empty lexical scope. */
         Context(Module rootModule) {
+            this(rootModule, 20); // TODO: should make this value configurable
+        }
+        /** Construct a new Context with an empty lexical scope. */
+        Context(Module rootModule, int unrolls) {
             this.rootmodule=rootModule;
+            this.unrolls=unrolls;
         }
         /** Resolve the given name to get a collection of Expr and Func objects. */
-        public ConstList<Expr> resolve(Pos pos, String name) {
+        public ConstList<Expr> resolve(Pos pos, final String name) {
+            int i = name.indexOf('/');
+            if (i>=0) {
+                String n=name;
+                if (n.startsWith("this/")) n=n.substring(5);
+                Module mod = rootmodule;
+                while(true) {
+                    i = n.indexOf('/');
+                    if (i<0) {
+                        Macro m = mod.macros.get(n);
+                        if (m==null || (m.isPrivate!=null && mod!=rootmodule)) break; else return Util.asList(m.changePos(pos));
+                    }
+                    String alias = n.substring(0,i);
+                    Open uu = mod.opens.get(alias);
+                    if (uu==null || uu.realModule==null || uu.isPrivate) break;
+                    n = n.substring(i+1);
+                    mod = uu.realModule;
+                }
+            }
             Expr match = env.get(name);
-            if (match==null) match=rootmodule.globals.get(name);
+            if (match==null) match = rootmodule.macros.get(name);
+            if (match==null) match = rootmodule.globals.get(name);
+            if (match instanceof Macro) return Util.asList(((Macro)match).changePos(pos));
             if (match!=null) {
                 match=ExprUnary.Op.NOOP.make(pos,match);
                 TempList<Expr> ans = new TempList<Expr>(1);
                 ans.add(match);
                 return ans.makeConst();
             }
-            return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, get("this",pos));
+            Expr th = env.get("this");
+            if (th!=null) th = ExprUnary.Op.NOOP.make(pos, th);
+            return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, th);
         }
     }
 
@@ -263,6 +283,9 @@ public final class Module {
 
     /** Each func name is mapped to a nonempty list of FunAST objects. */
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
+
+    /** Each macro name is mapped to a MacroAST object. */
+    private final Map<String,Macro> macros = new LinkedHashMap<String,Macro>();
 
     /** Each assertion name is mapped to either an untypechecked Exp, or a typechecked ExprVar with its value==the assertion. */
     private final Map<String,Object> asserts = new LinkedHashMap<String,Object>();
@@ -667,8 +690,23 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /** Add a MACRO declaration. */
+    void addMacro(Pos p, Pos isPrivate, String n, List<ExpName> decls, Exp v) throws Err {
+        if (decls==null) decls=new ArrayList<ExpName>(); else decls=new ArrayList<ExpName>(decls);
+        status=3;
+        dup(p, n, false);
+        for(int i=0; i<decls.size(); i++) for(int j=i+1; j<decls.size(); j++)
+          if (decls.get(i).name.equals(decls.get(j).name))
+             throw new ErrorSyntax(decls.get(j).span(), "The parameter name \""+decls.get(j).name+"\" cannot appear more than once.");
+        Macro ans = new Macro(p, isPrivate, this, n, decls, v);
+        Macro old = macros.put(n, ans);
+        if (old!=null) { macros.put(n, old); throw new ErrorSyntax(p, "You cannot declare more than one macro with the same name \""+n+"\" in the same file."); }
+     }
+
     /** Add a FUN or PRED declaration. */
     void addFunc(Pos p, Pos isPrivate, String n, Exp f, List<Decl> decls, Exp t, Exp v) throws Err {
+        if (decls==null) decls=new ArrayList<Decl>(); else decls=new ArrayList<Decl>(decls);
+        if (f!=null) decls.add(0, new Decl(null, null, Util.asList(new ExpName(f.span(), "this")), f));
         for(Decl d:decls) if (d.isPrivate!=null) {
             ExpName name=d.names.get(0);
             throw new ErrorSyntax(d.isPrivate.merge(name.pos), "Function parameter \""+name.name+"\" is always private already.");
@@ -677,8 +715,6 @@ public final class Module {
         dup(p, n, false);
         ExpName dup = Decl.findDuplicateName(decls);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
-        decls=new ArrayList<Decl>(decls);
-        if (f!=null) decls.add(0, new Decl(null, null, Util.asList(new ExpName(f.span(), "this")), f));
         FunAST ans = new FunAST(p, isPrivate, this, n, decls, t, v);
         SafeList<FunAST> list = funcs.get(n);
         if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
@@ -686,7 +722,7 @@ public final class Module {
     }
 
     /** Each FunAST will now point to a bodyless Func object. */
-    private JoinableList<Err> resolveFuncDecls(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) {
+    private JoinableList<Err> resolveFuncDecls(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
         for(Map.Entry<String,SafeList<FunAST>> entry:funcs.entrySet()) for(FunAST f:entry.getValue()) {
             String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.name;
             // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
@@ -720,7 +756,7 @@ public final class Module {
     }
 
     /** Each Func's body will now be typechecked Expr object. */
-    private JoinableList<Err> resolveFuncBodys(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) {
+    private JoinableList<Err> resolveFuncBodys(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
         for(Map.Entry<String,SafeList<FunAST>> entry:funcs.entrySet()) for(FunAST f:entry.getValue()) {
             Func ff = f.realFunc;
             Expr disj = null;
@@ -771,7 +807,7 @@ public final class Module {
     }
 
     /** Each assertion name now points to a typechecked Expr rather than an untypechecked Exp. */
-    private JoinableList<Err> resolveAssertions(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) {
+    private JoinableList<Err> resolveAssertions(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
         Context cx = new Context(this);
         for(Map.Entry<String,Object> e:asserts.entrySet()) {
             Object x = e.getValue();
@@ -809,7 +845,7 @@ public final class Module {
     }
 
     /** Each fact name now points to a typechecked Expr rather than an untypechecked Exp; we'll also add the sig appended facts. */
-    private JoinableList<Err> resolveFacts(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) {
+    private JoinableList<Err> resolveFacts(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
         Context cx = new Context(this);
         for(Map.Entry<String,Object> e:facts.entrySet()) {
             Object x = e.getValue();
