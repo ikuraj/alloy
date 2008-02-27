@@ -408,12 +408,12 @@ final class SimpleReporter extends A4Reporter {
         A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
         String formula = recordKodkod ? sol.deriveEquivalentKodkodInput() : "";
-        log(RESTORE3);
         String filename = tempfile+".xml";
         synchronized(SimpleReporter.class) {
             try {
                 writeXML(latestModule, filename, sol, latestKodkodSRC);
             } catch(Throwable ex) {
+                log(RESTORE3);
                 logBold(Util.indent(ex.toString().trim() + "\nStackTrace:\n" + (MailBug.dump(ex).trim()), "   "));
                 log("\n");
                 return;
@@ -421,6 +421,7 @@ final class SimpleReporter extends A4Reporter {
             latestKodkod=sol;
             latestKodkodXML=filename;
         }
+        log(RESTORE3);
         String formulafilename = "";
         if (formula.length()>0 && tempfile!=null) {
             formulafilename = tempfile+".java";
