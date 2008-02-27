@@ -328,8 +328,8 @@ final class MagicLayout {
                 MagicUtil.trimLabelBeforeLastSlash(vizState, r);
             }
         }
-        // If there's only one relation visible as an edge, then no need to label it.
-        if (1 == relationsAsEdges) {
+        // If there's only one relation visible as an edge, and it's binary, then no need to label it.
+        if (1 == relationsAsEdges && visibleRelation.getArity()==2) {
             vizState.label(visibleRelation, "");
         }
     }
