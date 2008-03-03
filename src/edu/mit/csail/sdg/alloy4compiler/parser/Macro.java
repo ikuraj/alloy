@@ -38,26 +38,26 @@ import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 final class Macro extends ExprCustom {
 
-    /** The module that defined this. */
-    final Module realModule;
-
     /** If nonnull, this is a private macro. */
     final Pos isPrivate;
 
+    /** The module that defined this. */
+    private final Module realModule;
+
     /** The name of the macro. */
-    final String name;
+    private final String name;
 
     /** The list of parameters (can be an empty list) */
-    final ConstList<ExpName> params;
+    private final ConstList<ExpName> params;
 
     /** The list of arguments (can be an empty list) (must be equal or shorter than this.params) */
-    final ConstList<Expr> args;
+    private final ConstList<Expr> args;
 
     /** The macro body. */
-    final Exp body;
+    private final Exp body;
 
     /** Construct a new Macro object. */
-    Macro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExpName> params, List<Expr> args, Exp body) {
+    private Macro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExpName> params, List<Expr> args, Exp body) {
         super(pos, new ErrorFatal(pos, "Incomplete call on the macro \""+name+"\""));
         this.realModule = realModule;
         this.isPrivate = isPrivate;
@@ -79,9 +79,6 @@ final class Macro extends ExprCustom {
     Expr changePos(Pos pos) {
         return new Macro(pos, isPrivate, realModule, name, params, args, body);
     }
-
-    /** Returns the number of parameters still unfulfilled. */
-    int gap() { return params.size() - args.size(); }
 
     /** Instantiate it. */
     Expr instantiate(Context cx, List<ErrorWarning> warnings) throws Err {
