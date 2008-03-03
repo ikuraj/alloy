@@ -181,7 +181,7 @@ public final class A4SolutionWriter {
             label="$"+label;
             try {
                 A4TupleSet ts = (A4TupleSet)(sol.eval(f.call()));
-                if (ts.size()==0) return; // Since we do not allow "none" in the <TYPE> or <TYPES> declaration
+                if (ts.size()==0) continue; // Since we do not allow "none" in the <TYPE> or <TYPES> declaration
                 StringBuilder sb = new StringBuilder();
                 Util.encodeXMLs(sb, "\n<skolem label=\"", label, "\" ID=\"m"+m+"\">\n");
                 if (writeExpr(sb.toString(), f.call())) { out.print("</skolem>\n"); }
