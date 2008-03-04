@@ -49,6 +49,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
@@ -122,6 +123,21 @@ public final class Module {
                     if (uu==null || uu.realModule==null || uu.isPrivate) break;
                     n = n.substring(i+1);
                     mod = uu.realModule;
+                }
+            } else {
+                List<Expr> choices=null;
+                for(Module m: rootmodule.getAllNameableModules()) {
+                    Macro mac = m.macros.get(name);
+                    if (mac==null) continue;
+                    if (choices==null) choices=new ArrayList<Expr>();
+                    choices.add(mac.changePos(pos));
+                }
+                if (choices!=null) {
+                    if (choices.size()>1) {
+                        choices.clear();
+                        choices.add(new ExprBad(pos, name, new ErrorType(pos, "There are multiple macros with the same name; please prepend the module alias in order to remove ambiguity.")));
+                    }
+                    if (choices.size()>0) return ConstList.make(choices);
                 }
             }
             Expr match = env.get(name);
@@ -692,13 +708,13 @@ public final class Module {
 
     /** Add a MACRO declaration. */
     void addMacro(Pos p, Pos isPrivate, String n, List<ExpName> decls, Exp v) throws Err {
-        if (decls==null) decls=new ArrayList<ExpName>(); else decls=new ArrayList<ExpName>(decls);
+        ConstList<ExpName> ds = ConstList.make(decls);
         status=3;
-        dup(p, n, false);
-        for(int i=0; i<decls.size(); i++) for(int j=i+1; j<decls.size(); j++)
-          if (decls.get(i).name.equals(decls.get(j).name))
-             throw new ErrorSyntax(decls.get(j).span(), "The parameter name \""+decls.get(j).name+"\" cannot appear more than once.");
-        Macro ans = new Macro(p, isPrivate, this, n, decls, v);
+        dup(p, n, true);
+        for(int i=0; i<ds.size(); i++) for(int j=i+1; j<ds.size(); j++)
+          if (ds.get(i).name.equals(ds.get(j).name))
+             throw new ErrorSyntax(ds.get(j).span(), "The parameter name \""+ds.get(j).name+"\" cannot appear more than once.");
+        Macro ans = new Macro(p, isPrivate, this, n, ds, v);
         Macro old = macros.put(n, ans);
         if (old!=null) { macros.put(n, old); throw new ErrorSyntax(p, "You cannot declare more than one macro with the same name \""+n+"\" in the same file."); }
      }
