@@ -118,7 +118,9 @@ public final class A4Options implements Serializable {
         /** SAT4J using native Java */
         public static final SatSolver SAT4J = new SatSolver("sat4j", "SAT4J", null, null, true);
         /** Outputs the raw CNF file only */
-        public static final SatSolver FILE = new SatSolver("file", "Output to file", null, null, true);
+        public static final SatSolver CNF = new SatSolver("cnf", "Output CNF to file", null, null, true);
+        /** Outputs the raw Kodkod file only */
+        public static final SatSolver KK = new SatSolver("kodkod", "Output Kodkod to file", null, null, true);
     }
 
     /** This ensures the class can be serialized reliably. */

@@ -513,6 +513,6 @@ final class SimpleReporter extends A4Reporter {
     /** {@inheritDoc} */
     @Override public void resultCNF(final String filename) {
         log(RESTORE3);
-        log("   CNF file written to "+filename+"\n\n");
+        log("   File written to "+filename+"\n\n");
     }
 }
