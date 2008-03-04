@@ -107,6 +107,7 @@ public final class Module {
         }
         /** Resolve the given name to get a collection of Expr and Func objects. */
         public ConstList<Expr> resolve(Pos pos, final String name) {
+            Expr match = env.get(name);
             int i = name.indexOf('/');
             if (i>=0) {
                 String n=name;
@@ -124,7 +125,7 @@ public final class Module {
                     n = n.substring(i+1);
                     mod = uu.realModule;
                 }
-            } else {
+            } else if (match==null) {
                 List<Expr> choices=null;
                 for(Module m: rootmodule.getAllNameableModules()) {
                     Macro mac = m.macros.get(name);
@@ -140,7 +141,6 @@ public final class Module {
                     if (choices.size()>0) return ConstList.make(choices);
                 }
             }
-            Expr match = env.get(name);
             if (match==null) match = rootmodule.macros.get(name);
             if (match==null) match = rootmodule.globals.get(name);
             if (match instanceof Macro) return Util.asList(((Macro)match).changePos(pos));
