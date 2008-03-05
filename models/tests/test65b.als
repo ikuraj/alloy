@@ -9,7 +9,7 @@ module tests/test
  * chicken will eat the grain. How can the farmer bring everything
  * to the far side of the river intact?
  *
- * authors: Greg Dennis, Rob Seater, Felix Chang
+ * authors: Felix Chang
  */
 
 open util/time
@@ -30,31 +30,30 @@ one sig Farmer, Fox, Chicken, Grain extends Object {}
  * Define what eats what when the Farmer' not around.
  * Fox eats the chicken and the chicken eats the grain.
  */
-pred eats[a, b: Object] { a->b in Fox->Chicken + Chicken->Grain }
+pred eats [a, b: Object] { a->b in Fox->Chicken + Chicken->Grain }
 
 /*
- * Constrains at most one item to move from 'from' to 'to'.
- * Also constrains which objects get eaten.
+ * This represents one move by the farmer; the farmer may bring at most one other object.
+ * Also constrains that the move is only legal if nothing would get eaten as a result.
  */
 pred crossRiver [t, t': Time] {
    t' = t.next
    some x:Object | {
       x.location.t != x.location.t'
       x!=Farmer => (x.location.t=Farmer.location.t && x.location.t'=Farmer.location.t')
-      all x':Object-Farmer-x | x'.location.t = x'.location.t'
-      //no p, q: Object | p.eats[q] && p.location.t=q.location.t && p.location.t!=Farmer.location.t
+      all y:Object-Farmer-x | y.location.t = y.location.t'
    }
-   no p, q: Object | p.eats[q] && p.location.t=q.location.t && p.location.t!=Farmer.location.t
+   no p, q: Object | p.eats[q] && p.location.t'=q.location.t' && p.location.t'!=Farmer.location.t'
 }
 
+/*
+ * The loop condition
+ */
 let notdone[t] = (Object.location.t != Far)
 
 /*
  * the farmer moves everything to the far side of the river.
  */
-/*
-solvePuzzle:
 run {
-   some t:Time | Object.location.first=Near && while6[notdone, crossRiver, first, t]
-} for 9 Time expect 1
- */
+   some t:Time | Object.location.first=Near && while7[notdone, crossRiver, first, t]
+} for 8 Time expect 1
