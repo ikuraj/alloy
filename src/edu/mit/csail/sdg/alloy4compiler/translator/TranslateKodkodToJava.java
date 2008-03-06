@@ -186,6 +186,8 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("%nsolver.options().setIntEncoding(Options.IntEncoding.TWOSCOMPLEMENT);");
         file.printf("%nsolver.options().setSymmetryBreaking(20);");
         file.printf("%nsolver.options().setSkolemDepth(0);");
+        file.printf("%nSystem.out.println(\"Solving...\");");
+        file.printf("%nSystem.out.flush();");
         file.printf("%nSolution sol = solver.solve(%s,bounds);", result);
         file.printf("%nSystem.out.println(sol.toString());");
         file.printf("%n}}%n");
