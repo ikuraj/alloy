@@ -407,15 +407,19 @@ final class SimpleReporter extends A4Reporter {
         if (!(command instanceof Command)) return;
         A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
+        log(RESTORE3);
+        log(cmd.check ? "   Counterexample" : "   Instance");
+        log(" found. Writing the XML file...\n");
+        log(FLUSH);
         String formula = recordKodkod ? sol.deriveEquivalentKodkodInput() : "";
         String filename = tempfile+".xml";
         synchronized(SimpleReporter.class) {
             try {
                 writeXML(latestModule, filename, sol, latestKodkodSRC);
             } catch(Throwable ex) {
-                log(RESTORE3);
                 logBold(Util.indent(ex.toString().trim() + "\nStackTrace:\n" + (MailBug.dump(ex).trim()), "   "));
                 log("\n");
+                log(FLUSH);
                 return;
             }
             latestKodkod=sol;
@@ -436,6 +440,7 @@ final class SimpleReporter extends A4Reporter {
         }
         if (cmd.expects==0) log(", contrary to expectation"); else if (cmd.expects==1) log(", as expected");
         log(". "+(System.currentTimeMillis()-lastTime)+"ms.\n\n");
+        log(FLUSH);
     }
 
     /** {@inheritDoc} */
