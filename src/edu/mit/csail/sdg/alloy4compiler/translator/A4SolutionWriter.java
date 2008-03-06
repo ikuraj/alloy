@@ -83,9 +83,13 @@ public final class A4SolutionWriter {
           // Check to see if the tupleset is *really* fully contained inside "type".
           // If not, then grow "type" until the tupleset is fully contained inside "type"
           Expr sum = type.toExpr();
+          int lastSize = (-1);
           while(true) {
              A4TupleSet ts = (A4TupleSet)(sol.eval(expr.minus(sum)));
-             if (ts.size()==0) break;
+             int n = ts.size();
+             if (n<=0) break;
+             if (lastSize>0 && lastSize<=n) throw new ErrorFatal("An internal error occurred in the evaluator.");
+             lastSize=n;
              Type extra = ts.iterator().next().type();
              type = type.merge(extra);
              sum = sum.plus(extra.toExpr());
