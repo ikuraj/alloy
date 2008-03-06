@@ -80,10 +80,6 @@ public final class A4SolutionWriter {
     private boolean writeExpr(String prefix, Expr expr) throws Err {
        Type type = expr.type;
        if (sol!=null) {
-          // Intersect with univ->univ->univ to get rid of any hidden atoms
-          Expr univAll = Sig.UNIV;
-          for(int i=type.arity(); i>1; i--) univAll=univAll.product(Sig.UNIV);
-          expr = expr.intersect(univAll);
           // Check to see if the tupleset is *really* fully contained inside "type".
           // If not, then grow "type" until the tupleset is fully contained inside "type"
           Expr sum = type.toExpr();
