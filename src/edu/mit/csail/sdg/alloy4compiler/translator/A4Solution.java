@@ -1014,8 +1014,27 @@ public final class A4Solution {
     }
 
     /** Helper method to write out a full XML file. */
+    public void writeXML(A4Reporter rep, String filename, Iterable<Func> macros, Map<String,String> sourceFiles) throws Err {
+        PrintWriter out=null;
+        try {
+            out=new PrintWriter(filename,"UTF-8");
+            writeXML(rep, out, macros, sourceFiles);
+            if (!Util.close(out)) throw new ErrorFatal("Error writing the solution XML file.");
+        } catch(IOException ex) {
+            Util.close(out);
+            throw new ErrorFatal("Error writing the solution XML file.", ex);
+        }
+    }
+
+    /** Helper method to write out a full XML file. */
     public void writeXML(PrintWriter writer, Iterable<Func> macros, Map<String,String> sourceFiles) throws Err {
-        A4SolutionWriter.writeInstance(this, writer, macros, sourceFiles);
+        A4SolutionWriter.writeInstance(null, this, writer, macros, sourceFiles);
+        if (writer.checkError()) throw new ErrorFatal("Error writing the solution XML file.");
+    }
+
+    /** Helper method to write out a full XML file. */
+    public void writeXML(A4Reporter rep, PrintWriter writer, Iterable<Func> macros, Map<String,String> sourceFiles) throws Err {
+        A4SolutionWriter.writeInstance(rep, this, writer, macros, sourceFiles);
         if (writer.checkError()) throw new ErrorFatal("Error writing the solution XML file.");
     }
 }

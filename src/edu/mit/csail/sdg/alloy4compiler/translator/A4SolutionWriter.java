@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -51,6 +52,9 @@ public final class A4SolutionWriter {
 
     /** This is the solution we're writing out. */
     private final A4Solution sol;
+
+    /** This is the A4Reporter that we're sending diagnostic messages to; can be null if none. */
+    private final A4Reporter rep;
 
     /** This is the list of toplevel sigs. */
     private final List<PrimSig> toplevels = new ArrayList<PrimSig>();
@@ -116,6 +120,7 @@ public final class A4SolutionWriter {
     /** Write the given Sig. */
     private void writesig(final Sig x) throws Err {
        if (x==Sig.NONE) return; // should not happen, but we test for it anyway
+       if (rep!=null) rep.debug("   Writing sig "+x+"\n");
        Util.encodeXMLs(out, "\n<sig label=\"", label(x.label), "\" ID=\"", map(x));
        if (x instanceof PrimSig && x!=Sig.UNIV) Util.encodeXMLs(out, "\" parentID=\"", map(((PrimSig)x).parent));
        if (x.builtin) out.print("\" builtin=\"yes");
@@ -139,6 +144,7 @@ public final class A4SolutionWriter {
 
     /** Write the given Field. */
     private void writeField(Field x) throws Err {
+       if (rep!=null) rep.debug("   Writing field "+x+"\n");
        try {
           Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
           if (x.isPrivate!=null) out.print("\" private=\"yes\">\n"); else out.print("\">\n");
@@ -151,6 +157,7 @@ public final class A4SolutionWriter {
 
     /** Write the given Skolem. */
     private void writeSkolem(ExprVar x) throws Err {
+       if (rep!=null) rep.debug("   Writing skolem "+x+"\n");
        try {
           StringBuilder sb = new StringBuilder();
           Util.encodeXMLs(sb, "\n<skolem label=\"", label(x.label), "\" ID=\"", map(x), "\">\n");
@@ -161,10 +168,11 @@ public final class A4SolutionWriter {
     }
 
     /** If sol==null, write the list of Sigs as a Metamodel, else write the solution as an XML file. */
-    private A4SolutionWriter(A4Solution sol, Iterable<Sig> sigs, int bitwidth, int maxseq, String originalCommand, String originalFileName, PrintWriter out, Iterable<Func> extraSkolems) throws Err {
-        for (Sig s:sigs) if (s instanceof PrimSig && ((PrimSig)s).parent==Sig.UNIV) toplevels.add((PrimSig)s);
+    private A4SolutionWriter(A4Reporter rep, A4Solution sol, Iterable<Sig> sigs, int bitwidth, int maxseq, String originalCommand, String originalFileName, PrintWriter out, Iterable<Func> extraSkolems) throws Err {
+        this.rep=rep;
         this.out=out;
         this.sol=sol;
+        for (Sig s:sigs) if (s instanceof PrimSig && ((PrimSig)s).parent==Sig.UNIV) toplevels.add((PrimSig)s);
         out.print("<instance bitwidth=\""); out.print(bitwidth);
         out.print("\" maxseq=\""); out.print(maxseq);
         out.print("\" command=\""); Util.encodeXML(out, originalCommand);
@@ -196,11 +204,11 @@ public final class A4SolutionWriter {
     /**
      * If this solution is a satisfiable solution, this method will write it out in XML format.
      */
-    static void writeInstance(A4Solution sol, PrintWriter out, Iterable<Func> extraSkolems, Map<String,String> sources) throws Err {
+    static void writeInstance(A4Reporter rep, A4Solution sol, PrintWriter out, Iterable<Func> extraSkolems, Map<String,String> sources) throws Err {
         if (!sol.satisfiable()) throw new ErrorAPI("This solution is unsatisfiable.");
         try {
             Util.encodeXMLs(out, "<alloy builddate=\"", Version.buildDate(), "\">\n\n");
-            new A4SolutionWriter(sol, sol.getAllReachableSigs(), sol.getBitwidth(), sol.getMaxSeq(), sol.getOriginalCommand(), sol.getOriginalFilename(), out, extraSkolems);
+            new A4SolutionWriter(rep, sol, sol.getAllReachableSigs(), sol.getBitwidth(), sol.getMaxSeq(), sol.getOriginalCommand(), sol.getOriginalFilename(), out, extraSkolems);
             if (sources!=null) for(Map.Entry<String,String> e: sources.entrySet()) {
                 Util.encodeXMLs(out, "\n<source filename=\"", e.getKey(), "\" content=\"", e.getValue(), "\"/>\n");
             }
@@ -216,7 +224,7 @@ public final class A4SolutionWriter {
      */
     public static void writeMetamodel(ConstList<Sig> sigs, String originalFilename, PrintWriter out) throws Err {
         try {
-            new A4SolutionWriter(null, sigs, 4, 4, "show metamodel", originalFilename, out, null);
+            new A4SolutionWriter(null, null, sigs, 4, 4, "show metamodel", originalFilename, out, null);
         } catch(Throwable ex) {
             if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("Error writing the solution XML file.", ex);
         }

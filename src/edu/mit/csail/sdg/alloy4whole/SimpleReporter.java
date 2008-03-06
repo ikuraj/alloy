@@ -175,8 +175,8 @@ final class SimpleReporter extends A4Reporter {
     private SimpleReporter(PrintStream out) { this.out=out; }
 
     /** Helper method to write out a full XML file. */
-    private static void writeXML(Module mod, String filename, A4Solution sol, Map<String,String> sources) throws IOException, Err {
-        sol.writeXML(filename, mod.getAllFunc(), sources);
+    private static void writeXML(A4Reporter rep, Module mod, String filename, A4Solution sol, Map<String,String> sources) throws IOException, Err {
+        sol.writeXML(rep, filename, mod.getAllFunc(), sources);
         if ("yes".equals(System.getProperty("debug"))) {
             // When in debug mode, try reading the file right back so that we can catch some errors right away
             A4SolutionReader.read(new ArrayList<Sig>(), new XMLNode(new File(filename))).toString();
@@ -215,7 +215,7 @@ final class SimpleReporter extends A4Reporter {
             return "There are no more satisfying instances.\n\n" +
             "Note: due to symmetry breaking and other optimizations,\n" +
             "some equivalent solutions may have been omitted.";
-        synchronized(SimpleReporter.class) { writeXML(mod, filename, sol, latestKodkodSRC); latestKodkod=sol; }
+        synchronized(SimpleReporter.class) { writeXML(null, mod, filename, sol, latestKodkodSRC); latestKodkod=sol; }
         rep.declareInstance(filename);
         return "";
     }
@@ -415,7 +415,7 @@ final class SimpleReporter extends A4Reporter {
         String filename = tempfile+".xml";
         synchronized(SimpleReporter.class) {
             try {
-                writeXML(latestModule, filename, sol, latestKodkodSRC);
+                writeXML(this, latestModule, filename, sol, latestKodkodSRC);
             } catch(Throwable ex) {
                 logBold(Util.indent(ex.toString().trim() + "\nStackTrace:\n" + (MailBug.dump(ex).trim()), "   "));
                 log("\n");
