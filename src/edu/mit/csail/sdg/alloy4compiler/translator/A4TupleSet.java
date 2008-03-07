@@ -67,6 +67,33 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
     /** Returns the number of tuples in this tuple set. */
     public int size() { return tuples.size(); }
 
+    /** Construct a new tupleset as the product of this and that; this and that must be come from the same solution. */
+    public A4TupleSet product(A4TupleSet that) throws ErrorAPI {
+        if (sol != that.sol) throw new ErrorAPI("A4TupleSet.product() requires 2 tuplesets from the same A4Solution.");
+        return new A4TupleSet(tuples.product(that.tuples), sol);
+    }
+
+    /** Construct a new tupleset as the subtraction of this and that; this and that must be come from the same solution. */
+    public A4TupleSet minus(A4TupleSet that) throws ErrorAPI {
+        if (sol != that.sol) throw new ErrorAPI("A4TupleSet.minus() requires 2 tuplesets from the same A4Solution.");
+        if (arity() != that.arity()) throw new ErrorAPI("A4TupleSet.minus() requires 2 tuplesets with the same arity.");
+        if (tuples.size()==0 || that.tuples.size()==0) return this; // special short cut
+        TupleSet ts = tuples.clone();
+        ts.removeAll(that.tuples);
+        if (tuples.size()!=ts.size()) return new A4TupleSet(ts, sol); else return this;
+    }
+
+    /** Construct a new tupleset as the intersection of this and that; this and that must be come from the same solution. */
+    public A4TupleSet intersect(A4TupleSet that) throws ErrorAPI {
+        if (sol != that.sol) throw new ErrorAPI("A4TupleSet.intersect() requires 2 tuplesets from the same A4Solution.");
+        if (arity() != that.arity()) throw new ErrorAPI("A4TupleSet.intersect() requires 2 tuplesets with the same arity.");
+        if (this.tuples.size()==0) return this; // special short cut
+        if (that.tuples.size()==0) return that; // special short cut
+        TupleSet ts = tuples.clone();
+        ts.retainAll(that.tuples);
+        if (tuples.size()!=ts.size()) return new A4TupleSet(ts, sol); else return this;
+    }
+
     /** Prints a human-readable description of this TupleSet. */
     @Override public String toString() {
         StringBuilder sb=new StringBuilder("{");
