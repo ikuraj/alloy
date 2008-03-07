@@ -425,7 +425,7 @@ final class SimpleReporter extends A4Reporter {
         log(RESTORE3);
         log("   Writing the XML file...\n");
         log(FLUSH);
-        String formula = recordKodkod ? sol.deriveEquivalentKodkodInput() : "";
+        String formula = recordKodkod ? sol.debugExtractKInput() : "";
         String filename = tempfile+".xml";
         synchronized(SimpleReporter.class) {
             try {
@@ -484,7 +484,7 @@ final class SimpleReporter extends A4Reporter {
         A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
         log(RESTORE3);
-        String originalFormula = recordKodkod ? sol.deriveEquivalentKodkodInput() : "";
+        String originalFormula = recordKodkod ? sol.debugExtractKInput() : "";
         String corefilename="", formulafilename="";
         if (originalFormula.length()>0 && tempfile!=null) {
             formulafilename=tempfile+".java";

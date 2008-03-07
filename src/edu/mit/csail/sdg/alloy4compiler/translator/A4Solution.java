@@ -355,8 +355,8 @@ public final class A4Solution {
 
     //===================================================================================================//
 
-    /** Returns the original formula used to generate this solution; can be "" if unknown. */
-    public String deriveEquivalentKodkodInput() {
+    /** Returns the Kodkod input used to generate this solution; returns "" if unknown. */
+    public String debugExtractKInput() {
        if (solved)
           return TranslateKodkodToJava.convert(getSingleFormula(1), bitwidth, kAtoms, bounds, atom2name);
        else
@@ -517,6 +517,13 @@ public final class A4Solution {
         if (result instanceof Formula) return eval.evaluate((Formula)result);
         if (result instanceof Expression) return new A4TupleSet(eval.evaluate((Expression)result), this);
         throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
+    }
+
+    /** Returns the Kodkod instance represented by this solution; throws an exception if the problem is not yet solved or if it is unsatisfiable. */
+    public Instance debugExtractKInstance() throws Err {
+        if (!solved) throw new ErrorAPI("This solution is not yet solved, so instance() is not allowed.");
+        if (eval==null) throw new ErrorAPI("This solution is unsatisfiable, so instance() is not allowed.");
+        return eval.instance().unmodifiableView();
     }
 
     //===================================================================================================//
@@ -822,7 +829,7 @@ public final class A4Solution {
             File tmpCNF = File.createTempFile("tmp", ".java", new File(opt.tempDirectory));
             String out = tmpCNF.getAbsolutePath();
             solver.options().setSolver(SATFactory.externalFactory(null, out, "", new String[0]));
-            Util.writeAll(out, deriveEquivalentKodkodInput());
+            Util.writeAll(out, debugExtractKInput());
             rep.resultCNF(out);
             return null;
          }
