@@ -84,16 +84,17 @@ public final class A4SolutionWriter {
     private boolean writeExpr(String prefix, Expr expr) throws Err {
        Type type = expr.type;
        if (sol!=null) {
-          // Intersect with univ->univ->univ to get rid of any hidden atoms
-          Expr univAll = Sig.UNIV;
-          for(int i=type.arity(); i>1; i--) univAll=univAll.product(Sig.UNIV);
-          expr = expr.intersect(univAll);
+          // Construct univ->...->univ so that we can use it to get rid of unwanted hidden atoms
+          A4TupleSet univTS = (A4TupleSet) (sol.eval(Sig.UNIV));
+          A4TupleSet univsTS = univTS;
+          for(int i=type.arity(); i>1; i--) univsTS = univsTS.product(univTS);
           // Check to see if the tupleset is *really* fully contained inside "type".
           // If not, then grow "type" until the tupleset is fully contained inside "type"
           Expr sum = type.toExpr();
           int lastSize = (-1);
           while(true) {
              A4TupleSet ts = (A4TupleSet)(sol.eval(expr.minus(sum)));
+             ts = ts.intersect(univsTS);
              int n = ts.size();
              if (n<=0) break;
              if (lastSize>0 && lastSize<=n) throw new ErrorFatal("An internal error occurred in the evaluator.");
@@ -104,6 +105,7 @@ public final class A4SolutionWriter {
           }
           // Now, write out the tupleset
           A4TupleSet ts = (A4TupleSet)(sol.eval(expr));
+          ts = ts.intersect(univsTS);
           for(A4Tuple t: ts) {
              if (prefix.length()>0) { out.print(prefix); prefix=""; }
              out.print("   <tuple>");
