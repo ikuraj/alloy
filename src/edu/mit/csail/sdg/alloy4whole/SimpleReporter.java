@@ -62,7 +62,9 @@ import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -402,14 +404,26 @@ final class SimpleReporter extends A4Reporter {
     }
 
     /** {@inheritDoc} */
+    @Override public void write(Object obj) {
+        String label;
+        if (obj instanceof Sig) { label="   Writing sig "+((Sig)obj).label; }
+        else if (obj instanceof Field) { label="   Writing field "+((Field)obj).sig.label+"."+((Field)obj).label; }
+        else if (obj instanceof ExprVar) { label="   Writing skolem "+((ExprVar)obj).label; }
+        else return;
+        log(RESTORE3);
+        log(label);
+        log("...\n");
+        log(FLUSH);
+    }
+
+    /** {@inheritDoc} */
     @Override public void resultSAT(Object command, long solvingTime, Object solution) {
         if (!(solution instanceof A4Solution)) return;
         if (!(command instanceof Command)) return;
         A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
         log(RESTORE3);
-        log(cmd.check ? "   Counterexample" : "   Instance");
-        log(" found. Writing the XML file...\n");
+        log("   Writing the XML file...\n");
         log(FLUSH);
         String formula = recordKodkod ? sol.deriveEquivalentKodkodInput() : "";
         String filename = tempfile+".xml";

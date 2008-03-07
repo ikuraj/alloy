@@ -120,4 +120,7 @@ public class A4Reporter {
      * @param solution - the unsatisfying A4Solution object
      */
     public void resultUNSAT(Object command, long solvingTime, Object solution) {}
+
+    /** This method is called by the A4SolutionWriter when it is writing a particular sig, field, or skolem. */
+    public void write(Object expr) { }
 }

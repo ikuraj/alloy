@@ -124,7 +124,7 @@ public final class A4SolutionWriter {
     /** Write the given Sig. */
     private void writesig(final Sig x) throws Err {
        if (x==Sig.NONE) return; // should not happen, but we test for it anyway
-       if (rep!=null) rep.debug("   Writing sig "+x+"\n");
+       if (rep!=null) rep.write(x);
        Util.encodeXMLs(out, "\n<sig label=\"", label(x.label), "\" ID=\"", map(x));
        if (x instanceof PrimSig && x!=Sig.UNIV) Util.encodeXMLs(out, "\" parentID=\"", map(((PrimSig)x).parent));
        if (x.builtin) out.print("\" builtin=\"yes");
@@ -148,7 +148,7 @@ public final class A4SolutionWriter {
 
     /** Write the given Field. */
     private void writeField(Field x) throws Err {
-       if (rep!=null) rep.debug("   Writing field "+x+"\n");
+       if (rep!=null) rep.write(x);
        try {
           Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
           if (x.isPrivate!=null) out.print("\" private=\"yes\">\n"); else out.print("\">\n");
@@ -161,7 +161,7 @@ public final class A4SolutionWriter {
 
     /** Write the given Skolem. */
     private void writeSkolem(ExprVar x) throws Err {
-       if (rep!=null) rep.debug("   Writing skolem "+x+"\n");
+       if (rep!=null) rep.write(x);
        try {
           StringBuilder sb = new StringBuilder();
           Util.encodeXMLs(sb, "\n<skolem label=\"", label(x.label), "\" ID=\"", map(x), "\">\n");
