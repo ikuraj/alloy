@@ -681,7 +681,7 @@ public final class A4Solution {
             }
             for(final Relation r:frame.eval.instance().relations()) if (!rels.contains(r)) {
                Type t=frame.kr2type(r);
-               if (t==null) t=UNIV.type;
+               if (t==null) continue; // That means it is a spurious skolem, rather than a real skolem
                while (t.arity() < r.arity()) t=UNIV.type.product(t);
                if (t.arity() > r.arity()) continue; // That means something terrible has happened, so let's skip it
                String n = Util.tail(r.name());

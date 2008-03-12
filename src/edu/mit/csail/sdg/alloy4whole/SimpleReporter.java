@@ -62,7 +62,6 @@ import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
@@ -408,11 +407,9 @@ final class SimpleReporter extends A4Reporter {
         String label;
         if (obj instanceof Sig) { label="   Writing sig "+((Sig)obj).label; }
         else if (obj instanceof Field) { label="   Writing field "+((Field)obj).sig.label+"."+((Field)obj).label; }
-        else if (obj instanceof ExprVar) { label="   Writing skolem "+((ExprVar)obj).label; }
-        else return;
+        else { label="   Writing skolem "+obj; }
         log(RESTORE3);
         log(label);
-        log("...\n");
         log(FLUSH);
     }
 
@@ -423,7 +420,7 @@ final class SimpleReporter extends A4Reporter {
         A4Solution sol = (A4Solution)solution;
         Command cmd = (Command)command;
         log(RESTORE3);
-        log("   Writing the XML file...\n");
+        log("   Writing the XML file...");
         log(FLUSH);
         String formula = recordKodkod ? sol.debugExtractKInput() : "";
         String filename = tempfile+".xml";

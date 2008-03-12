@@ -157,7 +157,6 @@ public final class A4SolutionWriter {
 
     /** Write the given Skolem. */
     private void writeSkolem(ExprVar x) throws Err {
-       if (rep!=null) rep.write(x);
        try {
           StringBuilder sb = new StringBuilder();
           Util.encodeXMLs(sb, "\n<skolem label=\"", label(x.label), "\" ID=\"", map(x), "\">\n");
@@ -181,13 +180,14 @@ public final class A4SolutionWriter {
         out.print("\">\n");
         writesig(Sig.UNIV);
         for (Sig s:sigs) if (s instanceof SubsetSig) writesig(s);
-        if (sol!=null) for (ExprVar s:sol.getAllSkolems()) writeSkolem(s);
+        if (sol!=null) for (ExprVar s:sol.getAllSkolems()) { if (rep!=null) rep.write(s.label); writeSkolem(s); }
         int m=0;
         if (extraSkolems!=null) for(Func f:extraSkolems) if (f.params.size()==0 && !f.isPred) {
             String label=label(f.label);
             while(label.length()>0 && label.charAt(0)=='$') label=label.substring(1);
             label="$"+label;
             try {
+                if (rep!=null) rep.write(label);
                 A4TupleSet ts = (A4TupleSet)(sol.eval(f.call()));
                 if (ts.size()==0) continue; // Since we do not allow "none" in the <TYPE> or <TYPES> declaration
                 StringBuilder sb = new StringBuilder();
