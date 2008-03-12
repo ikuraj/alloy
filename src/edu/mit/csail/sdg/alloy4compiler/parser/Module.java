@@ -98,7 +98,7 @@ public final class Module {
         }
         /** Construct a new Context with an empty lexical scope. */
         Context(Module rootModule) {
-            this(rootModule, 20); // TODO: should make this value configurable
+            this(rootModule, 20); // FIXTHIS: should make this value configurable
         }
         /** Construct a new Context with an empty lexical scope. */
         Context(Module rootModule, int unrolls) {
@@ -595,7 +595,7 @@ public final class Module {
                if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
                chg=true;
                p.setValue(vv);
-               // TODO: This detects for the Alloy3 behavior of util/ordering.als
+               // FIXTHIS: This detects for the Alloy3 behavior of util/ordering.als
                String sn=sub.modulePos.filename.toLowerCase(Locale.US).replace('\\', '/');
                if (kn.equals("elem") && sub.sigs.size()==1 && sn.endsWith("/util/ordering.als") &&
                   vv!=Module.UNIVast && vv!=Module.SIGINTast && vv!=Module.SEQIDXast && vv!=Module.NONEast)

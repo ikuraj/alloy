@@ -138,6 +138,7 @@ public final class Pos implements Serializable {
 
     /** Returns a String representation of this position value. */
     @Override public String toString() {
+        //if (1==1) return "(Y="+y+" X="+x+" .. Y="+y2+" X="+x2+")";
         if (filename.length()==0) return "line "+y+", column "+x; else return "line "+y+", column "+x+", filename="+filename;
     }
 }

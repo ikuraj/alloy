@@ -98,7 +98,7 @@ final class ExpDot extends Exp {
         for(Expr x: choices) {
             Expr y=x;
             while(true) {
-               if (y instanceof ExprUnary && ((ExprUnary)y).op==ExprUnary.Op.NOOP) y=((ExprUnary)y).sub;
+               if (y instanceof ExprUnary && ((ExprUnary)y).op==ExprUnary.Op.NOOP) y=((ExprUnary)y).sub; // FIXTHIS
                else if (y instanceof ExprChoice && ((ExprChoice)y).choices.size()==1) y=((ExprChoice)y).choices.get(0);
                else break;
             }
