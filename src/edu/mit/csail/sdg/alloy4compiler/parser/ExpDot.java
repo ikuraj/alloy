@@ -98,7 +98,7 @@ final class ExpDot extends Exp {
         for(Expr x: choices) {
             Expr y=x;
             while(true) {
-               if (y instanceof ExprUnary && ((ExprUnary)y).op==ExprUnary.Op.NOOP) y=((ExprUnary)y).sub; // FIXTHIS
+               if (y instanceof ExprUnary && ((ExprUnary)y).op==ExprUnary.Op.NOOP) y=((ExprUnary)y).sub;
                else if (y instanceof ExprChoice && ((ExprChoice)y).choices.size()==1) y=((ExprChoice)y).choices.get(0);
                else break;
             }
@@ -114,7 +114,7 @@ final class ExpDot extends Exp {
                     y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, y);
                 }
             } else {
-                y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, y);
+                y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, x);
             }
             list.add(y);
         }
