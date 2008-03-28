@@ -107,7 +107,7 @@ public final class VizGUI implements ComponentListener {
     private final JButton projectionButton, openSettingsButton, closeSettingsButton,
         magicLayout, loadSettingsButton, saveSettingsButton, saveAsSettingsButton,
         resetSettingsButton, updateSettingsButton, openEvaluatorButton, closeEvaluatorButton, enumerateButton,
-        vizButton, xmlButton, treeButton, dotButton, kodSrcButton, kodInstButton;
+        vizButton, xmlButton, treeButton, dotButton;
 
     /** This list must contain all the display mode buttons (that is, vizButton, xmlButton...) */
     private final List<JButton> solutionButtons = new ArrayList<JButton>();
@@ -221,10 +221,8 @@ public final class VizGUI implements ComponentListener {
     private enum VisualizerMode {
         /** Visualize using graphviz's dot. */  Viz("graphviz"),
         /** See the DOT content. */             DOT("dot"),
-        /** See the XML file content. */        XML("xml"),
-        /** See the instance as a tree. */      Tree("tree"),
-        /** See the raw input to Kodkod. */     KInput("kodkodJava"),
-        /** See the raw output from Kodkod. */  KOutput("kodkodInstance");
+        /** See the XML content. */             XML("xml"),
+        /** See the instance as a tree. */      Tree("tree");
         /** This is a unique String for this value; it should be kept consistent in future versions. */
         private final String id;
         /** Constructs a new VisualizerMode value with the given id. */
@@ -416,8 +414,6 @@ public final class VizGUI implements ComponentListener {
             dotButton=makeSolutionButton("Dot", "Show the Dot File for the Graph", "images/24_plaintext.gif", doShowDot());
             xmlButton=makeSolutionButton("XML", "Show XML", "images/24_plaintext.gif", doShowXML());
             treeButton=makeSolutionButton("Tree", "Show Tree", "images/24_texttree.gif", doShowTree());
-            kodSrcButton=makeSolutionButton("KK In", "Show KodKod Input", "images/24_plaintext.gif", doShowInput());
-            kodInstButton=makeSolutionButton("KK Out", "Show KodKod Instance", "images/24_plaintext.gif", doShowOutput());
             if (frame!=null) addDivider();
             toolbar.add(closeSettingsButton=OurUtil.button("Close", "Close the theme customization panel", "images/24_settings_close2.gif", doCloseThemePanel()));
             toolbar.add(updateSettingsButton=OurUtil.button("Apply", "Apply the changes to the current theme", "images/24_settings_apply2.gif", doApply()));
@@ -508,8 +504,6 @@ public final class VizGUI implements ComponentListener {
         for(JButton button:solutionButtons) button.setEnabled(settingsOpen!=1);
         switch (currentMode) {
             case Tree: treeButton.setEnabled(false); break;
-            case KInput: kodSrcButton.setEnabled(false); break;
-            case KOutput: kodInstButton.setEnabled(false); break;
             case XML: xmlButton.setEnabled(false); break;
             case DOT: dotButton.setEnabled(false); break;
             default: vizButton.setEnabled(false);
@@ -519,8 +513,6 @@ public final class VizGUI implements ComponentListener {
         treeButton.setVisible(frame!=null);
         dotButton.setVisible(frame!=null);
         xmlButton.setVisible(frame!=null);
-        kodSrcButton.setVisible(myState.getOriginalInstance().kodkod_input.length()>0 && frame!=null);
-        kodInstButton.setVisible(myState.getOriginalInstance().kodkod_output.length()>0 && frame!=null);
         magicLayout.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
         projectionButton.setVisible((settingsOpen==0 || settingsOpen==1) && currentMode==VisualizerMode.Viz);
         openSettingsButton.setVisible(               settingsOpen==0 && currentMode==VisualizerMode.Viz);
@@ -540,8 +532,6 @@ public final class VizGUI implements ComponentListener {
         switch (currentMode) {
            case Tree: content=StaticTreeMaker.makeTree(myState.getOriginalInstance(), makeVizTitle(), myState, fontSize); break;
            case XML: content=getTextComponent(xmlFileName); break;
-           case KInput: content=makeTextArea(myState.getOriginalInstance().kodkod_input); break;
-           case KOutput: content=makeTextArea(myState.getOriginalInstance().kodkod_output); break;
            default:
                 if (myGraphPanel==null) myGraphPanel=new VizGraphPanel(myState, currentMode == VisualizerMode.DOT);
                 else {myGraphPanel.seeDot(currentMode==VisualizerMode.DOT); myGraphPanel.remakeAll();}
@@ -682,16 +672,6 @@ public final class VizGUI implements ComponentListener {
                 if (xmlLoaded.size()>0) { loadXML(xmlLoaded.get(xmlLoaded.size()-1), false); return; }
                 doCloseAll();
                 return;
-            }
-            if (myInstance.kodkod_input.length()>0) kodSrcButton.setVisible(true);
-            else {
-                kodSrcButton.setVisible(false);
-                if (currentMode==VisualizerMode.KInput) currentMode=VisualizerMode.Tree;
-            }
-            if (myInstance.kodkod_output.length()>0) kodInstButton.setVisible(true);
-            else {
-                kodInstButton.setVisible(false);
-                if (currentMode==VisualizerMode.KOutput) currentMode=VisualizerMode.Tree;
             }
             if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
             repopulateProjectionPopup();
@@ -1023,18 +1003,6 @@ public final class VizGUI implements ComponentListener {
     /** This method changes the display mode to show the equivalent dot text (the return value is always null). */
     public Runner doShowDot() {
         if (!wrap) { currentMode=VisualizerMode.DOT; updateDisplay(); return null; }
-        return wrapMe();
-    }
-
-    /** This method changes the display mode to show the Kodkod input (the return value is always null). */
-    public Runner doShowInput() {
-        if (!wrap) { currentMode=VisualizerMode.KInput; updateDisplay(); return null; }
-        return wrapMe();
-    }
-
-    /** This method changes the display mode to show the Kodkod output (the return value is always null). */
-    public Runner doShowOutput() {
-        if (!wrap) { currentMode=VisualizerMode.KOutput; updateDisplay(); return null; }
         return wrapMe();
     }
 }

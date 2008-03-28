@@ -502,6 +502,9 @@ public final class A4Solution {
     /** Returns the most specific sig corresponding to the given atom if the problem is solved and is satisfiable; else returns UNIV. */
     PrimSig atom2sig(Object atom) { PrimSig sig=atom2sig.get(atom); return sig==null ? UNIV : sig; }
 
+    /** Caches eval(Sig) and eval(Field) results. */
+    private Map<Expr,A4TupleSet> evalCache = new LinkedHashMap<Expr,A4TupleSet>();
+
     /**
      * If this solution is solved and satisfiable, evaluates the given expression and returns an A4TupleSet, a java Integer, or a java Boolean.
      * @throws Err if the expression has syntax error, type error, or other errors, or is not fully typechecked
@@ -510,12 +513,20 @@ public final class A4Solution {
     public Object eval(Expr expr) throws Err {
         if (!solved) throw new ErrorAPI("This solution is not yet solved, so eval() is not allowed.");
         if (eval==null) throw new ErrorAPI("This solution is unsatisfiable, so eval() is not allowed.");
+        if (expr instanceof Sig || expr instanceof Field) {
+            A4TupleSet ans = evalCache.get(expr);
+            if (ans!=null) return ans;
+        }
         if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
         Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
         if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
         if (result instanceof Formula) return eval.evaluate((Formula)result);
-        if (result instanceof Expression) return new A4TupleSet(eval.evaluate((Expression)result), this);
+        if (result instanceof Expression) {
+            A4TupleSet ans = new A4TupleSet(eval.evaluate((Expression)result), this);
+            if (expr instanceof Sig || expr instanceof Field) evalCache.put(expr, ans);
+            return ans;
+        }
         throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
     }
 
@@ -913,23 +924,18 @@ public final class A4Solution {
             sb.append(atom2name(atom));
         }
         sb.append("}\n");
-        for(Map.Entry<Relation,TupleSet> e:sol.relationTuples().entrySet()) {
-            if (e.getKey() == SIGINT_MAX) continue;  // Not interesting
-            if (e.getKey() == SIGINT_MIN) continue;  // Not interesting
-            if (e.getKey() == SIGINT_NEXT) continue; // Not interesting
-            if (e.getKey() == SIGINT_ZERO) continue; // Not interesting
-            sb.append(e.getKey().name()).append("={");
-            firstTuple=true;
-            for(Tuple t:e.getValue()) {
-                if (firstTuple) firstTuple=false; else sb.append(", ");
-                for(int i=0; i<t.arity(); i++) {
-                    if (i>0) sb.append("->");
-                    sb.append(atom2name(t.atom(i)));
-                }
+        try {
+            for(Sig s:sigs) {
+                sb.append(s.label).append("=").append(eval(s)).append("\n");
+                for(Field f:s.getFields()) sb.append(s.label).append("<:").append(f.label).append("=").append(eval(f)).append("\n");
             }
-            sb.append("}\n");
+            for(ExprVar v:skolems) {
+                sb.append("skolem ").append(v.label).append("=").append(eval(v)).append("\n");
+            }
+            return toStringCache = sb.toString();
+        } catch(Err er) {
+            return toStringCache = ("<Evaluator error occurred: "+er+">");
         }
-        return toStringCache = sb.toString();
     }
 
     //===================================================================================================//

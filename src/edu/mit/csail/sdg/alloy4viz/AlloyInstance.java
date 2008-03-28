@@ -48,12 +48,6 @@ public final class AlloyInstance {
     /** If true, it is a metamodel, else it is not a metamodel. */
     public final boolean isMetamodel;
 
-    /** The original Kodkod input that generated this instance; can be "" if unknown. */
-    public final String kodkod_input;
-
-    /** The original Kodkod output representing this instance; can be "" if unknown. */
-    public final String kodkod_output;
-
     /** The original filename of the model that generated this instance; can be "" if unknown. */
     public final String filename;
 
@@ -117,13 +111,10 @@ public final class AlloyInstance {
      * (The constructor will ignore any atoms, sets, types, and relations not in the model. So there's no need
      * to explicitly filter them out prior to passing "atom2sets" and "rel2tuples" to the constructor.)
      */
-    public AlloyInstance(String filename, String commandname,
-            String kodkod_input, String kodkod_output, AlloyModel model,
+    public AlloyInstance(String filename, String commandname, AlloyModel model,
             Map<AlloyAtom,Set<AlloySet>> atom2sets, Map<AlloyRelation,Set<AlloyTuple>> rel2tuples, boolean isMetamodel) {
         this.filename = filename;
         this.commandname = commandname;
-        this.kodkod_input = kodkod_input;
-        this.kodkod_output = kodkod_output;
         this.model = model;
         this.isMetamodel=isMetamodel;
         // First, construct atom2sets (Use a treemap because we want its keyset to be sorted)
@@ -232,8 +223,6 @@ public final class AlloyInstance {
         if (!(other instanceof AlloyInstance)) return false;
         if (other==this) return true;
         AlloyInstance x=(AlloyInstance)other;
-        if (!kodkod_input.equals(x.kodkod_input)) return false;
-        if (!kodkod_output.equals(x.kodkod_output)) return false;
         if (!filename.equals(x.filename)) return false;
         if (!commandname.equals(x.commandname)) return false;
         if (!model.equals(x.model)) return false;
@@ -245,7 +234,7 @@ public final class AlloyInstance {
 
     /** Computes a hash code based on the same information used in equals(). */
     @Override public int hashCode() {
-        int n=kodkod_input.hashCode() + 3*kodkod_output.hashCode() + 5*filename.hashCode() + 7*commandname.hashCode();
+        int n = 5*filename.hashCode() + 7*commandname.hashCode();
         n = n + 7*atom2sets.hashCode() + 31*type2atoms.hashCode() + 71*set2atoms.hashCode() + 3*rel2tuples.hashCode();
         return 17*n + model.hashCode();
     }

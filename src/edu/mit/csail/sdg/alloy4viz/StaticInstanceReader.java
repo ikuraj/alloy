@@ -279,7 +279,7 @@ public final class StaticInstanceReader {
             if (exts.size()>0) { rels.put(AlloyRelation.EXTENDS, exts); }
         }
         AlloyModel am = new AlloyModel(sig2type.values(), sets, rels.keySet(), ts);
-        ans=new AlloyInstance(sol.getOriginalFilename(), sol.getOriginalCommand(), "", "", am, atom2sets, rels, isMeta);
+        ans=new AlloyInstance(sol.getOriginalFilename(), sol.getOriginalCommand(), am, atom2sets, rels, isMeta);
     }
 
     /** Parse the file into an AlloyInstance if possible. */

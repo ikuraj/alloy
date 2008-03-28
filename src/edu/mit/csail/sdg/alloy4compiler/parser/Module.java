@@ -708,6 +708,7 @@ public final class Module {
 
     /** Add a MACRO declaration. */
     void addMacro(Pos p, Pos isPrivate, String n, List<ExpName> decls, Exp v) throws Err {
+        if (1==1) throw new ErrorSyntax(p, "LET declaration is allowed only inside a toplevel paragraph.");
         ConstList<ExpName> ds = ConstList.make(decls);
         status=3;
         dup(p, n, true);
