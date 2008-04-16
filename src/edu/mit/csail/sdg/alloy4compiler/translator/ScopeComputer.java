@@ -301,9 +301,9 @@ final class ScopeComputer {
         }
         // Derive the implicit scopes
         while(true) {
-            if (derive_abstract_scope(sigs)) continue;
-            if (derive_overall_scope(sigs)) continue;
-            if (derive_scope_from_parent(sigs)) continue;
+            if (derive_abstract_scope(sigs))    { do {} while(derive_abstract_scope(sigs));     continue; }
+            if (derive_overall_scope(sigs))     { do {} while(derive_overall_scope(sigs));      continue; }
+            if (derive_scope_from_parent(sigs)) { do {} while(derive_scope_from_parent(sigs));  continue; }
             break;
         }
         // Set the initial scope on "int" and "Int" and "seq"
