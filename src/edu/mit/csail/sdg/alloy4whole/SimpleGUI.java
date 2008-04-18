@@ -1786,7 +1786,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         status.setBorder(new OurBorder(true,false,false,false));
 
         // Generate some informative log messages
-        log.logBold("Alloy Analyzer "+Version.version()+" (build date: "+Version.buildDate()+vista+")\n\n");
+        log.logBold("Alloy Analyzer "+Version.version()+" (build date: "+Version.buildDate()+")\n\n");
 
         // If on Mac, then register an application listener
         try {
