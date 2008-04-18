@@ -1659,7 +1659,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (Util.onWindows()) {
             Subprocess pro = new Subprocess(5000, new String[]{"cmd.exe", "/c", "ver"});
             String out = pro.getStandardOutputAndError();
-            if (out.contains("Version 5")) vista = true;
+            if (out.contains("Version 6")) vista = true;
         }
         
         // Enable better look-and-feel
