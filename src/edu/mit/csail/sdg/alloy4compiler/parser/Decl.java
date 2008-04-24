@@ -33,8 +33,11 @@ final class Decl {
     /** If nonnull, then this decl is private (and this.isPrivate is the location of the "private" keyword) */
     public final Pos isPrivate;
 
-    /** If nonnull, then this Decl is disjoint (and this.disjoint is the location of the "disjoint" keyword) */
+    /** If nonnull, then each name is disjoint (and this.disjoint is the location of the "disjoint" keyword) */
     public final Pos disjoint;
+
+    /** If nonnull, then each atom of this sig has disjoint value for this field (and this.disjoint2 is the location of the "disjoint" keyword) */
+    public final Pos disjoint2;
 
     /** The list of names. */
     public final ConstList<ExpName> names;
@@ -49,7 +52,7 @@ final class Decl {
     public Pos span() {
         Pos p=span;
         if (p==null) {
-            p=expr.span().merge(disjoint);
+            p=expr.span().merge(disjoint).merge(disjoint2);
             for(ExpName n:names) p=p.merge(n.span());
             span=p;
         }
@@ -57,9 +60,10 @@ final class Decl {
     }
 
     /** This constructs a declaration. */
-    public Decl(Pos isPrivate, Pos disjoint, List<ExpName> names, Exp expr) {
+    public Decl(Pos isPrivate, Pos disjoint, Pos disjoint2, List<ExpName> names, Exp expr) {
         this.isPrivate = isPrivate;
         this.disjoint = disjoint;
+        this.disjoint2 = disjoint2;
         this.names = ConstList.make(names);
         this.expr = expr;
     }

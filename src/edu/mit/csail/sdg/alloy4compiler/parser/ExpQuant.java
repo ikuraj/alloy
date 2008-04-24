@@ -75,9 +75,15 @@ final class ExpQuant extends Exp {
         this.op=op;
         this.decls=ConstList.make(decls);
         this.sub=sub;
-        for(Decl d:decls) if (d.isPrivate!=null) {
-            ExpName n=d.names.get(0);
-            throw new ErrorSyntax(d.isPrivate.merge(n.pos), "Local variable \""+n.name+"\" is always private already.");
+        for(Decl d:decls) {
+            if (d.isPrivate!=null) {
+                ExpName n=d.names.get(0);
+                throw new ErrorSyntax(d.isPrivate.merge(n.pos), "Local variable \""+n.name+"\" is always private already.");
+            }
+            if (d.disjoint2!=null) {
+                ExpName n=d.names.get(d.names.size()-1);
+                throw new ErrorSyntax(d.disjoint2.merge(n.pos), "Local variable \""+n.name+"\" cannot be bound to a 'disjoint' expression.");
+            }
         }
     }
 

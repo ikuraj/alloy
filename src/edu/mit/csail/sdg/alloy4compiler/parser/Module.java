@@ -723,10 +723,16 @@ public final class Module {
     /** Add a FUN or PRED declaration. */
     void addFunc(Pos p, Pos isPrivate, String n, Exp f, List<Decl> decls, Exp t, Exp v) throws Err {
         if (decls==null) decls=new ArrayList<Decl>(); else decls=new ArrayList<Decl>(decls);
-        if (f!=null) decls.add(0, new Decl(null, null, Util.asList(new ExpName(f.span(), "this")), f));
-        for(Decl d:decls) if (d.isPrivate!=null) {
-            ExpName name=d.names.get(0);
-            throw new ErrorSyntax(d.isPrivate.merge(name.pos), "Function parameter \""+name.name+"\" is always private already.");
+        if (f!=null) decls.add(0, new Decl(null, null, null, Util.asList(new ExpName(f.span(), "this")), f));
+        for(Decl d:decls) {
+            if (d.isPrivate!=null) {
+                ExpName name = d.names.get(0);
+                throw new ErrorSyntax(d.isPrivate.merge(name.pos), "Function parameter \""+name.name+"\" is always private already.");
+            }
+            if (d.disjoint2!=null) {
+                ExpName name = d.names.get(d.names.size()-1);
+                throw new ErrorSyntax(d.disjoint2.merge(name.pos), "Function parameter \""+name.name+"\" cannot be bound to a 'disjoint' expression.");
+            }
         }
         status=3;
         dup(p, n, false);
@@ -1005,33 +1011,43 @@ public final class Module {
            // * it is NOT allowed to refer to any predicate or function
            // For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
            // then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
-           final Sig s=oldS.realSig;
-           final Module m=oldS.realModule;
-           final Context cx=new Context(m);
-           final ExpName dup=Decl.findDuplicateName(oldS.fields);
+           final Sig s = oldS.realSig;
+           final Module m = oldS.realModule;
+           final Context cx = new Context(m);
+           final ExpName dup = Decl.findDuplicateName(oldS.fields);
            if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.name+"\"");
+           List<Field> disjoint2 = new ArrayList<Field>();
            for(final Decl d:oldS.fields) {
               // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
               final ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
-              cx.rootfield=true;
-              cx.rootsig=oldS;
+              cx.rootfield = true;
+              cx.rootsig = oldS;
               cx.put("this", THIS);
               Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
               for(final ExpName n:d.names) {
-                 final Field f=s.addTrickyField(d.span(), d.isPrivate, n.name, THIS, bound);
+                 final Field f = s.addTrickyField(d.span(), d.isPrivate, n.name, THIS, bound);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
+                 if (d.disjoint2!=null) disjoint2.add(f);
                  if (d.disjoint==null) continue;
                  if (disjA==null) { disjA=f; continue; }
-                 disjF=ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
-                 disjA=disjA.plus(f);
+                 disjF = ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
+                 disjA = disjA.plus(f);
               }
               if (d.disjoint==null || disjF==ExprConstant.TRUE) continue;
               if (!disjF.errors.isEmpty()) { errors=errors.join(disjF.errors); continue; }
-              String name = s.toString()+"$disjoint";
+              String name = s + "$disjoint";
               m.facts.put(name, disjF);
               rep.typecheck("Fact " + name + ": " + disjF.type+"\n");
-          }
+           }
+           if (s.isOne==null && disjoint2.size()>0) {
+               Expr formula = null;
+               ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
+               ExprVar THAT = ExprVar.make(null, "that", s.oneOf());
+               for(Field f:disjoint2) formula = THIS.join(f).intersect(THAT.join(f)).no().and(formula);
+               formula = THIS.equal(THAT).not().implies(formula).forAll(THIS).forAll(THAT);
+               m.facts.put(s + "$disjoint2", formula);
+           }
         }
         if (!errors.isEmpty()) throw errors.get(0);
         // The Alloy language forbids two overlapping sigs from having fields with the same name.

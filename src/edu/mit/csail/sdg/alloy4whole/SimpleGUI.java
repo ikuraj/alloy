@@ -1661,7 +1661,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             String out = pro.getStandardOutputAndError();
             if (out.contains("Version 6")) vista = true;
         }
-        
+
         // Enable better look-and-feel
         if (Util.onMac() || Util.onWindows()) {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy Analyzer "+Version.version());
