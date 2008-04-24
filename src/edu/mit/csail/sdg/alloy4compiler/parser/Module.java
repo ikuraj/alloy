@@ -666,7 +666,6 @@ public final class Module {
     /** Add an enumeration. */
     void addEnum(Pos pos, Pos priv, ExpName name, List<ExpName> parents, List<ExpName> atoms, Pos closingBracket) throws Err {
         ExpName LEAF = new ExpName(null,"leaf");
-        List<ExpName> LEAVES = Arrays.asList(LEAF);
         ExpName EXTENDS = new ExpName(null, "extends");
         ExpName THIS = new ExpName(null, "this/"+name);
         List<ExpName> THESE = Arrays.asList(THIS);
@@ -674,8 +673,8 @@ public final class Module {
         if (parents!=null) parents = new ArrayList<ExpName>(parents);
         ExpName inOrExtend = (parents!=null && parents.size()>0) ? parents.remove(parents.size()-1) : null;
         if (inOrExtend!=null && inOrExtend.name.charAt(0)=='i') throw new ErrorSyntax(pos, "Enumeration signatures cannot derive from a subset signature.");
-        addSig(null, name.pos, name.name, name.pos, null, null, null, priv, inOrExtend, parents, null, null);
-        for(ExpName a:atoms) addSig(LEAVES, a.pos, a.name, null, null, a.pos, null, priv, EXTENDS, THESE, null, null);
+        addSig(Arrays.asList(LEAF), name.pos, name.name, name.pos, null, null, null, priv, inOrExtend, parents, null, null);
+        for(ExpName a:atoms) addSig(null, a.pos, a.name, null, null, a.pos, null, priv, EXTENDS, THESE, null, null);
     }
 
     /** The given SigAST will now point to a nonnull Sig. */
