@@ -112,6 +112,7 @@ parser code {:
     ch.put(CompSym.CHECK           , "check");
     ch.put(CompSym.DISJ            , "disj");
     ch.put(CompSym.ELSE            , "else");
+    ch.put(CompSym.ENUM            , "enum");
     ch.put(CompSym.EXACTLY         , "exactly");
     ch.put(CompSym.EXPECT          , "expect");
     ch.put(CompSym.EXTENDS         , "extends");
@@ -349,6 +350,7 @@ terminal Pos DISJ;             //  disj disjoint
 terminal Pos DOMAIN;           //  <:
 terminal Pos DOT;              //  .
 terminal Pos ELSE;             //  else
+terminal Pos ENUM;             //  enum
 terminal Pos EQUALS;           //  =  ==
 terminal Pos EXACTLY;          //  exactly
 terminal Pos EXH;              //  exh exhaustive
@@ -505,6 +507,7 @@ Spec ::= Spec Vis:p OPEN:o Name:a                                              {
 Spec ::= Spec Vis:p OPEN:o Name:a                               AS Name:c      {: parser.alloymodule.addOpen(o.merge(c.pos), p, a, null, c);    :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c                {: parser.alloymodule.addOpen(o.merge(c),     p, a, b,    null); :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c      {: parser.alloymodule.addOpen(o.merge(c.pos), p, a, b,    c);    :};
+Spec ::= Spec Vis:p ENUM:o Name:a SigIn:i LBRACE Names:n RBRACE:c              {: parser.alloymodule.addEnum(o.merge(c),     p, a, i, n, c);    :};
 Spec ::= Spec       FACT:o          Super:e {: parser.alloymodule.addFact      (o , ""     , e); :};
 Spec ::= Spec       FACT:o   Name:n Super:e {: parser.alloymodule.addFact      (o , n.name , e); :};
 Spec ::= Spec       ASSERT:o        Super:e {: parser.alloymodule.addAssertion (o , ""     , e); :};

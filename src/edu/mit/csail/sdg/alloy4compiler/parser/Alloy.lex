@@ -145,6 +145,7 @@ import java_cup_11a.runtime.*;
 "disjoint"            { return alloy_sym(yytext(), CompSym.DISJ        );}
 "disj"                { return alloy_sym(yytext(), CompSym.DISJ        );}
 "else"                { return alloy_sym(yytext(), CompSym.ELSE        );}
+"enum"                { return alloy_sym(yytext(), CompSym.ENUM        );}
 "exactly"             { return alloy_sym(yytext(), CompSym.EXACTLY     );}
 "exhaustive"          { return alloy_sym(yytext(), CompSym.EXH         );}
 "exh"                 { return alloy_sym(yytext(), CompSym.EXH         );}

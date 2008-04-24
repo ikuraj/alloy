@@ -25,6 +25,7 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Locale;
@@ -660,6 +661,21 @@ public final class Module {
         if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
+    }
+
+    /** Add an enumeration. */
+    void addEnum(Pos pos, Pos priv, ExpName name, List<ExpName> parents, List<ExpName> atoms, Pos closingBracket) throws Err {
+        ExpName LEAF = new ExpName(null,"leaf");
+        List<ExpName> LEAVES = Arrays.asList(LEAF);
+        ExpName EXTENDS = new ExpName(null, "extends");
+        ExpName THIS = new ExpName(null, "this/"+name);
+        List<ExpName> THESE = Arrays.asList(THIS);
+        if (atoms==null || atoms.size()==0) throw new ErrorSyntax(pos, "Enumeration must contain at least one name.");
+        if (parents!=null) parents = new ArrayList<ExpName>(parents);
+        ExpName inOrExtend = (parents!=null && parents.size()>0) ? parents.remove(parents.size()-1) : null;
+        if (inOrExtend!=null && inOrExtend.name.charAt(0)=='i') throw new ErrorSyntax(pos, "Enumeration signatures cannot derive from a subset signature.");
+        addSig(null, name.pos, name.name, name.pos, null, null, null, priv, inOrExtend, parents, null, null);
+        for(ExpName a:atoms) addSig(LEAVES, a.pos, a.name, null, null, a.pos, null, priv, EXTENDS, THESE, null, null);
     }
 
     /** The given SigAST will now point to a nonnull Sig. */
