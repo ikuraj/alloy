@@ -27,7 +27,6 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
-import java.awt.image.RasterFormatException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -263,7 +262,7 @@ public final class A4Solution {
             solver.options().setSolver(SATFactory.MiniSatProver);
             solver.options().setLogTranslation(2);
         } else {
-            solver.options().setSolver(SATFactory.DefaultSAT4J); // Even for "FILE", we choose SAT4J here; later, just before solving, we'll change it to ExternalSolver with a nonexistent binary
+            solver.options().setSolver(SATFactory.DefaultSAT4J); // Even for "KK" and "CNF", we choose SAT4J here; later, just before solving, we'll change it to a Write2CNF solver
         }
         solver.options().setSymmetryBreaking(sym);
         solver.options().setSkolemDepth(opt.skolemDepth);
@@ -839,7 +838,6 @@ public final class A4Solution {
         if (opt.solver.equals(SatSolver.KK)) {
             File tmpCNF = File.createTempFile("tmp", ".java", new File(opt.tempDirectory));
             String out = tmpCNF.getAbsolutePath();
-            solver.options().setSolver(SATFactory.externalFactory(null, out, "", new String[0]));
             Util.writeAll(out, debugExtractKInput());
             rep.resultCNF(out);
             return null;
@@ -847,8 +845,8 @@ public final class A4Solution {
         if (opt.solver.equals(SatSolver.CNF)) {
             File tmpCNF = File.createTempFile("tmp", ".cnf", new File(opt.tempDirectory));
             String out = tmpCNF.getAbsolutePath();
-            solver.options().setSolver(SATFactory.externalFactory(null, out, "", new String[0]));
-            try { sol = solver.solve(fgoal, bounds); } catch(RasterFormatException ex) { rep.resultCNF(out); return null; }
+            solver.options().setSolver(WriteCNF.factory(out));
+            try { sol = solver.solve(fgoal, bounds); } catch(WriteCNF.WriteCNFCompleted ex) { rep.resultCNF(out); return null; }
             // The formula is trivial (otherwise, it would have thrown an exception)
             // Since the user wants it in CNF format, we manually generate a trivially satisfiable (or unsatisfiable) CNF file.
             Util.writeAll(out, sol.instance()!=null ? "p cnf 1 1\n1 0\n" : "p cnf 1 2\n1 0\n-1 0\n");
