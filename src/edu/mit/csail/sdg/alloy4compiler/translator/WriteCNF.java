@@ -50,7 +50,7 @@ final class WriteCNF implements SATSolver {
     private final StringBuilder buffer;
 
     /** This is the buffer size. */
-    private final int capacity = 8192;
+    private static final int capacity = 8192;
 
     /** The number of variables so far. */
     private int vars = 0;
