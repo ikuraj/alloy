@@ -66,7 +66,7 @@ public abstract class VisitQuery extends VisitReturn {
     @Override public Object visit(ExprITE x) throws Err {
         Object ans=x.cond.accept(this);
         if (ans==null) ans=x.left.accept(this);
-        if (ans==null) ans=x.right.accept(this);
+        if (ans==null && x.right!=null) ans=x.right.accept(this);
         return ans;
     }
 

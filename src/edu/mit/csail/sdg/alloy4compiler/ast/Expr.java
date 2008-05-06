@@ -542,7 +542,7 @@ public abstract class Expr {
      * <p> this must be a formula
      * <p> x and y must both be expressions of the same arity, or both be integer expressions, or both be formulas
      */
-    public final Expr ite(Expr x, Expr y) { return ExprITE.make(this, x, y); }
+    public final Expr ite(Expr x, Expr y) { return ExprITE.make(Pos.UNKNOWN, this, x, y); }
 
     /**
      * Returns the formula (all...| this)

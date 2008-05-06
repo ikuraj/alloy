@@ -40,13 +40,16 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 public final class ExprITE extends Expr {
 
+    /** The position of the IMPLIES token. */
+    public final Pos pos;
+
     /** The condition formula. */
     public final Expr cond;
 
     /** The then-clause. */
     public final Expr left;
 
-    /** The else-clause. */
+    /** The else-clause (if this ExprITE expression is unambiguously typedchecked, then this field is never null) */
     public final Expr right;
 
     /** Caches the span() result. */
@@ -55,7 +58,7 @@ public final class ExprITE extends Expr {
     /** {@inheritDoc} */
     @Override public Pos span() {
         Pos p=span;
-        if (p==null) span = (p = cond.span().merge(right.span()).merge(left.span()));
+        if (p==null) span = (p = cond.span().merge(right!=null ? right.span() : null).merge(left.span()));
         return p;
     }
 
@@ -66,21 +69,21 @@ public final class ExprITE extends Expr {
             cond.toString(out,-1);
             out.append(" => ");
             left.toString(out,-1);
-            out.append(" else ");
-            right.toString(out,-1);
+            if (right!=null) { out.append(" else "); right.toString(out,-1); }
             out.append(')');
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
             out.append("if-then-else with type=").append(type).append('\n');
             cond.toString(out, indent+2);
             left.toString(out, indent+2);
-            right.toString(out, indent+2);
+            if (right!=null) right.toString(out, indent+2);
         }
     }
 
     /** Constructs a ExprITE expression. */
-    private ExprITE(Expr cond, Expr left, Expr right, Type type, JoinableList<Err> errs) {
-        super(null,null, (cond.ambiguous || left.ambiguous || right.ambiguous), type, 0, cond.weight+left.weight+right.weight, errs);
+    private ExprITE(Pos pos, Expr cond, Expr left, Expr right, Type type, JoinableList<Err> errs) {
+        super(null,null, (cond.ambiguous || left.ambiguous || (right!=null && right.ambiguous)), type, 0, cond.weight+left.weight+(right!=null ? right.weight : 0), errs);
+        this.pos=pos;
         this.cond=cond;
         this.left=left;
         this.right=right;
@@ -92,7 +95,7 @@ public final class ExprITE extends Expr {
         if (obj==this) return true;
         if (!(obj instanceof ExprITE)) return false;
         ExprITE x=(ExprITE)obj;
-        return cond.isSame(x.cond) && left.isSame(x.left) && right.isSame(x.right);
+        return cond.isSame(x.cond) && left.isSame(x.left) && (right==null ? x.right==null : (x.right!=null && right.isSame(x.right)));
     }
 
     /**
@@ -102,7 +105,15 @@ public final class ExprITE extends Expr {
      * @param left - the then-clause
      * @param right - the else-clause
      */
-    public static Expr make(Expr cond, Expr left, Expr right) {
+    public static Expr make(Pos pos, Expr cond, Expr left, Expr right) {
+        if (right==null) {
+            if (left.type.is_bool) return ExprBinary.Op.OR.make(pos, Pos.UNKNOWN, cond.not(), left);
+            JoinableList<Err> errs = emptyListOfErrors;
+            if (cond.mult != 0) errs = errs.append(new ErrorSyntax(cond.span(), "Multiplicity expression not allowed here."));
+            if (left.mult != 0) errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
+            cond = cond.typecheck_as_formula();
+            return new ExprITE(pos, cond, left, null, left.type, errs.join(cond.errors).join(left.errors));
+        }
         JoinableList<Err> errs = emptyListOfErrors;
         if (cond.mult != 0) errs = errs.append(new ErrorSyntax(cond.span(), "Multiplicity expression not allowed here."));
         if (left.mult != 0) errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
@@ -129,12 +140,26 @@ public final class ExprITE extends Expr {
             break;
         }
         cond = cond.typecheck_as_formula();
-        return new ExprITE(cond, left, right, c, errs.join(cond.errors).join(left.errors).join(right.errors));
+        return new ExprITE(pos, cond, left, right, c, errs.join(cond.errors).join(left.errors).join(right.errors));
     }
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
+        if (right==null) {
+            Type a = left.type.intersect(p);
+            if (p.is_int) a=Type.makeInt(a);
+            if (p.is_bool) a=Type.makeBool(a);
+            if (p.size()>0 && left.type.hasTuple() && !a.hasTuple()) warns.add(new ErrorWarning(left.span(),"This subexpression is redundant."));
+            Expr cond = this.cond.resolve(Type.FORMULA, warns);
+            Expr left = this.left.resolve(a, warns);
+            Expr right = null;
+            int arity = left.type.arity();
+            if (arity>0) { right=Sig.NONE; while(arity>1) { right=right.product(Sig.NONE); arity--; } }
+               else if (left.type.is_int) { right=ExprConstant.ZERO; }
+               // in all other cases, that means "left" contains an error, so the following make() will generate an Expr with an embedded Err message
+            return make(pos,cond,left,right);
+        }
         Type a=left.type, b=right.type;
         if (p.size()>0) {
             a=a.intersect(p);
@@ -150,7 +175,7 @@ public final class ExprITE extends Expr {
         Expr cond = this.cond.resolve(Type.FORMULA, warns);
         Expr left = this.left.resolve(a, warns);
         Expr right = this.right.resolve(b, warns);
-        return (cond==this.cond && left==this.left && right==this.right) ? this : make(cond,left,right);
+        return (cond==this.cond && left==this.left && right==this.right) ? this : make(pos,cond,left,right);
     }
 
     /** {@inheritDoc} */

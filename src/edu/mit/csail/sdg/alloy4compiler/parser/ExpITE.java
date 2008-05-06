@@ -34,18 +34,22 @@ import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 final class ExpITE extends Exp {
 
+    /** The position of the IMPLIES token. */
+    public final Pos pos;
+
     /** The condition formula. */
     public final Exp formula;
 
     /** The then-clause. */
     public final Exp left;
 
-    /** The else-clause. */
+    /** The else-clause (can be null if there is no else clause) */
     public final Exp right;
 
     /** Constructs a ExpITE expression. */
-    public ExpITE(Exp formula, Exp left, Exp right) {
+    public ExpITE(Pos pos, Exp formula, Exp left, Exp right) {
         super(null);
+        this.pos=pos;
         this.formula=formula;
         this.left=left;
         this.right=right;
@@ -58,7 +62,7 @@ final class ExpITE extends Exp {
     public Pos span() {
         Pos p=span;
         if (p==null) {
-            p=formula.span().merge(right.span()).merge(left.span());
+            p=formula.span().merge(right!=null ? right.span() : null).merge(left.span());
             span=p;
         }
         return p;
@@ -68,12 +72,12 @@ final class ExpITE extends Exp {
     public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
         Expr f = formula.check(cx, warnings);
         Expr a = left.check(cx, warnings);
-        Expr b = right.check(cx, warnings);
-        return ExprITE.make(f, a, b);
+        Expr b = right==null ? null : (right.check(cx, warnings));
+        return ExprITE.make(pos, f, a, b);
     }
 
     /** {@inheritDoc} */
     @Override public String toString() {
-        return "(" + formula + " => " + left + " else " + right + ")";
+        return "(" + formula + " => " + left + (right==null ? "" : (" else " + right)) + ")";
     }
 }

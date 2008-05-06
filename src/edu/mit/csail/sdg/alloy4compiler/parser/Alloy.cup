@@ -744,19 +744,19 @@ EquivExprB ::= EquivExprB:a IFF:o ImpliesExprB:b    {: RESULT=new ExpBinary(o, E
 ImpliesExprA      ::= ImpliesExprCloseA:a            {: RESULT=a; :};
 ImpliesExprA      ::= ImpliesExprOpenA:a             {: RESULT=a; :};
 ImpliesExprCloseA ::= AndExprA:a                     {: RESULT=a; :};
-ImpliesExprCloseA ::= AndExprB:a IMPLIES   ImpliesExprCloseB:b ELSE ImpliesExprCloseA:c {: RESULT=new ExpITE(a,b,c);                              :};
-ImpliesExprOpenA  ::= AndExprB:a IMPLIES   ImpliesExprCloseB:b ELSE ImpliesExprOpenA:c  {: RESULT=new ExpITE(a,b,c);                              :};
-ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o ImpliesExprA:b                               {: RESULT=new ExpBinary(o, ExprBinary.Op.OR, a.not(), b); :};
+ImpliesExprCloseA ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprCloseA:c {: RESULT=new ExpITE(o,a,b,c);    :};
+ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprOpenA:c  {: RESULT=new ExpITE(o,a,b,c);    :};
+ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o ImpliesExprA:b                               {: RESULT=new ExpITE(o,a,b,null); :};
 
-ImpliesExprCloseA ::= AndExprB:a IMPLIES   ImpliesExprCloseB:b ELSE Bind:c {: RESULT=new ExpITE(a,b,c);                              :};
-ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o Bind:b                          {: RESULT=new ExpBinary(o, ExprBinary.Op.OR, a.not(), b); :};
+ImpliesExprCloseA ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE Bind:c {: RESULT=new ExpITE(o,a,b,c);    :};
+ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o Bind:b                          {: RESULT=new ExpITE(o,a,b,null); :};
 
 ImpliesExprB      ::= ImpliesExprCloseB:a            {: RESULT=a; :};
 ImpliesExprB      ::= ImpliesExprOpenB:a             {: RESULT=a; :};
 ImpliesExprCloseB ::= AndExprB:a                     {: RESULT=a; :};
-ImpliesExprCloseB ::= AndExprB:a IMPLIES   ImpliesExprCloseB:b ELSE ImpliesExprCloseB:c {: RESULT=new ExpITE(a,b,c);                              :};
-ImpliesExprOpenB  ::= AndExprB:a IMPLIES   ImpliesExprCloseB:b ELSE ImpliesExprOpenB:c  {: RESULT=new ExpITE(a,b,c);                              :};
-ImpliesExprOpenB  ::= AndExprB:a IMPLIES:o ImpliesExprB:b                               {: RESULT=new ExpBinary(o, ExprBinary.Op.OR, a.not(), b); :};
+ImpliesExprCloseB ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprCloseB:c {: RESULT=new ExpITE(o,a,b,c);    :};
+ImpliesExprOpenB  ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprOpenB:c  {: RESULT=new ExpITE(o,a,b,c);    :};
+ImpliesExprOpenB  ::= AndExprB:a IMPLIES:o ImpliesExprB:b                               {: RESULT=new ExpITE(o,a,b,null); :};
 
 AndExprA ::= NegExprA:a                   {: RESULT=a;                                         :};
 AndExprA ::= AndExprB:a AND:o Bind:b      {: RESULT=new ExpBinary(o, ExprBinary.Op.AND, a, b); :};

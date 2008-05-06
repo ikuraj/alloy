@@ -8664,7 +8664,7 @@ class CUP$CompParser$actions {
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpBinary(o, ExprBinary.Op.OR, a.not(), b);
+         RESULT=new ExpITE(o,a,b,null);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprOpenB",32, RESULT);
             }
           return CUP$CompParser$result;
@@ -8674,9 +8674,10 @@ class CUP$CompParser$actions {
             {
               Exp RESULT =null;
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp c = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpITE(a,b,c);
+         RESULT=new ExpITE(o,a,b,c);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprOpenB",32, RESULT);
             }
           return CUP$CompParser$result;
@@ -8686,9 +8687,10 @@ class CUP$CompParser$actions {
             {
               Exp RESULT =null;
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp c = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpITE(a,b,c);
+         RESULT=new ExpITE(o,a,b,c);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprCloseB",30, RESULT);
             }
           return CUP$CompParser$result;
@@ -8730,7 +8732,7 @@ class CUP$CompParser$actions {
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpBinary(o, ExprBinary.Op.OR, a.not(), b);
+         RESULT=new ExpITE(o,a,b,null);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprOpenA",31, RESULT);
             }
           return CUP$CompParser$result;
@@ -8740,9 +8742,10 @@ class CUP$CompParser$actions {
             {
               Exp RESULT =null;
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp c = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpITE(a,b,c);
+         RESULT=new ExpITE(o,a,b,c);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprCloseA",29, RESULT);
             }
           return CUP$CompParser$result;
@@ -8754,7 +8757,7 @@ class CUP$CompParser$actions {
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpBinary(o, ExprBinary.Op.OR, a.not(), b);
+         RESULT=new ExpITE(o,a,b,null);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprOpenA",31, RESULT);
             }
           return CUP$CompParser$result;
@@ -8764,9 +8767,10 @@ class CUP$CompParser$actions {
             {
               Exp RESULT =null;
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp c = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpITE(a,b,c);
+         RESULT=new ExpITE(o,a,b,c);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprOpenA",31, RESULT);
             }
           return CUP$CompParser$result;
@@ -8776,9 +8780,10 @@ class CUP$CompParser$actions {
             {
               Exp RESULT =null;
         Exp a = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
+        Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         Exp b = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Exp c = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ExpITE(a,b,c);
+         RESULT=new ExpITE(o,a,b,c);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("ImpliesExprCloseA",29, RESULT);
             }
           return CUP$CompParser$result;

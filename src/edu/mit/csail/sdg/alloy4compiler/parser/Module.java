@@ -1061,7 +1061,7 @@ public final class Module {
                ExprVar THAT = ExprVar.make(null, "that", s.oneOf());
                for(Field f:disjoint2) formula = THIS.join(f).intersect(THAT.join(f)).no().and(formula);
                formula = THIS.equal(THAT).not().implies(formula).forAll(THIS).forAll(THAT);
-               m.facts.put(s + "$disjoint2", formula);
+               m.facts.put(s + "$disj", formula);
            }
         }
         if (!errors.isEmpty()) throw errors.get(0);

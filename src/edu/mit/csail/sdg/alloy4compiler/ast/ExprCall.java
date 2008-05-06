@@ -92,7 +92,7 @@ public final class ExprCall extends Expr {
         private DeduceType() { }
         @Override public Object visit(ExprITE x) throws Err {
             Type t = (Type) (x.left.accept(this));
-            if (t.size()==0) return t; // This means x.left is either a formula, or an integer expression
+            if (t.size()==0 || x.right==null) return t;
             Type t2 = (Type) (x.right.accept(this));
             return t.unionWithCommonArity(t2);
         }
