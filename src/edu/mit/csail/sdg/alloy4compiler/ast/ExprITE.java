@@ -107,7 +107,7 @@ public final class ExprITE extends Expr {
      */
     public static Expr make(Pos pos, Expr cond, Expr left, Expr right) {
         if (right==null) {
-            if (left.type.is_bool) return ExprBinary.Op.OR.make(pos, Pos.UNKNOWN, cond.not(), left);
+            if (1==1 || left.type.is_bool) return ExprBinary.Op.OR.make(pos, Pos.UNKNOWN, cond.not(), left);
             JoinableList<Err> errs = emptyListOfErrors;
             if (cond.mult != 0) errs = errs.append(new ErrorSyntax(cond.span(), "Multiplicity expression not allowed here."));
             if (left.mult != 0) errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
