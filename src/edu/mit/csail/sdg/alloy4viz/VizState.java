@@ -173,10 +173,9 @@ public final class VizState {
 
     /** Generate a VizGraphPanel for a given projection choice, using the current settings. */
     public Pair<String,JPanel> getGraph(AlloyProjection projectionChoice) {
-        //if (cache2.size()==0) generateAllGraphs(new ArrayList<AlloyType>(projectedTypes), 0, null);
         Pair<String,JPanel> ans=cache.get(projectionChoice);
-        AlloyInstance inst=originalInstance;
         if (ans!=null) return ans;
+        AlloyInstance inst = originalInstance;
         DotGraph graph = StaticGraphMaker.produceGraph(inst, this, projectionChoice);
         try {
             ans=graph.visualize();

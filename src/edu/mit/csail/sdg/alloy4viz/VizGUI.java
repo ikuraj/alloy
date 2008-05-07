@@ -688,17 +688,16 @@ public final class VizGUI implements ComponentListener {
         updateDisplay();
     }
 
-    /** Load the XML instance as a result of solution enuemration (return false iff nothing changes) */
-    public boolean loadXMLfromEnumeration(final String fileName) {
+    /** Load the XML instance as a result of solution enuemration. */
+    public void loadXMLfromEnumeration(final String fileName) {
         final String xmlFileName=Util.canon(fileName);
         AlloyInstance myInstance = helper1(fileName, xmlFileName);
-        if (myInstance==null) return false;
+        if (myInstance==null) return;
         if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
         repopulateProjectionPopup();
         xml2title.put(xmlFileName, makeVizTitle());
         this.xmlFileName = xmlFileName;
         helper2(xmlFileName);
-        return true;
     }
 
     /** Load the XML instance. */
