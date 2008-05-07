@@ -1010,7 +1010,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (latestAutoInstance.length()>0) {
            String f=latestAutoInstance;
            latestAutoInstance="";
-           if (subrunningTask==2) viz.loadXML(f, true); else if (AutoVisualize.get() || subrunningTask==1) doVisualize("XML: "+f);
+           if (subrunningTask==2) viz.loadXMLfromEnumeration(f); else if (AutoVisualize.get() || subrunningTask==1) doVisualize("XML: "+f);
         }
         return null;
     }
