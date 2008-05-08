@@ -64,7 +64,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -416,6 +415,7 @@ final class SimpleReporter extends A4Reporter {
 
     /** {@inheritDoc} */
     @Override public void write(Object obj) {
+        /*
         String label;
         if (obj instanceof Sig) { label="   Writing sig "+((Sig)obj).label; }
         else if (obj instanceof Field) { label="   Writing field "+((Field)obj).sig.label+"."+((Field)obj).label; }
@@ -423,6 +423,7 @@ final class SimpleReporter extends A4Reporter {
         log(RESTORE3);
         log(label);
         log(FLUSH);
+        */
     }
 
     /** {@inheritDoc} */

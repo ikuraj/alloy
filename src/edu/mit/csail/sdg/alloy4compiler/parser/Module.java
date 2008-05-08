@@ -648,7 +648,7 @@ public final class Module {
     SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate,
     ExpName par, List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
         pos = pos.merge(isAbstract).merge(isLone).merge(isOne).merge(isSome);
-        if (name.indexOf('$')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'$\' character");
+        //if (name.indexOf('$')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'$\' character");
         status=3;
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
@@ -1017,7 +1017,7 @@ public final class Module {
         sorted.add(SIGINTast);
         sorted.add(SEQIDXast);
         sorted.add(NONEast);
-        for(final Module m:modules) for(final Map.Entry<String,SigAST> e:m.sigs.entrySet()) Module.resolveSig(sorted, e.getValue());
+        for(final Module m:modules) for(final Map.Entry<String,SigAST> e:m.sigs.entrySet()) resolveSig(sorted, e.getValue());
         // Add the fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
         for(final SigAST oldS:sorted) {
            // When typechecking each field:
@@ -1082,6 +1082,34 @@ public final class Module {
                peers.add(field);
             }
           }
+        }
+        // Now, add the meta sigs and fields if needed
+        if (1==1) {
+            ExpName EXTENDS = new ExpName(null, "extends");
+            ExpName THIS = new ExpName(null, "univ");
+            List<ExpName> THESE = Arrays.asList(THIS);
+            SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
+            SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
+            resolveSig(sorted, metasig);
+            resolveSig(sorted, metafield);
+            PrimSig metaSig = (PrimSig)(metasig.realSig);
+            PrimSig metaField = (PrimSig)(metafield.realSig);
+            for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
+                Sig s = sig.realSig;
+                String slab = sig.name;
+                SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null);
+                ast.topo=true;
+                ast.realParents.add(metasig);
+                ast.realSig = new PrimSig(Pos.UNKNOWN, metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, false);
+                sorted.add(ast);
+                for(Field field: s.getFields()) {
+                    ast = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null);
+                    ast.topo=true;
+                    ast.realParents.add(metafield);
+                    ast.realSig = new PrimSig(Pos.UNKNOWN, metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, false);
+                    sorted.add(ast);
+                }
+            }
         }
         // Typecheck the function declarations
         for(Module x:modules) errors=x.resolveFuncDecls(rep, errors, warns);

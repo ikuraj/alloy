@@ -78,7 +78,15 @@ import java_cup_11a.runtime.*;
  }
  private final Symbol alloy_id(String txt) throws Err {
     Pos p=alloy_here(txt);
-    if (!alloy_dollar && txt.indexOf('$')>=0) throw new ErrorSyntax(p,"The name cannot contain the $ symbol.");
+    if (!alloy_dollar) {
+       int i=txt.indexOf('$');
+       if (i==0) throw new ErrorSyntax(p,"The name cannot start with the $ symbol.");
+       if (i>0) {
+              if (i<txt.length()-1 && txt.indexOf('$', i+1) >= 0) throw new ErrorSyntax(p,"The name cannot contain two or more $ symbols.");
+              char c=txt.charAt(i);
+              if (c>='0' && c<='9') throw new ErrorSyntax(p,"The name cannot contain the $ symbol.");
+       }
+    }
     return new Symbol(CompSym.ID, p, new ExpName(p,txt));
  }
  private final Symbol alloy_num(String txt) throws Err {
