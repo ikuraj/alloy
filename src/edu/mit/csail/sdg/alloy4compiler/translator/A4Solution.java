@@ -734,13 +734,14 @@ public final class A4Solution {
         int width=1;
         for(int i=list.size()-1; i>=10; i=i/10) width++;
         // Now, generate the new name. By prepending enough 0 to line up the numbers, we ensure the atoms will sort lexicographically
-        StringBuilder sb = new StringBuilder();
-        String signame = s.label;
         // Many A4Solution objects will have the repetitive "this/" in front of the sig names (since that is
         // the convention of alloy4compiler), so removing "this/" will make the output look nicer.
         // This renaming is safe, since we'll pass it into UniqueNameGenerator to ensure no name clash anyway.
+        String signame = s.label;
         if (signame.startsWith("this/")) signame=signame.substring(5);
-        signame=un.make(signame);
+        signame = un.make(signame);
+        if (list.size()==1 && s.isOne!=null) { frame.atom2name.put(list.get(0).atom(0), signame); return; }
+        StringBuilder sb = new StringBuilder();
         int i=0;
         for(Tuple t:list) {
            sb.delete(0, sb.length()).append(signame).append('$');
