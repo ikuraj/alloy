@@ -105,6 +105,7 @@ import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.OurTabbedEditor;
+import edu.mit.csail.sdg.alloy4.OurTextArea;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -763,7 +764,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     private Runner doFindNext() {
         if (wrap) return wrapMe();
         if (lastFind.length()==0) return null;
-        JTextArea t=text.text();
+        OurTextArea t=text.text();
         String all=t.getText();
         int i=Util.indexOf(all, lastFind, t.getCaretPosition()+(lastFindForward?0:-1),lastFindForward,lastFindCaseSensitive);
         if (i<0) {
@@ -789,7 +790,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         JTextField x = OurUtil.textfield("", 10);
         if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return null;
         try {
-            JTextArea t = text.text();
+            OurTextArea t = text.text();
             int xx = 1, yy = Integer.parseInt(y.getText());
             if (yy<1) return null;
             if (yy>t.getLineCount()) {log.logRed("This file only has "+t.getLineCount()+" line(s)."); return null;}
