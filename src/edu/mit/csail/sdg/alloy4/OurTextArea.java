@@ -91,7 +91,7 @@ public final class OurTextArea extends JPanel {
 
     @Override public Dimension getPreferredSize() {
         if (in!=null) return in.getPreferredSize();
-        return new Dimension(myMaxWidth()*w+w+pad+pad, lines.size()*h+pad+pad); // FIXTHIS
+        return new Dimension(myMaxWidth()*w+w+pad+pad, lines.size()*h+pad+pad);
     }
 
     @Override public Dimension getMinimumSize() {
@@ -273,7 +273,7 @@ public final class OurTextArea extends JPanel {
         try { clip = (String) (getToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)); }
         catch(Throwable ex) { return; }
         if (clip.length()==0) return;
-        // FIXTHIS: what if clip contains "\r" or "\n"?
+        clip = clip.replace('\n',' ').replace('\r',' ').replace("\t","    ").replaceAll("[\000-\010\013\014\016-\037]"," ");
         String txt = lines.get(y);
         txt = txt.substring(0,x) + clip + txt.substring(x);
         x = x + clip.length();
@@ -308,6 +308,7 @@ public final class OurTextArea extends JPanel {
     }
 
     public OurTextArea(String text) {
+        text = text.replace("\t","    ").replaceAll("[\000-\010\013\014\016-\037]"," ");
         lines.add(""); // since we list this as one of the invariant for this class
         if (!("yes".equals(System.getProperty("debug")))) {
             in = new JTextArea(text);
@@ -360,7 +361,6 @@ public final class OurTextArea extends JPanel {
     private final Color colorJavadoc = new Color(210, 30, 30);
 
     @Override public void paint(Graphics gr) {
-        // FIXTHIS: use "findVisible" to avoid drawing in irrelevant area
         super.paint(gr);
         if (in!=null) return;
         if (false) if (gr instanceof Graphics2D) {
