@@ -1084,16 +1084,14 @@ public final class Module {
           }
         }
         // Now, add the meta sigs and fields if needed
-        if (1==1 && "yes".equals(System.getProperty("debug2"))) {
+        if (!(1==1)) {
             ExpName EXTENDS = new ExpName(null, "extends");
             ExpName THIS = new ExpName(null, "univ");
             List<ExpName> THESE = Arrays.asList(THIS);
             SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
             SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
-            resolveSig(sorted, metasig);
-            resolveSig(sorted, metafield);
-            PrimSig metaSig = (PrimSig)(metasig.realSig);
-            PrimSig metaField = (PrimSig)(metafield.realSig);
+            PrimSig metaSig = (PrimSig) resolveSig(sorted, metasig);
+            PrimSig metaField = (PrimSig) resolveSig(sorted, metafield);
             for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
                 Sig s = sig.realSig;
                 String slab = sig.name;
