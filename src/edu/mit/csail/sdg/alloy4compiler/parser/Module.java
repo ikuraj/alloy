@@ -1084,7 +1084,7 @@ public final class Module {
           }
         }
         // Now, add the meta sigs and fields if needed
-        if (1==1) {
+        if (1==1 && "yes".equals(System.getProperty("debug2"))) {
             ExpName EXTENDS = new ExpName(null, "extends");
             ExpName THIS = new ExpName(null, "univ");
             List<ExpName> THESE = Arrays.asList(THIS);
