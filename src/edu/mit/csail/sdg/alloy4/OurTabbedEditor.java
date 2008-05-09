@@ -116,8 +116,7 @@ public final class OurTabbedEditor {
             this.panel=panel;
             this.label=label;
             this.text=text;
-            this.highlighter=text.myMakeDefaultHighlighter();
-            if (this.highlighter!=null) text.setHighlighter(this.highlighter);
+            this.highlighter=text.getHighlighter();
             this.scroll=new JScrollPane(text, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
             this.scroll.setBorder(new EmptyBorder(0,0,0,0));
             this.undo.setLimit(100);
@@ -444,8 +443,6 @@ public final class OurTabbedEditor {
         final OurTextArea text = new OurTextArea(Util.convertLineBreak(fileContent));
         text.setBackground(Color.WHITE);
         text.setBorder(new EmptyBorder(1,1,1,1));
-        text.setLineWrap(false);
-        text.setEditable(true);
         text.setTabSize(tabSize);
         text.setFont(font);
         if (!Util.onMac()) {

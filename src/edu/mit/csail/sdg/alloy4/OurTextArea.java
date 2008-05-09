@@ -22,15 +22,15 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.awt.AWTKeyStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.datatransfer.DataFlavor;
@@ -40,12 +40,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentListener;
@@ -62,161 +64,163 @@ import javax.swing.text.Highlighter;
 
 public final class OurTextArea extends JPanel {
 
+    /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
+
+    /** If in!=null, then this OurTextArea is merely a wrapper around an actual JTextArea. */
     private JTextArea in;
-    private final List<String> lines = new ArrayList<String>(); // always contains at least one String
-    private Font font = new Font("Monospaced", Font.PLAIN, 14);
-    private Font bold = new Font("Monospaced", Font.BOLD, 14);
-    private int w = 8, h = 15, asc = 11;
-    private int x=0, y=0;
-    private final int pad = 5;
 
-    private void myRepaint() { invalidate(); repaint(); validate(); }
+    /** If in==null, this stores the text buffer content (always contains at least one String). */
+    private final List<String> lines = new ArrayList<String>();
 
-    @Override public void setFont(Font font) {
-        if (in!=null) { in.setFont(font); return; }
+    /** If in==null, this is the color to use for normal text. */
+    private final Color colorNormal = Color.BLACK;
+
+    /** If in==null, this is the color to use for numbers. */
+    private final Color colorNumber = Color.RED;
+
+    /** If in==null, this is the color to use for identifiers. */
+    private final Color colorIden = Color.BLACK;
+
+    /** If in==null, this is the color to use for keywords. */
+    private final Color colorKeyword = new Color(30, 30, 168);
+
+    /** If in==null, this is the color to use for "until end of line" comments. */
+    private final Color colorComment = new Color(30, 168, 30);
+
+    /** If in==null, this is the color to use for block comments. */
+    private final Color colorBlockComment = new Color(30, 168, 30);
+
+    /** If in==null, this is the color to use for javadoc comments. */
+    private final Color colorJavadoc = new Color(210, 30, 30);
+
+    /** If in==null, this is the ammount of padding to use around the text. */
+    private static final int pad = 5;
+
+    /** If in==null, this is the cursor's x position. */
+    private int x = 0;
+
+    /** If in==null, this is the cursor's y position. */
+    private int y = 0;
+
+    /** If in==null, this is the current font height. */
+    private int h = 15; // FIXTHIS
+
+    /** If in==null, this is the current font ascent. */
+    private int asc = 11; // FIXTHIS
+
+    /** If in==null, this is the amount of pixel to use per tab. */
+    private int tab = 30;
+
+    /** If in==null, this stores the non-bold font to use. */
+    private Font font = new Font(false ? "Arial" : "Monospaced", Font.PLAIN, 14);
+
+    /** If in==null, this stores the bold font to use. */
+    private Font bold = font.deriveFont(Font.BOLD);
+
+    /** If in==null, this stores the set of DocumentListeners. */
+    private List<DocumentListener> docListeners = new ArrayList<DocumentListener>();
+
+    /** If in==null, this stores the set of CaretListeners. */
+    private List<CaretListener> caretListeners = new ArrayList<CaretListener>();
+
+    /** If in==null, this stores the set of UndoableEditListeners. */
+    private List<UndoableEditListener> undoListeners = new ArrayList<UndoableEditListener>();
+
+    /** This stores the currently recognized set of keywords. */
+    private final String[] keywords = new String[] {"abstract", "all", "and", "as", "assert", "but", "check", "disj", "disjoint",
+      "else", "enum", "exactly", "exh", "exhaustive", "expect", "extends", "fact", "for", "fun", "iden", "iff", "implies", "in",
+      "Int", "int", "let", "lone", "module", "no", "none", "not", "one", "open", "or", "part", "partition", "pred", "private",
+      "run", "seq", "set", "sig", "some", "sum", "this", "univ"
+    };
+
+    /** Returns true if "c" can be the start of an identifier. */
+    private static boolean myIdenStart(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || c=='$'; }
+
+    /** Returns true if "c" can be in the middle or the end of an identifier. */
+    private boolean myIden(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || (c>='0' && c<='9') || c=='$' || c=='\'' || c=='\"'; }
+
+    /** Returns true if c[start..start+len-1] matches one of the reserved keyword. */
+    private boolean myIsKeyword(char[] array, int start, int len) {
+      again:
+      for(int i=keywords.length-1; i>=0; i--) {
+         String str=keywords[i];
+         if (str.length() != len) continue;
+         for(int j=0; j<len; j++) if (str.charAt(j)!=array[start+j]) continue again;
+         return true;
+      }
+      return false;
     }
 
-    private int myMaxWidth() {
-        int max=0;
-        for(int i=0; i<lines.size(); i++) { int n=lines.get(i).length(); if (max<n) max=n; }
-        return max;
+    /** Returns the number of lines. */
+    public int getLineCount() { if (in!=null) return in.getLineCount(); else return lines.size(); }
+
+    /** Add a documentListener. */
+    public void addDocumentListener(DocumentListener doc) {
+        if (in!=null) in.getDocument().addDocumentListener(doc); else docListeners.add(doc);
     }
 
-    public Highlighter myMakeDefaultHighlighter() { if (in!=null) return new DefaultHighlighter(); else return null; }
-
-    @Override public boolean requestFocusInWindow() {
-        if (in!=null) return in.requestFocusInWindow(); else return super.requestFocusInWindow();
+    /** Add a caretListener. */
+    public void addCaretListener(CaretListener caret) {
+        if (in!=null) in.addCaretListener(caret); else caretListeners.add(caret);
     }
 
-    @Override public Dimension getPreferredSize() {
-        if (in!=null) return in.getPreferredSize();
-        return new Dimension(myMaxWidth()*w+w+pad+pad, lines.size()*h+pad+pad);
+    /** Add an undoableEditListener. */
+    public void addUndoableEditListener(UndoableEditListener undo) {
+        if (in!=null) in.getDocument().addUndoableEditListener(undo); else undoListeners.add(undo);
     }
 
-    @Override public Dimension getMinimumSize() {
-        if (in!=null) return in.getMinimumSize();
-        return getPreferredSize();
-    }
-
-    @Override public Dimension getMaximumSize() {
-        if (in!=null) return in.getMaximumSize();
-        return getPreferredSize();
-    }
-
-    private boolean myFindVisible(Rectangle rect) {
-        Container p = getParent();
-        while(p!=null && !(p instanceof JViewport)) p=p.getParent();
-        if (p instanceof JViewport) {
-           Point topleft = ((JViewport)p).getViewPosition();
-           int pw = p.getWidth(), ph = p.getHeight();
-           rect.x = topleft.x;
-           rect.y = topleft.y;
-           rect.width = pw;
-           rect.height = ph;
-           return true;
-        }
-        return false;
-    }
-
-    private void myScroll() {
-        Rectangle r = new Rectangle();
-        if (myFindVisible(r))
-           if (!(r.x>x*w || r.x+r.width<x*w+w+pad+pad || r.y>y*h || r.y+r.height<y*h+h+pad+pad)) return;
-        r.x=x*w; r.y=y*h; r.width=w+pad+pad; r.height=h+pad+pad;
-        scrollRectToVisible(r);
-    }
-
+    /** Handles a keyTyped event. */
     private void myType(KeyEvent e) {
-        if (e.getModifiers()!=0 && e.getModifiers()!=KeyEvent.SHIFT_MASK) return;
-        final int on = lines.size();
-        char c = e.getKeyChar();
-        if (c>=32 && c<=126) {
-            String txt=lines.get(y); if (x==0) txt=c+txt; else if (x==txt.length()) txt=txt+c; else txt=txt.substring(0,x)+c+txt.substring(x); x++; lines.set(y,txt);
-        }
-        else if (c==10 || c==13) {
-            String txt=lines.get(y); if (x==0) lines.add(y,""); else if (x==txt.length()) lines.add(y+1,""); else {lines.set(y,txt.substring(0,x)); lines.add(y+1,txt.substring(x));} x=0; y++;
-        }
-        else {
-            return;
+        if (e.getModifiers() != 0 && e.getModifiers() != KeyEvent.SHIFT_MASK) return;
+        final String text = lines.get(y);
+        final int oldHeight = lines.size();
+        final char c = e.getKeyChar();
+        if (c=='\t' || (c>=32 && c<=126)) {
+           // Add a character
+           lines.set(y, text.substring(0,x)+c+text.substring(x));  x++;
+        } else if (c==10 || c==13) {
+           // Add a line break
+           lines.set(y, text.substring(0,x));  lines.add(y+1, text.substring(x));  x=0;  y++;
+        } else {
+           return;
         }
         e.consume();
-        if (on != lines.size()) setSize(getPreferredSize());
-        myRepaint(); myScroll(); myCaretChanged(); myChanged();
+        if (oldHeight != lines.size()) setSize(getPreferredSize());
+        myRepaint(); myCaretChanged(); myChanged();
     }
 
+    /** Handles a keyPressed event. */
     private void myPress(KeyEvent e) {
         boolean chg = false;
-        final int on = lines.size();
         String text = lines.get(y);
-        int c = e.getKeyCode();
-        int jump = 10;
-        int len = text.length();
+        final int c=e.getKeyCode(), jump=10, len=text.length(), oldHeight=lines.size(), oldX=x, oldY=y;
         if (e.getModifiers()!=0 || e.getModifiersEx()!=0) return;
-        else if (c==KeyEvent.VK_LEFT && x>0) { x--; }
-        else if (c==KeyEvent.VK_LEFT && y>0) { y--; x=lines.get(y).length(); }
-        else if (c==KeyEvent.VK_RIGHT && x<len) { x++; }
-        else if (c==KeyEvent.VK_RIGHT && y<lines.size()-1) { x=0; y++; }
-        else if (c==KeyEvent.VK_HOME && x!=0) { x=0; }
-        else if (c==KeyEvent.VK_END && x!=len) { x=len; }
-        else if (c==KeyEvent.VK_UP && y>0) { y--; }
-        else if (c==KeyEvent.VK_DOWN && y<lines.size()-1) { y++; }
-        else if (c==KeyEvent.VK_PAGE_UP && y>0) { y=y-jump; }
-        else if (c==KeyEvent.VK_PAGE_DOWN && y<lines.size()-1) { y=y+jump; }
-        else if (c==KeyEvent.VK_DELETE && x<len) { chg=true; if (x==0) text=text.substring(1); else text=text.substring(0,x)+text.substring(x+1); lines.set(y,text); }
-        else if (c==KeyEvent.VK_DELETE && y<lines.size()-1) { chg=true; text=text+lines.remove(y+1); lines.set(y,text); }
-        else if (c==KeyEvent.VK_BACK_SPACE && x>0) { chg=true; text=text.substring(0,x-1)+text.substring(x); lines.set(y,text); x--; }
-        else if (c==KeyEvent.VK_BACK_SPACE && y>0) { chg=true; String old=lines.get(y-1); text=old+text; lines.remove(y); y--; lines.set(y,text); x=old.length(); }
-        else if (c==KeyEvent.VK_LEFT || c==KeyEvent.VK_RIGHT) { e.consume(); return; }
-        else if (c==KeyEvent.VK_UP || c==KeyEvent.VK_DOWN) { e.consume(); return; }
-        else if (c==KeyEvent.VK_HOME || c==KeyEvent.VK_END) { e.consume(); return; }
-        else if (c==KeyEvent.VK_PAGE_UP || c==KeyEvent.VK_PAGE_DOWN) { e.consume(); return; }
+        else if (c==KeyEvent.VK_LEFT)              { if (x > 0) x--; else if (y > 0) { y--; x=lines.get(y).length(); } }
+        else if (c==KeyEvent.VK_RIGHT)             { if (x < len) x++; else if (y < oldHeight-1) { x=0; y++; } }
+        else if (c==KeyEvent.VK_HOME)              { x = 0; }
+        else if (c==KeyEvent.VK_END)               { x = len; }
+        else if (c==KeyEvent.VK_UP)                { if (y > 0) y--; }
+        else if (c==KeyEvent.VK_DOWN)              { if (y < oldHeight-1) y++; }
+        else if (c==KeyEvent.VK_PAGE_UP)           { if (y > jump) y=y-jump; else y=0; }
+        else if (c==KeyEvent.VK_PAGE_DOWN)         { if (y+jump < oldHeight) y=y+jump; else y=oldHeight-1; }
+        else if (c==KeyEvent.VK_BACK_SPACE && x>0) { chg=true; lines.set(y, text.substring(0,x-1)+text.substring(x)); x--; }
+        else if (c==KeyEvent.VK_BACK_SPACE)        { if (y>0) { chg=true; String old=lines.get(y-1); lines.remove(y); y--; x=old.length(); lines.set(y, old+text); } }
+        else if (c==KeyEvent.VK_DELETE && x<len)   { chg=true; lines.set(y, text.substring(0,x)+text.substring(x+1)); }
+        else if (c==KeyEvent.VK_DELETE)            { if (y<oldHeight-1) { chg=true; lines.set(y, text+lines.remove(y+1)); } }
         else return;
         if (y<0) y=0; else if (y>=lines.size()) y=lines.size()-1;
         if (x<0) x=0; else if (x>lines.get(y).length()) x=lines.get(y).length();
         e.consume();
-        if (on != lines.size()) setSize(getPreferredSize());
-        myRepaint(); myScroll(); myCaretChanged(); if (chg) myChanged();
+        if (oldHeight != lines.size()) setSize(getPreferredSize());
+        if (x!=oldX || y!=oldY || chg) { myRepaint(); myCaretChanged(); }
+        if (chg) myChanged();
     }
 
-    public int getLineCount() { if (in!=null) return in.getLineCount(); else return lines.size(); }
+    /** Helper method to repaint this widget. */
+    private void myRepaint() { invalidate(); repaint(); validate(); }
 
-    public void setLineWrap(boolean flag) { if (in!=null) in.setLineWrap(flag); }
-
-    public void setEditable(boolean flag) { if (in!=null) in.setEditable(flag); }
-
-    private List<DocumentListener> docs = new ArrayList<DocumentListener>();
-    public void addDocumentListener(DocumentListener doc) {
-        if (in!=null) in.getDocument().addDocumentListener(doc); else docs.add(doc);
-    }
-
-    private List<CaretListener> carets = new ArrayList<CaretListener>();
-    public void addCaretListener(CaretListener caret) {
-        if (in!=null) in.addCaretListener(caret); else carets.add(caret);
-    }
-
-    private List<UndoableEditListener> undos = new ArrayList<UndoableEditListener>();
-    public void addUndoableEditListener(UndoableEditListener undo) {
-        if (in!=null) in.getDocument().addUndoableEditListener(undo); else undos.add(undo);
-    }
-
-    public void setSelectionStart(int i) { if (in!=null) in.setSelectionStart(i); else setCaretPosition(i); }
-
-    public void setSelectionEnd(int i) { if (in!=null) in.setSelectionEnd(i); else setCaretPosition(i); }
-
-    public void moveCaretPosition(int c) { if (in!=null) in.moveCaretPosition(c); else setCaretPosition(c); }
-
-    public void setCaretPosition(int c) {
-        if (in!=null) { in.setCaretPosition(c); return; }
-        int newY=(c<=0 ? 0 : lines.size()-1), newX=(c<=0 ? 0 : lines.get(newY).length());
-        if (c>0) for(int i=0; i<lines.size(); i++) {
-            int n=lines.get(i).length();
-            if (c<=n) { newY=i; newX=c; break; }
-            c=c-n-1;
-        }
-        if (y!=newY || x!=newX) { y=newY; x=newX; myRepaint(); myScroll(); myCaretChanged(); }
-    }
-
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getCaretPosition() getCaretPosition} method. */
     public int getCaretPosition() {
         if (in!=null) return in.getCaretPosition();
         int ans = 0;
@@ -224,63 +228,63 @@ public final class OurTextArea extends JPanel {
         return ans + x;
     }
 
-    public int getLineOfOffset(int c) throws BadLocationException {
-        if (in!=null) return in.getLineOfOffset(c);
-        if (c<=0) return 0;
-        for(int i=0; i<lines.size(); i++) {
+    /** Implements JTextArea's {@link javax.swing.JTextArea#setCaretPosition(int) setCaretPosition} method. */
+    public void setCaretPosition(int offset) throws IllegalArgumentException {
+        if (in!=null) { in.setCaretPosition(offset); return; }
+        int newY=(offset<=0 ? 0 : lines.size()-1), newX=(offset<=0 ? 0 : lines.get(newY).length());
+        if (offset>0) for(int i=0; i<lines.size(); i++) {
             int n=lines.get(i).length();
-            if (c<=n) return i;
-            c=c-n-1;
+            if (offset<=n) { newY=i; newX=offset; break; }
+            offset=offset-n-1;
         }
-        return lines.size()-1;
+        if (y!=newY || x!=newX) { y=newY; x=newX; myRepaint(); myCaretChanged(); }
     }
 
+    /** Implements JTextArea's {@link javax.swing.JTextArea#setSelectionStart(int) setSelectionStart} method. */
+    public void setSelectionStart(int offset) { if (in!=null) in.setSelectionStart(offset); else setCaretPosition(offset); }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#setSelectionEnd(int) setSelectionEnd} method. */
+    public void setSelectionEnd(int offset) { if (in!=null) in.setSelectionEnd(offset); else setCaretPosition(offset); }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#moveCaretPosition(int) moveCaretPosition} method. */
+    public void moveCaretPosition(int offset) { if (in!=null) in.moveCaretPosition(offset); else setCaretPosition(offset); }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineOfOffset(int) getLineOfOffset} method. */
+    public int getLineOfOffset(int offset) throws BadLocationException {
+        if (in!=null) return in.getLineOfOffset(offset);
+        if (offset>=0) for(int i=0; i<lines.size(); i++) {
+            int n=lines.get(i).length();
+            if (offset<=n) return i;
+            offset=offset-n-1;
+        }
+        throw new BadLocationException("", 0);
+    }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineStartOffset(int) getLineStartOffset} method. */
     public int getLineStartOffset(int line) throws BadLocationException {
         if (in!=null) return in.getLineStartOffset(line);
-        if (line<0 || line>=lines.size()) throw new BadLocationException("",0);
+        if (line<0 || line>=lines.size()) throw new BadLocationException("", 0);
         int ans = 0;
         for(int i=0; i<line; i++) ans = ans + lines.get(i).length() + 1;
         return ans;
     }
 
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineEndOffset(int) getLineEndOffset} method. */
     public int getLineEndOffset(int line) throws BadLocationException {
         if (in!=null) return in.getLineEndOffset(line);
-        if (line<0 || line>=lines.size()) throw new BadLocationException("",0);
+        if (line<0 || line>=lines.size()) throw new BadLocationException("", 0);
         int ans = 0;
         for(int i=0; i<line; i++) ans = ans + lines.get(i).length() + 1;
         return ans + lines.get(line).length();
     }
 
-    public void setTabSize(int tab) { if (in!=null) in.setTabSize(tab); }
+    /** This method sends out change notifications. */
+    private void myChanged() { for(DocumentListener doc: docListeners) { doc.changedUpdate(null); } }
 
-    public void setHighlighter(Highlighter ht) { if (in!=null) in.setHighlighter(ht); }
+    /** This method sends out caretUpdate() notifications. */
+    private void myCaretChanged() { for(CaretListener caret: caretListeners) { caret.caretUpdate(null); } }
 
-    public void copy() { if (in!=null) in.copy(); }
-
-    public void cut() { if (in!=null) in.cut(); }
-
-    private void myChanged() {
-        for(DocumentListener doc: docs) { doc.changedUpdate(null); }
-    }
-
-    private void myCaretChanged() {
-        for(CaretListener caret: carets) { caret.caretUpdate(null); }
-    }
-
-    public void paste() {
-        if (in!=null) { in.paste(); return; }
-        String clip;
-        try { clip = (String) (getToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)); }
-        catch(Throwable ex) { return; }
-        if (clip.length()==0) return;
-        clip = clip.replace('\n',' ').replace('\r',' ').replace("\t","    ").replaceAll("[\000-\010\013\014\016-\037]"," ");
-        String txt = lines.get(y);
-        txt = txt.substring(0,x) + clip + txt.substring(x);
-        x = x + clip.length();
-        lines.set(y, txt);
-        myRepaint(); myScroll(); myCaretChanged(); myChanged();
-    }
-
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getText() getText} method. */
     public String getText() {
         if (in!=null) return in.getText();
         StringBuilder sb = new StringBuilder();
@@ -288,13 +292,13 @@ public final class OurTextArea extends JPanel {
         return sb.toString();
     }
 
+    /** Implements JTextArea's {@link javax.swing.JTextArea#setText(java.lang.String) setText} method. */
     public void setText(String text) {
         if (in!=null) { in.setText(text); return; }
         lines.clear();
         x=0;
         y=0;
-        int i=0, n=text.length();
-        while(i<n) {
+        for(int n=text.length(), i=0; i<n;) {
            int na=text.indexOf('\r', i), nb=text.indexOf('\n', i);
            if (na<0 && nb<0) { lines.add(text.substring(i)); break; }
            if (na<0) na=nb; else if (na>nb) { int tmp=na; na=nb; nb=tmp; }
@@ -302,134 +306,177 @@ public final class OurTextArea extends JPanel {
            i=na+1;
            if (i==nb) i=i+1;
         }
-        if (lines.size()==0) lines.add("");
-        if (lines.get(lines.size()-1).length()>0) lines.add(""); // Make it feel like there is a ending LINE BREAK
-        myChanged(); myCaretChanged();
+        if (lines.size()==0 || lines.get(lines.size()-1).length()>0) lines.add(""); // Make it feel like there is a ending LINE BREAK
+        myChanged();
+        myCaretChanged();
     }
 
+    /** This stores the latest caret's X position. */
+    private int caretX = 0;
+
+    /** This stores the latest caret's Y position. */
+    private int caretY = 0;
+
+    /** Helper method that draws the caret. */
+    private void myDrawCaret(Graphics gr, int px, int py) {
+        caretX = px;
+        caretY = py;
+        gr.setColor(Color.BLUE);
+        gr.drawLine(px-1, py, px-1, py+h-1);
+        gr.drawLine(px  , py, px  , py+h-1);
+    }
+
+    /** Helper method that draws a String, then return the horizontal distance we traveled as a result of drawing the String. */
+    private int myDraw(Graphics gr, Color color, char[] buf, int start, int len, int x, int y) {
+        gr.setColor(color);
+        if (len>1 || (len==1 && buf[start]!=' ' && buf[start]!='\t')) gr.drawChars(buf, start, len, x, y+asc);
+        if (y==pad+this.y*h && this.x>=start && this.x<start+len) {
+            myDrawCaret(gr, x + (int) (gr.getFontMetrics().getStringBounds(buf, start, this.x, gr).getWidth()), y);
+        }
+        if (len==1 && buf[start]=='\t') return tab-(x%tab); else return (int) (gr.getFontMetrics().getStringBounds(buf, start, start+len, gr).getWidth());
+    }
+
+    /** {@inheritDoc} */
+    @Override public void paintComponent(final Graphics gr) {
+        super.paintComponent(gr);
+        if (in!=null) return;
+        if (!(1==1) && gr instanceof Graphics2D) {
+            Graphics2D gr2 = (Graphics2D)gr;
+            gr2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        }
+        final Font oldFont = gr.getFont(); gr.setFont(font);
+        final Color oldColor = gr.getColor(); gr.setColor(colorNormal);
+        int maxWidth = 0;
+        int comment = 0; // 0:none   1:/*..*/   2:/**..*/
+        for(int i=0; i<lines.size(); i++) {
+            char[] ln = lines.get(i).toCharArray();
+            int px = pad, py = pad + i*h; // the current horizontal and vertical DRAWING position
+            for(int p=0; p<ln.length; p++) {
+                char c = ln[p];
+                if (c==' ' || c=='\t') { px += myDraw(gr, colorNormal, ln, p, 1, px, py); continue; }
+                if (comment==0 && (c=='/' || c=='-') && p<ln.length-1 && ln[p+1]==c) {
+                    px += myDraw(gr, colorComment, ln, p, ln.length-p, px, py);
+                    break;
+                }
+                if ((comment==0 && c=='/' && p<ln.length-3 && ln[p+1]=='*' && ln[p+2]=='*' && ln[p+3]!='/')
+                  ||(comment==0 && c=='/' && p==ln.length-3 && ln[p+1]=='*' && ln[p+2]=='*')) {
+                    px += myDraw(gr, colorJavadoc, ln, p, 3, px, py);
+                    p=p+2; comment=2;
+                } else if (comment==0 && c=='/' && p<ln.length-1 && ln[p+1]=='*') {
+                    px += myDraw(gr, colorBlockComment, ln, p, 2, px, py);
+                    p=p+1; comment=1;
+                } else if (comment>0) {
+                    Color color = comment==1 ? colorBlockComment : colorJavadoc;
+                    if (c=='*' && p<ln.length-1 && ln[p+1]=='/') { px+=myDraw(gr, color, ln, p, 2, px, py); p++; comment=0; } else px+=myDraw(gr, color, ln, p, 1, px, py);
+                } else if (c>='0' && c<='9') {
+                    int old=p; p++; while(p<ln.length) if (myIden(ln[p])) p++; else break;
+                    px += myDraw(gr, colorNumber, ln, old, p-old, px, py); p--;
+                } else if (myIdenStart(c)) {
+                    int old=p; p++; while(p<ln.length) if (myIden(ln[p])) p++; else break;
+                    boolean isKey = myIsKeyword(ln, old, p-old);
+                    if (isKey) gr.setFont(bold);
+                    px += myDraw(gr, isKey ? colorKeyword : colorIden, ln, old, p-old, px, py); p--;
+                    if (isKey) gr.setFont(font);
+                } else { gr.setFont(bold); px += myDraw(gr, colorNormal, ln, p, 1, px, py); gr.setFont(font); }
+            }
+            if (y==i && x==ln.length) myDrawCaret(gr, px, py);
+            if (maxWidth < px) maxWidth = px;
+        }
+        if (boxwidth != maxWidth+pad || boxheight != lines.size()*h+pad+pad) { boxwidth=(maxWidth+pad); boxheight=(lines.size()*h+pad+pad); invalidate(); }
+        gr.setColor(oldColor);
+        gr.setFont(oldFont);
+        final int caretX = this.caretX, caretY = this.caretY;
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            scrollRectToVisible(new Rectangle((caretX>50 ? caretX-50 : 0), (caretY>50 ? caretY-50 : 0), 100, 100));
+          }
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override public boolean requestFocusInWindow() { return in!=null ? in.requestFocusInWindow() : super.requestFocusInWindow(); }
+
+    private int boxwidth = 100;
+
+    private int boxheight = 100;
+
+    /** {@inheritDoc} */
+    @Override public Dimension getMinimumSize() { return in!=null ? in.getMinimumSize() : getPreferredSize(); }
+
+    /** {@inheritDoc} */
+    @Override public Dimension getMaximumSize() { return in!=null ? in.getMaximumSize() : getPreferredSize(); }
+
+    /** {@inheritDoc} */
+    @Override public Dimension getPreferredSize() { return in!=null ? in.getPreferredSize() : new Dimension(boxwidth, boxheight); }
+
+    /** {@inheritDoc} */
+    @Override public void setFont(Font font) { if (in!=null) in.setFont(font); else {this.font=font; this.bold=font.deriveFont(Font.BOLD); repaint();} }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#setTabSize(int) setTabSize} method. */
+    public void setTabSize(int tab) { if (in!=null) in.setTabSize(tab); else if (this.tab!=font.getSize()*tab) { this.tab=font.getSize()*tab; myRepaint(); } }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getHighlighter() getHighlighter} method. */
+    public Highlighter getHighlighter() { if (in!=null) return in.getHighlighter(); else return null; }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#copy() copy} method. */
+    public void copy() { if (in!=null) in.copy(); }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#cut() cut} method. */
+    public void cut() { if (in!=null) in.cut(); }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#paste() paste} method. */
+    public void paste() {
+        if (in!=null) { in.paste(); return; }
+        String clip;
+        try { clip = (String) (getToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor)); } catch(Throwable ex) { return; }
+        clip = Util.convertLineBreak(clip);
+        if (clip.length()==0) return;
+        while(clip.length()>0) {
+           final int i = clip.indexOf('\n');
+           final String chunk = (i<0) ? clip : clip.substring(0, i);
+           final String txt = lines.get(y);
+           if (i<0) {
+              lines.set(y, txt.substring(0,x) + chunk + txt.substring(x));
+              x = x + chunk.length();
+              break;
+           } else {
+              lines.set(y, txt.substring(0,x) + chunk);
+              lines.add(y+1, txt.substring(x));
+              y = y + 1;
+              x = 0;
+              clip = clip.substring(i+1);
+           }
+        }
+        myRepaint(); myCaretChanged(); myChanged();
+    }
+
+    /** Construct a new OurTextArea object displaying the given String. */
     public OurTextArea(String text) {
-        text = text.replace("\t","    ").replaceAll("[\000-\010\013\014\016-\037]"," ");
         lines.add(""); // since we list this as one of the invariant for this class
-        if (!("yes".equals(System.getProperty("debug")))) {
-            in = new JTextArea(text);
-            setLayout(new BorderLayout());
-            add(in, BorderLayout.CENTER);
-            return;
+        text = Util.convertLineBreak(text);
+        if (1==1 && !("yes".equals(System.getProperty("debug")))) {
+           in = new JTextArea(text);
+           in.setHighlighter(new DefaultHighlighter());
+           setLayout(new BorderLayout());
+           add(in, BorderLayout.CENTER);
+           return;
         }
         setText(text);
         setBackground(Color.WHITE);
         setOpaque(true);
         setFocusable(true);
+        Set<AWTKeyStroke> emptyset = Collections.unmodifiableSet(new HashSet<AWTKeyStroke>(1));
+        setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, emptyset);
+        setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, emptyset);
         addKeyListener(new KeyListener() {
            public void keyPressed(KeyEvent e) { myPress(e); }
            public void keyTyped(KeyEvent e) { myType(e); }
            public void keyReleased(KeyEvent e) { }
         });
         addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) { requestFocusInWindow(); }
-            public void mousePressed(MouseEvent e) { requestFocusInWindow(); }
+           public void mouseClicked(MouseEvent e) { requestFocusInWindow(); }
+           public void mousePressed(MouseEvent e) { requestFocusInWindow(); }
         });
-    }
-
-    private boolean myIdenStart(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || c=='$'; }
-
-    private boolean myIden(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || (c>='0' && c<='9') || c=='$' || c=='\'' || c=='\"'; }
-
-    private final String[] keywords = new String[] {"abstract", "all", "and", "as", "assert", "but", "check", "disj", "disjoint",
-      "else", "enum", "exactly", "exh", "exhaustive", "expect", "extends", "fact", "for", "fun", "iden", "iff", "implies", "in",
-      "Int", "int", "let", "lone", "module", "no", "none", "not", "one", "open", "or", "part", "partition", "pred", "private",
-      "run", "seq", "set", "sig", "some", "sum", "this", "univ"
-    };
-
-    private boolean myIsKeyword(char[] array, int start, int len) {
-        again:
-        for(int i=keywords.length-1; i>=0; i--) {
-            String str=keywords[i];
-            if (str.length() != len) continue;
-            for(int j=0; j<len; j++) if (str.charAt(j)!=array[start+j]) continue again;
-            return true;
-        }
-        return false;
-    }
-
-    private final Color colorNormal = Color.BLACK;
-    private final Color colorNumber = Color.RED;
-    private final Color colorIden = Color.BLACK;
-    private final Color colorKeyword = new Color(30, 30, 168);
-    private final Color colorComment = new Color(30, 168, 30);
-    private final Color colorBlockComment = new Color(30, 168, 30);
-    private final Color colorJavadoc = new Color(210, 30, 30);
-
-    @Override public void paint(Graphics gr) {
-        super.paint(gr);
-        if (in!=null) return;
-        if (false) if (gr instanceof Graphics2D) {
-            Graphics2D gr2 = (Graphics2D)gr;
-            gr2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        }
-        final Font oldFont = gr.getFont(); gr.setFont(font);
-        final Color oldColor = gr.getColor(); gr.setColor(colorNormal);
-        int comment = 0; // 0:none   1:/*..*/   2:/**..*/
-        again:
-        for(int i=0; i<lines.size(); i++) {
-            char[] ln = lines.get(i).toCharArray();
-            for(int p=0; p<ln.length; p++) {
-                char c = ln[p];
-                if (c<=32) continue;
-                if (comment==0 && (c=='/' || c=='-') && p<ln.length-1 && ln[p+1]==c) {
-                    gr.setColor(colorComment);
-                    gr.drawChars(ln, p, ln.length-p, pad+p*w, pad+i*h+asc);
-                    gr.setColor(colorNormal);
-                    continue again;
-                }
-                if ((comment==0 && c=='/' && p<ln.length-3 && ln[p+1]=='*' && ln[p+2]=='*' && ln[p+3]!='/')
-                  ||(comment==0 && c=='/' && p==ln.length-3 && ln[p+1]=='*' && ln[p+2]=='*')) {
-                    gr.setColor(colorJavadoc);
-                    gr.drawChars(ln, p, 3, pad+p*w, pad+i*h+asc);
-                    p=p+2; comment=2; continue;
-                }
-                if (comment==0 && c=='/' && p<ln.length-1 && ln[p+1]=='*') {
-                    gr.setColor(colorBlockComment);
-                    gr.drawChars(ln, p, 2, pad+p*w, pad+i*h+asc);
-                    p=p+1; comment=1; continue;
-                }
-                if (comment>0) {
-                    gr.setColor(comment==1 ? colorBlockComment : colorJavadoc);
-                    if (c=='*' && p<ln.length-1 && ln[p+1]=='/') {
-                       gr.drawChars(ln, p, 2, pad+p*w, pad+i*h+asc);
-                       p=p+1; comment=0; gr.setColor(colorNormal);
-                    } else {
-                       gr.drawChars(ln, p, 1, pad+p*w, pad+i*h+asc);
-                    }
-                    continue;
-                }
-                if (c>='0' && c<='9') {
-                    int old=p; p++; while(p<ln.length) if (ln[p]>='0' && ln[p]<='9') p++; else break;
-                    gr.setColor(colorNumber);
-                    gr.drawChars(ln, old, p-old, pad+old*w, pad+i*h+asc);
-                    gr.setColor(colorNormal);
-                    p--;
-                    continue;
-                }
-                if (myIdenStart(c)) {
-                    int old=p; p++; while(p<ln.length) if (myIden(ln[p])) p++; else break;
-                    boolean isKey = myIsKeyword(ln,old,p-old);
-                    if (isKey) gr.setFont(bold);
-                    gr.setColor(isKey ? colorKeyword : colorIden);
-                    gr.drawChars(ln, old, p-old, pad+old*w, pad+i*h+asc);
-                    gr.setColor(colorNormal);
-                    if (isKey) gr.setFont(font);
-                    p--;
-                    continue;
-                }
-                gr.setFont(bold); gr.drawChars(ln, p, 1, pad+p*w, pad+i*h+asc); gr.setFont(font);
-            }
-        }
-        gr.setColor(Color.BLUE);
-        gr.drawLine(pad+x*w-1, pad+y*h, pad+x*w-1, pad+y*h+h-1);
-        gr.drawLine(pad+x*w  , pad+y*h, pad+x*w  , pad+y*h+h-1);
-        gr.setColor(oldColor);
-        gr.setFont(oldFont);
     }
 
     public static void main(String[] args) {
@@ -440,8 +487,8 @@ public final class OurTextArea extends JPanel {
                 JFrame jf = new JFrame("Demo");
                 jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 jf.setLayout(new BorderLayout());
-                Component area = (1==1) ? new OurTextArea(text) : new JTextArea(text);
-                JScrollPane scroll = new JScrollPane(area, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+                Component area = new OurTextArea(text);
+                JScrollPane scroll = new JScrollPane(area, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
                 jf.add(scroll);
                 jf.pack();
                 jf.setLocation(50,50);
