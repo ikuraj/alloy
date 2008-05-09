@@ -102,8 +102,6 @@ public final class AlloyInstance {
      *
      * @param filename - the original filename of the model that generated this instance; can be "" if unknown
      * @param commandname - the original command that generated this instance; can be "" if unknown
-     * @param kodkod_input - the original Kodkod input that generated this instance; can be "" if unknown
-     * @param kodkod_output - the original Kodkod output representing this instance; can be "" if unknown
      * @param model - the AlloyModel that this AlloyInstance is an instance of
      * @param atom2sets - maps each atom to the set(s) it is in; its KeySet is considered the universe of all atoms
      * @param rel2tuples - maps each relation to the tuple(s) it is in
