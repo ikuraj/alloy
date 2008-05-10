@@ -654,24 +654,30 @@ public final class VizGUI implements ComponentListener {
         return myGraphPanel.alloyGetViewer();
     }
 
-    private AlloyInstance helper1(String fileName, String canonFileName) {
-        try {
-            File f=new File(canonFileName);
-            if (!f.canRead()) throw new Exception("");
-            return StaticInstanceReader.parseInstance(f);
-        } catch (Throwable e) {
-            xmlLoaded.remove(fileName);
-            xmlLoaded.remove(canonFileName);
-            JOptionPane.showMessageDialog(null, "File does not exist or is not a valid Alloy instance: "
-               +e.getMessage()+"\n\nFile: "+canonFileName,
-               "Error", JOptionPane.ERROR_MESSAGE);
-            if (xmlLoaded.size()>0) { loadXML(xmlLoaded.get(xmlLoaded.size()-1), false); return null; }
-            doCloseAll();
-            return null;
+    /** Load the XML instance. */
+    public void loadXML(final String fileName, boolean forcefully) {
+        final String xmlFileName=Util.canon(fileName);
+        File f=new File(xmlFileName);
+        if (forcefully || !xmlFileName.equals(this.xmlFileName)) {
+            AlloyInstance myInstance;
+            try {
+                if (!f.canRead()) throw new Exception("");
+                myInstance = StaticInstanceReader.parseInstance(f);
+            } catch (Throwable e) {
+                xmlLoaded.remove(fileName);
+                xmlLoaded.remove(xmlFileName);
+                JOptionPane.showMessageDialog(null, "File does not exist or is not a valid Alloy instance: "
+                   +e.getMessage()+"\n\nFile: "+xmlFileName,
+                   "Error", JOptionPane.ERROR_MESSAGE);
+                if (xmlLoaded.size()>0) { loadXML(xmlLoaded.get(xmlLoaded.size()-1), false); return; }
+                doCloseAll();
+                return;
+            }
+            if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
+            repopulateProjectionPopup();
+            xml2title.put(xmlFileName, makeVizTitle());
+            this.xmlFileName = xmlFileName;
         }
-    }
-
-    private void helper2(String xmlFileName) {
         if (!xmlLoaded.contains(xmlFileName)) xmlLoaded.add(xmlFileName);
         toolbar.setEnabled(true);
         settingsOpen=0;
@@ -686,32 +692,6 @@ public final class VizGUI implements ComponentListener {
            frame.toFront();
         }
         updateDisplay();
-    }
-
-    /** Load the XML instance as a result of solution enuemration. */
-    public void loadXMLfromEnumeration(final String fileName) {
-        final String xmlFileName=Util.canon(fileName);
-        AlloyInstance myInstance = helper1(fileName, xmlFileName);
-        if (myInstance==null) return;
-        if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
-        repopulateProjectionPopup();
-        xml2title.put(xmlFileName, makeVizTitle());
-        this.xmlFileName = xmlFileName;
-        helper2(xmlFileName);
-    }
-
-    /** Load the XML instance. */
-    public void loadXML(final String fileName, boolean forcefully) {
-        final String xmlFileName=Util.canon(fileName);
-        if (forcefully || !xmlFileName.equals(this.xmlFileName)) {
-            AlloyInstance myInstance = helper1(fileName, xmlFileName);
-            if (myInstance==null) return;
-            if (myState==null) myState=new VizState(myInstance); else myState.loadInstance(myInstance);
-            repopulateProjectionPopup();
-            xml2title.put(xmlFileName, makeVizTitle());
-            this.xmlFileName = xmlFileName;
-        }
-        helper2(xmlFileName);
     }
 
     /** This method loads a specific theme file. */

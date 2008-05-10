@@ -233,12 +233,6 @@ public final class VizGraphPanel extends JPanel {
         remakeAll();
     }
 
-    /** The currently shown diagram (in DOT form) */
-    private String latestDot = "";
-
-    /** Retrieves the current diagram (in DOT form) */
-    public String getLatestDot() { return latestDot; }
-
     /** Regenerate the comboboxes and the graph. */
     public void remakeAll() {
         Map<AlloyType,AlloyAtom> map=new LinkedHashMap<AlloyType,AlloyAtom>();
@@ -255,14 +249,9 @@ public final class VizGraphPanel extends JPanel {
         }
         currentProjection=new AlloyProjection(map);
         JPanel graph=vizState.getGraph(currentProjection).b;
-        if (graph instanceof VizViewer) {
-            latestDot = ((VizViewer)graph).alloyGetAnnotation();
-        } else {
-            latestDot = "";
-        }
         if (seeDot && (graph instanceof VizViewer)) {
             viewer=null;
-            final JTextArea t = OurUtil.textarea(latestDot, 10, 10);
+            final JTextArea t = OurUtil.textarea(((VizViewer)graph).alloyGetAnnotation(), 10, 10);
             t.setFont(getFont());
             t.setBackground(Color.WHITE);
             t.setEditable(false);
