@@ -103,22 +103,21 @@ public final class OurTabbedEditor {
         /** The ScrollPane containing the text area. */
         private final JScrollPane scroll;
         /** The undo manager associated with this text area. */
-        private final UndoManager undo = new UndoManager();
+        private final UndoManager undo=new UndoManager();
         /** The highlighter associated with this text area. */
-        private final Highlighter highlighter;
+        private final Highlighter highlighter=new DefaultHighlighter();
         /** The filename; always nonempty, canonical, absolute, and unique among all Tab objects in this editor. */
         private String filename;
         /** True if this is associated with an actual file; false if it is still an "untitled" tab. */
         private boolean isFile;
-        /** True if the OurTextArea has been modified since it was last loaded or saved. */
+        /** True if the JTextArea has been modified since it was last loaded or saved. */
         private boolean modified=false;
         /** Constructs a new Tab */
         private Tab(JPanel panel, JLabel label, OurTextArea text, String filename, boolean isFile) {
             this.panel=panel;
             this.label=label;
             this.text=text;
-            this.highlighter=new DefaultHighlighter();
-            text.setHighlighter(this.highlighter);
+            this.text.setHighlighter(highlighter);
             this.scroll=new JScrollPane(text, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
             this.scroll.setBorder(new EmptyBorder(0,0,0,0));
             this.undo.setLimit(100);
@@ -142,10 +141,10 @@ public final class OurTabbedEditor {
     /** Default border color for each tab. */
     private static final Color BORDER=Color.LIGHT_GRAY;
 
-    /** The font to use in the OurTextArea */
+    /** The font to use in the JTextArea */
     private Font font;
 
-    /** The tabsize to use in the OurTextArea */
+    /** The tabsize to use in the JTextArea */
     private int tabSize;
 
     /** The parent. */
@@ -210,7 +209,7 @@ public final class OurTabbedEditor {
         for(int j=0; j<tabs.size(); j++) {
             Tab t=tabs.get(j);
             JLabel label=t.label;
-            boolean hl=(t.highlighter!=null && t.highlighter.getHighlights().length>0);
+            boolean hl=(t.highlighter.getHighlights().length>0);
             label.setBorder(new OurBorder(BORDER, BORDER, j!=i?BORDER:WHITE, BORDER));
             label.setBackground(j!=i ? (hl ? INACTIVE_HIGHLIGHTED : INACTIVE) : WHITE);
             label.setForeground(hl ? (j!=i ? BLACK : ACTIVE_HIGHLIGHTED) : BLACK);
@@ -219,7 +218,7 @@ public final class OurTabbedEditor {
 
     /** Removes all highlights from every text buffer. */
     public void removeAllHighlights() {
-        for(Tab t:tabs) if (t.highlighter!=null) t.highlighter.removeAllHighlights();
+        for(Tab t:tabs) t.highlighter.removeAllHighlights();
         adjustLabelColor();
     }
 
@@ -441,7 +440,7 @@ public final class OurTabbedEditor {
         }
         pan.setAlignmentX(0.0f);
         pan.setAlignmentY(1.0f);
-        // Make the OurTextArea
+        // Make the JTextArea
         final OurTextArea text = new OurTextArea(Util.convertLineBreak(fileContent), font.getFamily(), font.getSize());
         text.setBackground(Color.WHITE);
         text.setBorder(new EmptyBorder(1,1,1,1));
@@ -595,7 +594,7 @@ public final class OurTabbedEditor {
         return frame;
     }
 
-    /** Returns the OurTextArea of the current text buffer. */
+    /** Returns the JTextArea of the current text buffer. */
     public OurTextArea text() {
         return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea("", "Monospaced", 10);
     }
@@ -675,7 +674,7 @@ public final class OurTabbedEditor {
                 }
                 int c=text().getLineStartOffset(p.y-1)+p.x-1;
                 int d=text().getLineStartOffset(p.y2-1)+p.x2-1;
-                if (tabs.get(me).highlighter!=null) tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
+                tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
                 // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
                 text().setSelectionStart(0);
                 text().setSelectionEnd(0);
@@ -722,7 +721,7 @@ public final class OurTabbedEditor {
                 text = text();
                 c = text.getLineStartOffset(p.y-1)+p.x-1;
                 d = text.getLineStartOffset(p.y2-1)+p.x2-1;
-                if (tabs.get(me).highlighter!=null) tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
+                tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
             }
