@@ -25,14 +25,18 @@ package edu.mit.csail.sdg.alloy4;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.WeakHashMap;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
@@ -41,7 +45,6 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
 import javax.swing.text.Element;
-import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -63,6 +66,43 @@ public final class OurTextArea extends JTextPane {
 
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
+
+    /**
+     * This flag indicates the styling strategy (0=none, 1=timer-based 2:eventQueue-based).
+     * it must be set to 0 here; the first constructor call will set the real value.
+     */
+    private static int strategy = 0;
+
+    /** This stores the set of all OurTextArea objects ever constructed; stale objects will be removed automatically. */
+    private static final WeakHashMap<OurTextArea,Object> all = new WeakHashMap<OurTextArea,Object>();
+
+    /** This stores the timer that performs timer-based syntax highlighting. */
+    private static Timer timer = null;
+
+    /** Disabled syntax highlighting. */
+    public static void myDisabledHighlighting() {
+        if (strategy == 0) return;
+        strategy = 0;
+        for(OurTextArea x:all.keySet()) if (x.doc!=null) {
+            x.doc.setCharacterAttributes(0, x.doc.getLength(), x.styleNormal, true);
+            x.needReApply = false;
+        }
+    }
+
+    /** Enable syntax highlighting; the flag indicates whether we will use a timer or an EventQueue for the coloring. */
+    public static void myEnableHighlighting(boolean timerBased) {
+        if (timerBased && timer==null) {
+           timer = new Timer(500, new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                if (strategy==1) for(OurTextArea x:all.keySet()) if (x.doc!=null && x.needReApply) x.myReapplyAll();
+              }
+           });
+           timer.start();
+        }
+        if (strategy == (timerBased ? 1 : 2)) return;
+        strategy = (timerBased ? 1 : 2);
+        for(OurTextArea x:all.keySet()) if (x.doc!=null) x.myReapplyAll();
+    }
 
     /** This stores the currently recognized set of keywords. */
     private final String[] keywords = new String[] {"abstract", "all", "and", "as", "assert", "but", "check", "disj",
@@ -107,9 +147,35 @@ public final class OurTextArea extends JTextPane {
         undoListeners.add(listener);
     }
 
+    /** Implements the core traversal logic in getLineStartOffset, getLineCount, and getLineOfOffset. */
+    private static int myHelper(String text, int action, int target) throws BadLocationException {
+        final int n=text.length();
+        if (action==3) if (target<0 || target>text.length()) throw new BadLocationException("", target);
+        for(int i=0, line=0; i<=n; line++) {
+            // invariant #1:  line == the number of lines we've seen already before text[i]
+            // invariant #2:  i==0 or text[i-1]=='\n'
+            int j = (i>=n) ? n : text.indexOf('\n',i); if (j<0) j=n; // offset of the end of this line
+            if (action==1 && line==target) return i;
+            if (action==2 && j==n) return line+1;
+            if (action==3 && target>=i && target<=j) return line;
+            i=j+1;
+        }
+        throw new BadLocationException("", target);
+    }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineStartOffset(int) getLineStartOffset} method. */
+    public int getLineStartOffset(int line) throws BadLocationException { return myHelper(getText(), 1, line); }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineCount() getLineCount} method. */
+    public int getLineCount() { try {return myHelper(getText(), 2, 0);} catch(BadLocationException ex) {return 0;} }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineOfOffset(int) getLineOfOffset} method. */
+    public int getLineOfOffset(int offset) throws BadLocationException { return myHelper(getText(), 3, offset); }
+
     /** Constructs a text area widget. */
     public OurTextArea(String text, String fontFamily, int fontSize, int tabSize) {
        super();
+       all.put(this, Boolean.FALSE);
        // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
        // 30000 is a good number; value higher than about 32768 will cause errors.
        final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
@@ -143,8 +209,8 @@ public final class OurTextArea extends JTextPane {
        mostRecentFont = new Font(fontFamily, Font.PLAIN, fontSize);
        setTabSize(tabSize);
        if (text.length()>0) setText(text);
-       final Runnable rerun = new Runnable() {
-           public void run() { myReapplyAll(); }
+       final Runnable run = new Runnable() {
+           public void run() { mostRecentReapply=null; if (needReApply) myReapplyAll(); }
        };
        getDocument().addDocumentListener(new DocumentListener() {
           public void changedUpdate(DocumentEvent e) { }
@@ -154,10 +220,19 @@ public final class OurTextArea extends JTextPane {
                  UndoableEditEvent event = new UndoableEditEvent(this, (UndoableEdit)e);
                  for(UndoableEditListener listener: undoListeners) listener.undoableEditHappened(event);
               }
-              SwingUtilities.invokeLater(rerun);
+              needReApply = true;
+              if (mostRecentReapply!=null) { System.out.print("S"); System.out.flush(); return; }
+              if (strategy==2) SwingUtilities.invokeLater(mostRecentReapply = run);
           }
        });
+       myEnableHighlighting(true);
     }
+
+    /** True iff the text area now needs to reapply styles. */
+    private boolean needReApply = true;
+
+    /** Nonnull iff the AWT event thread has a pending ReApplyAll in its pipeline already. */
+    private Runnable mostRecentReapply = null;
 
     /** {@inheritDoc} */
     @Override public void setText(String text) {
@@ -199,83 +274,47 @@ public final class OurTextArea extends JTextPane {
         if (doc!=null) doc.setParagraphAttributes(0, doc.getLength(), tabAttribute, false);
     }
 
-    /** Apply the given style to the section from text[start] up to but excluding text[start+len] */
-    private void myReapply(int start, int len, Style s) {
-        Element elem = doc.getCharacterElement(start);
-        //int end = elem.getEndOffset();
-        //System.out.println(elem.getStartOffset()+".."+elem.getEndOffset()+" : "+elem.getAttributes()); System.out.flush();
-        //System.out.println(elem.getClass()); System.out.flush();
-        //System.out.println(elem.getAttributes().getClass()); System.out.flush();
-        MutableAttributeSet atr = (MutableAttributeSet)(elem.getAttributes());
-        boolean flag = atr.isEqual(s); flag=false;
-        if (!flag) { /*System.out.print("X");*/ doc.setCharacterAttributes(start, len, s, true); }
-        //else { System.out.print("."); }
-    }
-
     /** Apply appropriate styles to the entire text. */
     private void myReapplyAll() {
-        if (doc==null) return;
+        if (doc==null || strategy==0) return;
         String txt=getText();
         int comment=0, n=txt.length();
-        doc.setCharacterAttributes(0, n, styleNormal, false);
-        doc.setParagraphAttributes(0, n, tabAttribute, false);
+        doc.setCharacterAttributes(0, n, styleNormal, true);
+        doc.setParagraphAttributes(0, n, tabAttribute, true);
         for(int i=0; i<n; i++) {
             char c = txt.charAt(i);
             if (c==' ' || c=='\t') continue;
             if (comment==0 && (c=='/' || c=='-') && i<n-1 && txt.charAt(i+1)==c) {
                int d = txt.indexOf('\n', i);
-               myReapply(i, d<0 ? (n-i) : (d-i), styleComment);
+               doc.setCharacterAttributes(i, d<0 ? (n-i) : (d-i), styleComment, true);
                if (d<0) return; else i=d;
             } else if
                 ((comment==0 && c=='/' && i<n-3 && txt.charAt(i+1)=='*' && txt.charAt(i+2)=='*' && txt.charAt(i+3)!='/')
                ||(comment==0 && c=='/' && i==n-3 && txt.charAt(i+1)=='*' && txt.charAt(i+2)=='*')) {
-                myReapply(i, 3, styleJavadocComment); i=i+2; comment=2;
+                doc.setCharacterAttributes(i, 3, styleJavadocComment, true); i=i+2; comment=2;
             } else if (comment==0 && c=='/' && i<n-1 && txt.charAt(i+1)=='*') {
-                myReapply(i, 2, styleBlockComment); i++; comment=1;
+                doc.setCharacterAttributes(i, 2, styleBlockComment, true); i++; comment=1;
             } else if (comment>0 && c=='*' && i<n-1 && txt.charAt(i+1)=='/') {
-                myReapply(i, 2, comment==1 ? styleBlockComment : styleJavadocComment); i++; comment=0;
+                doc.setCharacterAttributes(i, 2, comment==1 ? styleBlockComment : styleJavadocComment, true); i++; comment=0;
             } else if (comment>0) {
-                myReapply(i, 1, comment==1 ? styleBlockComment : styleJavadocComment);
+                doc.setCharacterAttributes(i, 1, comment==1 ? styleBlockComment : styleJavadocComment, true);
             } else if ((c>='0' && c<='9') || myIdenStart(c)) {
                int oldi=i; i++; while(i<n && myIden(txt.charAt(i))) i++;
                Style s = styleNormal;
                if (c>='0' && c<='9') s=styleNumber; else if (myIsKeyword(txt, oldi, i-oldi)) s=styleKeyword;
-               myReapply(oldi, i-oldi, s);
+               doc.setCharacterAttributes(oldi, i-oldi, s, true);
                i--;
             } else {
                int oldi=i; i++; while(i<n && txt.charAt(i)!='-' && txt.charAt(i)!='/' && txt.charAt(i)>=32 && !myIden(txt.charAt(i))) i++;
-               myReapply(oldi, i-oldi, styleSymbol);
+               doc.setCharacterAttributes(oldi, i-oldi, styleSymbol, true);
                i--;
             }
         }
+        needReApply = false;
     }
-
-    /** Implements the core traversal logic in getLineStartOffset, getLineCount, and getLineOfOffset. */
-    private static int myHelper(String text, int action, int target) throws BadLocationException {
-        final int n=text.length();
-        if (action==3) if (target<0 || target>text.length()) throw new BadLocationException("", target);
-        for(int i=0, line=0; i<=n; line++) {
-            // invariant #1:  line == the number of lines we've seen already before text[i]
-            // invariant #2:  i==0 or text[i-1]=='\n'
-            int j = (i>=n) ? n : text.indexOf('\n',i); if (j<0) j=n; // offset of the end of this line
-            if (action==1 && line==target) return i;
-            if (action==2 && j==n) return line+1;
-            if (action==3 && target>=i && target<=j) return line;
-            i=j+1;
-        }
-        throw new BadLocationException("", target);
-    }
-
-    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineStartOffset(int) getLineStartOffset} method. */
-    public int getLineStartOffset(int line) throws BadLocationException { return myHelper(getText(), 1, line); }
-
-    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineCount() getLineCount} method. */
-    public int getLineCount() { try {return myHelper(getText(), 2, 0);} catch(BadLocationException ex) {return 0;} }
-
-    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineOfOffset(int) getLineOfOffset} method. */
-    public int getLineOfOffset(int offset) throws BadLocationException { return myHelper(getText(), 3, offset); }
 
     public static void main(String[] args) throws Exception {
+        /*
         for(String a: new String[]{"", "a", "ab", "abc"})
         for(String b: new String[]{"", "\n", "d", "\nd", "de", "\nde", "def", "\ndef"})
         for(String c: new String[]{"", "\n", "x", "\nx", "xy", "\nxy", "xyz", "\nxyz"})
@@ -295,23 +334,36 @@ public final class OurTextArea extends JTextPane {
                if (ans1 != ans2) throw new RuntimeException("Diff2: offset="+offset+" ans1="+ans1+" ans2="+ans2);
             }
         }
+        */
         SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    String text = Util.readAll("/zweb/zweb/w/p/public/def.als");
-                    JFrame jf = new JFrame("Demo");
-                    jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    jf.setLayout(new BorderLayout());
-                    JTextPane area = new OurTextArea(text+"sig abc // def", "Monospaced", 10, 4);
-                    JScrollPane scroll = new JScrollPane(area, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-                    jf.add(scroll);
-                    jf.pack();
-                    jf.setLocation(50,50);
-                    jf.setSize(1200,250);
-                    jf.setVisible(true);
-                    area.requestFocusInWindow();
-                } catch(IOException ex) { }
-            }
+           public void run() {
+               try {
+                   String text = Util.readAll("/zweb/zweb/w/p/public/def.als");
+                   JFrame jf = new JFrame("Demo");
+                   jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                   jf.setLayout(new BorderLayout());
+                   final OurTextArea area = new OurTextArea(text, "Monospaced", 18, 4);
+                   JScrollPane scroll = new JScrollPane(area, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                   jf.add(scroll, BorderLayout.CENTER);
+                   JButton off = new JButton("Off"); off.addActionListener(new ActionListener() {
+                       public void actionPerformed(ActionEvent e) { myDisabledHighlighting(); }
+                   });
+                   JButton tim = new JButton("Timer"); tim.addActionListener(new ActionListener() {
+                       public void actionPerformed(ActionEvent e) { myEnableHighlighting(true); }
+                   });
+                   JButton inst = new JButton("Instant"); inst.addActionListener(new ActionListener() {
+                       public void actionPerformed(ActionEvent e) { myEnableHighlighting(false); }
+                   });
+                   jf.add(off, BorderLayout.NORTH);
+                   jf.add(tim, BorderLayout.WEST);
+                   jf.add(inst, BorderLayout.EAST);
+                   jf.pack();
+                   jf.setLocation(50,50);
+                   jf.setSize(1200,250);
+                   jf.setVisible(true);
+                   area.requestFocusInWindow();
+               } catch(IOException ex) { }
+           }
         });
     }
 }
