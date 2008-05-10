@@ -67,6 +67,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
 import javax.swing.undo.UndoManager;
@@ -102,7 +103,7 @@ public final class OurTabbedEditor {
         /** The ScrollPane containing the text area. */
         private final JScrollPane scroll;
         /** The undo manager associated with this text area. */
-        private final UndoManager undo=new UndoManager();
+        private final UndoManager undo = new UndoManager();
         /** The highlighter associated with this text area. */
         private final Highlighter highlighter;
         /** The filename; always nonempty, canonical, absolute, and unique among all Tab objects in this editor. */
@@ -116,7 +117,8 @@ public final class OurTabbedEditor {
             this.panel=panel;
             this.label=label;
             this.text=text;
-            this.highlighter=text.getHighlighter();
+            this.highlighter=new DefaultHighlighter();
+            text.setHighlighter(this.highlighter);
             this.scroll=new JScrollPane(text, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
             this.scroll.setBorder(new EmptyBorder(0,0,0,0));
             this.undo.setLimit(100);
@@ -440,11 +442,10 @@ public final class OurTabbedEditor {
         pan.setAlignmentX(0.0f);
         pan.setAlignmentY(1.0f);
         // Make the OurTextArea
-        final OurTextArea text = new OurTextArea(Util.convertLineBreak(fileContent));
+        final OurTextArea text = new OurTextArea(Util.convertLineBreak(fileContent), font.getFamily(), font.getSize());
         text.setBackground(Color.WHITE);
         text.setBorder(new EmptyBorder(1,1,1,1));
         text.setTabSize(tabSize);
-        text.setFont(font);
         if (!Util.onMac()) {
             text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
                 private static final long serialVersionUID = 1L;
@@ -504,17 +505,17 @@ public final class OurTabbedEditor {
         text.addFocusListener(new FocusAdapter() {
             public final void focusGained(FocusEvent e) { parent.notifyFocusGained(); }
         });
-        text.addDocumentListener(new DocumentListener() {
-            public final void changedUpdate(DocumentEvent e) {
+        text.getDocument().addDocumentListener(new DocumentListener() {
+            public final void insertUpdate(DocumentEvent e) {
                 removeAllHighlights();
                 setTitle(tab.label, tab.filename+" *");
                 tab.modified=true;
                 parent.notifyChange();
             }
-            public final void removeUpdate(DocumentEvent e) { changedUpdate(e); }
-            public final void insertUpdate(DocumentEvent e) { changedUpdate(e); }
+            public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+            public final void changedUpdate(DocumentEvent e) { } // font changes are irrelevant
         });
-        text.addUndoableEditListener(new UndoableEditListener() {
+        text.getDocument().addUndoableEditListener(new UndoableEditListener() {
             public final void undoableEditHappened(UndoableEditEvent event) { tab.undo.addEdit(event.getEdit()); }
         });
         // If it's a file, we want to remove the rightmost untitled empty tab
@@ -596,7 +597,7 @@ public final class OurTabbedEditor {
 
     /** Returns the OurTextArea of the current text buffer. */
     public OurTextArea text() {
-        return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea("");
+        return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea("", "Monospaced", 10);
     }
 
     /** True if the current text buffer has 1 or more "undo" that it can perform. */

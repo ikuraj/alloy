@@ -791,9 +791,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (!OurDialog.getInput(frame,"Go To","Line Number:", y, "Column Number (optional):", x)) return null;
         try {
             OurTextArea t = text.text();
-            int xx = 1, yy = Integer.parseInt(y.getText());
+            int xx = 1, yy = Integer.parseInt(y.getText()), lineCount = t.getLineCount();
             if (yy<1) return null;
-            if (yy>t.getLineCount()) {log.logRed("This file only has "+t.getLineCount()+" line(s)."); return null;}
+            if (yy>lineCount) {log.logRed("This file only has "+lineCount+" line(s)."); return null;}
             if (x.getText().length()!=0) xx=Integer.parseInt(x.getText());
             if (xx<1) {log.logRed("If the column number is specified, it must be 1 or greater."); return null;}
             int caret = t.getLineStartOffset(yy-1);
