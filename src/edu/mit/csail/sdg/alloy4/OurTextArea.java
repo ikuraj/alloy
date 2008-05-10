@@ -26,23 +26,32 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
 import javax.swing.text.Element;
 import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
+import javax.swing.text.TabSet;
+import javax.swing.text.TabStop;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
+import javax.swing.undo.UndoableEdit;
 
 /**
  * Graphical syntax-highlighting editor.
@@ -80,14 +89,26 @@ public final class OurTextArea extends JTextPane {
         return false;
     }
 
+    /** The attribute set for defining TAB stops. */
+    private SimpleAttributeSet tabAttribute = null;
+
     /** The various style to use when displaying text in the text area. */
     private final Style styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleIden, styleSymbol;
 
     /** The styled document being displayed. */
     private final StyledDocument doc;
 
+    /** Stores the list of UndoableEditListeners registered with this widget. */
+    private final List<UndoableEditListener> undoListeners = new ArrayList<UndoableEditListener>();
+
+    /** Add the given listener to the list of UndoableEditListeners registered with this widget. */
+    public void myAddUndoableEditListener(UndoableEditListener listener) {
+        for(int i=0; i<undoListeners.size(); i++) if (undoListeners.get(i)==listener) return;
+        undoListeners.add(listener);
+    }
+
     /** Constructs a text area widget. */
-    public OurTextArea(String text, String fontFamily, int fontSize) {
+    public OurTextArea(String text, String fontFamily, int fontSize, int tabSize) {
        super();
        // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
        // 30000 is a good number; value higher than about 32768 will cause errors.
@@ -119,14 +140,22 @@ public final class OurTextArea extends JTextPane {
        styleComment = doc.addStyle("0", styleNormal); StyleConstants.setForeground(styleComment, new Color(30, 168, 30));
        styleBlockComment = doc.addStyle("1", styleNormal); StyleConstants.setForeground(styleBlockComment, new Color(30, 168, 30));
        styleJavadocComment = doc.addStyle("2", styleNormal); StyleConstants.setForeground(styleJavadocComment, new Color(210, 30, 30));
+       mostRecentFont = new Font(fontFamily, Font.PLAIN, fontSize);
+       setTabSize(tabSize);
        if (text.length()>0) setText(text);
        final Runnable rerun = new Runnable() {
            public void run() { myReapplyAll(); }
        };
        getDocument().addDocumentListener(new DocumentListener() {
           public void changedUpdate(DocumentEvent e) { }
-          public void insertUpdate(DocumentEvent e) { SwingUtilities.invokeLater(rerun); }
-          public void removeUpdate(DocumentEvent e) { SwingUtilities.invokeLater(rerun); }
+          public void insertUpdate(DocumentEvent e) { removeUpdate(e); }
+          public void removeUpdate(DocumentEvent e) {
+              if (e instanceof UndoableEdit) {
+                 UndoableEditEvent event = new UndoableEditEvent(this, (UndoableEdit)e);
+                 for(UndoableEditListener listener: undoListeners) listener.undoableEditHappened(event);
+              }
+              SwingUtilities.invokeLater(rerun);
+          }
        });
     }
 
@@ -137,15 +166,37 @@ public final class OurTextArea extends JTextPane {
         try { doc.insertString(0, text, styleNormal); setCaretPosition(0); myReapplyAll(); } catch(BadLocationException ex) { }
     }
 
+    /** Caches the most recent font. */
+    private Font mostRecentFont;
+
+    /** Caches the most recent tab size. */
+    private int tabSize;
+
     /** {@inheritDoc} */
     @Override public void setFont(Font font) {
-        super.setFont(font);
-        if (styleNormal==null) return; // This can happen, since the parent's constructor may call setFont!
+        if (doc==null) return;
+        if (this.mostRecentFont == font) return; else this.mostRecentFont = font;
         for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleIden, styleSymbol}) {
            StyleConstants.setFontFamily(s, font.getFamily());
            StyleConstants.setFontSize(s, font.getSize());
         }
+        int oldTabSize = tabSize++;
+        setTabSize(oldTabSize); // forces the recomputation of the tab positions based on the new font
         myReapplyAll();
+    }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#setTabSize(int) setTabSize} method. */
+    public void setTabSize(int tab) {
+        if (doc==null) return;
+        if (tab<1) tab=1; else if (tab>100) tab=100;
+        if (this.tabSize == tab) return; else this.tabSize = tab;
+        int gap = (tab * getFontMetrics(mostRecentFont).charWidth('X') * 2) / 2;
+        tabAttribute = new SimpleAttributeSet();
+        final TabStop[] pos = new TabStop[100];
+        for(int i=0; i<100; i++) { pos[i] = new TabStop(i*gap+gap); }
+        final TabSet tabSet = new TabSet(pos);
+        StyleConstants.setTabSet(tabAttribute, tabSet);
+        if (doc!=null) doc.setParagraphAttributes(0, doc.getLength(), tabAttribute, false);
     }
 
     /** Apply the given style to the section from text[start] up to but excluding text[start+len] */
@@ -163,9 +214,11 @@ public final class OurTextArea extends JTextPane {
 
     /** Apply appropriate styles to the entire text. */
     private void myReapplyAll() {
+        if (doc==null) return;
         String txt=getText();
         int comment=0, n=txt.length();
-        myReapply(0, n, styleNormal);
+        doc.setCharacterAttributes(0, n, styleNormal, false);
+        doc.setParagraphAttributes(0, n, tabAttribute, false);
         for(int i=0; i<n; i++) {
             char c = txt.charAt(i);
             if (c==' ' || c=='\t') continue;
@@ -197,60 +250,51 @@ public final class OurTextArea extends JTextPane {
         }
     }
 
-    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineOfOffset(int) getLineOfOffset} method. */
-    public int getLineOfOffset(int offset) throws BadLocationException {
-        String text=getText();
-        int i=0, n=text.length(), y=0;
-        if (offset<0 || offset>=n) throw new BadLocationException("", offset);
-        while(i<n) {
-            int j=text.indexOf('\n',i);
-            if (j<0) return y;
-            if (offset>=i && offset<=j) return y;
-            i=j+1; y++;
+    /** Implements the core traversal logic in getLineStartOffset, getLineCount, and getLineOfOffset. */
+    private static int myHelper(String text, int action, int target) throws BadLocationException {
+        final int n=text.length();
+        if (action==3) if (target<0 || target>text.length()) throw new BadLocationException("", target);
+        for(int i=0, line=0; i<=n; line++) {
+            // invariant #1:  line == the number of lines we've seen already before text[i]
+            // invariant #2:  i==0 or text[i-1]=='\n'
+            int j = (i>=n) ? n : text.indexOf('\n',i); if (j<0) j=n; // offset of the end of this line
+            if (action==1 && line==target) return i;
+            if (action==2 && j==n) return line+1;
+            if (action==3 && target>=i && target<=j) return line;
+            i=j+1;
         }
-        return y;
+        throw new BadLocationException("", target);
     }
 
     /** Implements JTextArea's {@link javax.swing.JTextArea#getLineStartOffset(int) getLineStartOffset} method. */
-    public int getLineStartOffset(int line) throws BadLocationException {
-        String text=getText();
-        int i=0, n=text.length(), y=0;
-        while(true) {
-            if (y==line) return i;
-            if (i>=n) i=(-1); else i=text.indexOf('\n',i);
-            if (line<0 || i<0) throw new BadLocationException("", line);
-            i++; y++;
-        }
-    }
-
-    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineEndOffset(int) getLineEndOffset} method. */
-    public int getLineEndOffset(int line) throws BadLocationException {
-        String text=getText();
-        int i=0, n=text.length(), y=0;
-        while(true) {
-            if (y==line) return i;
-            if (i>=n) i=(-1); else i=text.indexOf('\n',i);
-            if (line<0 || i<0) throw new BadLocationException("", line);
-            i++; y++;
-        }
-    }
+    public int getLineStartOffset(int line) throws BadLocationException { return myHelper(getText(), 1, line); }
 
     /** Implements JTextArea's {@link javax.swing.JTextArea#getLineCount() getLineCount} method. */
-    public int getLineCount() {
-        String text=getText();
-        int i=0, n=text.length();
-        for(int line=0; ; line++) {
-            i = text.indexOf('\n', i);
-            if (i<0) return line+1;
-            if (i==n-1) return line+2;
-            i = i + 1;
+    public int getLineCount() { try {return myHelper(getText(), 2, 0);} catch(BadLocationException ex) {return 0;} }
+
+    /** Implements JTextArea's {@link javax.swing.JTextArea#getLineOfOffset(int) getLineOfOffset} method. */
+    public int getLineOfOffset(int offset) throws BadLocationException { return myHelper(getText(), 3, offset); }
+
+    public static void main(String[] args) throws Exception {
+        for(String a: new String[]{"", "a", "ab", "abc"})
+        for(String b: new String[]{"", "\n", "d", "\nd", "de", "\nde", "def", "\ndef"})
+        for(String c: new String[]{"", "\n", "x", "\nx", "xy", "\nxy", "xyz", "\nxyz"})
+        for(String d: new String[]{"", "\n", "x", "\nx", "xy", "\nxy", "xyz", "\nxyz"}) {
+            JTextArea jt = new JTextArea(a+b+c+d);
+            String text = jt.getText();
+            int ans1 = jt.getLineCount(), ans2 = myHelper(text, 2, 0);
+            if (ans1 != ans2) throw new RuntimeException("Diff2: ans1="+ans1+" ans2="+ans2);
+            try { myHelper(text, 1, -1); throw new RuntimeException("Exception expected"); } catch(BadLocationException ex) { }
+            try { myHelper(text, 1, ans1); throw new RuntimeException("Exception expected"); } catch(BadLocationException ex) { }
+            for(int line=ans1-1; line>=0; line--) {
+               ans1=jt.getLineStartOffset(line); ans2=myHelper(text, 1, line);
+               if (ans1 != ans2) throw new RuntimeException("Diff1: line="+line+" ans1="+ans1+" ans2="+ans2);
+            }
+            for(int offset=0; offset<=text.length(); offset++) {
+               ans1=jt.getLineOfOffset(offset); ans2=myHelper(text, 3, offset);
+               if (ans1 != ans2) throw new RuntimeException("Diff2: offset="+offset+" ans1="+ans1+" ans2="+ans2);
+            }
         }
-    }
-
-    /** Implements JTextArea's {@link javax.swing.JTextArea#setTabSize(int) setTabSize} method. */
-    public void setTabSize(int tab) { }
-
-    public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 try {
@@ -258,7 +302,7 @@ public final class OurTextArea extends JTextPane {
                     JFrame jf = new JFrame("Demo");
                     jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     jf.setLayout(new BorderLayout());
-                    JTextPane area = new OurTextArea(text+"sig abc // def", "Monospaced", 10);
+                    JTextPane area = new OurTextArea(text+"sig abc // def", "Monospaced", 10, 4);
                     JScrollPane scroll = new JScrollPane(area, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
                     jf.add(scroll);
                     jf.pack();
@@ -270,10 +314,4 @@ public final class OurTextArea extends JTextPane {
             }
         });
     }
-
-
-    // MISSING FEATURES:
-    // 1) Undo listeners
-    // 2) Edit too slow
-    // 3) Highlighting
 }

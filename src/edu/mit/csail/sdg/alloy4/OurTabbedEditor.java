@@ -441,10 +441,9 @@ public final class OurTabbedEditor {
         pan.setAlignmentX(0.0f);
         pan.setAlignmentY(1.0f);
         // Make the JTextArea
-        final OurTextArea text = new OurTextArea(Util.convertLineBreak(fileContent), font.getFamily(), font.getSize());
+        final OurTextArea text = new OurTextArea(Util.convertLineBreak(fileContent), font.getFamily(), font.getSize(), tabSize);
         text.setBackground(Color.WHITE);
         text.setBorder(new EmptyBorder(1,1,1,1));
-        text.setTabSize(tabSize);
         if (!Util.onMac()) {
             text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
                 private static final long serialVersionUID = 1L;
@@ -514,7 +513,7 @@ public final class OurTabbedEditor {
             public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
             public final void changedUpdate(DocumentEvent e) { } // font changes are irrelevant
         });
-        text.getDocument().addUndoableEditListener(new UndoableEditListener() {
+        text.myAddUndoableEditListener(new UndoableEditListener() {
             public final void undoableEditHappened(UndoableEditEvent event) { tab.undo.addEdit(event.getEdit()); }
         });
         // If it's a file, we want to remove the rightmost untitled empty tab
@@ -596,7 +595,7 @@ public final class OurTabbedEditor {
 
     /** Returns the JTextArea of the current text buffer. */
     public OurTextArea text() {
-        return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea("", "Monospaced", 10);
+        return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea("", "Monospaced", 10, 4);
     }
 
     /** True if the current text buffer has 1 or more "undo" that it can perform. */

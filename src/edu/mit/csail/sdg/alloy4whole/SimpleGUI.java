@@ -797,7 +797,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             if (x.getText().length()!=0) xx=Integer.parseInt(x.getText());
             if (xx<1) {log.logRed("If the column number is specified, it must be 1 or greater."); return null;}
             int caret = t.getLineStartOffset(yy-1);
-            int len = t.getLineEndOffset(yy-1)-caret;
+            int len = (yy==lineCount ? len=t.getText().length()+1 : t.getLineStartOffset(yy)) - caret;
             if (xx>len) xx=len;
             if (xx<1) xx=1;
             t.setSelectionStart(caret+xx-1);
