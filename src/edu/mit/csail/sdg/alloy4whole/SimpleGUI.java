@@ -186,6 +186,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     /** The latest welcome screen that the user has seen. */
     private static final IntPref Welcome = new IntPref("Welcome",0,0,1000);
 
+    /** Whether syntax highlighting should be disabled or not. */
+    private static final BooleanPref SyntaxDisabled = new BooleanPref("SyntaxHighlightingDisabled");
+
     /** The skolem depth. */
     private static final IntPref SkolemDepth = new IntPref("SkolemDepth2",0,0,2);
 
@@ -1148,6 +1151,8 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             for(Verbosity vb:Verbosity.values()) { OurUtil.makeMenuItem(verb, ""+vb, -1, -1, doOptVerbosity(vb)).setIcon(vb==vnow?iconYes:iconNo); }
             optmenu.add(verb);
             //
+            OurUtil.makeMenuItem(optmenu, "Syntax Highlighting: "+(SyntaxDisabled.get()?"No":"Yes"), -1, -1, doOptSyntaxHighlighting());
+            //
             final int fontSize = FontSize.get();
             final JMenu size = new JMenu("Font Size: "+fontSize);
             for(int n: new Integer[]{9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72}) {
@@ -1267,6 +1272,16 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     /** This method toggles the "record Kodkod input/output" checkbox. */
     private Runner doOptRecordKodkod() {
         if (!wrap) RecordKodkod.set(!RecordKodkod.get());
+        return wrapMe();
+    }
+
+    /** This method toggles the "syntax highlighting" checkbox. */
+    private Runner doOptSyntaxHighlighting() {
+        if (!wrap) {
+            boolean flag = !SyntaxDisabled.get();
+            if (flag) OurTextArea.myDisabledHighlighting(); else OurTextArea.myEnableHighlighting();
+            SyntaxDisabled.set(flag);
+        }
         return wrapMe();
     }
 
@@ -1769,6 +1784,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
         // Create the text area
         text = new OurTabbedEditor(this, frame, new Font(fontName, Font.PLAIN, fontSize), TabSize.get());
+        if (SyntaxDisabled.get()) OurTextArea.myDisabledHighlighting(); else OurTextArea.myEnableHighlighting();
 
         // Add everything to the frame, then display the frame
         Container all=frame.getContentPane();
