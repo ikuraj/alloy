@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.io.Reader;
 import java.io.IOException;
 import java_cup_11a.runtime.Scanner;
@@ -200,10 +201,10 @@ final class CompFilter implements Scanner {
     }
 
     /** Construct a filter for the tokens from the given file. */
-    public CompFilter(boolean allowDollar, final String filename, int lineOffset, Reader i) throws Err {
+    public CompFilter(final List<Object> alloy_seenDollar, final String filename, int lineOffset, Reader i) throws Err {
         r=new CompLexer(i);
-        r.alloy_dollar=allowDollar;
         r.alloy_filename=filename;
         r.alloy_lineoffset=lineOffset;
+        r.alloy_seenDollar=alloy_seenDollar;
     }
 }

@@ -289,6 +289,9 @@ public final class Module {
     /** The text of the "MODULE" line at the top of the file; "unknown" if the line has not be parsed from the file yet. */
     private String moduleName = "unknown";
 
+    /** Whether we have seen a name containing a dollar sign or not. */
+    public boolean seenDollar = false;
+
     /** Each param is mapped to its corresponding SigAST (or null if we have not resolved it). */
     private final Map<String,SigAST> params = new LinkedHashMap<String,SigAST>(); // Must be LinkedHashMap since the order matters
 
@@ -337,7 +340,7 @@ public final class Module {
     Expr parseOneExpressionFromString(String input) throws Err, FileNotFoundException, IOException {
         Map<String,String> fc=new LinkedHashMap<String,String>();
         fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-        Module m = CompParser.alloy_parseStream(true, null, fc, null, -1, "", "");
+        Module m = CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, -1, "", "");
         if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
         Exp body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
         Context cx = new Context(this);
@@ -648,7 +651,6 @@ public final class Module {
     SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate,
     ExpName par, List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
         pos = pos.merge(isAbstract).merge(isLone).merge(isOne).merge(isSome);
-        //if (name.indexOf('$')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'$\' character");
         status=3;
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
@@ -1084,7 +1086,7 @@ public final class Module {
           }
         }
         // Now, add the meta sigs and fields if needed
-        if (!(1==1)) {
+        if (root.seenDollar) {
             ExpName EXTENDS = new ExpName(null, "extends");
             ExpName THIS = new ExpName(null, "univ");
             List<ExpName> THESE = Arrays.asList(THIS);

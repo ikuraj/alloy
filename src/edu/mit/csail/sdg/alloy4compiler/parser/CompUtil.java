@@ -25,8 +25,10 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
@@ -110,7 +112,7 @@ public final class CompUtil {
      * @param thispath - the set of filenames involved in the current chain_of_file_opening
      */
     private static Module parseRecursively
-    (Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename, Module root, String prefix, Set<String> thispath)
+    (List<Object> seenDollar, Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename, Module root, String prefix, Set<String> thispath)
     throws Err, FileNotFoundException, IOException {
         // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
         // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
@@ -124,7 +126,7 @@ public final class CompUtil {
            "Circular dependency in module import. The file \""+(new File(filename)).getName()+"\" is imported infinitely often.");
         thispath.add(filename);
         // No cycle detected so far. So now we parse the file.
-        Module u = CompParser.alloy_parseStream(false, loaded, fc, root, 0, filename, prefix);
+        Module u = CompParser.alloy_parseStream(seenDollar, loaded, fc, root, 0, filename, prefix);
         if (prefix.length()==0) root = u;
         // Here, we recursively open the included files
         for(Open x: u.getOpens()) {
@@ -145,7 +147,7 @@ public final class CompUtil {
                 }
             }
             loaded.put(cp, content);
-            Module y = parseRecursively(loaded, fc, x.pos, cp, root, (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath);
+            Module y = parseRecursively(seenDollar, loaded, fc, x.pos, cp, root, (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath);
             x.connect(y);
         }
         thispath.remove(filename); // Remove this file from the CYCLE DETECTION LIST.
@@ -162,7 +164,7 @@ public final class CompUtil {
         try {
             Map<String,String> fc=new LinkedHashMap<String,String>();
             fc.put("", content);
-            Module u=CompParser.alloy_parseStream(false, null, fc, null, 0, "", "");
+            Module u=CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, 0, "", "");
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
@@ -179,7 +181,7 @@ public final class CompUtil {
      */
     public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
         try {
-            Module u=CompParser.alloy_parseStream(false, null, null, null, 0, filename, "");
+            Module u=CompParser.alloy_parseStream(new ArrayList<Object>(), null, null, null, 0, filename, "");
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
@@ -224,7 +226,9 @@ public final class CompUtil {
             if (loaded==null) loaded = new LinkedHashMap<String,String>();
             Map<String,String> fc = new LinkedHashMap<String,String>(loaded);
             loaded.clear();
-            Module root = parseRecursively(loaded, fc, new Pos(filename,1,1), filename, null, "", thispath);
+            List<Object> seenDollar = new ArrayList<Object>();
+            Module root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath);
+            root.seenDollar = seenDollar.size()>0;
             return Module.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());

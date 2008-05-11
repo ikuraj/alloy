@@ -237,7 +237,7 @@ parser code {:
     }
   }
 
-  static Module alloy_parseStream (boolean allowDollar, Map<String,String> loaded, Map<String,String> fc, Module root,
+  static Module alloy_parseStream (List<Object> seenDollar, Map<String,String> loaded, Map<String,String> fc, Module root,
   int lineOffset, String filename, String prefix) throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
@@ -250,7 +250,7 @@ parser code {:
         if (loaded!=null) loaded.put(filename,content);
         content = Util.convertLineBreak(content);
         isr=new StringReader(content);
-        CompFilter s=new CompFilter(allowDollar, filename, lineOffset, new BufferedReader(isr));
+        CompFilter s=new CompFilter(seenDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p=new CompParser(s);
         p.alloymodule=u;
         try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception: "+ex);}
@@ -296,6 +296,12 @@ action code {:
            if (y.op==ExprUnary.Op.ONE)  return new ExpUnary(y.pos, ExprUnary.Op.ONEOF, y.sub);
         }
         return x;
+    }
+    private void nod(ExpName name) throws Err {
+        if (name.name.indexOf('$')>=0) throw new ErrorSyntax(name.pos, "The name cannot contain the '$' symbol.");
+    }
+    private void nod(List<ExpName> names) throws Err {
+        if (names!=null) for(ExpName n:names) if (n.name.indexOf('$')>=0) throw new ErrorSyntax(n.pos, "The name cannot contain the '$' symbol.");
     }
     private Exp t(ExpDot j, Pos close) throws Err {
       if (j.right instanceof ExpName) {
@@ -501,17 +507,17 @@ nonterminal Pos                        Vis;
 
 //===========================================================================//
 
-Spec ::= Spec MODULE:o Name:n                                                  {: parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
-Spec ::= Spec MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r                    {: parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
-Spec ::= Spec Vis:p OPEN:o Name:a                                              {: parser.alloymodule.addOpen(o.merge(a.pos), p, a, null, null); :};
-Spec ::= Spec Vis:p OPEN:o Name:a                               AS Name:c      {: parser.alloymodule.addOpen(o.merge(c.pos), p, a, null, c);    :};
-Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c                {: parser.alloymodule.addOpen(o.merge(c),     p, a, b,    null); :};
-Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c      {: parser.alloymodule.addOpen(o.merge(c.pos), p, a, b,    c);    :};
-Spec ::= Spec Vis:p ENUM:o Name:a SigIn:i LBRACE Names:n RBRACE:c              {: parser.alloymodule.addEnum(o.merge(c),     p, a, i, n, c);    :};
-Spec ::= Spec       FACT:o          Super:e {: parser.alloymodule.addFact      (o , ""     , e); :};
-Spec ::= Spec       FACT:o   Name:n Super:e {: parser.alloymodule.addFact      (o , n.name , e); :};
-Spec ::= Spec       ASSERT:o        Super:e {: parser.alloymodule.addAssertion (o , ""     , e); :};
-Spec ::= Spec       ASSERT:o Name:n Super:e {: parser.alloymodule.addAssertion (o , n.name , e); :};
+Spec ::= Spec MODULE:o Name:n                                                  {: nod(n);         parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
+Spec ::= Spec MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r                    {: nod(n); nod(b); parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
+Spec ::= Spec Vis:p OPEN:o Name:a                                              {: nod(a);         parser.alloymodule.addOpen(o.merge(a.pos), p, a, null, null); :};
+Spec ::= Spec Vis:p OPEN:o Name:a                               AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, null, c);    :};
+Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c                {: nod(a);         parser.alloymodule.addOpen(o.merge(c),     p, a, b,    null); :};
+Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, b,    c);    :};
+Spec ::= Spec Vis:p ENUM:o Name:a SigIn:i LBRACE Names:n RBRACE:c              {: nod(a);         parser.alloymodule.addEnum(o.merge(c),     p, a, i, n, c);    :};
+Spec ::= Spec       FACT:o          Super:e {:         parser.alloymodule.addFact      (o , ""     , e); :};
+Spec ::= Spec       FACT:o   Name:n Super:e {: nod(n); parser.alloymodule.addFact      (o , n.name , e); :};
+Spec ::= Spec       ASSERT:o        Super:e {:         parser.alloymodule.addAssertion (o , ""     , e); :};
+Spec ::= Spec       ASSERT:o Name:n Super:e {: nod(n); parser.alloymodule.addAssertion (o , n.name , e); :};
 Spec ::= Spec Sig             ;
 Spec ::= Spec Function        ;
 Spec ::= Spec Predicate       ;
@@ -532,6 +538,7 @@ Spec ::= Spec CHECK:o CmdLabel:x Super:e  Scope:s  Expects:c {:
 :};
 
 Spec ::= Spec CHECK:o CmdLabel:x Name:n  Scope:s Expects:c  {:
+  nod(n);
   int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
   Pos p=o.merge(c==null ? null : c.pos).merge(n.pos);
   for(int i=s.size()-1; i>=0; i--) {
@@ -558,6 +565,7 @@ Spec ::= Spec RUN:o CmdLabel:x Super:e  Scope:s  Expects:c {:
 :};
 
 Spec ::= Spec RUN:o CmdLabel:x Name:n  Scope:s  Expects:c {:
+  nod(n);
   int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
   Pos p=o.merge(c==null ? null : c.pos).merge(n.pos);
   for(int i=s.size()-1; i>=0; i--) {
@@ -570,8 +578,8 @@ Spec ::= Spec RUN:o CmdLabel:x Name:n  Scope:s  Expects:c {:
   parser.alloymodule.addCommand(p, n.name, false, overall, bitwidth, maxseq, expects, s, x);
 :};
 
-CmdLabel ::=           {: RESULT=null; :};
-CmdLabel ::= DOT ID:i  {: RESULT=i;    :};
+CmdLabel ::=           {:         RESULT=null; :};
+CmdLabel ::= DOT ID:i  {: nod(i); RESULT=i;    :};
 
 Expects    ::=                 {: RESULT=null; :};
 Expects    ::= EXPECT NUMBER:a {: RESULT=a;    :};
@@ -584,10 +592,10 @@ Scope      ::=                               {: RESULT=new ArrayList<Pair<Sig,In
 Typescopes ::= Typescope:a                    {: RESULT=new ArrayList<Pair<Sig,Integer>>(); RESULT.add(a); :};
 Typescopes ::= Typescopes:a COMMA Typescope:b {: RESULT=a; a.add(b);                                       :};
 
-Typescope  ::= EXACTLY:e NUMBER:a Name:b    {: RESULT=new Pair<Sig,Integer>(new PrimSig(e.merge(b.pos)    , b.name) , (0-a.num)-1 );                                                                            :};
-Typescope  ::=           NUMBER:a Name:b    {: RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b.pos), b.name) ,    a.num    );                                                                            :};
-Typescope  ::=           NUMBER:a INT:b     {: RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "int")  ,    a.num    );                                                                            :};
-Typescope  ::=           NUMBER:a SEQ:b     {: RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "seq")  ,    a.num    );                                                                            :};
+Typescope  ::= EXACTLY:e NUMBER:a Name:b    {: nod(b); RESULT=new Pair<Sig,Integer>(new PrimSig(e.merge(b.pos)    , b.name) , (0-a.num)-1 );                                                                            :};
+Typescope  ::=           NUMBER:a Name:b    {: nod(b); RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b.pos), b.name) ,    a.num    );                                                                            :};
+Typescope  ::=           NUMBER:a INT:b     {:         RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "int")  ,    a.num    );                                                                            :};
+Typescope  ::=           NUMBER:a SEQ:b     {:         RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "seq")  ,    a.num    );                                                                            :};
 Typescope  ::= EXACTLY:e NUMBER   INT:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the integer bitwidth has to be exact.");                               :};
 Typescope  ::= EXACTLY:e NUMBER   SEQ:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the number of sequence index has to be exact.");                       :};
 Typescope  ::=           NUMBER:e UNIV:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on univ.");                                                                                  :};
@@ -597,28 +605,28 @@ Typescope  ::= EXACTLY:e NUMBER   SIGINT:f  {: if (1==1) throw new ErrorSyntax(e
 Typescope  ::=           NUMBER:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none.");                                                                                  :};
 Typescope  ::= EXACTLY:e NUMBER   NONE:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on none.");                                                                                  :};
 
-Macro ::= Vis:p LET:o              Name:n LPAREN   Names:d RPAREN   MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, d     , v); :};
-Macro ::= Vis:p LET:o              Name:n LPAREN           RPAREN   MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
-Macro ::= Vis:p LET:o              Name:n LBRACKET Names:d RBRACKET MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, d     , v); :};
-Macro ::= Vis:p LET:o              Name:n LBRACKET         RBRACKET MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
-Macro ::= Vis:p LET:o              Name:n                           MacroBody:v {: parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
+Macro ::= Vis:p LET:o              Name:n LPAREN   Names:d RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, d     , v); :};
+Macro ::= Vis:p LET:o              Name:n LPAREN           RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
+Macro ::= Vis:p LET:o              Name:n LBRACKET Names:d RBRACKET MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, d     , v); :};
+Macro ::= Vis:p LET:o              Name:n LBRACKET         RBRACKET MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
+Macro ::= Vis:p LET:o              Name:n                           MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
 
 MacroBody ::= Super:a       {: RESULT=a; :};
 MacroBody ::= EQUALS Expr:a {: RESULT=a; :};
 
-Function ::= Vis:p FUN:o              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , mult(r), v); :};
-Function ::= Vis:p FUN:o              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , mult(r), v); :};
-Function ::= Vis:p FUN:o              Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, null , mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n                           COLON Expr:r Super:v {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , null , mult(r), v); :};
+Function ::= Vis:p FUN:o              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , mult(r), v); :};
+Function ::= Vis:p FUN:o              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , mult(r), v); :};
+Function ::= Vis:p FUN:o              Name:n                           COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, null , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n                           COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , null , mult(r), v); :};
 
-Predicate ::= Vis:p PRED:o              Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , null, v); :};
-Predicate ::= Vis:p PRED:o              Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , null, v); :};
-Predicate ::= Vis:p PRED:o              Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, null , null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n                           Super:v             {: parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , null , null, v); :};
+Predicate ::= Vis:p PRED:o              Name:n LPAREN   Decls:d RPAREN   Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , null, v); :};
+Predicate ::= Vis:p PRED:o              Name:n LBRACKET Decls:d RBRACKET Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , null, v); :};
+Predicate ::= Vis:p PRED:o              Name:n                           Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, null , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n                           Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , null , null, v); :};
 
 Vis ::=           {: RESULT=null; :};
 Vis ::= PRIVATE:p {: RESULT=p;    :};
@@ -666,8 +674,8 @@ Name ::= SEQ:a  SLASH NameHelper:b {: RESULT=new ExpName(a.merge(b.pos),  "seq/"
 NameHelper ::= ID:x                     {: RESULT=x;                                                  :};
 NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=new ExpName(a.pos.merge(b.pos), a.name+"/"+b.name); :};
 
-Names ::= Name:x                   {: RESULT=new ArrayList<ExpName>(); RESULT.add(x);  :};
-Names ::= Names:a COMMA Name:b     {: a.add(b); RESULT=a;                              :};
+Names ::= Name:x                   {: nod(x); RESULT=new ArrayList<ExpName>(); RESULT.add(x);  :};
+Names ::= Names:a COMMA Name:b     {: nod(b); a.add(b); RESULT=a;                              :};
 
 Decla ::=           PART:k Names   COLON        Expr   {: if (1==1) throw ExpName.hint(k,"part");   :};
 Decla ::=           EXH:k  Names   COLON        Expr   {: if (1==1) throw ExpName.hint(k,"exh");    :};
@@ -692,12 +700,14 @@ Decls ::= Decla:x COMMA Decls:y  {: RESULT=y; RESULT.add(0,x);                  
 Decls ::=         COMMA Decls:y  {: RESULT=y;                                    :};
 
 Let ::= Name:a EQUALS:o Expr:b SuperOrBar:x {:
+  nod(a);
   if (a.name.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
   if (a.name.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
   RESULT = new ExpLet(o, a, b, x);
 :};
 
 Let ::= Name:a EQUALS:o Expr:b COMMA Let:x {:
+  nod(a);
   if (a.name.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
   if (a.name.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
   RESULT = new ExpLet(o, a, b, x);
@@ -912,7 +922,7 @@ BaseExpr ::= IDEN:o                                 {: RESULT=new ExpName(o, "id
 BaseExpr ::= THIS:o                                 {: RESULT=new ExpName(o, "this");                                                                            :};
 BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT=x;                                                                                                 :};
 BaseExpr ::= SigRef:x                               {: RESULT=x;                                                                                                 :};
-BaseExpr ::= AT:o Name:x                            {: RESULT=new ExpName(o.merge(x.pos), "@"+x.name);                                                           :};
+BaseExpr ::= AT:o Name:x                            {: nod(x); RESULT=new ExpName(o.merge(x.pos), "@"+x.name);                                                           :};
 BaseExpr ::= Super:x                                {: RESULT=x;                                                                                                 :};
 BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT=new ExpQuant(o, c, ExprQuant.Op.COMPREHENSION, a, b);                                              :};
 BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT=new ExpQuant(o, c, ExprQuant.Op.COMPREHENSION, a, new ExpConstant(null, ExprConstant.Op.TRUE, 0)); :};
