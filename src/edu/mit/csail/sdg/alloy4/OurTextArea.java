@@ -276,7 +276,6 @@ public final class OurTextArea extends JTextPane {
         doc.setParagraphAttributes(0, n, tabAttribute, true);
         for(int i=0; i<n; i++) {
             char c = txt.charAt(i);
-            if (c==' ' || c=='\t') continue;
             if (comment==0 && (c=='/' || c=='-') && i<n-1 && txt.charAt(i+1)==c) {
                int d = txt.indexOf('\n', i);
                doc.setCharacterAttributes(i, d<0 ? (n-i) : (d-i), styleComment, true);
@@ -298,7 +297,7 @@ public final class OurTextArea extends JTextPane {
                doc.setCharacterAttributes(oldi, i-oldi, s, true);
                i--;
             } else {
-               int oldi=i; i++; while(i<n && txt.charAt(i)!='-' && txt.charAt(i)!='/' && txt.charAt(i)>=32 && !myIden(txt.charAt(i))) i++;
+               int oldi=i; i++; while(i<n && txt.charAt(i)!='-' && txt.charAt(i)!='/' && !myIden(txt.charAt(i))) i++;
                doc.setCharacterAttributes(oldi, i-oldi, styleSymbol, true);
                i--;
             }
