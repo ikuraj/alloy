@@ -1,6 +1,6 @@
 module util/natural
 
-/**
+/*
  * Utility function and predicates for using the set of
  * nonnegative integers (0, 1, 2, . . .). The number of
  * naturals present in an analysis will be equal to the

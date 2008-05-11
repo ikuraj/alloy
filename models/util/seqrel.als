@@ -1,6 +1,6 @@
 module util/seqrel[elem]
 
-/**
+/*
  * A sequence utility for modeling sequences as just a
  * relation as opposed to reifying them into sequence
  * atoms like the util/sequence module does.
