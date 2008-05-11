@@ -139,7 +139,7 @@ public final class StaticInstanceReader {
         if (s==Sig.UNIV) type=AlloyType.UNIV;
            else if (s==Sig.SIGINT) type=AlloyType.INT;
            else if (s==Sig.SEQIDX) type=AlloyType.SEQINT;
-           else type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isOrdered!=null, s.isPrivate!=null, false);
+           else type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isOrdered!=null, s.isPrivate!=null, s.isMeta!=null);
         sig2type.put(s, type);
         AlloyAtom atom = new AlloyAtom(type, (type==AlloyType.SEQINT ? Integer.MIN_VALUE : Integer.MAX_VALUE), s.label);
         atom2sets.put(atom, new LinkedHashSet<AlloySet>());
@@ -158,7 +158,7 @@ public final class StaticInstanceReader {
         AlloyAtom atom;
         AlloyType type = sig2type.get(s);
         if (type != null) return;
-        type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isOrdered!=null, s.isPrivate!=null, false);
+        type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isOrdered!=null, s.isPrivate!=null, s.isMeta!=null);
         atom = new AlloyAtom(type, Integer.MAX_VALUE, s.label);
         atom2sets.put(atom, new LinkedHashSet<AlloySet>());
         sig2atom.put(s, atom);
