@@ -473,6 +473,10 @@ public final class Module {
     private SigAST getRawSIG (Pos pos, String name) throws Err {
         List<Object> s;
         SigAST s2=null;
+        if (name.equals("sig$") || name.equals("field$")) if (world!=null) {
+            s2 = world.sigs.get(name);
+            if (s2!=null) return s2;
+        }
         if (name.equals("univ"))    return UNIVast;
         if (name.equals("Int"))     return SIGINTast;
         if (name.equals("seq/Int")) return SEQIDXast;
@@ -1088,6 +1092,7 @@ public final class Module {
         // Now, add the meta sigs and fields if needed
         if (root.seenDollar) {
             // FIXTHIS: should add S$fields and F$values functions; also, need to be able to resolve sig$ and field$ from any submodule
+            boolean hasMetaSig=false, hasMetaField=false;
             ExpName EXTENDS = new ExpName(null, "extends");
             ExpName THIS = new ExpName(null, "univ");
             List<ExpName> THESE = Arrays.asList(THIS);
@@ -1109,14 +1114,18 @@ public final class Module {
                 ast.realParents.add(metasig);
                 ast.realSig = new PrimSig(Pos.UNKNOWN, metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                 sorted.add(ast);
+                hasMetaSig=true;
                 for(Field field: s.getFields()) {
                     ast = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null);
                     ast.topo=true;
                     ast.realParents.add(metafield);
                     ast.realSig = new PrimSig(Pos.UNKNOWN, metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                     sorted.add(ast);
+                    hasMetaField=true;
                 }
             }
+            if (hasMetaSig==false) root.facts.put("sig$fact", metaSig.no().and(metaField.no()));
+            else if (hasMetaField==false) root.facts.put("sig$fact", metaField.no());
         }
         // Typecheck the function declarations
         for(Module x:modules) errors=x.resolveFuncDecls(rep, errors, warns);
@@ -1152,6 +1161,10 @@ public final class Module {
         if (name.equals("seq/Int")) { Expr a = ExprUnary.Op.NOOP.make(pos, SEQIDX); return ConstList.make(1,a); }
         if (name.equals("none"))    { Expr a = ExprUnary.Op.NOOP.make(pos, NONE);   return ConstList.make(1,a); }
         if (name.equals("iden"))    { Expr a = ExprConstant.Op.IDEN.make(pos, 0);   return ConstList.make(1,a); }
+        if (name.equals("sig$") || name.equals("field$")) if (world!=null) {
+            SigAST s = world.sigs.get(name);
+            if (s!=null) { Expr s2 = ExprUnary.Op.NOOP.make(pos, s.realSig); return ConstList.make(1, s2); }
+        }
         final TempList<Expr> ans1 = new TempList<Expr>();
         final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1, name) : getRawNQS(this, fun?5:1, name);
         final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
