@@ -38,8 +38,13 @@ public final class AlloySet extends AlloyNodeElement {
     /** Records whether this relation is known to be "private"; NOTE: this value is NOT USED during equals() comparison. */
     public final boolean isPrivate;
 
+    /** Records whether this relation is known to be "meta"; NOTE: this value is NOT USED during equals() comparison. */
+    public final boolean isMeta;
+
     /** Constructs a new AlloySet object. */
-    public AlloySet(String name, boolean isPrivate, AlloyType type) { super(name); this.type=type; this.isPrivate=isPrivate; }
+    public AlloySet(String name, boolean isPrivate, boolean isMeta, AlloyType type) {
+        super(name); this.type=type; this.isPrivate=isPrivate; this.isMeta=isMeta;
+    }
 
     /** Returns the parent type of the AlloySet. */
     public AlloyType getType() { return type; }

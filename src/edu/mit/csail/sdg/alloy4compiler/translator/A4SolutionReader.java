@@ -132,6 +132,7 @@ public final class A4SolutionReader {
         Pos isSome     = yes(node,"some")     ? Pos.UNKNOWN : null;
         Pos isOrdered  = yes(node,"ordered")  ? Pos.UNKNOWN : null;
         Pos isPrivate  = yes(node,"private")  ? Pos.UNKNOWN : null;
+        Pos isMeta     = yes(node,"meta")     ? Pos.UNKNOWN : null;
         if (yes(node,"builtin")) {
            if (label.equals(UNIV.label))   { id2sig.put(id, UNIV);   return UNIV;   }
            if (label.equals(SIGINT.label)) { id2sig.put(id, SIGINT); return SIGINT; }
@@ -156,7 +157,7 @@ public final class A4SolutionReader {
               if (choice instanceof PrimSig && parent==((PrimSig)choice).parent && label(((Sig)choice).label).equals(label))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isOrdered, isPrivate, false);
+              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isOrdered, isPrivate, isMeta, false);
               allsigs.add(ans);
            }
         } else {
@@ -164,7 +165,7 @@ public final class A4SolutionReader {
               if (choice instanceof SubsetSig && label(((Sig)choice).label).equals(label) && sameset(parents, ((SubsetSig)choice).parents))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new SubsetSig(Pos.UNKNOWN, parents, label, Pos.UNKNOWN, isLone, isOne, isSome, isOrdered, isPrivate);
+              ans = new SubsetSig(Pos.UNKNOWN, parents, label, Pos.UNKNOWN, isLone, isOne, isSome, isOrdered, isPrivate, isMeta);
               allsigs.add(ans);
            }
         }
@@ -192,6 +193,7 @@ public final class A4SolutionReader {
        if (!node.is("field")) throw new IOException("ID "+id+" is not a field.");
        String label  = label(node);
        Pos isPrivate = yes(node,"private") ? Pos.UNKNOWN : null;
+       Pos isMeta = yes(node,"meta") ? Pos.UNKNOWN : null;
        Expr type = null;
        for(XMLNode sub:node) if (sub.is("types")) { Expr t=parseType(sub); if (type==null) type=t; else type=type.plus(t); }
        int arity;
@@ -203,7 +205,7 @@ public final class A4SolutionReader {
        for(Field f: parent.getFields())
            if (label(f.label).equals(label) && f.type.arity()==arity && choices.contains(f))
               { field=f; choices.remove(f); break; }
-       if (field==null) field = parent.addField(Pos.UNKNOWN, isPrivate, label, UNIV.join(type));
+       if (field==null) field = parent.addField(Pos.UNKNOWN, isPrivate, isMeta, label, UNIV.join(type));
        TupleSet ts = parseTuples(node, arity);
        expr2ts.put(field, ts);
        return field;

@@ -82,8 +82,6 @@ public final class StaticGraphMaker {
        ,new Color(77,175,74)
        ,new Color(55,126,184)
        ,new Color(152,78,163)
-       //,new Color(255,255,51)
-       //,new Color(247,129,191)
     ));
 
     /** The list of colors, in order, to assign each legend. */
@@ -91,11 +89,8 @@ public final class StaticGraphMaker {
        new Color(227,26,28)
        ,new Color(255,127,0)
        ,new Color(251*8/10,154*8/10,153*8/10)
-       //new Color(166,206,227)
-       //,new Color(178,223,138)
        ,new Color(51,160,44)
        ,new Color(31,120,180)
-       //,new Color(253,191,111)
     ));
 
     /** The list of colors, in order, to assign each legend. */
@@ -105,9 +100,6 @@ public final class StaticGraphMaker {
        ,new Color(166,216,84)
        ,new Color(102,194,165)
        ,new Color(141,160,203)
-       //,new Color(255,217,47)
-       //,new Color(229,196,148)
-       //,new Color(179,179,179)
     ));
 
     /** The list of colors, in order, to assign each legend. */
@@ -118,13 +110,12 @@ public final class StaticGraphMaker {
        ,new Color(102,166,30)
        ,new Color(27,158,119)
        ,new Color(117,112,179)
-       //,new Color(230,171,2)
-       //,new Color(102,102,102)
     ));
 
     /** The constructor takes an Instance and a View, then insert the generate graph(s) into a blank cartoon. */
     private StaticGraphMaker (AlloyInstance originalInstance, VizState view, AlloyProjection proj) {
         final boolean hidePrivate = view.hidePrivate();
+        final boolean hideMeta = view.hideMeta();
         Map<AlloyRelation,Color> magicColor = new TreeMap<AlloyRelation,Color>();
         Map<AlloyRelation,Integer> rels = new TreeMap<AlloyRelation,Integer>();
         this.view = view;
@@ -142,7 +133,7 @@ public final class StaticGraphMaker {
         for (AlloyRelation rel: model.getRelations()) {
             DotColor c = view.edgeColor(rel, model);
             Color cc = (c==DotColor.MAGIC) ? colors.get(ci) : DotColor.name2color(c.getDotText(view.getEdgePalette()));
-            int count = ((hidePrivate && rel.isPrivate) || !view.edgeVisible(rel, model)) ? 0 : edgesAsArcs(hidePrivate, rel, colors.get(ci));
+            int count = ((hidePrivate && rel.isPrivate) || !view.edgeVisible(rel, model)) ? 0 : edgesAsArcs(hidePrivate, hideMeta, rel, colors.get(ci));
             rels.put(rel, count);
             magicColor.put(rel, cc);
             if (count>0) ci=(ci+1)%(colors.size());
@@ -152,9 +143,9 @@ public final class StaticGraphMaker {
             if (sets.size()>0) {
                 for (AlloySet s:sets)
                     if (view.nodeVisible(s, instance.model) && !view.hideUnconnected(s,model))
-                       {createNode(hidePrivate, atom); break;}
+                       {createNode(hidePrivate, hideMeta, atom); break;}
             } else if (view.nodeVisible(atom.getType(),model) && !view.hideUnconnected(atom.getType(),model)) {
-                createNode(hidePrivate, atom);
+                createNode(hidePrivate, hideMeta, atom);
             }
         }
         for (AlloyRelation rel:model.getRelations())
@@ -173,10 +164,12 @@ public final class StaticGraphMaker {
      * Return the node for a specific AlloyAtom (create it if it doesn't exist yet).
      * @return null if the atom is explicitly marked as "Don't Show".
      */
-    private DotNode createNode(final boolean hidePrivate, final AlloyAtom atom) {
+    private DotNode createNode(final boolean hidePrivate, final boolean hideMeta, final AlloyAtom atom) {
         DotNode node=atom2node.get(atom);
         if (node!=null) return node;
-        if ((hidePrivate && atom.getType().isPrivate) || !view.nodeVisible(atom, instance)) return null;
+        if ( (hidePrivate && atom.getType().isPrivate)
+          || (hideMeta    && atom.getType().isMeta)
+          || !view.nodeVisible(atom, instance)) return null;
         // Make the node
         DotColor color = view.nodeColor(atom, instance);
         DotStyle style = view.nodeStyle(atom, instance);
@@ -203,7 +196,7 @@ public final class StaticGraphMaker {
     }
 
     /** Create an edge for a given tuple from a relation (if neither start nor end node is explicitly invisible) */
-    private boolean createEdge(final boolean hidePrivate, AlloyRelation rel, AlloyTuple tuple, boolean bidirectional, Color magicColor) {
+    private boolean createEdge(final boolean hidePrivate, final boolean hideMeta, AlloyRelation rel, AlloyTuple tuple, boolean bidirectional, Color magicColor) {
         // This edge represents a given tuple from a given relation.
         //
         // If the tuple's arity==2, then the label is simply the label of the relation.
@@ -211,9 +204,14 @@ public final class StaticGraphMaker {
         // If the tuple's arity>2, then we append the node labels for all the intermediate nodes.
         // eg. Say a given tuple is (A,B,C,D) from the relation R.
         // An edge will be drawn from A to D, with the label "R [B, C]"
-        if ((hidePrivate && tuple.getStart().getType().isPrivate) || !view.nodeVisible(tuple.getStart(), instance)) return false;
-        if ((hidePrivate && tuple.getEnd().getType().isPrivate) || !view.nodeVisible(tuple.getEnd(), instance)) return false;
-        DotNode start=createNode(hidePrivate, tuple.getStart()), end=createNode(hidePrivate, tuple.getEnd());
+        if ((hidePrivate && tuple.getStart().getType().isPrivate)
+          ||(hideMeta    && tuple.getStart().getType().isMeta)
+          || !view.nodeVisible(tuple.getStart(), instance)) return false;
+        if ((hidePrivate && tuple.getEnd().getType().isPrivate)
+          ||(hideMeta    && tuple.getEnd().getType().isMeta)
+          || !view.nodeVisible(tuple.getEnd(), instance)) return false;
+        DotNode start = createNode(hidePrivate, hideMeta, tuple.getStart());
+        DotNode end = createNode(hidePrivate, hideMeta, tuple.getEnd());
         if (start==null || end==null) return false;
         boolean layoutBack=view.layoutBack(rel,model);
         String label=view.label(rel);
@@ -236,11 +234,11 @@ public final class StaticGraphMaker {
     }
 
     /** Create edges for every visible tuple in the given relation. */
-    private int edgesAsArcs(final boolean hidePrivate, AlloyRelation rel, Color magicColor) {
+    private int edgesAsArcs(final boolean hidePrivate, final boolean hideMeta, AlloyRelation rel, Color magicColor) {
         int count = 0;
         if (!view.mergeArrows(rel,model)) {
             // If we're not merging bidirectional arrows, simply create an edge for each tuple.
-            for (AlloyTuple tuple: instance.relation2tuples(rel)) if (createEdge(hidePrivate, rel, tuple, false, magicColor)) count++;
+            for (AlloyTuple tuple: instance.relation2tuples(rel)) if (createEdge(hidePrivate, hideMeta, rel, tuple, false, magicColor)) count++;
             return count;
         }
         // Otherwise, find bidirectional arrows and only create one edge for each pair.
@@ -252,9 +250,9 @@ public final class StaticGraphMaker {
                 // If the reverse tuple is in the same relation, and it is not a self-edge, then draw it as a <-> arrow.
                 if (reverse!=null && tuples.contains(reverse) && !reverse.equals(tuple)) {
                     ignore.add(reverse);
-                    if (createEdge(hidePrivate, rel,tuple,true,magicColor)) count++;
+                    if (createEdge(hidePrivate, hideMeta, rel, tuple, true, magicColor)) count++;
                 } else {
-                    if (createEdge(hidePrivate, rel,tuple,false,magicColor)) count++;
+                    if (createEdge(hidePrivate, hideMeta, rel, tuple, false, magicColor)) count++;
                 }
             }
         }

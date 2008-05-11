@@ -61,6 +61,7 @@ public final class VizState {
         projectedTypes=new TreeSet<AlloyType>(old.projectedTypes);
         useOriginalNames=old.useOriginalNames;
         hidePrivate=old.hidePrivate;
+        hideMeta=old.hideMeta;
         fontSize=old.fontSize;
         orientation=old.orientation;
         nodePalette=old.nodePalette;
@@ -93,6 +94,7 @@ public final class VizState {
         projectedTypes.clear();
         useOriginalNames = false;
         hidePrivate = true;
+        hideMeta = true;
         fontSize = 12;
         orientation = DotOrientation.getDefault();
         nodePalette = DotPalette.getDefault();
@@ -309,6 +311,19 @@ public final class VizState {
     /** Sets whether we will hide private sigs/fields/relations. */
     public void hidePrivate(Boolean newValue) {
         if (newValue!=null && hidePrivate!=newValue) { change(); hidePrivate=newValue; }
+    }
+
+    /*============================================================================================*/
+
+    /** Whether to hide meta sigs/fields/relations. */
+    private boolean hideMeta = true;
+
+    /** Returns whether we will hide meta sigs/fields/relations. */
+    public boolean hideMeta() { return hideMeta; }
+
+    /** Sets whether we will hide meta sigs/fields/relations. */
+    public void hideMeta(Boolean newValue) {
+        if (newValue!=null && hideMeta!=newValue) { change(); hideMeta=newValue; }
     }
 
     /*============================================================================================*/

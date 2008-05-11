@@ -696,7 +696,7 @@ public final class Module {
                oldS.realParents.add(parentAST);
                parents.add(resolveSig(sorted, parentAST));
             }
-            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.isPrivate);
+            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.isPrivate, null);
         } else {
             ExpName sup = null;
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.name.length()==0) sup=null;}
@@ -708,7 +708,7 @@ public final class Module {
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
                + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
-            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isOrdered, oldS.isPrivate, oldS.hint_isLeaf);
+            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isOrdered, oldS.isPrivate, null, oldS.hint_isLeaf);
         }
         sorted.add(oldS);
         return oldS.realSig;
@@ -1043,7 +1043,7 @@ public final class Module {
               Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
               for(final ExpName n:d.names) {
-                 final Field f = s.addTrickyField(d.span(), d.isPrivate, n.name, THIS, bound);
+                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.name, THIS, bound);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint2!=null) disjoint2.add(f);
                  if (d.disjoint==null) continue;
@@ -1087,26 +1087,33 @@ public final class Module {
         }
         // Now, add the meta sigs and fields if needed
         if (root.seenDollar) {
+            // FIXTHIS: should add S$fields and F$values functions; also, need to be able to resolve sig$ and field$ from any submodule
             ExpName EXTENDS = new ExpName(null, "extends");
             ExpName THIS = new ExpName(null, "univ");
             List<ExpName> THESE = Arrays.asList(THIS);
             SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
             SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
-            PrimSig metaSig = (PrimSig) resolveSig(sorted, metasig);
-            PrimSig metaField = (PrimSig) resolveSig(sorted, metafield);
+            metasig.topo = true;
+            metasig.realParents.add(UNIVast);
+            metasig.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/sig$", Pos.UNKNOWN, null, null, null, null, null, null, Pos.UNKNOWN, false);
+            metafield.topo = true;
+            metafield.realParents.add(UNIVast);
+            metafield.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/field$", Pos.UNKNOWN, null, null, null, null, null, null, Pos.UNKNOWN, false);
+            PrimSig metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
+            PrimSig metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
             for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
                 Sig s = sig.realSig;
                 String slab = sig.name;
                 SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null);
                 ast.topo=true;
                 ast.realParents.add(metasig);
-                ast.realSig = new PrimSig(Pos.UNKNOWN, metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, false);
+                ast.realSig = new PrimSig(Pos.UNKNOWN, metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                 sorted.add(ast);
                 for(Field field: s.getFields()) {
                     ast = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null);
                     ast.topo=true;
                     ast.realParents.add(metafield);
-                    ast.realSig = new PrimSig(Pos.UNKNOWN, metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, false);
+                    ast.realSig = new PrimSig(Pos.UNKNOWN, metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                     sorted.add(ast);
                 }
             }
