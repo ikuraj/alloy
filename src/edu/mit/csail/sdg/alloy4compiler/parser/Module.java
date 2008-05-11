@@ -1091,7 +1091,6 @@ public final class Module {
         }
         // Now, add the meta sigs and fields if needed
         if (root.seenDollar) {
-            // FIXTHIS: should add S$fields and F$values functions; also, need to be able to resolve sig$ and field$ from any submodule
             boolean hasMetaSig=false, hasMetaField=false;
             ExpName EXTENDS = new ExpName(null, "extends");
             ExpName THIS = new ExpName(null, "univ");
