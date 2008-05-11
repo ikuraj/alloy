@@ -22,21 +22,16 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -270,7 +265,7 @@ public final class OurTextArea extends JTextPane {
         for(int i=0; i<100; i++) { pos[i] = new TabStop(i*gap+gap); }
         final TabSet tabSet = new TabSet(pos);
         StyleConstants.setTabSet(tabAttribute, tabSet);
-        if (doc!=null) doc.setParagraphAttributes(0, doc.getLength(), tabAttribute, false);
+        doc.setParagraphAttributes(0, doc.getLength(), tabAttribute, false);
     }
 
     /** Apply appropriate styles to the entire text. */
@@ -313,45 +308,45 @@ public final class OurTextArea extends JTextPane {
         needReApply = false;
     }
 
+    /*
     public static void main(String[] args) throws Exception {
-        /*
-        for(String a: new String[]{"", "a", "ab", "abc"})
-        for(String b: new String[]{"", "\n", "d", "\nd", "de", "\nde", "def", "\ndef"})
-        for(String c: new String[]{"", "\n", "x", "\nx", "xy", "\nxy", "xyz", "\nxyz"})
-        for(String d: new String[]{"", "\n", "x", "\nx", "xy", "\nxy", "xyz", "\nxyz"}) {
-            JTextArea jt = new JTextArea(a+b+c+d);
-            String text = jt.getText();
-            int ans1 = jt.getLineCount(), ans2 = myHelper(text, 2, 0);
-            if (ans1 != ans2) throw new RuntimeException("Diff2: ans1="+ans1+" ans2="+ans2);
-            try { myHelper(text, 1, -1); throw new RuntimeException("Exception expected"); } catch(BadLocationException ex) { }
-            try { myHelper(text, 1, ans1); throw new RuntimeException("Exception expected"); } catch(BadLocationException ex) { }
-            for(int line=ans1-1; line>=0; line--) {
-               ans1=jt.getLineStartOffset(line); ans2=myHelper(text, 1, line);
-               if (ans1 != ans2) throw new RuntimeException("Diff1: line="+line+" ans1="+ans1+" ans2="+ans2);
-            }
-            for(int offset=0; offset<=text.length(); offset++) {
-               ans1=jt.getLineOfOffset(offset); ans2=myHelper(text, 3, offset);
-               if (ans1 != ans2) throw new RuntimeException("Diff2: offset="+offset+" ans1="+ans1+" ans2="+ans2);
-            }
+      // a set of tests to verify our implementation of getLineCount(), getLineStartOffset(), and getLineOfOffset()
+      for(String a: new String[]{"", "a", "ab", "abc"})
+      for(String b: new String[]{"", "\n", "d", "\nd", "de", "\nde", "def", "\ndef"})
+      for(String c: new String[]{"", "\n", "x", "\nx", "xy", "\nxy", "xyz", "\nxyz"})
+      for(String d: new String[]{"", "\n", "x", "\nx", "xy", "\nxy", "xyz", "\nxyz"}) {
+        JTextArea jt = new JTextArea(a+b+c+d);
+        String text = jt.getText();
+        int ans1 = jt.getLineCount(), ans2 = myHelper(text, 2, 0);
+        if (ans1 != ans2) throw new RuntimeException("Diff2: ans1="+ans1+" ans2="+ans2);
+        try { myHelper(text, 1, -1); throw new RuntimeException("Exception expected"); } catch(BadLocationException ex) { }
+        try { myHelper(text, 1, ans1); throw new RuntimeException("Exception expected"); } catch(BadLocationException ex) { }
+        for(int line=ans1-1; line>=0; line--) {
+            ans1=jt.getLineStartOffset(line); ans2=myHelper(text, 1, line);
+            if (ans1 != ans2) throw new RuntimeException("Diff1: line="+line+" ans1="+ans1+" ans2="+ans2);
         }
-        */
-        SwingUtilities.invokeLater(new Runnable() {
-           public void run() {
-               try {
-                   String text = Util.readAll(1==1 ? "/zweb/zweb/w/m/tests/test47.als" : "/zweb/zweb/w/p/public/def.als");
-                   JFrame jf = new JFrame("Demo");
-                   jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                   jf.setLayout(new BorderLayout());
-                   final OurTextArea area = new OurTextArea(text, "Monospaced", 18, 4);
-                   JScrollPane scroll = new JScrollPane(area, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-                   jf.add(scroll, BorderLayout.CENTER);
-                   jf.pack();
-                   jf.setLocation(500,50);
-                   jf.setSize(850,450);
-                   jf.setVisible(true);
-                   area.requestFocusInWindow();
-               } catch(IOException ex) { }
-           }
-        });
+        for(int offset=0; offset<=text.length(); offset++) {
+            ans1=jt.getLineOfOffset(offset); ans2=myHelper(text, 3, offset);
+            if (ans1 != ans2) throw new RuntimeException("Diff2: offset="+offset+" ans1="+ans1+" ans2="+ans2);
+        }
+      }
+      // this simply opens a new window and put the text area in the middle
+      SwingUtilities.invokeLater(new Runnable() {
+        public void run() {
+           String text = ""; try { text=Util.readAll("/tmp/tests/test47.als"); } catch(IOException ex) { }
+           JFrame jf = new JFrame("Demo");
+           jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+           jf.setLayout(new BorderLayout());
+           final OurTextArea area = new OurTextArea(text, "Monospaced", 18, 4);
+           JScrollPane scroll = new JScrollPane(area, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+           jf.add(scroll, BorderLayout.CENTER);
+           jf.pack();
+           jf.setLocation(500,50);
+           jf.setSize(850,450);
+           jf.setVisible(true);
+           area.requestFocusInWindow();
+        }
+      });
     }
+    */
 }

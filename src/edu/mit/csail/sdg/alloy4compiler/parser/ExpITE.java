@@ -34,9 +34,6 @@ import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 final class ExpITE extends Exp {
 
-    /** The position of the IMPLIES token. */
-    public final Pos pos;
-
     /** The condition formula. */
     public final Exp formula;
 
@@ -48,8 +45,7 @@ final class ExpITE extends Exp {
 
     /** Constructs a ExpITE expression. */
     public ExpITE(Pos pos, Exp formula, Exp left, Exp right) {
-        super(null);
-        this.pos=pos;
+        super(pos);
         this.formula=formula;
         this.left=left;
         this.right=right;

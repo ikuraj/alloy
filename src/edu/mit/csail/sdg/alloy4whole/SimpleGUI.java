@@ -425,7 +425,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
            arch+"/berkmin", arch+"/spear");
         Util.copy(false, false, platformBinary,
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",
-           arch+"/berkmin.exe", arch="/spear.exe");
+           arch+"/berkmin.exe", arch+"/spear.exe");
         // Copy the model files
         Util.copy(false, true, Helper.alloyHome(),
            "models/book/appendixA/addressBook1.als", "models/book/appendixA/addressBook2.als", "models/book/appendixA/barbers.als",

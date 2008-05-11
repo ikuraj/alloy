@@ -496,14 +496,14 @@ public final class VizCustomizationPanel extends JPanel {
                 /*if (key==Field.LAYOUTBACK)*/ return vizState.layoutBack(rel);
             }
             public boolean getInherited(Object key) {
-                Object val=null;
+                boolean val=false;
                 if (key==Field.VISIBLE) val=vizState.edgeVisible(rel, vizState.getCurrentModel());
                 if (key==Field.SAMERANK) val=vizState.edgeSameRank(rel, vizState.getCurrentModel());
                 if (key==Field.MERGEARROWS) val=vizState.mergeArrows(rel, vizState.getCurrentModel());
                 if (key==Field.ATTRIBUTE) val=vizState.attribute(rel, vizState.getCurrentModel());
                 if (key==Field.CONSTRAINT) val=vizState.constraint(rel, vizState.getCurrentModel());
                 if (key==Field.LAYOUTBACK) val=vizState.layoutBack(rel, vizState.getCurrentModel());
-                if (val instanceof Boolean) return ((Boolean)val).booleanValue(); else return false;
+                return val;
             }
             public void set(Object key, Boolean value) {
                 if (key==Field.VISIBLE) vizState.edgeVisible(rel, value);

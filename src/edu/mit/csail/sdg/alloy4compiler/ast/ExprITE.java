@@ -40,9 +40,6 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 public final class ExprITE extends Expr {
 
-    /** The position of the IMPLIES token. */
-    public final Pos pos;
-
     /** The condition formula. */
     public final Expr cond;
 
@@ -82,8 +79,7 @@ public final class ExprITE extends Expr {
 
     /** Constructs a ExprITE expression. */
     private ExprITE(Pos pos, Expr cond, Expr left, Expr right, Type type, JoinableList<Err> errs) {
-        super(null,null, (cond.ambiguous || left.ambiguous || (right!=null && right.ambiguous)), type, 0, cond.weight+left.weight+(right!=null ? right.weight : 0), errs);
-        this.pos=pos;
+        super(pos, null, (cond.ambiguous || left.ambiguous || (right!=null && right.ambiguous)), type, 0, cond.weight+left.weight+(right!=null ? right.weight : 0), errs);
         this.cond=cond;
         this.left=left;
         this.right=right;

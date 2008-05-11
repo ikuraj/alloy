@@ -63,10 +63,10 @@ public final class StaticInstanceReader {
     private final List<PrimSig> toplevels = new ArrayList<PrimSig>();
 
     /** This maps each Sig to its corresponding Visualizer AlloyType. */
-    private final Map<Sig,AlloyType> sig2type = new LinkedHashMap<Sig,AlloyType>();
+    private final LinkedHashMap<Sig,AlloyType> sig2type = new LinkedHashMap<Sig,AlloyType>();
 
     /** This maps each Sig ot its corresponding unique VIsualizer AlloyAtom (if isMeta is true). */
-    private final Map<Sig,AlloyAtom> sig2atom = new LinkedHashMap<Sig,AlloyAtom>();
+    private final LinkedHashMap<Sig,AlloyAtom> sig2atom = new LinkedHashMap<Sig,AlloyAtom>();
 
     /** This stores the "extends" relationship among sigs (if isMeta is true). */
     private final LinkedHashSet<AlloyTuple> exts = new LinkedHashSet<AlloyTuple>();
