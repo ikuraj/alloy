@@ -120,6 +120,7 @@ public final class SimpleCLI {
     }
 
     public static void main(String[] args) throws Exception {
+        boolean minisat = "yes".equals(System.getProperty("minisat"));
         SatSolver solver = A4Options.SatSolver.make("mem", "mem", "/tmp/sat/mem");
         final SimpleReporter rep = new SimpleReporter();
         for(String filename:args) {
@@ -134,9 +135,7 @@ public final class SimpleCLI {
                 A4Options options = new A4Options();
                 options.originalFilename = filename;
                 options.solverDirectory = "/zweb/zweb/tmp/alloy4/x86-freebsd";
-                options.solver = solver;
-                //options.solver = A4Options.SatSolver.MiniSatJNI;
-                //options.solver = A4Options.SatSolver.SAT4J;
+                options.solver = minisat ? A4Options.SatSolver.MiniSatJNI : solver;
                 if (args.length!=1) continue;
                 for (int i=0; i<cmds.size(); i++) {
                     Command c = cmds.get(i).a;
