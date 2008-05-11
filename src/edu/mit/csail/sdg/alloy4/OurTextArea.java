@@ -27,11 +27,12 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -67,11 +68,8 @@ public final class OurTextArea extends JTextPane {
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
 
-    /**
-     * This flag indicates the styling strategy (0=none, 1=timer-based 2:eventQueue-based).
-     * it must be set to 0 here; the first constructor call will set the real value.
-     */
-    private static int strategy = 0;
+    /** This flag indicates whether syntax highlighting is currently enabled or not. */
+    private static boolean enabled = true;
 
     /** This stores the set of all OurTextArea objects ever constructed; stale objects will be removed automatically. */
     private static final WeakHashMap<OurTextArea,Object> all = new WeakHashMap<OurTextArea,Object>();
@@ -79,10 +77,13 @@ public final class OurTextArea extends JTextPane {
     /** This stores the timer that performs timer-based syntax highlighting. */
     private static Timer timer = null;
 
+    /** The most recent keyboard activity in any TextArea widget. */
+    private static long latest = 0;
+
     /** Disabled syntax highlighting. */
     public static void myDisabledHighlighting() {
-        if (strategy == 0) return;
-        strategy = 0;
+        if (!enabled) return;
+        enabled = false;
         for(OurTextArea x:all.keySet()) if (x.doc!=null) {
             x.doc.setCharacterAttributes(0, x.doc.getLength(), x.styleNormal, true);
             x.needReApply = false;
@@ -90,17 +91,18 @@ public final class OurTextArea extends JTextPane {
     }
 
     /** Enable syntax highlighting; the flag indicates whether we will use a timer or an EventQueue for the coloring. */
-    public static void myEnableHighlighting(boolean timerBased) {
-        if (timerBased && timer==null) {
-           timer = new Timer(500, new ActionListener() {
+    public static void myEnableHighlighting() {
+        if (timer==null) {
+           timer = new Timer(100, new ActionListener() {
               public void actionPerformed(ActionEvent e) {
-                if (strategy==1) for(OurTextArea x:all.keySet()) if (x.doc!=null && x.needReApply) x.myReapplyAll();
+                if (!enabled || e.getWhen()<latest || e.getWhen()-latest<300) return;
+                for(OurTextArea x:all.keySet()) if (x.doc!=null && x.needReApply) x.myReapplyAll();
               }
            });
            timer.start();
         }
-        if (strategy == (timerBased ? 1 : 2)) return;
-        strategy = (timerBased ? 1 : 2);
+        if (enabled) return;
+        enabled = true;
         for(OurTextArea x:all.keySet()) if (x.doc!=null) x.myReapplyAll();
     }
 
@@ -209,9 +211,11 @@ public final class OurTextArea extends JTextPane {
        mostRecentFont = new Font(fontFamily, Font.PLAIN, fontSize);
        setTabSize(tabSize);
        if (text.length()>0) setText(text);
-       final Runnable run = new Runnable() {
-           public void run() { mostRecentReapply=null; if (needReApply) myReapplyAll(); }
-       };
+       addKeyListener(new KeyListener() {
+           public void keyPressed(KeyEvent e) { latest = e.getWhen(); }
+           public void keyReleased(KeyEvent e) { latest = e.getWhen(); }
+           public void keyTyped(KeyEvent e) { latest = e.getWhen(); }
+       });
        getDocument().addDocumentListener(new DocumentListener() {
           public void changedUpdate(DocumentEvent e) { }
           public void insertUpdate(DocumentEvent e) { removeUpdate(e); }
@@ -221,18 +225,13 @@ public final class OurTextArea extends JTextPane {
                  for(UndoableEditListener listener: undoListeners) listener.undoableEditHappened(event);
               }
               needReApply = true;
-              if (mostRecentReapply!=null) { System.out.print("S"); System.out.flush(); return; }
-              if (strategy==2) SwingUtilities.invokeLater(mostRecentReapply = run);
           }
        });
-       myEnableHighlighting(true);
+       if (enabled && timer==null) myEnableHighlighting();
     }
 
     /** True iff the text area now needs to reapply styles. */
     private boolean needReApply = true;
-
-    /** Nonnull iff the AWT event thread has a pending ReApplyAll in its pipeline already. */
-    private Runnable mostRecentReapply = null;
 
     /** {@inheritDoc} */
     @Override public void setText(String text) {
@@ -276,10 +275,9 @@ public final class OurTextArea extends JTextPane {
 
     /** Apply appropriate styles to the entire text. */
     private void myReapplyAll() {
-        if (doc==null || strategy==0) return;
+        if (doc==null || !enabled) return;
         String txt=getText();
         int comment=0, n=txt.length();
-        doc.setCharacterAttributes(0, n, styleNormal, true);
         doc.setParagraphAttributes(0, n, tabAttribute, true);
         for(int i=0; i<n; i++) {
             char c = txt.charAt(i);
@@ -310,6 +308,8 @@ public final class OurTextArea extends JTextPane {
                i--;
             }
         }
+        getInputAttributes().removeAttribute(getInputAttributes());
+        getInputAttributes().addAttributes(styleNormal);
         needReApply = false;
     }
 
@@ -338,28 +338,16 @@ public final class OurTextArea extends JTextPane {
         SwingUtilities.invokeLater(new Runnable() {
            public void run() {
                try {
-                   String text = Util.readAll("/zweb/zweb/w/p/public/def.als");
+                   String text = Util.readAll(1==1 ? "/zweb/zweb/w/m/tests/test47.als" : "/zweb/zweb/w/p/public/def.als");
                    JFrame jf = new JFrame("Demo");
                    jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                    jf.setLayout(new BorderLayout());
                    final OurTextArea area = new OurTextArea(text, "Monospaced", 18, 4);
                    JScrollPane scroll = new JScrollPane(area, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
                    jf.add(scroll, BorderLayout.CENTER);
-                   JButton off = new JButton("Off"); off.addActionListener(new ActionListener() {
-                       public void actionPerformed(ActionEvent e) { myDisabledHighlighting(); }
-                   });
-                   JButton tim = new JButton("Timer"); tim.addActionListener(new ActionListener() {
-                       public void actionPerformed(ActionEvent e) { myEnableHighlighting(true); }
-                   });
-                   JButton inst = new JButton("Instant"); inst.addActionListener(new ActionListener() {
-                       public void actionPerformed(ActionEvent e) { myEnableHighlighting(false); }
-                   });
-                   jf.add(off, BorderLayout.NORTH);
-                   jf.add(tim, BorderLayout.WEST);
-                   jf.add(inst, BorderLayout.EAST);
                    jf.pack();
-                   jf.setLocation(50,50);
-                   jf.setSize(1200,250);
+                   jf.setLocation(500,50);
+                   jf.setSize(850,450);
                    jf.setVisible(true);
                    area.requestFocusInWindow();
                } catch(IOException ex) { }
