@@ -250,7 +250,7 @@ parser code {:
         if (loaded!=null) loaded.put(filename,content);
         content = Util.convertLineBreak(content);
         isr=new StringReader(content);
-        CompFilter s=new CompFilter(seenDollar, filename, lineOffset, new BufferedReader(isr));
+        CompFilter s=new CompFilter(u, seenDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p=new CompParser(s);
         p.alloymodule=u;
         try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception", ex);}

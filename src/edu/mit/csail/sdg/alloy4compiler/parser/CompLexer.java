@@ -57,15 +57,15 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
     "\1\54\2\31\1\55\1\34\1\56\1\57\1\60\1\61"+
     "\1\62\2\31\1\63\1\31\1\64\1\31\1\2\6\31"+
     "\1\65\2\31\1\66\2\31\1\54\1\67\6\31\1\70"+
-    "\1\71\1\72\1\0\1\33\2\31\1\73\1\74\1\31"+
+    "\1\71\1\72\3\0\1\33\2\31\1\73\1\74\1\31"+
     "\1\75\1\76\1\77\1\100\1\101\4\31\1\102\1\103"+
-    "\1\31\1\104\1\31\1\105\1\106\1\31\1\107\2\31"+
-    "\1\110\12\31\1\111\4\31\1\112\1\31\1\113\4\31"+
-    "\1\114\1\115\1\31\1\45\1\31\1\116\1\117\1\77"+
-    "\3\31\1\105\1\65";
+    "\1\31\1\104\1\31\1\105\1\106\1\31\1\107\1\110"+
+    "\2\31\1\111\12\31\1\112\4\31\1\113\1\31\1\114"+
+    "\4\31\1\115\1\116\1\31\1\45\1\31\1\117\1\120"+
+    "\1\77\3\31\1\105\1\65";
 
   private static int [] zzUnpackAction() {
-    int [] result = new int[202];
+    int [] result = new int[205];
     int offset = 0;
     offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
     return result;
@@ -107,18 +107,18 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
     "\0\u0fd2\0\u04da\0\u1008\0\u04da\0\u103e\0\u1074\0\u10aa\0\u10e0"+
     "\0\u1116\0\u114c\0\u1182\0\u11b8\0\u11ee\0\u04da\0\u1224\0\u125a"+
     "\0\u04da\0\u04da\0\u1290\0\u12c6\0\u12fc\0\u1332\0\u1368\0\u139e"+
-    "\0\u04da\0\u04da\0\u04da\0\u13d4\0\u0e8e\0\u140a\0\u1440\0\u04da"+
-    "\0\u04da\0\u1476\0\u04da\0\u04da\0\u14ac\0\u04da\0\u04da\0\u14e2"+
-    "\0\u1518\0\u154e\0\u1584\0\u04da\0\u04da\0\u15ba\0\u04da\0\u15f0"+
-    "\0\u1626\0\u04da\0\u165c\0\u04da\0\u1692\0\u16c8\0\u04da\0\u16fe"+
-    "\0\u1734\0\u176a\0\u17a0\0\u17d6\0\u180c\0\u1842\0\u1878\0\u18ae"+
-    "\0\u18e4\0\u04da\0\u191a\0\u1950\0\u1986\0\u19bc\0\u04da\0\u19f2"+
-    "\0\u04da\0\u1a28\0\u1a5e\0\u1a94\0\u1aca\0\u04da\0\u04da\0\u1b00"+
-    "\0\u04da\0\u1b36\0\u04da\0\u04da\0\u04da\0\u1b6c\0\u1ba2\0\u1bd8"+
-    "\0\u04da\0\u04da";
+    "\0\u04da\0\u04da\0\u04da\0\u13d4\0\u140a\0\u1440\0\u140a\0\u1476"+
+    "\0\u14ac\0\u04da\0\u04da\0\u14e2\0\u04da\0\u04da\0\u1518\0\u04da"+
+    "\0\u04da\0\u154e\0\u1584\0\u15ba\0\u15f0\0\u04da\0\u04da\0\u1626"+
+    "\0\u04da\0\u165c\0\u1692\0\u04da\0\u16c8\0\u04da\0\66\0\u16fe"+
+    "\0\u1734\0\u04da\0\u176a\0\u17a0\0\u17d6\0\u180c\0\u1842\0\u1878"+
+    "\0\u18ae\0\u18e4\0\u191a\0\u1950\0\u04da\0\u1986\0\u19bc\0\u19f2"+
+    "\0\u1a28\0\u04da\0\u1a5e\0\u04da\0\u1a94\0\u1aca\0\u1b00\0\u1b36"+
+    "\0\u04da\0\u04da\0\u1b6c\0\u04da\0\u1ba2\0\u04da\0\u04da\0\u04da"+
+    "\0\u1bd8\0\u1c0e\0\u1c44\0\u04da\0\u04da";
 
   private static int [] zzUnpackRowMap() {
-    int [] result = new int[202];
+    int [] result = new int[205];
     int offset = 0;
     offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
     return result;
@@ -183,42 +183,43 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
     "\4\45\1\205\27\45\32\0\11\45\1\206\3\45\1\207"+
     "\16\45\32\0\5\45\1\210\26\45\32\0\7\45\1\211"+
     "\24\45\32\0\4\45\1\212\27\45\32\0\3\45\1\213"+
-    "\30\45\32\0\34\140\2\0\6\142\1\214\65\142\1\214"+
-    "\5\142\1\215\51\142\30\0\3\45\1\216\30\45\32\0"+
-    "\11\45\1\217\22\45\32\0\11\45\1\220\22\45\32\0"+
-    "\2\45\1\221\31\45\32\0\5\45\1\222\26\45\32\0"+
-    "\11\45\1\223\22\45\32\0\11\45\1\224\22\45\32\0"+
-    "\16\45\1\225\15\45\32\0\11\45\1\226\22\45\32\0"+
-    "\20\45\1\227\13\45\32\0\5\45\1\230\26\45\32\0"+
-    "\11\45\1\231\22\45\32\0\1\232\33\45\32\0\11\45"+
-    "\1\233\22\45\32\0\23\45\1\234\10\45\32\0\7\45"+
-    "\1\235\24\45\32\0\6\45\1\236\25\45\32\0\7\45"+
-    "\1\237\24\45\32\0\12\45\1\240\21\45\32\0\3\45"+
-    "\1\241\30\45\32\0\10\45\1\242\23\45\32\0\23\45"+
-    "\1\243\10\45\32\0\3\45\1\244\30\45\2\0\6\142"+
-    "\1\214\5\142\1\55\51\142\30\0\4\45\1\245\27\45"+
-    "\32\0\4\45\1\246\27\45\32\0\14\45\1\247\17\45"+
-    "\32\0\17\45\1\250\14\45\32\0\3\45\1\251\30\45"+
-    "\32\0\7\45\1\252\24\45\32\0\12\45\1\253\21\45"+
-    "\32\0\5\45\1\254\26\45\32\0\15\45\1\255\16\45"+
-    "\32\0\6\45\1\256\25\45\32\0\15\45\1\257\16\45"+
-    "\32\0\1\260\33\45\32\0\1\261\33\45\32\0\3\45"+
-    "\1\262\30\45\32\0\15\45\1\263\16\45\32\0\6\45"+
-    "\1\264\25\45\32\0\10\45\1\265\23\45\32\0\2\45"+
-    "\1\266\31\45\32\0\3\45\1\267\30\45\32\0\11\45"+
-    "\1\270\22\45\32\0\11\45\1\271\22\45\32\0\3\45"+
-    "\1\272\30\45\32\0\3\45\1\273\30\45\32\0\5\45"+
-    "\1\274\26\45\32\0\7\45\1\275\24\45\32\0\22\45"+
-    "\1\276\11\45\32\0\2\45\1\277\31\45\32\0\3\45"+
-    "\1\300\30\45\32\0\2\45\1\301\31\45\32\0\15\45"+
-    "\1\302\16\45\32\0\11\45\1\303\22\45\32\0\3\45"+
-    "\1\304\30\45\32\0\3\45\1\305\30\45\32\0\15\45"+
-    "\1\306\16\45\32\0\17\45\1\307\14\45\32\0\23\45"+
-    "\1\310\10\45\32\0\7\45\1\311\24\45\32\0\11\45"+
-    "\1\312\22\45\2\0";
+    "\30\45\32\0\34\140\2\0\6\142\1\214\57\142\6\215"+
+    "\1\216\5\215\1\217\51\215\30\0\3\45\1\220\30\45"+
+    "\32\0\11\45\1\221\22\45\32\0\11\45\1\222\22\45"+
+    "\32\0\2\45\1\223\31\45\32\0\5\45\1\224\26\45"+
+    "\32\0\11\45\1\225\22\45\32\0\11\45\1\226\22\45"+
+    "\32\0\16\45\1\227\15\45\32\0\11\45\1\230\22\45"+
+    "\32\0\20\45\1\231\13\45\32\0\5\45\1\232\26\45"+
+    "\32\0\11\45\1\233\22\45\32\0\1\234\33\45\32\0"+
+    "\11\45\1\235\22\45\32\0\23\45\1\236\10\45\32\0"+
+    "\7\45\1\237\24\45\32\0\6\45\1\240\25\45\32\0"+
+    "\7\45\1\241\24\45\32\0\12\45\1\242\21\45\32\0"+
+    "\3\45\1\243\30\45\32\0\10\45\1\244\23\45\32\0"+
+    "\23\45\1\245\10\45\32\0\3\45\1\246\30\45\2\0"+
+    "\6\142\1\214\5\142\1\55\51\142\6\215\1\216\65\215"+
+    "\1\216\5\215\1\247\51\215\30\0\4\45\1\250\27\45"+
+    "\32\0\4\45\1\251\27\45\32\0\14\45\1\252\17\45"+
+    "\32\0\17\45\1\253\14\45\32\0\3\45\1\254\30\45"+
+    "\32\0\7\45\1\255\24\45\32\0\12\45\1\256\21\45"+
+    "\32\0\5\45\1\257\26\45\32\0\15\45\1\260\16\45"+
+    "\32\0\6\45\1\261\25\45\32\0\15\45\1\262\16\45"+
+    "\32\0\1\263\33\45\32\0\1\264\33\45\32\0\3\45"+
+    "\1\265\30\45\32\0\15\45\1\266\16\45\32\0\6\45"+
+    "\1\267\25\45\32\0\10\45\1\270\23\45\32\0\2\45"+
+    "\1\271\31\45\32\0\3\45\1\272\30\45\32\0\11\45"+
+    "\1\273\22\45\32\0\11\45\1\274\22\45\32\0\3\45"+
+    "\1\275\30\45\32\0\3\45\1\276\30\45\32\0\5\45"+
+    "\1\277\26\45\32\0\7\45\1\300\24\45\32\0\22\45"+
+    "\1\301\11\45\32\0\2\45\1\302\31\45\32\0\3\45"+
+    "\1\303\30\45\32\0\2\45\1\304\31\45\32\0\15\45"+
+    "\1\305\16\45\32\0\11\45\1\306\22\45\32\0\3\45"+
+    "\1\307\30\45\32\0\3\45\1\310\30\45\32\0\15\45"+
+    "\1\311\16\45\32\0\17\45\1\312\14\45\32\0\23\45"+
+    "\1\313\10\45\32\0\7\45\1\314\24\45\32\0\11\45"+
+    "\1\315\22\45\2\0";
 
   private static int [] zzUnpackTrans() {
-    int [] result = new int[7182];
+    int [] result = new int[7290];
     int offset = 0;
     offset = zzUnpackTrans(ZZ_TRANS_PACKED_0, offset, result);
     return result;
@@ -259,10 +260,10 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
     "\1\0\3\11\1\1\3\11\1\1\1\11\7\1\5\11"+
     "\1\1\2\11\23\1\3\11\1\1\1\11\1\1\2\11"+
     "\1\0\3\11\1\1\4\11\43\1\1\11\2\0\1\11"+
-    "\47\1\1\0\76\1";
+    "\47\1\3\0\30\1\1\11\46\1";
 
   private static int [] zzUnpackAttribute() {
-    int [] result = new int[202];
+    int [] result = new int[205];
     int offset = 0;
     offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
     return result;
@@ -334,6 +335,7 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
  public String alloy_filename="";
  public int alloy_lineoffset=0; // If not zero, it is added to the current LINE NUMBER
  public List<Object> alloy_seenDollar;
+ public Module alloy_module;
  private final Pos alloy_here(String txt) {
     return new Pos(alloy_filename,yycolumn+1,yyline+1+alloy_lineoffset,yycolumn+txt.length(),yyline+1);
  }
@@ -704,319 +706,323 @@ yyline=yycolumn=0;
         case 4:
           { return alloy_sym(yytext(), CompSym.AMPERSAND   );
           }
-        case 80: break;
+        case 81: break;
         case 48:
           { return alloy_sym(yytext(), CompSym.SEQ         );
           }
-        case 81: break;
+        case 82: break;
         case 37:
           { return alloy_sym(yytext(), CompSym.IMPLIES     );
           }
-        case 82: break;
+        case 83: break;
         case 23:
           { return alloy_sym(yytext(), CompSym.RBRACE      );
           }
-        case 83: break;
-        case 76:
+        case 84: break;
+        case 77:
           { return alloy_sym(yytext(), CompSym.EXACTLY     );
           }
-        case 84: break;
+        case 85: break;
         case 51:
           { return alloy_sym(yytext(), CompSym.RUN         );
           }
-        case 85: break;
+        case 86: break;
         case 35:
           { return alloy_sym(yytext(), CompSym.SHL         );
           }
-        case 86: break;
+        case 87: break;
         case 34:
           { return alloy_sym(yytext(), CompSym.DOMAIN      );
           }
-        case 87: break;
+        case 88: break;
         case 58:
           { return alloy_sym(yytext(), CompSym.SIGINT      );
           }
-        case 88: break;
+        case 89: break;
         case 24:
           { return alloy_sym(yytext(), CompSym.TILDE       );
           }
-        case 89: break;
+        case 90: break;
         case 21:
           { return alloy_sym(yytext(), CompSym.LBRACE      );
           }
-        case 90: break;
+        case 91: break;
         case 7:
           { return alloy_sym(yytext(), CompSym.STAR        );
           }
-        case 91: break;
+        case 92: break;
         case 29:
           { return alloy_sym(yytext(), CompSym.PLUSPLUS    );
           }
-        case 92: break;
+        case 93: break;
         case 56:
           { return alloy_sym(yytext(), CompSym.FUN         );
           }
-        case 93: break;
+        case 94: break;
         case 53:
           { return alloy_sym(yytext(), CompSym.EXH         );
           }
-        case 94: break;
+        case 95: break;
         case 1:
           { throw new ErrorSyntax(alloy_here(" "),"The character "+yytext()+" cannot start a lexical token.");
           }
-        case 95: break;
+        case 96: break;
         case 54:
           { return alloy_sym(yytext(), CompSym.INT         );
           }
-        case 96: break;
+        case 97: break;
         case 50:
           { return alloy_sym(yytext(), CompSym.SIG         );
           }
-        case 97: break;
+        case 98: break;
         case 70:
           { return alloy_sym(yytext(), CompSym.PRED        );
           }
-        case 98: break;
+        case 99: break;
         case 25:
           { return alloy_id  (yytext());
           }
-        case 99: break;
+        case 100: break;
         case 61:
           { return alloy_sym(yytext(), CompSym.LONE        );
           }
-        case 100: break;
+        case 101: break;
         case 40:
           { return alloy_sym(yytext(), CompSym.NO          );
           }
-        case 101: break;
+        case 102: break;
         case 9:
           { return alloy_sym(yytext(), CompSym.COMMA       );
           }
-        case 102: break;
+        case 103: break;
         case 39:
           { return alloy_sym(yytext(), CompSym.AS          );
           }
-        case 103: break;
+        case 104: break;
         case 60:
           { return alloy_sym(yytext(), CompSym.THIS        );
           }
-        case 104: break;
+        case 105: break;
         case 13:
           { return alloy_sym(yytext(), CompSym.SLASH       );
           }
-        case 105: break;
+        case 106: break;
         case 46:
           { return alloy_sym(yytext(), CompSym.BUT         );
           }
-        case 106: break;
+        case 107: break;
         case 63:
           { return alloy_sym(yytext(), CompSym.DISJ        );
           }
-        case 107: break;
+        case 108: break;
         case 31:
           { return alloy_sym(yytext(), CompSym.SHA         );
           }
-        case 108: break;
+        case 109: break;
         case 38:
           { return alloy_sym(yytext(), CompSym.OR          );
           }
-        case 109: break;
+        case 110: break;
         case 43:
           { return alloy_sym(yytext(), CompSym.SHR         );
           }
-        case 110: break;
-        case 78:
+        case 111: break;
+        case 79:
           { return alloy_sym(yytext(), CompSym.PRIVATE     );
           }
-        case 111: break;
+        case 112: break;
         case 30:
           { return alloy_sym(yytext(), CompSym.ARROW       );
           }
-        case 112: break;
+        case 113: break;
         case 32:
           { return alloy_sym(yytext(), CompSym.GTE         );
           }
-        case 113: break;
+        case 114: break;
         case 20:
           { return alloy_sym(yytext(), CompSym.CARET       );
           }
-        case 114: break;
+        case 115: break;
         case 44:
           { return alloy_sym(yytext(), CompSym.IFF         );
           }
-        case 115: break;
+        case 116: break;
         case 64:
           { return alloy_sym(yytext(), CompSym.ELSE        );
           }
-        case 116: break;
+        case 117: break;
         case 3:
           { return alloy_sym(yytext(), CompSym.HASH        );
           }
-        case 117: break;
+        case 118: break;
         case 12:
           { return alloy_sym(yytext(), CompSym.DOT         );
           }
-        case 118: break;
+        case 119: break;
         case 22:
           { return alloy_sym(yytext(), CompSym.BAR         );
           }
-        case 119: break;
-        case 74:
+        case 120: break;
+        case 75:
           { return alloy_sym(yytext(), CompSym.EXPECT      );
           }
-        case 120: break;
+        case 121: break;
         case 8:
           { return alloy_sym(yytext(), CompSym.PLUS        );
           }
-        case 121: break;
+        case 122: break;
         case 36:
           { return alloy_sym(yytext(), CompSym.LTE         );
           }
-        case 122: break;
+        case 123: break;
         case 55:
           { return alloy_sym(yytext(), CompSym.ONE         );
           }
-        case 123: break;
+        case 124: break;
         case 68:
           { return alloy_sym(yytext(), CompSym.OPEN        );
           }
-        case 124: break;
+        case 125: break;
         case 11:
           { return alloy_sym(yytext(), CompSym.GT          );
           }
-        case 125: break;
-        case 75:
+        case 126: break;
+        case 76:
           { return alloy_sym(yytext(), CompSym.MODULE      );
           }
-        case 126: break;
+        case 127: break;
         case 14:
           { return alloy_sym(yytext(), CompSym.COLON       );
           }
-        case 127: break;
+        case 128: break;
         case 49:
           { return alloy_sym(yytext(), CompSym.SUM         );
           }
-        case 128: break;
+        case 129: break;
         case 69:
           { return alloy_sym(yytext(), CompSym.PART        );
           }
-        case 129: break;
+        case 130: break;
         case 16:
           { return alloy_sym(yytext(), CompSym.EQUALS      );
           }
-        case 130: break;
-        case 77:
+        case 131: break;
+        case 78:
           { return alloy_sym(yytext(), CompSym.EXTENDS     );
           }
-        case 131: break;
+        case 132: break;
         case 57:
           { return alloy_sym(yytext(), CompSym.FOR         );
           }
-        case 132: break;
+        case 133: break;
         case 26:
           { return alloy_num (yytext());
           }
-        case 133: break;
+        case 134: break;
         case 67:
           { return alloy_sym(yytext(), CompSym.IDEN        );
           }
-        case 134: break;
+        case 135: break;
         case 15:
           { return alloy_sym(yytext(), CompSym.LT          );
           }
-        case 135: break;
+        case 136: break;
         case 17:
           { return alloy_sym(yytext(), CompSym.AT          );
           }
-        case 136: break;
+        case 137: break;
         case 33:
           { return alloy_sym(yytext(), CompSym.RANGE       );
           }
-        case 137: break;
+        case 138: break;
         case 66:
           { return alloy_sym(yytext(), CompSym.UNIV        );
           }
-        case 138: break;
+        case 139: break;
         case 2:
           { return alloy_sym(yytext(), CompSym.NOT         );
           }
-        case 139: break;
+        case 140: break;
         case 47:
           { return alloy_sym(yytext(), CompSym.SET         );
           }
-        case 140: break;
+        case 141: break;
         case 6:
           { return alloy_sym(yytext(), CompSym.RPAREN      );
           }
-        case 141: break;
+        case 142: break;
         case 41:
           { return alloy_sym(yytext(), CompSym.IN          );
           }
-        case 142: break;
-        case 72:
+        case 143: break;
+        case 73:
           { return alloy_sym(yytext(), CompSym.CHECK       );
           }
-        case 143: break;
+        case 144: break;
         case 28:
           { return alloy_sym(yytext(), CompSym.AND         );
           }
-        case 144: break;
+        case 145: break;
         case 59:
           { return alloy_sym(yytext(), CompSym.SOME        );
           }
-        case 145: break;
+        case 146: break;
         case 71:
           { return alloy_sym(yytext(), CompSym.FACT        );
           }
-        case 146: break;
+        case 147: break;
         case 10:
           { return alloy_sym(yytext(), CompSym.MINUS       );
           }
-        case 147: break;
+        case 148: break;
         case 5:
           { return alloy_sym(yytext(), CompSym.LPAREN      );
           }
-        case 148: break;
+        case 149: break;
         case 62:
           { return alloy_sym(yytext(), CompSym.NONE        );
           }
-        case 149: break;
+        case 150: break;
         case 18:
           { return alloy_sym(yytext(), CompSym.LBRACKET    );
           }
-        case 150: break;
+        case 151: break;
         case 19:
           { return alloy_sym(yytext(), CompSym.RBRACKET    );
           }
-        case 151: break;
+        case 152: break;
         case 65:
           { return alloy_sym(yytext(), CompSym.ENUM        );
           }
-        case 152: break;
+        case 153: break;
         case 45:
           { return alloy_sym(yytext(), CompSym.ALL         );
           }
-        case 153: break;
-        case 79:
+        case 154: break;
+        case 80:
           { return alloy_sym(yytext(), CompSym.ABSTRACT    );
           }
-        case 154: break;
-        case 73:
+        case 155: break;
+        case 74:
           { return alloy_sym(yytext(), CompSym.ASSERT      );
           }
-        case 155: break;
+        case 156: break;
+        case 72:
+          { String txt=yytext(); alloy_module.javadocs.add(new ExpName(alloy_here(txt), txt));
+          }
+        case 157: break;
         case 52:
           { return alloy_sym(yytext(), CompSym.LET         );
           }
-        case 156: break;
+        case 158: break;
         case 27:
           {
           }
-        case 157: break;
+        case 159: break;
         case 42:
           { throw new ErrorSyntax(alloy_here(yytext()),"Name cannot start with a number.");
           }
-        case 158: break;
+        case 160: break;
         default:
           if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
             zzAtEOF = true;

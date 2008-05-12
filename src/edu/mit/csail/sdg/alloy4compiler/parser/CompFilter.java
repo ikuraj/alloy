@@ -199,8 +199,9 @@ final class CompFilter implements Scanner {
     }
 
     /** Construct a filter for the tokens from the given file. */
-    public CompFilter(final List<Object> alloy_seenDollar, final String filename, int lineOffset, Reader i) throws Err {
+    public CompFilter(final Module module, final List<Object> alloy_seenDollar, final String filename, int lineOffset, Reader i) throws Err {
         r=new CompLexer(i);
+        r.alloy_module=module;
         r.alloy_filename=filename;
         r.alloy_lineoffset=lineOffset;
         r.alloy_seenDollar=alloy_seenDollar;

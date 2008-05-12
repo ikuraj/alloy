@@ -306,6 +306,9 @@ public final class Module {
     /** The list of params in this module whose scope shall be deemed "exact" */
     private final List<String> exactParams = new ArrayList<String>();
 
+    /** The list of javadoc comments in this module. */
+    final List<ExpName> javadocs = new ArrayList<ExpName>();
+
     /** Each func name is mapped to a nonempty list of FunAST objects. */
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
 

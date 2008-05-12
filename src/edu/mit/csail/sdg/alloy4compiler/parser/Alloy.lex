@@ -71,6 +71,7 @@ import java_cup_11a.runtime.*;
  public String alloy_filename="";
  public int alloy_lineoffset=0; // If not zero, it is added to the current LINE NUMBER
  public List<Object> alloy_seenDollar;
+ public Module alloy_module;
  private final Pos alloy_here(String txt) {
     return new Pos(alloy_filename,yycolumn+1,yyline+1+alloy_lineoffset,yycolumn+txt.length(),yyline+1);
  }
@@ -187,7 +188,7 @@ import java_cup_11a.runtime.*;
 [0-9][0-9]*                                                           { return alloy_num (yytext()); }
 [\$a-zA-Z][\$0-9a-zA-Z_\'\"\u0019\u001d]*                             { return alloy_id  (yytext()); }
 
-"/**" ~"*/"                  { } // System.out.println("[Javadoc: " + yytext() + "]"); System.out.flush();
+"/**" ~"*/"                  { String txt=yytext(); alloy_module.javadocs.add(new ExpName(alloy_here(txt), txt)); }
 
 "/*" ~"*/"                   { }
 
