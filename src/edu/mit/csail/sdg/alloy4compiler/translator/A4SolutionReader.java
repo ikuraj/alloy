@@ -130,7 +130,6 @@ public final class A4SolutionReader {
         Pos isOne      = yes(node,"one")      ? Pos.UNKNOWN : null;
         Pos isLone     = yes(node,"lone")     ? Pos.UNKNOWN : null;
         Pos isSome     = yes(node,"some")     ? Pos.UNKNOWN : null;
-        Pos isOrdered  = yes(node,"ordered")  ? Pos.UNKNOWN : null;
         Pos isPrivate  = yes(node,"private")  ? Pos.UNKNOWN : null;
         Pos isMeta     = yes(node,"meta")     ? Pos.UNKNOWN : null;
         if (yes(node,"builtin")) {
@@ -157,7 +156,7 @@ public final class A4SolutionReader {
               if (choice instanceof PrimSig && parent==((PrimSig)choice).parent && label(((Sig)choice).label).equals(label))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isOrdered, isPrivate, isMeta, false);
+              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isPrivate, isMeta, false);
               allsigs.add(ans);
            }
         } else {
@@ -165,7 +164,7 @@ public final class A4SolutionReader {
               if (choice instanceof SubsetSig && label(((Sig)choice).label).equals(label) && sameset(parents, ((SubsetSig)choice).parents))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new SubsetSig(Pos.UNKNOWN, parents, label, Pos.UNKNOWN, isLone, isOne, isSome, isOrdered, isPrivate, isMeta);
+              ans = new SubsetSig(Pos.UNKNOWN, parents, label, Pos.UNKNOWN, isLone, isOne, isSome, isPrivate, isMeta);
               allsigs.add(ans);
            }
         }

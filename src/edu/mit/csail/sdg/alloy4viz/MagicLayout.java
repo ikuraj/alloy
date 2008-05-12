@@ -162,10 +162,6 @@ final class MagicLayout {
                         scores.put(t, scores.get(t)+1 );
                     }
                 }
-                // is it ordered?
-                if (t.isOrdered) {
-                    scores.put(t, scores.get(t)+1 );
-                }
             }
             // now we have the scores, see who the winners are:
             int max = 0;

@@ -74,7 +74,7 @@ public abstract class Sig extends Expr {
 
     /**
      * True if this sig is one of the built-in sig.
-     * <p> Note: if builtin==true, then we ensure it is not abstract, and it is not ordered
+     * <p> Note: if builtin==true, then we ensure it is not abstract
      */
     public final boolean builtin;
 
@@ -94,12 +94,6 @@ public abstract class Sig extends Expr {
      * <p> Note: if a sig is a subset sig, then it cannot and will not be abstract.
      */
     public final Pos isSubset;
-
-    /**
-     * Nonnull if the user wanted this sig to be ordered.
-     * <p> Note: this value is always null for builtin sigs.
-     */
-    public final Pos isOrdered;
 
     /**
      * Nonnull if this sig's multiplicity is declared to be lone.
@@ -150,20 +144,18 @@ public abstract class Sig extends Expr {
         this.label=label;
         this.isSubset=null;
         this.isSubsig=null;
-        this.isOrdered=null;
         this.isPrivate=null;
         this.isMeta=null;
     }
 
     /** Constructs a new PrimSig or SubsetSig. */
-    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isOrdered, Pos isPrivate, Pos isMeta)
+    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isPrivate, Pos isMeta)
     throws Err {
         super(pos, type);
         if (lone!=null && one!=null)  throw new ErrorSyntax(lone.merge(one),  "You cannot delcare a sig to be both lone and one.");
         if (lone!=null && some!=null) throw new ErrorSyntax(lone.merge(some), "You cannot delcare a sig to be both lone and some.");
         if (one!=null  && some!=null) throw new ErrorSyntax(one.merge(some),  "You cannot delcare a sig to be both one and some.");
         this.builtin=false;
-        this.isOrdered=isOrdered;
         this.isPrivate=isPrivate;
         this.isMeta=isMeta;
         this.isAbstract=abs;
@@ -241,13 +233,13 @@ public abstract class Sig extends Expr {
          * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
          */
         public PrimSig
-        (Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos subsig, Pos ordered, Pos isPrivate, Pos isMeta, boolean isLeaf)
+        (Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos subsig, Pos isPrivate, Pos isMeta, boolean isLeaf)
         throws Err {
             super(pos,
                 (parent!=null && parent.hint_isLeaf) ? parent.type : null,
                 label, isAbstract, lone, one, some,
                 (parent!=null && parent!=UNIV) ? Pos.UNKNOWN.merge(subsig) : null,
-                null, ordered, isPrivate, isMeta);
+                null, isPrivate, isMeta);
             if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
             if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
             if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"none\" signature");
@@ -274,7 +266,7 @@ public abstract class Sig extends Expr {
         public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some,
         boolean isLeaf) throws Err {
             this(pos, parent, label, isAbstract?Pos.UNKNOWN:null,
-               lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, null, null, null, isLeaf);
+               lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, null, null, isLeaf);
         }
 
         /**
@@ -282,7 +274,7 @@ public abstract class Sig extends Expr {
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param label - the name of this sig (it does not need to be unique)
          */
-        public PrimSig(Pos pos, String label) throws Err { this(pos, null, label, null,null,null,null,null,null,null,null, false); }
+        public PrimSig(Pos pos, String label) throws Err { this(pos, null, label, null,null,null,null,null,null,null, false); }
 
         /** {@inheritDoc} */
         @Override public boolean isSameOrDescendentOf(Sig that) {
@@ -359,8 +351,8 @@ public abstract class Sig extends Expr {
          * @throws ErrorSyntax if the signature has two or more multiplicities
          * @throws ErrorType if parents contains NONE or SIGINT or SEQIDX
          */
-        public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos ordered, Pos isPrivate, Pos isMeta) throws Err {
-            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), ordered, isPrivate, isMeta);
+        public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos isPrivate, Pos isMeta) throws Err {
+            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta);
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
             if (parents!=null) for(Sig parent:parents) if (parent==Sig.UNIV) {temp.clear(); break;} else if (!temp.contains(parent)) temp.add(parent);
             if (temp.size()==0) temp.add(UNIV);

@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -225,7 +224,6 @@ public final class Module {
         private final ConstList<ExpName> parents;
         private final ConstList<Decl> fields;
         private final Exp appendedFact;
-        private Pos isOrdered=null;
         private SigAST(Pos pos, Pos isPrivate, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
             List<ExpName> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
@@ -618,11 +616,6 @@ public final class Module {
                if (vv==Module.NONEast) throw new ErrorSyntax(open.pos, "You cannot use \"none\" as an instantiating argument.");
                chg=true;
                p.setValue(vv);
-               // FIXTHIS: This detects for the Alloy3 behavior of util/ordering.als
-               String sn=sub.modulePos.filename.toLowerCase(Locale.US).replace('\\', '/');
-               if (kn.equals("elem") && sub.sigs.size()==1 && sn.endsWith("/util/ordering.als") &&
-                  vv!=Module.UNIVast && vv!=Module.SIGINTast && vv!=Module.SEQIDXast && vv!=Module.NONEast)
-                     vv.isOrdered = open.pos;
                rep.parse("RESOLVE: "+(sub.path.length()==0?"this/":sub.path)+"/"+kn+" := "+vv+"\n");
             }
          }
@@ -715,7 +708,7 @@ public final class Module {
                oldS.realParents.add(parentAST);
                parents.add(resolveSig(sorted, parentAST));
             }
-            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isOrdered, oldS.isPrivate, null);
+            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isPrivate, null);
         } else {
             ExpName sup = null;
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.name.length()==0) sup=null;}
@@ -727,7 +720,7 @@ public final class Module {
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
                + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
-            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isOrdered, oldS.isPrivate, null, oldS.hint_isLeaf);
+            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isPrivate, null, oldS.hint_isLeaf);
         }
         sorted.add(oldS);
         return oldS.realSig;
@@ -1119,10 +1112,10 @@ public final class Module {
             SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
             metasig.topo = true;
             metasig.realParents.add(UNIVast);
-            metasig.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/sig$", Pos.UNKNOWN, null, null, null, null, null, null, Pos.UNKNOWN, false);
+            metasig.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/sig$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, false);
             metafield.topo = true;
             metafield.realParents.add(UNIVast);
-            metafield.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/field$", Pos.UNKNOWN, null, null, null, null, null, null, Pos.UNKNOWN, false);
+            metafield.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/field$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, false);
             PrimSig metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
             PrimSig metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
             for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
@@ -1131,14 +1124,14 @@ public final class Module {
                 SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null);
                 ast.topo=true;
                 ast.realParents.add(metasig);
-                ast.realSig = new PrimSig(Pos.UNKNOWN, metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, Pos.UNKNOWN, false);
+                ast.realSig = new PrimSig(Pos.UNKNOWN, metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                 sorted.add(ast);
                 hasMetaSig=true;
                 for(Field field: s.getFields()) {
                     ast = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null);
                     ast.topo=true;
                     ast.realParents.add(metafield);
-                    ast.realSig = new PrimSig(Pos.UNKNOWN, metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, null, ast.isPrivate, Pos.UNKNOWN, false);
+                    ast.realSig = new PrimSig(Pos.UNKNOWN, metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                     sorted.add(ast);
                     hasMetaField=true;
                 }

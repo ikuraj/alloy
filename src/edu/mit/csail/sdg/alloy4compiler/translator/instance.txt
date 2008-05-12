@@ -6,13 +6,13 @@ INSTANCE = <instance bitwidth=".." maxseq=".." command=".." filename=".." metamo
                                                                                             0 or more FIELD
                                                                                             0 or more SKOLEM
 
-PRIMSIG = <sig ID=".." parentID=".." label=".." builtin="yes" some="yes" lone="yes" one="yes" abstract="yes" private="yes" ordered="yes">  0 or more ATOM  </sig>
+PRIMSIG = <sig ID=".." parentID=".." label=".." builtin="yes" some="yes" lone="yes" one="yes" abstract="yes" private="yes" meta="yes">  0 or more ATOM  </sig>
 
-SUBSETSIG = <sig ID=".." label=".."  some="yes" lone="yes" one="yes"  private="yes" ordered="yes">  0 or more ATOM  </sig>
+SUBSETSIG = <sig ID=".." label=".."  some="yes" lone="yes" one="yes"  private="yes" meta="yes">  0 or more ATOM  </sig>
                                                                                                     1 or more TYPE
 
-FIELD = <field ID=".." parentID=".." label=".." private="yes"> 0 or more TUPLE </field>
-                                                               1 or more TYPES
+FIELD = <field ID=".." parentID=".." label=".." private="yes" meta="yes"> 0 or more TUPLE </field>
+                                                                          1 or more TYPES
 
 SKOLEM = <skolem ID=".." label=".."> 0 or more TUPLE </skolem>
                                      1 or more TYPES

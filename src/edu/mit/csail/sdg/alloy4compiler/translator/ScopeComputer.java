@@ -235,11 +235,6 @@ final class ScopeComputer {
            n=lower;
            sig2scope.put(sig, n);
         }
-        // Add special overrides for ordered sigs
-        if (sig.isOrdered!=null) {
-            if (n<=0) throw new ErrorSyntax(cmd.pos, "Sig "+sig+" must have a scope of 1 or above, since it is used to instantiate the util/ordering module");
-            if (!isExact) { isExact=true; rep.scope("Sig "+sig+" forced to have exactly "+n+" atoms.\n"); makeExact(sig.isOrdered, sig); }
-        }
         // Add special overrides for "exactly" sigs
         if (!isExact && cmd.additionalExactScopes.contains(sig)) {
             isExact=true; rep.scope("Sig "+sig+" forced to have exactly "+n+" atoms.\n"); makeExact(Pos.UNKNOWN, sig);

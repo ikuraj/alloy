@@ -33,24 +33,23 @@ import edu.mit.csail.sdg.alloy4.Util;
 public final class AlloyType extends AlloyNodeElement {
 
     /** This caches an instance of the "univ" AlloyType, so we don't have to keep re-constructing it. */
-    public static final AlloyType UNIV=new AlloyType("univ", false, false, true, false, false, false);
+    public static final AlloyType UNIV=new AlloyType("univ", false, false, true, false, false);
 
     /** This caches an instance of the "Int" AlloyType, so we don't have to keep re-constructing it. */
-    public static final AlloyType INT=new AlloyType("Int", false, false, true, false, false, false);
+    public static final AlloyType INT=new AlloyType("Int", false, false, true, false, false);
 
     /** This caches an instance of the "seq/Int" AlloyType, so we don't have to keep re-constructing it. */
-    public static final AlloyType SEQINT=new AlloyType("seq/Int", false, false, true, false, false, false);
+    public static final AlloyType SEQINT=new AlloyType("seq/Int", false, false, true, false, false);
 
     /** This caches an instance of the "set" AlloyType, so we don't have to keep re-constructing it. */
-    public static final AlloyType SET=new AlloyType("set", false, false, false, false, false, false);
+    public static final AlloyType SET=new AlloyType("set", false, false, false, false, false);
 
     /** Constructs an AlloyType object with that name. */
-    public AlloyType(String name, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isOrdered, boolean isPrivate, boolean isMeta) {
+    public AlloyType(String name, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isPrivate, boolean isMeta) {
         super(name);
         this.isOne = isOne;
         this.isAbstract = isAbstract;
         this.isBuiltin = isBuiltin;
-        this.isOrdered = isOrdered;
         this.isPrivate = isPrivate;
         this.isMeta = isMeta;
     }
@@ -63,9 +62,6 @@ public final class AlloyType extends AlloyNodeElement {
 
     /** Records whether this sig is known to be "builtin"; NOTE: this value is NOT USED during equals() comparison. */
     public final boolean isBuiltin;
-
-    /** Records whether this sig is known to be "ordered"; NOTE: this value is NOT USED during equals() comparison. */
-    public final boolean isOrdered;
 
     /** Records whether this sig is known to be "private"; NOTE: this value is NOT USED during equals() comparison. */
     public final boolean isPrivate;

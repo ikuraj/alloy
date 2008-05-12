@@ -130,7 +130,6 @@ public final class A4SolutionWriter {
        if (x.isSome!=null) out.print("\" some=\"yes");
        if (x.isPrivate!=null) out.print("\" private=\"yes");
        if (x.isMeta!=null) out.print("\" meta=\"yes");
-       if (x.isOrdered!=null) out.print("\" ordered=\"yes");
        out.print("\">\n");
        try {
            if (sol!=null) for(A4Tuple t: (A4TupleSet)(sol.eval(x)))  Util.encodeXMLs(out, "   <atom label=\"", t.atom(0), "\"/>\n");

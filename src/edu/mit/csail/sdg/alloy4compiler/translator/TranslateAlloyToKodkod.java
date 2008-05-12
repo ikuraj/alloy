@@ -178,7 +178,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 Field f2 = sig.getFields().get(1); Relation lst = right(a2k(f2)); if (lst==null) break;
                 Field f3 = sig.getFields().get(2); Relation nxt = right(a2k(f3)); if (nxt==null) break;
                 Sig e = findElem(sig,f1,f2,f3);
-                if (e==null || e.isOrdered==null) break;
+                if (e==null || !cmd.additionalExactScopes.contains(e)) break;
                 Expression ee = a2k(e);
                 if (!(ee instanceof Relation)) break;
                 for(int i=0; i+5<ar.size(); i++) {
@@ -187,7 +187,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                         // Remove ar[i..i+5]; the remaining elements are not re-arranged
                         ar.remove(i+5); ar.remove(i+4); ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i);
                         Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                        frame.addFormula(f, e.isOrdered);
+                        frame.addFormula(f, Pos.UNKNOWN);
                         continue again;
                     }
                 }
