@@ -253,7 +253,7 @@ parser code {:
         CompFilter s=new CompFilter(seenDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p=new CompParser(s);
         p.alloymodule=u;
-        try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception: "+ex);}
+        try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception", ex);}
         return u;
     } finally {
         Util.close(isr);
@@ -301,7 +301,7 @@ action code {:
         if (name.name.indexOf('$')>=0) throw new ErrorSyntax(name.pos, "The name cannot contain the '$' symbol.");
     }
     private void nod(List<ExpName> names) throws Err {
-        if (names!=null) for(ExpName n:names) if (n.name.indexOf('$')>=0) throw new ErrorSyntax(n.pos, "The name cannot contain the '$' symbol.");
+        if (names!=null) for(ExpName n:names) if (n!=null && n.name.indexOf('$')>=0) throw new ErrorSyntax(n.pos, "The name cannot contain the '$' symbol.");
     }
     private Exp t(ExpDot j, Pos close) throws Err {
       if (j.right instanceof ExpName) {
@@ -471,6 +471,7 @@ nonterminal Exp                        MacroBody;
 nonterminal ExpName                    Name;
 nonterminal ExpName                    NameHelper;
 nonterminal List<ExpName>              Names;
+nonterminal List<ExpName>              Namex;
 nonterminal Exp                        NegExprA;
 nonterminal Exp                        NegExprB;
 nonterminal Exp                        NumUnopExprA;
@@ -508,7 +509,7 @@ nonterminal Pos                        Vis;
 //===========================================================================//
 
 Spec ::= Spec MODULE:o Name:n                                                  {: nod(n);         parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
-Spec ::= Spec MODULE:o Name:n LBRACKET SigRefs:b RBRACKET:r                    {: nod(n); nod(b); parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
+Spec ::= Spec MODULE:o Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b); parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                                              {: nod(a);         parser.alloymodule.addOpen(o.merge(a.pos), p, a, null, null); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                               AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, null, c);    :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c                {: nod(a);         parser.alloymodule.addOpen(o.merge(c),     p, a, b,    null); :};
@@ -676,6 +677,11 @@ NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=new ExpName(a.pos.merge(b.pos)
 
 Names ::= Name:x                   {: nod(x); RESULT=new ArrayList<ExpName>(); RESULT.add(x);  :};
 Names ::= Names:a COMMA Name:b     {: nod(b); a.add(b); RESULT=a;                              :};
+
+Namex ::=         Name:x               {: nod(x); RESULT=new ArrayList<ExpName>();                   RESULT.add(x);  :};
+Namex ::= EXACTLY Name:x               {: nod(x); RESULT=new ArrayList<ExpName>(); RESULT.add(null); RESULT.add(x);  :};
+Namex ::= Namex:a COMMA         Name:b {: nod(b);              a.add(b); RESULT=a;                                   :};
+Namex ::= Namex:a COMMA EXACTLY Name:b {: nod(b); a.add(null); a.add(b); RESULT=a;                                   :};
 
 Decla ::=           PART:k Names   COLON        Expr   {: if (1==1) throw ExpName.hint(k,"part");   :};
 Decla ::=           EXH:k  Names   COLON        Expr   {: if (1==1) throw ExpName.hint(k,"exh");    :};

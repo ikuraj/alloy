@@ -106,7 +106,6 @@ public final class ExprChoice extends Expr {
         Type type=EMPTY;
         boolean first=true;
         long weight=0;
-        // FIXTHIS: what should the weight be?
         for(Expr x:choices) {
             type=x.type.merge(type);
             if (first || weight>x.weight) if (x.type!=EMPTY) { weight=x.weight; first=false; }

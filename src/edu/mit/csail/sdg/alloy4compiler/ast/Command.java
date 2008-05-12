@@ -26,6 +26,7 @@ import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /**
  * Immutable; reresents a "run" or "check" command.
@@ -66,6 +67,9 @@ public final class Command {
      */
     public final ConstList<Pair<Sig,Integer>> scope;
 
+    /** This stores a list of Sig whose scope shall be considered "exact", but we don't know what its scope is yet. */
+    public final ConstList<Sig> additionalExactScopes;
+
     /** Returns a human-readable string that summarizes this Run or Check command. */
     @Override public final String toString() {
         boolean first=true;
@@ -103,9 +107,10 @@ public final class Command {
      * @param maxseq - the maximum sequence length (0 or higher) (-1 if it was not specified)
      * @param expects - the expected value (0 or 1) (-1 if no expectation was specified)
      * @param scope - Sig-to-Integer map (see the "scope" field of the Command class for its meaning)
+     * @param additionalExactSig - a list of sigs whose scope shall be considered exact but we may not know what the scope is yet
      */
     public Command(Pos pos, String label, boolean check, int overall, int bitwidth,
-    int maxseq, int expects, List<Pair<Sig,Integer>> scope) {
+    int maxseq, int expects, List<Pair<Sig,Integer>> scope, Sig... additionalExactSig) {
         if (pos==null) pos = Pos.UNKNOWN;
         this.pos = pos;
         this.label = (label==null ? "" : label);
@@ -115,6 +120,9 @@ public final class Command {
         this.maxseq = (maxseq<0 ? -1 : maxseq);
         this.expects = (expects<0 ? -1 : (expects>0 ? 1 : 0));
         this.scope = ConstList.make(scope);
+        TempList<Sig> tmp = new TempList<Sig>(additionalExactSig.length);
+        for(int i=0; i<additionalExactSig.length; i++) tmp.add(additionalExactSig[i]);
+        this.additionalExactScopes = tmp.makeConst();
     }
 
     /**
@@ -122,6 +130,14 @@ public final class Command {
      * @param scope - Sig-to-Integer map to be associated with the new command (see the "scope" field for its meaning)
      */
     public Command make(ConstList<Pair<Sig,Integer>> scope) {
-        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope);
+        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes.toArray(new Sig[]{}));
+    }
+
+    /**
+     * Constructs a new Command object where it is the same as the current object, except with a different list of additional exact sigs.
+     * @param sigs - a list of sigs whose scope shall be considered exact (even though we may not know its scope yet)
+     */
+    public Command make(Sig... additionalExactScopes) {
+        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes);
     }
 }

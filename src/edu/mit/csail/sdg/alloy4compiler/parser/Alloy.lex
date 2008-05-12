@@ -187,6 +187,8 @@ import java_cup_11a.runtime.*;
 [0-9][0-9]*                                                           { return alloy_num (yytext()); }
 [\$a-zA-Z][\$0-9a-zA-Z_\'\"\u0019\u001d]*                             { return alloy_id  (yytext()); }
 
+"/**" ~"*/"                  { } // System.out.println("[Javadoc: " + yytext() + "]"); System.out.flush();
+
 "/*" ~"*/"                   { }
 
 ("//"|"--") [^\r\n]* [\r\n]  { }

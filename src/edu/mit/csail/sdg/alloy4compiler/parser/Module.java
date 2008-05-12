@@ -41,6 +41,7 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
+import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -99,7 +100,7 @@ public final class Module {
         }
         /** Construct a new Context with an empty lexical scope. */
         Context(Module rootModule) {
-            this(rootModule, 20); // FIXTHIS: should make this value configurable
+            this(rootModule, 20); // 20 is a reasonable threshold; deeper than this would likely be too big to solve anyway
         }
         /** Construct a new Context with an empty lexical scope. */
         Context(Module rootModule, int unrolls) {
@@ -300,6 +301,12 @@ public final class Module {
 
     /** Each sig name is mapped to its corresponding SigAST. */
     private final Map<String,SigAST> sigs = new LinkedHashMap<String,SigAST>();
+
+    /** The list of sigs in this module whose scope shall be deemed "exact" */
+    private final IdentitySet<SigAST> exactSigs = new IdentitySet<SigAST>();
+
+    /** The list of params in this module whose scope shall be deemed "exact" */
+    private final List<String> exactParams = new ArrayList<String>();
 
     /** Each func name is mapped to a nonempty list of FunAST objects. */
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
@@ -520,11 +527,19 @@ public final class Module {
            "The \"module\" declaration must occur at the top,\n" + "and can occur at most once.");
         this.moduleName=moduleName;
         this.modulePos=pos;
+        boolean nextIsExact = false;
         if (list!=null) for(ExpName expr: list) {
+            if (expr==null) { nextIsExact=true; continue; }
             String name=expr.name;
             dup(expr.span(), name, true);
-            if (path.length()==0) addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null);
-            else params.put(name, null);
+            if (path.length()==0) {
+                SigAST newSig = addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null);
+                if (nextIsExact) exactSigs.add(newSig);
+            } else {
+                params.put(name, null);
+                if (nextIsExact) exactParams.add(name);
+            }
+            nextIsExact=false;
         }
         this.status=1; // This line must be at the end, since "addSig" will otherwise bump the status value to 3
     }
@@ -959,7 +974,10 @@ public final class Module {
 
     /** Each command now points to a typechecked Expr. */
     private void resolveCommands() throws Err {
-        for(int i=0; i<commands.size(); i++) {
+        Sig[] exactSigs = new Sig[this.exactSigs.size()];
+        int i=0;
+        for(SigAST s: this.exactSigs) { exactSigs[i]=s.realSig; i++; }
+        for(i=0; i<commands.size(); i++) {
             String cname=commands.get(i).a;
             Command cmd=commands.get(i).b;
             Expr e=null;
@@ -982,7 +1000,9 @@ public final class Module {
                 if (s==null) throw new ErrorSyntax(et.a.pos, "The sig \""+et.a.label+"\" cannot be found.");
                 sc.add(new Pair<Sig,Integer>(s.realSig, et.b));
             }
-            commands.set(i, new Triple<String,Command,Expr>(cname, cmd.make(sc.makeConst()), e));
+            cmd = cmd.make(sc.makeConst());
+            cmd = cmd.make(exactSigs);
+            commands.set(i, new Triple<String,Command,Expr>(cname, cmd, e));
         }
     }
 
@@ -1134,12 +1154,16 @@ public final class Module {
             errors=x.resolveFuncBodys(rep,errors,warns);
             errors=x.resolveAssertions(rep,errors,warns);
             errors=x.resolveFacts(rep,errors,warns);
+            // also, we can collect up all the exact sigs and add them to the root module's list of exact sigs
+            if (x!=root) for(SigAST s:x.exactSigs) root.exactSigs.add(s);
+            for(String n:x.exactParams) { SigAST sig=x.params.get(n); if (sig!=null) root.exactSigs.add(sig); }
         }
         if (!errors.isEmpty()) throw errors.get(0);
         // Typecheck the run/check commands (which can refer to function bodies and assertions)
         root.resolveCommands();
         if (!errors.isEmpty()) throw errors.get(0);
         for(ErrorWarning w:warns) rep.warning(w);
+        for(SigAST s: root.exactSigs) rep.debug("Forced to be exact: "+s+"\n");
         return root;
     }
 
