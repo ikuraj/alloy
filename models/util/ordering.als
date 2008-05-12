@@ -1,4 +1,4 @@
-module util/ordering[elem]
+module util/ordering[exactly elem]
 
 /*
  * Creates a single linear ordering over the atoms in elem. It also constrains all
