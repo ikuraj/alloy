@@ -183,11 +183,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 if (!(ee instanceof Relation)) break;
                 for(int i=0; i+5<ar.size(); i++) {
                     if (findOrder(e,sig,f1,f2,f3, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3), ar.get(i+4), ar.get(i+5))) {
+                        Pos pos = ar.get(i).span().merge(ar.get(i+5).span());
                         rep.debug("Found: util/ordering\n");
                         // Remove ar[i..i+5]; the remaining elements are not re-arranged
                         ar.remove(i+5); ar.remove(i+4); ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i);
                         Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                        frame.addFormula(f, Pos.UNKNOWN);
+                        frame.addFormula(f, pos);
                         continue again;
                     }
                 }
