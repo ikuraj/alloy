@@ -88,9 +88,9 @@ public final class OurTextArea extends JTextPane {
     /** Enable syntax highlighting; the flag indicates whether we will use a timer or an EventQueue for the coloring. */
     public static void myEnableHighlighting() {
         if (timer==null) {
-           timer = new Timer(100, new ActionListener() {
+           timer = new Timer(400, new ActionListener() {
               public void actionPerformed(ActionEvent e) {
-                if (!enabled || e.getWhen()<latest || e.getWhen()-latest<300) return;
+                if (!enabled || e.getWhen()<latest || e.getWhen()-latest < 800) return;
                 for(OurTextArea x:all.keySet()) if (x.doc!=null && x.needReApply) x.myReapplyAll();
               }
            });
