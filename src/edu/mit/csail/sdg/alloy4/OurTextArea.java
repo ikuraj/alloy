@@ -184,7 +184,7 @@ public final class OurTextArea extends JTextPane {
                  if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
                  return new BoxView(x, View.Y_AXIS) {
                     @Override public final float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
-                    @Override public final void layout(int width,int height) { super.layout(30000, height); }
+                    @Override public final void layout(int width,int height) { try {super.layout(30000, height);} catch(Throwable ex) {} }
                  };
               }
             };
