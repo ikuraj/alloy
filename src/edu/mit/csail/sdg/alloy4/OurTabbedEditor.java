@@ -147,6 +147,9 @@ public final class OurTabbedEditor {
     /** The tabsize to use in the JTextArea */
     private int tabSize;
 
+    /** Whether syntax highlighting is current enabled or not. */
+    private boolean syntaxHighlighting;
+
     /** The parent. */
     private final Parent parent;
 
@@ -441,7 +444,7 @@ public final class OurTabbedEditor {
         pan.setAlignmentX(0.0f);
         pan.setAlignmentY(1.0f);
         // Make the JTextArea
-        final OurTextArea text = new OurTextArea(Util.convertLineBreak(fileContent), font.getFamily(), font.getSize(), tabSize);
+        final OurTextArea text = new OurTextArea(syntaxHighlighting, Util.convertLineBreak(fileContent), font.getFamily(), font.getSize(), tabSize);
         text.setBackground(Color.WHITE);
         text.setBorder(new EmptyBorder(1,1,1,1));
         if (!Util.onMac()) {
@@ -588,6 +591,12 @@ public final class OurTabbedEditor {
         for(Tab t:tabs) { t.text.setFont(font); }
     }
 
+    /** Enables or disables syntax highlighting. */
+    public void syntaxHighlighting(boolean flag) {
+        syntaxHighlighting = flag;
+        for(Tab t:tabs) { t.text.mySyntaxHighlighting(flag); }
+    }
+
     /** Returne ths entire JPanel of this tabbed text editor. */
     public Component getUI() {
         return frame;
@@ -595,7 +604,7 @@ public final class OurTabbedEditor {
 
     /** Returns the JTextArea of the current text buffer. */
     public OurTextArea text() {
-        return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea("", "Monospaced", 10, 4);
+        return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea(true, "", "Monospaced", 10, 4);
     }
 
     /** True if the current text buffer has 1 or more "undo" that it can perform. */

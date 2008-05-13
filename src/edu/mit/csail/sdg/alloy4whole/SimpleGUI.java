@@ -1278,9 +1278,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     /** This method toggles the "syntax highlighting" checkbox. */
     private Runner doOptSyntaxHighlighting() {
         if (!wrap) {
-            boolean flag = !SyntaxDisabled.get();
-            if (flag) OurTextArea.myDisabledHighlighting(); else OurTextArea.myEnableHighlighting();
-            SyntaxDisabled.set(flag);
+            boolean flag = SyntaxDisabled.get();
+            text.syntaxHighlighting(flag);
+            SyntaxDisabled.set(!flag);
         }
         return wrapMe();
     }
@@ -1784,7 +1784,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
         // Create the text area
         text = new OurTabbedEditor(this, frame, new Font(fontName, Font.PLAIN, fontSize), TabSize.get());
-        if (SyntaxDisabled.get()) OurTextArea.myDisabledHighlighting(); else OurTextArea.myEnableHighlighting();
+        text.syntaxHighlighting(! SyntaxDisabled.get());
 
         // Add everything to the frame, then display the frame
         Container all=frame.getContentPane();
