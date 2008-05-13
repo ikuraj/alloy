@@ -133,6 +133,22 @@ public abstract class Sig extends Expr {
         return (this!=NONE) && (this instanceof PrimSig) && (this==UNIV || ((PrimSig)this).parent==UNIV);
     }
 
+    /** Returns true if this sig is an enumeration of some parent sig. */
+    public final boolean isEnum() {
+        if (!(this instanceof PrimSig)) return false;
+        PrimSig x = (PrimSig)this;
+        if (x.parent!=null) for(x=x.parent; x!=null; x=x.parent) if (x.hint_isLeaf) return true;
+        return false;
+    }
+
+    /** Returns true if this sig is a leaf sig (and thus all subsigs will be enumerations of this sig) */
+    public final boolean isLeaf() {
+        if (!(this instanceof PrimSig)) return false;
+        PrimSig x = (PrimSig)this;
+        if (x.parent!=null) for(x=x.parent; x!=null; x=x.parent) if (x.hint_isLeaf) return false;
+        return ((PrimSig)this).hint_isLeaf;
+    }
+
     /** Constructs a new builtin PrimSig. */
     private Sig(String label) {
         super(Pos.UNKNOWN, null);

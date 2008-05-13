@@ -132,6 +132,7 @@ public final class A4SolutionReader {
         Pos isSome     = yes(node,"some")     ? Pos.UNKNOWN : null;
         Pos isPrivate  = yes(node,"private")  ? Pos.UNKNOWN : null;
         Pos isMeta     = yes(node,"meta")     ? Pos.UNKNOWN : null;
+        boolean isLeaf = yes(node,"leaf");
         if (yes(node,"builtin")) {
            if (label.equals(UNIV.label))   { id2sig.put(id, UNIV);   return UNIV;   }
            if (label.equals(SIGINT.label)) { id2sig.put(id, SIGINT); return SIGINT; }
@@ -156,7 +157,7 @@ public final class A4SolutionReader {
               if (choice instanceof PrimSig && parent==((PrimSig)choice).parent && label(((Sig)choice).label).equals(label))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isPrivate, isMeta, false);
+              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isPrivate, isMeta, isLeaf);
               allsigs.add(ans);
            }
         } else {
