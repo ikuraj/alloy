@@ -126,6 +126,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     /** {@inheritDoc} */
     @Override public void insertString(int offset, String string, AttributeSet attr) throws BadLocationException {
         if (string.indexOf('\r')>=0) string = Util.convertLineBreak(string);
+        if (string.length() == 0) return;
         if (!enabled) { super.insertString(offset, string, attr); return; }
         int startLine = root.getElementIndex(offset), lineCount = 1;
         for(int i=0; i<string.length(); i++) {
@@ -138,6 +139,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
 
     /** {@inheritDoc} */
     @Override public void remove(int offset, int length) throws BadLocationException {
+        if (length==0) return;
         if (!enabled) { super.remove(offset, length); return; }
         String oldText = myText();
         int startLine = root.getElementIndex(offset);
