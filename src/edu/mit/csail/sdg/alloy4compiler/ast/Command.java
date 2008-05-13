@@ -135,7 +135,7 @@ public final class Command {
 
     /**
      * Constructs a new Command object where it is the same as the current object, except with a different list of additional exact sigs.
-     * @param sigs - a list of sigs whose scope shall be considered exact (even though we may not know its scope yet)
+     * @param additionalExactScopes - a list of sigs whose scope shall be considered exact (even though we may not know its scope yet)
      */
     public Command make(Sig... additionalExactScopes) {
         return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes);
