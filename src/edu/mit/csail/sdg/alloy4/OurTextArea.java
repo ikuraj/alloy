@@ -88,6 +88,21 @@ public final class OurTextArea extends JTextPane {
     /** Implements JTextArea's {@link javax.swing.JTextArea#getLineOfOffset(int) getLineOfOffset} method. */
     public int getLineOfOffset(int offset) throws BadLocationException { return myHelper(getText(), 3, offset); }
 
+    /** Returns true if we can perform undo right now. */
+    public boolean myCanUndo() { return doc.myCanUndo(); }
+
+    /** Returns true if we can perform redo right now. */
+    public boolean myCanRedo() { return doc.myCanRedo(); }
+
+    /** Perform undo if possible. */
+    public void myUndo() { int i = doc.myUndo(); if (i>=0 && i<=getText().length()) setCaretPosition(i); }
+
+    /** Perform redo if possible. */
+    public void myRedo() { int i = doc.myRedo(); if (i>=0 && i<=getText().length()) setCaretPosition(i); }
+
+    /** Clear the undo history. */
+    public void myClearUndo() { doc.myClearUndo(); }
+
     /** Constructs a text area widget. */
     public OurTextArea(boolean syntaxHighlighting, String text, String fontFamily, int fontSize, int tabSize) {
         super();
@@ -115,6 +130,7 @@ public final class OurTextArea extends JTextPane {
         doc.mySetFont(this, new Font(fontFamily, Font.PLAIN, fontSize));
         doc.mySetTabSize(this, tabSize);
         if (text.length()>0) setText(text);
+        myClearUndo();
         getDocument().addDocumentListener(new DocumentListener() {
            public void changedUpdate(DocumentEvent e) { }
            public void insertUpdate(DocumentEvent e) { removeUpdate(e); }

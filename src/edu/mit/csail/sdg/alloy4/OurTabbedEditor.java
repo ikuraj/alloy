@@ -64,13 +64,10 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.UndoableEditEvent;
-import javax.swing.event.UndoableEditListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.JTextComponent;
-import javax.swing.undo.UndoManager;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /**
@@ -102,8 +99,6 @@ public final class OurTabbedEditor {
         private final OurTextArea text;
         /** The ScrollPane containing the text area. */
         private final JScrollPane scroll;
-        /** The undo manager associated with this text area. */
-        private final UndoManager undo=new UndoManager();
         /** The highlighter associated with this text area. */
         private final Highlighter highlighter=new DefaultHighlighter();
         /** The filename; always nonempty, canonical, absolute, and unique among all Tab objects in this editor. */
@@ -120,7 +115,6 @@ public final class OurTabbedEditor {
             this.text.setHighlighter(highlighter);
             this.scroll=new JScrollPane(text, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
             this.scroll.setBorder(new EmptyBorder(0,0,0,0));
-            this.undo.setLimit(100);
             this.filename=filename;
             this.isFile=isFile;
         }
@@ -378,7 +372,7 @@ public final class OurTabbedEditor {
         }
         tabs.get(i).text.setText("");
         if (tabs.size()==1) {
-            tabs.get(i).undo.discardAllEdits();
+            tabs.get(i).text.myClearUndo();
             tabs.get(i).modified=false;
             if (tabs.get(i).isFile) { tabs.get(i).isFile=false; tabs.get(i).filename=newname(); }
             setTitle(tabs.get(i).label, tabs.get(i).filename);
@@ -516,10 +510,7 @@ public final class OurTabbedEditor {
             public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
             public final void changedUpdate(DocumentEvent e) { } // font changes are irrelevant
         });
-        text.myAddUndoableEditListener(new UndoableEditListener() {
-            public final void undoableEditHappened(UndoableEditEvent event) { tab.undo.addEdit(event.getEdit()); }
-        });
-        // If it's a file, we want to remove the rightmost untitled empty tab
+       // If it's a file, we want to remove the rightmost untitled empty tab
         if (isFile) {
             for(int i=tabs.size()-1; i>=0; i--) {
                 if (!tabs.get(i).isFile && tabs.get(i).text.getText().trim().length()==0) {
@@ -609,12 +600,12 @@ public final class OurTabbedEditor {
 
     /** True if the current text buffer has 1 or more "undo" that it can perform. */
     public boolean canUndo() {
-        return (me>=0 && me<tabs.size()) ? tabs.get(me).undo.canUndo() : false;
+        return (me>=0 && me<tabs.size()) ? tabs.get(me).text.myCanUndo() : false;
     }
 
     /** True if the current text buffer has 1 or more "redo" that it can perform. */
     public boolean canRedo() {
-        return (me>=0 && me<tabs.size()) ? tabs.get(me).undo.canRedo() : false;
+        return (me>=0 && me<tabs.size()) ? tabs.get(me).text.myCanRedo() : false;
     }
 
     /** True if the i-th text buffer has been modified since it was last loaded/saved */
@@ -644,12 +635,12 @@ public final class OurTabbedEditor {
 
     /** Perform "undo" on the current text buffer. */
     public void undo() {
-        if (me>=0 && me<tabs.size()) { tabs.get(me).undo.undo(); }
+        if (me>=0 && me<tabs.size()) { tabs.get(me).text.myUndo(); }
     }
 
     /** Perform "redo" on the current text buffer. */
     public void redo() {
-        if (me>=0 && me<tabs.size()) { tabs.get(me).undo.redo(); }
+        if (me>=0 && me<tabs.size()) { tabs.get(me).text.myRedo(); }
     }
 
     /**

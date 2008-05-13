@@ -46,6 +46,18 @@ import javax.swing.text.TabStop;
 
 final class OurTextAreaDocument extends DefaultStyledDocument {
 
+    /** This records an insertion or deletion. */
+    private static final class OurTextAreaAction {
+        public boolean insert;
+        public String text;
+        public int offset;
+        public OurTextAreaAction(boolean insert, String text, int offset) {
+            this.insert = insert;
+            this.text = text;
+            this.offset = offset;
+        }
+    }
+
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
 
@@ -58,8 +70,17 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     /** Stores the "comment mode" at the start of each line: 0 means no comment, 1 means block comment, 2 means javadoc block comment, -1 means unknown. */
     private final List<Integer> comments = new ArrayList<Integer>();
 
+    /** The list of undo's. */
+    private final List<OurTextAreaAction> undos = new ArrayList<OurTextAreaAction>();
+
+    /** The number of items in the undo list that are actual undone. */
+    private int undo = 0;
+
     /** Whether syntax highlighting is currently enabled or not. */
     private boolean enabled = true;
+
+    /** The maximum number of UNDO actions we want to keep. */
+    private static final int MAXUNDO = 100;
 
     /** Caches the most recent font. */
     private Font mostRecentFont = null;
@@ -123,23 +144,24 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         StyleConstants.setForeground(styleJavadocComment = addStyle("2", styleSymbol), new Color(10, 148, 10));
     }
 
-    /** {@inheritDoc} */
-    @Override public void insertString(int offset, String string, AttributeSet attr) throws BadLocationException {
-        if (string.indexOf('\r')>=0) string = Util.convertLineBreak(string);
-        if (string.length() == 0) return;
-        if (!enabled) { super.insertString(offset, string, attr); return; }
+    /** Performs the action insertString() operation without touching the Undo/Redo history. */
+    private void myInsert(int offset, String string) throws BadLocationException {
+        if (!enabled) { super.insertString(offset, string, styleNormal); return; }
         int startLine = root.getElementIndex(offset), lineCount = 1;
         for(int i=0; i<string.length(); i++) {
             // given that we are about to insert line breaks into the document, we need to shift the values in this.comments array
             if (string.charAt(i)=='\n') { lineCount++; if (startLine <= comments.size()-1) comments.add(startLine+1, -1); }
         }
-        super.insertString(offset, string, attr);
-        myUpdate((startLine<comments.size() ? comments.get(startLine) : -1), startLine, lineCount);
+        super.insertString(offset, string, styleNormal);
+        try {
+            myUpdate((startLine<comments.size() ? comments.get(startLine) : -1), startLine, lineCount);
+        } catch(Exception ex) {
+            comments.clear(); // syntax highlighting is not crucial, but if error occurred, let's clear the cache so we'll recompute the highlighting next time
+        }
     }
 
-    /** {@inheritDoc} */
-    @Override public void remove(int offset, int length) throws BadLocationException {
-        if (length==0) return;
+    /** Performs the action remove() operation without touching the Undo/Redo history. */
+    private void myRemove(int offset, int length) throws BadLocationException {
         if (!enabled) { super.remove(offset, length); return; }
         String oldText = myText();
         int startLine = root.getElementIndex(offset);
@@ -148,7 +170,85 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
             if (oldText.charAt(i)=='\n') if (startLine < comments.size()-1) comments.remove(startLine+1);
         }
         super.remove(offset, length);
-        myUpdate((startLine<comments.size() ? comments.get(startLine) : -1), startLine, 1);
+        try {
+            myUpdate((startLine<comments.size() ? comments.get(startLine) : -1), startLine, 1);
+        } catch(Exception ex) {
+            comments.clear(); // syntax highlighting is not crucial, but if error occurred, let's clear the cache so we'll recompute the highlighting next time
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override public void insertString(int offset, String string, AttributeSet attr) throws BadLocationException {
+        // make sure we don't insert the '\r' character
+        if (string.indexOf('\r')>=0) string = Util.convertLineBreak(string);
+        // don't perform trivial actions
+        if (string.length() == 0) return;
+        // clear all the "potential redo's"
+        while(undo>0) { undos.remove(undos.size()-1); undo--; }
+        // perform the actual insertion
+        myInsert(offset, string);
+        // if the last action and this action can be merged, then merge them
+        OurTextAreaAction act = (undos.size()>0 ? undos.get(undos.size()-1) : null);
+        if (act!=null && act.insert && act.offset==offset-act.text.length()) { act.text=act.text+string; return; }
+        // if there are already MAX undo items in the undo cache, then evict the earliest action from the UNDO cache
+        if (undos.size()>=MAXUNDO) undos.remove(0);
+        undos.add(new OurTextAreaAction(true, string, offset));
+    }
+
+    /** {@inheritDoc} */
+    @Override public void remove(int offset, int length) throws BadLocationException {
+        // don't perform trivial actions
+        if (length==0) return;
+        // clear all the "potential redo's"
+        while(undo>0) { undos.remove(undos.size()-1); undo--; }
+        String string = myText().substring(offset, offset+length);
+        // perform the actual removal
+        myRemove(offset, length);
+        // if the last action and this action can be merged, then merge them
+        OurTextAreaAction act = (undos.size()>0 ? undos.get(undos.size()-1) : null);
+        if (act!=null && !act.insert && act.offset==offset) { act.text=act.text+string; return; }
+        // if there are already MAX undo items in the undo cache, then evict the earliest action from the UNDO cache
+        if (undos.size()>=MAXUNDO) undos.remove(0);
+        undos.add(new OurTextAreaAction(false, string, offset));
+    }
+
+    /** Clear the undo history. */
+    public void myClearUndo() { undos.clear(); undo=0; }
+
+    /** Returns true if we can perform undo right now. */
+    public boolean myCanUndo() { return undo < undos.size(); }
+
+    /** Returns true if we can perform redo right now. */
+    public boolean myCanRedo() { return undo > 0 ; }
+
+    /** Perform undo if possible, and return the new caret position (-1 if no undo is possible) */
+    public int myUndo() {
+        int n = undos.size();
+        if (undo >= n) return -1;
+        undo++;
+        OurTextAreaAction act = undos.get(n-undo);
+        try {
+            if (act.insert) { myRemove(act.offset, act.text.length()); return act.offset; }
+            else { myInsert(act.offset, act.text); return act.offset + act.text.length(); }
+        } catch(Exception ex) {
+            comments.clear();
+            return -1;
+        }
+    }
+
+    /** Perform redo if possible, and return the new caret position (-1 if no redo is possible) */
+    public int myRedo() {
+        int n = undos.size();
+        if (undo == 0) return -1;
+        OurTextAreaAction act = undos.get(n-undo);
+        undo--;
+        try {
+            if (act.insert) { myInsert(act.offset, act.text); return act.offset + act.text.length(); }
+            else { myRemove(act.offset, act.text.length()); return act.offset; }
+        } catch(Exception ex) {
+            comments.clear();
+            return -1;
+        }
     }
 
     /** Returns the entire text. */
