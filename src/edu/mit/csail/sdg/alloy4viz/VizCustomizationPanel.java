@@ -259,11 +259,12 @@ public final class VizCustomizationPanel extends JPanel {
             if (s.equals(lastElement)) last=path.pathByAddingChild(rad2);
           }
         // Generate the nodes for all AlloyType that inherit from this
-        for(AlloyType t:old.getDirectSubTypes(type))
-          if (!(hidePrivate && t.isPrivate) && !(hideMeta && t.isMeta)) {
-            TreePath possibleLast=remakeForType(hidePrivate, hideMeta, path, t);
-            if (possibleLast!=null) last=possibleLast;
-          }
+        if (!type.isLeaf)
+          for(AlloyType t:old.getDirectSubTypes(type))
+            if (!(hidePrivate && t.isPrivate) && !(hideMeta && t.isMeta)) {
+              TreePath possibleLast=remakeForType(hidePrivate, hideMeta, path, t);
+              if (possibleLast!=null) last=possibleLast;
+            }
         return last;
     }
 
