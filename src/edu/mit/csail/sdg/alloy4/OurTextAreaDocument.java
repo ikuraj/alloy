@@ -207,6 +207,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         // if the last action and this action can be merged, then merge them
         OurTextAreaAction act = (undos.size()>0 ? undos.get(undos.size()-1) : null);
         if (act!=null && !act.insert && act.offset==offset) { act.text=act.text+string; return; }
+        if (act!=null && !act.insert && act.offset==offset+length) { act.offset=offset; act.text=string+act.text; return; }
         // if there are already MAX undo items in the undo cache, then evict the earliest action from the UNDO cache
         if (undos.size()>=MAXUNDO) undos.remove(0);
         undos.add(new OurTextAreaAction(false, string, offset));
