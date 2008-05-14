@@ -30,7 +30,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -1640,9 +1639,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
     public static void main(final String[] args) throws Exception {
-        if ("yes".equals(System.getProperty("debug"))) {
-            InternalTest.main(new String[0]);
-        }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() { new SimpleGUI(args); }
         });
@@ -1654,21 +1650,8 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     private SimpleGUI(String[] args) {
 
         // Register an exception handler for uncaught exceptions
-        if ("yes".equals(System.getProperty("exception"))) {
-            Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-                public void uncaughtException(Thread t, Throwable e) {
-                    System.out.flush();
-                    System.out.println(e);
-                    e.printStackTrace(System.out);
-                    System.out.flush();
-                    System.exit(1);
-                }
-            });
-            exitReporter = new MailBug();
-        } else {
-            exitReporter = new MailBug();
-            Thread.setDefaultUncaughtExceptionHandler(exitReporter);
-        }
+        exitReporter = new MailBug();
+        Thread.setDefaultUncaughtExceptionHandler(exitReporter);
 
         // Try to determine if we're on Windows Vista (this test is not reliable, but will have to do)
         boolean vista = false;
