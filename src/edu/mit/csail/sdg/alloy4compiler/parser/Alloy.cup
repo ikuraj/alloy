@@ -647,7 +647,7 @@ SigQual  ::= SOME:x                   {: RESULT=new ArrayList<Pos>(5); RESULT.ad
 SigQual  ::= PRIVATE:x                {: RESULT=new ArrayList<Pos>(5); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(x);    :};
 
 SigQuals ::= SIG                      {: RESULT=new ArrayList<Pos>(5); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); :};
-SigQuals ::= SigQual:b SigQuals:a     {: RESULT=a; for(int i=0;i<5;i++) if (a.get(i)==null) a.set(i,b.get(i)); else if (b.get(i)!=null) throw new ErrorSyntax(b.get(i), "The same qualifer cannot be specified more than once for the same sig."); :};
+SigQuals ::= SigQual:a SigQuals:b     {: RESULT=a; for(int i=0;i<5;i++) if (a.get(i)==null) a.set(i,b.get(i)); else if (b.get(i)!=null) throw new ErrorSyntax(b.get(i), "The same qualifer cannot be specified more than once for the same sig."); :};
 
 SigIn    ::= EXTENDS:a SigRef:x       {: RESULT=new ArrayList<ExpName>(2); RESULT.add(x); RESULT.add(new ExpName(a,"extends")); :};
 SigIn    ::= IN:a SigRefu:x           {: RESULT=x;  x.add(new ExpName(a,"in"));                                                 :};
@@ -724,7 +724,7 @@ SuperOpt ::= Super:x                       {: RESULT=x;                         
 Super    ::= LBRACE:a SuperP:x RBRACE:b    {: RESULT=new ExpUnary(a.merge(b), ExprUnary.Op.NOOP, x);       :};
 Super    ::= LBRACE:a          RBRACE:b    {: RESULT=new ExpConstant(a.merge(b), ExprConstant.Op.TRUE, 0); :};
 SuperP   ::= Expr:a                        {: RESULT=a;                                                    :};
-SuperP   ::= Expr:a SuperP:b               {: RESULT=new ExpBinary(null, ExprBinary.Op.AND, a, b);         :};
+SuperP   ::= SuperP:a Expr:b               {: RESULT=new ExpBinary(null, ExprBinary.Op.AND, a, b);         :};
 
 SuperOrBar ::= BAR Expr:x  {: RESULT=x; :};
 SuperOrBar ::= Super:x     {: RESULT=x; :};
