@@ -146,6 +146,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
 
     /** Performs the action insertString() operation without touching the Undo/Redo history. */
     private void myInsert(int offset, String string) throws BadLocationException {
+        //System.out.println("Insert "+offset+" ["+string+"]"); System.out.flush();
         if (!enabled) { super.insertString(offset, string, styleNormal); return; }
         int startLine = root.getElementIndex(offset), lineCount = 1;
         for(int i=0; i<string.length(); i++) {
@@ -164,10 +165,11 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     private void myRemove(int offset, int length) throws BadLocationException {
         if (!enabled) { super.remove(offset, length); return; }
         String oldText = myText();
+        // System.out.println("Delete "+offset+" ["+oldText.substring(offset,offset+length)+"]"); System.out.flush();
         int startLine = root.getElementIndex(offset);
         for(int i=0; i<length; i++) {
             // given that we are about to delete line breaks from the document, we need to shift the values in this.comments array
-            if (oldText.charAt(i)=='\n') if (startLine < comments.size()-1) comments.remove(startLine+1);
+            if (oldText.charAt(offset+i)=='\n') if (startLine < comments.size()-1) comments.remove(startLine+1);
         }
         super.remove(offset, length);
         try {
@@ -278,6 +280,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         for (i = startLine; i < startLine+numLines; i++) { comment = myReapply(comment, content, i); }
         // afterwards, we need to apply styles to each subsequent line until we find that it already starts with the same comment mode as before
         for (; i < lineCount; i++) { if (i>=comments.size() || comments.get(i)!=comment) comment = myReapply(comment, content, i); else break; }
+        // if (1==1) for(i=0; i<lineCount; i++) { int j=myGetStartingStyleOfLine(content,i), k=comments.get(i); if (j!=k) { System.out.println("Failure at line "+i+" shouldBe="+j+" but we remembered "+k); System.out.flush(); } } // FIXTHIS
     }
 
     /** Reparse the entire text to determine the appropriate comment mode at the start of the given line. */
