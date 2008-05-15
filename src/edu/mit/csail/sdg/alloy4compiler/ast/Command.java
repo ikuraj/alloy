@@ -92,7 +92,7 @@ public final class Command {
             sb.append(num).append(' ').append(label);
             first=false;
         }
-        if (expects>=0) sb.append(" expects ").append(expects);
+        if (expects>=0) sb.append(" expect ").append(expects);
         return sb.toString();
     }
 
