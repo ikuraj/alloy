@@ -84,7 +84,9 @@ public final class Module {
         /** True if we are typechecking a field declaration. */
         private boolean rootfield=false;
         /** True if we are typechecking a function's parameter declarations or return declaration. */
-        private boolean rootfun=false;
+        private boolean rootfunparam=false;
+        /** Nonnull if we are typechecking a function's body. */
+        private Func rootfunbody=null;
         /** This maps local names (eg. let/quantification variables and function parameters) to the objects they refer to. */
         private final Env<String,Expr> env=new Env<String,Expr>();
         /** The level of macro substitution recursion. */
@@ -153,7 +155,7 @@ public final class Module {
             }
             Expr th = env.get("this");
             if (th!=null) th = ExprUnary.Op.NOOP.make(pos, th);
-            return rootmodule.populate(rootfield, rootsig, rootfun, pos, name, th);
+            return rootmodule.populate(rootfield, rootsig, rootfunparam, rootfunbody, pos, name, th);
         }
     }
 
@@ -783,7 +785,7 @@ public final class Module {
             // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
             // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
             Context cx = new Context(this);
-            cx.rootfun = true;
+            cx.rootfunparam = true;
             TempList<ExprVar> tmpvars = new TempList<ExprVar>();
             boolean err=false;
             for(Decl d:f.params) {
@@ -816,6 +818,7 @@ public final class Module {
             Func ff = f.realFunc;
             Expr disj = null;
             Context cx = new Context(this);
+            cx.rootfunbody = ff;
             Iterator<ExprVar> vv=ff.params.iterator();
             for(Decl d:f.params) {
                 List<Expr> disjvars = (d.disjoint!=null && d.names.size()>0) ? (new ArrayList<Expr>(d.names.size())) : null;
@@ -1171,10 +1174,10 @@ public final class Module {
     }
 
     /** Resolve the name based on the current context and this module. */
-    private ConstList<Expr> populate(boolean rootfield, SigAST rootsig, boolean rootfun, Pos pos, String fullname, Expr THIS) {
+    private ConstList<Expr> populate(boolean rootfield, SigAST rootsig, boolean rootfunparam, Func rootfunbody, Pos pos, String fullname, Expr THIS) {
         // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
-        boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfun);
+        boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfunparam);
         if (name.equals("univ"))    { Expr a = ExprUnary.Op.NOOP.make(pos, UNIV);   return ConstList.make(1,a); }
         if (name.equals("Int"))     { Expr a = ExprUnary.Op.NOOP.make(pos, SIGINT); return ConstList.make(1,a); }
         if (name.equals("seq/Int")) { Expr a = ExprUnary.Op.NOOP.make(pos, SEQIDX); return ConstList.make(1,a); }
@@ -1190,18 +1193,19 @@ public final class Module {
         for(Object x: ans) {
             if (x instanceof SigAST) {
                 SigAST y=(SigAST)x;
-                ans1.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, y.realModule==this?0:1000)); // penalty of 1000
+                ans1.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, y.realModule==this?0:1000));
             }
             else if (x instanceof FunAST) {
                 FunAST y=(FunAST)x;
                 Func f = y.realFunc;
                 int fn = f.params.size();
                 int penalty = (y.realModule==this ? 0 : 1000); // penalty of 1000
-                if (fn>0 && rootsig!=null && THIS!=null && THIS.type.hasArity(1) && f.params.get(0).type.intersects(THIS.type)) {
-                    // If we're inside a sig, and there is a unary variable bound to "this",
+                if (f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
+                    // If there is some value bound to "this",
                     // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
-                    ans1.add(fn==1 ? ExprCall.make(pos,null,f,t,1+penalty) : ExprBadCall.make(pos,null,f,t,1+penalty)); // penalty of 1
+                    ans1.add(fn==1 ? ExprCall.make(pos,null,f,t,penalty) : ExprBadCall.make(pos,null,f,t,penalty));
+                    penalty++;
                 }
                 ans1.add(fn==0 ? ExprCall.make(pos,null,f,null,penalty) : ExprBadCall.make(pos,null,f,null,penalty));
             }
@@ -1211,7 +1215,7 @@ public final class Module {
         // (2) Can refer to field in this sig (defined earlier than you), and fields in any visible ancestor sig
         // Within an appended facts
         // (1) Can refer to any visible sig/param/func/predicate
-        // (2) Can refer to any visible field (but if it is in this sig or a parent sig, we'll prepend "this." unless it has '@')
+        // (2) Can refer to any visible field
         // Within a function paramDecl/returnDecl
         // (1) Cannot call
         // (2) But can refer to anything else visible.
@@ -1224,15 +1228,17 @@ public final class Module {
                 fi++;
                 if (fi<fn && (m==this || d.isPrivate==null) && label.name.equals(name)) {
                    Field f=s.getValue().realSig.getFields().get(fi);
-                   Expr x=null;
-                   int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
-                   if (rootsig==null)
-                      { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); }
-                   else if (rootsig.realSig.isSameOrDescendentOf(f.sig))
-                      { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
-                   else if (!rootfield)
-                      { x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); } // penalty of 1
-                   if (x!=null) ans1.add(x);
+                   Expr x=null, y=null;
+                   int penalty = (s.getValue().realModule==this ? 0 : 1000);
+                   if (rootsig==null || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
+                      x=ExprUnary.Op.NOOP.make(pos, f, null, penalty);
+                      y=ExprUnary.Op.NOOP.make(pos, f, null, penalty+100);
+                   } else if (!rootfield) {
+                      x=ExprUnary.Op.NOOP.make(pos, f, null, penalty+100);
+                      y=ExprUnary.Op.NOOP.make(pos, f, null, penalty+200);
+                   }
+                   if (x==null) continue;
+                   if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) { ans1.add(THIS.join(x)); ans1.add(y); } else { ans1.add(x); }
                 }
               }
             }
