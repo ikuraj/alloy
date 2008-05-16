@@ -445,6 +445,9 @@ final class SwingLogPanel {
         if (log==null) return;
         this.fontName = fontName;
         log.setFont(new Font(fontName, Font.PLAIN, fontSize));
+        StyleConstants.setFontFamily(styleRegular, fontName);
+        StyleConstants.setFontFamily(styleBold, fontName);
+        StyleConstants.setFontFamily(styleRed, fontName);
         StyleConstants.setFontSize(styleRegular, fontSize);
         StyleConstants.setFontSize(styleBold, fontSize);
         StyleConstants.setFontSize(styleRed, fontSize);

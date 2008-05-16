@@ -457,7 +457,8 @@ final class SimpleReporter extends A4Reporter {
             formulafilename = tempfile+".java";
             try { Util.writeAll(formulafilename,formula); formulafilename="CNF: "+formulafilename; } catch(Throwable ex) { formulafilename=""; }
         }
-        logLink(cmd.check ? "   Counterexample" : "   Instance", (filename==null||filename.length()==0)?"":("XML: "+filename));
+        log("   ");
+        logLink(cmd.check ? "Counterexample" : "Instance", (filename==null||filename.length()==0)?"":("XML: "+filename));
         log(" found. ");
         if (cmd.check) {
             logLink("Assertion", formulafilename); log(" is invalid");
@@ -531,7 +532,8 @@ final class SimpleReporter extends A4Reporter {
             if (corefilename.length()==0) {
                 log("   No unsat core is available in this case");
             } else {
-                logLink("   Core", corefilename);
+                log("   ");
+                logLink("Core", corefilename);
                 if (minimizedBefore<=minimizedAfter)
                     log(" contains "+minimizedAfter+" top-level formulas");
                 else
