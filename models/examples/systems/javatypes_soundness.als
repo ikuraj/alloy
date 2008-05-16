@@ -19,8 +19,7 @@ sig Class extends Type {
   implements: set Interface,
   fields: set Field
   } { lone xtends && xtends in Class }
--- optional: best omitted to allow private etc
--- {xtends.@fields in fields}
+
 sig Field {
   declType: Type
   }
@@ -50,7 +49,7 @@ sig Setter extends Statement {
 abstract sig Expr {
   type: Type,
   subexprs: set Expr
-  } {subexprs = this + this.^@expr}
+  } {subexprs = this + this.^expr}
 sig Variable extends Expr {
   declType: Type
   } {type = declType}

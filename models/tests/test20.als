@@ -10,27 +10,38 @@ abstract sig Person {
   education : School,
   preference : set Hobby
 }{
+  // I deliberately put all 4 forms here to regression test the Alloy4 typechecker
  @match=~@match
+ @match=~match
+ match=~@match
+ match=~match
+  // I deliberately put both forms here to regression test the Alloy4 typechecker
  no @match & iden
-
+ no match & iden
+  // I deliberately put both forms here to regression test the Alloy4 typechecker
  no p : Person | p in match && education in Elementary && p.@education in High
- no p : Person | (p in match && #(preference & p.@preference) =< #preference - 1
-                            && #(preference & p.@preference) =< #p.@preference - 1 )
+ no p : Person | p in match && education in Elementary && p.education in High
+  // I deliberately put both forms here to regression test the Alloy4 typechecker
+ no p : Person | (p in match && #(preference & p.@preference) =< #preference - 1 && #(preference & p.@preference) =< #p.@preference - 1 )
+ no p : Person | (p in match && #(preference & p.preference) =< #preference - 1 && #(preference & p.preference) =< #p.preference - 1 )
 }
 
 
 sig Male extends Person{}{
   this in Gay => match in Gay else match in Female
-  no p : Male | p in match && (int age > int p.@age + 5 || int age < int
-p.@age - 5)
-  no p : Female | p in match && (int age > int p.@age + 5 || int age < int
-p.@age - 5)
+  // I deliberately put both forms here to regression test the Alloy4 typechecker
+  no p : Male | p in match && (int age > int p.@age + 5 || int age < int p.@age - 5)
+  no p : Male | p in match && (int age > int p.age + 5 || int age < int p.age - 5)
+  // I deliberately put both forms here to regression test the Alloy4 typechecker
+  no p : Female | p in match && (int age > int p.@age + 5 || int age < int p.@age - 5)
+  no p : Female | p in match && (int age > int p.age + 5 || int age < int p.age - 5)
 }
 
 sig Female extends Person{}{
   this in Lesbo => match in Lesbo else match in Male
-  no p : Female | p in match && (int age > int p.@age + 5 || int age < int
-p.@age - 5)
+  // I deliberately put both forms here to regression test the Alloy4 typechecker
+  no p : Female | p in match && (int age > int p.@age + 5 || int age < int p.@age - 5)
+  no p : Female | p in match && (int age > int p.age + 5 || int age < int p.age - 5)
 }
 
 sig Gay in Male{}
@@ -38,8 +49,7 @@ sig Lesbo in Female{}
 
 assert prefmatch
 {
- no p,q : Person |p in q.match && ( #(q.preference & p.preference) =< #q.preference - 1
-                           && #(q.preference & p.preference) =< #p.preference - 1   )
+ no p,q : Person | p in q.match && ( #(q.preference & p.preference) =< #q.preference - 1 && #(q.preference & p.preference) =< #p.preference - 1   )
 }
 
 run {} expect 1

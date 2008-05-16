@@ -28,6 +28,8 @@ abstract sig Construct extends Component {
   components: set Component,
   descendants: set Component
 }{
+  // I deliberately put both forms here to regression test the Alloy4 typechecker
+  descendants = ran[^components]
   descendants = ran[^@components]
 }
 
