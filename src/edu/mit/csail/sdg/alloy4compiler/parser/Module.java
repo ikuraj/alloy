@@ -1244,10 +1244,10 @@ public final class Module {
                    int penalty = (s.getValue().realModule==this ? 0 : 1000);
                    if (rootsig==null || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
                       x=ExprUnary.Op.NOOP.make(pos, f, null, penalty);
-                      y=ExprUnary.Op.NOOP.make(pos, f, null, penalty+100);
+                      y=ExprUnary.Op.NOOP.make(pos, f, null, penalty+1);
                    } else if (!rootfield) {
-                      x=ExprUnary.Op.NOOP.make(pos, f, null, penalty+100);
-                      y=ExprUnary.Op.NOOP.make(pos, f, null, penalty+200);
+                      x=ExprUnary.Op.NOOP.make(pos, f, null, penalty+1);
+                      y=ExprUnary.Op.NOOP.make(pos, f, null, penalty+2);
                    }
                    if (x==null) continue;
                    if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) { ans1.add(THIS.join(x)); ans1.add(y); } else { ans1.add(x); }
