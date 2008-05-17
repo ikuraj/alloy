@@ -82,13 +82,20 @@ sig Frame {
    , interface : set Interface
    , domain : set Domain
 }
-
 {
    disj[machine,given,designed]
    domain =  machine + given + designed
     // I deliberately put both forms here to regression test the Alloy4 typechecker
    phenomena = interface.@phenomena + requirement.(refers + constrains)
    phenomena = interface.phenomena + requirement.(refers + constrains)
+}
+
+fact {
+  all x:Frame | {
+     // I deliberately put both forms here to regression test the Alloy4 typechecker
+     x.phenomena = x.interface.@phenomena + x.requirement.(refers + constrains)
+     x.phenomena = x.interface.phenomena + x.requirement.(refers + constrains)
+  }
 }
 
 fact {

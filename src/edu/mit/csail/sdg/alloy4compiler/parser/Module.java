@@ -1200,6 +1200,7 @@ public final class Module {
             if (s!=null) { Expr s2 = ExprUnary.Op.NOOP.make(pos, s.realSig); return ConstList.make(1, s2); }
         }
         final TempList<Expr> ans1 = new TempList<Expr>();
+        final TempList<Expr> ans2 = new TempList<Expr>();
         final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1, name) : getRawNQS(this, fun?5:1, name);
         final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
         for(Object x: ans) {
@@ -1232,6 +1233,7 @@ public final class Module {
         // (1) Cannot call
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
+        boolean foundMyOwnField = false;
         for(Module m: getAllNameableModules()) {
           for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null) {
             int fi=(-1), fn=s.getValue().realSig.getFields().size(); // fn is the number of fields that are typechecked so far
@@ -1239,23 +1241,23 @@ public final class Module {
               for(ExpName label: d.names) {
                 fi++;
                 if (fi<fn && (m==this || d.isPrivate==null) && label.name.equals(name)) {
-                   Field f=s.getValue().realSig.getFields().get(fi);
-                   Expr x=null, y=null;
+                   Field f = s.getValue().realSig.getFields().get(fi);
                    int penalty = (s.getValue().realModule==this ? 0 : 1000);
+                   Expr x = ExprUnary.Op.NOOP.make(pos, f, null, penalty);
+                   Expr y = ExprUnary.Op.NOOP.make(pos, f, null, penalty+1);
+                   boolean thisWorks = THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type);
                    if (rootsig==null || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
-                      x=ExprUnary.Op.NOOP.make(pos, f, null, penalty);
-                      y=ExprUnary.Op.NOOP.make(pos, f, null, penalty+1);
+                      foundMyOwnField = true;
+                      if (thisWorks) { ans1.add(THIS.join(x)); ans1.add(y); } else { ans1.add(x); }
                    } else if (!rootfield) {
-                      x=ExprUnary.Op.NOOP.make(pos, f, null, penalty+1);
-                      y=ExprUnary.Op.NOOP.make(pos, f, null, penalty+2);
+                      if (thisWorks) { ans2.add(THIS.join(x)); ans2.add(y); } else { ans2.add(x); }
                    }
-                   if (x==null) continue;
-                   if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) { ans1.add(THIS.join(x)); ans1.add(y); } else { ans1.add(x); }
                 }
               }
             }
           }
         }
+        if (!foundMyOwnField) for(int i=0; i<ans2.size(); i++) ans1.add(ans2.get(i));
         return ans1.makeConst();
     }
 }
