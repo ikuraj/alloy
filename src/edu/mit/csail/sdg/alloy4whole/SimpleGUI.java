@@ -1879,7 +1879,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         }
 
         // Launch the welcome screen if needed
-        if (Welcome.get() < welcomeLevel) {
+        if (!"yes".equals(System.getProperty("debug")) && Welcome.get() < welcomeLevel) {
             String dismiss = Util.onMac() ? "Dismiss" : "Close";
             JCheckBox again = new JCheckBox("Show this message every time you start Alloy 4");
             again.setSelected(true);
