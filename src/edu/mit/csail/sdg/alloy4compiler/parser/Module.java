@@ -78,7 +78,7 @@ public final class Module {
     /** Mutable; this class represents the current typechecking context. */
     static final class Context {
         /** The module that the current context is in. */
-        private Module rootmodule=null;
+        final Module rootmodule;
         /** Nonnull if we are typechecking a field declaration or a sig appended facts. */
         SigAST rootsig=null;
         /** True if we are typechecking a field declaration. */
@@ -307,6 +307,18 @@ public final class Module {
 
     /** The list of params in this module whose scope shall be deemed "exact" */
     private final List<String> exactParams = new ArrayList<String>();
+
+    /** If nonnull, this stores the meta signature "sig$" */
+    private PrimSig metaSig = null;
+
+    /** If nonnull, this stores the meta signature "field$" */
+    private PrimSig metaField = null;
+
+    /** Returns the meta signature "sig$" (or null if such a sig does not exist) */
+    public PrimSig metaSig() { return world.metaSig; }
+
+    /** Returns the meta signature "field$" (or null if such a sig does not exist) */
+    public PrimSig metaField() { return world.metaField; }
 
     /** The list of javadoc comments in this module. */
     final List<ExpName> javadocs = new ArrayList<ExpName>();
@@ -1122,28 +1134,28 @@ public final class Module {
             metafield.topo = true;
             metafield.realParents.add(UNIVast);
             metafield.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/field$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, false);
-            PrimSig metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
-            PrimSig metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
+            root.metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
+            root.metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
             for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
                 Sig s = sig.realSig;
                 String slab = sig.name;
                 SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null);
                 ast.topo=true;
                 ast.realParents.add(metasig);
-                ast.realSig = new PrimSig(Pos.UNKNOWN, metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
+                ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                 sorted.add(ast);
                 hasMetaSig=true;
                 for(Field field: s.getFields()) {
                     ast = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null);
                     ast.topo=true;
                     ast.realParents.add(metafield);
-                    ast.realSig = new PrimSig(Pos.UNKNOWN, metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
+                    ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                     sorted.add(ast);
                     hasMetaField=true;
                 }
             }
-            if (hasMetaSig==false) root.facts.put("sig$fact", metaSig.no().and(metaField.no()));
-            else if (hasMetaField==false) root.facts.put("sig$fact", metaField.no());
+            if (hasMetaSig==false) root.facts.put("sig$fact", root.metaSig.no().and(root.metaField.no()));
+            else if (hasMetaField==false) root.facts.put("sig$fact", root.metaField.no());
         }
         // Typecheck the function declarations
         for(Module x:modules) errors=x.resolveFuncDecls(rep, errors, warns);

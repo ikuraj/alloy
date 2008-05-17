@@ -24,13 +24,13 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
@@ -81,8 +81,11 @@ final class Macro extends ExprCustom {
     }
 
     /** Instantiate it. */
-    Expr instantiate(Context cx, List<ErrorWarning> warnings) throws Err {
-        if (cx.unrolls<=0) throw new ErrorType("Macro substitution too deep; possibly indicating an infinite recursion.");
+    Expr instantiate(Context cx, List<ErrorWarning> warnings) {
+        if (cx.unrolls<=0) {
+            Pos p = span();
+            return new ExprBad(p, toString(), new ErrorType(p, "Macro substitution too deep; possibly indicating an infinite recursion."));
+        }
         if (params.size() != args.size()) return this;
         Context cx2 = new Context(realModule, cx.unrolls-1);
         for(int n=params.size(), i=0; i<n; i++) {

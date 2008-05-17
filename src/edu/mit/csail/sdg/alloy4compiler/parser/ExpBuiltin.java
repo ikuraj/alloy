@@ -23,7 +23,6 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -64,7 +63,7 @@ final class ExpBuiltin extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
+    public Expr check(Context cx, List<ErrorWarning> warnings) {
         TempList<Expr> temp = new TempList<Expr>(args.size());
         for(int i=0; i<args.size(); i++) {
             Expr x = args.get(i).check(cx, warnings);

@@ -102,13 +102,14 @@ final class ExpQuant extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
+    public Expr check(Context cx, List<ErrorWarning> warnings) {
         Expr guard=null;
         final TempList<ExprVar> tempvars=new TempList<ExprVar>();
         for(Decl d: decls) {
             Expr v = d.expr.check(cx, warnings).resolve_as_set(warnings);
             // If the variable declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (v.mult==0 && v.type.arity()==1) v=ExprUnary.Op.ONEOF.make(null, v);
+            // Otherwise...
             int num = d.names.size();
             List<Expr> disjoints = (num>1 && d.disjoint!=null) ? (new ArrayList<Expr>(num)) : null;
             for(ExpName n: d.names) {

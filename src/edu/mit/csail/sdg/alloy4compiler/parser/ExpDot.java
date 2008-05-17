@@ -23,7 +23,6 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -122,7 +121,7 @@ final class ExpDot extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
+    public Expr check(Context cx, List<ErrorWarning> warnings) {
         Expr left = this.left.check(cx, warnings);
         Expr right = this.right.check(cx, warnings);
         // check to see if it is a macro invocation

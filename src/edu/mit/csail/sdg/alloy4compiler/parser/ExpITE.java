@@ -23,7 +23,6 @@
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -65,7 +64,7 @@ final class ExpITE extends Exp {
     }
 
     /** {@inheritDoc} */
-    public Expr check(Context cx, List<ErrorWarning> warnings) throws Err {
+    public Expr check(Context cx, List<ErrorWarning> warnings) {
         Expr f = formula.check(cx, warnings);
         Expr a = left.check(cx, warnings);
         Expr b = right==null ? null : (right.check(cx, warnings));
