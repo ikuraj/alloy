@@ -109,6 +109,15 @@ final class ExpQuant extends Exp {
             Expr v = d.expr.check(cx, warnings).resolve_as_set(warnings);
             // If the variable declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (v.mult==0 && v.type.arity()==1) v=ExprUnary.Op.ONEOF.make(null, v);
+            // Now, check if the quantification involves meta atoms
+            /*
+            PrimSig mSig=cx.rootmodule.metaSig(), mField=cx.rootmodule.metaField();
+            if ((mSig!=null && v.type.intersects(mSig.type)) || (mField!=null && v.type.intersects(mField.type))) {
+               if (op!=ExprQuant.Op.ALL && op!=ExprQuant.Op.SOME) {
+                  return new ExprBad(pos, d.names.get(0).name, new ErrorType(pos, "You can only quantify \"all\" and \"some\" over meta atoms."));
+               }
+            }
+            */
             // Otherwise...
             int num = d.names.size();
             List<Expr> disjoints = (num>1 && d.disjoint!=null) ? (new ArrayList<Expr>(num)) : null;
