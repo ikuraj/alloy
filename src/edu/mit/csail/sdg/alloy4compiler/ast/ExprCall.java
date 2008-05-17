@@ -74,7 +74,9 @@ public final class ExprCall extends Expr {
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            out.append(fun.label).append('[');
+            out.append(fun.label);
+            if (args.size()==0) return;
+            out.append('[');
             for(int i=0; i<args.size(); i++) { if (i>0) out.append(", "); args.get(i).toString(out,-1); }
             out.append(']');
         } else {

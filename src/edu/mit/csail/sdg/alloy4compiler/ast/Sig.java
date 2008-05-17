@@ -438,7 +438,8 @@ public abstract class Sig extends Expr {
         /** {@inheritDoc} */
         @Override public void toString(StringBuilder out, int indent) {
             if (indent<0) {
-                out.append(label);
+                int i = sig.label.lastIndexOf('/');
+                if (i>=0) out.append(sig.label.substring(0,i)).append("/").append(label); else out.append("this/").append(label);
             } else {
                 for(int i=0; i<indent; i++) { out.append(' '); }
                 out.append("field ").append(sig).append(" <: ").append(label).append(" with type=").append(type).append('\n');
