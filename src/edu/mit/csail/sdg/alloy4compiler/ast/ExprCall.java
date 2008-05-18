@@ -81,7 +81,7 @@ public final class ExprCall extends Expr {
             out.append(']');
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            out.append("call ").append(fun).append(" with type=").append(type).append('\n');
+            out.append("call ").append(fun).append(" at position <").append(fun.pos).append("> with type=").append(type).append('\n');
             for(Expr a:args) { a.toString(out, indent+2); }
         }
     }

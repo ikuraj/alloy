@@ -57,7 +57,8 @@ public final class ExprVar extends Expr {
             out.append(label);
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            out.append("Var ").append(label).append(" with type=").append(type).append('\n');
+            out.append("Var ").append(label).append(" at position <").append(pos).append("> with type=").append(type).append('\n');
+            expr.toString(out, indent+2);
         }
     }
 

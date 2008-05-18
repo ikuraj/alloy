@@ -63,13 +63,9 @@ public final class ExprChoice extends Expr {
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            // Each choice's textual form is probably similar, so the first one would do
-            //choices.get(0).toString(out,indent);
-            //
             out.append("<");
             for(Expr e:choices) { e.toString(out,-1); out.append(";"); }
             out.append(">");
-            //
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
             out.append(""+choices.size()+" choices with combined type=").append(type).append('\n');

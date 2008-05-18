@@ -40,16 +40,6 @@ public abstract class ExprCustom extends Expr {
     /** {@inheritDoc} */
     @Override public Pos span() { return pos; }
 
-    /** {@inheritDoc} */
-    @Override public void toString(StringBuilder out, int indent) {
-        if (indent<0) {
-            out.append(toString());
-        } else {
-            for(int i=0; i<indent; i++) { out.append(' '); }
-            out.append(toString()).append('\n');
-        }
-    }
-
     /**
      * Constructs an ExprCustom object.
      * @param pos - the Pos for this expression (can be Pos.UNKNOWN if unknown)
