@@ -1881,12 +1881,12 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         // Launch the welcome screen if needed
         if (!"yes".equals(System.getProperty("debug")) && Welcome.get() < welcomeLevel) {
             String dismiss = Util.onMac() ? "Dismiss" : "Close";
-            JCheckBox again = new JCheckBox("Show this message every time you start Alloy 4");
+            JCheckBox again = new JCheckBox("Show this message every time you start the Alloy Analyzer");
             again.setSelected(true);
             JOptionPane.showOptionDialog(frame, new Object[]{
-                "Thank you for using the Alloy Analyzer 4.0.",
+                "Thank you for using the Alloy Analyzer "+Version.version(),
                 " ",
-                "Version 4.0 of the Alloy Analyzer is a complete rewrite,",
+                "Version 4 of the Alloy Analyzer is a complete rewrite,",
                 "offering improvements in robustness, performance and usability.",
                 "Models written in Alloy 3 will require some small alterations to run in Alloy 4.",
                 " ",
