@@ -104,7 +104,7 @@ public final class ExprChoice extends Expr {
         long weight=0;
         for(Expr x:choices) {
             type=x.type.merge(type);
-            if (first || weight>x.weight) if (x.type!=EMPTY) { weight=x.weight; first=false; }
+            if (first || weight<x.weight) if (x.type!=EMPTY) { weight=x.weight; first=false; }
         }
         return new ExprChoice(pos, choices, type, weight);
     }
@@ -130,12 +130,12 @@ public final class ExprChoice extends Expr {
         if (match.size()==0 && Type.INT2SIGINT && t.hasArity(1)) {
             for(Expr ch:choices) if (ch.type.is_int) match.add(ch.cast2sigint());
         }
-        // If too many, then keep the choices with the smallest weight
+        // If too many, then keep the choices with the largest weight
         if (match.size()>1) {
             List<Expr> newmatch=new ArrayList<Expr>(match.size());
             long w=0;
             for(Expr x:match) {
-                if (newmatch.size()==0 || x.weight<w) { newmatch.clear(); newmatch.add(x); w=x.weight; }
+                if (newmatch.size()==0 || x.weight>w) { newmatch.clear(); newmatch.add(x); w=x.weight; }
                 else if (x.weight==w) { newmatch.add(x); }
             }
             match=newmatch;

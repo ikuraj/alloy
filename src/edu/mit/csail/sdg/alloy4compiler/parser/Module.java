@@ -1212,9 +1212,9 @@ public final class Module {
                 if (f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
-                    ans1.add(fn==1 ? ExprCall.make(pos, null, f, t, 0) : ExprBadCall.make(pos, null, f, t, 0));
+                    ans1.add(fn==1 ? ExprCall.make(pos, null, f, t, 1) : ExprBadCall.make(pos, null, f, t, 1));
                 }
-                ans1.add(fn==0 ? ExprCall.make(pos, null, f, null, 1) : ExprBadCall.make(pos, null, f, null, 1));
+                ans1.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
             }
         }
         // Within a field decl
@@ -1236,8 +1236,8 @@ public final class Module {
                 if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
                     Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
                     Expr x1 = ExprUnary.Op.NOOP.make(pos, f, null, 1);
-                    if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) ans1.add(THIS.join(x0));
-                    ans1.add(x1);
+                    if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) ans1.add(THIS.join(x1));
+                    ans1.add(x0);
                 }
              }
           }
