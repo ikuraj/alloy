@@ -778,6 +778,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 else { s=(Expression)obj; f=s.eq(cset(b)); }
                 return k2pos(f,x);
             case DOMAIN:
+                a=deNOP(a);
+                b=deNOP(b);
+                if (a instanceof Sig && b instanceof Field && ((Field)b).sig==a) return cset(b);
                 s=cset(a);
                 s2=cset(b);
                 for(int j=s2.arity(); j>1; j--) s=s.product(Expression.UNIV);
