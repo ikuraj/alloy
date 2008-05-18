@@ -100,7 +100,7 @@ fact Traces {
             (Checkin+Checkout).allows [occ]
 
             k1.t = k1.t' and k2.t = k2.t' or e in RecodeEnter
-            prev.t = prev.t' and issued.t = issued.t' and holds.t = holds.t' or e in Checkin
+            (Room<:prev).t = prev.t' and issued.t = issued.t' and holds.t = holds.t' or e in Checkin
             occ.t = occ.t' or e in Checkin + Checkout
             }
     }

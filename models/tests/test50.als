@@ -65,7 +65,7 @@ sig NormalEnter extends Enter { }
     card.k1 = room.k1.pre
     card.k2 = room.k2.pre
 
-    prev.unchanged
+    (Room<:prev).unchanged
     issued.unchanged
     holds.unchanged
     occ.unchanged
@@ -81,7 +81,7 @@ sig RecodeEnter extends Enter { }
     k1.post = k1.pre ++ room -> card.k1
     k2.post = k2.pre ++ room -> card.k2
 
-    prev.unchanged
+    (Room<:prev).unchanged
     issued.unchanged
     holds.unchanged
     occ.unchanged
@@ -92,7 +92,7 @@ sig Checkout extends HotelEvent { }
     some occ.pre.guest
     occ.post = occ.pre - Room -> guest
 
-    prev.unchanged
+    (Room<:prev).unchanged
     issued.unchanged
     holds.unchanged
     k1.unchanged

@@ -43,7 +43,7 @@ pred enter [t,t': Time, r: Room, g: Guest] {
 			c.snd = k and key.t' = key.t
 			or c.fst = k and key.t' = key.t ++ r->c.snd
 			}
-	issued.t = issued.t' and prev.t = prev.t'
+	issued.t = issued.t' and (Desk<:prev).t = prev.t'
 	cards.t = cards.t'
 	}
 
