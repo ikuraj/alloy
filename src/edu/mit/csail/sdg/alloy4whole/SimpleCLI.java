@@ -22,6 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4whole;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.StringReader;
@@ -35,7 +36,10 @@ import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
+import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -57,6 +61,28 @@ public final class SimpleCLI {
         private final StringBuilder sb = new StringBuilder();
 
         private final List<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
+
+        private final RandomAccessFile os;
+
+        public SimpleReporter() throws IOException {
+            os = new RandomAccessFile(".alloy.tmp","rw");
+            os.setLength(0);
+        }
+
+        public void flush() throws IOException {
+            if (sb.length()>65536) {
+                os.write(sb.toString().getBytes("UTF-8"));
+                sb.delete(0, sb.length());
+            }
+        }
+
+        public void close() throws IOException {
+            if (sb.length()>0) {
+                os.write(sb.toString().getBytes("UTF-8"));
+                sb.delete(0, sb.length());
+            }
+            os.close();
+        }
 
         @Override public void debug(String msg) { sb.append(msg); }
 
@@ -120,11 +146,13 @@ public final class SimpleCLI {
     }
 
     public static void main(String[] args) throws Exception {
-        boolean minisat = "yes".equals(System.getProperty("minisat"));
+        final boolean minisat = "yes".equals(System.getProperty("minisat"));
         SatSolver solver = A4Options.SatSolver.make("mem", "mem", "/tmp/sat/mem");
         final SimpleReporter rep = new SimpleReporter();
+        final StringBuilder sb = rep.sb;
         for(String filename:args) {
             try {
+                // Parse+Typecheck
                 rep.sb.append("\n\nMain file = "+filename+"\n");
                 if (db) db("Parsing+Typechecking...");
                 Module world = CompUtil.parseEverything_fromFile(rep, null, filename);
@@ -132,11 +160,44 @@ public final class SimpleCLI {
                 List<Pair<Command,Expr>> cmds=world.getAllCommandsWithFormulas();
                 for(ErrorWarning msg: rep.warnings) rep.sb.append("Relevance Warning:\n" + (msg.toString().trim()) + "\n\n");
                 rep.warnings.clear();
+                // Do a detailed dump if we will not be executing the commands
+                if (args.length!=1) {
+                  for(Module m:world.getAllReachableModules()) {
+                    for(Sig x:m.getAllSigs()) {
+                        sb.append("\nSig ").append(x.label).append(" at position ").append(x.pos).append("\n");
+                        for(Field f:x.getFields()) {
+                            sb.append("\nField ").append(f.label).append(" with type ").append(f.type).append("\n");
+                            f.boundingFormula.toString(sb, 2);
+                        }
+                        rep.flush();
+                    }
+                    for(Func x:m.getAllFunc()) {
+                        sb.append("\nFun/pred ").append(x.label).append(" at position ").append(x.pos).append("\n");
+                        for(ExprVar v: x.params) v.toString(sb, 2);
+                        x.returnDecl.toString(sb, 2);
+                        x.getBody().toString(sb, 4);
+                        rep.flush();
+                    }
+                    for(Pair<String,Expr> x:m.getAllFacts()) {
+                        sb.append("\nFact ").append(x.a).append("\n");  x.b.toString(sb, 4);
+                        rep.flush();
+                    }
+                    for(Pair<String,Expr> x:m.getAllAssertions()) {
+                        sb.append("\nAssertion ").append(x.a).append("\n");  x.b.toString(sb, 4);
+                        rep.flush();
+                    }
+                    for(Pair<Command,Expr> x:m.getAllCommandsWithFormulas()) {
+                        sb.append("\nCommand ").append(x.a.label).append("\n");  x.b.toString(sb, 4);
+                        rep.flush();
+                    }
+                  }
+                  continue;
+                }
+                // Okay, now solve the commands
                 A4Options options = new A4Options();
                 options.originalFilename = filename;
                 options.solverDirectory = "/zweb/zweb/tmp/alloy4/x86-freebsd";
                 options.solver = minisat ? A4Options.SatSolver.MiniSatJNI : solver;
-                if (args.length!=1) continue;
                 for (int i=0; i<cmds.size(); i++) {
                     Command c = cmds.get(i).a;
                     if (db) {
@@ -159,9 +220,6 @@ public final class SimpleCLI {
             }
             if (db) { if (args.length!=1) db(" ERROR!\n"); else db("\n\n"); }
         }
-        RandomAccessFile file=new RandomAccessFile(".alloy.tmp","rw");
-        file.setLength(0);
-        file.write(rep.sb.toString().getBytes("UTF-8"));
-        file.close();
+        rep.close();
     }
 }
