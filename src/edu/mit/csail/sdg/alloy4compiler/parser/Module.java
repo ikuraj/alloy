@@ -195,16 +195,14 @@ public final class Module {
         /** Only initialized by typechecker. */ private Func realFunc=null;
         /** Only initialized by typechecker. */ private Expr realFormula=null;
         /** Whether it is private.           */ private final Pos isPrivate;
-        /** The original module.             */ private final Module realModule;
         /** The original position.           */ private final Pos pos;
         /** The short name.                  */ private final String name;
         /** The parameters.                  */ private final ConstList<Decl> params;
         /** The return type.                 */ private final Exp returnType;
         /** The body.                        */ private final Exp body;
-        private FunAST(Pos pos, Pos isPrivate, Module realModule, String name, List<Decl> params, Exp returnType, Exp body) {
+        private FunAST(Pos pos, Pos isPrivate, String name, List<Decl> params, Exp returnType, Exp body) {
             this.pos=pos;
             this.isPrivate=isPrivate;
-            this.realModule=realModule;
             this.name=name; this.params=ConstList.make(params); this.returnType=returnType; this.body=body;
         }
         @Override public String toString() { return name; }
@@ -784,7 +782,7 @@ public final class Module {
         dup(p, n, false);
         ExpName dup = Decl.findDuplicateName(decls);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
-        FunAST ans = new FunAST(p, isPrivate, this, n, decls, t, v);
+        FunAST ans = new FunAST(p, isPrivate, n, decls, t, v);
         SafeList<FunAST> list = funcs.get(n);
         if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
         list.add(ans);
@@ -1200,27 +1198,23 @@ public final class Module {
             if (s!=null) { Expr s2 = ExprUnary.Op.NOOP.make(pos, s.realSig); return ConstList.make(1, s2); }
         }
         final TempList<Expr> ans1 = new TempList<Expr>();
-        final TempList<Expr> ans2 = new TempList<Expr>();
         final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1, name) : getRawNQS(this, fun?5:1, name);
         final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
         for(Object x: ans) {
             if (x instanceof SigAST) {
                 SigAST y=(SigAST)x;
-                ans1.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, y.realModule==this?0:1000));
+                ans1.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, 0));
             }
             else if (x instanceof FunAST) {
                 FunAST y=(FunAST)x;
                 Func f = y.realFunc;
                 int fn = f.params.size();
-                int penalty = (y.realModule==this ? 0 : 1000); // penalty of 1000
                 if (f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
-                    // If there is some value bound to "this",
-                    // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
+                    // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
-                    ans1.add(fn==1 ? ExprCall.make(pos,null,f,t,penalty) : ExprBadCall.make(pos,null,f,t,penalty));
-                    penalty++;
+                    ans1.add(fn==1 ? ExprCall.make(pos, null, f, t, 0) : ExprBadCall.make(pos, null, f, t, 0));
                 }
-                ans1.add(fn==0 ? ExprCall.make(pos,null,f,null,penalty) : ExprBadCall.make(pos,null,f,null,penalty));
+                ans1.add(fn==0 ? ExprCall.make(pos, null, f, null, 1) : ExprBadCall.make(pos, null, f, null, 1));
             }
         }
         // Within a field decl
@@ -1233,31 +1227,21 @@ public final class Module {
         // (1) Cannot call
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
-        boolean foundMyOwnField = false;
-        for(Module m: getAllNameableModules()) {
-          for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null) {
-            int fi=(-1), fn=s.getValue().realSig.getFields().size(); // fn is the number of fields that are typechecked so far
-            for(Decl d: s.getValue().fields) {
-              for(ExpName label: d.names) {
-                fi++;
-                if (fi<fn && (m==this || d.isPrivate==null) && label.name.equals(name)) {
-                   Field f = s.getValue().realSig.getFields().get(fi);
-                   int penalty = (s.getValue().realModule==this ? 0 : 1000);
-                   Expr x = ExprUnary.Op.NOOP.make(pos, f, null, penalty);
-                   Expr y = ExprUnary.Op.NOOP.make(pos, f, null, penalty+1);
-                   boolean thisWorks = THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type);
-                   if (rootsig==null || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
-                      foundMyOwnField = true;
-                      if (thisWorks) { ans1.add(THIS.join(x)); ans1.add(y); } else { ans1.add(x); }
-                   } else if (!rootfield) {
-                      if (thisWorks) { ans2.add(THIS.join(x)); ans2.add(y); } else { ans2.add(x); }
-                   }
+        for(Module m: getAllNameableModules()) for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null) {
+          int fi=(-1), fn=s.getValue().realSig.getFields().size(); // fn is the number of fields that are typechecked so far
+          for(Decl d: s.getValue().fields) for(ExpName label: d.names) {
+             fi++;
+             if (fi<fn && (m==this || d.isPrivate==null) && label.name.equals(name)) {
+                Field f=s.getValue().realSig.getFields().get(fi);
+                if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
+                    Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
+                    Expr x1 = ExprUnary.Op.NOOP.make(pos, f, null, 1);
+                    if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) ans1.add(THIS.join(x0));
+                    ans1.add(x1);
                 }
-              }
-            }
+             }
           }
         }
-        if (!foundMyOwnField) for(int i=0; i<ans2.size(); i++) ans1.add(ans2.get(i));
         return ans1.makeConst();
     }
 }
