@@ -137,7 +137,7 @@ final class ExpDot extends Exp {
             return ExprBinary.Op.JOIN.make(pos, closingBracket, left, right);
         }
         ConstList<Expr> list = process(((ExprChoice)right).choices, left);
-        return ExprChoice.make(pos, list);
+        return ExprChoice.make(right.pos, list);
     }
 
     /** {@inheritDoc} */
