@@ -26,10 +26,7 @@ import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 /** Immutable; represents an unresolved name in the AST. */
@@ -52,10 +49,8 @@ final class ExpName extends Exp {
 
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
-        ConstList<Expr> list = cx.resolve(pos, name);
-        if (list.size()==1) if (list.get(0) instanceof Macro) return ((Macro)(list.get(0))).instantiate(cx, warnings);
-        if (list.size()==0) return new ExprBad(pos, name, hint(pos, name));
-        return ExprChoice.make(pos, list);
+        Expr obj = cx.resolve(pos, name);
+        if (obj instanceof Macro) return ((Macro)obj).instantiate(cx, warnings); else return obj;
     }
 
     /**

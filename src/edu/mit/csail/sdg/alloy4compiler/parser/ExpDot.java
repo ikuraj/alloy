@@ -92,10 +92,11 @@ final class ExpDot extends Exp {
         return true;
     }
 
-    private ConstList<Expr> process(List<Expr> choices, Expr arg) {
+    private Expr process(List<Expr> choices, List<String> oldReasons, Expr arg) {
         TempList<Expr> list = new TempList<Expr>(choices.size());
-        for(Expr x: choices) {
-            Expr y=x;
+        TempList<String> reasons = new TempList<String>(choices.size());
+        for(int i=0; i<choices.size(); i++) {
+            Expr x=choices.get(i), y=x;
             while(true) {
                if (y instanceof ExprUnary && ((ExprUnary)y).op==ExprUnary.Op.NOOP) y=((ExprUnary)y).sub;
                else if (y instanceof ExprChoice && ((ExprChoice)y).choices.size()==1) y=((ExprChoice)y).choices.get(0);
@@ -116,8 +117,9 @@ final class ExpDot extends Exp {
                 y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, x);
             }
             list.add(y);
+            reasons.add(oldReasons.get(i));
         }
-        return list.makeConst();
+        return ExprChoice.make(this.right.pos, list.makeConst(), reasons.makeConst());
     }
 
     /** {@inheritDoc} */
@@ -136,8 +138,7 @@ final class ExpDot extends Exp {
         if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) {
             return ExprBinary.Op.JOIN.make(pos, closingBracket, left, right);
         }
-        ConstList<Expr> list = process(((ExprChoice)right).choices, left);
-        return ExprChoice.make(right.pos, list);
+        return process(((ExprChoice)right).choices, ((ExprChoice)right).reasons, left);
     }
 
     /** {@inheritDoc} */

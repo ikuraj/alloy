@@ -42,6 +42,9 @@ public final class ExprChoice extends Expr {
     /** The unmodifiable list of Expr(s) from that this ExprChoice can refer to. */
     public final ConstList<Expr> choices;
 
+    /** The unmodifiable list of String(s) explaining where each choice came from. */
+    public final ConstList<String> reasons;
+
     /** Caches the span() result. */
     private Pos span=null;
 
@@ -88,15 +91,16 @@ public final class ExprChoice extends Expr {
     //============================================================================================================//
 
     /** Constructs an ExprChoice node. */
-    private ExprChoice(Pos pos, ConstList<Expr> choices, Type type, long weight) {
+    private ExprChoice(Pos pos, ConstList<Expr> choices, ConstList<String> reasons, Type type, long weight) {
         super(pos, null, true, type, 0, weight, emptyListOfErrors.appendIfNotNull(type==EMPTY ? complain(pos,choices) : null));
         this.choices = choices;
+        this.reasons = reasons;
     }
 
     //============================================================================================================//
 
     /** Construct an ExprChoice node. */
-    public static Expr make(Pos pos, ConstList<Expr> choices) {
+    public static Expr make(Pos pos, ConstList<Expr> choices, ConstList<String> reasons) {
         if (choices.size()==0) return new ExprBad(pos, "", new ErrorType(pos, "This expression failed to be typechecked."));
         if (choices.size()==1 && choices.get(0).errors.isEmpty()) return choices.get(0); // Shortcut
         Type type=EMPTY;
@@ -106,66 +110,72 @@ public final class ExprChoice extends Expr {
             type=x.type.merge(type);
             if (first || weight<x.weight) if (x.type!=EMPTY) { weight=x.weight; first=false; }
         }
-        return new ExprChoice(pos, choices, type, weight);
+        return new ExprChoice(pos, choices, reasons, type, weight);
     }
 
     //============================================================================================================//
 
-    private Expr resolveHelper(boolean firstPass, Type t, List<Expr> choices, Collection<ErrorWarning> warns) {
-        List<Expr> match=new ArrayList<Expr>(choices.size());
+    /** Resolve the list of choices, or return an ExprBad object containing the list of unresolvable ambiguities. */
+    private Expr resolveHelper(boolean firstPass, final Type t, List<Expr> choices, List<String> reasons, Collection<ErrorWarning> warns) {
+        List<Expr> ch = new ArrayList<Expr>(choices.size());
+        List<String> re = new ArrayList<String>(choices.size());
         // We first prefer exact matches
-        for(Expr ch:choices) {
-            Type tt=ch.type;
-            if ((t.is_int && tt.is_int) || (t.is_bool && tt.is_bool) || t.intersects(tt)) match.add(ch);
+        for(int i=0; i<choices.size(); i++) {
+            Type tt = choices.get(i).type;
+            if ((t.is_int && tt.is_int) || (t.is_bool && tt.is_bool) || t.intersects(tt)) { ch.add(choices.get(i)); re.add(reasons.get(i)); }
         }
         // If none, we try any legal matches
-        if (match.size()==0) {
-            for(Expr ch:choices) if (ch.type.hasCommonArity(t)) match.add(ch);
+        if (ch.size()==0) {
+            for(int i=0; i<choices.size(); i++) if (choices.get(i).type.hasCommonArity(t)) { ch.add(choices.get(i)); re.add(reasons.get(i)); }
         }
         // If none, we try sigint->int
-        if (match.size()==0 && Type.SIGINT2INT && t.is_int) {
-            for(Expr ch:choices) if (ch.type.intersects(SIGINT.type)) match.add(ch.cast2int());
+        if (ch.size()==0 && Type.SIGINT2INT && t.is_int) {
+            for(int i=0; i<choices.size(); i++) if (choices.get(i).type.intersects(SIGINT.type)) { ch.add(choices.get(i).cast2int()); re.add(reasons.get(i)); }
         }
         // If none, we try int->sigint
-        if (match.size()==0 && Type.INT2SIGINT && t.hasArity(1)) {
-            for(Expr ch:choices) if (ch.type.is_int) match.add(ch.cast2sigint());
+        if (ch.size()==0 && Type.INT2SIGINT && t.hasArity(1)) {
+            for(int i=0; i<choices.size(); i++) if (choices.get(i).type.is_int) { ch.add(choices.get(i).cast2sigint()); re.add(reasons.get(i)); }
         }
         // If too many, then keep the choices with the largest weight
-        if (match.size()>1) {
-            List<Expr> newmatch=new ArrayList<Expr>(match.size());
-            long w=0;
-            for(Expr x:match) {
-                if (newmatch.size()==0 || x.weight>w) { newmatch.clear(); newmatch.add(x); w=x.weight; }
-                else if (x.weight==w) { newmatch.add(x); }
+        if (ch.size()>1) {
+            List<Expr> ch2 = new ArrayList<Expr>(ch.size());
+            List<String> re2 = new ArrayList<String>(ch.size());
+            long w = 0;
+            for(int i=0; i<ch.size(); i++) {
+                Expr c = ch.get(i);
+                String r = re.get(i);
+                if (ch2.size()>0 && c.weight<w) continue; else if (ch2.size()==0 || c.weight>w) {ch2.clear(); re2.clear(); w=c.weight;}
+                ch2.add(c);
+                re2.add(r);
             }
-            match=newmatch;
+            ch = ch2;
+            re = re2;
             // If still too many, but this is the first pass, then try to resolve them all and try again
-            if (firstPass && match.size()>1) {
-                newmatch = new ArrayList<Expr>(match.size());
-                for(Expr x:match) newmatch.add(x.resolve(t, sink));
-                return resolveHelper(false, t, newmatch, warns);
+            if (firstPass && ch.size()>1) {
+                ch2 = new ArrayList<Expr>(ch.size());
+                for(Expr c:ch) ch2.add(c.resolve(t, sink));
+                return resolveHelper(false, t, ch2, re, warns);
             }
         }
         // If we are down to exactly 1 match, return it
-        if (match.size()==1) return match.get(0).resolve(t, warns);
+        if (ch.size()==1) return ch.get(0).resolve(t, warns);
         // Otherwise, complain!
         String txt;
-        if (match.size()>1) {
+        if (ch.size()>1) {
             txt="\nThe expression is ambiguous due to multiple matches:";
         } else {
             txt="\nThe expression cannot be resolved; its relevant type does not intersect with any of the following candidates:";
-            match.clear();
-            match.addAll(choices);
+            ch = choices;
+            re = reasons;
         }
-        StringBuilder msg=new StringBuilder(txt);
-        for(Expr ch:match) { msg.append("\n\n"); ch.toString(msg,-1); msg.append(" (type: ").append(ch.type).append(")"); }
-        Pos span=span();
-        return new ExprBad(span, toString(), new ErrorType(span, msg.toString()));
+        StringBuilder msg = new StringBuilder(txt);
+        for(String r:re) msg.append('\n').append(r);
+        return new ExprBad(pos, toString(), new ErrorType(pos, msg.toString()));
     }
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
-        if (errors.size()>0) return this; else return resolveHelper(true, t, choices, warns);
+        if (errors.size()>0) return this; else return resolveHelper(true, t, choices, reasons, warns);
     }
 
     //============================================================================================================//

@@ -55,6 +55,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
@@ -109,18 +110,15 @@ public final class Module {
             this.unrolls=unrolls;
         }
         /** Resolve the given name to get a collection of Expr and Func objects. */
-        public ConstList<Expr> resolve(Pos pos, final String name) {
-            Expr match = env.get(name);
-            int i = name.indexOf('/');
-            if (i>=0) {
-                String n=name;
-                if (n.startsWith("this/")) n=n.substring(5);
+        public Expr resolve(final Pos pos, final String name) {
+            if (name.indexOf('/') >= 0) {
+                String n = name.startsWith("this/") ? name.substring(5) : name;
                 Module mod = rootmodule;
                 while(true) {
-                    i = n.indexOf('/');
+                    int i = n.indexOf('/');
                     if (i<0) {
                         Macro m = mod.macros.get(n);
-                        if (m==null || (m.isPrivate!=null && mod!=rootmodule)) break; else return Util.asList(m.changePos(pos));
+                        if (m==null || (m.isPrivate!=null && mod!=rootmodule)) break; else return m.changePos(pos);
                     }
                     String alias = n.substring(0,i);
                     Open uu = mod.opens.get(alias);
@@ -128,34 +126,32 @@ public final class Module {
                     n = n.substring(i+1);
                     mod = uu.realModule;
                 }
-            } else if (match==null) {
-                List<Expr> choices=null;
+            }
+            Expr match = env.get(name);
+            if (match==null) {
+                boolean ambiguous = false;
+                StringBuilder sb = new StringBuilder();
                 for(Module m: rootmodule.getAllNameableModules()) {
                     Macro mac = m.macros.get(name);
                     if (mac==null) continue;
-                    if (choices==null) choices=new ArrayList<Expr>();
-                    choices.add(mac.changePos(pos));
+                    if (match!=null) ambiguous=true; else match=mac;
+                    sb.append("\n").append(m.path.length()==0 ? "this" : m.path).append("/").append(name);
                 }
-                if (choices!=null) {
-                    if (choices.size()>1) {
-                        choices.clear();
-                        choices.add(new ExprBad(pos, name, new ErrorType(pos, "There are multiple macros with the same name; please prepend the module alias in order to remove ambiguity.")));
-                    }
-                    if (choices.size()>0) return ConstList.make(choices);
-                }
+                if (ambiguous) return new ExprBad(pos, name, new ErrorType(pos, "There are multiple macros with the same name:"+sb));
             }
-            if (match==null) match = rootmodule.macros.get(name);
             if (match==null) match = rootmodule.globals.get(name);
-            if (match instanceof Macro) return Util.asList(((Macro)match).changePos(pos));
             if (match!=null) {
-                match=ExprUnary.Op.NOOP.make(pos,match);
-                TempList<Expr> ans = new TempList<Expr>(1);
-                ans.add(match);
-                return ans.makeConst();
+                if (match instanceof Macro) return ((Macro)match).changePos(pos);
+                match = ExprUnary.Op.NOOP.make(pos, match);
+                return ExprChoice.make(pos, Util.asList(match), Util.asList(name));
             }
             Expr th = env.get("this");
             if (th!=null) th = ExprUnary.Op.NOOP.make(pos, th);
-            return rootmodule.populate(rootfield, rootsig, rootfunparam, rootfunbody, pos, name, th);
+            TempList<Expr> ch = new TempList<Expr>();
+            TempList<String> re = new TempList<String>();
+            Expr ans = rootmodule.populate(ch, re, rootfield, rootsig, rootfunparam, rootfunbody, pos, name, th);
+            if (ans!=null) return ans;
+            if (ch.size()==0) return new ExprBad(pos, name, ExpName.hint(pos, name)); else return ExprChoice.make(pos, ch.makeConst(), re.makeConst());
         }
     }
 
@@ -1184,26 +1180,26 @@ public final class Module {
     }
 
     /** Resolve the name based on the current context and this module. */
-    private ConstList<Expr> populate(boolean rootfield, SigAST rootsig, boolean rootfunparam, Func rootfunbody, Pos pos, String fullname, Expr THIS) {
+    private Expr populate(TempList<Expr> ch, TempList<String> re, boolean rootfield, SigAST rootsig, boolean rootfunparam, Func rootfunbody, Pos pos, String fullname, Expr THIS) {
         // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
         boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfunparam);
-        if (name.equals("univ"))    { Expr a = ExprUnary.Op.NOOP.make(pos, UNIV);   return ConstList.make(1,a); }
-        if (name.equals("Int"))     { Expr a = ExprUnary.Op.NOOP.make(pos, SIGINT); return ConstList.make(1,a); }
-        if (name.equals("seq/Int")) { Expr a = ExprUnary.Op.NOOP.make(pos, SEQIDX); return ConstList.make(1,a); }
-        if (name.equals("none"))    { Expr a = ExprUnary.Op.NOOP.make(pos, NONE);   return ConstList.make(1,a); }
-        if (name.equals("iden"))    { Expr a = ExprConstant.Op.IDEN.make(pos, 0);   return ConstList.make(1,a); }
+        if (name.equals("univ"))    return ExprUnary.Op.NOOP.make(pos, UNIV);
+        if (name.equals("Int"))     return ExprUnary.Op.NOOP.make(pos, SIGINT);
+        if (name.equals("seq/Int")) return ExprUnary.Op.NOOP.make(pos, SEQIDX);
+        if (name.equals("none"))    return ExprUnary.Op.NOOP.make(pos, NONE);
+        if (name.equals("iden"))    return ExprConstant.Op.IDEN.make(pos, 0);
         if (name.equals("sig$") || name.equals("field$")) if (world!=null) {
             SigAST s = world.sigs.get(name);
-            if (s!=null) { Expr s2 = ExprUnary.Op.NOOP.make(pos, s.realSig); return ConstList.make(1, s2); }
+            if (s!=null) return ExprUnary.Op.NOOP.make(pos, s.realSig);
         }
-        final TempList<Expr> ans1 = new TempList<Expr>();
         final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1, name) : getRawNQS(this, fun?5:1, name);
         final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
         for(Object x: ans) {
             if (x instanceof SigAST) {
                 SigAST y=(SigAST)x;
-                ans1.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, 0));
+                ch.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, 0));
+                re.add("sig "+y.realSig.label+". To make this your choice, write ("+y.realSig.label+")");
             }
             else if (x instanceof FunAST) {
                 FunAST y=(FunAST)x;
@@ -1212,9 +1208,11 @@ public final class Module {
                 if (f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
-                    ans1.add(fn==1 ? ExprCall.make(pos, null, f, t, 1) : ExprBadCall.make(pos, null, f, t, 1));
+                    ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 1) : ExprBadCall.make(pos, null, f, t, 1));
+                    re.add((f.isPred?"pred ":"fun ")+f.label+"[this]. To make this your choice, write (this.@"+f.label+")");
                 }
-                ans1.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
+                ch.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
+                re.add((f.isPred?"pred ":"fun ")+f.label+". To make this your choice, write (@"+f.label+")");
             }
         }
         // Within a field decl
@@ -1236,12 +1234,16 @@ public final class Module {
                 if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
                     Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
                     Expr x1 = ExprUnary.Op.NOOP.make(pos, f, null, 1);
-                    if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) ans1.add(THIS.join(x1));
-                    ans1.add(x0);
+                    if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
+                        ch.add(THIS.join(x1));
+                        re.add("field "+f.sig.label+" <: "+f.label+". To make this your choice, write (this.("+f.sig.label+" <: @"+f.label+"))");
+                    }
+                    ch.add(x0);
+                    re.add("field "+f.sig.label+" <: @"+f.label+". To make this your choice, write ("+f.sig.label+" <: @"+f.label+")");
                 }
              }
           }
         }
-        return ans1.makeConst();
+        return null;
     }
 }
