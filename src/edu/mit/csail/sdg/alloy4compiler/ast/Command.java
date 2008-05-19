@@ -130,7 +130,7 @@ public final class Command {
      * @param scope - Sig-to-Integer map to be associated with the new command (see the "scope" field for its meaning)
      */
     public Command make(ConstList<Pair<Sig,Integer>> scope) {
-        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes.toArray(new Sig[]{}));
+        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes.toArray(new Sig[additionalExactScopes.size()]));
     }
 
     /**

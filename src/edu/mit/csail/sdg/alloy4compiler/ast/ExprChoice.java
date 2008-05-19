@@ -162,10 +162,9 @@ public final class ExprChoice extends Expr {
         // Otherwise, complain!
         String txt;
         if (ch.size()>1) {
-            txt="\nThe expression is ambiguous due to multiple matches:";
+            txt="\nThis name is ambiguous due to multiple matches:";
         } else {
-            txt="\nThe expression cannot be resolved; its relevant type does not intersect with any of the following candidates:";
-            ch = choices;
+            txt="\nThis name cannot be resolved; its relevant type does not intersect with any of the following candidates:";
             re = reasons;
         }
         StringBuilder msg = new StringBuilder(txt);
