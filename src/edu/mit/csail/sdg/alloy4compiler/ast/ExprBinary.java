@@ -370,7 +370,7 @@ public final class ExprBinary extends Expr {
             b=p.intersect(b);
             if (p.is_int) {
                 a=Type.makeInt(a); b=Type.makeInt(b);
-            } else if (type.hasNoTuple() || b==EMPTY) {
+            } else if (type.hasNoTuple() || b.hasNoTuple()) {
                 w=warn("- is irrelevant since the right expression is redundant.", p);
             }
             break;
