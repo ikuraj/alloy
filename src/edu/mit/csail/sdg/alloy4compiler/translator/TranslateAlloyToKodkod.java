@@ -195,12 +195,34 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
                 break;
             }
             for(Field f:sig.getFields()) {
+                Expression sr=a2k(sig), fr=a2k(f);
+                // we could test to see if we can use kodkod's "function" and "functional" predicates, but experimentally it actually performs much worse, so I will disable it
+                /*
+                if (sig.isOne==null && fr instanceof Relation && f.boundingFormula instanceof ExprQuant) {
+                   final ExprVar THIS = ((ExprQuant)(f.boundingFormula)).vars.get(0);
+                   final Expr a_in_b = deNOP(((ExprQuant)(f.boundingFormula)).sub);
+                   if (a_in_b instanceof ExprBinary && ((ExprBinary)a_in_b).op==ExprBinary.Op.IN) {
+                      final Expr sub = deNOP(((ExprBinary)a_in_b).right);
+                      if (sub.type.arity()==1 && sub instanceof ExprUnary && ((ExprUnary)sub).op==ExprUnary.Op.ONEOF && !sub.hasVar(THIS)) {
+                         final Expression range=cset(((ExprUnary)sub).sub);
+                         frame.addFormula(((Relation)fr).function(sr, range), f);
+                         rep.debug("Found: kodkod function\n");
+                         continue;
+                      }
+                      if (sub.type.arity()==1 && sub instanceof ExprUnary && ((ExprUnary)sub).op==ExprUnary.Op.LONEOF && !sub.hasVar(THIS)) {
+                         final Expression range=cset(((ExprUnary)sub).sub);
+                         frame.addFormula(((Relation)fr).functional(sr, range), f);
+                         rep.debug("Found: kodkod functional\n");
+                         continue;
+                      }
+                   }
+                }
+                */
                 // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
                 frame.addFormula(cform(f.boundingFormula), f);
                 // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
                 // Thus, we need to add a bound that the first column is a subset of s.
                 if (sig.isOne==null) {
-                    Expression sr=a2k(sig), fr=a2k(f);
                     for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
                     frame.addFormula(fr.in(sr), f);
                 }
