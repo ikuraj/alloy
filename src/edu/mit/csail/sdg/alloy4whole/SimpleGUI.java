@@ -109,6 +109,7 @@ import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Runner;
+import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Subprocess;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
@@ -1474,6 +1475,27 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     void doSetLatest(String arg) {
         latestInstance=arg;
         latestAutoInstance=arg;
+    }
+
+    /** This method reads the list of Itatlic positions from the given file, then highlight any open textbuffer with the given italic style. */
+    @SuppressWarnings("unchecked")
+    void doItatlic(String filename) {
+        text.removeAllHighlights();
+        if (filename.length()==0) return;
+        InputStream is = null;
+        ObjectInputStream ois = null;
+        SafeList<Pos> list = null;
+        try {
+            is = new FileInputStream(filename);
+            ois = new ObjectInputStream(is);
+            list = (SafeList<Pos>) (ois.readObject());
+        } catch(Throwable ex) {
+            return;
+        } finally {
+            Util.close(ois);
+            Util.close(is);
+        }
+        text.highlight(list, null, true);
     }
 
     /** The color to use for functions/predicate/paragraphs that contains part of the unsat core. */

@@ -796,7 +796,7 @@ public final class Module {
             boolean err=false;
             for(Decl d:f.params) {
                 Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
-                if (!val.errors.isEmpty()) { err=true; errors = errors.join(val.errors); }
+                if (!val.errors.isEmpty()) { err=true; errors = errors.join(val.errors); } else { implicit(val); }
                 for(ExpName n: d.names) {
                     ExprVar v = ExprVar.make(n.span(), n.name, val);
                     cx.put(n.name, v);
@@ -807,7 +807,7 @@ public final class Module {
             Expr ret = null;
             if (f.returnType!=null) {
                 ret = f.returnType.check(cx, warns).resolve_as_set(warns);
-                if (!ret.errors.isEmpty()) { err=true; errors=errors.join(ret.errors); }
+                if (!ret.errors.isEmpty()) { err=true; errors=errors.join(ret.errors); } else { implicit(ret); }
             }
             if (err) continue;
             try {
@@ -839,6 +839,7 @@ public final class Module {
             if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
             errors = errors.join(newBody.errors);
             if (!newBody.errors.isEmpty()) continue;
+            implicit(newBody);
             try { ff.setBody(newBody); } catch(Err er) {errors=errors.append(er); continue;}
             if (ff.returnDecl.type.hasTuple() && newBody.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
                 warns.add(new ErrorWarning(ff.getBody().span(),
@@ -879,6 +880,7 @@ public final class Module {
             if (x instanceof Expr) expr=(Expr)x;
             if (x instanceof Exp) {
                 expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
+                implicit(expr);
                 if (expr.errors.isEmpty())
                    e.setValue(ExprVar.make(expr.span(), (path.length()==0?"this/":(path+"/"))+e.getKey(), expr));
             }
@@ -920,7 +922,7 @@ public final class Module {
                 if (expr.errors.isEmpty()) e.setValue(expr);
             }
             if (expr.errors.size()>0) errors=errors.join(expr.errors);
-            else rep.typecheck("Fact " + e.getKey() + ": " + expr.type+"\n");
+            else { implicit(expr); rep.typecheck("Fact " + e.getKey() + ": " + expr.type+"\n"); }
         }
         for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
             Sig s=e.getValue().realSig;
@@ -939,6 +941,7 @@ public final class Module {
             cx.remove("this");
             if (formula.errors.size()>0) { errors=errors.join(formula.errors); continue; }
             facts.put(s.toString()+"$fact", formula);
+            implicit(formula);
             rep.typecheck("Fact "+s+"$fact: " + formula.type+"\n");
         }
         return errors;
@@ -1035,6 +1038,20 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /** Records the list of all occurrences "implicit this" */
+    private SafeList<Pos> implicits = null;
+
+    /** Return a copy of the list of all occurrences of "implicit this". */
+    public SafeList<Pos> implicits() {
+        if (world.implicits!=null) return world.implicits.dup(); else return (new SafeList<Pos>()).dup();
+    }
+
+    /** Records the list of all occurrences "implicit this" and store them into the "this.implicits" field. */
+    private void implicit(Expr expr) {
+        if (implicits == null) implicits = new SafeList<Pos>();
+        expr.findImplicitThis(implicits);
+    }
+
     /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
     static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
         List<Module> modules = root.getAllReachableModules().makeCopy();
@@ -1073,6 +1090,7 @@ public final class Module {
               cx.remove("this");
               for(final ExpName n:d.names) {
                  final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.name, THIS, bound);
+                 root.implicit(f.boundingFormula);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint2!=null) disjoint2.add(f);
                  if (d.disjoint==null) continue;
@@ -1199,7 +1217,7 @@ public final class Module {
             if (x instanceof SigAST) {
                 SigAST y=(SigAST)x;
                 ch.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, 0));
-                re.add("sig "+y.realSig.label+". To make this your choice, write ("+y.realSig.label+")");
+                re.add("sig "+y.realSig.label);
             }
             else if (x instanceof FunAST) {
                 FunAST y=(FunAST)x;
@@ -1209,10 +1227,10 @@ public final class Module {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
                     ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 1) : ExprBadCall.make(pos, null, f, t, 1));
-                    re.add((f.isPred?"pred ":"fun ")+f.label+"[this]. To make this your choice, write (this.@"+f.label+")");
+                    re.add((f.isPred?"pred ":"fun this.")+f.label);
                 }
                 ch.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
-                re.add((f.isPred?"pred ":"fun ")+f.label+". To make this your choice, write (@"+f.label+")");
+                re.add((f.isPred?"pred ":"fun ")+f.label);
             }
         }
         // Within a field decl
@@ -1236,10 +1254,10 @@ public final class Module {
                     Expr x1 = ExprUnary.Op.NOOP.make(pos, f, null, 1);
                     if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
                         ch.add(THIS.join(x1));
-                        re.add("field "+f.sig.label+" <: "+f.label+". To make this your choice, write (this.("+f.sig.label+" <: @"+f.label+"))");
+                        re.add("field "+f.sig.label+" <: this."+f.label);
                     }
                     ch.add(x0);
-                    re.add("field "+f.sig.label+" <: @"+f.label+". To make this your choice, write ("+f.sig.label+" <: @"+f.label+")");
+                    re.add("field "+f.sig.label+" <: "+f.label);
                 }
              }
           }

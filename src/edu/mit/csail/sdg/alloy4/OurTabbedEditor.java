@@ -100,7 +100,7 @@ public final class OurTabbedEditor {
         /** The ScrollPane containing the text area. */
         private final JScrollPane scroll;
         /** The highlighter associated with this text area. */
-        private final Highlighter highlighter=new DefaultHighlighter();
+        private final Highlighter highlighter = new DefaultHighlighter();
         /** The filename; always nonempty, canonical, absolute, and unique among all Tab objects in this editor. */
         private String filename;
         /** True if this is associated with an actual file; false if it is still an "untitled" tab. */
@@ -654,7 +654,7 @@ public final class OurTabbedEditor {
             });
             return;
         }
-        if (clearOldHighlightsFirst) removeAllHighlights();
+        if (clearOldHighlightsFirst) { if (color==null) for(Tab t:tabs) t.text.myClearItalic(); else removeAllHighlights(); }
         if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
                 String f=Util.canon(p.filename);
@@ -673,13 +673,17 @@ public final class OurTabbedEditor {
                 }
                 int c=text().getLineStartOffset(p.y-1)+p.x-1;
                 int d=text().getLineStartOffset(p.y2-1)+p.x2-1;
-                tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
-                // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
-                text().setSelectionStart(0);
-                text().setSelectionEnd(0);
-                text().setSelectionStart(c);
-                text().setSelectionEnd(c);
-                text().requestFocusInWindow();
+                if (color==null) {
+                    tabs.get(me).text.myItalic(c, d-c+1);
+                } else {
+                    tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
+                    // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
+                    text().setSelectionStart(0);
+                    text().setSelectionEnd(0);
+                    text().setSelectionStart(c);
+                    text().setSelectionEnd(c);
+                    text().requestFocusInWindow();
+                }
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
             }
@@ -699,7 +703,7 @@ public final class OurTabbedEditor {
             });
             return;
         }
-        if (clearOldHighlightsFirst) removeAllHighlights();
+        if (clearOldHighlightsFirst) { if (color==null) for(Tab t:tabs) t.text.myClearItalic(); else removeAllHighlights(); }
         OurTextArea text=null;
         int c=0, d;
         again:
@@ -720,12 +724,16 @@ public final class OurTabbedEditor {
                 text = text();
                 c = text.getLineStartOffset(p.y-1)+p.x-1;
                 d = text.getLineStartOffset(p.y2-1)+p.x2-1;
-                tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
+                if (color==null) {
+                    tabs.get(me).text.myItalic(c, d-c+1);
+                } else {
+                    tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
+                }
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
             }
         }
-        if (text!=null) {
+        if (text!=null && color!=null) {
             // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
             text.setSelectionStart(0);
             text.setSelectionEnd(0);

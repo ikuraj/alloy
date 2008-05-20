@@ -103,6 +103,12 @@ public final class OurTextArea extends JTextPane {
     /** Clear the undo history. */
     public void myClearUndo() { doc.myClearUndo(); }
 
+    /** Apply the italic style to the given part of the document. */
+    public void myItalic(int start, int len) { doc.myItalic(start, len); }
+
+    /** Clear all existing italic style. */
+    public void myClearItalic() { doc.myClearItalic(); }
+
     /** Constructs a text area widget. */
     public OurTextArea(boolean syntaxHighlighting, String text, String fontFamily, int fontSize, int tabSize) {
         super();

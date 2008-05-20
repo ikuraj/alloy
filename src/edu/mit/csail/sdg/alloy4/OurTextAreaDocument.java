@@ -65,7 +65,16 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     private final Element root;
 
     /** The various style to use when displaying text in the text area. */
-    private final Style styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleSymbol;
+    private final Style
+      styleItalic = addStyle("i", null),
+      styleNonitalic = addStyle("n", null),
+      styleNormal = addStyle("-", null),
+      styleNumber = addStyle("0", null),
+      styleKeyword = addStyle("k", null),
+      styleComment = addStyle("c", null),
+      styleBlockComment = addStyle("b", null),
+      styleJavadocComment = addStyle("j", null),
+      styleSymbol = addStyle("+", null);
 
     /** Stores the "comment mode" at the start of each line: 0 means no comment, 1 means block comment, 2 means javadoc block comment, -1 means unknown. */
     private final List<Integer> comments = new ArrayList<Integer>();
@@ -122,7 +131,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         enabled = flag;
         comments.clear();
         if (flag) { myReapplyAll(); return; }
-        setCharacterAttributes(0, getLength(), styleNormal, true);
+        setCharacterAttributes(0, getLength(), styleNormal, false);
         pane.getInputAttributes().removeAttribute(pane.getInputAttributes());
         pane.getInputAttributes().addAttributes(styleNormal);
     }
@@ -130,18 +139,24 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     /** Construct a new OurTextAreaDocument object. */
     public OurTextAreaDocument() {
         root = getDefaultRootElement();
-        putProperty( DefaultEditorKit.EndOfLineStringProperty, "\n" );
-        styleNormal = addStyle("N", null);
-        StyleConstants.setBold      (styleNormal, false);
-        StyleConstants.setForeground(styleNormal, Color.BLACK);
-        StyleConstants.setFontFamily(styleNormal, "Monospaced");
-        StyleConstants.setFontSize  (styleNormal, 14);
-        StyleConstants.setBold      (styleSymbol         = addStyle("S", styleNormal), true);
-        StyleConstants.setForeground(styleKeyword        = addStyle("K", styleSymbol), new Color(30, 30, 168));
-        StyleConstants.setForeground(styleNumber         = addStyle("9", styleSymbol), new Color(168, 10, 10));
-        StyleConstants.setForeground(styleComment        = addStyle("0", styleNormal), new Color(10, 148, 10));
-        StyleConstants.setForeground(styleBlockComment   = addStyle("1", styleNormal), new Color(10, 148, 10));
-        StyleConstants.setForeground(styleJavadocComment = addStyle("2", styleSymbol), new Color(10, 148, 10));
+        putProperty(DefaultEditorKit.EndOfLineStringProperty, "\n");
+        StyleConstants.setUnderline(styleItalic, true);
+        StyleConstants.setUnderline(styleNonitalic, false);
+        for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleSymbol}) {
+            StyleConstants.setBold      (s, false);
+            StyleConstants.setForeground(s, Color.BLACK);
+            StyleConstants.setFontFamily(s, "Monospaced");
+            StyleConstants.setFontSize  (s, 14);
+        }
+        StyleConstants.setBold      (styleSymbol, true);
+        StyleConstants.setForeground(styleComment, new Color(10, 148, 10));
+        StyleConstants.setForeground(styleBlockComment, new Color(10, 148, 10));
+        StyleConstants.setBold      (styleKeyword, true);
+        StyleConstants.setBold      (styleNumber, true);
+        StyleConstants.setBold      (styleJavadocComment, true);
+        StyleConstants.setForeground(styleKeyword, new Color(30, 30, 168));
+        StyleConstants.setForeground(styleNumber, new Color(168, 10, 10));
+        StyleConstants.setForeground(styleJavadocComment, new Color(10, 148, 10));
     }
 
     /** Performs the action insertString() operation without touching the Undo/Redo history. */
@@ -176,6 +191,12 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
             comments.clear(); // syntax highlighting is not crucial, but if error occurred, let's clear the cache so we'll recompute the highlighting next time
         }
     }
+
+    /** Apply the italic style to the given part of the document. */
+    public void myItalic(int start, int len) { setCharacterAttributes(start, len, styleItalic, false); }
+
+    /** Clear all existing italic style. */
+    public void myClearItalic() { setCharacterAttributes(0, getLength(), styleNonitalic, false); }
 
     /** {@inheritDoc} */
     @Override public void insertString(int offset, String string, AttributeSet attr) throws BadLocationException {
@@ -316,28 +337,28 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
             if (c=='\r' || c=='\n') break;
             if (comment==0 && (c=='/' || c=='-') && i<n-1 && txt.charAt(i+1)==c) {
                 int d = txt.indexOf('\n', i);
-                setCharacterAttributes(i, d<0 ? (n-i) : (d-i), styleComment, true);
+                setCharacterAttributes(i, d<0 ? (n-i) : (d-i), styleComment, false);
                 break;
             } else if
                 ((comment==0 && c=='/' && i<n-3 && txt.charAt(i+1)=='*' && txt.charAt(i+2)=='*' && txt.charAt(i+3)!='/')
                ||(comment==0 && c=='/' && i==n-3 && txt.charAt(i+1)=='*' && txt.charAt(i+2)=='*')) {
-                setCharacterAttributes(i, 3, styleJavadocComment, true); i=i+2; comment=2;
+                setCharacterAttributes(i, 3, styleJavadocComment, false); i=i+2; comment=2;
             } else if (comment==0 && c=='/' && i<n-1 && txt.charAt(i+1)=='*') {
-                setCharacterAttributes(i, 2, styleBlockComment, true); i++; comment=1;
+                setCharacterAttributes(i, 2, styleBlockComment, false); i++; comment=1;
             } else if (comment>0 && c=='*' && i<n-1 && txt.charAt(i+1)=='/') {
-                setCharacterAttributes(i, 2, comment==1 ? styleBlockComment : styleJavadocComment, true); i++; comment=0;
+                setCharacterAttributes(i, 2, comment==1 ? styleBlockComment : styleJavadocComment, false); i++; comment=0;
             } else if (comment>0) {
                 int oldi=i; i++; while(i<n && txt.charAt(i)!='\n' && txt.charAt(i)!='*') i++;
-                setCharacterAttributes(oldi, i-oldi, comment==1 ? styleBlockComment : styleJavadocComment, true);
+                setCharacterAttributes(oldi, i-oldi, comment==1 ? styleBlockComment : styleJavadocComment, false);
                 i--;
             } else if ((c>='0' && c<='9') || myIdenStart(c)) {
                 int oldi=i; i++; while(i<n && myIden(txt.charAt(i))) i++;
                 Style s=styleNormal; if (c>='0' && c<='9') s=styleNumber; else if (myIsKeyword(txt, oldi, i-oldi)) s=styleKeyword;
-                setCharacterAttributes(oldi, i-oldi, s, true);
+                setCharacterAttributes(oldi, i-oldi, s, false);
                 i--;
             } else {
                 int oldi=i; i++; while(i<n && txt.charAt(i)!='\n' && txt.charAt(i)!='-' && txt.charAt(i)!='/' && !myIden(txt.charAt(i))) i++;
-                setCharacterAttributes(oldi, i-oldi, styleSymbol, true);
+                setCharacterAttributes(oldi, i-oldi, styleSymbol, false);
                 i--;
             }
         }
