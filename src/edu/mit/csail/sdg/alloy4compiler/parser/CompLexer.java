@@ -959,56 +959,56 @@ yyline=yycolumn=0;
           { return alloy_sym(yytext(), CompSym.CHECK       );
           }
         case 144: break;
+        case 72:
+          { String txt=yytext(); if (txt.length()>5) { txt=txt.substring(3,txt.length()-2); alloy_module.javadocs.add(new ExpName(alloy_here(txt), txt)); }
+          }
+        case 145: break;
         case 28:
           { return alloy_sym(yytext(), CompSym.AND         );
           }
-        case 145: break;
+        case 146: break;
         case 59:
           { return alloy_sym(yytext(), CompSym.SOME        );
           }
-        case 146: break;
+        case 147: break;
         case 71:
           { return alloy_sym(yytext(), CompSym.FACT        );
           }
-        case 147: break;
+        case 148: break;
         case 10:
           { return alloy_sym(yytext(), CompSym.MINUS       );
           }
-        case 148: break;
+        case 149: break;
         case 5:
           { return alloy_sym(yytext(), CompSym.LPAREN      );
           }
-        case 149: break;
+        case 150: break;
         case 62:
           { return alloy_sym(yytext(), CompSym.NONE        );
           }
-        case 150: break;
+        case 151: break;
         case 18:
           { return alloy_sym(yytext(), CompSym.LBRACKET    );
           }
-        case 151: break;
+        case 152: break;
         case 19:
           { return alloy_sym(yytext(), CompSym.RBRACKET    );
           }
-        case 152: break;
+        case 153: break;
         case 65:
           { return alloy_sym(yytext(), CompSym.ENUM        );
           }
-        case 153: break;
+        case 154: break;
         case 45:
           { return alloy_sym(yytext(), CompSym.ALL         );
           }
-        case 154: break;
+        case 155: break;
         case 80:
           { return alloy_sym(yytext(), CompSym.ABSTRACT    );
           }
-        case 155: break;
+        case 156: break;
         case 74:
           { return alloy_sym(yytext(), CompSym.ASSERT      );
-          }
-        case 156: break;
-        case 72:
-          { String txt=yytext(); alloy_module.javadocs.add(new ExpName(alloy_here(txt), txt));
           }
         case 157: break;
         case 52:
