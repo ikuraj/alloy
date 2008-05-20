@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -405,8 +406,11 @@ public abstract class Sig extends Expr {
         /** The bounding formula; it is always of the form "all x: one ThisSig | x.ThisField in y" */
         public final Expr boundingFormula;
 
+        /** List of annotations associated with this field; these annotations are ignored by Alloy Analyzer itself. */
+        public final ConstList<String> annotations;
+
         /** Constructs a new Field object. */
-        private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, ExprVar var, Expr bound) throws Err {
+        private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, ExprVar var, Expr bound, List<String> annotations) throws Err {
             super(pos, null, false, sig.type.product(bound.type), 0, 0, bound.errors);
             if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
             this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
@@ -422,6 +426,7 @@ public abstract class Sig extends Expr {
             if (boundingFormula.hasCall())
                 throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             if (bound.type.arity()>0 && bound.type.hasNoTuple()) throw new ErrorType(pos, "Cannot bind field "+label+" to the empty set or empty relation.");
+            this.annotations = ConstList.make(annotations);
         }
 
         /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
@@ -472,15 +477,16 @@ public abstract class Sig extends Expr {
      * @param label - the name of this field (it does not need to be unique)
      * @param x - a quantified variable "x: one ThisSig"
      * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in bound"
+     * @param hints - if nonnull, it contains a list of annotations to be associated with this field (these annotations are ignored by Alloy Analyzer itself)
      *
      * @throws ErrorSyntax  if the sig is one of the builtin sig
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
-    public final Field addTrickyField(Pos pos, Pos isPrivate, Pos isMeta, String label, ExprVar x, Expr bound) throws Err {
+    public final Field addTrickyField(Pos pos, Pos isPrivate, Pos isMeta, String label, ExprVar x, Expr bound, List<String> annotations) throws Err {
         bound=bound.typecheck_as_set();
         if (bound.ambiguous) bound=bound.resolve_as_set(Expr.sink);
-        final Field f=new Field(pos, isPrivate, isMeta, this, label, x, bound);
+        final Field f=new Field(pos, isPrivate, isMeta, this, label, x, bound, annotations);
         fields.add(f);
         return f;
     }
@@ -498,7 +504,7 @@ public abstract class Sig extends Expr {
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field addField(Pos pos, String label, Expr bound) throws Err {
-        return addTrickyField(pos, null, null, label, null, bound);
+        return addTrickyField(pos, null, null, label, null, bound, null);
     }
 
     /**
@@ -515,7 +521,7 @@ public abstract class Sig extends Expr {
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field addField(Pos pos, Pos isPrivate, String label, Expr bound) throws Err {
-        return addTrickyField(pos, isPrivate, null, label, null, bound);
+        return addTrickyField(pos, isPrivate, null, label, null, bound, null);
     }
 
     /**
@@ -533,6 +539,6 @@ public abstract class Sig extends Expr {
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field addField(Pos pos, Pos isPrivate, Pos isMeta, String label, Expr bound) throws Err {
-        return addTrickyField(pos, isPrivate, isMeta, label, null, bound);
+        return addTrickyField(pos, isPrivate, isMeta, label, null, bound, null);
     }
 }

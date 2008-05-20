@@ -1096,14 +1096,16 @@ public final class Module {
               Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
               for(int dj=0; dj<d.names.size(); dj++) {
+                 List<String> annotations = null;
                  final ExpName n = d.names.get(dj);
                  da = n.pos;
                  if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.appendedFact.span();
                  while (j!=null && Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
-                     // System.out.println("Sig "+s+" field "+n+" javadoc "+j); System.out.flush();
+                     if (annotations==null) annotations = new ArrayList<String>();
+                     annotations.add(j.name);
                      if (jj.hasNext()) j=jj.next(); else j=null;
                  }
-                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.name, THIS, bound);
+                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.name, THIS, bound, annotations);
                  root.implicit(f.boundingFormula);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint2!=null) disjoint2.add(f);
