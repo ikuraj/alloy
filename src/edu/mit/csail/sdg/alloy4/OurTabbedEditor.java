@@ -745,7 +745,7 @@ public final class OurTabbedEditor {
             setSelectedIndex(thisFile);
             text().setCaretPosition(thisCaret);
         }
-        text.requestFocusInWindow();
+        text().requestFocusInWindow();
         adjustLabelColor();
         parent.notifyChange();
     }
