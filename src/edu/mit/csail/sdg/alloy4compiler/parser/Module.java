@@ -1085,7 +1085,7 @@ public final class Module {
            List<Field> disjoint2 = new ArrayList<Field>();
            Iterator<ExpName> jj = oldS.javadocs.iterator();
            ExpName j = jj.hasNext() ? jj.next() : null;
-           Pos da, db;
+           Expr disjX = ExprConstant.TRUE;
            for(int di=0; di<oldS.fields.size(); di++) {
               final Decl d = oldS.fields.get(di);
               // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
@@ -1098,7 +1098,7 @@ public final class Module {
               for(int dj=0; dj<d.names.size(); dj++) {
                  List<String> annotations = null;
                  final ExpName n = d.names.get(dj);
-                 da = n.pos;
+                 Pos da = n.pos, db;
                  if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.appendedFact.span();
                  while (j!=null && Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
                      if (annotations==null) annotations = new ArrayList<String>();
@@ -1114,12 +1114,10 @@ public final class Module {
                  disjF = ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
                  disjA = disjA.plus(f);
               }
-              if (d.disjoint==null || disjF==ExprConstant.TRUE) continue;
-              if (!disjF.errors.isEmpty()) { errors=errors.join(disjF.errors); continue; }
-              String name = s + "$disjoint";
-              m.facts.put(name, disjF);
-              rep.typecheck("Fact " + name + ": " + disjF.type+"\n");
+              if (disjX==ExprConstant.TRUE) disjX=disjF; else if (disjF!=ExprConstant.TRUE) disjX=ExprBinary.Op.AND.make(Pos.UNKNOWN, null, disjF, disjX);
            }
+           errors=errors.join(disjX.errors);
+           if (disjX!=ExprConstant.TRUE && disjX.errors.isEmpty()){ m.facts.put(s+"$disjoint", disjX); rep.typecheck("Fact "+s+"$disjoint: "+disjX.type+"\n"); }
            if (s.isOne==null && disjoint2.size()>0) {
                Expr formula = null;
                ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
