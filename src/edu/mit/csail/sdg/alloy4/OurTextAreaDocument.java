@@ -111,7 +111,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     private static boolean myIdenStart(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || c=='$'; }
 
     /** Returns true if "c" can be in the middle or the end of an identifier. */
-    private static boolean myIden(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || (c>='0' && c<='9') || c=='$' || c=='\'' || c=='\"'; }
+    private static boolean myIden(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || (c>='0' && c<='9') || c=='_' || c=='$' || c=='\'' || c=='\"'; }
 
     /** Returns true if c[start..start+len-1] matches one of the reserved keyword. */
     private boolean myIsKeyword(String array, int start, int len) {
