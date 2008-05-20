@@ -703,9 +703,10 @@ public final class OurTabbedEditor {
             });
             return;
         }
+        final int thisFile = me;
         if (clearOldHighlightsFirst) { if (color==null) for(Tab t:tabs) t.text.myClearItalic(); else removeAllHighlights(); }
         OurTextArea text=null;
-        int c=0, d;
+        int c=0, d, thisCaret=text().getCaretPosition();
         again:
         for(Pos p:set) if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
@@ -741,6 +742,9 @@ public final class OurTabbedEditor {
             text.setSelectionStart(c);
             text.setSelectionEnd(c);
             text.requestFocusInWindow();
+        } else {
+            setSelectedIndex(thisFile);
+            text().setCaretPosition(thisCaret);
         }
         adjustLabelColor();
         parent.notifyChange();
