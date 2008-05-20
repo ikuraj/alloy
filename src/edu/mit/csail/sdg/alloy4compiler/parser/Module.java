@@ -219,9 +219,10 @@ public final class Module {
         private final Pos abs,lone,one,some,subsig,subset;
         private final ConstList<ExpName> parents;
         private final ConstList<Decl> fields;
-        private final Exp appendedFact;
+        private final ConstList<ExpName> javadocs;
+        private final Exp appendedFact; // never null
         private SigAST(Pos pos, Pos isPrivate, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
-            List<ExpName> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig) {
+            List<ExpName> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig, List<ExpName> javadocs) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
             this.isPrivate=isPrivate;
             this.fullname=fullname;
@@ -238,9 +239,10 @@ public final class Module {
             this.realModule=realModule;
             this.realSig=realSig;
             this.realParents=new ArrayList<SigAST>(this.parents.size());
+            this.javadocs=ConstList.make(javadocs);
         }
         private SigAST(String fullname, String name, List<ExpName> parents, Sig realSig) {
-            this(null, null, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig);
+            this(null, null, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig, null);
         }
         @Override public String toString() { return fullname; }
     }
@@ -542,7 +544,7 @@ public final class Module {
             String name=expr.name;
             dup(expr.span(), name, true);
             if (path.length()==0) {
-                SigAST newSig = addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null);
+                SigAST newSig = addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null, null);
                 if (nextIsExact) exactSigs.add(newSig);
             } else {
                 params.put(name, null);
@@ -672,7 +674,7 @@ public final class Module {
 
     /** Add a sig declaration. */
     SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate,
-    ExpName par, List<ExpName> parents, List<Decl> fields, Exp fact) throws Err {
+    ExpName par, List<ExpName> parents, List<Decl> fields, Exp fact, List<ExpName> javadocs) throws Err {
         pos = pos.merge(isAbstract).merge(isLone).merge(isOne).merge(isSome);
         status=3;
         dup(pos, name, true);
@@ -682,7 +684,7 @@ public final class Module {
             if (par.name.charAt(0)=='e') { subsig=par.span().merge(parents.get(0).span()); }
             else { subset=par.span(); for(ExpName p:parents) subset=p.span().merge(subset); }
         }
-        SigAST obj=new SigAST(pos, isPrivate, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null);
+        SigAST obj=new SigAST(pos, isPrivate, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null,javadocs);
         if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
@@ -698,8 +700,8 @@ public final class Module {
         if (parents!=null) parents = new ArrayList<ExpName>(parents);
         ExpName inOrExtend = (parents!=null && parents.size()>0) ? parents.remove(parents.size()-1) : null;
         if (inOrExtend!=null && inOrExtend.name.charAt(0)=='i') throw new ErrorSyntax(pos, "Enumeration signatures cannot derive from a subset signature.");
-        addSig(Arrays.asList(LEAF), name.pos, name.name, name.pos, null, null, null, priv, inOrExtend, parents, null, null);
-        for(ExpName a:atoms) addSig(null, a.pos, a.name, null, null, a.pos, null, priv, EXTENDS, THESE, null, null);
+        addSig(Arrays.asList(LEAF), name.pos, name.name, name.pos, null, null, null, priv, inOrExtend, parents, null, null, null);
+        for(ExpName a:atoms) addSig(null, a.pos, a.name, null, null, a.pos, null, priv, EXTENDS, THESE, null, null, null);
     }
 
     /** The given SigAST will now point to a nonnull Sig. */
@@ -928,6 +930,7 @@ public final class Module {
             Sig s=e.getValue().realSig;
             Exp f=e.getValue().appendedFact;
             if (f==null) continue;
+            if (f instanceof ExpConstant && ((ExpConstant)f).op==ExprConstant.Op.TRUE) continue;
             Expr formula;
             cx.rootsig=e.getValue();
             if (s.isOne==null) {
@@ -1080,7 +1083,11 @@ public final class Module {
            final ExpName dup = Decl.findDuplicateName(oldS.fields);
            if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.name+"\"");
            List<Field> disjoint2 = new ArrayList<Field>();
-           for(final Decl d:oldS.fields) {
+           Iterator<ExpName> jj = oldS.javadocs.iterator();
+           ExpName j = jj.hasNext() ? jj.next() : null;
+           Pos da, db;
+           for(int di=0; di<oldS.fields.size(); di++) {
+              final Decl d = oldS.fields.get(di);
               // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
               final ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
               cx.rootfield = true;
@@ -1088,7 +1095,14 @@ public final class Module {
               cx.put("this", THIS);
               Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
-              for(final ExpName n:d.names) {
+              for(int dj=0; dj<d.names.size(); dj++) {
+                 final ExpName n = d.names.get(dj);
+                 da = n.pos;
+                 if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.appendedFact.span();
+                 while (j!=null && Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
+                     // System.out.println("Sig "+s+" field "+n+" javadoc "+j); System.out.flush();
+                     if (jj.hasNext()) j=jj.next(); else j=null;
+                 }
                  final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.name, THIS, bound);
                  root.implicit(f.boundingFormula);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
@@ -1138,8 +1152,8 @@ public final class Module {
             ExpName EXTENDS = new ExpName(null, "extends");
             ExpName THIS = new ExpName(null, "univ");
             List<ExpName> THESE = Arrays.asList(THIS);
-            SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
-            SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null);
+            SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null, null);
+            SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null, null);
             metasig.topo = true;
             metasig.realParents.add(UNIVast);
             metasig.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/sig$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, false);
@@ -1151,14 +1165,14 @@ public final class Module {
             for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
                 Sig s = sig.realSig;
                 String slab = sig.name;
-                SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null);
+                SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null, null);
                 ast.topo=true;
                 ast.realParents.add(metasig);
                 ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                 sorted.add(ast);
                 hasMetaSig=true;
                 for(Field field: s.getFields()) {
-                    ast = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null);
+                    ast = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null, null);
                     ast.topo=true;
                     ast.realParents.add(metafield);
                     ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);

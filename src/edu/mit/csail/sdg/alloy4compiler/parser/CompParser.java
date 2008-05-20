@@ -9874,7 +9874,7 @@ class CUP$CompParser$actions {
           case 74: // SigIn ::=
             {
               List<ExpName> RESULT =null;
-         RESULT=null;
+         parser.alloymodule.javadocs.clear(); RESULT=null;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",58, RESULT);
             }
           return CUP$CompParser$result;
@@ -9885,7 +9885,7 @@ class CUP$CompParser$actions {
               List<ExpName> RESULT =null;
         Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         List<ExpName> x = (List<ExpName>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=x;  x.add(new ExpName(a,"in"));
+         parser.alloymodule.javadocs.clear(); RESULT=x;  x.add(new ExpName(a,"in"));
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",58, RESULT);
             }
           return CUP$CompParser$result;
@@ -9896,7 +9896,7 @@ class CUP$CompParser$actions {
               List<ExpName> RESULT =null;
         Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExpName x = (ExpName)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT=new ArrayList<ExpName>(2); RESULT.add(x); RESULT.add(new ExpName(a,"extends"));
+         parser.alloymodule.javadocs.clear(); RESULT=new ArrayList<ExpName>(2); RESULT.add(x); RESULT.add(new ExpName(a,"extends"));
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",58, RESULT);
             }
           return CUP$CompParser$result;
@@ -9982,9 +9982,13 @@ class CUP$CompParser$actions {
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Exp e = (Exp)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
 
+   if (e==null) e = new ExpConstant(o, ExprConstant.Op.TRUE, 0);
    ExpName cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
+   List<ExpName> j = parser.alloymodule.javadocs;
+   if (j!=null && j.size()>0) j=new ArrayList<ExpName>(j); else j=null;
+   parser.alloymodule.javadocs.clear();
    for(ExpName bb:b) {
-      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.name, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), cc, c, d, e);
+      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.name, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), cc, c, d, e, j);
    }
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Sig",57, RESULT);

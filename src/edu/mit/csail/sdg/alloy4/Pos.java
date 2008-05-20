@@ -110,6 +110,13 @@ public final class Pos implements Serializable {
         return new Pos(filename, x, y, x2, y2);
     }
 
+    /** Returns true if neither argument is null nor UNKNOWN, and that the ending position of "a" is before the starting position of "b". */
+    public static boolean before(Pos a, Pos b) {
+        if (a==null || a==Pos.UNKNOWN || b==null || b==Pos.UNKNOWN) return false;
+        else if (a.filename!=b.filename && !a.filename.equals(b.filename)) return false;
+        else return a.y2<b.y || (a.y2==b.y && a.x2<b.x);
+    }
+
     /**
      * Two Pos objects are equal if the filename x y x2 y2 are the same.
      */
