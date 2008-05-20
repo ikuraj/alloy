@@ -682,8 +682,8 @@ public final class OurTabbedEditor {
                     text().setSelectionEnd(0);
                     text().setSelectionStart(c);
                     text().setSelectionEnd(c);
-                    text().requestFocusInWindow();
                 }
+                text().requestFocusInWindow();
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
             }
@@ -741,11 +741,11 @@ public final class OurTabbedEditor {
             text.setSelectionEnd(0);
             text.setSelectionStart(c);
             text.setSelectionEnd(c);
-            text.requestFocusInWindow();
         } else {
             setSelectedIndex(thisFile);
             text().setCaretPosition(thisCaret);
         }
+        text.requestFocusInWindow();
         adjustLabelColor();
         parent.notifyChange();
     }
