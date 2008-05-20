@@ -140,8 +140,8 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     public OurTextAreaDocument() {
         root = getDefaultRootElement();
         putProperty(DefaultEditorKit.EndOfLineStringProperty, "\n");
-        StyleConstants.setBackground(styleItalic, new Color(255, 230, 230));
-        StyleConstants.setBackground(styleNonitalic, Color.WHITE);
+        StyleConstants.setItalic(styleItalic, true);
+        StyleConstants.setItalic(styleNonitalic, false);
         for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleSymbol}) {
             StyleConstants.setBold      (s, false);
             StyleConstants.setForeground(s, Color.BLACK);
