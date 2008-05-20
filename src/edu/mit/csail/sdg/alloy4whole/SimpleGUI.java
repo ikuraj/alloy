@@ -1495,7 +1495,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             Util.close(ois);
             Util.close(is);
         }
-        text.highlight(list, null, true);
+        text.highlight(list, null, true, false);
     }
 
     /** The color to use for functions/predicate/paragraphs that contains part of the unsat core. */
@@ -1534,9 +1534,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
                 Util.close(is);
             }
             text.removeAllHighlights();
-            text.highlight(hCore.b, subCoreColor, false);
-            text.highlight(hCore.a, coreColor, false);
-            if (1==2) text.highlight(lCore, coreColor, false); // we are currently not highlighting the lowlevel core
+            text.highlight(hCore.b, subCoreColor, false, true);
+            text.highlight(hCore.a, coreColor, false, true);
+            if (false) text.highlight(lCore, coreColor, false, true); // we are currently not highlighting the lowlevel core
         }
         if (arg.startsWith("POS: ")) {
             Scanner s=new Scanner(arg.substring(5));

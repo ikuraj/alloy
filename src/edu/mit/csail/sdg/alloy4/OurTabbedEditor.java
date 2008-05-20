@@ -696,10 +696,10 @@ public final class OurTabbedEditor {
      * Highlights the text editor, based on the location information in the set of Pos objects.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
-    public void highlight(final Iterable<Pos> set, final Color color, final boolean clearOldHighlightsFirst) {
+    public void highlight(final Iterable<Pos> set, final Color color, final boolean clearOldHighlightsFirst, final boolean loadFiles) {
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() {
-                public final void run() { highlight(set, color, clearOldHighlightsFirst); }
+                public final void run() { highlight(set, color, clearOldHighlightsFirst, loadFiles); }
             });
             return;
         }
@@ -711,6 +711,7 @@ public final class OurTabbedEditor {
             try {
                 String f=Util.canon(p.filename);
                 if (!switchToFilename(f)) {
+                    if (!loadFiles) continue;
                     String content;
                     try {
                         content=Util.readAll(f);

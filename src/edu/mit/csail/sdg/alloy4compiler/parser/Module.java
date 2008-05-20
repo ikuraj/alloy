@@ -1048,8 +1048,8 @@ public final class Module {
 
     /** Records the list of all occurrences "implicit this" and store them into the "this.implicits" field. */
     private void implicit(Expr expr) {
-        if (implicits == null) implicits = new SafeList<Pos>();
-        expr.findImplicitThis(implicits);
+        if (world.implicits == null) world.implicits = new SafeList<Pos>();
+        expr.findImplicitThis(world.implicits);
     }
 
     /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
