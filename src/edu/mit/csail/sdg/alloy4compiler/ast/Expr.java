@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -36,7 +35,6 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.JoinableList;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
@@ -260,27 +258,6 @@ public abstract class Expr {
         boolean ans = !ambiguous && errors.isEmpty();
         if (ans) { try { ans=accept(hasCall)!=null; } catch(Err ex) { ans=false; } } // This exception should not occur
         return ans;
-    }
-
-    /** Add all occurrences of IMPLICIT THIS to the given list. */
-    public void findImplicitThis(final SafeList<Pos> ans) {
-        final VisitQuery findImplicitThis = new VisitQuery() {
-            @Override public Object visit(ExprCall x) throws Err {
-                if (x.extraWeight>0) ans.add(x.pos);
-                for(Expr y:x.args) y.accept(this);
-                return null;
-            }
-            @Override public Object visit(ExprBinary x) throws Err {
-                if (x.right instanceof ExprUnary && x.right.weight>0) {
-                    ExprUnary u = (ExprUnary)(x.right);
-                    if (u.op == ExprUnary.Op.NOOP && u.sub instanceof Field) ans.add(u.pos);
-                }
-                x.left.accept(this);
-                x.right.accept(this);
-                return null;
-            }
-        };
-        try { accept(findImplicitThis); } catch(Err er) { } // exception should not happen
     }
 
     /** Returns true if the node is well-typed, unambiguous, and contains the given variable. */

@@ -654,7 +654,7 @@ public final class OurTabbedEditor {
             });
             return;
         }
-        if (clearOldHighlightsFirst) { if (color==null) for(Tab t:tabs) t.text.myClearItalic(); else removeAllHighlights(); }
+        if (clearOldHighlightsFirst) removeAllHighlights();
         if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
                 String f=Util.canon(p.filename);
@@ -673,16 +673,12 @@ public final class OurTabbedEditor {
                 }
                 int c=text().getLineStartOffset(p.y-1)+p.x-1;
                 int d=text().getLineStartOffset(p.y2-1)+p.x2-1;
-                if (color==null) {
-                    tabs.get(me).text.myItalic(c, d-c+1);
-                } else {
-                    tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
-                    // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
-                    text().setSelectionStart(0);
-                    text().setSelectionEnd(0);
-                    text().setSelectionStart(c);
-                    text().setSelectionEnd(c);
-                }
+                tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
+                // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
+                text().setSelectionStart(0);
+                text().setSelectionEnd(0);
+                text().setSelectionStart(c);
+                text().setSelectionEnd(c);
                 text().requestFocusInWindow();
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
@@ -696,23 +692,21 @@ public final class OurTabbedEditor {
      * Highlights the text editor, based on the location information in the set of Pos objects.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
-    public void highlight(final Iterable<Pos> set, final Color color, final boolean clearOldHighlightsFirst, final boolean loadFiles) {
+    public void highlight(final Iterable<Pos> set, final Color color, final boolean clearOldHighlightsFirst) {
         if (!SwingUtilities.isEventDispatchThread()) {
             OurUtil.invokeAndWait(new Runnable() {
-                public final void run() { highlight(set, color, clearOldHighlightsFirst, loadFiles); }
+                public final void run() { highlight(set, color, clearOldHighlightsFirst); }
             });
             return;
         }
-        final int thisFile = me;
-        if (clearOldHighlightsFirst) { if (color==null) for(Tab t:tabs) t.text.myClearItalic(); else removeAllHighlights(); }
+        if (clearOldHighlightsFirst) removeAllHighlights();
         OurTextArea text=null;
-        int c=0, d, thisCaret=text().getCaretPosition();
+        int c=0, d;
         again:
         for(Pos p:set) if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
                 String f=Util.canon(p.filename);
                 if (!switchToFilename(f)) {
-                    if (!loadFiles) continue;
                     String content;
                     try {
                         content=Util.readAll(f);
@@ -726,24 +720,17 @@ public final class OurTabbedEditor {
                 text = text();
                 c = text.getLineStartOffset(p.y-1)+p.x-1;
                 d = text.getLineStartOffset(p.y2-1)+p.x2-1;
-                if (color==null) {
-                    tabs.get(me).text.myItalic(c, d-c+1);
-                } else {
-                    tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
-                }
+                tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
             }
         }
-        if (text!=null && color!=null) {
+        if (text!=null) {
             // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
             text.setSelectionStart(0);
             text.setSelectionEnd(0);
             text.setSelectionStart(c);
             text.setSelectionEnd(c);
-        } else {
-            setSelectedIndex(thisFile);
-            text().setCaretPosition(thisCaret);
         }
         text().requestFocusInWindow();
         adjustLabelColor();

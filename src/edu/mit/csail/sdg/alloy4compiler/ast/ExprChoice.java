@@ -108,7 +108,7 @@ public final class ExprChoice extends Expr {
         long weight=0;
         for(Expr x:choices) {
             type=x.type.merge(type);
-            if (first || weight<x.weight) if (x.type!=EMPTY) { weight=x.weight; first=false; }
+            if (first || weight>x.weight) if (x.type!=EMPTY) { weight=x.weight; first=false; }
         }
         return new ExprChoice(pos, choices, reasons, type, weight);
     }
@@ -136,7 +136,7 @@ public final class ExprChoice extends Expr {
         if (ch.size()==0 && Type.INT2SIGINT && t.hasArity(1)) {
             for(int i=0; i<choices.size(); i++) if (choices.get(i).type.is_int) { ch.add(choices.get(i).cast2sigint()); re.add(reasons.get(i)); }
         }
-        // If too many, then keep the choices with the largest weight
+        // If too many, then keep the choices with the smallest weight
         if (ch.size()>1) {
             List<Expr> ch2 = new ArrayList<Expr>(ch.size());
             List<String> re2 = new ArrayList<String>(ch.size());
@@ -144,7 +144,7 @@ public final class ExprChoice extends Expr {
             for(int i=0; i<ch.size(); i++) {
                 Expr c = ch.get(i);
                 String r = re.get(i);
-                if (ch2.size()>0 && c.weight<w) continue; else if (ch2.size()==0 || c.weight>w) {ch2.clear(); re2.clear(); w=c.weight;}
+                if (ch2.size()>0 && c.weight>w) continue; else if (ch2.size()==0 || c.weight<w) {ch2.clear(); re2.clear(); w=c.weight;}
                 ch2.add(c);
                 re2.add(r);
             }

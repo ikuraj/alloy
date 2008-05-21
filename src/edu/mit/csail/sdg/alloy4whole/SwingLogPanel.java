@@ -116,9 +116,6 @@ final class SwingLogPanel {
     /** This defines the escape code for DECLARE_INSTANCE (see Alloy4 Developer's Guide). */
     public static final byte DECLARE_INSTANCE=31;
 
-    /** This defines the escape code for DECLARE_IMPLICIT (see Alloy4 Developer's Guide). */
-    public static final byte DECLARE_IMPLICIT=18;
-
     /** This stores the serialized writings that are not yet processed. */
     private byte[] escSb = new byte[65536];
     private int escSn = 0;
@@ -186,7 +183,6 @@ final class SwingLogPanel {
                 else if (c==LINK) logLink(txt,escLink);
                 else if (c==DELETE_ON_EXIT) (new File(txt)).deleteOnExit();
                 else if (c==DECLARE_INSTANCE) handler.doSetLatest(txt);
-                else if (c==DECLARE_IMPLICIT) handler.doItatlic(txt);
                 else if (c==DIVIDER) { log(txt); logDivider(); }
                 else if (c==SAVE1) { log(txt); escLength3=(escLength2=(escLength1=getLength())); }
                 else if (c==RESTORE1) { log(txt); setLength(escLength1); }

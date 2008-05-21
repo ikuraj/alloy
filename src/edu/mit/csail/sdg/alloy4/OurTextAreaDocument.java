@@ -66,8 +66,6 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
 
     /** The various style to use when displaying text in the text area. */
     private final Style
-      styleItalic = addStyle("i", null),
-      styleNonitalic = addStyle("n", null),
       styleNormal = addStyle("-", null),
       styleNumber = addStyle("0", null),
       styleKeyword = addStyle("k", null),
@@ -140,8 +138,6 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     public OurTextAreaDocument() {
         root = getDefaultRootElement();
         putProperty(DefaultEditorKit.EndOfLineStringProperty, "\n");
-        StyleConstants.setItalic(styleItalic, true);
-        StyleConstants.setItalic(styleNonitalic, false);
         for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleSymbol}) {
             StyleConstants.setBold      (s, false);
             StyleConstants.setForeground(s, Color.BLACK);
@@ -191,12 +187,6 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
             comments.clear(); // syntax highlighting is not crucial, but if error occurred, let's clear the cache so we'll recompute the highlighting next time
         }
     }
-
-    /** Apply the italic style to the given part of the document. */
-    public void myItalic(int start, int len) { setCharacterAttributes(start, len, styleItalic, false); }
-
-    /** Clear all existing italic style. */
-    public void myClearItalic() { setCharacterAttributes(0, getLength(), styleNonitalic, false); }
 
     /** {@inheritDoc} */
     @Override public void insertString(int offset, String string, AttributeSet attr) throws BadLocationException {

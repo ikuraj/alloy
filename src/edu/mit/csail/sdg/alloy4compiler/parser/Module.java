@@ -191,14 +191,16 @@ public final class Module {
         /** Only initialized by typechecker. */ private Func realFunc=null;
         /** Only initialized by typechecker. */ private Expr realFormula=null;
         /** Whether it is private.           */ private final Pos isPrivate;
+        /** The original module.             */ private final Module realModule;
         /** The original position.           */ private final Pos pos;
         /** The short name.                  */ private final String name;
         /** The parameters.                  */ private final ConstList<Decl> params;
         /** The return type.                 */ private final Exp returnType;
         /** The body.                        */ private final Exp body;
-        private FunAST(Pos pos, Pos isPrivate, String name, List<Decl> params, Exp returnType, Exp body) {
+        private FunAST(Pos pos, Pos isPrivate, Module realModule, String name, List<Decl> params, Exp returnType, Exp body) {
             this.pos=pos;
             this.isPrivate=isPrivate;
+            this.realModule=realModule;
             this.name=name; this.params=ConstList.make(params); this.returnType=returnType; this.body=body;
         }
         @Override public String toString() { return name; }
@@ -319,7 +321,7 @@ public final class Module {
     /** The list of javadoc comments in this module. */
     final List<ExpName> javadocs = new ArrayList<ExpName>();
 
-    /** The current name resolution mode (0=pure) (1=old) (2=new) */
+    /** The current name resolution mode (0=pure) (1=Alloy 4.1.3 and older) (2=new) */
     int resolution = 2;
 
     /** Each func name is mapped to a nonempty list of FunAST objects. */
@@ -783,7 +785,7 @@ public final class Module {
         dup(p, n, false);
         ExpName dup = Decl.findDuplicateName(decls);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
-        FunAST ans = new FunAST(p, isPrivate, n, decls, t, v);
+        FunAST ans = new FunAST(p, isPrivate, this, n, decls, t, v);
         SafeList<FunAST> list = funcs.get(n);
         if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
         list.add(ans);
@@ -801,7 +803,7 @@ public final class Module {
             boolean err=false;
             for(Decl d:f.params) {
                 Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
-                if (!val.errors.isEmpty()) { err=true; errors = errors.join(val.errors); } else { implicit(val); }
+                if (!val.errors.isEmpty()) { err=true; errors = errors.join(val.errors); }
                 for(ExpName n: d.names) {
                     ExprVar v = ExprVar.make(n.span(), n.name, val);
                     cx.put(n.name, v);
@@ -812,7 +814,7 @@ public final class Module {
             Expr ret = null;
             if (f.returnType!=null) {
                 ret = f.returnType.check(cx, warns).resolve_as_set(warns);
-                if (!ret.errors.isEmpty()) { err=true; errors=errors.join(ret.errors); } else { implicit(ret); }
+                if (!ret.errors.isEmpty()) { err=true; errors=errors.join(ret.errors); }
             }
             if (err) continue;
             try {
@@ -844,7 +846,6 @@ public final class Module {
             if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
             errors = errors.join(newBody.errors);
             if (!newBody.errors.isEmpty()) continue;
-            implicit(newBody);
             try { ff.setBody(newBody); } catch(Err er) {errors=errors.append(er); continue;}
             if (ff.returnDecl.type.hasTuple() && newBody.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
                 warns.add(new ErrorWarning(ff.getBody().span(),
@@ -885,7 +886,6 @@ public final class Module {
             if (x instanceof Expr) expr=(Expr)x;
             if (x instanceof Exp) {
                 expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
-                implicit(expr);
                 if (expr.errors.isEmpty())
                    e.setValue(ExprVar.make(expr.span(), (path.length()==0?"this/":(path+"/"))+e.getKey(), expr));
             }
@@ -927,7 +927,7 @@ public final class Module {
                 if (expr.errors.isEmpty()) e.setValue(expr);
             }
             if (expr.errors.size()>0) errors=errors.join(expr.errors);
-            else { implicit(expr); rep.typecheck("Fact " + e.getKey() + ": " + expr.type+"\n"); }
+            else { rep.typecheck("Fact " + e.getKey() + ": " + expr.type+"\n"); }
         }
         for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
             Sig s=e.getValue().realSig;
@@ -947,7 +947,6 @@ public final class Module {
             cx.remove("this");
             if (formula.errors.size()>0) { errors=errors.join(formula.errors); continue; }
             facts.put(s.toString()+"$fact", formula);
-            implicit(formula);
             rep.typecheck("Fact "+s+"$fact: " + formula.type+"\n");
         }
         return errors;
@@ -1044,20 +1043,6 @@ public final class Module {
 
     //============================================================================================================================//
 
-    /** Records the list of all occurrences "implicit this" */
-    private SafeList<Pos> implicits = null;
-
-    /** Return a copy of the list of all occurrences of "implicit this". */
-    public SafeList<Pos> implicits() {
-        if (world.implicits!=null) return world.implicits.dup(); else return (new SafeList<Pos>()).dup();
-    }
-
-    /** Records the list of all occurrences "implicit this" and store them into the "this.implicits" field. */
-    private void implicit(Expr expr) {
-        if (world.implicits == null) world.implicits = new SafeList<Pos>();
-        expr.findImplicitThis(world.implicits);
-    }
-
     /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
     static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
         List<Module> modules = root.getAllReachableModules().makeCopy();
@@ -1109,7 +1094,6 @@ public final class Module {
                      if (jj.hasNext()) j=jj.next(); else j=null;
                  }
                  final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.name, THIS, bound, annotations);
-                 root.implicit(f.boundingFormula);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint2!=null) disjoint2.add(f);
                  if (d.disjoint==null) continue;
@@ -1236,20 +1220,30 @@ public final class Module {
         for(Object x: ans) {
             if (x instanceof SigAST) {
                 SigAST y=(SigAST)x;
-                ch2.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, 0));
+                ch2.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, (resolution==1 && y.realModule!=this) ? 1000 : 0));
                 re2.add("sig "+y.realSig.label);
             }
             else if (x instanceof FunAST) {
-                FunAST y=(FunAST)x;
+                FunAST y = (FunAST)x;
                 Func f = y.realFunc;
                 int fn = f.params.size();
-                if (resolution!=0 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
+                int penalty = (y.realModule==this ? 0 : 1000); // penalty of 1000
+                if (resolution==1 && fn>0 && rootsig!=null && THIS!=null && THIS.type.hasArity(1) && f.params.get(0).type.intersects(THIS.type)) {
+                    // If we're inside a sig, and there is a unary variable bound to "this",
+                    // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
+                    ConstList<Expr> t = Util.asList(THIS);
+                    ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 1+penalty) : ExprBadCall.make(pos, null, f, t, 1+penalty)); // penalty of 1
+                    re.add((f.isPred?"pred this.":"fun this.")+f.label);
+                } else if (resolution==1) {
+                    ch.add(fn==0 ? ExprCall.make(pos, null, f, null, penalty) : ExprBadCall.make(pos, null, f, null, penalty));
+                    re.add((f.isPred?"pred ":"fun ")+f.label);
+                } else if (resolution==2 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
                     usedThis = true;
                     ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 0) : ExprBadCall.make(pos, null, f, t, 0));
-                    re.add((f.isPred?"pred ":"fun this.")+f.label);
-                } else {
+                    re.add((f.isPred?"pred this.":"fun this.")+f.label);
+                } else if (resolution!=1) {
                     ch2.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
                     re2.add((f.isPred?"pred ":"fun ")+f.label);
                 }
@@ -1271,21 +1265,32 @@ public final class Module {
              fi++;
              if (fi<fn && (m==this || d.isPrivate==null) && label.name.equals(name)) {
                 Field f=s.getValue().realSig.getFields().get(fi);
-                if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
-                    Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
-                    if (resolution!=0 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
-                        ch.add(THIS.join(x0));
-                        re.add("field "+f.sig.label+" <: this."+f.label);
-                        usedThis = true;
-                    } else {
-                        ch2.add(x0);
-                        re2.add("field "+f.sig.label+" <: "+f.label);
-                    }
+                if (resolution==1) {
+                   Expr x=null;
+                   int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
+                   if (rootsig==null)
+                      { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); }
+                   else if (rootsig.realSig.isSameOrDescendentOf(f.sig))
+                      { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
+                   else if (!rootfield)
+                      { x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); } // penalty of 1
+                   if (x!=null) { ch.add(x); re.add("field "+f.sig.label+" <: "+f.label); }
+                } else if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
+                   Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
+                   if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
+                       ch.add(THIS.join(x0));
+                       re.add("field "+f.sig.label+" <: this."+f.label);
+                       usedThis = true;
+                   } else {
+                       ch2.add(x0);
+                       re2.add("field "+f.sig.label+" <: "+f.label);
+                   }
                 }
              }
           }
         }
         if (resolution==0) { ch.addAll(ch2); re.addAll(re2); }
+        if (resolution==1) { ch.addAll(ch2); re.addAll(re2); }
         if (resolution==2) { if (!usedThis) {ch.addAll(ch2); re.addAll(re2);} }
         return null;
     }

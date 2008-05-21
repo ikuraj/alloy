@@ -25,7 +25,6 @@ package edu.mit.csail.sdg.alloy4whole;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.BOLD;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.CLICK;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.DECLARE_INSTANCE;
-import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.DECLARE_IMPLICIT;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.DELETE_ON_EXIT;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.FLUSH;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.INDENTLONG;
@@ -117,10 +116,6 @@ final class SimpleReporter extends A4Reporter {
     /** Tell the GUI the filename of the the most recently generated XML solution. */
     private void declareInstance(String filename) {
         if (out!=null) { out.printf("%c%s%c", FLUSH, filename, DECLARE_INSTANCE); out.flush(); }
-    }
-
-    private void declareImplicit(String argument) {
-        if (out!=null) { out.printf("%c%s%c", FLUSH, argument, DECLARE_IMPLICIT); out.flush(); }
     }
 
     /** Tell the GUI to highlight the text corresponding to the given Pos object. */
@@ -258,24 +253,6 @@ final class SimpleReporter extends A4Reporter {
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
         final Module world = CompUtil.parseEverything_fromFile(rep, bundleCache, rep.mainAlloyFileName);
-        if (true) {
-            String corefilename=tempdir+File.separatorChar+"this.pos";
-            OutputStream fs=null;
-            ObjectOutputStream os=null;
-            try {
-                fs=new FileOutputStream(corefilename);
-                os=new ObjectOutputStream(fs);
-                os.writeObject(world.implicits());
-                Util.close(os);
-                Util.close(fs);
-                rep.declareImplicit(corefilename);
-            } catch(Throwable ex) {
-                rep.declareImplicit("");
-            } finally {
-                Util.close(os);
-                Util.close(fs);
-            }
-        }
         /*
         if (1==1) {
             for(Pair<String,Expr> p: world.getAllAssertions()) {
