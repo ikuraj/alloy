@@ -25,13 +25,17 @@ sig ReconName extends Name {
    p_children: set Name,
    first_p_child, last_p_child: lone Name,
    prev_p_child: (p_children - first_p_child) -> p_children
-}{
-  p_children = ChildrenAB[Ain, Bin, this]
-  first_p_child = { pc: p_children | p_children in (pc + @nexts[pc]) }
-  last_p_child = { pc: p_children | p_children in (pc + @prevs[pc]) }
-  all p_child: p_children - first_p_child | {
-    let earlierChildren = @prevs[p_child] & p_children |
-       p_child.prev_p_child = { earlierChild: earlierChildren | earlierChildren in (earlierChild + @prevs[earlierChild]) }
+}
+
+fact {
+  all x: ReconName {
+     x.p_children = ChildrenAB[x.Ain, x.Bin, x]
+     x.first_p_child = { pc: x.p_children | x.p_children in (pc + nexts[pc]) }
+     x.last_p_child = { pc: x.p_children | x.p_children in (pc + prevs[pc]) }
+     all p_child: x.p_children - x.first_p_child | {
+       let earlierChildren = prevs[p_child] & x.p_children |
+          p_child . (x.prev_p_child) = { earlierChild: earlierChildren | earlierChildren in (earlierChild + @prevs[earlierChild]) }
+     }
   }
 }
 

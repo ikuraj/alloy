@@ -322,7 +322,7 @@ public final class Module {
     final List<ExpName> javadocs = new ArrayList<ExpName>();
 
     /** The current name resolution mode (0=pure) (1=Alloy 4.1.3 and older) (2=new) */
-    int resolution = 2;
+    int resolution = 1;
 
     /** Each func name is mapped to a nonempty list of FunAST objects. */
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
@@ -1234,10 +1234,12 @@ public final class Module {
                     ConstList<Expr> t = Util.asList(THIS);
                     ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 1+penalty) : ExprBadCall.make(pos, null, f, t, 1+penalty)); // penalty of 1
                     re.add((f.isPred?"pred this.":"fun this.")+f.label);
-                } else if (resolution==1) {
+                }
+                if (resolution==1) {
                     ch.add(fn==0 ? ExprCall.make(pos, null, f, null, penalty) : ExprBadCall.make(pos, null, f, null, penalty));
                     re.add((f.isPred?"pred ":"fun ")+f.label);
-                } else if (resolution==2 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
+                }
+                if (resolution==2 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
                     usedThis = true;
