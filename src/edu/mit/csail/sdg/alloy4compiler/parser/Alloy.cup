@@ -508,8 +508,10 @@ nonterminal Pos                        Vis;
 
 //===========================================================================//
 
-Spec ::= Spec MODULE:o Name:n                                                  {: nod(n);         parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
-Spec ::= Spec MODULE:o Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b); parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
+Spec ::= Spec MODULE:o               Name:n                                                  {: nod(n);                                              parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
+Spec ::= Spec MODULE:o               Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b);                                      parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
+Spec ::= Spec MODULE:o HASH NUMBER:i Name:n                                                  {: nod(n);         parser.alloymodule.resolution=i.num; parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
+Spec ::= Spec MODULE:o HASH NUMBER:i Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b); parser.alloymodule.resolution=i.num; parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                                              {: nod(a);         parser.alloymodule.addOpen(o.merge(a.pos), p, a, null, null); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                               AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, null, c);    :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c                {: nod(a);         parser.alloymodule.addOpen(o.merge(c),     p, a, b,    null); :};

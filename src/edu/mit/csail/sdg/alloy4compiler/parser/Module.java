@@ -319,6 +319,9 @@ public final class Module {
     /** The list of javadoc comments in this module. */
     final List<ExpName> javadocs = new ArrayList<ExpName>();
 
+    /** The current name resolution mode (0=pure) (1=old) (2=new) */
+    int resolution = 2;
+
     /** Each func name is mapped to a nonempty list of FunAST objects. */
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
 
@@ -1240,7 +1243,7 @@ public final class Module {
                 FunAST y=(FunAST)x;
                 Func f = y.realFunc;
                 int fn = f.params.size();
-                if (f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
+                if (resolution!=0 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
                     usedThis = true;
@@ -1270,7 +1273,7 @@ public final class Module {
                 Field f=s.getValue().realSig.getFields().get(fi);
                 if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
                     Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
-                    if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
+                    if (resolution!=0 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
                         ch.add(THIS.join(x0));
                         re.add("field "+f.sig.label+" <: this."+f.label);
                         usedThis = true;
@@ -1282,7 +1285,8 @@ public final class Module {
              }
           }
         }
-        if (!usedThis) { ch.addAll(ch2); re.addAll(re2); }
+        if (resolution==0) { ch.addAll(ch2); re.addAll(re2); }
+        if (resolution==2) { if (!usedThis) {ch.addAll(ch2); re.addAll(re2);} }
         return null;
     }
 }
