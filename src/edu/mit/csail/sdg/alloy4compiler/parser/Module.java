@@ -1227,11 +1227,14 @@ public final class Module {
         }
         final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1, name) : getRawNQS(this, fun?5:1, name);
         final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
+        final List<Expr> ch2 = new ArrayList<Expr>();
+        final List<String> re2 = new ArrayList<String>();
+        boolean usedThis = false;
         for(Object x: ans) {
             if (x instanceof SigAST) {
                 SigAST y=(SigAST)x;
-                ch.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, 0));
-                re.add("sig "+y.realSig.label);
+                ch2.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, 0));
+                re2.add("sig "+y.realSig.label);
             }
             else if (x instanceof FunAST) {
                 FunAST y=(FunAST)x;
@@ -1240,11 +1243,13 @@ public final class Module {
                 if (f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
-                    ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 1) : ExprBadCall.make(pos, null, f, t, 1));
+                    usedThis = true;
+                    ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 0) : ExprBadCall.make(pos, null, f, t, 0));
                     re.add((f.isPred?"pred ":"fun this.")+f.label);
+                } else {
+                    ch2.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
+                    re2.add((f.isPred?"pred ":"fun ")+f.label);
                 }
-                ch.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
-                re.add((f.isPred?"pred ":"fun ")+f.label);
             }
         }
         // Within a field decl
@@ -1265,17 +1270,19 @@ public final class Module {
                 Field f=s.getValue().realSig.getFields().get(fi);
                 if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
                     Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
-                    Expr x1 = ExprUnary.Op.NOOP.make(pos, f, null, 1);
                     if (THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
-                        ch.add(THIS.join(x1));
+                        ch.add(THIS.join(x0));
                         re.add("field "+f.sig.label+" <: this."+f.label);
+                        usedThis = true;
+                    } else {
+                        ch2.add(x0);
+                        re2.add("field "+f.sig.label+" <: "+f.label);
                     }
-                    ch.add(x0);
-                    re.add("field "+f.sig.label+" <: "+f.label);
                 }
              }
           }
         }
+        if (!usedThis) { ch.addAll(ch2); re.addAll(re2); }
         return null;
     }
 }

@@ -46,7 +46,7 @@ sig Interface {
    phenomena : set Phenomena
 }
 {
-   #domain > 1
+   #(this.@domain) > 1
 }
 
 fact {
@@ -85,15 +85,13 @@ sig Frame {
 {
    disj[machine,given,designed]
    domain =  machine + given + designed
-    // I deliberately put both forms here to regression test the Alloy4 typechecker
    phenomena = interface.@phenomena + requirement.(refers + constrains)
-   phenomena = interface.phenomena + requirement.(refers + constrains)
+   phenomena = interface.@phenomena + requirement.(refers + constrains)
 }
 
 fact {
   all x:Frame | {
-     // I deliberately put both forms here to regression test the Alloy4 typechecker
-     x.phenomena = x.interface.@phenomena + x.requirement.(refers + constrains)
+     x.phenomena = x.interface.phenomena + x.requirement.(refers + constrains)
      x.phenomena = x.interface.phenomena + x.requirement.(refers + constrains)
   }
 }
@@ -110,7 +108,7 @@ sig FrameDomain extends Domain {
 {
     no phenomena & inPhenomena
     inPhenomena = { p : Phenomena | p.affects = this}
-    outPhenomena = { p : phenomena | some p.affects }
+    outPhenomena = { p : this.@phenomena | some p.affects }
     refPhenomena =  phenomena - outPhenomena
 }
 
@@ -165,7 +163,7 @@ fact {
 
 sig ContextDiagram extends Frame{}
 {
-   no phenomena
+   no this.@phenomena
 }
 
 sig ProblemFrame extends Frame {}

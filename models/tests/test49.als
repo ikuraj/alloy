@@ -77,14 +77,14 @@ fact {
             (Checkin + Checkout).allows [occ]
 }
 
-pred HotelEvent.allows (field: univ -> univ -> Time) {
-    all e: HotelEvent | field.(e.pre) = field.(e.post) or e in this
+pred allows (he: HotelEvent, field: univ -> univ -> Time) {
+    all e: HotelEvent | field.(e.pre) = field.(e.post) or e in he
     }
 pred canChangeIn (field: univ -> univ -> Time, events: set HotelEvent) {
     all e: HotelEvent | field.(e.pre) = field.(e.post) or e in events
     }
-pred HotelEvent.allows (field: univ -> Time) {
-    all e: HotelEvent | field.(e.pre) = field.(e.post) or e in this
+pred allows (he: HotelEvent, field: univ -> Time) {
+    all e: HotelEvent | field.(e.pre) = field.(e.post) or e in he
     }
 pred canChangeIn (field: univ -> Time, events: set HotelEvent) {
     all e: HotelEvent | field.(e.pre) = field.(e.post) or e in events

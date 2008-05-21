@@ -63,79 +63,79 @@ pred allExistNoDuplicates {
 }
 
 /* returns element at the given index */
-fun Seq.at [i: SeqIdx]: lone elem { i.(this.seqElems) }
+fun at [s: Seq, i: SeqIdx]: lone elem { i.(s.seqElems) }
 
 /* returns all the elements in this sequence */
-fun Seq.elems: set elem { SeqIdx.(this.seqElems) }
+fun elems [s: Seq]: set elem { SeqIdx.(s.seqElems) }
 
 /* returns the first element in the sequence */
-fun Seq.first : lone elem { this.at[ord/first] }
+fun first [s:Seq]: lone elem { s.at[ord/first] }
 
 /* returns the last element in the sequence */
-fun Seq.last : lone elem { this.at[this.lastIdx] }
+fun last [s:Seq]: lone elem { s.at[s.lastIdx] }
 
 /*
  * true if the argument is the "cdr" of this sequence
  * false if this sequence is empty
  */
-pred Seq.rest [r: Seq] {
-   !this.isEmpty
-   all i: SeqIdx | r.at[i] = this.at[ord/next[i]]
+pred rest [s, r: Seq] {
+   !s.isEmpty
+   all i: SeqIdx | r.at[i] = s.at[ord/next[i]]
 }
 
 /* true if the sequence is empty */
-pred Seq.isEmpty { no this.elems }
+pred isEmpty [s:Seq] { no s.elems }
 
 /* true if this sequence has duplicates */
-pred Seq.hasDups { # elems[this] < # inds[this] }
+pred hasDups [s:Seq] { # elems[s] < # inds[s] }
 
 /* returns all the indices occupied by this sequence */
-fun Seq.inds : set SeqIdx { elem.~(this.seqElems) }
+fun inds [s:Seq] : set SeqIdx { elem.~(s.seqElems) }
 
 /* returns last index occupied by this sequence */
-fun Seq.lastIdx: lone SeqIdx { ord/max[this.inds] }
+fun lastIdx [s:Seq] : lone SeqIdx { ord/max[s.inds] }
 
 /*
  * returns the index after the last index
  * if this sequence is empty, returns the first index,
  * if this sequence is full, returns empty set
  */
-fun Seq.afterLastIdx : lone SeqIdx {
-  ord/min[SeqIdx - this.inds]
+fun afterLastIdx [s:Seq] : lone SeqIdx {
+  ord/min[SeqIdx - s.inds]
 }
 
 /* returns first index at which given element appears or the empty set if it doesn't */
-fun Seq.idxOf [e: elem] : lone SeqIdx { ord/min[this.indsOf[e]] }
+fun idxOf [s: Seq, e: elem] : lone SeqIdx { ord/min[s.indsOf[e]] }
 
 /* returns last index at which given element appears or the empty set if it doesn't */
-fun Seq.lastIdxOf [e: elem] : lone SeqIdx { ord/max[this.indsOf[e]] }
+fun lastIdxOf [s: Seq, e: elem] : lone SeqIdx { ord/max[s.indsOf[e]] }
 
 /* returns set of indices at which given element appears or the empty set if it doesn't */
-fun Seq.indsOf [e: elem] : set SeqIdx { (this.seqElems).e }
+fun indsOf [s: Seq, e: elem] : set SeqIdx { (s.seqElems).e }
 
 /* true if this starts with prefix */
-pred Seq.startsWith [prefix: Seq] {
-  all i: prefix.inds | this.at[i] = prefix.at[i]
+pred startsWith [s, prefix: Seq] {
+  all i: prefix.inds | s.at[i] = prefix.at[i]
 }
 
 /* added is the result of appending e to the end of s */
-pred Seq.add [e: elem, added: Seq] {
-  added.startsWith[this]
-  added.seqElems[this.afterLastIdx] = e
-  #added.inds = #this.inds + 1
+pred add [s: Seq, e: elem, added: Seq] {
+  added.startsWith[s]
+  added.seqElems[s.afterLastIdx] = e
+  #added.inds = #s.inds + 1
 }
 
 /* setted is the result of setting value at index i to e */
-pred Seq.setAt [idx: SeqIdx, e: elem, setted: Seq] {
-  setted.seqElems = this.seqElems ++ idx->e
+pred setAt [s: Seq, idx: SeqIdx, e: elem, setted: Seq] {
+  setted.seqElems = s.seqElems ++ idx->e
 }
 
 /* inserts is the result of inserting value e at index i */
-pred Seq.insert [idx: SeqIdx, e: elem, inserted: Seq] {
+pred insert [s: Seq, idx: SeqIdx, e: elem, inserted: Seq] {
   inserted.at[idx] = e
-  all i: ord/prevs[idx] | inserted.at[i] = this.at[i]
-  all i: ord/nexts[idx] | inserted.at[i] = this.at[ord/prev[i]]
-  #inserted.inds = #this.inds + 1
+  all i: ord/prevs[idx] | inserted.at[i] = s.at[i]
+  all i: ord/nexts[idx] | inserted.at[i] = s.at[ord/prev[i]]
+  #inserted.inds = #s.inds + 1
 }
 
 /* copies source into dest starting at destStart */

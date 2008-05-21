@@ -47,12 +47,12 @@ sig Checkin extends RoomCardEvent { }
     k2.unchanged
     }
 
-pred HotelEvent.unchanged (field: univ -> Time) {
-    field.(this.pre) = field.(this.post)
+pred unchanged (he: HotelEvent, field: univ -> Time) {
+    field.(he.pre) = field.(he.post)
     }
 
-pred HotelEvent.unchanged (field: univ -> univ -> Time) {
-    field.(this.pre) = field.(this.post)
+pred unchanged (he: HotelEvent, field: univ -> univ -> Time) {
+    field.(he.pre) = field.(he.post)
     }
 
 abstract sig Enter extends RoomCardEvent { }

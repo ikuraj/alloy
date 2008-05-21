@@ -31,64 +31,64 @@ fact ExpansionFacts  {
 }
 
 -- Returns the feature that is being expanded.
-fun Expansion.currentFeature [] : lone Feature {
-  this.proposedRoute.at[this.currentIndex]
+fun currentFeature [e: Expansion]: lone Feature {
+  e.proposedRoute.at[e.currentIndex]
 }
 
 -- Returns the feature that will be expanded in the next step.
-fun Expansion.nextFeature [] : lone Feature {
-  this.proposedRoute.at[next[this.currentIndex]]
+fun nextFeature [e:Expansion] : lone Feature {
+  e.proposedRoute.at[next[e.currentIndex]]
 }
 
 -- Returns the feature that has been expanded in the previous step.
-fun Expansion.prevFeature [] : lone Feature {
-  this.proposedRoute.at[prev[this.currentIndex]]
+fun prevFeature [e:Expansion] : lone Feature {
+  e.proposedRoute.at[prev[e.currentIndex]]
 }
 
 -- True if the given expansion has the same field values as this one.
-pred Expansion.eq [other: Expansion] {
-  this.proposedRoute = other.proposedRoute and
-  this.currentIndex = other.currentIndex and
-  this.expandedRoute = other.expandedRoute and
-  this.error = other.error
+pred eq [e: Expansion, other: Expansion] {
+  e.proposedRoute = other.proposedRoute and
+  e.currentIndex = other.currentIndex and
+  e.expandedRoute = other.expandedRoute and
+  e.error = other.error
 }
 
 -- True if the given expansion is the first step in the process of expanding this.proposedRoute
-pred Expansion.start [] {
-  this.currentIndex = 0 and
-  no this.expandedRoute.inds and
-  this.error = (syntacticallyValidProposedRoute[this.proposedRoute] => none else SyntaxError)
+pred start [e: Expansion] {
+  e.currentIndex = 0 and
+  no e.expandedRoute.inds and
+  e.error = (syntacticallyValidProposedRoute[e.proposedRoute] => none else SyntaxError)
 }
 
 -- True if e'  follows this in the process of expanding this.proposedRoute
-pred Expansion.expand [e': Expansion] {
-  no this.error and
-  e'.proposedRoute = this.proposedRoute and
-  e'.currentIndex =next[this.currentIndex] and
-  (this.expandPlace[e'] or this.expandRoad[e'])
+pred expand [e, e': Expansion] {
+  no e.error and
+  e'.proposedRoute = e.proposedRoute and
+  e'.currentIndex =next[e.currentIndex] and
+  (e.expandPlace[e'] or e.expandRoad[e'])
 }
 
 -- True if e' is obtained by expanding this.expandedRoute with the place at this.currentIndex
-pred Expansion.expandPlace [e': Expansion] {
-  let p = Place & (this.currentFeature) |
-   this.currentFeature in Place and
-   (p = this.expandedRoute.last =>
-    e'.expandedRoute = this.expandedRoute else
-    this.expandedRoute.addPlace[p, e'.expandedRoute] ) and
+pred expandPlace [e, e': Expansion] {
+  let p = Place & (e.currentFeature) |
+   e.currentFeature in Place and
+   (p = e.expandedRoute.last =>
+    e'.expandedRoute = e.expandedRoute else
+    e.expandedRoute.addPlace[p, e'.expandedRoute] ) and
    no e'.error
 }
 
 -- True if e' is obtained by expanding this.expandedRoute with the places on the road at this.currentIndex
-pred Expansion.expandRoad [e': Expansion] {
-  let r = Road & (this.currentFeature) |
-   this.currentFeature in Road and
-   (let entry = r.closest[r.connections[this.prevFeature]], exit = r.closest[r.connections[this.nextFeature]] |
+pred expandRoad [e, e': Expansion] {
+  let r = Road & (e.currentFeature) |
+   e.currentFeature in Road and
+   (let entry = r.closest[r.connections[e.prevFeature]], exit = r.closest[r.connections[e.nextFeature]] |
     (no entry or no exit) =>
-    (e'.error = NoConnection and e'.expandedRoute = this.expandedRoute) else
+    (e'.error = NoConnection and e'.expandedRoute = e.expandedRoute) else
     ((let start =r.closest[entry+exit], end = r.farthest[entry+exit] |
-      start.place = this.expandedRoute.last =>
-      this.expandedRoute.addPlaces[r, r.successor[start], end, e'.expandedRoute] else
-      this.expandedRoute.addPlaces[r, start, end, e'.expandedRoute]) and
+      start.place = e.expandedRoute.last =>
+      e.expandedRoute.addPlaces[r, r.successor[start], end, e'.expandedRoute] else
+      e.expandedRoute.addPlaces[r, start, end, e'.expandedRoute]) and
      no e'.error)
    )
 }

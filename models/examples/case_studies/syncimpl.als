@@ -27,11 +27,11 @@ sig ReconName extends Name {
    prev_p_child: (p_children - first_p_child) -> p_children
 }{
   p_children = ChildrenAB[Ain, Bin, this]
-  first_p_child = { pc: p_children | p_children in (pc + ord/nexts[pc]) }
-  last_p_child = { pc: p_children | p_children in (pc + ord/prevs[pc]) }
+  first_p_child = { pc: p_children | p_children in (pc + @nexts[pc]) }
+  last_p_child = { pc: p_children | p_children in (pc + @prevs[pc]) }
   all p_child: p_children - first_p_child | {
-    let earlierChildren = ord/prevs[p_child] & p_children |
-       p_child.prev_p_child = { earlierChild: earlierChildren | earlierChildren in (earlierChild + ord/prevs[earlierChild]) }
+    let earlierChildren = @prevs[p_child] & p_children |
+       p_child.prev_p_child = { earlierChild: earlierChildren | earlierChildren in (earlierChild + @prevs[earlierChild]) }
   }
 }
 

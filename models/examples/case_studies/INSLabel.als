@@ -106,8 +106,8 @@ pred Query.ConformsAux[a: Advertisement, nq: Node, na: Node] {
   na in State.conforms[this][a][nq]
 }
 
-pred Query.Conforms[a:Advertisement] {
-  this.ConformsAux[a, this.root, a.root]
+pred Conforms[q: Query, a:Advertisement] {
+  q.ConformsAux[a, q.root, a.root]
 }
 
 fact LookupFixPoint {
@@ -131,8 +131,8 @@ fun DB.LookupAux[q: Query, vd: Node, vq: Node]: set Record {      // helper func
   State.lookup[this][q][vd][vq]
 }
 
-fun DB.Lookup[q: Query]: set Record {                             // models Lookup-Name algorithm invocation
-  this.LookupAux[q,this.root,q.root]
+fun Lookup[db: DB, q: Query]: set Record {                             // models Lookup-Name algorithm invocation
+  db.LookupAux[q, db.root, q.root]
 }
 
 assert LookupConforms2 { //soundness and completeness

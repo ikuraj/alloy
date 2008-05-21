@@ -18,10 +18,10 @@ fact element_correspondence {
 }
 
 
-pred ProposedRoute/Seq.SyntacticallyValidProposedRoute() {
-   not lone this.inds and
-   this.first in PlaceElement and
-   this.last in PlaceElement
+pred SyntacticallyValidProposedRoute [s: ProposedRoute/Seq] {
+   not lone s.inds and
+   s.first in PlaceElement and
+   s.last in PlaceElement
 }
 
 

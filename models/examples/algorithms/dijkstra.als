@@ -20,58 +20,58 @@ sig Mutex {}
 sig State { holds, waits: Process -> Mutex }
 
 
-pred State.Initial  { no this.holds + this.waits }
+pred Initial [s: State]  { no s.holds + s.waits }
 
-pred State.IsFree [m: Mutex] {
+pred IsFree [s: State, m: Mutex] {
    // no process holds this mutex
-   no m.~(this.holds)
+   no m.~(s.holds)
    // all p: Process | m !in p.(this.holds)
 }
 
-pred State.IsStalled [p: Process] { some p.(this.waits) }
+pred IsStalled [s: State, p: Process] { some p.(s.waits) }
 
-pred State.GrabMutex [p: Process, m: Mutex, s': State] {
+pred GrabMutex [s: State, p: Process, m: Mutex, s': State] {
    // a process can only act if it is not
    // waiting for a mutex
-   !this.IsStalled[p]
+   !s.IsStalled[p]
    // can only grab a mutex we do not yet hold
-   m !in p.(this.holds)
-   this.IsFree[m] => {
+   m !in p.(s.holds)
+   s.IsFree[m] => {
       // if the mutex is free, we now hold it,
       // and do not become stalled
-      p.(s'.holds) = p.(this.holds) + m
+      p.(s'.holds) = p.(s.holds) + m
       no p.(s'.waits)
    } else {
     // if the mutex was not free,
     // we still hold the same mutexes we held,
     // and are now waiting on the mutex
     // that we tried to grab.
-    p.(s'.holds) = p.(this.holds)
+    p.(s'.holds) = p.(s.holds)
     p.(s'.waits) = m
   }
   all otherProc: Process - p | {
-     otherProc.(s'.holds) = otherProc.(this.holds)
-     otherProc.(s'.waits) = otherProc.(this.waits)
+     otherProc.(s'.holds) = otherProc.(s.holds)
+     otherProc.(s'.waits) = otherProc.(s.waits)
   }
 }
 
-pred State.ReleaseMutex [p: Process, m: Mutex, s': State] {
-   !this.IsStalled[p]
-   m in p.(this.holds)
-   p.(s'.holds) = p.(this.holds) - m
+pred ReleaseMutex [s: State, p: Process, m: Mutex, s': State] {
+   !s.IsStalled[p]
+   m in p.(s.holds)
+   p.(s'.holds) = p.(s.holds) - m
    no p.(s'.waits)
-   no m.~(this.waits) => {
+   no m.~(s.waits) => {
       no m.~(s'.holds)
       no m.~(s'.waits)
    } else {
-      some lucky: m.~(this.waits) | {
-        m.~(s'.waits) = m.~(this.waits) - lucky
+      some lucky: m.~(s.waits) | {
+        m.~(s'.waits) = m.~(s.waits) - lucky
         m.~(s'.holds) = lucky
       }
    }
   all mu: Mutex - m {
-    mu.~(s'.waits) = mu.~(this.waits)
-    mu.~(s'.holds)= mu.~(this.holds)
+    mu.~(s'.waits) = mu.~(s.waits)
+    mu.~(s'.holds)= mu.~(s.holds)
   }
 }
 

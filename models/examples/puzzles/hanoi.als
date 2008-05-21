@@ -48,19 +48,19 @@ sig State {
 }
 
 
-fun State.discsOnStake[stake: Stake]: set Disc {
+fun discsOnStake[st: State, stake: Stake]: set Disc {
   // compute the set of discs on the given stake in this state.
   // ~(this.on) map the stake to the set of discs on that stake.
-  stake.~(this.on)
+  stake.~(st.on)
 }
 
-fun State.topDisc[stake: Stake]: lone Disc {
+fun topDisc[st: State, stake: Stake]: lone Disc {
   // compute the top disc on the given stake, or the empty set
   // if the stake is empty
-  { d: this.discsOnStake[stake] | this.discsOnStake[stake] in discs/nexts[d] + d }
+  { d: st.discsOnStake[stake] | st.discsOnStake[stake] in discs/nexts[d] + d }
 }
 
-pred State.Move[ fromStake, toStake: Stake, s': State] {
+pred Move [st: State, fromStake, toStake: Stake, s': State] {
    // Describes the operation of moving the top disc from stake fromStake
    // to stake toStake.  This function is defined implicitly but is
    // nevertheless deterministic, i.e. the result state is completely
@@ -68,17 +68,17 @@ pred State.Move[ fromStake, toStake: Stake, s': State] {
    // the "det" modifier above.  (It's important to use the "det" modifier
    // to tell the Alloy Analyzer that the function is in fact deterministic.)
 
-   let d = this.topDisc[fromStake] | {
+   let d = st.topDisc[fromStake] | {
       // all discs on toStake must be larger than d,
       // so that we can put d on top of them
-      this.discsOnStake[toStake] in discs/nexts[d]
+      st.discsOnStake[toStake] in discs/nexts[d]
       // after, the fromStake has the discs it had before, minus d
-      s'.discsOnStake[fromStake] = this.discsOnStake[fromStake] - d
+      s'.discsOnStake[fromStake] = st.discsOnStake[fromStake] - d
       // after, the toStake has the discs it had before, plus d
-      s'.discsOnStake[toStake] = this.discsOnStake[toStake] + d
+      s'.discsOnStake[toStake] = st.discsOnStake[toStake] + d
       // the remaining stake afterwards has exactly the discs it had before
       let otherStake = Stake - fromStake - toStake |
-        s'.discsOnStake[otherStake] = this.discsOnStake[otherStake]
+        s'.discsOnStake[otherStake] = st.discsOnStake[otherStake]
    }
 }
 

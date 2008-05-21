@@ -47,12 +47,12 @@ fact AddInvariants {
   }
 }
 
-pred DB.Get[r: Record, q: Query] {
-  q.values = r.~(this.recs).*(~(this.av).~(this.va))
-  q.attributes = q.values.~(this.av)
-  q.root = this.root
-  all a : attributes| a.~(q.va) = a.~(this.va)
-  all v : values | v.~(q.av) = v.~(this.av)
+pred Get [db: DB, r: Record, q: Query] {
+  q.values = r.~(db.recs).*(~(db.av).~(db.va))
+  q.attributes = q.values.~(db.av)
+  q.root = db.root
+  all a : attributes| a.~(q.va) = a.~(db.va)
+  all v : values | v.~(q.av) = v.~(db.av)
 }
 
 pred Conforms [db: DB, q: Query, r: Record] {
@@ -69,16 +69,16 @@ pred indSubset[db : DB, q: Query, r: set Record, v: Value] {
     (a.(q.av) = Wildcard => r in a.(db.av).*((db.va).(db.av)).(db.recs))
 }
 
-pred DB.Lookup[q : Query, found: set Record] {
-  all v: Value | not v.(q.va) in v.(this.va) => no v.(q.(this.lookup))
+pred Lookup[db: DB, q: Query, found: set Record] {
+  all v: Value | not v.(q.va) in v.(db.va) => no v.(q.(db.lookup))
   all v: Value | all a : v.(q.va) |
-    a.(q.av) != Wildcard && not a.(q.av) in a.(this.av) => no v.(q.(this.lookup))
+    a.(q.av) != Wildcard && not a.(q.av) in a.(db.av) => no v.(q.(db.lookup))
   all v: Value - Wildcard |
-    no v.(q.va) => v.(q.(this.lookup)) = v.*((this.va).(this.av)).(this.recs)
+    no v.(q.va) => v.(q.(db.lookup)) = v.*((db.va).(db.av)).(db.recs)
   all v: Value |
-    some v.(q.va) => indSubset[this,q,v.(q.(this.lookup)),v] &&
-    (no r: Record - v.(q.(this.lookup)) | indSubset[this,q,v.(q.(this.lookup)) + r, v])
-  found = this.root.(q.(this.lookup))
+    some v.(q.va) => indSubset[db, q, v.(q.(db.lookup)), v] &&
+    (no r: Record - v.(q.(db.lookup)) | indSubset[db, q, v.(q.(db.lookup)) + r, v])
+  found = db.root.(q.(db.lookup))
 }
 
 assert CorrectLookup {
@@ -86,27 +86,27 @@ assert CorrectLookup {
     Conforms [db,q,r] <=> db.Lookup[q, r]
 }
 
-pred DB.Add[adv: Query, r: Record, db: DB] {
+pred Add [me: DB, adv: Query, r: Record, db: DB] {
   // restricted version - only advertisements with fresh attributes and values added
-  no this.attributes & adv.attributes
-  this.values & adv.values = this.root
-  this.root = adv.root
+  no me.attributes & adv.attributes
+  me.values & adv.values = me.root
+  me.root = adv.root
   Wildcard !in adv.values
-  r !in this.records
-  db.values = this.values + adv.values
-  db.attributes = this.attributes + adv.attributes
-  db.root = this.root
-  db.av = this.av + adv.av
-  db.va = this.va + adv.va
-  db.recs = this.recs + ((db.values - dom[db.va]) -> r)
+  r !in me.records
+  db.values = me.values + adv.values
+  db.attributes = me.attributes + adv.attributes
+  db.root = me.root
+  db.av = me.av + adv.av
+  db.va = me.va + adv.va
+  db.recs = me.recs + ((db.values - dom[db.va]) -> r)
 }
 
-pred Query.RemoveWildCard[q: Query] {
-  q.values = this.values - Wildcard
-  q.attributes = this.attributes - Wildcard.~(this.av)
-  q.root = this.root
-  q.av = this.av - Attribute -> Wildcard
-  q.va = this.va - Value -> Wildcard.~(this.av)
+pred RemoveWildCard[me: Query, q: Query] {
+  q.values = me.values - Wildcard
+  q.attributes = me.attributes - Wildcard.~(me.av)
+  q.root = me.root
+  q.av = me.av - Attribute -> Wildcard
+  q.va = me.va - Value -> Wildcard.~(me.av)
 }
 
 assert MissingAttributeAsWildcard {

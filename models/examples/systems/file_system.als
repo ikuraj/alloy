@@ -14,10 +14,10 @@ sig Dir extends Object {
   entries: set DirEntry,
   parent: lone Dir
 } {
-  parent = this.~contents.~entries
+  parent = this.~@contents.~@entries
   all e1, e2 : entries | e1.name = e2.name => e1 = e2
-  this !in this.^parent
-  this != Root => Root in this.^parent
+  this !in this.^@parent
+  this != Root => Root in this.^@parent
 }
 
 one sig Root extends Dir {} { no parent }

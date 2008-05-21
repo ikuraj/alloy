@@ -13,44 +13,44 @@ sig HeapState {
   freeList : lone Node
 }
 
-pred HeapState.clearMarks[hs' : HeapState] {
+pred clearMarks[hs, hs' : HeapState] {
   // clear marked set
   no hs'.marked
   // left and right fields are unchanged
-  hs'.left = this.left
-  hs'.right = this.right
+  hs'.left = hs.left
+  hs'.right = hs.right
 }
 
 // simulate the recursion of the mark() function using transitive closure
-fun HeapState.reachable[n: Node] : set Node {
-  n + n.^(this.left + this.right)
+fun reachable[hs: HeapState, n: Node] : set Node {
+  n + n.^(hs.left + hs.right)
 }
 
-pred HeapState.mark[from : Node, hs': HeapState] {
-  hs'.marked = this.reachable[from]
-  hs'.left = this.left
-  hs'.right = this.right
+pred mark[hs: HeapState, from : Node, hs': HeapState] {
+  hs'.marked = hs.reachable[from]
+  hs'.left = hs.left
+  hs'.right = hs.right
 }
 
 // complete hack to simulate behavior of code to set freeList
-pred HeapState.setFreeList[hs': HeapState] {
+pred setFreeList[hs, hs': HeapState] {
   // especially hackish
-  hs'.freeList.*(hs'.left) in (Node - this.marked)
+  hs'.freeList.*(hs'.left) in (Node - hs.marked)
   all n: Node |
-    (n !in this.marked) => {
+    (n !in hs.marked) => {
       no hs'.right[n]
       hs'.left[n] in (hs'.freeList.*(hs'.left))
       n in hs'.freeList.*(hs'.left)
     } else {
-      hs'.left[n] = this.left[n]
-      hs'.right[n] = this.right[n]
+      hs'.left[n] = hs.left[n]
+      hs'.right[n] = hs.right[n]
     }
-  hs'.marked = this.marked
+  hs'.marked = hs.marked
 }
 
-pred HeapState.GC[root : Node, hs': HeapState] {
+pred GC[hs: HeapState, root : Node, hs': HeapState] {
   some hs1, hs2: HeapState |
-    this.clearMarks[hs1] && hs1.mark[root, hs2] && hs2.setFreeList[hs']
+    hs.clearMarks[hs1] && hs1.mark[root, hs2] && hs2.setFreeList[hs']
 }
 
 assert Soundness1 {

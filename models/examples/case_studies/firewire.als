@@ -175,8 +175,8 @@ sig Node {to, from: set Link} {
   }
 
 sig Link {target, source: Node, reverse: Link} {
-  reverse.source = target
-  reverse.target = source
+  reverse.@source = target
+  reverse.@target = source
   }
 
 -- at most one link between a pair of nodes in a given direction
