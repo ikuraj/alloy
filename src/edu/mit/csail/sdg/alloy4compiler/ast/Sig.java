@@ -477,7 +477,7 @@ public abstract class Sig extends Expr {
      * @param label - the name of this field (it does not need to be unique)
      * @param x - a quantified variable "x: one ThisSig"
      * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in bound"
-     * @param hints - if nonnull, it contains a list of annotations to be associated with this field (these annotations are ignored by Alloy Analyzer itself)
+     * @param annotations - if nonnull, it contains a list of annotations to be associated with this field (these annotations are ignored by Alloy Analyzer itself)
      *
      * @throws ErrorSyntax  if the sig is one of the builtin sig
      * @throws ErrorSyntax  if the bound contains a predicate/function call
