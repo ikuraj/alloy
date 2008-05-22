@@ -95,7 +95,10 @@ public final class ExprVar extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override public ExprVar resolve(Type p, Collection<ErrorWarning> warns) { return this; }
+    @Override public Expr desugar(Collection<ErrorWarning> warns) { return this; }
+
+    /** {@inheritDoc} */
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
     @Override Object accept(VisitReturn visitor) throws Err {

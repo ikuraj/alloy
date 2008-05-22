@@ -68,6 +68,9 @@ public abstract class Sig extends Expr {
     @Override public final Pos span() { return pos; }
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warns) { return this; }
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
@@ -452,6 +455,9 @@ public abstract class Sig extends Expr {
 
         /** {@inheritDoc} */
         @Override public Pos span() { return pos; }
+
+        /** {@inheritDoc} */
+        @Override public Expr desugar(Collection<ErrorWarning> warns) { return this; }
 
         /** {@inheritDoc} */
         @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }

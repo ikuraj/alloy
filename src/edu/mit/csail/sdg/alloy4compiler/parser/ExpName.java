@@ -50,7 +50,7 @@ final class ExpName extends Exp {
     /** {@inheritDoc} */
     public Expr check(Context cx, List<ErrorWarning> warnings) {
         Expr obj = cx.resolve(pos, name);
-        if (obj instanceof Macro) return ((Macro)obj).instantiate(cx, warnings); else return obj;
+        if (obj instanceof ExpMacro) return ((ExpMacro)obj).instantiate(cx, warnings); else return obj;
     }
 
     /**

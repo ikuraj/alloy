@@ -307,6 +307,15 @@ public final class ExprBinary extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warns) {
+        Expr a = left.desugar(warns);
+        Expr b = right.desugar(warns);
+        return (a==left && b==right) ? this : op.make(pos, closingBracket, a, b);
+    }
+
+    //============================================================================================================//
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
         ErrorWarning w=null;

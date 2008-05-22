@@ -92,6 +92,11 @@ public abstract class Expr {
     }
 
     /**
+     * Desugar this node if possible.
+     */
+    public abstract Expr desugar(Collection<ErrorWarning> warnings);
+
+    /**
      * Resolves this expression if ambiguous.
      * (And if t.size()>0, it represents the set of tuples whose presence/absence is relevent to the parent expression)
      * (Note: it's possible for t to be EMPTY, or even ambiguous!)

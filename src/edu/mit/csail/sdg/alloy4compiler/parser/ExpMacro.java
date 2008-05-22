@@ -36,7 +36,7 @@ import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 /** Immutable; this class represents a macro. */
 
-final class Macro extends ExprCustom {
+final class ExpMacro extends ExprCustom {
 
     /** If nonnull, this is a private macro. */
     final Pos isPrivate;
@@ -57,7 +57,7 @@ final class Macro extends ExprCustom {
     private final Exp body;
 
     /** Construct a new Macro object. */
-    private Macro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExpName> params, List<Expr> args, Exp body) {
+    private ExpMacro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExpName> params, List<Expr> args, Exp body) {
         super(pos, new ErrorFatal(pos, "Incomplete call on the macro \""+name+"\""));
         this.realModule = realModule;
         this.isPrivate = isPrivate;
@@ -68,16 +68,16 @@ final class Macro extends ExprCustom {
     }
 
     /** Construct a new Macro object. */
-    Macro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExpName> params, Exp body) {
+    ExpMacro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExpName> params, Exp body) {
         this(pos, isPrivate, realModule, name, params, null, body);
     }
 
-    Macro addArg(Expr arg) {
-        return new Macro(pos, isPrivate, realModule, name, params, Util.append(args,arg), body);
+    ExpMacro addArg(Expr arg) {
+        return new ExpMacro(pos, isPrivate, realModule, name, params, Util.append(args,arg), body);
     }
 
     Expr changePos(Pos pos) {
-        return new Macro(pos, isPrivate, realModule, name, params, args, body);
+        return new ExpMacro(pos, isPrivate, realModule, name, params, args, body);
     }
 
     /** Instantiate it. */
@@ -90,7 +90,7 @@ final class Macro extends ExprCustom {
         Context cx2 = new Context(realModule, cx.unrolls-1);
         for(int n=params.size(), i=0; i<n; i++) {
             Expr tmp = args.get(i);
-            if (!(tmp instanceof Macro)) tmp = tmp.resolve(tmp.type, warnings);
+            if (!(tmp instanceof ExpMacro)) tmp = tmp.resolve(tmp.type, warnings);
             cx2.put(params.get(i).name, tmp);
         }
         Expr ans = body.check(cx2, warnings);

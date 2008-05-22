@@ -117,7 +117,7 @@ public final class Module {
                 while(true) {
                     int i = n.indexOf('/');
                     if (i<0) {
-                        Macro m = mod.macros.get(n);
+                        ExpMacro m = mod.macros.get(n);
                         if (m==null || (m.isPrivate!=null && mod!=rootmodule)) break; else return m.changePos(pos);
                     }
                     String alias = n.substring(0,i);
@@ -132,7 +132,7 @@ public final class Module {
                 boolean ambiguous = false;
                 StringBuilder sb = new StringBuilder();
                 for(Module m: rootmodule.getAllNameableModules()) {
-                    Macro mac = m.macros.get(name);
+                    ExpMacro mac = m.macros.get(name);
                     if (mac==null) continue;
                     if (match!=null) ambiguous=true; else match=mac;
                     sb.append("\n").append(m.path.length()==0 ? "this" : m.path).append("/").append(name);
@@ -141,7 +141,7 @@ public final class Module {
             }
             if (match==null) match = rootmodule.globals.get(name);
             if (match!=null) {
-                if (match instanceof Macro) return ((Macro)match).changePos(pos);
+                if (match instanceof ExpMacro) return ((ExpMacro)match).changePos(pos);
                 match = ExprUnary.Op.NOOP.make(pos, match);
                 return ExprChoice.make(pos, Util.asList(match), Util.asList(name));
             }
@@ -328,7 +328,7 @@ public final class Module {
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
 
     /** Each macro name is mapped to a MacroAST object. */
-    private final Map<String,Macro> macros = new LinkedHashMap<String,Macro>();
+    private final Map<String,ExpMacro> macros = new LinkedHashMap<String,ExpMacro>();
 
     /** Each assertion name is mapped to either an untypechecked Exp, or a typechecked ExprVar with its value==the assertion. */
     private final Map<String,Object> asserts = new LinkedHashMap<String,Object>();
@@ -762,8 +762,8 @@ public final class Module {
         for(int i=0; i<ds.size(); i++) for(int j=i+1; j<ds.size(); j++)
           if (ds.get(i).name.equals(ds.get(j).name))
              throw new ErrorSyntax(ds.get(j).span(), "The parameter name \""+ds.get(j).name+"\" cannot appear more than once.");
-        Macro ans = new Macro(p, isPrivate, this, n, ds, v);
-        Macro old = macros.put(n, ans);
+        ExpMacro ans = new ExpMacro(p, isPrivate, this, n, ds, v);
+        ExpMacro old = macros.put(n, ans);
         if (old!=null) { macros.put(n, old); throw new ErrorSyntax(p, "You cannot declare more than one macro with the same name \""+n+"\" in the same file."); }
      }
 

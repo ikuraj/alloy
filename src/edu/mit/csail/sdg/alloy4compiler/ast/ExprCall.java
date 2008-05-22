@@ -226,14 +226,29 @@ public final class ExprCall extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warns) {
+        TempList<Expr> args = new TempList<Expr>(this.args.size());
+        boolean changed = false;
+        for(int i=0; i<this.args.size(); i++) {
+            Expr x = this.args.get(i);
+            Expr y = x.desugar(warns);
+            if (x != y) changed=true;
+            args.add(y);
+        }
+        return changed ? make(pos, closingBracket, fun, args.makeConst(), extraWeight) : this;
+    }
+
+    //============================================================================================================//
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
         TempList<Expr> args = new TempList<Expr>(this.args.size());
-        boolean changed=false;
+        boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
-            Expr x=this.args.get(i);
+            Expr x = this.args.get(i);
             // Use the function's param type to narrow down the choices
-            Expr y=x.resolve(fun.params.get(i).type, warns).typecheck_as_set();
+            Expr y = x.resolve(fun.params.get(i).type, warns).typecheck_as_set();
             if (x!=y) changed=true;
             args.add(y);
         }

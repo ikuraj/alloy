@@ -140,6 +140,14 @@ public final class ExprITE extends Expr {
     }
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warns) {
+        Expr c = cond.desugar(warns);
+        Expr a = left.desugar(warns);
+        Expr b = (right!=null ? right.desugar(warns) : null);
+        if (c==cond && a==left && b==right) return this; else return make(pos, c, a, b);
+    }
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
         if (right==null) {

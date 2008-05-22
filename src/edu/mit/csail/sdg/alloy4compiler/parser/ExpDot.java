@@ -127,9 +127,9 @@ final class ExpDot extends Exp {
         Expr left = this.left.check(cx, warnings);
         Expr right = this.right.check(cx, warnings);
         // check to see if it is a macro invocation
-        if (right instanceof Macro) {
+        if (right instanceof ExpMacro) {
             // If we get here, that means it is a partial macro call
-            return ((Macro)right).addArg(left).instantiate(cx, warnings);
+            return ((ExpMacro)right).addArg(left).instantiate(cx, warnings);
         }
         // check to see if it is the special builtin function "Int[]"
         if (left.type.is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();

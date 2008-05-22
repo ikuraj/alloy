@@ -114,6 +114,21 @@ public final class ExprBuiltin extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warns) {
+        TempList<Expr> newlist = null;
+        for(int i=0; i<args.size(); i++) {
+            Expr x = args.get(i).desugar(warns);
+            if (newlist!=null) { newlist.add(x); continue; } else if (x==args.get(i)) continue;
+            newlist = new TempList<Expr>(args.size());
+            for(int j=0; j<i; j++) newlist.add(args.get(j));
+            newlist.add(x);
+        }
+        if (newlist==null) return this; else return makeDISJOINT(pos, closingBracket, newlist.makeConst());
+    }
+
+    //============================================================================================================//
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
         for(int i=0; i<args.size(); i++) {

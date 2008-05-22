@@ -220,6 +220,14 @@ public final class ExprUnary extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warns) {
+        Expr x = sub.desugar(warns);
+        return x==sub ? this : op.make(pos, x, null, weight-sub.weight);
+    }
+
+    //============================================================================================================//
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
         ErrorWarning w1=null, w2=null;

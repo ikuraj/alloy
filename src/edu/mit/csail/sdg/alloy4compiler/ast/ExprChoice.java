@@ -173,6 +173,9 @@ public final class ExprChoice extends Expr {
     }
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warns) { return this; }
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this; else return resolveHelper(true, t, choices, reasons, warns);
     }

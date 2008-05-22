@@ -125,6 +125,9 @@ public final class ExprConstant extends Expr {
     }
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warns) { return this; }
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type type, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */

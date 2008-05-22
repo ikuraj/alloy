@@ -181,6 +181,11 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
+    @Override public Expr desugar(Collection<ErrorWarning> warnings) { return this; }
+
+    //=============================================================================================================//
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
         if (op!=Op.COMPREHENSION) {
             again:
