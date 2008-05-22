@@ -22,12 +22,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -51,19 +48,6 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
  */
 
 public abstract class Expr {
-
-    /** This is an empty collection which ignores all modification attempts. */
-    static final Collection<ErrorWarning> sink = new AbstractCollection<ErrorWarning>() {
-        @Override public final int size() { return 0; }
-        @Override public final boolean add(ErrorWarning x) { return true; } // This class pretends add() succeeds
-        @Override public final Iterator<ErrorWarning> iterator() {
-            return new Iterator<ErrorWarning>() {
-                public final boolean hasNext() { return false; }
-                public final ErrorWarning next() { throw new NoSuchElementException(); }
-                public final void remove() { throw new UnsupportedOperationException(); }
-            };
-        }
-    };
 
     /** Accepts the return visitor. */
     abstract Object accept(VisitReturn visitor) throws Err;
@@ -93,6 +77,8 @@ public abstract class Expr {
 
     /**
      * Desugar this node if possible.
+     *
+     * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */
     public abstract Expr desugar(Collection<ErrorWarning> warnings);
 
@@ -105,6 +91,8 @@ public abstract class Expr {
      * <p> On failure: the return value's "errors" list will be nonempty
      *
      * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
+     *
+     * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */
     public abstract Expr resolve(Type t, Collection<ErrorWarning> warnings);
 
@@ -115,9 +103,10 @@ public abstract class Expr {
      * <p> On failure: the return value's "errors" list will be nonempty
      *
      * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
+     *
+     * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */
     public final Expr resolve_as_formula(Collection<ErrorWarning> warnings) {
-        if (warnings==null) warnings=sink;
         return typecheck_as_formula().resolve(Type.FORMULA, warnings).typecheck_as_formula();
     }
 
@@ -128,9 +117,10 @@ public abstract class Expr {
      * <p> On failure: the return value's "errors" list will be nonempty
      *
      * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
+     *
+     * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */
     public final Expr resolve_as_int(Collection<ErrorWarning> warnings) {
-        if (warnings==null) warnings=sink;
         return typecheck_as_int().resolve(Type.INT, warnings).typecheck_as_int();
     }
 
@@ -141,9 +131,10 @@ public abstract class Expr {
      * <p> On failure: the return value's "errors" list will be nonempty
      *
      * <p> If we detect any type warnings, we will add the type warnings to the "warnings" collection.
+     *
+     * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */
     public final Expr resolve_as_set(Collection<ErrorWarning> warnings) {
-        if (warnings==null) warnings=sink;
         Expr x = typecheck_as_set();
         Type t = x.type;
         return x.resolve(Type.removesBoolAndInt(t), warnings).typecheck_as_set();

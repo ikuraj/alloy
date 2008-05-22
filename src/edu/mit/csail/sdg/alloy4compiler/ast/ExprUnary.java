@@ -237,10 +237,10 @@ public final class ExprUnary extends Expr {
             s=Type.FORMULA;
             break;
           case TRANSPOSE: case RCLOSURE: case CLOSURE:
-            if (op!=Op.TRANSPOSE && type.join(type).hasNoTuple())
+            if (warns!=null && op!=Op.TRANSPOSE && type.join(type).hasNoTuple())
                w1=new ErrorWarning(pos, this+" is redundant since its domain and range are disjoint: "+sub.type.extract(2));
             s = (op!=Op.TRANSPOSE) ? resolveClosure(p, sub.type) : sub.type.transpose().intersect(p).transpose() ;
-            if (s==EMPTY && p.hasTuple())
+            if (warns!=null && s==EMPTY && p.hasTuple())
                w2=new ErrorWarning(sub.span(),
                "The value of this expression does not contribute to the value of the parent.\nParent's relevant type = "
                +p+"\nThis expression's type = "+sub.type.extract(2));
@@ -253,7 +253,7 @@ public final class ExprUnary extends Expr {
             break;
           case CAST2INT:
             s=sub.type.intersect(SIGINT.type);
-            if (s.hasNoTuple())
+            if (warns!=null && s.hasNoTuple())
                w1=new ErrorWarning(sub.span(),
                "This expression should contain Int atoms.\nInstead, its possible type(s) are:\n"+sub.type.extract(1));
             break;

@@ -334,6 +334,8 @@ public final class ExprBinary extends Expr {
             if (p.hasTuple()) {a=p; b=p;} else {a=a.pickCommonArity(b); b=b.pickCommonArity(a);}
             if (left.type.is_int && right.type.is_int) {
                a=Type.makeInt(a); b=Type.makeInt(b);
+            } else if (warns==null) {
+               break;
             } else if (left.type.hasTuple() && right.type.hasTuple() && !(left.type.intersects(right.type))) {
                w=warn("== is redundant, because the left and right expressions are always disjoint.");
             } else if (left.isSame(right)) {
@@ -344,6 +346,7 @@ public final class ExprBinary extends Expr {
           case IN: {
             a=a.pickCommonArity(b);
             b=b.intersect(a);
+            if (warns==null) break;
             if (left.type.hasNoTuple() && right.type.hasNoTuple())
                w=warn("Subset operator is redundant, because both subexpressions are always empty.");
             else if (left.type.hasNoTuple())
@@ -359,13 +362,14 @@ public final class ExprBinary extends Expr {
           case INTERSECT: {
             a=a.intersect(p);
             b=b.intersect(p);
-            if (type.hasNoTuple()) w=warn("& is irrelevant because the two subexpressions are always disjoint.");
+            if (warns!=null && type.hasNoTuple()) w=warn("& is irrelevant because the two subexpressions are always disjoint.");
             break;
           }
           case PLUSPLUS: case PLUS: {
             a=a.intersect(p);
             b=b.intersect(p);
             if (op==Op.PLUS && p.is_int) { a=Type.makeInt(a); b=Type.makeInt(b); }
+            if (warns==null) break;
             if (a==EMPTY && b==EMPTY)
                w=warn(this+" is irrelevant since both subexpressions are redundant.", p);
             else if (a==EMPTY)
@@ -379,13 +383,13 @@ public final class ExprBinary extends Expr {
             b=p.intersect(b);
             if (p.is_int) {
                 a=Type.makeInt(a); b=Type.makeInt(b);
-            } else if (type.hasNoTuple() || b.hasNoTuple()) {
+            } else if (warns!=null && (type.hasNoTuple() || b.hasNoTuple())) {
                 w=warn("- is irrelevant since the right expression is redundant.", p);
             }
             break;
           }
           case JOIN: {
-            if (type.hasNoTuple()) w=warn("The join operation here always yields an empty set.");
+            if (warns!=null && type.hasNoTuple()) w=warn("The join operation here always yields an empty set.");
             a=(b=EMPTY);
             for (ProductType aa: left.type) for (ProductType bb: right.type) if (p.hasArity(aa.arity()+bb.arity()-2)) {
               PrimSig j = aa.get(aa.arity()-1).intersect(bb.get(0));
@@ -414,7 +418,7 @@ public final class ExprBinary extends Expr {
           case DOMAIN: {
             // leftType' = {r1 | r1 in leftType and there exists r2 in rightType such that r1<:r2 in parentType}
             // rightType' = {r2 | r2 in rightType and there exists r1 in leftType such that r1<:r2 in parentType}
-            if (type.hasNoTuple()) w=warn("<: is irrelevant because the result is always empty.");
+            if (warns!=null && type.hasNoTuple()) w=warn("<: is irrelevant because the result is always empty.");
             Type leftType=EMPTY, rightType=EMPTY;
             for (ProductType aa:a) if (aa.arity()==1) for (ProductType bb:b) if (p.hasArity(bb.arity()))
                 for (ProductType cc:p.intersect(bb.columnRestrict(aa.get(0), 0))) if (!cc.isEmpty()) {
@@ -430,7 +434,7 @@ public final class ExprBinary extends Expr {
           case RANGE: {
             // leftType' = {r1 | r1 in leftType and there exists r2 in rightType such that r1:>r2 in parentType}
             // rightType' = {r2 | r2 in rightType and there exists r1 in leftType such that r1:>r2 in parentType}
-            if (type.hasNoTuple()) w=warn(":> is irrelevant because the result is always empty.");
+            if (warns!=null && type.hasNoTuple()) w=warn(":> is irrelevant because the result is always empty.");
             Type leftType=EMPTY, rightType=EMPTY;
             for(ProductType bb:b) if (bb.arity()==1) for(ProductType aa:a) if (p.hasArity(aa.arity()))
                 for (ProductType cc:p.intersect(aa.columnRestrict(bb.get(0), aa.arity()-1))) if (!cc.isEmpty()) {
@@ -446,7 +450,9 @@ public final class ExprBinary extends Expr {
           default: {
             // leftType'  == {r1 | r1 in leftType and there exists r2 in rightType such that r1->r2 in parentType}
             // rightType' == {r2 | r2 in rightType and there exists r1 in leftType such that r1->r2 in parentType}
-            if (a.hasTuple()) {
+            if (warns==null) {
+                // do nothing
+            } else if (a.hasTuple()) {
                 if (b.hasNoTuple()) w=warn("The left expression of -> is irrelevant because the right expression is always empty.");
             } else {
                 if (b.hasTuple()) w=warn("The right expression of -> is irrelevant because the left expression is always empty.");

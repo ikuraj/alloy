@@ -72,7 +72,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -516,7 +515,7 @@ public final class A4Solution {
             A4TupleSet ans = evalCache.get(expr);
             if (ans!=null) return ans;
         }
-        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
+        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
         Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
         if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);

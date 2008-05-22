@@ -154,7 +154,7 @@ public final class ExprITE extends Expr {
             Type a = left.type.intersect(p);
             if (p.is_int) a=Type.makeInt(a);
             if (p.is_bool) a=Type.makeBool(a);
-            if (p.size()>0 && left.type.hasTuple() && !a.hasTuple()) warns.add(new ErrorWarning(left.span(),"This subexpression is redundant."));
+            if (warns!=null && p.size()>0 && left.type.hasTuple() && !a.hasTuple()) warns.add(new ErrorWarning(left.span(),"This subexpression is redundant."));
             Expr cond = this.cond.resolve(Type.FORMULA, warns);
             Expr left = this.left.resolve(a, warns);
             Expr right = null;
@@ -170,8 +170,8 @@ public final class ExprITE extends Expr {
             b=b.intersect(p);
             if (p.is_int) { a=Type.makeInt(a); b=Type.makeInt(b); }
             if (p.is_bool) { a=Type.makeBool(a); b=Type.makeBool(b); }
-            if (left.type.hasTuple() && !a.hasTuple()) warns.add(new ErrorWarning(left.span(),"This subexpression is redundant."));
-            if (right.type.hasTuple() && !b.hasTuple()) warns.add(new ErrorWarning(right.span(),"This subexpression is redundant."));
+            if (warns!=null && left.type.hasTuple() && !a.hasTuple()) warns.add(new ErrorWarning(left.span(),"This subexpression is redundant."));
+            if (warns!=null && right.type.hasTuple() && !b.hasTuple()) warns.add(new ErrorWarning(right.span(),"This subexpression is redundant."));
         } else {
             a=p;
             b=p;

@@ -34,7 +34,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
-import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -308,7 +307,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn {
      * @param expr - this is the Alloy expression we want to translate
      */
     public static Object alloy2kodkod(A4Solution sol, Expr expr) throws Err {
-        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, new ArrayList<ErrorWarning>());
+        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
         if (!expr.errors.isEmpty()) throw expr.errors.get(0);
         TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.unrolls(), sol.a2k());
         Object ans;

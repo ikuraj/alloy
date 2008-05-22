@@ -153,7 +153,7 @@ public final class ExprChoice extends Expr {
             // If still too many, but this is the first pass, then try to resolve them all and try again
             if (firstPass && ch.size()>1) {
                 ch2 = new ArrayList<Expr>(ch.size());
-                for(Expr c:ch) ch2.add(c.resolve(t, sink));
+                for(Expr c:ch) ch2.add(c.resolve(t, null));
                 return resolveHelper(false, t, ch2, re, warns);
             }
         }

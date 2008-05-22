@@ -367,9 +367,8 @@ public final class Module {
         if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
         Exp body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
         Context cx = new Context(this);
-        ArrayList<ErrorWarning> warnings = new ArrayList<ErrorWarning>();
-        Expr ans = body.check(cx, warnings);
-        ans = ans.resolve(ans.type, warnings);
+        Expr ans = body.check(cx, null);
+        ans = ans.resolve(ans.type, null);
         if (ans.errors.size()>0) throw ans.errors.get(0);
         return ans;
     }
@@ -847,7 +846,7 @@ public final class Module {
             errors = errors.join(newBody.errors);
             if (!newBody.errors.isEmpty()) continue;
             try { ff.setBody(newBody); } catch(Err er) {errors=errors.append(er); continue;}
-            if (ff.returnDecl.type.hasTuple() && newBody.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
+            if (warns!=null && ff.returnDecl.type.hasTuple() && newBody.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
                 warns.add(new ErrorWarning(ff.getBody().span(),
                     "Function return value is disjoint from its return type.\n"
                     +"Function body has type "+ff.getBody().type + "\n" + "but the return type is "+ff.returnDecl.type));

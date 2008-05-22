@@ -52,6 +52,8 @@ abstract class Exp {
     /**
      * Consults the current lexical context, and converts this Exp node into a corresponding Expr node
      * (along the way, if we detect any type warnings, add them to the listOfWarnings)
+     *
+     * @param listOfWarnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */
     public abstract Expr check(Context cx, List<ErrorWarning> listOfWarnings);
 }

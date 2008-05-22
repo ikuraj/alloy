@@ -80,7 +80,11 @@ final class ExpMacro extends ExprCustom {
         return new ExpMacro(pos, isPrivate, realModule, name, params, args, body);
     }
 
-    /** Instantiate it. */
+    /**
+     * Instantiate it.
+     *
+     * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
+     */
     Expr instantiate(Context cx, List<ErrorWarning> warnings) {
         if (cx.unrolls<=0) {
             Pos p = span();

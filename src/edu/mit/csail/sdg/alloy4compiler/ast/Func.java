@@ -112,7 +112,7 @@ public final class Func {
         }
         else {
             returnDecl = returnDecl.typecheck_as_set();
-            if (returnDecl.ambiguous) returnDecl = returnDecl.resolve_as_set(Expr.sink);
+            if (returnDecl.ambiguous) returnDecl = returnDecl.resolve_as_set(null);
             if (!returnDecl.errors.isEmpty()) throw returnDecl.errors.get(0);
             // If the return declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (returnDecl.mult==0 && returnDecl.type.arity()==1) returnDecl=ExprUnary.Op.ONEOF.make(null, returnDecl);
@@ -152,11 +152,11 @@ public final class Func {
     public void setBody(Expr newBody) throws Err {
         if (isPred) {
             newBody = newBody.typecheck_as_formula();
-            if (newBody.ambiguous) newBody = newBody.resolve_as_formula(Expr.sink);
+            if (newBody.ambiguous) newBody = newBody.resolve_as_formula(null);
             if (newBody.errors.size()>0) throw newBody.errors.get(0);
         } else {
             newBody = newBody.typecheck_as_set();
-            if (newBody.ambiguous) newBody = newBody.resolve_as_set(Expr.sink);
+            if (newBody.ambiguous) newBody = newBody.resolve_as_set(null);
             if (newBody.errors.size()>0) throw newBody.errors.get(0);
             if (newBody.type.arity() != returnDecl.type.arity())
                 throw new ErrorType(newBody.span(),

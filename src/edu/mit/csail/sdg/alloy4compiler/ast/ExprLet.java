@@ -110,11 +110,11 @@ public final class ExprLet extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override public Expr resolve(Type p, Collection<ErrorWarning> warnings) {
+    @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
         // The variable is always already fully resolved, so we only need to resolve sub
-        Expr newSub = sub.resolve(p, warnings);
-        if (!newSub.hasVar(var)) warnings.add(new ErrorWarning(var.pos, "This variable is unused."));
+        Expr newSub = sub.resolve(p, warns);
+        if (warns!=null && !newSub.hasVar(var)) warns.add(new ErrorWarning(var.pos, "This variable is unused."));
         return (sub==newSub) ? this : make(pos, var, newSub);
     }
 
