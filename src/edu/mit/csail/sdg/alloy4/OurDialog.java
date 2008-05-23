@@ -163,15 +163,15 @@ public final class OurDialog {
         dir=Util.canon(dir);
         String ans;
         if (useAWT) {
-        	FileDialog f = new FileDialog(parentFrame, isOpen ? "Open..." : "Save...");
-        	f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
-        	f.setDirectory(dir);
-        	if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
-        		public boolean accept(File dir, String name) { return name.toLowerCase(Locale.US).endsWith(ext); }
-        	});
-        	f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
-        	if (f.getFile()==null) return null;
-        	ans = f.getDirectory()+File.separatorChar+f.getFile();
+            FileDialog f = new FileDialog(parentFrame, isOpen ? "Open..." : "Save...");
+            f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
+            f.setDirectory(dir);
+            if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
+                public boolean accept(File dir, String name) { return name.toLowerCase(Locale.US).endsWith(ext); }
+            });
+            f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
+            if (f.getFile()==null) return null;
+            ans = f.getDirectory()+File.separatorChar+f.getFile();
         } else {
             try {
                 JFileChooser open = new JFileChooser(dir);
