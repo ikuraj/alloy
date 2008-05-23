@@ -1653,14 +1653,6 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         exitReporter = new MailBug();
         Thread.setDefaultUncaughtExceptionHandler(exitReporter);
 
-        // Try to determine if we're on Windows Vista (this test is not reliable, but will have to do)
-        boolean vista = false;
-        if (Util.onWindows()) {
-            Subprocess pro = new Subprocess(5000, new String[]{"cmd.exe", "/c", "ver"});
-            String out = pro.getStandardOutputAndError();
-            if (out.contains("Version 6")) vista = true;
-        }
-
         // Enable better look-and-feel
         if (Util.onMac() || Util.onWindows()) {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Alloy Analyzer "+Version.version());
@@ -1668,10 +1660,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             System.setProperty("com.apple.mrj.application.live-resize","true");
             System.setProperty("com.apple.macos.useScreenMenuBar","true");
             System.setProperty("apple.laf.useScreenMenuBar","true");
-            if (!vista) {
-               try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
-               catch (Throwable e) { }
-            }
+            try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Throwable e) { }
         }
 
         // Figure out the desired x, y, width, and height

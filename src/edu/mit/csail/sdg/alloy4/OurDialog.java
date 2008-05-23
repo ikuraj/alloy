@@ -142,6 +142,9 @@ public final class OurDialog {
         return ((String)value);
     }
 
+    /** True if we should use AWT (instead of Swing) to display the OPEN and SAVE dialog. */
+    private static boolean useAWT = false;
+
     /**
      * Use the platform's preferred file chooser to ask the user to select a file.
      * <br> Note: if it is a save operation, and the user didn't include an extension, then we'll add the extension.
@@ -154,30 +157,36 @@ public final class OurDialog {
      */
     public static File askFile
     (Frame parentFrame, boolean isOpen, String dir, final String ext, final String description) {
+        if (Util.onMac()) useAWT = true;
         if (dir==null) dir=Util.getCurrentDirectory();
         if (!(new File(dir).isDirectory())) dir=System.getProperty("user.home");
         dir=Util.canon(dir);
         String ans;
-        if (Util.onMac()) {
-            FileDialog f = new FileDialog(parentFrame, isOpen ? "Open..." : "Save...");
-            f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
-            f.setDirectory(dir);
-            if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
-               public boolean accept(File dir, String name) { return name.toLowerCase(Locale.US).endsWith(ext); }
-            });
-            f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
-            if (f.getFile()==null) return null;
-            ans = f.getDirectory()+File.separatorChar+f.getFile();
+        if (useAWT) {
+        	FileDialog f = new FileDialog(parentFrame, isOpen ? "Open..." : "Save...");
+        	f.setMode(isOpen ? FileDialog.LOAD : FileDialog.SAVE);
+        	f.setDirectory(dir);
+        	if (ext.length()>0) f.setFilenameFilter(new FilenameFilter() {
+        		public boolean accept(File dir, String name) { return name.toLowerCase(Locale.US).endsWith(ext); }
+        	});
+        	f.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
+        	if (f.getFile()==null) return null;
+        	ans = f.getDirectory()+File.separatorChar+f.getFile();
         } else {
-            JFileChooser open = new JFileChooser(dir);
-            open.setDialogTitle(isOpen ? "Open..." : "Save...");
-            open.setApproveButtonText(isOpen ? "Open" : "Save");
-            if (ext.length()>0) open.setFileFilter(new FileFilter() {
-               public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase(Locale.US).endsWith(ext); }
-               public String getDescription() { return description; }
-            });
-            if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION || open.getSelectedFile()==null) { return null; }
-            ans = open.getSelectedFile().getPath();
+            try {
+                JFileChooser open = new JFileChooser(dir);
+                open.setDialogTitle(isOpen ? "Open..." : "Save...");
+                open.setApproveButtonText(isOpen ? "Open" : "Save");
+                if (ext.length()>0) open.setFileFilter(new FileFilter() {
+                    public boolean accept(File f) { return !f.isFile() || f.getPath().toLowerCase(Locale.US).endsWith(ext); }
+                    public String getDescription() { return description; }
+                });
+                if (open.showOpenDialog(parentFrame)!=JFileChooser.APPROVE_OPTION || open.getSelectedFile()==null) { return null; }
+                ans = open.getSelectedFile().getPath();
+            } catch(Exception ex) {
+                useAWT = true;
+                return askFile(parentFrame, isOpen, dir, ext, description);
+            }
         }
         if (!isOpen) {
             int lastSlash = ans.lastIndexOf(File.separatorChar);
