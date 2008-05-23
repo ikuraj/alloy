@@ -1215,7 +1215,7 @@ public final class Module {
         final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
         final List<Expr> ch2 = new ArrayList<Expr>();
         final List<String> re2 = new ArrayList<String>();
-        boolean usedThis = false;
+        //boolean usedThis = false;
         for(Object x: ans) {
             if (x instanceof SigAST) {
                 SigAST y=(SigAST)x;
@@ -1241,10 +1241,11 @@ public final class Module {
                 if (resolution==2 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
-                    usedThis = true;
+                    //usedThis = true;
                     ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 0) : ExprBadCall.make(pos, null, f, t, 0));
                     re.add((f.isPred?"pred this.":"fun this.")+f.label);
-                } else if (resolution!=1) {
+                }
+                if (resolution!=1) {
                     ch2.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
                     re2.add((f.isPred?"pred ":"fun ")+f.label);
                 }
@@ -1281,18 +1282,17 @@ public final class Module {
                    if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
                        ch.add(THIS.join(x0));
                        re.add("field "+f.sig.label+" <: this."+f.label);
-                       usedThis = true;
-                   } else {
-                       ch2.add(x0);
-                       re2.add("field "+f.sig.label+" <: "+f.label);
+                       //usedThis = true;
                    }
+                   ch2.add(x0);
+                   re2.add("field "+f.sig.label+" <: "+f.label);
                 }
              }
           }
         }
         if (resolution==0) { ch.addAll(ch2); re.addAll(re2); }
         if (resolution==1) { ch.addAll(ch2); re.addAll(re2); }
-        if (resolution==2) { if (!usedThis) {ch.addAll(ch2); re.addAll(re2);} }
+        if (resolution==2) { ch.addAll(ch2); re.addAll(re2); }
         return null;
     }
 }
