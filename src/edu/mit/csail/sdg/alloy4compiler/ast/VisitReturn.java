@@ -27,44 +27,44 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
 /** This abstract class defines what a Return Visitor's interface needs to be. */
 
-public abstract class VisitReturn {
+public abstract class VisitReturn<T,E> {
 
     /** Constructs a VisitReturn object. */
     public VisitReturn() { }
 
     /** This is the start method that begins a traversal over the given expression. */
-    public final Object visitThis(Expr x) throws Err { return x.accept(this); }
+    public final T visitThis(E context, Expr x) throws Err { return x.accept(context, this); }
 
     /** Visits an ExprBinary node. */
-    public abstract Object visit(ExprBinary x) throws Err;
+    public abstract T visit(E context, ExprBinary x) throws Err;
 
     /** Visits an ExprBuiltin node. */
-    public abstract Object visit(ExprBuiltin x) throws Err;
+    public abstract T visit(E context, ExprBuiltin x) throws Err;
 
     /** Visits an ExprCall node. */
-    public abstract Object visit(ExprCall x) throws Err;
+    public abstract T visit(E context, ExprCall x) throws Err;
 
     /** Visits an ExprConstant node. */
-    public abstract Object visit(ExprConstant x) throws Err;
+    public abstract T visit(E context, ExprConstant x) throws Err;
 
     /** Visits an ExprITE node. */
-    public abstract Object visit(ExprITE x) throws Err;
+    public abstract T visit(E context, ExprITE x) throws Err;
 
     /** Visits an ExprLet node. */
-    public abstract Object visit(ExprLet x) throws Err;
+    public abstract T visit(E context, ExprLet x) throws Err;
 
     /** Visits an ExprQuant node. */
-    public abstract Object visit(ExprQuant x) throws Err;
+    public abstract T visit(E context, ExprQuant x) throws Err;
 
     /** Visits an ExprUnary node. */
-    public abstract Object visit(ExprUnary x) throws Err;
+    public abstract T visit(E context, ExprUnary x) throws Err;
 
     /** Visits an ExprVar node. */
-    public abstract Object visit(ExprVar x) throws Err;
+    public abstract T visit(E context, ExprVar x) throws Err;
 
     /** Visits a Sig node. */
-    public abstract Object visit(Sig x) throws Err;
+    public abstract T visit(E context, Sig x) throws Err;
 
     /** Visits a Field node. */
-    public abstract Object visit(Field x) throws Err;
+    public abstract T visit(E context, Field x) throws Err;
 }

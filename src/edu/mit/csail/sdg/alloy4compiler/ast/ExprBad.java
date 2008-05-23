@@ -66,5 +66,5 @@ public final class ExprBad extends Expr {
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override Object accept(VisitReturn visitor) throws Err { throw errors.get(0); }
+    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err { throw errors.get(0); }
 }

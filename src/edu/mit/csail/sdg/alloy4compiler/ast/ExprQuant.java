@@ -203,8 +203,8 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override Object accept(VisitReturn visitor) throws Err {
+    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err {
         if (!errors.isEmpty()) throw errors.get(0);
-        return visitor.visit(this);
+        return visitor.visit(context, this);
     }
 }

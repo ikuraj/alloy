@@ -74,7 +74,7 @@ public abstract class Sig extends Expr {
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
+    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err { return visitor.visit(context, this); }
 
     /**
      * True if this sig is one of the built-in sig.
@@ -463,7 +463,7 @@ public abstract class Sig extends Expr {
         @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
         /** {@inheritDoc} */
-        @Override Object accept(VisitReturn visitor) throws Err { return visitor.visit(this); }
+        @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err { return visitor.visit(context, this); }
     }
 
     //==============================================================================================================//

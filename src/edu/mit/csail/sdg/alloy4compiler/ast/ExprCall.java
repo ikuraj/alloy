@@ -89,22 +89,22 @@ public final class ExprCall extends Expr {
     //============================================================================================================//
 
     /** This visitor assumes the input expression is already fully typechecked, and derive a tight bound on the return type. */
-    private static class DeduceType extends VisitReturn {
+    private static class DeduceType extends VisitReturn<Type,Object> {
         private final Env<ExprVar,Type> env=new Env<ExprVar,Type>();
         private DeduceType() { }
-        @Override public Object visit(ExprITE x) throws Err {
-            Type t = (Type) (x.left.accept(this));
+        @Override public Type visit(Object unused, ExprITE x) throws Err {
+            Type t = x.left.accept(unused, this);
             if (t.size()==0 || x.right==null) return t;
-            Type t2 = (Type) (x.right.accept(this));
+            Type t2 = x.right.accept(unused, this);
             return t.unionWithCommonArity(t2);
         }
-        @Override public Object visit(ExprBinary x) throws Err {
+        @Override public Type visit(Object unused, ExprBinary x) throws Err {
             switch(x.op) {
               case GT: case GTE: case LT: case LTE: case IFF: case EQUALS: case IN: case OR: case AND: return Type.FORMULA;
               case SHL: case SHR: case SHA: return Type.INT;
             }
-            Type a=(Type)(x.left.accept(this));
-            Type b=(Type)(x.right.accept(this));
+            Type a = x.left.accept(unused, this);
+            Type b = x.right.accept(unused, this);
             switch(x.op) {
               case JOIN: return a.join(b);
               case DOMAIN: return b.domainRestrict(a);
@@ -116,8 +116,8 @@ public final class ExprCall extends Expr {
               default: return a.product(b);
             }
         }
-        @Override public Object visit(ExprUnary x) throws Err {
-            Type t=(Type)(x.sub.accept(this));
+        @Override public Type visit(Object unused, ExprUnary x) throws Err {
+            Type t = x.sub.accept(unused, this);
             switch(x.op) {
               case NOOP: case LONEOF: case ONEOF: case SETOF: case SOMEOF: return t;
               case CARDINALITY: case CAST2INT: return Type.INT;
@@ -128,30 +128,30 @@ public final class ExprCall extends Expr {
               default: return Type.FORMULA;
             }
         }
-        @Override public Object visit(ExprQuant x) throws Err {
+        @Override public Type visit(Object unused, ExprQuant x) throws Err {
             if (x.op == ExprQuant.Op.SUM) return Type.INT;
             if (x.op != ExprQuant.Op.COMPREHENSION) return Type.FORMULA;
             Type ans=null;
             for(ExprVar v: x.vars) {
-                Type t=(Type)(v.expr.accept(this));
+                Type t = v.expr.accept(unused, this);
                 env.put(v, t);
                 if (ans==null) ans=t; else ans=ans.product(t);
             }
             for(ExprVar v: x.vars) env.remove(v);
             return (ans==null) ? EMPTY : ans;
         }
-        @Override public Object visit(ExprLet x) throws Err {
-            env.put(x.var, (Type)(x.var.expr.accept(this)));
-            Object ans=x.sub.accept(this);
+        @Override public Type visit(Object unused, ExprLet x) throws Err {
+            env.put(x.var, x.var.expr.accept(unused, this));
+            Type ans=x.sub.accept(unused, this);
             env.remove(x.var);
             return ans;
         }
-        @Override public Object visit(ExprCall x)     { return x.fun.returnDecl.type; }
-        @Override public Object visit(ExprVar x)      { Type t=env.get(x); return (t!=null && t!=EMPTY) ? t : x.type; }
-        @Override public Object visit(ExprConstant x) { return x.type; }
-        @Override public Object visit(Sig x)          { return x.type; }
-        @Override public Object visit(Field x)        { return x.type; }
-        @Override public Object visit(ExprBuiltin x)  { return Type.FORMULA; }
+        @Override public Type visit(Object unused, ExprCall x)     { return x.fun.returnDecl.type; }
+        @Override public Type visit(Object unused, ExprVar x)      { Type t=env.get(x); return (t!=null && t!=EMPTY) ? t : x.type; }
+        @Override public Type visit(Object unused, ExprConstant x) { return x.type; }
+        @Override public Type visit(Object unused, Sig x)          { return x.type; }
+        @Override public Type visit(Object unused, Field x)        { return x.type; }
+        @Override public Type visit(Object unused, ExprBuiltin x)  { return Type.FORMULA; }
     }
 
     //============================================================================================================//
@@ -214,7 +214,7 @@ public final class ExprCall extends Expr {
                     ExprVar param=fun.params.get(i);
                     d.env.put(param, newargs.get(i).type.extract(param.type.arity()));
                 }
-                t = (Type) (fun.returnDecl.accept(d));
+                t = fun.returnDecl.accept(null, d);
                 if (t==null || t.is_int || t.is_bool || t.arity()!=tt.arity()) t=tt; // Just in case an error occurred...
             } catch(Throwable ex) {
                 t=tt; // Just in case an error occurred...
@@ -258,8 +258,8 @@ public final class ExprCall extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override Object accept(VisitReturn visitor) throws Err {
+    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err {
         if (!errors.isEmpty()) throw errors.get(0);
-        return visitor.visit(this);
+        return visitor.visit(context, this);
     }
 }
