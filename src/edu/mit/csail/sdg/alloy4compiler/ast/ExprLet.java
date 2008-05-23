@@ -101,14 +101,6 @@ public final class ExprLet extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override Expr desugar(Collection<ErrorWarning> warnings) {
-        Expr newSub = sub.desugar(warnings);
-        return (sub==newSub) ? this : make(pos, var, newSub);
-    }
-
-    //=============================================================================================================//
-
-    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
         // The variable is always already fully resolved, so we only need to resolve sub
@@ -120,8 +112,8 @@ public final class ExprLet extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err {
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err {
         if (!errors.isEmpty()) throw errors.get(0);
-        return visitor.visit(context, this);
+        return visitor.visit(this);
     }
 }

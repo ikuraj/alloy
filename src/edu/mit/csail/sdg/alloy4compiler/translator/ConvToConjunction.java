@@ -43,26 +43,26 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
  * (in order to get better precision unsat core results)
  */
 
-final class ConvToConjunction extends VisitReturn<Expr,Object> {
+final class ConvToConjunction extends VisitReturn<Expr> {
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprBinary x) throws Err {
+    @Override public Expr visit(ExprBinary x) throws Err {
         if (x.op == ExprBinary.Op.AND) {
-            Expr a = visitThis(unused, x.left);
-            Expr b = visitThis(unused, x.right);
+            Expr a = visitThis(x.left);
+            Expr b = visitThis(x.right);
             return a.and(b);
         }
         return x;
     }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprQuant x) throws Err {
+    @Override public Expr visit(ExprQuant x) throws Err {
         if (x.op == ExprQuant.Op.ALL) {
             Expr s = x.sub;
             while(s instanceof ExprUnary && ((ExprUnary)s).op==ExprUnary.Op.NOOP) s=((ExprUnary)s).sub;
             if (s instanceof ExprBinary && ((ExprBinary)s).op==ExprBinary.Op.AND) {
-                Expr a = visitThis(unused, x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.vars, ((ExprBinary)s).left));
-                Expr b = visitThis(unused, x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.vars, ((ExprBinary)s).right));
+                Expr a = visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.vars, ((ExprBinary)s).left));
+                Expr b = visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.vars, ((ExprBinary)s).right));
                 return a.and(b);
             }
         }
@@ -70,15 +70,15 @@ final class ConvToConjunction extends VisitReturn<Expr,Object> {
     }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprUnary x) throws Err {
+    @Override public Expr visit(ExprUnary x) throws Err {
         if (x.op == ExprUnary.Op.NOOP) {
-            return visitThis(unused, x.sub);
+            return visitThis(x.sub);
         }
         if (x.op == ExprUnary.Op.NOT && x.sub instanceof ExprBinary) {
             ExprBinary bin = (ExprBinary)(x.sub);
             if (bin.op == ExprBinary.Op.OR) {
-                Expr a = visitThis(unused, bin.left.not());
-                Expr b = visitThis(unused, bin.right.not());
+                Expr a = visitThis(bin.left.not());
+                Expr b = visitThis(bin.right.not());
                 return a.and(b);
             }
         }
@@ -86,26 +86,26 @@ final class ConvToConjunction extends VisitReturn<Expr,Object> {
     }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprBuiltin x) { return x; }
+    @Override public Expr visit(ExprBuiltin x) { return x; }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprCall x) { return x; }
+    @Override public Expr visit(ExprCall x) { return x; }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprConstant x) { return x; }
+    @Override public Expr visit(ExprConstant x) { return x; }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprITE x) { return x; }
+    @Override public Expr visit(ExprITE x) { return x; }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprLet x) { return x; }
+    @Override public Expr visit(ExprLet x) { return x; }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, ExprVar x) { return x; }
+    @Override public Expr visit(ExprVar x) { return x; }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, Sig x) { return x; }
+    @Override public Expr visit(Sig x) { return x; }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(Object unused, Field x) { return x; }
+    @Override public Expr visit(Field x) { return x; }
 }

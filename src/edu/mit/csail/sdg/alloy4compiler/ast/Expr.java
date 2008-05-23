@@ -50,7 +50,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 public abstract class Expr {
 
     /** Accepts the return visitor. */
-    abstract<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err;
+    abstract<T> T accept(VisitReturn<T> visitor) throws Err;
 
     /** Converts this into a "formula" if possible; otherwise, returns an Expr with a nonempty error list */
     public final Expr typecheck_as_formula() {
@@ -74,13 +74,6 @@ public abstract class Expr {
         String msg = "This must be a set or relation.\nInstead, it has the following possible type(s):\n"+type;
         return NOOP.make(null, this, new ErrorType(span(), msg), 0);
     }
-
-    /**
-     * Desugar this node if possible.
-     *
-     * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
-     */
-    abstract Expr desugar(Collection<ErrorWarning> warnings);
 
     /**
      * Resolves this expression if ambiguous.
@@ -245,27 +238,27 @@ public abstract class Expr {
     }
 
     /** A return visitor that determines whether the node (or a subnode) contains a predicate/function call. */
-    private static final VisitQuery<Object,Object> hasCall = new VisitQuery<Object,Object>() {
-        @Override public final Object visit(Object unused, ExprCall x) { return this; }
+    private static final VisitQuery<Object> hasCall = new VisitQuery<Object>() {
+        @Override public final Object visit(ExprCall x) { return this; }
     };
 
     /** Returns true if the node is well-typed, unambiguous, and contains a predicate/function call. */
     final boolean hasCall() {
         boolean ans = !ambiguous && errors.isEmpty();
-        if (ans) { try { ans=accept(null, hasCall)!=null; } catch(Err ex) { ans=false; } } // This exception should not occur
+        if (ans) { try { ans=accept(hasCall)!=null; } catch(Err ex) { ans=false; } } // This exception should not occur
         return ans;
     }
 
     /** Returns true if the node is well-typed, unambiguous, and contains the given variable. */
     final boolean hasVar(final ExprVar goal) {
         if (ambiguous || !errors.isEmpty()) return false;
-        VisitQuery<Object,Object> hasVar = new VisitQuery<Object,Object>() {
-            @Override public final Object visit(Object unused, ExprVar x) throws Err {
-                if (x==goal) return this; else return x.expr.accept(unused, this);
+        VisitQuery<Object> hasVar = new VisitQuery<Object>() {
+            @Override public final Object visit(ExprVar x) throws Err {
+                if (x==goal) return this; else return x.expr.accept(this);
             }
         };
         boolean ans;
-        try { ans=accept(null, hasVar)!=null; } catch(Err ex) { return false; } // This exception should not occur
+        try { ans=accept(hasVar)!=null; } catch(Err ex) { return false; } // This exception should not occur
         return ans;
     }
 
@@ -273,12 +266,12 @@ public abstract class Expr {
     public final Iterable<Func> findAllFunctions() {
         final IdentitySet<Func> seen = new IdentitySet<Func>();
         final List<Func> todo = new ArrayList<Func>();
-        final VisitQuery<Object,Object> q = new VisitQuery<Object,Object>() {
-            @Override public final Object visit(Object unused, ExprCall x) { if (seen.add(x.fun)) todo.add(x.fun); return null; }
+        final VisitQuery<Object> q = new VisitQuery<Object>() {
+            @Override public final Object visit(ExprCall x) { if (seen.add(x.fun)) todo.add(x.fun); return null; }
         };
         try {
-            q.visitThis(null, this);
-            while(!todo.isEmpty()) { q.visitThis(null, todo.remove(todo.size()-1).getBody()); }
+            q.visitThis(this);
+            while(!todo.isEmpty()) { q.visitThis(todo.remove(todo.size()-1).getBody()); }
         } catch(Err ex) { } // Exception should not occur
         return seen;
     }

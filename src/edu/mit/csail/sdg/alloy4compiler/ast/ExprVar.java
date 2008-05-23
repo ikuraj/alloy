@@ -95,14 +95,11 @@ public final class ExprVar extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override Expr desugar(Collection<ErrorWarning> warns) { return this; }
-
-    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err {
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err {
         if (!errors.isEmpty()) throw errors.get(0);
-        return visitor.visit(context, this);
+        return visitor.visit(this);
     }
 }

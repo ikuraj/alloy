@@ -68,13 +68,10 @@ public abstract class Sig extends Expr {
     @Override public final Pos span() { return pos; }
 
     /** {@inheritDoc} */
-    @Override Expr desugar(Collection<ErrorWarning> warns) { return this; }
-
-    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err { return visitor.visit(context, this); }
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /**
      * True if this sig is one of the built-in sig.
@@ -457,13 +454,10 @@ public abstract class Sig extends Expr {
         @Override public Pos span() { return pos; }
 
         /** {@inheritDoc} */
-        @Override Expr desugar(Collection<ErrorWarning> warns) { return this; }
-
-        /** {@inheritDoc} */
         @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
         /** {@inheritDoc} */
-        @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err { return visitor.visit(context, this); }
+        @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
     }
 
     //==============================================================================================================//

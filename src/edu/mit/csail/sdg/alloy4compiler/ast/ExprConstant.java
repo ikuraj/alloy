@@ -125,11 +125,8 @@ public final class ExprConstant extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override Expr desugar(Collection<ErrorWarning> warns) { return this; }
-
-    /** {@inheritDoc} */
     @Override public Expr resolve(Type type, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err { return visitor.visit(context, this); }
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 }

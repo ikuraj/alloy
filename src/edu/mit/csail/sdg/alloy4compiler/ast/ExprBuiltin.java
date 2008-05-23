@@ -114,21 +114,6 @@ public final class ExprBuiltin extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override Expr desugar(Collection<ErrorWarning> warns) {
-        TempList<Expr> newlist = null;
-        for(int i=0; i<args.size(); i++) {
-            Expr x = args.get(i).desugar(warns);
-            if (newlist!=null) { newlist.add(x); continue; } else if (x==args.get(i)) continue;
-            newlist = new TempList<Expr>(args.size());
-            for(int j=0; j<i; j++) newlist.add(args.get(j));
-            newlist.add(x);
-        }
-        if (newlist==null) return this; else return makeDISJOINT(pos, closingBracket, newlist.makeConst());
-    }
-
-    //============================================================================================================//
-
-    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
         for(int i=0; i<args.size(); i++) {
@@ -148,8 +133,8 @@ public final class ExprBuiltin extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err {
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err {
         if (!errors.isEmpty()) throw errors.get(0);
-        return visitor.visit(context, this);
+        return visitor.visit(this);
     }
 }

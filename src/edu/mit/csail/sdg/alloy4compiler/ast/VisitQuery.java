@@ -33,73 +33,73 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
  * <br> To implement a particular query, you need to extend this class.
  */
 
-public abstract class VisitQuery<T,E> extends VisitReturn<T,E> {
+public abstract class VisitQuery<T> extends VisitReturn<T> {
 
     /** Constructs a VisitQuery object. */
     public VisitQuery() { }
 
     /** Visits an ExprBinary node (A OP B) by calling accept() on A then B. */
-    @Override public T visit(E context, ExprBinary x) throws Err {
-        T ans=x.left.accept(context, this);
-        if (ans==null) ans=x.right.accept(context, this);
+    @Override public T visit(ExprBinary x) throws Err {
+        T ans=x.left.accept(this);
+        if (ans==null) ans=x.right.accept(this);
         return ans;
     }
 
     /** Visits an ExprBuiltin node F[X1,X2,X3..] by calling accept() on X1, X2, X3... */
-    @Override public T visit(E context, ExprBuiltin x) throws Err {
-        for(Expr y:x.args) { T ans=y.accept(context, this); if (ans!=null) return ans; }
+    @Override public T visit(ExprBuiltin x) throws Err {
+        for(Expr y:x.args) { T ans=y.accept(this); if (ans!=null) return ans; }
         return null;
     }
 
     /** Visits an ExprCall node F[X1,X2,X3..] by calling accept() on X1, X2, X3... */
-    @Override public T visit(E context, ExprCall x) throws Err {
-        for(Expr y:x.args) { T ans=y.accept(context, this); if (ans!=null) return ans; }
+    @Override public T visit(ExprCall x) throws Err {
+        for(Expr y:x.args) { T ans=y.accept(this); if (ans!=null) return ans; }
         return null;
     }
 
     /** Visits an ExprConstant node (this default implementation simply returns null) */
-    @Override public T visit(E context, ExprConstant x) throws Err {
+    @Override public T visit(ExprConstant x) throws Err {
         return null;
     }
 
     /** Visits an ExprITE node (C => X else Y) by calling accept() on C, X, then Y. */
-    @Override public T visit(E context, ExprITE x) throws Err {
-        T ans=x.cond.accept(context, this);
-        if (ans==null) ans=x.left.accept(context, this);
-        if (ans==null && x.right!=null) ans=x.right.accept(context, this);
+    @Override public T visit(ExprITE x) throws Err {
+        T ans=x.cond.accept(this);
+        if (ans==null) ans=x.left.accept(this);
+        if (ans==null && x.right!=null) ans=x.right.accept(this);
         return ans;
     }
 
     /** Visits an ExprLet node (let a=x | y) by calling accept() on "a=x" then "y". */
-    @Override public T visit(E context, ExprLet x) throws Err {
-        T ans = x.var.accept(context, this);
-        if (ans==null) ans=x.sub.accept(context, this);
+    @Override public T visit(ExprLet x) throws Err {
+        T ans = x.var.accept(this);
+        if (ans==null) ans=x.sub.accept(this);
         return ans;
     }
 
     /** Visits an ExprQuant node (all a:X1, b:X2... | F) by calling accept() on a:X1, b:X2... and then on F. */
-    @Override public T visit(E context, ExprQuant x) throws Err {
-        for(Expr y:x.vars) { T ans=y.accept(context, this); if (ans!=null) return ans; }
-        return x.sub.accept(context, this);
+    @Override public T visit(ExprQuant x) throws Err {
+        for(Expr y:x.vars) { T ans=y.accept(this); if (ans!=null) return ans; }
+        return x.sub.accept(this);
     }
 
     /** Visits an ExprUnary node (OP X) by calling accept() on X. */
-    @Override public T visit(E context, ExprUnary x) throws Err {
-        return x.sub.accept(context, this);
+    @Override public T visit(ExprUnary x) throws Err {
+        return x.sub.accept(this);
     }
 
     /** Visits an ExprVar node by calling accept on its associated subexpression. */
-    @Override public T visit(E context, ExprVar x) throws Err {
-        return x.expr.accept(context, this);
+    @Override public T visit(ExprVar x) throws Err {
+        return x.expr.accept(this);
     }
 
     /** Visits a Sig node (this default implementation simply returns null) */
-    @Override public T visit(E context, Sig x) throws Err {
+    @Override public T visit(Sig x) throws Err {
         return null;
     }
 
     /** Visits a Field node (this default implementation simply returns null) */
-    @Override public T visit(E context, Field x) throws Err {
+    @Override public T visit(Field x) throws Err {
         return null;
     }
 }

@@ -71,7 +71,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ONE;
 
 /** Translate an Alloy AST into Kodkod AST then attempt to solve it using Kodkod. */
 
-public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
+public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     /**
      * This is used to detect "function recursion" (which we currently do not allow);
@@ -166,7 +166,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     private void makeFacts(Expr facts) throws Err {
         rep.debug("Generating facts...\n");
         // convert into a form that hopefully gives better unsat core
-        facts = (Expr) (new ConvToConjunction()).visitThis(null, facts);
+        facts = (Expr) (new ConvToConjunction()).visitThis(facts);
         // now go over each of them
         ArrayList<Expr> ar = new ArrayList<Expr>();
         makelist(ar, facts);
@@ -312,7 +312,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
         TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.unrolls(), sol.a2k());
         Object ans;
         try {
-            ans = tr.visitThis(null, expr);
+            ans = tr.visitThis(expr);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
@@ -333,7 +333,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
      * @throws ErrorFatal - if x does not evaluate to a Formula
      */
     private Formula cform(Expr x) throws Err {
-        Object y=visitThis(null, x);
+        Object y=visitThis(x);
         if (y instanceof Formula) return (Formula)y;
         throw new ErrorFatal(x.span(), "This should have been a formula.\nInstead it is "+y);
     }
@@ -344,7 +344,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
      * @throws ErrorFatal - if x does not evaluate to an IntExpression
      */
     private IntExpression cint(Expr x) throws Err {
-        Object y=visitThis(null, x);
+        Object y=visitThis(x);
         if (y instanceof IntExpression) return (IntExpression)y;
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
@@ -355,7 +355,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
      * @throws ErrorFatal - if x does not evaluate to an Expression
      */
     private Expression cset(Expr x) throws Err {
-        Object y=visitThis(null, x);
+        Object y=visitThis(x);
         if (y instanceof Expression) return (Expression)y;
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
     }
@@ -476,9 +476,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*============================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprITE x) throws Err {
+    @Override public Object visit(ExprITE x) throws Err {
         Formula c = cform(x.cond);
-        Object l = visitThis(unused, x.left);
+        Object l = visitThis(x.left);
         if (l instanceof Formula) {
             Formula c1 = c.implies((Formula)l);
             Formula c2 = c.not().implies(cform(x.right));
@@ -495,9 +495,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*============================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprLet x) throws Err {
-        env.put(x.var, visitThis(unused, x.var.expr));
-        Object ans = visitThis(unused, x.sub);
+    @Override public Object visit(ExprLet x) throws Err {
+        env.put(x.var, visitThis(x.var.expr));
+        Object ans = visitThis(x.sub);
         env.remove(x.var);
         return ans;
     }
@@ -507,7 +507,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*=================================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprConstant x) throws Err {
+    @Override public Object visit(ExprConstant x) throws Err {
         switch(x.op) {
           case NUMBER:
             int n=x.num();
@@ -526,10 +526,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*==============================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprUnary x) throws Err {
+    @Override public Object visit(ExprUnary x) throws Err {
         switch(x.op) {
             case SOMEOF: case LONEOF: case ONEOF: case SETOF: return cset(x.sub);
-            case NOOP: return visitThis(unused, x.sub);
+            case NOOP: return visitThis(x.sub);
             case NOT:  return k2pos( cform(x.sub).not() , x );
             case SOME: return k2pos( cset(x.sub).some() , x);
             case LONE: return k2pos( cset(x.sub).lone() , x);
@@ -557,7 +557,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*============================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprVar x) throws Err {
+    @Override public Object visit(ExprVar x) throws Err {
         Object ans=env.get(x);
         if (ans==null) ans=a2k(x);
         if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
@@ -569,7 +569,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*=========================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, Field x) throws Err {
+    @Override public Object visit(Field x) throws Err {
         Expression ans = a2k(x);
         if (ans==null) throw new ErrorFatal(x.pos, "Field \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
@@ -580,7 +580,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*=======================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, Sig x) throws Err {
+    @Override public Object visit(Sig x) throws Err {
         Expression ans = a2k(x);
         if (ans==null) throw new ErrorFatal(x.pos, "Sig \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
@@ -678,7 +678,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     private final Map<Func,Pair<Expr,String>> cacheForExprCall = new IdentityHashMap<Func,Pair<Expr,String>>();
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprCall x) throws Err {
+    @Override public Object visit(ExprCall x) throws Err {
         final Func f=x.fun;
         final Pair<Expr,String> cache = cacheForExprCall.get(f);
         final Expr body = f.getBody();
@@ -722,7 +722,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
         Env<ExprVar,Object> oldenv = env;
         env = newenv;
         current_function.add(f);
-        Object ans = visitThis(unused, body);
+        Object ans = visitThis(body);
         env = oldenv;
         current_function.remove(current_function.size()-1);
         if (ans instanceof Formula) k2pos((Formula)ans, x);
@@ -734,7 +734,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*================================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprBuiltin x) throws Err {
+    @Override public Object visit(ExprBuiltin x) throws Err {
         // This says  no(a&b) and no((a+b)&c) and no((a+b+c)&d)...
         // Emperically this seems to be more efficient than "no(a&b) and no(a&c) and no(b&c)"
         Formula answer=null;
@@ -753,7 +753,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     /*===============================*/
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprBinary x) throws Err {
+    @Override public Object visit(ExprBinary x) throws Err {
         Expr a=x.left, b=x.right;
         Expression s, s2; IntExpression i; Formula f; Object obj;
         switch(x.op) {
@@ -770,7 +770,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
             case SHR: i=cint(a); return i.shr(cint(b));
             case SHA: i=cint(a); return i.sha(cint(b));
             case PLUS:
-                obj = visitThis(unused, a);
+                obj = visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.plus(cint(b)); }
                 s = (Expression)obj; return s.union(cset(b));
             case MINUS:
@@ -779,7 +779,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
                 if (a instanceof ExprConstant && ((ExprConstant)a).op==ExprConstant.Op.NUMBER && ((ExprConstant)a).num()==0)
                    if (b instanceof ExprConstant && ((ExprConstant)b).op==ExprConstant.Op.NUMBER && ((ExprConstant)b).num()==max+1)
                       return IntConstant.constant(min);
-                obj=visitThis(unused, a);
+                obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; return i.minus(cint(b));}
                 s=(Expression)obj; return s.difference(cset(b));
             case INTERSECT:
@@ -794,7 +794,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
             case JOIN:
                 s=cset(a); return s.join(cset(b));
             case EQUALS:
-                obj=visitThis(unused, a);
+                obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b));}
                 else { s=(Expression)obj; f=s.eq(cset(b)); }
                 return k2pos(f,x);
@@ -973,7 +973,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object,Object> {
     }
 
     /** {@inheritDoc} */
-    @Override public Object visit(Object unused, ExprQuant x) throws Err {
+    @Override public Object visit(ExprQuant x) throws Err {
         // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
         if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==1) {
             ExprVar a=x.vars.get(0);

@@ -60,11 +60,8 @@ public final class ExprBad extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override Expr desugar(Collection<ErrorWarning> warns) { return this; }
-
-    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final<T,E> T accept(E context, VisitReturn<T,E> visitor) throws Err { throw errors.get(0); }
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { throw errors.get(0); }
 }
