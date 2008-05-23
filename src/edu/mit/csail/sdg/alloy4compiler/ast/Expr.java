@@ -80,7 +80,7 @@ public abstract class Expr {
      *
      * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */
-    public abstract Expr desugar(Collection<ErrorWarning> warnings);
+    abstract Expr desugar(Collection<ErrorWarning> warnings);
 
     /**
      * Resolves this expression if ambiguous.

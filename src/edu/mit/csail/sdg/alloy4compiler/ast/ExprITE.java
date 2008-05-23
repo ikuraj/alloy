@@ -140,7 +140,7 @@ public final class ExprITE extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override public Expr desugar(Collection<ErrorWarning> warns) {
+    @Override Expr desugar(Collection<ErrorWarning> warns) {
         Expr c = cond.desugar(warns);
         Expr a = left.desugar(warns);
         Expr b = (right!=null ? right.desugar(warns) : null);

@@ -101,8 +101,7 @@ public final class ExprLet extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override public Expr desugar(Collection<ErrorWarning> warnings) {
-        // The variable is always already fully desugared, so we only need to desugar sub
+    @Override Expr desugar(Collection<ErrorWarning> warnings) {
         Expr newSub = sub.desugar(warnings);
         return (sub==newSub) ? this : make(pos, var, newSub);
     }

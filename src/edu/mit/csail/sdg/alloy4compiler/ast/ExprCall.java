@@ -226,7 +226,7 @@ public final class ExprCall extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override public Expr desugar(Collection<ErrorWarning> warns) {
+    @Override Expr desugar(Collection<ErrorWarning> warns) {
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {

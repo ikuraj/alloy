@@ -95,7 +95,7 @@ public final class ExprVar extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override public Expr desugar(Collection<ErrorWarning> warns) { return this; }
+    @Override Expr desugar(Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) { return this; }

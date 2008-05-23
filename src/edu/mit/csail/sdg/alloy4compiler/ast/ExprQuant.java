@@ -181,7 +181,7 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
-    @Override public Expr desugar(Collection<ErrorWarning> warnings) { return this; }
+    @Override Expr desugar(Collection<ErrorWarning> warnings) { return this; }
 
     //=============================================================================================================//
 

@@ -173,7 +173,7 @@ public final class ExprChoice extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override public Expr desugar(Collection<ErrorWarning> warns) { return this; }
+    @Override Expr desugar(Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) {
