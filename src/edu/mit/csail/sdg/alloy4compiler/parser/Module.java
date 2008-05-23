@@ -1283,9 +1283,10 @@ public final class Module {
                        ch.add(THIS.join(x0));
                        re.add("field "+f.sig.label+" <: this."+f.label);
                        //usedThis = true;
+                   } else {
+                       ch2.add(x0);
+                       re2.add("field "+f.sig.label+" <: "+f.label);
                    }
-                   ch2.add(x0);
-                   re2.add("field "+f.sig.label+" <: "+f.label);
                 }
              }
           }
