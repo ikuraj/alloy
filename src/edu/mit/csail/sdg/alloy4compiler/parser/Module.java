@@ -52,19 +52,24 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadJoin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Type;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
+import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
@@ -77,38 +82,54 @@ public final class Module {
     //============================================================================================================================//
 
     /** Mutable; this class represents the current typechecking context. */
-    static final class Context {
+    static final class Context extends VisitReturn<Expr> {
+
+        /** The place where warnings should go; can be null if we don't care about storing the warnings. */
+        private final List<ErrorWarning> warns;
+
         /** The module that the current context is in. */
         final Module rootmodule;
+
         /** Nonnull if we are typechecking a field declaration or a sig appended facts. */
         SigAST rootsig=null;
+
         /** True if we are typechecking a field declaration. */
         private boolean rootfield=false;
+
         /** True if we are typechecking a function's parameter declarations or return declaration. */
         private boolean rootfunparam=false;
+
         /** Nonnull if we are typechecking a function's body. */
         private Func rootfunbody=null;
+
         /** This maps local names (eg. let/quantification variables and function parameters) to the objects they refer to. */
         private final Env<String,Expr> env=new Env<String,Expr>();
+
         /** The level of macro substitution recursion. */
         public final int unrolls;
+
         /** Associates the given name with the given expression in the current lexical scope. */
         final void put(String name, Expr value) {
             env.put(name,value);
         }
+
         /** Removes the latest binding for the given name from the current lexical scope. */
         final void remove(String name) {
             env.remove(name);
         }
+
         /** Construct a new Context with an empty lexical scope. */
-        Context(Module rootModule) {
-            this(rootModule, 20); // 20 is a reasonable threshold; deeper than this would likely be too big to solve anyway
+        Context(Module rootModule, List<ErrorWarning> warns) {
+            this(rootModule, warns, 20); // 20 is a reasonable threshold; deeper than this would likely be too big to solve anyway
         }
+
         /** Construct a new Context with an empty lexical scope. */
-        Context(Module rootModule, int unrolls) {
-            this.rootmodule=rootModule;
-            this.unrolls=unrolls;
+        Context(Module rootModule, List<ErrorWarning> warns, int unrolls) {
+            this.rootmodule = rootModule;
+            this.unrolls = unrolls;
+            this.warns = warns;
         }
+
         /** Resolve the given name to get a collection of Expr and Func objects. */
         public Expr resolve(final Pos pos, final String name) {
             if (name.indexOf('/') >= 0) {
@@ -117,7 +138,7 @@ public final class Module {
                 while(true) {
                     int i = n.indexOf('/');
                     if (i<0) {
-                        ExpMacro m = mod.macros.get(n);
+                        Macro m = mod.macros.get(n);
                         if (m==null || (m.isPrivate!=null && mod!=rootmodule)) break; else return m.changePos(pos);
                     }
                     String alias = n.substring(0,i);
@@ -132,7 +153,7 @@ public final class Module {
                 boolean ambiguous = false;
                 StringBuilder sb = new StringBuilder();
                 for(Module m: rootmodule.getAllNameableModules()) {
-                    ExpMacro mac = m.macros.get(name);
+                    Macro mac = m.macros.get(name);
                     if (mac==null) continue;
                     if (match!=null) ambiguous=true; else match=mac;
                     sb.append("\n").append(m.path.length()==0 ? "this" : m.path).append("/").append(name);
@@ -141,7 +162,7 @@ public final class Module {
             }
             if (match==null) match = rootmodule.globals.get(name);
             if (match!=null) {
-                if (match instanceof ExpMacro) return ((ExpMacro)match).changePos(pos);
+                if (match instanceof Macro) return ((Macro)match).changePos(pos);
                 match = ExprUnary.Op.NOOP.make(pos, match);
                 return ExprChoice.make(pos, Util.asList(match), Util.asList(name));
             }
@@ -151,8 +172,159 @@ public final class Module {
             TempList<String> re = new TempList<String>();
             Expr ans = rootmodule.populate(ch, re, rootfield, rootsig, rootfunparam, rootfunbody, pos, name, th);
             if (ans!=null) return ans;
-            if (ch.size()==0) return new ExprBad(pos, name, ExpName.hint(pos, name)); else return ExprChoice.make(pos, ch.makeConst(), re.makeConst());
+            if (ch.size()==0) return new ExprBad(pos, name, hint(pos, name)); else return ExprChoice.make(pos, ch.makeConst(), re.makeConst());
         }
+
+        Expr check(Expr x) throws Err {
+            return visitThis(x);
+        }
+
+        /**
+         * Returns true if the function's parameters have reasonable intersection with the list of arguments.
+         * <br> If args.length() > f.params.size(), the extra arguments are ignored by this check
+         */
+        private static boolean applicable(Func f, List<Expr> args) {
+            if (f.params.size() > args.size()) return false;
+            int i=0;
+            for(ExprVar d: f.params) {
+                Type param=d.type, arg=args.get(i).type;
+                i++;
+                // The reason we don't directly compare "arg.arity()" with "param.arity()"
+                // is because the arguments may not be fully resolved yet.
+                if (!arg.hasCommonArity(param)) return false;
+                if (arg.hasTuple() && param.hasTuple() && !arg.intersects(param)) return false;
+            }
+            return true;
+        }
+
+        private Expr process(Pos pos, Pos closingBracket, Pos rightPos, List<Expr> choices, List<String> oldReasons, Expr arg) {
+            TempList<Expr> list = new TempList<Expr>(choices.size());
+            TempList<String> reasons = new TempList<String>(choices.size());
+            for(int i=0; i<choices.size(); i++) {
+                Expr x=choices.get(i), y=x;
+                while(true) {
+                   if (y instanceof ExprUnary && ((ExprUnary)y).op==ExprUnary.Op.NOOP) y=((ExprUnary)y).sub;
+                   else if (y instanceof ExprChoice && ((ExprChoice)y).choices.size()==1) y=((ExprChoice)y).choices.get(0);
+                   else break;
+                }
+                if (y instanceof ExprBadCall) {
+                    ExprBadCall bc = (ExprBadCall)y;
+                    if (bc.args.size() < bc.fun.params.size()) {
+                        ConstList<Expr> newargs = Util.append(bc.args, arg);
+                        if (applicable(bc.fun, newargs))
+                            y=ExprCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.extraWeight);
+                        else
+                            y=ExprBadCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.extraWeight);
+                    } else {
+                        y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, y);
+                    }
+                } else {
+                    y=ExprBinary.Op.JOIN.make(pos, closingBracket, arg, x);
+                }
+                list.add(y);
+                reasons.add(oldReasons.get(i));
+            }
+            return ExprChoice.make(rightPos, list.makeConst(), reasons.makeConst());
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprBuiltin x) throws Err {
+            TempList<Expr> temp = new TempList<Expr>(x.args.size());
+            for(int i=0; i<x.args.size(); i++) {
+                Expr e = visitThis(x.args.get(i));
+                temp.add(e);
+            }
+            return ExprBuiltin.makeDISJOINT(x.pos, x.closingBracket, temp.makeConst());
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprITE x) throws Err {
+            Expr f = visitThis(x.cond);
+            Expr a = visitThis(x.left);
+            Expr b = x.right==null ? null : visitThis(x.right);
+            return ExprITE.make(x.pos, f, a, b);
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprBadJoin x) throws Err {
+            Expr left = visitThis(x.left);
+            Expr right = visitThis(x.right);
+            // If it's a macro invocation, instantiate it
+            if (right instanceof Macro) return ((Macro)right).addArg(left).instantiate(this, warns);
+            // check to see if it is the special builtin function "Int[]"
+            if (left.type.is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();
+            // otherwise, process as regular join or as method call
+            left = left.typecheck_as_set();
+            if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) return ExprBinary.Op.JOIN.make(x.pos, x.closingBracket, left, right);
+            return process(x.pos, x.closingBracket, right.pos, ((ExprChoice)right).choices, ((ExprChoice)right).reasons, left);
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprBinary x) throws Err {
+            Expr left = visitThis(x.left);
+            Expr right = visitThis(x.right);
+            if (x.op==ExprBinary.Op.JOIN) {
+                // If it's a macro invocation, instantiate it
+                if (right instanceof Macro) return ((Macro)right).addArg(left).instantiate(this, warns);
+                // check to see if it is the special builtin function "Int[]"
+                if (left.type.is_int && right.isSame(Sig.SIGINT)) return left.cast2sigint();
+                // otherwise, process as regular join or as method call
+                left = left.typecheck_as_set();
+                if (!left.errors.isEmpty() || !(right instanceof ExprChoice)) return x.op.make(x.pos, x.closingBracket, left, right);
+                return process(x.pos, x.closingBracket, right.pos, ((ExprChoice)right).choices, ((ExprChoice)right).reasons, left);
+            }
+            return x.op.make(x.pos, x.closingBracket, left, right);
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprLet x) throws Err {
+            Expr right = visitThis(x.var.expr);
+            right = right.resolve(right.type, warns);
+            ExprVar left = ExprVar.make(x.var.pos, x.var.label, right);
+            put(left.label, left);
+            Expr sub = visitThis(x.sub);
+            remove(left.label);
+            return ExprLet.make(x.pos, left, sub);
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprQuant x) throws Err {
+            TempList<ExprVar> vars = new TempList<ExprVar>(x.vars.size());
+            Expr pre=null, post=null;
+            for(ExprVar v: x.vars) {
+                if (pre!=v.expr) { pre=v.expr; post=visitThis(pre).resolve_as_set(warns); if (post.mult==0 && post.type.arity()==1) post=ExprUnary.Op.ONEOF.make(null, post); }
+                ExprVar newV = ExprVar.make(v.pos, v.label, post);
+                vars.add(newV);
+                put(newV.label, newV);
+            }
+            Expr sub = visitThis(x.sub);
+            if (x.op==ExprQuant.Op.SUM) sub=sub.resolve_as_int(warns); else sub=sub.resolve_as_formula(warns);
+            for(ExprVar v: vars.makeConst()) remove(v.label);
+            return x.op.make(x.pos, x.closingBracket, vars.makeConst(), sub);
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprVar x) throws Err {
+            Expr obj = resolve(x.pos, x.label);
+            if (obj instanceof Macro) return ((Macro)obj).instantiate(this, warns); else return obj;
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprUnary x) throws Err {
+            return x.op.make(x.pos, visitThis(x.sub));
+        }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprCall x) { return x; }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(ExprConstant x) { return x; }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(Sig x) { return x; }
+
+        /** {@inheritDoc} */
+        @Override public Expr visit(Field x) { return x; }
     }
 
     //============================================================================================================================//
@@ -195,9 +367,9 @@ public final class Module {
         /** The original position.           */ private final Pos pos;
         /** The short name.                  */ private final String name;
         /** The parameters.                  */ private final ConstList<Decl> params;
-        /** The return type.                 */ private final Exp returnType;
-        /** The body.                        */ private final Exp body;
-        private FunAST(Pos pos, Pos isPrivate, Module realModule, String name, List<Decl> params, Exp returnType, Exp body) {
+        /** The return type.                 */ private final Expr returnType;
+        /** The body.                        */ private final Expr body;
+        private FunAST(Pos pos, Pos isPrivate, Module realModule, String name, List<Decl> params, Expr returnType, Expr body) {
             this.pos=pos;
             this.isPrivate=isPrivate;
             this.realModule=realModule;
@@ -219,12 +391,12 @@ public final class Module {
         private final Pos pos;
         private final String name,fullname;
         private final Pos abs,lone,one,some,subsig,subset;
-        private final ConstList<ExpName> parents;
+        private final ConstList<ExprVar> parents;
         private final ConstList<Decl> fields;
-        private final ConstList<ExpName> javadocs;
-        private final Exp appendedFact; // never null
+        private final ConstList<ExprVar> javadocs;
+        private final Expr appendedFact; // never null
         private SigAST(Pos pos, Pos isPrivate, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
-            List<ExpName> parents, List<Decl> fields, Exp appendedFacts, Module realModule, Sig realSig, List<ExpName> javadocs) {
+            List<ExprVar> parents, List<Decl> fields, Expr appendedFacts, Module realModule, Sig realSig, List<ExprVar> javadocs) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
             this.isPrivate=isPrivate;
             this.fullname=fullname;
@@ -243,7 +415,7 @@ public final class Module {
             this.realParents=new ArrayList<SigAST>(this.parents.size());
             this.javadocs=ConstList.make(javadocs);
         }
-        private SigAST(String fullname, String name, List<ExpName> parents, Sig realSig) {
+        private SigAST(String fullname, String name, List<ExprVar> parents, Sig realSig) {
             this(null, null, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig, null);
         }
         @Override public String toString() { return fullname; }
@@ -253,10 +425,10 @@ public final class Module {
     private static final SigAST UNIVast = new SigAST("univ", "univ", null, UNIV);
 
     /** The builtin sig "Int" */
-    private static final SigAST SIGINTast = new SigAST("Int", "Int", Util.asList(new ExpName(null,"univ")), SIGINT);
+    private static final SigAST SIGINTast = new SigAST("Int", "Int", Util.asList(ExprVar.make(null, "univ")), SIGINT);
 
     /** The builtin sig "seq/Int" */
-    private static final SigAST SEQIDXast = new SigAST("seq/Int", "Int", Util.asList(new ExpName(null,"Int")), SEQIDX);
+    private static final SigAST SEQIDXast = new SigAST("seq/Int", "Int", Util.asList(ExprVar.make(null, "Int")), SEQIDX);
 
     /** The builtin sig "none" */
     private static final SigAST NONEast = new SigAST("none", "none", null, NONE);
@@ -319,7 +491,7 @@ public final class Module {
     public PrimSig metaField() { return world.metaField; }
 
     /** The list of javadoc comments in this module. */
-    final List<ExpName> javadocs = new ArrayList<ExpName>();
+    final List<ExprVar> javadocs = new ArrayList<ExprVar>();
 
     /** The current name resolution mode (0=pure) (1=Alloy 4.1.3 and older) (2=new) */
     int resolution = 1;
@@ -328,13 +500,13 @@ public final class Module {
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
 
     /** Each macro name is mapped to a MacroAST object. */
-    private final Map<String,ExpMacro> macros = new LinkedHashMap<String,ExpMacro>();
+    private final Map<String,Macro> macros = new LinkedHashMap<String,Macro>();
 
     /** Each assertion name is mapped to either an untypechecked Exp, or a typechecked ExprVar with its value==the assertion. */
-    private final Map<String,Object> asserts = new LinkedHashMap<String,Object>();
+    private final Map<String,Expr> asserts = new LinkedHashMap<String,Expr>();
 
     /** Each fact name is mapped to either an untypechecked Exp, or a typechecked Expr. */
-    private final Map<String,Object> facts = new LinkedHashMap<String,Object>();
+    private final Map<String,Expr> facts = new LinkedHashMap<String,Expr>();
 
     /** The list of (CommandName,Command,Expr) triples; NOTE: duplicate command names are allowed. */
     private final List<Triple<String,Command,Expr>> commands = new ArrayList<Triple<String,Command,Expr>>();
@@ -359,18 +531,26 @@ public final class Module {
 
     //============================================================================================================================//
 
+    /** Generate an error message saying the given keyword is no longer supported. */
+    static ErrorSyntax hint (Pos pos, String name) {
+        String msg="The name \""+name+"\" cannot be found.";
+        if ("exh".equals(name) || "exhaustive".equals(name) || "part".equals(name) || "partition".equals(name))
+            msg=msg+" If you are migrating from Alloy 3, please see Help->QuickGuide on how to translate models that use the \""
+            +name+"\" keyword.";
+        return new ErrorSyntax(pos, msg);
+    }
+
     /** Return the untypechecked body of the first func/pred in this module; return null if there has not been any fun/pred. */
     Expr parseOneExpressionFromString(String input) throws Err, FileNotFoundException, IOException {
         Map<String,String> fc=new LinkedHashMap<String,String>();
         fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
         Module m = CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, -1, "", "");
         if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
-        Exp body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
-        Context cx = new Context(this);
-        Expr ans = body.check(cx, null);
-        ans = ans.resolve(ans.type, null);
-        if (ans.errors.size()>0) throw ans.errors.get(0);
-        return ans;
+        Expr body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
+        Context cx = new Context(this, null);
+        body = cx.check(body);
+        body = body.resolve(body.type, null);
+        if (body.errors.size()>0) throw body.errors.get(0); else return body;
     }
 
     /** Throw an exception if the name is already used, or has @ or /, or is univ/Int/none. */
@@ -461,7 +641,7 @@ public final class Module {
         List<Object> ans=new ArrayList<Object>();
         for(Module m:getAllNameableModules()) {
             if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) if (m==start || x.isPrivate==null) ans.add(x); }
-            if ((r&2)!=0) { Object x=m.asserts.get(name); if (x instanceof Expr) ans.add(x); }
+            if ((r&2)!=0) { Expr x=m.asserts.get(name); if (x!=null) ans.add(x); }
             if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) for(FunAST y:x) if (m==start || y.isPrivate==null) ans.add(y); }
         }
         return ans;
@@ -477,7 +657,7 @@ public final class Module {
             int i=name.indexOf('/');
             if (i<0) {
                 if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) if (level==0 || x.isPrivate==null) ans.add(x); }
-                if ((r&2)!=0) { Object x=u.asserts.get(name); if (x instanceof Expr) ans.add(x); }
+                if ((r&2)!=0) { Expr x=u.asserts.get(name); if (x!=null) ans.add(x); }
                 if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) if (level==0 || y.isPrivate==null) ans.add(y); }
                 if (ans.size()==0) return u.getRawNQS(this,r,name); // If nothing at this module, then do a non-qualified search from this module
                 return ans;
@@ -537,15 +717,15 @@ public final class Module {
     }
 
     /** Add the "MODULE" declaration. */
-    void addModelName(Pos pos, String moduleName, List<ExpName> list) throws Err {
+    void addModelName(Pos pos, String moduleName, List<ExprVar> list) throws Err {
         if (status>0) throw new ErrorSyntax(pos,
            "The \"module\" declaration must occur at the top,\n" + "and can occur at most once.");
         this.moduleName=moduleName;
         this.modulePos=pos;
         boolean nextIsExact = false;
-        if (list!=null) for(ExpName expr: list) {
+        if (list!=null) for(ExprVar expr: list) {
             if (expr==null) { nextIsExact=true; continue; }
-            String name=expr.name;
+            String name = expr.label;
             dup(expr.span(), name, true);
             if (path.length()==0) {
                 SigAST newSig = addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null, null);
@@ -564,27 +744,27 @@ public final class Module {
         int oldStatus=status;
         status=0;
         try {
-            addOpen(pos, null, new ExpName(pos,"util/sequniv"), null, new ExpName(pos,"seq"));
+            addOpen(pos, null, ExprVar.make(pos, "util/sequniv"), null, ExprVar.make(pos, "seq"));
         } finally {
             status=oldStatus;
         }
     }
 
     /** Add an OPEN declaration. */
-    void addOpen(Pos pos, Pos isPrivate, ExpName name, List<ExpName> args, ExpName alias) throws Err {
+    void addOpen(Pos pos, Pos isPrivate, ExprVar name, List<ExprVar> args, ExprVar alias) throws Err {
         if (status>2) throw new ErrorSyntax(pos,
            "The \"open\" declaration must occur before any\n" + "sig/pred/fun/fact/assert/check/run command.");
         status=2;
-        String as = (alias==null ? "" : alias.name);
-        if (name.name.length()==0) throw new ErrorSyntax(name.span(), "The filename cannot be empty.");
+        String as = (alias==null ? "" : alias.label);
+        if (name.label.length()==0) throw new ErrorSyntax(name.span(), "The filename cannot be empty.");
         if (as.indexOf('@')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'@\' character");
         if (as.indexOf('/')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'/\' character");
         if (as.length()==0) {
             as="open$"+(1+opens.size());
             if (args==null || args.size()==0) {
               for(int i=0; ; i++) {
-                if (i>=name.name.length()) { as=name.name; break; }
-                char c=name.name.charAt(i);
+                if (i>=name.label.length()) { as=name.label; break; }
+                char c=name.label.charAt(i);
                 if ((c>='a' && c<='z') || (c>='A' && c<='Z')) continue;
                 if (i==0) break;
                 if (!(c>='0' && c<='9') && c!='_' && c!='\'' && c!='\"') break;
@@ -593,18 +773,18 @@ public final class Module {
         }
         final TempList<String> newlist = new TempList<String>(args==null ? 0 : args.size());
         if (args!=null) for(int i=0; i<args.size(); i++) {
-            ExpName arg=args.get(i);
-            if (arg.name.length()==0)      throw new ErrorSyntax(arg.span(), "Argument cannot be empty.");
-            if (arg.name.indexOf('@')>=0)  throw new ErrorSyntax(arg.span(), "Argument cannot contain the \'@\' chracter.");
-            newlist.add(arg.name);
+            ExprVar arg=args.get(i);
+            if (arg.label.length()==0)      throw new ErrorSyntax(arg.span(), "Argument cannot be empty.");
+            if (arg.label.indexOf('@')>=0)  throw new ErrorSyntax(arg.span(), "Argument cannot contain the \'@\' chracter.");
+            newlist.add(arg.label);
         }
         Open x=opens.get(as);
         if (x!=null) {
             // we allow this, especially because of util/sequniv
-            if (x.args.equals(newlist.makeConst()) && x.filename.equals(name.name)) return;
+            if (x.args.equals(newlist.makeConst()) && x.filename.equals(name.label)) return;
             throw new ErrorSyntax(pos, "You cannot import two different modules\n" + "using the same alias.");
         }
-        x=new Open(pos, isPrivate!=null, as, newlist.makeConst(), name.name);
+        x=new Open(pos, isPrivate!=null, as, newlist.makeConst(), name.label);
         opens.put(as,x);
     }
 
@@ -677,35 +857,35 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a sig declaration. */
-    SigAST addSig(List<ExpName> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate,
-    ExpName par, List<ExpName> parents, List<Decl> fields, Exp fact, List<ExpName> javadocs) throws Err {
+    SigAST addSig(List<ExprVar> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate,
+        ExprVar par, List<ExprVar> parents, List<Decl> fields, Expr fact, List<ExprVar> javadocs) throws Err {
         pos = pos.merge(isAbstract).merge(isLone).merge(isOne).merge(isSome);
         status=3;
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
         Pos subset=null, subsig=null;
         if (par!=null) {
-            if (par.name.charAt(0)=='e') { subsig=par.span().merge(parents.get(0).span()); }
-            else { subset=par.span(); for(ExpName p:parents) subset=p.span().merge(subset); }
+            if (par.label.charAt(0)=='e') { subsig=par.span().merge(parents.get(0).span()); }
+            else { subset=par.span(); for(ExprVar p:parents) subset=p.span().merge(subset); }
         }
         SigAST obj=new SigAST(pos, isPrivate, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null,javadocs);
-        if (hints!=null) for(ExpName hint:hints) if (hint.name.equals("leaf")) {obj.hint_isLeaf=true; break;}
+        if (hints!=null) for(ExprVar hint:hints) if (hint.label.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
     }
 
     /** Add an enumeration. */
-    void addEnum(Pos pos, Pos priv, ExpName name, List<ExpName> parents, List<ExpName> atoms, Pos closingBracket) throws Err {
-        ExpName LEAF = new ExpName(null,"leaf");
-        ExpName EXTENDS = new ExpName(null, "extends");
-        ExpName THIS = new ExpName(null, "this/"+name);
-        List<ExpName> THESE = Arrays.asList(THIS);
+    void addEnum(Pos pos, Pos priv, ExprVar name, List<ExprVar> parents, List<ExprVar> atoms, Pos closingBracket) throws Err {
+        ExprVar LEAF = ExprVar.make(null,"leaf");
+        ExprVar EXTENDS = ExprVar.make(null, "extends");
+        ExprVar THIS = ExprVar.make(null, "this/"+name);
+        List<ExprVar> THESE = Arrays.asList(THIS);
         if (atoms==null || atoms.size()==0) throw new ErrorSyntax(pos, "Enumeration must contain at least one name.");
-        if (parents!=null) parents = new ArrayList<ExpName>(parents);
-        ExpName inOrExtend = (parents!=null && parents.size()>0) ? parents.remove(parents.size()-1) : null;
-        if (inOrExtend!=null && inOrExtend.name.charAt(0)=='i') throw new ErrorSyntax(pos, "Enumeration signatures cannot derive from a subset signature.");
-        addSig(Arrays.asList(LEAF), name.pos, name.name, name.pos, null, null, null, priv, inOrExtend, parents, null, null, null);
-        for(ExpName a:atoms) addSig(null, a.pos, a.name, null, null, a.pos, null, priv, EXTENDS, THESE, null, null, null);
+        if (parents!=null) parents = new ArrayList<ExprVar>(parents);
+        ExprVar inOrExtend = (parents!=null && parents.size()>0) ? parents.remove(parents.size()-1) : null;
+        if (inOrExtend!=null && inOrExtend.label.charAt(0)=='i') throw new ErrorSyntax(pos, "Enumeration signatures cannot derive from a subset signature.");
+        addSig(Arrays.asList(LEAF), name.pos, name.label, name.pos, null, null, null, priv, inOrExtend, parents, null, null, null);
+        for(ExprVar a:atoms) addSig(null, a.pos, a.label, null, null, a.pos, null, priv, EXTENDS, THESE, null, null, null);
     }
 
     /** The given SigAST will now point to a nonnull Sig. */
@@ -719,19 +899,19 @@ public final class Module {
         if (oldS.subset!=null)  {
             if (oldS.abs!=null) throw new ErrorSyntax(pos, "Subset signature \""+name+"\" cannot be abstract.");
             List<Sig> parents = new ArrayList<Sig>();
-            for(ExpName n: oldS.parents) {
-               SigAST parentAST = u.getRawSIG(n.span(), n.name);
-               if (parentAST==null) throw new ErrorSyntax(n.span(), "The sig \""+n.name+"\" cannot be found.");
+            for(ExprVar n: oldS.parents) {
+               SigAST parentAST = u.getRawSIG(n.span(), n.label);
+               if (parentAST==null) throw new ErrorSyntax(n.span(), "The sig \""+n.label+"\" cannot be found.");
                oldS.realParents.add(parentAST);
                parents.add(resolveSig(sorted, parentAST));
             }
             oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isPrivate, null);
         } else {
-            ExpName sup = null;
-            if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.name.length()==0) sup=null;}
+            ExprVar sup = null;
+            if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.label.length()==0) sup=null;}
             Pos suppos = sup==null ? Pos.UNKNOWN : sup.span();
-            SigAST parentAST = sup==null ? UNIVast : u.getRawSIG(suppos, sup.name);
-            if (parentAST==null) throw new ErrorSyntax(suppos, "The sig \""+sup.name+"\" cannot be found.");
+            SigAST parentAST = sup==null ? UNIVast : u.getRawSIG(suppos, sup.label);
+            if (parentAST==null) throw new ErrorSyntax(suppos, "The sig \""+sup.label+"\" cannot be found.");
             oldS.realParents.add(parentAST);
             Sig parent = resolveSig(sorted, parentAST);
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
@@ -753,37 +933,37 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a MACRO declaration. */
-    void addMacro(Pos p, Pos isPrivate, String n, List<ExpName> decls, Exp v) throws Err {
+    void addMacro(Pos p, Pos isPrivate, String n, List<ExprVar> decls, Expr v) throws Err {
         //if (1==1) throw new ErrorSyntax(p, "LET declaration is allowed only inside a toplevel paragraph.");
-        ConstList<ExpName> ds = ConstList.make(decls);
+        ConstList<ExprVar> ds = ConstList.make(decls);
         status=3;
         dup(p, n, true);
         for(int i=0; i<ds.size(); i++) for(int j=i+1; j<ds.size(); j++)
-          if (ds.get(i).name.equals(ds.get(j).name))
-             throw new ErrorSyntax(ds.get(j).span(), "The parameter name \""+ds.get(j).name+"\" cannot appear more than once.");
-        ExpMacro ans = new ExpMacro(p, isPrivate, this, n, ds, v);
-        ExpMacro old = macros.put(n, ans);
+          if (ds.get(i).label.equals(ds.get(j).label))
+             throw new ErrorSyntax(ds.get(j).span(), "The parameter name \""+ds.get(j).label+"\" cannot appear more than once.");
+        Macro ans = new Macro(p, isPrivate, this, n, ds, v);
+        Macro old = macros.put(n, ans);
         if (old!=null) { macros.put(n, old); throw new ErrorSyntax(p, "You cannot declare more than one macro with the same name \""+n+"\" in the same file."); }
      }
 
     /** Add a FUN or PRED declaration. */
-    void addFunc(Pos p, Pos isPrivate, String n, Exp f, List<Decl> decls, Exp t, Exp v) throws Err {
+    void addFunc(Pos p, Pos isPrivate, String n, Expr f, List<Decl> decls, Expr t, Expr v) throws Err {
         if (decls==null) decls=new ArrayList<Decl>(); else decls=new ArrayList<Decl>(decls);
-        if (f!=null) decls.add(0, new Decl(null, null, null, Util.asList(new ExpName(f.span(), "this")), f));
+        if (f!=null) decls.add(0, new Decl(null, null, null, Util.asList(ExprVar.make(f.span(), "this")), f));
         for(Decl d:decls) {
             if (d.isPrivate!=null) {
-                ExpName name = d.names.get(0);
-                throw new ErrorSyntax(d.isPrivate.merge(name.pos), "Function parameter \""+name.name+"\" is always private already.");
+                ExprVar name = d.names.get(0);
+                throw new ErrorSyntax(d.isPrivate.merge(name.pos), "Function parameter \""+name.label+"\" is always private already.");
             }
             if (d.disjoint2!=null) {
-                ExpName name = d.names.get(d.names.size()-1);
-                throw new ErrorSyntax(d.disjoint2.merge(name.pos), "Function parameter \""+name.name+"\" cannot be bound to a 'disjoint' expression.");
+                ExprVar name = d.names.get(d.names.size()-1);
+                throw new ErrorSyntax(d.disjoint2.merge(name.pos), "Function parameter \""+name.label+"\" cannot be bound to a 'disjoint' expression.");
             }
         }
         status=3;
         dup(p, n, false);
-        ExpName dup = Decl.findDuplicateName(decls);
-        if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.name+"\" cannot appear more than once.");
+        ExprVar dup = Decl.findDuplicateName(decls);
+        if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.label+"\" cannot appear more than once.");
         FunAST ans = new FunAST(p, isPrivate, this, n, decls, t, v);
         SafeList<FunAST> list = funcs.get(n);
         if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
@@ -796,23 +976,23 @@ public final class Module {
             String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.name;
             // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
             // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
-            Context cx = new Context(this);
+            Context cx = new Context(this, warns);
             cx.rootfunparam = true;
             TempList<ExprVar> tmpvars = new TempList<ExprVar>();
             boolean err=false;
             for(Decl d:f.params) {
-                Expr val = d.expr.check(cx, warns).resolve_as_set(warns);
+                Expr val = cx.check(d.expr).resolve_as_set(warns);
                 if (!val.errors.isEmpty()) { err=true; errors = errors.join(val.errors); }
-                for(ExpName n: d.names) {
-                    ExprVar v = ExprVar.make(n.span(), n.name, val);
-                    cx.put(n.name, v);
+                for(ExprVar n: d.names) {
+                    ExprVar v = ExprVar.make(n.span(), n.label, val);
+                    cx.put(n.label, v);
                     tmpvars.add(v);
-                    rep.typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.name+": "+v.type+"\n");
+                    rep.typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.label+": "+v.type+"\n");
                 }
             }
             Expr ret = null;
             if (f.returnType!=null) {
-                ret = f.returnType.check(cx, warns).resolve_as_set(warns);
+                ret = cx.check(f.returnType).resolve_as_set(warns);
                 if (!ret.errors.isEmpty()) { err=true; errors=errors.join(ret.errors); }
             }
             if (err) continue;
@@ -829,19 +1009,19 @@ public final class Module {
         for(Map.Entry<String,SafeList<FunAST>> entry:funcs.entrySet()) for(FunAST f:entry.getValue()) {
             Func ff = f.realFunc;
             Expr disj = null;
-            Context cx = new Context(this);
+            Context cx = new Context(this, warns);
             cx.rootfunbody = ff;
             Iterator<ExprVar> vv=ff.params.iterator();
             for(Decl d:f.params) {
                 List<Expr> disjvars = (d.disjoint!=null && d.names.size()>0) ? (new ArrayList<Expr>(d.names.size())) : null;
-                for(ExpName n:d.names) {
+                for(ExprVar n:d.names) {
                     ExprVar newvar=vv.next();
-                    cx.put(n.name, newvar);
+                    cx.put(n.label, newvar);
                     if (disjvars!=null) disjvars.add(newvar);
                 }
                 if (disjvars!=null) disj=ExprBuiltin.makeDISJOINT(d.disjoint, null, disjvars).and(disj);
             }
-            Expr newBody = f.body.check(cx, warns);
+            Expr newBody = cx.check(f.body);
             if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
             errors = errors.join(newBody.errors);
             if (!newBody.errors.isEmpty()) continue;
@@ -868,28 +1048,24 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add an ASSERT declaration. */
-    String addAssertion(Pos pos, String name, Exp value) throws Err {
+    String addAssertion(Pos pos, String name, Expr value) throws Err {
         status=3;
         if (name==null || name.length()==0) name="assert$"+(1+asserts.size());
         dup(pos, name, true);
-        asserts.put(name, new ExpUnary(value.span().merge(pos), ExprUnary.Op.NOOP, value));
+        asserts.put(name, ExprUnary.Op.NOOP.make(value.span().merge(pos), value));
         return name;
     }
 
     /** Each assertion name now points to a typechecked Expr rather than an untypechecked Exp. */
     private JoinableList<Err> resolveAssertions(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
-        Context cx = new Context(this);
-        for(Map.Entry<String,Object> e:asserts.entrySet()) {
-            Object x = e.getValue();
-            Expr expr = null;
-            if (x instanceof Expr) expr=(Expr)x;
-            if (x instanceof Exp) {
-                expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
-                if (expr.errors.isEmpty())
-                   e.setValue(ExprVar.make(expr.span(), (path.length()==0?"this/":(path+"/"))+e.getKey(), expr));
-            }
-            if (expr.errors.size()>0) errors=errors.join(expr.errors);
-            else rep.typecheck("Assertion " + e.getKey() + ": " + expr.type+"\n");
+        Context cx = new Context(this, warns);
+        for(Map.Entry<String,Expr> e:asserts.entrySet()) {
+            Expr expr = e.getValue();
+            expr = cx.check(expr).resolve_as_formula(warns);
+            if (expr.errors.isEmpty()) {
+                e.setValue(ExprVar.make(expr.span(), (path.length()==0?"this/":(path+"/"))+e.getKey(), expr));
+                rep.typecheck("Assertion " + e.getKey() + ": " + expr.type+"\n");
+            } else errors=errors.join(expr.errors);
         }
         return errors;
     }
@@ -897,8 +1073,8 @@ public final class Module {
     /** Return an unmodifiable list of all assertions in this module. */
     public ConstList<Pair<String,Expr>> getAllAssertions() {
         TempList<Pair<String,Expr>> ans = new TempList<Pair<String,Expr>>(asserts.size());
-        for(Map.Entry<String,Object> e:asserts.entrySet()) {
-            Object x=e.getValue();
+        for(Map.Entry<String,Expr> e:asserts.entrySet()) {
+            Expr x=e.getValue();
             if (x instanceof ExprVar) ans.add(new Pair<String,Expr>(e.getKey(), ((ExprVar)x).expr));
         }
         return ans.makeConst();
@@ -907,41 +1083,38 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a FACT declaration. */
-    void addFact(Pos pos, String name, Exp value) throws Err {
+    void addFact(Pos pos, String name, Expr value) throws Err {
         status=3;
         if (name==null || name.length()==0) name="fact$"+(1+facts.size());
         dup(pos, name, true);
-        facts.put(name, new ExpUnary(value.span().merge(pos), ExprUnary.Op.NOOP, value));
+        facts.put(name, ExprUnary.Op.NOOP.make(value.span().merge(pos), value));
     }
 
     /** Each fact name now points to a typechecked Expr rather than an untypechecked Exp; we'll also add the sig appended facts. */
     private JoinableList<Err> resolveFacts(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
-        Context cx = new Context(this);
-        for(Map.Entry<String,Object> e:facts.entrySet()) {
-            Object x = e.getValue();
-            Expr expr = null;
-            if (x instanceof Expr) expr=(Expr)x;
-            if (x instanceof Exp) {
-                expr=((Exp)x).check(cx, warns).resolve_as_formula(warns);
-                if (expr.errors.isEmpty()) e.setValue(expr);
-            }
-            if (expr.errors.size()>0) errors=errors.join(expr.errors);
-            else { rep.typecheck("Fact " + e.getKey() + ": " + expr.type+"\n"); }
+        Context cx = new Context(this, warns);
+        for(Map.Entry<String,Expr> e:facts.entrySet()) {
+            Expr expr = e.getValue();
+            expr = cx.check(expr).resolve_as_formula(warns);
+            if (expr.errors.isEmpty()) {
+                e.setValue(expr);
+                rep.typecheck("Fact " + e.getKey() + ": " + expr.type+"\n");
+            } else errors=errors.join(expr.errors);
         }
         for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
             Sig s=e.getValue().realSig;
-            Exp f=e.getValue().appendedFact;
+            Expr f=e.getValue().appendedFact;
             if (f==null) continue;
-            if (f instanceof ExpConstant && ((ExpConstant)f).op==ExprConstant.Op.TRUE) continue;
+            if (f instanceof ExprConstant && ((ExprConstant)f).op==ExprConstant.Op.TRUE) continue;
             Expr formula;
             cx.rootsig=e.getValue();
             if (s.isOne==null) {
                 ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
                 cx.put("this", THIS);
-                formula = f.check(cx, warns).resolve_as_formula(warns).forAll(THIS);
+                formula = cx.check(f).resolve_as_formula(warns).forAll(THIS);
             } else {
                 cx.put("this", s);
-                formula = f.check(cx, warns).resolve_as_formula(warns);
+                formula = cx.check(f).resolve_as_formula(warns);
             }
             cx.remove("this");
             if (formula.errors.size()>0) { errors=errors.join(formula.errors); continue; }
@@ -954,9 +1127,9 @@ public final class Module {
     /** Return an unmodifiable list of all facts in this module. */
     public SafeList<Pair<String,Expr>> getAllFacts() {
         SafeList<Pair<String,Expr>> ans = new SafeList<Pair<String,Expr>>(facts.size());
-        for(Map.Entry<String,Object> e:facts.entrySet()) {
-            Object x=e.getValue();
-            if (x instanceof Expr) ans.add(new Pair<String,Expr>(e.getKey(), (Expr)x));
+        for(Map.Entry<String,Expr> e:facts.entrySet()) {
+            Expr x=e.getValue();
+            if (x!=null) ans.add(new Pair<String,Expr>(e.getKey(), x));
         }
         return ans.dup();
     }
@@ -964,23 +1137,23 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, ExpName label) throws Err {
+    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, ExprVar label) throws Err {
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
-        String labelName = (label==null || label.name.length()==0) ? n : label.name;
+        String labelName = (label==null || label.label.length()==0) ? n : label.label;
         commands.add(new Triple<String,Command,Expr>(n, new Command(p, labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
     }
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, Exp e, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, ExpName label) throws Err {
+    void addCommand(Pos p, Expr e, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, ExprVar label) throws Err {
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         String n;
         if (c) n=addAssertion(p,"check$"+(1+commands.size()),e);
            else addFunc(e.span().merge(p), Pos.UNKNOWN, n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
-        String labelName = (label==null || label.name.length()==0) ? n : label.name;
+        String labelName = (label==null || label.label.length()==0) ? n : label.label;
         commands.add(new Triple<String,Command,Expr>(n, new Command(e.span().merge(p), labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
     }
 
@@ -1066,12 +1239,12 @@ public final class Module {
            // then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
            final Sig s = oldS.realSig;
            final Module m = oldS.realModule;
-           final Context cx = new Context(m);
-           final ExpName dup = Decl.findDuplicateName(oldS.fields);
-           if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.name+"\"");
+           final Context cx = new Context(m, warns);
+           final ExprVar dup = Decl.findDuplicateName(oldS.fields);
+           if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.label+"\"");
            List<Field> disjoint2 = new ArrayList<Field>();
-           Iterator<ExpName> jj = oldS.javadocs.iterator();
-           ExpName j = jj.hasNext() ? jj.next() : null;
+           Iterator<ExprVar> jj = oldS.javadocs.iterator();
+           ExprVar j = jj.hasNext() ? jj.next() : null;
            Expr disjX = ExprConstant.TRUE;
            for(int di=0; di<oldS.fields.size(); di++) {
               final Decl d = oldS.fields.get(di);
@@ -1080,19 +1253,19 @@ public final class Module {
               cx.rootfield = true;
               cx.rootsig = oldS;
               cx.put("this", THIS);
-              Expr bound = d.expr.check(cx, warns).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
+              Expr bound = cx.check(d.expr).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
               for(int dj=0; dj<d.names.size(); dj++) {
                  List<String> annotations = null;
-                 final ExpName n = d.names.get(dj);
+                 final ExprVar n = d.names.get(dj);
                  Pos da = n.pos, db;
                  if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.appendedFact.span();
                  while (j!=null && Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
                      if (annotations==null) annotations = new ArrayList<String>();
-                     annotations.add(j.name);
+                     annotations.add(j.label);
                      if (jj.hasNext()) j=jj.next(); else j=null;
                  }
-                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.name, THIS, bound, annotations);
+                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.label, THIS, bound, annotations);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint2!=null) disjoint2.add(f);
                  if (d.disjoint==null) continue;
@@ -1135,9 +1308,9 @@ public final class Module {
         // Now, add the meta sigs and fields if needed
         if (root.seenDollar) {
             boolean hasMetaSig=false, hasMetaField=false;
-            ExpName EXTENDS = new ExpName(null, "extends");
-            ExpName THIS = new ExpName(null, "univ");
-            List<ExpName> THESE = Arrays.asList(THIS);
+            ExprVar EXTENDS = ExprVar.make(null, "extends");
+            ExprVar THIS = ExprVar.make(null, "univ");
+            List<ExprVar> THESE = Arrays.asList(THIS);
             SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null, null);
             SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null, null);
             metasig.topo = true;
@@ -1263,9 +1436,9 @@ public final class Module {
         // All else: we can call, and can refer to anything visible.
         for(Module m: getAllNameableModules()) for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null) {
           int fi=(-1), fn=s.getValue().realSig.getFields().size(); // fn is the number of fields that are typechecked so far
-          for(Decl d: s.getValue().fields) for(ExpName label: d.names) {
+          for(Decl d: s.getValue().fields) for(ExprVar label: d.names) {
              fi++;
-             if (fi<fn && (m==this || d.isPrivate==null) && label.name.equals(name)) {
+             if (fi<fn && (m==this || d.isPrivate==null) && label.label.equals(name)) {
                 Field f=s.getValue().realSig.getFields().get(fi);
                 if (resolution==1) {
                    Expr x=null;

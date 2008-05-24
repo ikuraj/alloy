@@ -24,6 +24,7 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -32,11 +33,12 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module.Context;
 
 /** Immutable; this class represents a macro. */
 
-final class ExpMacro extends ExprCustom {
+final class Macro extends ExprCustom {
 
     /** If nonnull, this is a private macro. */
     final Pos isPrivate;
@@ -48,16 +50,16 @@ final class ExpMacro extends ExprCustom {
     private final String name;
 
     /** The list of parameters (can be an empty list) */
-    private final ConstList<ExpName> params;
+    private final ConstList<ExprVar> params;
 
     /** The list of arguments (can be an empty list) (must be equal or shorter than this.params) */
     private final ConstList<Expr> args;
 
     /** The macro body. */
-    private final Exp body;
+    private final Expr body;
 
     /** Construct a new Macro object. */
-    private ExpMacro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExpName> params, List<Expr> args, Exp body) {
+    private Macro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExprVar> params, List<Expr> args, Expr body) {
         super(pos, new ErrorFatal(pos, "Incomplete call on the macro \""+name+"\""));
         this.realModule = realModule;
         this.isPrivate = isPrivate;
@@ -68,16 +70,16 @@ final class ExpMacro extends ExprCustom {
     }
 
     /** Construct a new Macro object. */
-    ExpMacro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExpName> params, Exp body) {
+    Macro(Pos pos, Pos isPrivate, Module realModule, String name, List<ExprVar> params, Expr body) {
         this(pos, isPrivate, realModule, name, params, null, body);
     }
 
-    ExpMacro addArg(Expr arg) {
-        return new ExpMacro(pos, isPrivate, realModule, name, params, Util.append(args,arg), body);
+    Macro addArg(Expr arg) {
+        return new Macro(pos, isPrivate, realModule, name, params, Util.append(args,arg), body);
     }
 
     Expr changePos(Pos pos) {
-        return new ExpMacro(pos, isPrivate, realModule, name, params, args, body);
+        return new Macro(pos, isPrivate, realModule, name, params, args, body);
     }
 
     /**
@@ -85,20 +87,19 @@ final class ExpMacro extends ExprCustom {
      *
      * @param warnings - the list that will receive any warning we generate; can be null if we wish to ignore warnings
      */
-    Expr instantiate(Context cx, List<ErrorWarning> warnings) {
+    Expr instantiate(Context cx, List<ErrorWarning> warnings) throws Err {
         if (cx.unrolls<=0) {
             Pos p = span();
             return new ExprBad(p, toString(), new ErrorType(p, "Macro substitution too deep; possibly indicating an infinite recursion."));
         }
         if (params.size() != args.size()) return this;
-        Context cx2 = new Context(realModule, cx.unrolls-1);
+        Context cx2 = new Context(realModule, warnings, cx.unrolls-1);
         for(int n=params.size(), i=0; i<n; i++) {
             Expr tmp = args.get(i);
-            if (!(tmp instanceof ExpMacro)) tmp = tmp.resolve(tmp.type, warnings);
-            cx2.put(params.get(i).name, tmp);
+            if (!(tmp instanceof Macro)) tmp = tmp.resolve(tmp.type, warnings);
+            cx2.put(params.get(i).label, tmp);
         }
-        Expr ans = body.check(cx2, warnings);
-        return ans;
+        return cx2.check(body);
     }
 
     /** {@inheritDoc} */

@@ -6,6 +6,7 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import java.util.List;
 import java_cup_11a.runtime.*;
 
@@ -345,7 +346,7 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
  private final Symbol alloy_id(String txt) throws Err {
     Pos p=alloy_here(txt);
     if (alloy_seenDollar.size()==0 && txt.indexOf('$')>=0) alloy_seenDollar.add(null);
-    return new Symbol(CompSym.ID, p, new ExpName(p,txt));
+    return new Symbol(CompSym.ID, p, ExprVar.make(p,txt));
  }
  private final Symbol alloy_num(String txt) throws Err {
     Pos p=alloy_here(txt);
@@ -355,7 +356,7 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
     } catch(NumberFormatException ex) {
        throw new ErrorSyntax(p, "The number "+txt+" is too large to be stored in a Java integer");
     }
-    return new Symbol(CompSym.NUMBER, p, new ExpConstant(p, ExprConstant.Op.NUMBER, n));
+    return new Symbol(CompSym.NUMBER, p, ExprConstant.Op.NUMBER.make(p, n));
  }
 
 
@@ -711,256 +712,256 @@ yyline=yycolumn=0;
           { return alloy_sym(yytext(), CompSym.SEQ         );
           }
         case 82: break;
+        case 72:
+          { String txt=yytext(); if (txt.length()>5) { txt=txt.substring(3,txt.length()-2); alloy_module.javadocs.add(ExprVar.make(alloy_here(txt), txt)); }
+          }
+        case 83: break;
         case 37:
           { return alloy_sym(yytext(), CompSym.IMPLIES     );
           }
-        case 83: break;
+        case 84: break;
         case 23:
           { return alloy_sym(yytext(), CompSym.RBRACE      );
           }
-        case 84: break;
+        case 85: break;
         case 77:
           { return alloy_sym(yytext(), CompSym.EXACTLY     );
           }
-        case 85: break;
+        case 86: break;
         case 51:
           { return alloy_sym(yytext(), CompSym.RUN         );
           }
-        case 86: break;
+        case 87: break;
         case 35:
           { return alloy_sym(yytext(), CompSym.SHL         );
           }
-        case 87: break;
+        case 88: break;
         case 34:
           { return alloy_sym(yytext(), CompSym.DOMAIN      );
           }
-        case 88: break;
+        case 89: break;
         case 58:
           { return alloy_sym(yytext(), CompSym.SIGINT      );
           }
-        case 89: break;
+        case 90: break;
         case 24:
           { return alloy_sym(yytext(), CompSym.TILDE       );
           }
-        case 90: break;
+        case 91: break;
         case 21:
           { return alloy_sym(yytext(), CompSym.LBRACE      );
           }
-        case 91: break;
+        case 92: break;
         case 7:
           { return alloy_sym(yytext(), CompSym.STAR        );
           }
-        case 92: break;
+        case 93: break;
         case 29:
           { return alloy_sym(yytext(), CompSym.PLUSPLUS    );
           }
-        case 93: break;
+        case 94: break;
         case 56:
           { return alloy_sym(yytext(), CompSym.FUN         );
           }
-        case 94: break;
+        case 95: break;
         case 53:
           { return alloy_sym(yytext(), CompSym.EXH         );
           }
-        case 95: break;
+        case 96: break;
         case 1:
           { throw new ErrorSyntax(alloy_here(" "),"The character "+yytext()+" cannot start a lexical token.");
           }
-        case 96: break;
+        case 97: break;
         case 54:
           { return alloy_sym(yytext(), CompSym.INT         );
           }
-        case 97: break;
+        case 98: break;
         case 50:
           { return alloy_sym(yytext(), CompSym.SIG         );
           }
-        case 98: break;
+        case 99: break;
         case 70:
           { return alloy_sym(yytext(), CompSym.PRED        );
           }
-        case 99: break;
+        case 100: break;
         case 25:
           { return alloy_id  (yytext());
           }
-        case 100: break;
+        case 101: break;
         case 61:
           { return alloy_sym(yytext(), CompSym.LONE        );
           }
-        case 101: break;
+        case 102: break;
         case 40:
           { return alloy_sym(yytext(), CompSym.NO          );
           }
-        case 102: break;
+        case 103: break;
         case 9:
           { return alloy_sym(yytext(), CompSym.COMMA       );
           }
-        case 103: break;
+        case 104: break;
         case 39:
           { return alloy_sym(yytext(), CompSym.AS          );
           }
-        case 104: break;
+        case 105: break;
         case 60:
           { return alloy_sym(yytext(), CompSym.THIS        );
           }
-        case 105: break;
+        case 106: break;
         case 13:
           { return alloy_sym(yytext(), CompSym.SLASH       );
           }
-        case 106: break;
+        case 107: break;
         case 46:
           { return alloy_sym(yytext(), CompSym.BUT         );
           }
-        case 107: break;
+        case 108: break;
         case 63:
           { return alloy_sym(yytext(), CompSym.DISJ        );
           }
-        case 108: break;
+        case 109: break;
         case 31:
           { return alloy_sym(yytext(), CompSym.SHA         );
           }
-        case 109: break;
+        case 110: break;
         case 38:
           { return alloy_sym(yytext(), CompSym.OR          );
           }
-        case 110: break;
+        case 111: break;
         case 43:
           { return alloy_sym(yytext(), CompSym.SHR         );
           }
-        case 111: break;
+        case 112: break;
         case 79:
           { return alloy_sym(yytext(), CompSym.PRIVATE     );
           }
-        case 112: break;
+        case 113: break;
         case 30:
           { return alloy_sym(yytext(), CompSym.ARROW       );
           }
-        case 113: break;
+        case 114: break;
         case 32:
           { return alloy_sym(yytext(), CompSym.GTE         );
           }
-        case 114: break;
+        case 115: break;
         case 20:
           { return alloy_sym(yytext(), CompSym.CARET       );
           }
-        case 115: break;
+        case 116: break;
         case 44:
           { return alloy_sym(yytext(), CompSym.IFF         );
           }
-        case 116: break;
+        case 117: break;
         case 64:
           { return alloy_sym(yytext(), CompSym.ELSE        );
           }
-        case 117: break;
+        case 118: break;
         case 3:
           { return alloy_sym(yytext(), CompSym.HASH        );
           }
-        case 118: break;
+        case 119: break;
         case 12:
           { return alloy_sym(yytext(), CompSym.DOT         );
           }
-        case 119: break;
+        case 120: break;
         case 22:
           { return alloy_sym(yytext(), CompSym.BAR         );
           }
-        case 120: break;
+        case 121: break;
         case 75:
           { return alloy_sym(yytext(), CompSym.EXPECT      );
           }
-        case 121: break;
+        case 122: break;
         case 8:
           { return alloy_sym(yytext(), CompSym.PLUS        );
           }
-        case 122: break;
+        case 123: break;
         case 36:
           { return alloy_sym(yytext(), CompSym.LTE         );
           }
-        case 123: break;
+        case 124: break;
         case 55:
           { return alloy_sym(yytext(), CompSym.ONE         );
           }
-        case 124: break;
+        case 125: break;
         case 68:
           { return alloy_sym(yytext(), CompSym.OPEN        );
           }
-        case 125: break;
+        case 126: break;
         case 11:
           { return alloy_sym(yytext(), CompSym.GT          );
           }
-        case 126: break;
+        case 127: break;
         case 76:
           { return alloy_sym(yytext(), CompSym.MODULE      );
           }
-        case 127: break;
+        case 128: break;
         case 14:
           { return alloy_sym(yytext(), CompSym.COLON       );
           }
-        case 128: break;
+        case 129: break;
         case 49:
           { return alloy_sym(yytext(), CompSym.SUM         );
           }
-        case 129: break;
+        case 130: break;
         case 69:
           { return alloy_sym(yytext(), CompSym.PART        );
           }
-        case 130: break;
+        case 131: break;
         case 16:
           { return alloy_sym(yytext(), CompSym.EQUALS      );
           }
-        case 131: break;
+        case 132: break;
         case 78:
           { return alloy_sym(yytext(), CompSym.EXTENDS     );
           }
-        case 132: break;
+        case 133: break;
         case 57:
           { return alloy_sym(yytext(), CompSym.FOR         );
           }
-        case 133: break;
+        case 134: break;
         case 26:
           { return alloy_num (yytext());
           }
-        case 134: break;
+        case 135: break;
         case 67:
           { return alloy_sym(yytext(), CompSym.IDEN        );
           }
-        case 135: break;
+        case 136: break;
         case 15:
           { return alloy_sym(yytext(), CompSym.LT          );
           }
-        case 136: break;
+        case 137: break;
         case 17:
           { return alloy_sym(yytext(), CompSym.AT          );
           }
-        case 137: break;
+        case 138: break;
         case 33:
           { return alloy_sym(yytext(), CompSym.RANGE       );
           }
-        case 138: break;
+        case 139: break;
         case 66:
           { return alloy_sym(yytext(), CompSym.UNIV        );
           }
-        case 139: break;
+        case 140: break;
         case 2:
           { return alloy_sym(yytext(), CompSym.NOT         );
           }
-        case 140: break;
+        case 141: break;
         case 47:
           { return alloy_sym(yytext(), CompSym.SET         );
           }
-        case 141: break;
+        case 142: break;
         case 6:
           { return alloy_sym(yytext(), CompSym.RPAREN      );
           }
-        case 142: break;
+        case 143: break;
         case 41:
           { return alloy_sym(yytext(), CompSym.IN          );
           }
-        case 143: break;
+        case 144: break;
         case 73:
           { return alloy_sym(yytext(), CompSym.CHECK       );
-          }
-        case 144: break;
-        case 72:
-          { String txt=yytext(); if (txt.length()>5) { txt=txt.substring(3,txt.length()-2); alloy_module.javadocs.add(new ExpName(alloy_here(txt), txt)); }
           }
         case 145: break;
         case 28:

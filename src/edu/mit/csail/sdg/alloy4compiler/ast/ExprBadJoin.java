@@ -39,10 +39,10 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 public final class ExprBadJoin extends Expr {
 
     /** The left-hand-side expression. */
-    private final Expr left;
+    public final Expr left;
 
     /** The right-hand-side expression. */
-    private final Expr right;
+    public final Expr right;
 
     /** Caches the span() result. */
     private Pos span=null;
@@ -93,5 +93,5 @@ public final class ExprBadJoin extends Expr {
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { throw errors.get(0); }
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 }

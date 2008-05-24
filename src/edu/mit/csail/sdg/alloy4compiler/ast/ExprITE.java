@@ -175,8 +175,5 @@ public final class ExprITE extends Expr {
     }
 
     /** {@inheritDoc} */
-    @Override final<T> T accept(VisitReturn<T> visitor) throws Err {
-        if (!errors.isEmpty()) throw errors.get(0);
-        return visitor.visit(this);
-    }
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 }

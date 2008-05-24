@@ -24,6 +24,7 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -64,9 +65,24 @@ public final class ExprVar extends Expr {
 
     /** Constructs an ExprVar object */
     private ExprVar(Pos pos, String label, Type type, Expr expr) {
-        super(pos, null, false, type, 0, expr.weight, expr.errors);
+        super(pos, null, false, type, 0, (expr==null ? 0 : expr.weight), (expr==null ? uninitList : expr.errors));
         this.label = (label==null ? "" : label);
         this.expr = expr;
+    }
+
+    /** Preconstructed error object saying "this variable failed to be resolved" */
+    private static final ErrorType uninit = new ErrorType(Pos.UNKNOWN, "This variable failed to be resolved.");
+
+    /** Preconstructed list that contains a single error message. */
+    private static final JoinableList<Err> uninitList = new JoinableList<Err>(uninit);
+
+    /**
+     * Constructs an ExprVar variable
+     * @param pos - the original position in the source file (can be null if unknown)
+     * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
+     */
+    public static ExprVar make(Pos pos, String label) {
+        return new ExprVar(pos, label, Type.EMPTY, null);
     }
 
     /**
@@ -98,8 +114,5 @@ public final class ExprVar extends Expr {
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final<T> T accept(VisitReturn<T> visitor) throws Err {
-        if (!errors.isEmpty()) throw errors.get(0);
-        return visitor.visit(this);
-    }
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 }

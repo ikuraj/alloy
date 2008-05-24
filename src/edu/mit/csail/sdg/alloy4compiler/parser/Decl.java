@@ -25,6 +25,8 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 
 /** Immutable; this declaration binds a list of names to an expression. */
 
@@ -40,10 +42,10 @@ final class Decl {
     public final Pos disjoint2;
 
     /** The list of names. */
-    public final ConstList<ExpName> names;
+    public final ConstList<ExprVar> names;
 
     /** The value that the list of names are bound to. */
-    public final Exp expr;
+    public final Expr expr;
 
     /** Caches the span() result. */
     private Pos span=null;
@@ -53,14 +55,14 @@ final class Decl {
         Pos p=span;
         if (p==null) {
             p=expr.span().merge(disjoint).merge(disjoint2);
-            for(ExpName n:names) p=p.merge(n.span());
+            for(ExprVar n:names) p=p.merge(n.span());
             span=p;
         }
         return p;
     }
 
     /** This constructs a declaration. */
-    public Decl(Pos isPrivate, Pos disjoint, Pos disjoint2, List<ExpName> names, Exp expr) {
+    public Decl(Pos isPrivate, Pos disjoint, Pos disjoint2, List<ExprVar> names, Expr expr) {
         this.isPrivate = isPrivate;
         this.disjoint = disjoint;
         this.disjoint2 = disjoint2;
@@ -69,13 +71,13 @@ final class Decl {
     }
 
     /** If the list of declaration contains a duplicate name, return one such duplicate name, else return null. */
-    public static ExpName findDuplicateName (List<Decl> list) {
+    public static ExprVar findDuplicateName (List<Decl> list) {
         for(int i=0; i<list.size(); i++) {
             Decl d=list.get(i);
             for(int j=0; j<d.names.size(); j++) {
-                ExpName n=d.names.get(j);
-                for(int k=j+1; k<d.names.size(); k++) if (d.names.get(k).name.equals(n.name)) return n;
-                for(int k=i+1; k<list.size(); k++) if (list.get(k).hasName(n.name)) return n;
+                ExprVar n = d.names.get(j);
+                for(int k=j+1; k<d.names.size(); k++) if (d.names.get(k).label.equals(n.label)) return n;
+                for(int k=i+1; k<list.size(); k++) if (list.get(k).hasName(n.label)) return n;
             }
         }
         return null;
@@ -83,7 +85,7 @@ final class Decl {
 
     /** Returns true if this declaration contains the given name. */
     public boolean hasName(String name) {
-        for(int i=0; i<names.size(); i++) if (names.get(i).name.equals(name)) return true;
+        for(int i=0; i<names.size(); i++) if (names.get(i).label.equals(name)) return true;
         return false;
     }
 }

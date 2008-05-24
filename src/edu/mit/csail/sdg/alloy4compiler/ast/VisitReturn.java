@@ -35,6 +35,15 @@ public abstract class VisitReturn<T> {
     /** This is the start method that begins a traversal over the given expression. */
     public final T visitThis(Expr x) throws Err { return x.accept(this); }
 
+    /** Visits a ExprBad node */
+    public T visit(ExprBad x) throws Err { throw x.errors.get(0); }
+
+    /** Visits a ExprBadCall node */
+    public T visit(ExprBadCall x) throws Err { throw x.errors.get(0); }
+
+    /** Visits a ExprBadJoin node */
+    public T visit(ExprBadJoin x) throws Err { throw x.errors.get(0); }
+
     /** Visits an ExprBinary node. */
     public abstract T visit(ExprBinary x) throws Err;
 

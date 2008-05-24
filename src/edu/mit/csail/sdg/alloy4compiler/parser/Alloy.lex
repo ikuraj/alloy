@@ -26,6 +26,7 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import java.util.List;
 import java_cup_11a.runtime.*;
 
@@ -81,7 +82,7 @@ import java_cup_11a.runtime.*;
  private final Symbol alloy_id(String txt) throws Err {
     Pos p=alloy_here(txt);
     if (alloy_seenDollar.size()==0 && txt.indexOf('$')>=0) alloy_seenDollar.add(null);
-    return new Symbol(CompSym.ID, p, new ExpName(p,txt));
+    return new Symbol(CompSym.ID, p, ExprVar.make(p,txt));
  }
  private final Symbol alloy_num(String txt) throws Err {
     Pos p=alloy_here(txt);
@@ -91,7 +92,7 @@ import java_cup_11a.runtime.*;
     } catch(NumberFormatException ex) {
        throw new ErrorSyntax(p, "The number "+txt+" is too large to be stored in a Java integer");
     }
-    return new Symbol(CompSym.NUMBER, p, new ExpConstant(p, ExprConstant.Op.NUMBER, n));
+    return new Symbol(CompSym.NUMBER, p, ExprConstant.Op.NUMBER.make(p, n));
  }
 %}
 
@@ -188,7 +189,7 @@ import java_cup_11a.runtime.*;
 [0-9][0-9]*                                                           { return alloy_num (yytext()); }
 [\$a-zA-Z][\$0-9a-zA-Z_\'\"\u0019\u001d]*                             { return alloy_id  (yytext()); }
 
-"/**" ~"*/"                  { String txt=yytext(); if (txt.length()>5) { txt=txt.substring(3,txt.length()-2); alloy_module.javadocs.add(new ExpName(alloy_here(txt), txt)); } }
+"/**" ~"*/"                  { String txt=yytext(); if (txt.length()>5) { txt=txt.substring(3,txt.length()-2); alloy_module.javadocs.add(ExprVar.make(alloy_here(txt), txt)); } }
 
 "/*" ~"*/"                   { }
 

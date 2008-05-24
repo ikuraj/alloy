@@ -46,10 +46,17 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadJoin;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 
@@ -204,7 +211,7 @@ parser code {:
     TreeSet<String> list=new TreeSet<String>();
     Pos p=Pos.UNKNOWN;
     if (x!=null && x.value instanceof Pos) p=(Pos)(x.value);
-       else if (x!=null && x.value instanceof Exp) p=((Exp)(x.value)).pos;
+       else if (x!=null && x.value instanceof Expr) p=((Expr)(x.value)).pos;
        else if (x!=null) p=x.pos;
     if (!stack.empty()) for(Map.Entry<Integer,String> e:ch.entrySet()) {
         int key=e.getKey(), act=get_action(((Symbol)stack.peek()).parse_state, key);
@@ -288,34 +295,66 @@ action code {:
      * @return a newly formed multiplciity constraint (if this.op==SOME or LONE or ONE),
      * otherwise it just returns the original node.
      */
-    private Exp mult(Exp x) throws Err {
-        if (x instanceof ExpUnary) {
-           ExpUnary y=(ExpUnary)x;
-           if (y.op==ExprUnary.Op.SOME) return new ExpUnary(y.pos, ExprUnary.Op.SOMEOF, y.sub);
-           if (y.op==ExprUnary.Op.LONE) return new ExpUnary(y.pos, ExprUnary.Op.LONEOF, y.sub);
-           if (y.op==ExprUnary.Op.ONE)  return new ExpUnary(y.pos, ExprUnary.Op.ONEOF, y.sub);
+    private Expr mult(Expr x) throws Err {
+        if (x instanceof ExprUnary) {
+           ExprUnary y=(ExprUnary)x;
+           if (y.op==ExprUnary.Op.SOME) return ExprUnary.Op.SOMEOF.make(y.pos, y.sub);
+           if (y.op==ExprUnary.Op.LONE) return ExprUnary.Op.LONEOF.make(y.pos, y.sub);
+           if (y.op==ExprUnary.Op.ONE)  return ExprUnary.Op.ONEOF.make(y.pos, y.sub);
         }
         return x;
     }
-    private void nod(ExpName name) throws Err {
-        if (name.name.indexOf('$')>=0) throw new ErrorSyntax(name.pos, "The name cannot contain the '$' symbol.");
+    private void nod(ExprVar name) throws Err {
+        if (name.label.indexOf('$')>=0) throw new ErrorSyntax(name.pos, "The name cannot contain the '$' symbol.");
     }
-    private void nod(List<ExpName> names) throws Err {
-        if (names!=null) for(ExpName n:names) if (n!=null && n.name.indexOf('$')>=0) throw new ErrorSyntax(n.pos, "The name cannot contain the '$' symbol.");
+    private void nod(List<ExprVar> names) throws Err {
+        if (names!=null) for(ExprVar n:names) if (n!=null && n.label.indexOf('$')>=0) throw new ErrorSyntax(n.pos, "The name cannot contain the '$' symbol.");
     }
-    private Exp t(ExpDot j, Pos close) throws Err {
-      if (j.right instanceof ExpName) {
-         String n=((ExpName)(j.right)).name;
-         if (n.equals("int"))  return new ExpUnary(j.pos, ExprUnary.Op.CAST2INT, j.left);
-         if (n.equals("disj")) return new ExpBuiltin(j.pos, close, Util.asList(j.left));
+    private Expr q (Pos pos, Pos closingBracket, ExprQuant.Op op, List<Decl> decls, Expr sub) throws ErrorSyntax {
+        for(Decl d:decls) {
+            if (d.isPrivate!=null) {
+                ExprVar n=d.names.get(0);
+                throw new ErrorSyntax(d.isPrivate.merge(n.pos), "Local variable \""+n.label+"\" is always private already.");
+            }
+            if (d.disjoint2!=null) {
+                ExprVar n=d.names.get(d.names.size()-1);
+                throw new ErrorSyntax(d.disjoint2.merge(n.pos), "Local variable \""+n.label+"\" cannot be bound to a 'disjoint' expression.");
+            }
+        }
+        Expr guard = null;
+        final TempList<ExprVar> tempvars = new TempList<ExprVar>();
+        for(Decl d: decls) {
+            int num = d.names.size();
+            List<Expr> disjoints = (num>1 && d.disjoint!=null) ? (new ArrayList<Expr>(num)) : null;
+            for(ExprVar n: d.names) {
+                ExprVar var = ExprVar.make(n.pos, n.label, d.expr);
+                tempvars.add(var);
+                if (disjoints!=null) disjoints.add(var);
+            }
+            if (disjoints!=null) guard = ExprBuiltin.makeDISJOINT(d.disjoint, null, disjoints).and(guard);
+        }
+        if (guard!=null) {
+            switch(op) {
+              case SUM: sub = guard.ite(sub, ExprConstant.ZERO); break;
+              case ALL: sub = guard.implies(sub); break;
+              default: sub = guard.and(sub);
+            }
+        }
+        return op.make(pos, closingBracket, tempvars.makeConst(), sub);
+    }
+    private Expr t(Pos pos, Pos oldClosing, Expr left, Expr right, Pos close) throws Err {
+      if (right instanceof ExprVar) {
+         String n = ((ExprVar)right).label;
+         if (n.equals("int"))  return ExprUnary.Op.CAST2INT.make(pos, left);
+         if (n.equals("disj")) return ExprBuiltin.makeDISJOINT(pos, close, Util.asList(left));
       }
-      else if (j.right instanceof ExpBuiltin) {
-         ExpBuiltin n=(ExpBuiltin)(j.right);
-         List<Exp> args=new ArrayList<Exp>(n.args);
-         args.add(j.left);
-         return new ExpBuiltin(j.pos, n.closingBracket, args);
+      else if (right instanceof ExprBuiltin) {
+         ExprBuiltin n = (ExprBuiltin)right;
+         List<Expr> args = new ArrayList<Expr>(n.args);
+         args.add(left);
+         return ExprBuiltin.makeDISJOINT(pos, n.closingBracket, args);
       }
-      return j;
+      return ExprBadJoin.make(pos, oldClosing, left, right);
     }
 :};
 
@@ -424,103 +463,103 @@ terminal Pos THIS;             //  this
 terminal Pos TILDE;            //  ~
 terminal Pos UNIV;             //  univ
 
-terminal ExpName ID;
+terminal ExprVar ID;
 
-terminal ExpConstant NUMBER;
+terminal ExprConstant NUMBER;
 
 //===========================================================================//
 
-nonterminal Exp                        AndExprA;
-nonterminal Exp                        AndExprB;
-nonterminal Exp                        BaseExpr;
-nonterminal Exp                        Bind;
-nonterminal Exp                        BracketExprA;
-nonterminal Exp                        BracketExprB;
-nonterminal Exp                        CompareExprA;
-nonterminal Exp                        CompareExprB;
-nonterminal ExpName                    CmdLabel;
+nonterminal Expr                       AndExprA;
+nonterminal Expr                       AndExprB;
+nonterminal Expr                       BaseExpr;
+nonterminal Expr                       Bind;
+nonterminal Expr                       BracketExprA;
+nonterminal Expr                       BracketExprB;
+nonterminal Expr                       CompareExprA;
+nonterminal Expr                       CompareExprB;
+nonterminal ExprVar                    CmdLabel;
 nonterminal Decl                       Decla;
 nonterminal List<Decl>                 Declp;
 nonterminal List<Decl>                 Decls;
-nonterminal Exp                        DomainExprA;
-nonterminal Exp                        DomainExprB;
-nonterminal Exp                        DotExprA;
-nonterminal Exp                        DotExprB;
-nonterminal Exp                        EquivExprA;
-nonterminal Exp                        EquivExprB;
-nonterminal ExpConstant                Expects;
-nonterminal Exp                        Expr;
-nonterminal Exp                        Super;
-nonterminal Exp                        SuperOpt;
-nonterminal Exp                        SuperP;
-nonterminal Exp                        SuperOrBar;
-nonterminal List<Exp>                  Exprs;
-nonterminal List<Exp>                  Exprp;
+nonterminal Expr                       DomainExprA;
+nonterminal Expr                       DomainExprB;
+nonterminal Expr                       DotExprA;
+nonterminal Expr                       DotExprB;
+nonterminal Expr                       EquivExprA;
+nonterminal Expr                       EquivExprB;
+nonterminal ExprConstant               Expects;
+nonterminal Expr                       Expr;
+nonterminal Expr                       Super;
+nonterminal Expr                       SuperOpt;
+nonterminal Expr                       SuperP;
+nonterminal Expr                       SuperOrBar;
+nonterminal List<Expr>                 Exprs;
+nonterminal List<Expr>                 Exprp;
 nonterminal                            Function;
-nonterminal Exp                        ImpliesExprA;
-nonterminal Exp                        ImpliesExprB;
-nonterminal Exp                        ImpliesExprCloseA;
-nonterminal Exp                        ImpliesExprCloseB;
-nonterminal Exp                        ImpliesExprOpenA;
-nonterminal Exp                        ImpliesExprOpenB;
-nonterminal Exp                        IntersectExprA;
-nonterminal Exp                        IntersectExprB;
-nonterminal Exp                        Let;
+nonterminal Expr                       ImpliesExprA;
+nonterminal Expr                       ImpliesExprB;
+nonterminal Expr                       ImpliesExprCloseA;
+nonterminal Expr                       ImpliesExprCloseB;
+nonterminal Expr                       ImpliesExprOpenA;
+nonterminal Expr                       ImpliesExprOpenB;
+nonterminal Expr                       IntersectExprA;
+nonterminal Expr                       IntersectExprB;
+nonterminal Expr                       Let;
 nonterminal                            Macro;
-nonterminal Exp                        MacroBody;
-nonterminal ExpName                    Name;
-nonterminal ExpName                    NameHelper;
-nonterminal List<ExpName>              Names;
-nonterminal List<ExpName>              Namex;
-nonterminal Exp                        NegExprA;
-nonterminal Exp                        NegExprB;
-nonterminal Exp                        NumUnopExprA;
-nonterminal Exp                        NumUnopExprB;
-nonterminal Exp                        OrExprA;
-nonterminal Exp                        OrExprB;
-nonterminal Exp                        OverrideExprA;
-nonterminal Exp                        OverrideExprB;
+nonterminal Expr                       MacroBody;
+nonterminal ExprVar                    Name;
+nonterminal ExprVar                    NameHelper;
+nonterminal List<ExprVar>              Names;
+nonterminal List<ExprVar>              Namex;
+nonterminal Expr                       NegExprA;
+nonterminal Expr                       NegExprB;
+nonterminal Expr                       NumUnopExprA;
+nonterminal Expr                       NumUnopExprB;
+nonterminal Expr                       OrExprA;
+nonterminal Expr                       OrExprB;
+nonterminal Expr                       OverrideExprA;
+nonterminal Expr                       OverrideExprB;
 nonterminal                            Predicate;
-nonterminal Exp                        RangeExprA;
-nonterminal Exp                        RangeExprB;
+nonterminal Expr                       RangeExprA;
+nonterminal Expr                       RangeExprB;
 nonterminal Pair<Pos,ExprBinary.Op>    RelOp;
-nonterminal Exp                        RelationExprA;
-nonterminal Exp                        RelationExprB;
+nonterminal Expr                       RelationExprA;
+nonterminal Expr                       RelationExprB;
 nonterminal List<Pair<Sig,Integer>>    Scope;
 nonterminal                            Sig;
-nonterminal List<ExpName>              SigIn;
+nonterminal List<ExprVar>              SigIn;
 nonterminal List<Pos>                  SigQual;
 nonterminal List<Pos>                  SigQuals;
-nonterminal ExpName                    SigRef;
-nonterminal List<ExpName>              SigRefp;
-nonterminal List<ExpName>              SigRefs;
-nonterminal List<ExpName>              SigRefu;
+nonterminal ExprVar                    SigRef;
+nonterminal List<ExprVar>              SigRefp;
+nonterminal List<ExprVar>              SigRefs;
+nonterminal List<ExprVar>              SigRefu;
 nonterminal                            Spec;
 nonterminal List<Pair<Sig,Integer>>    Typescopes;
 nonterminal Pair<Sig,Integer>          Typescope;
-nonterminal Exp                        ShiftExprA;
-nonterminal Exp                        ShiftExprB;
-nonterminal Exp                        UnionDiffExprA;
-nonterminal Exp                        UnionDiffExprB;
-nonterminal Exp                        UnopExprA;
-nonterminal Exp                        UnopExprB;
+nonterminal Expr                       ShiftExprA;
+nonterminal Expr                       ShiftExprB;
+nonterminal Expr                       UnionDiffExprA;
+nonterminal Expr                       UnionDiffExprB;
+nonterminal Expr                       UnopExprA;
+nonterminal Expr                       UnopExprB;
 nonterminal Pos                        Vis;
 
 //===========================================================================//
 
-Spec ::= Spec MODULE:o               Name:n                                                  {: nod(n);                                              parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
-Spec ::= Spec MODULE:o               Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b);                                      parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
-Spec ::= Spec MODULE:o HASH NUMBER:i Name:n                                                  {: nod(n);         parser.alloymodule.resolution=i.num; parser.alloymodule.addModelName(o.merge(n.pos) , n.name , new ArrayList<ExpName>()); :};
-Spec ::= Spec MODULE:o HASH NUMBER:i Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b); parser.alloymodule.resolution=i.num; parser.alloymodule.addModelName(o.merge(r)     , n.name , b                       ); :};
+Spec ::= Spec MODULE:o               Name:n                                                  {: nod(n);                                              parser.alloymodule.addModelName(o.merge(n.pos) , n.label , new ArrayList<ExprVar>()); :};
+Spec ::= Spec MODULE:o               Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b);                                      parser.alloymodule.addModelName(o.merge(r)     , n.label , b                       ); :};
+Spec ::= Spec MODULE:o HASH NUMBER:i Name:n                                                  {: nod(n);         parser.alloymodule.resolution=i.num; parser.alloymodule.addModelName(o.merge(n.pos) , n.label , new ArrayList<ExprVar>()); :};
+Spec ::= Spec MODULE:o HASH NUMBER:i Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b); parser.alloymodule.resolution=i.num; parser.alloymodule.addModelName(o.merge(r)     , n.label , b                       ); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                                              {: nod(a);         parser.alloymodule.addOpen(o.merge(a.pos), p, a, null, null); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                               AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, null, c);    :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c                {: nod(a);         parser.alloymodule.addOpen(o.merge(c),     p, a, b,    null); :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET   AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, b,    c);    :};
 Spec ::= Spec Vis:p ENUM:o Name:a SigIn:i LBRACE Names:n RBRACE:c              {: nod(a);         parser.alloymodule.addEnum(o.merge(c),     p, a, i, n, c);    :};
-Spec ::= Spec       FACT:o          Super:e {:         parser.alloymodule.addFact      (o , ""     , e); :};
-Spec ::= Spec       FACT:o   Name:n Super:e {: nod(n); parser.alloymodule.addFact      (o , n.name , e); :};
-Spec ::= Spec       ASSERT:o        Super:e {:         parser.alloymodule.addAssertion (o , ""     , e); :};
-Spec ::= Spec       ASSERT:o Name:n Super:e {: nod(n); parser.alloymodule.addAssertion (o , n.name , e); :};
+Spec ::= Spec       FACT:o          Super:e {:         parser.alloymodule.addFact      (o , ""      , e); :};
+Spec ::= Spec       FACT:o   Name:n Super:e {: nod(n); parser.alloymodule.addFact      (o , n.label , e); :};
+Spec ::= Spec       ASSERT:o        Super:e {:         parser.alloymodule.addAssertion (o , ""      , e); :};
+Spec ::= Spec       ASSERT:o Name:n Super:e {: nod(n); parser.alloymodule.addAssertion (o , n.label , e); :};
 Spec ::= Spec Sig             ;
 Spec ::= Spec Function        ;
 Spec ::= Spec Predicate       ;
@@ -551,7 +590,7 @@ Spec ::= Spec CHECK:o CmdLabel:x Name:n  Scope:s Expects:c  {:
     if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
     if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, n.name, true, overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(p, n.label, true, overall, bitwidth, maxseq, expects, s, x);
 :};
 
 Spec ::= Spec RUN:o CmdLabel:x Super:e  Scope:s  Expects:c {:
@@ -578,7 +617,7 @@ Spec ::= Spec RUN:o CmdLabel:x Name:n  Scope:s  Expects:c {:
     if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
     if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, n.name, false, overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(p, n.label, false, overall, bitwidth, maxseq, expects, s, x);
 :};
 
 CmdLabel ::=           {:         RESULT=null; :};
@@ -595,10 +634,10 @@ Scope      ::=                               {: RESULT=new ArrayList<Pair<Sig,In
 Typescopes ::= Typescope:a                    {: RESULT=new ArrayList<Pair<Sig,Integer>>(); RESULT.add(a); :};
 Typescopes ::= Typescopes:a COMMA Typescope:b {: RESULT=a; a.add(b);                                       :};
 
-Typescope  ::= EXACTLY:e NUMBER:a Name:b    {: nod(b); RESULT=new Pair<Sig,Integer>(new PrimSig(e.merge(b.pos)    , b.name) , (0-a.num)-1 );                                                                            :};
-Typescope  ::=           NUMBER:a Name:b    {: nod(b); RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b.pos), b.name) ,    a.num    );                                                                            :};
-Typescope  ::=           NUMBER:a INT:b     {:         RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "int")  ,    a.num    );                                                                            :};
-Typescope  ::=           NUMBER:a SEQ:b     {:         RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "seq")  ,    a.num    );                                                                            :};
+Typescope  ::= EXACTLY:e NUMBER:a Name:b    {: nod(b); RESULT=new Pair<Sig,Integer>(new PrimSig(e.merge(b.pos)    , b.label) , (0-a.num)-1 );                                                                       :};
+Typescope  ::=           NUMBER:a Name:b    {: nod(b); RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b.pos), b.label) ,    a.num    );                                                                       :};
+Typescope  ::=           NUMBER:a INT:b     {:         RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "int")   ,    a.num    );                                                                       :};
+Typescope  ::=           NUMBER:a SEQ:b     {:         RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "seq")   ,    a.num    );                                                                       :};
 Typescope  ::= EXACTLY:e NUMBER   INT:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the integer bitwidth has to be exact.");                               :};
 Typescope  ::= EXACTLY:e NUMBER   SEQ:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the number of sequence index has to be exact.");                       :};
 Typescope  ::=           NUMBER:e UNIV:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on univ.");                                                                                  :};
@@ -608,41 +647,41 @@ Typescope  ::= EXACTLY:e NUMBER   SIGINT:f  {: if (1==1) throw new ErrorSyntax(e
 Typescope  ::=           NUMBER:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none.");                                                                                  :};
 Typescope  ::= EXACTLY:e NUMBER   NONE:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on none.");                                                                                  :};
 
-Macro ::= Vis:p LET:o              Name:n LPAREN   Names:d RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, d     , v); :};
-Macro ::= Vis:p LET:o              Name:n LPAREN           RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
-Macro ::= Vis:p LET:o              Name:n LBRACKET Names:d RBRACKET MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, d     , v); :};
-Macro ::= Vis:p LET:o              Name:n LBRACKET         RBRACKET MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
-Macro ::= Vis:p LET:o              Name:n                           MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.name, null  , v); :};
+Macro ::= Vis:p LET:o              Name:n LPAREN   Names:d RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, d     , v); :};
+Macro ::= Vis:p LET:o              Name:n LPAREN           RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, null  , v); :};
+Macro ::= Vis:p LET:o              Name:n LBRACKET Names:d RBRACKET MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, d     , v); :};
+Macro ::= Vis:p LET:o              Name:n LBRACKET         RBRACKET MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, null  , v); :};
+Macro ::= Vis:p LET:o              Name:n                           MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, null  , v); :};
 
 MacroBody ::= Super:a       {: RESULT=a; :};
 MacroBody ::= EQUALS Expr:a {: RESULT=a; :};
 
-Function ::= Vis:p FUN:o              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , mult(r), v); :};
-Function ::= Vis:p FUN:o              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , mult(r), v); :};
-Function ::= Vis:p FUN:o              Name:n                           COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, null , mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , mult(r), v); :};
-Function ::= Vis:p FUN:o SigRef:f DOT Name:n                           COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , null , mult(r), v); :};
+Function ::= Vis:p FUN:o              Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, null, d    , mult(r), v); :};
+Function ::= Vis:p FUN:o              Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, null, d    , mult(r), v); :};
+Function ::= Vis:p FUN:o              Name:n                           COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, null, null , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, f   , d    , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, f   , d    , mult(r), v); :};
+Function ::= Vis:p FUN:o SigRef:f DOT Name:n                           COLON Expr:r Super:v {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, f   , null , mult(r), v); :};
 
-Predicate ::= Vis:p PRED:o              Name:n LPAREN   Decls:d RPAREN   Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , null, v); :};
-Predicate ::= Vis:p PRED:o              Name:n LBRACKET Decls:d RBRACKET Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, d    , null, v); :};
-Predicate ::= Vis:p PRED:o              Name:n                           Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, null, null , null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , d    , null, v); :};
-Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n                           Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.name, f   , null , null, v); :};
+Predicate ::= Vis:p PRED:o              Name:n LPAREN   Decls:d RPAREN   Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, null, d    , null, v); :};
+Predicate ::= Vis:p PRED:o              Name:n LBRACKET Decls:d RBRACKET Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, null, d    , null, v); :};
+Predicate ::= Vis:p PRED:o              Name:n                           Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, null, null , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LPAREN   Decls:d RPAREN   Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, f   , d    , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n LBRACKET Decls:d RBRACKET Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, f   , d    , null, v); :};
+Predicate ::= Vis:p PRED:o SigRef:f DOT Name:n                           Super:v             {: nod(n); parser.alloymodule.addFunc(o.merge(v.span()), p, n.label, f   , null , null, v); :};
 
 Vis ::=           {: RESULT=null; :};
 Vis ::= PRIVATE:p {: RESULT=p;    :};
 
 Sig ::= SigQuals:a Names:b SigIn:c LBRACE Decls:d RBRACE:o SuperOpt:e
  {:
-   if (e==null) e = new ExpConstant(o, ExprConstant.Op.TRUE, 0);
-   ExpName cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
-   List<ExpName> j = parser.alloymodule.javadocs;
-   if (j!=null && j.size()>0) j=new ArrayList<ExpName>(j); else j=null;
+   if (e==null) e = ExprConstant.Op.TRUE.make(o, 0);
+   ExprVar cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
+   List<ExprVar> j = parser.alloymodule.javadocs;
+   if (j!=null && j.size()>0) j=new ArrayList<ExprVar>(j); else j=null;
    parser.alloymodule.javadocs.clear();
-   for(ExpName bb:b) {
-      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.name, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), cc, c, d, e, j);
+   for(ExprVar bb:b) {
+      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.label, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), cc, c, d, e, j);
    }
  :};
 
@@ -655,49 +694,49 @@ SigQual  ::= PRIVATE:x                {: RESULT=new ArrayList<Pos>(5); RESULT.ad
 SigQuals ::= SIG                      {: RESULT=new ArrayList<Pos>(5); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); :};
 SigQuals ::= SigQual:a SigQuals:b     {: RESULT=a; for(int i=0;i<5;i++) if (a.get(i)==null) a.set(i,b.get(i)); else if (b.get(i)!=null) throw new ErrorSyntax(b.get(i), "The same qualifer cannot be specified more than once for the same sig."); :};
 
-SigIn    ::= EXTENDS:a SigRef:x       {: parser.alloymodule.javadocs.clear(); RESULT=new ArrayList<ExpName>(2); RESULT.add(x); RESULT.add(new ExpName(a,"extends")); :};
-SigIn    ::= IN:a SigRefu:x           {: parser.alloymodule.javadocs.clear(); RESULT=x;  x.add(new ExpName(a,"in"));                                                 :};
-SigIn    ::=                          {: parser.alloymodule.javadocs.clear(); RESULT=null;                                                                           :};
+SigIn    ::= EXTENDS:a SigRef:x       {: parser.alloymodule.javadocs.clear(); RESULT=new ArrayList<ExprVar>(2); RESULT.add(x); RESULT.add(ExprVar.make(a, "extends")); :};
+SigIn    ::= IN:a SigRefu:x           {: parser.alloymodule.javadocs.clear(); RESULT=x;  x.add(ExprVar.make(a,"in"));                                                  :};
+SigIn    ::=                          {: parser.alloymodule.javadocs.clear(); RESULT=null;                                                                             :};
 
 SigRef   ::= Name:x                   {: RESULT=x;                                   :};
-SigRef   ::= UNIV:x                   {: RESULT=new ExpName(x, "univ");              :};
-SigRef   ::= SIGINT:x                 {: RESULT=new ExpName(x, "Int");               :};
-SigRef   ::= SEQ:a SLASH SIGINT:b     {: RESULT=new ExpName(a.merge(b), "seq/Int");  :};
-SigRef   ::= NONE:x                   {: RESULT=new ExpName(x, "none");              :};
+SigRef   ::= UNIV:x                   {: RESULT=ExprVar.make(x, "univ");              :};
+SigRef   ::= SIGINT:x                 {: RESULT=ExprVar.make(x, "Int");               :};
+SigRef   ::= SEQ:a SLASH SIGINT:b     {: RESULT=ExprVar.make(a.merge(b), "seq/Int");  :};
+SigRef   ::= NONE:x                   {: RESULT=ExprVar.make(x, "none");              :};
 
-SigRefs  ::=                          {: RESULT=new ArrayList<ExpName>(); :};
+SigRefs  ::=                          {: RESULT=new ArrayList<ExprVar>(); :};
 SigRefs  ::= SigRefp:x                {: RESULT=x;                        :};
 
-SigRefp  ::= SigRef:x                 {: RESULT=new ArrayList<ExpName>(); RESULT.add(x); :};
+SigRefp  ::= SigRef:x                 {: RESULT=new ArrayList<ExprVar>(); RESULT.add(x); :};
 SigRefp  ::= SigRefp:a COMMA SigRef:b {: a.add(b); RESULT=a;                             :};
 
-SigRefu  ::= SigRef:x                 {: RESULT=new ArrayList<ExpName>(); RESULT.add(x); :};
+SigRefu  ::= SigRef:x                 {: RESULT=new ArrayList<ExprVar>(); RESULT.add(x); :};
 SigRefu  ::= SigRefu:a PLUS SigRef:b  {: a.add(b); RESULT=a;                             :};
 
 Name ::= NameHelper:x              {: RESULT=x;                                           :};
-Name ::= THIS:a SLASH NameHelper:b {: RESULT=new ExpName(a.merge(b.pos), "this/"+b.name); :};
-Name ::= SEQ:a  SLASH NameHelper:b {: RESULT=new ExpName(a.merge(b.pos),  "seq/"+b.name); :};
+Name ::= THIS:a SLASH NameHelper:b {: RESULT=ExprVar.make(a.merge(b.pos), "this/"+b.label); :};
+Name ::= SEQ:a  SLASH NameHelper:b {: RESULT=ExprVar.make(a.merge(b.pos),  "seq/"+b.label); :};
 
 NameHelper ::= ID:x                     {: RESULT=x;                                                  :};
-NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=new ExpName(a.pos.merge(b.pos), a.name+"/"+b.name); :};
+NameHelper ::= NameHelper:a SLASH ID:b  {: RESULT=ExprVar.make(a.pos.merge(b.pos), a.label+"/"+b.label); :};
 
-Names ::= Name:x                   {: nod(x); RESULT=new ArrayList<ExpName>(); RESULT.add(x);  :};
+Names ::= Name:x                   {: nod(x); RESULT=new ArrayList<ExprVar>(); RESULT.add(x);  :};
 Names ::= Names:a COMMA Name:b     {: nod(b); a.add(b); RESULT=a;                              :};
 
-Namex ::=         Name:x               {: nod(x); RESULT=new ArrayList<ExpName>();                   RESULT.add(x);  :};
-Namex ::= EXACTLY Name:x               {: nod(x); RESULT=new ArrayList<ExpName>(); RESULT.add(null); RESULT.add(x);  :};
+Namex ::=         Name:x               {: nod(x); RESULT=new ArrayList<ExprVar>();                   RESULT.add(x);  :};
+Namex ::= EXACTLY Name:x               {: nod(x); RESULT=new ArrayList<ExprVar>(); RESULT.add(null); RESULT.add(x);  :};
 Namex ::= Namex:a COMMA         Name:b {: nod(b);              a.add(b); RESULT=a;                                   :};
 Namex ::= Namex:a COMMA EXACTLY Name:b {: nod(b); a.add(null); a.add(b); RESULT=a;                                   :};
 
-Decla ::=           PART:k Names   COLON        Expr   {: if (1==1) throw ExpName.hint(k,"part");   :};
-Decla ::=           EXH:k  Names   COLON        Expr   {: if (1==1) throw ExpName.hint(k,"exh");    :};
+Decla ::=           PART:k Names   COLON        Expr   {: if (1==1) throw Module.hint(k,"part");         :};
+Decla ::=           EXH:k  Names   COLON        Expr   {: if (1==1) throw Module.hint(k,"exh");          :};
 Decla ::=           DISJ:k Names:a COLON        Expr:b {: RESULT=new Decl(null, k,    null, a, mult(b)); :};
 Decla ::= PRIVATE:p DISJ:k Names:a COLON        Expr:b {: RESULT=new Decl(p,    k,    null, a, mult(b)); :};
 Decla ::= PRIVATE:p        Names:a COLON        Expr:b {: RESULT=new Decl(p,    null, null, a, mult(b)); :};
 Decla ::=                  Names:a COLON        Expr:b {: RESULT=new Decl(null, null, null, a, mult(b)); :};
 
-Decla ::=           PART:k Names   COLON DISJ   Expr   {: if (1==1) throw ExpName.hint(k,"part");   :};
-Decla ::=           EXH:k  Names   COLON DISJ   Expr   {: if (1==1) throw ExpName.hint(k,"exh");    :};
+Decla ::=           PART:k Names   COLON DISJ   Expr   {: if (1==1) throw Module.hint(k,"part");         :};
+Decla ::=           EXH:k  Names   COLON DISJ   Expr   {: if (1==1) throw Module.hint(k,"exh");          :};
 Decla ::=           DISJ:k Names:a COLON DISJ:d Expr:b {: RESULT=new Decl(null, k,    d,    a, mult(b)); :};
 Decla ::= PRIVATE:p DISJ:k Names:a COLON DISJ:d Expr:b {: RESULT=new Decl(p,    k,    d,    a, mult(b)); :};
 Decla ::= PRIVATE:p        Names:a COLON DISJ:d Expr:b {: RESULT=new Decl(p,    null, d,    a, mult(b)); :};
@@ -713,163 +752,163 @@ Decls ::=         COMMA Decls:y  {: RESULT=y;                                   
 
 Let ::= Name:a EQUALS:o Expr:b SuperOrBar:x {:
   nod(a);
-  if (a.name.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
-  if (a.name.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
-  RESULT = new ExpLet(o, a, b, x);
+  if (a.label.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
+  if (a.label.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
+  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label, b), x);
 :};
 
 Let ::= Name:a EQUALS:o Expr:b COMMA Let:x {:
   nod(a);
-  if (a.name.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
-  if (a.name.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
-  RESULT = new ExpLet(o, a, b, x);
+  if (a.label.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
+  if (a.label.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
+  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label, b), x);
 :};
 
-SuperOpt ::=                               {: RESULT=null;                                                 :};
-SuperOpt ::= Super:x                       {: RESULT=x;                                                    :};
-Super    ::= LBRACE:a SuperP:x RBRACE:b    {: RESULT=new ExpUnary(a.merge(b), ExprUnary.Op.NOOP, x);       :};
-Super    ::= LBRACE:a          RBRACE:b    {: RESULT=new ExpConstant(a.merge(b), ExprConstant.Op.TRUE, 0); :};
-SuperP   ::= Expr:a                        {: RESULT=a;                                                    :};
-SuperP   ::= SuperP:a Expr:b               {: RESULT=new ExpBinary(null, ExprBinary.Op.AND, a, b);         :};
+SuperOpt ::=                               {: RESULT=null;                                      :};
+SuperOpt ::= Super:x                       {: RESULT=x;                                         :};
+Super    ::= LBRACE:a SuperP:x RBRACE:b    {: RESULT=ExprUnary.Op.NOOP.make(a.merge(b), x);     :};
+Super    ::= LBRACE:a          RBRACE:b    {: RESULT=ExprConstant.Op.TRUE.make(a.merge(b), 0);  :};
+SuperP   ::= Expr:a                        {: RESULT=a;                                         :};
+SuperP   ::= SuperP:a Expr:b               {: RESULT=ExprBinary.Op.AND.make(null, null, a, b);  :};
 
 SuperOrBar ::= BAR Expr:x  {: RESULT=x; :};
 SuperOrBar ::= Super:x     {: RESULT=x; :};
 
-Exprs ::=                       {: RESULT=new ArrayList<Exp>();                :};
-Exprs ::= Exprp:x               {: RESULT=x;                                   :};
-Exprp ::= Expr:x                {: RESULT=new ArrayList<Exp>(); RESULT.add(x); :};
-Exprp ::= Exprp:a COMMA Expr:b  {: a.add(b); RESULT=a;                         :};
+Exprs ::=                       {: RESULT=new ArrayList<Expr>();                :};
+Exprs ::= Exprp:x               {: RESULT=x;                                    :};
+Exprp ::= Expr:x                {: RESULT=new ArrayList<Expr>(); RESULT.add(x); :};
+Exprp ::= Exprp:a COMMA Expr:b  {: a.add(b); RESULT=a;                          :};
 
 //=============================================================================
 
-Expr ::= OrExprA:x                    {: RESULT=x;                                              :};
-Expr ::= OrExprB:x                    {: RESULT=x;                                              :};
-Expr ::= Bind:x                       {: RESULT=x;                                              :};
-Bind ::= LET     Let:x                {: RESULT=x;                                              :};
-Bind ::= ALL2:o  Declp:a SuperOrBar:b {: RESULT=new ExpQuant(o, null, ExprQuant.Op.ALL,  a, b); :};
-Bind ::= NO2:o   Declp:a SuperOrBar:b {: RESULT=new ExpQuant(o, null, ExprQuant.Op.NO,   a, b); :};
-Bind ::= SOME2:o Declp:a SuperOrBar:b {: RESULT=new ExpQuant(o, null, ExprQuant.Op.SOME, a, b); :};
-Bind ::= LONE2:o Declp:a SuperOrBar:b {: RESULT=new ExpQuant(o, null, ExprQuant.Op.LONE, a, b); :};
-Bind ::= ONE2:o  Declp:a SuperOrBar:b {: RESULT=new ExpQuant(o, null, ExprQuant.Op.ONE,  a, b); :};
-Bind ::= SUM2:o  Declp:a SuperOrBar:b {: RESULT=new ExpQuant(o, null, ExprQuant.Op.SUM,  a, b); :};
+Expr ::= OrExprA:x                    {: RESULT = x;                                   :};
+Expr ::= OrExprB:x                    {: RESULT = x;                                   :};
+Expr ::= Bind:x                       {: RESULT = x;                                   :};
+Bind ::= LET     Let:x                {: RESULT = x;                                   :};
+Bind ::= ALL2:o  Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.ALL,  a, b); :};
+Bind ::= NO2:o   Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.NO,   a, b); :};
+Bind ::= SOME2:o Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.SOME, a, b); :};
+Bind ::= LONE2:o Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.LONE, a, b); :};
+Bind ::= ONE2:o  Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.ONE,  a, b); :};
+Bind ::= SUM2:o  Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.SUM,  a, b); :};
 
-OrExprA ::=                EquivExprA:a  {: RESULT=a;                                        :};
-OrExprA ::= OrExprB:a OR:o Bind:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.OR, a, b); :};
-OrExprB ::=                EquivExprB:b  {: RESULT=b;                                        :};
-OrExprB ::= OrExprB:a OR:o EquivExprB:b  {: RESULT=new ExpBinary(o, ExprBinary.Op.OR, a, b); :};
+OrExprA ::=                EquivExprA:a  {: RESULT=a;                                    :};
+OrExprA ::= OrExprB:a OR:o Bind:b        {: RESULT=ExprBinary.Op.OR.make(o, null, a, b); :};
+OrExprB ::=                EquivExprB:b  {: RESULT=b;                                    :};
+OrExprB ::= OrExprB:a OR:o EquivExprB:b  {: RESULT=ExprBinary.Op.OR.make(o, null, a, b); :};
 
-EquivExprA ::=                    ImpliesExprA:b    {: RESULT=b;                                         :};
-EquivExprA ::= EquivExprB:a IFF:o Bind:b            {: RESULT=new ExpBinary(o, ExprBinary.Op.IFF, a, b); :};
-EquivExprB ::=                    ImpliesExprB:b    {: RESULT=b;                                         :};
-EquivExprB ::= EquivExprB:a IFF:o ImpliesExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IFF, a, b); :};
+EquivExprA ::=                    ImpliesExprA:b    {: RESULT=b;                                     :};
+EquivExprA ::= EquivExprB:a IFF:o Bind:b            {: RESULT=ExprBinary.Op.IFF.make(o, null, a, b); :};
+EquivExprB ::=                    ImpliesExprB:b    {: RESULT=b;                                     :};
+EquivExprB ::= EquivExprB:a IFF:o ImpliesExprB:b    {: RESULT=ExprBinary.Op.IFF.make(o, null, a, b); :};
 
 ImpliesExprA      ::= ImpliesExprCloseA:a            {: RESULT=a; :};
 ImpliesExprA      ::= ImpliesExprOpenA:a             {: RESULT=a; :};
 ImpliesExprCloseA ::= AndExprA:a                     {: RESULT=a; :};
-ImpliesExprCloseA ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprCloseA:c {: RESULT=new ExpITE(o,a,b,c);    :};
-ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprOpenA:c  {: RESULT=new ExpITE(o,a,b,c);    :};
-ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o ImpliesExprA:b                               {: RESULT=new ExpITE(o,a,b,null); :};
+ImpliesExprCloseA ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprCloseA:c {: RESULT = ExprITE.make(o,a,b,c);    :};
+ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprOpenA:c  {: RESULT = ExprITE.make(o,a,b,c);    :};
+ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o ImpliesExprA:b                               {: RESULT = ExprITE.make(o,a,b,null); :};
 
-ImpliesExprCloseA ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE Bind:c {: RESULT=new ExpITE(o,a,b,c);    :};
-ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o Bind:b                          {: RESULT=new ExpITE(o,a,b,null); :};
+ImpliesExprCloseA ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE Bind:c {: RESULT = ExprITE.make(o,a,b,c);    :};
+ImpliesExprOpenA  ::= AndExprB:a IMPLIES:o Bind:b                          {: RESULT = ExprITE.make(o,a,b,null); :};
 
 ImpliesExprB      ::= ImpliesExprCloseB:a            {: RESULT=a; :};
 ImpliesExprB      ::= ImpliesExprOpenB:a             {: RESULT=a; :};
 ImpliesExprCloseB ::= AndExprB:a                     {: RESULT=a; :};
-ImpliesExprCloseB ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprCloseB:c {: RESULT=new ExpITE(o,a,b,c);    :};
-ImpliesExprOpenB  ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprOpenB:c  {: RESULT=new ExpITE(o,a,b,c);    :};
-ImpliesExprOpenB  ::= AndExprB:a IMPLIES:o ImpliesExprB:b                               {: RESULT=new ExpITE(o,a,b,null); :};
+ImpliesExprCloseB ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprCloseB:c {: RESULT=ExprITE.make(o,a,b,c);    :};
+ImpliesExprOpenB  ::= AndExprB:a IMPLIES:o ImpliesExprCloseB:b ELSE ImpliesExprOpenB:c  {: RESULT=ExprITE.make(o,a,b,c);    :};
+ImpliesExprOpenB  ::= AndExprB:a IMPLIES:o ImpliesExprB:b                               {: RESULT=ExprITE.make(o,a,b,null); :};
 
-AndExprA ::= NegExprA:a                   {: RESULT=a;                                         :};
-AndExprA ::= AndExprB:a AND:o Bind:b      {: RESULT=new ExpBinary(o, ExprBinary.Op.AND, a, b); :};
-AndExprB ::=                  NegExprB:b  {: RESULT=b;                                         :};
-AndExprB ::= AndExprB:a AND:o NegExprB:b  {: RESULT=new ExpBinary(o, ExprBinary.Op.AND, a, b); :};
+AndExprA ::= NegExprA:a                   {: RESULT=a;                                     :};
+AndExprA ::= AndExprB:a AND:o Bind:b      {: RESULT=ExprBinary.Op.AND.make(o, null, a, b); :};
+AndExprB ::=                  NegExprB:b  {: RESULT=b;                                     :};
+AndExprB ::= AndExprB:a AND:o NegExprB:b  {: RESULT=ExprBinary.Op.AND.make(o, null, a, b); :};
 
-NegExprA ::=         CompareExprA:b         {: RESULT=b;                                    :};
-NegExprA ::= NOT:o   Bind:b                 {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
-NegExprA ::= NOT:o   NegExprA:b             {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
-NegExprB ::=         CompareExprB:b         {: RESULT=b;                                    :};
-NegExprB ::= NOT:o   NegExprB:b             {: RESULT=new ExpUnary(o, ExprUnary.Op.NOT, b); :};
+NegExprA ::=         CompareExprA:b         {: RESULT=b;                           :};
+NegExprA ::= NOT:o   Bind:b                 {: RESULT=ExprUnary.Op.NOT.make(o, b); :};
+NegExprA ::= NOT:o   NegExprA:b             {: RESULT=ExprUnary.Op.NOT.make(o, b); :};
+NegExprB ::=         CompareExprB:b         {: RESULT=b;                           :};
+NegExprB ::= NOT:o   NegExprB:b             {: RESULT=ExprUnary.Op.NOT.make(o, b); :};
 
-CompareExprA ::= CompareExprB:a EQUALS:o    ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b);         :};
-CompareExprA ::= CompareExprB:a IN:o        ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b));       :};
-CompareExprA ::= CompareExprB:a LT:o        ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
-CompareExprA ::= CompareExprB:a GT:o        ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
-CompareExprA ::= CompareExprB:a LTE:o       ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
-CompareExprA ::= CompareExprB:a GTE:o       ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
-CompareExprA ::= CompareExprB:a NOTEQUALS:o ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b).not();   :};
-CompareExprA ::= CompareExprB:a NOTIN:o     ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b)).not(); :};
-CompareExprA ::= CompareExprB:a NOTLT:o     ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
-CompareExprA ::= CompareExprB:a NOTGT:o     ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
-CompareExprA ::= CompareExprB:a NOTLTE:o    ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
-CompareExprA ::= CompareExprB:a NOTGTE:o    ShiftExprA:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
+CompareExprA ::= CompareExprB:a EQUALS:o    ShiftExprA:b    {: RESULT=ExprBinary.Op.EQUALS.make(o, null, a, b);             :};
+CompareExprA ::= CompareExprB:a IN:o        ShiftExprA:b    {: RESULT=ExprBinary.Op.IN    .make(o, null, a, mult(b));       :};
+CompareExprA ::= CompareExprB:a LT:o        ShiftExprA:b    {: RESULT=ExprBinary.Op.LT    .make(o, null, a, b);             :};
+CompareExprA ::= CompareExprB:a GT:o        ShiftExprA:b    {: RESULT=ExprBinary.Op.GT    .make(o, null, a, b);             :};
+CompareExprA ::= CompareExprB:a LTE:o       ShiftExprA:b    {: RESULT=ExprBinary.Op.LTE   .make(o, null, a, b);             :};
+CompareExprA ::= CompareExprB:a GTE:o       ShiftExprA:b    {: RESULT=ExprBinary.Op.GTE   .make(o, null, a, b);             :};
+CompareExprA ::= CompareExprB:a NOTEQUALS:o ShiftExprA:b    {: RESULT=ExprBinary.Op.EQUALS.make(o, null, a, b).not();       :};
+CompareExprA ::= CompareExprB:a NOTIN:o     ShiftExprA:b    {: RESULT=ExprBinary.Op.IN    .make(o, null, a, mult(b)).not(); :};
+CompareExprA ::= CompareExprB:a NOTLT:o     ShiftExprA:b    {: RESULT=ExprBinary.Op.GTE   .make(o, null, a, b);             :};
+CompareExprA ::= CompareExprB:a NOTGT:o     ShiftExprA:b    {: RESULT=ExprBinary.Op.LTE   .make(o, null, a, b);             :};
+CompareExprA ::= CompareExprB:a NOTLTE:o    ShiftExprA:b    {: RESULT=ExprBinary.Op.GT    .make(o, null, a, b);             :};
+CompareExprA ::= CompareExprB:a NOTGTE:o    ShiftExprA:b    {: RESULT=ExprBinary.Op.LT    .make(o, null, a, b);             :};
 CompareExprA ::= ALL:o  ShiftExprA                          {: if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
-CompareExprA ::= NO:o   ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.NO,    b);   :};
-CompareExprA ::= SOME:o ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SOME,  b);   :};
-CompareExprA ::= LONE:o ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
-CompareExprA ::= ONE:o  ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
-CompareExprA ::= SET:o  ShiftExprA:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
-CompareExprA ::= SEQ:o  ShiftExprA:b                        {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addSeq(o); :};
-CompareExprA ::=        ShiftExprA:b                        {: RESULT=b;                                        :};
+CompareExprA ::= NO:o   ShiftExprA:b                        {: RESULT=ExprUnary.Op.NO   .make(o, b);   :};
+CompareExprA ::= SOME:o ShiftExprA:b                        {: RESULT=ExprUnary.Op.SOME .make(o, b);   :};
+CompareExprA ::= LONE:o ShiftExprA:b                        {: RESULT=ExprUnary.Op.LONE .make(o, b);   :};
+CompareExprA ::= ONE:o  ShiftExprA:b                        {: RESULT=ExprUnary.Op.ONE  .make(o, b);   :};
+CompareExprA ::= SET:o  ShiftExprA:b                        {: RESULT=ExprUnary.Op.SETOF.make(o, b);   :};
+CompareExprA ::= SEQ:o  ShiftExprA:b                        {: RESULT=ExprBinary.Op.ISSEQ_ARROW_LONE.make(o, null, ExprVar.make(o, "seq/Int"), b); parser.alloymodule.addSeq(o); :};
+CompareExprA ::=        ShiftExprA:b                        {: RESULT=b;                               :};
 
-CompareExprB ::= CompareExprB:a EQUALS:o    ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b);         :};
-CompareExprB ::= CompareExprB:a IN:o        ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b));       :};
-CompareExprB ::= CompareExprB:a LT:o        ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
-CompareExprB ::= CompareExprB:a GT:o        ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
-CompareExprB ::= CompareExprB:a LTE:o       ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
-CompareExprB ::= CompareExprB:a GTE:o       ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
-CompareExprB ::= CompareExprB:a NOTEQUALS:o ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.EQUALS,a,b).not();   :};
-CompareExprB ::= CompareExprB:a NOTIN:o     ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.IN,a,mult(b)).not(); :};
-CompareExprB ::= CompareExprB:a NOTLT:o     ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GTE,a,b);            :};
-CompareExprB ::= CompareExprB:a NOTGT:o     ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LTE,a,b);            :};
-CompareExprB ::= CompareExprB:a NOTLTE:o    ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.GT,a,b);             :};
-CompareExprB ::= CompareExprB:a NOTGTE:o    ShiftExprB:b    {: RESULT=new ExpBinary(o, ExprBinary.Op.LT,a,b);             :};
+CompareExprB ::= CompareExprB:a EQUALS:o    ShiftExprB:b    {: RESULT=ExprBinary.Op.EQUALS .make(o, null, a, b);             :};
+CompareExprB ::= CompareExprB:a IN:o        ShiftExprB:b    {: RESULT=ExprBinary.Op.IN     .make(o, null, a, mult(b));       :};
+CompareExprB ::= CompareExprB:a LT:o        ShiftExprB:b    {: RESULT=ExprBinary.Op.LT     .make(o, null, a, b);             :};
+CompareExprB ::= CompareExprB:a GT:o        ShiftExprB:b    {: RESULT=ExprBinary.Op.GT     .make(o, null, a, b);             :};
+CompareExprB ::= CompareExprB:a LTE:o       ShiftExprB:b    {: RESULT=ExprBinary.Op.LTE    .make(o, null, a, b);             :};
+CompareExprB ::= CompareExprB:a GTE:o       ShiftExprB:b    {: RESULT=ExprBinary.Op.GTE    .make(o, null, a, b);             :};
+CompareExprB ::= CompareExprB:a NOTEQUALS:o ShiftExprB:b    {: RESULT=ExprBinary.Op.EQUALS .make(o, null, a, b).not();       :};
+CompareExprB ::= CompareExprB:a NOTIN:o     ShiftExprB:b    {: RESULT=ExprBinary.Op.IN     .make(o, null, a, mult(b)).not(); :};
+CompareExprB ::= CompareExprB:a NOTLT:o     ShiftExprB:b    {: RESULT=ExprBinary.Op.GTE    .make(o, null, a, b);             :};
+CompareExprB ::= CompareExprB:a NOTGT:o     ShiftExprB:b    {: RESULT=ExprBinary.Op.LTE    .make(o, null, a, b);             :};
+CompareExprB ::= CompareExprB:a NOTLTE:o    ShiftExprB:b    {: RESULT=ExprBinary.Op.GT     .make(o, null, a, b);             :};
+CompareExprB ::= CompareExprB:a NOTGTE:o    ShiftExprB:b    {: RESULT=ExprBinary.Op.LT     .make(o, null, a, b);             :};
 CompareExprB ::= ALL:o  ShiftExprB                          {: if (1==1) throw new ErrorSyntax(o,"The \"all x\" construct is no longer supported. If you know the range of possible values of x, consider rewriting it as \"x == set_of_all_possible_values\"."); :};
-CompareExprB ::= NO:o   ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.NO,    b);   :};
-CompareExprB ::= SOME:o ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SOME,  b);   :};
-CompareExprB ::= LONE:o ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.LONE,  b);   :};
-CompareExprB ::= ONE:o  ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.ONE,   b);   :};
-CompareExprB ::= SET:o  ShiftExprB:b                        {: RESULT=new ExpUnary(o, ExprUnary.Op.SETOF, b);   :};
-CompareExprB ::= SEQ:o  ShiftExprB:b                        {: RESULT=new ExpBinary(o, ExprBinary.Op.ISSEQ_ARROW_LONE, new ExpName(o,"seq/Int"), b); parser.alloymodule.addSeq(o); :};
-CompareExprB ::=        ShiftExprB:b                        {: RESULT=b;                                        :};
+CompareExprB ::= NO:o   ShiftExprB:b                        {: RESULT=ExprUnary.Op.NO   .make(o, b);   :};
+CompareExprB ::= SOME:o ShiftExprB:b                        {: RESULT=ExprUnary.Op.SOME .make(o, b);   :};
+CompareExprB ::= LONE:o ShiftExprB:b                        {: RESULT=ExprUnary.Op.LONE .make(o, b);   :};
+CompareExprB ::= ONE:o  ShiftExprB:b                        {: RESULT=ExprUnary.Op.ONE  .make(o, b);   :};
+CompareExprB ::= SET:o  ShiftExprB:b                        {: RESULT=ExprUnary.Op.SETOF.make(o, b);   :};
+CompareExprB ::= SEQ:o  ShiftExprB:b                        {: RESULT=ExprBinary.Op.ISSEQ_ARROW_LONE.make(o, null, ExprVar.make(o,"seq/Int"), b); parser.alloymodule.addSeq(o); :};
+CompareExprB ::=        ShiftExprB:b                        {: RESULT=b;                               :};
 
-ShiftExprA ::=                    UnionDiffExprA:b        {: RESULT=b;                                                 :};
-ShiftExprA ::= ShiftExprB:a SHL:o Bind:b                  {: RESULT=new ExpBinary(o, ExprBinary.Op.SHL, a, b);         :};
-ShiftExprA ::= ShiftExprB:a SHR:o Bind:b                  {: RESULT=new ExpBinary(o, ExprBinary.Op.SHR, a, b);         :};
-ShiftExprA ::= ShiftExprB:a SHA:o Bind:b                  {: RESULT=new ExpBinary(o, ExprBinary.Op.SHA, a, b);         :};
-ShiftExprB ::=                    UnionDiffExprB:b        {: RESULT=b;                                                 :};
-ShiftExprB ::= ShiftExprB:a SHL:o UnionDiffExprB:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.SHL, a, b);         :};
-ShiftExprB ::= ShiftExprB:a SHR:o UnionDiffExprB:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.SHR, a, b);         :};
-ShiftExprB ::= ShiftExprB:a SHA:o UnionDiffExprB:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.SHA, a, b);         :};
+ShiftExprA ::=                    UnionDiffExprA:b        {: RESULT=b;                                     :};
+ShiftExprA ::= ShiftExprB:a SHL:o Bind:b                  {: RESULT=ExprBinary.Op.SHL.make(o, null, a, b); :};
+ShiftExprA ::= ShiftExprB:a SHR:o Bind:b                  {: RESULT=ExprBinary.Op.SHR.make(o, null, a, b); :};
+ShiftExprA ::= ShiftExprB:a SHA:o Bind:b                  {: RESULT=ExprBinary.Op.SHA.make(o, null, a, b); :};
+ShiftExprB ::=                    UnionDiffExprB:b        {: RESULT=b;                                     :};
+ShiftExprB ::= ShiftExprB:a SHL:o UnionDiffExprB:b        {: RESULT=ExprBinary.Op.SHL.make(o, null, a, b); :};
+ShiftExprB ::= ShiftExprB:a SHR:o UnionDiffExprB:b        {: RESULT=ExprBinary.Op.SHR.make(o, null, a, b); :};
+ShiftExprB ::= ShiftExprB:a SHA:o UnionDiffExprB:b        {: RESULT=ExprBinary.Op.SHA.make(o, null, a, b); :};
 
-UnionDiffExprA ::=                          NumUnopExprA:b        {: RESULT=b;                                                   :};
-UnionDiffExprA ::= UnionDiffExprB:a PLUS:o  Bind:b                {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUS,  a, b);         :};
-UnionDiffExprA ::= UnionDiffExprB:a MINUS:o Bind:b                {: RESULT=new ExpBinary(o, ExprBinary.Op.MINUS, a, b);         :};
-UnionDiffExprB ::=                          NumUnopExprB:b        {: RESULT=b;                                                   :};
-UnionDiffExprB ::= UnionDiffExprB:a PLUS:o  NumUnopExprB:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUS,  a, b);         :};
-UnionDiffExprB ::= UnionDiffExprB:a MINUS:o NumUnopExprB:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.MINUS, a, b);         :};
+UnionDiffExprA ::=                          NumUnopExprA:b        {: RESULT=b;                                       :};
+UnionDiffExprA ::= UnionDiffExprB:a PLUS:o  Bind:b                {: RESULT=ExprBinary.Op.PLUS .make(o, null, a, b); :};
+UnionDiffExprA ::= UnionDiffExprB:a MINUS:o Bind:b                {: RESULT=ExprBinary.Op.MINUS.make(o, null, a, b); :};
+UnionDiffExprB ::=                          NumUnopExprB:b        {: RESULT=b;                                       :};
+UnionDiffExprB ::= UnionDiffExprB:a PLUS:o  NumUnopExprB:b        {: RESULT=ExprBinary.Op.PLUS .make(o, null, a, b); :};
+UnionDiffExprB ::= UnionDiffExprB:a MINUS:o NumUnopExprB:b        {: RESULT=ExprBinary.Op.MINUS.make(o, null, a, b); :};
 
-NumUnopExprA ::=          OverrideExprA:b                        {: RESULT=b;                                                   :};
-NumUnopExprA ::= HASH:o   Bind:b                                 {: RESULT=new ExpUnary(o, ExprUnary.Op.CARDINALITY, b);        :};
-NumUnopExprA ::= SUM:o    Bind:b                                 {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b);        :};
-NumUnopExprA ::= INT:o    Bind:b                                 {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b);        :};
-NumUnopExprA ::= HASH:o   NumUnopExprA:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CARDINALITY, b);        :};
-NumUnopExprA ::= SUM:o    NumUnopExprA:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b);        :};
-NumUnopExprA ::= INT:o    NumUnopExprA:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b);        :};
-NumUnopExprB ::=          OverrideExprB:b                        {: RESULT=b;                                                   :};
-NumUnopExprB ::= HASH:o   NumUnopExprB:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CARDINALITY, b);        :};
-NumUnopExprB ::= SUM:o    NumUnopExprB:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b);        :};
-NumUnopExprB ::= INT:o    NumUnopExprB:b                         {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT,    b);        :};
+NumUnopExprA ::=          OverrideExprA:b                        {: RESULT=b;                                   :};
+NumUnopExprA ::= HASH:o   Bind:b                                 {: RESULT=ExprUnary.Op.CARDINALITY.make(o, b); :};
+NumUnopExprA ::= SUM:o    Bind:b                                 {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprA ::= INT:o    Bind:b                                 {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprA ::= HASH:o   NumUnopExprA:b                         {: RESULT=ExprUnary.Op.CARDINALITY.make(o, b); :};
+NumUnopExprA ::= SUM:o    NumUnopExprA:b                         {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprA ::= INT:o    NumUnopExprA:b                         {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprB ::=          OverrideExprB:b                        {: RESULT=b;                                   :};
+NumUnopExprB ::= HASH:o   NumUnopExprB:b                         {: RESULT=ExprUnary.Op.CARDINALITY.make(o, b); :};
+NumUnopExprB ::= SUM:o    NumUnopExprB:b                         {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
+NumUnopExprB ::= INT:o    NumUnopExprB:b                         {: RESULT=ExprUnary.Op.CAST2INT   .make(o, b); :};
 
-OverrideExprA ::=                            IntersectExprA:b     {: RESULT=b;                                                   :};
-OverrideExprA ::= OverrideExprB:a PLUSPLUS:o Bind:b               {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUSPLUS, a, b);      :};
-OverrideExprB ::=                            IntersectExprB:b     {: RESULT=b;                                                   :};
-OverrideExprB ::= OverrideExprB:a PLUSPLUS:o IntersectExprB:b     {: RESULT=new ExpBinary(o, ExprBinary.Op.PLUSPLUS, a, b);      :};
+OverrideExprA ::=                            IntersectExprA:b     {: RESULT=b;                                               :};
+OverrideExprA ::= OverrideExprB:a PLUSPLUS:o Bind:b               {: RESULT=ExprBinary.Op.PLUSPLUS.make(o, null, a, b);      :};
+OverrideExprB ::=                            IntersectExprB:b     {: RESULT=b;                                               :};
+OverrideExprB ::= OverrideExprB:a PLUSPLUS:o IntersectExprB:b     {: RESULT=ExprBinary.Op.PLUSPLUS.make(o, null, a, b);      :};
 
-IntersectExprA ::=                              RelationExprA:b   {: RESULT=b;                                                   :};
-IntersectExprA ::= IntersectExprB:a AMPERSAND:o Bind:b            {: RESULT=new ExpBinary(o, ExprBinary.Op.INTERSECT, a, b);     :};
-IntersectExprB ::=                              RelationExprB:b   {: RESULT=b;                                                   :};
-IntersectExprB ::= IntersectExprB:a AMPERSAND:o RelationExprB:b   {: RESULT=new ExpBinary(o, ExprBinary.Op.INTERSECT, a, b);     :};
+IntersectExprA ::=                              RelationExprA:b   {: RESULT=b;                                               :};
+IntersectExprA ::= IntersectExprB:a AMPERSAND:o Bind:b            {: RESULT=ExprBinary.Op.INTERSECT.make(o, null, a, b);     :};
+IntersectExprB ::=                              RelationExprB:b   {: RESULT=b;                                               :};
+IntersectExprB ::= IntersectExprB:a AMPERSAND:o RelationExprB:b   {: RESULT=ExprBinary.Op.INTERSECT.make(o, null, a, b);     :};
 
 RelOp ::= ARROW:o           {: RESULT=new Pair<Pos,ExprBinary.Op>(o, ExprBinary.Op.ARROW          ); :};
 RelOp ::= ANY_ARROW_SOME:o  {: RESULT=new Pair<Pos,ExprBinary.Op>(o, ExprBinary.Op.ANY_ARROW_SOME ); :};
@@ -888,55 +927,55 @@ RelOp ::= LONE_ARROW_SOME:o {: RESULT=new Pair<Pos,ExprBinary.Op>(o, ExprBinary.
 RelOp ::= LONE_ARROW_ONE:o  {: RESULT=new Pair<Pos,ExprBinary.Op>(o, ExprBinary.Op.LONE_ARROW_ONE ); :};
 RelOp ::= LONE_ARROW_LONE:o {: RESULT=new Pair<Pos,ExprBinary.Op>(o, ExprBinary.Op.LONE_ARROW_LONE); :};
 
-RelationExprA ::= DomainExprA:a                         {: RESULT=a;                             :};
-RelationExprA ::= DomainExprB:a RelOp:o Bind:b          {: RESULT=new ExpBinary(o.a, o.b, a, b); :};
-RelationExprB ::= DomainExprB:a                         {: RESULT=a;                             :};
-RelationExprB ::= DomainExprB:a RelOp:o RelationExprB:b {: RESULT=new ExpBinary(o.a, o.b, a, b); :};
+RelationExprA ::= DomainExprA:a                         {: RESULT=a;                          :};
+RelationExprA ::= DomainExprB:a RelOp:o Bind:b          {: RESULT=o.b.make(o.a, null, a, b);  :};
+RelationExprB ::= DomainExprB:a                         {: RESULT=a;                          :};
+RelationExprB ::= DomainExprB:a RelOp:o RelationExprB:b {: RESULT=o.b.make(o.a, null, a, b);  :};
 
-DomainExprA ::=                        RangeExprA:b  {: RESULT=b;                                            :};
-DomainExprA ::= DomainExprB:a DOMAIN:o Bind:b        {: RESULT=new ExpBinary(o, ExprBinary.Op.DOMAIN, a, b); :};
-DomainExprB ::=                        RangeExprB:b  {: RESULT=b;                                            :};
-DomainExprB ::= DomainExprB:a DOMAIN:o RangeExprB:b  {: RESULT=new ExpBinary(o, ExprBinary.Op.DOMAIN, a, b); :};
+DomainExprA ::=                        RangeExprA:b  {: RESULT=b;                                        :};
+DomainExprA ::= DomainExprB:a DOMAIN:o Bind:b        {: RESULT=ExprBinary.Op.DOMAIN.make(o, null, a, b); :};
+DomainExprB ::=                        RangeExprB:b  {: RESULT=b;                                        :};
+DomainExprB ::= DomainExprB:a DOMAIN:o RangeExprB:b  {: RESULT=ExprBinary.Op.DOMAIN.make(o, null, a, b); :};
 
-RangeExprA ::=                      BracketExprA:b   {: RESULT=b;                                           :};
-RangeExprA ::= RangeExprB:a RANGE:o Bind:b           {: RESULT=new ExpBinary(o, ExprBinary.Op.RANGE, a, b); :};
-RangeExprB ::=                      BracketExprB:b   {: RESULT=b;                                           :};
-RangeExprB ::= RangeExprB:a RANGE:o BracketExprB:b   {: RESULT=new ExpBinary(o, ExprBinary.Op.RANGE, a, b); :};
+RangeExprA ::=                      BracketExprA:b   {: RESULT=b;                                       :};
+RangeExprA ::= RangeExprB:a RANGE:o Bind:b           {: RESULT=ExprBinary.Op.RANGE.make(o, null, a, b); :};
+RangeExprB ::=                      BracketExprB:b   {: RESULT=b;                                       :};
+RangeExprB ::= RangeExprB:a RANGE:o BracketExprB:b   {: RESULT=ExprBinary.Op.RANGE.make(o, null, a, b); :};
 
-BracketExprA ::= DotExprA:b                                 {: RESULT=b;                                                                                                          :};
-BracketExprB ::= DotExprB:b                                 {: RESULT=b;                                                                                                          :};
-BracketExprB ::= BracketExprB:a LBRACKET Exprs:b RBRACKET:c {: Exp aa=a;                     for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), c, bb, aa), c); RESULT=aa; :};
-BracketExprB ::= DISJ:a         LBRACKET Exprs:b RBRACKET:c {: Exp aa=new ExpName(a,"disj"); for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), c, bb, aa), c); RESULT=aa; :};
-BracketExprB ::= INT:a          LBRACKET Exprs:b RBRACKET:c {: Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), c, bb, aa), c); RESULT=aa; :};
-BracketExprB ::= SUM:a          LBRACKET Exprs:b RBRACKET:c {: Exp aa=new ExpName(a,"int");  for(Exp bb:b) aa=t(new ExpDot(aa.span().merge(bb.span()), c, bb, aa), c); RESULT=aa; :};
+BracketExprA ::= DotExprA:b                                 {: RESULT=b;                                                                                                  :};
+BracketExprB ::= DotExprB:b                                 {: RESULT=b;                                                                                                  :};
+BracketExprB ::= BracketExprB:a LBRACKET Exprs:b RBRACKET:c {: Expr aa=a;                       for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=aa; :};
+BracketExprB ::= DISJ:a         LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "disj"); for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=aa; :};
+BracketExprB ::= INT:a          LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "int");  for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=aa; :};
+BracketExprB ::= SUM:a          LBRACKET Exprs:b RBRACKET:c {: Expr aa=ExprVar.make(a, "int");  for(Expr bb:b) aa=t(aa.span().merge(bb.span()), c, bb, aa, c); RESULT=aa; :};
 
-DotExprA ::=                      UnopExprA:b {: RESULT=b;                                                      :};
-DotExprA ::= BracketExprB:a DOT:o Bind:b      {: RESULT=t(new ExpDot(o, null, a, b),                     null); :};
-DotExprB ::=                      UnopExprB:b {: RESULT=b;                                                      :};
-DotExprB ::= BracketExprB:a DOT:o UnopExprB:b {: RESULT=t(new ExpDot(o, null, a, b),                     null); :};
-DotExprB ::= BracketExprB:a DOT:o DISJ:b      {: RESULT=t(new ExpDot(o, null, a, new ExpName(b,"disj")), null); :};
-DotExprB ::= BracketExprB:a DOT:o INT         {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT, a);              :};
-DotExprB ::= BracketExprB:a DOT:o SUM         {: RESULT=new ExpUnary(o, ExprUnary.Op.CAST2INT, a);              :};
+DotExprA ::=                      UnopExprA:b {: RESULT=b;                                            :};
+DotExprA ::= BracketExprB:a DOT:o Bind:b      {: RESULT=t(o, null, a, b,                       null); :};
+DotExprB ::=                      UnopExprB:b {: RESULT=b;                                            :};
+DotExprB ::= BracketExprB:a DOT:o UnopExprB:b {: RESULT=t(o, null, a, b,                       null); :};
+DotExprB ::= BracketExprB:a DOT:o DISJ:b      {: RESULT=t(o, null, a, ExprVar.make(b, "disj"), null); :};
+DotExprB ::= BracketExprB:a DOT:o INT         {: RESULT=ExprUnary.Op.CAST2INT.make(o, a); :};
+DotExprB ::= BracketExprB:a DOT:o SUM         {: RESULT=ExprUnary.Op.CAST2INT.make(o, a); :};
 
-UnopExprA ::= TILDE:o  Bind:b       {: RESULT=new ExpUnary(o, ExprUnary.Op.TRANSPOSE, b); :};
-UnopExprA ::= STAR:o   Bind:b       {: RESULT=new ExpUnary(o, ExprUnary.Op.RCLOSURE,  b); :};
-UnopExprA ::= CARET:o  Bind:b       {: RESULT=new ExpUnary(o, ExprUnary.Op.CLOSURE,   b); :};
-UnopExprA ::= TILDE:o  UnopExprA:b  {: RESULT=new ExpUnary(o, ExprUnary.Op.TRANSPOSE, b); :};
-UnopExprA ::= STAR:o   UnopExprA:b  {: RESULT=new ExpUnary(o, ExprUnary.Op.RCLOSURE,  b); :};
-UnopExprA ::= CARET:o  UnopExprA:b  {: RESULT=new ExpUnary(o, ExprUnary.Op.CLOSURE,   b); :};
-UnopExprB ::=          BaseExpr:b   {: RESULT=b;                                          :};
-UnopExprB ::= TILDE:o  UnopExprB:b  {: RESULT=new ExpUnary(o, ExprUnary.Op.TRANSPOSE, b); :};
-UnopExprB ::= STAR:o   UnopExprB:b  {: RESULT=new ExpUnary(o, ExprUnary.Op.RCLOSURE,  b); :};
-UnopExprB ::= CARET:o  UnopExprB:b  {: RESULT=new ExpUnary(o, ExprUnary.Op.CLOSURE,   b); :};
+UnopExprA ::= TILDE:o  Bind:b       {: RESULT=ExprUnary.Op.TRANSPOSE.make(o,b); :};
+UnopExprA ::= STAR:o   Bind:b       {: RESULT=ExprUnary.Op.RCLOSURE .make(o,b); :};
+UnopExprA ::= CARET:o  Bind:b       {: RESULT=ExprUnary.Op.CLOSURE  .make(o,b); :};
+UnopExprA ::= TILDE:o  UnopExprA:b  {: RESULT=ExprUnary.Op.TRANSPOSE.make(o,b); :};
+UnopExprA ::= STAR:o   UnopExprA:b  {: RESULT=ExprUnary.Op.RCLOSURE .make(o,b); :};
+UnopExprA ::= CARET:o  UnopExprA:b  {: RESULT=ExprUnary.Op.CLOSURE  .make(o,b); :};
+UnopExprB ::=          BaseExpr:b   {: RESULT=b;                                :};
+UnopExprB ::= TILDE:o  UnopExprB:b  {: RESULT=ExprUnary.Op.TRANSPOSE.make(o,b); :};
+UnopExprB ::= STAR:o   UnopExprB:b  {: RESULT=ExprUnary.Op.RCLOSURE .make(o,b); :};
+UnopExprB ::= CARET:o  UnopExprB:b  {: RESULT=ExprUnary.Op.CLOSURE  .make(o,b); :};
 
-BaseExpr ::= NUMBER:x                               {: RESULT=x;                                                                                                 :};
-BaseExpr ::= IDEN:o                                 {: RESULT=new ExpName(o, "iden");                                                                            :};
-BaseExpr ::= THIS:o                                 {: RESULT=new ExpName(o, "this");                                                                            :};
-BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT=x;                                                                                                 :};
-BaseExpr ::= SigRef:x                               {: RESULT=x;                                                                                                 :};
-BaseExpr ::= AT:o Name:x                            {: nod(x); RESULT=new ExpName(o.merge(x.pos), "@"+x.name);                                                           :};
-BaseExpr ::= Super:x                                {: RESULT=x;                                                                                                 :};
-BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT=new ExpQuant(o, c, ExprQuant.Op.COMPREHENSION, a, b);                                              :};
-BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT=new ExpQuant(o, c, ExprQuant.Op.COMPREHENSION, a, new ExpConstant(null, ExprConstant.Op.TRUE, 0)); :};
+BaseExpr ::= NUMBER:x                               {: RESULT = x;                                                         :};
+BaseExpr ::= IDEN:o                                 {: RESULT = ExprVar.make(o, "iden");                                   :};
+BaseExpr ::= THIS:o                                 {: RESULT = ExprVar.make(o, "this");                                   :};
+BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT = x;                                                         :};
+BaseExpr ::= SigRef:x                               {: RESULT = x;                                                         :};
+BaseExpr ::= AT:o Name:x                            {: nod(x); RESULT = ExprVar.make(o.merge(x.pos), "@"+x.label);         :};
+BaseExpr ::= Super:x                                {: RESULT = x;                                                         :};
+BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT = q(o, c, ExprQuant.Op.COMPREHENSION, a, b);                 :};
+BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT = q(o, c, ExprQuant.Op.COMPREHENSION, a, ExprConstant.TRUE); :};
 
 //=============================================================================

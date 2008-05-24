@@ -97,9 +97,9 @@ final class CompFilter implements Scanner {
           if (i==follow.length) {
               if ((b=myread()).sym!=MINUS)  { undo.add(0,b); break; }
               if ((c=myread()).sym!=NUMBER) { undo.add(0,c); undo.add(0,b); break; }
-              ExpConstant num = (ExpConstant)(c.value);
+              ExprConstant num = (ExprConstant)(c.value);
               Pos pos = ((Pos)(b.value)).merge(num.span());
-              c.value = new ExpConstant(pos, ExprConstant.Op.NUMBER, 0-num.num);
+              c.value = ExprConstant.Op.NUMBER.make(pos, 0-num.num);
               undo.add(0,c);
               break;
           }

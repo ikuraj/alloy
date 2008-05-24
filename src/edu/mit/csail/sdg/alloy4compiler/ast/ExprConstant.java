@@ -37,8 +37,8 @@ public final class ExprConstant extends Expr {
     /** The type of constant. */
     public final Op op;
 
-    /** If this node is a number constant, then this field stores the index or the number, else this field stores 0. */
-    private final int num;
+    /** If this node is a number constant, then this field stores the number, else this field stores 0. */
+    public final int num;
 
     /** Return the number if this node is a number constant, otherwise return 0. */
     public int num() { return num; }
