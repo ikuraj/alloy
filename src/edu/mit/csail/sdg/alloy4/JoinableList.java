@@ -93,11 +93,14 @@ public final class JoinableList<E> implements Iterable<E> {
         return new JoinableList<E>(count+1, pre, item, new JoinableList<E>(newItem));
     }
 
+    /** If the list if nonempty, arbitrarily return one of the item, otherwise throw NoSuchElementException. */
+    public E peek() { if (count==0) throw new NoSuchElementException(); else return get(0); }
+
     /**
      * Return the i-th element
      * @throws ArrayIndexOutOfBoundsException if the given index doesn't exist
      */
-    public E get(int i) {
+    private E get(int i) {
         if (i<0 || i>=count) throw new ArrayIndexOutOfBoundsException();
         JoinableList<E> x = this;
         while(true) {
@@ -154,18 +157,6 @@ public final class JoinableList<E> implements Iterable<E> {
             }
         }
         return true;
-    }
-
-    /** Returns true if the list contains the given element. */
-    public boolean contains(E item) {
-        for(E entry:this) {
-            if (entry==null) {
-                if (item==null) return true;
-            } else {
-                if (entry.equals(item)) return true;
-            }
-        }
-        return false;
     }
 
     /** Returns a readonly iterator that iterates over the elements in this list. */

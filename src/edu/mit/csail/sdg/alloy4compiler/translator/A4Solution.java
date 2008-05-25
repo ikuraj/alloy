@@ -516,7 +516,7 @@ public final class A4Solution {
             if (ans!=null) return ans;
         }
         if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
-        if (!expr.errors.isEmpty()) throw expr.errors.get(0);
+        if (!expr.errors.isEmpty()) throw expr.errors.peek();
         Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
         if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
         if (result instanceof Formula) return eval.evaluate((Formula)result);

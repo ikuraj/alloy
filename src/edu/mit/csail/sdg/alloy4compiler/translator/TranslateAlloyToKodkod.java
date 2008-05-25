@@ -308,7 +308,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      */
     public static Object alloy2kodkod(A4Solution sol, Expr expr) throws Err {
         if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
-        if (!expr.errors.isEmpty()) throw expr.errors.get(0);
+        if (!expr.errors.isEmpty()) throw expr.errors.peek();
         TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.unrolls(), sol.a2k());
         Object ans;
         try {
@@ -333,7 +333,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * @throws ErrorFatal - if x does not evaluate to a Formula
      */
     private Formula cform(Expr x) throws Err {
-        if (!x.errors.isEmpty()) throw x.errors.get(0);
+        if (!x.errors.isEmpty()) throw x.errors.peek();
         Object y=visitThis(x);
         if (y instanceof Formula) return (Formula)y;
         throw new ErrorFatal(x.span(), "This should have been a formula.\nInstead it is "+y);
@@ -345,7 +345,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * @throws ErrorFatal - if x does not evaluate to an IntExpression
      */
     private IntExpression cint(Expr x) throws Err {
-        if (!x.errors.isEmpty()) throw x.errors.get(0);
+        if (!x.errors.isEmpty()) throw x.errors.peek();
         Object y=visitThis(x);
         if (y instanceof IntExpression) return (IntExpression)y;
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
@@ -357,7 +357,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * @throws ErrorFatal - if x does not evaluate to an Expression
      */
     private Expression cset(Expr x) throws Err {
-        if (!x.errors.isEmpty()) throw x.errors.get(0);
+        if (!x.errors.isEmpty()) throw x.errors.peek();
         Object y=visitThis(x);
         if (y instanceof Expression) return (Expression)y;
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);

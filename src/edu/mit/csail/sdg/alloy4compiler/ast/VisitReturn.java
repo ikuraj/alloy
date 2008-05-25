@@ -36,13 +36,13 @@ public abstract class VisitReturn<T> {
     public final T visitThis(Expr x) throws Err { return x.accept(this); }
 
     /** Visits a ExprBad node */
-    public T visit(ExprBad x) throws Err { throw x.errors.get(0); }
+    public T visit(ExprBad x) throws Err { throw x.errors.peek(); }
 
     /** Visits a ExprBadCall node */
-    public T visit(ExprBadCall x) throws Err { throw x.errors.get(0); }
+    public T visit(ExprBadCall x) throws Err { throw x.errors.peek(); }
 
     /** Visits a ExprBadJoin node */
-    public T visit(ExprBadJoin x) throws Err { throw x.errors.get(0); }
+    public T visit(ExprBadJoin x) throws Err { throw x.errors.peek(); }
 
     /** Visits an ExprBinary node. */
     public abstract T visit(ExprBinary x) throws Err;
