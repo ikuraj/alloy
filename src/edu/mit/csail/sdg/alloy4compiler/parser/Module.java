@@ -28,9 +28,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Env;
@@ -40,7 +42,6 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -473,7 +474,7 @@ public final class Module {
     private final Map<String,SigAST> sigs = new LinkedHashMap<String,SigAST>();
 
     /** The list of sigs in this module whose scope shall be deemed "exact" */
-    private final IdentitySet<SigAST> exactSigs = new IdentitySet<SigAST>();
+    private final Set<SigAST> exactSigs = new LinkedHashSet<SigAST>();
 
     /** The list of params in this module whose scope shall be deemed "exact" */
     private final List<String> exactParams = new ArrayList<String>();

@@ -24,13 +24,13 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary.Op.NOOP;
@@ -264,7 +264,7 @@ public abstract class Expr {
 
     /** Transitively returns a set that contains all predicates/functions that this expression calls directly or indirectly. */
     public final Iterable<Func> findAllFunctions() {
-        final IdentitySet<Func> seen = new IdentitySet<Func>();
+        final LinkedHashSet<Func> seen = new LinkedHashSet<Func>();
         final List<Func> todo = new ArrayList<Func>();
         final VisitQuery<Object> q = new VisitQuery<Object>() {
             @Override public final Object visit(ExprCall x) { if (seen.add(x.fun)) todo.add(x.fun); return null; }

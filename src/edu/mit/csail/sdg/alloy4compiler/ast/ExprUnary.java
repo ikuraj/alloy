@@ -23,13 +23,13 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
-import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.DirectedGraph;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
@@ -272,7 +272,7 @@ public final class ExprUnary extends Expr {
      * and possibly end up with only A->B + A->C so we need to rediscover the relevant edges.
      */
     private static Type resolveClosure (Type parent, Type child) {
-        IdentitySet<PrimSig> nodes = new IdentitySet<PrimSig>();
+        LinkedHashSet<PrimSig> nodes = new LinkedHashSet<PrimSig>();
         DirectedGraph<PrimSig> graph = new DirectedGraph<PrimSig>();
         // For each (v1->v2) in childType, add (v1->v2) into the graph.
         for (ProductType c:child) if (c.arity()==2) {

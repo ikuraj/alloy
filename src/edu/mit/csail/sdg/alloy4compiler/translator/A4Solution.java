@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import kodkod.ast.BinaryExpression;
@@ -72,7 +73,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
-import edu.mit.csail.sdg.alloy4.IdentitySet;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
@@ -666,7 +666,7 @@ public final class A4Solution {
     //===================================================================================================//
 
     /** Helper method that adds every mentioned Relation into set (assuming "ex" is a Relation, or a binary composition of Relations) */
-    private static void addAllSubrelation(IdentitySet<Relation> set, Expression ex) {
+    private static void addAllSubrelation(LinkedHashSet<Relation> set, Expression ex) {
         while(ex instanceof BinaryExpression) {
             BinaryExpression b = (BinaryExpression)ex;
             addAllSubrelation(set, b.left());
@@ -683,7 +683,7 @@ public final class A4Solution {
             for(ExprVar sk:frame.skolems) un.seen(sk.label);
             // Store up the skolems
             List<Object> skolems = new ArrayList<Object>();
-            IdentitySet<Relation> rels = new IdentitySet<Relation>(Arrays.asList(SEQ_SEQIDX, SIGINT_MAX, SIGINT_MIN, SIGINT_ZERO, SIGINT_NEXT));
+            LinkedHashSet<Relation> rels = new LinkedHashSet<Relation>(Arrays.asList(SEQ_SEQIDX, SIGINT_MAX, SIGINT_MIN, SIGINT_ZERO, SIGINT_NEXT));
             for(final Sig s2:frame.getAllReachableSigs()) {
                addAllSubrelation(rels, frame.a2k(s2));
                for(Field f:s2.getFields()) addAllSubrelation(rels, frame.a2k(f));
@@ -869,7 +869,7 @@ public final class A4Solution {
         // If unsatisfiable, then retreive the unsat core if desired
         if (inst==null && solver.options().solver()==SATFactory.MiniSatProver) {
            try {
-              lCore = new IdentitySet<Formula>();
+              lCore = new LinkedHashSet<Formula>();
               Proof p = sol.proof();
               if (sol.outcome()==UNSATISFIABLE) {
                  // only perform the minimization if it was UNSATISFIABLE, rather than TRIVIALLY_UNSATISFIABLE
@@ -883,7 +883,7 @@ public final class A4Solution {
                  Object n=it.next().node();
                  if (n instanceof Formula) lCore.add((Formula)n);
               }
-              hCore = new IdentitySet<Formula>(p.highLevelCore());
+              hCore = new LinkedHashSet<Formula>(p.highLevelCore());
            } catch(Throwable ex) {
               lCore = hCore = null;
            }
@@ -958,7 +958,7 @@ public final class A4Solution {
     //===================================================================================================//
 
     /** The low-level unsat core; null if it is not available. */
-    private IdentitySet<Formula> lCore = null;
+    private LinkedHashSet<Formula> lCore = null;
 
     /** This caches the result of lowLevelCore(). */
     private ConstSet<Pos> lCoreCache = null;
@@ -977,7 +977,7 @@ public final class A4Solution {
     //===================================================================================================//
 
     /** The high-level unsat core; null if it is not available. */
-    private IdentitySet<Formula> hCore = null;
+    private LinkedHashSet<Formula> hCore = null;
 
     /** This caches the result of highLevelCore(). */
     private Pair<ConstSet<Pos>,ConstSet<Pos>> hCoreCache = null;
