@@ -214,7 +214,7 @@ public final class AlloyInstance {
     }
 
     /**
-     * Two instances are equal if they have the same filename, same commands, same kodkod input and output,
+     * Two instances are equal if they have the same filename, same commands,
      * same model, and same atoms and tuples relationships.
      */
     @Override public boolean equals(Object other) {
