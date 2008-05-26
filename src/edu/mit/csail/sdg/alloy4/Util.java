@@ -139,19 +139,6 @@ public final class Util {
         return ans.makeConst();
     }
 
-    /** Copy the input list, remove a single instance of "element" if exists, then return the result as a unmodifiable list. */
-    public static<T> ConstList<T> remove(List<T> list, T element) {
-        for(int i=0, n=list.size(); i<n; i++) {
-            T x=list.get(i);
-            if (x==element || (x!=null && x.equals(element))) {
-                TempList<T> newlist=new TempList<T>(list.size()-1);
-                for(int j=0; j<n; j++) { if (i!=j) newlist.add(list.get(j)); }
-                return newlist.makeConst();
-            }
-        }
-        return ConstList.make(list);
-    }
-
     /** Returns an unmodifiable List with same elements as the array. */
     public static<T> ConstList<T> asList(T... array) {
         TempList<T> ans = new TempList<T>(array.length);
