@@ -59,8 +59,8 @@ import javax.swing.JToolBar;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import edu.mit.csail.sdg.alloy4.Computer;
-import edu.mit.csail.sdg.alloy4.OurBinaryCheckbox;
 import edu.mit.csail.sdg.alloy4.OurBorder;
+import edu.mit.csail.sdg.alloy4.OurCheckbox;
 import edu.mit.csail.sdg.alloy4.OurConsole;
 import edu.mit.csail.sdg.alloy4.OurDialog;
 import edu.mit.csail.sdg.alloy4.Runner;
@@ -483,7 +483,7 @@ public final class VizGUI implements ComponentListener {
         final Set<AlloyType> projected = myState.getProjectedTypes();
         for(final AlloyType t: myState.getOriginalModel().getTypes()) if (myState.canProject(t)) {
             final boolean on = projected.contains(t);
-            final JMenuItem m = new JMenuItem(t.getName(), on ? OurBinaryCheckbox.on : OurBinaryCheckbox.off);
+            final JMenuItem m = new JMenuItem(t.getName(), on ? OurCheckbox.ON : OurCheckbox.OFF);
             m.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if (on) myState.deproject(t); else myState.project(t);

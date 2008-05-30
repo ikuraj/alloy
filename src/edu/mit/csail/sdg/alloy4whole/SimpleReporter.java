@@ -51,7 +51,6 @@ import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
-import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.MailBug;
@@ -503,7 +502,7 @@ final class SimpleReporter extends A4Reporter {
             formulafilename=tempfile+".java";
             try { Util.writeAll(formulafilename, originalFormula); formulafilename="CNF: "+formulafilename; } catch(Throwable ex) { formulafilename=""; }
         }
-        Pair<ConstSet<Pos>,ConstSet<Pos>> core = sol.highLevelCore();
+        Pair<Set<Pos>,Set<Pos>> core = sol.highLevelCore();
         if ((core.a.size()>0 || core.b.size()>0) && tempfile!=null) {
             corefilename=tempfile+".core";
             OutputStream fs=null;

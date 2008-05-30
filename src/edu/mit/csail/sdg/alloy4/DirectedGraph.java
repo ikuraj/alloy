@@ -31,8 +31,6 @@ import java.util.IdentityHashMap;
  *
  * <p> Note: it uses n1==n2 for comparing nodes rather than using n1.equals(n2)
  *
- * <p><b>Thread Safety:</b>  unsafe
- *
  * @param <N> - the node type
  */
 
@@ -44,50 +42,39 @@ public final class DirectedGraph<N> {
     /** Constructs an empty graph. */
     public DirectedGraph () { }
 
-    /**
-     * Adds a directed edge from start node to end node (if there wasn't such an edge already).
-     */
+    /** Add a directed edge from start node to end node (if there wasn't such an edge already). */
     public void addEdge (final N start, final N end) {
+        // statement order here ensures failure atomicity
         List<N> targets = nodeToTargets.get(start);
         if (targets == null) {
             targets = new ArrayList<N>();
+            targets.add(end);
             nodeToTargets.put(start, targets);
         } else {
-            for (int i=targets.size()-1; i>=0; i--) {
-                if (targets.get(i) == end) { return; }
-            }
+            for (int i=targets.size()-1; i>=0; i--) if (targets.get(i) == end) return;
+            targets.add(end);
         }
-        targets.add(end);
     }
 
-    /**
-     * Returns whether there is a directed path from start node to end node by following 0 or more directed edges.
-     */
+    /** Returns whether there is a directed path from start node to end node by following 0 or more directed edges. */
     public boolean hasPath (final N start, final N end) {
-        if (start == end) { return true; }
+        if (start == end) return true;
         List<N> todo = new ArrayList<N>();
-        IdentityHashMap<N,Object> visited = new IdentityHashMap<N,Object>();
+        IdentityHashMap<N,N> visited = new IdentityHashMap<N,N>();
         // The correctness and guaranteed termination relies on four invariants:
         // (1) Nothing is ever removed from "visited".
         // (2) Every time we add X to "visited", we also simultaneously add X to "todo".
         // (3) Every time we add X to "todo", we also simultaneously add X to "visited".
         // (4) Nothing is added to "todo" more than once
-        visited.put(start, null);
+        visited.put(start, start);
         todo.add(start);
         while(!todo.isEmpty()) {
             List<N> targets = nodeToTargets.get(todo.remove(todo.size()-1));
-            if (targets!=null) {
-                for (int i=targets.size()-1; i>=0; i--) {
-                    N next=targets.get(i);
-                    if (next == end) {
-                        addEdge(start, end); // This caches the result, so that hasPath(start,end) will return true immediately
-                        return true;
-                    }
-                    if (!visited.containsKey(next)) {
-                        visited.put(next, null);
-                        todo.add(next);
-                    }
-                }
+            if (targets==null) continue;
+            for (int i=targets.size()-1; i>=0; i--) {
+                N next=targets.get(i);
+                if (next == end) { addEdge(start, end); return true; } // This caches the result, so hasPath(start,end)==true immediately
+                if (visited.put(next, next)==null) todo.add(next);
             }
         }
         return false;

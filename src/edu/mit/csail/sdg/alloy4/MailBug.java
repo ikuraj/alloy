@@ -63,20 +63,17 @@ public final class MailBug implements UncaughtExceptionHandler {
 
     /** Sets the most recent Alloy version (as queried from alloy.mit.edu) */
     public synchronized void setLatestAlloyVersion (int version, String versionName) {
-        latestAlloyVersion=version;
-        latestAlloyVersionName=versionName;
+        latestAlloyVersion = version;
+        latestAlloyVersionName = versionName;
     }
 
     /** Helper method that prints a Throwable's stack trace and all its causes as a String. */
     public static String dump(Throwable ex) {
         StringBuilder sb=new StringBuilder();
         while(ex!=null) {
-           sb.append(ex.getClass().toString());
-           sb.append(": ");
-           sb.append(ex.getMessage());
-           sb.append('\n');
+           sb.append(ex.getClass()).append(": ").append(ex.getMessage()).append('\n');
            StackTraceElement[] trace = ex.getStackTrace();
-           for(int n=trace.length, i=0; i<n; i++) sb.append(trace[i].toString()).append('\n');
+           if (trace!=null) for(int n=trace.length, i=0; i<n; i++) sb.append(trace[i]).append('\n');
            ex = ex.getCause();
            if (ex!=null) sb.append("caused by...\n");
         }
@@ -85,13 +82,13 @@ public final class MailBug implements UncaughtExceptionHandler {
 
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException (Thread thread, Throwable ex) {
-        final String yes="Send the Bug Report";
-        final String no="Don't Send the Bug Report";
-        final JTextField email = OurUtil.textfield("",20);
-        final JTextArea problem = OurUtil.textarea("",50,50);
+        final String yes = "Send the Bug Report";
+        final String no = "Don't Send the Bug Report";
+        final JTextField email = OurUtil.textfield("", 20);
+        final JTextArea problem = OurUtil.textarea("", 50, 50);
         email.setBorder(new LineBorder(Color.DARK_GRAY));
         problem.setBorder(null);
-        final JScrollPane scroll=OurUtil.scrollpane(problem);
+        final JScrollPane scroll = OurUtil.scrollpane(problem);
         scroll.setPreferredSize(new Dimension(300,200));
         scroll.setBorder(new LineBorder(Color.DARK_GRAY));
         if (ex instanceof OutOfMemoryError || ex instanceof StackOverflowError) {
@@ -132,8 +129,8 @@ public final class MailBug implements UncaughtExceptionHandler {
                     "If you'd like to be notified about a fix,",
                     "please describe the problem, and enter your email address.",
                     " ",
-                    OurUtil.makeHT("Email:",5,email,null),
-                    OurUtil.makeHT("Problem:",5,scroll,null)
+                    OurUtil.makeHT("Email:", 5, email, null),
+                    OurUtil.makeHT("Problem:", 5, scroll, null)
             }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
             null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { System.exit(1); }
         }
@@ -151,7 +148,7 @@ public final class MailBug implements UncaughtExceptionHandler {
         pw.printf("\n========================= Preferences ======================\n");
         try {
             for(String key: Preferences.userNodeForPackage(Util.class).keys()) {
-                String value = Preferences.userNodeForPackage(Util.class).get(key,"");
+                String value = Preferences.userNodeForPackage(Util.class).get(key, "");
                 pw.printf("%s = %s\n", key, value);
             }
         } catch(BackingStoreException bse) {
@@ -170,41 +167,40 @@ public final class MailBug implements UncaughtExceptionHandler {
         pw.close();
         sw.flush();
         try {
-            final JFrame statusWindow=new JFrame();
+            final JFrame statusWindow = new JFrame();
             final JButton done = new JButton("Close");
             done.addActionListener(new ActionListener() {
-                public final void actionPerformed(ActionEvent e) {
-                    System.exit(1);
-                }
+               public void actionPerformed(ActionEvent e) { System.exit(1); }
             });
-            final JTextArea status=OurUtil.textarea("Sending the bug report... please wait...",10,40);
+            final JTextArea status = OurUtil.textarea("Sending the bug report... please wait...", 10, 40);
             status.setEditable(false);
             status.setLineWrap(true);
             status.setWrapStyleWord(true);
             status.setBackground(Color.WHITE);
             status.setForeground(Color.BLACK);
             status.setBorder(new EmptyBorder(2,2,2,2));
-            final JScrollPane statusPane=new JScrollPane(status);
+            final JScrollPane statusPane = new JScrollPane(status);
             statusPane.setBorder(null);
             statusWindow.setTitle("Sending Bug Report");
             statusWindow.setBackground(Color.LIGHT_GRAY);
             statusWindow.getContentPane().setLayout(new BorderLayout());
             statusWindow.getContentPane().add(statusPane, BorderLayout.CENTER);
             statusWindow.getContentPane().add(done, BorderLayout.SOUTH);
-            int w=OurUtil.getScreenWidth(), h=OurUtil.getScreenHeight();
+            int w = OurUtil.getScreenWidth(), h = OurUtil.getScreenHeight();
             statusWindow.pack();
             statusWindow.setSize(600,200);
             statusWindow.setLocation(w/2-300,h/2-100);
             statusWindow.setVisible(true);
             statusWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            status.setText(postBug(sw.toString()));
+            status.setText(postBug(sw.toString(), ex));
+            status.setCaretPosition(0);
         } catch(Throwable exception) {
             System.exit(1);
         }
     }
 
     /** Post the given string via POST HTTP request. */
-    private static String postBug(String bugReport) {
+    private static String postBug(String bugReport, Throwable ex) {
         final String BUG_POST_URL = "http://alloy.mit.edu/postbug4.php";
         BufferedReader in = null;
         try {
@@ -214,15 +210,10 @@ public final class MailBug implements UncaughtExceptionHandler {
             connection.getOutputStream().flush();
             in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
             StringBuilder report = new StringBuilder();
-            for (String inputLine = in.readLine(); inputLine != null; inputLine = in.readLine()) {
-                report.append(inputLine);
-                report.append('\n');
-            }
+            for (String line = in.readLine(); line != null; line = in.readLine()) report.append(line).append('\n');
             return report.toString();
-        } catch (Throwable ex) {
-            return "Sorry. An error has occurred in posting the bug report.\n\n"
-            +"Please email alloy@mit.edu directly.\n\n"
-            +"(Bug posting failed due to Java exception: "+ex.toString()+")";
+        } catch (Throwable exception) {
+            return "Sorry. An error has occurred in posting the bug report.\n\nPlease email alloy@mit.edu directly.\n\n"+dump(ex);
         } finally {
             if (in!=null) Util.close(in);
         }

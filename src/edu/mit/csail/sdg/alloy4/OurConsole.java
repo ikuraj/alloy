@@ -36,6 +36,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -90,7 +91,7 @@ public final class OurConsole extends JScrollPane {
     /**
      * The number of characters before the horizontal divider bar.
      * (The interactive console is composed of a JTextPane which contains 0 or more input/output pairs, followed
-     * by horizontal divider bar, followed by an imbedded sub-JTextPane (where the user can type in the next input))
+     * by horizontal divider bar, followed by an embedded sub-JTextPane (where the user can type in the next input))
      */
     private int len = 0;
 
@@ -101,7 +102,7 @@ public final class OurConsole extends JScrollPane {
     private final JTextPane sub;
 
     /** The history of all commands entered so far, plus an extra String representing the user's next command. */
-    private final List<String> history = new ArrayList<String>();
+    private final List<String> history = new ArrayList<String>(Arrays.asList(""));
 
     /** The position in this.history that is currently showing. */
     private int browse = 0;
@@ -121,33 +122,27 @@ public final class OurConsole extends JScrollPane {
 
     /** This helper method enables cut/copy/paste using ctrl-{c,v,x,insert} and shift-{insert,delete} for this.main and this.sub */
     private void do_CutCopyPaste() {
-        // Have to make sure only one of {input,output} has an active selection, or else it may confuse the user
+        // Have to make sure only one of {input, output} has an active selection, or else it may confuse the user
         sub.getCaret().addChangeListener(new ChangeListener() {
            public void stateChanged(ChangeEvent e) {
              if (suppress) return;
-             suppress=true;
-             try { main.getCaret().setDot(main.getCaret().getDot()); } finally { suppress=false; }
+             try { suppress=true; main.getCaret().setDot(main.getCaret().getDot()); } finally { suppress=false; }
            }
         });
         main.getCaret().addChangeListener(new ChangeListener() {
            public void stateChanged(ChangeEvent e) {
-              if (suppress) return;
-              suppress=true;
-              try { sub.getCaret().setDot(sub.getCaret().getDot()); } finally { suppress=false; }
+             if (suppress) return;
+             try { suppress=true; sub.getCaret().setDot(sub.getCaret().getDot()); } finally { suppress=false; }
            }
         });
         // now, create the 3 actions
         AbstractAction alloy_copy = new AbstractAction("alloy_copy") {
            private static final long serialVersionUID = 1L;
-           public void actionPerformed(ActionEvent ev) {
-              if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.copy(); else main.copy();
-           }
+           public void actionPerformed(ActionEvent ev) { if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.copy(); else main.copy(); }
         };
         AbstractAction alloy_cut = new AbstractAction("alloy_cut") {
            private static final long serialVersionUID = 1L;
-           public void actionPerformed(ActionEvent ev) {
-              if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.cut(); else main.copy();
-           }
+           public void actionPerformed(ActionEvent ev) { if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.cut(); else main.copy(); }
         };
         AbstractAction alloy_paste = new AbstractAction("alloy_paste") {
            private static final long serialVersionUID = 1L;
@@ -155,10 +150,10 @@ public final class OurConsole extends JScrollPane {
         };
         // create the keyboard associations: ctrl-{c,v,x,insert} and shift-{insert,delete}
         for(int i=0; i<=1; i++) {
-           InputMap inputMap = (i==0) ? sub.getInputMap() : main.getInputMap();
+           InputMap  inputMap  = (i==0) ? sub.getInputMap()  : main.getInputMap();
            ActionMap actionMap = (i==0) ? sub.getActionMap() : main.getActionMap();
-           actionMap.put("alloy_copy", alloy_copy);
-           actionMap.put("alloy_cut", alloy_cut);
+           actionMap.put("alloy_copy",  alloy_copy);
+           actionMap.put("alloy_cut",   alloy_cut);
            actionMap.put("alloy_paste", alloy_paste);
            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Event.CTRL_MASK), "alloy_copy");
            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, Event.CTRL_MASK), "alloy_cut");
@@ -181,7 +176,7 @@ public final class OurConsole extends JScrollPane {
         b.setValue(b.getValue() + 200);
     }
 
-    /** Insert the given text into the given location and with the given style; if where is -1, then we append the text. */
+    /** Insert the given text into the given location and with the given style; if "where" is -1, then we append the text. */
     private void do_add(int where, String text, AttributeSet style) {
         StyledDocument doc = main.getStyledDocument();
         try { doc.insertString(where >= 0 ? where : doc.getLength(), text, style); } catch(BadLocationException ex) { }
@@ -193,12 +188,11 @@ public final class OurConsole extends JScrollPane {
      * @param computer - this object is used to evaluate the user input
      *
      * @param initialMessages - this is a list of String and Boolean; each String is printed to the screen as is,
-     * and Boolean.TRUE will turn subsequent text bold, and  Boolean.FALSE will turn subsequent text non-bold.
+     * and Boolean.TRUE will turn subsequent text bold, and Boolean.FALSE will turn subsequent text non-bold.
      */
     public OurConsole(final Computer computer, final Object... initialMessages) {
         super(VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        history.add("");
-        main = do_makeTextPane(false,5,5,5);
+        main = do_makeTextPane(false, 5, 5, 5);
         setViewportView(main);
         final StyledDocument doc = main.getStyledDocument();
         // construct the various styles
@@ -214,10 +208,10 @@ public final class OurConsole extends JScrollPane {
         }
         do_add(-1, "\n", plain); // we must add a linebreak to ensure that subsequent text belong to a "different paragraph"
         // insert the divider and the sub JTextPane
-        sub = do_makeTextPane(true,10,10,0);
+        sub = do_makeTextPane(true, 10, 10, 0);
         final JPanel divider = new JPanel(); divider.setBackground(Color.LIGHT_GRAY); divider.setPreferredSize(new Dimension(1,1));
         final Style dividerStyle = doc.addStyle("divider", null); StyleConstants.setComponent(dividerStyle, divider);
-        final Style inputStyle = doc.addStyle("input", null); StyleConstants.setComponent(inputStyle, sub);
+        final Style inputStyle   = doc.addStyle("input",   null); StyleConstants.setComponent(inputStyle, sub);
         len = doc.getLength();
         do_add(-1, "x\n", dividerStyle);
         do_add(-1, "x\n", inputStyle);
@@ -239,7 +233,7 @@ public final class OurConsole extends JScrollPane {
            public void mousePressed(MouseEvent e) { sub.requestFocusInWindow(); }
            public void mouseClicked(MouseEvent e) { sub.requestFocusInWindow(); }
         });
-        // configure the behavior for PAGE_UP, PAGE_DOWN, UP, DOWN, and ENTER
+        // configure the behavior for PAGE_UP, PAGE_DOWN, UP, DOWN, TAB, and ENTER
         sub.addKeyListener(new KeyListener() {
            public void keyPressed(KeyEvent e) {
               if (e.getKeyCode()==KeyEvent.VK_ENTER) e.consume();
@@ -280,13 +274,7 @@ public final class OurConsole extends JScrollPane {
                   len = doc.getLength() - old + len;
                   old = doc.getLength();
                   boolean bad = false;
-                  try {
-                      x=computer.compute(x);
-                  } catch(Throwable ex) {
-                      x=ex.toString();
-                      MailBug.dump(ex);
-                      bad=true;
-                  }
+                  try { x=computer.compute(x); } catch(Throwable ex) { x=ex.toString(); bad=true; }
                   do_add(len, x.trim()+"\n\n", (bad ? red : blue));
                   main.setSelectionStart(len+1);
                   main.setSelectionEnd(doc.getLength() - old + len);

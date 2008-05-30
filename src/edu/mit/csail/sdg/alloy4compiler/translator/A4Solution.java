@@ -39,6 +39,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import kodkod.ast.BinaryExpression;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.Decl;
@@ -68,7 +69,6 @@ import kodkod.instance.Universe;
 import kodkod.util.ints.IndexedEntry;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstMap;
-import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -78,7 +78,6 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.ConstSet.TempSet;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
@@ -961,17 +960,17 @@ public final class A4Solution {
     private LinkedHashSet<Formula> lCore = null;
 
     /** This caches the result of lowLevelCore(). */
-    private ConstSet<Pos> lCoreCache = null;
+    private Set<Pos> lCoreCache = null;
 
     /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
-    public ConstSet<Pos> lowLevelCore() {
+    public Set<Pos> lowLevelCore() {
        if (lCoreCache!=null) return lCoreCache;
-       TempSet<Pos> ans1 = new TempSet<Pos>();
+       Set<Pos> ans1 = new LinkedHashSet<Pos>();
        if (lCore!=null) for(Formula f: lCore) {
           Object y = k2pos(f);
           if (y instanceof Pos) ans1.add( (Pos)y ); else if (y instanceof Expr) ans1.add( ((Expr)y).span() );
        }
-       return lCoreCache = ans1.makeConst();
+       return lCoreCache = Collections.unmodifiableSet(ans1);
     }
 
     //===================================================================================================//
@@ -980,12 +979,12 @@ public final class A4Solution {
     private LinkedHashSet<Formula> hCore = null;
 
     /** This caches the result of highLevelCore(). */
-    private Pair<ConstSet<Pos>,ConstSet<Pos>> hCoreCache = null;
+    private Pair<Set<Pos>,Set<Pos>> hCoreCache = null;
 
     /** If this solution is unsatisfiable and its unsat core is available, then return the core; else return an empty set. */
-    public Pair<ConstSet<Pos>,ConstSet<Pos>> highLevelCore() {
+    public Pair<Set<Pos>,Set<Pos>> highLevelCore() {
        if (hCoreCache!=null) return hCoreCache;
-       TempSet<Pos> ans1 = new TempSet<Pos>(), ans2 = new TempSet<Pos>();
+       Set<Pos> ans1 = new LinkedHashSet<Pos>(), ans2 = new LinkedHashSet<Pos>();
        if (hCore!=null) for(Formula f: hCore) {
           Object x = k2pos(f);
           if (x instanceof Pos) {
@@ -996,7 +995,7 @@ public final class A4Solution {
              for(Func func: expr.findAllFunctions()) ans2.add(func.getBody().span());
           }
        }
-       return hCoreCache = new Pair<ConstSet<Pos>,ConstSet<Pos>>(ans1.makeConst(), ans2.makeConst());
+       return hCoreCache = new Pair<Set<Pos>,Set<Pos>>(Collections.unmodifiableSet(ans1), Collections.unmodifiableSet(ans2));
     }
 
     //===================================================================================================//

@@ -98,14 +98,13 @@ public final class DotGraph {
      * @param edgePalette - the palette for edges in the graph
      * @param nodes - the map containing all nodes in this graph (and the AlloyAtom each node corresponds to)
      * @param edges - the map containing all edges in this graph (and the AlloyTuple each edge corresponds to)
-     * @param ranks - the set of set of nodes that should be aligned on the same rank in the graph
      * @param attrs - this maps nodes to a set of additional attributes to be printed
      */
     public DotGraph(int fontSize, DotOrientation orientation, DotPalette nodePalette, DotPalette edgePalette,
             Map<AlloyRelation,Integer> rels,
             Map<AlloyRelation,Color> magicColor,
             Map<DotNode,AlloyAtom> nodes, Map<DotEdge,AlloyTuple> edges,
-            Set<Set<DotNode>> ranks, Map<DotNode,Set<String>> attrs) {
+            Map<DotNode,Set<String>> attrs) {
         this.fontSize = fontSize;
         this.orientation = orientation;
         this.nodePalette = nodePalette;

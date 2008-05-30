@@ -48,7 +48,7 @@ import java.util.NoSuchElementException;
  * @param <T> - the type of element
  */
 
-public final class SafeList<T> implements Iterable<T>, Serializable {
+public final class SafeList<T> implements Serializable, Iterable<T> {
 
     /** This ensures the class can be serialized reliably. */
     private static final long serialVersionUID = 1L;

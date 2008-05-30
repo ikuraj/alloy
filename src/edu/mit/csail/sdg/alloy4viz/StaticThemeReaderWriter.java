@@ -298,7 +298,7 @@ public final class StaticThemeReaderWriter {
     private static void parseNodeViz(XMLNode xml, VizState view, AlloyNodeElement x) {
         /*
          * <node visible="inherit/yes/no"  label=".."  color=".."  shape=".."  style=".."
-         * samerank="inherit/yes/no"  showlabel="inherit/yes/no"  showinattr="inherit/yes/no"
+         * showlabel="inherit/yes/no"  showinattr="inherit/yes/no"
          * hideunconnected="inherit/yes/no" nubmeratoms="inherit/yes/no">
          *      zero or more SET or TYPE
          * </node>
@@ -306,45 +306,43 @@ public final class StaticThemeReaderWriter {
          * Each attribute, if omitted, means "no change".
          * Note: BOOLEAN is tristate.
          */
-        if (has(xml,"visible"))  view.nodeVisible (x, getbool(xml, "visible"));
-        if (has(xml,"samerank")) view.nodeSameRank(x, getbool(xml, "samerank"));
-        if (has(xml,"hideunconnected")) view.hideUnconnected(x, getbool(xml, "hideunconnected"));
+        if (has(xml,"visible"))         view.nodeVisible.put     (x, getbool(xml, "visible"));
+        if (has(xml,"hideunconnected")) view.hideUnconnected.put (x, getbool(xml, "hideunconnected"));
         if (x==null || x instanceof AlloySet) {
             AlloySet s=(AlloySet)x;
-            if (has(xml,"showlabel"))  view.showAsLabel(s, getbool(xml, "showlabel"));
-            if (has(xml,"showinattr")) view.showAsAttr (s, getbool(xml, "showinattr"));
+            if (has(xml,"showlabel"))  view.showAsLabel.put (s, getbool(xml, "showlabel"));
+            if (has(xml,"showinattr")) view.showAsAttr.put  (s, getbool(xml, "showinattr"));
         }
         if (x==null || x instanceof AlloyType) {
             AlloyType t=(AlloyType)x;
-            if (has(xml,"numberatoms"))     view.number         (t, getbool(xml, "numberatoms"));
+            if (has(xml,"numberatoms"))  view.number.put (t, getbool(xml, "numberatoms"));
         }
-        if (has(xml,"style")) view.nodeStyle(x, parseDotStyle(xml));
-        if (has(xml,"color")) view.nodeColor(x, parseDotColor(xml));
-        if (has(xml,"shape")) view.shape    (x, parseDotShape(xml));
-        if (has(xml,"label")) view.label    (x, xml.getAttribute("label"));
+        if (has(xml,"style")) view.nodeStyle.put(x, parseDotStyle(xml));
+        if (has(xml,"color")) view.nodeColor.put(x, parseDotColor(xml));
+        if (has(xml,"shape")) view.shape    .put(x, parseDotShape(xml));
+        if (has(xml,"label")) view.label    .put(x, xml.getAttribute("label"));
     }
 
     /** Returns the String representation of an AlloyNodeElement's settings. */
     private static String writeNodeViz(VizState view, VizState defaultView, AlloyNodeElement x) throws IOException {
         StringWriter sw=new StringWriter();
         PrintWriter out=new PrintWriter(sw);
-        writeBool(out, "visible",   view.nodeVisible(x),   defaultView.nodeVisible(x));
-        writeBool(out, "samerank",  view.nodeSameRank(x),  defaultView.nodeSameRank(x));
-        writeBool(out, "hideunconnected", view.hideUnconnected(x), defaultView.hideUnconnected(x));
+        writeBool(out, "visible",         view.nodeVisible.get(x),     defaultView.nodeVisible.get(x));
+        writeBool(out, "hideunconnected", view.hideUnconnected.get(x), defaultView.hideUnconnected.get(x));
         if (x==null || x instanceof AlloySet) {
             AlloySet s=(AlloySet)x;
-            writeBool(out, "showlabel",  view.showAsLabel(s), defaultView.showAsLabel(s));
-            writeBool(out, "showinattr", view.showAsAttr(s),  defaultView.showAsAttr(s));
+            writeBool(out, "showlabel",  view.showAsLabel.get(s), defaultView.showAsLabel.get(s));
+            writeBool(out, "showinattr", view.showAsAttr.get(s),  defaultView.showAsAttr.get(s));
         }
         if (x==null || x instanceof AlloyType) {
             AlloyType t=(AlloyType)x;
-            writeBool(out, "numberatoms",     view.number(t),          defaultView.number(t));
+            writeBool(out, "numberatoms",     view.number.get(t),  defaultView.number.get(t));
         }
-        writeDotStyle(out, view.nodeStyle(x), defaultView.nodeStyle(x));
-        writeDotShape(out, view.shape(x),     defaultView.shape(x));
-        writeDotColor(out, view.nodeColor(x), defaultView.nodeColor(x));
-        if (x!=null && !view.label(x).equals(defaultView.label(x)))
-            Util.encodeXMLs(out, " label=\"", view.label(x), "\"");
+        writeDotStyle(out, view.nodeStyle.get(x), defaultView.nodeStyle.get(x));
+        writeDotShape(out, view.shape.get(x),     defaultView.shape.get(x));
+        writeDotColor(out, view.nodeColor.get(x), defaultView.nodeColor.get(x));
+        if (x!=null && !view.label.get(x).equals(defaultView.label.get(x)))
+            Util.encodeXMLs(out, " label=\"", view.label.get(x), "\"");
         if (out.checkError()) throw new IOException("PrintWriter IO Exception!");
         return sw.toString();
     }
@@ -355,40 +353,38 @@ public final class StaticThemeReaderWriter {
     private static void parseEdgeViz(XMLNode xml, VizState view, AlloyRelation x) {
         /*
          * <edge visible="inherit/yes/no"  label=".."  color=".."  style=".."  weight=".."  constraint=".."
-         * attribute="inherit/yes/no", samerank="inherit/yes/no"  merge="inherit/yes/no" layout="inherit/yes/no">
+         * attribute="inherit/yes/no"   merge="inherit/yes/no" layout="inherit/yes/no">
          *     zero or more RELATION
          * </edge>
          *
          * Each attribute, if omitted, means "no change".
          * Note: BOOLEAN is tristate.
          */
-        if (has(xml,"visible"))    view.edgeVisible (x, getbool(xml,"visible"));
-        if (has(xml,"attribute"))  view.attribute   (x, getbool(xml,"attribute"));
-        if (has(xml,"samerank"))   view.edgeSameRank(x, getbool(xml,"samerank"));
-        if (has(xml,"merge"))      view.mergeArrows (x, getbool(xml,"merge"));
-        if (has(xml,"layout"))     view.layoutBack  (x, getbool(xml,"layout"));
-        if (has(xml,"constraint")) view.constraint  (x, getbool(xml,"constraint"));
-        if (has(xml,"weight"))     view.weight      (x, getint (xml,"weight"));
-        if (has(xml,"style"))      view.edgeStyle   (x, parseDotStyle(xml));
-        if (has(xml,"color"))      view.edgeColor   (x, parseDotColor(xml));
-        if (has(xml,"label"))      view.label       (x, xml.getAttribute("label"));
+        if (has(xml,"visible"))    view.edgeVisible.put (x, getbool(xml,"visible"));
+        if (has(xml,"attribute"))  view.attribute  .put (x, getbool(xml,"attribute"));
+        if (has(xml,"merge"))      view.mergeArrows.put (x, getbool(xml,"merge"));
+        if (has(xml,"layout"))     view.layoutBack .put (x, getbool(xml,"layout"));
+        if (has(xml,"constraint")) view.constraint .put (x, getbool(xml,"constraint"));
+        if (has(xml,"style"))      view.edgeStyle  .put (x, parseDotStyle(xml));
+        if (has(xml,"color"))      view.edgeColor  .put (x, parseDotColor(xml));
+        if (has(xml,"weight"))     view.weight     .put (x, getint (xml,"weight"));
+        if (has(xml,"label"))      view.label      .put (x, xml.getAttribute("label"));
     }
 
     /** Returns the String representation of an AlloyRelation's settings. */
     private static String writeEdgeViz(VizState view, VizState defaultView, AlloyRelation x) throws IOException {
         StringWriter sw=new StringWriter();
         PrintWriter out=new PrintWriter(sw);
-        writeDotColor(out, view.edgeColor(x), defaultView.edgeColor(x));
-        writeDotStyle(out, view.edgeStyle(x), defaultView.edgeStyle(x));
-        writeBool(out, "samerank",  view.edgeSameRank(x), defaultView.edgeSameRank(x));
-        writeBool(out, "visible",   view.edgeVisible(x),  defaultView.edgeVisible(x));
-        writeBool(out, "merge",     view.mergeArrows(x),  defaultView.mergeArrows(x));
-        writeBool(out, "layout",    view.layoutBack(x),   defaultView.layoutBack(x));
-        writeBool(out, "attribute", view.attribute(x),    defaultView.attribute(x));
-        writeBool(out, "constraint",view.constraint(x),   defaultView.constraint(x));
-        if (view.weight(x) != defaultView.weight(x))         out.write(" weight=\"" + view.weight(x) + "\"");
-        if (x!=null && !view.label(x).equals(defaultView.label(x)))
-            Util.encodeXMLs(out, " label=\"", view.label(x), "\"");
+        writeDotColor(out, view.edgeColor.get(x), defaultView.edgeColor.get(x));
+        writeDotStyle(out, view.edgeStyle.get(x), defaultView.edgeStyle.get(x));
+        writeBool(out, "visible",   view.edgeVisible.get(x),  defaultView.edgeVisible.get(x));
+        writeBool(out, "merge",     view.mergeArrows.get(x),  defaultView.mergeArrows.get(x));
+        writeBool(out, "layout",    view.layoutBack.get(x),   defaultView.layoutBack.get(x));
+        writeBool(out, "attribute", view.attribute.get(x),    defaultView.attribute.get(x));
+        writeBool(out, "constraint",view.constraint.get(x),   defaultView.constraint.get(x));
+        if (view.weight.get(x) != defaultView.weight.get(x))  out.write(" weight=\"" + view.weight.get(x) + "\"");
+        if (x!=null && !view.label.get(x).equals(defaultView.label.get(x)))
+            Util.encodeXMLs(out, " label=\"", view.label.get(x), "\"");
         if (out.checkError()) throw new IOException("PrintWriter IO Exception!");
         return sw.toString();
     }

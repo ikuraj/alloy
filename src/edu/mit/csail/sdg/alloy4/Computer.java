@@ -22,9 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/**
- * This defines a compute() method that takes a String input and produces a String output.
- */
+/** This defines a compute() method that takes a String input and produces a String output. */
 
 public interface Computer {
 

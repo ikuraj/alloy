@@ -108,7 +108,7 @@ final class MagicLayout {
                         // all of the subtypes in the enumeration should have visibility inherited
                         // so that the user only needs to make the abstract supertype visible
                         // if we made a mistake hiding these things
-                        vizState.nodeVisible(st, (Boolean)null);
+                        vizState.nodeVisible.put(st, null);
                     }
                     // hide unless these are the source of some relation
                     boolean visible = false;
@@ -120,7 +120,7 @@ final class MagicLayout {
                         }
                     }
                     log("VizInference: visible status of enumeration type " + t + " " + visible);
-                    vizState.nodeVisible(t, visible);
+                    vizState.nodeVisible.put(t, visible);
                 }
             }
         }
@@ -253,7 +253,7 @@ final class MagicLayout {
 
                     // however, binary relations named parent should be layed out backwards
                     if (r.getName().equals("parent")) {
-                        vizState.layoutBack(r, true);
+                        vizState.layoutBack.put(r, true);
                     }
                 }
             }
@@ -264,15 +264,15 @@ final class MagicLayout {
 
         // set everything to not influence layout
         for (final AlloyRelation r : relations) {
-            vizState.constraint(r, false);
-            vizState.edgeColor(r, DotColor.GRAY);
+            vizState.constraint.put(r, false);
+            vizState.edgeColor.put(r, DotColor.GRAY);
         }
 
         // set spines to influence layout
         for (final AlloyRelation s : spineRelations) {
-            vizState.constraint(s, (Boolean)null );
+            vizState.constraint.put(s, null);
             // inherit the default color, which should be black
-            vizState.edgeColor(s, (DotColor)null );
+            vizState.edgeColor.put(s, null);
         }
 
     }
@@ -299,8 +299,8 @@ final class MagicLayout {
                 final AlloyType targetType = rTypes.get(1);
                 if (enumerationTypes.contains(targetType)) {
                     // target is an enumeration: we have an attribute
-                    vizState.attribute(r, true);
-                    vizState.edgeVisible(r, false);
+                    vizState.attribute.put(r, true);
+                    vizState.edgeVisible.put(r, false);
                 }
             }
         }
@@ -315,7 +315,7 @@ final class MagicLayout {
         int relationsAsEdges = 0;
         AlloyRelation visibleRelation = null;
         for (final AlloyRelation r : model.getRelations()) {
-            final Boolean v = vizState.edgeVisible(r);
+            final Boolean v = vizState.edgeVisible.get(r);
             if (v == null || v.booleanValue()) {
                 // it's visible
                 relationsAsEdges++;
@@ -326,7 +326,7 @@ final class MagicLayout {
         }
         // If there's only one relation visible as an edge, and it's binary, then no need to label it.
         if (1 == relationsAsEdges && visibleRelation.getArity()==2) {
-            vizState.label(visibleRelation, "");
+            vizState.label.put(visibleRelation, "");
         }
     }
 
@@ -341,7 +341,7 @@ final class MagicLayout {
         for (final AlloyType t : types) {
             if (!t.isBuiltin && MagicUtil.isActuallyVisible(vizState, t)) {
                 if (t.getName().endsWith("/Ord")) {
-                    vizState.nodeVisible(t, false);
+                    vizState.nodeVisible.put(t, false);
                 }
             }
         }
@@ -349,7 +349,7 @@ final class MagicLayout {
         for (final AlloySet s : model.getSets()) {
             if (MagicUtil.isActuallyVisible(vizState, s)) {
                 if (s.getName().endsWith("/Ord")) {
-                    vizState.nodeVisible(s, false);
+                    vizState.nodeVisible.put(s, false);
                 }
             }
         }

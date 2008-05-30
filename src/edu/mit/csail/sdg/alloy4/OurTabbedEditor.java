@@ -81,14 +81,6 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 public final class OurTabbedEditor {
 
-    /** This defines notifyChange and notifyFocusGained events this tabbed editor may send to the parent. */
-    public interface Parent {
-        /** This method is called when a tab is added/removed, we switch to another tab, text is modified, or text cursor moved. */
-        public void notifyChange ();
-        /** This method is called when a tab in this tabbed editor gains the focus. */
-        public void notifyFocusGained ();
-    }
-
     /** This defines the data associated with each tab. */
     private static final class Tab {
         /** The JLabel on top. */
@@ -144,8 +136,11 @@ public final class OurTabbedEditor {
     /** Whether syntax highlighting is current enabled or not. */
     private boolean syntaxHighlighting;
 
-    /** The parent. */
-    private final Parent parent;
+    /** This runnable is notified when a tab is added/removed, we switch to another tab, text is modified, or text cursor moved. */
+    private final Runnable notifyChange;
+
+    /** This runnable is notified when a tab in this tabbed editor gains the focus. */
+    private final Runnable notifyFocused;
 
     /** The parent's JFrame. */
     private final JFrame parentFrame;
@@ -160,7 +155,7 @@ public final class OurTabbedEditor {
     private final JScrollPane tabBarScroller;
 
     /** The list of tabs. */
-    private final List<Tab> tabs=new ArrayList<Tab>();
+    private final List<Tab> tabs = new ArrayList<Tab>();
 
     /** The currently selected tab from 0 to list.size()-1 (This value is 0 if there are no tabs) */
     private int me=0;
@@ -219,7 +214,7 @@ public final class OurTabbedEditor {
         adjustLabelColor();
     }
 
-    /** Switch to the i-th tab (Note: if successful, it will then always call parent.notifyChange()) */
+    /** Switch to the i-th tab (Note: if successful, it will then always call notifyChange.run()) */
     public void setSelectedIndex(final int i) {
         if (i<0 || i>=tabs.size()) return;
         me=i;
@@ -229,7 +224,7 @@ public final class OurTabbedEditor {
         if (tabs.size()>1) frame.add(tabBarScroller, BorderLayout.NORTH);
         frame.add(tabs.get(me).scroll, BorderLayout.CENTER);
         frame.repaint();
-        parent.notifyChange();
+        notifyChange.run();
         tabs.get(me).text.requestFocusInWindow();
         tabBar.scrollRectToVisible(new Rectangle(0,0,0,0)); // Forces recalculation
         Point p=tabs.get(me).panel.getLocation();
@@ -292,7 +287,7 @@ public final class OurTabbedEditor {
         try { t.text.setCaretPosition(caret); } catch(IllegalArgumentException ex) { t.text.setCaretPosition(0); }
         t.modified=false;
         setTitle(t.label, t.filename);
-        parent.notifyChange();
+        notifyChange.run();
         return true;
     }
 
@@ -317,7 +312,7 @@ public final class OurTabbedEditor {
         tabs.get(me).filename=filename;
         tabs.get(me).modified=false;
         tabs.get(me).isFile=true;
-        parent.notifyChange();
+        notifyChange.run();
         return true;
     }
 
@@ -381,7 +376,7 @@ public final class OurTabbedEditor {
             tabs.remove(i);
             if (me>=tabs.size()) { me=tabs.size()-1; }
         }
-        // Must call this to change the active tab and call parent.notifyChange() (which is important)
+        // Must call this to change the active tab and call notifyChange.run() (which is important)
         setSelectedIndex(me);
         return true;
     }
@@ -444,15 +439,15 @@ public final class OurTabbedEditor {
         if (!Util.onMac()) {
             text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
                 private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.copy(); parent.notifyChange(); }
+                public final void actionPerformed(ActionEvent e) { text.copy(); notifyChange.run(); }
             });
             text.getActionMap().put("my_cut", new AbstractAction("my_cut") {
                 private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.cut(); parent.notifyChange(); }
+                public final void actionPerformed(ActionEvent e) { text.cut(); notifyChange.run(); }
             });
             text.getActionMap().put("my_paste", new AbstractAction("my_paste") {
                 private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.paste(); parent.notifyChange(); }
+                public final void actionPerformed(ActionEvent e) { text.paste(); notifyChange.run(); }
             });
             text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "my_copy");
             text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "my_cut");
@@ -495,17 +490,17 @@ public final class OurTabbedEditor {
         setTitle(tab.label, filename);
         // Add these listeners last, to make sure this object is fully initialized first
         text.addCaretListener(new CaretListener() {
-            public final void caretUpdate(CaretEvent e) { parent.notifyChange(); }
+            public final void caretUpdate(CaretEvent e) { notifyChange.run(); }
         });
         text.addFocusListener(new FocusAdapter() {
-            public final void focusGained(FocusEvent e) { parent.notifyFocusGained(); }
+            public final void focusGained(FocusEvent e) { notifyFocused.run(); }
         });
         text.getDocument().addDocumentListener(new DocumentListener() {
             public final void insertUpdate(DocumentEvent e) {
                 removeAllHighlights();
                 setTitle(tab.label, tab.filename+" *");
                 tab.modified=true;
-                parent.notifyChange();
+                notifyChange.run();
             }
             public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
             public final void changedUpdate(DocumentEvent e) { } // font changes are irrelevant
@@ -520,7 +515,7 @@ public final class OurTabbedEditor {
                 }
             }
         }
-        // Must call this method to switch to the new tab; and it will call parent.notifyChange() which is important
+        // Must call this method to switch to the new tab; and it will call notifyChange.run() which is important
         setSelectedIndex(tabs.size()-1);
     }
 
@@ -598,16 +593,6 @@ public final class OurTabbedEditor {
         return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea(true, "", "Monospaced", 10, 4);
     }
 
-    /** True if the current text buffer has 1 or more "undo" that it can perform. */
-    public boolean canUndo() {
-        return (me>=0 && me<tabs.size()) ? tabs.get(me).text.myCanUndo() : false;
-    }
-
-    /** True if the current text buffer has 1 or more "redo" that it can perform. */
-    public boolean canRedo() {
-        return (me>=0 && me<tabs.size()) ? tabs.get(me).text.myCanRedo() : false;
-    }
-
     /** True if the i-th text buffer has been modified since it was last loaded/saved */
     public boolean modified(int i) {
         return (i>=0 && i<tabs.size()) ? tabs.get(i).modified : false;
@@ -618,11 +603,6 @@ public final class OurTabbedEditor {
         return (me>=0 && me<tabs.size()) ? tabs.get(me).modified : false;
     }
 
-    /** True if the i-th text buffer corresponds to an actual file. */
-    public boolean isFile(int i) {
-        return (i>=0 && i<tabs.size()) ? tabs.get(i).isFile : false;
-    }
-
     /** True if the current text buffer corresponds to an actual file. */
     public boolean isFile() {
         return (me>=0 && me<tabs.size()) ? tabs.get(me).isFile : false;
@@ -631,16 +611,6 @@ public final class OurTabbedEditor {
     /** Returns the currently selected tab. */
     public int getSelectedIndex() {
         return me;
-    }
-
-    /** Perform "undo" on the current text buffer. */
-    public void undo() {
-        if (me>=0 && me<tabs.size()) { tabs.get(me).text.myUndo(); }
-    }
-
-    /** Perform "redo" on the current text buffer. */
-    public void redo() {
-        if (me>=0 && me<tabs.size()) { tabs.get(me).text.myRedo(); }
     }
 
     /**
@@ -663,10 +633,7 @@ public final class OurTabbedEditor {
                     try {
                         content=Util.readAll(f);
                     } catch(IOException ex) {
-                        // Highlight is not critical
-                        if (1==1) { OurDialog.alert(parentFrame, "Error reading the file \""+f+"\"", "Error"); return; }
-                        adjustLabelColor();
-                        parent.notifyChange();
+                        OurDialog.alert(parentFrame, "Error reading the file \""+f+"\"", "Error");
                         return;
                     }
                     newTab(f, content, true);
@@ -684,7 +651,7 @@ public final class OurTabbedEditor {
                 // Failure to highlight is not fatal
             }
             adjustLabelColor();
-            parent.notifyChange();
+            notifyChange.run();
         }
     }
 
@@ -711,9 +678,8 @@ public final class OurTabbedEditor {
                     try {
                         content=Util.readAll(f);
                     } catch(IOException ex) {
-                        // Highlight is not critical
-                        if (1==1) { OurDialog.alert(parentFrame, "Error reading the file \""+f+"\"", "Error"); break again; }
-                        continue again;
+                        OurDialog.alert(parentFrame, "Error reading the file \""+f+"\"", "Error");
+                        break again;
                     }
                     newTab(f, content, true);
                 }
@@ -734,7 +700,7 @@ public final class OurTabbedEditor {
         }
         text().requestFocusInWindow();
         adjustLabelColor();
-        parent.notifyChange();
+        notifyChange.run();
     }
 
     /**
@@ -744,11 +710,12 @@ public final class OurTabbedEditor {
     public void highlight(final Err e) { highlight(e.pos, new Color(0.9f, 0.4f, 0.4f), true); }
 
     /** Constructs a tabbed editor pane. */
-    public OurTabbedEditor(final Parent parent, final JFrame parentFrame, final Font font, final int tabSize) {
-        this.parent=parent;
-        this.parentFrame=parentFrame;
-        this.font=font;
-        this.tabSize=tabSize;
+    public OurTabbedEditor(final Runnable notifyChanged, final Runnable notifyFocused, final JFrame parentFrame, final Font font, final int tabSize) {
+        this.notifyChange = notifyChanged;
+        this.notifyFocused = notifyFocused;
+        this.parentFrame = parentFrame;
+        this.font = font;
+        this.tabSize = tabSize;
         JPanel glue = OurUtil.makeHB(new Object[]{null});
         glue.setBorder(new OurBorder(null,null,BORDER,null));
         tabBar=OurUtil.makeHB(glue);
@@ -758,9 +725,9 @@ public final class OurTabbedEditor {
         }
         tabBarScroller = new JScrollPane(tabBar, VERTICAL_SCROLLBAR_NEVER, HORIZONTAL_SCROLLBAR_NEVER);
         tabBarScroller.setFocusable(false);
-        tabBarScroller.setBorder(new EmptyBorder(0,0,0,0));
+        tabBarScroller.setBorder(new EmptyBorder(0, 0, 0, 0));
         frame=new JPanel();
-        frame.setBorder(new EmptyBorder(0,0,0,0));
+        frame.setBorder(new EmptyBorder(0, 0, 0, 0));
         frame.setLayout(new BorderLayout());
         frame.add(tabBarScroller, BorderLayout.NORTH);
         frame.add(new JPanel(), BorderLayout.CENTER); // Create an "initial" content area beneath the list-of-tabs

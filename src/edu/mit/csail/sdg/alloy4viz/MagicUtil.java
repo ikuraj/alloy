@@ -42,7 +42,7 @@ final class MagicUtil {
 
 
     static void trimLabelBeforeLastSlash(final VizState vizState, final AlloyElement x) {
-        vizState.label(x, trimBeforeLastSlash(vizState.label(x)));
+        vizState.label.put(x, trimBeforeLastSlash(vizState.label.get(x)));
     }
 
     static String trimBeforeLastSlash(final String label) {
@@ -63,14 +63,14 @@ final class MagicUtil {
      */
     static boolean isActuallyVisible(final VizState vizState, final AlloyType t) {
         if (t.isAbstract) return false;
-        final Boolean V = vizState.nodeVisible(t);
-        if (V != null) return V.booleanValue();
+        final Boolean V = vizState.nodeVisible.get(t);
+        if (V != null) return V;
 
         // inherited value, find out the real deal
         final AlloyModel model = vizState.getCurrentModel();
         AlloyType parent = model.getSuperType(t);
         while (parent != null) {
-            final Boolean pV = vizState.nodeVisible(parent);
+            final Boolean pV = vizState.nodeVisible.get(parent);
             if (pV != null) {
                 // found a real setting
                 break;
@@ -82,13 +82,13 @@ final class MagicUtil {
             return true;
         } else {
             // found a concrete setting, use it
-            return vizState.nodeVisible(parent).booleanValue();
+            return vizState.nodeVisible.get(parent);
         }
     }
 
     static boolean isActuallyVisible(final VizState vizState, final AlloySet s) {
-        final Boolean V = vizState.nodeVisible(s);
-        if (V != null) return V.booleanValue();
+        final Boolean V = vizState.nodeVisible.get(s);
+        if (V != null) return V;
 
         return isActuallyVisible(vizState, s.getType());
     }

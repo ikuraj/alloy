@@ -36,84 +36,47 @@ import javax.imageio.ImageIO;
 
 public final strictfp class OurPNGWriter {
 
-    /** The buffer size; must be at least 21 since we need to have enough prefetch to write out the pHYs chunk into the file. */
-    private static final int BUFSIZE=4096;
-
     /** The constructor is private, since this utility class never needs to be instantiated. */
-    private OurPNGWriter() { }
+    private OurPNGWriter () { }
 
     /** Writes the image as a PNG file with the given horizontal and vertical dots-per-inch. */
-    public static void writePNG(BufferedImage image, String filename, double dpiX, double dpiY) throws IOException {
+    public static void writePNG (BufferedImage image, String filename, double dpiX, double dpiY) throws IOException {
         ImageIO.write(image, "PNG", new File(filename));
         setDPI(filename, dpiX, dpiY);
     }
 
     /** Modifies the given PNG file to have the given horizontal and vertical dots-per-inch. */
-    private static void setDPI(String filename, double dpiX, double dpiY) throws IOException {
+    private static void setDPI (String filename, double dpiX, double dpiY) throws IOException {
        RandomAccessFile f = null;
        try {
           f = new RandomAccessFile(filename, "rw");
-          byte[] buf1 = new byte[BUFSIZE], buf2 = new byte[BUFSIZE];
-          int fill = 0;
-          long total = f.length(), rOffset = 8, wOffset;
+          long total = f.length(), pos = 8;
           // Jump to the appropriate place for inserting the pHYs chunk, then insert it
           while(true) {
-             if (rOffset>=total) throw new IOException("PNG is missing the IDAT chunk.");
-             f.seek(rOffset);
+             if (pos>=total) throw new IOException("PNG is missing the IDAT chunk.");
+             f.seek(pos);
              int a1=f.read(), a2=f.read(), a3=f.read(), a4=f.read(), b1=f.read(), b2=f.read(), b3=f.read(), b4=f.read();
              if (a1<0 || a2<0 || a3<0 || a4<0 || b1<0 || b2<0 || b3<0 || b4<0 || (b1=='I' && b2=='E' && b3=='N' && b4=='D'))
                 throw new IOException("PNG is missing the IDAT chunk.");
-             int jump=(a1<<24)|(a2<<16)|(a3<<8)|a4;
-             if (jump<0 || (total-rOffset)-12<jump) throw new IOException("PNG chunk size exceeds the rest of the file.");
+             int jump = (a1<<24) | (a2<<16) | (a3<<8) | a4;
+             if (jump<0 || (total-pos)-12<jump) throw new IOException("PNG chunk size exceeds the rest of the file.");
              if ((b1=='I' && b2=='D' && b3=='A' && b4=='T') || (b1=='p' && b2=='H' && b3=='Y' && b4=='s')) {
-                wOffset=rOffset;
-                if (b1=='p') rOffset=(rOffset+12)+jump; // We can skip over the original pHYs chunk, since we're writing our own
-                f.seek(rOffset);
-                fill=fill(f,buf1);
-                rOffset=rOffset+fill;
-                // At this point, buf1 either contains the ENTIRE REMAINING FILE, or buf1 contains at least BUFSIZE bytes
-                f.seek(wOffset);
+                Util.shift(f, (b1=='p' ? (pos+12+jump) : pos), pos+21); // skip over the original pHYs chunk if we see it
+                f.seek(pos);
                 writeDPI(f, dpiX, dpiY);
-                wOffset=wOffset+(12+9);
+                f.close();
+                f=null;
                 break;
              }
-             rOffset=(rOffset+12)+jump;
+             pos = pos + 12 + jump;
           }
-          // Now, shift everything else in the file down by 21 bytes
-          while(true) {
-             // At this point, buf1 either contains the ENTIRE REMAINING FILE, or buf1 contains at least BUFSIZE bytes
-             f.seek(rOffset);
-             int fill2=fill(f,buf2);
-             if (total-rOffset<fill2) fill2=(int)(total-rOffset); // We must not read beyond the original end of file
-             rOffset += fill2;
-             // At this point, buf1+buf2 either contains the ENTIRE REMAING FILE, or buf2 contains at least BUFSIZE bytes
-             if (fill>0) { f.seek(wOffset); f.write(buf1,0,fill); wOffset+=fill; }
-             byte[] tmp=buf1; buf1=buf2; buf2=tmp;
-             fill=fill2;
-             if (fill==0) break;
-          }
-          // Now, end the file at the current file length
-          f.setLength(wOffset);
-          f.close();
-          f=null;
        } finally {
           Util.close(f);
        }
     }
 
-    /** Read as much as possible until we get bufsize bytes or EOF; return the number of bytes successfully read into the buffer. */
-    private static int fill(RandomAccessFile f, byte[] buf) throws IOException {
-        int n=0;
-        while(n<BUFSIZE) {
-            int i=f.read(buf, n, BUFSIZE-n);
-            if (i<0) return n;
-            n=n+i;
-        }
-        return n;
-    }
-
     /** Write the "pHYs" chunk into the PNG file with the given horizontal and vertical dots-per-inch. */
-    private static void writeDPI(RandomAccessFile f, double dpiX, double dpiY) throws IOException {
+    private static void writeDPI (RandomAccessFile f, double dpiX, double dpiY) throws IOException {
         int dpmX = (int) (dpiX/2.54d*100d); // Translate dots-per-inch into dots-per-meter
         int dpmY = (int) (dpiY/2.54d*100d); // Translate dots-per-inch into dots-per-meter
         int crc = 0xFFFFFFFF, b;

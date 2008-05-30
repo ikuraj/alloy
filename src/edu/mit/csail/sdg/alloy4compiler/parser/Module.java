@@ -37,7 +37,6 @@ import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
@@ -522,7 +521,7 @@ public final class Module {
      * @param path - one of the path pointing to this module
      */
     Module(Module world, String filename, String path) throws Err {
-        if (world==null) { if (path.length()>0) throw new ErrorAPI("Root module misparsed."); else world=this; }
+        if (world==null) { if (path.length()>0) throw new ErrorFatal("Root module misparsed by parser."); else world=this; }
         this.world=world;
         this.path=path;
         this.paths=new ArrayList<String>(1);

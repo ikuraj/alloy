@@ -33,46 +33,11 @@ import java.io.Serializable;
 /**
  * This implements an unmodifiable map.
  *
- * <p><b>Thread Safety:</b>  Safe.
- *
  * @param <K> - the type of key
  * @param <V> - the type of value
  */
 
 public final class ConstMap<K,V> implements Serializable, Map<K,V> {
-
-    /**
-     * This implements a modifiable map that can be used to construct a ConstMap.
-     *
-     * <p><b>Thread Safety:</b>  Not safe.
-     *
-     * @param <K> - the type of key
-     * @param <V> - the type of value
-     */
-    public static final class TempMap<K,V> {
-        /** The underlying map. */
-        private final LinkedHashMap<K,V> map;
-        /** Nonnull iff this map is no longer modifiable. */
-        private ConstMap<K,V> cmap = null;
-        /** Construct a new empty modifiable TempMap. */
-        public TempMap()                                 { this.map = new LinkedHashMap<K,V>(); }
-        /** Construct a new modifiable TempMap with the initial entries equal to the given map. */
-        public TempMap(Map<? extends K,? extends V> map) { this.map = new LinkedHashMap<K,V>(map); }
-        /** Returns a String representation. */
-        @Override public String toString()    { return map.toString(); }
-        /** Return the number of entries in this map. */
-        public int size()                     { return map.size(); }
-        /** Return true if the given key is in the map. */
-        public boolean containsKey(Object k)  { return map.containsKey(k); }
-        /** Return the value associated with the given key (or null if the key does not exist in the map) */
-        public V get(Object k)                { return map.get(k); }
-        /** Remove the key (if it exists). */
-        public void remove(K k)               { if (cmap!=null) throw new UnsupportedOperationException(); map.remove(k); }
-        /** Add the given key and value into the map. */
-        public void put(K k, V v)             { if (cmap!=null) throw new UnsupportedOperationException(); map.put(k,v); }
-        /** Turn this TempMap unmodifiable, then construct a ConstMap backed by this TempMap. */
-        public ConstMap<K,V> makeConst()      { if (cmap==null) { if (map.isEmpty()) cmap=make(); else cmap=new ConstMap<K,V>(map); } return cmap; }
-    }
 
     /** This ensures the class can be serialized reliably. */
     private static final long serialVersionUID = 1L;
@@ -83,9 +48,9 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
     /** This caches a readonly empty map. */
     private static final ConstMap<Object,Object> emptymap = new ConstMap<Object,Object>(new HashMap<Object,Object>(1));
 
-    /** Construct an unmodifiable map containing the entries from the given map. */
+    /** Construct an unmodifiable map with the given map as the backing store. */
     private ConstMap(Map<? extends K,? extends V> map) {
-        this.map=Collections.unmodifiableMap(map);
+        this.map = Collections.unmodifiableMap(map);
     }
 
     /** Return an unmodifiable empty map. */
@@ -100,16 +65,11 @@ public final class ConstMap<K,V> implements Serializable, Map<K,V> {
      */
     public static<K,V> ConstMap<K,V> make(Map<K,V> map) {
         if (map instanceof ConstMap) return (ConstMap<K,V>)map;
-        if (map==null || map.isEmpty()) return make();
-        return new ConstMap<K,V>(new LinkedHashMap<K,V>(map));
+        if (map==null || map.isEmpty()) return make(); else return new ConstMap<K,V>(new LinkedHashMap<K,V>(map));
     }
 
     /** {@inheritDoc} */
-    @Override public boolean equals(Object that) {
-        if (this==that) return true;
-        if (!(that instanceof Map)) return false;
-        return map.equals(that);
-    }
+    @Override public boolean equals(Object that) { return this==that || map.equals(that); }
 
     /** {@inheritDoc} */
     @Override public int hashCode() { return map.hashCode(); }

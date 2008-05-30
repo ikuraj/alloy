@@ -39,8 +39,6 @@ import java.util.LinkedList;
  *       the new variable "hides" the old mapping; and when the new variable falls
  *       out of scope, the previous mapping is once again "revealed".
  *
- * <p><b>Thread Safety:</b>  Safe
- *
  * @param <V> - the type for Value
  */
 
@@ -71,9 +69,7 @@ public final class Env<K,V> {
      * @param key - the key
      * @return true if the key is mapped to one or more values
      */
-    public synchronized boolean has (K key) {
-        return map1.containsKey(key);
-    }
+    public boolean has (K key) { return map1.containsKey(key); }
 
     /**
      * Returns the latest value associated with the key (and returns null if none).
@@ -85,7 +81,7 @@ public final class Env<K,V> {
      * @param key - the key
      * @return the latest value associated with the key (and returns null if none)
      */
-    public synchronized V get (K key) {
+    public V get (K key) {
         LinkedList<V> list = map2.get(key);
         return (list != null) ? list.getLast() : map1.get(key);
     }
@@ -96,9 +92,10 @@ public final class Env<K,V> {
      * @param key - the key
      * @param value - the value (which can be null)
      */
-    public synchronized void put (K key, V value) {
+    public void put (K key, V value) {
+        // statement order here ensures failure atomicity
         LinkedList<V> list = map2.get(key);
-        if (list != null) {
+        if (list!=null) {
             list.add(value);
         } else if (!map1.containsKey(key)) {
             map1.put(key, value);
@@ -116,19 +113,13 @@ public final class Env<K,V> {
      *
      * @param key - the key
      */
-    public synchronized void remove(K key) {
+    public void remove (K key) {
         final LinkedList<V> list = map2.get(key);
-        if (list == null) {
-            map1.remove(key);
-        } else if (list.size() <= 1) {
-            map2.remove(key);
-        } else {
-            list.removeLast();
-        }
+        if (list==null) map1.remove(key); else if (list.size()<=1) map2.remove(key); else list.removeLast();
     }
 
     /** Removes all mappings. */
-    public synchronized void clear() {
+    public void clear() {
         map1.clear();
         map2.clear();
     }

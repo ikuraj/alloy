@@ -159,7 +159,7 @@ public final class ExprUnary extends Expr {
          * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary's constructor never sees it)
          */
         public final Expr make(Pos pos, Expr sub, Err extraError, long extraWeight) {
-            JoinableList<Err> errors = sub.errors.appendIfNotNull(extraError);
+            JoinableList<Err> errors = sub.errors.append(extraError);
             if (sub.mult!=0) {
                if (this==SETOF) return sub;
                if (this!=NOOP && extraError==null)
@@ -210,7 +210,7 @@ public final class ExprUnary extends Expr {
                 type=SIGINT.type;
                 break;
             }
-            return new ExprUnary(pos, this, sub, type, extraWeight + sub.weight, errors.appendIfNotNull(extraError));
+            return new ExprUnary(pos, this, sub, type, extraWeight + sub.weight, errors.append(extraError));
         }
 
         /** Returns the human readable label for this operator */

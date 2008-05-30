@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -448,6 +449,37 @@ public final class Util {
             Runtime.getRuntime().exec(realargs).waitFor();
         } catch (Throwable ex) {
             // We only intend to make a best effort
+        }
+    }
+
+    /**
+     * Copy file.content[from...f.length-1] into file.content[to...], then truncate the file after that point.
+     * <p> If (from &gt; to), this means we simply delete the portion of the file beginning at "to" and up to but excluding "from".
+     * <p> If (from &lt; to), this means we insert (to-from) number of NUL bytes into the "from" location and shift the original file content accordingly.
+     * <p> Note: after this operation, the file's current position may have moved, so if you plan to read/write you need to first call file.seek() yourself.
+     * @throws IOException if (from &lt; 0) || (to &lt; 0) || (from &gt;= file.length())
+     */
+    public static void shift (RandomAccessFile file, long from, long to) throws IOException {
+        long total = file.length();
+        if (from<0 || from>=total || to<0) throw new IOException(); else if (from==to) return;
+        final byte buf[] = new byte[4096];
+        int res;
+        if (from>to) {
+           while(true) {
+              file.seek(from);
+              if ((res=file.read(buf)) <= 0) { file.setLength(to); return; }
+              file.seek(to); file.write(buf, 0, res); from=from+res; to=to+res;
+           }
+        } else {
+           file.seek(total);
+           for(long todo=to-from; todo>0;) { if (todo>=buf.length) {file.write(buf); todo=todo-buf.length;} else {file.write(buf, 0, (int)todo); break;} }
+           for(long todo=total-from; todo>0; total=total-res, todo=todo-res) {
+              if (todo > buf.length) res=buf.length; else res=(int)todo;
+              file.seek(total-res);
+              for(int done=0; done < res;) { int r=file.read(buf, done, res-done); if (r<=0) throw new IOException(); else done=done+r; }
+              file.seek(total-res+(to-from));
+              file.write(buf, 0, res);
+           }
         }
     }
 

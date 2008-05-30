@@ -46,8 +46,6 @@ import java.awt.Container;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
@@ -128,7 +126,7 @@ import edu.mit.csail.sdg.alloy4viz.VizGUI;
  * <br> (2) the run() method in the instance watcher (in constructor) is launched from a fresh thread
  */
 
-public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Parent {
+public final class SimpleGUI implements ComponentListener {
 
     /** The latest welcome screen; each time we update the welcome screen, we increment this number. */
     private static final int welcomeLevel = 2;
@@ -345,15 +343,20 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
     }
 
     /** Sets the flag "lastFocusIsOnEditor" to be true. */
-    public void notifyFocusGained() { lastFocusIsOnEditor=true; }
+    private Runner notifyFocusGained() {
+        if (wrap) return wrapMe();
+        lastFocusIsOnEditor=true;
+        return null;
+    }
 
     /** Sets the flag "lastFocusIsOnEditor" to be false. */
     void notifyFocusLost() { lastFocusIsOnEditor=false; }
 
     /** Updates the status bar at the bottom of the screen. */
-    public void notifyChange() {
+    private Runner notifyChange() {
+        if (wrap) return wrapMe();
         commands=null;
-        if (text==null) return; // If this was called prior to the "text" being fully initialized
+        if (text==null) return null; // If this was called prior to the "text" being fully initialized
         if (Util.onMac()) frame.getRootPane().putClientProperty("windowModified", Boolean.valueOf(text.modified()));
         if (text.isFile()) frame.setTitle(text.getFilename()); else frame.setTitle("Alloy Analyzer "+Version.version());
         toolbar.setBorder(new OurBorder(false, false, text.getTabCount()<=1, false));
@@ -367,6 +370,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
             status.setText("<html>&nbsp; Line ?, Column ?"
                     +(text.modified()?" <b style=\"color:#B43333;\">[modified]</b></html>":"</html>"));
         }
+        return null;
     }
 
     /** Make the frame visible, non-iconized, and focused. */
@@ -689,8 +693,8 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         if (wrap) return wrapMe();
         try {
             wrap = true;
-            boolean canUndo = text.canUndo();
-            boolean canRedo = text.canRedo();
+            boolean canUndo = text.text().myCanUndo();
+            boolean canRedo = text.text().myCanRedo();
             editmenu.removeAll();
             OurUtil.makeMenuItem(editmenu, "Undo", canUndo, KeyEvent.VK_Z, KeyEvent.VK_Z, doUndo());
             if (Util.onMac())
@@ -716,13 +720,13 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
 
     /** This method performs Edit->Undo. */
     private Runner doUndo() {
-        if (!wrap && text.canUndo()) text.undo();
+        if (!wrap) text.text().myUndo();
         return wrapMe();
     }
 
     /** This method performs Edit->Redo. */
     private Runner doRedo() {
-        if (!wrap && text.canRedo()) text.redo();
+        if (!wrap) text.text().myRedo();
         return wrapMe();
     }
 
@@ -1371,10 +1375,9 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         text.setLineWrap(false);
         text.setBorder(new EmptyBorder(2,2,2,2));
         text.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","JavaCup","SAT4J","ZChaff","MiniSat"});
-        combo.addActionListener(new ActionListener() {
-           public void actionPerformed(ActionEvent e) {
-              Object value = combo.getSelectedItem();
+        final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","JavaCup","SAT4J","ZChaff","MiniSat"}) {
+            private static final long serialVersionUID = 1L;
+            public void myChanged(Object value) {
               if (value instanceof String) {
                  try {
                      String content = Util.readAll(JAR + "LICENSES" + File.separator + value + ".txt");
@@ -1385,7 +1388,7 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
               }
               text.setCaretPosition(0);
            }
-        });
+        };
         JScrollPane scroll = OurUtil.scrollpane(text);
         scroll.setBorder(new LineBorder(Color.DARK_GRAY, 1));
         Object[] array = {
@@ -1755,7 +1758,10 @@ public final class SimpleGUI implements ComponentListener, OurTabbedEditor.Paren
         log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this, viz);
 
         // Create the text area
-        text = new OurTabbedEditor(this, frame, new Font(fontName, Font.PLAIN, fontSize), TabSize.get());
+        wrap = true;
+        Runner chg = notifyChange(), focus = notifyFocusGained();
+        wrap = false;
+        text = new OurTabbedEditor(chg, focus, frame, new Font(fontName, Font.PLAIN, fontSize), TabSize.get());
         text.syntaxHighlighting(! SyntaxDisabled.get());
 
         // Add everything to the frame, then display the frame

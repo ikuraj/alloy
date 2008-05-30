@@ -34,7 +34,7 @@ import java.util.List;
 public final class AvailableSpace {
 
     /** Mutable; represents a rectangle. */
-    public static final class Box {
+    static final class Box {
         /** (x,y) is the top-left corner; w is the width; h is the height. */
         int x, y, w, h;
     }

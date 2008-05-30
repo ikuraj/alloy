@@ -57,15 +57,11 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import edu.mit.csail.sdg.alloy4.OurBinaryCheckbox;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
-import edu.mit.csail.sdg.alloy4.OurTristateCheckbox;
+import edu.mit.csail.sdg.alloy4.OurCheckbox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
-import edu.mit.csail.sdg.alloy4.OurCombobox.ComboGetterSetter;
-import edu.mit.csail.sdg.alloy4.OurBinaryCheckbox.BinaryGetterSetter;
-import edu.mit.csail.sdg.alloy4.OurTristateCheckbox.GetterSetter;
 
 /**
  * GUI panel for making customization changes.
@@ -78,13 +74,6 @@ public final class VizCustomizationPanel extends JPanel {
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
 
-    /** These are the possible fields that can be modified from VizState. */
-    private enum Field {
-        COLOR, STYLE, VISIBLE, LABEL, SAMERANK,
-        NUMBER, SHOWINATTR, SHOWLABEL, SHAPE, HIDEUNCONNECTED,
-        CONSTRAINT, WEIGHT, ATTRIBUTE, MERGEARROWS, LAYOUTBACK;
-    };
-
     /** This is the VizState object that this customization panel will customize. */
     private final VizState vizState;
 
@@ -95,7 +84,7 @@ public final class VizCustomizationPanel extends JPanel {
     private final JPanel zoomPane;
 
     /** This is the lower-half of the customization panel. */
-    private JScrollPane widgetsScrollPane=null;
+    private JScrollPane widgetsScrollPane = null;
 
     /** The JSplitPane separating this customization panel with the main graph panel. */
     private final JSplitPane divider;
@@ -106,7 +95,7 @@ public final class VizCustomizationPanel extends JPanel {
      * the General Graph Settings, Default Type+Set, or Default Relation panels respectively.
      * All else, that means the zoom panel is empty.
      */
-    private Object lastElement=null;
+    private Object lastElement = null;
 
     //=============================================================================================================//
 
@@ -116,11 +105,11 @@ public final class VizCustomizationPanel extends JPanel {
      * @param vizState - the VizState object that will be customized by this customization panel
      */
     public VizCustomizationPanel(JSplitPane divider, VizState vizState) {
-        this.divider=divider;
-        this.vizState=vizState;
+        this.divider = divider;
+        this.vizState = vizState;
         setBorder(null);
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        zoomPane=new JPanel();
+        zoomPane = new JPanel();
         zoomPane.setBorder(new OurBorder(false,false,true,false));
         zoomPane.setLayout(new BoxLayout(zoomPane, BoxLayout.Y_AXIS));
         zoomPane.setAlignmentX(0f);
@@ -139,7 +128,7 @@ public final class VizCustomizationPanel extends JPanel {
      * the General Graph Settings, Default Type+Set, or Default Relation panels respectively.
      */
     private void zoom(Object x) {
-        lastElement=x;
+        lastElement = x;
         zoomPane.removeAll();
         if (x instanceof AlloyNodeElement) makeNodeOptionsPanel(zoomPane, (AlloyNodeElement)x);
         else if (x instanceof AlloyRelation) makeEdgeOptionsPanel(zoomPane, (AlloyRelation)x);
@@ -151,12 +140,12 @@ public final class VizCustomizationPanel extends JPanel {
             zoomPane.add(OurUtil.makeH(wcolor,new JLabel(" "),(Object)null));
             zoomPane.add(OurUtil.makeBox(250,200,wcolor,(Object)null));
         }
-        Dimension dim=zoomPane.getPreferredSize();
+        Dimension dim = zoomPane.getPreferredSize();
         if (divider!=null && divider.getDividerLocation()<dim.width) divider.setDividerLocation(dim.width);
         if (divider!=null && divider.getDividerLocation()>dim.width) dim.width=divider.getDividerLocation();
-        dim.height=150;
+        dim.height = 150;
         zoomPane.setPreferredSize(dim);
-        dim.width=450;
+        dim.width = 450;
         zoomPane.setMinimumSize(dim);
         zoomPane.repaint();
         validate();
@@ -354,117 +343,77 @@ public final class VizCustomizationPanel extends JPanel {
     /** Generates the node settings widgets for the given type or set, and add them to "parent". */
     private void makeNodeOptionsPanel(final JPanel answer, final AlloyNodeElement elt) {
         final boolean enabled = !(elt instanceof AlloyType) || (vizState.getCurrentModel().hasType((AlloyType)elt));
-        ComboGetterSetter cgs=new ComboGetterSetter() {
-            public Icon getIcon(Object key, Object value) {
-                if (value==null) {
-                    AlloyModel model=vizState.getCurrentModel();
-                    AlloyNodeElement elt2=null;
-                    if (elt instanceof AlloyType) elt2=model.getSuperType((AlloyType)elt);
-                    if (elt instanceof AlloySet) elt2=((AlloySet)elt).getType();
-                    if (key==Field.COLOR) value=vizState.nodeColor(elt2,model);
-                    if (key==Field.STYLE) value=vizState.nodeStyle(elt2,model);
-                    if (key==Field.SHAPE) value=vizState.shape(elt2,model);
-                }
-                if (value==null) return null; else return ((DotAttribute)value).getIcon(vizState.getNodePalette());
-            }
-            public String getText(Object key, Object value) {
-                if (value==null) return "Inherit"; else return ((DotAttribute)value).getDisplayedText() ;
-            }
-            public Object getValue(Object key) {
-                if (key==Field.COLOR) return vizState.nodeColor(elt);
-                if (key==Field.STYLE) return vizState.nodeStyle(elt);
-                /*if (key==Field.SHAPE)*/ return vizState.shape(elt);
-            }
-            public void setValue(Object key, Object value) {
-                if (key==Field.COLOR) vizState.nodeColor(elt, (DotColor)value);
-                if (key==Field.STYLE) vizState.nodeStyle(elt, (DotStyle)value);
-                if (key==Field.SHAPE) vizState.shape(elt, (DotShape)value);
-            }
-        };
-        GetterSetter gs=new GetterSetter() {
-            public Boolean get(Object key) {
-                if (key==Field.VISIBLE) return vizState.nodeVisible(elt);
-                if (key==Field.SAMERANK) return vizState.nodeSameRank(elt);
-                if (key==Field.HIDEUNCONNECTED) return vizState.hideUnconnected(elt);
-                if (key==Field.NUMBER) return vizState.number((AlloyType)elt);
-                if (key==Field.SHOWLABEL) return vizState.showAsLabel((AlloySet)elt);
-                /*if (key==Field.SHOWINATTR)*/ return vizState.showAsAttr((AlloySet)elt);
-            }
-            public boolean getInherited(Object key) {
-                AlloyModel model=vizState.getCurrentModel();
-                if (key==Field.VISIBLE) return vizState.nodeVisible(elt,model);
-                if (key==Field.SAMERANK) return vizState.nodeSameRank(elt,model);
-                if (key==Field.HIDEUNCONNECTED) return vizState.hideUnconnected(elt,model);
-                if (key==Field.NUMBER) return vizState.number((AlloyType)elt,model);
-                if (key==Field.SHOWLABEL) return vizState.showAsLabel((AlloySet)elt,model);
-                /*if (key==Field.SHOWINATTR)*/ return vizState.showAsAttr((AlloySet)elt,model);
-            }
-            public void set(Object key, Boolean value) {
-                if (key==Field.VISIBLE) vizState.nodeVisible(elt, value);
-                if (key==Field.SAMERANK) vizState.nodeSameRank(elt, value);
-                if (key==Field.HIDEUNCONNECTED) vizState.hideUnconnected(elt, value);
-                if (key==Field.NUMBER) vizState.number((AlloyType)elt, value);
-                if (key==Field.SHOWLABEL) vizState.showAsLabel((AlloySet)elt, value);
-                if (key==Field.SHOWINATTR) vizState.showAsAttr((AlloySet)elt, value);
-            }
-        };
-        GetterSetter ps=new GetterSetter() {
-            public Boolean get(Object key) { return !enabled; }
-            public boolean getInherited(Object key) { return true; }
-            public void set(Object key, Boolean value) {
-                if (enabled) { lastElement=elt; projectAlloyType((AlloyType)elt); }
-                else { lastElement=elt; deprojectAlloyType((AlloyType)elt); }
-            }
-        };
         if (elt instanceof AlloyType)
             answer.add(makelabel(" "+typename((AlloyType)elt)));
         else
             answer.add(makelabel(" "+elt.toString()));
-        final JTextField labelText = OurUtil.textfield(vizState.label(elt), 10);
+        final JTextField labelText = OurUtil.textfield(vizState.label.get(elt), 10);
         labelText.setMaximumSize(new Dimension(100, 25));
         labelText.addKeyListener(new KeyListener() {
             public final void keyTyped(KeyEvent e) { }
             public final void keyPressed(KeyEvent e) { }
-            public final void keyReleased(KeyEvent e) { vizState.label(elt, labelText.getText()); }
+            public final void keyReleased(KeyEvent e) { vizState.label.put(elt, labelText.getText()); }
         });
         labelText.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { vizState.label(elt, labelText.getText()); }
+            public final void actionPerformed(ActionEvent e) { vizState.label.put(elt, labelText.getText()); }
         });
         labelText.addFocusListener(new FocusListener() {
             public final void focusGained(FocusEvent e) { }
-            public final void focusLost(FocusEvent e) { vizState.label(elt, labelText.getText()); }
+            public final void focusLost(FocusEvent e) { vizState.label.put(elt, labelText.getText()); }
         });
-        JComboBox color = new OurCombobox(cgs, true, DotColor.values(DotColor.MAGIC), 100, 35, Field.COLOR);
-        JComboBox shape = new OurCombobox(cgs, true, DotShape.values(),               125, 35, Field.SHAPE);
-        JComboBox style = new OurCombobox(cgs, true, DotStyle.values(),                95, 35, Field.STYLE);
+        //
+        final AlloyModel model=vizState.getCurrentModel();
+        final AlloyNodeElement elt2;
+        if (elt instanceof AlloyType) elt2=model.getSuperType((AlloyType)elt); else if (elt instanceof AlloySet) elt2=((AlloySet)elt).getType(); else elt2=null;
+        JComboBox color = new OurCombobox(true, DotColor.values(DotColor.MAGIC), 100, 35, vizState.nodeColor.get(elt)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { if (value==null) return "Inherit"; else return ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { if (value==null) value=vizState.nodeColor.resolve(elt2); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public void   myChanged(Object value) { vizState.nodeColor.put(elt, (DotColor)value); }
+        };
+        JComboBox shape = new OurCombobox(true, DotShape.values(), 125, 35, vizState.shape.get(elt)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { if (value==null) return "Inherit"; else return ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { if (value==null) value=vizState.shape.resolve(elt2); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public void   myChanged(Object value) { vizState.shape.put(elt, (DotShape)value); }
+        };
+        JComboBox style = new OurCombobox(true, DotStyle.values(), 95, 35, vizState.nodeStyle.get(elt)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { if (value==null) return "Inherit"; else return ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { if (value==null) value=vizState.nodeStyle.resolve(elt2); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public void   myChanged(Object value) { vizState.nodeStyle.put(elt, (DotStyle)value); }
+        };
+        //
         answer.add(OurUtil.makeH(10, labelText, wcolor, color, style, shape, 2, null));
         if (elt instanceof AlloyType) {
-            JPanel vis =new OurTristateCheckbox(gs, Field.VISIBLE,         "Show",                   "Display members as nodes");
-            //JPanel rank=new OurTristateCheckbox(gs, Field.SAMERANK,        "Align members",          "Aligns nodes of this type");
-            JPanel con =new OurTristateCheckbox(gs, Field.HIDEUNCONNECTED, "Hide unconnected nodes", "Hide nodes without arcs");
-            JPanel num =new OurTristateCheckbox(gs, Field.NUMBER,          "Number nodes",           "Attach atom number to node label as suffix");
-            JPanel proj;
-            if (!vizState.canProject((AlloyType)elt)) proj=null;
-            else if (enabled) proj=new OurTristateCheckbox(ps, null, "Project over this sig", "Click here to project over this signature");
-            else proj=new OurTristateCheckbox(ps, null, "Project over this sig", "Click here to unproject over this signature");
+            JPanel vis = vizState.nodeVisible    .pick(elt, "Show",                   "Display members as nodes");
+            JPanel con = vizState.hideUnconnected.pick(elt, "Hide unconnected nodes", "Hide nodes without arcs");
+            JPanel num = vizState.number         .pick(elt, "Number nodes",           "Attach atom number to node label as suffix");
+            JPanel proj = null;
+            if (vizState.canProject((AlloyType)elt))
+                proj = new OurCheckbox("Project over this sig", "Click here to " + (enabled?"":"un") + "project over this signature", enabled ? OurCheckbox.ALL_OFF : OurCheckbox.ALL_ON) {
+                    private static final long serialVersionUID = 1L;
+                    public void actionPerformed(ActionEvent e) {
+                        if (enabled) { projectAlloyType((AlloyType)elt); setCheckboxIcon(ALL_ON); } else { deprojectAlloyType((AlloyType)elt); setCheckboxIcon(ALL_OFF); }
+                        lastElement=elt;
+                    }
+                };
             labelText.setEnabled(enabled && !vizState.useOriginalName());
             color.setEnabled(enabled);
             shape.setEnabled(enabled);
             style.setEnabled(enabled);
             vis.setEnabled(enabled);
-            //rank.setEnabled(enabled);
             con.setEnabled(enabled);
             num.setEnabled(enabled && !vizState.useOriginalName());
             JPanel a=OurUtil.makeVR(wcolor,vis,num),b;
-            if (proj!=null) b=OurUtil.makeVR(wcolor,/*rank,*/con,proj); else b=OurUtil.makeVR(wcolor,/*rank,*/con);
+            if (proj!=null) b=OurUtil.makeVR(wcolor, con, proj); else b=OurUtil.makeVR(wcolor, con);
             answer.add(OurUtil.makeHT(wcolor, 15,a,15,b,2,null));
         } else {
-            JPanel vis =new OurTristateCheckbox(gs, Field.VISIBLE,         "Show",                        "Include members of set as nodes");
-            //JPanel rank=new OurTristateCheckbox(gs, Field.SAMERANK,        "Align members",               "Aligns members of this set");
-            JPanel attr=new OurTristateCheckbox(gs, Field.SHOWINATTR,      "Show in relation attributes", "Show set membership in relation attributes");
-            JPanel lab =new OurTristateCheckbox(gs, Field.SHOWLABEL,       "Show as labels",              "Show membership in set by labeling nodes");
-            JPanel con =new OurTristateCheckbox(gs, Field.HIDEUNCONNECTED, "Hide unconnected nodes",      "Hide nodes without arcs");
-            JPanel a=OurUtil.makeVR(wcolor,vis,lab), b=OurUtil.makeVR(wcolor,/*rank,*/con,attr);
+            JPanel vis  = vizState.nodeVisible    .pick(elt, "Show",                        "Include members of set as nodes");
+            JPanel attr = vizState.showAsAttr     .pick(elt, "Show in relation attributes", "Show set membership in relation attributes");
+            JPanel lab  = vizState.showAsLabel    .pick(elt, "Show as labels",              "Show membership in set by labeling nodes");
+            JPanel con  = vizState.hideUnconnected.pick(elt, "Hide unconnected nodes",      "Hide nodes without arcs");
+            JPanel a=OurUtil.makeVR(wcolor,vis,lab), b=OurUtil.makeVR(wcolor, con, attr);
             answer.add(OurUtil.makeHT(wcolor, 15,a,15,b,2,null));
         }
     }
@@ -473,99 +422,62 @@ public final class VizCustomizationPanel extends JPanel {
 
     /** Generates the edge settings widgets for the given relation, and add them to "parent". */
     private void makeEdgeOptionsPanel(final JPanel parent, final AlloyRelation rel) {
-        ComboGetterSetter cgs=new ComboGetterSetter() {
-            public Icon getIcon(Object key, Object value) {
-                if (value==null && key==Field.COLOR) value=vizState.edgeColor(null);
-                if (value==null && key==Field.STYLE) value=vizState.edgeStyle(null);
-                if (value==null) return null; else return ((DotAttribute)value).getIcon(vizState.getEdgePalette());
-            }
-            public String getText(Object key, Object value) {
-                if (value==null) return "Inherit"; else return ((DotAttribute)value).getDisplayedText() ;
-            }
-            public Object getValue(Object key) {
-                if (key==Field.COLOR) return vizState.edgeColor(rel);
-                /*if (key==Field.STYLE)*/ return vizState.edgeStyle(rel);
-            }
-            public void setValue(Object key, Object value) {
-                if (key==Field.COLOR) vizState.edgeColor(rel, (DotColor)value);
-                if (key==Field.STYLE) vizState.edgeStyle(rel, (DotStyle)value);
-            }
-        };
-        GetterSetter gs=new GetterSetter() {
-            public Boolean get(Object key) {
-                if (key==Field.VISIBLE) return vizState.edgeVisible(rel);
-                if (key==Field.SAMERANK) return vizState.edgeSameRank(rel);
-                if (key==Field.MERGEARROWS) return vizState.mergeArrows(rel);
-                if (key==Field.ATTRIBUTE) return vizState.attribute(rel);
-                if (key==Field.CONSTRAINT) return vizState.constraint(rel);
-                /*if (key==Field.LAYOUTBACK)*/ return vizState.layoutBack(rel);
-            }
-            public boolean getInherited(Object key) {
-                boolean val=false;
-                if (key==Field.VISIBLE) val=vizState.edgeVisible(rel, vizState.getCurrentModel());
-                if (key==Field.SAMERANK) val=vizState.edgeSameRank(rel, vizState.getCurrentModel());
-                if (key==Field.MERGEARROWS) val=vizState.mergeArrows(rel, vizState.getCurrentModel());
-                if (key==Field.ATTRIBUTE) val=vizState.attribute(rel, vizState.getCurrentModel());
-                if (key==Field.CONSTRAINT) val=vizState.constraint(rel, vizState.getCurrentModel());
-                if (key==Field.LAYOUTBACK) val=vizState.layoutBack(rel, vizState.getCurrentModel());
-                return val;
-            }
-            public void set(Object key, Boolean value) {
-                if (key==Field.VISIBLE) vizState.edgeVisible(rel, value);
-                if (key==Field.SAMERANK) vizState.edgeSameRank(rel, value);
-                if (key==Field.MERGEARROWS) vizState.mergeArrows(rel, value);
-                if (key==Field.ATTRIBUTE) vizState.attribute(rel, value);
-                if (key==Field.CONSTRAINT) vizState.constraint(rel, value);
-                if (key==Field.LAYOUTBACK) vizState.layoutBack(rel, value);
-            }
-        };
-        final JTextField labelText = OurUtil.textfield(vizState.label(rel), 10);
+        final JTextField labelText = OurUtil.textfield(vizState.label.get(rel), 10);
         labelText.setMaximumSize(new Dimension(100, 25));
         labelText.addKeyListener(new KeyListener() {
-            public void keyTyped(KeyEvent e) { }
-            public void keyPressed(KeyEvent e) { }
-            public void keyReleased(KeyEvent e) { vizState.label(rel, labelText.getText()); }
+           public void keyTyped(KeyEvent e)    { }
+           public void keyPressed(KeyEvent e)  { }
+           public void keyReleased(KeyEvent e) { vizState.label.put(rel, labelText.getText()); }
         });
         labelText.addActionListener(new ActionListener() {
-            public final void actionPerformed(ActionEvent e) { vizState.label(rel, labelText.getText()); }
+           public final void actionPerformed(ActionEvent e) { vizState.label.put(rel, labelText.getText()); }
         });
         labelText.addFocusListener(new FocusListener() {
-            public final void focusGained(FocusEvent e) { }
-            public final void focusLost(FocusEvent e) { vizState.label(rel, labelText.getText()); }
+           public final void focusGained(FocusEvent e) { }
+           public final void focusLost(FocusEvent e)   { vizState.label.put(rel, labelText.getText()); }
         });
         final JLabel weightLabel = OurUtil.label(OurUtil.getVizFont(), "Weight:");
-        final JSpinner weightSpinner = new JSpinner(new SpinnerNumberModel(vizState.weight(rel), 0, 999, 1));
+        final JSpinner weightSpinner = new JSpinner(new SpinnerNumberModel(vizState.weight.get(rel), 0, 999, 1));
         weightSpinner.setMaximumSize(weightSpinner.getPreferredSize());
         weightSpinner.setToolTipText("A higher weight will cause the edge to be shorter and straighter.");
         weightSpinner.addKeyListener(new KeyListener() {
-            public void keyTyped(KeyEvent e) { }
-            public void keyPressed(KeyEvent e) { }
-            public void keyReleased(KeyEvent e) { vizState.weight(rel, (Integer) (weightSpinner.getValue())); }
+            public void keyTyped(KeyEvent e)    { }
+            public void keyPressed(KeyEvent e)  { }
+            public void keyReleased(KeyEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
         });
         weightSpinner.addMouseListener(new MouseListener() {
-            public void mouseClicked(MouseEvent e) { vizState.weight(rel, (Integer) (weightSpinner.getValue())); }
-            public void mousePressed(MouseEvent e) { vizState.weight(rel, (Integer) (weightSpinner.getValue())); }
-            public void mouseReleased(MouseEvent e) { vizState.weight(rel, (Integer) (weightSpinner.getValue())); }
-            public void mouseEntered(MouseEvent e) { }
-            public void mouseExited(MouseEvent e) { }
+            public void mouseClicked(MouseEvent e)  { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
+            public void mousePressed(MouseEvent e)  { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
+            public void mouseReleased(MouseEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
+            public void mouseEntered(MouseEvent e)  { }
+            public void mouseExited(MouseEvent e)   { }
         });
         weightSpinner.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) { vizState.weight(rel, (Integer) (weightSpinner.getValue())); }
+            public void stateChanged(ChangeEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
         });
         JPanel weightPanel = OurUtil.makeH(weightLabel, 5, weightSpinner);
         weightPanel.setBorder(new EmptyBorder(5,5,5,5));
         weightPanel.setAlignmentY(0.5f);
         weightPanel.setToolTipText("A higher weight will cause the edge to be shorter and straighter.");
-        OurCombobox color = new OurCombobox(cgs, true, DotColor.values(DotColor.WHITE), 110, 35, Field.COLOR);
-        OurCombobox style = new OurCombobox(cgs, true, DotStyle.values(),               105, 35, Field.STYLE);
-        JPanel visible=new OurTristateCheckbox(gs, Field.VISIBLE,     "Show as arcs",      "Show relation as arcs");
-        JPanel attr=new OurTristateCheckbox(gs,    Field.ATTRIBUTE,   "Show as attribute", "Additionally display this relation as an attribute on the nodes' labels");
-        //JPanel rank=new OurTristateCheckbox(gs,    Field.SAMERANK,    "Align endpoints",   "Align nodes connected by this relation's arcs");
-        JPanel back=new OurTristateCheckbox(gs,    Field.LAYOUTBACK,  "Layout backwards",  "Layout graph as if arcs were reversed");
-        JPanel merge=new OurTristateCheckbox(gs,   Field.MERGEARROWS, "Merge arrows",      "Merge opposing arrows between the same nodes as one bidirectional arrow");
-        JPanel constraint=new OurTristateCheckbox(gs,Field.CONSTRAINT, "Influence layout",      "Whether this edge influences the graph layout");
+        OurCombobox color = new OurCombobox(true, DotColor.values(DotColor.WHITE), 110, 35, vizState.edgeColor.get(rel)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return value==null ? "Inherit" : ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { if (value==null) value=vizState.edgeColor.get(null); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
+            @Override public void   myChanged(Object value) { vizState.edgeColor.put(rel, (DotColor)value); }
+        };
+        OurCombobox style = new OurCombobox(true, DotStyle.values(), 105, 35, vizState.edgeStyle.get(rel)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return value==null ? "Inherit" : ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { if (value==null) value=vizState.edgeStyle.get(null); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
+            @Override public void   myChanged(Object value) { vizState.edgeStyle.put(rel, (DotStyle)value); }
+        };
+        JPanel visible    = vizState.edgeVisible.pick("Show as arcs",      "Show relation as arcs");
+        JPanel attr       = vizState.attribute  .pick("Show as attribute", "Additionally display this relation as an attribute on the nodes' labels");
+        JPanel back       = vizState.layoutBack .pick("Layout backwards",  "Layout graph as if arcs were reversed");
+        JPanel merge      = vizState.mergeArrows.pick("Merge arrows",      "Merge opposing arrows between the same nodes as one bidirectional arrow");
+        JPanel constraint = vizState.constraint .pick("Influence layout",  "Whether this edge influences the graph layout");
         JPanel panel1=OurUtil.makeVR(wcolor, visible, attr, constraint);
-        JPanel panel2=OurUtil.makeVR(wcolor, /*rank,*/ back, merge);
+        JPanel panel2=OurUtil.makeVR(wcolor, back, merge);
         parent.add(makelabel(rel.toString()));
         parent.add(OurUtil.makeH(10, labelText, wcolor, 5, color, 5, style, 3, weightPanel, 2, null));
         parent.add(OurUtil.makeHT(wcolor, 10, panel1, 15, panel2, 2, null));
@@ -576,48 +488,38 @@ public final class VizCustomizationPanel extends JPanel {
     /** Generates the "general graph settings" widgets, and add them to "parent". */
     private void createGeneralWidget(JPanel parent) {
         final List<Object> fontSizes = Util.asList((Object)9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72);
-        final ComboGetterSetter cgs=new ComboGetterSetter() {
-            public Icon getIcon(Object key, Object value) { return null; }
-            public String getText(Object key, Object value) {
-                if ("0".equals(key)) return value.toString(); else return ((DotAttribute)value).getDisplayedText();
-            }
-            public Object getValue(Object key) {
-                if ("1".equals(key)) return vizState.getOrientation();
-                if ("2".equals(key)) return vizState.getNodePalette();
-                if ("3".equals(key)) return vizState.getEdgePalette();
-                return vizState.getFontSize();
-            }
-            public void setValue(Object key, Object value) {
-                if ("1".equals(key)) vizState.setOrientation((DotOrientation)value);
-                if ("2".equals(key)) vizState.setNodePalette((DotPalette)value);
-                if ("3".equals(key)) vizState.setEdgePalette((DotPalette)value);
-                if (value instanceof Integer && fontSizes.contains(value)) vizState.setFontSize((Integer)value);
-            }
-        };
-        final BinaryGetterSetter bgs = new BinaryGetterSetter() {
-            public boolean get(Object key) { return vizState.useOriginalName(); }
-            public void set(Object key, boolean value) { vizState.useOriginalName(value); }
-        };
-        final BinaryGetterSetter pgs = new BinaryGetterSetter() {
-            public boolean get(Object key) { return vizState.hidePrivate(); }
-            public void set(Object key, boolean value) { vizState.hidePrivate(value); remakeAll(); }
-        };
-        final BinaryGetterSetter mgs = new BinaryGetterSetter() {
-            public boolean get(Object key) { return vizState.hideMeta(); }
-            public void set(Object key, boolean value) { vizState.hideMeta(value); remakeAll(); }
-        };
         JLabel nLabel = OurUtil.label(OurUtil.getVizFont(), "Node Color Palette:");
         JLabel eLabel = OurUtil.label(OurUtil.getVizFont(), "Edge Color Palette:");
         JLabel aLabel = OurUtil.label(OurUtil.getVizFont(), "Use original atom names:");
         JLabel pLabel = OurUtil.label(OurUtil.getVizFont(), "Hide private sigs/relations:");
         JLabel mLabel = OurUtil.label(OurUtil.getVizFont(), "Hide meta sigs/relations:");
         JLabel fLabel = OurUtil.label(OurUtil.getVizFont(), "Font Size:");
-        JComboBox fontSize= new OurCombobox(cgs, false, fontSizes,                60, 32, "0");
-        JComboBox nodepal = new OurCombobox(cgs, false, DotPalette.values(),     100, 32, "2");
-        JComboBox edgepal = new OurCombobox(cgs, false, DotPalette.values(),     100, 32, "3");
-        JPanel name = new OurBinaryCheckbox(bgs, null, "", "Whether the visualizer should use the original atom names as-is.");
-        JPanel priv = new OurBinaryCheckbox(pgs, null, "", "Whether the visualizer should hide private sigs, sets, and relations by default.");
-        JPanel meta = new OurBinaryCheckbox(mgs, null, "", "Whether the visualizer should hide meta sigs, sets, and relations by default.");
+        JComboBox fontSize = new OurCombobox(false, fontSizes, 60, 32, vizState.getFontSize()) {
+            private static final long serialVersionUID = 1L;
+            @Override public void myChanged(Object value) { if (fontSizes.contains(value)) vizState.setFontSize((Integer)value); }
+        };
+        JComboBox nodepal = new OurCombobox(false, DotPalette.values(), 100, 32, vizState.getNodePalette()) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public void   myChanged(Object value) { vizState.setNodePalette((DotPalette)value); }
+        };
+        JComboBox edgepal = new OurCombobox(false, DotPalette.values(), 100, 32, vizState.getEdgePalette()) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public void   myChanged(Object value) { vizState.setEdgePalette((DotPalette)value); }
+        };
+        JPanel name = new OurCheckbox("", "Whether the visualizer should use the original atom names as-is.", vizState.useOriginalName() ? OurCheckbox.ON : OurCheckbox.OFF) {
+            private static final long serialVersionUID = 1L;
+            public void actionPerformed(ActionEvent e) { boolean x = vizState.useOriginalName();  vizState.useOriginalName(!x); setCheckboxIcon(!x ? ON : OFF); }
+        };
+        JPanel priv = new OurCheckbox("", "Whether the visualizer should hide private sigs, sets, and relations by default.", vizState.hidePrivate() ? OurCheckbox.ON : OurCheckbox.OFF) {
+            private static final long serialVersionUID = 1L;
+            public void actionPerformed(ActionEvent e) { boolean x = vizState.hidePrivate();  vizState.hidePrivate(!x); setCheckboxIcon(!x ? ON : OFF); remakeAll(); }
+        };
+        JPanel meta = new OurCheckbox("", "Whether the visualizer should hide meta sigs, sets, and relations by default.", vizState.hideMeta() ? OurCheckbox.ON : OurCheckbox.OFF) {
+            private static final long serialVersionUID = 1L;
+            public void actionPerformed(ActionEvent e) { boolean x = vizState.hideMeta();  vizState.hideMeta(!x); setCheckboxIcon(!x ? ON : OFF); remakeAll(); }
+        };
         parent.add(makelabel(" General Graph Settings:"));
         parent.add(OurUtil.makeBox(6,6,wcolor));
         parent.add(OurUtil.makeH(wcolor, 25, nLabel, 5, nodepal, 8, aLabel, 5, name, 2, null));
@@ -630,54 +532,32 @@ public final class VizCustomizationPanel extends JPanel {
 
     /** Generates the "default type and set settings" widgets, and add them to "parent". */
     private void createDefaultNodeWidget(JPanel parent) {
-        ComboGetterSetter cgs=new ComboGetterSetter() {
-            public Icon getIcon(Object key, Object value) {
-                return ((DotAttribute)value).getIcon(vizState.getNodePalette());
-            }
-            public String getText(Object key, Object value) {
-                return ((DotAttribute)value).getDisplayedText();
-            }
-            public Object getValue(Object key) {
-                if (key==Field.COLOR) return vizState.nodeColor(null);
-                if (key==Field.SHAPE) return vizState.shape(null);
-                /*if (key==Field.STYLE)*/ return vizState.nodeStyle(null);
-            }
-            public void setValue(Object key, Object value) {
-                if (key==Field.COLOR) vizState.nodeColor(null, (DotColor)value);
-                if (key==Field.SHAPE) vizState.shape(null, (DotShape)value);
-                if (key==Field.STYLE) vizState.nodeStyle(null, (DotStyle)value);
-            }
+        JComboBox color = new OurCombobox(false, DotColor.values(DotColor.MAGIC), 110, 35, vizState.nodeColor.get(null)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public void   myChanged(Object value) { vizState.nodeColor.put(null, (DotColor)value); }
         };
-        BinaryGetterSetter gs = new BinaryGetterSetter() {
-            public boolean get(Object key) {
-                if (key==Field.VISIBLE) return vizState.nodeVisible(null);
-                if (key==Field.SAMERANK) return vizState.nodeSameRank(null);
-                if (key==Field.HIDEUNCONNECTED) return vizState.hideUnconnected(null);
-                if (key==Field.NUMBER) return vizState.number(null);
-                if (key==Field.SHOWLABEL) return vizState.showAsLabel(null);
-                /*if (key==Field.SHOWINATTR)*/ return vizState.showAsAttr(null);
-            }
-            public void set(Object key, boolean value) {
-                if (key==Field.VISIBLE) vizState.nodeVisible(null, value);
-                if (key==Field.SAMERANK) vizState.nodeSameRank(null, value);
-                if (key==Field.HIDEUNCONNECTED) vizState.hideUnconnected(null, value);
-                if (key==Field.NUMBER) vizState.number(null, value);
-                if (key==Field.SHOWLABEL) vizState.showAsLabel(null, value);
-                if (key==Field.SHOWINATTR) vizState.showAsAttr(null, value);
-            }
+        JComboBox shape = new OurCombobox(false, DotShape.values(), 135, 35, vizState.shape.get(null)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public void   myChanged(Object value) { vizState.shape.put(null, (DotShape)value); }
         };
-        JComboBox color = new OurCombobox(cgs, false, DotColor.values(DotColor.MAGIC), 110, 35, Field.COLOR);
-        JComboBox shape = new OurCombobox(cgs, false, DotShape.values(),               135, 35, Field.SHAPE);
-        JComboBox style = new OurCombobox(cgs, false, DotStyle.values(),               110, 35, Field.STYLE);
-        JPanel vis  = new OurBinaryCheckbox(gs, Field.VISIBLE,         "Show",                   "Show members of type as nodes");
-        //JPanel rank = new OurBinaryCheckbox(gs, Field.SAMERANK,        "Align members",          "Align nodes of the same type");
-        JPanel hide = new OurBinaryCheckbox(gs, Field.HIDEUNCONNECTED, "Hide unconnected nodes", "Hide nodes without arcs");
-        JPanel num  = new OurBinaryCheckbox(gs, Field.NUMBER,          "Number nodes",           "Attach atom number to node label as suffix");
-        JPanel label= new OurBinaryCheckbox(gs, Field.SHOWLABEL,  "Show as labels", "Show members as labels");
-        JPanel attr = new OurBinaryCheckbox(gs, Field.SHOWINATTR, "Show in relation attributes", "Show set membership of endpoints when relation attributes are enabled");
+        JComboBox style = new OurCombobox(false, DotStyle.values(), 110, 35, vizState.nodeStyle.get(null)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getNodePalette()); }
+            @Override public void   myChanged(Object value) { vizState.nodeStyle.put(null, (DotStyle)value); }
+        };
+        JPanel vis  = vizState.nodeVisible    .pick("Show",                        "Show members of type as nodes");
+        JPanel hide = vizState.hideUnconnected.pick("Hide unconnected nodes",      "Hide nodes without arcs");
+        JPanel num  = vizState.number         .pick("Number nodes",                "Attach atom number to node label as suffix");
+        JPanel label= vizState.showAsLabel    .pick("Show as labels",              "Show members as labels");
+        JPanel attr = vizState.showAsAttr     .pick("Show in relation attributes", "Show set membership of endpoints when relation attributes are enabled");
         parent.add(makelabel(" Default Type and Set Settings:"));
         parent.add(OurUtil.makeH(wcolor, 10, color, 7, style, 7, shape, 2, null));
-        JPanel a=OurUtil.makeVL(wcolor,vis,num,label), b=OurUtil.makeVL(wcolor,/*rank,*/hide,attr);
+        JPanel a=OurUtil.makeVL(wcolor, vis, num, label), b=OurUtil.makeVL(wcolor, hide, attr);
         parent.add(OurUtil.makeHT(wcolor, 10, a, 10, b, 2, null));
     }
 
@@ -685,51 +565,26 @@ public final class VizCustomizationPanel extends JPanel {
 
     /** Generates the "default relation settings" widgets, and add them to "parent". */
     private void createDefaultEdgeWidget(JPanel parent) {
-        ComboGetterSetter cgs=new ComboGetterSetter() {
-            public Icon getIcon(Object key, Object value) {
-                return ((DotAttribute)value).getIcon(vizState.getEdgePalette());
-            }
-            public String getText(Object key, Object value) {
-                return ((DotAttribute)value).getDisplayedText();
-            }
-            public Object getValue(Object key) {
-                if (key==Field.COLOR) return vizState.edgeColor(null);
-                /* if (key==Field.STYLE) */ return vizState.edgeStyle(null);
-            }
-            public void setValue(Object key, Object value) {
-                if (key==Field.COLOR) vizState.edgeColor(null, (DotColor)value);
-                if (key==Field.STYLE) vizState.edgeStyle(null, (DotStyle)value);
-            }
+        JComboBox colorComboE = new OurCombobox(false, DotColor.values(DotColor.WHITE), 110, 35, vizState.edgeColor.get(null)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
+            @Override public void   myChanged(Object value) { vizState.edgeColor.put(null, (DotColor)value); }
         };
-        BinaryGetterSetter gs = new BinaryGetterSetter() {
-            public boolean get(Object key) {
-                if (key==Field.VISIBLE) return vizState.edgeVisible(null);
-                if (key==Field.SAMERANK) return vizState.edgeSameRank(null);
-                if (key==Field.MERGEARROWS) return vizState.mergeArrows(null);
-                if (key==Field.ATTRIBUTE) return vizState.attribute(null);
-                if (key==Field.CONSTRAINT) return vizState.constraint(null);
-                /*if (key==Field.LAYOUTBACK)*/ return vizState.layoutBack(null);
-            }
-            public void set(Object key, boolean value) {
-                if (key==Field.VISIBLE) vizState.edgeVisible(null, value);
-                if (key==Field.SAMERANK) vizState.edgeSameRank(null, value);
-                if (key==Field.MERGEARROWS) vizState.mergeArrows(null, value);
-                if (key==Field.ATTRIBUTE) vizState.attribute(null, value);
-                if (key==Field.CONSTRAINT) vizState.constraint(null, value);
-                if (key==Field.LAYOUTBACK) vizState.layoutBack(null, value);
-            }
+        JComboBox outlineComboE = new OurCombobox(false, DotStyle.values(), 110, 35, vizState.edgeStyle.get(null)) {
+            private static final long serialVersionUID = 1L;
+            @Override public String myGetText(Object value) { return ((DotAttribute)value).getDisplayedText(); }
+            @Override public Icon   myGetIcon(Object value) { return ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
+            @Override public void   myChanged(Object value) { vizState.edgeStyle.put(null, (DotStyle)value); }
         };
-        JComboBox colorComboE   = new OurCombobox(cgs, false, DotColor.values(DotColor.WHITE), 110, 35, Field.COLOR);
-        JComboBox outlineComboE = new OurCombobox(cgs, false, DotStyle.values(),               110, 35, Field.STYLE);
-        JPanel dispCBE       = new OurBinaryCheckbox(gs, Field.VISIBLE,     "Show as arcs", "Show relations as arcs");
-        //JPanel rankCBE     = new OurBinaryCheckbox(gs, Field.SAMERANK,    "Align endpoints", "Align nodes connected by the same relationships' arcs");
-        JPanel mergeCBE      = new OurBinaryCheckbox(gs, Field.MERGEARROWS, "Merge arrows", "Merge opposing arrows of the same relation");
-        JPanel constraintCBE = new OurBinaryCheckbox(gs, Field.CONSTRAINT,  "Influence layout", "Whether this edge influences the graph layout");
-        JPanel attrCBE       = new OurBinaryCheckbox(gs, Field.ATTRIBUTE,   "Show as attributes", "Show relations as attributes on nodes");
-        JPanel laybackCBE    = new OurBinaryCheckbox(gs, Field.LAYOUTBACK,  "Layout backwards", "Layout graph as if arcs were reversed");
+        JPanel dispCBE       = vizState.edgeVisible.pick("Show as arcs",       "Show relations as arcs");
+        JPanel mergeCBE      = vizState.mergeArrows.pick("Merge arrows",       "Merge opposing arrows of the same relation");
+        JPanel constraintCBE = vizState.constraint .pick("Influence layout",   "Whether this edge influences the graph layout");
+        JPanel attrCBE       = vizState.attribute  .pick("Show as attributes", "Show relations as attributes on nodes");
+        JPanel laybackCBE    = vizState.layoutBack .pick("Layout backwards",   "Layout graph as if arcs were reversed");
         parent.add(makelabel(" Default Relation Settings:"));
         parent.add(OurUtil.makeH(wcolor, 10, colorComboE, 8, outlineComboE, 2, null));
-        JPanel a=OurUtil.makeVL(wcolor,dispCBE,attrCBE,constraintCBE,10), b=OurUtil.makeVL(wcolor,/*rankCBE,*/laybackCBE,mergeCBE);
+        JPanel a=OurUtil.makeVL(wcolor, dispCBE, attrCBE, constraintCBE, 10), b=OurUtil.makeVL(wcolor, laybackCBE, mergeCBE);
         parent.add(OurUtil.makeHT(wcolor, 10, a, 10, b, 2, null));
     }
 

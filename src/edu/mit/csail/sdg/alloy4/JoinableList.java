@@ -22,13 +22,21 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-/** Immutable; implements an ordered list where it is very cheap to join two lists or to append an item to a list. */
+/** Immutable; implements an ordered list where it is cheap to join or append; null values are NOT allowed. */
 
-public final class JoinableList<E> implements Iterable<E> {
+public final class JoinableList<E> implements Serializable, Iterable<E> {
+
+    // Invariant: pre!=null iff pre.count!=0
+    // Invariant: post!=null iff post.count!=0
+    // Invariant: count == (pre!=null ? pre.count : 0) + (item!=null ? 1 : 0) + (post!=null ? post.count : 0)
+
+    /** This ensures the class can be serialized reliably. */
+    private static final long serialVersionUID = 1L;
 
     /** The number of items stored in this list. */
     private final int count;
@@ -36,13 +44,13 @@ public final class JoinableList<E> implements Iterable<E> {
     /** The list of items before "this.item"; can be null or even an empty list. */
     private final JoinableList<E> pre;
 
-    /** If pre.count+post.count!=this.count, then this field stores the middle item; else this field is ignored. */
+    /** If nonnull, it stores an item. */
     private final E item;
 
     /** The list of items after "this.item"; can be null or even an empty list. */
     private final JoinableList<E> post;
 
-    /** Construct an JoinableList object. */
+    /** Construct a JoinableList object. */
     private JoinableList(int count, JoinableList<E> pre, E item, JoinableList<E> post) {
         this.count = count;
         this.pre = pre;
@@ -50,11 +58,11 @@ public final class JoinableList<E> implements Iterable<E> {
         this.post = post;
     }
 
-    /** Construct a list containing a single item. */
+    /** Construct a list containing a single item, or return an empty list if item==null. */
     public JoinableList(E item) {
-        this.count = 1;
-        this.item = item;
+        this.count = (item!=null ? 1 : 0);
         this.pre = null;
+        this.item = item;
         this.post = null;
     }
 
@@ -66,31 +74,24 @@ public final class JoinableList<E> implements Iterable<E> {
         this.post = null;
     }
 
-    /** Returns a list that represents the concatenation of this and that. */
+    /** Returns a list that represents the concatenation of this list and that list. */
     public JoinableList<E> join(JoinableList<E> that) {
         if (that==null || that.count==0) return this;
         if (count==0) return that;
-        if (post!=null && post.count>0) return new JoinableList<E>(count + that.count, this, null, that);
-        return new JoinableList<E>(count + that.count, pre, item, that);
+        int sum = count + that.count;
+        if (sum<count) throw new OutOfMemoryError();
+        if (post!=null) return new JoinableList<E>(sum, this, null, that);
+        return new JoinableList<E>(sum, pre, item, that);
     }
 
-    /** Returns a list that represents the result of appending the given item onto the end of the this list. */
+    /** Returns a list that represents the result of appending newItem onto this list; if newItem==null we return this list as-is. */
     public JoinableList<E> append(E newItem) {
-        if (count==0) return new JoinableList<E>(newItem);
-        if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);
-        int preCount = (pre==null) ? 0 : (pre.count);
-        if (count==preCount) return new JoinableList<E>(count+1, pre, newItem, null);
-        return new JoinableList<E>(count+1, pre, item, new JoinableList<E>(newItem));
-    }
-
-    /** Returns a list that represents the result of appending the given item onto the end of the this list if newItem!=null. */
-    public JoinableList<E> appendIfNotNull(E newItem) {
-        if (newItem==null) return this;
-        if (count==0) return new JoinableList<E>(newItem);
-        if (post!=null && post.count>0) return new JoinableList<E>(count+1, this, newItem, null);
-        int preCount = (pre==null) ? 0 : (pre.count);
-        if (count==preCount) return new JoinableList<E>(count+1, pre, newItem, null);
-        return new JoinableList<E>(count+1, pre, item, new JoinableList<E>(newItem));
+        if (newItem==null) return this; else if (count==0) return new JoinableList<E>(newItem);
+        int sum = count + 1;
+        if (sum<1) throw new OutOfMemoryError();
+        if (post!=null) return new JoinableList<E>(sum, this, newItem, null);
+        if (item!=null) return new JoinableList<E>(sum, pre, item, new JoinableList<E>(newItem));
+        return new JoinableList<E>(sum, pre, newItem, null);
     }
 
     /** If the list if nonempty, arbitrarily return one of the item, otherwise throw NoSuchElementException. */
@@ -104,11 +105,9 @@ public final class JoinableList<E> implements Iterable<E> {
         if (i<0 || i>=count) throw new ArrayIndexOutOfBoundsException();
         JoinableList<E> x = this;
         while(true) {
-            int a = (x.pre==null) ? 0 : x.pre.count;
-            if (i<a) { x=x.pre; continue; }
-            int b = (x.post==null) ? 0 : x.post.count;
-            if (a+b==x.count) { i=i-a; } else if (i!=a) { i=i-a-1; } else { return x.item; }
-            x = x.post;
+            int pre = (x.pre==null) ? 0 : x.pre.count;
+            if (i<pre) { x=x.pre; continue; }
+            if (x.item==null) { i=i-pre; x=x.post; } else if (i!=pre) { i=i-pre-1; x=x.post; } else return x.item;
         }
     }
 
@@ -120,50 +119,39 @@ public final class JoinableList<E> implements Iterable<E> {
 
     /** Returns a String representation of this list. */
     @Override public String toString() {
-        StringBuilder sb=new StringBuilder("[");
-        boolean first=true;
+        StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
         for(Object x: this) {
-            if (first) { first=false; } else { sb.append(", "); }
-            if (x==null) sb.append("null");
-            else if (x==this) sb.append("(this collection)");
-            else sb.append(x.toString());
+            if (first) first=false; else sb.append(", ");
+            sb.append(x);
         }
         return sb.append(']').toString();
     }
 
     /** Computes a hash code that is consistent with JoinableList's equals() and java.util.List's hashCode() methods. */
     @Override public int hashCode() {
-        int answer=1;
-        for(Object obj:this) {
-            answer=31*answer;
-            if (obj!=null) answer=answer+obj.hashCode();
-        }
+        int answer = 1;
+        for(Object x: this) { answer = 31*answer + x.hashCode(); }
         return answer;
     }
 
-    /** Returns true if (that instanceof List), and that contains the same elements as this list. */
+    /** Returns true if that is a List or JoinableList, and contains the same elements as this list. */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
-        if (!(that instanceof List)) return false;
-        List<?> x=(List<?>)that;
-        if (count!=x.size()) return false;
-        Iterator<?> a=iterator(), b=x.iterator();
-        for(int i=0; i<count; i++) {
-            Object aa=a.next(), bb=b.next();
-            if (aa==null) {
-                if (bb!=null) return false;
-            } else {
-                if (!aa.equals(bb)) return false;
-            }
-        }
+        Iterator<?> b;
+        if (that instanceof JoinableList) { JoinableList x=(JoinableList)that; if (count!=x.size()) return false; b=x.iterator(); }
+           else if (that instanceof List) { List x=(List)that; if (count!=x.size()) return false; b=x.iterator(); }
+           else return false;
+        Iterator<?> a=iterator();
+        for(int i=0; i<count; i++) if (!a.next().equals(b.next())) return false;
         return true;
     }
 
     /** Returns a readonly iterator that iterates over the elements in this list. */
     public Iterator<E> iterator() {
         return new Iterator<E>() {
-            private int i=0;
-            public final E next() { if (i>=count) throw new NoSuchElementException(); i++; return get(i-1); }
+            private int i = 0;
+            public final E next() { if (i>=count) throw new NoSuchElementException(); E ans=get(i); i++; return ans; }
             public final boolean hasNext() { return i < count; }
             public final void remove() { throw new UnsupportedOperationException(); }
         };

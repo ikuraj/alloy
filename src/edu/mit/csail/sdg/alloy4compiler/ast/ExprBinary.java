@@ -297,7 +297,7 @@ public final class ExprBinary extends Expr {
                 errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
             if ((isArrow && right.mult==1) || (!isArrow && this!=Op.IN && right.mult!=0))
                 errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
-            return new ExprBinary(pos, closingBracket, this, left, right, type, errs.appendIfNotNull(e));
+            return new ExprBinary(pos, closingBracket, this, left, right, type, errs.append(e));
         }
 
         /** Returns the human readable label for this operator. */

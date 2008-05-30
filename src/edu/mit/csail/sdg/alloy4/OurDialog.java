@@ -137,7 +137,7 @@ public final class OurDialog {
             null,
             new Object[]{"Ok","Cancel"},
             "Cancel");
-        Object value=jcombo.getSelectedItem();
+        Object value = jcombo.getSelectedItem();
         if (ans!=JOptionPane.YES_OPTION || !(value instanceof String)) return "";
         return ((String)value);
     }
@@ -242,7 +242,7 @@ public final class OurDialog {
                public void keyReleased(KeyEvent e) {}
             });
         }
-        jd.setVisible(true);
+        jd.setVisible(true); // This method blocks until the user either chooses something or cancels the dialog.
         return pane.getValue() == "Ok";
     }
 
@@ -251,7 +251,7 @@ public final class OurDialog {
         final JFrame window = new JFrame(title);
         final JButton done = new JButton("Close");
         done.addActionListener(Runner.createDispose(window));
-        JTextArea textarea = OurUtil.textarea(text,20,60);
+        JTextArea textarea = OurUtil.textarea(text, 20, 60);
         textarea.setBackground(Color.WHITE);
         textarea.setEditable(false);
         textarea.setLineWrap(autoLineWrap);

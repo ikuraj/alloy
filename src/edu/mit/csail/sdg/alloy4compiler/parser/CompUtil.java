@@ -231,7 +231,7 @@ public final class CompUtil {
             root.seenDollar = seenDollar.size()>0;
             return Module.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
         } catch(FileNotFoundException ex) {
-            throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage());
+            throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage(), ex);
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
         } catch(Throwable ex) {

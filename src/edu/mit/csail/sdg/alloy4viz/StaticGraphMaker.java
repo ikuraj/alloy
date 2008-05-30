@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import edu.mit.csail.sdg.alloy4.Util;
 
 /**
  * This utility class generates a graph for a particular index of the projection.
@@ -70,7 +69,7 @@ public final class StaticGraphMaker {
     public static DotGraph produceGraph(AlloyInstance instance, VizState view, AlloyProjection proj) {
         view = new VizState(view);
         if (proj == null) proj = new AlloyProjection();
-        StaticGraphMaker answer = new StaticGraphMaker(instance,view,proj);
+        StaticGraphMaker answer = new StaticGraphMaker(instance, view, proj);
         return answer.graph;
     }
 
@@ -119,7 +118,7 @@ public final class StaticGraphMaker {
         Map<AlloyRelation,Color> magicColor = new TreeMap<AlloyRelation,Color>();
         Map<AlloyRelation,Integer> rels = new TreeMap<AlloyRelation,Integer>();
         this.view = view;
-        instance = StaticProjector.project(originalInstance,proj);
+        instance = StaticProjector.project(originalInstance, proj);
         model = instance.model;
         for (AlloyRelation rel: model.getRelations()) {
             rels.put(rel,null);
@@ -131,9 +130,9 @@ public final class StaticGraphMaker {
           else colors = colorsNeon;
         int ci=0;
         for (AlloyRelation rel: model.getRelations()) {
-            DotColor c = view.edgeColor(rel, model);
+            DotColor c = view.edgeColor.resolve(rel);
             Color cc = (c==DotColor.MAGIC) ? colors.get(ci) : DotColor.name2color(c.getDotText(view.getEdgePalette()));
-            int count = ((hidePrivate && rel.isPrivate) || !view.edgeVisible(rel, model)) ? 0 : edgesAsArcs(hidePrivate, hideMeta, rel, colors.get(ci));
+            int count = ((hidePrivate && rel.isPrivate) || !view.edgeVisible.resolve(rel)) ? 0 : edgesAsArcs(hidePrivate, hideMeta, rel, colors.get(ci));
             rels.put(rel, count);
             magicColor.put(rel, cc);
             if (count>0) ci=(ci+1)%(colors.size());
@@ -142,22 +141,17 @@ public final class StaticGraphMaker {
             List<AlloySet> sets=instance.atom2sets(atom);
             if (sets.size()>0) {
                 for (AlloySet s:sets)
-                    if (view.nodeVisible(s, instance.model) && !view.hideUnconnected(s,model))
+                    if (view.nodeVisible.resolve(s) && !view.hideUnconnected.resolve(s))
                        {createNode(hidePrivate, hideMeta, atom); break;}
-            } else if (view.nodeVisible(atom.getType(),model) && !view.hideUnconnected(atom.getType(),model)) {
+            } else if (view.nodeVisible.resolve(atom.getType()) && !view.hideUnconnected.resolve(atom.getType())) {
                 createNode(hidePrivate, hideMeta, atom);
             }
         }
         for (AlloyRelation rel:model.getRelations())
           if (!(hidePrivate && rel.isPrivate))
-             if (view.attribute(rel,model))
+             if (view.attribute.resolve(rel))
                 edgesAsAttribute(rel);
-        Set<Set<DotNode>> rank=new LinkedHashSet<Set<DotNode>>();
-        rankTypes(rank);
-        rankSets(rank);
-        rankEdges(rank);
-        graph=new DotGraph(view.getFontSize(), view.getOrientation(),
-                view.getNodePalette(), view.getEdgePalette(), rels, magicColor, nodes, edges, rank, attribs);
+        graph=new DotGraph(view.getFontSize(), view.getOrientation(), view.getNodePalette(), view.getEdgePalette(), rels, magicColor, nodes, edges, attribs);
     }
 
     /**
@@ -178,10 +172,10 @@ public final class StaticGraphMaker {
         node = new DotNode(atom, nodes.size(), label, shape, color, style);
         // Get the label based on the sets and relations
         String setsLabel="";
-        boolean showLabelByDefault = view.showAsLabel(null);
+        boolean showLabelByDefault = view.showAsLabel.get(null);
         for (AlloySet set: instance.atom2sets(atom)) {
-            String x=view.label(set); if (x.length()==0) continue;
-            Boolean showLabel=view.showAsLabel(set);
+            String x = view.label.get(set); if (x.length()==0) continue;
+            Boolean showLabel = view.showAsLabel.get(set);
             if ((showLabel==null && showLabelByDefault) || (showLabel!=null && showLabel.booleanValue()))
                 setsLabel += ((setsLabel.length()>0?", ":"")+x);
         }
@@ -213,8 +207,8 @@ public final class StaticGraphMaker {
         DotNode start = createNode(hidePrivate, hideMeta, tuple.getStart());
         DotNode end = createNode(hidePrivate, hideMeta, tuple.getEnd());
         if (start==null || end==null) return false;
-        boolean layoutBack=view.layoutBack(rel,model);
-        String label=view.label(rel);
+        boolean layoutBack = view.layoutBack.resolve(rel);
+        String label = view.label.get(rel);
         if (tuple.getArity() > 2) {
             StringBuilder moreLabel = new StringBuilder();
             List<AlloyAtom> atoms=tuple.getAtoms();
@@ -227,8 +221,8 @@ public final class StaticGraphMaker {
         }
         DotDirection dir = bidirectional ? DotDirection.BOTH : (layoutBack ? DotDirection.BACK:DotDirection.FORWARD);
         DotEdge e=new DotEdge(tuple, edges.size(), (layoutBack?end:start), (layoutBack?start:end), label,
-                view.edgeStyle(rel,model), view.edgeColor(rel,model), magicColor,
-                dir, view.weight(rel), view.constraint(rel,model), rel);
+                view.edgeStyle.resolve(rel), view.edgeColor.resolve(rel), magicColor,
+                dir, view.weight.get(rel), view.constraint.resolve(rel), rel);
         edges.put(e, tuple);
         return true;
     }
@@ -236,7 +230,7 @@ public final class StaticGraphMaker {
     /** Create edges for every visible tuple in the given relation. */
     private int edgesAsArcs(final boolean hidePrivate, final boolean hideMeta, AlloyRelation rel, Color magicColor) {
         int count = 0;
-        if (!view.mergeArrows(rel,model)) {
+        if (!view.mergeArrows.resolve(rel)) {
             // If we're not merging bidirectional arrows, simply create an edge for each tuple.
             for (AlloyTuple tuple: instance.relation2tuples(rel)) if (createEdge(hidePrivate, hideMeta, rel, tuple, false, magicColor)) count++;
             return count;
@@ -290,48 +284,13 @@ public final class StaticGraphMaker {
             if (oldattr!=null && oldattr.length()>0) attr=oldattr+", "+attr;
             if (attr.length()>0) map.put(start,attr);
         }
-        for (Map.Entry<DotNode,String> e:map.entrySet()) {
-            DotNode node=e.getKey();
-            Set<String> list=attribs.get(node);
+        for (Map.Entry<DotNode,String> e: map.entrySet()) {
+            DotNode node = e.getKey();
+            Set<String> list = attribs.get(node);
             if (list==null) attribs.put(node, list=new TreeSet<String>());
-            String attr=e.getValue();
-            if (view.label(rel).length()>0) attr=view.label(rel)+": "+attr;
+            String attr = e.getValue();
+            if (view.label.get(rel).length()>0) attr = view.label.get(rel) + ": " + attr;
             list.add(attr);
-        }
-    }
-
-    /** Generate a set of sets of Nodes that should be ranked together based on their type. */
-    private void rankTypes(Set<Set<DotNode>> retSet) {
-        for(AlloyType type: instance.model.getTypes()) if (view.nodeSameRank(type,model)) {
-            Set<DotNode> nodes = new LinkedHashSet<DotNode>();
-            for (AlloyAtom atom: instance.type2atoms(type)) {
-                DotNode node=atom2node.get(atom);
-                if (node!=null) nodes.add(node);
-            }
-            if (nodes.size()>1) retSet.add(nodes);
-        }
-    }
-
-    /** Generate a set of sets of Nodes that should be ranked together based on their set. */
-    private void rankSets(Set<Set<DotNode>> retSet) {
-        for (AlloySet set: instance.model.getSets()) if (view.nodeSameRank(set,model)) {
-            Set<DotNode> nodes = new LinkedHashSet<DotNode>();
-            for (AlloyAtom atom: instance.set2atoms(set)) {
-                DotNode node=atom2node.get(atom);
-                if (node!=null) nodes.add(node);
-            }
-            if (nodes.size()>1) retSet.add(nodes);
-        }
-    }
-
-    /** Generate a set of sets of Nodes that should be ranked together based on the Edges they are connected by. */
-    private void rankEdges(Set<Set<DotNode>> retSet) {
-        for (AlloyRelation rel: instance.model.getRelations()) if (view.edgeSameRank(rel,model)) {
-            for (AlloyTuple tuple: instance.relation2tuples(rel)) {
-                DotNode from=atom2node.get(tuple.getStart());
-                DotNode to=atom2node.get(tuple.getEnd());
-                if (from!=null && to!=null && from!=to) retSet.add(new LinkedHashSet<DotNode>(Util.asList(from,to)));
-            }
         }
     }
 
@@ -352,13 +311,13 @@ public final class StaticGraphMaker {
      *      then the return value would be "Person (Set1, Set2)".
      */
     private String atomname(AlloyAtom atom, boolean showSets) {
-        String label=atom.getVizName(view, view.number(atom.getType(),model));
+        String label = atom.getVizName(view, view.number.resolve(atom.getType()));
         if (!showSets) return label;
-        String attr="";
-        boolean showInAttrByDefault = view.showAsAttr(null);
+        String attr = "";
+        boolean showInAttrByDefault = view.showAsAttr.get(null);
         for (AlloySet set: instance.atom2sets(atom)) {
-            String x=view.label(set); if (x.length()==0) continue;
-            Boolean showAsAttr=view.showAsAttr(set);
+            String x = view.label.get(set); if (x.length()==0) continue;
+            Boolean showAsAttr = view.showAsAttr.get(set);
             if ((showAsAttr==null && showInAttrByDefault) || (showAsAttr!=null && showAsAttr))
                 attr += ((attr.length()>0?", ":"")+x);
         }

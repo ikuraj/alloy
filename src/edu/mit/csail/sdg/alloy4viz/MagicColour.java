@@ -90,7 +90,7 @@ final class MagicColour {
 
         int index = 0;
         for (final AlloyType t : uniqueColourTypes) {
-            vizState.nodeColor(t, (DotColor) DotColor.values(DotColor.MAGIC).get(index));
+            vizState.nodeColor.put(t, (DotColor) DotColor.values(DotColor.MAGIC).get(index));
             index = (index + 1) % DotColor.values(DotColor.MAGIC).size();
         }
     }
@@ -103,14 +103,14 @@ final class MagicColour {
         final Set<AlloySet> sets = vizState.getCurrentModel().getSets();
         for (final AlloySet s : sets) {
             // change the style
-            vizState.nodeStyle(s, DotStyle.BOLD);
+            vizState.nodeStyle.put(s, DotStyle.BOLD);
             // change the label
-            String label = vizState.label(s);
+            String label = vizState.label.get(s);
             final int lastUnderscore = label.lastIndexOf('_');
             if (lastUnderscore >= 0) {
                 label = label.substring(lastUnderscore+1);
             }
-            vizState.label(s, label);
+            vizState.label.put(s, label);
         }
     }
 
@@ -221,13 +221,13 @@ final class MagicColour {
         if (isTvisible) {
             final DotShape shape = shapeFamily.get(index++);
             //log("AssignNodeShape " + t + " " + shape);
-            vizState.shape(t, shape);
+            vizState.shape.put(t, shape);
         }
         // shapes for visible subtypes
         for (final AlloyType subt : subTypes) {
             final DotShape shape = shapeFamily.get(index++);
             //log("AssignNodeShape " + subt + " " + shape);
-            vizState.shape(subt, shape);
+            vizState.shape.put(subt, shape);
         }
     }
 
@@ -276,7 +276,7 @@ final class MagicColour {
 
         // hide names if there's only one node type visible
         if (1 == visibleUserTypes.size()) {
-            vizState.label(visibleUserTypes.iterator().next(), "");
+            vizState.label.put(visibleUserTypes.iterator().next(), "");
         }
 
     }

@@ -25,9 +25,7 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * Immutable; represents a syntax error that should be reported to the user.
  *
- * <p><b>Invariant:</b>       pos!=null && msg!=null
- *
- * <p><b>Thread Safety:</b>   Safe (since objects of this class are immutable).
+ * <p><b>Invariant:</b> pos!=null && msg!=null
  */
 
 public final class ErrorSyntax extends Err {
@@ -61,9 +59,7 @@ public final class ErrorSyntax extends Err {
         super(pos, msg, null);
     }
 
-    /**
-     * Two Err objects are equal if the type, position, and message are the same; the "Throwable other" field is not considered.
-     */
+    /** Two Err objects are equal if the type, position, and message are the same. */
     @Override public boolean equals(Object other) {
         if (this==other) return true;
         if (!(other instanceof ErrorSyntax)) return false;
@@ -71,9 +67,7 @@ public final class ErrorSyntax extends Err {
         return pos.equals(that.pos) && msg.equals(that.msg);
     }
 
-    /**
-     * Returns a hash code consistent with equals()
-     */
+    /** Returns a hash code consistent with equals() */
     @Override public int hashCode() {
         return msg.hashCode();
     }

@@ -29,7 +29,7 @@ import java.io.IOException;
 import java_cup_11a.runtime.Scanner;
 import java_cup_11a.runtime.Symbol;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
+import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import static edu.mit.csail.sdg.alloy4compiler.parser.CompSym.*;
@@ -83,7 +83,7 @@ final class CompFilter implements Scanner {
       try {
           return r.next_token();
       } catch(IOException ex) {
-          throw new ErrorAPI("IO error: "+ex.getMessage());
+          throw new ErrorFatal("IO error: "+ex.getMessage(), ex);
       }
     }
 

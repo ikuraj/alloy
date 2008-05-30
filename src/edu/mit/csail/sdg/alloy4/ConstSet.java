@@ -33,44 +33,10 @@ import java.io.Serializable;
 /**
  * This implements an unmodifiable set.
  *
- * <p><b>Thread Safety:</b>  Safe.
- *
  * @param <K> - the type of element
  */
 
 public final class ConstSet<K> implements Serializable, Set<K> {
-
-    /**
-     * This implements a modifiable set that can be used to construct a ConstSet.
-     *
-     * <p><b>Thread Safety:</b>  Not safe.
-     *
-     * @param <K> - the type of element
-     */
-    public static final class TempSet<K> {
-        /** The underlying set. */
-        private final LinkedHashSet<K> set;
-        /** Nonnull iff this set is no longer modifiable. */
-        private ConstSet<K> cset=null;
-        /** Construct a new empty modifiable TempSet. */
-        public TempSet()                     { this.set = new LinkedHashSet<K>(); }
-        /** Construct a new modifiable TempSet with the initial entries equal to the given set. */
-        public TempSet(Set<? extends K> set) { this.set = new LinkedHashSet<K>(set); }
-        /** Returns a String representation. */
-        @Override public String toString()   { return set.toString(); }
-        /** Return the number of entries in this set. */
-        public int size()                    { return set.size(); }
-        /** Return true if the given key is in the set. */
-        public boolean contains(Object k)    { return set.contains(k); }
-        /** Remove the element (if it exists). */
-        public void remove(K k)                  { if (cset!=null) throw new UnsupportedOperationException(); set.remove(k); }
-        /** Remove every element that appears in the given collection. */
-        public void removeAll(Collection<K> set) { if (cset!=null) throw new UnsupportedOperationException(); this.set.removeAll(set); }
-        /** Add the given element to the set. */
-        public void add(K k)                     { if (cset!=null) throw new UnsupportedOperationException(); set.add(k); }
-        /** Turn this TempSet unmodifiable, then construct a ConstSet backed by this TempSet. */
-        public ConstSet<K> makeConst()           { if (cset==null) { if (set.isEmpty()) cset=make(); else cset=new ConstSet<K>(set); } return cset; }
-    }
 
     /** This ensures the class can be serialized reliably. */
     private static final long serialVersionUID = 1L;
@@ -81,9 +47,9 @@ public final class ConstSet<K> implements Serializable, Set<K> {
     /** This caches a readonly empty Set. */
     private static final ConstSet<Object> emptyset = new ConstSet<Object>(new HashSet<Object>(1));
 
-    /** Construct an unmodifiable set containing the elements from the given set. */
+    /** Construct an unmodifiable map with the given set as the backing store. */
     private ConstSet(Set<? extends K> set) {
-        this.set=Collections.unmodifiableSet(set);
+        this.set = Collections.unmodifiableSet(set);
     }
 
     /** Return an unmodifiable empty set. */
@@ -98,16 +64,11 @@ public final class ConstSet<K> implements Serializable, Set<K> {
      */
     public static<K> ConstSet<K> make(Set<K> set) {
         if (set instanceof ConstSet) return (ConstSet<K>)set;
-        if (set==null || set.isEmpty()) return make();
-        return new ConstSet<K>(new LinkedHashSet<K>(set));
+        if (set==null || set.isEmpty()) return make(); else return new ConstSet<K>(new LinkedHashSet<K>(set));
     }
 
     /** {@inheritDoc} */
-    @Override public boolean equals(Object that) {
-        if (this==that) return true;
-        if (!(that instanceof Set)) return false;
-        return set.equals(that);
-    }
+    @Override public boolean equals(Object that) { return this==that || set.equals(that); }
 
     /** {@inheritDoc} */
     @Override public int hashCode() { return set.hashCode(); }
@@ -116,7 +77,7 @@ public final class ConstSet<K> implements Serializable, Set<K> {
     @Override public String toString() { return set.toString(); }
 
     /** {@inheritDoc} */
-    public boolean contains(Object o) { return set.contains(o); }
+    public boolean contains(Object element) { return set.contains(element); }
 
     /** {@inheritDoc} */
     public Iterator<K> iterator() { return set.iterator(); }
@@ -125,10 +86,10 @@ public final class ConstSet<K> implements Serializable, Set<K> {
     public Object[] toArray() { return set.toArray(); }
 
     /** {@inheritDoc} */
-    public <T> T[] toArray(T[] a) { return set.toArray(a); }
+    public <T> T[] toArray(T[] array) { return set.toArray(array); }
 
     /** {@inheritDoc} */
-    public boolean containsAll(Collection<?> c) { return set.containsAll(c); }
+    public boolean containsAll(Collection<?> collection) { return set.containsAll(collection); }
 
     /** {@inheritDoc} */
     public int size() { return set.size(); }
@@ -137,19 +98,19 @@ public final class ConstSet<K> implements Serializable, Set<K> {
     public boolean isEmpty() { return set.isEmpty(); }
 
     /** This set is readonly, so this method always throws UnsupportedOperationException. */
-    public boolean add(K o) { throw new UnsupportedOperationException(); }
+    public boolean add(K element) { throw new UnsupportedOperationException(); }
 
     /** This set is readonly, so this method always throws UnsupportedOperationException. */
-    public boolean addAll(Collection<? extends K> c) { throw new UnsupportedOperationException(); }
+    public boolean addAll(Collection<? extends K> collection) { throw new UnsupportedOperationException(); }
 
     /** This set is readonly, so this method always throws UnsupportedOperationException. */
-    public boolean remove(Object o) { throw new UnsupportedOperationException(); }
+    public boolean remove(Object element) { throw new UnsupportedOperationException(); }
 
     /** This set is readonly, so this method always throws UnsupportedOperationException. */
-    public boolean removeAll(Collection<?> c) { throw new UnsupportedOperationException(); }
+    public boolean removeAll(Collection<?> collection) { throw new UnsupportedOperationException(); }
 
     /** This set is readonly, so this method always throws UnsupportedOperationException. */
-    public boolean retainAll(Collection<?> c) { throw new UnsupportedOperationException(); }
+    public boolean retainAll(Collection<?> collection) { throw new UnsupportedOperationException(); }
 
     /** This set is readonly, so this method always throws UnsupportedOperationException. */
     public void clear() { throw new UnsupportedOperationException(); }

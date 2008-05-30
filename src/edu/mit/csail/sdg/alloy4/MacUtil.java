@@ -43,7 +43,7 @@ public final class MacUtil {
     private MacUtil() { }
 
     /** The cached Application object. */
-    private static Application application = null;
+    private static Application app = null;
 
     /** The previous listener (or null if there was none). */
     private static ApplicationListener listener = null;
@@ -57,29 +57,25 @@ public final class MacUtil {
      */
     public synchronized static void registerApplicationListener
     (final Runnable reopen, final Runnable about, final Runner open, final Runnable quit) {
-        if (application==null) {
-            application=new Application();
-        } else if (listener!=null) {
-            application.removeApplicationListener(listener);
-        }
-        listener=new ApplicationAdapter() {
-            @Override public final void handleReOpenApplication (final ApplicationEvent arg) {
+        if (app==null) app = new Application(); else if (listener!=null) app.removeApplicationListener(listener);
+        listener = new ApplicationAdapter() {
+            @Override public void handleReOpenApplication (final ApplicationEvent arg) {
                 SwingUtilities.invokeLater(reopen);
             }
-            @Override public final void handleAbout (final ApplicationEvent arg) {
+            @Override public void handleAbout (final ApplicationEvent arg) {
                 arg.setHandled(true);
                 SwingUtilities.invokeLater(about);
             }
-            @Override public final void handleOpenFile (final ApplicationEvent arg) {
+            @Override public void handleOpenFile (final ApplicationEvent arg) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public final void run() { open.run(arg.getFilename()); }
                 });
             }
-            @Override public final void handleQuit (final ApplicationEvent arg) {
+            @Override public void handleQuit (final ApplicationEvent arg) {
                 OurUtil.invokeAndWait(quit);
                 arg.setHandled(false); // "false" is correct; some documentation on apple.com claimed otherwise.
             }
         };
-        application.addApplicationListener(listener);
+        app.addApplicationListener(listener);
     }
 }
