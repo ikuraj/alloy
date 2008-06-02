@@ -84,8 +84,7 @@ public abstract class OurCheckbox extends JPanel {
         });
         box.setMaximumSize(box.getPreferredSize());
         box.setToolTipText(tooltip);
-        jlabel = OurUtil.label(OurUtil.getVizFont(), label);
-        jlabel.setToolTipText(tooltip);
+        jlabel = OurUtil.label(label, tooltip);
         if (icon==ON || icon==OFF) { add(box); add(jlabel); } else { add(jlabel); add(box); }
         setAlignmentX(RIGHT_ALIGNMENT);
     }

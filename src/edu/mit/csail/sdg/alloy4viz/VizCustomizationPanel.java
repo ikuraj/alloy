@@ -137,8 +137,8 @@ public final class VizCustomizationPanel extends JPanel {
         else if (Integer.valueOf(3).equals(x)) createDefaultEdgeWidget(zoomPane);
         else {
             // The following 2 lines make sure the panel doesn't get too small on Mac
-            zoomPane.add(OurUtil.makeH(wcolor,new JLabel(" "),(Object)null));
-            zoomPane.add(OurUtil.makeBox(250,200,wcolor,(Object)null));
+            zoomPane.add(OurUtil.makeH(wcolor, new JLabel(" "), (Object)null));
+            zoomPane.add(OurUtil.makeBox(250, 200, wcolor, (Object)null));
         }
         Dimension dim = zoomPane.getPreferredSize();
         if (divider!=null && divider.getDividerLocation()<dim.width) divider.setDividerLocation(dim.width);
@@ -292,15 +292,11 @@ public final class VizCustomizationPanel extends JPanel {
           }
 
         // Now, generate the tree
-        final JTree tree = new JTree(top);
-        tree.setOpaque(true);
+        final JTree tree = OurUtil.make(new JTree(top), Color.BLACK, Color.WHITE, new EmptyBorder(8,8,2,2));
         tree.setRootVisible(false);
         tree.setRowHeight(0); // To allow variable row height on Mac OS X
         tree.setCellRenderer(new OurRenderer());
         tree.setShowsRootHandles(false);
-        tree.setBorder(new EmptyBorder(8,8,2,2));
-        tree.setFont(OurUtil.getVizFont());
-        tree.setBackground(Color.WHITE);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.addTreeSelectionListener(new TreeSelectionListener() {
             public final void valueChanged(TreeSelectionEvent e) {
@@ -313,12 +309,9 @@ public final class VizCustomizationPanel extends JPanel {
         });
 
         // Remove the old widgets on display, and show these new widgets
-        widgetsScrollPane = new JScrollPane(tree);
-        widgetsScrollPane.setBackground(Color.WHITE);
+        widgetsScrollPane = OurUtil.scrollpane(tree, Color.BLACK, Color.WHITE, Util.onMac() ? new OurBorder(false,false,false,true) : null);
         widgetsScrollPane.setAlignmentX(0f);
         widgetsScrollPane.getVerticalScrollBar().setUnitIncrement(50);
-        if (Util.onMac()) widgetsScrollPane.setBorder(new OurBorder(false,false,false,true));
-        else widgetsScrollPane.setBorder(new EmptyBorder(0,0,0,0));
 
         // Pre-expand the entire tree
         for (int i=0; i<tree.getRowCount(); i++) tree.expandRow(i);
@@ -437,7 +430,7 @@ public final class VizCustomizationPanel extends JPanel {
            public final void focusGained(FocusEvent e) { }
            public final void focusLost(FocusEvent e)   { vizState.label.put(rel, labelText.getText()); }
         });
-        final JLabel weightLabel = OurUtil.label(OurUtil.getVizFont(), "Weight:");
+        final JLabel weightLabel = OurUtil.label("Weight:");
         final JSpinner weightSpinner = new JSpinner(new SpinnerNumberModel(vizState.weight.get(rel), 0, 999, 1));
         weightSpinner.setMaximumSize(weightSpinner.getPreferredSize());
         weightSpinner.setToolTipText("A higher weight will cause the edge to be shorter and straighter.");
@@ -457,7 +450,7 @@ public final class VizCustomizationPanel extends JPanel {
             public void stateChanged(ChangeEvent e) { vizState.weight.put(rel, (Integer) (weightSpinner.getValue())); }
         });
         JPanel weightPanel = OurUtil.makeH(weightLabel, 5, weightSpinner);
-        weightPanel.setBorder(new EmptyBorder(5,5,5,5));
+        weightPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         weightPanel.setAlignmentY(0.5f);
         weightPanel.setToolTipText("A higher weight will cause the edge to be shorter and straighter.");
         OurCombobox color = new OurCombobox(true, DotColor.values(DotColor.WHITE), 110, 35, vizState.edgeColor.get(rel)) {
@@ -489,12 +482,12 @@ public final class VizCustomizationPanel extends JPanel {
     /** Generates the "general graph settings" widgets, and add them to "parent". */
     private void createGeneralWidget(JPanel parent) {
         final List<Object> fontSizes = Util.asList((Object)9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72);
-        JLabel nLabel = OurUtil.label(OurUtil.getVizFont(), "Node Color Palette:");
-        JLabel eLabel = OurUtil.label(OurUtil.getVizFont(), "Edge Color Palette:");
-        JLabel aLabel = OurUtil.label(OurUtil.getVizFont(), "Use original atom names:");
-        JLabel pLabel = OurUtil.label(OurUtil.getVizFont(), "Hide private sigs/relations:");
-        JLabel mLabel = OurUtil.label(OurUtil.getVizFont(), "Hide meta sigs/relations:");
-        JLabel fLabel = OurUtil.label(OurUtil.getVizFont(), "Font Size:");
+        JLabel nLabel = OurUtil.label("Node Color Palette:");
+        JLabel eLabel = OurUtil.label("Edge Color Palette:");
+        JLabel aLabel = OurUtil.label("Use original atom names:");
+        JLabel pLabel = OurUtil.label("Hide private sigs/relations:");
+        JLabel mLabel = OurUtil.label("Hide meta sigs/relations:");
+        JLabel fLabel = OurUtil.label("Font Size:");
         JComboBox fontSize = new OurCombobox(false, fontSizes, 60, 32, vizState.getFontSize()) {
             private static final long serialVersionUID = 1L;
             @Override public void do_changed(Object value) { if (fontSizes.contains(value)) vizState.setFontSize((Integer)value); }
@@ -600,7 +593,7 @@ public final class VizCustomizationPanel extends JPanel {
     }
 
     /** Generates a black JLabel for the given String. */
-    private JLabel makelabel(String label) { return OurUtil.label(OurUtil.getVizFont().deriveFont(Font.BOLD), label); }
+    private JLabel makelabel(String label) { return OurUtil.label(label, OurUtil.getVizFont().deriveFont(Font.BOLD)); }
 
     /** Project over the given type if we are allowed to. */
     private void projectAlloyType(AlloyType type) { vizState.project(type); remakeAll(); }

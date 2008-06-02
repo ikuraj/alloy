@@ -52,6 +52,7 @@ import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
@@ -65,12 +66,31 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 public final class OurUtil {
 
+    /** An empty border. */
+    public static final EmptyBorder empty = new EmptyBorder(0, 0, 0, 0);
+
     /** This constructor is private, since this utility class never needs to be instantiated. */
     private OurUtil() { }
 
+    /** Make a JComponent with the given font. */
+    public static<X extends JComponent> X make(X ans, Object... attributes) {
+        boolean hasFont = false;
+        boolean hasForeground = false;
+        if (attributes!=null) for(int i=0; i<attributes.length; i++) {
+            Object at = attributes[i];
+            if (at instanceof Font) { ans.setFont((Font)at); hasFont=true; }
+            if (at instanceof Color && !hasForeground) { ans.setForeground((Color)at); hasForeground=true; continue; }
+            if (at instanceof Color) { ans.setBackground((Color)at); ans.setOpaque(true); }
+            if (at instanceof String) { ans.setToolTipText((String)at); }
+            if (at instanceof Border) { ans.setBorder((Border)at); }
+        }
+        if (!hasFont) ans.setFont(getVizFont());
+        return ans;
+    }
+
     /** Returns the recommended font to use in the visualizer, based on the OS. */
     public static Font getVizFont() {
-        return Util.onMac() ? new Font("Lucida Grande",Font.PLAIN,11) : new Font("Dialog",Font.PLAIN,12);
+        return Util.onMac() ? new Font("Lucida Grande", Font.PLAIN, 11) : new Font("Dialog", Font.PLAIN, 12);
     }
 
     /** Returns the screen height (in pixels). */
@@ -102,7 +122,7 @@ public final class OurUtil {
      * @param iconname - the filename of the icon to show (it will be loaded from an accompanying jar file)
      * @param func - the function to call when the button is pressed (null if we don't want to call any function)
      */
-    public static JButton button(String label, String tip, String iconname, ActionListener func) {
+    public static JButton button (String label, String tip, String iconname, ActionListener func) {
         JButton button = new JButton(label, (iconname!=null && iconname.length()>0) ? loadIcon(iconname) : null);
         if (func!=null) button.addActionListener(func);
         button.setVerticalTextPosition(JButton.BOTTOM);
@@ -116,30 +136,25 @@ public final class OurUtil {
     }
 
     /** Make a JTextField. */
-    public static JTextField textfield(String text, int columns) {
+    public static JTextField textfield (String text, int columns, Object... attributes) {
         JTextField answer = new JTextField(text, columns);
-        return answer;
+        return make(answer, attributes);
     }
 
     /** Make a JTextArea. */
-    public static JTextArea textarea(String text, int rows, int columns) {
-        JTextArea answer = new JTextArea(text, rows, columns);
-        return answer;
+    public static JTextArea textarea (String text, int rows, int columns, boolean editable, boolean wrap, Object... attributes) {
+        JTextArea ans = new JTextArea(text, rows, columns);
+        ans.setForeground(Color.BLACK);
+        ans.setBackground(Color.WHITE);
+        ans.setEditable(editable);
+        ans.setLineWrap(wrap);
+        ans.setWrapStyleWord(wrap);
+        ans.setBorder(null);
+        return make(ans, attributes);
     }
 
     /** Make a JLabel with the given font. */
-    public static JLabel label(Font font, String label) {
-        JLabel answer = new JLabel(label);
-        answer.setFont(font);
-        return answer;
-    }
-
-    /** Make a JLabel with the given color. */
-    public static JLabel label(Color color, String label) {
-        JLabel answer = label(getVizFont(), label);
-        answer.setForeground(color);
-        return answer;
-    }
+    public static JLabel label (String label, Object... attributes) { return make(new JLabel(label), attributes); }
 
     /** Load the given image file from an accompanying JAR file, and return it as an Icon object. */
     public static Icon loadIcon(String pathname) {
@@ -183,7 +198,7 @@ public final class OurUtil {
             if (a[i] instanceof Component) {
                 c = (Component)(a[i]);
             } else if (a[i] instanceof String) {
-                c = label(Color.BLACK, (String)(a[i]));
+                c = label((String)(a[i]), Color.BLACK);
             } else if (a[i] instanceof Integer) {
                 Dimension d = (w>=h) ? new Dimension((Integer)a[i], 1) : new Dimension(1, (Integer)a[i]);
                 c = Box.createRigidArea(d);
@@ -220,7 +235,7 @@ public final class OurUtil {
             if (a[i] instanceof Component) {
                 c=(Component)(a[i]);
             } else if (a[i] instanceof String) {
-                c=label(Color.BLACK, (String)(a[i]));
+                c=label((String)(a[i]), Color.BLACK);
             } else if (a[i] instanceof Integer) {
                 Dimension d = horizontal ?  new Dimension((Integer)a[i], 1) : new Dimension(1, (Integer)a[i]);
                 c = Box.createRigidArea(d);
@@ -296,20 +311,13 @@ public final class OurUtil {
      */
     public static JPanel makeVR(Object... a) { return makeBox(false, 1.0f, 0.5f, a); }
 
-    /** Make an empty JScrollPane; scrollbars will only show up as needed. */
-    public static JScrollPane scrollpane() {
-        JScrollPane ans = new JScrollPane(VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        ans.setMinimumSize(new Dimension(50, 50));
-        ans.setBorder(new EmptyBorder(0,0,0,0));
-        return ans;
-    }
-
     /** Make a JScrollPane containing the component; scrollbars will only show up as needed. */
-    public static JScrollPane scrollpane(Component component) {
-        JScrollPane ans = new JScrollPane(component, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    public static JScrollPane scrollpane (Component component, Object... attributes) {
+        JScrollPane ans = new JScrollPane(VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        if (component!=null) ans.setViewportView(component);
         ans.setMinimumSize(new Dimension(50, 50));
-        ans.setBorder(new EmptyBorder(0,0,0,0));
-        return ans;
+        ans.setBorder(null);
+        return make(ans, attributes);
     }
 
     /**
@@ -319,8 +327,7 @@ public final class OurUtil {
      * @param rightComp - the right component (if horizontal) or bottom component (if vertical)
      * @param initialDividerLocation - the initial divider location (in pixels)
      */
-    public static JSplitPane splitpane
-    (int orientation, Component leftComp, Component rightComp, int initialDividerLocation) {
+    public static JSplitPane splitpane (int orientation, Component leftComp, Component rightComp, int initialDividerLocation) {
         JSplitPane x = new JSplitPane(orientation, leftComp, rightComp);
         x.setBorder(null);
         x.setContinuousLayout(true);
@@ -361,7 +368,7 @@ public final class OurUtil {
      * @param mnemonic - the mnemonic (eg. KeyEvent.VK_F), or -1 if you don't want mnemonic
      * @param func - the function to call if the user expands this menu (or null if there is no function to call)
      */
-    public static JMenu makeMenu(JMenuBar parent, String label, int mnemonic, final Runnable func) {
+    public static JMenu makeMenu (JMenuBar parent, String label, int mnemonic, final Runnable func) {
         final JMenu x = new JMenu(label, false);
         if (mnemonic!=-1 && !Util.onMac()) x.setMnemonic(mnemonic);
         x.addMenuListener(new MenuListener() {
@@ -381,7 +388,7 @@ public final class OurUtil {
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want an accelerator
      * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
      */
-    public static JMenuItem makeMenuItem(JMenu parent, String label, int mnemonic, int accel, final Runnable func) {
+    public static JMenuItem makeMenuItem (JMenu parent, String label, int mnemonic, int accel, final Runnable func) {
         JMenuItem x = new JMenuItem(label, null);
         if (mnemonic!=-1) x.setMnemonic(mnemonic);
         if (accel!=-1) {
@@ -406,8 +413,7 @@ public final class OurUtil {
      * @param accel - the accelerator (eg. KeyEvent.VK_F), or -1 if you don't want an accelerator
      * @param func - the runnable to run if the user clicks this item (or null if there is no runnable to run)
      */
-    public static JMenuItem makeMenuItem
-    (JMenu parent, String label, boolean enabled, int mnemonic, int accel, final ActionListener func) {
+    public static JMenuItem makeMenuItem (JMenu parent, String label, boolean enabled, int mnemonic, int accel, final ActionListener func) {
         JMenuItem x = new JMenuItem(label, null);
         if (mnemonic!=-1) x.setMnemonic(mnemonic);
         if (accel!=-1) {
@@ -427,7 +433,7 @@ public final class OurUtil {
      * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the "SHIFT" mask on top of it
      * @param func - the action listener to call if the user clicks this item (or null if there is no action to do)
      */
-    public static JMenuItem makeMenuItemWithShift(JMenu parent, String label, int accel, ActionListener func) {
+    public static JMenuItem makeMenuItemWithShift (JMenu parent, String label, int accel, ActionListener func) {
         JMenuItem x = new JMenuItem(label, null);
         int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
         x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.SHIFT_MASK));
@@ -443,7 +449,7 @@ public final class OurUtil {
      * @param accel - the accelerator (eg. KeyEvent.VK_F); we will add the "ALT" mask on top of it
      * @param func - the action listener to call if the user clicks this item (or null if there is no action to do)
      */
-    public static JMenuItem makeMenuItemWithAlt(JMenu parent, String label, int accel, ActionListener func) {
+    public static JMenuItem makeMenuItemWithAlt (JMenu parent, String label, int accel, ActionListener func) {
         JMenuItem x = new JMenuItem(label, null);
         int accelMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
         x.setAccelerator(KeyStroke.getKeyStroke(accel, accelMask | InputEvent.ALT_MASK));

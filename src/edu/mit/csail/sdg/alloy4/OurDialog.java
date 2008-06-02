@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Locale;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
@@ -44,8 +43,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
-import static javax.swing.JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED;
-import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED;
 
 /**
  * Graphical dialog methods for asking the user some questions.
@@ -247,16 +244,11 @@ public final class OurDialog {
     }
 
     /** Display a simple window showing some text. */
-    public static JFrame showtext(String title, String text, boolean autoLineWrap) {
+    public static JFrame showtext(String title, String text) {
         final JFrame window = new JFrame(title);
         final JButton done = new JButton("Close");
         done.addActionListener(Runner.createDispose(window));
-        JTextArea textarea = OurUtil.textarea(text, 20, 60);
-        textarea.setBackground(Color.WHITE);
-        textarea.setEditable(false);
-        textarea.setLineWrap(autoLineWrap);
-        textarea.setWrapStyleWord(autoLineWrap);
-        JScrollPane scrollPane = new JScrollPane(textarea, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        JScrollPane scrollPane = OurUtil.scrollpane(OurUtil.textarea(text, 20, 60, false, false));
         window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         window.getContentPane().setLayout(new BorderLayout());
         window.getContentPane().add(scrollPane, BorderLayout.CENTER);

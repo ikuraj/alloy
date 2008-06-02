@@ -61,7 +61,7 @@ public final strictfp class OurPNGWriter {
              int jump = (a1<<24) | (a2<<16) | (a3<<8) | a4;
              if (jump<0 || (total-pos)-12<jump) throw new IOException("PNG chunk size exceeds the rest of the file.");
              if ((b1=='I' && b2=='D' && b3=='A' && b4=='T') || (b1=='p' && b2=='H' && b3=='Y' && b4=='s')) {
-                Util.shift(f, (b1=='p' ? (pos+12+jump) : pos), pos+21); // skip over the original pHYs chunk if we see it
+                Util.shift(f, (b1=='p' ? (pos+12+jump) : pos), pos+21); // skip over the existing pHYs chunk if we see it
                 f.seek(pos);
                 writeDPI(f, dpiX, dpiY);
                 f.close();

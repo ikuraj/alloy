@@ -56,7 +56,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
-import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.OurBorder;
@@ -406,7 +405,7 @@ public final class VizGUI implements ComponentListener {
         toolbar = new JToolBar();
         toolbar.setVisible(false);
         toolbar.setFloatable(false);
-        toolbar.setBorder(new EmptyBorder(0,0,0,0));
+        toolbar.setBorder(null);
         if (!Util.onMac()) toolbar.setBackground(background);
         try {
             wrap = true;
@@ -566,9 +565,9 @@ public final class VizGUI implements ComponentListener {
                        "univ", false, " shows the list of all atoms.\n(You can press UP and DOWN to recall old inputs).\n");
                 evaluator.setSourceFile(xmlFileName);
                 left = myEvaluatorPanel;
-                left.setBorder(new OurBorder(false,false,false,false));
+                left.setBorder(new OurBorder(false, false, false, false));
             } else {
-                left=null;
+                left = null;
             }
             if (frame!=null && frame.getContentPane()==splitpane) lastDividerPosition=splitpane.getDividerLocation();
             splitpane.setRightComponent(instanceArea);
@@ -620,31 +619,14 @@ public final class VizGUI implements ComponentListener {
 
     /** Helper method that reads a file and then return a JTextArea containing it. */
     private JComponent getTextComponent(String filename) {
-        String text="";
-        try {
-            text="<!-- "+filename+" -->\n"+Util.readAll(filename);
-        } catch(IOException ex) {
-            text="# Error reading from "+filename;
-        }
-        return makeTextArea(text);
-    }
-
-    /** Helper method that returns a JScrollPane containing the given string in a JTextArea. */
-    private JScrollPane makeTextArea(final String text) {
-        final JTextArea t = OurUtil.textarea(text,10,10);
-        t.setBackground(Color.WHITE);
-        t.setEditable(false);
-        t.setLineWrap(true);
-        t.setWrapStyleWord(true);
-        JScrollPane ans=new JScrollPane(t,
-            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED) {
-                private static final long serialVersionUID = 1L;
-                @Override public void setFont(Font font) {
-                    t.setFont(font);
-                }
+        String text = "";
+        try { text="<!-- "+filename+" -->\n"+Util.readAll(filename); } catch(IOException ex) { text="# Error reading from "+filename; }
+        final JTextArea ta = OurUtil.textarea(text, 10, 10, false, true);
+        final JScrollPane ans = new JScrollPane(ta, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED) {
+            private static final long serialVersionUID = 1L;
+            @Override public void setFont(Font font) { ta.setFont(font); }
         };
-        ans.setBorder(new OurBorder(true,false,true,false));
+        ans.setBorder(new OurBorder(true, false, true, false));
         return ans;
     }
 

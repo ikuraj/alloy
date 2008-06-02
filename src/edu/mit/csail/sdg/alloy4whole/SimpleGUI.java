@@ -1370,11 +1370,7 @@ public final class SimpleGUI implements ComponentListener {
         final String JAR = Util.jarPrefix();
         String alloytxt;
         try {alloytxt=Util.readAll(JAR + "LICENSES" + File.separator + "Alloy.txt");} catch(IOException ex) {return null;}
-        final JTextArea text = OurUtil.textarea(alloytxt,15,85);
-        text.setEditable(false);
-        text.setLineWrap(false);
-        text.setBorder(new EmptyBorder(2,2,2,2));
-        text.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        final JTextArea text = OurUtil.textarea(alloytxt, 15, 85, false, false, new EmptyBorder(2, 2, 2, 2), new Font("Monospaced", Font.PLAIN, 12));
         final JComboBox combo = new OurCombobox(new String[]{"Alloy","Kodkod","JavaCup","SAT4J","ZChaff","MiniSat"}) {
             private static final long serialVersionUID = 1L;
             @Override public void do_changed(Object value) {
@@ -1389,8 +1385,7 @@ public final class SimpleGUI implements ComponentListener {
               text.setCaretPosition(0);
            }
         };
-        JScrollPane scroll = OurUtil.scrollpane(text);
-        scroll.setBorder(new LineBorder(Color.DARK_GRAY, 1));
+        JScrollPane scroll = OurUtil.scrollpane(text, new LineBorder(Color.DARK_GRAY, 1));
         Object[] array = {
            "The source code for the Alloy Analyzer is available under the MIT license.",
            " ",
@@ -1402,8 +1397,7 @@ public final class SimpleGUI implements ComponentListener {
            " ",
            scroll,
            OurUtil.makeH(null, dismiss, null)};
-        final JOptionPane about = new JOptionPane(array,
-           JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
+        final JOptionPane about = new JOptionPane(array, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[]{});
         final JDialog dialog = about.createDialog(null, "The Copyright Notices");
         dismiss.addActionListener(Runner.createDispose(dialog));
         dialog.setVisible(true);
@@ -1494,7 +1488,7 @@ public final class SimpleGUI implements ComponentListener {
         if (wrap) return wrapMe(arg);
         text.do_removeAllHighlights();
         if (arg.startsWith("MSG: ")) {
-            OurDialog.showtext("Detailed Message", arg.substring(5), false);
+            OurDialog.showtext("Detailed Message", arg.substring(5));
         }
         if (arg.startsWith("CORE: ")) {
             String filename = Util.canon(arg.substring(6));
@@ -1529,7 +1523,7 @@ public final class SimpleGUI implements ComponentListener {
         }
         if (arg.startsWith("CNF: ")) {
             String filename=Util.canon(arg.substring(5));
-            try { String text=Util.readAll(filename); OurDialog.showtext("Text Viewer", text, false); }
+            try { String text=Util.readAll(filename); OurDialog.showtext("Text Viewer", text); }
             catch(IOException ex) { log.logRed("Error reading the file \""+filename+"\"\n"); }
         }
         if (arg.startsWith("XML: ")) {
@@ -1754,7 +1748,7 @@ public final class SimpleGUI implements ComponentListener {
         }
 
         // Create the message area
-        logpane = OurUtil.scrollpane();
+        logpane = OurUtil.scrollpane(null);
         log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this, viz);
 
         // Create the text area
@@ -1774,11 +1768,10 @@ public final class SimpleGUI implements ComponentListener {
         lefthalf.add(text, BorderLayout.CENTER);
         splitpane = OurUtil.splitpane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, logpane, width/2);
         splitpane.setResizeWeight(0.5D);
-        all.add(splitpane, BorderLayout.CENTER);
-        all.add(status=OurUtil.label(new Font(fontName, Font.PLAIN, fontSize)," "), BorderLayout.SOUTH);
-        status.setBackground(background);
-        status.setOpaque(true);
+        status = OurUtil.label(" ", new Font(fontName, Font.PLAIN, fontSize), Color.BLACK, background);
         status.setBorder(new OurBorder(true,false,false,false));
+        all.add(splitpane, BorderLayout.CENTER);
+        all.add(status, BorderLayout.SOUTH);
 
         // Generate some informative log messages
         log.logBold("Alloy Analyzer "+Version.version()+" (build date: "+Version.buildDate()+")\n\n");

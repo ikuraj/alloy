@@ -50,8 +50,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED;
-import static javax.swing.JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED;
 import static javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_NEVER;
 import static javax.swing.JScrollPane.VERTICAL_SCROLLBAR_NEVER;
 import static java.awt.Color.BLACK;
@@ -85,30 +83,38 @@ public final class OurTabbedEditor extends JPanel {
 
     /** This defines the data associated with each tab. */
     private static final class Tab {
+
         /** The JLabel on top. */
         private final JLabel label;
+
         /** The JPanel containing the decoration around the JLabel. */
         private final JPanel panel;
+
         /** The text area. */
         private final OurTextArea text;
+
         /** The ScrollPane containing the text area. */
         private final JScrollPane scroll;
+
         /** The highlighter associated with this text area. */
         private final Highlighter highlighter = new DefaultHighlighter();
+
         /** The filename; always nonempty, canonical, absolute, and unique among all Tab objects in this editor. */
         private String filename;
+
         /** True if this is associated with an actual file; false if it is still an "untitled" tab. */
         private boolean isFile;
+
         /** True if the JTextArea has been modified since it was last loaded or saved. */
         private boolean modified = false;
+
         /** Constructs a new Tab */
         private Tab(JPanel panel, JLabel label, OurTextArea text, String filename, boolean isFile) {
             this.panel = panel;
             this.label = label;
             this.text = text;
             this.text.setHighlighter(highlighter);
-            this.scroll = new JScrollPane(text, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            this.scroll.setBorder(new EmptyBorder(0,0,0,0));
+            this.scroll = OurUtil.scrollpane(text);
             this.filename = filename;
             this.isFile = isFile;
         }
@@ -402,11 +408,7 @@ public final class OurTabbedEditor extends JPanel {
         // If exists, then switch to that tab directly
         if (do_switchToFilename(filename)) return;
         // Make the new tab
-        final JLabel lb = OurUtil.label(OurUtil.getVizFont().deriveFont(Font.BOLD), "");
-        lb.setOpaque(true);
-        lb.setBorder(new OurBorder(BORDER, BORDER, WHITE, BORDER));
-        lb.setBackground(WHITE);
-        lb.setForeground(BLACK);
+        final JLabel lb = OurUtil.label("", OurUtil.getVizFont().deriveFont(Font.BOLD), BLACK, WHITE, new OurBorder(BORDER, BORDER, WHITE, BORDER));
         lb.addMouseListener(new MouseAdapter() {
             @Override public final void mousePressed(MouseEvent e) {
                 for(int i=0; i<tabs.size(); i++) {
@@ -421,33 +423,14 @@ public final class OurTabbedEditor extends JPanel {
         JPanel h2 = OurUtil.makeH(3); h2.setBorder(new OurBorder(null, null, BORDER, null));
         JPanel pan;
         if (Util.onMac()) {
-            pan=OurUtil.makeVL(null, 2, OurUtil.makeHB(h4, lb, h2));
+            pan = OurUtil.makeVL(null, 2, OurUtil.makeHB(h4, lb, h2));
         } else {
-            pan=OurUtil.makeVL(null, 2, OurUtil.makeHB(h4, lb, h2, GRAY), GRAY);
+            pan = OurUtil.makeVL(null, 2, OurUtil.makeHB(h4, lb, h2, GRAY), GRAY);
         }
         pan.setAlignmentX(0.0f);
         pan.setAlignmentY(1.0f);
         // Make the JTextArea
         final OurTextArea text = new OurTextArea(syntaxHighlighting, Util.convertLineBreak(fileContent), fontFamily, fontSize, tabSize);
-        text.setBackground(Color.WHITE);
-        text.setBorder(new EmptyBorder(1, 1, 1, 1));
-        if (!Util.onMac()) {
-            text.getActionMap().put("my_copy", new AbstractAction("my_copy") {
-                private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.copy(); notifyChange.run(); }
-            });
-            text.getActionMap().put("my_cut", new AbstractAction("my_cut") {
-                private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.cut(); notifyChange.run(); }
-            });
-            text.getActionMap().put("my_paste", new AbstractAction("my_paste") {
-                private static final long serialVersionUID = 1L;
-                public final void actionPerformed(ActionEvent e) { text.paste(); notifyChange.run(); }
-            });
-            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "my_copy");
-            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "my_cut");
-            text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.SHIFT_MASK), "my_paste");
-        }
         text.getActionMap().put("my_next", new AbstractAction("my_next") {
             private static final long serialVersionUID = 1L;
             public final void actionPerformed(ActionEvent e) {

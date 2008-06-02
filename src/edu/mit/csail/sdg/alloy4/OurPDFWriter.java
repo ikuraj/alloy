@@ -89,7 +89,6 @@ public final strictfp class OurPDFWriter {
      * @throws IOException if an error occurred in opening or writing to the file
      */
     public OurPDFWriter(int dpi, String filename) throws IOException {
-        // Initialize various data structures
         if (dpi<50 || dpi>3000) throw new IllegalArgumentException("The DPI must be between 50 and 3000");
         width = dpi*8L + (dpi/2L); // "8.5 inch"
         height = dpi*11L;          // "11 inch"

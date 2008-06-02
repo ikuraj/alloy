@@ -286,11 +286,11 @@ final class SwingLogPanel {
         final JScrollPane parent, String fontName, int fontSize,
         final Color background, final Color regular, final Color red,
         final SimpleGUI handler, final VizGUI viz) {
-        this.handler=handler;
-        this.viz=viz;
-        this.fontName=fontName;
-        this.fontSize=fontSize;
-        this.log=new JTextPane();
+        this.handler = handler;
+        this.viz = viz;
+        this.fontName = fontName;
+        this.fontSize = fontSize;
+        this.log = OurUtil.make(new JTextPane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
         this.log.setEditorKit(new StyledEditorKit() {
@@ -298,25 +298,16 @@ final class SwingLogPanel {
             @Override public final ViewFactory getViewFactory() {
                 return new ViewFactory() {
                     public final View create(Element x) {
-                        if (!AbstractDocument.SectionElementName.equals(x.getName())) {
-                            return defaultFactory.create(x);
-                        }
+                        if (!AbstractDocument.SectionElementName.equals(x.getName())) return defaultFactory.create(x);
                         return new BoxView(x, View.Y_AXIS) {
-                            @Override public final float getMinimumSpan(int axis) {
-                                return super.getPreferredSpan(axis);
-                            }
-                            @Override public final void layout(int width,int height) {
-                                super.layout(30000, height);
-                            }
+                            @Override public final float getMinimumSpan(int axis) { return super.getPreferredSpan(axis); }
+                            @Override public final void layout(int width,int height) { super.layout(30000, height); }
                         };
                     }
                 };
             }
         });
-        log.setBorder(new EmptyBorder(1,1,1,1));
-        log.setBackground(background);
         log.setEditable(false);
-        log.setFont(new Font(fontName, Font.PLAIN, fontSize));
         log.addFocusListener(new FocusListener() {
             public final void focusGained(FocusEvent e) { if (handler!=null) handler.notifyFocusLost(); }
             public final void focusLost(FocusEvent e) { }
@@ -354,12 +345,11 @@ final class SwingLogPanel {
     public void logLink(final String link, final String linkDestination) {
         if (log==null || link.length()==0) return;
         clearError();
-        StyledDocument doc=log.getStyledDocument();
-        Style linkStyle=doc.addStyle("link", styleRegular);
-        final JLabel label=OurUtil.label(linkColor, link);
+        StyledDocument doc = log.getStyledDocument();
+        Style linkStyle = doc.addStyle("link", styleRegular);
+        final JLabel label = OurUtil.label(link, new Font(fontName, Font.BOLD, fontSize), linkColor);
         label.setAlignmentY(0.8f);
         label.setMaximumSize(label.getPreferredSize());
-        label.setFont(new Font(fontName, Font.BOLD, fontSize));
         label.addMouseListener(new MouseListener(){
             public final void mousePressed(MouseEvent e) { if (handler!=null) handler.doVisualize(linkDestination); }
             public final void mouseClicked(MouseEvent e) { }

@@ -30,7 +30,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 import edu.mit.csail.sdg.alloy4.ConstMap;
 import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -188,7 +187,7 @@ public final class DotGraph {
         final String result=write();
         final VizGraph graph=write2();
         VizViewer gp = new VizViewer(graph);
-        gp.setBorder(new EmptyBorder(0,0,0,0));
+        gp.setBorder(null);
         gp.alloySetAnnotation(result);
         return new Pair<String,JPanel>(result,gp);
     }

@@ -49,7 +49,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
-import javax.swing.border.EmptyBorder;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
@@ -132,7 +131,7 @@ public final class VizGraphPanel extends JPanel {
             Collections.sort(atoms);
             this.atoms=Collections.unmodifiableList(atoms);
             setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-            setBorder(new EmptyBorder(0,0,0,0));
+            setBorder(null);
             this.atomnames=new String[this.atoms.size()];
             for(int i=0; i<this.atoms.size(); i++) {
                 atomnames[i]=this.atoms.get(i).getVizName(vizState,true);
@@ -190,19 +189,14 @@ public final class VizGraphPanel extends JPanel {
      * @param seeDot - true if we want to see the DOT source code, false if we want it rendered as a graph
      */
     public VizGraphPanel(VizState vizState, boolean seeDot) {
-        this.seeDot=seeDot;
+        OurUtil.make(this, Color.BLACK, Color.WHITE, OurUtil.empty);
+        this.seeDot = seeDot;
+        this.vizState = vizState;
         setLayout(new GridLayout());
-        setBackground(Color.WHITE);
         setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
-        setBorder(null);
-        this.vizState=vizState;
         navPanel = new JPanel();
-        JScrollPane navscroll = new JScrollPane(navPanel);
-        navscroll.setBorder(null);
-        graphPanel = new JPanel();
-        graphPanel.setOpaque(true);
-        graphPanel.setBorder(null);
-        graphPanel.setBackground(Color.WHITE);
+        JScrollPane navscroll = OurUtil.scrollpane(navPanel);
+        graphPanel = OurUtil.make(new JPanel(), Color.BLACK, Color.WHITE, OurUtil.empty);
         graphPanel.addMouseListener(new MouseAdapter() {
            @Override public void mousePressed(MouseEvent ev) {
                // We let Ctrl+LeftClick bring up the popup menu, just like RightClick,
@@ -214,7 +208,7 @@ public final class VizGraphPanel extends JPanel {
                viewer.alloyPopup(graphPanel, ev.getX(), ev.getY());
            }
         });
-        diagramScrollPanel = new JScrollPane(graphPanel);
+        diagramScrollPanel = OurUtil.scrollpane(graphPanel, new OurBorder(true,true,true,false));
         diagramScrollPanel.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
             public void adjustmentValueChanged(AdjustmentEvent e) {
                 diagramScrollPanel.invalidate(); diagramScrollPanel.repaint(); diagramScrollPanel.validate();
@@ -225,7 +219,6 @@ public final class VizGraphPanel extends JPanel {
                 diagramScrollPanel.invalidate(); diagramScrollPanel.repaint(); diagramScrollPanel.validate();
             }
         });
-        diagramScrollPanel.setBorder(new OurBorder(true,true,true,false));
         split = OurUtil.splitpane(JSplitPane.VERTICAL_SPLIT, diagramScrollPanel, navscroll, 0);
         split.setResizeWeight(1.0);
         split.setDividerSize(0);
@@ -250,14 +243,9 @@ public final class VizGraphPanel extends JPanel {
         currentProjection=new AlloyProjection(map);
         JPanel graph=vizState.getGraph(currentProjection).b;
         if (seeDot && (graph instanceof VizViewer)) {
-            viewer=null;
-            final JTextArea t = OurUtil.textarea(((VizViewer)graph).alloyGetAnnotation(), 10, 10);
-            t.setFont(getFont());
-            t.setBackground(Color.WHITE);
-            t.setEditable(false);
-            t.setLineWrap(true);
-            t.setWrapStyleWord(true);
-            diagramScrollPanel.setViewportView(t);
+            viewer = null;
+            JTextArea txt = OurUtil.textarea(((VizViewer)graph).alloyGetAnnotation(), 10, 10, false, true, getFont());
+            diagramScrollPanel.setViewportView(txt);
         } else {
             if (graph instanceof VizViewer) viewer=(VizViewer)graph; else viewer=null;
             graphPanel.removeAll();

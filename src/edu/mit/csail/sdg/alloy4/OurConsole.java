@@ -109,12 +109,10 @@ public final class OurConsole extends JScrollPane {
 
     /** This helper method constructs a JTextPane with the given settings. */
     private JTextPane do_makeTextPane(boolean editable, int topMargin, int bottomMargin, int otherMargin) {
-        JTextPane x = new JTextPane();
-        x.setFont(new Font("Verdana", Font.PLAIN, 16));
+        JTextPane x = OurUtil.make(new JTextPane(), Color.BLACK, Color.WHITE, new Font("Verdana", Font.PLAIN, 16));
         x.setEditable(editable);
         x.setAlignmentX(0);
         x.setAlignmentY(0);
-        x.setBackground(Color.WHITE);
         x.setCaretPosition(0);
         x.setMargin(new Insets(topMargin, otherMargin, bottomMargin, otherMargin));
         return x;

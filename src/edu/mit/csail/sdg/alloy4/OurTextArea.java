@@ -22,7 +22,14 @@
 
 package edu.mit.csail.sdg.alloy4;
 
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import javax.swing.AbstractAction;
 import javax.swing.JTextPane;
+import javax.swing.KeyStroke;
+import javax.swing.border.EmptyBorder;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
@@ -74,6 +81,26 @@ public final class OurTextArea extends JTextPane {
         doc.do_setTabSize(this, tabSize);
         if (text.length()>0) { setText(text); setCaretPosition(0); }
         doc.do_clearUndo();
+        setBackground(Color.WHITE);
+        setBorder(new EmptyBorder(1, 1, 1, 1));
+        getActionMap().put("alloy_copy", new AbstractAction("alloy_copy") {
+            private static final long serialVersionUID = 1L;
+            public final void actionPerformed(ActionEvent e) { copy(); }
+        });
+        getActionMap().put("alloy_cut", new AbstractAction("alloy_cut") {
+            private static final long serialVersionUID = 1L;
+            public final void actionPerformed(ActionEvent e) { cut(); }
+        });
+        getActionMap().put("alloy_paste", new AbstractAction("alloy_paste") {
+            private static final long serialVersionUID = 1L;
+            public final void actionPerformed(ActionEvent e) { paste(); }
+        });
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), "alloy_copy");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK), "alloy_cut");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), "alloy_paste");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.CTRL_MASK), "alloy_copy");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, InputEvent.SHIFT_MASK), "alloy_paste");
+        getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, InputEvent.SHIFT_MASK), "alloy_cut");
     }
 
     /** Changes the font for the document. */

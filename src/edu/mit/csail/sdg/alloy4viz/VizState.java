@@ -32,7 +32,6 @@ import java.util.TreeSet;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.OurCheckbox;
 import edu.mit.csail.sdg.alloy4.OurUtil;
@@ -182,8 +181,7 @@ public final class VizState {
             cache.put(projectionChoice,ans);
         } catch(Throwable ex) {
             String msg = "An error has occurred: "+ex+"\n\nStackTrace:\n"+MailBug.dump(ex)+"\nRaw Dot:\n\n"+graph.write();
-            JTextArea message = OurUtil.textarea(msg, 0, 0);
-            JScrollPane scroll = OurUtil.scrollpane(message);
+            JScrollPane scroll = OurUtil.scrollpane(OurUtil.textarea(msg, 0, 0, false, false));
             ans=new Pair<String,JPanel>("",new JPanel());
             ans.b.setLayout(new BorderLayout());
             ans.b.add(scroll, BorderLayout.CENTER);

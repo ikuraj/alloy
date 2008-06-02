@@ -29,12 +29,12 @@ import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Vector;
-import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
+import javax.swing.border.EmptyBorder;
 
 /**
  * Graphical combobox.
@@ -60,7 +60,7 @@ public class OurCombobox extends JComboBox {
             setOpaque(true);
             setText(do_getText(value));
             setIcon(do_getIcon(value));
-            setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 0));
+            setBorder(new EmptyBorder(0, 2, 0, 0));
             setBackground(selected ? list.getSelectionBackground() : list.getBackground());
             setForeground(selected ? list.getSelectionForeground() : list.getForeground());
             return this;
@@ -114,7 +114,7 @@ public class OurCombobox extends JComboBox {
             setMaximumSize(new Dimension(width, height));
         }
         if (!Util.onWindows() && !Util.onMac() && width>0 && height>0) {
-            setBorder(BorderFactory.createEmptyBorder(4, 3, 4, 0));
+            setBorder(new EmptyBorder(4, 3, 4, 0));
         }
         if (initialValue!=null) setSelectedItem(initialValue);
         addActionListener(new ActionListener() {

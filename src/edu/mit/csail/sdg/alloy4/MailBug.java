@@ -45,6 +45,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
+import static edu.mit.csail.sdg.alloy4.OurUtil.empty;
 
 /**
  * This class asks the user for permission to email a bug report when an uncaught exception occurs.
@@ -84,13 +85,10 @@ public final class MailBug implements UncaughtExceptionHandler {
     public synchronized void uncaughtException (Thread thread, Throwable ex) {
         final String yes = "Send the Bug Report";
         final String no = "Don't Send the Bug Report";
-        final JTextField email = OurUtil.textfield("", 20);
-        final JTextArea problem = OurUtil.textarea("", 50, 50);
-        email.setBorder(new LineBorder(Color.DARK_GRAY));
-        problem.setBorder(null);
-        final JScrollPane scroll = OurUtil.scrollpane(problem);
+        final JTextField email = OurUtil.textfield("", 20, new LineBorder(Color.DARK_GRAY));
+        final JTextArea problem = OurUtil.textarea("", 50, 50, true, false, empty);
+        final JScrollPane scroll = OurUtil.scrollpane(problem, new LineBorder(Color.DARK_GRAY));
         scroll.setPreferredSize(new Dimension(300,200));
-        scroll.setBorder(new LineBorder(Color.DARK_GRAY));
         if (ex instanceof OutOfMemoryError || ex instanceof StackOverflowError) {
             JOptionPane.showMessageDialog(null, new Object[] {
                     "Sorry. Alloy4 has run out of memory.",
@@ -172,15 +170,8 @@ public final class MailBug implements UncaughtExceptionHandler {
             done.addActionListener(new ActionListener() {
                public void actionPerformed(ActionEvent e) { System.exit(1); }
             });
-            final JTextArea status = OurUtil.textarea("Sending the bug report... please wait...", 10, 40);
-            status.setEditable(false);
-            status.setLineWrap(true);
-            status.setWrapStyleWord(true);
-            status.setBackground(Color.WHITE);
-            status.setForeground(Color.BLACK);
-            status.setBorder(new EmptyBorder(2,2,2,2));
-            final JScrollPane statusPane = new JScrollPane(status);
-            statusPane.setBorder(null);
+            final JTextArea status = OurUtil.textarea("Sending the bug report... please wait...", 10, 40, false, true, new EmptyBorder(2,2,2,2));
+            final JScrollPane statusPane = OurUtil.scrollpane(status);
             statusWindow.setTitle("Sending Bug Report");
             statusWindow.setBackground(Color.LIGHT_GRAY);
             statusWindow.getContentPane().setLayout(new BorderLayout());

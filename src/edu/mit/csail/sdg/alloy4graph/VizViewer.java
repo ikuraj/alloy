@@ -52,7 +52,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import edu.mit.csail.sdg.alloy4.OurDialog;
@@ -60,6 +59,7 @@ import edu.mit.csail.sdg.alloy4.OurPDFWriter;
 import edu.mit.csail.sdg.alloy4.OurPNGWriter;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 import edu.mit.csail.sdg.alloy4.Util;
+import static edu.mit.csail.sdg.alloy4.OurUtil.empty;
 
 /**
  * This class displays the graph.
@@ -131,10 +131,8 @@ public final strictfp class VizViewer extends JPanel {
 
     /** Construct a VizViewer that displays the given graph. */
     public VizViewer(final VizGraph graph) {
-        scale=graph.getDefaultScale();
-        setOpaque(true);
-        setBackground(WHITE);
-        setBorder(new EmptyBorder(0,0,0,0));
+        OurUtil.make(this, BLACK, WHITE, empty);
+        this.scale = graph.getDefaultScale();
         this.graph = graph;
         graph.layout();
         final JMenuItem zoomIn = new JMenuItem("Zoom In");
@@ -237,8 +235,7 @@ public final strictfp class VizViewer extends JPanel {
     private boolean recursive=false;
 
     /** This updates the three input boxes and the three accompanying text labels, then return the width in pixels. */
-    private int alloyRefresh
-    (int who, double ratio, JTextField w1, JLabel w2, JTextField h1, JLabel h2, JTextField d1, JLabel d2, JLabel msg) {
+    private int alloyRefresh (int who, double ratio, JTextField w1, JLabel w2, JTextField h1, JLabel h2, JTextField d1, JLabel d2, JLabel msg) {
        if (recursive) return 0;
        try {
           recursive=true;
@@ -286,15 +283,14 @@ public final strictfp class VizViewer extends JPanel {
        if (ih>11D) { ih=11D; iw=((int)(ih*100*ratio))/100D; } // If too tall, then set height=11inch, and compute width accordingly
        synchronized(VizViewer.class) { dpi=oldDPI; }
        // Prepare the dialog box
-       final JLabel msg=new JLabel(" ");
-       msg.setForeground(Color.RED);
-       final JLabel w=new JLabel("Width: "+((int)(graph.getTotalWidth()*scale))+" pixels");
-       final JLabel h=new JLabel("Height: "+((int)(graph.getTotalHeight()*scale))+" pixels");
-       final JTextField w1=new JTextField(""+iw); final JLabel w0=new JLabel("Width: "), w2=new JLabel();
-       final JTextField h1=new JTextField(""+ih); final JLabel h0=new JLabel("Height: "), h2=new JLabel();
-       final JTextField d1=new JTextField(""+(int)dpi); final JLabel d0=new JLabel("Resolution: "), d2=new JLabel(" dots per inch");
-       final JTextField dp1=new JTextField(""+(int)dpi);final JLabel dp0=new JLabel("Resolution: "),dp2=new JLabel(" dots per inch");
-       alloyRefresh(0,ratio,w1,w2,h1,h2,d1,d2,msg);
+       final JLabel msg = OurUtil.label(" ", Color.RED);
+       final JLabel w = OurUtil.label("Width: "+((int)(graph.getTotalWidth()*scale))+" pixels");
+       final JLabel h = OurUtil.label("Height: "+((int)(graph.getTotalHeight()*scale))+" pixels");
+       final JTextField w1 = new JTextField(""+iw); final JLabel w0 = OurUtil.label("Width: "), w2 = OurUtil.label("");
+       final JTextField h1 = new JTextField(""+ih); final JLabel h0 = OurUtil.label("Height: "), h2 = OurUtil.label("");
+       final JTextField d1 = new JTextField(""+(int)dpi); final JLabel d0 = OurUtil.label("Resolution: "), d2 = OurUtil.label(" dots per inch");
+       final JTextField dp1 = new JTextField(""+(int)dpi);final JLabel dp0 = OurUtil.label("Resolution: "), dp2 = OurUtil.label(" dots per inch");
+       alloyRefresh(0, ratio, w1, w2, h1, h2, d1, d2, msg);
        Dimension dim = new Dimension(100,20);
        w1.setMaximumSize(dim); w1.setPreferredSize(dim); w1.setEnabled(false);
        h1.setMaximumSize(dim); h1.setPreferredSize(dim); h1.setEnabled(false);

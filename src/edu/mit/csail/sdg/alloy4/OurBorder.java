@@ -82,7 +82,7 @@ public final class OurBorder implements Border {
     public void paintBorder (Component component, Graphics graphics, int x, int y, int width, int height) {
         if (width<1 || height<1) return;
         Color oldColor = graphics.getColor();
-        if (top   !=null) { graphics.setColor(top);    graphics.drawLine(x,         y,          x+width-1, y);          }
+        if (top   !=null) { graphics.setColor(top);    graphics.drawLine(x,         y,          x+width-1, y         ); }
         if (bottom!=null) { graphics.setColor(bottom); graphics.drawLine(x,         y+height-1, x+width-1, y+height-1); }
         if (left  !=null) { graphics.setColor(left);   graphics.drawLine(x,         y,          x,         y+height-1); }
         if (right !=null) { graphics.setColor(right);  graphics.drawLine(x+width-1, y,          x+width-1, y+height-1); }
