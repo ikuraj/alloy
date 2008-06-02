@@ -24,7 +24,6 @@ package edu.mit.csail.sdg.alloy4viz;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -437,10 +436,11 @@ public final class VizState {
         OurCheckbox pick(String label, String tooltip) {
             return new OurCheckbox(label, tooltip, (Boolean.TRUE.equals(get(null)) ? OurCheckbox.ON : OurCheckbox.OFF)) {
                 private static final long serialVersionUID = 1L;
-                public void actionPerformed(ActionEvent e) {
-                    T a = get(null);
-                    if (a!=null && a.equals(onValue)) { a=offValue; setCheckboxIcon(OFF); } else { a=onValue; setCheckboxIcon(ON); }
-                    MMap.this.put(null, a);
+                public Icon do_action() {
+                    T old = get(null);
+                    boolean ans = (old!=null && old.equals(onValue));
+                    MMap.this.put(null, ans ? offValue : onValue);
+                    return ans ? OFF : ON;
                 }
             };
         }
@@ -449,12 +449,12 @@ public final class VizState {
             Icon icon = a==null ? (Boolean.TRUE.equals(b) ? OurCheckbox.I_ON : OurCheckbox.I_OFF) : (Boolean.TRUE.equals(a) ? OurCheckbox.ALL_ON : OurCheckbox.ALL_OFF);
             return new OurCheckbox(label, tooltip, icon) {
                 private static final long serialVersionUID = 1L;
-                public void actionPerformed(ActionEvent e) {
+                public Icon do_action() {
                     T a = get(obj), b = resolve(obj);
                     if (a==null) a=onValue; else if (a.equals(onValue)) a=offValue; else a=null;
                     MMap.this.put(obj, a);
                     Icon icon = a==null ? (Boolean.TRUE.equals(b) ? I_ON : I_OFF) : (Boolean.TRUE.equals(a) ? ALL_ON : ALL_OFF);
-                    setCheckboxIcon(icon);
+                    return icon;
                 }
             };
         }

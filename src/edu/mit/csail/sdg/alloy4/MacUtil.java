@@ -55,8 +55,7 @@ public final class MacUtil {
      * @param open - when a file needs to be opened, we'll call open.run(filename) using SwingUtilities.invokeLater
      * @param quit - when the user clicks on Quit, we'll call quit.run() using SwingUtilities.invokeAndWait
      */
-    public synchronized static void registerApplicationListener
-    (final Runnable reopen, final Runnable about, final Runner open, final Runnable quit) {
+    public synchronized static void registerApplicationListener (final Runnable reopen, final Runnable about, final Runner open, final Runnable quit) {
         if (app==null) app = new Application(); else if (listener!=null) app.removeApplicationListener(listener);
         listener = new ApplicationAdapter() {
             @Override public void handleReOpenApplication (final ApplicationEvent arg) {

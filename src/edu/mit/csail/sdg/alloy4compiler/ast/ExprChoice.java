@@ -83,7 +83,7 @@ public final class ExprChoice extends Expr {
            "perhaps you used ( ) when you should have used [ ]\n");
         for(Expr x:choices) {
             pos = pos.merge(x.span());
-            if (x instanceof ExprBadCall || x instanceof ExprBadJoin) sb.append('\n').append(x.errors.peek().msg);
+            if (x instanceof ExprBadCall || x instanceof ExprBadJoin) sb.append('\n').append(x.errors.pick().msg);
         }
         return new ErrorType(pos, sb.toString());
     }
@@ -181,7 +181,7 @@ public final class ExprChoice extends Expr {
 
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err {
-        if (!errors.isEmpty()) throw errors.peek();
+        if (!errors.isEmpty()) throw errors.pick();
         throw new ErrorType(span(), "This expression failed to be resolved.");
     }
 }

@@ -56,7 +56,7 @@ public final class OurBorder implements Border {
      * @param bottom - nonnull if we want to draw a border line (with that color) below the component
      * @param right  - nonnull if we want to draw a border line (with that color) to the right of the component
      */
-    public OurBorder(Color top, Color left, Color bottom, Color right) {
+    public OurBorder (Color top, Color left, Color bottom, Color right) {
         this.top    = top;
         this.left   = left;
         this.bottom = bottom;
@@ -71,7 +71,7 @@ public final class OurBorder implements Border {
      * @param bottom - true if we want to draw a Color.LIGHT_GRAY border line below the component
      * @param right  - true if we want to draw a Color.LIGHT_GRAY border line to the right of the component
      */
-    public OurBorder(boolean top, boolean left, boolean bottom, boolean right) {
+    public OurBorder (boolean top, boolean left, boolean bottom, boolean right) {
         this.top    = top    ? Color.LIGHT_GRAY : null;
         this.left   = left   ? Color.LIGHT_GRAY : null;
         this.bottom = bottom ? Color.LIGHT_GRAY : null;
@@ -90,12 +90,12 @@ public final class OurBorder implements Border {
     }
 
     /** This method is called by Swing to retrieve the dimension of the border. */
-    public Insets getBorderInsets(Component c) {
+    public Insets getBorderInsets (Component c) {
         return new Insets(top!=null?1:0, left!=null?1:0, bottom!=null?1:0, right!=null?1:0);
     }
 
     /** This method is called by Swing to find out whether this border object needs to fill in its own background. */
-    public boolean isBorderOpaque() {
+    public boolean isBorderOpaque () {
         return true;
     }
 }

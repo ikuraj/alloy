@@ -144,7 +144,7 @@ public final strictfp class OurPDFWriter {
         // These extreme values shouldn't happen, but we want to protect against them
         if (Double.isNaN(x)) return write("0");
         if (x==Double.POSITIVE_INFINITY) return write("65535");
-        if (x==Double.NEGATIVE_INFINITY) return write("-65535");
+        if (x==Double.NEGATIVE_INFINITY) return write("-65536");
         // Now, regular doubles... we only want up to 6 digits after the decimal point
         String sign="", str=Long.toString((long)(x*1000000d));
         if (str.charAt(0)=='-') { str=str.substring(1); sign="-"; }

@@ -158,9 +158,9 @@ public final class OurDialog {
     public static File askFile
     (Frame parentFrame, boolean isOpen, String dir, final String ext, final String description) {
         if (Util.onMac()) useAWT = true;
-        if (dir==null) dir=Util.getCurrentDirectory();
-        if (!(new File(dir).isDirectory())) dir=System.getProperty("user.home");
-        dir=Util.canon(dir);
+        if (dir==null) dir = Util.getCurrentDirectory();
+        if (!(new File(dir).isDirectory())) dir = System.getProperty("user.home");
+        dir = Util.canon(dir);
         String ans;
         if (useAWT) {
             FileDialog f = new FileDialog(parentFrame, isOpen ? "Open..." : "Save...");

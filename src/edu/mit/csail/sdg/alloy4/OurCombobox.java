@@ -58,8 +58,8 @@ public class OurCombobox extends JComboBox {
         /** This configures the JLabel with the appropriate icon and text, then return it to be displayed. */
         public Component getListCellRendererComponent(JList list, Object value, int i, boolean selected, boolean focused) {
             setOpaque(true);
-            setText(myGetText(value));
-            setIcon(myGetIcon(value));
+            setText(do_getText(value));
+            setIcon(do_getIcon(value));
             setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 0));
             setBackground(selected ? list.getSelectionBackground() : list.getBackground());
             setForeground(selected ? list.getSelectionForeground() : list.getForeground());
@@ -68,13 +68,13 @@ public class OurCombobox extends JComboBox {
     }
 
     /** Subclass can override this method to provide the custom text for any given value (or "" if no text is needed) */
-    public String myGetText(Object value) { return String.valueOf(value); }
+    public String do_getText(Object value) { return String.valueOf(value); }
 
     /** Subclass can override this method to provide the custom icon for any given value (or null if no icon is needed) */
-    public Icon myGetIcon(Object value) { return null; }
+    public Icon do_getIcon(Object value) { return null; }
 
     /** Subclass can override this method to react upon selection change. */
-    public void myChanged(Object newValue) { }
+    public void do_changed(Object newValue) { }
 
     /** This helper method makes a copy of the list, and then optionally prepend null at the beginning of the list. */
     private static<T> Vector<T> copy (List<T> list, boolean addNull) {
@@ -118,7 +118,7 @@ public class OurCombobox extends JComboBox {
         }
         if (initialValue!=null) setSelectedItem(initialValue);
         addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { OurCombobox.this.myChanged(getSelectedItem()); }
+            public void actionPerformed(ActionEvent e) { OurCombobox.this.do_changed(getSelectedItem()); }
         });
     }
 }

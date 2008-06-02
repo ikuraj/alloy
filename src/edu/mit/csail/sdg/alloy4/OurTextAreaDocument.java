@@ -48,10 +48,10 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
 
     /** This records an insertion or deletion. */
     private static final class OurTextAreaAction {
-        public boolean insert;
-        public String text;
-        public int offset;
-        public OurTextAreaAction(boolean insert, String text, int offset) {
+        private boolean insert;
+        private String text;
+        private int offset;
+        private OurTextAreaAction(boolean insert, String text, int offset) {
             this.insert = insert;
             this.text = text;
             this.offset = offset;
@@ -89,8 +89,11 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     /** The maximum number of UNDO actions we want to keep. */
     private static final int MAXUNDO = 100;
 
-    /** Caches the most recent font. */
-    private Font mostRecentFont = null;
+    /** Caches the most recent font family. */
+    private String fontFamily = "Monospaced";
+
+    /** Caches the most recent font size. */
+    private int fontSize = 14;
 
     /** Caches the most recent tab size. */
     private int tabSize = 4;
@@ -106,16 +109,16 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     };
 
     /** Returns true if "c" can be the start of an identifier. */
-    private static boolean myIdenStart(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || c=='$'; }
+    private static boolean do_start(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || c=='$'; }
 
     /** Returns true if "c" can be in the middle or the end of an identifier. */
-    private static boolean myIden(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || (c>='0' && c<='9') || c=='_' || c=='$' || c=='\'' || c=='\"'; }
+    private static boolean do_iden(char c) { return (c>='A' && c<='Z') || (c>='a' && c<='z') || (c>='0' && c<='9') || c=='_' || c=='$' || c=='\'' || c=='\"'; }
 
-    /** Returns true if c[start..start+len-1] matches one of the reserved keyword. */
-    private boolean myIsKeyword(String array, int start, int len) {
+    /** Returns true if array[start..start+len-1] matches one of the reserved keyword. */
+    private boolean do_keyword(String array, int start, int len) {
        again:
        for(int i=keywords.length-1; i>=0; i--) {
-          String str=keywords[i];
+          String str = keywords[i];
           if (str.length() != len) continue;
           for(int j=0; j<len; j++) if (str.charAt(j)!=array.charAt(start+j)) continue again;
           return true;
@@ -124,11 +127,11 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     }
 
     /** Enables or disables syntax highlighting. */
-    void mySyntaxHighlighting (JTextPane pane, boolean flag) {
+    void do_syntaxHighlighting (JTextPane pane, boolean flag) {
         if (enabled == flag) return;
         enabled = flag;
         comments.clear();
-        if (flag) { myReapplyAll(); return; }
+        if (flag) { do_reapplyAll(); return; }
         setCharacterAttributes(0, getLength(), styleNormal, false);
         pane.getInputAttributes().removeAttribute(pane.getInputAttributes());
         pane.getInputAttributes().addAttributes(styleNormal);
@@ -155,8 +158,8 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         StyleConstants.setForeground(styleJavadocComment, new Color(10, 148, 10));
     }
 
-    /** Performs the action insertString() operation without touching the Undo/Redo history. */
-    private void myInsert(int offset, String string) throws BadLocationException {
+    /** Performs the insertString() operation without touching the Undo/Redo history. */
+    private void do_insert(int offset, String string) throws BadLocationException {
         if (!enabled) { super.insertString(offset, string, styleNormal); return; }
         int startLine = root.getElementIndex(offset), lineCount = 1;
         for(int i=0; i<string.length(); i++) {
@@ -165,16 +168,16 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         }
         super.insertString(offset, string, styleNormal);
         try {
-            myUpdate((startLine<comments.size() ? comments.get(startLine) : -1), startLine, lineCount);
+            do_update((startLine<comments.size() ? comments.get(startLine) : -1), startLine, lineCount);
         } catch(Exception ex) {
             comments.clear(); // syntax highlighting is not crucial, but if error occurred, let's clear the cache so we'll recompute the highlighting next time
         }
     }
 
-    /** Performs the action remove() operation without touching the Undo/Redo history. */
-    private void myRemove(int offset, int length) throws BadLocationException {
+    /** Performs the remove() operation without touching the Undo/Redo history. */
+    private void do_remove(int offset, int length) throws BadLocationException {
         if (!enabled) { super.remove(offset, length); return; }
-        String oldText = myText();
+        String oldText = do_text();
         int startLine = root.getElementIndex(offset);
         for(int i=0; i<length; i++) {
             // given that we are about to delete line breaks from the document, we need to shift the values in this.comments array
@@ -182,7 +185,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         }
         super.remove(offset, length);
         try {
-            myUpdate((startLine<comments.size() ? comments.get(startLine) : -1), startLine, 1);
+            do_update((startLine<comments.size() ? comments.get(startLine) : -1), startLine, 1);
         } catch(Exception ex) {
             comments.clear(); // syntax highlighting is not crucial, but if error occurred, let's clear the cache so we'll recompute the highlighting next time
         }
@@ -197,7 +200,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         // clear all the "potential redo's"
         while(undo>0) { undos.remove(undos.size()-1); undo--; }
         // perform the actual insertion
-        myInsert(offset, string);
+        do_insert(offset, string);
         // if the last action and this action can be merged, then merge them
         OurTextAreaAction act = (undos.size()>0 ? undos.get(undos.size()-1) : null);
         if (act!=null && act.insert && act.offset==offset-act.text.length()) { act.text=act.text+string; return; }
@@ -212,9 +215,9 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         if (length==0) return;
         // clear all the "potential redo's"
         while(undo>0) { undos.remove(undos.size()-1); undo--; }
-        String string = myText().substring(offset, offset+length);
+        String string = do_text().substring(offset, offset+length);
         // perform the actual removal
-        myRemove(offset, length);
+        do_remove(offset, length);
         // if the last action and this action can be merged, then merge them
         OurTextAreaAction act = (undos.size()>0 ? undos.get(undos.size()-1) : null);
         if (act!=null && !act.insert && act.offset==offset) { act.text=act.text+string; return; }
@@ -225,23 +228,23 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     }
 
     /** Clear the undo history. */
-    public void myClearUndo() { undos.clear(); undo=0; }
+    public void do_clearUndo() { undos.clear(); undo=0; }
 
     /** Returns true if we can perform undo right now. */
-    public boolean myCanUndo() { return undo < undos.size(); }
+    public boolean do_canUndo() { return undo < undos.size(); }
 
     /** Returns true if we can perform redo right now. */
-    public boolean myCanRedo() { return undo > 0 ; }
+    public boolean do_canRedo() { return undo > 0 ; }
 
     /** Perform undo if possible, and return the new caret position (-1 if no undo is possible) */
-    public int myUndo() {
+    public int do_undo() {
         int n = undos.size();
         if (undo >= n) return -1;
         undo++;
         OurTextAreaAction act = undos.get(n-undo);
         try {
-            if (act.insert) { myRemove(act.offset, act.text.length()); return act.offset; }
-            else { myInsert(act.offset, act.text); return act.offset + act.text.length(); }
+            if (act.insert) { do_remove(act.offset, act.text.length()); return act.offset; }
+            else { do_insert(act.offset, act.text); return act.offset + act.text.length(); }
         } catch(Exception ex) {
             comments.clear();
             return -1;
@@ -249,14 +252,14 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     }
 
     /** Perform redo if possible, and return the new caret position (-1 if no redo is possible) */
-    public int myRedo() {
+    public int do_redo() {
         int n = undos.size();
         if (undo == 0) return -1;
         OurTextAreaAction act = undos.get(n-undo);
         undo--;
         try {
-            if (act.insert) { myInsert(act.offset, act.text); return act.offset + act.text.length(); }
-            else { myRemove(act.offset, act.text.length()); return act.offset; }
+            if (act.insert) { do_insert(act.offset, act.text); return act.offset + act.text.length(); }
+            else { do_remove(act.offset, act.text.length()); return act.offset; }
         } catch(Exception ex) {
             comments.clear();
             return -1;
@@ -264,12 +267,12 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     }
 
     /** Returns the entire text. */
-    private String myText() {
+    private String do_text() {
         try { return getText(0, getLength()); } catch(BadLocationException ex) { return ""; }
     }
 
     /** Returns the number of lines represented by the given text. */
-    private int myGetLineCount(String content) {
+    private int do_getLineCount(String content) {
         int lineCount = 1;
         for(int i=0; i<content.length(); i++) if (content.charAt(i)=='\n') lineCount++;
         return lineCount;
@@ -281,18 +284,18 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
      * @param startLine - the line where changes begin
      * @param numLines - the number of lines directly affected; we still have to check beyond it to see if more styling are needed
      */
-    private void myUpdate(int comment, int startLine, int numLines) throws BadLocationException  {
-        String content = myText();
-        int i, lineCount = myGetLineCount(content);
-        if (comment<0) comment = myGetStartingStyleOfLine(content, startLine);
+    private void do_update(int comment, int startLine, int numLines) throws BadLocationException  {
+        String content = do_text();
+        int i, lineCount = do_getLineCount(content);
+        if (comment<0) comment = do_getStartingStyleOfLine(content, startLine);
         // for each line, we apply the appropriate styles
-        for (i = startLine; i < startLine+numLines; i++) { comment = myReapply(comment, content, i); }
+        for (i = startLine; i < startLine+numLines; i++) { comment = do_reapply(comment, content, i); }
         // afterwards, we need to apply styles to each subsequent line until we find that it already starts with the same comment mode as before
-        for (; i < lineCount; i++) { if (i>=comments.size() || comments.get(i)!=comment) comment = myReapply(comment, content, i); else break; }
+        for (; i < lineCount; i++) { if (i>=comments.size() || comments.get(i)!=comment) comment = do_reapply(comment, content, i); else break; }
     }
 
     /** Reparse the entire text to determine the appropriate comment mode at the start of the given line. */
-    private static int myGetStartingStyleOfLine(final String txt, final int line) {
+    private static int do_getStartingStyleOfLine(final String txt, final int line) {
         if (line<=0) return 0;
         int comment=0, y=0, n=txt.length();
         for(int i=0; i<n; i++) {
@@ -316,7 +319,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     }
 
     /** Parse the given line and apply appropriate styles to it. */
-    private int myReapply(int comment, final String txt, final int line) {
+    private int do_reapply(int comment, final String txt, final int line) {
         // enlarge the comments array as appropriate
         while (line>=comments.size()) comments.add(-1);
         // record the fact that this line starts with the given comment mode
@@ -341,13 +344,13 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
                 int oldi=i; i++; while(i<n && txt.charAt(i)!='\n' && txt.charAt(i)!='*') i++;
                 setCharacterAttributes(oldi, i-oldi, comment==1 ? styleBlockComment : styleJavadocComment, false);
                 i--;
-            } else if ((c>='0' && c<='9') || myIdenStart(c)) {
-                int oldi=i; i++; while(i<n && myIden(txt.charAt(i))) i++;
-                Style s=styleNormal; if (c>='0' && c<='9') s=styleNumber; else if (myIsKeyword(txt, oldi, i-oldi)) s=styleKeyword;
+            } else if ((c>='0' && c<='9') || do_start(c)) {
+                int oldi=i; i++; while(i<n && do_iden(txt.charAt(i))) i++;
+                Style s=styleNormal; if (c>='0' && c<='9') s=styleNumber; else if (do_keyword(txt, oldi, i-oldi)) s=styleKeyword;
                 setCharacterAttributes(oldi, i-oldi, s, false);
                 i--;
             } else {
-                int oldi=i; i++; while(i<n && txt.charAt(i)!='\n' && txt.charAt(i)!='-' && txt.charAt(i)!='/' && !myIden(txt.charAt(i))) i++;
+                int oldi=i; i++; while(i<n && txt.charAt(i)!='\n' && txt.charAt(i)!='-' && txt.charAt(i)!='/' && !do_iden(txt.charAt(i))) i++;
                 setCharacterAttributes(oldi, i-oldi, styleSymbol, false);
                 i--;
             }
@@ -356,30 +359,32 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     }
 
     /** Reapply the appropriate style to the entire document. */
-    void myReapplyAll() {
-        String content = myText();
-        int lineCount = myGetLineCount(content);
+    void do_reapplyAll() {
+        String content = do_text();
+        int lineCount = do_getLineCount(content);
         comments.clear();
-        for(int comment=0, i=0; i<lineCount; i++)  comment = myReapply(comment, content, i);
+        for(int comment=0, i=0; i<lineCount; i++)  comment = do_reapply(comment, content, i);
     }
 
     /** Changes the font for the document. */
-    void mySetFont(JTextPane pane, Font font) {
-        if (mostRecentFont == font) return; else mostRecentFont = font;
+    void do_setFont(JTextPane pane, String fontFamily, int fontSize) {
+        if (fontFamily.equals(this.fontFamily) && fontSize==this.fontSize) return;
+        this.fontFamily = fontFamily;
+        this.fontSize = fontSize;
         for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleSymbol}) {
-            StyleConstants.setFontFamily(s, font.getFamily());
-            StyleConstants.setFontSize(s, font.getSize());
+            StyleConstants.setFontFamily(s, fontFamily);
+            StyleConstants.setFontSize(s, fontSize);
         }
         tabAttribute = null; // forces the recomputation of the tab positions based on the new font
-        mySetTabSize(pane, tabSize);
-        myReapplyAll();
+        do_setTabSize(pane, tabSize);
+        do_reapplyAll();
     }
 
     /** Changes the tab size for the document. */
-    void mySetTabSize(JTextPane pane, int tab) {
+    void do_setTabSize(JTextPane pane, int tab) {
         if (tab<1) tab=1; else if (tab>100) tab=100;
         if (tabAttribute!=null && this.tabSize==tab) return; else this.tabSize = tab;
-        int gap = (tab * pane.getFontMetrics(mostRecentFont).charWidth('X') * 2) / 2;
+        int gap = tab * pane.getFontMetrics(new Font(fontFamily, Font.PLAIN, fontSize)).charWidth('X');
         tabAttribute = new SimpleAttributeSet();
         final TabStop[] pos = new TabStop[100];
         for(int i=0; i<100; i++) { pos[i] = new TabStop(i*gap+gap); }

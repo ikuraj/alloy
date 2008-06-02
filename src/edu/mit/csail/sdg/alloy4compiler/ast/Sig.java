@@ -422,7 +422,7 @@ public abstract class Sig extends Expr {
             if (var==null) var = ExprVar.make(null, "this", sig.oneOf());
             boundingFormula=ExprQuant.Op.ALL.make(pos, null, Util.asList(var), var.join(this).in(bound));
             if (!boundingFormula.errors.isEmpty())
-                throw boundingFormula.errors.peek();
+                throw boundingFormula.errors.pick();
             if (boundingFormula.hasCall())
                 throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             if (bound.type.arity()>0 && bound.type.hasNoTuple()) throw new ErrorType(pos, "Cannot bind field "+label+" to the empty set or empty relation.");

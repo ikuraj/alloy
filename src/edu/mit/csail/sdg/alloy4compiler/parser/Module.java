@@ -550,7 +550,7 @@ public final class Module {
         Context cx = new Context(this, null);
         body = cx.check(body);
         body = body.resolve(body.type, null);
-        if (body.errors.size()>0) throw body.errors.peek(); else return body;
+        if (body.errors.size()>0) throw body.errors.pick(); else return body;
     }
 
     /** Throw an exception if the name is already used, or has @ or /, or is univ/Int/none. */
@@ -1286,7 +1286,7 @@ public final class Module {
                m.facts.put(s + "$disj", formula);
            }
         }
-        if (!errors.isEmpty()) throw errors.peek();
+        if (!errors.isEmpty()) throw errors.pick();
         // The Alloy language forbids two overlapping sigs from having fields with the same name.
         // In other words: if 2 fields have the same name, then their type's first column must not intersect.
         final Map<String,List<Field>> fieldname2fields=new LinkedHashMap<String,List<Field>>();
@@ -1344,7 +1344,7 @@ public final class Module {
         }
         // Typecheck the function declarations
         for(Module x:modules) errors=x.resolveFuncDecls(rep, errors, warns);
-        if (!errors.isEmpty()) throw errors.peek();
+        if (!errors.isEmpty()) throw errors.pick();
         // Typecheck the function bodies, assertions, and facts (which can refer to function declarations)
         for(Module x:modules) {
             errors=x.resolveFuncBodys(rep,errors,warns);
@@ -1354,10 +1354,10 @@ public final class Module {
             if (x!=root) for(SigAST s:x.exactSigs) root.exactSigs.add(s);
             for(String n:x.exactParams) { SigAST sig=x.params.get(n); if (sig!=null) root.exactSigs.add(sig); }
         }
-        if (!errors.isEmpty()) throw errors.peek();
+        if (!errors.isEmpty()) throw errors.pick();
         // Typecheck the run/check commands (which can refer to function bodies and assertions)
         root.resolveCommands();
-        if (!errors.isEmpty()) throw errors.peek();
+        if (!errors.isEmpty()) throw errors.pick();
         for(ErrorWarning w:warns) rep.warning(w);
         for(SigAST s: root.exactSigs) rep.debug("Forced to be exact: "+s+"\n");
         return root;

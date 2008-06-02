@@ -69,7 +69,7 @@ public final class MailBug implements UncaughtExceptionHandler {
 
     /** Helper method that prints a Throwable's stack trace and all its causes as a String. */
     public static String dump(Throwable ex) {
-        StringBuilder sb=new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         while(ex!=null) {
            sb.append(ex.getClass()).append(": ").append(ex.getMessage()).append('\n');
            StackTraceElement[] trace = ex.getStackTrace();

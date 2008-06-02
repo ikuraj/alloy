@@ -77,8 +77,8 @@ public final strictfp class OurPNGWriter {
 
     /** Write the "pHYs" chunk into the PNG file with the given horizontal and vertical dots-per-inch. */
     private static void writeDPI (RandomAccessFile f, double dpiX, double dpiY) throws IOException {
-        int dpmX = (int) (dpiX/2.54d*100d); // Translate dots-per-inch into dots-per-meter
-        int dpmY = (int) (dpiY/2.54d*100d); // Translate dots-per-inch into dots-per-meter
+        int dpmX = (int) (dpiX/0.0254d); // Translate dots-per-inch into dots-per-meter
+        int dpmY = (int) (dpiY/0.0254d); // Translate dots-per-inch into dots-per-meter
         int crc = 0xFFFFFFFF, b;
         f.write(0); f.write(0); f.write(0); f.write(9);
         b='p';              crc=table[(crc ^ b) & 0xff] ^ (crc >>> 8); f.write(b);

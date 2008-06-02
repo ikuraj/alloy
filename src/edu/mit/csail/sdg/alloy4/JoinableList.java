@@ -95,7 +95,7 @@ public final class JoinableList<E> implements Serializable, Iterable<E> {
     }
 
     /** If the list if nonempty, arbitrarily return one of the item, otherwise throw NoSuchElementException. */
-    public E peek() { if (count==0) throw new NoSuchElementException(); else return get(0); }
+    public E pick() { if (count==0) throw new NoSuchElementException(); else return get(0); }
 
     /**
      * Return the i-th element

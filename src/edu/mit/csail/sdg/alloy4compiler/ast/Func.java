@@ -113,7 +113,7 @@ public final class Func {
         else {
             returnDecl = returnDecl.typecheck_as_set();
             if (returnDecl.ambiguous) returnDecl = returnDecl.resolve_as_set(null);
-            if (!returnDecl.errors.isEmpty()) throw returnDecl.errors.peek();
+            if (!returnDecl.errors.isEmpty()) throw returnDecl.errors.pick();
             // If the return declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (returnDecl.mult==0 && returnDecl.type.arity()==1) returnDecl=ExprUnary.Op.ONEOF.make(null, returnDecl);
             this.returnDecl = returnDecl;
@@ -153,11 +153,11 @@ public final class Func {
         if (isPred) {
             newBody = newBody.typecheck_as_formula();
             if (newBody.ambiguous) newBody = newBody.resolve_as_formula(null);
-            if (newBody.errors.size()>0) throw newBody.errors.peek();
+            if (newBody.errors.size()>0) throw newBody.errors.pick();
         } else {
             newBody = newBody.typecheck_as_set();
             if (newBody.ambiguous) newBody = newBody.resolve_as_set(null);
-            if (newBody.errors.size()>0) throw newBody.errors.peek();
+            if (newBody.errors.size()>0) throw newBody.errors.pick();
             if (newBody.type.arity() != returnDecl.type.arity())
                 throw new ErrorType(newBody.span(),
                 "Function return type is "+returnDecl.type+",\nso the body must be a relation with arity "

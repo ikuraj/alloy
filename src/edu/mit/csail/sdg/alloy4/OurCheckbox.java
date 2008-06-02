@@ -37,7 +37,7 @@ import javax.swing.JPanel;
  * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
-public abstract class OurCheckbox extends JPanel implements ActionListener {
+public abstract class OurCheckbox extends JPanel {
 
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
@@ -76,7 +76,12 @@ public abstract class OurCheckbox extends JPanel implements ActionListener {
         super();
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
         box = new JCheckBox(icon);
-        box.addActionListener(this);
+        box.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Icon icon = do_action();
+                if (icon!=null && icon!=box.getIcon()) box.setIcon(icon);
+            }
+        });
         box.setMaximumSize(box.getPreferredSize());
         box.setToolTipText(tooltip);
         jlabel = OurUtil.label(OurUtil.getVizFont(), label);
@@ -85,8 +90,8 @@ public abstract class OurCheckbox extends JPanel implements ActionListener {
         setAlignmentX(RIGHT_ALIGNMENT);
     }
 
-    /** Changes the icon. */
-    public final void setCheckboxIcon(Icon icon) { if (box.getIcon()!=icon) box.setIcon(icon); }
+    /** This method is called when the user clicks on the checkbox; subclasses should override this method to provide the custom behavior. */
+    public abstract Icon do_action();
 
     /** This method is called by Swing to enable/disable a component. */
     @Override public final void setEnabled(boolean enabled) {
@@ -100,7 +105,4 @@ public abstract class OurCheckbox extends JPanel implements ActionListener {
         if (box!=null) box.setBackground(color);
         if (jlabel!=null) jlabel.setBackground(color);
     }
-
-    /** This method is called by Swing when the user clicks on the checkbox; subclasses should override this method to provide the custom behavior. */
-    public abstract void actionPerformed(ActionEvent e);
 }

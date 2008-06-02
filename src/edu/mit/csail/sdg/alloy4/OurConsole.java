@@ -121,7 +121,7 @@ public final class OurConsole extends JScrollPane {
     }
 
     /** This helper method enables cut/copy/paste using ctrl-{c,v,x,insert} and shift-{insert,delete} for this.main and this.sub */
-    private void do_CutCopyPaste() {
+    private void do_cutCopyPaste() {
         // Have to make sure only one of {input, output} has an active selection, or else it may confuse the user
         sub.getCaret().addChangeListener(new ChangeListener() {
            public void stateChanged(ChangeEvent e) {
@@ -216,7 +216,7 @@ public final class OurConsole extends JScrollPane {
         do_add(-1, "x\n", dividerStyle);
         do_add(-1, "x\n", inputStyle);
         // enable cut+copy+paste
-        do_CutCopyPaste();
+        do_cutCopyPaste();
         // configure so that, upon receiving focus, we always scroll to the sub-JTextPane automatically
         FocusListener focus = new FocusListener() {
            public void focusGained(FocusEvent e) {

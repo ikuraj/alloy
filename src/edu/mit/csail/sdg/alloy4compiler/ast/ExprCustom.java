@@ -54,5 +54,5 @@ public abstract class ExprCustom extends Expr {
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { throw errors.peek(); }
+    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { throw errors.pick(); }
 }
