@@ -50,6 +50,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Caret;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -85,9 +86,6 @@ public final class OurConsole extends JScrollPane {
     /** The style for failed result. */
     private final SimpleAttributeSet red;
 
-    /** True if we want to temporarily disable the CaretChange listener. */
-    private boolean suppress = false;
-
     /**
      * The number of characters before the horizontal divider bar.
      * (The interactive console is composed of a JTextPane which contains 0 or more input/output pairs, followed
@@ -96,7 +94,7 @@ public final class OurConsole extends JScrollPane {
     private int len = 0;
 
     /** The main JTextPane containing 0 or more input/output pairs, followed by a horizontal bar, followed by this.sub */
-    private final JTextPane main;
+    private final JTextPane main = do_makeTextPane(false, 5, 5, 5);
 
     /** The sub JTextPane where the user can type in the next command. */
     private final JTextPane sub;
@@ -121,19 +119,22 @@ public final class OurConsole extends JScrollPane {
     /** This helper method enables cut/copy/paste using ctrl-{c,v,x,insert} and shift-{insert,delete} for this.main and this.sub */
     private void do_cutCopyPaste() {
         // Have to make sure only one of {input, output} has an active selection, or else it may confuse the user
-        sub.getCaret().addChangeListener(new ChangeListener() {
+        final Caret subCaret = sub.getCaret(), mainCaret = main.getCaret();
+        subCaret.addChangeListener(new ChangeListener() {
            public void stateChanged(ChangeEvent e) {
-             if (suppress) return;
-             try { suppress=true; main.getCaret().setDot(main.getCaret().getDot()); } finally { suppress=false; }
+              if (mainCaret.getMark() != mainCaret.getDot()) mainCaret.setDot(mainCaret.getDot());
            }
         });
-        main.getCaret().addChangeListener(new ChangeListener() {
+        mainCaret.addChangeListener(new ChangeListener() {
            public void stateChanged(ChangeEvent e) {
-             if (suppress) return;
-             try { suppress=true; sub.getCaret().setDot(sub.getCaret().getDot()); } finally { suppress=false; }
+              if (subCaret.getMark() != subCaret.getDot()) subCaret.setDot(subCaret.getDot());
            }
         });
         // now, create the 3 actions
+        AbstractAction alloy_paste = new AbstractAction("alloy_paste") {
+            private static final long serialVersionUID = 1L;
+            public void actionPerformed(ActionEvent ev) { sub.paste(); }
+         };
         AbstractAction alloy_copy = new AbstractAction("alloy_copy") {
            private static final long serialVersionUID = 1L;
            public void actionPerformed(ActionEvent ev) { if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.copy(); else main.copy(); }
@@ -142,22 +143,18 @@ public final class OurConsole extends JScrollPane {
            private static final long serialVersionUID = 1L;
            public void actionPerformed(ActionEvent ev) { if (sub.getSelectionStart()!=sub.getSelectionEnd()) sub.cut(); else main.copy(); }
         };
-        AbstractAction alloy_paste = new AbstractAction("alloy_paste") {
-           private static final long serialVersionUID = 1L;
-           public void actionPerformed(ActionEvent ev) { sub.paste(); }
-        };
         // create the keyboard associations: ctrl-{c,v,x,insert} and shift-{insert,delete}
         for(int i=0; i<=1; i++) {
            InputMap  inputMap  = (i==0) ? sub.getInputMap()  : main.getInputMap();
            ActionMap actionMap = (i==0) ? sub.getActionMap() : main.getActionMap();
+           actionMap.put("alloy_paste", alloy_paste);
            actionMap.put("alloy_copy",  alloy_copy);
            actionMap.put("alloy_cut",   alloy_cut);
-           actionMap.put("alloy_paste", alloy_paste);
+           inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, Event.CTRL_MASK), "alloy_paste");
            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Event.CTRL_MASK), "alloy_copy");
            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, Event.CTRL_MASK), "alloy_cut");
-           inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, Event.CTRL_MASK), "alloy_paste");
-           inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, Event.CTRL_MASK), "alloy_copy");
            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, Event.SHIFT_MASK), "alloy_paste");
+           inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_INSERT, Event.CTRL_MASK),  "alloy_copy");
            inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Event.SHIFT_MASK), "alloy_cut");
         }
     }
@@ -180,6 +177,40 @@ public final class OurConsole extends JScrollPane {
         try { doc.insertString(where >= 0 ? where : doc.getLength(), text, style); } catch(BadLocationException ex) { }
     }
 
+    /** This method processes a user command. */
+    private void do_command(Computer computer, String cmd) {
+        cmd = cmd.trim();
+        if (cmd.length()<=0) return;
+        StyledDocument doc = main.getStyledDocument();
+        if (history.size()>=2 && cmd.equals(history.get(history.size()-2))) {
+           history.set(history.size()-1, "");
+        } else {
+           history.set(history.size()-1, cmd);
+           history.add("");
+        }
+        browse = history.size()-1;
+        // display the command
+        int old = doc.getLength();
+        do_add(len, cmd+"\n\n", plain);
+        len = doc.getLength() - old + len;
+        // perform the computation
+        boolean bad = false;
+        try { cmd=computer.compute(cmd); } catch(Throwable ex) { cmd=ex.toString(); bad=true; }
+        int savePosition = len;
+        // display the outcome
+        old = doc.getLength();
+        do_add(len, cmd.trim()+"\n\n", (bad ? red : blue));
+        len = doc.getLength() - old + len;
+        // indent the outcome
+        main.setSelectionStart(savePosition+1);
+        main.setSelectionEnd(len);
+        main.setParagraphAttributes(blue, false);
+        // redraw then scroll to the bottom
+        invalidate(); repaint(); validate();
+        sub.scrollRectToVisible(new Rectangle(0, sub.getY(), 1, sub.getHeight()));
+        do_pagedown(); // need to do this after the validate() so that the scrollbar knows the new limit
+    }
+
     /**
      * Construct a JScrollPane that allows the user to interactively type in commands and see replies.
      *
@@ -190,9 +221,8 @@ public final class OurConsole extends JScrollPane {
      */
     public OurConsole(final Computer computer, final Object... initialMessages) {
         super(VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        main = do_makeTextPane(false, 5, 5, 5);
         setViewportView(main);
-        final StyledDocument doc = main.getStyledDocument();
+        StyledDocument doc = main.getStyledDocument();
         // construct the various styles
         StyleConstants.setFontFamily(plain = new SimpleAttributeSet(), "Verdana"); StyleConstants.setFontSize(plain, 14);
         StyleConstants.setBold(bold = new SimpleAttributeSet(plain), true);
@@ -215,7 +245,7 @@ public final class OurConsole extends JScrollPane {
         do_add(-1, "x\n", inputStyle);
         // enable cut+copy+paste
         do_cutCopyPaste();
-        // configure so that, upon receiving focus, we always scroll to the sub-JTextPane automatically
+        // configure so that, upon receiving focus, we automatically focus and scroll to the sub-JTextPane
         FocusListener focus = new FocusListener() {
            public void focusGained(FocusEvent e) {
               sub.requestFocusInWindow();
@@ -233,55 +263,26 @@ public final class OurConsole extends JScrollPane {
         });
         // configure the behavior for PAGE_UP, PAGE_DOWN, UP, DOWN, TAB, and ENTER
         sub.addKeyListener(new KeyListener() {
+           public void keyTyped(KeyEvent e) {
+              if (e.getKeyChar()=='\t') { e.consume(); }
+              if (e.getKeyChar()=='\n') { e.consume(); String cmd = sub.getText(); sub.setText(""); do_command(computer, cmd); }
+           }
            public void keyPressed(KeyEvent e) {
-              if (e.getKeyCode()==KeyEvent.VK_ENTER) e.consume();
-              if (e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
+              if (e.getKeyCode()==KeyEvent.VK_ENTER || e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
               if (e.getKeyCode()==KeyEvent.VK_PAGE_UP) { e.consume(); do_pageup(); }
               if (e.getKeyCode()==KeyEvent.VK_PAGE_DOWN) { e.consume(); do_pagedown(); }
               if (e.getKeyCode()==KeyEvent.VK_UP) {
                  e.consume();
                  if (browse==history.size()-1) { history.set(browse, sub.getText()); }
-                 if (browse>0 && browse-1<history.size()) { browse--; sub.setText(history.get(browse)); return; }
+                 if (browse>0 && browse-1<history.size()) { browse--; sub.setText(history.get(browse)); }
               }
               if (e.getKeyCode()==KeyEvent.VK_DOWN) {
                  e.consume();
-                 if (browse<history.size()-1) { browse++; sub.setText(history.get(browse)); return; }
+                 if (browse<history.size()-1) { browse++; sub.setText(history.get(browse)); }
               }
            }
            public void keyReleased(KeyEvent e) {
-              if (e.getKeyCode()==KeyEvent.VK_ENTER) e.consume();
-              if (e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
-           }
-           public void keyTyped(KeyEvent e) {
-              if (e.getKeyChar()=='\t') e.consume();
-              if (e.getKeyChar()=='\n') {
-                  e.consume();
-                  String x = sub.getText().trim();
-                  sub.setText("");
-                  if (x.length()<=0) return;
-                  if (history.size()>=2 && x.equals(history.get(history.size()-2))) {
-                     history.set(history.size()-1, "");
-                  } else {
-                     history.set(history.size()-1, x);
-                     history.add("");
-                  }
-                  browse = history.size()-1;
-                  int old = doc.getLength();
-                  do_add(len, x+"\n\n", plain);
-                  main.getCaret().setDot(len+1);
-                  len = doc.getLength() - old + len;
-                  old = doc.getLength();
-                  boolean bad = false;
-                  try { x=computer.compute(x); } catch(Throwable ex) { x=ex.toString(); bad=true; }
-                  do_add(len, x.trim()+"\n\n", (bad ? red : blue));
-                  main.setSelectionStart(len+1);
-                  main.setSelectionEnd(doc.getLength() - old + len);
-                  main.setParagraphAttributes(blue, false);
-                  len = doc.getLength() - old + len;
-                  invalidate(); repaint(); validate();
-                  sub.scrollRectToVisible(new Rectangle(0, sub.getY(), 1, sub.getHeight()));
-                  do_pagedown(); // need to do this after the validate() so that the scrollbar knows the new limit
-              }
+              if (e.getKeyCode()==KeyEvent.VK_ENTER || e.getKeyCode()==KeyEvent.VK_TAB) e.consume();
            }
         });
     }

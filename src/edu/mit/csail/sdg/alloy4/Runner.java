@@ -79,6 +79,15 @@ public abstract class Runner extends AbstractAction implements Runnable, WindowL
     /** This method is defined in java.awt.event.WindowListener; (this implementation does nothing) */
     public final void windowDeactivated(WindowEvent e) { }
 
+    /** This helper method returns a Runnable whose run() method will call System.exit(n) */
+    public static final Runner createExit(final int n) {
+        return new Runner() {
+            private static final long serialVersionUID = 1L;
+            public final void run() { System.exit(n); }
+            public final void run(Object arg) { System.exit(n); }
+        };
+    }
+
     /** This helper method returns a Runnable whose run() method will call window.dispose() */
     public static final Runner createDispose(final Window window) {
         return new Runner() {

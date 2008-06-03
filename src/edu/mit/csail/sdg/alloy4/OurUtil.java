@@ -83,6 +83,7 @@ public final class OurUtil {
             if (at instanceof Color) { ans.setBackground((Color)at); ans.setOpaque(true); }
             if (at instanceof String) { ans.setToolTipText((String)at); }
             if (at instanceof Border) { ans.setBorder((Border)at); }
+            if (at instanceof Dimension) { ans.setPreferredSize((Dimension)at); }
         }
         if (!hasFont) ans.setFont(getVizFont());
         return ans;
@@ -113,6 +114,17 @@ public final class OurUtil {
         } catch (InvocationTargetException e) {
             // Nothing we can do about it
         }
+    }
+
+    /**
+     * Make a textual button
+     * @param label - the text to show beneath the button
+     * @param func - the function to call when the button is pressed (null if we don't want to call any function)
+     */
+    public static JButton button (String label, ActionListener func) {
+        JButton button = new JButton(label);
+        if (func!=null) button.addActionListener(func);
+        return button;
     }
 
     /**

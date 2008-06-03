@@ -38,8 +38,11 @@ import java.io.RandomAccessFile;
 
 public final strictfp class OurPDFWriter {
 
-    /** This is the file we're writing. */
+    /** Nonnull if a file is currently open for us to write into. */
     private RandomAccessFile out;
+
+    /** Nonnull if an IOException has occurred. */
+    private IOException err = null;
 
     /** This maps each PDF Object ID to its exact offset in the file. */
     private final long[] offset = new long[7];
@@ -80,9 +83,6 @@ public final strictfp class OurPDFWriter {
     /** The height (in terms of dots). */
     private final long height;
 
-    /** Nonnull if an IOException has occurred. */
-    private IOException err = null;
-
     /**
      * Write the PDF header into the file, then begins a Contents stream; (if the file already exists, it will be overwritten).
      * @throws IllegalArgumentException if dpi is less than 50 or is greater than 3000
@@ -118,8 +118,7 @@ public final strictfp class OurPDFWriter {
      * <p> Note: IO errors are recorded and delayed until you call close() on this OurPDFWriter object.
      */
     public OurPDFWriter write(String string) {
-        if (err!=null || out==null) return this;
-        try { out.write(string.getBytes("UTF-8")); } catch(IOException ex) { err=ex; }
+        if (err==null && out!=null) { try {out.write(string.getBytes("UTF-8"));} catch(IOException ex) {err=ex;} }
         return this;
     }
 
@@ -142,10 +141,12 @@ public final strictfp class OurPDFWriter {
     public OurPDFWriter write(double x) {
         // These extreme values shouldn't happen, but we want to protect against them
         if (Double.isNaN(x)) return write("0");
-        if (x==Double.POSITIVE_INFINITY) return write("65535");
-        if (x==Double.NEGATIVE_INFINITY) return write("-65536");
+        if (x==Double.POSITIVE_INFINITY) return write("32767");  // this is the maximum requirement stated in PDF Spec 1.3
+        if (x==Double.NEGATIVE_INFINITY) return write("-32767"); // this is the minimum requirement stated in PDF Spec 1.3
         // Now, regular doubles... we only want up to 6 digits after the decimal point
-        String sign="", str=Long.toString((long)(x*1000000d));
+        long num = (long)(x * 1000000.0);
+        if (num>32767000000L) return write("32767"); else if (num<(-32767000000L)) return write("-32767");
+        String sign="", str=Long.toString(num);
         if (str.charAt(0)=='-') { str=str.substring(1); sign="-"; }
         while(str.length()<6) str="0"+str;
         return write(sign + str.substring(0, str.length()-6) + "." + str.substring(str.length()-6));
@@ -177,8 +178,7 @@ public final strictfp class OurPDFWriter {
            final long xref = out.getFilePointer();
            write("xref\n0 ").write(offset.length).write("\n");
            for(int i=0; i<offset.length; i++) {
-              long off = offset[i];
-              String a = "" + off;
+              String a = Long.toString(offset[i]);
               while(a.length()<10) a = "0" + a; // must be exactly 10 characters long
               if (i==0) write(a).write(" 65535 f\r\n"); else write(a).write(" 00000 n\r\n");
            }
@@ -187,10 +187,9 @@ public final strictfp class OurPDFWriter {
         } catch(IOException ex) {
            err=ex;
         }
-        // Close the file at all cost, since open files are a scarce system resource
+        // Close the file, since open files are a scarce system resource
         try { if (out!=null) out.close(); } catch(IOException ex) { if (err==null) err=ex; }
         out = null;
-        // If any errors occurred during writing or flushing or closing the file, then re-throw the exception
-        if (err!=null) throw err;
+        if (err!=null) throw err; // If any errors occurred during writing or closing the file, then throw the exception
     }
 }

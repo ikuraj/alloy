@@ -55,10 +55,10 @@ public abstract class OurCheckbox extends JPanel {
     public static final Icon ALL_ON = OurUtil.loadIcon("images/tcb02.gif");
 
     /** The icon to use when the checkbox is off due to inheritance. */
-    public static final Icon I_OFF = OurUtil.loadIcon("images/tcb03.gif");
+    public static final Icon INH_OFF = OurUtil.loadIcon("images/tcb03.gif");
 
     /** The icon to use when the checkbox is on due to inheritance. */
-    public static final Icon I_ON = OurUtil.loadIcon("images/tcb04.gif");
+    public static final Icon INH_ON = OurUtil.loadIcon("images/tcb04.gif");
 
     /** The underlying JCheckBox object. */
     private final JCheckBox box;

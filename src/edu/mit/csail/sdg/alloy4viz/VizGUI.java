@@ -394,8 +394,7 @@ public final class VizGUI implements ComponentListener {
 
         // Create the toolbar
         projectionPopup = new JPopupMenu();
-        projectionButton = new JButton("Projection: none");
-        projectionButton.addActionListener(new ActionListener() {
+        projectionButton = OurUtil.button("Projection: none", new ActionListener() {
             public final void actionPerformed(ActionEvent e) {
                 repopulateProjectionPopup();
                 if (projectionPopup.getComponentCount()>0) projectionPopup.show(projectionButton, 10, 10);

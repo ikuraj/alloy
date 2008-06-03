@@ -444,14 +444,14 @@ public final class VizState {
         }
         OurCheckbox pick(final AlloyElement obj, final String label, final String tooltip) {
             T a = get(obj), b = resolve(obj);
-            Icon icon = a==null ? (Boolean.TRUE.equals(b) ? OurCheckbox.I_ON : OurCheckbox.I_OFF) : (Boolean.TRUE.equals(a) ? OurCheckbox.ALL_ON : OurCheckbox.ALL_OFF);
+            Icon icon = a==null ? (Boolean.TRUE.equals(b) ? OurCheckbox.INH_ON : OurCheckbox.INH_OFF) : (Boolean.TRUE.equals(a) ? OurCheckbox.ALL_ON : OurCheckbox.ALL_OFF);
             return new OurCheckbox(label, tooltip, icon) {
                 private static final long serialVersionUID = 1L;
                 public Icon do_action() {
                     T a = get(obj), b = resolve(obj);
                     if (a==null) a=onValue; else if (a.equals(onValue)) a=offValue; else a=null;
                     MMap.this.put(obj, a);
-                    Icon icon = a==null ? (Boolean.TRUE.equals(b) ? I_ON : I_OFF) : (Boolean.TRUE.equals(a) ? ALL_ON : ALL_OFF);
+                    Icon icon = a==null ? (Boolean.TRUE.equals(b) ? INH_ON : INH_OFF) : (Boolean.TRUE.equals(a) ? ALL_ON : ALL_OFF);
                     return icon;
                 }
             };

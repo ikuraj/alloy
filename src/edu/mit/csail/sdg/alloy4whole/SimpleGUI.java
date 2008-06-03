@@ -1293,7 +1293,7 @@ public final class SimpleGUI implements ComponentListener {
     /** This method displays the about box. */
     private Runner doAbout() {
         if (wrap) return wrapMe();
-        Icon icon=OurUtil.loadIcon("images/logo.gif");
+        Icon icon = OurUtil.loadIcon("images/logo.gif");
         JButton dismiss = new JButton(Util.onMac() ? "Dismiss" : "Close");
         Object[] array = {
             icon,

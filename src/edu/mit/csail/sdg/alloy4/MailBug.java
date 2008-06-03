@@ -25,8 +25,6 @@ package edu.mit.csail.sdg.alloy4;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -45,7 +43,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
-import static edu.mit.csail.sdg.alloy4.OurUtil.empty;
+import static edu.mit.csail.sdg.alloy4.OurUtil.*;
 
 /**
  * This class asks the user for permission to email a bug report when an uncaught exception occurs.
@@ -53,23 +51,45 @@ import static edu.mit.csail.sdg.alloy4.OurUtil.empty;
 
 public final class MailBug implements UncaughtExceptionHandler {
 
-    /** Construct a new MailBug object. */
-    public MailBug() { }
-
     /** The version number of the most recent Alloy4 (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
     private int latestAlloyVersion = (-1);
 
     /** The name of the most recent Alloy4 (as queried from alloy.mit.edu); "unknown" if alloy.mit.edu has not replied yet. */
     private String latestAlloyVersionName = "unknown";
 
-    /** Sets the most recent Alloy version (as queried from alloy.mit.edu) */
+    /** The URL where the bug report should be sent. */
+    private static final String ALLOY_URL = "http://alloy.mit.edu/postbug4.php";
+
+    /** Construct a new MailBug object. */
+    public MailBug() { }
+
+    /** This method sets the most recent Alloy version (as queried from alloy.mit.edu) */
     public synchronized void setLatestAlloyVersion (int version, String versionName) {
         latestAlloyVersion = version;
         latestAlloyVersionName = versionName;
     }
 
-    /** Helper method that prints a Throwable's stack trace and all its causes as a String. */
-    public static String dump(Throwable ex) {
+    /** This method sends the bugReport by making a HTTP POST request. */
+    private static String sendHTTP (String bugReport, Throwable ex) {
+        BufferedReader in = null;
+        try {
+            URLConnection connection = (new URL(ALLOY_URL)).openConnection();
+            connection.setDoOutput(true);
+            connection.getOutputStream().write(bugReport.getBytes("UTF-8"));
+            connection.getOutputStream().flush();
+            in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
+            StringBuilder report = new StringBuilder();
+            for (String line = in.readLine(); line != null; line = in.readLine()) report.append(line).append('\n');
+            return report.toString();
+        } catch (Throwable exception) {
+            return "Sorry. An error has occurred in posting the bug report.\n\nPlease email this report to alloy@mit.edu directly.\n\n" + dump(ex);
+        } finally {
+            Util.close(in);
+        }
+    }
+
+    /** This method concatenates a Throwable's message and stack trace and all its causes into a single String. */
+    public static String dump (Throwable ex) {
         StringBuilder sb = new StringBuilder();
         while(ex!=null) {
            sb.append(ex.getClass()).append(": ").append(ex.getMessage()).append('\n');
@@ -81,62 +101,13 @@ public final class MailBug implements UncaughtExceptionHandler {
         return sb.toString();
     }
 
-    /** This method is an exception handler for uncaught exceptions. */
-    public synchronized void uncaughtException (Thread thread, Throwable ex) {
-        final String yes = "Send the Bug Report";
-        final String no = "Don't Send the Bug Report";
-        final JTextField email = OurUtil.textfield("", 20, new LineBorder(Color.DARK_GRAY));
-        final JTextArea problem = OurUtil.textarea("", 50, 50, true, false, empty);
-        final JScrollPane scroll = OurUtil.scrollpane(problem, new LineBorder(Color.DARK_GRAY));
-        scroll.setPreferredSize(new Dimension(300,200));
-        if (ex instanceof OutOfMemoryError || ex instanceof StackOverflowError) {
-            JOptionPane.showMessageDialog(null, new Object[] {
-                    "Sorry. Alloy4 has run out of memory.",
-                    " ",
-                    "Try simplifying your model or reducing the scope.",
-                    "And try disabling Options->RecordKodkod.",
-                    "And try reducing Options->SkolemDepth to 0.",
-                    "And try increasing Options->Memory.",
-                    " ",
-                    "There is no way for Alloy4 to continue execution, so pressing OK will shut down Alloy4."
-            }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
-            System.exit(1);
-        }
-        else if (!"yes".equals(System.getProperty("debug")) && latestAlloyVersion>Version.buildNumber()) {
-            JOptionPane.showMessageDialog(null, new Object[] {
-                    "Sorry. A fatal internal error has occurred.",
-                    " ",
-                    "You are running Alloy build#"+Version.buildNumber()+",",
-                    "but the most recent is Alloy build#"+latestAlloyVersion+":",
-                    "( version "+latestAlloyVersionName+" )",
-                    " ",
-                    "Please try to upgrade to the newest version",
-                    "as the problem may have already been fixed.",
-                    " ",
-                    "There is no way for Alloy4 to continue execution, so pressing OK will shut down Alloy4."
-            }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
-            System.exit(1);
-        } else {
-            if (JOptionPane.showOptionDialog(null, new Object[] {
-                    "Sorry. A fatal internal error has occurred.",
-                    " ",
-                    "You may submit a bug report (via HTTP).",
-                    "The error report will include your system",
-                    "configuration, but no other information.",
-                    " ",
-                    "If you'd like to be notified about a fix,",
-                    "please describe the problem, and enter your email address.",
-                    " ",
-                    OurUtil.makeHT("Email:", 5, email, null),
-                    OurUtil.makeHT("Problem:", 5, scroll, null)
-            }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-            null, new Object[]{yes,no}, no)!=JOptionPane.YES_OPTION) { System.exit(1); }
-        }
-        final StringWriter sw = new StringWriter();
-        final PrintWriter pw = new PrintWriter(sw);
+    /** This method prepares the crash report. */
+    private static String prepareCrashReport (Thread thread, Throwable ex, String email, String problem) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
         pw.printf("\nAlloy Analyzer %s crash report (Build Date = %s)\n\n", Version.version(), Version.buildDate());
-        pw.printf("========================= Email ============================\n%s\n\n", Util.convertLineBreak(email.getText()));
-        pw.printf("========================= Problem ==========================\n%s\n\n", Util.convertLineBreak(problem.getText()));
+        pw.printf("========================= Email ============================\n%s\n\n", Util.convertLineBreak(email));
+        pw.printf("========================= Problem ==========================\n%s\n\n", Util.convertLineBreak(problem));
         pw.printf("========================= Thread Name ======================\n%s\n\n", thread.getName());
         if (ex!=null) {
            pw.printf("========================= Exception ========================\n");
@@ -145,68 +116,104 @@ public final class MailBug implements UncaughtExceptionHandler {
         }
         pw.printf("\n========================= Preferences ======================\n");
         try {
-            for(String key: Preferences.userNodeForPackage(Util.class).keys()) {
-                String value = Preferences.userNodeForPackage(Util.class).get(key, "");
-                pw.printf("%s = %s\n", key, value);
-            }
+           for(String key: Preferences.userNodeForPackage(Util.class).keys()) {
+               String value = Preferences.userNodeForPackage(Util.class).get(key, "");
+               pw.printf("%s = %s\n", key, value);
+           }
         } catch(BackingStoreException bse) {
-            pw.printf("BackingStoreException occurred: %s\n", bse.toString());
+           pw.printf("BackingStoreException occurred: %s\n", bse.toString());
         }
         pw.printf("\n========================= System Properties ================");
         pw.printf("\nRuntime.freeMemory() = "+Runtime.getRuntime().freeMemory());
         pw.printf("\nRuntime.totalMemory() = "+Runtime.getRuntime().totalMemory());
         for(Map.Entry<Object,Object> e:System.getProperties().entrySet()) {
-            Object k=e.getKey(), v=e.getValue();
-            if (!"line.separator".equals(k)) { // We skip "line.separator" since it's useless and makes the email harder to read
-                pw.printf("\n%s = %s", (k==null ? "null" : k.toString()), (v==null ? "null" : v.toString()));
-            }
+           Object k=e.getKey(), v=e.getValue();
+           if (!"line.separator".equals(k)) { // We skip "line.separator" since it's useless and makes the email harder to read
+              pw.printf("\n%s = %s", (k==null ? "null" : k.toString()), (v==null ? "null" : v.toString()));
+           }
         }
         pw.printf("\n\n\n========================= The End ==========================\n\n");
         pw.close();
         sw.flush();
+        return sw.toString();
+    }
+
+    /** This method sends the crash report. */
+    private static void sendCrashReport (Thread thread, Throwable ex, String email, String problem) {
+        String report = prepareCrashReport(thread, ex, email, problem);
         try {
-            final JFrame statusWindow = new JFrame();
-            final JButton done = new JButton("Close");
-            done.addActionListener(new ActionListener() {
-               public void actionPerformed(ActionEvent e) { System.exit(1); }
-            });
-            final JTextArea status = OurUtil.textarea("Sending the bug report... please wait...", 10, 40, false, true, new EmptyBorder(2,2,2,2));
-            final JScrollPane statusPane = OurUtil.scrollpane(status);
-            statusWindow.setTitle("Sending Bug Report");
+            int w = getScreenWidth(), h = getScreenHeight();
+            JFrame statusWindow = new JFrame("Sending the bug report... please wait...");
+            JButton done = button("Close", Runner.createExit(1));
+            JTextArea status = textarea("Sending the bug report... please wait...", 10, 40, false, true, new EmptyBorder(2,2,2,2));
+            JScrollPane statusPane = scrollpane(status);
+            statusWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             statusWindow.setBackground(Color.LIGHT_GRAY);
             statusWindow.getContentPane().setLayout(new BorderLayout());
             statusWindow.getContentPane().add(statusPane, BorderLayout.CENTER);
             statusWindow.getContentPane().add(done, BorderLayout.SOUTH);
-            int w = OurUtil.getScreenWidth(), h = OurUtil.getScreenHeight();
             statusWindow.pack();
             statusWindow.setSize(600,200);
-            statusWindow.setLocation(w/2-300,h/2-100);
+            statusWindow.setLocation(w/2-300, h/2-100);
             statusWindow.setVisible(true);
-            statusWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            status.setText(postBug(sw.toString(), ex));
+            status.setText(sendHTTP(report, ex));
             status.setCaretPosition(0);
         } catch(Throwable exception) {
             System.exit(1);
         }
     }
 
-    /** Post the given string via POST HTTP request. */
-    private static String postBug(String bugReport, Throwable ex) {
-        final String BUG_POST_URL = "http://alloy.mit.edu/postbug4.php";
-        BufferedReader in = null;
-        try {
-            URLConnection connection = (new URL(BUG_POST_URL)).openConnection();
-            connection.setDoOutput(true);
-            connection.getOutputStream().write(bugReport.getBytes("UTF-8"));
-            connection.getOutputStream().flush();
-            in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"));
-            StringBuilder report = new StringBuilder();
-            for (String line = in.readLine(); line != null; line = in.readLine()) report.append(line).append('\n');
-            return report.toString();
-        } catch (Throwable exception) {
-            return "Sorry. An error has occurred in posting the bug report.\n\nPlease email alloy@mit.edu directly.\n\n"+dump(ex);
-        } finally {
-            if (in!=null) Util.close(in);
+    /** This method is an exception handler for uncaught exceptions. */
+    public synchronized void uncaughtException (Thread thread, Throwable ex) {
+        final String yes = "Send the Bug Report";
+        final String no = "Don't Send the Bug Report";
+        final JTextField email = textfield("", 20, new LineBorder(Color.DARK_GRAY));
+        final JTextArea problem = textarea("", 50, 50, true, false, empty);
+        final JScrollPane scroll = scrollpane(problem, new LineBorder(Color.DARK_GRAY), new Dimension(300, 200));
+        for(Throwable ex2=ex; ex2!=null; ex2=ex2.getCause()) {
+            if (ex2 instanceof OutOfMemoryError || ex2 instanceof StackOverflowError) {
+                JOptionPane.showMessageDialog(null, new Object[] {
+                   "Sorry. The Alloy Analyzer has run out of memory.",
+                   " ",
+                   "Try simplifying your model or reducing the scope.",
+                   "And try disabling Options->RecordKodkod.",
+                   "And try reducing Options->SkolemDepth to 0.",
+                   "And try increasing Options->Memory.",
+                   " ",
+                   "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
+                }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
+                System.exit(1);
+            }
         }
+        if (latestAlloyVersion > Version.buildNumber()) {
+            JOptionPane.showMessageDialog(null, new Object[] {
+               "Sorry. A fatal error has occurred.",
+               " ",
+               "You are running Alloy build#"+Version.buildNumber()+",",
+               "but the most recent is Alloy build#"+latestAlloyVersion+":",
+               "( version "+latestAlloyVersionName+" )",
+               " ",
+               "Please try to upgrade to the newest version",
+               "as the problem may have already been fixed.",
+               " ",
+               "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
+            }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
+        } else {
+            if (JOptionPane.showOptionDialog(null, new Object[] {
+               "Sorry. A fatal internal error has occurred.",
+               " ",
+               "You may submit a bug report (via HTTP).",
+               "The error report will include your system",
+               "configuration, but no other information.",
+               " ",
+               "If you'd like to be notified about a fix,",
+               "please describe the problem, and enter your email address.",
+               " ",
+               makeHT("Email:", 5, email, null),
+               makeHT("Problem:", 5, scroll, null)
+            }, "Error", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+            null, new Object[]{yes,no}, no) == JOptionPane.YES_OPTION) { sendCrashReport(thread, ex, email.getText(), problem.getText()); return; }
+        }
+        System.exit(1);
     }
 }
