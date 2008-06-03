@@ -82,12 +82,12 @@ public final strictfp class OurPNGWriter {
     }
 
     /** Write the given chunk into the PNG file;  Note: data.length must be at least 4. */
-    private static void writeChunk(RandomAccessFile file, int[] data) throws IOException {
-        int crc = 0xFFFFFFFF, len = data.length-4;
-        file.write((len>>>24)&0xFF); file.write((len>>>16)&0xFF); file.write((len>>>8)&0xFF); file.write(len&0xFF);
-        for(int i=0; i<data.length; i++) { int x=data[i]; crc=table[(crc ^ x) & 0xff] ^ (crc >>> 8); file.write(x & 0xFF); }
-        crc = crc ^ 0xFFFFFFFF;
-        file.write((crc>>>24)&0xFF); file.write((crc>>>16)&0xFF); file.write((crc>>>8)&0xFF); file.write(crc&0xFF);
+    private static void writeChunk (RandomAccessFile file, int[] data) throws IOException {
+        int crc = (-1), len = data.length-4;
+        file.write((len>>>24)&255); file.write((len>>>16)&255); file.write((len>>>8)&255); file.write(len&255);
+        for(int i=0; i<data.length; i++) { int x=data[i]; crc=table[(crc ^ x) & 255] ^ (crc >>> 8); file.write(x & 255); }
+        crc = crc ^ (-1);
+        file.write((crc>>>24)&255); file.write((crc>>>16)&255); file.write((crc>>>8)&255); file.write(crc&255);
     }
 
     /** This precomputed table makes it faster to calculate CRC; this is based on the suggestion in the PNG specification. */

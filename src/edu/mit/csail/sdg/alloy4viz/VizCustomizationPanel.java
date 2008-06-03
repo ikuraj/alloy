@@ -465,13 +465,13 @@ public final class VizCustomizationPanel extends JPanel {
             @Override public Icon   do_getIcon(Object value) { if (value==null) value=vizState.edgeStyle.get(null); return value==null ? null : ((DotAttribute)value).getIcon(vizState.getEdgePalette()); }
             @Override public void   do_changed(Object value) { vizState.edgeStyle.put(rel, (DotStyle)value); }
         };
-        JPanel visible    = vizState.edgeVisible.pick("Show as arcs",      "Show relation as arcs");
-        JPanel attr       = vizState.attribute  .pick("Show as attribute", "Additionally display this relation as an attribute on the nodes' labels");
-        JPanel back       = vizState.layoutBack .pick("Layout backwards",  "Layout graph as if arcs were reversed");
-        JPanel merge      = vizState.mergeArrows.pick("Merge arrows",      "Merge opposing arrows between the same nodes as one bidirectional arrow");
-        JPanel constraint = vizState.constraint .pick("Influence layout",  "Whether this edge influences the graph layout");
-        JPanel panel1=OurUtil.makeVR(wcolor, visible, attr, constraint);
-        JPanel panel2=OurUtil.makeVR(wcolor, back, merge);
+        JPanel visible    = vizState.edgeVisible.pick(rel, "Show as arcs",      "Show relation as arcs");
+        JPanel attr       = vizState.attribute  .pick(rel, "Show as attribute", "Additionally display this relation as an attribute on the nodes' labels");
+        JPanel back       = vizState.layoutBack .pick(rel, "Layout backwards",  "Layout graph as if arcs were reversed");
+        JPanel merge      = vizState.mergeArrows.pick(rel, "Merge arrows",      "Merge opposing arrows between the same nodes as one bidirectional arrow");
+        JPanel constraint = vizState.constraint .pick(rel, "Influence layout",  "Whether this edge influences the graph layout");
+        JPanel panel1 = OurUtil.makeVR(wcolor, visible, attr, constraint);
+        JPanel panel2 = OurUtil.makeVR(wcolor, back, merge);
         parent.add(makelabel(rel.toString()));
         parent.add(OurUtil.makeH(10, labelText, wcolor, 5, color, 5, style, 3, weightPanel, 2, null));
         parent.add(OurUtil.makeHT(wcolor, 10, panel1, 15, panel2, 2, null));

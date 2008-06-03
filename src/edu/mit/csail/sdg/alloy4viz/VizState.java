@@ -448,11 +448,10 @@ public final class VizState {
             return new OurCheckbox(label, tooltip, icon) {
                 private static final long serialVersionUID = 1L;
                 public Icon do_action() {
-                    T a = get(obj), b = resolve(obj);
+                    T a = get(obj);
                     if (a==null) a=onValue; else if (a.equals(onValue)) a=offValue; else a=null;
                     MMap.this.put(obj, a);
-                    Icon icon = a==null ? (Boolean.TRUE.equals(b) ? INH_ON : INH_OFF) : (Boolean.TRUE.equals(a) ? ALL_ON : ALL_OFF);
-                    return icon;
+                    return a==null ? (Boolean.TRUE.equals(resolve(obj)) ? INH_ON : INH_OFF) : (Boolean.TRUE.equals(a) ? ALL_ON : ALL_OFF);
                 }
             };
         }
