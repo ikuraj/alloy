@@ -396,6 +396,9 @@ public final strictfp class VizNode extends DiGraph.DiNode {
        }
     }
 
+    /** Color to use to show a highlighted node. */
+    private static final Color COLOR_CHOSENNODE = Color.LIGHT_GRAY;
+
     /** Assuming calcBounds() have been called, and (x,y) have been set, then this draws the node. */
     public void draw(Artist gr, double scale, boolean highlight) {
        final int top = graph.getTop(), left = graph.getLeft();
@@ -404,7 +407,7 @@ public final strictfp class VizNode extends DiGraph.DiNode {
        gr.set(style, scale);
        gr.translate(centerX-left, centerY-top);
        gr.setFont(fontBold);
-       if (highlight) gr.setColor(Color.RED); else gr.setColor(color);
+       if (highlight) gr.setColor(COLOR_CHOSENNODE); else gr.setColor(color);
        if (shape==VizShape.CIRCLE || shape==VizShape.M_CIRCLE || shape==VizShape.DOUBLE_CIRCLE) {
           int hw=width/2, hh=height/2;
           int radius = ((int) (sqrt( hw*((double)hw) + ((double)hh)*hh ))) + 2;

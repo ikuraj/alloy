@@ -443,7 +443,7 @@ public final strictfp class VizViewer extends JPanel {
         VizNode c=null;
         if (sel instanceof VizNode && ((VizNode)sel).shape()==null) { c=(VizNode)sel; sel=c.inEdges().get(0); }
         graph.draw(new Artist(g2), scale, sel, true);
-        if (c!=null) { gr.setColor(Color.RED); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
+        if (c!=null) { gr.setColor(((VizEdge)sel).color()); gr.fillArc(c.x()-5-graph.getLeft(), c.y()-5-graph.getTop(), 10, 10, 0, 360); }
         g2.setTransform(oldAF);
     }
 }
