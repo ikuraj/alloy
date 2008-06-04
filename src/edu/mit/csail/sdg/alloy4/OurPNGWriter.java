@@ -43,6 +43,31 @@ public final strictfp class OurPNGWriter {
         setDPI(filename, dpiX, dpiY);
     }
 
+    /*
+     * PNG consists of a "8 byte header" followed by one or more CHUNK.
+     *
+     * Each CHUNK:
+     * ===========
+     * 4 bytes: N
+     * 4 bytes: Chunk Type
+     * N bytes: Chunk Data
+     * 4 bytes: Checksum (this checksum is computed over the Chunk Type and Chunk Data)
+     *
+     * Each PNG must contain an IDAT chunk (this is the actual pixels of the image)
+     *
+     * Each PNG may contain an optional pHYs chunk that describes the horizontal and vertical dots-per-meter information.
+     * If such a chunk exists, it must come before (though not necessarily immediately before) the IDAT chunk.
+     *
+     * pHYs CHUNK:
+     * ===========
+     * 4 bytes:  0  ,  0  ,  0  ,  9
+     * 4 bytes: 'p' , 'H' , 'Y' , 's'
+     * 4 bytes: horizontal dots per meter
+     * 4 bytes: vertical dots per meter
+     * 1 byte:   1
+     * 4 bytes: Checksum
+     */
+
     /** Modifies the given PNG file to have the given horizontal and vertical dots-per-inch. */
     private static void setDPI (String filename, double dpiX, double dpiY) throws IOException {
        RandomAccessFile f = null;
@@ -54,8 +79,7 @@ public final strictfp class OurPNGWriter {
              if (pos>=total) throw new IOException("PNG is missing the IDAT chunk.");
              f.seek(pos);
              int a1=f.read(), a2=f.read(), a3=f.read(), a4=f.read(), b1=f.read(), b2=f.read(), b3=f.read(), b4=f.read();
-             if (a1<0 || a2<0 || a3<0 || a4<0 || b1<0 || b2<0 || b3<0 || b4<0 || (b1=='I' && b2=='E' && b3=='N' && b4=='D'))
-                throw new IOException("PNG is missing the IDAT chunk.");
+             if (a1<0 || a2<0 || a3<0 || a4<0 || b1<0 || b2<0 || b3<0 || b4<0) throw new IOException("PNG is missing the IDAT chunk.");
              int jump = (a1<<24) | (a2<<16) | (a3<<8) | a4;
              if (jump<0 || (total-pos)-12<jump) throw new IOException("PNG chunk size exceeds the rest of the file.");
              if ((b1=='I' && b2=='D' && b3=='A' && b4=='T') || (b1=='p' && b2=='H' && b3=='Y' && b4=='s')) {
