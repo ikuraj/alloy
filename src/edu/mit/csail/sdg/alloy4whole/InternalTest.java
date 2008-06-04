@@ -26,15 +26,24 @@ import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+
+import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.MailBug;
+import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.XMLNode;
+import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
+import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
+import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
+import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 
 /** API-specific regression test suite; the larger collection of models that test both the compiler and translator are in models/tests/*.als */
 
@@ -127,6 +136,36 @@ final class InternalTest {
         String err = "";
         try { A4SolutionReader.read(null, xml); } catch(Throwable ex) { err=ex.toString(); }
         check(err.contains("cyclic inheritance"));
+    }
+
+    /** Displays the amount of memory taken per solution enumeration. */
+    public static void main2(String[] args) throws Exception {
+        String filename = "models/examples/algorithms/dijkstra.als";
+        Module world = CompUtil.parseEverything_fromFile(A4Reporter.NOP, null, filename);
+        A4Options options = new A4Options();
+        for (Pair<Command,Expr> pair: world.getAllCommandsWithFormulas()) {
+            Command command = pair.a;
+            Expr formula = pair.b;
+            for(Module m:world.getAllReachableModules())
+                for(Pair<String,Expr> f:m.getAllFacts())
+                    formula = formula.and(f.b);
+            A4Solution ans = TranslateAlloyToKodkod.execute_command(A4Reporter.NOP, world.getAllReachableSigs(), formula, command, options);
+            while(ans.satisfiable()) {
+                String hc = "Answer: " + ans.toString().hashCode();
+                System.gc();
+                System.gc();
+                System.gc();
+                Thread.sleep(500);
+                System.gc();
+                System.gc();
+                System.gc();
+                Thread.sleep(500);
+                long t = Runtime.getRuntime().totalMemory(), f = Runtime.getRuntime().freeMemory(), m = Runtime.getRuntime().maxMemory();
+                System.out.println(hc + " total=" + t + " free=" + f + " max="+m); System.out.flush();
+                ans=ans.next();
+            }
+            return;
+        }
     }
 
     /** Runs every test case. */

@@ -494,7 +494,7 @@ public final class Module {
     final List<ExprVar> javadocs = new ArrayList<ExprVar>();
 
     /** The current name resolution mode (0=pure) (1=Alloy 4.1.3 and older) (2=new) */
-    int resolution = 2;
+    int resolution = 1;
 
     /** Each func name is mapped to a nonempty list of FunAST objects. */
     private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
