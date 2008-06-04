@@ -293,7 +293,10 @@ public final class A4Solution {
         decl2type = old.decl2type;
         if (inst!=null) {
            eval = new Evaluator(inst, old.solver.options());
-           a2k = new LinkedHashMap<Expr,Expression>(old.a2k); // this is because rename() needs to modify it
+           a2k = new LinkedHashMap<Expr,Expression>();
+           for(Map.Entry<Expr,Expression> e: old.a2k.entrySet())
+             if (e.getKey() instanceof Sig || e.getKey() instanceof Field)
+                a2k.put(e.getKey(), e.getValue());
            UniqueNameGenerator un = new UniqueNameGenerator();
            rename(this, null, un);
            a2k = ConstMap.make(a2k);

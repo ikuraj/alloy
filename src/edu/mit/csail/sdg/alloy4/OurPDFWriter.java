@@ -40,8 +40,6 @@ import java.io.OutputStream;
  * which consists of a single stream of graphical operations.
  * Hopefully this class will no longer be needed in the future,
  * once Java comes with better PDF support.
- *
- * <p><b>Thread Safety:</b> unsafe.
  */
 
 public final strictfp class OurPDFWriter {

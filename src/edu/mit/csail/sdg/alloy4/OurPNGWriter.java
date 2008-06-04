@@ -30,8 +30,6 @@ import javax.imageio.ImageIO;
 
 /**
  * Graphical convenience methods for producing PNG files.
- *
- * <p><b>Thread Safety:</b> Can be called only by the AWT event thread.
  */
 
 public final strictfp class OurPNGWriter {
