@@ -82,7 +82,7 @@ public final class OurDialog {
             null,
             new Object[]{"Save", "Don\'t Save", "Cancel"},
             "Cancel");
-        return (ans == JOptionPane.YES_OPTION) ? true : (ans == JOptionPane.NO_OPTION ? false : null);
+        return (ans == JOptionPane.YES_OPTION) ? Boolean.TRUE : (ans == JOptionPane.NO_OPTION ? Boolean.FALSE : null);
     }
 
     /** Ask if the user really wishes to overwrite the file (default=no). */
