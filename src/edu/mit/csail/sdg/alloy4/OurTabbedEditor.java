@@ -56,7 +56,6 @@ import static java.awt.Color.BLACK;
 import static java.awt.Color.WHITE;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
@@ -78,8 +77,45 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 public final class OurTabbedEditor extends JPanel {
 
-    /** This silences javac's warning about missing serialVersionUID. */
-    private static final long serialVersionUID = 1L;
+    //=====================================================================//
+
+    /** Graphical highlighter for a JTextComponent. */
+    private static final class OurTabbedHighlighter implements Highlighter.HighlightPainter {
+
+        /** The color to draw the highlights. */
+        private final Color color;
+
+        /** Constructs a highlighter. */
+        public OurTabbedHighlighter(Color color) { this.color = color; }
+
+        /** This method actually highlights. */
+        public void paint(Graphics g, int start, int end, Shape shape, JTextComponent text) {
+            Color oldcolor = g.getColor();
+            g.setColor(color);
+            try {
+                Rectangle box = shape.getBounds();
+                Rectangle a = text.getUI().modelToView(text, start);
+                Rectangle b = text.getUI().modelToView(text, end);
+                if (a.y == b.y) {
+                    // same line; if start==end, then draw all the way to the right edge.
+                    Rectangle r = a.union(b);
+                    g.fillRect(r.x, r.y, (r.width<=1 ? (box.x+box.width-r.x) : r.width), r.height);
+                } else {
+                    // On the first line, draw from "start" and extends to the right-most edge
+                    g.fillRect(a.x, a.y, box.x+box.width-a.x, a.height);
+                    // If there are line(s) between the first line and the last line, then draw them
+                    if (a.y+a.height != b.y) g.fillRect(box.x, a.y+a.height, box.width, b.y-(a.y+a.height));
+                    // Draw the last line
+                    g.fillRect(box.x, b.y, b.x-box.x, b.height);
+                }
+            } catch (BadLocationException e) {
+                // Failure to highlight is not fatal
+            }
+            g.setColor(oldcolor);
+        }
+    }
+
+    //=====================================================================//
 
     /** This defines the data associated with each tab. */
     private static final class Tab {
@@ -120,17 +156,22 @@ public final class OurTabbedEditor extends JPanel {
         }
     }
 
+    //=====================================================================//
+
+    /** This silences javac's warning about missing serialVersionUID. */
+    private static final long serialVersionUID = 1L;
+
     /** Background color for the list of tabs. */
-    private static final Color GRAY = new Color(.9f, .9f, .9f);
+    private static final Color GRAY = new Color(0.9f, 0.9f, 0.9f);
 
     /** Background color for an inactive tab. */
-    private static final Color INACTIVE = new Color(.8f, .8f, .8f);
+    private static final Color INACTIVE = new Color(0.8f, 0.8f, 0.8f);
 
     /** Background color for a inactive and highlighted tab. */
-    private static final Color INACTIVE_HIGHLIGHTED = new Color(.7f, .5f, .5f);
+    private static final Color INACTIVE_HIGHLIGHTED = new Color(0.7f, 0.5f, 0.5f);
 
     /** Foreground color for a active and highlighted tab. */
-    private static final Color ACTIVE_HIGHLIGHTED = new Color(.5f, .2f, .2f);
+    private static final Color ACTIVE_HIGHLIGHTED = new Color(0.5f, 0.2f, 0.2f);
 
     /** Default border color for each tab. */
     private static final Color BORDER = Color.LIGHT_GRAY;
@@ -165,41 +206,13 @@ public final class OurTabbedEditor extends JPanel {
     /** The list of tabs. */
     private final List<Tab> tabs = new ArrayList<Tab>();
 
-    /** The currently selected tab from 0 to list.size()-1 (This value is 0 if there are no tabs) */
+    /** The currently selected tab from 0 to list.size()-1 (This value must be 0 if there are no tabs) */
     private int me = 0;
 
     /** The anonymous filename to give to the next unnamed text buffer. */
     private int nextNumber = 1;
 
-    /** Graphical highlighter for a JTextComponent. */
-    private static final class OurTabbedHighlighter implements Highlighter.HighlightPainter {
-        private final Color color;
-        public OurTabbedHighlighter(Color color) { this.color = color; }
-        public void paint(Graphics g, int start, int end, Shape shape, JTextComponent text) {
-            Color oldcolor = g.getColor();
-            g.setColor(color);
-            try {
-                Rectangle box = shape.getBounds();
-                Rectangle a = text.getUI().modelToView(text, start);
-                Rectangle b = text.getUI().modelToView(text, end);
-                if (a.y == b.y) {
-                    // same line; if start==end, then draw all the way to the right edge.
-                    Rectangle r = a.union(b);
-                    g.fillRect(r.x, r.y, (r.width<=1 ? (box.x+box.width-r.x) : r.width), r.height);
-                } else {
-                    // On the first line, draw from "start" and extends to the right-most edge
-                    g.fillRect(a.x, a.y, box.x+box.width-a.x, a.height);
-                    // If there are line(s) between the first line and the last line, then draw them
-                    if (a.y+a.height != b.y) g.fillRect(box.x, a.y+a.height, box.width, b.y-(a.y+a.height));
-                    // Draw the last line
-                    g.fillRect(box.x, b.y, b.x-box.x, b.height);
-                }
-            } catch (BadLocationException e) {
-                // Failure to highlight is not fatal
-            }
-            g.setColor(oldcolor);
-        }
-    }
+    //=====================================================================//
 
     /** Adjusts the background and foreground of all labels. */
     private void do_adjustLabelColor() {
@@ -220,7 +233,7 @@ public final class OurTabbedEditor extends JPanel {
     }
 
     /** Switch to the i-th tab (Note: if successful, it will then always call notifyChange.run()) */
-    public void do_setSelectedIndex(final int i) {
+    private void do_setSelectedIndex(final int i) {
         if (i<0 || i>=tabs.size()) return;
         me=i;
         revalidate();
@@ -260,11 +273,11 @@ public final class OurTabbedEditor extends JPanel {
     }
 
     /** Changes the label of a JLabel. */
-    private static void do_setTitle(JLabel label, String x, boolean modified) {
-        label.setToolTipText(x);
-        x = do_getShorterTitle(x);
-        if (x.length()>14) { x=x.substring(0,14)+"..."; }
-        label.setText("  "+x+(modified?" *  ":"  "));
+    private static void do_setTitle(JLabel label, String filename, boolean modified) {
+        label.setToolTipText(filename);
+        filename = do_getShorterTitle(filename);
+        if (filename.length()>14) { filename=filename.substring(0,14)+"..."; }
+        label.setText("  " + filename + (modified?" *  ":"  "));
     }
 
     /** Refresh the given tab; return true if no error occurred. */
@@ -273,7 +286,7 @@ public final class OurTabbedEditor extends JPanel {
         Tab t = tabs.get(i);
         if (!t.isFile) return true; // "untitled" text buffer does not have a on-disk file to refresh from
         if (t.modified) {
-            boolean ans=OurDialog.yesno(parentFrame,
+            boolean ans = OurDialog.yesno(parentFrame,
                 "You have unsaved changes to \"" + do_getShorterTitle(t.filename)
                 + "\"\nAre you sure you wish to discard your changes and reload it from disk?",
                 "Discard your changes", "Cancel this operation");
@@ -296,8 +309,11 @@ public final class OurTabbedEditor extends JPanel {
         return true;
     }
 
-    /** Save the current tab to a file. */
-    public String do_saveAs(String filename) {
+    /**
+     * Save the current tab content to the file system
+     * @return null if an error occurred (otherwise, return the filename)
+     */
+    private String do_saveAs(String filename) {
         if (me<0 || me>=tabs.size()) return null;
         filename = Util.canon(filename);
         for(int i=0; i<tabs.size(); i++) {
@@ -327,13 +343,13 @@ public final class OurTabbedEditor extends JPanel {
      * @return null if an error occurred (otherwise, return the filename)
      */
     public String do_save(boolean alwaysPickNewName) {
-        if (me<0 || me>=tabs.size()) { return null; }
+        if (me<0 || me>=tabs.size()) return null;
         String filename = tabs.get(me).filename;
         if (alwaysPickNewName || tabs.get(me).isFile==false || filename.startsWith(Util.jarPrefix())) {
             File file = OurDialog.askFile(parentFrame, false, null, ".als", ".als files");
             if (file==null) return null;
             filename = Util.canon(file.getPath());
-            if (file.exists() && !OurDialog.askOverwrite(parentFrame,filename)) return null;
+            if (file.exists() && !OurDialog.askOverwrite(parentFrame, filename)) return null;
         }
         filename = do_saveAs(filename);
         if (filename!=null) Util.setCurrentDirectory(new File(filename).getParentFile());
@@ -346,7 +362,7 @@ public final class OurTabbedEditor extends JPanel {
         while(true) {
             String filename = Util.canon("Untitled "+nextNumber+".als");
             nextNumber++;
-            for(Tab t:tabs) { if (t.filename.equals(filename)) { continue again; } }
+            for(Tab t:tabs) if (t.filename.equals(filename)) continue again;
             return filename;
         }
     }
@@ -387,119 +403,13 @@ public final class OurTabbedEditor extends JPanel {
         if (me>=0 && me<tabs.size()) do_close(me);
     }
 
-    /** Close every tab, then create a new empty tab. */
+    /** Close every tab then create a new empty tab; returns true iff success. */
     public boolean do_closeAll() {
         // first attempt to close all the unmodified files
-        for(int i=tabs.size()-1; i>=0; i--) {
-            if (tabs.get(i).modified==false && do_close(i)==false) return false;
-        }
+        for(int i=tabs.size()-1; i>=0; i--) if (tabs.get(i).modified==false) do_close(i);
         // then close the modified files one-by-one until an error occurred or if the user refuses to save nor discard a file
-        for(int i=tabs.size()-1; i>=0; i--) {
-            if (do_close(i)==false) return false;
-        }
+        for(int i=tabs.size()-1; i>=0; i--) if (do_close(i)==false) return false;
         return true;
-    }
-
-    /**
-     * Create a new tab with the given filename and initial content.
-     * <p> Note: if a text buffer with that filename already exists, we will switch to it and ignore "fileContent" and "isFile"
-     */
-    private void do_newTab(String filename, String fileContent, boolean isFile) {
-        // If exists, then switch to that tab directly
-        if (do_switchToFilename(filename)) return;
-        // Make the new tab
-        final JLabel lb = OurUtil.label("", OurUtil.getVizFont().deriveFont(Font.BOLD), BLACK, WHITE, new OurBorder(BORDER, BORDER, WHITE, BORDER));
-        lb.addMouseListener(new MouseAdapter() {
-            @Override public final void mousePressed(MouseEvent e) {
-                for(int i=0; i<tabs.size(); i++) {
-                    if (tabs.get(i).label==lb) {
-                        do_setSelectedIndex(i);
-                        break;
-                    }
-                }
-            }
-        });
-        JPanel h4 = OurUtil.makeH(4); h4.setBorder(new OurBorder(null, null, BORDER, null));
-        JPanel h2 = OurUtil.makeH(3); h2.setBorder(new OurBorder(null, null, BORDER, null));
-        JPanel pan;
-        if (Util.onMac()) {
-            pan = OurUtil.makeVL(null, 2, OurUtil.makeHB(h4, lb, h2));
-        } else {
-            pan = OurUtil.makeVL(null, 2, OurUtil.makeHB(h4, lb, h2, GRAY), GRAY);
-        }
-        pan.setAlignmentX(0.0f);
-        pan.setAlignmentY(1.0f);
-        // Make the JTextArea
-        final OurTextArea text = new OurTextArea(syntaxHighlighting, Util.convertLineBreak(fileContent), fontFamily, fontSize, tabSize);
-        text.getActionMap().put("my_next", new AbstractAction("my_next") {
-            private static final long serialVersionUID = 1L;
-            public final void actionPerformed(ActionEvent e) {
-                int j=(-1);
-                for(int n=tabs.size(), i=0; i<n; i++) if (tabs.get(i).text==text) { j=i+1; if (j>=n) j=0; break; }
-                if (j>=0) do_setSelectedIndex(j);
-            }
-        });
-        text.getActionMap().put("my_prev", new AbstractAction("my_prev") {
-            private static final long serialVersionUID = 1L;
-            public final void actionPerformed(ActionEvent e) {
-                int j=(-1);
-                for(int n=tabs.size(), i=0; i<n; i++) if (tabs.get(i).text==text) { j=i-1; if (j<0) j=n-1; break; }
-                if (j>=0) do_setSelectedIndex(j);
-            }
-        });
-        text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, InputEvent.CTRL_MASK), "my_prev");
-        text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, InputEvent.CTRL_MASK), "my_next");
-        // Add everything
-        tabBar.add(pan, tabs.size());
-        final Tab tab = new Tab(pan, lb, text, filename, isFile);
-        tabs.add(tab);
-        do_setTitle(tab.label, filename, false);
-        // Add these listeners last, to make sure this object is fully initialized first
-        text.addCaretListener(new CaretListener() {
-            public final void caretUpdate(CaretEvent e) { notifyChange.run(); }
-        });
-        text.addFocusListener(new FocusAdapter() {
-            public final void focusGained(FocusEvent e) { notifyFocused.run(); }
-        });
-        text.getDocument().addDocumentListener(new DocumentListener() {
-            public final void insertUpdate(DocumentEvent e) {
-                do_removeAllHighlights();
-                do_setTitle(tab.label, tab.filename, true);
-                tab.modified=true;
-                notifyChange.run();
-            }
-            public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
-            public final void changedUpdate(DocumentEvent e) { } // font changes are irrelevant
-        });
-       // If it's a file, we want to remove the rightmost untitled empty tab
-        if (isFile) {
-            for(int i=tabs.size()-1; i>=0; i--) {
-                if (!tabs.get(i).isFile && tabs.get(i).text.getText().trim().length()==0) {
-                    tabs.get(i).modified=false;
-                    do_close(i);
-                    break;
-                }
-            }
-        }
-        // Must call this method to switch to the new tab; and it will call notifyChange.run() which is important
-        do_setSelectedIndex(tabs.size()-1);
-    }
-
-    /** Create a new empty tab. */
-    public void do_newTab() {
-        do_newTab(do_newname(), "", false);
-    }
-
-    /**
-     * Create a new tab with the given filename.
-     * <p> If a text buffer with that filename already exists, we will just switch to it.
-     * <p> Otherwise, we will create a new empty tab (and if allowIO==true, we'll populate the new tab with the content from disk).
-     */
-    public void do_newTab(String filename) throws IOException {
-        filename=Util.canon(filename);
-        if (do_switchToFilename(filename)) return;
-        String content = Util.readAll(filename);
-        do_newTab(filename, content, true);
     }
 
     /** Returns the number of tabs. */
@@ -570,51 +480,104 @@ public final class OurTabbedEditor extends JPanel {
         return (me>=0 && me<tabs.size()) ? tabs.get(me).isFile : false;
     }
 
-    /** Returns the currently selected tab. */
-    public int do_getSelectedIndex() {
-        return me;
+    /** Switches to the previous tab. */
+    public void do_prev() {
+        int i = me-1;
+        if (i<0) i=tabs.size()-1;
+        if (i!=me) do_setSelectedIndex(i);
+    }
+
+    /** Switches to the next tab. */
+    public void do_next() {
+        int i = me+1;
+        if (i>=tabs.size()) i=0;
+        if (i!=me) do_setSelectedIndex(i);
     }
 
     /**
-     * Highlights the text editor, based on the location information in the Pos object.
-     * <p> Note: this method can be called by any thread (not just the AWT event thread)
+     * Create a new tab with the given filename and initial content.
+     * <p> Note: if a text buffer with that filename already exists, we will switch to it and ignore "fileContent" and "isFile"
      */
-    public void do_highlight(final Pos p, final Color color, final boolean clearOldHighlightsFirst) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            OurUtil.invokeAndWait(new Runnable() {
-                public final void run() { do_highlight(p, color, clearOldHighlightsFirst); }
-            });
-            return;
-        }
-        if (clearOldHighlightsFirst) do_removeAllHighlights();
-        if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
-            try {
-                String f=Util.canon(p.filename);
-                if (!do_switchToFilename(f)) {
-                    String content;
-                    try {
-                        content=Util.readAll(f);
-                    } catch(IOException ex) {
-                        OurDialog.alert(parentFrame, "Error reading the file \""+f+"\"", "Error");
-                        return;
-                    }
-                    do_newTab(f, content, true);
-                }
-                OurTextArea text = do_text();
-                int c = text.do_getLineStartOffset(p.y-1)+p.x-1;
-                int d = text.do_getLineStartOffset(p.y2-1)+p.x2-1;
-                tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
-                // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
-                text.setSelectionStart(0);
-                text.setSelectionEnd(0);
-                text.setSelectionStart(c);
-                text.setSelectionEnd(c);
-                text.requestFocusInWindow();
-            } catch(BadLocationException ex) {
-                // Failure to highlight is not fatal
+    private void do_newTab(String filename, String fileContent, boolean isFile) {
+        // If exists, then switch to that tab directly
+        if (do_switchToFilename(filename)) return;
+        // Make the new tab
+        final JLabel lb = OurUtil.label("", OurUtil.getVizFont().deriveFont(Font.BOLD), BLACK, WHITE, new OurBorder(BORDER, BORDER, WHITE, BORDER));
+        lb.addMouseListener(new MouseAdapter() {
+            @Override public final void mousePressed(MouseEvent e) {
+                for(int i=0; i<tabs.size(); i++) if (tabs.get(i).label==lb) { do_setSelectedIndex(i); break; }
             }
-            do_adjustLabelColor();
-            notifyChange.run();
+        });
+        JPanel h1  = OurUtil.makeH(4); h1.setBorder(new OurBorder(null, null, BORDER, null));
+        JPanel h2  = OurUtil.makeH(3); h2.setBorder(new OurBorder(null, null, BORDER, null));
+        JPanel pan = Util.onMac() ? OurUtil.makeVL(null, 2, OurUtil.makeHB(h1, lb, h2)) : OurUtil.makeVL(null, 2, OurUtil.makeHB(h1, lb, h2, GRAY), GRAY);
+        pan.setAlignmentX(0.0f);
+        pan.setAlignmentY(1.0f);
+        // Make the JTextArea
+        final OurTextArea text = new OurTextArea(syntaxHighlighting, Util.convertLineBreak(fileContent), fontFamily, fontSize, tabSize);
+        text.getActionMap().put("alloy_next", new AbstractAction("alloy_next") {
+            private static final long serialVersionUID = 1L;
+            public final void actionPerformed(ActionEvent e) { do_next(); }
+        });
+        text.getActionMap().put("alloy_prev", new AbstractAction("alloy_prev") {
+            private static final long serialVersionUID = 1L;
+            public final void actionPerformed(ActionEvent e) { do_prev(); }
+        });
+        text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP,   InputEvent.CTRL_MASK), "alloy_prev");
+        text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, InputEvent.CTRL_MASK), "alloy_next");
+        // Add everything
+        tabBar.add(pan, tabs.size());
+        final Tab tab = new Tab(pan, lb, text, filename, isFile);
+        tabs.add(tab);
+        do_setTitle(tab.label, filename, false);
+        // Add these listeners last, to make sure this object is fully initialized first
+        text.addCaretListener(new CaretListener() {
+            public final void caretUpdate(CaretEvent e) { notifyChange.run(); }
+        });
+        text.addFocusListener(new FocusAdapter() {
+            public final void focusGained(FocusEvent e) { notifyFocused.run(); }
+        });
+        text.getDocument().addDocumentListener(new DocumentListener() {
+            public final void insertUpdate(DocumentEvent e) {
+                do_removeAllHighlights();
+                do_setTitle(tab.label, tab.filename, true);
+                tab.modified=true;
+                notifyChange.run();
+            }
+            public final void removeUpdate(DocumentEvent e) { insertUpdate(e); }
+            public final void changedUpdate(DocumentEvent e) { } // font changes are irrelevant
+        });
+        // If it's a file, we want to remove the rightmost untitled empty tab
+        if (isFile) for(int i=tabs.size()-1; i>=0; i--) if (!tabs.get(i).isFile && tabs.get(i).text.getText().length()==0) {
+            tabs.get(i).modified=false;
+            do_close(i);
+            break;
+        }
+        // Must call this method to switch to the new tab; and it will call notifyChange.run() which is important
+        do_setSelectedIndex(tabs.size()-1);
+    }
+
+    /** Create a new empty tab. */
+    public void do_newTab() {
+        do_newTab(do_newname(), "", false);
+    }
+
+    /**
+     * Create a new tab with the given filename.
+     * <p> If a text buffer with that filename already exists, we will just switch to it.
+     * <p> Otherwise, we will read the given filename and create a new tab for it.
+     * @return false iff an error occurred
+     */
+    public boolean do_newTab(String filename) {
+        filename = Util.canon(filename);
+        if (do_switchToFilename(filename)) return true;
+        try {
+           String content = Util.readAll(filename);
+           do_newTab(filename, content, true);
+           return true;
+        } catch(IOException ex) {
+           OurDialog.alert(parentFrame, "Error reading the file \""+filename+"\"", "Error");
+           return false;
         }
     }
 
@@ -630,36 +593,24 @@ public final class OurTabbedEditor extends JPanel {
             return;
         }
         if (clearOldHighlightsFirst) do_removeAllHighlights();
-        OurTextArea text=null;
+        OurTabbedHighlighter ht = new OurTabbedHighlighter(color);
+        OurTextArea text = null;
         int c=0, d;
-        again:
         for(Pos p:set) if (p!=null && p.filename.length()>0 && p.y>0 && p.x>0) {
             try {
-                String f=Util.canon(p.filename);
-                if (!do_switchToFilename(f)) {
-                    String content;
-                    try {
-                        content=Util.readAll(f);
-                    } catch(IOException ex) {
-                        OurDialog.alert(parentFrame, "Error reading the file \""+f+"\"", "Error");
-                        break again;
-                    }
-                    do_newTab(f, content, true);
-                }
+                if (!do_newTab(p.filename)) break;
                 text = do_text();
                 c = text.do_getLineStartOffset(p.y-1)+p.x-1;
                 d = text.do_getLineStartOffset(p.y2-1)+p.x2-1;
-                tabs.get(me).highlighter.addHighlight(c, d+1, new OurTabbedHighlighter(color));
+                tabs.get(me).highlighter.addHighlight(c, d+1, ht);
             } catch(BadLocationException ex) {
                 // Failure to highlight is not fatal
             }
         }
         if (text!=null) {
             // Setting cursor to 0 first should ensure the textarea will scroll to the highlighted section
-            text.setSelectionStart(0);
-            text.setSelectionEnd(0);
-            text.setSelectionStart(c);
-            text.setSelectionEnd(c);
+            text.setSelectionStart(0); text.setSelectionEnd(0);
+            text.setSelectionStart(c); text.setSelectionEnd(c);
         }
         do_text().requestFocusInWindow();
         do_adjustLabelColor();
@@ -670,7 +621,7 @@ public final class OurTabbedEditor extends JPanel {
      * Highlights the text editor, based on the location information in the Err object.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
-    public void do_highlight(final Err e) { do_highlight(e.pos, new Color(0.9f, 0.4f, 0.4f), true); }
+    public void do_highlight(final Err e) { do_highlight(Util.asList(e.pos), new Color(0.9f, 0.4f, 0.4f), true); }
 
     /** Constructs a tabbed editor pane. */
     public OurTabbedEditor(final Runnable notifyChanged, final Runnable notifyFocused, final JFrame parentFrame, final String fontFamily, final int fontSize, final int tabSize) {
@@ -681,19 +632,14 @@ public final class OurTabbedEditor extends JPanel {
         this.fontSize = fontSize;
         this.tabSize = tabSize;
         JPanel glue = OurUtil.makeHB(new Object[]{null});
-        glue.setBorder(new OurBorder(null,null,BORDER,null));
-        tabBar=OurUtil.makeHB(glue);
-        if (!Util.onMac()) {
-            tabBar.setOpaque(true);
-            tabBar.setBackground(GRAY);
-        }
+        glue.setBorder(new OurBorder(null, null, BORDER, null));
+        tabBar = OurUtil.makeHB(glue);
+        if (!Util.onMac()) { tabBar.setOpaque(true); tabBar.setBackground(GRAY); }
         tabBarScroller = new JScrollPane(tabBar, VERTICAL_SCROLLBAR_NEVER, HORIZONTAL_SCROLLBAR_NEVER);
         tabBarScroller.setFocusable(false);
-        tabBarScroller.setBorder(new EmptyBorder(0, 0, 0, 0));
-        setBorder(new EmptyBorder(0, 0, 0, 0));
+        tabBarScroller.setBorder(null);
+        setBorder(null);
         setLayout(new BorderLayout());
-        add(tabBarScroller, BorderLayout.NORTH);
-        add(new JPanel(), BorderLayout.CENTER); // Create an "initial" content area beneath the list-of-tabs
         do_newTab();
         tabBarScroller.addComponentListener(new ComponentListener() {
             public final void componentResized(ComponentEvent e) { do_setSelectedIndex(me); }

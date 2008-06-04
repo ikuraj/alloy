@@ -819,20 +819,12 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method performs Edit->GotoPrevFile. */
     private Runner doGotoPrevFile() {
-        if (wrap) return wrapMe();
-        int i=text.do_getSelectedIndex()-1;
-        if (i<0) i=text.do_getTabCount()-1;
-        text.do_setSelectedIndex(i);
-        return null;
+        if (wrap) return wrapMe(); else {text.do_prev(); return null;}
     }
 
     /** This method performs Edit->GotoNextFile. */
     private Runner doGotoNextFile() {
-        if (wrap) return wrapMe();
-        int i=text.do_getSelectedIndex()+1;
-        if (i>=text.do_getTabCount()) i=0;
-        text.do_setSelectedIndex(i);
-        return null;
+        if (wrap) return wrapMe(); else {text.do_next(); return null;}
     }
 
     //===============================================================================================================//
@@ -1536,13 +1528,7 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doOpenFile(String arg) {
         if (wrap) return wrapMe(arg);
         String f=Util.canon(arg);
-        try {
-            text.do_newTab(f);
-        } catch(IOException ex) {
-            doShow();
-            log.logRed("Cannot open the file "+f+"\nError message: "+(ex.getMessage().trim())+"\n");
-            return null;
-        }
+        if (!text.do_newTab(f)) return null;
         if (text.do_isFile()) addHistory(f);
         doShow();
         text.do_text().requestFocusInWindow();

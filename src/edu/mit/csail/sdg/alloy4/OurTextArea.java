@@ -114,11 +114,11 @@ public final class OurTextArea extends JTextPane {
 
     /** Implements the core traversal logic in getLineStartOffset, getLineCount, and getLineOfOffset. */
     private static int do_helper(String text, int action, int target) throws BadLocationException {
-        final int n=text.length();
+        final int n = text.length();
         if (action==3) if (target<0 || target>text.length()) throw new BadLocationException("", target);
         for(int i=0, line=0; i<=n; line++) {
-            // invariant #1:  line == the number of lines we've seen already before text[i]
-            // invariant #2:  i==0 or text[i-1]=='\n'
+            // loop invariant #1:  line == the number of lines we've seen already before text[i]
+            // loop invariant #2:  i==0 or text[i-1]=='\n'
             int j = (i>=n) ? n : text.indexOf('\n',i); if (j<0) j=n; // offset of the end of this line
             if (action==1 && line==target) return i;
             if (action==2 && j==n) return line+1;

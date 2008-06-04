@@ -48,9 +48,17 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
 
     /** This records an insertion or deletion. */
     private static final class OurTextAreaAction {
+
+        /** True if this was an insertion; false if this was a deletion. */
         private boolean insert;
+
+        /** The text being inserted or deleted. */
         private String text;
+
+        /** The offset where the insertion or deletion occurred. */
         private int offset;
+
+        /** Construct a new OurTextAreaAction object. */
         private OurTextAreaAction(boolean insert, String text, int offset) {
             this.insert = insert;
             this.text = text;
@@ -64,7 +72,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     /** The root element. */
     private final Element root;
 
-    /** The various style to use when displaying text in the text area. */
+    /** The various styles to use when displaying text in the text area. */
     private final Style
       styleNormal = addStyle("-", null),
       styleNumber = addStyle("0", null),
@@ -133,8 +141,6 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         comments.clear();
         if (flag) { do_reapplyAll(); return; }
         setCharacterAttributes(0, getLength(), styleNormal, false);
-        pane.getInputAttributes().removeAttribute(pane.getInputAttributes());
-        pane.getInputAttributes().addAttributes(styleNormal);
     }
 
     /** Construct a new OurTextAreaDocument object. */
@@ -303,7 +309,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
             if (c=='\n') {
                 y++; if (y==line) return comment;
             } else if (comment==0 && (c=='/' || c=='-') && i<n-1 && txt.charAt(i+1)==c) {
-                i = txt.indexOf('\n', i);
+                i=txt.indexOf('\n', i);
                 if (i<0) break; else i--;
             } else if
                 ((comment==0 && c=='/' && i<n-3 && txt.charAt(i+1)=='*' && txt.charAt(i+2)=='*' && txt.charAt(i+3)!='/')
@@ -388,8 +394,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         tabAttribute = new SimpleAttributeSet();
         final TabStop[] pos = new TabStop[100];
         for(int i=0; i<100; i++) { pos[i] = new TabStop(i*gap+gap); }
-        final TabSet tabSet = new TabSet(pos);
-        StyleConstants.setTabSet(tabAttribute, tabSet);
+        StyleConstants.setTabSet(tabAttribute, new TabSet(pos));
         setParagraphAttributes(0, getLength(), tabAttribute, false);
     }
 }
