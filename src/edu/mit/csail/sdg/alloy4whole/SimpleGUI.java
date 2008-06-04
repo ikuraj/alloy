@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.prefs.Preferences;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -92,7 +93,6 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Computer;
-import edu.mit.csail.sdg.alloy4.ConstSet;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.MailBug;
@@ -1492,15 +1492,15 @@ public final class SimpleGUI implements ComponentListener {
         }
         if (arg.startsWith("CORE: ")) {
             String filename = Util.canon(arg.substring(6));
-            Pair<ConstSet<Pos>,ConstSet<Pos>> hCore;
-            ConstSet<Pos> lCore;
+            Pair<Set<Pos>,Set<Pos>> hCore;
+            Set<Pos> lCore;
             InputStream is = null;
             ObjectInputStream ois = null;
             try {
                 is = new FileInputStream(filename);
                 ois = new ObjectInputStream(is);
-                hCore = (Pair<ConstSet<Pos>,ConstSet<Pos>>) ois.readObject();
-                lCore = (ConstSet<Pos>) ois.readObject();
+                hCore = (Pair<Set<Pos>,Set<Pos>>) ois.readObject();
+                lCore = (Set<Pos>) ois.readObject();
             } catch(Throwable ex) {
                 log.logRed("Error reading or parsing the core \""+filename+"\"\n");
                 return null;
