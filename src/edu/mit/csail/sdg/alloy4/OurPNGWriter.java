@@ -48,7 +48,7 @@ public final strictfp class OurPNGWriter {
      *
      * Each CHUNK:
      * ===========
-     * 4 bytes: N
+     * 4 bytes: N (most-significant-byte first)
      * 4 bytes: Chunk Type
      * N bytes: Chunk Data
      * 4 bytes: Checksum (this checksum is computed over the Chunk Type and Chunk Data)
@@ -62,8 +62,8 @@ public final strictfp class OurPNGWriter {
      * ===========
      * 4 bytes:  0  ,  0  ,  0  ,  9
      * 4 bytes: 'p' , 'H' , 'Y' , 's'
-     * 4 bytes: horizontal dots per meter
-     * 4 bytes: vertical dots per meter
+     * 4 bytes: horizontal dots per meter  (most-significant-byte first)
+     * 4 bytes: vertical dots per meter    (most-significant-byte first)
      * 1 byte:   1
      * 4 bytes: Checksum
      */

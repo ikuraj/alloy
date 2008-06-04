@@ -367,7 +367,7 @@ public final strictfp class OurPDFWriter {
      *  >>\n
      *  endobj\n\n
      *
-     *  END_OF_FILE format (assuming we have obj1 obj2 obj3 obj4 obj5 obj6 where obj2 is the "PDF Catalog")
+     *  END_OF_FILE format (assuming we have obj1 obj2 obj3 obj4 obj5 obj6 where obj6 is the "PDF Catalog")
      *  ===================================================================================================
      *
      *  xref\n
