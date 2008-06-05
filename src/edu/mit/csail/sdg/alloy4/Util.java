@@ -610,15 +610,11 @@ public final class Util {
     }
 
     /** Returns true iff running on Windows **/
-    public static boolean onWindows() {
-        return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows");
-    };
+    public static boolean onWindows()  { return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows"); };
 
     /** Returns true iff running on Mac OS X. **/
-    public static boolean onMac() {
-        return System.getProperty("mrj.version")!=null || System.getProperty("os.name").toLowerCase(Locale.US).startsWith("mac ");
-    }
+    public static boolean onMac()  { return System.getProperty("mrj.version")!=null || System.getProperty("os.name").toLowerCase(Locale.US).startsWith("mac "); }
 
     /** Returns the substring after the last "/" */
-    public static String tail(String string) { int i=string.lastIndexOf('/'); return (i<0) ? string : string.substring(i+1); }
+    public static String tail(String string)  { int i=string.lastIndexOf('/'); return (i<0) ? string : string.substring(i+1); }
 }
