@@ -49,7 +49,29 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.awt.event.KeyEvent;
+import static java.awt.event.KeyEvent.VK_PAGE_UP;
+import static java.awt.event.KeyEvent.VK_PAGE_DOWN;
+import static java.awt.event.KeyEvent.VK_ALT;
+import static java.awt.event.KeyEvent.VK_SHIFT;
+import static java.awt.event.KeyEvent.VK_A;
+import static java.awt.event.KeyEvent.VK_C;
+import static java.awt.event.KeyEvent.VK_E;
+import static java.awt.event.KeyEvent.VK_F;
+import static java.awt.event.KeyEvent.VK_G;
+import static java.awt.event.KeyEvent.VK_H;
+import static java.awt.event.KeyEvent.VK_L;
+import static java.awt.event.KeyEvent.VK_M;
+import static java.awt.event.KeyEvent.VK_N;
+import static java.awt.event.KeyEvent.VK_O;
+import static java.awt.event.KeyEvent.VK_Q;
+import static java.awt.event.KeyEvent.VK_R;
+import static java.awt.event.KeyEvent.VK_S;
+import static java.awt.event.KeyEvent.VK_T;
+import static java.awt.event.KeyEvent.VK_V;
+import static java.awt.event.KeyEvent.VK_W;
+import static java.awt.event.KeyEvent.VK_X;
+import static java.awt.event.KeyEvent.VK_Y;
+import static java.awt.event.KeyEvent.VK_Z;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -373,17 +395,6 @@ public final class SimpleGUI implements ComponentListener {
         return null;
     }
 
-    /** Make the frame visible, non-iconized, and focused. */
-    private void bringup(JFrame frame) {
-        frame.setVisible(true);
-        if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
-            frame.setExtendedState(JFrame.NORMAL);
-        else
-            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.requestFocus();
-        frame.toFront();
-    }
-
     /** Helper method that returns a hopefully very short name for a file name. */
     public static String slightlyShorterFilename(String name) {
         if (name.toLowerCase(Locale.US).endsWith(".als")) {
@@ -562,32 +573,32 @@ public final class SimpleGUI implements ComponentListener {
         try {
             wrap = true;
             filemenu.removeAll();
-            OurUtil.makeMenuItem(filemenu, "New",     true, KeyEvent.VK_N, KeyEvent.VK_N, doNew());
-            OurUtil.makeMenuItem(filemenu, "Open...", true, KeyEvent.VK_O, KeyEvent.VK_O, doOpen());
+            OurUtil.makeMenuItem(filemenu, "New",     VK_N, VK_N, doNew());
+            OurUtil.makeMenuItem(filemenu, "Open...", VK_O, VK_O, doOpen());
             if (!Util.onMac())
-                OurUtil.makeMenuItemWithAlt(filemenu, "Open Sample Models...", KeyEvent.VK_O, doBuiltin());
+                OurUtil.makeMenuItem(filemenu, "Open Sample Models...", VK_ALT, VK_O, doBuiltin());
             else
-                OurUtil.makeMenuItem(filemenu, "Open Sample Models...", true, -1, -1, doBuiltin());
+                OurUtil.makeMenuItem(filemenu, "Open Sample Models...", doBuiltin());
             JMenu recentmenu;
             filemenu.add(recentmenu = new JMenu("Open Recent"));
-            OurUtil.makeMenuItem(filemenu, "Reload all", true, KeyEvent.VK_R, KeyEvent.VK_R, doReloadAll());
-            OurUtil.makeMenuItem(filemenu, "Save",       true, KeyEvent.VK_S, KeyEvent.VK_S, doSave());
+            OurUtil.makeMenuItem(filemenu, "Reload all", VK_R, VK_R, doReloadAll());
+            OurUtil.makeMenuItem(filemenu, "Save",       VK_S, VK_S, doSave());
             if (Util.onMac())
-                OurUtil.makeMenuItemWithShift(filemenu,"Save As...",KeyEvent.VK_S, doSaveAs());
+                OurUtil.makeMenuItem(filemenu, "Save As...", VK_SHIFT, VK_S, doSaveAs());
             else
-                OurUtil.makeMenuItem(filemenu, "Save As...", true, KeyEvent.VK_A, -1, doSaveAs());
-            OurUtil.makeMenuItem(filemenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, doClose());
-            OurUtil.makeMenuItem(filemenu, "Clear Temporary Directory", true, -1, -1, doClearTemp());
-            OurUtil.makeMenuItem(filemenu, "Quit", true, KeyEvent.VK_Q, (Util.onMac()?-1:KeyEvent.VK_Q), doQuit());
+                OurUtil.makeMenuItem(filemenu, "Save As...", VK_A, doSaveAs());
+            OurUtil.makeMenuItem(filemenu,     "Close",                     VK_W, VK_W,                   doClose());
+            OurUtil.makeMenuItem(filemenu,     "Clear Temporary Directory",                               doClearTemp());
+            OurUtil.makeMenuItem(filemenu,     "Quit",                      VK_Q, (Util.onMac()?-1:VK_Q), doQuit());
             boolean found=false;
             for(Util.StringPref p: new Util.StringPref[]{ Model0, Model1, Model2, Model3 }) {
                 final String name = p.get();
                 if (name.length()==0) continue;
                 found=true;
-                OurUtil.makeMenuItem(recentmenu, name, -1, -1, doOpenFile(name));
+                OurUtil.makeMenuItem(recentmenu, name, doOpenFile(name));
             }
             recentmenu.addSeparator();
-            OurUtil.makeMenuItem(recentmenu, "Clear Menu", true, -1, -1, doClearRecent());
+            OurUtil.makeMenuItem(recentmenu, "Clear Menu", doClearRecent());
             recentmenu.setEnabled(found);
         } finally {
             wrap = false;
@@ -696,22 +707,22 @@ public final class SimpleGUI implements ComponentListener {
             boolean canUndo = text.do_text().do_canUndo();
             boolean canRedo = text.do_text().do_canRedo();
             editmenu.removeAll();
-            OurUtil.makeMenuItem(editmenu, "Undo", canUndo, KeyEvent.VK_Z, KeyEvent.VK_Z, doUndo());
+            OurUtil.makeMenuItem(editmenu, "Undo", VK_Z, VK_Z, doUndo(), canUndo);
             if (Util.onMac())
-                OurUtil.makeMenuItemWithShift(editmenu, "Redo", KeyEvent.VK_Z, doRedo()).setEnabled(canRedo);
+                OurUtil.makeMenuItem(editmenu, "Redo", VK_SHIFT, VK_Z, doRedo(), canRedo);
             else
-                OurUtil.makeMenuItem(editmenu, "Redo", canRedo, KeyEvent.VK_Y, KeyEvent.VK_Y, doRedo());
+                OurUtil.makeMenuItem(editmenu, "Redo", VK_Y, VK_Y, doRedo(), canRedo);
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Cut"           , true, KeyEvent.VK_X,        KeyEvent.VK_X,         doCut());
-            OurUtil.makeMenuItem(editmenu,"Copy"          , true,                 KeyEvent.VK_C,        KeyEvent.VK_C,         doCopy());
-            OurUtil.makeMenuItem(editmenu,"Paste"         , true, KeyEvent.VK_V,        KeyEvent.VK_V,         doPaste());
+            OurUtil.makeMenuItem(editmenu, "Cut",   VK_X, VK_X, doCut());
+            OurUtil.makeMenuItem(editmenu, "Copy",  VK_C, VK_C, doCopy());
+            OurUtil.makeMenuItem(editmenu, "Paste", VK_V, VK_V, doPaste());
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Go To..."      , true, KeyEvent.VK_T,        KeyEvent.VK_T,         doGoto());
-            OurUtil.makeMenuItem(editmenu,"Previous File" , text.do_getTabCount()>1, KeyEvent.VK_PAGE_UP,  KeyEvent.VK_PAGE_UP,   doGotoPrevFile());
-            OurUtil.makeMenuItem(editmenu,"Next File"     , text.do_getTabCount()>1, KeyEvent.VK_PAGE_DOWN,KeyEvent.VK_PAGE_DOWN, doGotoNextFile());
+            OurUtil.makeMenuItem(editmenu, "Go To..."      , VK_T,         VK_T,         doGoto());
+            OurUtil.makeMenuItem(editmenu, "Previous File" , VK_PAGE_UP,   VK_PAGE_UP,   doGotoPrevFile(), text.do_getTabCount()>1);
+            OurUtil.makeMenuItem(editmenu, "Next File"     , VK_PAGE_DOWN, VK_PAGE_DOWN, doGotoNextFile(), text.do_getTabCount()>1);
             editmenu.addSeparator();
-            OurUtil.makeMenuItem(editmenu,"Find..."       , true, KeyEvent.VK_F,        KeyEvent.VK_F,         doFind());
-            OurUtil.makeMenuItem(editmenu,"Find Next"     , true, KeyEvent.VK_G,        KeyEvent.VK_G,         doFindNext());
+            OurUtil.makeMenuItem(editmenu, "Find...",   VK_F, VK_F, doFind());
+            OurUtil.makeMenuItem(editmenu, "Find Next", VK_G, VK_G, doFindNext());
         } finally {
             wrap = false;
         }
@@ -832,15 +843,15 @@ public final class SimpleGUI implements ComponentListener {
     /** This method refreshes the "run" menu. */
     private Runner doRefreshRun() {
         if (wrap) return wrapMe();
-        KeyStroke ac = KeyStroke.getKeyStroke(KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
+        KeyStroke ac = KeyStroke.getKeyStroke(VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask());
         try {
             wrap = true;
             runmenu.removeAll();
-            OurUtil.makeMenuItem(runmenu, "Execute Latest Command", true,                      KeyEvent.VK_E, KeyEvent.VK_E,  doExecuteLatest());
+            OurUtil.makeMenuItem(runmenu, "Execute Latest Command", VK_E, VK_E, doExecuteLatest());
             runmenu.add(new JSeparator());
-            OurUtil.makeMenuItem(runmenu, "Show Latest Instance",   latestInstance.length()>0, KeyEvent.VK_L,  KeyEvent.VK_L, doShowLatest());
-            OurUtil.makeMenuItem(runmenu, "Show Metamodel",         true,                      KeyEvent.VK_M,  KeyEvent.VK_M, doShowMetaModel());
-            OurUtil.makeMenuItem(runmenu, "Open Evaluator",         true,                      KeyEvent.VK_V,  -1,            doLoadEvaluator());
+            OurUtil.makeMenuItem(runmenu, "Show Latest Instance",   VK_L, VK_L, doShowLatest(), latestInstance.length()>0);
+            OurUtil.makeMenuItem(runmenu, "Show Metamodel",         VK_M, VK_M, doShowMetaModel());
+            OurUtil.makeMenuItem(runmenu, "Open Evaluator",         VK_V,       doLoadEvaluator());
         } finally {
             wrap = false;
         }
@@ -878,12 +889,12 @@ public final class SimpleGUI implements ComponentListener {
             for(int i=0; i<cp.size(); i++) {
                 JMenuItem y = new JMenuItem(cp.get(i).toString(), null);
                 y.addActionListener(doRun(i));
-                if (i==latestCommand) { y.setMnemonic(KeyEvent.VK_E); y.setAccelerator(ac); }
+                if (i==latestCommand) { y.setMnemonic(VK_E); y.setAccelerator(ac); }
                 runmenu.add(y,i);
             }
             if (cp.size()>=2) {
                 JMenuItem y = new JMenuItem("Execute All", null);
-                y.setMnemonic(KeyEvent.VK_A);
+                y.setMnemonic(VK_A);
                 y.addActionListener(doRun(-1));
                 runmenu.add(y,0);
                 runmenu.add(new JSeparator(),1);
@@ -1068,8 +1079,8 @@ public final class SimpleGUI implements ComponentListener {
             if (isViz) {
                 viz.addMinMaxActions(w);
             } else {
-                OurUtil.makeMenuItem(w, "Minimize", true, KeyEvent.VK_M, -1, doMinimize()).setIcon(iconNo);
-                OurUtil.makeMenuItem(w, "Zoom", true, -1, -1, doMaximize()).setIcon(iconNo);
+                OurUtil.makeMenuItem(w, "Minimize", VK_M, doMinimize(), iconNo);
+                OurUtil.makeMenuItem(w, "Zoom",           doZoom(),     iconNo);
             }
             w.addSeparator();
             List<String> filenames=text.do_getFilenames();
@@ -1094,25 +1105,18 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method minimizes the window. */
     private Runner doMinimize() {
-        if (wrap) return wrapMe();
-        frame.setExtendedState(JFrame.ICONIFIED);
-        return null;
+        if (wrap) return wrapMe(); else {OurUtil.minimize(frame); return null;}
     }
 
     /** This method alternatingly maximizes or restores the window. */
-    private Runner doMaximize() {
-        if (wrap) return wrapMe();
-        if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
-            frame.setExtendedState(JFrame.NORMAL);
-        else
-            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        return null;
+    private Runner doZoom() {
+        if (wrap) return wrapMe(); else {OurUtil.zoom(frame); return null;}
     }
 
     /** This method bring this window to the foreground. */
     private Runner doShow() {
         if (wrap) return wrapMe();
-        bringup(frame);
+        OurUtil.show(frame);
         text.do_text().requestFocusInWindow();
         return null;
     }
@@ -1125,58 +1129,58 @@ public final class SimpleGUI implements ComponentListener {
         try {
             wrap = true;
             optmenu.removeAll();
-            OurUtil.makeMenuItem(optmenu, "Welcome Message at Start Up: "+(Welcome.get() < welcomeLevel ? "Yes" : "No"), -1, -1, doOptWelcome());
+            OurUtil.makeMenuItem(optmenu, "Welcome Message at Start Up: "+(Welcome.get() < welcomeLevel ? "Yes" : "No"), doOptWelcome());
             //
             final SatSolver now = SatSolver.get();
             final JMenu sat = new JMenu("SAT Solver: "+now);
-            for(SatSolver sc:satChoices) { OurUtil.makeMenuItem(sat, ""+sc, -1, -1, doOptSolver(sc)).setIcon(sc==now?iconYes:iconNo); }
+            for(SatSolver sc:satChoices) { OurUtil.makeMenuItem(sat, ""+sc, doOptSolver(sc), sc==now?iconYes:iconNo); }
             optmenu.add(sat);
             //
-            OurUtil.makeMenuItem(optmenu, "Warnings are Fatal: "+(WarningNonfatal.get()?"No":"Yes"), -1, -1, doOptWarning());
+            OurUtil.makeMenuItem(optmenu, "Warnings are Fatal: "+(WarningNonfatal.get()?"No":"Yes"), doOptWarning());
             //
             final int mem = SubMemory.get();
             final JMenu subMemoryMenu = new JMenu("Maximum Memory to Use: " + mem + "M");
             for(int n: new Integer[]{16,32,64,128,256,512,768,1024,2048,3072,4096}) {
-                OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", -1, -1, doOptMemory(n)).setIcon(n==mem?iconYes:iconNo);
+                OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", doOptMemory(n), n==mem?iconYes:iconNo);
             }
             optmenu.add(subMemoryMenu);
             //
             final Verbosity vnow = Verbosity.get();
             final JMenu verb = new JMenu("Message Verbosity: "+vnow);
-            for(Verbosity vb:Verbosity.values()) { OurUtil.makeMenuItem(verb, ""+vb, -1, -1, doOptVerbosity(vb)).setIcon(vb==vnow?iconYes:iconNo); }
+            for(Verbosity vb:Verbosity.values()) { OurUtil.makeMenuItem(verb, ""+vb, doOptVerbosity(vb), vb==vnow?iconYes:iconNo); }
             optmenu.add(verb);
             //
-            OurUtil.makeMenuItem(optmenu, "Syntax Highlighting: "+(SyntaxDisabled.get()?"No":"Yes"), -1, -1, doOptSyntaxHighlighting());
+            OurUtil.makeMenuItem(optmenu, "Syntax Highlighting: "+(SyntaxDisabled.get()?"No":"Yes"), doOptSyntaxHighlighting());
             //
             final int fontSize = FontSize.get();
             final JMenu size = new JMenu("Font Size: "+fontSize);
             for(int n: new Integer[]{9,10,11,12,14,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72}) {
-                OurUtil.makeMenuItem(size, ""+n, -1, -1, doOptFontsize(n)).setIcon(n==fontSize?iconYes:iconNo);
+                OurUtil.makeMenuItem(size, ""+n, doOptFontsize(n), n==fontSize?iconYes:iconNo);
             }
             optmenu.add(size);
             //
-            OurUtil.makeMenuItem(optmenu, "Font: "+FontName.get()+"...", -1, -1, doOptFontname());
+            OurUtil.makeMenuItem(optmenu, "Font: "+FontName.get()+"...", doOptFontname());
             //
             final int tabSize = TabSize.get();
             final JMenu tabSizeMenu = new JMenu("Tab Size: "+tabSize);
-            for(int n=1; n<=12; n++) { OurUtil.makeMenuItem(tabSizeMenu, ""+n, -1, -1, doOptTabsize(n)).setIcon(n==tabSize?iconYes:iconNo); }
+            for(int n=1; n<=12; n++) { OurUtil.makeMenuItem(tabSizeMenu, ""+n, doOptTabsize(n), n==tabSize?iconYes:iconNo); }
             optmenu.add(tabSizeMenu);
             //
             final int skDepth = SkolemDepth.get();
             final JMenu skDepthMenu = new JMenu("Skolem Depth: "+skDepth);
-            for(int n=0; n<=2; n++) { OurUtil.makeMenuItem(skDepthMenu, ""+n, -1, -1, doOptSkolemDepth(n)).setIcon(n==skDepth?iconYes:iconNo); }
+            for(int n=0; n<=2; n++) { OurUtil.makeMenuItem(skDepthMenu, ""+n, doOptSkolemDepth(n), n==skDepth?iconYes:iconNo); }
             optmenu.add(skDepthMenu);
             //
             final int min = CoreMinimization.get();
             final String[] minLabelLong=new String[]{"Slow (guarantees local minimum)", "Medium", "Fast (initial unsat core)"};
             final String[] minLabelShort=new String[]{"Slow", "Medium", "Fast"};
             final JMenu cmMenu = new JMenu("Unsat Core Minimization Strategy: "+minLabelShort[min]);
-            for(int n=0; n<=2; n++) { OurUtil.makeMenuItem(cmMenu, minLabelLong[n], -1, -1, doOptCore(n)).setIcon(n==min?iconYes:iconNo); }
+            for(int n=0; n<=2; n++) { OurUtil.makeMenuItem(cmMenu, minLabelLong[n], doOptCore(n), n==min?iconYes:iconNo); }
             if (now!=SatSolver.MiniSatProverJNI) cmMenu.setEnabled(false);
             optmenu.add(cmMenu);
             //
-            OurUtil.makeMenuItem(optmenu,"Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), -1, -1, doOptAutoVisualize());
-            OurUtil.makeMenuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), -1, -1, doOptRecordKodkod());
+            OurUtil.makeMenuItem(optmenu, "Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), doOptAutoVisualize());
+            OurUtil.makeMenuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), doOptRecordKodkod());
         } finally {
             wrap = false;
         }
@@ -1538,7 +1542,7 @@ public final class SimpleGUI implements ComponentListener {
     /** This object performs solution enumeration. */
     private final Computer enumerator = new Computer() {
         public String compute(String arg) {
-            bringup(frame);
+            OurUtil.show(frame);
             if (subrunning)
                 throw new RuntimeException("Alloy4 is currently executing a SAT solver command. Please wait until that command has finished.");
             if (!prepareSubJVM())
@@ -1668,6 +1672,13 @@ public final class SimpleGUI implements ComponentListener {
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         frame.addComponentListener(this);
         frame.pack();
+        if (!Util.onMac() && !Util.onWindows()) {
+           // many Window managers do not respect ICCCM2; this should help avoid the Title Bar being shifted "off screen"
+           if (x<30) { if (x<0) x=0; width=width-(30-x);   x=30; }
+           if (y<30) { if (y<0) y=0; height=height-(30-y); y=30; }
+           if (width<100) width=100;
+           if (height<100) height=100;
+        }
         frame.setSize(width,height);
         frame.setLocation(x,y);
         frame.setVisible(true);
@@ -1695,16 +1706,16 @@ public final class SimpleGUI implements ComponentListener {
         JMenuBar bar = new JMenuBar();
         try {
             wrap = true;
-            filemenu = OurUtil.makeMenu(bar, "File", KeyEvent.VK_F, doRefreshFile());
-            editmenu = OurUtil.makeMenu(bar, "Edit", KeyEvent.VK_E, doRefreshEdit());
-            runmenu = OurUtil.makeMenu(bar, "Execute", KeyEvent.VK_X, doRefreshRun());
-            optmenu = OurUtil.makeMenu(bar, "Options", KeyEvent.VK_O, doRefreshOption());
-            windowmenu = OurUtil.makeMenu(bar, "Window", KeyEvent.VK_W, doRefreshWindow(false));
-            windowmenu2 = OurUtil.makeMenu(null, "Window", KeyEvent.VK_W, doRefreshWindow(true));
-            helpmenu = OurUtil.makeMenu(bar, "Help", KeyEvent.VK_H, null);
-            if (!Util.onMac()) OurUtil.makeMenuItem(helpmenu, "About Alloy...", true, KeyEvent.VK_A, -1, doAbout());
-            OurUtil.makeMenuItem(helpmenu, "Quick Guide", true, KeyEvent.VK_Q, -1, doHelp());
-            OurUtil.makeMenuItem(helpmenu, "See the Copyright Notices...", true, KeyEvent.VK_L, -1, doLicense());
+            filemenu = OurUtil.makeMenu(bar, "File", VK_F, doRefreshFile());
+            editmenu = OurUtil.makeMenu(bar, "Edit", VK_E, doRefreshEdit());
+            runmenu = OurUtil.makeMenu(bar, "Execute", VK_X, doRefreshRun());
+            optmenu = OurUtil.makeMenu(bar, "Options", VK_O, doRefreshOption());
+            windowmenu = OurUtil.makeMenu(bar, "Window", VK_W, doRefreshWindow(false));
+            windowmenu2 = OurUtil.makeMenu(null, "Window", VK_W, doRefreshWindow(true));
+            helpmenu = OurUtil.makeMenu(bar, "Help", VK_H, null);
+            if (!Util.onMac()) OurUtil.makeMenuItem(helpmenu, "About Alloy...", VK_A, doAbout());
+            OurUtil.makeMenuItem(helpmenu, "Quick Guide",                       VK_Q, doHelp());
+            OurUtil.makeMenuItem(helpmenu, "See the Copyright Notices...",      VK_L, doLicense());
         } finally {
             wrap = false;
         }

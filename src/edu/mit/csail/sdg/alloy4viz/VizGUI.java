@@ -372,14 +372,14 @@ public final class VizGUI implements ComponentListener {
         try {
             wrap=true;
             JMenu fileMenu = OurUtil.makeMenu(mb, "File", KeyEvent.VK_F, null);
-            OurUtil.makeMenuItem(fileMenu, "Open...", true, KeyEvent.VK_O, KeyEvent.VK_O, doLoad());
-            OurUtil.makeMenuItem(fileMenu, "Close", true, KeyEvent.VK_W, KeyEvent.VK_W, doClose());
+            OurUtil.makeMenuItem(fileMenu,        "Open...", KeyEvent.VK_O, KeyEvent.VK_O, doLoad());
+            OurUtil.makeMenuItem(fileMenu,        "Close",   KeyEvent.VK_W, KeyEvent.VK_W, doClose());
             if (!standalone)
-                OurUtil.makeMenuItem(fileMenu, "Close All", true, KeyEvent.VK_A, -1, doCloseAll());
+                OurUtil.makeMenuItem(fileMenu,    "Close All", KeyEvent.VK_A, doCloseAll());
             else
-                OurUtil.makeMenuItem(fileMenu, "Quit", true, KeyEvent.VK_Q, KeyEvent.VK_Q, doCloseAll());
+                OurUtil.makeMenuItem(fileMenu,    "Quit", KeyEvent.VK_Q, KeyEvent.VK_Q, doCloseAll());
             JMenu instanceMenu = OurUtil.makeMenu(mb, "Instance", KeyEvent.VK_I, null);
-            enumerateMenu = OurUtil.makeMenuItem(instanceMenu, "Show Next Solution", true, KeyEvent.VK_N, KeyEvent.VK_N, doNext());
+            enumerateMenu = OurUtil.makeMenuItem(instanceMenu, "Show Next Solution", KeyEvent.VK_N, KeyEvent.VK_N, doNext());
             thememenu = OurUtil.makeMenu(mb, "Theme", KeyEvent.VK_T, doRefreshTheme());
             if (standalone || windowmenu==null)
                 windowmenu = OurUtil.makeMenu(mb, "Window", KeyEvent.VK_W, doRefreshWindow());
@@ -441,8 +441,15 @@ public final class VizGUI implements ComponentListener {
         // Display the window, then proceed to load the input file
         if (frame!=null) {
            frame.pack();
-           frame.setSize(width,height);
-           frame.setLocation(x,y);
+           if (!Util.onMac() && !Util.onWindows()) {
+              // many Window managers do not respect ICCCM2; this should help avoid the Title Bar being shifted "off screen"
+              if (x<30) { if (x<0) x=0; width=width-(30-x);   x=30; }
+              if (y<30) { if (y<0) y=0; height=height-(30-y); y=30; }
+              if (width<100) width=100;
+              if (height<100) height=100;
+           }
+           frame.setSize(width, height);
+           frame.setLocation(x, y);
            frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
            try { wrap=true; frame.addWindowListener(doClose()); } finally { wrap=false; }
            frame.addComponentListener(this);
@@ -667,10 +674,7 @@ public final class VizGUI implements ComponentListener {
         if (frame!=null) {
            frame.setVisible(true);
            frame.setTitle("Alloy Visualizer "+Version.version()+" loading... Please wait...");
-           if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)!=JFrame.MAXIMIZED_BOTH)
-              frame.setExtendedState(JFrame.NORMAL);
-           frame.requestFocus();
-           frame.toFront();
+           OurUtil.show(frame);
         }
         updateDisplay();
     }
@@ -773,12 +777,12 @@ public final class VizGUI implements ComponentListener {
         thememenu.removeAll();
         try {
             wrap=true;
-            OurUtil.makeMenuItem(thememenu, "Load Theme...",            true, KeyEvent.VK_L, -1, doLoadTheme());
+            OurUtil.makeMenuItem(thememenu,     "Load Theme...",        KeyEvent.VK_L, doLoadTheme());
             if (defaultTheme!=null && defaultTheme.length()>0 && (new File(defaultTheme)).isDirectory())
-                OurUtil.makeMenuItem(thememenu, "Load Sample Theme...", true, KeyEvent.VK_B, -1, doLoadSampleTheme());
-            OurUtil.makeMenuItem(thememenu, "Save Theme",               true, KeyEvent.VK_S, -1, doSaveTheme());
-            OurUtil.makeMenuItem(thememenu, "Save Theme As...",         true, KeyEvent.VK_A, -1, doSaveThemeAs());
-            OurUtil.makeMenuItem(thememenu, "Reset Theme",              true, KeyEvent.VK_R, -1, doResetTheme());
+                OurUtil.makeMenuItem(thememenu, "Load Sample Theme...", KeyEvent.VK_B, doLoadSampleTheme());
+            OurUtil.makeMenuItem(thememenu,     "Save Theme",           KeyEvent.VK_S, doSaveTheme());
+            OurUtil.makeMenuItem(thememenu,     "Save Theme As...",     KeyEvent.VK_A, doSaveThemeAs());
+            OurUtil.makeMenuItem(thememenu,     "Reset Theme",          KeyEvent.VK_R, doResetTheme());
         } finally {
             wrap=false;
         }
@@ -884,8 +888,8 @@ public final class VizGUI implements ComponentListener {
     public void addMinMaxActions(JMenu menu) {
         try {
             wrap=true;
-            OurUtil.makeMenuItem(menu, "Minimize", true, KeyEvent.VK_M, -1, doMinimize()).setIcon(iconNo);
-            OurUtil.makeMenuItem(menu, "Zoom", true, -1, -1, doMaximize()).setIcon(iconNo);
+            OurUtil.makeMenuItem(menu, "Minimize", KeyEvent.VK_M, doMinimize(), iconNo);
+            OurUtil.makeMenuItem(menu, "Zoom",                    doZoom(),     iconNo);
         } finally {
             wrap=false;
         }
@@ -893,18 +897,13 @@ public final class VizGUI implements ComponentListener {
 
     /** This method minimizes the window. */
     private Runner doMinimize() {
-        if (!wrap && frame!=null) frame.setExtendedState(JFrame.ICONIFIED);
+        if (!wrap && frame!=null) OurUtil.minimize(frame);
         return wrapMe();
     }
 
     /** This method alternatingly maximizes or restores the window. */
-    private Runner doMaximize() {
-        if (!wrap && frame!=null) {
-            if ((frame.getExtendedState() & JFrame.MAXIMIZED_BOTH)==JFrame.MAXIMIZED_BOTH)
-                frame.setExtendedState(JFrame.NORMAL);
-            else
-                frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        }
+    private Runner doZoom() {
+        if (!wrap && frame!=null) OurUtil.zoom(frame);
         return wrapMe();
     }
 
