@@ -77,7 +77,7 @@ public final class Triple<A,B,C> implements Serializable {
         if (c!=null) {
             return c.toString();
         }
-        return "<null,null,null>";
+        return "";
     }
 
     /** Triples (a1,b1,c1) and (a2,b2,c2) are equal iff a1.equals(a2) and b1.equals(b2) and c1.equals(c2). */

@@ -38,8 +38,7 @@ import java.util.NoSuchElementException;
  *
  * <p>
  * Furthermore, this class's iterator allows concurrent insertion and iteration
- * (that is, we can iterate over the list while adding elements to the
- * list at the same time).
+ * (that is, we can iterate over the list while adding elements to the list at the same time).
  * The iterator is guaranteed to iterate over exactly the elements
  * that existed at the time that the iterator was created.
  *
@@ -92,49 +91,35 @@ public final class SafeList<T> implements Serializable, Iterable<T> {
 
     /** Constructs an unmodifiable copy of an existing SafeList. */
     public SafeList<T> dup() {
-        List<T> mylist;
-        int mymax;
-        synchronized(SafeList.class) {
-            mylist=list;
-            mymax=size();
-        }
-        return new SafeList<T>(mylist,mymax);
+        synchronized(SafeList.class) { return new SafeList<T>(list, size()); }
     }
 
     /** Constructs a modifiable ArrayList containing the same elements as this list. */
     public List<T> makeCopy() {
-        int n = size();
-        // size() is synchronized; by reading the size up front, we can then read each element one-by-one
-        // while allowing other threads to add to this list. Since existing elements in SafeList will never change,
-        // we can safely interleave the read and insertion without putting a grand lock on the entire loop.
-        ArrayList<T> ans = new ArrayList<T>(n);
-        for(int i=0; i<n; i++) ans.add(get(i));
-        return ans;
+        synchronized(SafeList.class) {
+           int n = size();
+           ArrayList<T> ans = new ArrayList<T>(n);
+           for(int i=0; i<n; i++) ans.add(list.get(i));
+           return ans;
+        }
     }
 
     /** Computes a hash code that is consistent with SafeList's equals() and java.util.List's hashCode() methods. */
     @Override public int hashCode() {
-        int answer=1, i=0, n=size();
-        // size() is synchronized; by reading the size up front, we can then read each element one-by-one
-        // while allowing other threads to add to this list. Since existing elements in SafeList will never change,
-        // we can safely interleave the read and insertion without putting a grand lock on the entire loop.
-        for(Object obj:this) {
-            if (i>=n) break;
-            i++;
-            answer=31*answer;
-            if (obj!=null) answer=answer+obj.hashCode();
-        }
+        int answer = 1;
+        for(Object obj: this) answer = 31*answer + (obj!=null ? obj.hashCode() : 0);
         return answer;
     }
 
-    /** Returns true if (that instanceof List), and that contains the same elements as this list. */
+    /** Returns true if (that instanceof List or that instanceof SafeList), and that contains the same elements as this list. */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
-        if (!(that instanceof List)) return false;
-        List<?> x=(List<?>)that;
-        int n=size(); // the size() method is synchronized, so we are safe in calling it
-        if (n!=x.size()) return false;
-        Iterator<?> a=iterator(), b=x.iterator();
+        int n;
+        Iterator<?> b;
+        if (that instanceof List)          { n=((List)that).size();      if (n!=size()) return false; b=((List)that).iterator();     }
+        else if (that instanceof SafeList) { n=((SafeList)that).size();  if (n!=size()) return false; b=((SafeList)that).iterator(); }
+        else return false;
+        Iterator<?> a=iterator();
         for(int i=0; i<n; i++) { // We must read up to n elements only
             Object aa=a.next(), bb=b.next();
             if (aa==null) {
@@ -148,7 +133,7 @@ public final class SafeList<T> implements Serializable, Iterable<T> {
 
     /** Returns true if the list contains the given element. */
     public boolean contains(Object item) {
-        for(T entry:this) {
+        for(T entry: this) {
             if (entry==null) {
                 if (item==null) return true;
             } else {
@@ -160,21 +145,23 @@ public final class SafeList<T> implements Serializable, Iterable<T> {
 
     /** Add an element into the list. */
     public boolean add(T item) {
-        if (max>=0) throw new UnsupportedOperationException();
-        synchronized(SafeList.class) { list.add(item); }
-        return true;
+        synchronized(SafeList.class) {
+            if (max>=0) throw new UnsupportedOperationException(); else return list.add(item);
+        }
     }
 
     /** Get an element from the list. */
     public T get(int i) {
-        if (max>=0 && i>=max) throw new IndexOutOfBoundsException();
-        synchronized(SafeList.class) { return list.get(i); }
+        synchronized(SafeList.class) {
+            if (max>=0 && i>=max) throw new IndexOutOfBoundsException(); else return list.get(i);
+        }
     }
 
     /** Returns the size of the list. */
     public int size() {
-        if (max>=0) return max;
-        synchronized(SafeList.class) { return list.size(); }
+        synchronized(SafeList.class) {
+            if (max>=0) return max; else return list.size();
+        }
     }
 
     /** Returns true if the list is empty. */
@@ -194,53 +181,29 @@ public final class SafeList<T> implements Serializable, Iterable<T> {
     public Iterator<T> iterator() {
         synchronized(SafeList.class) {
             return new Iterator<T>() {
-                private final int imax=(max>=0 ? max : list.size());
-                private int now=0;
+                private final int imax = (max>=0 ? max : list.size());
+                private int now = 0;
                 public final T next() {
-                    if (now>=imax) throw new NoSuchElementException();
+                    if (now >= imax) throw new NoSuchElementException();
                     synchronized(SafeList.class) {
-                        T answer=list.get(now);
+                        T answer = list.get(now);
                         now++;
                         return answer;
                     }
                 }
-                public final boolean hasNext() { return now<imax; }
+                public final boolean hasNext() { return now < imax; }
                 public final void remove() { throw new UnsupportedOperationException(); }
             };
         }
     }
 
-    /** True if this list contains everything from that collection; we return true if that collection is empty. */
-    public boolean containsAll(Collection<?> collection) {
-        for(Object obj:collection) {
-            if (!contains(obj)) return false;
-        }
-        return true;
-    }
-
-    /** Adds every element from that collection. */
-    public boolean addAll(Collection<? extends T> collection) {
-        boolean changed=false;
-        synchronized(SafeList.class) {
-            // Since other threads might try to add element to this SafeList also,
-            // we must put a lock on the entire loop, so that addAll() completes atomically.
-            for(T obj:collection) {
-                add(obj);
-                changed=true;
-            }
-        }
-        return changed;
-    }
-
     /** Returns a String representation of this list. */
     @Override public String toString() {
-        StringBuilder sb=new StringBuilder("[");
-        boolean first=true;
-        for(Object x:this) {
-            if (first) { first=false; } else { sb.append(", "); }
-            if (x==null) sb.append("null");
-            else if (x==this) sb.append("(this collection)");
-            else sb.append(x.toString());
+        StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
+        for(Object x: this) {
+            if (first) first=false; else sb.append(", ");
+            if (x==this) sb.append("(this collection)"); else sb.append(x);
         }
         return sb.append(']').toString();
     }

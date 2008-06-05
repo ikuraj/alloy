@@ -57,7 +57,7 @@ public final class Pair<A,B> implements Serializable {
             return (String)b;
         }
         if (a==null) {
-            return (b!=null) ? b.toString() : "<null,null>";
+            return (b!=null) ? b.toString() : "";
         } else {
             return (b!=null) ? (a.toString()+" "+b) : a.toString();
         }

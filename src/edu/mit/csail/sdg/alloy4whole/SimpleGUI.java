@@ -1427,7 +1427,7 @@ public final class SimpleGUI implements ComponentListener {
         // If the "check for update" took too long, then don't display the message, since it clutters up the message panel
         if (System.currentTimeMillis()-now >= 5000 || !result.startsWith("Alloy Build ")) return null;
         // Now that we're online, try to remove the old ill-conceived "Java WebStart" versions of Alloy4 (which consists of Alloy4 BETA1..BETA7)
-        new Subprocess(20000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
+        Subprocess.exec(20000, new String[]{"javaws","-silent","-offline","-uninstall","http://alloy.mit.edu/alloy4/download/alloy4.jnlp"});
         // Now, display the result of the alloy.mit.edu version polling
         try {
             wrap=true;
@@ -1795,10 +1795,10 @@ public final class SimpleGUI implements ComponentListener {
         // Testing the SAT solvers
         if (1==1) {
             satChoices = SatSolver.values().makeCopy();
-            Subprocess test1 = new Subprocess(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
-            if (!isSat(test1.getStandardOutput())) satChoices.remove(SatSolver.BerkMinPIPE);
-            Subprocess test2 = new Subprocess(20000, new String[]{binary+fs+"spear", "--model", "--dimacs", binary+fs+"tmp.cnf"});
-            if (!isSat(test2.getStandardOutput())) satChoices.remove(SatSolver.SpearPIPE);
+            String test1 = Subprocess.exec(20000, new String[]{binary+fs+"berkmin", binary+fs+"tmp.cnf"});
+            if (!isSat(test1)) satChoices.remove(SatSolver.BerkMinPIPE);
+            String test2 = Subprocess.exec(20000, new String[]{binary+fs+"spear", "--model", "--dimacs", binary+fs+"tmp.cnf"});
+            if (!isSat(test2)) satChoices.remove(SatSolver.SpearPIPE);
             try { System.loadLibrary("minisat"); } catch(UnsatisfiedLinkError e) {
                 log.logBold("Warning: JNI-based SAT solver does not work on this platform.\n");
                 log.log("This is okay, since you can still use SAT4J as the solver.\n"+

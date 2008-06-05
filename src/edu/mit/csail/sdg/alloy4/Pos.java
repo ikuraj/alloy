@@ -62,11 +62,11 @@ public final class Pos implements Serializable {
      * @param y - the row position (from 1..)
      */
     public Pos(String filename, int x, int y) {
-        this.filename=(filename==null?"":filename);
-        this.x=(x>0?x:1);
-        this.y=(y>0?y:1);
-        this.x2=this.x;
-        this.y2=this.y;
+        this.filename = (filename==null ? "" : filename);
+        this.x = (x>0 ? x : 1);
+        this.y = (y>0 ? y : 1);
+        this.x2 = this.x;
+        this.y2 = this.y;
     }
 
     /**
@@ -78,21 +78,21 @@ public final class Pos implements Serializable {
      * @param y2 - the ending row position (from 1..)
      */
     public Pos(String filename, int x, int y, int x2, int y2) {
-        this.filename=(filename==null?"":filename);
-        this.x=(x>0?x:1);
-        this.y=(y>0?y:1);
+        this.filename = (filename==null ? "" : filename);
+        this.x = (x>0 ? x : 1);
+        this.y = (y>0 ? y : 1);
         if (y2<(this.y)) y2=this.y;
         if (y2==this.y) {
            if (x2<(this.x)) x2=this.x;
         } else {
            if (x2<1) x2=1;
         }
-        this.x2=x2;
-        this.y2=y2;
+        this.x2 = x2;
+        this.y2 = y2;
     }
 
     /**
-     * Return a new position that merges this and that
+     * Return a new position that merges this and that (it is assumed that the two Pos objects have same filename)
      * @param that - the other position object
      */
     public Pos merge(Pos that) {
@@ -107,14 +107,15 @@ public final class Pos implements Serializable {
             x2=this.x2;
             y2=this.y2;
         }
+        if (x==this.x && y==this.y && x2==this.x2 && y2==this.y2) return this; // avoid creating unnecessary new object
+        if (x==that.x && y==that.y && x2==that.x2 && y2==that.y2) return that; // avoid creating unnecessary new object
         return new Pos(filename, x, y, x2, y2);
     }
 
     /** Returns true if neither argument is null nor UNKNOWN, and that the ending position of "a" is before the starting position of "b". */
     public static boolean before(Pos a, Pos b) {
-        if (a==null || a==Pos.UNKNOWN || b==null || b==Pos.UNKNOWN) return false;
-        else if (a.filename!=b.filename && !a.filename.equals(b.filename)) return false;
-        else return a.y2<b.y || (a.y2==b.y && a.x2<b.x);
+        if (a==null || a==Pos.UNKNOWN || b==null || b==Pos.UNKNOWN || !a.filename.equals(b.filename)) return false;
+        return a.y2<b.y || (a.y2==b.y && a.x2<b.x);
     }
 
     /**
@@ -145,7 +146,6 @@ public final class Pos implements Serializable {
 
     /** Returns a String representation of this position value. */
     @Override public String toString() {
-        //if (1==1) return "(Y="+y+" X="+x+" .. Y="+y2+" X="+x2+")";
         if (filename.length()==0) return "line "+y+", column "+x; else return "line "+y+", column "+x+", filename="+filename;
     }
 }

@@ -37,7 +37,7 @@ public abstract class Runner extends AbstractAction implements Runnable, WindowL
     /** This silences javac's warning about missing serialVersionUID. */
     private static final long serialVersionUID = 1L;
 
-    /** Constructs a new runner to encapsulate the given runnable that takes an int argument. */
+    /** Constructs a new runner; you should override the run() and run(arg) method to customize it. */
     public Runner() { }
 
     /** This method should be overriden to provide the default action that this Runner would perform. */
@@ -83,7 +83,7 @@ public abstract class Runner extends AbstractAction implements Runnable, WindowL
     public static final Runner createExit(final int n) {
         return new Runner() {
             private static final long serialVersionUID = 1L;
-            public final void run() { System.exit(n); }
+            public final void run()           { System.exit(n); }
             public final void run(Object arg) { System.exit(n); }
         };
     }
@@ -92,7 +92,7 @@ public abstract class Runner extends AbstractAction implements Runnable, WindowL
     public static final Runner createDispose(final Window window) {
         return new Runner() {
             private static final long serialVersionUID = 1L;
-            public final void run() { window.dispose(); }
+            public final void run()           { window.dispose(); }
             public final void run(Object arg) { window.dispose(); }
         };
     }
