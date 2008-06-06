@@ -279,7 +279,7 @@ public final class A4SolutionReader {
           sol.kr2type(r, v.type);
        }
        // Done!
-       sol.solve(null, null, false);
+       sol.solve(null, null, null, false);
     }
 
     /**

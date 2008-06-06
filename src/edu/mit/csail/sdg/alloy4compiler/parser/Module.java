@@ -1134,6 +1134,13 @@ public final class Module {
         return ans.dup();
     }
 
+    /** Return the conjunction of all facts in this module and all reachable submodules. */
+    public Expr getAllReachableFacts() {
+        Expr ans = ExprConstant.TRUE;
+        for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) ans = ans.and(f.b);
+        return ans;
+    }
+
     //============================================================================================================================//
 
     /** Add a COMMAND declaration. */

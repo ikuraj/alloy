@@ -35,7 +35,6 @@ import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -206,13 +205,12 @@ public final class SimpleCLI {
                         db("Executing "+cc+"...\n");
                     }
                     rep.sb.append("Executing \""+c+"\"\n");
-                    Expr facts = ExprConstant.TRUE;
-                    for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
+                    Expr facts = world.getAllReachableFacts().and(cmds.get(i).b);
                     options.skolemDepth=0;
-                    A4Solution s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
+                    A4Solution s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts, c, options);
                     if (s.satisfiable()) { validate(s); if (s.isIncremental()) { s=s.next(); if (s.satisfiable()) validate(s); } }
                     options.skolemDepth=2;
-                    s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmds.get(i).b), c, options);
+                    s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts, c, options);
                     if (s.satisfiable()) { validate(s); if (s.isIncremental()) { s=s.next(); if (s.satisfiable()) validate(s); } }
                 }
             } catch(Throwable ex) {

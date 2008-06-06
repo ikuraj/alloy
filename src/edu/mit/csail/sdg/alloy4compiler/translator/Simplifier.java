@@ -23,7 +23,10 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import edu.mit.csail.sdg.alloy4.A4Reporter;
+import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.MailBug;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Expression;
@@ -42,21 +45,37 @@ import kodkod.instance.TupleSet;
  * <p> (2) When it sees "A = B", it will try to simplify A assuming "A in B", and then simplify B assuming "B in A".
  */
 
-final class Simplifier {
-
-    // It calls the following methods on A4Solution: query(), approximate(), shrink()
+public class Simplifier {
 
     /** Reporter for receiving debug messages. */
-    private final A4Reporter rep;
+    private A4Reporter rep = null;
 
     /** The A4Solution object we are attempting to simplify. */
-    private final A4Solution sol;
+    private A4Solution sol = null;
 
-    /** Constructor is private, since this class never needs to be instantiated. */
-    private Simplifier(A4Reporter rep, A4Solution sol) { this.rep=rep; this.sol=sol; }
+    /** Construct a Simplifier object. */
+    public Simplifier() { }
+
+    /** Simplify sol.bounds() based on the set of formulas; subclasses should override this method to implement different simplification algorithms. */
+    public boolean simplify(A4Reporter rep, A4Solution sol, Iterable<Formula> formulas) {
+        this.rep = rep;
+        this.sol = sol;
+        boolean ans = true;
+        for(Formula f: formulas) ans = simplify(f) && ans; // Note: even if we get false, we want to keep going so that we simplify bounds further
+        return ans;
+    }
+
+    /** Returns the corresponding Kodkod expression for the given Sig, or null if it is not associated with anything. */
+    protected final Expression a2k(A4Solution sol, Sig sig)  { return sol.a2k(sig); }
+
+    /** Returns the corresponding Kodkod expression for the given Field, or null if it is not associated with anything. */
+    protected final Expression a2k(A4Solution sol, Field field)  { return sol.a2k(field); }
+
+    /** Query the Bounds object to find the lower/upper bound; throws ErrorFatal if expr is not Relation, nor a union of Relations. */
+    protected final TupleSet query(A4Solution sol, boolean findUpper, Expression expr) throws ErrorFatal { return sol.query(findUpper, expr, true); }
 
     /** Simplify the bounds based on the fact that "a is subset of b"; return false if we discover the formula is unsat. */
-    private boolean simplify_in(Expression a, Expression b) {
+    private final boolean simplify_in(Expression a, Expression b) {
        if (a instanceof Relation) {
           try {
              Relation r = (Relation)a;
@@ -72,7 +91,7 @@ final class Simplifier {
     }
 
     /** Simplify the bounds based on the fact that "form is true"; return false if we discover the formula is unsat. */
-    private boolean simplify (Formula form) {
+    private final boolean simplify (Formula form) {
        boolean flag1=true, flag2=true;
        if (form instanceof BinaryFormula) {
           BinaryFormula f=(BinaryFormula)form;
@@ -86,13 +105,5 @@ final class Simplifier {
           if (f.op() == ComparisonFormula.Operator.EQUALS) flag2=simplify_in(f.right(), f.left());
        }
        return flag1 && flag2;
-    }
-
-    /** Simplify sol.bounds() based on the existing set of formulas in frame.formulas() */
-    static boolean simplify(A4Reporter rep, A4Solution sol, Iterable<Formula> formulas) {
-       Simplifier simp = new Simplifier(rep, sol);
-       boolean ans = true;
-       for(Formula f: formulas) ans = simp.simplify(f) && ans; // Note: even if we get false, we want to keep going so that we simplify bounds further
-       return ans;
     }
 }

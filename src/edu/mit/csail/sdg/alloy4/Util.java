@@ -22,7 +22,6 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -72,10 +71,10 @@ public final class Util {
         /** Constructs a new StringPref object with the given id and the given default value. */
         public StringPref (String id, String defaultValue) {this.id=id; this.defaultValue=defaultValue;}
         /** Sets the value for this preference. */
-        public void set (String value) { Preferences.userNodeForPackage(Util.class).put(id,value); }
+        public void set (String value) { Preferences.userNodeForPackage(Util.class).put(id, value); }
         /** Reads the value for this preference; if not set or is empty, we return the default value. */
         public String get () {
-            String ans=Preferences.userNodeForPackage(Util.class).get(id,"");
+            String ans=Preferences.userNodeForPackage(Util.class).get(id, "");
             return (ans==null || ans.length()==0) ? defaultValue : ans;
         }
     }
@@ -90,9 +89,9 @@ public final class Util {
         /** Constructurs a new BooleanPref object with the given id. */
         public BooleanPref (String id) { this.id=id; }
         /** Sets the value for this preference. */
-        public void set (boolean value) { Preferences.userNodeForPackage(Util.class).put(id, value?"y":""); }
+        public void set (boolean value) { Preferences.userNodeForPackage(Util.class).put(id, value ? "y" : ""); }
         /** Reads the value for this preference; if not set, we return false. */
-        public boolean get () { return Preferences.userNodeForPackage(Util.class).get(id,"").length()>0; }
+        public boolean get () { return "y".equals(Preferences.userNodeForPackage(Util.class).get(id, "")); }
     }
 
     /**
@@ -113,28 +112,28 @@ public final class Util {
         /** Constructs a new IntPref object with the given id; you must ensure max >= min, but def does not have to be between min..max */
         public IntPref (String id, int min, int def, int max) {this.id=id; this.min=min; this.def=def; this.max=max;}
         /** Sets the value for this preference. */
-        public void set (int value) { Preferences.userNodeForPackage(Util.class).putInt(id,bound(value)); }
+        public void set (int value) { Preferences.userNodeForPackage(Util.class).putInt(id, bound(value)); }
         /** Reads the value for this preference; if not set, we return the default value. */
         public int get () {
             int n;
-            String t=Preferences.userNodeForPackage(Util.class).get(id,"");
+            String t = Preferences.userNodeForPackage(Util.class).get(id, "");
             if (t==null || t.length()==0) return def;
             try { n=Integer.parseInt(t); } catch(NumberFormatException ex) { return def; }
             return bound(n);
         }
     }
 
-    /** Copy the input list, append "element" to it, then return the result as a unmodifiable list. */
+    /** Copy the input list, append "element" to it, then return the result as an unmodifiable list. */
     public static<T> ConstList<T> append(List<T> list, T element) {
-        TempList<T> ans=new TempList<T>(list.size()+1);
+        TempList<T> ans = new TempList<T>(list.size()+1);
         ans.addAll(list);
         ans.add(element);
         return ans.makeConst();
     }
 
-    /** Copy the input list, prepend "element" to it, then return the result as a unmodifiable list. */
+    /** Copy the input list, prepend "element" to it, then return the result as an unmodifiable list. */
     public static<T> ConstList<T> prepend(List<T> list, T element) {
-        TempList<T> ans=new TempList<T>(list.size()+1);
+        TempList<T> ans = new TempList<T>(list.size()+1);
         ans.add(element);
         ans.addAll(list);
         return ans.makeConst();
@@ -221,27 +220,41 @@ public final class Util {
         return currentDirectory;
     }
 
-    /** Read the file then return the file size and a byte[] array (the array could be slightly bigger than file size) */
-    private static Pair<byte[],Integer> readEntireFile(boolean fromJar, String filename) throws FileNotFoundException, IOException {
+    /**
+     * This returns the constant prefix to denote whether Util.readAll() should read from a JAR or read from the file system.
+     * (The reason we made this into a "method" rather than a constant String is that it is used
+     * by Util.canon() which is called by many static initializer blocks... so if we made this into a static field
+     * of Util, then it may not be initialized yet when we need it!)
+     */
+    public static String jarPrefix() { return File.separator + "$alloy4$" + File.separator; }
+
+    /**
+     * Read everything into a String; throws IOException if an error occurred.
+     * (If filename begins with Util.jarPrefix() then we read from the JAR instead)
+     */
+    public static String readAll(String filename) throws FileNotFoundException, IOException {
+        String JAR = jarPrefix();
+        boolean fromJar=false;
+        if (filename.startsWith(JAR)) { fromJar=true; filename=filename.substring(JAR.length()).replace('\\', '/'); }
         InputStream fis=null;
         int now=0, max=4096;
         if (!fromJar) {
-            long maxL=new File(filename).length();
-            max=(int)maxL;
+            long maxL = new File(filename).length();
+            max = (int)maxL;
             if (max != maxL) throw new IOException("File too big to fit in memory");
         }
         byte[] buf;
         try {
-            buf=new byte[max];
+            buf = new byte[max];
             fis = fromJar ? Util.class.getClassLoader().getResourceAsStream(filename) : new FileInputStream(filename);
             if (fis==null) throw new FileNotFoundException("File \""+filename+"\" cannot be found");
             while(true) {
                 if (now >= max) {
-                    max=now+4096;
-                    if (max<now) throw new IOException("File too big to fit in memory"); // since the new array size cannot fit in an "int"
-                    byte[] buf2=new byte[max];
+                    max = now + 4096;
+                    if (max<now) throw new IOException("File too big to fit in memory");
+                    byte[] buf2 = new byte[max];
                     if (now>0) System.arraycopy(buf, 0, buf2, 0, now);
-                    buf=buf2;
+                    buf = buf2;
                 }
                 int r = fis.read(buf, now, max-now);
                 if (r<0) break;
@@ -253,45 +266,26 @@ public final class Util {
         } finally {
             close(fis);
         }
-        return new Pair<byte[],Integer>(buf,now);
-    }
-
-    /**
-     * This returns the constant prefix to denote whether Util.readAll() should read from a JAR or read from the file system.
-     * (The reason we made this into a "method" rather than a constant String is that it is used
-     * by Util.canon() which is called by many static initializer blocks... so if we made this into a static field
-     * of Util, then it may not be initialized yet when we need it!)
-     */
-    public static String jarPrefix() { return File.separator + "$alloy4$" + File.separator; }
-
-    /**
-     * Read everything into a String; throws IOException if an error occurred.
-     * (If filename begins with Util.JAR, then we read from the JAR instead)
-     */
-    public static String readAll(String filename) throws FileNotFoundException, IOException {
-        String JAR = jarPrefix();
-        boolean fromJar=false;
-        if (filename.startsWith(JAR)) { fromJar=true; filename=filename.substring(JAR.length()).replace('\\', '/'); }
-        final CodingErrorAction r=CodingErrorAction.REPORT;
-        final Pair<byte[],Integer> p=readEntireFile(fromJar,filename);
+        CodingErrorAction r = CodingErrorAction.REPORT;
+        CodingErrorAction i = CodingErrorAction.IGNORE;
         ByteBuffer bbuf;
-        String ans="";
+        String ans = "";
         try {
             // We first try UTF-8;
-            bbuf=ByteBuffer.wrap(p.a, 0, p.b);
+            bbuf=ByteBuffer.wrap(buf, 0, now);
             ans=Charset.forName("UTF-8").newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
         } catch(CharacterCodingException ex) {
             try {
                 // if that fails, we try using the platform's default charset
-                bbuf=ByteBuffer.wrap(p.a, 0, p.b);
+                bbuf=ByteBuffer.wrap(buf, 0, now);
                 ans=Charset.defaultCharset().newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
             } catch(CharacterCodingException ex2) {
-                // if that also fails, we try using "ISO-8859-1" which should always succeed but may map characters wrong
-                bbuf=ByteBuffer.wrap(p.a, 0, p.b);
-                ans=Charset.forName("ISO-8859-1").newDecoder().onMalformedInput(r).onUnmappableCharacter(r).decode(bbuf).toString();
+                // if that also fails, we try using "ISO-8859-1" which should always succeed but may map some characters wrong
+                bbuf=ByteBuffer.wrap(buf, 0, now);
+                ans=Charset.forName("ISO-8859-1").newDecoder().onMalformedInput(i).onUnmappableCharacter(i).decode(bbuf).toString();
             }
         }
-        return ans;
+        return convertLineBreak(ans);
     }
 
     /** Open then overwrite the file with the given content; throws Err if an error occurred. */
@@ -308,30 +302,15 @@ public final class Util {
         if (content.length()>0 && content.charAt(content.length()-1)!='\n') content=content+"\n";
         // Now, convert the line break into the local platform's line break, then write it to the file
         try {
-            final String NL=System.getProperty("line.separator");
+            final String NL = System.getProperty("line.separator");
             byte[] array = content.replace("\n",NL).getBytes("UTF-8");
             fos.write(array);
             fos.close();
             return array.length;
         } catch(IOException ex) {
             close(fos);
-            throw new ErrorFatal("Cannot write to the file "+filename);
+            throw new ErrorFatal("Cannot write to the file "+filename, ex);
         }
-    }
-
-    /**
-     * Indent every line in the input stream with the given indentation.
-     */
-    public static final String indent(String text, String prefix) {
-        StringBuilder sb = new StringBuilder();
-        boolean lineStarted = false;
-        for(int i=0, n=text.length(); i<n; i++) {
-            char c=text.charAt(i);
-            if (c=='\n') { lineStarted=false; } else if (!lineStarted) { sb.append(prefix); lineStarted=true; }
-            sb.append(c);
-        }
-        if (sb.length()>0 && sb.charAt(sb.length()-1)!='\n') sb.append('\n');
-        return sb.toString();
     }
 
     /**
@@ -346,42 +325,32 @@ public final class Util {
            char sep = File.separatorChar, other = (sep=='/' ? '\\' : '/');
            return filename.replace(other, sep);
         }
-        File file=new File(filename);
-        String answer;
-        try {
-            answer=file.getCanonicalPath();
-        } catch(IOException ex) {
-            // Hopefully this shouldn't happen
-            answer=file.getAbsolutePath();
-        }
-        return answer;
+        File file = new File(filename);
+        try { return file.getCanonicalPath(); } catch(IOException ex) { return file.getAbsolutePath(); }
     }
 
     /**
      * Sorts two strings for optimum module order; we guarantee slashComparator(a,b)==0 iff a.equals(b).
      * <br> (1) First of all, the builtin names "extend" and "in" are sorted ahead of other names
-     * <br> (2) Else, if one string has fewer '/' than the other, then it is considered smaller.
-     * <br> (3) Else, if one string starts with "this/", then it is considered smaller
+     * <br> (2) Else, if one string starts with "this/", then it is considered smaller
+     * <br> (3) Else, if one string has fewer '/' than the other, then it is considered smaller.
      * <br> (4) Else, we compare them lexically without case-sensitivity.
      * <br> (5) Finally, we compare them lexically with case-sensitivity.
      */
     public static final Comparator<String> slashComparator = new Comparator<String>() {
         public final int compare(String a, String b) {
-            if (a==null) return (b==null)?0:-1;
-            if (b==null) return 1;
-            if (a.equals("extends")) return a.equals(b) ? 0 : -1;
-            if (b.equals("extends")) return 1;
-            if (a.equals("in")) return a.equals(b) ? 0 : -1;
-            if (b.equals("in")) return 1;
-            int acount=0, bcount=0;
-            for(int i=0; i<a.length(); i++) { if (a.charAt(i)=='/') acount++; }
-            for(int i=0; i<b.length(); i++) { if (b.charAt(i)=='/') bcount++; }
-            if (acount!=bcount) return (acount<bcount)?-1:1;
+            if (a==null) return (b==null)?0:-1; else if (b==null) return 1; else if (a.equals(b)) return 0;
+            if (a.equals("extends")) return -1; else if (b.equals("extends")) return 1;
+            if (a.equals("in"))      return -1; else if (b.equals("in"))      return 1;
             if (a.startsWith("this/")) {
                 if (!b.startsWith("this/")) return -1;
             } else if (b.startsWith("this/")) {
                 return 1;
             }
+            int acount=0, bcount=0;
+            for(int i=0; i<a.length(); i++) { if (a.charAt(i)=='/') acount++; }
+            for(int i=0; i<b.length(); i++) { if (b.charAt(i)=='/') bcount++; }
+            if (acount!=bcount) return (acount<bcount) ? -1 : 1;
             int result = a.compareToIgnoreCase(b);
             return result!=0 ? result : a.compareTo(b);
         }
@@ -391,19 +360,17 @@ public final class Util {
      * Copy the given file from JAR into the destination file; if the destination file exists, we then do nothing.
      * Returns true iff a file was created and written.
      */
-    private static synchronized boolean copy(String sourcename, String destname) {
-        File destfileobj=new File(destname);
+    private static boolean copy(String sourcename, String destname) {
+        File destfileobj = new File(destname);
         if (destfileobj.isFile() && destfileobj.length()>0) return false;
-        boolean result=true;
-        InputStream res=null;
-        InputStream in=null;
-        FileOutputStream out=null;
+        boolean result = true;
+        InputStream in = null;
+        FileOutputStream out = null;
         try {
-            res=Util.class.getClassLoader().getResourceAsStream(sourcename);
-            if (res==null) return false; // This means the file is not relevant for this setup, so we don't pop up a fatal dialog
-            in=new BufferedInputStream(res);
-            out=new FileOutputStream(destname);
-            byte[] b=new byte[16384];
+            in = Util.class.getClassLoader().getResourceAsStream(sourcename);
+            if (in==null) return false; // This means the file is not relevant for this setup, so we don't pop up a fatal dialog
+            out = new FileOutputStream(destname);
+            byte[] b = new byte[16384];
             while(true) {
                 int numRead = in.read(b);
                 if (numRead < 0) break;
@@ -414,8 +381,7 @@ public final class Util {
         }
         if (!close(out)) result=false;
         if (!close(in)) result=false;
-        if (!close(res)) result=false;
-        if (!result) OurDialog.fatal(null,"Error occurred in creating the file \""+destname+"\"");
+        if (!result) OurDialog.fatal(null, "Error occurred in creating the file \""+destname+"\"");
         return true;
     }
 
@@ -428,14 +394,14 @@ public final class Util {
      * @param destdir - the destination directory
      * @param names - the files to copy from the JAR
      */
-    public static synchronized void copy(boolean executable, boolean keepPath, String destdir, String... names) {
-        String[] args=new String[names.length+2];
-        args[0]="/bin/chmod"; // This does not work on Windows, but the "executable" bit is not needed on Windows anyway.
-        args[1]=(executable ? "700" : "600"); // 700 means read+write+executable; 600 means read+write.
+    public static void copy(boolean executable, boolean keepPath, String destdir, String... names) {
+        String[] args = new String[names.length+2];
+        args[0] = "/bin/chmod"; // This does not work on Windows, but the "executable" bit is not needed on Windows anyway.
+        args[1] = (executable ? "700" : "600"); // 700 means read+write+executable; 600 means read+write.
         int j=2;
         for(int i=0; i<names.length; i++) {
-            String name=names[i];
-            String destname=name;
+            String name = names[i];
+            String destname = name;
             if (!keepPath) { int ii=destname.lastIndexOf('/'); if (ii>=0) destname=destname.substring(ii+1); }
             destname=(destdir+'/'+destname).replace('/', File.separatorChar);
             int last=destname.lastIndexOf(File.separatorChar);
@@ -443,8 +409,8 @@ public final class Util {
             if (copy(name, destname)) { args[j]=destname; j++; }
         }
         if (onWindows() || j<=2) return;
-        String[] realargs=new String[j];
-        for(int i=0; i<j; i++) realargs[i]=args[i];
+        String[] realargs = new String[j];
+        for(int i=0; i<j; i++) realargs[i] = args[i];
         try {
             Runtime.getRuntime().exec(realargs).waitFor();
         } catch (Throwable ex) {
@@ -455,19 +421,19 @@ public final class Util {
     /**
      * Copy file.content[from...f.length-1] into file.content[to...], then truncate the file after that point.
      * <p> If (from &gt; to), this means we simply delete the portion of the file beginning at "to" and up to but excluding "from".
-     * <p> If (from &lt; to), this means we insert (to-from) number of NUL bytes into the "from" location and shift the original file content accordingly.
-     * <p> Note: after this operation, the file's current position may have moved, so if you plan to read/write you need to first call file.seek() yourself.
+     * <p> If (from &lt; to), this means we insert (to-from) number of ARBITRARY bytes into the "from" location and shift the original file content accordingly.
+     * <p> Note: after this operation, the file's current position will be moved to the start of the file.
      * @throws IOException if (from &lt; 0) || (to &lt; 0) || (from &gt;= file.length())
      */
     public static void shift (RandomAccessFile file, long from, long to) throws IOException {
         long total = file.length();
-        if (from<0 || from>=total || to<0) throw new IOException(); else if (from==to) return;
+        if (from<0 || from>=total || to<0) throw new IOException(); else if (from==to) {file.seek(0); return;}
         final byte buf[] = new byte[4096];
         int res;
         if (from>to) {
            while(true) {
               file.seek(from);
-              if ((res=file.read(buf)) <= 0) { file.setLength(to); return; }
+              if ((res=file.read(buf)) <= 0) { file.setLength(to); file.seek(0); return; }
               file.seek(to); file.write(buf, 0, res); from=from+res; to=to+res;
            }
         } else {
@@ -481,6 +447,7 @@ public final class Util {
               file.write(buf, 0, res);
            }
         }
+        file.seek(0);
     }
 
     /**

@@ -246,15 +246,33 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt)
-    throws Err {
+    public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt) throws Err {
+        return execute_command(rep, sigs, fact, cmd, opt, null);
+    }
+
+    /**
+     * Based on the specified "options", execute one command and return the resulting A4Solution object.
+     *
+     * @param rep - if nonnull, we'll send compilation diagnostic messages to it
+     * @param sigs - the list of sigs; this list must be complete
+     * @param fact - a formula that must be satisfied by the solution
+     * @param cmd - the Command to execute
+     * @param opt - the set of options guiding the execution of the command
+     * @param simp - a custom simplifier (null if you wish to use the default simplifier)
+     *
+     * @return null if the user chose "save to FILE" as the SAT solver,
+     * and nonnull if the solver finishes the entire solving and is either satisfiable or unsatisfiable.
+     * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
+     * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
+     */
+    public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt, Simplifier simp) throws Err {
         if (rep==null) rep=A4Reporter.NOP;
         if (fact==null) fact=ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
             tr.makeFacts(fact);
-            return tr.frame.solve(rep, cmd, false);
+            return tr.frame.solve(rep, cmd, simp==null ? new Simplifier() : simp, false);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
@@ -282,15 +300,14 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_commandFromBook (A4Reporter rep, List<Sig> sigs, Expr fact, Command cmd, A4Options opt)
-    throws Err {
+    public static A4Solution execute_commandFromBook (A4Reporter rep, List<Sig> sigs, Expr fact, Command cmd, A4Options opt) throws Err {
         if (rep==null) rep=A4Reporter.NOP;
         if (fact==null) fact=ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
             tr.makeFacts(fact);
-            return tr.frame.solve(rep, cmd, true);
+            return tr.frame.solve(rep, cmd, new Simplifier(), true);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {

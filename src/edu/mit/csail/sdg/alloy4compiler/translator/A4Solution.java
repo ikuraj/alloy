@@ -764,7 +764,7 @@ public final class A4Solution {
     //===================================================================================================//
 
     /** Solve for the solution if not solved already; if cmd==null, we will simply use the lowerbound of each relation as its value. */
-    A4Solution solve(final A4Reporter rep, Command cmd, boolean tryBookExamples) throws Err, IOException {
+    A4Solution solve(final A4Reporter rep, Command cmd, Simplifier simp, boolean tryBookExamples) throws Err, IOException {
         // If already solved, then return this object as is
         if (solved) return this;
         // If cmd==null, then all four arguments are ignored, and we simply use the lower bound of each relation
@@ -784,7 +784,7 @@ public final class A4Solution {
         final A4Options opt = originalOptions;
         long time = System.currentTimeMillis();
         rep.debug("Simplifying the bounds...\n");
-        if (formulas.size()>0 && !Simplifier.simplify(rep, this, formulas.dup())) addFormula(Formula.FALSE, Pos.UNKNOWN);
+        if (simp!=null && formulas.size()>0 && !simp.simplify(rep, this, formulas.dup())) addFormula(Formula.FALSE, Pos.UNKNOWN);
         rep.translate(opt.solver.id(), bitwidth, maxseq, solver.options().skolemDepth(), solver.options().symmetryBreaking());
         Formula fgoal = getSingleFormula(1);
         rep.debug("Generating the solution...\n");

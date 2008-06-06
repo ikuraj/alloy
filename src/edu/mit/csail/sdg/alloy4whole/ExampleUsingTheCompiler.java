@@ -76,18 +76,12 @@ public final class ExampleUsingTheCompiler {
 
             for (Pair<Command,Expr> pair: world.getAllCommandsWithFormulas()) {
                 Command command = pair.a;
-                Expr formula = pair.b;
+                Expr formula = world.getAllReachableFacts().and(pair.b);
                 // Execute the command
                 System.out.println("============ Command "+command+": ============");
-                // Conjoin the facts with the command
-                for(Module m:world.getAllReachableModules())
-                    for(Pair<String,Expr> f:m.getAllFacts())
-                        formula = formula.and(f.b);
-                // Now run it!
                 A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), formula, command, options);
                 // Print the outcome
-                System.out.println("Answer:");
-                System.out.println(ans.toString());
+                System.out.println(ans);
                 // If satisfiable...
                 if (ans.satisfiable()) {
                     // You can query "ans" to find out the values of each set or type.

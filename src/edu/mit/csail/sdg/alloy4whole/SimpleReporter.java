@@ -61,7 +61,6 @@ import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
@@ -315,9 +314,8 @@ final class SimpleReporter extends A4Reporter {
             final Pair<Command,Expr> cmd=cmds.get(i);
             rep.tempfile=tempCNF;
             rep.logBold("Executing \""+cmd.a+"\"\n");
-            Expr facts = ExprConstant.TRUE;
-            for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts=facts.and(f.b);
-            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts.and(cmd.b), cmd.a, options);
+            Expr facts = world.getAllReachableFacts().and(cmd.b);
+            A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts, cmd.a, options);
             if (ai==null) {
                 result.add(null);
             }
@@ -440,7 +438,7 @@ final class SimpleReporter extends A4Reporter {
             try {
                 writeXML(this, latestModule, filename, sol, latestKodkodSRC);
             } catch(Throwable ex) {
-                logBold(Util.indent(ex.toString().trim() + "\nStackTrace:\n" + (MailBug.dump(ex).trim()), "   "));
+                logBold("\n" + (ex.toString().trim()) + "\nStackTrace:\n" + (MailBug.dump(ex).trim()));
                 log("\n");
                 log(FLUSH);
                 return;

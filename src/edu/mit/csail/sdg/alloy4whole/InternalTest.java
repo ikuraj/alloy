@@ -144,10 +144,7 @@ final class InternalTest {
         A4Options options = new A4Options();
         for (Pair<Command,Expr> pair: world.getAllCommandsWithFormulas()) {
             Command command = pair.a;
-            Expr formula = pair.b;
-            for(Module m:world.getAllReachableModules())
-                for(Pair<String,Expr> f:m.getAllFacts())
-                    formula = formula.and(f.b);
+            Expr formula = world.getAllReachableFacts().and(pair.b);
             A4Solution ans = TranslateAlloyToKodkod.execute_command(A4Reporter.NOP, world.getAllReachableSigs(), formula, command, options);
             while(ans.satisfiable()) {
                 String hc = "Answer: " + ans.toString().hashCode();
