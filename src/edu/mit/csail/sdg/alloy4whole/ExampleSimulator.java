@@ -22,7 +22,6 @@
 
 package edu.mit.csail.sdg.alloy4whole;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -86,6 +85,8 @@ public final class ExampleSimulator extends Simplifier {
     private Expr init = null;
 
     private A4Solution partial = null;
+    
+    private StringBuilder output = new StringBuilder();
 
     private TupleSet convert(TupleFactory factory, TupleSet old) {
        TupleSet ans = factory.noneOf(old.arity());
@@ -134,13 +135,9 @@ public final class ExampleSimulator extends Simplifier {
        return true;
     }
 
-    private void output(String text) {
-       System.out.print(text);
-       System.out.flush();
-    }
+    private void output(String text) { output.append(text); }
 
     private ExampleSimulator(String filename, Map<String,String> snapshot) throws Exception {
-       output("\n\n\n\n\n\n");
        Command cmd = null;
        Expr fact = null;
        world = CompUtil.parseEverything_fromFile(rep, snapshot, filename);
@@ -179,7 +176,5 @@ public final class ExampleSimulator extends Simplifier {
        }
     }
 
-    public static void run(String filename, Map<String,String> snapshot) throws Exception { new ExampleSimulator(filename, snapshot); }
-
-    public static void main(String[] args) throws Exception { new ExampleSimulator(args[0], new LinkedHashMap<String,String>()); }
+    public static String run(String filename, Map<String,String> snapshot) throws Exception { return (new ExampleSimulator(filename, snapshot)).output.toString(); }
 }

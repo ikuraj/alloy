@@ -1059,7 +1059,9 @@ public final class SimpleGUI implements ComponentListener {
         doRefreshRun();
         OurUtil.enableAll(runmenu);
         try {
-           ExampleSimulator.run(text.do_getFilename(), text.do_takeSnapshot());
+           String output = ExampleSimulator.run(text.do_getFilename(), text.do_takeSnapshot());
+           log.log(output);
+           log.logDivider();
         } catch(Throwable ex) {
            log.logRed(ex.getMessage());
         }
