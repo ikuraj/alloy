@@ -85,7 +85,7 @@ public final class ExampleSimulator extends Simplifier {
     private Expr init = null;
 
     private A4Solution partial = null;
-    
+
     private StringBuilder output = new StringBuilder();
 
     private TupleSet convert(TupleFactory factory, TupleSet old) {
