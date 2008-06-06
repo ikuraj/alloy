@@ -48,6 +48,9 @@ public final class A4TupleSet implements Iterable<A4Tuple> {
         this.sol = sol;
     }
 
+    /** Return the underlying Kodkod tupleset. */
+    public TupleSet debugGetKodkodTupleset() { return tuples.clone(); }
+
     /** Returns a read-only iterator that iterates over each tuple in this TupleSet. */
     public Iterator<A4Tuple> iterator() {
         return new Iterator<A4Tuple>() {

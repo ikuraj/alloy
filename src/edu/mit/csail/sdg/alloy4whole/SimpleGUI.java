@@ -851,6 +851,7 @@ public final class SimpleGUI implements ComponentListener {
             runmenu.add(new JSeparator());
             OurUtil.makeMenuItem(runmenu, "Show Latest Instance",   VK_L, VK_L, doShowLatest(), latestInstance.length()>0);
             OurUtil.makeMenuItem(runmenu, "Show Metamodel",         VK_M, VK_M, doShowMetaModel());
+            OurUtil.makeMenuItem(runmenu, "Run Greedy Simulation",              doGreedySimulation());
             OurUtil.makeMenuItem(runmenu, "Open Evaluator",         VK_V,       doLoadEvaluator());
         } finally {
             wrap = false;
@@ -1044,6 +1045,19 @@ public final class SimpleGUI implements ComponentListener {
         doRefreshRun();
         OurUtil.enableAll(runmenu);
         if (commands!=null) doRun(-2);
+        return null;
+    }
+
+    /** This method executes the greedy simulation algorithm. */
+    private Runner doGreedySimulation() {
+        if (wrap) return wrapMe();
+        doRefreshRun();
+        OurUtil.enableAll(runmenu);
+        try {
+           ExampleSimulator.run(text.do_getFilename(), text.do_takeSnapshot());
+        } catch(Throwable ex) {
+           log.logRed(ex.getMessage());
+        }
         return null;
     }
 
@@ -1536,6 +1550,7 @@ public final class SimpleGUI implements ComponentListener {
         if (text.do_isFile()) addHistory(f);
         doShow();
         text.do_text().requestFocusInWindow();
+        log.clearError();
         return null;
     }
 
