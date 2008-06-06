@@ -46,14 +46,16 @@ final class SimpleRunnerBundle implements Serializable {
     public final int index;
     public final int verbosity;
     public final boolean warningNonFatal;
+    public final int resolutionMode;
 
     public SimpleRunnerBundle
-    (A4Options options, Map<String,String> cache, int index, int verbosity, boolean warningNonFatal) {
+    (A4Options options, Map<String,String> cache, int index, int verbosity, boolean warningNonFatal, int resolutionMode) {
         this.options = options;
         this.cache = cache;
         this.index = index;
         this.verbosity = verbosity;
         this.warningNonFatal = warningNonFatal;
+        this.resolutionMode = resolutionMode;
     }
 
     public void write(String filename) throws Exception {
@@ -74,7 +76,7 @@ final class SimpleRunnerBundle implements Serializable {
             InputStream is = new FileInputStream(filename);
             ObjectInputStream ois = new ObjectInputStream(is);
             SimpleRunnerBundle ans = (SimpleRunnerBundle) (ois.readObject());
-            return new SimpleRunnerBundle(ans.options, new LinkedHashMap<String,String>(ans.cache), ans.index, ans.verbosity, ans.warningNonFatal);
+            return new SimpleRunnerBundle(ans.options, new LinkedHashMap<String,String>(ans.cache), ans.index, ans.verbosity, ans.warningNonFatal, ans.resolutionMode);
         } catch(Throwable ex) {
             return null;
         }

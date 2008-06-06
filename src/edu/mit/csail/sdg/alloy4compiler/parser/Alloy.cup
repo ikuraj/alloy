@@ -245,20 +245,21 @@ parser code {:
   }
 
   static Module alloy_parseStream (List<Object> seenDollar, Map<String,String> loaded, Map<String,String> fc, Module root,
-  int lineOffset, String filename, String prefix) throws Err, FileNotFoundException, IOException {
+  int lineOffset, String filename, String prefix, int initialResolutionMode) throws Err, FileNotFoundException, IOException {
     Reader isr=null;
     try {
         if (root==null && prefix.length()!=0) throw new ErrorFatal("Internal error (parse subfile with root==null)");
         if (root!=null && prefix.length()==0) throw new ErrorFatal("Internal error (parse topfile with root!=null)");
         Module u = new Module(root, filename, prefix);
+        u.resolution = initialResolutionMode;
         String content = fc!=null ? fc.get(filename) : null;
         if (content==null && loaded!=null) content = loaded.get(filename);
         if (content==null) content = Util.readAll(filename);
         if (loaded!=null) loaded.put(filename,content);
         content = Util.convertLineBreak(content);
-        isr=new StringReader(content);
-        CompFilter s=new CompFilter(u, seenDollar, filename, lineOffset, new BufferedReader(isr));
-        CompParser p=new CompParser(s);
+        isr = new StringReader(content);
+        CompFilter s = new CompFilter(u, seenDollar, filename, lineOffset, new BufferedReader(isr));
+        CompParser p = new CompParser(s);
         p.alloymodule=u;
         try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception", ex);}
         return u;
@@ -547,10 +548,8 @@ nonterminal Pos                        Vis;
 
 //===========================================================================//
 
-Spec ::= Spec MODULE:o               Name:n                                                  {: nod(n);                                              parser.alloymodule.addModelName(o.merge(n.pos) , n.label , new ArrayList<ExprVar>()); :};
-Spec ::= Spec MODULE:o               Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b);                                      parser.alloymodule.addModelName(o.merge(r)     , n.label , b                       ); :};
-Spec ::= Spec MODULE:o HASH NUMBER:i Name:n                                                  {: nod(n);         parser.alloymodule.resolution=i.num; parser.alloymodule.addModelName(o.merge(n.pos) , n.label , new ArrayList<ExprVar>()); :};
-Spec ::= Spec MODULE:o HASH NUMBER:i Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b); parser.alloymodule.resolution=i.num; parser.alloymodule.addModelName(o.merge(r)     , n.label , b                       ); :};
+Spec ::= Spec MODULE:o Name:n                                                  {: nod(n);                                              parser.alloymodule.addModelName(o.merge(n.pos) , n.label , new ArrayList<ExprVar>()); :};
+Spec ::= Spec MODULE:o Name:n LBRACKET Namex:b RBRACKET:r                      {: nod(n); nod(b);                                      parser.alloymodule.addModelName(o.merge(r)     , n.label , b                       ); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                                              {: nod(a);         parser.alloymodule.addOpen(o.merge(a.pos), p, a, null, null); :};
 Spec ::= Spec Vis:p OPEN:o Name:a                               AS Name:c      {: nod(a); nod(c); parser.alloymodule.addOpen(o.merge(c.pos), p, a, null, c);    :};
 Spec ::= Spec Vis:p OPEN:o Name:a LBRACKET SigRefs:b RBRACKET:c                {: nod(a);         parser.alloymodule.addOpen(o.merge(c),     p, a, b,    null); :};

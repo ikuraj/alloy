@@ -181,6 +181,9 @@ public final class SimpleGUI implements ComponentListener {
     /** True if Alloy Analyzer should record the raw Kodkod input and output. */
     private static final BooleanPref RecordKodkod = new BooleanPref("RecordKodkod");
 
+    /** True if Alloy Analyzer should enable the new Implicit This name resolution. */
+    private static final BooleanPref ImplicitThis = new BooleanPref("ImplicitThis");
+
     /** The latest X corrdinate of the Alloy Analyzer's main window. */
     private static final IntPref AnalyzerX = new IntPref("AnalyzerX",0,-1,65535);
 
@@ -943,7 +946,7 @@ public final class SimpleGUI implements ComponentListener {
         if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
             try {
                 final String tempdir = Helper.maketemp();
-                SimpleReporter.performRegularCommand(null, text.do_takeSnapshot(), i, opt, WarningNonfatal.get(), tempdir, Verbosity.get().ordinal());
+                SimpleReporter.performRegularCommand(null, text.do_takeSnapshot(), i, opt, WarningNonfatal.get(), tempdir, Verbosity.get().ordinal(), ImplicitThis.get() ? 2 : 1);
                 System.err.flush();
             } catch(Throwable ex) {
                 ErrorFatal err=new ErrorFatal(ex.getMessage(), ex);
@@ -967,7 +970,9 @@ public final class SimpleGUI implements ComponentListener {
                 text.do_takeSnapshot(),
                 i,
                 Verbosity.get().ordinal(),
-                WarningNonfatal.get());
+                WarningNonfatal.get(),
+                ImplicitThis.get() ? 2 : 1
+            );
             (new File(cache)).deleteOnExit();
             b.write(cache);
             byte[] bytes=("S"+tempdir).getBytes("UTF-8");
@@ -1195,6 +1200,7 @@ public final class SimpleGUI implements ComponentListener {
             //
             OurUtil.makeMenuItem(optmenu, "Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), doOptAutoVisualize());
             OurUtil.makeMenuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), doOptRecordKodkod());
+            OurUtil.makeMenuItem(optmenu, "Enable \"implicit this\" name resolution: "+(ImplicitThis.get()?"Yes":"No"), doOptImplicitThis());
         } finally {
             wrap = false;
         }
@@ -1285,6 +1291,12 @@ public final class SimpleGUI implements ComponentListener {
     /** This method toggles the "record Kodkod input/output" checkbox. */
     private Runner doOptRecordKodkod() {
         if (!wrap) RecordKodkod.set(!RecordKodkod.get());
+        return wrapMe();
+    }
+
+    /** This method toggles the "enable new `implicit this' name resolution" checkbox. */
+    private Runner doOptImplicitThis() {
+        if (!wrap) ImplicitThis.set(!ImplicitThis.get());
         return wrapMe();
     }
 
@@ -1609,7 +1621,7 @@ public final class SimpleGUI implements ComponentListener {
                    String content = sub.getAttribute("content");
                    fc.put(name, content);
                 }
-                root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, mainname);
+                root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, mainname, ImplicitThis.get() ? 2 : 1);
                 ans = A4SolutionReader.read(root.getAllReachableSigs(), x);
                 for(ExprVar a:ans.getAllAtoms())   { root.addGlobal(a.label, a); }
                 for(ExprVar a:ans.getAllSkolems()) { root.addGlobal(a.label, a); }

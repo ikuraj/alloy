@@ -242,7 +242,7 @@ final class SimpleReporter extends A4Reporter {
      */
     static void performRegularCommand(
         final PrintStream out, final Map<String,String> bundleCache, final int bundleIndex, final A4Options options,
-        final boolean bundleWarningNonFatal, final String tempdir, final int verbosity)
+        final boolean bundleWarningNonFatal, final String tempdir, final int verbosity, final int resolutionMode)
         throws Exception {
         SimpleReporter rep = new SimpleReporter(out);
         rep.verbosity = verbosity;
@@ -250,7 +250,7 @@ final class SimpleReporter extends A4Reporter {
         rep.mainAlloyFileName = Util.canon(options.originalFilename);
         rep.log(SAVE2);
         rep.logBold("Starting the solver...\n\n");
-        final Module world = CompUtil.parseEverything_fromFile(rep, bundleCache, rep.mainAlloyFileName);
+        final Module world = CompUtil.parseEverything_fromFile(rep, bundleCache, rep.mainAlloyFileName, resolutionMode);
         /*
         if (1==1) {
             for(Pair<String,Expr> p: world.getAllAssertions()) {

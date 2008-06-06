@@ -544,7 +544,7 @@ public final class Module {
     Expr parseOneExpressionFromString(String input) throws Err, FileNotFoundException, IOException {
         Map<String,String> fc=new LinkedHashMap<String,String>();
         fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-        Module m = CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, -1, "", "");
+        Module m = CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, -1, "", "", 1);
         if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
         Expr body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
         Context cx = new Context(this, null);
@@ -1460,17 +1460,14 @@ public final class Module {
                    if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
                        ch.add(THIS.join(x0));
                        re.add("field "+f.sig.label+" <: this."+f.label);
-                   } else {
-                       ch2.add(x0);
-                       re2.add("field "+f.sig.label+" <: "+f.label);
+                       if (rootsig!=null) continue;
                    }
+                   ch2.add(x0);
+                   re2.add("field "+f.sig.label+" <: "+f.label);
                 }
              }
           }
         }
-        if (resolution==0) { ch.addAll(ch2); re.addAll(re2); }
-        if (resolution==1) { ch.addAll(ch2); re.addAll(re2); }
-        if (resolution==2) { ch.addAll(ch2); re.addAll(re2); }
-        return null;
+        ch.addAll(ch2); re.addAll(re2); return null;
     }
 }

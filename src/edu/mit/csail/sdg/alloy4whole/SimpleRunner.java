@@ -152,7 +152,7 @@ final class SimpleRunner implements Runnable {
                 final SimpleRunnerBundle bundle = SimpleRunnerBundle.read(bundleName);
                 if (bundle==null) throw new IOException("Error reading from the file:\n"+bundleName);
                 verbosity = bundle.verbosity;
-                SimpleReporter.performRegularCommand(out, bundle.cache, bundle.index, bundle.options, bundle.warningNonFatal, tempdir, bundle.verbosity);
+                SimpleReporter.performRegularCommand(out, bundle.cache, bundle.index, bundle.options, bundle.warningNonFatal, tempdir, bundle.verbosity, bundle.resolutionMode);
             } else {
                 verbosity = 3;
                 String ans=SimpleReporter.performEnumeration(out, tempdir);
