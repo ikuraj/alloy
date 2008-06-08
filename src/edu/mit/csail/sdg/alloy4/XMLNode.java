@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -50,31 +51,6 @@ public final class XMLNode implements Iterable<XMLNode> {
     /** Constructs an empty XMLNode object. */
     private XMLNode() { }
 
-    /** Constructs the root XMLNode by parsing an entire XML document. */
-    public XMLNode(Reader r) throws IOException {
-        XMLParser parser = new XMLParser(r);
-        if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
-        parser.parseElement(this);
-        if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
-    }
-
-    /** Constructs the root XMLNode by parsing an entire XML document. */
-    public XMLNode(File file) throws IOException {
-        FileInputStream fis = null;
-        InputStreamReader reader = null;
-        try {
-            fis = new FileInputStream(file);
-            reader = new InputStreamReader(fis,"UTF-8");
-            XMLParser parser = new XMLParser(reader);
-            if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
-            parser.parseElement(this);
-            if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
-        } finally {
-            Util.close(reader);
-            Util.close(fis);
-        }
-    }
-
     /** Simple parser based on XML Specification 1.0 taking into account XML Specification Errata up to 2008/Jan/18. */
     private static final class XMLParser {
 
@@ -91,7 +67,12 @@ public final class XMLNode implements Iterable<XMLNode> {
         private int read = (-2);
 
         /** Constructor is private, since we want only XMLNode to be able to construct an instance of this class. */
-        private XMLParser(Reader reader) { this.reader = reader; }
+        private XMLParser(Reader reader) {
+            if (reader instanceof BufferedReader) this.reader = reader; else this.reader = new BufferedReader(reader);
+        }
+
+        /** Throws an IOException with the given msg, and associate with it the current line and column location. */
+        private void malform(String msg) throws IOException { throw new IOException("Error at line "+y+" column "+x+": "+msg); }
 
         /**
          * Read the next character.
@@ -144,21 +125,74 @@ public final class XMLNode implements Iterable<XMLNode> {
          * @throws IOException if after skipping 0 or more white space character we reach end-of-file.
          * @throws IOException if an I/O error occurred.
          */
-        private int parseSpace() throws IOException {
+        private int skipSpace() throws IOException {
             while(true) {
                 int ch=read();
                 if (ch!=' ' && ch!='\t' && ch!='\r' && ch!='\n') return ch;
             }
         }
 
+        /*
+         * Taking the 79 grammar rules from XML specification, and after making conservative simplifications, we get the following rules.
+         * ("conservative" in that well-formed XML documents will parse correctly, but some malformed documents also parse successfully)
+         *
+         *    S                  ::=          (#x20 | #x9 | #xD | #xA)+
+         *    Name               ::=          ( [A-Za-z0-9_:.-] | [#xC0-#xEFFFF] )+
+         *    Nmtoken            ::=          ( [A-Za-z0-9_:.-] | [#xC0-#xEFFFF] )+
+         *    Reference          ::=          '&' Name ';'   |    '&#' [0-9]+ ';'   |   '&#x' [0-9a-fA-F]+ ';'
+         *    PEReference        ::=          '%' Name ';'
+         *    SystemLiteral      ::=                           '...'  |  "..."
+         *    PubidLiteral       ::=                           '...'  |  "..."
+         *    AttValue           ::=                           '...'  |  "..."
+         *    EntityValue        ::=                           '...'  |  "..."
+         *    DefaultDecl        ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    ExternalID         ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    PublicID           ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    NotationType       ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    Enumeration        ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    EnumeratedType     ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    AttType            ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    Mixed              ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    children           ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    contentspec        ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    PEDef              ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    NDataDecl          ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    EntityDef          ::=                        (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*
+         *    NotationDecl       ::=          '<!NOTATION'  (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*  '>'
+         *    AttlistDecl        ::=          '<!ATTLIST'   (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*  '>'
+         *    elementdecl        ::=          '<!ELEMENT'   (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*  '>'
+         *    EntityDecl         ::=          '<!ENTITY'    (  '...'  |  "..."  |  [%()|#*?+,]  |  Name  |  S  )*  '>'
+         *    PI                 ::=          '<?' ... '?>'
+         *    Comment            ::=          '<!--'  ([^-] | ('-' [^-])))*   '-->'
+         *    Misc               ::=          Comment | PI | S
+         *    doctypedecl        ::=          '<!DOCTYPE' S  Name (S  ExternalID)? S? ('[' intSubset ']' S?)? '>'
+         *    intSubset          ::=          (elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S)*
+         *
+         * SkipNondata(false) will skip zero or more instance of the below, and thus it will consume (Misc | doctypedecl)*
+         *   SPACE TAB CR LF
+         *   <?...?>
+         *   <!--...-->
+         *   '<!' followed by SkipNondata(true) followed by '>'
+         *
+         * SkipNondata(true) will skip zero or more instances of the below, and thus it will consume intSubset*
+         *   SPACE TAB CR LF
+         *   <?...?>
+         *   <!--...-->
+         *   '<!' followed by SkipNondata(true) followed by '>'
+         *   '['  followed by SkipNondata(true) followed by ']'
+         *   '...'
+         *   "..."
+         *   any char that is not '<' nor '>' nor '[' nor ']' nor ''' nor '"'
+         */
+
         /**
          * Skip as much nondata as possible, then return the first character after that (or -1 if we end up at end-of-file).
-         * Specifically, this method consumes as many instances of XMLDecl/doctypedecl/intSubset/extSubsetDecl as possible.
-         * If skipText==true, then this method is being called recursively to consume the inner text of XMLDecl/doctypedecl/intSubset/extSubsetDecl.
+         * <p> Specifically, skipNondata(false) consumes (Misc | doctypedecl)* from XML specification
+         * <p> Likewise,     skipNondata(true)  consumes (intSubset)*          from XML specification
          * @throws IOException if the XML input is malformed.
          * @throws IOException if an I/O error occurred.
          */
-        private int skipNondata(boolean skipText) throws IOException {
+        private int skipNondata(boolean inner) throws IOException {
            while(true) {
               int ch = peek();
               if (ch<0) return -1;
@@ -177,44 +211,10 @@ public final class XMLNode implements Iterable<XMLNode> {
                  }
                  if (skipNondata(true)!='>') malform("Expects end of <!...>");
               }
-              else if (!skipText || ch == ']' || ch=='>') { return ch; }
+              else if (!inner || ch == ']' || ch=='>') { return ch; }
               else if (ch == '[') { if (skipNondata(true)!=']') malform("Expects end of [...]"); }
               else if (ch == '\'' || ch == '\"') { while(read()!=ch) { } }
            }
-        }
-
-        /**
-         * Parse an element (and all its subelements), assuming the initial "less than" sign has already been consumed.
-         * @throws IOException if the XML input is malformed.
-         * @throws IOException if an I/O error occurred.
-         */
-        private void parseElement(XMLNode target) throws IOException {
-            target.type = parseName();
-            while(true) {
-                boolean space = false;
-                int ch = read();
-                if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') { space=true; ch=parseSpace(); }
-                if (ch == '=') malform("Unexpected '='");
-                if (ch == '/') {
-                   if (read()!='>') malform("Expects '/>'");
-                   break;
-                }
-                if (ch == '>') {
-                   parseContent(target);
-                   if (!target.type.equals(parseName())) malform("Start tag and end tag must have matching types.");
-                   if (parseSpace()!='>') malform("Expects '</"+target.type+">'");
-                   break;
-                }
-                if (!space) malform("Space needed between element type and element attributes.");
-                read = ch;
-                String key = parseName();
-                if (key.length()==0) malform("Attribute name cannot be empty.");
-                if (parseSpace()!='=') malform("Expects = after the attribute name.");
-                ch = parseSpace();
-                if (ch != '\'' && ch != '\"') malform("Expects \' or \" as the start of the attribute value.");
-                String value = parseValue(ch);
-                target.map.put(key, value);
-            }
         }
 
         /**
@@ -266,6 +266,52 @@ public final class XMLNode implements Iterable<XMLNode> {
             }
         }
 
+        /*
+         * Below are the grammar rules for "element":
+         * ==========================================
+         *
+         * element ::=  '<' Name (S  Name S? '=' S? AttValue)* S? '/>'
+         *           |  '<' Name (S  Name S? '=' S? AttValue)* S? '>'  content   '</' Name  S? '>'
+         *
+         * content  ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+         * CDSect   ::=  '<![CDATA['     (Char* - (Char* ']]>' Char*))      ']]>'
+         * CharData ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
+         */
+
+        /**
+         * Parse an element (and all its subelements), assuming the initial "less than" sign has already been consumed.
+         * @throws IOException if the XML input is malformed.
+         * @throws IOException if an I/O error occurred.
+         */
+        private void parseElement(XMLNode target) throws IOException {
+            target.type = parseName();
+            while(true) {
+                boolean space = false;
+                int ch = read();
+                if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') { space=true; ch=skipSpace(); }
+                if (ch == '=') malform("Unexpected '='");
+                if (ch == '/') {
+                   if (read()!='>') malform("Expects '/>'");
+                   break;
+                }
+                if (ch == '>') {
+                   parseContent(target);
+                   if (!target.type.equals(parseName())) malform("Start tag and end tag must have matching types.");
+                   if (skipSpace()!='>') malform("Expects '</"+target.type+">'");
+                   break;
+                }
+                if (!space) malform("Whitespace needed before a (key,value) pair.");
+                read = ch;
+                String key = parseName();
+                if (key.length()==0) malform("Attribute name cannot be empty.");
+                if (skipSpace()!='=') malform("Expects = after the attribute name.");
+                ch = skipSpace();
+                if (ch != '\'' && ch != '\"') malform("Expects \' or \" as the start of the attribute value.");
+                String value = parseValue(ch);
+                target.map.put(key, value);
+            }
+        }
+
         /**
          * Parses the content until the rightful closing "LESS THAN SIGN followed by FORWARD SLASH" are both consumed.
          * @throws IOException if the XML input is malformed.
@@ -299,9 +345,37 @@ public final class XMLNode implements Iterable<XMLNode> {
               parent.sub.add(newElem);
            }
         }
+    }
 
-        /** Throws an IOException with the given msg, and associate with it the current line and column location. */
-        private void malform(String msg) throws IOException { throw new IOException("Error at line "+y+" column "+x+": "+msg); }
+    /** Constructs the root XMLNode by parsing an entire XML document, then close the reader afterwards. */
+    public XMLNode(Reader reader) throws IOException {
+        try {
+            // document ::= Misc* doctypedecl? Misc* element Misc*
+            XMLParser parser = new XMLParser(reader);
+            if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
+            parser.parseElement(this);
+            if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
+        } finally {
+            Util.close(reader);
+        }
+    }
+
+    /** Constructs the root XMLNode by parsing an entire XML document. */
+    public XMLNode(File file) throws IOException {
+        FileInputStream fis = null;
+        InputStreamReader reader = null;
+        try {
+            // document ::= Misc* doctypedecl? Misc* element Misc*
+            fis = new FileInputStream(file);
+            reader = new InputStreamReader(fis, "UTF-8");
+            XMLParser parser = new XMLParser(reader);
+            if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
+            parser.parseElement(this);
+            if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
+        } finally {
+            Util.close(reader);
+            Util.close(fis);
+        }
     }
 
     /** Returns the type of the element. */

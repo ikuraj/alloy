@@ -39,7 +39,7 @@ public final class Version {
     public static int buildNumber() { return Integer.MAX_VALUE; }
 
     /** Returns the version string. */
-    public static String version() { return "4.?"; }
+    public static String version() { return "4.1.?"; }
 
     /** Returns the build date. */
     public static String buildDate() { return "unknown"; }

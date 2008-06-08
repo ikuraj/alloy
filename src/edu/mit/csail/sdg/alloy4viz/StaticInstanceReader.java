@@ -291,7 +291,7 @@ public final class StaticInstanceReader {
         }
     }
 
-    /** Parse the file into an AlloyInstance if possible. */
+    /** Parse the file into an AlloyInstance if possible, then close the Reader afterwards. */
     public static AlloyInstance parseInstance(Reader reader) throws Err {
         try {
             return (new StaticInstanceReader(new XMLNode(reader))).ans;
