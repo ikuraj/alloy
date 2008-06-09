@@ -394,7 +394,7 @@ final class SwingLogPanel {
 
     /** Write "msg" in red style (with automatic line wrap). */
     public void logRed (String msg) {
-        if (log==null || msg.length()==0) return;
+        if (log==null || msg==null || msg.length()==0) return;
         StringBuilder sb=new StringBuilder();
         while (msg.length()>0) {
             int i = msg.indexOf('\n');

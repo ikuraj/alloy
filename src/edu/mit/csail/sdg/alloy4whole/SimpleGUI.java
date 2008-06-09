@@ -1053,18 +1053,44 @@ public final class SimpleGUI implements ComponentListener {
         return null;
     }
 
+    private Runnable doGreedySimulation2 = new Runnable() {
+        public void run() {
+            try {
+                A4Reporter rep = new A4Reporter() {
+                    public void solve(int primaryVars, int totalVars, int clauses) {
+                        log.log("   "+totalVars+" vars. "+primaryVars+" primary vars. "+clauses+" clauses.\n");
+                        log.flush();
+                    }
+                };
+                String xml = "/tmp/z.xml";
+                long lastTime = System.currentTimeMillis();
+                A4Solution sol = ExampleSimulator2.run(rep, text.do_getFilename(), xml, text.do_takeSnapshot());
+                if (sol.satisfiable()) {
+                    log.log("   ");
+                    log.logLink("Instance", "XML: "+xml);
+                    log.log(" found. Predicate is consistent. "+(System.currentTimeMillis()-lastTime)+"ms.\n");
+                } else {
+                    log.log("   No instance found. Predicate may be inconsistent. "+(System.currentTimeMillis()-lastTime)+"ms.\n");
+                }
+                log.logDivider();
+                log.flush();
+            } catch(Throwable ex) {
+                String msg = ex.getMessage();
+                log.log((msg!=null && msg.length()>0) ? msg.trim()+"\n" : MailBug.dump(ex));
+                log.logDivider();
+                log.flush();
+            }
+        }
+    };
+
     /** This method executes the greedy simulation algorithm. */
     private Runner doGreedySimulation() {
         if (wrap) return wrapMe();
         doRefreshRun();
         OurUtil.enableAll(runmenu);
-        try {
-           String output = ExampleSimulator.run(text.do_getFilename(), text.do_takeSnapshot());
-           log.log(output);
-           log.logDivider();
-        } catch(Throwable ex) {
-           log.logRed(ex.getMessage());
-        }
+        log.logBold("Executing greedy simulation... please wait...\n");
+        log.flush();
+        SwingUtilities.invokeLater(doGreedySimulation2);
         return null;
     }
 
