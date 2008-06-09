@@ -44,8 +44,7 @@ import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.SAVE1;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.RESTORE1;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.FLUSH;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.DIVIDER;
-import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.INDENTSHORT;
-import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.INDENTLONG;
+import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.INDENT;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.DONE;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.FAIL;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.VIZMSG;
@@ -93,9 +92,9 @@ final class SimpleRunner implements Runnable {
     }
 
     /** Emit the given message in both long and short versions; the GUI will choose whether to display the long version or the short version. */
-    private static void logIndented(String full, String shortText) {
-        if (out==null) System.err.println(full);
-        else { out.printf("%c%s%c%s%c", FLUSH, full, INDENTLONG, shortText, INDENTSHORT); out.flush(); }
+    private static void logIndented(String text) {
+        if (out==null) System.err.println(text);
+        else { out.printf("%c%s%c", FLUSH, text, INDENT); out.flush(); }
     }
 
     /** Emit the given message using bold font. */
@@ -190,7 +189,7 @@ final class SimpleRunner implements Runnable {
             } else {
                 log("\n");
             }
-            logIndented(e.toString().trim(), e.msg.trim());
+            logIndented(e.msg.trim());
             log("\n");
             if (err==null && latestVersion>Version.buildNumber())
                 logBold(
@@ -215,7 +214,7 @@ final class SimpleRunner implements Runnable {
             } else {
                 logBold("An error has occurred:\n");
             }
-            logIndented(e.getMessage().trim(), e.getMessage().trim());
+            logIndented(e.getMessage().trim());
             log("\n");
             if (latestVersion>Version.buildNumber())
                 logBold(

@@ -27,8 +27,7 @@ import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.CLICK;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.DECLARE_INSTANCE;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.DELETE_ON_EXIT;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.FLUSH;
-import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.INDENTLONG;
-import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.INDENTSHORT;
+import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.INDENT;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.LINK;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.RESTORE2;
 import static edu.mit.csail.sdg.alloy4whole.SwingLogPanel.RESTORE3;
@@ -88,9 +87,9 @@ final class SimpleReporter extends A4Reporter {
     }
 
     /** Emit the given message in both long and short versions; the GUI will choose whether to display the long version or the short version. */
-    private void logIndented(String full, String shortText) {
-        if (out==null) System.err.println(full);
-        else { out.printf("%c%s%c%s%c", FLUSH, full, INDENTLONG, shortText, INDENTSHORT); out.flush(); }
+    private void logIndented(String text) {
+        if (out==null) System.err.println(text);
+        else { out.printf("%c%s%c", FLUSH, text, INDENT); out.flush(); }
     }
 
     /** Emit the given message using bold font. */
@@ -366,7 +365,7 @@ final class SimpleReporter extends A4Reporter {
         Pos p=e.pos;
         logLink("Warning #"+warnings.size(), "POS: "+p.x+" "+p.y+" "+p.x2+" "+p.y2+" "+p.filename);
         log("\n");
-        logIndented(e.toString().trim(), e.msg.trim());
+        logIndented(e.msg.trim());
         log("\n\n");
         log(FLUSH);
     }
@@ -411,17 +410,7 @@ final class SimpleReporter extends A4Reporter {
     }
 
     /** {@inheritDoc} */
-    @Override public void write(Object obj) {
-        /*
-        String label;
-        if (obj instanceof Sig) { label="   Writing sig "+((Sig)obj).label; }
-        else if (obj instanceof Field) { label="   Writing field "+((Field)obj).sig.label+"."+((Field)obj).label; }
-        else { label="   Writing skolem "+obj; }
-        log(RESTORE3);
-        log(label);
-        log(FLUSH);
-        */
-    }
+    @Override public void write(Object obj) { }
 
     /** {@inheritDoc} */
     @Override public void resultSAT(Object command, long solvingTime, Object solution) {
