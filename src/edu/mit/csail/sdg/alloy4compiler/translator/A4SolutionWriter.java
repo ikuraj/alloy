@@ -148,8 +148,9 @@ public final class A4SolutionWriter {
        if (rep!=null) rep.write(x);
        try {
           Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
-          if (x.isPrivate!=null) out.print("\" private=\"yes\">\n"); else out.print("\">\n");
-          if (x.isMeta!=null) out.print("\" meta=\"yes\">\n"); else out.print("\">\n");
+          if (x.isPrivate!=null) out.print("\" private=\"yes");
+          if (x.isMeta!=null) out.print("\" meta=\"yes");
+          out.print("\">\n");
           writeExpr("", x);
           out.print("</field>\n");
        } catch(Throwable ex) {
