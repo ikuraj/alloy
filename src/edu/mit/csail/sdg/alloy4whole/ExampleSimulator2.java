@@ -58,24 +58,18 @@ import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 
 //
 //  1. a distinguished abstract toplevel sig "State"
-//  2. State has exactly two subsigs: "one sig pre, post extends State {}"
-//  3. State has no subsetsigs
-//  4. no field has "State" in its declaration
-//  5. global facts directly relate pre to post
-//  6. optionally, you can have a parameterless predicate called "init" that must hold for the first <pre,post> pair
+//  2. State has no subsigs nor subsetsigs
+//  3. a distinguished predicate init[s: State]
+//  4. a distinguished predicate step[s, s': State]
 //
 //  Algorithm:
 //  ==========
-//  prepare KK universe from scratch
-//  inst[0] = KK.solve()
-//  print inst[0] projected over "pre"
-//  print inst[0] projected over "post"
-//  for each i = 1, 2, 3... {
-//      prepare KK universe from scratch
-//      for each field F in State, let pre.F := the value of post.F in inst[i-1]
-//      inst[i] = KK.solve
-//      print inst[i] projected over "pre"
-//      print inst[i] projected over "post"
+//  add "one sig s[0], s[1] extends State { }" then construct KK universe from scratch
+//  instance = KK.solve()
+//  for each i = 2... {
+//      add "one sig s[i] extends State { }" then construct KK universe from scratch
+//      for each field F in State, let (s[0]..s[i-1]).F := their value from the last instance
+//      instance = KK.solve()
 //  }
 //
 
@@ -111,18 +105,6 @@ public final class ExampleSimulator2 extends Simplifier {
        }
        return ans;
     }
-
-    /*
-    private String debug(A4Solution ans, Sig step) throws Exception {
-        StringBuilder sb = new StringBuilder("  ");
-        for(Sig s: world.getAllReachableSigs()) for(Field f: s.getFields()) if (f.type.firstColumnOverlaps(state.type)) {
-           int n = sb.length();
-            sb.append(f.label).append(" ").append(ans.eval(step.join(f))).append(" ");
-            while(sb.length()-35 < n) sb.append(" ");
-        }
-        return sb.append("\n").toString();
-     }
-    */
 
     @Override public boolean simplify(A4Reporter rep, A4Solution sol, Iterable<Formula> unused) throws Err {
        TupleFactory factory = factory(sol);
@@ -180,15 +162,12 @@ public final class ExampleSimulator2 extends Simplifier {
        PrimSig s1 = makeAtom(); allsigs.add(s1);
        partial = TranslateAlloyToKodkod.execute_command(rep, allsigs, fact.and(init.call(s0)).and(step.call(s0,s1)), cmd, options);
        if (!partial.satisfiable()) return;
-       // debug(partial, s0);
-       // debug(partial, s1);
        for(int i=2; i<scope && partial.satisfiable(); i++) {
            PrimSig pre = state.children().get(state.children().size()-1);
            PrimSig post = makeAtom(); allsigs.add(post);
            A4Solution tmp = TranslateAlloyToKodkod.execute_command(rep, allsigs, fact.and(step.call(pre,post)), cmd, options, this);
            if (!tmp.satisfiable()) break;
            partial = tmp;
-           // debug(partial, post);
        }
        partial.writeXML(rep, xmlFilename, world.getAllFunc(), snapshot);
     }
