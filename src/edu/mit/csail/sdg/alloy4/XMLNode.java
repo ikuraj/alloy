@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -387,14 +388,24 @@ public final class XMLNode implements Iterable<XMLNode> {
     /** Returns a read-only iterator over the immediate subelements. */
     public Iterator<XMLNode> iterator() { return Collections.unmodifiableList(sub).iterator(); }
 
-    /** Returns a read-only list of the immediate subelements whose type is equal to the given type. */
-    public List<XMLNode> getChildren(String type) {
-        List<XMLNode> answer = new ArrayList<XMLNode>(sub.size());
-        for(int i=0; i<sub.size(); i++) {
-           XMLNode x = sub.get(i);
-           if (x.type.equals(type)) answer.add(x);
-        }
-        return Collections.unmodifiableList(answer);
+    /** Returns a read-only iteration of the immediate subelements whose type is equal to the given type. */
+    public Iterable<XMLNode> getChildren(final String type) {
+       return new Iterable<XMLNode>() {
+          public Iterator<XMLNode> iterator() {
+             return new Iterator<XMLNode>() {
+                private final Iterator<XMLNode> it = sub.iterator();
+                private XMLNode peek = null;
+                public boolean hasNext() {
+                   while(true) {
+                      if (peek!=null && peek.type.equals(type)) return true;
+                      if (!it.hasNext()) return false; else peek=it.next();
+                   }
+                }
+                public XMLNode next() { XMLNode ans; if (!hasNext()) throw new NoSuchElementException(); else {ans=peek; peek=null; return ans;} }
+                public void remove() { throw new UnsupportedOperationException(); }
+             };
+          }
+       };
     }
 
     /** Returns the value associated with the given attribute name; if the attribute doesn't exist, return "". */
