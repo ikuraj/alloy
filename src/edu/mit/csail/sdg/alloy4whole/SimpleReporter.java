@@ -458,7 +458,7 @@ final class SimpleReporter extends A4Reporter {
             List<String> result = new ArrayList<String>(cmds.size());
             if (bundleIndex==-3) {
                 rep.lastTime = System.currentTimeMillis();
-                rep.tempfile = tempdir+File.separatorChar+"m.cnf";
+                rep.tempfile = tempdir+File.separatorChar+"g.cnf";
                 synchronized(SimpleReporter.class) { latestModule=null; latestKodkodSRC=ConstMap.make(map); }
                 cb(out, "S2", "Performing greedy simulation...\n");
                 cb(out, "S2", "");
