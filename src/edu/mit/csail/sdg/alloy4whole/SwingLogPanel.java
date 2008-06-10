@@ -29,8 +29,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -38,7 +36,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
@@ -51,156 +48,10 @@ import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import edu.mit.csail.sdg.alloy4.OurUtil;
-import edu.mit.csail.sdg.alloy4viz.VizGUI;
 
 /** This helper method is used by SimpleGUI; only the AWT Event Thread may call methods in this class. */
 
 final class SwingLogPanel {
-
-    /** This defines the escape code for CLICK (see Alloy4 Developer's Guide). */
-    public static final byte CLICK=1;
-
-    /** This defines the escape code for BOLD (see Alloy4 Developer's Guide). */
-    public static final byte BOLD=2;
-
-    /** This defines the escape code for RED (see Alloy4 Developer's Guide). */
-    public static final byte RED=3;
-
-    /** This defines the escape code for INDENT (see Alloy4 Developer's Guide). */
-    public static final byte INDENT=4;
-
-    /** This defines the escape code for LINK (see Alloy4 Developer's Guide). */
-    public static final byte LINK=6;
-    public static final byte SETLINK=7;
-
-    /** This defines the escape code for DIVIDER (see Alloy4 Developer's Guide). */
-    public static final byte DIVIDER=12;
-
-    /** This defines the escape code for FLUSH (see Alloy4 Developer's Guide). */
-    public static final byte FLUSH=21;
-
-    /** This defines the escape code for SAVE#1 (see Alloy4 Developer's Guide). */
-    public static final byte SAVE1=22;
-
-    /** This defines the escape code for RESTORE#1 (see Alloy4 Developer's Guide). */
-    public static final byte RESTORE1=23;
-
-    /** This defines the escape code for SAVE#2 (see Alloy4 Developer's Guide). */
-    public static final byte SAVE2=24;
-
-    /** This defines the escape code for RESTORE#2 (see Alloy4 Developer's Guide). */
-    public static final byte RESTORE2=25;
-
-    /** This defines the escape code for SAVE#3 (see Alloy4 Developer's Guide). */
-    public static final byte SAVE3=26;
-
-    /** This defines the escape code for RESTORE#3 (see Alloy4 Developer's Guide). */
-    public static final byte RESTORE3=27;
-
-    /** This defines the escape code for CLEARERROR (see Alloy4 Developer's Guide). */
-    public static final byte CLEARERROR=28;
-
-    /** This defines the escape code for DONE (see Alloy4 Developer's Guide). */
-    public static final byte DONE=29;
-
-    /** This defines the escape code for FAIL (see Alloy4 Developer's Guide). */
-    public static final byte FAIL=20;
-
-    /** This defines the escape code for VIZMSG (see Alloy4 Developer's Guide). */
-    public static final byte VIZMSG=19;
-
-    /** This defines the escape code for DELETE_ON_EXIT (see Alloy4 Developer's Guide). */
-    public static final byte DELETE_ON_EXIT=30;
-
-    /** This defines the escape code for DECLARE_INSTANCE (see Alloy4 Developer's Guide). */
-    public static final byte DECLARE_INSTANCE=31;
-
-    /** This stores the serialized writings that are not yet processed. */
-    private byte[] escSb = new byte[65536];
-    private int escSn = 0;
-    private String escLink = "";
-
-    /** This stores the document length previously saved by the "SAVE#1" escape code. */
-    private int escLength1 = 0;
-
-    /** This stores the document length previously saved by the "SAVE#2" escape code. */
-    private int escLength2 = 0;
-
-    /** This stores the document length previously saved by the "SAVE#3" escape code. */
-    private int escLength3 = 0;
-
-    /** This stores the current process that is allowed to call esc(..) on this logpanel. */
-    private Process escProcess=null;
-
-    /** Sets the current process that is allowed to call esc(...) on this logpanel. */
-    public void escSetProcess(Process process) { escProcess=process; escLink=""; escSn=escLength1=escLength2=escLength3=0; }
-
-    /** Discard any serialized writings that were not yet processed (This method can be called by any thread) */
-    public void escReset() {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public final void run() {
-                    escReset();
-                }
-            });
-            return;
-        }
-        escLink="";
-        escSn=escLength1=escLength2=escLength3=0;
-    }
-
-    /**
-     * Write "msg" into the serialized writing buffer (This method can be called by any thread).
-     * NOTE: this method may return BEFORE it reads the arguments, so you must give up control of the byte[] array!
-     */
-    public void esc(final Process process, final byte[] msg, final int msglen) {
-        if (!SwingUtilities.isEventDispatchThread()) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public final void run() {
-                    esc(process, msg, msglen);
-                }
-            });
-            return;
-        }
-        if (process!=escProcess) return;
-        while(msglen > (escSb.length - escSn)) {
-            byte[] escSb2 = new byte[escSb.length+4096];
-            for(int i=0; i<escSn; i++) escSb2[i]=escSb[i];
-            escSb=escSb2;
-        }
-        for(int i=0; i<msglen; i++) {
-            byte c=msg[i];
-            if (c>0 && c<32 && c!=10 && c!=13 && c!=8 && c!=9) {
-                String txt;
-                try {txt=new String(escSb, 0, escSn, "UTF-8");} catch(UnsupportedEncodingException ex) {txt="";}
-                if (c==CLICK) handler.doVisualize(txt);
-                else if (c==BOLD) logBold(txt);
-                else if (c==RED) logRed(txt);
-                else if (c==INDENT) { logIndented(txt); }
-                else if (c==SETLINK) escLink=txt;
-                else if (c==LINK) logLink(txt,escLink);
-                else if (c==DELETE_ON_EXIT) (new File(txt)).deleteOnExit();
-                else if (c==DECLARE_INSTANCE) handler.doSetLatest(txt);
-                else if (c==DIVIDER) { log(txt); logDivider(); }
-                else if (c==SAVE1) { log(txt); escLength3=(escLength2=(escLength1=getLength())); }
-                else if (c==RESTORE1) { log(txt); setLength(escLength1); }
-                else if (c==SAVE2) { log(txt); escLength3=(escLength2=getLength()); }
-                else if (c==RESTORE2) { log(txt); setLength(escLength2); }
-                else if (c==SAVE3) { log(txt); escLength3=getLength(); }
-                else if (c==RESTORE3) { log(txt); setLength(escLength3); }
-                else if (c==CLEARERROR) { log(txt); clearError(); }
-                else if (c==DONE) { log(txt); handler.doStop(0); }
-                else if (c==FAIL) { log(txt); handler.doStop(1); }
-                else if (c==VIZMSG) { viz.doAlert(txt); }
-                else { log(txt); } // Everything else is treated as FLUSH
-                flush();
-                escSn=0;
-            } else {
-                escSb[escSn]=c;
-                escSn++;
-            }
-        }
-    }
 
     /** Try to wrap the input to about 60 characters per line; however, if a token is too long, we won't break it. */
     private static void linewrap(StringBuilder sb, String msg) {
@@ -248,9 +99,6 @@ final class SwingLogPanel {
      */
     private final SimpleGUI handler;
 
-    /** The VizGUI handler. */
-    private final VizGUI viz;
-
     /** The current length of the log, not counting any "red" error message at the end of the log. */
     private int lastSize=0;
 
@@ -278,14 +126,12 @@ final class SwingLogPanel {
      * @param regular - the color to use for regular messages
      * @param red - the color to use for red messages
      * @param handler - the SimpleGUI parent
-     * @param viz - the VizGUI parent
      */
     public SwingLogPanel(
         final JScrollPane parent, String fontName, int fontSize,
         final Color background, final Color regular, final Color red,
-        final SimpleGUI handler, final VizGUI viz) {
+        final SimpleGUI handler) {
         this.handler = handler;
-        this.viz = viz;
         this.fontName = fontName;
         this.fontSize = fontSize;
         this.log = OurUtil.make(new JTextPane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
@@ -342,6 +188,7 @@ final class SwingLogPanel {
     /** Write a clickable link into the log window. */
     public void logLink(final String link, final String linkDestination) {
         if (log==null || link.length()==0) return;
+        if (linkDestination==null || linkDestination.length()==0) { log(link); return; }
         clearError();
         StyledDocument doc = log.getStyledDocument();
         Style linkStyle = doc.addStyle("link", styleRegular);
@@ -464,14 +311,14 @@ final class SwingLogPanel {
     }
 
     /** Query the current length of the log. */
-    private int getLength() {
+    int getLength() {
         if (log==null) return 0;
         clearError();
         return log.getStyledDocument().getLength();
     }
 
     /** Truncate the log to the given length; if the log is shorter than the number given, then nothing happens. */
-    private void setLength(int newLength) {
+    void setLength(int newLength) {
         if (log==null) return;
         clearError();
         StyledDocument doc=log.getStyledDocument();

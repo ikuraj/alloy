@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -132,11 +131,15 @@ import edu.mit.csail.sdg.alloy4.Runner;
 import edu.mit.csail.sdg.alloy4.Subprocess;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
+import edu.mit.csail.sdg.alloy4.WorkerEngine;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4.Util.BooleanPref;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
 import edu.mit.csail.sdg.alloy4viz.VizGUI;
+import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleCallback1;
+import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask1;
+import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask2;
 
 /**
  * Simple graphical interface for accessing various features of the analyzer.
@@ -321,14 +324,8 @@ public final class SimpleGUI implements ComponentListener {
     /** Whether we should force ".als" when opening a file. */
     private boolean openAlsOnly = true;
 
-    /** If true, that means we are currently generating a metamodel or running a SAT solve or doing solution enumeration. */
-    private boolean subrunning = false;
-
     /** If subrunning==true: 0 means SAT solving; 1 means metamodel; 2 means enumeration. */
     private int subrunningTask = 0;
-
-    /** If nonnull and alive, that means it's the subprocess for running SAT solvers. */
-    private Process subprocess = null;
 
     /** The amount of memory (in MB) currently allocated for this.subprocess */
     private int subMemoryNow = 0;
@@ -695,7 +692,7 @@ public final class SimpleGUI implements ComponentListener {
     /** This method performs File->Quit. */
     private Runner doQuit() {
         if (!wrap) if (text.do_closeAll()) {
-            try { if (subprocess!=null) subprocess.destroy(); } finally { System.exit(0); }
+            try { WorkerEngine.stop(); } finally { System.exit(0); }
         }
         return wrapMe();
     }
@@ -913,7 +910,7 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doRun(Integer commandIndex) {
         if (wrap) return wrapMe(commandIndex);
         final int index = commandIndex;
-        if (subrunning) return null;
+        if (WorkerEngine.isBusy()) return null;
         if (index==(-2)) subrunningTask=1; else subrunningTask=0;
         latestAutoInstance="";
         if (index>=0) latestCommand=index;
@@ -925,67 +922,42 @@ public final class SimpleGUI implements ComponentListener {
         doRefreshRun();
         OurUtil.enableAll(runmenu);
         if (commands==null) return null;
-        if (commands.size()==0 && index!=-2) { log.logRed("There are no commands to execute.\n\n"); return null; }
+        if (commands.size()==0 && index!=-2 && index!=-3) { log.logRed("There are no commands to execute.\n\n"); return null; }
         int i=index;
         if (i>=commands.size()) i=commands.size()-1;
-        // Now we begin the execution; make sure you trap all possible exceptions, so that we can turn subrunning to false
-        subrunning=true;
-        runmenu.setEnabled(false);
-        runbutton.setVisible(false);
-        showbutton.setEnabled(false);
-        stopbutton.setVisible(true);
-        final SatSolver sc = SatSolver.get();
-        final A4Options opt = new A4Options();
-        opt.tempDirectory = Helper.alloyHome()+fs+"tmp";
-        opt.solverDirectory = Helper.alloyHome()+fs+"binary";
+        SimpleCallback1 cb = new SimpleCallback1(this, null, log, Verbosity.get().ordinal(), latestAlloyVersionName, latestAlloyVersion);
+        SimpleTask1 task = new SimpleTask1();
+        A4Options opt = new A4Options();
+        opt.tempDirectory = Helper.alloyHome() + fs + "tmp";
+        opt.solverDirectory = Helper.alloyHome() + fs + "binary";
         opt.recordKodkod = RecordKodkod.get();
         opt.skolemDepth = SkolemDepth.get();
         opt.coreMinimization = CoreMinimization.get();
         opt.originalFilename = Util.canon(text.do_getFilename());
-        opt.solver = sc;
-        if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
-            try {
-                final String tempdir = Helper.maketemp();
-                SimpleReporter.performRegularCommand(null, text.do_takeSnapshot(), i, opt, WarningNonfatal.get(), tempdir, Verbosity.get().ordinal(), ImplicitThis.get() ? 2 : 1);
-                System.err.flush();
-            } catch(Throwable ex) {
-                ErrorFatal err=new ErrorFatal(ex.getMessage(), ex);
-                log.logBold("Unknown exception: "+ex+"\nStackTrace:\n"+MailBug.dump(err));
-                System.err.flush();
-            }
-            doStop(0);
-            return null;
-        }
-        if (!prepareSubJVM()) {
-            log.logBold("Error launching the sub-JVM.\n\"java\" is not in your current program search path.\n");
-            log.flush();
-            doStop(2);
-            return null;
-        }
+        opt.solver = SatSolver.get();
+        task.bundleIndex = i;
+        task.bundleWarningNonFatal = WarningNonfatal.get();
+        task.map = text.do_takeSnapshot();
+        task.options = opt.dup();
+        task.resolutionMode = ImplicitThis.get() ? 2 : 1;
+        task.tempdir = Helper.maketemp();
         try {
-            final String tempdir = Helper.maketemp();
-            final String cache = tempdir + fs + "cache";
-            final SimpleRunnerBundle b = new SimpleRunnerBundle(
-                opt,
-                text.do_takeSnapshot(),
-                i,
-                Verbosity.get().ordinal(),
-                WarningNonfatal.get(),
-                ImplicitThis.get() ? 2 : 1
-            );
-            (new File(cache)).deleteOnExit();
-            b.write(cache);
-            byte[] bytes=("S"+tempdir).getBytes("UTF-8");
-            subprocess.getOutputStream().write(bytes, 0, bytes.length);
-            subprocess.getOutputStream().write(new byte[]{0}, 0, 1);
-            subprocess.getOutputStream().flush();
+            runmenu.setEnabled(false);
+            runbutton.setVisible(false);
+            showbutton.setEnabled(false);
+            stopbutton.setVisible(true);
+            int newmem = SubMemory.get();
+            if (newmem != subMemoryNow) WorkerEngine.stop();
+            WorkerEngine.run(task, newmem, Helper.alloyHome()+fs+"binary", cb);
+            subMemoryNow = newmem;
         } catch(Throwable ex) {
+            WorkerEngine.stop();
             log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
-            "One possible cause is that, in the Options menu, your specified\n" +
-            "memory size is larger than the amount allowed by your OS.\n");
+              "One possible cause is that, in the Options menu, your specified\n" +
+              "memory size is larger than the amount allowed by your OS.\n" +
+              "Also, please make sure \"java\" is in your program path.\n");
             log.logDivider();
             log.flush();
-            subrunning=false;
             doStop(2);
         }
         return null;
@@ -996,29 +968,9 @@ public final class SimpleGUI implements ComponentListener {
         if (wrap) return wrapMe(how);
         int h = how;
         if (h!=0) {
-            log.escSetProcess(null); // Prevents the subprocess from writing any more text to the log
-            log.escReset();
-            if (h==2 && subrunning) { log.logBold("\nSolving Stopped.\n"); log.logDivider(); }
-            if (subprocess!=null) { subprocess.destroy(); subprocess=null; }
-        } else if (subrunning && subprocess!=null) {
-            try {
-                int r=subprocess.exitValue();
-                // If we can get to this line, that means the process has terminated abnormally.
-                log.escSetProcess(null); // Prevents the subprocess from writing any more text to the log
-                log.escReset();
-                subprocess.destroy();
-                subprocess=null;
-                if (r==SimpleRunner.EXIT_OUT_OF_MEMORY)
-                    log.logBold("Fatal Error: Solver ran out of memory.\n" +
-                    "Please go to the \"Options\" menu to specify a different memory size.\n");
-                else
-                    log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
-                    "One possible cause is that, in the Options menu, your specified\n" +
-                    "memory size is larger than the amount allowed by your OS.\n");
-                log.logDivider();
-            } catch(IllegalThreadStateException ex) {}
+           if (h==2 && WorkerEngine.isBusy()) { WorkerEngine.stop(); log.logBold("\nSolving Stopped.\n"); log.logDivider(); }
+           WorkerEngine.stop();
         }
-        subrunning=false;
         runmenu.setEnabled(true);
         runbutton.setVisible(true);
         showbutton.setEnabled(true);
@@ -1053,44 +1005,12 @@ public final class SimpleGUI implements ComponentListener {
         return null;
     }
 
-    private Runnable doGreedySimulation2 = new Runnable() {
-        public void run() {
-            try {
-                A4Reporter rep = new A4Reporter() {
-                    public void solve(int primaryVars, int totalVars, int clauses) {
-                        log.log("   "+totalVars+" vars. "+primaryVars+" primary vars. "+clauses+" clauses.\n");
-                        log.flush();
-                    }
-                };
-                String xml = "/tmp/z.xml";
-                long lastTime = System.currentTimeMillis();
-                A4Solution sol = ExampleSimulator2.run(rep, text.do_getFilename(), xml, text.do_takeSnapshot());
-                if (sol.satisfiable()) {
-                    log.log("   ");
-                    log.logLink("Instance", "XML: "+xml);
-                    log.log(" found. Predicate is consistent. "+(System.currentTimeMillis()-lastTime)+"ms.\n");
-                } else {
-                    log.log("   No instance found. Predicate may be inconsistent. "+(System.currentTimeMillis()-lastTime)+"ms.\n");
-                }
-                log.logDivider();
-                log.flush();
-            } catch(Throwable ex) {
-                String msg = ex.getMessage();
-                log.log((msg!=null && msg.length()>0) ? msg.trim()+"\n" : MailBug.dump(ex));
-                log.logDivider();
-                log.flush();
-            }
-        }
-    };
-
-    /** This method executes the greedy simulation algorithm. */
+    /** This method displays the meta model. */
     private Runner doGreedySimulation() {
         if (wrap) return wrapMe();
         doRefreshRun();
         OurUtil.enableAll(runmenu);
-        log.logBold("Executing greedy simulation... please wait...\n");
-        log.flush();
-        SwingUtilities.invokeLater(doGreedySimulation2);
+        if (commands!=null) doRun(-3);
         return null;
     }
 
@@ -1598,22 +1518,24 @@ public final class SimpleGUI implements ComponentListener {
     private final Computer enumerator = new Computer() {
         public String compute(String arg) {
             OurUtil.show(frame);
-            if (subrunning)
+            if (WorkerEngine.isBusy())
                 throw new RuntimeException("Alloy4 is currently executing a SAT solver command. Please wait until that command has finished.");
-            if (!prepareSubJVM())
-                throw new RuntimeException("Error launching the sub-JVM.\n\"java\" is not in your current program search path.\n");
+            SimpleCallback1 cb = new SimpleCallback1(SimpleGUI.this, viz, log, Verbosity.get().ordinal(), latestAlloyVersionName, latestAlloyVersion);
+            SimpleTask2 task = new SimpleTask2();
+            task.filename = arg;
             try {
-                byte[] bytes=("N"+arg).getBytes("UTF-8");
-                subprocess.getOutputStream().write(bytes, 0, bytes.length);
-                subprocess.getOutputStream().write(new byte[]{0}, 0, 1);
-                subprocess.getOutputStream().flush();
+                WorkerEngine.run(task, subMemoryNow, Helper.alloyHome()+fs+"binary", cb);
             } catch(Throwable ex) {
-                throw new RuntimeException("Solver failed due to unknown reason.\n" +
-                        "One possible cause is that, in the Options menu,\n" +
-                        "your specified memory size is larger than the\n" +
-                "amount allowed by your OS.\n");
+                WorkerEngine.stop();
+                log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
+                  "One possible cause is that, in the Options menu, your specified\n" +
+                  "memory size is larger than the amount allowed by your OS.\n" +
+                  "Also, please make sure \"java\" is in your program path.\n");
+                log.logDivider();
+                log.flush();
+                doStop(2);
+                return arg;
             }
-            subrunning=true;
             subrunningTask=2;
             runmenu.setEnabled(false);
             runbutton.setVisible(false);
@@ -1801,7 +1723,7 @@ public final class SimpleGUI implements ComponentListener {
 
         // Create the message area
         logpane = OurUtil.scrollpane(null);
-        log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this, viz);
+        log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this);
 
         // Create the text area
         wrap = true;
@@ -1944,87 +1866,6 @@ public final class SimpleGUI implements ComponentListener {
                 again
             }, "Welcome", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]{dismiss}, dismiss);
             if (!again.isSelected()) Welcome.set(welcomeLevel);
-        }
-    }
-
-    //=============================================================================================================//
-
-    /** This method loads the sub JVM if not already loaded. */
-    private boolean prepareSubJVM() {
-        final int newmem = SubMemory.get();
-        if (newmem!=subMemoryNow && subprocess!=null) { subprocess.destroy(); subprocess=null; }
-        try {
-            if (subprocess!=null) { subprocess.exitValue(); subprocess=null; }
-        } catch(IllegalThreadStateException ex) {
-            // If we can get to this line, that means the subprocess is still alive. So no work is needed.
-            return true;
-        }
-        try {
-            String java="java", javahome = System.getProperty("java.home");
-            if (javahome!=null && javahome.length()>0) {
-                // First try "[JAVAHOME]/bin/java"
-                File f = new File(javahome + fs + "bin" + fs + "java");
-                // Then try "[JAVAHOME]/java"
-                if (!f.isFile()) f = new File(javahome + fs + "java");
-                // All else, try "java" (and let the Operating System search the program path...)
-                if (f.isFile()) java=f.getAbsolutePath();
-            }
-            subprocess=Runtime.getRuntime().exec(new String[]{
-                java,
-                "-Xmx"+newmem+"m",
-                "-Djava.library.path="+Helper.alloyHome()+fs+"binary",
-                "-cp",
-                System.getProperty("java.class.path"),
-                "edu.mit.csail.sdg.alloy4whole.SimpleRunner",
-                Integer.toString(Version.buildNumber()),
-                Integer.toString(latestAlloyVersion),
-                latestAlloyVersionName
-            });
-            subMemoryNow=newmem;
-        } catch (IOException ex) {
-            return false;
-        }
-        log.escSetProcess(subprocess);
-        log.escReset();
-        Thread thread1=new Thread(new OutPipe(subprocess, subprocess.getInputStream(), true));
-        Thread thread2=new Thread(new OutPipe(subprocess, subprocess.getErrorStream(), false));
-        thread1.start();
-        thread2.start();
-        return true;
-    }
-
-    //=======================================================================//
-
-    private final class OutPipe implements Runnable {
-        private final Process process;
-        private final InputStream input;
-        private final boolean isStdout;
-        public OutPipe(Process process, InputStream input, boolean isStdout) {
-            this.process=process;
-            this.input=input;
-            this.isStdout=isStdout;
-        }
-        public void run() {
-            try {
-                while(true) {
-                    byte[] buffer=new byte[1024]; // Must re-allocate each time, since "log.esc" will return before it reads buffer
-                    int n=input.read(buffer);
-                    if (n<=0) break;
-                    if (!isStdout) continue;
-                    log.esc(process, buffer, n);
-                }
-            } catch (IOException ex) {
-                log.escReset();
-                try {
-                    byte[] msg=("Error: "+ex.getMessage()+"\n").getBytes("UTF-8");
-                    log.esc(process, msg, msg.length);
-                } catch(UnsupportedEncodingException ex2) {}
-            }
-            log.esc(process, new byte[]{SwingLogPanel.FLUSH}, 1);
-            Util.close(input);
-            if (isStdout) SwingUtilities.invokeLater(new Runnable() {
-                public void run() { doStop(0); }
-            });
         }
     }
 }

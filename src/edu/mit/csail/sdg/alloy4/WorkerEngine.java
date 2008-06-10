@@ -55,7 +55,7 @@ public final class WorkerEngine {
   /** This defines an interface for performing tasks in a subprocess. */
   public interface WorkerTask extends Serializable {
      /** The task should write zero or more non-null Objects to the ObjectOutputStream to report progress to the parent process. */
-     public void run(ObjectOutputStream out);
+     public void run(ObjectOutputStream out) throws Exception;
   }
 
   /** This defines an interface for receiving results from a subprocess. */
@@ -132,7 +132,6 @@ public final class WorkerEngine {
               // All else, try "java" (and let the Operating System search the program path...)
               if (f.isFile()) java = f.getAbsolutePath();
            }
-           callback.callback("<NEW JVM>");
            if (jniPath!=null && jniPath.length()>0)
                sub = Runtime.getRuntime().exec(new String[] {
                   java,
@@ -211,6 +210,7 @@ public final class WorkerEngine {
      while(true) {
         final WorkerTask task;
         try {
+           System.gc(); // while we're waiting for the next task, we might as well encourage garbage collection
            ObjectInputStream oin = new ObjectInputStream(wrap(in));
            task = (WorkerTask) oin.readObject();
            oin.close();
@@ -229,7 +229,21 @@ public final class WorkerEngine {
            try {t.join(5000); if (t.isAlive()) halt(1);} catch (Throwable ex) {halt(1);}
         }
         t = new Thread(new Runnable() {
-           public void run() { try { ObjectOutputStream x=new ObjectOutputStream(wrap(out)); task.run(x); x.writeObject(null); x.close(); } catch(Throwable ex) { halt(1); } }
+           public void run() {
+              ObjectOutputStream x = null;
+              Throwable e = null;
+              try { x=new ObjectOutputStream(wrap(out)); task.run(x); x.writeObject(null); x.flush(); } catch(Throwable ex) { e=ex; }
+              for(Throwable ex=e; ex!=null; ex=ex.getCause()) if (ex instanceof OutOfMemoryError || ex instanceof StackOverflowError) {
+                 try { System.gc(); x.writeObject(ex); x.flush(); } catch(Throwable ex2) { } finally { halt(2); }
+              }
+              if (e instanceof Err) {
+                 try { System.gc(); x.writeObject(e); x.writeObject(null); x.flush(); } catch(Throwable ex2) { halt(1); }
+              }
+              if (e!=null) {
+                 try { System.gc(); x.writeObject(e); x.flush(); } catch(Throwable ex2) { } finally { halt(1); }
+              }
+              Util.close(x); // avoid memory leaks
+           }
         });
         t.start();
      }

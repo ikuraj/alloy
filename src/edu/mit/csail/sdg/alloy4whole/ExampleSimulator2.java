@@ -39,6 +39,7 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.Triple;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
@@ -191,7 +192,7 @@ public final class ExampleSimulator2 extends Simplifier {
        partial.writeXML(rep, xmlFilename, world.getAllFunc(), snapshot);
     }
 
-    public static A4Solution run(A4Reporter rep, String filename, String xmlFilename, Map<String,String> snapshot) throws Exception {
+    public static Triple<Module,Command,A4Solution> run(A4Reporter rep, String filename, String xmlFilename, Map<String,String> snapshot) throws Exception {
         if (rep==null) rep = A4Reporter.NOP;
         if (snapshot==null) snapshot = new HashMap<String,String>();
         long old = System.currentTimeMillis();
@@ -199,6 +200,6 @@ public final class ExampleSimulator2 extends Simplifier {
         long now = System.currentTimeMillis();
         A4Solution sol = sim.partial;
         if (!sol.satisfiable()) rep.resultUNSAT(sim.cmd, now-old, sol); else rep.resultSAT(sim.cmd, now-old, sol);
-        return sol;
+        return new Triple<Module,Command,A4Solution>(sim.world, sim.cmd, sol);
     }
 }
