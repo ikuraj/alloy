@@ -150,6 +150,7 @@ public final class ExampleSimulator2 extends Simplifier {
     }
 
     private ExampleSimulator2(A4Reporter rep, String filename, String xmlFilename, Map<String,String> snapshot) throws Exception {
+       options.originalFilename = filename;
        Expr fact = null;
        world = CompUtil.parseEverything_fromFile(rep, snapshot, filename);
        List<Sig> allsigs = new ArrayList<Sig>(world.getAllReachableSigs());
