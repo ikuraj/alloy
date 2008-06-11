@@ -110,23 +110,32 @@ public final class ExampleSimulator2 extends Simplifier {
        TupleFactory factory = factory(sol);
        Set<Object> oldAtoms = new HashSet<Object>();
        for(Tuple t: ((A4TupleSet)(partial.eval(state))).debugGetKodkodTupleset()) oldAtoms.add(t.atom(0));
-       for(Sig s: world.getAllReachableSigs()) for(Field f: s.getFields()) if (f.type.firstColumnOverlaps(state.type)) {
-
-          // Retrieve the old states from the previous solution
-          TupleSet oldT = ((A4TupleSet) (partial.eval(f))).debugGetKodkodTupleset();
-
-          // Convert it into the universe used in the new solution that we are about to solve for.
-          // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
-          TupleSet newLower = convert(factory, oldT),  newUpper = newLower.clone();
-
-          // Extract the expression corresponding to the given field.
-          Expression rel = (Relation) a2k(sol, f);
-          if (!(rel instanceof Relation)) continue; // should not happen, as long as the input model obeys our conventions
-
-          // Bind the partial instance
-          for(Tuple t: query(sol, false, rel)) if (!oldAtoms.contains(t.atom(0))) newLower.add(t);
-          for(Tuple t: query(sol, true,  rel)) if (!oldAtoms.contains(t.atom(0))) newUpper.add(t);
-          shrink(sol, (Relation)rel, newLower, newUpper);
+       for(Sig s: world.getAllReachableSigs()) for(Field f: s.getFields()) {
+           if (f.type.firstColumnOverlaps(state.type)) {
+               // Retrieve the old states from the previous solution
+               TupleSet oldT = ((A4TupleSet) (partial.eval(f))).debugGetKodkodTupleset();
+               // Convert it into the universe used in the new solution that we are about to solve for.
+               // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
+               TupleSet newLower = convert(factory, oldT),  newUpper = newLower.clone();
+               // Extract the expression corresponding to the given field.
+               Expression rel = (Relation) a2k(sol, f);
+               if (!(rel instanceof Relation)) continue; // should not happen, as long as the input model obeys our conventions
+               // Bind the partial instance
+               for(Tuple t: query(sol, false, rel)) if (!oldAtoms.contains(t.atom(0))) newLower.add(t);
+               for(Tuple t: query(sol, true,  rel)) if (!oldAtoms.contains(t.atom(0))) newUpper.add(t);
+               shrink(sol, (Relation)rel, newLower, newUpper);
+           } else {
+               // Retrieve the old states from the previous solution
+               TupleSet oldT = ((A4TupleSet) (partial.eval(f))).debugGetKodkodTupleset();
+               // Convert it into the universe used in the new solution that we are about to solve for.
+               // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
+               TupleSet newLower = convert(factory, oldT),  newUpper = newLower.clone();
+               // Extract the expression corresponding to the given field.
+               Expression rel = (Relation) a2k(sol, f);
+               if (!(rel instanceof Relation)) continue; // should not happen, as long as the input model obeys our conventions
+               // Bind the partial instance
+               shrink(sol, (Relation)rel, newLower, newUpper);
+           }
        }
        return true;
     }
