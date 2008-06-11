@@ -145,9 +145,6 @@ public final class ExampleSimulator2 extends Simplifier {
        Expr fact = null;
        world = CompUtil.parseEverything_fromFile(rep, snapshot, filename);
        List<Sig> allsigs = new ArrayList<Sig>(world.getAllReachableSigs());
-       for(Sig s: world.getAllSigs()) if (s instanceof PrimSig) {
-          if (s.label.equals("this/State")) state = (PrimSig)s;
-       }
        for(Func f: world.getAllFunc()) if (f.isPred) {
            if (f.label.equals("this/init") && f.params.size()==1) init=f;
            if (f.label.equals("this/step") && f.params.size()==2) step=f;
@@ -155,17 +152,18 @@ public final class ExampleSimulator2 extends Simplifier {
        for(Pair<Command,Expr> pair: world.getAllCommandsWithFormulas()) {
            if (!pair.a.check) { cmd=pair.a; fact=pair.b.and(world.getAllReachableFacts()); break; }
        }
-       if (cmd==null || fact==null)   throw new ErrorSyntax("Must have at least one RUN command");
-       if (state==null)               throw new ErrorSyntax("Must have a toplevel sig called \"State\"");
-       if (!state.isTopLevel())       throw new ErrorSyntax("sig \"State\" must be toplevel");
-       if (state.isAbstract==null)    throw new ErrorSyntax("sig \"State\" must be abstract");
-       if (state.children().size()>0) throw new ErrorSyntax("sig \"State\" must not have any subsigs");
+       if (cmd==null || fact==null)                  throw new ErrorSyntax("Must have at least one RUN command");
+       if (cmd.scope.size()==0)                      throw new ErrorSyntax("First RUN command's must specify at least one sig in the list of scopes.");
+       if (!(cmd.scope.get(0).a instanceof PrimSig)) throw new ErrorSyntax("The first sig mentioned in the first RUN command must be a toplevel abstract sig.");
+       int scope = cmd.scope.get(0).b;
+       if (scope<0) scope=0-(scope+1);
+       if (scope<2) throw new ErrorSyntax("Scope for \"State\" must be 2 or higher");
+       state = (PrimSig) (cmd.scope.get(0).a);
+       if (!state.isTopLevel())       throw new ErrorSyntax("sig \"" + state + "\" must be toplevel");
+       if (state.isAbstract==null)    throw new ErrorSyntax("sig \"" + state + "\" must be abstract");
+       if (state.children().size()>0) throw new ErrorSyntax("sig \"" + state + "\" must not have any subsigs");
        if (init==null)                throw new ErrorSyntax("Must have a predicate called \"init\"");
        if (step==null)                throw new ErrorSyntax("Must have a predicate called \"step\"");
-       int scope = -1;
-       for(Pair<Sig,Integer> k: cmd.scope) { if (k.a==state) { scope=k.b; if (scope<0) scope=0-(scope+1); break; } }
-       if (scope<0)                   throw new ErrorSyntax("Must specify an explicit scope for \"State\"");
-       if (scope<2)                   throw new ErrorSyntax("Scope for \"State\" must be 2 or higher");
        // now, try the step-by-step greedy simulation
        PrimSig s0 = makeAtom(); allsigs.add(s0);
        PrimSig s1 = makeAtom(); allsigs.add(s1);
@@ -191,4 +189,6 @@ public final class ExampleSimulator2 extends Simplifier {
         if (!sol.satisfiable()) rep.resultUNSAT(sim.cmd, now-old, sol); else rep.resultSAT(sim.cmd, now-old, sol);
         return new Triple<Module,Command,A4Solution>(sim.world, sim.cmd, sol);
     }
+
+    public static void main(String[] args) throws Exception { run(null, "/zweb/zweb/absFsys.als", "/tmp/z.xml", new HashMap<String, String>()); }
 }

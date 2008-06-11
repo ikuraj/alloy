@@ -463,7 +463,6 @@ final class SimpleReporter extends A4Reporter {
                 cb(out, "S2", "Performing greedy simulation...\n");
                 cb(out, "S2", "");
                 Triple<Module,Command,A4Solution> sol = ExampleSimulator2.run(noxml(rep), options.originalFilename, rep.tempfile+".xml", map);
-                synchronized(SimpleReporter.class) { latestModule=sol.a; latestKodkodSRC=ConstMap.make(map); }
                 if (!sol.c.satisfiable()) rep.resultUNSAT(sol.b, 0, sol.c);
                 else rep.resultSAT(sol.b, 0, sol.c);
             } else if (bundleIndex==-2) {
