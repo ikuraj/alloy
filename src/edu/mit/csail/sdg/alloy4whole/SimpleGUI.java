@@ -1610,14 +1610,14 @@ public final class SimpleGUI implements ComponentListener {
 
     //====== Constructor ====================================================//
 
-	static boolean loadLibrary(String library) {
-		try { System.loadLibrary(library);      return true; } catch(UnsatisfiedLinkError ex) { }	
-		try { System.loadLibrary(library+"x1"); return true; } catch(UnsatisfiedLinkError ex) { }
-		try { System.loadLibrary(library+"x2"); return true; } catch(UnsatisfiedLinkError ex) { }
-		try { System.loadLibrary(library+"x3"); return true; } catch(UnsatisfiedLinkError ex) { }
-		try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { }
-		try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { return false; }
-	}
+    private static boolean loadLibrary(String library) {
+        try { System.loadLibrary(library);      return true; } catch(UnsatisfiedLinkError ex) { }
+        try { System.loadLibrary(library+"x1"); return true; } catch(UnsatisfiedLinkError ex) { }
+        try { System.loadLibrary(library+"x2"); return true; } catch(UnsatisfiedLinkError ex) { }
+        try { System.loadLibrary(library+"x3"); return true; } catch(UnsatisfiedLinkError ex) { }
+        try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { }
+        try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { return false; }
+    }
 
     /** The constructor; this method will be called by the AWT event thread, using the "invokeLater" method. */
     private SimpleGUI(String[] args) {
