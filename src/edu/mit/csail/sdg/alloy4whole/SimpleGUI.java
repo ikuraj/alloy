@@ -1610,6 +1610,15 @@ public final class SimpleGUI implements ComponentListener {
 
     //====== Constructor ====================================================//
 
+	static boolean loadLibrary(String library) {
+		try { System.loadLibrary(library);      return true; } catch(UnsatisfiedLinkError ex) { }	
+		try { System.loadLibrary(library+"x1"); return true; } catch(UnsatisfiedLinkError ex) { }
+		try { System.loadLibrary(library+"x2"); return true; } catch(UnsatisfiedLinkError ex) { }
+		try { System.loadLibrary(library+"x3"); return true; } catch(UnsatisfiedLinkError ex) { }
+		try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { }
+		try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { return false; }
+	}
+
     /** The constructor; this method will be called by the AWT event thread, using the "invokeLater" method. */
     private SimpleGUI(String[] args) {
 
@@ -1776,7 +1785,7 @@ public final class SimpleGUI implements ComponentListener {
             if (!isSat(test1)) satChoices.remove(SatSolver.BerkMinPIPE);
             String test2 = Subprocess.exec(20000, new String[]{binary+fs+"spear", "--model", "--dimacs", binary+fs+"tmp.cnf"});
             if (!isSat(test2)) satChoices.remove(SatSolver.SpearPIPE);
-            try { System.loadLibrary("minisat"); } catch(UnsatisfiedLinkError e) {
+            if (!loadLibrary("minisat")) {
                 log.logBold("Warning: JNI-based SAT solver does not work on this platform.\n");
                 log.log("This is okay, since you can still use SAT4J as the solver.\n"+
                 "For more information, please visit http://alloy.mit.edu/alloy4/\n");
@@ -1784,8 +1793,8 @@ public final class SimpleGUI implements ComponentListener {
                 log.flush();
                 satChoices.remove(SatSolver.MiniSatJNI);
             }
-            try { System.loadLibrary("minisatprover"); } catch(UnsatisfiedLinkError e) { satChoices.remove(SatSolver.MiniSatProverJNI); }
-            try { System.loadLibrary("zchaff"); } catch(UnsatisfiedLinkError e) { satChoices.remove(SatSolver.ZChaffJNI); }
+            if (!loadLibrary("minisatprover")) satChoices.remove(SatSolver.MiniSatProverJNI);
+            if (!loadLibrary("zchaff"))        satChoices.remove(SatSolver.ZChaffJNI);
             SatSolver now = SatSolver.get();
             if (!satChoices.contains(now)) {
                 now=SatSolver.ZChaffJNI;
