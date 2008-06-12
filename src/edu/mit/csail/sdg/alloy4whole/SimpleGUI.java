@@ -433,9 +433,9 @@ public final class SimpleGUI implements ComponentListener {
         }
         // Copy the platform-dependent binaries
         Util.copy(true, false, platformBinary,
-           arch+"/libminisat.so", arch+"/libminisat.jnilib",
-           arch+"/libminisatprover.so", arch+"/libminisatprover.jnilib",
-           arch+"/libzchaff.so", arch+"/libzchaff.jnilib",
+           arch+"/libminisat.so", arch+"/libminisatx1.so", arch+"/libminisat.jnilib",
+           arch+"/libminisatprover.so", arch+"/libminisatproverx1.so", arch+"/libminisatprover.jnilib",
+           arch+"/libzchaff.so", arch+"/libzchaffx1.so", arch+"/libzchaff.jnilib",
            arch+"/berkmin", arch+"/spear");
         Util.copy(false, false, platformBinary,
            arch+"/minisat.dll", arch+"/minisatprover.dll", arch+"/zchaff.dll",

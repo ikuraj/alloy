@@ -501,7 +501,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
              String range=make(tp.range());
              switch(((RelationPredicate.Function)x).targetMult()) {
                case ONE: file.printf("Formula %s=%s.function(%s,%s);%n",newname,rel,domain,range); return;
-               case LONE: file.printf("Formula %s=%s.functional(%s,%s);%n",newname,rel,domain,range); return;
+               case LONE: file.printf("Formula %s=%s.partialFunction(%s,%s);%n",newname,rel,domain,range); return;
                default: throw new RuntimeException("Illegal multiplicity encountered in RelationPredicate.Function");
              }
           }

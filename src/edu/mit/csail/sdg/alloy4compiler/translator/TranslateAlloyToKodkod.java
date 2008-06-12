@@ -22,6 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -195,7 +196,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             }
             for(Field f:sig.getFields()) {
                 Expression sr=a2k(sig), fr=a2k(f);
-                // we could test to see if we can use kodkod's "function" and "functional" predicates, but experimentally it actually performs much worse, so I will disable it
+                // we could test to see if we can use kodkod's "function" and "partialFunction" predicates, but experimentally it actually performs much worse, so I will disable it
                 /*
                 if (sig.isOne==null && fr instanceof Relation && f.boundingFormula instanceof ExprQuant) {
                    final ExprVar THIS = ((ExprQuant)(f.boundingFormula)).vars.get(0);
@@ -210,8 +211,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                       }
                       if (sub.type.arity()==1 && sub instanceof ExprUnary && ((ExprUnary)sub).op==ExprUnary.Op.LONEOF && !sub.hasVar(THIS)) {
                          final Expression range=cset(((ExprUnary)sub).sub);
-                         frame.addFormula(((Relation)fr).functional(sr, range), f);
-                         rep.debug("Found: kodkod functional\n");
+                         frame.addFormula(((Relation)fr).partialFunction(sr, range), f);
+                         rep.debug("Found: kodkod partialFunction\n");
                          continue;
                       }
                    }
@@ -937,10 +938,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             QuantifiedFormula p1 = (QuantifiedFormula) visit_qt(ExprQuant.Op.ALL, xvars, sub);
             QuantifiedFormula p2 = (QuantifiedFormula) visit_qt(ExprQuant.Op.ALL, xvars, sub);
             Formula f1=p1.formula(), f2=p2.formula(), eqv=Formula.TRUE;
-            List<Decl> s1=p1.declarations().declarations(), s2=p2.declarations().declarations();
+            Iterator<Decl> s1=p1.declarations().iterator(), s2=p2.declarations().iterator();
             Decls decls=null;
-            for(int i=0; i<s1.size(); i++) {
-                Decl d1=s1.get(i), d2=s2.get(i);
+            while(s1.hasNext() && s2.hasNext()) {
+                Decl d1=s1.next(), d2=s2.next();
                 eqv = d1.variable().eq(d2.variable()).and(eqv);
                 if (decls==null) decls=d1.and(d2); else decls=decls.and(d1).and(d2);
             }
