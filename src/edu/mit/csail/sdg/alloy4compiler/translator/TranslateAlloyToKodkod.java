@@ -698,12 +698,17 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** Caches functions that we have matched to be one of the builtin ones. */
     private final Map<Func,Pair<Expr,String>> cacheForExprCall = new IdentityHashMap<Func,Pair<Expr,String>>();
 
+    /** Caches parameter-less functions to a Kodkod Expression, Kodkod IntExpression, or Kodkod Formula. */
+    private final Map<Func,Object> cacheForConstants = new IdentityHashMap<Func,Object>();
+
     /** {@inheritDoc} */
     @Override public Object visit(ExprCall x) throws Err {
-        final Func f=x.fun;
+        final Func f = x.fun;
+        final Object candidate = f.params.size()==0 ? cacheForConstants.get(f) : null;
+        if (candidate!=null) return candidate;
         final Pair<Expr,String> cache = cacheForExprCall.get(f);
         final Expr body = f.getBody();
-        final int n=f.params.size();
+        final int n = f.params.size();
         int maxRecursion = unrolls;
         for(Func ff:current_function) if (ff==f) {
             if (maxRecursion<0) {
@@ -747,6 +752,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         env = oldenv;
         current_function.remove(current_function.size()-1);
         if (ans instanceof Formula) k2pos((Formula)ans, x);
+        if (f.params.size()==0) cacheForConstants.put(f, ans);
         return ans;
     }
 
