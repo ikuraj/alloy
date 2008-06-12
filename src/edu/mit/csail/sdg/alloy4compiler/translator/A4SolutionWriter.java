@@ -120,6 +120,7 @@ public final class A4SolutionWriter {
     /** Write the given Sig. */
     private void writesig(final Sig x) throws Err {
        if (x==Sig.NONE) return; // should not happen, but we test for it anyway
+       if (!sol.has(x)) return;
        if (rep!=null) rep.write(x);
        Util.encodeXMLs(out, "\n<sig label=\"", label(x.label), "\" ID=\"", map(x));
        if (x instanceof PrimSig && x!=Sig.UNIV) Util.encodeXMLs(out, "\" parentID=\"", map(((PrimSig)x).parent));
@@ -139,7 +140,7 @@ public final class A4SolutionWriter {
        }
        if (x instanceof SubsetSig) for(Sig p:((SubsetSig)x).parents) Util.encodeXMLs(out, "   <type ID=\"", map(p), "\"/>\n");
        out.print("</sig>\n");
-       for(Field field: x.getFields()) writeField(field);
+       for(Field field: x.getFields()) if (sol.has(field)) writeField(field);
        if (x instanceof PrimSig) for(final PrimSig sub:children((PrimSig)x)) writesig(sub);
     }
 

@@ -391,6 +391,12 @@ public final class A4Solution {
        return rel;
     }
 
+    /** Returns true if this is a satisfying instance and contains the given sig. */
+    public boolean has(Sig sig) { return eval!=null && a2k.containsKey(sig); }
+
+    /** Returns true if this is a satisfying instance and contains the given field. */
+    public boolean has(Field field) { return eval!=null && a2k.containsKey(field); }
+
     /**
      * Add a new sig to this solution and associate it with the given expression (and if s.isTopLevel then add this expression into Sig.UNIV).
      * <br> The expression must contain only constant Relations or Relations that are already bound in this solution.
