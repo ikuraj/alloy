@@ -22,7 +22,6 @@
 
 package edu.mit.csail.sdg.alloy4whole;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,12 +36,10 @@ import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Triple;
-import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
@@ -168,7 +165,6 @@ public final class ExampleSimulator2 extends Simplifier {
        if (init==null)                throw new ErrorSyntax("Must have a predicate called \"init\"");
        if (step==null)                throw new ErrorSyntax("Must have a predicate called \"step\"");
        // now, try the step-by-step greedy simulation
-       Expr toSkip = null;
        PrimSig s0 = makeAtom(); allsigs.add(s0);
        PrimSig s1 = makeAtom(); allsigs.add(s1);
        partial = TranslateAlloyToKodkod.execute_command(rep, allsigs, fact.and(init.call(s0)).and(step.call(s0,s1)), cmd, options);
@@ -177,12 +173,10 @@ public final class ExampleSimulator2 extends Simplifier {
            PrimSig pre = state.children().get(state.children().size()-1);
            PrimSig post = makeAtom(); allsigs.add(post);
            A4Solution tmp = TranslateAlloyToKodkod.execute_command(rep, allsigs, fact.and(step.call(pre,post)), cmd, options, this);
-           if (!tmp.satisfiable()) { toSkip=post; break; }
+           if (!tmp.satisfiable()) break;
            partial = tmp;
        }
-       PrintWriter out=new PrintWriter(xmlFilename, "UTF-8");
-       partial.writeXML(rep, out, world.getAllFunc(), snapshot, toSkip==null ? null : Util.asSet(toSkip));
-       if (!Util.close(out)) throw new ErrorFatal("Error writing the solution XML file.");
+       partial.writeXML(rep, xmlFilename, world.getAllFunc(), snapshot);
     }
 
     public static Triple<Module,Command,A4Solution> run(A4Reporter rep, String filename, String xmlFilename, Map<String,String> snapshot) throws Exception {
