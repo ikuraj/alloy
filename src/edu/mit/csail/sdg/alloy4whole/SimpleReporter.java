@@ -60,6 +60,7 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionWriter;
+import edu.mit.csail.sdg.alloy4compiler.translator.GreedySimulator;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.alloy4viz.VizGUI;
 
@@ -462,7 +463,7 @@ final class SimpleReporter extends A4Reporter {
                 synchronized(SimpleReporter.class) { latestModule=null; latestKodkodSRC=ConstMap.make(map); }
                 cb(out, "S2", "Performing greedy simulation...\n");
                 cb(out, "S2", "");
-                Triple<Module,Command,A4Solution> sol = ExampleSimulator2.run(noxml(rep), options.originalFilename, rep.tempfile+".xml", map);
+                Triple<Module,Command,A4Solution> sol = GreedySimulator.run(noxml(rep), options.originalFilename, rep.tempfile+".xml", map);
                 if (!sol.c.satisfiable()) rep.resultUNSAT(sol.b, 0, sol.c);
                 else rep.resultSAT(sol.b, 0, sol.c);
             } else if (bundleIndex==-2) {

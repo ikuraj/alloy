@@ -38,6 +38,7 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
@@ -302,10 +303,24 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
     public static A4Solution execute_commandFromBook (A4Reporter rep, List<Sig> sigs, Expr fact, Command cmd, A4Options opt) throws Err {
-        if (rep==null) rep=A4Reporter.NOP;
-        if (fact==null) fact=ExprConstant.TRUE;
+        if (rep==null) rep = A4Reporter.NOP;
+        if (fact==null) fact = ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
+            ConstList<Sig> growables = cmd.getGrowableSigs();
+            A4Solution old = null;
+            if (!growables.isEmpty() && !cmd.check) while(true) {
+                tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
+                tr.makeFacts(fact);
+                A4Solution sol = tr.frame.solve(rep, cmd, old==null ? new Simplifier() : null, false);
+                if (!sol.satisfiable()) { if (old==null) old=sol; return old; }
+                for(Sig s: growables) {
+                    CommandScope sc = cmd.getScope(s);
+                    if (sc.increment > sc.endingScope - sc.startingScope) return sol;
+                    cmd = cmd.make(s, sc.isExact, sc.startingScope+sc.increment, sc.endingScope, sc.increment);
+                }
+                old = sol;
+            }
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
             tr.makeFacts(fact);
             return tr.frame.solve(rep, cmd, new Simplifier(), true);

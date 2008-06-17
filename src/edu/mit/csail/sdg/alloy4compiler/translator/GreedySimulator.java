@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package edu.mit.csail.sdg.alloy4whole;
+package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,11 +48,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
-import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
-import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
-import edu.mit.csail.sdg.alloy4compiler.translator.A4TupleSet;
-import edu.mit.csail.sdg.alloy4compiler.translator.Simplifier;
-import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 
 /** This class demonstrates how to use partial instance to do greedy multi-step simulation. */
 
@@ -73,7 +68,7 @@ import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 //  }
 //
 
-public final class ExampleSimulator2 extends Simplifier {
+public final class GreedySimulator extends Simplifier {
 
     private Module world = null;
 
@@ -140,7 +135,7 @@ public final class ExampleSimulator2 extends Simplifier {
        return true;
     }
 
-    private ExampleSimulator2(A4Reporter rep, String filename, String xmlFilename, Map<String,String> snapshot) throws Exception {
+    private GreedySimulator(A4Reporter rep, String filename, String xmlFilename, Map<String,String> snapshot) throws Exception {
        options.originalFilename = filename;
        Expr fact = null;
        world = CompUtil.parseEverything_fromFile(rep, snapshot, filename);
@@ -182,10 +177,11 @@ public final class ExampleSimulator2 extends Simplifier {
         if (rep==null) rep = A4Reporter.NOP;
         if (snapshot==null) snapshot = new HashMap<String,String>();
         long old = System.currentTimeMillis();
-        ExampleSimulator2 sim = new ExampleSimulator2(rep, filename, xmlFilename, snapshot);
+        GreedySimulator sim = new GreedySimulator(rep, filename, xmlFilename, snapshot);
         long now = System.currentTimeMillis();
         A4Solution sol = sim.partial;
         if (!sol.satisfiable()) rep.resultUNSAT(sim.cmd, now-old, sol); else rep.resultSAT(sim.cmd, now-old, sol);
         return new Triple<Module,Command,A4Solution>(sim.world, sim.cmd, sol);
     }
 }
+

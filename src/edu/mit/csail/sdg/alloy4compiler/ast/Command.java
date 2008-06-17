@@ -26,6 +26,7 @@ import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 
@@ -149,17 +150,38 @@ public final class Command {
         this(pos, label, check, overall, bitwidth, maxseq, expects, convert(scope));
     }
 
-    /**
-     * Constructs a new Command object where it is the same as the current object, except with a different scope.
-     */
+    /** Constructs a new Command object where it is the same as the current object, except with a different scope. */
     public Command make(ConstList<CommandScope> scope) {
         return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes.toArray(new Sig[additionalExactScopes.size()]));
     }
 
-    /**
-     * Constructs a new Command object where it is the same as the current object, except with a different list of "additional exact sigs".
-     */
+    /** Constructs a new Command object where it is the same as the current object, except with a different list of "additional exact sigs". */
     public Command make(Sig... additionalExactScopes) {
         return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes);
+    }
+
+    /** Constructs a new Command object where it is the same as the current object, except with a different scope for the given sig. */
+    public Command make(Sig sig, boolean isExact, int startingScope, int endingScope, int increment) throws ErrorSyntax {
+        for(int i=0; i<scope.size(); i++) if (scope.get(i).sig == sig) {
+            CommandScope sc = new CommandScope(scope.get(i).pos, sig, isExact, startingScope, endingScope, increment);
+            TempList<CommandScope> newlist = new TempList<CommandScope>(scope);
+            newlist.set(i, sc);
+            return make(newlist.makeConst());
+        }
+        CommandScope sc = new CommandScope(Pos.UNKNOWN, sig, isExact, startingScope, endingScope, increment);
+        return make(Util.append(scope, sc));
+    }
+
+    /** Helper method that returns the scope corresponding to a given sig (or return null if the sig isn't named in this command) */
+    public CommandScope getScope(Sig sig) {
+        for(int i=0; i<scope.size(); i++) if (scope.get(i).sig==sig) return scope.get(i);
+        return null;
+    }
+
+    /** Helper method that returns true iff this command contains at least one growable sig. */
+    public ConstList<Sig> getGrowableSigs() {
+        TempList<Sig> answer = new TempList<Sig>();
+        for(CommandScope sc: scope) if (sc.startingScope != sc.endingScope) answer.add(sc.sig);
+        return answer.makeConst();
     }
 }
