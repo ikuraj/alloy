@@ -47,6 +47,7 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadJoin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
@@ -181,7 +182,7 @@ parser code {:
     ch.put(CompSym.GTE             , ">=");
     ch.put(CompSym.HASH            , "#");
     ch.put(CompSym.IFF             , "<=>");
-    ch.put(CompSym.IMPLIES         , "->");
+    ch.put(CompSym.IMPLIES         , "=>");
     ch.put(CompSym.LBRACE          , "{");
     ch.put(CompSym.LBRACKET        , "[");
     ch.put(CompSym.LPAREN          , "(");
@@ -478,6 +479,8 @@ nonterminal Expr                       BracketExprA;
 nonterminal Expr                       BracketExprB;
 nonterminal Expr                       CompareExprA;
 nonterminal Expr                       CompareExprB;
+nonterminal                            Command;
+nonterminal ExprVar                    CommandPrefix;
 nonterminal ExprVar                    CmdLabel;
 nonterminal Decl                       Decla;
 nonterminal List<Decl>                 Declp;
@@ -526,7 +529,7 @@ nonterminal Expr                       RangeExprB;
 nonterminal Pair<Pos,ExprBinary.Op>    RelOp;
 nonterminal Expr                       RelationExprA;
 nonterminal Expr                       RelationExprB;
-nonterminal List<Pair<Sig,Integer>>    Scope;
+nonterminal List<CommandScope>         Scope;
 nonterminal                            Sig;
 nonterminal List<ExprVar>              SigIn;
 nonterminal List<Pos>                  SigQual;
@@ -536,8 +539,9 @@ nonterminal List<ExprVar>              SigRefp;
 nonterminal List<ExprVar>              SigRefs;
 nonterminal List<ExprVar>              SigRefu;
 nonterminal                            Spec;
-nonterminal List<Pair<Sig,Integer>>    Typescopes;
-nonterminal Pair<Sig,Integer>          Typescope;
+nonterminal CommandScope               TypeNumber;
+nonterminal CommandScope               Typescope;
+nonterminal List<CommandScope>         Typescopes;
 nonterminal Expr                       ShiftExprA;
 nonterminal Expr                       ShiftExprB;
 nonterminal Expr                       UnionDiffExprA;
@@ -563,60 +567,64 @@ Spec ::= Spec Sig             ;
 Spec ::= Spec Function        ;
 Spec ::= Spec Predicate       ;
 Spec ::= Spec Macro           ;
+Spec ::= Spec Command         ;
 Spec ::= ;
 
-Spec ::= Spec CHECK:o CmdLabel:x Super:e  Scope:s  Expects:c {:
+CommandPrefix ::= CHECK:c  {: RESULT = ExprVar.make(c, "c"); :};
+CommandPrefix ::= RUN:r    {: RESULT = ExprVar.make(r, "r"); :};
+
+Command ::= CommandPrefix:o CmdLabel:x Super:e  Scope:s  Expects:c {:
   int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.merge(c==null ? null : c.pos);
+  Pos p=o.pos.merge(c==null ? null : c.pos);
   for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).a;
+    Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
     p=p.merge(j.pos);
-    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
+    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, e, true, overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(p, e, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
 :};
 
-Spec ::= Spec CHECK:o CmdLabel:x Name:n  Scope:s Expects:c  {:
+Command ::= Command IMPLIES CommandPrefix:o CmdLabel:x Super:e  Scope:s  Expects:c {:
+  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
+  Pos p=o.pos.merge(c==null ? null : c.pos);
+  for(int i=s.size()-1; i>=0; i--) {
+    Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
+    p=p.merge(j.pos);
+    if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
+    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
+  }
+  parser.alloymodule.addCommand(p, e, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
+:};
+
+Command ::= CommandPrefix:o CmdLabel:x Name:n  Scope:s Expects:c  {:
   nod(n);
   int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.merge(c==null ? null : c.pos).merge(n.pos);
+  Pos p=o.pos.merge(c==null ? null : c.pos).merge(n.pos);
   for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).a;
+    Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
     p=p.merge(j.pos);
-    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
+    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, n.label, true, overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
 :};
 
-Spec ::= Spec RUN:o CmdLabel:x Super:e  Scope:s  Expects:c {:
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.merge(c==null ? null : c.pos);
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).a;
-    p=p.merge(j.pos);
-    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(p, e, false, overall, bitwidth, maxseq, expects, s, x);
-:};
-
-Spec ::= Spec RUN:o CmdLabel:x Name:n  Scope:s  Expects:c {:
+Command ::= Command IMPLIES CommandPrefix:o CmdLabel:x Name:n  Scope:s Expects:c  {:
   nod(n);
   int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.merge(c==null ? null : c.pos).merge(n.pos);
+  Pos p=o.pos.merge(c==null ? null : c.pos).merge(n.pos);
   for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).a;
+    Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
     p=p.merge(j.pos);
-    if (j.label.equals("univ")) { overall=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=s.get(i).b; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=s.get(i).b; s.remove(i); continue; }
+    if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
+    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
+    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, n.label, false, overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
 :};
 
 CmdLabel ::=           {:         RESULT=null; :};
@@ -625,26 +633,47 @@ CmdLabel ::= DOT ID:i  {: nod(i); RESULT=i;    :};
 Expects    ::=                 {: RESULT=null; :};
 Expects    ::= EXPECT NUMBER:a {: RESULT=a;    :};
 
-Scope      ::= FOR NUMBER:a                  {: RESULT=new ArrayList<Pair<Sig,Integer>>(); RESULT.add(new Pair<Sig,Integer>(new PrimSig(a.pos, "univ"), a.num)); :};
-Scope      ::= FOR NUMBER:a BUT Typescopes:b {: RESULT=b;                                       b.add(new Pair<Sig,Integer>(new PrimSig(a.pos, "univ"), a.num)); :};
-Scope      ::= FOR              Typescopes:b {: RESULT=b;                                                                                                        :};
-Scope      ::=                               {: RESULT=new ArrayList<Pair<Sig,Integer>>();                                                                       :};
+Scope      ::= FOR NUMBER:a                  {: RESULT=new ArrayList<CommandScope>(); RESULT.add(new CommandScope(a.pos, new PrimSig(a.pos, "univ"), true, a.num, a.num, 1)); :};
+Scope      ::= FOR NUMBER:a BUT Typescopes:b {: RESULT=b;                                  b.add(new CommandScope(a.pos, new PrimSig(a.pos, "univ"), true, a.num, a.num, 1)); :};
+Scope      ::= FOR              Typescopes:b {: RESULT=b;                                                                                                                     :};
+Scope      ::=                               {: RESULT=new ArrayList<CommandScope>();                                                                                         :};
 
-Typescopes ::= Typescope:a                    {: RESULT=new ArrayList<Pair<Sig,Integer>>(); RESULT.add(a); :};
-Typescopes ::= Typescopes:a COMMA Typescope:b {: RESULT=a; a.add(b);                                       :};
+Typescopes ::= Typescope:a                    {: RESULT=new ArrayList<CommandScope>(); RESULT.add(a); :};
+Typescopes ::= Typescopes:a COMMA Typescope:b {: RESULT=a; a.add(b);                                  :};
 
-Typescope  ::= EXACTLY:e NUMBER:a Name:b    {: nod(b); RESULT=new Pair<Sig,Integer>(new PrimSig(e.merge(b.pos)    , b.label) , (0-a.num)-1 );                                                                       :};
-Typescope  ::=           NUMBER:a Name:b    {: nod(b); RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b.pos), b.label) ,    a.num    );                                                                       :};
-Typescope  ::=           NUMBER:a INT:b     {:         RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "int")   ,    a.num    );                                                                       :};
-Typescope  ::=           NUMBER:a SEQ:b     {:         RESULT=new Pair<Sig,Integer>(new PrimSig(a.pos.merge(b)    , "seq")   ,    a.num    );                                                                       :};
-Typescope  ::= EXACTLY:e NUMBER   INT:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the integer bitwidth has to be exact.");                               :};
-Typescope  ::= EXACTLY:e NUMBER   SEQ:f     {: if (1==1) throw new ErrorSyntax(e.    merge(f), "The exactly keyword is redundant here, since the number of sequence index has to be exact.");                       :};
-Typescope  ::=           NUMBER:e UNIV:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on univ.");                                                                                  :};
-Typescope  ::= EXACTLY:e NUMBER   UNIV:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on univ.");                                                                                  :};
-Typescope  ::=           NUMBER:e SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
-Typescope  ::= EXACTLY:e NUMBER   SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
-Typescope  ::=           NUMBER:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none.");                                                                                  :};
-Typescope  ::= EXACTLY:e NUMBER   NONE:f    {: if (1==1) throw new ErrorSyntax(e.    merge(f), "You cannot set a scope on none.");                                                                                  :};
+Typescope  ::= TypeNumber:a Name:b  {:
+   nod(b);
+   RESULT = new CommandScope(a.pos.merge(b.pos), new PrimSig(a.pos.merge(b.pos), b.label), a.isExact, a.startingScope, a.endingScope, a.increment);
+:};
+
+Typescope ::= TypeNumber:a INT:b  {:
+   Pos p = a.pos.merge(b);
+   if (a.endingScope>a.startingScope) throw new ErrorSyntax(p, "Cannot specify a growing scope for \"int\"");
+   if (a.isExact) throw new ErrorSyntax(p, "The exactly keyword is redundant here since the integer bitwidth must be exact.");
+   RESULT = new CommandScope(p, new PrimSig(p, "int"), a.isExact, a.startingScope, a.startingScope, 1);
+:};
+
+Typescope ::= TypeNumber:a SEQ:b  {:
+   Pos p = a.pos.merge(b);
+   if (a.endingScope>a.startingScope) throw new ErrorSyntax(p, "Cannot specify a growing scope for \"seq\"");
+   if (a.isExact) throw new ErrorSyntax(p, "The exactly keyword is redundant here since the number of sequence index has to be exact.");
+   RESULT = new CommandScope(p, new PrimSig(p, "seq"), a.isExact, a.startingScope, a.startingScope, 1);
+:};
+
+Typescope  ::= TypeNumber:e UNIV:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on univ."); :};
+
+Typescope  ::= TypeNumber:e SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You can no longer set a scope on Int; the number of Int atoms is always exactly equal to 2^(integer bitwidth).\n"); :};
+
+Typescope  ::= TypeNumber:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none."); :};
+
+TypeNumber ::= EXACTLY:e NUMBER:a                                  {: RESULT = new CommandScope(    e.merge(a.pos), Sig.NONE, true,  a.num, a.num,             1    ); :};
+TypeNumber ::= EXACTLY:e NUMBER:a DOT DOT NUMBER:b                 {: RESULT = new CommandScope(    e.merge(b.pos), Sig.NONE, true,  a.num, b.num,             1    ); :};
+TypeNumber ::= EXACTLY:e NUMBER:a DOT DOT NUMBER:b COLON NUMBER:i  {: RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, b.num,             i.num); :};
+TypeNumber ::= EXACTLY:e NUMBER:a                  COLON NUMBER:i  {: RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, Integer.MAX_VALUE, i.num); :};
+TypeNumber ::=           NUMBER:a                                  {: RESULT = new CommandScope(a.pos             , Sig.NONE, false, a.num, a.num,             1    ); :};
+TypeNumber ::=           NUMBER:a DOT DOT NUMBER:b                 {: RESULT = new CommandScope(a.pos.merge(b.pos), Sig.NONE, false, a.num, b.num,             1    ); :};
+TypeNumber ::=           NUMBER:a DOT DOT NUMBER:b COLON NUMBER:i  {: RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, b.num,             i.num); :};
+TypeNumber ::=           NUMBER:a                  COLON NUMBER:i  {: RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, Integer.MAX_VALUE, i.num); :};
 
 Macro ::= Vis:p LET:o              Name:n LPAREN   Names:d RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, d     , v); :};
 Macro ::= Vis:p LET:o              Name:n LPAREN           RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, null  , v); :};

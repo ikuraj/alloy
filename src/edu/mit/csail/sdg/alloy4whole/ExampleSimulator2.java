@@ -154,11 +154,10 @@ public final class ExampleSimulator2 extends Simplifier {
        }
        if (cmd==null || fact==null)                  throw new ErrorSyntax("Must have at least one RUN command");
        if (cmd.scope.size()==0)                      throw new ErrorSyntax("First RUN command's must specify at least one sig in the list of scopes.");
-       if (!(cmd.scope.get(0).a instanceof PrimSig)) throw new ErrorSyntax("The first sig mentioned in the first RUN command must be a toplevel abstract sig.");
-       int scope = cmd.scope.get(0).b;
-       if (scope<0) scope=0-(scope+1);
+       if (!(cmd.scope.get(0).sig instanceof PrimSig)) throw new ErrorSyntax("The first sig mentioned in the first RUN command must be a toplevel abstract sig.");
+       int scope = cmd.scope.get(0).startingScope;
        if (scope<2) throw new ErrorSyntax("Scope for \"State\" must be 2 or higher");
-       state = (PrimSig) (cmd.scope.get(0).a);
+       state = (PrimSig) (cmd.scope.get(0).sig);
        if (!state.isTopLevel())       throw new ErrorSyntax("sig \"" + state + "\" must be toplevel");
        if (state.isAbstract==null)    throw new ErrorSyntax("sig \"" + state + "\" must be abstract");
        if (state.children().size()>0) throw new ErrorSyntax("sig \"" + state + "\" must not have any subsigs");

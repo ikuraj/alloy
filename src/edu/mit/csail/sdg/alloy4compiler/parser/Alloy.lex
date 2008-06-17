@@ -110,7 +110,6 @@ import java_cup_11a.runtime.*;
 ","                   { return alloy_sym(yytext(), CompSym.COMMA       );}
 "->"                  { return alloy_sym(yytext(), CompSym.ARROW       );}
 "-"                   { return alloy_sym(yytext(), CompSym.MINUS       );}
-".."                  { return alloy_sym(yytext(), CompSym.DOT         );}
 "."                   { return alloy_sym(yytext(), CompSym.DOT         );}
 "/"                   { return alloy_sym(yytext(), CompSym.SLASH       );}
 "::"                  { return alloy_sym(yytext(), CompSym.DOT         );}

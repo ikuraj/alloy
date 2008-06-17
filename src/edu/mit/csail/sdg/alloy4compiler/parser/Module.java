@@ -49,6 +49,7 @@ import edu.mit.csail.sdg.alloy4.Triple;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
@@ -1144,24 +1145,24 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, ExprVar label) throws Err {
+    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         String labelName = (label==null || label.label.length()==0) ? n : label.label;
-        commands.add(new Triple<String,Command,Expr>(n, new Command(p, labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
+        commands.add(new Triple<String,Command,Expr>(n, new Command(p, labelName, c, o, b, seq, exp, ConstList.make(s)), ExprConstant.TRUE));
     }
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, Expr e, boolean c, int o, int b, int seq, int exp, List<Pair<Sig,Integer>> s, ExprVar label) throws Err {
+    void addCommand(Pos p, Expr e, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         String n;
         if (c) n=addAssertion(p,"check$"+(1+commands.size()),e);
            else addFunc(e.span().merge(p), Pos.UNKNOWN, n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
         String labelName = (label==null || label.label.length()==0) ? n : label.label;
-        commands.add(new Triple<String,Command,Expr>(n, new Command(e.span().merge(p), labelName, c, o, b, seq, exp, s), ExprConstant.TRUE));
+        commands.add(new Triple<String,Command,Expr>(n, new Command(e.span().merge(p), labelName, c, o, b, seq, exp, ConstList.make(s)), ExprConstant.TRUE));
     }
 
     /** Each command now points to a typechecked Expr. */
@@ -1186,11 +1187,11 @@ public final class Module {
                 if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
                 e = ((FunAST)(m.get(0))).realFormula;
             }
-            TempList<Pair<Sig,Integer>> sc=new TempList<Pair<Sig,Integer>>(cmd.scope.size());
-            for(Pair<Sig,Integer> et:cmd.scope) {
-                SigAST s=getRawSIG(et.a.pos, et.a.label);
-                if (s==null) throw new ErrorSyntax(et.a.pos, "The sig \""+et.a.label+"\" cannot be found.");
-                sc.add(new Pair<Sig,Integer>(s.realSig, et.b));
+            TempList<CommandScope> sc=new TempList<CommandScope>(cmd.scope.size());
+            for(CommandScope et:cmd.scope) {
+                SigAST s = getRawSIG(et.sig.pos, et.sig.label);
+                if (s==null) throw new ErrorSyntax(et.sig.pos, "The sig \""+et.sig.label+"\" cannot be found.");
+                sc.add(new CommandScope(null, s.realSig, et.isExact, et.startingScope, et.endingScope, et.increment));
             }
             cmd = cmd.make(sc.makeConst());
             cmd = cmd.make(exactSigs);

@@ -23,10 +23,11 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
+import edu.mit.csail.sdg.alloy4.Pair;
+import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 
 /**
  * Immutable; reresents a "run" or "check" command.
@@ -60,14 +61,10 @@ public final class Command {
     /** The expected answer (either 0 or 1) (Or -1 if there is no expected answer). */
     public final int expects;
 
-    /**
-     * This maps each signature to a number that represents its bound as well as its exactness.
-     * <p> If the number N is >= 0: the sig is bound to have at most N atoms.
-     * <p> Otherwise: the sig is bound to have exactly (0-(N+1)) atoms.
-     */
-    public final ConstList<Pair<Sig,Integer>> scope;
+    /** The list of scopes. */
+    public final ConstList<CommandScope> scope;
 
-    /** This stores a list of Sig whose scope shall be considered "exact", but we don't know what its scope is yet. */
+    /** This stores a list of Sig whose scope shall be considered "exact", but we may or may not know what its scope is yet. */
     public final ConstList<Sig> additionalExactScopes;
 
     /** Returns a human-readable string that summarizes this Run or Check command. */
@@ -82,18 +79,28 @@ public final class Command {
             sb.append(" for");
         if (bitwidth>=0) { sb.append(" ").append(bitwidth).append(" int"); first=false; }
         if (maxseq>=0) { sb.append(first?" ":", ").append(maxseq).append(" seq"); first=false; }
-        for(Pair<Sig,Integer> e:scope) {
-            sb.append(first?" ":", ");
-            int num=e.b;
-            if (num<0) { sb.append("exactly "); num=0-(num+1); }
-            String label=e.a.label;
-            int index=label.lastIndexOf('/');
-            if (index>=0) label=label.substring(index+1);
-            sb.append(num).append(' ').append(label);
+        for(CommandScope e:scope) {
+            sb.append(first?" ":", ").append(e);
             first=false;
         }
         if (expects>=0) sb.append(" expect ").append(expects);
         return sb.toString();
+    }
+
+    /** Helper method that converts a (Sig,Integer) pair into a CommandScope object; this is intended for backwards compatibility only. */
+    private static CommandScope convert(Pair<Sig,Integer> scope) throws ErrorSyntax {
+        boolean exact = false;
+        int i = scope.b;
+        if (i<0) { exact=true; i=0-(i+1); }
+        return new CommandScope(null, scope.a, exact, i, i, 1);
+    }
+
+    /** Helper method that converts a list of (Sig,Integer) pairs into a list of CommandScope objects; this is intended for backwards compatibility only. */
+    private static ConstList<CommandScope> convert(List<Pair<Sig,Integer>> scope) throws ErrorSyntax {
+        if (scope==null) return null;
+        TempList<CommandScope> ans = new TempList<CommandScope>(scope.size());
+        for(int i=0; i<scope.size(); i++) ans.add(convert(scope.get(i)));
+        return ans.makeConst();
     }
 
     /**
@@ -106,11 +113,11 @@ public final class Command {
      * @param bitwidth - the integer bitwidth (0 or higher) (-1 if it was not specified)
      * @param maxseq - the maximum sequence length (0 or higher) (-1 if it was not specified)
      * @param expects - the expected value (0 or 1) (-1 if no expectation was specified)
-     * @param scope - Sig-to-Integer map (see the "scope" field of the Command class for its meaning)
-     * @param additionalExactSig - a list of sigs whose scope shall be considered exact but we may not know what the scope is yet
+     * @param scope - a list of scopes (can be null if we want to use default)
+     * @param additionalExactSig - a list of sigs whose scope shall be considered exact though we may or may not know what the scope is yet
      */
     public Command(Pos pos, String label, boolean check, int overall, int bitwidth,
-    int maxseq, int expects, List<Pair<Sig,Integer>> scope, Sig... additionalExactSig) {
+    int maxseq, int expects, ConstList<CommandScope> scope, Sig... additionalExactSig) {
         if (pos==null) pos = Pos.UNKNOWN;
         this.pos = pos;
         this.label = (label==null ? "" : label);
@@ -126,16 +133,31 @@ public final class Command {
     }
 
     /**
-     * Constructs a new Command object where it is the same as the current object, except with a different scope.
-     * @param scope - Sig-to-Integer map to be associated with the new command (see the "scope" field for its meaning)
+     * Constructs a new Command object.
+     *
+     * @param pos - the original position in the file (must not be null)
+     * @param label - the label for this command (it is only for pretty-printing and does not have to be unique)
+     * @param check - true if this is a "check"; false if this is a "run"
+     * @param overall - the overall scope (0 or higher) (-1 if no overall scope was specified)
+     * @param bitwidth - the integer bitwidth (0 or higher) (-1 if it was not specified)
+     * @param maxseq - the maximum sequence length (0 or higher) (-1 if it was not specified)
+     * @param expects - the expected value (0 or 1) (-1 if no expectation was specified)
+     * @param scope - a list that associates each sig with a scope
      */
-    public Command make(ConstList<Pair<Sig,Integer>> scope) {
+    public Command(Pos pos, String label, boolean check, int overall, int bitwidth,
+    int maxseq, int expects, List<Pair<Sig,Integer>> scope) throws ErrorSyntax {
+        this(pos, label, check, overall, bitwidth, maxseq, expects, convert(scope));
+    }
+
+    /**
+     * Constructs a new Command object where it is the same as the current object, except with a different scope.
+     */
+    public Command make(ConstList<CommandScope> scope) {
         return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes.toArray(new Sig[additionalExactScopes.size()]));
     }
 
     /**
-     * Constructs a new Command object where it is the same as the current object, except with a different list of additional exact sigs.
-     * @param additionalExactScopes - a list of sigs whose scope shall be considered exact (even though we may not know its scope yet)
+     * Constructs a new Command object where it is the same as the current object, except with a different list of "additional exact sigs".
      */
     public Command make(Sig... additionalExactScopes) {
         return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes);

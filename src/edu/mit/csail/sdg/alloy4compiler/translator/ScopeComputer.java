@@ -34,6 +34,7 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
@@ -272,11 +273,10 @@ final class ScopeComputer {
         this.rep = rep;
         this.cmd = cmd;
         // Process each sig listed in the command
-        for(Pair<Sig,Integer> entry:cmd.scope) {
-            Sig s=entry.a;
-            int scope=entry.b;
-            boolean exact=(scope<0);
-            if (scope<0) scope=0-(scope+1);
+        for(CommandScope entry:cmd.scope) {
+            Sig s = entry.sig;
+            int scope = entry.startingScope;
+            boolean exact = entry.isExact;
             if (s==UNIV) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on \"univ\".");
             if (s==SIGINT) throw new ErrorSyntax(cmd.pos,
                     "You can no longer set a scope on \"Int\". "
