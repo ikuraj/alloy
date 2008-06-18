@@ -345,20 +345,24 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             sim.growableSigs = cmd.getGrowableSigs();
             sim.partial = null;
             long start = System.currentTimeMillis();
-            if (!sim.growableSigs.isEmpty() && !cmd.check) while(true) {
+            if (!sim.growableSigs.isEmpty()) while(true) {
                 tr = new TranslateAlloyToKodkod(rep2, opt, sigs, cmd);
                 tr.makeFacts(fact);
                 sim.totalOrderPredicates = tr.totalOrderPredicates;
-                A4Solution sol = tr.frame.solve(rep2, cmd, sim.partial==null ? new Simplifier() : sim, false);
-                if (!sol.satisfiable()) {
+                A4Solution sol = tr.frame.solve(rep2, cmd, sim.partial==null || cmd.check ? new Simplifier() : sim, false);
+                if (!sol.satisfiable() && !cmd.check) {
                     start = System.currentTimeMillis() - start;
                     if (sim.partial==null) { rep.resultUNSAT(savedCmd, start, sol); return sol; } else { rep.resultSAT(savedCmd, start, sim.partial); return sim.partial; }
+                }
+                if (sol.satisfiable() && cmd.check) {
+                    start = System.currentTimeMillis() - start;
+                    rep.resultSAT(savedCmd, start, sol); return sol;
                 }
                 sim.partial = sol;
                 for(Sig s: sim.growableSigs) {
                     CommandScope sc = cmd.getScope(s);
                     if (sc.increment > sc.endingScope - sc.startingScope) {
-                        rep.resultSAT(savedCmd, System.currentTimeMillis()-start, sol);
+                        if (sol.satisfiable()) rep.resultSAT(savedCmd, System.currentTimeMillis()-start, sol); else rep.resultUNSAT(savedCmd, System.currentTimeMillis()-start, sol);
                         return sol;
                     }
                     cmd = cmd.make(s, sc.isExact, sc.startingScope+sc.increment, sc.endingScope, sc.increment);
