@@ -317,6 +317,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     private static A4Solution execute_greedyCommand(A4Reporter rep, Iterable<Sig> sigs, Command usercommand, A4Options opt) throws Exception {
         // FIXTHIS: if the next command has a *smaller scope* than the last command, we would get a Kodkod exception...
         // FIXTHIS: if the solver is "toCNF" or "toKodkod" then this method will throw an Exception...
+    	// FIXTHIS: does solution enumeration still work when we're doing a greedy solve?
         TranslateAlloyToKodkod tr = null;
         try {
             long start = System.currentTimeMillis();
@@ -353,6 +354,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                         rep.resultSAT(cmd, start, sol); return sol;
                     }
                     sim.partial = sol;
+                    if (sim.growableSigs.isEmpty()) break;
                     for(Sig s: sim.growableSigs) {
                         CommandScope sc = cmd.getScope(s);
                         if (sc.increment > sc.endingScope - sc.startingScope) {cmd=null; break;}
