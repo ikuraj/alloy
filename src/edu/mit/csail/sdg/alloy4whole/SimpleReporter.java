@@ -45,7 +45,6 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.Triple;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.XMLNode;
@@ -60,7 +59,6 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionWriter;
-import edu.mit.csail.sdg.alloy4compiler.translator.GreedySimulator;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.alloy4viz.VizGUI;
 
@@ -419,22 +417,6 @@ final class SimpleReporter extends A4Reporter {
         }
     }
 
-    private static final A4Reporter noxml(final A4Reporter old) {
-        return new A4Reporter() {
-            public void debug(String msg) { old.debug(msg); }
-            public void parse(String msg) { old.parse(msg); }
-            public void typecheck(String msg) { old.typecheck(msg); }
-            public void warning(ErrorWarning msg) { old.warning(msg); }
-            public void scope(String msg) { old.scope(msg); }
-            public void bound(String msg) { old.bound(msg); }
-            public void translate(String solver, int bitwidth, int maxseq, int skolemDepth, int symmetry) { } //old.translate(solver, bitwidth, maxseq, skolemDepth, symmetry); }
-            public void solve(int primaryVars, int totalVars, int clauses) { old.solve(primaryVars, totalVars, clauses); }
-            public void resultCNF(String filename) { }
-            public void resultSAT(Object command, long solvingTime, Object solution) { }
-            public void resultUNSAT(Object command, long solvingTime, Object solution) { }
-        };
-    }
-
     /**
      * Task that perform one command.
      */
@@ -457,16 +439,7 @@ final class SimpleReporter extends A4Reporter {
             cb(out, "warnings", bundleWarningNonFatal);
             if (rep.warn>0 && !bundleWarningNonFatal) return;
             List<String> result = new ArrayList<String>(cmds.size());
-            if (bundleIndex==-3) {
-                rep.lastTime = System.currentTimeMillis();
-                rep.tempfile = tempdir+File.separatorChar+"g.cnf";
-                synchronized(SimpleReporter.class) { latestModule=null; latestKodkodSRC=ConstMap.make(map); }
-                cb(out, "S2", "Performing greedy simulation...\n");
-                cb(out, "S2", "");
-                Triple<Module,Command,A4Solution> sol = GreedySimulator.run(noxml(rep), options.originalFilename, rep.tempfile+".xml", map);
-                if (!sol.c.satisfiable()) rep.resultUNSAT(sol.b, 0, sol.c);
-                else rep.resultSAT(sol.b, 0, sol.c);
-            } else if (bundleIndex==-2) {
+            if (bundleIndex==-2) {
                 final String outf=tempdir+File.separatorChar+"m.xml";
                 cb(out, "S2", "Generating the metamodel...\n");
                 PrintWriter of = new PrintWriter(outf, "UTF-8");

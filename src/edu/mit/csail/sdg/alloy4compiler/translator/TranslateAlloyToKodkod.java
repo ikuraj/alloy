@@ -22,11 +22,13 @@
 
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.IdentityHashMap;
+import java.util.Set;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ConstMap;
@@ -66,6 +68,9 @@ import kodkod.ast.Relation;
 import kodkod.ast.Formula;
 import kodkod.ast.Expression;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
+import kodkod.instance.Tuple;
+import kodkod.instance.TupleFactory;
+import kodkod.instance.TupleSet;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
@@ -234,6 +239,58 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     //==============================================================================================================//
 
+    private static final class GreedySimulator extends Simplifier {
+        private Iterable<Sig> allSigs = null;
+        private ConstList<Sig> growableSigs = null;
+        private Sig state = null;
+        private A4Solution partial = null;
+        public GreedySimulator() { }
+        private TupleSet convert(TupleFactory factory, TupleSet old) {
+            TupleSet ans = factory.noneOf(old.arity());
+            for(Tuple oldT: old) {
+                Tuple newT = null;
+                for(int i=0; i<oldT.arity(); i++) {
+                    if (newT==null) newT=factory.tuple(oldT.atom(i)); else newT=newT.product(factory.tuple(oldT.atom(i)));
+                }
+                ans.add(newT);
+            }
+            return ans;
+        }
+        @Override public boolean simplify(A4Reporter rep, A4Solution sol, Iterable<Formula> unused) throws Err {
+            TupleFactory factory = factory(sol);
+            Set<Object> oldAtoms = new HashSet<Object>();
+            for(Tuple t: ((A4TupleSet)(partial.eval(state))).debugGetKodkodTupleset()) oldAtoms.add(t.atom(0));
+            for(Sig s: allSigs) for(Field f: s.getFields()) {
+                if (f.type.firstColumnOverlaps(state.type)) {
+                    // Retrieve the old states from the previous solution
+                    TupleSet oldT = ((A4TupleSet) (partial.eval(f))).debugGetKodkodTupleset();
+                    // Convert it into the universe used in the new solution that we are about to solve for.
+                    // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
+                    TupleSet newLower = convert(factory, oldT),  newUpper = newLower.clone();
+                    // Extract the expression corresponding to the given field.
+                    Expression rel = (Relation) a2k(sol, f);
+                    if (!(rel instanceof Relation)) continue; // should not happen, as long as the input model obeys our conventions
+                    // Bind the partial instance
+                    for(Tuple t: query(sol, false, rel)) if (!oldAtoms.contains(t.atom(0))) newLower.add(t);
+                    for(Tuple t: query(sol, true,  rel)) if (!oldAtoms.contains(t.atom(0))) newUpper.add(t);
+                    shrink(sol, (Relation)rel, newLower, newUpper);
+                } else {
+                    // Retrieve the old states from the previous solution
+                    TupleSet oldT = ((A4TupleSet) (partial.eval(f))).debugGetKodkodTupleset();
+                    // Convert it into the universe used in the new solution that we are about to solve for.
+                    // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
+                    TupleSet newLower = convert(factory, oldT),  newUpper = newLower.clone();
+                    // Extract the expression corresponding to the given field.
+                    Expression rel = (Relation) a2k(sol, f);
+                    if (!(rel instanceof Relation)) continue; // should not happen, as long as the input model obeys our conventions
+                    // Bind the partial instance
+                    shrink(sol, (Relation)rel, newLower, newUpper);
+                }
+            }
+            return true;
+        }
+    }
+
     /**
      * Based on the specified "options", execute one command and return the resulting A4Solution object.
      *
@@ -249,32 +306,43 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
     public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt) throws Err {
-        return execute_command(rep, sigs, fact, cmd, opt, null);
-    }
-
-    /**
-     * Based on the specified "options", execute one command and return the resulting A4Solution object.
-     *
-     * @param rep - if nonnull, we'll send compilation diagnostic messages to it
-     * @param sigs - the list of sigs; this list must be complete
-     * @param fact - a formula that must be satisfied by the solution
-     * @param cmd - the Command to execute
-     * @param opt - the set of options guiding the execution of the command
-     * @param simp - a custom simplifier (null if you wish to use the default simplifier)
-     *
-     * @return null if the user chose "save to FILE" as the SAT solver,
-     * and nonnull if the solver finishes the entire solving and is either satisfiable or unsatisfiable.
-     * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
-     * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
-     */
-    public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt, Simplifier simp) throws Err {
-        if (rep==null) rep=A4Reporter.NOP;
-        if (fact==null) fact=ExprConstant.TRUE;
+        final Command savedCmd = cmd;
+        if (rep==null) rep = A4Reporter.NOP;
+        if (fact==null) fact = ExprConstant.TRUE;
+        A4Reporter rep2 = new A4Reporter(rep) {
+            private boolean first = true;
+            public void translate(String solver, int bitwidth, int maxseq, int skolemDepth, int symmetry) { if (first) super.translate(solver, bitwidth, maxseq, skolemDepth, symmetry); first=false; }
+            public void resultSAT(Object command, long solvingTime, Object solution) { }
+            public void resultUNSAT(Object command, long solvingTime, Object solution) { }
+        };
         TranslateAlloyToKodkod tr = null;
         try {
+            GreedySimulator sim = new GreedySimulator();
+            sim.allSigs = sigs;
+            sim.growableSigs = cmd.getGrowableSigs();
+            sim.partial = null;
+            long start = System.currentTimeMillis();
+            if (!sim.growableSigs.isEmpty() && !cmd.check) while(true) {
+                tr = new TranslateAlloyToKodkod(rep2, opt, sigs, cmd);
+                tr.makeFacts(fact);
+                A4Solution sol = tr.frame.solve(rep2, cmd, /*sim.partial==null ?*/ new Simplifier() /*: sim*/, false);
+                if (!sol.satisfiable()) {
+                    start = System.currentTimeMillis() - start;
+                    if (sim.partial==null) { rep.resultUNSAT(savedCmd, start, sol); return sol; } else { rep.resultSAT(savedCmd, start, sim.partial); return sim.partial; }
+                }
+                sim.partial = sol;
+                for(Sig s: sim.growableSigs) {
+                    CommandScope sc = cmd.getScope(s);
+                    if (sc.increment > sc.endingScope - sc.startingScope) {
+                        rep.resultSAT(savedCmd, System.currentTimeMillis()-start, sol);
+                        return sol;
+                    }
+                    cmd = cmd.make(s, sc.isExact, sc.startingScope+sc.increment, sc.endingScope, sc.increment);
+                }
+            }
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
             tr.makeFacts(fact);
-            return tr.frame.solve(rep, cmd, simp==null ? new Simplifier() : simp, false);
+            return tr.frame.solve(rep, cmd, new Simplifier(), false);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
         } catch(HigherOrderDeclException ex) {
@@ -302,25 +370,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_commandFromBook (A4Reporter rep, List<Sig> sigs, Expr fact, Command cmd, A4Options opt) throws Err {
+    public static A4Solution execute_commandFromBook (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt) throws Err {
         if (rep==null) rep = A4Reporter.NOP;
         if (fact==null) fact = ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
-            ConstList<Sig> growables = cmd.getGrowableSigs();
-            A4Solution old = null;
-            if (!growables.isEmpty() && !cmd.check) while(true) {
-                tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
-                tr.makeFacts(fact);
-                A4Solution sol = tr.frame.solve(rep, cmd, old==null ? new Simplifier() : null, false);
-                if (!sol.satisfiable()) { if (old==null) old=sol; return old; }
-                for(Sig s: growables) {
-                    CommandScope sc = cmd.getScope(s);
-                    if (sc.increment > sc.endingScope - sc.startingScope) return sol;
-                    cmd = cmd.make(s, sc.isExact, sc.startingScope+sc.increment, sc.endingScope, sc.increment);
-                }
-                old = sol;
-            }
+            if (!cmd.getGrowableSigs().isEmpty()) return execute_command(rep, sigs, fact, cmd, opt);
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
             tr.makeFacts(fact);
             return tr.frame.solve(rep, cmd, new Simplifier(), true);

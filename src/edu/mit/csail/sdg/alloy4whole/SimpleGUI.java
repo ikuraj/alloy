@@ -851,7 +851,6 @@ public final class SimpleGUI implements ComponentListener {
             runmenu.add(new JSeparator());
             OurUtil.makeMenuItem(runmenu, "Show Latest Instance",   VK_L, VK_L, doShowLatest(), latestInstance.length()>0);
             OurUtil.makeMenuItem(runmenu, "Show Metamodel",         VK_M, VK_M, doShowMetaModel());
-            OurUtil.makeMenuItem(runmenu, "Run Greedy Simulation",              doGreedySimulation());
             OurUtil.makeMenuItem(runmenu, "Open Evaluator",         VK_V,       doLoadEvaluator());
         } finally {
             wrap = false;
@@ -1002,15 +1001,6 @@ public final class SimpleGUI implements ComponentListener {
         doRefreshRun();
         OurUtil.enableAll(runmenu);
         if (commands!=null) doRun(-2);
-        return null;
-    }
-
-    /** This method displays the meta model. */
-    private Runner doGreedySimulation() {
-        if (wrap) return wrapMe();
-        doRefreshRun();
-        OurUtil.enableAll(runmenu);
-        if (commands!=null) doRun(-3);
         return null;
     }
 

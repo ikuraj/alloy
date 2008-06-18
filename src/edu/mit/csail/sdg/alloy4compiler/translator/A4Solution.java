@@ -819,6 +819,8 @@ public final class A4Solution {
            try { sol=BookExamples.trial(r, this, fgoal, solver, cmd.check); } catch(Throwable ex) { }
            if (r!=null) r.debug("Book check is done.\n");
         }
+        // set up a flag to indicate whether "solving()" has been called or not
+        final boolean solved[] = new boolean[]{false};
         // Set up a reporter to catch the type+pos of skolems, this time allowing the reporter to report the # of vars and clauses
         solver.options().setReporter(new AbstractReporter() {
             @Override public void skolemizing(Decl decl, Relation skolem, List<Decl> predecl) {
@@ -834,6 +836,7 @@ public final class A4Solution {
                 } catch(Throwable ex) { } // Exception here is not fatal
             }
             @Override public void solvingCNF(int primaryVars, int vars, int clauses) {
+                solved[0] = true;
                 if (rep!=null) rep.solve(primaryVars, vars, clauses);
             }
         });
@@ -871,6 +874,7 @@ public final class A4Solution {
            if (sol==null) sol = kEnumerator.next();
            rep.debug("End solveAll()\n");
         }
+        if (!solved[0]) rep.solve(0, 0, 0);
         final Instance inst = sol.instance();
         // To ensure no more output during SolutionEnumeration
         solver.options().setReporter(oldReporter);
