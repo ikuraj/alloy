@@ -947,7 +947,10 @@ public final class SimpleGUI implements ComponentListener {
             stopbutton.setVisible(true);
             int newmem = SubMemory.get();
             if (newmem != subMemoryNow) WorkerEngine.stop();
-            WorkerEngine.run(task, newmem, Helper.alloyHome()+fs+"binary", cb);
+            if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
+                WorkerEngine.runLocally(task, cb);
+            else
+                WorkerEngine.run(task, newmem, Helper.alloyHome()+fs+"binary", cb);
             subMemoryNow = newmem;
         } catch(Throwable ex) {
             WorkerEngine.stop();

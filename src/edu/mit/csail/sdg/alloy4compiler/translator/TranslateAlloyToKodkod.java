@@ -169,6 +169,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     //==============================================================================================================//
 
+    /** Stores the list of "totalOrder predicates" that we constructed. */
+    private final List<Relation> totalOrderPredicates = new ArrayList<Relation>();
+
     /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
     private void makeFacts(Expr facts) throws Err {
         rep.debug("Generating facts...\n");
@@ -179,20 +182,21 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         makelist(ar, facts);
         again:
         for(Sig sig: frame.getAllReachableSigs()) {
-            while(sig.isOne!=null && sig.getFields().size()==3) {
+            while(sig.isOne!=null && sig.getFields().size()==2) {
                 Field f1 = sig.getFields().get(0); Relation fst = right(a2k(f1)); if (fst==null) break;
-                Field f2 = sig.getFields().get(1); Relation lst = right(a2k(f2)); if (lst==null) break;
-                Field f3 = sig.getFields().get(2); Relation nxt = right(a2k(f3)); if (nxt==null) break;
-                Sig e = findElem(sig,f1,f2,f3);
+                Field f2 = sig.getFields().get(1); Relation nxt = right(a2k(f2)); if (nxt==null) break;
+                Sig e = findElem(sig, f1, f2);
                 if (e==null || !cmd.additionalExactScopes.contains(e)) break;
                 Expression ee = a2k(e);
                 if (!(ee instanceof Relation)) break;
-                for(int i=0; i+5<ar.size(); i++) {
-                    if (findOrder(e,sig,f1,f2,f3, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3), ar.get(i+4), ar.get(i+5))) {
-                        Pos pos = ar.get(i).span().merge(ar.get(i+5).span());
+                for(int i=0; i+4<ar.size(); i++) {
+                    if (findOrder(e,sig,f1,f2, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3), ar.get(i+4))) {
+                        Pos pos = ar.get(i).span().merge(ar.get(i+4).span());
                         rep.debug("Found: util/ordering\n");
-                        // Remove ar[i..i+5]; the remaining elements are not re-arranged
-                        ar.remove(i+5); ar.remove(i+4); ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i);
+                        // Remove ar[i..i+4]; the remaining elements are not re-arranged
+                        ar.remove(i+4); ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i);
+                        Relation lst = frame.addRel("", null, frame.query(true, (Relation)ee, false));
+                        totalOrderPredicates.add((Relation)ee); totalOrderPredicates.add(fst); totalOrderPredicates.add(lst); totalOrderPredicates.add(nxt);
                         Formula f = nxt.totalOrder((Relation)ee, fst, lst);
                         frame.addFormula(f, pos);
                         continue again;
@@ -240,6 +244,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     //==============================================================================================================//
 
     private static final class GreedySimulator extends Simplifier {
+        private List<Relation> totalOrderPredicates = null;
         private Iterable<Sig> allSigs = null;
         private ConstList<Sig> growableSigs = null;
         private A4Solution partial = null;
@@ -258,32 +263,51 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         }
         @Override public boolean simplify(A4Reporter rep, A4Solution sol, Iterable<Formula> unused) throws Err {
             TupleFactory factory = sol.getFactory();
-            Set<Object> oldAtoms = new HashSet<Object>();
-            for(Tuple t: ((A4TupleSet)(partial.eval(Sig.UNIV))).debugGetKodkodTupleset()) oldAtoms.add(t.atom(0));
-            for(Sig s: allSigs) for(Field f: s.getFields()) {
-                Expression rel = sol.a2k(f);
-                if (s.isOne!=null) {
-                    if (!(rel instanceof BinaryExpression)) continue;
-                    if (((BinaryExpression)rel).left() != sol.a2k(s)) continue;
-                    if (((BinaryExpression)rel).op() != BinaryExpression.Operator.PRODUCT) continue;
-                    rel = ((BinaryExpression)rel).right();
-                    if (!(rel instanceof Relation)) continue;
-                    // Retrieve the old value from the previous solution, and convert it to the new unverse.
-                    // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
-                    TupleSet newLower = convert(factory, s.join(f)), newUpper = newLower.clone();
-                    // Bind the partial instance
-                    for(Tuple t: sol.query(false, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newLower.add(t); break; }
-                    for(Tuple t: sol.query(true, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newUpper.add(t); break; }
-                    sol.shrink((Relation)rel, newLower, newUpper);
-                } else {
-                    if (!(rel instanceof Relation)) continue;
-                    // Retrieve the old value from the previous solution, and convert it to the new unverse.
-                    // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
-                    TupleSet newLower = convert(factory, f), newUpper = newLower.clone();
-                    // Bind the partial instance
-                    for(Tuple t: sol.query(false, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newLower.add(t); break; }
-                    for(Tuple t: sol.query(true, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newUpper.add(t); break; }
-                    sol.shrink((Relation)rel, newLower, newUpper);
+            TupleSet oldUniv = convert(factory, Sig.UNIV);
+            Set<Object> oldAtoms = new HashSet<Object>(); for(Tuple t: oldUniv) oldAtoms.add(t.atom(0));
+            for(Sig s: allSigs) {
+                // The case below is STRICTLY an optimization; the entire statement can be removed without affecting correctness
+                if (s.isOne!=null && s.getFields().size()==2)
+                  for(int i=0; i+3<totalOrderPredicates.size(); i=i+4)
+                      if (totalOrderPredicates.get(i+1)==right(sol.a2k(s.getFields().get(0))) && totalOrderPredicates.get(i+3)==right(sol.a2k(s.getFields().get(1)))) {
+                          TupleSet allelem = sol.query(true, totalOrderPredicates.get(i), true);
+                          if (allelem.size()==0) continue;
+                          Tuple first=null, prev=null; TupleSet next=factory.noneOf(2);
+                          for(Tuple t:allelem) {
+                              if (prev==null) first=t; else next.add(prev.product(t));
+                              prev=t;
+                          }
+                          try {
+                              sol.shrink(totalOrderPredicates.get(i+1), factory.range(first,first), factory.range(first,first));
+                              sol.shrink(totalOrderPredicates.get(i+2), factory.range(prev,prev), factory.range(prev,prev));
+                              sol.shrink(totalOrderPredicates.get(i+3), next, next);
+                          } catch(Throwable ex) {
+                              // Error here is not fatal
+                          }
+                      }
+                // The case above is STRICTLY an optimization; the entire statement can be removed without affecting correctness
+                for(Field f: s.getFields()) {
+                    Expression rel = sol.a2k(f);
+                    if (s.isOne!=null) {
+                        rel = right(rel);
+                        if (!(rel instanceof Relation)) continue;
+                        // Retrieve the old value from the previous solution, and convert it to the new unverse.
+                        // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
+                        TupleSet newLower = convert(factory, s.join(f)), newUpper = newLower.clone();
+                        // Bind the partial instance
+                        for(Tuple t: sol.query(false, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newLower.add(t); break; }
+                        for(Tuple t: sol.query(true, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newUpper.add(t); break; }
+                        sol.shrink((Relation)rel, newLower, newUpper);
+                    } else {
+                        if (!(rel instanceof Relation)) continue;
+                        // Retrieve the old value from the previous solution, and convert it to the new unverse.
+                        // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
+                        TupleSet newLower = convert(factory, f), newUpper = newLower.clone();
+                        // Bind the partial instance
+                        for(Tuple t: sol.query(false, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newLower.add(t); break; }
+                        for(Tuple t: sol.query(true, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newUpper.add(t); break; }
+                        sol.shrink((Relation)rel, newLower, newUpper);
+                    }
                 }
             }
             return true;
@@ -324,6 +348,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             if (!sim.growableSigs.isEmpty() && !cmd.check) while(true) {
                 tr = new TranslateAlloyToKodkod(rep2, opt, sigs, cmd);
                 tr.makeFacts(fact);
+                sim.totalOrderPredicates = tr.totalOrderPredicates;
                 A4Solution sol = tr.frame.solve(rep2, cmd, sim.partial==null ? new Simplifier() : sim, false);
                 if (!sol.satisfiable()) {
                     start = System.currentTimeMillis() - start;
@@ -503,48 +528,40 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         return x;
     }
 
-    /** Returns the sig "elem" if field1="all this:s | s.f1 in set elem", field2=same, field3="... in elem->elem" */
-    private static Sig findElem(Sig s, Field field1, Field field2, Field field3) {
-        Expr b1=findY(s,field1), b2=findY(s,field2), b3=findY(s,field3);
-        if (!(b1 instanceof Sig) || b1!=b2 || b3==null) return null;
-        if (!(b3.isSame(b1.product(b1)))) return null;
-        return (Sig)b1;
+    /** Returns the sig "elem" if field1="all this:s | s.f1 in set elem" and field2="... in elem->elem" */
+    private static Sig findElem(Sig s, Field field1, Field field2) {
+        Expr b1 = findY(s, field1), b2 = findY(s, field2);
+        if (b1 instanceof Sig && b2!=null && b2.isSame(b1.product(b1))) return (Sig)b1; else return null;
     }
 
     /**
-     * Returns true if we can determine that "e1 && e2 && e3 && e4 && e5 && e6" says "total order on elem".
+     * Returns true if we can determine that "e1 && e2 && e3 && e4 && e5" says "total order on elem".
      *
      * <p> In particular, that means:
      * <br> e1 == elem in First.*Next
-     * <br> e2 == no First.(~Next)
-     * <br> e3 == no Last.Next
-     * <br> e4 == all e: one elem | (e = First || one e.(~Next))
-     * <br> e5 == all e: one elem | (e = Last || one e.Next)
-     * <br> e6 == all e: one elem | (e !in e.^Next)
+     * <br> e2 == no Next.First
+     * <br> e3 == all e: one elem | (e = First || one Next.e)
+     * <br> e4 == all e: one elem | (e = (elem-(Next.elem)) || one e.Next)
+     * <br> e5 == all e: one elem | (e !in e.^Next)
      */
-    private static boolean findOrder
-    (Sig elem, Sig ord, Expr first, Expr last, Expr next, Expr e1, Expr e2, Expr e3, Expr e4, Expr e5, Expr e6) {
-        Expr prev;
+    private static boolean findOrder (Sig elem, Sig ord, Expr first, Expr next, Expr e1, Expr e2, Expr e3, Expr e4, Expr e5) {
         ExprQuant qt;
         ExprVar e;
         first = ord.join(first);
-        last = ord.join(last);
         next = ord.join(next);
-        prev = next.transpose();
         if (!elem.in(first.join(next.reflexiveClosure())).isSame(e1)) return false;
-        if (!first.join(prev).no().isSame(e2)) return false;
-        if (!last.join(next).no().isSame(e3)) return false;
-        if (!(e4 instanceof ExprQuant)) return false;
+        if (!next.join(first).no().isSame(e2)) return false;
+        if (!(e3 instanceof ExprQuant) || !(e4 instanceof ExprQuant) || !(e5 instanceof ExprQuant)) return false;
+        //
+        qt=(ExprQuant)e3; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
+        e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
+        if (!e.equal(first).or(next.join(e).one()).isSame(qt.sub)) return false;
         //
         qt=(ExprQuant)e4; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
         e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
-        if (!e.equal(first).or(e.join(prev).one()).isSame(qt.sub)) return false;
+        if (!e.equal(elem.minus(next.join(elem))).or(e.join(next).one()).isSame(qt.sub)) return false;
         //
         qt=(ExprQuant)e5; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
-        e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
-        if (!e.equal(last).or(e.join(next).one()).isSame(qt.sub)) return false;
-        //
-        qt=(ExprQuant)e6; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
         e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
         if (!e.in(e.join(next.closure())).not().isSame(qt.sub)) return false;
         //

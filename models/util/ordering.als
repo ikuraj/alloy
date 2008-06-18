@@ -23,30 +23,26 @@ module util/ordering[exactly elem]
  */
 
 private one sig Ord {
-   First, Last: set elem,
+   First: set elem,
    Next: elem -> elem
 }{
-  // every element is in the total order
-  elem in First.*Next
-  // first element has no predecessor
-  no First.(~Next)
-  // last element has no successor
-  no Last.Next
-  (all e: elem | {
-    // each element (except the first) has one predecessor
-    (e = First || one e.(~Next))
-    // each element (except the last) has one successor
-    (e = Last || one e.Next)
-    // there are no cycles
-    (e !in e.^Next)
-  })
+   elem in First.*Next    // every element is in the total order
+   no Next.First      // first element has no predecessor
+   (all e: elem | {
+     // each element (except the first) has one predecessor
+     (e = First || one Next.e)
+     // each element (except the last) has one successor
+     (e = (elem-(Next.elem)) || one e.Next)
+     // there are no cycles
+     (e !in e.^Next)
+   })
 }
 
 // first
-fun first: elem { Ord.First }
+fun first: lone elem { Ord.First }
 
 // last
-fun last: elem { Ord.Last }
+fun last: lone elem { elem - (next.elem) }
 
 // return a mapping from each element to its predecessor
 fun prev : elem->elem { ~(Ord.Next) }

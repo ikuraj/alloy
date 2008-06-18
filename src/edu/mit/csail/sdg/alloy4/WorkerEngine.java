@@ -54,8 +54,8 @@ public final class WorkerEngine {
 
   /** This defines an interface for performing tasks in a subprocess. */
   public interface WorkerTask extends Serializable {
-     /** The task should write zero or more non-null Objects to the ObjectOutputStream to report progress to the parent process. */
-     public void run(ObjectOutputStream out) throws Exception;
+     /** The task should send zero or more non-null Objects to out.callback(msg) to report progress to the parent process. */
+     public void run(WorkerCallback out) throws Exception;
   }
 
   /** This defines an interface for receiving results from a subprocess. */
@@ -109,12 +109,25 @@ public final class WorkerEngine {
   }
 
   /**
+   * This executes a task using the current thread.
+   * @param task - the task that we want to execute
+   * @param callback - the handler that will receive outputs from the task
+   * @throws IOException - if a previous task is still busy executing
+   */
+  public static void runLocally(final WorkerTask task, final WorkerCallback callback) throws Exception {
+     synchronized(WorkerEngine.class) {
+        if (latest_manager!=null && latest_manager.isAlive()) throw new IOException("Subprocess still performing the previous task.");
+        try { task.run(callback); callback.done(); } catch(Throwable ex) { callback.callback(ex); callback.fail(); }
+     }
+  }
+
+  /**
    * This issues a new task to the subprocess; if subprocess hasn't been constructed yet or has terminated abnormally, this method will launch a new subprocess.
    * @param task - the task that we want the subprocess to execute
    * @param newmem - the amount of memory (in megabytes) we want the subprocess to have (if the subproces has not terminated, then this parameter is ignored)
    * @param jniPath - if nonnull and nonempty, then it specifies the subprocess's default JNI library location
    * @param callback - the handler that will receive outputs from the task
-   * @throws IOException - if the subprocess is still busy processing the last task
+   * @throws IOException - if a previous task is still busy executing
    * @throws IOException - if an error occurred in launching a sub JVM or talking to it
    */
   public static void run(final WorkerTask task, final int newmem, final String jniPath, final WorkerCallback callback) throws IOException {
@@ -232,7 +245,20 @@ public final class WorkerEngine {
            public void run() {
               ObjectOutputStream x = null;
               Throwable e = null;
-              try { x=new ObjectOutputStream(wrap(out)); task.run(x); x.writeObject(null); x.flush(); } catch(Throwable ex) { e=ex; }
+              try {
+                 x = new ObjectOutputStream(wrap(out));
+                 final ObjectOutputStream xx = x;
+                 WorkerCallback y = new WorkerCallback() {
+                    public void callback(Object msg) { try { xx.writeObject(msg); } catch(IOException ex) { halt(1); } }
+                    public void done() { }
+                    public void fail() { }
+                 };
+                 task.run(y);
+                 x.writeObject(null);
+                 x.flush();
+              } catch(Throwable ex) {
+                 e=ex;
+              }
               for(Throwable ex=e; ex!=null; ex=ex.getCause()) if (ex instanceof OutOfMemoryError || ex instanceof StackOverflowError) {
                  try { System.gc(); x.writeObject(ex); x.flush(); } catch(Throwable ex2) { } finally { halt(2); }
               }
