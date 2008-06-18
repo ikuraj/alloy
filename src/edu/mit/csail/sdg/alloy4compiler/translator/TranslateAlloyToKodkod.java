@@ -314,6 +314,59 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         }
     }
 
+    private static A4Solution execute_greedyCommand(A4Reporter rep, Iterable<Sig> sigs, Command usercommand, A4Options opt) throws Exception {
+        TranslateAlloyToKodkod tr = null;
+        try {
+            long start = System.currentTimeMillis();
+            GreedySimulator sim = new GreedySimulator();
+            sim.allSigs = sigs;
+            sim.partial = null;
+            A4Reporter rep2 = new A4Reporter(rep) {
+                private boolean first = true;
+                public void translate(String solver, int bitwidth, int maxseq, int skolemDepth, int symmetry) { if (first) super.translate(solver, bitwidth, maxseq, skolemDepth, symmetry); first=false; }
+                public void resultSAT(Object command, long solvingTime, Object solution) { }
+                public void resultUNSAT(Object command, long solvingTime, Object solution) { }
+            };
+            // Form the list of commands
+            List<Command> commands = new ArrayList<Command>();
+            while(usercommand!=null) { commands.add(usercommand); usercommand = usercommand.parent; }
+            // For each command...
+            A4Solution sol = null;
+            for(int i=commands.size()-1; i>=0; i--) {
+                Command cmd = commands.get(i);
+                sim.growableSigs = cmd.getGrowableSigs();
+                while(cmd != null) {
+                    // FIXTHIS: if the next command has a *smaller scope* than the last command, we would get a Kodkod exception...
+                    rep.debug(cmd.scope.toString());
+                    usercommand = cmd;
+                    tr = new TranslateAlloyToKodkod(rep2, opt, sigs, cmd);
+                    tr.makeFacts(cmd.formula);
+                    sim.totalOrderPredicates = tr.totalOrderPredicates;
+                    sol = tr.frame.solve(rep2, cmd, sim.partial==null || cmd.check ? new Simplifier() : sim, false);
+                    if (!sol.satisfiable() && !cmd.check) {
+                        start = System.currentTimeMillis() - start;
+                        if (sim.partial==null) { rep.resultUNSAT(cmd, start, sol); return sol; } else { rep.resultSAT(cmd, start, sim.partial); return sim.partial; }
+                    }
+                    if (sol.satisfiable() && cmd.check) {
+                        start = System.currentTimeMillis() - start;
+                        rep.resultSAT(cmd, start, sol); return sol;
+                    }
+                    sim.partial = sol;
+                    for(Sig s: sim.growableSigs) {
+                        CommandScope sc = cmd.getScope(s);
+                        if (sc.increment > sc.endingScope - sc.startingScope) {cmd=null; break;}
+                        cmd = cmd.change(s, sc.isExact, sc.startingScope+sc.increment, sc.endingScope, sc.increment);
+                    }
+                }
+            }
+            if (sol.satisfiable()) rep.resultSAT(usercommand, System.currentTimeMillis()-start, sol); else rep.resultUNSAT(usercommand, System.currentTimeMillis()-start, sol);
+            return sol;
+        } catch(HigherOrderDeclException ex) {
+            Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
+            throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
+        }
+    }
+
     /**
      * Based on the specified "options", execute one command and return the resulting A4Solution object.
      *
@@ -328,44 +381,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
     public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Command cmd, A4Options opt) throws Err {
-        final Command savedCmd = cmd;
         if (rep==null) rep = A4Reporter.NOP;
-        A4Reporter rep2 = new A4Reporter(rep) {
-            private boolean first = true;
-            public void translate(String solver, int bitwidth, int maxseq, int skolemDepth, int symmetry) { if (first) super.translate(solver, bitwidth, maxseq, skolemDepth, symmetry); first=false; }
-            public void resultSAT(Object command, long solvingTime, Object solution) { }
-            public void resultUNSAT(Object command, long solvingTime, Object solution) { }
-        };
         TranslateAlloyToKodkod tr = null;
         try {
-            GreedySimulator sim = new GreedySimulator();
-            sim.allSigs = sigs;
-            sim.growableSigs = cmd.getGrowableSigs();
-            sim.partial = null;
-            long start = System.currentTimeMillis();
-            if (!sim.growableSigs.isEmpty()) while(true) {
-                tr = new TranslateAlloyToKodkod(rep2, opt, sigs, cmd);
-                tr.makeFacts(cmd.formula);
-                sim.totalOrderPredicates = tr.totalOrderPredicates;
-                A4Solution sol = tr.frame.solve(rep2, cmd, sim.partial==null || cmd.check ? new Simplifier() : sim, false);
-                if (!sol.satisfiable() && !cmd.check) {
-                    start = System.currentTimeMillis() - start;
-                    if (sim.partial==null) { rep.resultUNSAT(savedCmd, start, sol); return sol; } else { rep.resultSAT(savedCmd, start, sim.partial); return sim.partial; }
-                }
-                if (sol.satisfiable() && cmd.check) {
-                    start = System.currentTimeMillis() - start;
-                    rep.resultSAT(savedCmd, start, sol); return sol;
-                }
-                sim.partial = sol;
-                for(Sig s: sim.growableSigs) {
-                    CommandScope sc = cmd.getScope(s);
-                    if (sc.increment > sc.endingScope - sc.startingScope) {
-                        if (sol.satisfiable()) rep.resultSAT(savedCmd, System.currentTimeMillis()-start, sol); else rep.resultUNSAT(savedCmd, System.currentTimeMillis()-start, sol);
-                        return sol;
-                    }
-                    cmd = cmd.change(s, sc.isExact, sc.startingScope+sc.increment, sc.endingScope, sc.increment);
-                }
-            }
+            if (cmd.parent!=null || !cmd.getGrowableSigs().isEmpty()) return execute_greedyCommand(rep, sigs, cmd, opt);
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
             tr.makeFacts(cmd.formula);
             return tr.frame.solve(rep, cmd, new Simplifier(), false);
@@ -399,7 +418,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         if (rep==null) rep = A4Reporter.NOP;
         TranslateAlloyToKodkod tr = null;
         try {
-            if (!cmd.getGrowableSigs().isEmpty()) return execute_command(rep, sigs, cmd, opt);
+            if (cmd.parent!=null || !cmd.getGrowableSigs().isEmpty()) return execute_greedyCommand(rep, sigs, cmd, opt);
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
             tr.makeFacts(cmd.formula);
             return tr.frame.solve(rep, cmd, new Simplifier(), true);
