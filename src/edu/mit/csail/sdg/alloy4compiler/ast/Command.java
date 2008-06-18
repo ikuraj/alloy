@@ -96,8 +96,6 @@ public final class Command {
     /**
      * Constructs a new Command object.
      *
-     * @param pos - the original position in the file (must not be null)
-     * @param label - the label for this command (it is only for pretty-printing and does not have to be unique)
      * @param check - true if this is a "check"; false if this is a "run"
      * @param overall - the overall scope (0 or higher) (-1 if no overall scope was specified)
      * @param bitwidth - the integer bitwidth (0 or higher) (-1 if it was not specified)
