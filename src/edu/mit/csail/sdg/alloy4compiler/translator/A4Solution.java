@@ -737,10 +737,6 @@ public final class A4Solution {
            list.add(t);
         }
         if (list==null) return;
-        // Compute the width of the index (eg. width("0")=1,  width("7")=1,  width("23")=2, etc)
-        int width=1;
-        for(int i=list.size()-1; i>=10; i=i/10) width++;
-        // Now, generate the new name. By prepending enough 0 to line up the numbers, we ensure the atoms will sort lexicographically
         // Many A4Solution objects will have the repetitive "this/" in front of the sig names (since that is
         // the convention of alloy4compiler), so removing "this/" will make the output look nicer.
         // This renaming is safe, since we'll pass it into UniqueNameGenerator to ensure no name clash anyway.
@@ -751,11 +747,7 @@ public final class A4Solution {
         StringBuilder sb = new StringBuilder();
         int i=0;
         for(Tuple t:list) {
-           sb.delete(0, sb.length()).append(signame).append('$');
-           String x=Integer.toString(i);
-           int xlen=x.length();
-           while(xlen < width) { xlen++; sb.append('0'); }
-           x=sb.append(x).toString();
+           String x = sb.delete(0, sb.length()).append(signame).append('$').append(i).toString();
            frame.atom2name.put(t.atom(0), x);
            ExprVar v = ExprVar.make(Pos.UNKNOWN, x, s.type);
            TupleSet ts = t.universe().factory().range(t,t);

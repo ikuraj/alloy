@@ -242,10 +242,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     private static final class GreedySimulator extends Simplifier {
         private Iterable<Sig> allSigs = null;
         private ConstList<Sig> growableSigs = null;
-        private Sig state = null;
         private A4Solution partial = null;
         public GreedySimulator() { }
-        private TupleSet convert(TupleFactory factory, TupleSet old) {
+        private TupleSet convert(TupleFactory factory, Expr f) throws Err {
+            TupleSet old = ((A4TupleSet) (partial.eval(f))).debugGetKodkodTupleset();
             TupleSet ans = factory.noneOf(old.arity());
             for(Tuple oldT: old) {
                 Tuple newT = null;
@@ -257,34 +257,33 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             return ans;
         }
         @Override public boolean simplify(A4Reporter rep, A4Solution sol, Iterable<Formula> unused) throws Err {
-            TupleFactory factory = factory(sol);
+            TupleFactory factory = sol.getFactory();
             Set<Object> oldAtoms = new HashSet<Object>();
-            for(Tuple t: ((A4TupleSet)(partial.eval(state))).debugGetKodkodTupleset()) oldAtoms.add(t.atom(0));
+            for(Tuple t: ((A4TupleSet)(partial.eval(Sig.UNIV))).debugGetKodkodTupleset()) oldAtoms.add(t.atom(0));
             for(Sig s: allSigs) for(Field f: s.getFields()) {
-                if (f.type.firstColumnOverlaps(state.type)) {
-                    // Retrieve the old states from the previous solution
-                    TupleSet oldT = ((A4TupleSet) (partial.eval(f))).debugGetKodkodTupleset();
-                    // Convert it into the universe used in the new solution that we are about to solve for.
+                Expression rel = sol.a2k(f);
+                if (s.isOne!=null) {
+                    if (!(rel instanceof BinaryExpression)) continue;
+                    if (((BinaryExpression)rel).left() != sol.a2k(s)) continue;
+                    if (((BinaryExpression)rel).op() != BinaryExpression.Operator.PRODUCT) continue;
+                    rel = ((BinaryExpression)rel).right();
+                    if (!(rel instanceof Relation)) continue;
+                    // Retrieve the old value from the previous solution, and convert it to the new unverse.
                     // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
-                    TupleSet newLower = convert(factory, oldT),  newUpper = newLower.clone();
-                    // Extract the expression corresponding to the given field.
-                    Expression rel = (Relation) a2k(sol, f);
-                    if (!(rel instanceof Relation)) continue; // should not happen, as long as the input model obeys our conventions
+                    TupleSet newLower = convert(factory, s.join(f)), newUpper = newLower.clone();
                     // Bind the partial instance
-                    for(Tuple t: query(sol, false, rel)) if (!oldAtoms.contains(t.atom(0))) newLower.add(t);
-                    for(Tuple t: query(sol, true,  rel)) if (!oldAtoms.contains(t.atom(0))) newUpper.add(t);
-                    shrink(sol, (Relation)rel, newLower, newUpper);
+                    for(Tuple t: sol.query(false, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newLower.add(t); break; }
+                    for(Tuple t: sol.query(true, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newUpper.add(t); break; }
+                    sol.shrink((Relation)rel, newLower, newUpper);
                 } else {
-                    // Retrieve the old states from the previous solution
-                    TupleSet oldT = ((A4TupleSet) (partial.eval(f))).debugGetKodkodTupleset();
-                    // Convert it into the universe used in the new solution that we are about to solve for.
+                    if (!(rel instanceof Relation)) continue;
+                    // Retrieve the old value from the previous solution, and convert it to the new unverse.
                     // This should always work since the new universe is not yet solved, and so it should have all possible atoms.
-                    TupleSet newLower = convert(factory, oldT),  newUpper = newLower.clone();
-                    // Extract the expression corresponding to the given field.
-                    Expression rel = (Relation) a2k(sol, f);
-                    if (!(rel instanceof Relation)) continue; // should not happen, as long as the input model obeys our conventions
+                    TupleSet newLower = convert(factory, f), newUpper = newLower.clone();
                     // Bind the partial instance
-                    shrink(sol, (Relation)rel, newLower, newUpper);
+                    for(Tuple t: sol.query(false, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newLower.add(t); break; }
+                    for(Tuple t: sol.query(true, rel, false)) for(int i=0; i<t.arity(); i++) if (!oldAtoms.contains(t.atom(i))) { newUpper.add(t); break; }
+                    sol.shrink((Relation)rel, newLower, newUpper);
                 }
             }
             return true;
@@ -325,7 +324,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             if (!sim.growableSigs.isEmpty() && !cmd.check) while(true) {
                 tr = new TranslateAlloyToKodkod(rep2, opt, sigs, cmd);
                 tr.makeFacts(fact);
-                A4Solution sol = tr.frame.solve(rep2, cmd, /*sim.partial==null ?*/ new Simplifier() /*: sim*/, false);
+                A4Solution sol = tr.frame.solve(rep2, cmd, sim.partial==null ? new Simplifier() : sim, false);
                 if (!sol.satisfiable()) {
                     start = System.currentTimeMillis() - start;
                     if (sim.partial==null) { rep.resultUNSAT(savedCmd, start, sol); return sol; } else { rep.resultSAT(savedCmd, start, sim.partial); return sim.partial; }

@@ -248,18 +248,12 @@ final class ScopeComputer {
             String name=sig.label;
             if (name.startsWith("this/")) name=name.substring(5);
             name=un.make(name);
-            // Compute the width of the index (eg. width("0")=1,  width("7")=1,  width("23")=2, etc)
-            int width=1;
-            for(int i=n-1; i>=10; i=i/10) width++;
             // Now, generate each atom using the format "SIGNAME$INDEX"
             // By prepending the index with 0 so that they're the same width, we ensure they sort lexicographically.
             StringBuilder sb=new StringBuilder();
             for(int i=0; i<n; i++) {
-               sb.delete(0, sb.length()).append(name).append('$');
-               String x = Integer.toString(i);
-               int xlen = x.length();
-               while(xlen < width) {sb.append('0'); xlen++;}
-               atoms.add(sb.append(x).toString());
+               String x = sb.delete(0, sb.length()).append(name).append('$').append(i).toString();
+               atoms.add(x);
                lower++;
             }
         }

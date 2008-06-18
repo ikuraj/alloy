@@ -24,16 +24,12 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.MailBug;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import kodkod.ast.BinaryFormula;
 import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
-import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
 
 /**
@@ -66,21 +62,6 @@ public class Simplifier {
         for(Formula f: formulas) ans = simplify(f) && ans; // Note: even if we get false, we want to keep going so that we simplify bounds further
         return ans;
     }
-
-    /** Returns the corresponding Kodkod factory. */
-    protected final TupleFactory factory(A4Solution sol) { return sol.getFactory(); }
-
-    /** Returns the corresponding Kodkod expression for the given Sig, or null if it is not associated with anything. */
-    protected final Expression a2k(A4Solution sol, Sig sig)  { return sol.a2k(sig); }
-
-    /** Returns the corresponding Kodkod expression for the given Field, or null if it is not associated with anything. */
-    protected final Expression a2k(A4Solution sol, Field field)  { return sol.a2k(field); }
-
-    /** Shrink the bounds for the given relation. */
-    protected final void shrink(A4Solution sol, Relation relation, TupleSet lowerBound, TupleSet upperBound) throws Err { sol.shrink(relation, lowerBound, upperBound); }
-
-    /** Query the Bounds object to find the lower/upper bound; throws ErrorFatal if expr is not Relation, nor a union of Relations. */
-    protected final TupleSet query(A4Solution sol, boolean findUpper, Expression expr) throws ErrorFatal { return sol.query(findUpper, expr, true); }
 
     /** Simplify the bounds based on the fact that "a is subset of b"; return false if we discover the formula is unsat. */
     private final boolean simplify_in(Expression a, Expression b) {
