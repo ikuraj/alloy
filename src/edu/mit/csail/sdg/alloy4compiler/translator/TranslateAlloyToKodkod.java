@@ -315,6 +315,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     }
 
     private static A4Solution execute_greedyCommand(A4Reporter rep, Iterable<Sig> sigs, Command usercommand, A4Options opt) throws Exception {
+        // FIXTHIS: if the next command has a *smaller scope* than the last command, we would get a Kodkod exception...
+        // FIXTHIS: if the solver is "toCNF" or "toKodkod" then this method will throw an Exception...
         TranslateAlloyToKodkod tr = null;
         try {
             long start = System.currentTimeMillis();
@@ -336,7 +338,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                 Command cmd = commands.get(i);
                 sim.growableSigs = cmd.getGrowableSigs();
                 while(cmd != null) {
-                    // FIXTHIS: if the next command has a *smaller scope* than the last command, we would get a Kodkod exception...
                     rep.debug(cmd.scope.toString());
                     usercommand = cmd;
                     tr = new TranslateAlloyToKodkod(rep2, opt, sigs, cmd);
