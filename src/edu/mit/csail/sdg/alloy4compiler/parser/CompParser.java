@@ -10709,7 +10709,7 @@ class CUP$CompParser$actions {
     if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
     if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(true, p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Command",8, RESULT);
             }
@@ -10735,7 +10735,7 @@ class CUP$CompParser$actions {
     if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
     if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(false, p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Command",8, RESULT);
             }
@@ -10760,7 +10760,7 @@ class CUP$CompParser$actions {
     if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
     if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, e, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(true, p, e, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Command",8, RESULT);
             }
@@ -10785,7 +10785,7 @@ class CUP$CompParser$actions {
     if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
     if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
   }
-  parser.alloymodule.addCommand(p, e, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
+  parser.alloymodule.addCommand(false, p, e, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Command",8, RESULT);
             }

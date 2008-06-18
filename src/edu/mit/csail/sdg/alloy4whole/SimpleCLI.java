@@ -35,6 +35,7 @@ import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -156,7 +157,7 @@ public final class SimpleCLI {
                 if (db) db("Parsing+Typechecking...");
                 Module world = CompUtil.parseEverything_fromFile(rep, null, filename);
                 if (db) db(" ok\n");
-                List<Pair<Command,Expr>> cmds=world.getAllCommandsWithFormulas();
+                List<Command> cmds=world.getAllCommands();
                 for(ErrorWarning msg: rep.warnings) rep.sb.append("Relevance Warning:\n" + (msg.toString().trim()) + "\n\n");
                 rep.warnings.clear();
                 // Do a detailed dump if we will not be executing the commands
@@ -185,8 +186,10 @@ public final class SimpleCLI {
                         sb.append("\nAssertion ").append(x.a).append("\n");  x.b.toString(sb, 4);
                         rep.flush();
                     }
-                    for(Pair<Command,Expr> x:m.getAllCommandsWithFormulas()) {
-                        sb.append("\nCommand ").append(x.a.label).append("\n");  x.b.toString(sb, 4);
+                    for(Command x:m.getAllCommands()) {
+                        sb.append("\nCommand ").append(x.label).append("\n");
+                        Expr f = x.formula;
+                        if (f instanceof ExprBinary && ((ExprBinary)f).op==ExprBinary.Op.AND) ((ExprBinary)f).right.toString(sb, 4);
                         rep.flush();
                     }
                   }
@@ -198,19 +201,18 @@ public final class SimpleCLI {
                 options.solverDirectory = "/zweb/zweb/tmp/alloy4/x86-freebsd";
                 options.solver = minisat ? A4Options.SatSolver.MiniSatJNI : solver;
                 for (int i=0; i<cmds.size(); i++) {
-                    Command c = cmds.get(i).a;
+                    Command c = cmds.get(i);
                     if (db) {
                         String cc = c.toString();
                         if (cc.length()>60) cc=cc.substring(0,55);
                         db("Executing "+cc+"...\n");
                     }
                     rep.sb.append("Executing \""+c+"\"\n");
-                    Expr facts = world.getAllReachableFacts().and(cmds.get(i).b);
                     options.skolemDepth=0;
-                    A4Solution s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts, c, options);
+                    A4Solution s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), c, options);
                     if (s.satisfiable()) { validate(s); if (s.isIncremental()) { s=s.next(); if (s.satisfiable()) validate(s); } }
                     options.skolemDepth=2;
-                    s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts, c, options);
+                    s = TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), c, options);
                     if (s.satisfiable()) { validate(s); if (s.isIncremental()) { s=s.next(); if (s.satisfiable()) validate(s); } }
                 }
             } catch(Throwable ex) {

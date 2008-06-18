@@ -25,9 +25,7 @@ package edu.mit.csail.sdg.alloy4whole;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
-import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -74,12 +72,10 @@ public final class ExampleUsingTheCompiler {
             A4Options options = new A4Options();
             options.solver = A4Options.SatSolver.SAT4J;
 
-            for (Pair<Command,Expr> pair: world.getAllCommandsWithFormulas()) {
-                Command command = pair.a;
-                Expr formula = world.getAllReachableFacts().and(pair.b);
+            for (Command command: world.getAllCommands()) {
                 // Execute the command
                 System.out.println("============ Command "+command+": ============");
-                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), formula, command, options);
+                A4Solution ans = TranslateAlloyToKodkod.execute_command(rep, world.getAllReachableSigs(), command, options);
                 // Print the outcome
                 System.out.println(ans);
                 // If satisfiable...

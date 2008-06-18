@@ -51,7 +51,6 @@ import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4.WorkerEngine.WorkerCallback;
 import edu.mit.csail.sdg.alloy4.WorkerEngine.WorkerTask;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
@@ -435,7 +434,7 @@ final class SimpleReporter extends A4Reporter {
             final SimpleReporter rep = new SimpleReporter(out, options.recordKodkod);
             final Module world = CompUtil.parseEverything_fromFile(rep, map, options.originalFilename, resolutionMode);
             final List<Sig> sigs = world.getAllReachableSigs();
-            final ConstList<Pair<Command,Expr>> cmds = world.getAllCommandsWithFormulas();
+            final ConstList<Command> cmds = world.getAllCommands();
             cb(out, "warnings", bundleWarningNonFatal);
             if (rep.warn>0 && !bundleWarningNonFatal) return;
             List<String> result = new ArrayList<String>(cmds.size());
@@ -453,11 +452,10 @@ final class SimpleReporter extends A4Reporter {
                 synchronized(SimpleReporter.class) { latestModule=world; latestKodkodSRC=ConstMap.make(map); }
                 final String tempXML=tempdir+File.separatorChar+i+".cnf.xml";
                 final String tempCNF=tempdir+File.separatorChar+i+".cnf";
-                final Pair<Command,Expr> cmd=cmds.get(i);
+                final Command cmd=cmds.get(i);
                 rep.tempfile=tempCNF;
-                cb(out, "bold", "Executing \""+cmd.a+"\"\n");
-                Expr facts = world.getAllReachableFacts().and(cmd.b);
-                A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), facts, cmd.a, options);
+                cb(out, "bold", "Executing \""+cmd+"\"\n");
+                A4Solution ai=TranslateAlloyToKodkod.execute_commandFromBook(rep, world.getAllReachableSigs(), cmd, options);
                 if (ai==null) result.add(null);
                 else if (ai.satisfiable()) result.add(tempXML);
                 else if (ai.highLevelCore().a.size()>0) result.add(tempCNF+".core");

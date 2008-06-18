@@ -28,12 +28,10 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.MailBug;
-import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
@@ -142,10 +140,8 @@ final class InternalTest {
         String filename = "models/examples/algorithms/dijkstra.als";
         Module world = CompUtil.parseEverything_fromFile(A4Reporter.NOP, null, filename);
         A4Options options = new A4Options();
-        for (Pair<Command,Expr> pair: world.getAllCommandsWithFormulas()) {
-            Command command = pair.a;
-            Expr formula = world.getAllReachableFacts().and(pair.b);
-            A4Solution ans = TranslateAlloyToKodkod.execute_command(A4Reporter.NOP, world.getAllReachableSigs(), formula, command, options);
+        for (Command command: world.getAllCommands()) {
+            A4Solution ans = TranslateAlloyToKodkod.execute_command(A4Reporter.NOP, world.getAllReachableSigs(), command, options);
             while(ans.satisfiable()) {
                 String hc = "Answer: " + ans.toString().hashCode();
                 System.gc();

@@ -319,7 +319,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      *
      * @param rep - if nonnull, we'll send compilation diagnostic messages to it
      * @param sigs - the list of sigs; this list must be complete
-     * @param fact - a formula that must be satisfied by the solution
      * @param cmd - the Command to execute
      * @param opt - the set of options guiding the execution of the command
      *
@@ -328,10 +327,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt) throws Err {
+    public static A4Solution execute_command (A4Reporter rep, Iterable<Sig> sigs, Command cmd, A4Options opt) throws Err {
         final Command savedCmd = cmd;
         if (rep==null) rep = A4Reporter.NOP;
-        if (fact==null) fact = ExprConstant.TRUE;
         A4Reporter rep2 = new A4Reporter(rep) {
             private boolean first = true;
             public void translate(String solver, int bitwidth, int maxseq, int skolemDepth, int symmetry) { if (first) super.translate(solver, bitwidth, maxseq, skolemDepth, symmetry); first=false; }
@@ -347,7 +345,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             long start = System.currentTimeMillis();
             if (!sim.growableSigs.isEmpty()) while(true) {
                 tr = new TranslateAlloyToKodkod(rep2, opt, sigs, cmd);
-                tr.makeFacts(fact);
+                tr.makeFacts(cmd.formula);
                 sim.totalOrderPredicates = tr.totalOrderPredicates;
                 A4Solution sol = tr.frame.solve(rep2, cmd, sim.partial==null || cmd.check ? new Simplifier() : sim, false);
                 if (!sol.satisfiable() && !cmd.check) {
@@ -365,11 +363,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                         if (sol.satisfiable()) rep.resultSAT(savedCmd, System.currentTimeMillis()-start, sol); else rep.resultUNSAT(savedCmd, System.currentTimeMillis()-start, sol);
                         return sol;
                     }
-                    cmd = cmd.make(s, sc.isExact, sc.startingScope+sc.increment, sc.endingScope, sc.increment);
+                    cmd = cmd.change(s, sc.isExact, sc.startingScope+sc.increment, sc.endingScope, sc.increment);
                 }
             }
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
-            tr.makeFacts(fact);
+            tr.makeFacts(cmd.formula);
             return tr.frame.solve(rep, cmd, new Simplifier(), false);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
@@ -389,7 +387,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      *
      * @param rep - if nonnull, we'll send compilation diagnostic messages to it
      * @param sigs - the list of sigs; this list must be complete
-     * @param fact - a formula that must be satisfied by the solution
      * @param cmd - the Command to execute
      * @param opt - the set of options guiding the execution of the command
      *
@@ -398,14 +395,13 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * <p> If the return value X is satisfiable, you can call X.next() to get the next satisfying solution X2;
      * and you can call X2.next() to get the next satisfying solution X3... until you get an unsatisfying solution.
      */
-    public static A4Solution execute_commandFromBook (A4Reporter rep, Iterable<Sig> sigs, Expr fact, Command cmd, A4Options opt) throws Err {
+    public static A4Solution execute_commandFromBook (A4Reporter rep, Iterable<Sig> sigs, Command cmd, A4Options opt) throws Err {
         if (rep==null) rep = A4Reporter.NOP;
-        if (fact==null) fact = ExprConstant.TRUE;
         TranslateAlloyToKodkod tr = null;
         try {
-            if (!cmd.getGrowableSigs().isEmpty()) return execute_command(rep, sigs, fact, cmd, opt);
+            if (!cmd.getGrowableSigs().isEmpty()) return execute_command(rep, sigs, cmd, opt);
             tr = new TranslateAlloyToKodkod(rep, opt, sigs, cmd);
-            tr.makeFacts(fact);
+            tr.makeFacts(cmd.formula);
             return tr.frame.solve(rep, cmd, new Simplifier(), true);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());

@@ -45,7 +45,6 @@ import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
-import edu.mit.csail.sdg.alloy4.Triple;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -510,7 +509,7 @@ public final class Module {
     private final Map<String,Expr> facts = new LinkedHashMap<String,Expr>();
 
     /** The list of (CommandName,Command,Expr) triples; NOTE: duplicate command names are allowed. */
-    private final List<Triple<String,Command,Expr>> commands = new ArrayList<Triple<String,Command,Expr>>();
+    private final List<Command> commands = new ArrayList<Command>();
 
     /** This stores a set of global values; given a unresolved name, we query this map first before all else. */
     private final Map<String,Expr> globals = new LinkedHashMap<String,Expr>();
@@ -1145,73 +1144,71 @@ public final class Module {
     //============================================================================================================================//
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, String n, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
+    void addCommand(boolean followUp, Pos p, String n, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
         if (n.indexOf('@')>=0) throw new ErrorSyntax(p, "Predicate/assertion name cannot contain \'@\'");
         String labelName = (label==null || label.label.length()==0) ? n : label.label;
-        commands.add(new Triple<String,Command,Expr>(n, new Command(p, labelName, c, o, b, seq, exp, ConstList.make(s)), ExprConstant.TRUE));
+        Command parent = followUp ? commands.get(commands.size()-1) : null;
+        Command newcommand = new Command(p, labelName, c, o, b, seq, exp, s, null, ExprVar.make(null, n), parent);
+        if (parent!=null) commands.set(commands.size()-1, newcommand); else commands.add(newcommand);
     }
 
     /** Add a COMMAND declaration. */
-    void addCommand(Pos p, Expr e, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
+    void addCommand(boolean followUp, Pos p, Expr e, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         String n;
         if (c) n=addAssertion(p,"check$"+(1+commands.size()),e);
            else addFunc(e.span().merge(p), Pos.UNKNOWN, n="run$"+(1+commands.size()), null, new ArrayList<Decl>(), null, e);
         String labelName = (label==null || label.label.length()==0) ? n : label.label;
-        commands.add(new Triple<String,Command,Expr>(n, new Command(e.span().merge(p), labelName, c, o, b, seq, exp, ConstList.make(s)), ExprConstant.TRUE));
+        Command parent = followUp ? commands.get(commands.size()-1) : null;
+        Command newcommand = new Command(e.span().merge(p), labelName, c, o, b, seq, exp, s, null, ExprVar.make(null, n), parent);
+        if (parent!=null) commands.set(commands.size()-1, newcommand); else commands.add(newcommand);
+    }
+
+    /** Resolve a particular command. */
+    private Command resolveCommand(Command cmd, ConstList<Sig> exactSigs, Expr globalFacts) throws Err {
+        Command parent = cmd.parent==null ? null : resolveCommand(cmd.parent, exactSigs, globalFacts);
+        String cname = ((ExprVar)(cmd.formula)).label;
+        Expr e;
+        if (cmd.check) {
+            List<Object> m=getRawQS(2, cname); // We prefer assertion in the topmost module
+            if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(this, 2, cname);
+            if (m.size()>1) unique(cmd.pos, cname, m);
+            if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
+            e = ((ExprVar)(m.get(0))).expr.not();
+        } else {
+            List<Object> m=getRawQS(4, cname); // We prefer fun/pred in the topmost module
+            if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(this, 4, cname);
+            if (m.size()>1) unique(cmd.pos, cname, m);
+            if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
+            e = ((FunAST)(m.get(0))).realFormula;
+        }
+        if (e==null) e=ExprConstant.TRUE;
+        TempList<CommandScope> sc=new TempList<CommandScope>(cmd.scope.size());
+        for(CommandScope et:cmd.scope) {
+            SigAST s = getRawSIG(et.sig.pos, et.sig.label);
+            if (s==null) throw new ErrorSyntax(et.sig.pos, "The sig \""+et.sig.label+"\" cannot be found.");
+            sc.add(new CommandScope(null, s.realSig, et.isExact, et.startingScope, et.endingScope, et.increment));
+        }
+        return new Command(cmd.pos, cmd.label, cmd.check, cmd.overall, cmd.bitwidth, cmd.maxseq, cmd.expects, sc.makeConst(), exactSigs, globalFacts.and(e), parent);
     }
 
     /** Each command now points to a typechecked Expr. */
-    private void resolveCommands() throws Err {
-        Sig[] exactSigs = new Sig[this.exactSigs.size()];
-        int i=0;
-        for(SigAST s: this.exactSigs) { exactSigs[i]=s.realSig; i++; }
-        for(i=0; i<commands.size(); i++) {
-            String cname=commands.get(i).a;
-            Command cmd=commands.get(i).b;
-            Expr e=null;
-            if (cmd.check) {
-                List<Object> m=getRawQS(2, cname); // We prefer assertion in the topmost module
-                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(this, 2, cname);
-                if (m.size()>1) unique(cmd.pos, cname, m);
-                if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
-                e = ((ExprVar)(m.get(0))).expr.not();
-            } else {
-                List<Object> m=getRawQS(4, cname); // We prefer fun/pred in the topmost module
-                if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(this, 4, cname);
-                if (m.size()>1) unique(cmd.pos, cname, m);
-                if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
-                e = ((FunAST)(m.get(0))).realFormula;
-            }
-            TempList<CommandScope> sc=new TempList<CommandScope>(cmd.scope.size());
-            for(CommandScope et:cmd.scope) {
-                SigAST s = getRawSIG(et.sig.pos, et.sig.label);
-                if (s==null) throw new ErrorSyntax(et.sig.pos, "The sig \""+et.sig.label+"\" cannot be found.");
-                sc.add(new CommandScope(null, s.realSig, et.isExact, et.startingScope, et.endingScope, et.increment));
-            }
-            cmd = cmd.make(sc.makeConst());
-            cmd = cmd.make(exactSigs);
-            commands.set(i, new Triple<String,Command,Expr>(cname, cmd, e));
+    private void resolveCommands(Expr globalFacts) throws Err {
+        TempList<Sig> exactSigs = new TempList<Sig>(this.exactSigs.size());
+        for(SigAST s: this.exactSigs) exactSigs.add(s.realSig);
+        for(int i=0; i<commands.size(); i++) {
+            Command cmd = commands.get(i);
+            cmd = resolveCommand(cmd, exactSigs.makeConst(), globalFacts);
+            commands.set(i, cmd);
         }
     }
 
     /** Return an unmodifiable list of all commands in this module. */
-    public ConstList<Command> getAllCommands() {
-        TempList<Command> ans = new TempList<Command>(commands.size());
-        for(Triple<String,Command,Expr> c:commands) ans.add(c.b);
-        return ans.makeConst();
-    }
-
-    /** Return an unmodifiable list of all commands (and each command's associated formula) in this module. */
-    public ConstList<Pair<Command,Expr>> getAllCommandsWithFormulas() {
-        TempList<Pair<Command,Expr>> ans = new TempList<Pair<Command,Expr>>(commands.size());
-        for(Triple<String,Command,Expr> c:commands) ans.add(new Pair<Command,Expr>(c.b, c.c));
-        return ans.makeConst();
-    }
+    public ConstList<Command> getAllCommands() { return ConstList.make(commands); }
 
     //============================================================================================================================//
 
@@ -1364,7 +1361,7 @@ public final class Module {
         }
         if (!errors.isEmpty()) throw errors.pick();
         // Typecheck the run/check commands (which can refer to function bodies and assertions)
-        root.resolveCommands();
+        root.resolveCommands(root.getAllReachableFacts());
         if (!errors.isEmpty()) throw errors.pick();
         for(ErrorWarning w:warns) rep.warning(w);
         for(SigAST s: root.exactSigs) rep.debug("Forced to be exact: "+s+"\n");

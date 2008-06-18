@@ -22,9 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
-import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
@@ -40,6 +38,9 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
  */
 
 public final class Command {
+
+    /** If nonnull, it means this command depends on this parent command. */
+    public final Command parent;
 
     /** The position in the original file where this command was declared; never null. */
     public final Pos pos;
@@ -62,6 +63,9 @@ public final class Command {
     /** The expected answer (either 0 or 1) (Or -1 if there is no expected answer). */
     public final int expects;
 
+    /** The formula associated with this command. */
+    public final Expr formula;
+
     /** The list of scopes. */
     public final ConstList<CommandScope> scope;
 
@@ -70,6 +74,7 @@ public final class Command {
 
     /** Returns a human-readable string that summarizes this Run or Check command. */
     @Override public final String toString() {
+        if (parent!=null) { Command p=parent; while(p.parent!=null) p=p.parent; return p.toString(); }
         boolean first=true;
         StringBuilder sb=new StringBuilder(check?"Check ":"Run ").append(label);
         if (overall>=0 && (bitwidth>=0 || maxseq>=0 || scope.size()>0))
@@ -88,20 +93,19 @@ public final class Command {
         return sb.toString();
     }
 
-    /** Helper method that converts a (Sig,Integer) pair into a CommandScope object; this is intended for backwards compatibility only. */
-    private static CommandScope convert(Pair<Sig,Integer> scope) throws ErrorSyntax {
-        boolean exact = false;
-        int i = scope.b;
-        if (i<0) { exact=true; i=0-(i+1); }
-        return new CommandScope(null, scope.a, exact, i, i, 1);
-    }
-
-    /** Helper method that converts a list of (Sig,Integer) pairs into a list of CommandScope objects; this is intended for backwards compatibility only. */
-    private static ConstList<CommandScope> convert(List<Pair<Sig,Integer>> scope) throws ErrorSyntax {
-        if (scope==null) return null;
-        TempList<CommandScope> ans = new TempList<CommandScope>(scope.size());
-        for(int i=0; i<scope.size(); i++) ans.add(convert(scope.get(i)));
-        return ans.makeConst();
+    /**
+     * Constructs a new Command object.
+     *
+     * @param pos - the original position in the file (must not be null)
+     * @param label - the label for this command (it is only for pretty-printing and does not have to be unique)
+     * @param check - true if this is a "check"; false if this is a "run"
+     * @param overall - the overall scope (0 or higher) (-1 if no overall scope was specified)
+     * @param bitwidth - the integer bitwidth (0 or higher) (-1 if it was not specified)
+     * @param maxseq - the maximum sequence length (0 or higher) (-1 if it was not specified)
+     * @param formula - the formula that must be satisfied by this command
+     */
+    public Command(boolean check, int overall, int bitwidth, int maxseq, Expr formula) throws ErrorSyntax {
+        this(null, "", check, overall, bitwidth, maxseq, -1, null, null, formula, null);
     }
 
     /**
@@ -116,10 +120,11 @@ public final class Command {
      * @param expects - the expected value (0 or 1) (-1 if no expectation was specified)
      * @param scope - a list of scopes (can be null if we want to use default)
      * @param additionalExactSig - a list of sigs whose scope shall be considered exact though we may or may not know what the scope is yet
+     * @param formula - the formula that must be satisfied by this command
      */
-    public Command(Pos pos, String label, boolean check, int overall, int bitwidth,
-    int maxseq, int expects, ConstList<CommandScope> scope, Sig... additionalExactSig) {
+    public Command(Pos pos, String label, boolean check, int overall, int bitwidth, int maxseq, int expects, Iterable<CommandScope> scope, Iterable<Sig> additionalExactSig, Expr formula, Command parent) {
         if (pos==null) pos = Pos.UNKNOWN;
+        this.formula = formula;
         this.pos = pos;
         this.label = (label==null ? "" : label);
         this.check = check;
@@ -128,48 +133,40 @@ public final class Command {
         this.maxseq = (maxseq<0 ? -1 : maxseq);
         this.expects = (expects<0 ? -1 : (expects>0 ? 1 : 0));
         this.scope = ConstList.make(scope);
-        TempList<Sig> tmp = new TempList<Sig>(additionalExactSig.length);
-        for(int i=0; i<additionalExactSig.length; i++) tmp.add(additionalExactSig[i]);
-        this.additionalExactScopes = tmp.makeConst();
+        this.additionalExactScopes = ConstList.make(additionalExactSig);
+        this.parent = parent;
     }
 
-    /**
-     * Constructs a new Command object.
-     *
-     * @param pos - the original position in the file (must not be null)
-     * @param label - the label for this command (it is only for pretty-printing and does not have to be unique)
-     * @param check - true if this is a "check"; false if this is a "run"
-     * @param overall - the overall scope (0 or higher) (-1 if no overall scope was specified)
-     * @param bitwidth - the integer bitwidth (0 or higher) (-1 if it was not specified)
-     * @param maxseq - the maximum sequence length (0 or higher) (-1 if it was not specified)
-     * @param expects - the expected value (0 or 1) (-1 if no expectation was specified)
-     * @param scope - a list that associates each sig with a scope
-     */
-    public Command(Pos pos, String label, boolean check, int overall, int bitwidth,
-    int maxseq, int expects, List<Pair<Sig,Integer>> scope) throws ErrorSyntax {
-        this(pos, label, check, overall, bitwidth, maxseq, expects, convert(scope));
+    /** Constructs a new Command object where it is the same as the current object, except with a different formula. */
+    public Command change(Expr newFormula) {
+        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes, newFormula, parent);
     }
 
     /** Constructs a new Command object where it is the same as the current object, except with a different scope. */
-    public Command make(ConstList<CommandScope> scope) {
-        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes.toArray(new Sig[additionalExactScopes.size()]));
+    public Command change(ConstList<CommandScope> scope) {
+        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes, formula, parent);
     }
 
     /** Constructs a new Command object where it is the same as the current object, except with a different list of "additional exact sigs". */
-    public Command make(Sig... additionalExactScopes) {
-        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, additionalExactScopes);
+    public Command change(Sig... additionalExactScopes) {
+        TempList<Sig> tmp = new TempList<Sig>(additionalExactScopes.length);
+        for(int i=0; i<additionalExactScopes.length; i++) tmp.add(additionalExactScopes[i]);
+        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, tmp.makeConst(), formula, parent);
     }
 
     /** Constructs a new Command object where it is the same as the current object, except with a different scope for the given sig. */
-    public Command make(Sig sig, boolean isExact, int startingScope, int endingScope, int increment) throws ErrorSyntax {
+    public Command change(Sig sig, boolean isExact, int newScope) throws ErrorSyntax { return change(sig, isExact, newScope, newScope, 1); }
+
+    /** Constructs a new Command object where it is the same as the current object, except with a different scope for the given sig. */
+    public Command change(Sig sig, boolean isExact, int startingScope, int endingScope, int increment) throws ErrorSyntax {
         for(int i=0; i<scope.size(); i++) if (scope.get(i).sig == sig) {
             CommandScope sc = new CommandScope(scope.get(i).pos, sig, isExact, startingScope, endingScope, increment);
             TempList<CommandScope> newlist = new TempList<CommandScope>(scope);
             newlist.set(i, sc);
-            return make(newlist.makeConst());
+            return change(newlist.makeConst());
         }
         CommandScope sc = new CommandScope(Pos.UNKNOWN, sig, isExact, startingScope, endingScope, increment);
-        return make(Util.append(scope, sc));
+        return change(Util.append(scope, sc));
     }
 
     /** Helper method that returns the scope corresponding to a given sig (or return null if the sig isn't named in this command) */

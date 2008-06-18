@@ -22,11 +22,9 @@
 
 package edu.mit.csail.sdg.alloy4whole;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Err;
-import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -86,18 +84,17 @@ public final class ExampleUsingTheAPI {
 
         // run { some A && atMostThree[B,B] } for 3 but 3 int, 3 seq
         Expr expr1 = A.some().and(atMost3.call(B,B));
-        Command cmd1 = new Command(null, "command1", false, 3, 3, 3, -1, null);
-        A4Solution sol1 = TranslateAlloyToKodkod.execute_command(NOP, sigs, expr1, cmd1, opt);
+        Command cmd1 = new Command(false, 3, 3, 3, expr1);
+        A4Solution sol1 = TranslateAlloyToKodkod.execute_command(NOP, sigs, cmd1, opt);
         System.out.println("[Solution1]:");
         System.out.println(sol1.toString());
 
         // run { some f && SomeG[] } for 3 but 2 int, 1 seq, 5 A, exactly 6 B
-        List<Pair<Sig,Integer>> scope = new ArrayList<Pair<Sig,Integer>>();
-        scope.add(new Pair<Sig,Integer>(A,5));
-        scope.add(new Pair<Sig,Integer>(B,-7)); // To say exactly N, use the number "-N-1". So, to say "exactly 6", use "-7".
         Expr expr2 = f.some().and(someG.call());
-        Command cmd2 = new Command(null, "command2", false, 3, 2, 1, -1, scope);
-        A4Solution sol2 = TranslateAlloyToKodkod.execute_command(NOP, sigs, expr2, cmd2, opt);
+        Command cmd2 = new Command(false, 3, 2, 1, expr2);
+        cmd2 = cmd2.change(A, false, 5);
+        cmd2 = cmd2.change(B, true, 6);
+        A4Solution sol2 = TranslateAlloyToKodkod.execute_command(NOP, sigs, cmd2, opt);
         System.out.println("[Solution2]:");
         System.out.println(sol2.toString());
     }

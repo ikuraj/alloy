@@ -59,8 +59,8 @@ public class DemoFileSystem {
 
     void runFor3(Expr expr) throws Err {
         A4Options opt = new A4Options();
-        Command cmd = new Command(null, "", false, 3, 3, 3, -1, null);
-        A4Solution sol = TranslateAlloyToKodkod.execute_command(NOP, sigs, expr.and(fact), cmd, opt);
+        Command cmd = new Command(false, 3, 3, 3, expr.and(fact));
+        A4Solution sol = TranslateAlloyToKodkod.execute_command(NOP, sigs, cmd, opt);
         System.out.println(sol.toString().trim());
         if (sol.satisfiable()) {
             System.out.println("In particular, File = " + sol.eval(file));

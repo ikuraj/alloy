@@ -56,6 +56,15 @@ public class CommandScope {
 
     /**
      * Construct a new CommandScope object.
+     * @param sig - the sig for this scope
+     * @param isExact - true iff the scope is intended to be exact
+     * @param scope - the scope
+     * @throws ErrorSyntax if scope is less than zero
+     */
+    public CommandScope(Sig sig, boolean isExact, int scope) throws ErrorSyntax { this(null, sig, isExact, scope, scope, 1); }
+
+    /**
+     * Construct a new CommandScope object.
      * @param pos - the position where this scope is given
      * @param sig - the sig for this scope
      * @param isExact - true iff the scope is intended to be exact
