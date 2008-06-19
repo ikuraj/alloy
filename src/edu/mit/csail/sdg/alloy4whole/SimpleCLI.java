@@ -35,7 +35,6 @@ import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -186,10 +185,9 @@ public final class SimpleCLI {
                         sb.append("\nAssertion ").append(x.a).append("\n");  x.b.toString(sb, 4);
                         rep.flush();
                     }
-                    for(Command x:m.getAllCommands()) {
+                    if (m==world) for(Command x:m.getAllCommands()) {
                         sb.append("\nCommand ").append(x.label).append("\n");
-                        Expr f = x.formula;
-                        if (f instanceof ExprBinary && ((ExprBinary)f).op==ExprBinary.Op.AND) ((ExprBinary)f).right.toString(sb, 4);
+                        x.formula.toString(sb, 4);
                         rep.flush();
                     }
                   }
