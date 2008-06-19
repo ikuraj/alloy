@@ -938,7 +938,7 @@ public final class SimpleGUI implements ComponentListener {
         task.bundleWarningNonFatal = WarningNonfatal.get();
         task.map = text.do_takeSnapshot();
         task.options = opt.dup();
-        task.resolutionMode = ImplicitThis.get() ? 2 : 1;
+        task.resolutionMode = (Version.experimental() && ImplicitThis.get()) ? 2 : 1;
         task.tempdir = Helper.maketemp();
         try {
             runmenu.setEnabled(false);
@@ -1141,7 +1141,7 @@ public final class SimpleGUI implements ComponentListener {
             //
             OurUtil.makeMenuItem(optmenu, "Visualize Automatically: "+(AutoVisualize.get()?"Yes":"No"), doOptAutoVisualize());
             OurUtil.makeMenuItem(optmenu, "Record the Kodkod Input/Output: "+(RecordKodkod.get()?"Yes":"No"), doOptRecordKodkod());
-            OurUtil.makeMenuItem(optmenu, "Enable \"implicit this\" name resolution: "+(ImplicitThis.get()?"Yes":"No"), doOptImplicitThis());
+            if (Version.experimental()) OurUtil.makeMenuItem(optmenu, "Enable \"implicit this\" name resolution: "+(ImplicitThis.get()?"Yes":"No"), doOptImplicitThis());
         } finally {
             wrap = false;
         }
@@ -1564,7 +1564,7 @@ public final class SimpleGUI implements ComponentListener {
                    String content = sub.getAttribute("content");
                    fc.put(name, content);
                 }
-                root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, mainname, ImplicitThis.get() ? 2 : 1);
+                root = CompUtil.parseEverything_fromFile(A4Reporter.NOP, fc, mainname, (Version.experimental() && ImplicitThis.get()) ? 2 : 1);
                 ans = A4SolutionReader.read(root.getAllReachableSigs(), x);
                 for(ExprVar a:ans.getAllAtoms())   { root.addGlobal(a.label, a); }
                 for(ExprVar a:ans.getAllSkolems()) { root.addGlobal(a.label, a); }

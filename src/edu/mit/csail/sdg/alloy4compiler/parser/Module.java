@@ -46,6 +46,7 @@ import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
@@ -934,7 +935,7 @@ public final class Module {
 
     /** Add a MACRO declaration. */
     void addMacro(Pos p, Pos isPrivate, String n, List<ExprVar> decls, Expr v) throws Err {
-        //if (1==1) throw new ErrorSyntax(p, "LET declaration is allowed only inside a toplevel paragraph.");
+        if (!Version.experimental()) throw new ErrorSyntax(p, "LET declaration is allowed only inside a toplevel paragraph.");
         ConstList<ExprVar> ds = ConstList.make(decls);
         status=3;
         dup(p, n, true);
@@ -1145,6 +1146,7 @@ public final class Module {
 
     /** Add a COMMAND declaration. */
     void addCommand(boolean followUp, Pos p, String n, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
+        if (followUp && !Version.experimental()) throw new ErrorSyntax(p, "Syntax error encountering => symbol.");
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
@@ -1157,6 +1159,7 @@ public final class Module {
 
     /** Add a COMMAND declaration. */
     void addCommand(boolean followUp, Pos p, Expr e, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
+        if (followUp && !Version.experimental()) throw new ErrorSyntax(p, "Syntax error encountering => symbol.");
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         String n;
@@ -1311,7 +1314,7 @@ public final class Module {
           }
         }
         // Now, add the meta sigs and fields if needed
-        if (root.seenDollar) {
+        if (Version.experimental() && root.seenDollar) {
             boolean hasMetaSig=false, hasMetaField=false;
             ExprVar EXTENDS = ExprVar.make(null, "extends");
             ExprVar THIS = ExprVar.make(null, "univ");
