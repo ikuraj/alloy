@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry exported="true" kind="lib" path="src/apple-osx-ui.jar"/>
 	<classpathentry exported="true" kind="lib" path="src/extra.jar"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/relations"/>
+	<classpathentry exported="true" kind="lib" path="src/kodkod+sat4j.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="output" path="bin"/>

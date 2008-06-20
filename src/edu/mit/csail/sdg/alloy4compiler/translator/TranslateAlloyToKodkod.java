@@ -71,6 +71,7 @@ import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
+import kodkod.instance.TupleSetException;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
@@ -364,6 +365,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             }
             if (sol.satisfiable()) rep.resultSAT(usercommand, System.currentTimeMillis()-start, sol); else rep.resultUNSAT(usercommand, System.currentTimeMillis()-start, sol);
             return sol;
+        } catch(TupleSetException ex) {
+            throw new ErrorType(ex.getMessage(), ex);
         } catch(HigherOrderDeclException ex) {
             Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
@@ -393,6 +396,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             return tr.frame.solve(rep, cmd, new Simplifier(), false);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
+        } catch(TupleSetException ex) {
+            throw new ErrorType(ex.getMessage(), ex);
         } catch(HigherOrderDeclException ex) {
             Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
@@ -427,6 +432,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             return tr.frame.solve(rep, cmd, new Simplifier(), true);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
+        } catch(TupleSetException ex) {
+            throw new ErrorType(ex.getMessage(), ex);
         } catch(HigherOrderDeclException ex) {
             Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
@@ -449,6 +456,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             ans = tr.visitThis(expr);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
+        } catch(TupleSetException ex) {
+            throw new ErrorType(ex.getMessage(), ex);
         } catch(HigherOrderDeclException ex) {
             throw new ErrorType("Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(Throwable ex) {

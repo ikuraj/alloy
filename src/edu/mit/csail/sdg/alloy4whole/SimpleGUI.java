@@ -102,6 +102,7 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.html.HTMLDocument;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
+import kodkod.instance.TupleSetException;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -1574,6 +1575,8 @@ public final class SimpleGUI implements ComponentListener {
             try {
                 Expr e = CompUtil.parseOneExpression_fromString(root, input);
                 return ans.eval(e).toString();
+            } catch(TupleSetException ex) {
+                throw new ErrorType(ex.getMessage(), ex);
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");
             }
