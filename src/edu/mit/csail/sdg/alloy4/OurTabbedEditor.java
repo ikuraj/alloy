@@ -381,6 +381,8 @@ public final class OurTabbedEditor extends JPanel {
         if (tabs.get(i).modified) {
             Boolean ans = OurDialog.askSaveDiscardCancel(parentFrame, "The file \"" + do_getShorterTitle(filename) + "\"");
             if (ans==null || (ans && do_save(false)==null)) return false;
+            // check to make sure the i-th buffer still exists; if there is no longer such a buffer, then we're done
+            if (i<0 || i>=tabs.size()) return true;
         }
         tabs.get(i).text.setText("");
         if (tabs.size()==1) {

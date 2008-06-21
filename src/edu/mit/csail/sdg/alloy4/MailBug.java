@@ -165,6 +165,15 @@ public final class MailBug implements UncaughtExceptionHandler {
 
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException (Thread thread, Throwable ex) {
+        if (ex!=null) {
+           System.out.flush();
+           System.err.flush();
+           System.err.println("Exception: " + ex.getClass());
+           System.err.println("Message: " + ex);
+           System.err.println("Stacktrace:");
+           System.err.println(dump(ex));
+           System.err.flush();
+        }
         final String yes = "Send the Bug Report";
         final String no = "Don't Send the Bug Report";
         final JTextField email = textfield("", 20, new LineBorder(Color.DARK_GRAY));
