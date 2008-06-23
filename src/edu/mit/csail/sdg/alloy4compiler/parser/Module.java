@@ -289,26 +289,63 @@ public final class Module {
             return ExprLet.make(x.pos, left, sub);
         }
 
+        private boolean isMetaSig(Type t) {
+            PrimSig metaSig = rootmodule.metaSig();
+            if (metaSig==null) return false;
+            again:
+            for(List<PrimSig> list: t.fold()) {
+                if (list.size()!=1) return false;
+                PrimSig s = list.get(0);
+                while(s!=null) { if (s==metaSig) continue again; else s=s.parent; }
+                return false;
+            }
+            return true;
+        }
+
+        private boolean isMetaField(Type t) {
+            PrimSig metaField = rootmodule.metaField();
+            if (metaField==null) return false;
+            again:
+            for(List<PrimSig> list: t.fold()) {
+                if (list.size()!=1) return false;
+                PrimSig s = list.get(0);
+                while(s!=null) { if (s==metaField) continue again; else s=s.parent; }
+                return false;
+            }
+            return true;
+        }
+
         /** {@inheritDoc} */
         @Override public Expr visit(ExprQuant x) throws Err {
             TempList<ExprVar> vars = new TempList<ExprVar>(x.vars.size());
             Expr pre=null, post=null;
+            boolean isMetaSig=false, isMetaField=false;
             for(ExprVar v: x.vars) {
-                if (pre!=v.expr) { pre=v.expr; post=visitThis(pre).resolve_as_set(warns); if (post.mult==0 && post.type.arity()==1) post=ExprUnary.Op.ONEOF.make(null, post); }
+                if (pre!=v.expr) {
+                    pre=v.expr;
+                    post=visitThis(pre).resolve_as_set(warns);
+                    if (post.mult==0 && post.type.arity()==1) post=ExprUnary.Op.ONEOF.make(null, post);
+                    isMetaSig = isMetaSig(post.type);
+                    isMetaField = isMetaField(post.type);
+                }
                 // Below is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
-                if (x.vars.size()==1 && (x.op==ExprQuant.Op.ALL || x.op==ExprQuant.Op.SOME)) {
-                    List<List<PrimSig>> fold = post.type.fold();
-                    if (fold.size()==1 && fold.get(0).size()==1 && fold.get(0).get(0)==rootmodule.world.metaField) {
-                        Expr answer = null;
-                        for(PrimSig child: rootmodule.world.metaField.children()) {
-                            put(v.label, child);
-                            Expr sub = visitThis(x.sub).resolve_as_formula(null);
-                            remove(v.label);
-                            if (x.op==ExprQuant.Op.ALL) answer = sub.and(answer); else answer = sub.or(answer);
-                        }
-                        if (answer==null) answer = (x.op==ExprQuant.Op.ALL ? ExprConstant.TRUE : ExprConstant.FALSE);
-                        return answer;
+                if (x.vars.size()==1 && (x.op==ExprQuant.Op.ALL || x.op==ExprQuant.Op.SOME) && (isMetaSig || isMetaField)) {
+                    boolean some = x.op==ExprQuant.Op.SOME;
+                    Expr answer = null;
+                    if (isMetaSig) for(PrimSig child: rootmodule.metaSig().children()) if (child.type.intersects(post.type)) {
+                        put(v.label, child);
+                        Expr sub = visitThis(x.sub).resolve_as_formula(null);
+                        remove(v.label);
+                        if (some) answer = child.in(post).and(sub).or(answer); else answer = child.in(post).implies(sub).and(answer);
                     }
+                    if (isMetaField) for(PrimSig child: rootmodule.metaField().children()) if (child.type.intersects(post.type)) {
+                        put(v.label, child);
+                        Expr sub = visitThis(x.sub).resolve_as_formula(null);
+                        remove(v.label);
+                        if (some) answer = child.in(post).and(sub).or(answer); else answer = child.in(post).implies(sub).and(answer);
+                    }
+                    if (answer==null) answer = (some ? ExprConstant.FALSE : ExprConstant.TRUE);
+                    return answer;
                 }
                 // Above is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
                 ExprVar newV = ExprVar.make(v.pos, v.label, post);
@@ -1456,9 +1493,16 @@ public final class Module {
         // (1) Cannot call
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
+        if (metaField()!=null && name.equals("value") && (rootsig==null || !rootfield)) {
+            SafeList<PrimSig> children = null;
+            try { children=metaField().children(); } catch(Err err) { return null; } // exception NOT possible
+            for(PrimSig s:children) for(Field f:s.getFields()) {
+                Expr x=ExprUnary.Op.NOOP.make(pos, f, null, 0); ch.add(x); re.add("field "+f.sig.label+" <: "+f.label);
+            }
+        }
         for(Module m: getAllNameableModules())
           for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null)
-            for(Field f: s.getValue().realSig.getFields()) if ((m==this || f.isPrivate==null) && f.label.equals(name))
+            for(Field f: s.getValue().realSig.getFields()) if (f.isMeta==null && (m==this || f.isPrivate==null) && f.label.equals(name))
               if (resolution==1) {
                  Expr x=null;
                  int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
