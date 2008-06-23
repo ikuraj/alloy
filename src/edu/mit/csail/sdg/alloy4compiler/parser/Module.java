@@ -87,7 +87,7 @@ public final class Module {
     static final class Context extends VisitReturn<Expr> {
 
         /** The place where warnings should go; can be null if we don't care about storing the warnings. */
-        private final List<ErrorWarning> warns;
+        private List<ErrorWarning> warns;
 
         /** The module that the current context is in. */
         final Module rootmodule;
@@ -330,22 +330,31 @@ public final class Module {
                 }
                 // Below is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
                 if (x.vars.size()==1 && (x.op==ExprQuant.Op.ALL || x.op==ExprQuant.Op.SOME) && (isMetaSig || isMetaField)) {
+                    // Prevent warnings
+                    List<ErrorWarning> saved = warns;
+                    warns = null;
+                    // Now duplicate the body for each possible Meta Atom binding
                     boolean some = x.op==ExprQuant.Op.SOME;
                     Expr answer = null;
                     if (isMetaSig) for(PrimSig child: rootmodule.metaSig().children()) if (child.type.intersects(post.type)) {
                         put(v.label, child);
-                        Expr sub = visitThis(x.sub).resolve_as_formula(null);
+                        Expr sub = visitThis(x.sub);
                         remove(v.label);
                         if (some) answer = child.in(post).and(sub).or(answer); else answer = child.in(post).implies(sub).and(answer);
                     }
                     if (isMetaField) for(PrimSig child: rootmodule.metaField().children()) if (child.type.intersects(post.type)) {
                         put(v.label, child);
-                        Expr sub = visitThis(x.sub).resolve_as_formula(null);
+                        Expr sub = visitThis(x.sub);
                         remove(v.label);
                         if (some) answer = child.in(post).and(sub).or(answer); else answer = child.in(post).implies(sub).and(answer);
                     }
-                    if (answer==null) answer = (some ? ExprConstant.FALSE : ExprConstant.TRUE);
-                    return answer;
+                    if (answer==null) answer = (some ? ExprConstant.FALSE : ExprConstant.TRUE); else answer = answer.resolve_as_formula(null);
+                    // Now, wrap the body in an ExprLet expression to prevent any more warnings by outer code
+                    ExprVar combinedAnswer = ExprVar.make(Pos.UNKNOWN, "", answer);
+                    Expr returnValue = ExprLet.make(Pos.UNKNOWN, combinedAnswer, combinedAnswer);
+                    // Restore the "warns" array, then return the answer
+                    warns = saved;
+                    return returnValue;
                 }
                 // Above is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
                 ExprVar newV = ExprVar.make(v.pos, v.label, post);
