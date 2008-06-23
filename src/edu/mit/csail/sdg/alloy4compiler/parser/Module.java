@@ -75,6 +75,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
+import static edu.mit.csail.sdg.alloy4.Util.asList;
 
 /** Mutable; this class represents an Alloy module; equals() uses object identity. */
 
@@ -165,7 +166,7 @@ public final class Module {
             if (match!=null) {
                 if (match instanceof Macro) return ((Macro)match).changePos(pos);
                 match = ExprUnary.Op.NOOP.make(pos, match);
-                return ExprChoice.make(pos, Util.asList(match), Util.asList(name));
+                return ExprChoice.make(pos, asList(match), asList(name));
             }
             Expr th = env.get("this");
             if (th!=null) th = ExprUnary.Op.NOOP.make(pos, th);
@@ -294,6 +295,22 @@ public final class Module {
             Expr pre=null, post=null;
             for(ExprVar v: x.vars) {
                 if (pre!=v.expr) { pre=v.expr; post=visitThis(pre).resolve_as_set(warns); if (post.mult==0 && post.type.arity()==1) post=ExprUnary.Op.ONEOF.make(null, post); }
+                // Below is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
+                if (x.vars.size()==1 && (x.op==ExprQuant.Op.ALL || x.op==ExprQuant.Op.SOME)) {
+                    List<List<PrimSig>> fold = post.type.fold();
+                    if (fold.size()==1 && fold.get(0).size()==1 && fold.get(0).get(0)==rootmodule.world.metaField) {
+                        Expr answer = null;
+                        for(PrimSig child: rootmodule.world.metaField.children()) {
+                            put(v.label, child);
+                            Expr sub = visitThis(x.sub).resolve_as_formula(null);
+                            remove(v.label);
+                            if (x.op==ExprQuant.Op.ALL) answer = sub.and(answer); else answer = sub.or(answer);
+                        }
+                        if (answer==null) answer = (x.op==ExprQuant.Op.ALL ? ExprConstant.TRUE : ExprConstant.FALSE);
+                        return answer;
+                    }
+                }
+                // Above is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
                 ExprVar newV = ExprVar.make(v.pos, v.label, post);
                 vars.add(newV);
                 put(newV.label, newV);
@@ -1345,6 +1362,7 @@ public final class Module {
                     ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                     sorted.add(ast);
                     hasMetaField=true;
+                    ast.realSig.addField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", field);
                 }
             }
             if (hasMetaSig==false) root.facts.put("sig$fact", root.metaSig.no().and(root.metaField.no()));
@@ -1394,13 +1412,11 @@ public final class Module {
         }
         final List<Object> ans = name.indexOf('/')>=0 ? getRawQS(fun?5:1, name) : getRawNQS(this, fun?5:1, name);
         final SigAST param = params.get(name); if (param!=null && !ans.contains(param)) ans.add(param);
-        final List<Expr> ch2 = new ArrayList<Expr>();
-        final List<String> re2 = new ArrayList<String>();
         for(Object x: ans) {
             if (x instanceof SigAST) {
                 SigAST y=(SigAST)x;
-                ch2.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, (resolution==1 && y.realModule!=this) ? 1000 : 0));
-                re2.add("sig "+y.realSig.label);
+                ch.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, (resolution==1 && y.realModule!=this) ? 1000 : 0));
+                re.add("sig "+y.realSig.label);
             }
             else if (x instanceof FunAST) {
                 FunAST y = (FunAST)x;
@@ -1425,8 +1441,8 @@ public final class Module {
                     re.add((f.isPred?"pred this.":"fun this.")+f.label);
                 }
                 if (resolution!=1) {
-                    ch2.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
-                    re2.add((f.isPred?"pred ":"fun ")+f.label);
+                    ch.add(fn==0 ? ExprCall.make(pos, null, f, null, 0) : ExprBadCall.make(pos, null, f, null, 0));
+                    re.add((f.isPred?"pred ":"fun ")+f.label);
                 }
             }
         }
@@ -1440,35 +1456,29 @@ public final class Module {
         // (1) Cannot call
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
-        for(Module m: getAllNameableModules()) for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null) {
-          int fi=(-1), fn=s.getValue().realSig.getFields().size(); // fn is the number of fields that are typechecked so far
-          for(Decl d: s.getValue().fields) for(ExprVar label: d.names) {
-             fi++;
-             if (fi<fn && (m==this || d.isPrivate==null) && label.label.equals(name)) {
-                Field f=s.getValue().realSig.getFields().get(fi);
-                if (resolution==1) {
-                   Expr x=null;
-                   int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
-                   if (rootsig==null)
-                      { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); }
-                   else if (rootsig.realSig.isSameOrDescendentOf(f.sig))
-                      { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
-                   else if (!rootfield)
-                      { x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); } // penalty of 1
-                   if (x!=null) { ch.add(x); re.add("field "+f.sig.label+" <: "+f.label); }
-                } else if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
-                   Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
-                   if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
-                       ch.add(THIS.join(x0));
-                       re.add("field "+f.sig.label+" <: this."+f.label);
-                       if (rootsig!=null) continue;
-                   }
-                   ch2.add(x0);
-                   re2.add("field "+f.sig.label+" <: "+f.label);
-                }
-             }
-          }
-        }
-        ch.addAll(ch2); re.addAll(re2); return null;
+        for(Module m: getAllNameableModules())
+          for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null)
+            for(Field f: s.getValue().realSig.getFields()) if ((m==this || f.isPrivate==null) && f.label.equals(name))
+              if (resolution==1) {
+                 Expr x=null;
+                 int penalty = (s.getValue().realModule==this ? 0 : 1000); // penalty of 1000
+                 if (rootsig==null)
+                    { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); }
+                 else if (rootsig.realSig.isSameOrDescendentOf(f.sig))
+                    { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
+                 else if (!rootfield)
+                    { x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); } // penalty of 1
+                 if (x!=null) { ch.add(x); re.add("field "+f.sig.label+" <: "+f.label); }
+              } else if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
+                 Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
+                 if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
+                    ch.add(THIS.join(x0));
+                    re.add("field "+f.sig.label+" <: this."+f.label);
+                    if (rootsig!=null) continue;
+                 }
+                 ch.add(x0);
+                 re.add("field "+f.sig.label+" <: "+f.label);
+              }
+        return null;
     }
 }

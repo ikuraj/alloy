@@ -290,8 +290,9 @@ public abstract class Expr {
     /**
      * Returns the formula (this or x)
      * <p> this and x must both be formulas
+     * <p> Note: as a special guarantee, if x==null, then the method will return this Expr object as-is.
      */
-    public final Expr or(Expr x) { return ExprBinary.Op.OR.make(span().merge(x.span()), null, this, x); }
+    public final Expr or(Expr x) { return (x==null) ? this : ExprBinary.Op.OR.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the formula (this iff x)
