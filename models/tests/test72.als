@@ -1,6 +1,6 @@
 module tests/test
 
-sig A { x, y, z: set Int }
+sig A { x, y: set Int }
 
 run { (some p: field$ | some p.value) && (no x) && (no y) } expect 0
 run { (some p: field$ | some p.value) && (no x) && (some y) } expect 1
