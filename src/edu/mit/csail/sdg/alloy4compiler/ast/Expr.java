@@ -343,8 +343,9 @@ public abstract class Expr {
     /**
      * Returns the expression (this+x)
      * <p> this and x must be expressions with the same arity, or both be integer expressions
+     * <p> Note: as a special guarantee, if x==null, then the method will return this Expr object as-is.
      */
-    public final Expr plus(Expr x) { return ExprBinary.Op.PLUS.make(span().merge(x.span()), null, this, x); }
+    public final Expr plus(Expr x) { return (x==null) ? this : ExprBinary.Op.PLUS.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this-x)

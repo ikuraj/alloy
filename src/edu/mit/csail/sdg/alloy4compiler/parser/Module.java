@@ -315,6 +315,12 @@ public final class Module {
             return true;
         }
 
+        private boolean isOneOf(Expr x) {
+            if (x.mult!=1 || x.type.arity()!=1) return false;
+            while (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
+            return (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.ONEOF);
+        }
+
         /** {@inheritDoc} */
         @Override public Expr visit(ExprQuant x) throws Err {
             TempList<ExprVar> vars = new TempList<ExprVar>(x.vars.size());
@@ -325,30 +331,33 @@ public final class Module {
                     pre=v.expr;
                     post=visitThis(pre).resolve_as_set(warns);
                     if (post.mult==0 && post.type.arity()==1) post=ExprUnary.Op.ONEOF.make(null, post);
-                    isMetaSig = isMetaSig(post.type);
-                    isMetaField = isMetaField(post.type);
+                    if (post.errors.isEmpty()) { isMetaSig = isMetaSig(post.type); isMetaField = isMetaField(post.type); }
                 }
                 // Below is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
-                if (x.vars.size()==1 && (x.op==ExprQuant.Op.ALL || x.op==ExprQuant.Op.SOME) && (isMetaSig || isMetaField)) {
+                boolean some = (x.op==ExprQuant.Op.SOME), compre = (x.op==ExprQuant.Op.COMPREHENSION);
+                if (x.vars.size()==1 && isOneOf(post) && (x.op==ExprQuant.Op.ALL || some || compre) && (isMetaSig || isMetaField)) {
                     // Prevent warnings
                     List<ErrorWarning> saved = warns;
                     warns = null;
                     // Now duplicate the body for each possible Meta Atom binding
-                    boolean some = x.op==ExprQuant.Op.SOME;
                     Expr answer = null;
                     if (isMetaSig) for(PrimSig child: rootmodule.metaSig().children()) if (child.type.intersects(post.type)) {
                         put(v.label, child);
                         Expr sub = visitThis(x.sub);
                         remove(v.label);
-                        if (some) answer = child.in(post).and(sub).or(answer); else answer = child.in(post).implies(sub).and(answer);
+                        if (compre) answer = child.in(post).and(sub).ite(child, Sig.NONE).plus(answer);
+                        else if (some) answer = child.in(post).and(sub).or(answer);
+                        else answer = child.in(post).implies(sub).and(answer);
                     }
                     if (isMetaField) for(PrimSig child: rootmodule.metaField().children()) if (child.type.intersects(post.type)) {
                         put(v.label, child);
                         Expr sub = visitThis(x.sub);
                         remove(v.label);
-                        if (some) answer = child.in(post).and(sub).or(answer); else answer = child.in(post).implies(sub).and(answer);
+                        if (compre) answer = child.in(post).and(sub).ite(child, Sig.NONE).plus(answer);
+                        else if (some) answer = child.in(post).and(sub).or(answer);
+                        else answer = child.in(post).implies(sub).and(answer);
                     }
-                    if (answer==null) answer = (some ? ExprConstant.FALSE : ExprConstant.TRUE); else answer = answer.resolve_as_formula(null);
+                    if (answer==null) answer = (compre ? Sig.NONE : (some ? ExprConstant.FALSE : ExprConstant.TRUE)); else answer = answer.resolve(answer.type, null);
                     // Now, wrap the body in an ExprLet expression to prevent any more warnings by outer code
                     ExprVar combinedAnswer = ExprVar.make(Pos.UNKNOWN, "", answer);
                     Expr returnValue = ExprLet.make(Pos.UNKNOWN, combinedAnswer, combinedAnswer);
