@@ -1417,7 +1417,7 @@ public final class Module {
                     ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                     sorted.add(ast);
                     hasMetaField=true;
-                    ast.realSig.addField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", field);
+                    ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", ast.realSig.product(field));
                 }
             }
             if (hasMetaSig==false) root.facts.put("sig$fact", root.metaSig.no().and(root.metaField.no()));
@@ -1511,13 +1511,6 @@ public final class Module {
         // (1) Cannot call
         // (2) But can refer to anything else visible.
         // All else: we can call, and can refer to anything visible.
-        if (metaField()!=null && name.equals("value") && (rootsig==null || !rootfield)) {
-            SafeList<PrimSig> children = null;
-            try { children=metaField().children(); } catch(Err err) { return null; } // exception NOT possible
-            for(PrimSig s:children) for(Field f:s.getFields()) {
-                Expr x=ExprUnary.Op.NOOP.make(pos, f, null, 0); ch.add(x); re.add("field "+f.sig.label+" <: "+f.label);
-            }
-        }
         for(Module m: getAllNameableModules())
           for(Map.Entry<String,SigAST> s:m.sigs.entrySet()) if (m==this || s.getValue().isPrivate==null)
             for(Field f: s.getValue().realSig.getFields()) if (f.isMeta==null && (m==this || f.isPrivate==null) && f.label.equals(name))
@@ -1541,6 +1534,13 @@ public final class Module {
                  ch.add(x0);
                  re.add("field "+f.sig.label+" <: "+f.label);
               }
+        if (metaField()!=null && (rootsig==null || !rootfield)) {
+            SafeList<PrimSig> children = null;
+            try { children=metaField().children(); } catch(Err err) { return null; } // exception NOT possible
+            for(PrimSig s:children) for(Field f:s.getFields()) if (f.label.equals(name)) {
+                Expr x=ExprUnary.Op.NOOP.make(pos, f, null, 0); ch.add(x); re.add("field "+f.sig.label+" <: "+f.label);
+            }
+        }
         return null;
     }
 }

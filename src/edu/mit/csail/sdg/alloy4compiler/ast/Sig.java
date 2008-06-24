@@ -24,6 +24,7 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -403,11 +404,30 @@ public abstract class Sig extends Expr {
         /** The label for this field; this name does not need to be unique. */
         public final String label;
 
-        /** The bounding formula; it is always of the form "all x: one ThisSig | x.ThisField in y" */
+        /** The bounding formula (null if this.definition!=null); if nonnull it is always of the form "all x: one ThisSig | x.ThisField in y" */
         public final Expr boundingFormula;
+
+        /** The definition expression (null if this.boundFormula!=null). */
+        public final Expr definition;
 
         /** List of annotations associated with this field; these annotations are ignored by Alloy Analyzer itself. */
         public final ConstList<String> annotations;
+
+        /** Constructs a new Field object. */
+        private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, Expr definition) throws Err {
+            super(pos, null, false, definition.type, 0, 0, definition.errors);
+            if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
+            if (definition.mult!=0 || definition.type.arity()<=1 || definition.ambiguous || !definition.type.firstColumnOverlaps(sig.type)) {
+                throw new ErrorAPI(pos, "This field's definition must be a binary or higher arity expression that intersects this sig.");
+            }
+            this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
+            this.isMeta = (isMeta!=null ? isMeta : sig.isMeta);
+            this.sig = sig;
+            this.label = label;
+            this.boundingFormula = null;
+            this.annotations = ConstList.make();
+            this.definition = definition;
+        }
 
         /** Constructs a new Field object. */
         private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, ExprVar var, Expr bound, List<String> annotations) throws Err {
@@ -427,6 +447,7 @@ public abstract class Sig extends Expr {
                 throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             if (bound.type.arity()>0 && bound.type.hasNoTuple()) throw new ErrorType(pos, "Cannot bind field "+label+" to the empty set or empty relation.");
             this.annotations = ConstList.make(annotations);
+            this.definition = null;
         }
 
         /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
@@ -540,5 +561,27 @@ public abstract class Sig extends Expr {
      */
     public final Field addField(Pos pos, Pos isPrivate, Pos isMeta, String label, Expr bound) throws Err {
         return addTrickyField(pos, isPrivate, isMeta, label, null, bound, null);
+    }
+
+    /**
+     * Add then return a new field F where F is bound to an exact "definition" expression.
+     * <p> Note: the definition must be fully-typechecked and have exactly 0 free variables.
+     *
+     * @param pos - the position in the original file where this field was defined (can be null if unknown)
+     * @param isPrivate - if nonnull, that means this field should be marked as private
+     * @param isMeta - if nonnull, that means this field should be marked as meta
+     * @param label - the name of this field (it does not need to be unique)
+     * @param definition - the new field will be defined to be exactly equal to this definition
+     *
+     * @throws ErrorSyntax  if the sig is one of the builtin sig
+     * @throws ErrorSyntax  if the bound contains a predicate/function call
+     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
+     */
+    public final Field addDefinedField(Pos pos, Pos isPrivate, Pos isMeta, String label, Expr definition) throws Err {
+        definition = definition.typecheck_as_set();
+        if (definition.ambiguous) definition = definition.resolve_as_set(null);
+        final Field f = new Field(pos, isPrivate, isMeta, this, label, definition);
+        fields.add(f);
+        return f;
     }
 }

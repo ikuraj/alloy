@@ -41,8 +41,6 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
@@ -213,7 +211,7 @@ final class BoundsComputer {
         for(Sig s:sigs) if (!s.builtin && s.isTopLevel()) allocatePrimSig((PrimSig)s);
         for(Sig s:sigs) if (s instanceof SubsetSig) allocateSubsetSig((SubsetSig)s);
         // Bound the fields
-        for(Sig s:sigs) if (s.isMeta==null) for(Field f:s.getFields()) {
+        for(Sig s:sigs) for(Field f:s.getFields()) if (f.definition==null) {
             boolean isOne = s.isOne!=null;
             Type t = isOne ? Sig.UNIV.type.join(f.type) : f.type;
             TupleSet ub = factory.noneOf(t.arity());
@@ -228,11 +226,9 @@ final class BoundsComputer {
             Relation r = sol.addRel(s.label+"."+f.label, null, ub);
             sol.addField(f, isOne ? sol.a2k(s).product(r) : r);
         }
-        for(Sig s:sigs) if (s.isMeta!=null) for(Field f:s.getFields()) {
-            ExprQuant qt = (ExprQuant) (f.boundingFormula);
-            ExprBinary in = (ExprBinary) (qt.sub);
-            Field realfield = (Field) (in.right);
-            sol.addField(f, sol.a2k(s).product(sol.a2k(realfield)));
+        for(Sig s:sigs) for(Field f:s.getFields()) if (f.definition!=null) {
+            Expression r = sol.a2k(f.definition);
+            sol.addField(f, r);
         }
         // Add any additional SIZE constraints
         for(Sig s:sigs) if (!s.builtin) {

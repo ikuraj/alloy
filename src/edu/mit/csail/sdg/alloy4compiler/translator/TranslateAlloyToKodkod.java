@@ -205,30 +205,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                 }
                 break;
             }
-            for(Field f:sig.getFields()) {
+            for(Field f:sig.getFields()) if (f.boundingFormula!=null) {
                 Expression sr=a2k(sig), fr=a2k(f);
-                // we could test to see if we can use kodkod's "function" and "partialFunction" predicates, but experimentally it actually performs much worse, so I will disable it
-                /*
-                if (sig.isOne==null && fr instanceof Relation && f.boundingFormula instanceof ExprQuant) {
-                   final ExprVar THIS = ((ExprQuant)(f.boundingFormula)).vars.get(0);
-                   final Expr a_in_b = deNOP(((ExprQuant)(f.boundingFormula)).sub);
-                   if (a_in_b instanceof ExprBinary && ((ExprBinary)a_in_b).op==ExprBinary.Op.IN) {
-                      final Expr sub = deNOP(((ExprBinary)a_in_b).right);
-                      if (sub.type.arity()==1 && sub instanceof ExprUnary && ((ExprUnary)sub).op==ExprUnary.Op.ONEOF && !sub.hasVar(THIS)) {
-                         final Expression range=cset(((ExprUnary)sub).sub);
-                         frame.addFormula(((Relation)fr).function(sr, range), f);
-                         rep.debug("Found: kodkod function\n");
-                         continue;
-                      }
-                      if (sub.type.arity()==1 && sub instanceof ExprUnary && ((ExprUnary)sub).op==ExprUnary.Op.LONEOF && !sub.hasVar(THIS)) {
-                         final Expression range=cset(((ExprUnary)sub).sub);
-                         frame.addFormula(((Relation)fr).partialFunction(sr, range), f);
-                         rep.debug("Found: kodkod partialFunction\n");
-                         continue;
-                      }
-                   }
-                }
-                */
                 // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
                 frame.addFormula(cform(f.boundingFormula), f);
                 // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
@@ -287,7 +265,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                           }
                       }
                 // The case above is STRICTLY an optimization; the entire statement can be removed without affecting correctness
-                for(Field f: s.getFields()) {
+                for(Field f: s.getFields()) if (f.definition==null) {
                     Expression rel = sol.a2k(f);
                     if (s.isOne!=null) {
                         rel = right(rel);

@@ -166,7 +166,7 @@ public final class SimpleCLI {
                         sb.append("\nSig ").append(x.label).append(" at position ").append(x.pos).append("\n");
                         for(Field f:x.getFields()) {
                             sb.append("\nField ").append(f.label).append(" with type ").append(f.type).append("\n");
-                            f.boundingFormula.toString(sb, 2);
+                            if (f.boundingFormula!=null) f.boundingFormula.toString(sb, 2); else f.definition.toString(sb, 2);
                         }
                         rep.flush();
                     }

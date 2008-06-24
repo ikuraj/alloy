@@ -80,6 +80,8 @@ import edu.mit.csail.sdg.alloy4.UniqueNameGenerator;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -449,6 +451,21 @@ public final class A4Solution {
 
     /** Returns the corresponding Kodkod expression for the given Atom/Skolem, or null if it is not associated with anything. */
     Expression a2k(ExprVar var)  { return a2k.get(var); }
+
+    /** Returns the corresponding Kodkod expression for the given expression, or null if it is not associated with anything. */
+    Expression a2k(Expr expr) throws ErrorFatal {
+        while(expr instanceof ExprUnary && ((ExprUnary)expr).op==ExprUnary.Op.NOOP) expr = ((ExprUnary)expr).sub;
+        if (expr instanceof Sig || expr instanceof Field || expr instanceof ExprVar) return a2k.get(expr);
+        if (expr instanceof ExprBinary) {
+            Expr a=((ExprBinary)expr).left, b=((ExprBinary)expr).right;
+            switch(((ExprBinary)expr).op) {
+              case ARROW: return a2k(a).product(a2k(b));
+              case PLUS: return a2k(a).union(a2k(b));
+              case MINUS: return a2k(a).difference(a2k(b));
+            }
+        }
+        return null; // Current only UNION, PRODUCT, and DIFFERENCE of Sigs and Fields are allowed in a defined field's definition.
+    }
 
     /** Return a modifiable TupleSet representing a sound overapproximation of the given expression. */
     TupleSet approximate(Expression expression) {
