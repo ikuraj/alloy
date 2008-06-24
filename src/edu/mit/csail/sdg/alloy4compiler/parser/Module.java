@@ -1402,7 +1402,7 @@ public final class Module {
             root.metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
             root.metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
             for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
-                Sig s = sig.realSig;
+                final Sig s = sig.realSig;
                 String slab = sig.name;
                 SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null, null);
                 ast.topo=true;
@@ -1410,15 +1410,18 @@ public final class Module {
                 ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                 sorted.add(ast);
                 hasMetaSig=true;
+                Expr allfields = Sig.NONE;
                 for(Field field: s.getFields()) {
-                    ast = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null, null);
-                    ast.topo=true;
-                    ast.realParents.add(metafield);
-                    ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
-                    sorted.add(ast);
+                    SigAST ast2 = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null, null);
+                    ast2.topo=true;
+                    ast2.realParents.add(metafield);
+                    ast2.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast2.name : (m.paths.get(0)+"/"+ast2.name), null, null, ast2.one, null, null, ast2.isPrivate, Pos.UNKNOWN, false);
+                    sorted.add(ast2);
                     hasMetaField=true;
-                    ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", ast.realSig.product(field));
+                    ast2.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", ast2.realSig.product(field));
+                    if (allfields==Sig.NONE) allfields=ast2.realSig; else allfields=allfields.plus(ast2.realSig);
                 }
+                ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", ast.realSig.product(allfields));
             }
             if (hasMetaSig==false) root.facts.put("sig$fact", root.metaSig.no().and(root.metaField.no()));
             else if (hasMetaField==false) root.facts.put("sig$fact", root.metaField.no());
@@ -1534,6 +1537,13 @@ public final class Module {
                  ch.add(x0);
                  re.add("field "+f.sig.label+" <: "+f.label);
               }
+        if (metaSig()!=null && (rootsig==null || !rootfield)) {
+            SafeList<PrimSig> children = null;
+            try { children=metaSig().children(); } catch(Err err) { return null; } // exception NOT possible
+            for(PrimSig s:children) for(Field f:s.getFields()) if (f.label.equals(name)) {
+                Expr x=ExprUnary.Op.NOOP.make(pos, f, null, 0); ch.add(x); re.add("field "+f.sig.label+" <: "+f.label);
+            }
+        }
         if (metaField()!=null && (rootsig==null || !rootfield)) {
             SafeList<PrimSig> children = null;
             try { children=metaField().children(); } catch(Err err) { return null; } // exception NOT possible

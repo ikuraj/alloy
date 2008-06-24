@@ -417,7 +417,8 @@ public abstract class Sig extends Expr {
         private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, Expr definition) throws Err {
             super(pos, null, false, definition.type, 0, 0, definition.errors);
             if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
-            if (definition.mult!=0 || definition.type.arity()<=1 || definition.ambiguous || !definition.type.firstColumnOverlaps(sig.type)) {
+            if (definition.mult!=0 || definition.type.arity()<=1 || definition.ambiguous ||
+                (definition.type.hasTuple() && !definition.type.firstColumnOverlaps(sig.type))) {
                 throw new ErrorAPI(pos, "This field's definition must be a binary or higher arity expression that intersects this sig.");
             }
             this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
