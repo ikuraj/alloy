@@ -148,12 +148,12 @@ public final class A4SolutionWriter {
     private void writeField(Field x) throws Err {
        if (rep!=null) rep.write(x);
        try {
-          Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
-          if (x.isPrivate!=null) out.print("\" private=\"yes");
-          if (x.isMeta!=null) out.print("\" meta=\"yes");
-          out.print("\">\n");
-          writeExpr("", x);
-          out.print("</field>\n");
+          StringBuilder sb = new StringBuilder();
+          Util.encodeXMLs(sb, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
+          if (x.isPrivate!=null) sb.append("\" private=\"yes");
+          if (x.isMeta!=null) sb.append("\" meta=\"yes");
+          sb.append("\">\n");
+          if (writeExpr(sb.toString(), x)) out.print("</field>\n");
        } catch(Throwable ex) {
           throw new ErrorFatal("Error evaluating field "+x.sig.label+"."+x.label, ex);
        }

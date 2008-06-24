@@ -1387,6 +1387,8 @@ public final class Module {
         }
         // Now, add the meta sigs and fields if needed
         if (Version.experimental() && root.seenDollar) {
+            Map<Sig,PrimSig> sig2meta = new LinkedHashMap<Sig,PrimSig>();
+            Map<Field,PrimSig> field2meta = new LinkedHashMap<Field,PrimSig>();
             boolean hasMetaSig=false, hasMetaField=false;
             ExprVar EXTENDS = ExprVar.make(null, "extends");
             ExprVar THIS = ExprVar.make(null, "univ");
@@ -1408,6 +1410,7 @@ public final class Module {
                 ast.topo=true;
                 ast.realParents.add(metasig);
                 ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
+                sig2meta.put(s, (PrimSig)(ast.realSig));
                 sorted.add(ast);
                 hasMetaSig=true;
                 Expr allfields = Sig.NONE;
@@ -1416,12 +1419,27 @@ public final class Module {
                     ast2.topo=true;
                     ast2.realParents.add(metafield);
                     ast2.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast2.name : (m.paths.get(0)+"/"+ast2.name), null, null, ast2.one, null, null, ast2.isPrivate, Pos.UNKNOWN, false);
+                    field2meta.put(field, (PrimSig)(ast2.realSig));
                     sorted.add(ast2);
                     hasMetaField=true;
                     ast2.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", ast2.realSig.product(field));
                     if (allfields==Sig.NONE) allfields=ast2.realSig; else allfields=allfields.plus(ast2.realSig);
                 }
                 ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", ast.realSig.product(allfields));
+            }
+            for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
+                Sig s = e.getKey();
+                PrimSig s2 = e.getValue();
+                Expr allfields = Sig.NONE;
+                for(Field f: s.getFields()) {
+                    PrimSig metaF = field2meta.get(f);
+                    if (allfields==Sig.NONE) allfields=metaF; else allfields=allfields.plus(metaF);
+                }
+                if (s instanceof PrimSig) for(Sig c: (((PrimSig)s).descendents())) for(Field f: c.getFields()) {
+                    PrimSig metaF = field2meta.get(f);
+                    if (allfields==Sig.NONE) allfields=metaF; else allfields=allfields.plus(metaF);
+                }
+                s2.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "subfields", s2.product(allfields));
             }
             if (hasMetaSig==false) root.facts.put("sig$fact", root.metaSig.no().and(root.metaField.no()));
             else if (hasMetaField==false) root.facts.put("sig$fact", root.metaField.no());

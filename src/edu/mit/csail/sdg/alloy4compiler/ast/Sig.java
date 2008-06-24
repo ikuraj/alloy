@@ -221,6 +221,17 @@ public abstract class Sig extends Expr {
             return children.dup();
         }
 
+        /**
+         * Returns its subsigs and their subsigs and their subsigs, etc.
+         * <p> Note: if this==UNIV, then this method will throw an exception, since we don't keep track of UNIV's children
+         */
+        public Iterable<PrimSig> descendents() throws Err {
+            if (this==UNIV) throw new ErrorFatal("Internal error (cannot enumerate the subsigs of UNIV)");
+            Iterable<PrimSig> answer = children.dup();
+            for(PrimSig x:children) answer = Util.fastJoin(answer, x.descendents());
+            return answer;
+        }
+
         /** True if all subsigs will get this sig's type. */
         final boolean hint_isLeaf;
 
