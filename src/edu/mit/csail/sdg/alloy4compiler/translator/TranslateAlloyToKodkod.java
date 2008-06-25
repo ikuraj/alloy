@@ -67,11 +67,12 @@ import kodkod.ast.Variable;
 import kodkod.ast.Relation;
 import kodkod.ast.Formula;
 import kodkod.ast.Expression;
+import kodkod.engine.CapacityExceededException;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
 import kodkod.instance.TupleSet;
-import kodkod.instance.TupleSetException;
+import kodkod.util.ints.IntVector;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
@@ -293,6 +294,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         }
     }
 
+    static ErrorType rethrow(CapacityExceededException ex) {
+        IntVector vec = ex.dims();
+        return new ErrorType(
+          "Translation capacity exceeded.\n"
+          + "In this scope, universe contains " + vec.get(0) + " atoms\n"
+          + "and relations of arity " + vec.size() + " cannot be represented.\n"
+          + "Visit http://alloy.mit.edu/ for advice on refactoring.");
+    }
+
     private static A4Solution execute_greedyCommand(A4Reporter rep, Iterable<Sig> sigs, Command usercommand, A4Options opt) throws Exception {
         // FIXTHIS: if the next command has a *smaller scope* than the last command, we would get a Kodkod exception...
         // FIXTHIS: if the solver is "toCNF" or "toKodkod" then this method will throw an Exception...
@@ -343,8 +353,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             }
             if (sol.satisfiable()) rep.resultSAT(usercommand, System.currentTimeMillis()-start, sol); else rep.resultUNSAT(usercommand, System.currentTimeMillis()-start, sol);
             return sol;
-        } catch(TupleSetException ex) {
-            throw new ErrorType(ex.getMessage(), ex);
+        } catch(CapacityExceededException ex) {
+            throw rethrow(ex);
         } catch(HigherOrderDeclException ex) {
             Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
@@ -374,8 +384,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             return tr.frame.solve(rep, cmd, new Simplifier(), false);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
-        } catch(TupleSetException ex) {
-            throw new ErrorType(ex.getMessage(), ex);
+        } catch(CapacityExceededException ex) {
+            throw rethrow(ex);
         } catch(HigherOrderDeclException ex) {
             Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
@@ -410,8 +420,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             return tr.frame.solve(rep, cmd, new Simplifier(), true);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
-        } catch(TupleSetException ex) {
-            throw new ErrorType(ex.getMessage(), ex);
+        } catch(CapacityExceededException ex) {
+            throw rethrow(ex);
         } catch(HigherOrderDeclException ex) {
             Pos p = tr!=null ? tr.frame.kv2typepos(ex.decl().variable()).b : Pos.UNKNOWN;
             throw new ErrorType(p, "Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
@@ -434,8 +444,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             ans = tr.visitThis(expr);
         } catch(UnsatisfiedLinkError ex) {
             throw new ErrorFatal("The required JNI library cannot be found: "+ex.toString().trim());
-        } catch(TupleSetException ex) {
-            throw new ErrorType(ex.getMessage(), ex);
+        } catch(CapacityExceededException ex) {
+            throw rethrow(ex);
         } catch(HigherOrderDeclException ex) {
             throw new ErrorType("Analysis cannot be performed since it requires higher-order quantification that could not be skolemized.");
         } catch(Throwable ex) {

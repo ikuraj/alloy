@@ -48,6 +48,7 @@ import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.engine.CapacityExceededException;
 import kodkod.engine.Evaluator;
 import kodkod.engine.Proof;
 import kodkod.engine.Solution;
@@ -534,23 +535,27 @@ public final class A4Solution {
      * @throws Err if this solution is not yet solved or it is not satisfiable
      */
     public Object eval(Expr expr) throws Err {
-        if (!solved) throw new ErrorAPI("This solution is not yet solved, so eval() is not allowed.");
-        if (eval==null) throw new ErrorAPI("This solution is unsatisfiable, so eval() is not allowed.");
-        if (expr instanceof Sig || expr instanceof Field) {
-            A4TupleSet ans = evalCache.get(expr);
-            if (ans!=null) return ans;
+        try {
+            if (!solved) throw new ErrorAPI("This solution is not yet solved, so eval() is not allowed.");
+            if (eval==null) throw new ErrorAPI("This solution is unsatisfiable, so eval() is not allowed.");
+            if (expr instanceof Sig || expr instanceof Field) {
+                A4TupleSet ans = evalCache.get(expr);
+                if (ans!=null) return ans;
+            }
+            if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
+            if (!expr.errors.isEmpty()) throw expr.errors.pick();
+            Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
+            if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
+            if (result instanceof Formula) return eval.evaluate((Formula)result);
+            if (result instanceof Expression) {
+                A4TupleSet ans = new A4TupleSet(eval.evaluate((Expression)result), this);
+                if (expr instanceof Sig || expr instanceof Field) evalCache.put(expr, ans);
+                return ans;
+            }
+            throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
+        } catch(CapacityExceededException ex) {
+            throw TranslateAlloyToKodkod.rethrow(ex);
         }
-        if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
-        if (!expr.errors.isEmpty()) throw expr.errors.pick();
-        Object result = TranslateAlloyToKodkod.alloy2kodkod(this, expr);
-        if (result instanceof IntExpression) return eval.evaluate((IntExpression)result);
-        if (result instanceof Formula) return eval.evaluate((Formula)result);
-        if (result instanceof Expression) {
-            A4TupleSet ans = new A4TupleSet(eval.evaluate((Expression)result), this);
-            if (expr instanceof Sig || expr instanceof Field) evalCache.put(expr, ans);
-            return ans;
-        }
-        throw new ErrorFatal("Unknown internal error encountered in the evaluator.");
     }
 
     /** Returns the Kodkod instance represented by this solution; throws an exception if the problem is not yet solved or if it is unsatisfiable. */

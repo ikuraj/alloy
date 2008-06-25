@@ -279,7 +279,6 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         switch(x.op()) {
            case AND: file.printf("Formula %s=%s.and(%s);%n", newname, left, right); break;
            case OR: file.printf("Formula %s=%s.or(%s);%n", newname, left, right); break;
-           case XOR: file.printf("Formula %s=%s.xor(%s);%n", newname, left, right); break;
            case IMPLIES: file.printf("Formula %s=%s.implies(%s);%n", newname, left, right); break;
            case IFF: file.printf("Formula %s=%s.iff(%s);%n", newname, left, right); break;
            default: throw new RuntimeException("Unknown kodkod operator \""+x.op()+"\" encountered");
