@@ -1828,7 +1828,7 @@ public final class SimpleGUI implements ComponentListener {
         // Open the given file, if a filename is given in the command line
         for(String f:args) if (f.toLowerCase(Locale.US).endsWith(".als")) {
             File file = new File(f);
-            if (file.exists()) doOpenFile(file.getPath());
+            if (file.exists() && file.isFile()) doOpenFile(file.getPath());
         }
 
         // Update the title and status bar
