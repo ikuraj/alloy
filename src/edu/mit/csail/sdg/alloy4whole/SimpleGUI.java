@@ -1124,7 +1124,7 @@ public final class SimpleGUI implements ComponentListener {
             //
             OurUtil.makeMenuItem(optmenu, "Font: "+FontName.get()+"...", doOptFontname());
             //
-            OurUtil.makeMenuItem(optmenu, "Editor anti-alias: "+(AntiAlias.get()?"Yes":"No"), doOptAntiAlias());
+            OurUtil.makeMenuItem(optmenu, "Use anti-aliasing: "+(AntiAlias.get()?"Yes":"No"), doOptAntiAlias());
             //
             final int tabSize = TabSize.get();
             final JMenu tabSizeMenu = new JMenu("Tab Size: "+tabSize);
@@ -1230,7 +1230,7 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method toggles the "antialias" checkbox. */
     private Runner doOptAntiAlias() {
-        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); text.do_antiAlias(newValue); }
+        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); text.do_antiAlias(newValue); log.setAntiAlias(newValue); }
         return wrapMe();
     }
 
@@ -1736,7 +1736,7 @@ public final class SimpleGUI implements ComponentListener {
 
         // Create the message area
         logpane = OurUtil.scrollpane(null);
-        log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this);
+        log = new SwingLogPanel(logpane, fontName, fontSize, AntiAlias.get(), background, Color.BLACK, new Color(.7f,.2f,.2f), this);
 
         // Create the text area
         wrap = true;

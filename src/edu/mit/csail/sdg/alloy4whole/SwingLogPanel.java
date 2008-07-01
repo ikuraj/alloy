@@ -25,6 +25,9 @@ package edu.mit.csail.sdg.alloy4whole;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
@@ -91,7 +94,7 @@ final class SwingLogPanel {
     private final Style styleRed;
 
     /** This stores the JLabels used for displaying hyperlinks. */
-    private final List<JLabel> links=new ArrayList<JLabel>();
+    private final List<JLabel> links = new ArrayList<JLabel>();
 
     /**
      * When the window gains focus, we'll call handler.run(ev_logFocused);
@@ -100,13 +103,16 @@ final class SwingLogPanel {
     private final SimpleGUI handler;
 
     /** The current length of the log, not counting any "red" error message at the end of the log. */
-    private int lastSize=0;
+    private int lastSize = 0;
 
     /** The current font name. */
     private String fontName;
 
     /** The current font size. */
     private int fontSize;
+
+    /** Whether we are currently doing anti-alias. */
+    private boolean antiAlias;
 
     /** The color to use for hyperlinks when the mouse is not hovering over it. */
     private static final Color linkColor = new Color(0.3f, 0.3f, 0.9f);
@@ -116,6 +122,32 @@ final class SwingLogPanel {
 
     /** This stores a default ViewFactory that will handle the View requests that we don't care to override. */
     private static final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
+
+    /** This class extends JLabel, and will do antialias or not based on whether this SwingLogPanel is in antialias mode or not. */
+    private final class AntiAliasLabel extends JLabel {
+        private static final long serialVersionUID = 1L;
+        public AntiAliasLabel(String label) {
+            super(label);
+        }
+        @Override public void paint(Graphics gr) {
+            if (antiAlias && gr instanceof Graphics2D) {
+                ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            }
+            super.paint(gr);
+        }
+        @Override public Dimension getPreferredSize() { return super.getMinimumSize(); }
+    }
+
+    /** This class extends JTextPane, and will do antialias or not based on whether this SwingLogPanel is in antialias mode or not. */
+    private final class AntiAliasTextPane extends JTextPane {
+        private static final long serialVersionUID = 1L;
+        @Override public void paint(Graphics gr) {
+            if (antiAlias && gr instanceof Graphics2D) {
+                ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            }
+            super.paint(gr);
+        }
+    }
 
     /**
      * Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
@@ -128,13 +160,14 @@ final class SwingLogPanel {
      * @param handler - the SimpleGUI parent
      */
     public SwingLogPanel(
-        final JScrollPane parent, String fontName, int fontSize,
+        final JScrollPane parent, String fontName, int fontSize, boolean antiAlias,
         final Color background, final Color regular, final Color red,
         final SimpleGUI handler) {
         this.handler = handler;
         this.fontName = fontName;
         this.fontSize = fontSize;
-        this.log = OurUtil.make(new JTextPane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
+        this.antiAlias = antiAlias;
+        this.log = OurUtil.make(new AntiAliasTextPane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
         this.log.setEditorKit(new StyledEditorKit() {
@@ -156,14 +189,14 @@ final class SwingLogPanel {
             public final void focusGained(FocusEvent e) { if (handler!=null) handler.notifyFocusLost(); }
             public final void focusLost(FocusEvent e) { }
         });
-        StyledDocument doc=log.getStyledDocument();
-        styleRegular=doc.addStyle("regular", null);
+        StyledDocument doc = log.getStyledDocument();
+        styleRegular = doc.addStyle("regular", null);
         StyleConstants.setFontFamily(styleRegular, fontName);
         StyleConstants.setFontSize(styleRegular, fontSize);
         StyleConstants.setForeground(styleRegular, regular);
-        styleBold=doc.addStyle("bold", styleRegular);
+        styleBold = doc.addStyle("bold", styleRegular);
         StyleConstants.setBold(styleBold, true);
-        styleRed=doc.addStyle("red", styleBold);
+        styleRed = doc.addStyle("red", styleBold);
         StyleConstants.setForeground(styleRed, red);
         parent.setViewportView(log);
         parent.setBackground(background);
@@ -192,15 +225,15 @@ final class SwingLogPanel {
         clearError();
         StyledDocument doc = log.getStyledDocument();
         Style linkStyle = doc.addStyle("link", styleRegular);
-        final JLabel label = OurUtil.label(link, new Font(fontName, Font.BOLD, fontSize), linkColor);
+        final JLabel label = OurUtil.make(new AntiAliasLabel(link), new Font(fontName, Font.BOLD, fontSize), linkColor);
         label.setAlignmentY(0.8f);
         label.setMaximumSize(label.getPreferredSize());
         label.addMouseListener(new MouseListener(){
-            public final void mousePressed(MouseEvent e) { if (handler!=null) handler.doVisualize(linkDestination); }
-            public final void mouseClicked(MouseEvent e) { }
+            public final void mousePressed(MouseEvent e)  { if (handler!=null) handler.doVisualize(linkDestination); }
+            public final void mouseClicked(MouseEvent e)  { }
             public final void mouseReleased(MouseEvent e) { }
-            public final void mouseEntered(MouseEvent e) { label.setForeground(hoverColor); }
-            public final void mouseExited(MouseEvent e) { label.setForeground(linkColor); }
+            public final void mouseEntered(MouseEvent e)  { label.setForeground(hoverColor); }
+            public final void mouseExited(MouseEvent e)   { label.setForeground(linkColor); }
         });
         StyleConstants.setComponent(linkStyle, label);
         links.add(label);
@@ -302,6 +335,16 @@ final class SwingLogPanel {
         if (log==null) return;
         this.fontSize = fontSize;
         setFontName(this.fontName);
+    }
+
+    /** Changes whether we are doing antialiasing or not. */
+    public void setAntiAlias(boolean antiAlias) {
+        if (log==null || this.antiAlias == antiAlias) return;
+        this.antiAlias = antiAlias;
+        for(JLabel link: links) { link.invalidate(); link.repaint(); link.validate(); }
+        log.invalidate();
+        log.repaint();
+        log.validate();
     }
 
     /** Set the background color. */
