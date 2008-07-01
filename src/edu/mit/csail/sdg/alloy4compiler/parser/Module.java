@@ -947,6 +947,9 @@ public final class Module {
         return obj;
     }
 
+    /** The list of ENUMS in this module. */
+    private final List<Pair<SigAST,Integer>> enums = new ArrayList<Pair<SigAST,Integer>>();
+
     /** Add an enumeration. */
     void addEnum(Pos pos, Pos priv, ExprVar name, List<ExprVar> parents, List<ExprVar> atoms, Pos closingBracket) throws Err {
         ExprVar LEAF = ExprVar.make(null,"leaf");
@@ -957,7 +960,8 @@ public final class Module {
         if (parents!=null) parents = new ArrayList<ExprVar>(parents);
         ExprVar inOrExtend = (parents!=null && parents.size()>0) ? parents.remove(parents.size()-1) : null;
         if (inOrExtend!=null && inOrExtend.label.charAt(0)=='i') throw new ErrorSyntax(pos, "Enumeration signatures cannot derive from a subset signature.");
-        addSig(Arrays.asList(LEAF), name.pos, name.label, name.pos, null, null, null, priv, inOrExtend, parents, null, null, null);
+        SigAST ans = addSig(Arrays.asList(LEAF), name.pos, name.label, name.pos, null, null, null, priv, inOrExtend, parents, null, null, null);
+        enums.add(new Pair<SigAST,Integer>(ans, atoms.size()));
         for(ExprVar a:atoms) addSig(null, a.pos, a.label, null, null, a.pos, null, priv, EXTENDS, THESE, null, null, null);
     }
 
@@ -1309,6 +1313,19 @@ public final class Module {
         sorted.add(SEQIDXast);
         sorted.add(NONEast);
         for(final Module m:modules) for(final Map.Entry<String,SigAST> e:m.sigs.entrySet()) resolveSig(sorted, e.getValue());
+        // For enums, add the additional partial instance fields "next" and "prev" to them
+        for(final Module m:modules) for(final Pair<SigAST,Integer> p:m.enums) {
+            int i = p.b;
+            Expr next = null, prev = null;
+            Sig last = null;
+            for(Sig c: ((PrimSig)(p.a.realSig)).children()) {
+                if (i<=0) break; else i--;
+                if (last!=null) { next=last.product(c).plus(next); prev=c.product(last).plus(prev); }
+                last = c;
+            }
+            if (next!=null) p.a.realSig.addDefinedField(Pos.UNKNOWN, null, null, "next", next);
+            if (prev!=null) p.a.realSig.addDefinedField(Pos.UNKNOWN, null, null, "prev", prev);
+        }
         // Add the fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
         for(final SigAST oldS:sorted) {
            // When typechecking each field:
