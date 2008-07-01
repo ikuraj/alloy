@@ -185,6 +185,9 @@ public final class OurTabbedEditor extends JPanel {
     /** The tabsize to use in the JTextArea */
     private int tabSize;
 
+    /** Whether we should do antialiasing. */
+    private boolean antiAlias;
+
     /** Whether syntax highlighting is current enabled or not. */
     private boolean syntaxHighlighting;
 
@@ -449,6 +452,12 @@ public final class OurTabbedEditor extends JPanel {
         for(Tab t:tabs) { t.text.do_setTabSize(tabSize); }
     }
 
+    /** Changes whether we do antialias or not. */
+    public void do_antiAlias(boolean flag) {
+        this.antiAlias=flag;
+        for(Tab t:tabs) { t.text.do_antialias(flag); }
+    }
+
     /** Changes the font of every text buffer. */
     public void do_setFont(String fontFamily, int fontSize) {
         this.fontFamily = fontFamily;
@@ -464,7 +473,7 @@ public final class OurTabbedEditor extends JPanel {
 
     /** Returns the JTextArea of the current text buffer. */
     public OurTextArea do_text() {
-        return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea(true, "", "Monospaced", 10, 4);
+        return (me>=0 && me<tabs.size()) ? tabs.get(me).text : new OurTextArea(true, "", "Monospaced", 10, 4, false);
     }
 
     /** True if the i-th text buffer has been modified since it was last loaded/saved */
@@ -516,7 +525,7 @@ public final class OurTabbedEditor extends JPanel {
         pan.setAlignmentX(0.0f);
         pan.setAlignmentY(1.0f);
         // Make the JTextArea
-        final OurTextArea text = new OurTextArea(syntaxHighlighting, Util.convertLineBreak(fileContent), fontFamily, fontSize, tabSize);
+        final OurTextArea text = new OurTextArea(syntaxHighlighting, Util.convertLineBreak(fileContent), fontFamily, fontSize, tabSize, antiAlias);
         text.getActionMap().put("alloy_next", new AbstractAction("alloy_next") {
             private static final long serialVersionUID = 1L;
             public final void actionPerformed(ActionEvent e) { do_next(); }

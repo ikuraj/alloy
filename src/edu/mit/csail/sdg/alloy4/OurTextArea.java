@@ -23,6 +23,9 @@
 package edu.mit.csail.sdg.alloy4;
 
 import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -53,8 +56,11 @@ public final class OurTextArea extends JTextPane {
     /** The styled document being displayed. */
     private final OurTextAreaDocument doc;
 
+    /** Whether we are currently using anti-aliasing. */
+    private boolean antialias = false;
+
     /** Constructs a text area widget. */
-    public OurTextArea(boolean syntaxHighlighting, String text, String fontFamily, int fontSize, int tabSize) {
+    public OurTextArea(boolean syntaxHighlighting, String text, String fontFamily, int fontSize, int tabSize, boolean antialias) {
         super();
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
@@ -75,6 +81,7 @@ public final class OurTextArea extends JTextPane {
              };
           }
         });
+        this.antialias = antialias;
         doc = (OurTextAreaDocument) getStyledDocument();
         doc.do_syntaxHighlighting(this, syntaxHighlighting);
         doc.do_setFont(this, fontFamily, fontSize);
@@ -108,6 +115,9 @@ public final class OurTextArea extends JTextPane {
 
     /** Changes the tab size for the document. */
     public void do_setTabSize(int tab) { if (doc!=null) doc.do_setTabSize(this, tab); }
+
+    /** Enables or disables antialiasing. */
+    public void do_antialias(boolean flag) { if (antialias!=flag) { antialias=flag; invalidate(); repaint(); validate(); } }
 
     /** Enables or disables syntax highlighting. */
     public void do_syntaxHighlighting(boolean flag) { if (doc!=null) doc.do_syntaxHighlighting(this, flag); }
@@ -151,4 +161,12 @@ public final class OurTextArea extends JTextPane {
 
     /** Clear the undo history. */
     public void do_clearUndo() { doc.do_clearUndo(); }
+
+    /** {@inheritDocs} */
+    @Override public void paint(Graphics gr) {
+        if (antialias && gr instanceof Graphics2D) {
+            ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        }
+        super.paint(gr);
+    }
 }

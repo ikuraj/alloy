@@ -181,6 +181,9 @@ public final class SimpleGUI implements ComponentListener {
     /** True if Alloy Analyzer should automatically visualize the latest instance. */
     private static final BooleanPref AutoVisualize = new BooleanPref("AutoVisualize");
 
+    /** True if Alloy Analyzer should insist on antialias. */
+    private static final BooleanPref AntiAlias = new BooleanPref("AntiAlias");
+
     /** True if Alloy Analyzer should record the raw Kodkod input and output. */
     private static final BooleanPref RecordKodkod = new BooleanPref("RecordKodkod");
 
@@ -1121,6 +1124,8 @@ public final class SimpleGUI implements ComponentListener {
             //
             OurUtil.makeMenuItem(optmenu, "Font: "+FontName.get()+"...", doOptFontname());
             //
+            OurUtil.makeMenuItem(optmenu, "Editor anti-alias: "+(AntiAlias.get()?"Yes":"No"), doOptAntiAlias());
+            //
             final int tabSize = TabSize.get();
             final JMenu tabSizeMenu = new JMenu("Tab Size: "+tabSize);
             for(int n=1; n<=12; n++) { OurUtil.makeMenuItem(tabSizeMenu, ""+n, doOptTabsize(n), n==tabSize?iconYes:iconNo); }
@@ -1221,6 +1226,12 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doOptCore(Integer speed) {
         if (!wrap) CoreMinimization.set(speed.intValue());
         return wrapMe(speed);
+    }
+
+    /** This method toggles the "antialias" checkbox. */
+    private Runner doOptAntiAlias() {
+        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); text.do_antiAlias(newValue); }
+        return wrapMe();
     }
 
     /** This method toggles the "visualize automatically" checkbox. */
@@ -1732,6 +1743,7 @@ public final class SimpleGUI implements ComponentListener {
         Runner chg = notifyChange(), focus = notifyFocusGained();
         wrap = false;
         text = new OurTabbedEditor(chg, focus, frame, fontName, fontSize, TabSize.get());
+        text.do_antiAlias(AntiAlias.get());
         text.do_syntaxHighlighting(! SyntaxDisabled.get());
 
         // Add everything to the frame, then display the frame
