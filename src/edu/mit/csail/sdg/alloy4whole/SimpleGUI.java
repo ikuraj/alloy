@@ -1125,7 +1125,7 @@ public final class SimpleGUI implements ComponentListener {
             //
             OurUtil.makeMenuItem(optmenu, "Font: "+FontName.get()+"...", doOptFontname());
             //
-            if (!Util.onMac()) OurUtil.makeMenuItem(optmenu, "Use anti-aliasing: "+(AntiAlias.get()?"Yes":"No"), doOptAntiAlias());
+            if (!Util.onMac() && !Util.onWindows()) OurUtil.makeMenuItem(optmenu, "Use anti-aliasing: "+(AntiAlias.get()?"Yes":"No"), doOptAntiAlias());
             //
             final int tabSize = TabSize.get();
             final JMenu tabSizeMenu = new JMenu("Tab Size: "+tabSize);
