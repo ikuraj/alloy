@@ -120,7 +120,6 @@ public final class A4SolutionWriter {
     /** Write the given Sig. */
     private void writesig(final Sig x) throws Err {
        if (x==Sig.NONE) return; // should not happen, but we test for it anyway
-       if (sol!=null && !sol.has(x)) return;
        if (rep!=null) rep.write(x);
        Util.encodeXMLs(out, "\n<sig label=\"", label(x.label), "\" ID=\"", map(x));
        if (x instanceof PrimSig && x!=Sig.UNIV) Util.encodeXMLs(out, "\" parentID=\"", map(((PrimSig)x).parent));
@@ -140,7 +139,7 @@ public final class A4SolutionWriter {
        }
        if (x instanceof SubsetSig) for(Sig p:((SubsetSig)x).parents) Util.encodeXMLs(out, "   <type ID=\"", map(p), "\"/>\n");
        out.print("</sig>\n");
-       for(Field field: x.getFields()) if (sol==null || sol.has(field)) writeField(field);
+       for(Field field: x.getFields()) writeField(field);
        if (x instanceof PrimSig) for(final PrimSig sub:children((PrimSig)x)) writesig(sub);
     }
 
@@ -148,12 +147,12 @@ public final class A4SolutionWriter {
     private void writeField(Field x) throws Err {
        if (rep!=null) rep.write(x);
        try {
-          StringBuilder sb = new StringBuilder();
-          Util.encodeXMLs(sb, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
-          if (x.isPrivate!=null) sb.append("\" private=\"yes");
-          if (x.isMeta!=null) sb.append("\" meta=\"yes");
-          sb.append("\">\n");
-          if (writeExpr(sb.toString(), x)) out.print("</field>\n");
+          Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
+          if (x.isPrivate!=null) out.print("\" private=\"yes");
+          if (x.isMeta!=null) out.print("\" meta=\"yes");
+          out.print("\">\n");
+          writeExpr("", x);
+          out.print("</field>\n");
        } catch(Throwable ex) {
           throw new ErrorFatal("Error evaluating field "+x.sig.label+"."+x.label, ex);
        }
