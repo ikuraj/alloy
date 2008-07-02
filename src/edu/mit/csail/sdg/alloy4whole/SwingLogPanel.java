@@ -25,9 +25,6 @@ package edu.mit.csail.sdg.alloy4whole;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
@@ -50,6 +47,7 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
+import edu.mit.csail.sdg.alloy4.OurAntiAlias;
 import edu.mit.csail.sdg.alloy4.OurUtil;
 
 /** This helper method is used by SimpleGUI; only the AWT Event Thread may call methods in this class. */
@@ -111,9 +109,6 @@ final class SwingLogPanel {
     /** The current font size. */
     private int fontSize;
 
-    /** Whether we are currently doing anti-alias. */
-    private boolean antiAlias;
-
     /** The color to use for hyperlinks when the mouse is not hovering over it. */
     private static final Color linkColor = new Color(0.3f, 0.3f, 0.9f);
 
@@ -122,32 +117,6 @@ final class SwingLogPanel {
 
     /** This stores a default ViewFactory that will handle the View requests that we don't care to override. */
     private static final ViewFactory defaultFactory = (new StyledEditorKit()).getViewFactory();
-
-    /** This class extends JLabel, and will do antialias or not based on whether this SwingLogPanel is in antialias mode or not. */
-    private final class AntiAliasLabel extends JLabel {
-        private static final long serialVersionUID = 1L;
-        public AntiAliasLabel(String label) {
-            super(label);
-        }
-        @Override public void paint(Graphics gr) {
-            if (antiAlias && gr instanceof Graphics2D) {
-                ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            }
-            super.paint(gr);
-        }
-        @Override public Dimension getPreferredSize() { return super.getMinimumSize(); }
-    }
-
-    /** This class extends JTextPane, and will do antialias or not based on whether this SwingLogPanel is in antialias mode or not. */
-    private final class AntiAliasTextPane extends JTextPane {
-        private static final long serialVersionUID = 1L;
-        @Override public void paint(Graphics gr) {
-            if (antiAlias && gr instanceof Graphics2D) {
-                ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            }
-            super.paint(gr);
-        }
-    }
 
     /**
      * Constructs a new JTextPane logger, and put it inside an existing JScrollPane.
@@ -160,14 +129,13 @@ final class SwingLogPanel {
      * @param handler - the SimpleGUI parent
      */
     public SwingLogPanel(
-        final JScrollPane parent, String fontName, int fontSize, boolean antiAlias,
+        final JScrollPane parent, String fontName, int fontSize,
         final Color background, final Color regular, final Color red,
         final SimpleGUI handler) {
         this.handler = handler;
         this.fontName = fontName;
         this.fontSize = fontSize;
-        this.antiAlias = antiAlias;
-        this.log = OurUtil.make(new AntiAliasTextPane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
+        this.log = OurUtil.make(OurAntiAlias.pane(), Color.BLACK, background, new EmptyBorder(1,1,1,1), new Font(fontName, Font.PLAIN, fontSize));
         // This customized StyledEditorKit prevents line-wrapping up to 30000 pixels wide.
         // 30000 is a good number; value higher than about 32768 will cause errors.
         this.log.setEditorKit(new StyledEditorKit() {
@@ -225,7 +193,7 @@ final class SwingLogPanel {
         clearError();
         StyledDocument doc = log.getStyledDocument();
         Style linkStyle = doc.addStyle("link", styleRegular);
-        final JLabel label = OurUtil.make(new AntiAliasLabel(link), new Font(fontName, Font.BOLD, fontSize), linkColor);
+        final JLabel label = OurUtil.make(OurAntiAlias.label(link), new Font(fontName, Font.BOLD, fontSize), linkColor);
         label.setAlignmentY(0.8f);
         label.setMaximumSize(label.getPreferredSize());
         label.addMouseListener(new MouseListener(){
@@ -335,16 +303,6 @@ final class SwingLogPanel {
         if (log==null) return;
         this.fontSize = fontSize;
         setFontName(this.fontName);
-    }
-
-    /** Changes whether we are doing antialiasing or not. */
-    public void setAntiAlias(boolean antiAlias) {
-        if (log==null || this.antiAlias == antiAlias) return;
-        this.antiAlias = antiAlias;
-        for(JLabel link: links) { link.invalidate(); link.repaint(); link.validate(); }
-        log.invalidate();
-        log.repaint();
-        log.validate();
     }
 
     /** Set the background color. */

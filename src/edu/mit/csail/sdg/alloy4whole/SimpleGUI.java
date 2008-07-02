@@ -119,6 +119,7 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.MailBug;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.MacUtil;
+import edu.mit.csail.sdg.alloy4.OurAntiAlias;
 import edu.mit.csail.sdg.alloy4.OurBorder;
 import edu.mit.csail.sdg.alloy4.OurCombobox;
 import edu.mit.csail.sdg.alloy4.OurDialog;
@@ -1230,7 +1231,7 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This method toggles the "antialias" checkbox. */
     private Runner doOptAntiAlias() {
-        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); text.do_antiAlias(newValue); log.setAntiAlias(newValue); }
+        if (!wrap) { boolean newValue = !AntiAlias.get(); AntiAlias.set(newValue); OurAntiAlias.enableAntiAlias(newValue); }
         return wrapMe();
     }
 
@@ -1734,16 +1735,18 @@ public final class SimpleGUI implements ComponentListener {
             wrap = false;
         }
 
+        // Choose the antiAlias setting
+        OurAntiAlias.enableAntiAlias(AntiAlias.get());
+
         // Create the message area
         logpane = OurUtil.scrollpane(null);
-        log = new SwingLogPanel(logpane, fontName, fontSize, AntiAlias.get(), background, Color.BLACK, new Color(.7f,.2f,.2f), this);
+        log = new SwingLogPanel(logpane, fontName, fontSize, background, Color.BLACK, new Color(.7f,.2f,.2f), this);
 
         // Create the text area
         wrap = true;
         Runner chg = notifyChange(), focus = notifyFocusGained();
         wrap = false;
         text = new OurTabbedEditor(chg, focus, frame, fontName, fontSize, TabSize.get());
-        text.do_antiAlias(AntiAlias.get());
         text.do_syntaxHighlighting(! SyntaxDisabled.get());
 
         // Add everything to the frame, then display the frame
@@ -1756,7 +1759,7 @@ public final class SimpleGUI implements ComponentListener {
         lefthalf.add(text, BorderLayout.CENTER);
         splitpane = OurUtil.splitpane(JSplitPane.HORIZONTAL_SPLIT, lefthalf, logpane, width/2);
         splitpane.setResizeWeight(0.5D);
-        status = OurUtil.label(" ", new Font(fontName, Font.PLAIN, fontSize), Color.BLACK, background);
+        status = OurUtil.make(OurAntiAlias.label(" "), new Font(fontName, Font.PLAIN, fontSize), Color.BLACK, background);
         status.setBorder(new OurBorder(true,false,false,false));
         all.add(splitpane, BorderLayout.CENTER);
         all.add(status, BorderLayout.SOUTH);
