@@ -120,6 +120,7 @@ public final class A4SolutionWriter {
     /** Write the given Sig. */
     private void writesig(final Sig x) throws Err {
        if (x==Sig.NONE) return; // should not happen, but we test for it anyway
+       if (sol==null && x.isMeta!=null) return; // When writing the metamodel, skip the metamodel sigs!
        if (rep!=null) rep.write(x);
        Util.encodeXMLs(out, "\n<sig label=\"", label(x.label), "\" ID=\"", map(x));
        if (x instanceof PrimSig && x!=Sig.UNIV) Util.encodeXMLs(out, "\" parentID=\"", map(((PrimSig)x).parent));
@@ -145,6 +146,7 @@ public final class A4SolutionWriter {
 
     /** Write the given Field. */
     private void writeField(Field x) throws Err {
+       if (sol==null && x.isMeta!=null) return; // when writing the metamodel, skip the metamodel fields!
        if (rep!=null) rep.write(x);
        try {
           Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));

@@ -32,6 +32,8 @@ import java.util.List;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pair;
+import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -44,6 +46,7 @@ import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionWriter;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 import edu.mit.csail.sdg.alloy4viz.StaticInstanceReader;
@@ -193,6 +196,17 @@ public final class SimpleCLI {
                   }
                   continue;
                 }
+                // Validate the metamodel generation code
+                StringWriter metasb = new StringWriter();
+                PrintWriter meta = new PrintWriter(metasb);
+                Util.encodeXMLs(meta, "\n<alloy builddate=\"", Version.buildDate(), "\">\n\n");
+                A4SolutionWriter.writeMetamodel(world.getAllReachableSigs(), filename, meta);
+                Util.encodeXMLs(meta, "\n</alloy>");
+                meta.flush();
+                metasb.flush();
+                String metaxml = metasb.toString();
+                A4SolutionReader.read(new ArrayList<Sig>(), new XMLNode(new StringReader(metaxml)));
+                StaticInstanceReader.parseInstance(new StringReader(metaxml));
                 // Okay, now solve the commands
                 A4Options options = new A4Options();
                 options.originalFilename = filename;
