@@ -145,11 +145,13 @@ public final class WorkerEngine {
               // All else, try "java" (and let the Operating System search the program path...)
               if (f.isFile()) java = f.getAbsolutePath();
            }
+           String debug = "yes".equals(System.getProperty("debug")) ? "yes" : "no";
            if (jniPath!=null && jniPath.length()>0)
                sub = Runtime.getRuntime().exec(new String[] {
                   java,
                   "-Xmx" + newmem + "m",
                   "-Djava.library.path=" + jniPath,
+                  "-Ddebug=" + debug,
                   "-cp", System.getProperty("java.class.path"), WorkerEngine.class.getName(),
                   Version.buildDate(), ""+Version.buildNumber()
                });
@@ -157,6 +159,7 @@ public final class WorkerEngine {
                sub = Runtime.getRuntime().exec(new String[] {
                   java,
                   "-Xmx" + newmem + "m",
+                  "-Ddebug=" + debug,
                   "-cp", System.getProperty("java.class.path"), WorkerEngine.class.getName(),
                   Version.buildDate(), ""+Version.buildNumber()
                });
