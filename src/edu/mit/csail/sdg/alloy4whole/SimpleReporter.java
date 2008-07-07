@@ -59,6 +59,7 @@ import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionWriter;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
+import edu.mit.csail.sdg.alloy4viz.StaticInstanceReader;
 import edu.mit.csail.sdg.alloy4viz.VizGUI;
 
 /** This helper method is used by SimpleGUI. */
@@ -359,12 +360,9 @@ final class SimpleReporter extends A4Reporter {
     private SimpleReporter(WorkerCallback cb, boolean recordKodkod) { this.cb=cb; this.recordKodkod=recordKodkod; }
 
     /** Helper method to write out a full XML file. */
-    private static void writeXML(A4Reporter rep, Module mod, String filename, A4Solution sol, Map<String,String> sources) throws IOException, Err {
+    private static void writeXML(A4Reporter rep, Module mod, String filename, A4Solution sol, Map<String,String> sources) throws Exception {
         sol.writeXML(rep, filename, mod.getAllFunc(), sources);
-        if ("yes".equals(System.getProperty("debug"))) {
-            // When in debug mode, try reading the file right back so that we can catch some errors right away
-            A4SolutionReader.read(new ArrayList<Sig>(), new XMLNode(new File(filename))).toString();
-        }
+        if ("yes".equals(System.getProperty("debug"))) validate(filename);
     }
 
     private int warn=0;
@@ -416,6 +414,12 @@ final class SimpleReporter extends A4Reporter {
         }
     }
 
+    /** Validate the given filename to see if it is a valid Alloy XML instance file. */
+    private static void validate(String filename) throws Exception {
+        A4SolutionReader.read(new ArrayList<Sig>(), new XMLNode(new File(filename))).toString();
+        StaticInstanceReader.parseInstance(new File(filename));
+    }
+
     /**
      * Task that perform one command.
      */
@@ -446,6 +450,7 @@ final class SimpleReporter extends A4Reporter {
                 A4SolutionWriter.writeMetamodel(ConstList.make(sigs), options.originalFilename, of);
                 Util.encodeXMLs(of, "\n</alloy>");
                 Util.close(of);
+                if ("yes".equals(System.getProperty("debug"))) validate(outf);
                 cb(out, "metamodel", outf);
                 synchronized(SimpleReporter.class) { latestMetamodelXML=outf; }
             } else for(int i=0; i<cmds.size(); i++) if (bundleIndex<0 || i==bundleIndex) {

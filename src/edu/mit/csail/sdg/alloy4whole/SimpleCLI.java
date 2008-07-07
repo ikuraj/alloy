@@ -143,7 +143,7 @@ public final class SimpleCLI {
         pw.flush();
         sw.flush();
         String txt = sw.toString();
-        A4SolutionReader.read(new ArrayList<Sig>(), new XMLNode(new StringReader(txt)));
+        A4SolutionReader.read(new ArrayList<Sig>(), new XMLNode(new StringReader(txt))).toString();
         StaticInstanceReader.parseInstance(new StringReader(txt));
     }
 
