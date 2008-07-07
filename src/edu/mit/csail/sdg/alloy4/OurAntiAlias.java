@@ -21,13 +21,14 @@ public final class OurAntiAlias {
     private OurAntiAlias() { }
 
     /** Use anti-alias or not. */
-    private static boolean antiAlias = false;
+    private static boolean antiAlias = Util.onMac() || Util.onWindows();
 
     /** Stores a weak-reference set of all objects that need to be redrawn when anti-alias setting changes. */
     private static WeakHashMap<JComponent, Boolean> map = new WeakHashMap<JComponent, Boolean>();
 
     /** Changes whether anti-aliasing should be done or not (when this changes, we will automatically repaint all affected components). */
     public static void enableAntiAlias(boolean enableAntiAlias) {
+        if (Util.onMac() || Util.onWindows()) enableAntiAlias = true; // On Mac and Windows they are already antialiased
         if (antiAlias == enableAntiAlias) return;
         antiAlias = enableAntiAlias;
         for(Map.Entry<JComponent,Boolean> x: map.entrySet()) { x.getKey().invalidate(); x.getKey().repaint(); x.getKey().validate(); }
