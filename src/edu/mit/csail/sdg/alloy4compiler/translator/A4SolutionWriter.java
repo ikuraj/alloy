@@ -83,6 +83,7 @@ public final class A4SolutionWriter {
     /** Write the given Expr and its Type. */
     private boolean writeExpr(String prefix, Expr expr) throws Err {
        Type type = expr.type;
+       if (!type.hasTuple()) return false;
        if (sol!=null) {
           // Check to see if the tupleset is *really* fully contained inside "type".
           // If not, then grow "type" until the tupleset is fully contained inside "type"
@@ -146,9 +147,10 @@ public final class A4SolutionWriter {
 
     /** Write the given Field. */
     private void writeField(Field x) throws Err {
-       if (sol==null && x.isMeta!=null) return; // when writing the metamodel, skip the metamodel fields!
-       if (rep!=null) rep.write(x);
        try {
+          if (sol==null && x.isMeta!=null) return; // when writing the metamodel, skip the metamodel fields!
+          if (x.type.hasNoTuple()) return;         // we do not allow "none" in the XML file's type declarations
+          if (rep!=null) rep.write(x);
           Util.encodeXMLs(out, "\n<field label=\"", label(x.label), "\" ID=\"", map(x), "\" parentID=\"", map(x.sig));
           if (x.isPrivate!=null) out.print("\" private=\"yes");
           if (x.isMeta!=null) out.print("\" meta=\"yes");
@@ -163,6 +165,8 @@ public final class A4SolutionWriter {
     /** Write the given Skolem. */
     private void writeSkolem(ExprVar x) throws Err {
        try {
+          if (sol==null) return;             // when writing a metamodel, skip the skolems
+          if (x.type.hasNoTuple()) return;   // we do not allow "none" in the XML file's type declarations
           StringBuilder sb = new StringBuilder();
           Util.encodeXMLs(sb, "\n<skolem label=\"", label(x.label), "\" ID=\"", map(x), "\">\n");
           if (writeExpr(sb.toString(), x)) { out.print("</skolem>\n"); }
@@ -187,14 +191,12 @@ public final class A4SolutionWriter {
         for (Sig s:sigs) if (s instanceof SubsetSig) writesig(s);
         if (sol!=null) for (ExprVar s:sol.getAllSkolems()) { if (rep!=null) rep.write(s); writeSkolem(s); }
         int m=0;
-        if (extraSkolems!=null) for(Func f:extraSkolems) if (f.params.size()==0 && !f.isPred) {
+        if (sol!=null && extraSkolems!=null) for(Func f:extraSkolems) if (f.params.size()==0 && f.call().type.hasTuple()) {
             String label=label(f.label);
             while(label.length()>0 && label.charAt(0)=='$') label=label.substring(1);
             label="$"+label;
             try {
                 if (rep!=null) rep.write(f.call());
-                A4TupleSet ts = (A4TupleSet)(sol.eval(f.call()));
-                if (ts.size()==0) continue; // Since we do not allow "none" in the <TYPE> or <TYPES> declaration
                 StringBuilder sb = new StringBuilder();
                 Util.encodeXMLs(sb, "\n<skolem label=\"", label, "\" ID=\"m"+m+"\">\n");
                 if (writeExpr(sb.toString(), f.call())) { out.print("</skolem>\n"); }
