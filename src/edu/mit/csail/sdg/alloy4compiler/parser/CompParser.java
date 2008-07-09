@@ -23,6 +23,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -10425,7 +10426,7 @@ class CUP$CompParser$actions {
               CommandScope RESULT =null;
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         ExprConstant i = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, Integer.MAX_VALUE, i.num);
+         if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, Integer.MAX_VALUE, i.num);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("TypeNumber",68, RESULT);
             }
           return CUP$CompParser$result;
@@ -10437,7 +10438,7 @@ class CUP$CompParser$actions {
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-5)).value;
         ExprConstant b = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         ExprConstant i = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, b.num,             i.num);
+         if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, b.num,             i.num);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("TypeNumber",68, RESULT);
             }
           return CUP$CompParser$result;
@@ -10448,7 +10449,7 @@ class CUP$CompParser$actions {
               CommandScope RESULT =null;
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         ExprConstant b = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT = new CommandScope(a.pos.merge(b.pos), Sig.NONE, false, a.num, b.num,             1    );
+         if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(a.pos.merge(b.pos), Sig.NONE, false, a.num, b.num,             1    );
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("TypeNumber",68, RESULT);
             }
           return CUP$CompParser$result;
@@ -10458,7 +10459,7 @@ class CUP$CompParser$actions {
             {
               CommandScope RESULT =null;
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT = new CommandScope(a.pos             , Sig.NONE, false, a.num, a.num,             1    );
+                                                                                        RESULT = new CommandScope(a.pos             , Sig.NONE, false, a.num, a.num,             1    );
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("TypeNumber",68, RESULT);
             }
           return CUP$CompParser$result;
@@ -10470,7 +10471,7 @@ class CUP$CompParser$actions {
         Pos e = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         ExprConstant i = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, Integer.MAX_VALUE, i.num);
+         if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, Integer.MAX_VALUE, i.num);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("TypeNumber",68, RESULT);
             }
           return CUP$CompParser$result;
@@ -10483,7 +10484,7 @@ class CUP$CompParser$actions {
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-5)).value;
         ExprConstant b = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         ExprConstant i = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, b.num,             i.num);
+         if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, b.num,             i.num);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("TypeNumber",68, RESULT);
             }
           return CUP$CompParser$result;
@@ -10495,7 +10496,7 @@ class CUP$CompParser$actions {
         Pos e = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-4)).value;
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-3)).value;
         ExprConstant b = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT = new CommandScope(    e.merge(b.pos), Sig.NONE, true,  a.num, b.num,             1    );
+         if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(    e.merge(b.pos), Sig.NONE, true,  a.num, b.num,             1    );
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("TypeNumber",68, RESULT);
             }
           return CUP$CompParser$result;
@@ -10506,7 +10507,7 @@ class CUP$CompParser$actions {
               CommandScope RESULT =null;
         Pos e = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExprConstant a = (ExprConstant)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         RESULT = new CommandScope(    e.merge(a.pos), Sig.NONE, true,  a.num, a.num,             1    );
+                                                                                        RESULT = new CommandScope(    e.merge(a.pos), Sig.NONE, true,  a.num, a.num,             1    );
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("TypeNumber",68, RESULT);
             }
           return CUP$CompParser$result;

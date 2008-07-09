@@ -35,8 +35,8 @@ public final class Version {
     /** The constructor is private, since this class never needs to be instantiated. */
     private Version() { }
 
-    /** Returns true if this is an experimental version rather than a release version. */
-    public static boolean experimental() { return true; }
+    /** This is true if this is an experimental version rather than a release version. */
+    public static boolean experimental = true;
 
     /** Returns the build number. */
     public static int buildNumber() { return Integer.MAX_VALUE; }

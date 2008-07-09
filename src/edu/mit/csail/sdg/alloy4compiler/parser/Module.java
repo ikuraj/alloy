@@ -1011,7 +1011,7 @@ public final class Module {
 
     /** Add a MACRO declaration. */
     void addMacro(Pos p, Pos isPrivate, String n, List<ExprVar> decls, Expr v) throws Err {
-        if (!Version.experimental()) throw new ErrorSyntax(p, "LET declaration is allowed only inside a toplevel paragraph.");
+        if (!Version.experimental) throw new ErrorSyntax(p, "LET declaration is allowed only inside a toplevel paragraph.");
         ConstList<ExprVar> ds = ConstList.make(decls);
         status=3;
         dup(p, n, true);
@@ -1222,7 +1222,7 @@ public final class Module {
 
     /** Add a COMMAND declaration. */
     void addCommand(boolean followUp, Pos p, String n, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
-        if (followUp && !Version.experimental()) throw new ErrorSyntax(p, "Syntax error encountering => symbol.");
+        if (followUp && !Version.experimental) throw new ErrorSyntax(p, "Syntax error encountering => symbol.");
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         if (n.length()==0) throw new ErrorSyntax(p, "Predicate/assertion name cannot be empty.");
@@ -1235,7 +1235,7 @@ public final class Module {
 
     /** Add a COMMAND declaration. */
     void addCommand(boolean followUp, Pos p, Expr e, boolean c, int o, int b, int seq, int exp, List<CommandScope> s, ExprVar label) throws Err {
-        if (followUp && !Version.experimental()) throw new ErrorSyntax(p, "Syntax error encountering => symbol.");
+        if (followUp && !Version.experimental) throw new ErrorSyntax(p, "Syntax error encountering => symbol.");
         if (label!=null) p=Pos.UNKNOWN.merge(p).merge(label.pos);
         status=3;
         String n;
@@ -1403,7 +1403,7 @@ public final class Module {
           }
         }
         // Now, add the meta sigs and fields if needed
-        if (Version.experimental() && root.seenDollar) {
+        if (Version.experimental && root.seenDollar) {
             Map<Sig,PrimSig> sig2meta = new LinkedHashMap<Sig,PrimSig>();
             Map<Field,PrimSig> field2meta = new LinkedHashMap<Field,PrimSig>();
             boolean hasMetaSig=false, hasMetaField=false;

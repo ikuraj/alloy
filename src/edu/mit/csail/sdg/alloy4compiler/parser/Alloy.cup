@@ -46,6 +46,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -666,14 +667,14 @@ Typescope  ::= TypeNumber:e SIGINT:f  {: if (1==1) throw new ErrorSyntax(e.pos.m
 
 Typescope  ::= TypeNumber:e NONE:f    {: if (1==1) throw new ErrorSyntax(e.pos.merge(f), "You cannot set a scope on none."); :};
 
-TypeNumber ::= EXACTLY:e NUMBER:a                                  {: RESULT = new CommandScope(    e.merge(a.pos), Sig.NONE, true,  a.num, a.num,             1    ); :};
-TypeNumber ::= EXACTLY:e NUMBER:a DOT DOT NUMBER:b                 {: RESULT = new CommandScope(    e.merge(b.pos), Sig.NONE, true,  a.num, b.num,             1    ); :};
-TypeNumber ::= EXACTLY:e NUMBER:a DOT DOT NUMBER:b COLON NUMBER:i  {: RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, b.num,             i.num); :};
-TypeNumber ::= EXACTLY:e NUMBER:a                  COLON NUMBER:i  {: RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, Integer.MAX_VALUE, i.num); :};
-TypeNumber ::=           NUMBER:a                                  {: RESULT = new CommandScope(a.pos             , Sig.NONE, false, a.num, a.num,             1    ); :};
-TypeNumber ::=           NUMBER:a DOT DOT NUMBER:b                 {: RESULT = new CommandScope(a.pos.merge(b.pos), Sig.NONE, false, a.num, b.num,             1    ); :};
-TypeNumber ::=           NUMBER:a DOT DOT NUMBER:b COLON NUMBER:i  {: RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, b.num,             i.num); :};
-TypeNumber ::=           NUMBER:a                  COLON NUMBER:i  {: RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, Integer.MAX_VALUE, i.num); :};
+TypeNumber ::= EXACTLY:e NUMBER:a                                  {:                                                                                RESULT = new CommandScope(    e.merge(a.pos), Sig.NONE, true,  a.num, a.num,             1    ); :};
+TypeNumber ::= EXACTLY:e NUMBER:a DOT DOT NUMBER:b                 {: if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(    e.merge(b.pos), Sig.NONE, true,  a.num, b.num,             1    ); :};
+TypeNumber ::= EXACTLY:e NUMBER:a DOT DOT NUMBER:b COLON NUMBER:i  {: if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, b.num,             i.num); :};
+TypeNumber ::= EXACTLY:e NUMBER:a                  COLON NUMBER:i  {: if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(    e.merge(i.pos), Sig.NONE, true,  a.num, Integer.MAX_VALUE, i.num); :};
+TypeNumber ::=           NUMBER:a                                  {:                                                                                RESULT = new CommandScope(a.pos             , Sig.NONE, false, a.num, a.num,             1    ); :};
+TypeNumber ::=           NUMBER:a DOT DOT NUMBER:b                 {: if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(a.pos.merge(b.pos), Sig.NONE, false, a.num, b.num,             1    ); :};
+TypeNumber ::=           NUMBER:a DOT DOT NUMBER:b COLON NUMBER:i  {: if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, b.num,             i.num); :};
+TypeNumber ::=           NUMBER:a                  COLON NUMBER:i  {: if (!Version.experimental) throw new ErrorSyntax(a.pos, "Syntax error here."); RESULT = new CommandScope(a.pos.merge(i.pos), Sig.NONE, false, a.num, Integer.MAX_VALUE, i.num); :};
 
 Macro ::= Vis:p LET:o              Name:n LPAREN   Names:d RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, d     , v); :};
 Macro ::= Vis:p LET:o              Name:n LPAREN           RPAREN   MacroBody:v {: nod(n); parser.alloymodule.addMacro(o.merge(v.span()), p, n.label, null  , v); :};
