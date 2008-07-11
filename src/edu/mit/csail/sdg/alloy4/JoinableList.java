@@ -136,6 +136,7 @@ public final class JoinableList<E> implements Serializable, Iterable<E> {
     }
 
     /** Returns true if that is a List or JoinableList, and contains the same elements as this list. */
+    @SuppressWarnings("unchecked")
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         Iterator<?> b;

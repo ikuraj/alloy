@@ -112,6 +112,7 @@ public final class SafeList<T> implements Serializable, Iterable<T> {
     }
 
     /** Returns true if (that instanceof List or that instanceof SafeList), and that contains the same elements as this list. */
+    @SuppressWarnings("unchecked")
     @Override public boolean equals(Object that) {
         if (this==that) return true;
         int n;
