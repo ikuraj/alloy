@@ -32,6 +32,7 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import static edu.mit.csail.sdg.alloy4compiler.parser.CompSym.*;
 
 /**
@@ -116,6 +117,24 @@ final class CompFilter implements Scanner {
               undo.add(0,change(b,DOT));
               return last=c;
           }
+          undo.add(0,c);
+         }
+        undo.add(0,b);
+       }
+      if (a.sym==SIGINT)
+       {
+        b=myread();
+        if (b.sym==SLASH)
+         {
+          c=myread();
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("add")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTADD); }
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("sub")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTSUB); }
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("mul")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTMUL); }
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("div")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTDIV); }
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("rem")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTREM); }
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("min")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTMIN); }
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("max")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTMAX); }
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("next")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTNEXT); }
           undo.add(0,c);
          }
         undo.add(0,b);

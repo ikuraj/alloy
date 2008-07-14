@@ -304,7 +304,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     }
 
     private static A4Solution execute_greedyCommand(A4Reporter rep, Iterable<Sig> sigs, Command usercommand, A4Options opt) throws Exception {
-        // FIXTHIS: if the next command has a *smaller scope* than the last command, we would get a Kodkod exception...
+        // FIXTHIS: if the next command has a "smaller scope" than the last command, we would get a Kodkod exception...
         // FIXTHIS: if the solver is "toCNF" or "toKodkod" then this method will throw an Exception...
         // FIXTHIS: does solution enumeration still work when we're doing a greedy solve?
         TranslateAlloyToKodkod tr = null;
@@ -640,6 +640,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
             if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
             return IntConstant.constant(n);
+          case MIN: return IntConstant.constant(min);
+          case MAX: return IntConstant.constant(max);
+          case NEXT: return A4Solution.SIGINT_NEXT;
           case TRUE: return Formula.TRUE;
           case FALSE: return Formula.FALSE;
           case IDEN: return Expression.IDEN.intersection(a2k(UNIV).product(Relation.UNIV));
@@ -898,6 +901,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             case OR:  f=cform(a); f=f.or(cform(b));  return k2pos(f,x);
             case IFF: f=cform(a); f=f.iff(cform(b)); return k2pos(f,x);
             case PLUSPLUS: s=cset(a); return s.override(cset(b));
+            case MUL: i=cint(a); return i.multiply(cint(b));
+            case DIV: i=cint(a); return i.divide(cint(b));
+            case REM: i=cint(a); return i.modulo(cint(b));
             case SHL: i=cint(a); return i.shl(cint(b));
             case SHR: i=cint(a); return i.shr(cint(b));
             case SHA: i=cint(a); return i.sha(cint(b));

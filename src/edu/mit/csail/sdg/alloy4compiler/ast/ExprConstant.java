@@ -64,7 +64,7 @@ public final class ExprConstant extends Expr {
      * @param num - the number (this argument is ignored if op!=NUMBER)
      */
     private ExprConstant(Pos pos, Op op, int num) {
-        super(pos, null, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NUMBER ? Type.INT : Type.FORMULA)), 0, 0, null);
+        super(pos, null, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NEXT ? Type.make2(Sig.SIGINT) : (op==Op.TRUE || op==Op.FALSE ? Type.FORMULA : Type.INT))), 0, 0, null);
         this.op = op;
         this.num = (op==Op.NUMBER ? num : 0);
     }
@@ -87,6 +87,15 @@ public final class ExprConstant extends Expr {
     /** The "iden" relation. */
     public static final Expr IDEN = new ExprConstant(null, Op.IDEN, 0);
 
+    /** The smallest integer value allowed by the current bitwidth. */
+    public static final Expr MIN = new ExprConstant(null, Op.MIN, 0);
+
+    /** The largest integer value allowed by the current bitwidth. */
+    public static final Expr MAX = new ExprConstant(null, Op.MAX, 0);
+
+    /** The "next" relation relating each integer to its next larger integer. */
+    public static final Expr NEXT = new ExprConstant(null, Op.NEXT, 0);
+
     /** The "0" integer. */
     public static final Expr ZERO = new ExprConstant(null, Op.NUMBER, 0);
 
@@ -102,10 +111,13 @@ public final class ExprConstant extends Expr {
 
     /** This class contains all possible constant types. */
     public enum Op {
-        /** true                               */  TRUE("true"),
-        /** false                              */  FALSE("false"),
-        /** the builtin "iden" relation        */  IDEN("iden"),
-        /** an integer constant                */  NUMBER("NUMBER");
+        /** true                                 */  TRUE("true"),
+        /** false                                */  FALSE("false"),
+        /** the builtin "iden" relation          */  IDEN("iden"),
+        /** the minimum integer constant         */  MIN("min"),
+        /** the maximum integer constant         */  MAX("max"),
+        /** the "next" relation between integers */  NEXT("next"),
+        /** an integer constant                  */  NUMBER("NUMBER");
 
         /** The constructor. */
         private Op(String label) {this.label=label;}

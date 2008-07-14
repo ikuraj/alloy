@@ -354,6 +354,24 @@ public abstract class Expr {
     public final Expr minus(Expr x) { return ExprBinary.Op.MINUS.make(span().merge(x.span()), null, this, x); }
 
     /**
+     * Returns the formula "this.mul[x]" (the result of multiplying this by x)
+     * <p> this and x must both be integer expressions
+     */
+    public final Expr mul(Expr x) { return ExprBinary.Op.MUL.make(span().merge(x.span()), null, this, x); }
+
+    /**
+     * Returns the formula "this.div[x]" (the quotient of dividing this by x)
+     * <p> this and x must both be integer expressions
+     */
+    public final Expr div(Expr x) { return ExprBinary.Op.DIV.make(span().merge(x.span()), null, this, x); }
+
+    /**
+     * Returns the formula "this.rem[x]" (the remainder of dividing this by x)
+     * <p> this and x must both be integer expressions
+     */
+    public final Expr rem(Expr x) { return ExprBinary.Op.REM.make(span().merge(x.span()), null, this, x); }
+
+    /**
      * Returns the formula (this==x)
      * <p> this and x must be expressions with the same arity, or both be integer expressions
      */
