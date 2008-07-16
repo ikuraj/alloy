@@ -25,17 +25,8 @@ module util/ordering[exactly elem]
 private one sig Ord {
    First: set elem,
    Next: elem -> elem
-}{
-   elem in First.*Next    // every element is in the total order
-   no Next.First      // first element has no predecessor
-   (all e: elem | {
-     // each element (except the first) has one predecessor
-     (e = First || one Next.e)
-     // each element (except the last) has one successor
-     (e = (elem-(Next.elem)) || one e.Next)
-     // there are no cycles
-     (e !in e.^Next)
-   })
+} {
+   pred/totalOrder[elem,First,Next]
 }
 
 // first

@@ -183,6 +183,7 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public Object visit(ExprBuiltin x) throws Err {
+        // FIXTHIS: add totalOrder
         SimTupleset[] ans = new SimTupleset[x.args.size()];
         for(int i=1; i<ans.length; i++) {
            for(int j=0; j<i; j++) {

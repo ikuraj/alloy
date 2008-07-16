@@ -75,8 +75,6 @@ import kodkod.instance.TupleSet;
 import kodkod.util.ints.IntVector;
 import static edu.mit.csail.sdg.alloy4.Util.tail;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
-import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ZERO;
-import static edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant.ONE;
 
 /** Translate an Alloy AST into Kodkod AST then attempt to solve it using Kodkod. */
 
@@ -182,30 +180,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         // now go over each of them
         ArrayList<Expr> ar = new ArrayList<Expr>();
         makelist(ar, facts);
-        again:
         for(Sig sig: frame.getAllReachableSigs()) {
-            while(sig.isOne!=null && sig.getFields().size()==2) {
-                Field f1 = sig.getFields().get(0); Relation fst = right(a2k(f1)); if (fst==null) break;
-                Field f2 = sig.getFields().get(1); Relation nxt = right(a2k(f2)); if (nxt==null) break;
-                Sig e = findElem(sig, f1, f2);
-                if (e==null || !cmd.additionalExactScopes.contains(e)) break;
-                Expression ee = a2k(e);
-                if (!(ee instanceof Relation)) break;
-                for(int i=0; i+4<ar.size(); i++) {
-                    if (findOrder(e,sig,f1,f2, ar.get(i), ar.get(i+1), ar.get(i+2), ar.get(i+3), ar.get(i+4))) {
-                        Pos pos = ar.get(i).span().merge(ar.get(i+4).span());
-                        rep.debug("Found: util/ordering\n");
-                        // Remove ar[i..i+4]; the remaining elements are not re-arranged
-                        ar.remove(i+4); ar.remove(i+3); ar.remove(i+2); ar.remove(i+1); ar.remove(i);
-                        Relation lst = frame.addRel("", null, frame.query(true, (Relation)ee, false));
-                        totalOrderPredicates.add((Relation)ee); totalOrderPredicates.add(fst); totalOrderPredicates.add(lst); totalOrderPredicates.add(nxt);
-                        Formula f = nxt.totalOrder((Relation)ee, fst, lst);
-                        frame.addFormula(f, pos);
-                        continue again;
-                    }
-                }
-                break;
-            }
             for(Field f:sig.getFields()) if (f.boundingFormula!=null) {
                 Expression sr=a2k(sig), fr=a2k(f);
                 // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
@@ -528,65 +503,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         return x;
     }
 
-    /** Returns y if f.boundingFormula is of the form "all SomeVar: one s | SomeVar.f in y" */
-    private static Expr findY(Sig s, Field f) {
-        Expr x=f.boundingFormula;
-        if (!(x instanceof ExprQuant)) return null;
-        final ExprQuant q=(ExprQuant)x;
-        if (q.op!=ExprQuant.Op.ALL || q.vars.size()!=1) return null;
-        final ExprVar v=q.vars.get(0);
-        x=deNOP(v.expr);
-        if (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.ONEOF) x=((ExprUnary)x).sub;
-        if (!x.isSame(s)) return null;
-        if (!(q.sub instanceof ExprBinary)) return null;
-        ExprBinary in=(ExprBinary)(q.sub);
-        if (in.op!=ExprBinary.Op.IN) return null;
-        if (!in.left.isSame(v.join(f))) return null;
-        x=deNOP(in.right);
-        if (x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.SETOF) x=deNOP(((ExprUnary)x).sub);
-        return x;
-    }
-
-    /** Returns the sig "elem" if field1="all this:s | s.f1 in set elem" and field2="... in elem->elem" */
-    private static Sig findElem(Sig s, Field field1, Field field2) {
-        Expr b1 = findY(s, field1), b2 = findY(s, field2);
-        if (b1 instanceof Sig && b2!=null && b2.isSame(b1.product(b1))) return (Sig)b1; else return null;
-    }
-
-    /**
-     * Returns true if we can determine that "e1 && e2 && e3 && e4 && e5" says "total order on elem".
-     *
-     * <p> In particular, that means:
-     * <br> e1 == elem in First.*Next
-     * <br> e2 == no Next.First
-     * <br> e3 == all e: one elem | (e = First || one Next.e)
-     * <br> e4 == all e: one elem | (e = (elem-(Next.elem)) || one e.Next)
-     * <br> e5 == all e: one elem | (e !in e.^Next)
-     */
-    private static boolean findOrder (Sig elem, Sig ord, Expr first, Expr next, Expr e1, Expr e2, Expr e3, Expr e4, Expr e5) {
-        ExprQuant qt;
-        ExprVar e;
-        first = ord.join(first);
-        next = ord.join(next);
-        if (!elem.in(first.join(next.reflexiveClosure())).isSame(e1)) return false;
-        if (!next.join(first).no().isSame(e2)) return false;
-        if (!(e3 instanceof ExprQuant) || !(e4 instanceof ExprQuant) || !(e5 instanceof ExprQuant)) return false;
-        //
-        qt=(ExprQuant)e3; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
-        e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
-        if (!e.equal(first).or(next.join(e).one()).isSame(qt.sub)) return false;
-        //
-        qt=(ExprQuant)e4; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
-        e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
-        if (!e.equal(elem.minus(next.join(elem))).or(e.join(next).one()).isSame(qt.sub)) return false;
-        //
-        qt=(ExprQuant)e5; if (qt.op!=ExprQuant.Op.ALL || qt.vars.size()!=1) return false;
-        e=qt.vars.get(0); if (!e.expr.isSame(ExprUnary.Op.ONEOF.make(null,elem))) return false;
-        if (!e.in(e.join(next.closure())).not().isSame(qt.sub)) return false;
-        //
-        return true;
-    }
-
     /** If x = SOMETHING->RELATION where SOMETHING.arity==1, then return the RELATION, else return null. */
     private static Relation right(Expression x) {
         if (!(x instanceof BinaryExpression)) return null;
@@ -719,93 +635,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /* Evaluates an ExprCall node. */
     /*=============================*/
 
-    private boolean is_mul(Func f) {
-        // fun mul [n1, n2: Int] : Int {
-        //     let s1 = { p:Int | (n1<0 && p<0 && p>=n1) || (n1>0 && p>0 && p<=n1) } |
-        //     let s2 = { q:Int | (n2<0 && q<0 && q>=n2) || (n2>0 && q>0 && q<=n2) } |
-        //     #(s1->s2)
-        // }
-        if (f.params.size()!=2 || !(f.label.equals("mul") || f.label.endsWith("/mul"))) return false;
-        final Expr cast = deNOP(f.getBody());
-        if (!(cast instanceof ExprUnary) || ((ExprUnary)cast).op != ExprUnary.Op.CAST2SIGINT) return false;
-        final Expr let1 = deNOP(((ExprUnary)cast).sub); if (!(let1 instanceof ExprLet)) return false;
-        final Expr let2 = deNOP(((ExprLet)let1).sub);   if (!(let2 instanceof ExprLet)) return false;
-        final Expr card = deNOP(((ExprLet)let2).sub);
-        if (!(card instanceof ExprUnary) || ((ExprUnary)card).op != ExprUnary.Op.CARDINALITY) return false;
-        final Expr product = deNOP(((ExprUnary)card).sub);
-        if (!(product instanceof ExprBinary) || ((ExprBinary)product).op != ExprBinary.Op.ARROW) return false;
-        final ExprVar s1 = ((ExprLet)let1).var; if (!((ExprBinary)product).left.isSame(s1)) return false;
-        final ExprVar s2 = ((ExprLet)let2).var; if (!((ExprBinary)product).right.isSame(s2)) return false;
-        final Expr q1 = deNOP(s1.expr); if (!(q1 instanceof ExprQuant)) return false;
-        final Expr q2 = deNOP(s2.expr); if (!(q2 instanceof ExprQuant)) return false;
-        final ExprQuant qt1 = (ExprQuant)q1; if (qt1.op != ExprQuant.Op.COMPREHENSION || qt1.vars.size()!=1) return false;
-        final ExprQuant qt2 = (ExprQuant)q2; if (qt2.op != ExprQuant.Op.COMPREHENSION || qt2.vars.size()!=1) return false;
-        final ExprVar n1=f.params.get(0), p=qt1.vars.get(0); if (!p.expr.isSame(Sig.SIGINT.oneOf())) return false;
-        final ExprVar n2=f.params.get(1), q=qt2.vars.get(0); if (!q.expr.isSame(Sig.SIGINT.oneOf())) return false;
-        if (!qt1.sub.isSame(n1.lt(ZERO).and(p.lt(ZERO)).and(p.gte(n1)).or(n1.gt(ZERO).and(p.gt(ZERO)).and(p.lte(n1))))) return false;
-        if (!qt2.sub.isSame(n2.lt(ZERO).and(q.lt(ZERO)).and(q.gte(n2)).or(n2.gt(ZERO).and(q.gt(ZERO)).and(q.lte(n2))))) return false;
-        return true;
-    }
-
-    private boolean is_div(Func f) {
-        // fun div [a, b: Int] : Int {
-        //     let sn = (((a>=0 && b>=0) || (a<0 && b<0)) => 1 else 0-1) |
-        //     let na = (a>0 => 0-a else int[a]) |
-        //     let nb = (b>0 => 0-b else int[b]) |
-        //     let r = div[na-nb, nb] |
-        //     (na=0 || na>nb) => 0 else
-        //     nb=0 => 0-sn else
-        //     na=nb => sn else (sn>0 => 1+r else (0-1)-r)
-        // }
-        if (f.params.size()!=2 || !(f.label.equals("div") || f.label.endsWith("/div"))) return false;
-        final ExprVar a = f.params.get(0), b = f.params.get(1);
-        final Expr cast = deNOP(f.getBody());
-        if (!(cast instanceof ExprUnary) || ((ExprUnary)cast).op != ExprUnary.Op.CAST2SIGINT) return false;
-        final Expr let1 = deNOP(((ExprUnary)cast).sub); if (!(let1 instanceof ExprLet)) return false;
-        final Expr let2 = deNOP(((ExprLet)let1).sub);   if (!(let2 instanceof ExprLet)) return false;
-        final Expr let3 = deNOP(((ExprLet)let2).sub);   if (!(let3 instanceof ExprLet)) return false;
-        final Expr let4 = deNOP(((ExprLet)let3).sub);   if (!(let4 instanceof ExprLet)) return false;
-        final Expr if1  = deNOP(((ExprLet)let4).sub);   if (!(if1  instanceof ExprITE)) return false;
-        final Expr if2  = deNOP(((ExprITE)if1).right);  if (!(if2  instanceof ExprITE)) return false;
-        final Expr if3  = deNOP(((ExprITE)if2).right);  if (!(if3  instanceof ExprITE)) return false;
-        final Expr if4  = deNOP(((ExprITE)if3).right);  if (!(if4  instanceof ExprITE)) return false;
-        final ExprVar sn = ((ExprLet)let1).var; if (!a.gte(ZERO).and(b.gte(ZERO)).or(a.lt(ZERO).and(b.lt(ZERO))).ite(ONE,ZERO.minus(ONE)).isSame(sn.expr)) return false;
-        final ExprVar na = ((ExprLet)let2).var; if (!a.gt(ZERO).ite(ZERO.minus(a), a).isSame(na.expr)) return false;
-        final ExprVar nb = ((ExprLet)let3).var; if (!b.gt(ZERO).ite(ZERO.minus(b), b).isSame(nb.expr)) return false;
-        final ExprVar r  = ((ExprLet)let4).var; if (!f.call(na.minus(nb),nb).isSame(r.expr)) return false;
-        if (!na.equal(ZERO).or(na.gt(nb)).isSame(((ExprITE)if1).cond)) return false; if (!ZERO.isSame(((ExprITE)if1).left)) return false;
-        if (!nb.equal(ZERO)              .isSame(((ExprITE)if2).cond)) return false; if (!ZERO.minus(sn).isSame(((ExprITE)if2).left)) return false;
-        if (!na.equal(nb)                .isSame(((ExprITE)if3).cond)) return false; if (!sn.isSame(((ExprITE)if3).left)) return false;
-        if (!sn.gt(ZERO)                 .isSame(((ExprITE)if4).cond)) return false; if (!ONE.plus(r).isSame(((ExprITE)if4).left)) return false;
-        return ZERO.minus(ONE).minus(r).isSame(((ExprITE)if4).right);
-    }
-
-    private boolean is_rem(Func f) {
-        // fun rem [a, b: Int] : Int {
-        //     int[a] - (a.div[b].mul[b])
-        // }
-        if (f.params.size()!=2 || !(f.label.equals("rem") || f.label.endsWith("/rem"))) return false;
-        final ExprVar a = f.params.get(0), b = f.params.get(1);
-        final Expr cast = deNOP(f.getBody());
-        if (!(cast instanceof ExprUnary) || ((ExprUnary)cast).op != ExprUnary.Op.CAST2SIGINT) return false;
-        final Expr sub = deNOP(((ExprUnary)cast).sub); if (!(sub instanceof ExprBinary)) return false;
-        final ExprBinary bin = (ExprBinary)sub;
-        if (bin.op != ExprBinary.Op.MINUS || !a.cast2int().isSame(bin.left)) return false;
-        final Expr tmp0 = deNOP(bin.right);
-        if (!(tmp0 instanceof ExprUnary) || ((ExprUnary)tmp0).op != ExprUnary.Op.CAST2INT) return false;
-        final Expr tmp1 = deNOP(((ExprUnary)tmp0).sub);
-        if (!(tmp1 instanceof ExprCall)) return false;
-        final ExprCall call1 = (ExprCall)tmp1;
-        if (!is_mul(call1.fun) || !call1.args.get(1).isSame(b)) return false;
-        final Expr tmp2 = deNOP(call1.args.get(0));
-        if (!(tmp2 instanceof ExprCall)) return false;
-        final ExprCall call2 = (ExprCall)tmp2;
-        return is_div(call2.fun) && call2.args.get(0).isSame(a) && call2.args.get(1).isSame(b);
-    }
-
-    /** Caches functions that we have matched to be one of the builtin ones. */
-    private final Map<Func,Pair<Expr,String>> cacheForExprCall = new IdentityHashMap<Func,Pair<Expr,String>>();
-
     /** Caches parameter-less functions to a Kodkod Expression, Kodkod IntExpression, or Kodkod Formula. */
     private final Map<Func,Object> cacheForConstants = new IdentityHashMap<Func,Object>();
 
@@ -814,7 +643,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         final Func f = x.fun;
         final Object candidate = f.params.size()==0 ? cacheForConstants.get(f) : null;
         if (candidate!=null) return candidate;
-        final Pair<Expr,String> cache = cacheForExprCall.get(f);
         final Expr body = f.getBody();
         final int n = f.params.size();
         int maxRecursion = unrolls;
@@ -832,24 +660,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                 return ans;
             }
             maxRecursion--;
-        }
-        if (n==2) if ((cache!=null && cache.a==body && cache.b=="util/integer/mul") || is_mul(f)) {
-            cacheForExprCall.put(f, new Pair<Expr,String>(body, "util/integer/mul"));
-            rep.debug("Found: util/integer/mul\n");
-            final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
-            return a.multiply(b).toExpression();
-        }
-        if (n==2) if ((cache!=null && cache.a==body && cache.b=="util/integer/div") || is_div(f)) {
-            cacheForExprCall.put(f, new Pair<Expr,String>(body, "util/integer/div"));
-            rep.debug("Found: util/integer/div\n");
-            final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
-            return a.divide(b).toExpression();
-        }
-        if (n==2) if ((cache!=null && cache.a==body && cache.b=="util/integer/rem") || is_rem(f)) {
-            cacheForExprCall.put(f, new Pair<Expr,String>(body, "util/integer/rem"));
-            rep.debug("Found: util/integer/rem\n");
-            final IntExpression a = sum(cset(x.args.get(0))), b = sum(cset(x.args.get(1)));
-            return a.modulo(b).toExpression();
         }
         Env<ExprVar,Object> newenv = new Env<ExprVar,Object>();
         for(int i=0; i<n; i++) newenv.put(f.params.get(i), cset(x.args.get(i)));
@@ -870,10 +680,25 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public Object visit(ExprBuiltin x) throws Err {
+        if (x.op == ExprBuiltin.Op.TOTALORDER) {
+            Expression elem = cset(x.args.get(0)), first = cset(x.args.get(1)), next = cset(x.args.get(2));
+            if (elem instanceof Relation && first instanceof Relation && next instanceof Relation) {
+                Relation lst = frame.addRel("", null, frame.query(true, (Relation)elem, false));
+                totalOrderPredicates.add((Relation)elem); totalOrderPredicates.add((Relation)first); totalOrderPredicates.add(lst); totalOrderPredicates.add((Relation)next);
+                return k2pos(((Relation)next).totalOrder((Relation)elem, (Relation)first, lst), x);
+            }
+            Formula f1 = elem.in(first.join(next.reflexiveClosure())); // every element is in the total order
+            Formula f2 = next.join(first).no(); // first element has no predecessor
+            Variable e = Variable.unary("");
+            Formula f3 = e.eq(first).or(next.join(e).one()); // each element (except the first) has one predecessor
+            Formula f4 = e.eq(elem.difference(next.join(elem))).or(e.join(next).one()); // each element (except the last) has one successor
+            Formula f5 = e.in(e.join(next.closure())).not(); // there are no cycles
+            return k2pos(f3.and(f4).and(f5).forAll(e.oneOf(elem)).and(f1).and(f2), x);
+        }
         // This says  no(a&b) and no((a+b)&c) and no((a+b+c)&d)...
         // Emperically this seems to be more efficient than "no(a&b) and no(a&c) and no(b&c)"
-        Formula answer=null;
-        Expression a=null;
+        Formula answer = null;
+        Expression a = null;
         for(Expr arg:x.args) {
             Expression b=cset(arg);
             if (a==null) {a=b;continue;}
@@ -930,7 +755,12 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             case ARROW:
                 s=cset(a); return s.product(cset(b));
             case JOIN:
-                s=cset(a); return s.join(cset(b));
+                a=deNOP(a); s=cset(a); s2=cset(b);
+                if (a instanceof Sig && ((Sig)a).isOne!=null && s2 instanceof BinaryExpression) {
+                    BinaryExpression bin = (BinaryExpression)s2;
+                    if (bin.op()==BinaryExpression.Operator.PRODUCT && bin.left()==s) return bin.right();
+                }
+                return s.join(s2);
             case EQUALS:
                 obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b));}
@@ -1112,31 +942,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public Object visit(ExprQuant x) throws Err {
-        // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
-        if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==1) {
-            ExprVar a=x.vars.get(0);
-            if (a.expr.isSame(Sig.SIGINT.oneOf())) {
-                if (a.gte(ZERO).and(a.plus(ONE).lt(ZERO)).isSame(x.sub)) {
-                    rep.debug("Found: util/integer/max\n");
-                    return A4Solution.SIGINT_MAX;
-                }
-                if (a.lt(ZERO).and(a.minus(ONE).gte(ZERO)).isSame(x.sub)) {
-                    rep.debug("Found: util/integer/min\n");
-                    return A4Solution.SIGINT_MIN;
-                }
-            }
-        }
-        // Special translation that are useful for util/integer.als (and any other places where this expression shows up)
-        if (x.op==ExprQuant.Op.COMPREHENSION && x.vars.size()==2) {
-            ExprVar a=x.vars.get(0), b=x.vars.get(1);
-            if (a.expr.isSame(Sig.SIGINT.oneOf()) && b.expr.isSame(Sig.SIGINT.oneOf())) {
-                if (b.gt(a).and(b.equal(ONE.plus(a))).isSame(x.sub)) {
-                    rep.debug("Found: util/integer/next\n");
-                    return A4Solution.SIGINT_NEXT;
-                }
-            }
-        }
-        // All else, invoke the helper method to translate this quantification expression
         Object ans = visit_qt(x.op, x.vars, x.sub);
         if (ans instanceof Formula) k2pos((Formula)ans, x);
         return ans;

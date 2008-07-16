@@ -236,7 +236,7 @@ public final class Module {
                 Expr e = visitThis(x.args.get(i));
                 temp.add(e);
             }
-            return ExprBuiltin.makeDISJOINT(x.pos, x.closingBracket, temp.makeConst());
+            return ExprBuiltin.make(x.pos, x.closingBracket, x.op, temp.makeConst());
         }
 
         /** {@inheritDoc} */

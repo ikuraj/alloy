@@ -121,7 +121,18 @@ final class CompFilter implements Scanner {
          }
         undo.add(0,b);
        }
-      if (a.sym==SIGINT)
+      if (a.sym==PRED)
+       {
+        b=myread();
+        if (b.sym==SLASH)
+         {
+          c=myread();
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("totalOrder")) { a.pos=a.pos.merge(c.pos); return last=change(a, TOTALORDER); }
+          undo.add(0,c);
+         }
+        undo.add(0,b);
+       }
+      if (a.sym==FUN)
        {
         b=myread();
         if (b.sym==SLASH)
@@ -135,6 +146,7 @@ final class CompFilter implements Scanner {
           if (c.sym==ID && ((ExprVar)(c.value)).label.equals("min")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTMIN); }
           if (c.sym==ID && ((ExprVar)(c.value)).label.equals("max")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTMAX); }
           if (c.sym==ID && ((ExprVar)(c.value)).label.equals("next")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTNEXT); }
+          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("totalOrder")) { a.pos=a.pos.merge(c.pos); return last=change(a, TOTALORDER); }
           undo.add(0,c);
          }
         undo.add(0,b);

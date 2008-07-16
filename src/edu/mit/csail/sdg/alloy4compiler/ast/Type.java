@@ -656,6 +656,38 @@ public final class Type implements Iterable<Type.ProductType> {
     }
 
     /**
+     * Returns a new type { A in this | A.artiy==1 }
+     *
+     * <p>  ReturnValue.is_int  == false
+     * <br> ReturnValue.is_bool == false
+     *
+     * <p> If this.size()==0, or does not contain any ProductType entries of the given arity, then result.size()==0
+     */
+    public Type pickUnary() {
+        if ((arities & (1<<1))==0) return EMPTY;
+        if (!is_int && !is_bool && arities==(1<<1)) return this;
+        TempList<ProductType> ee=new TempList<ProductType>();
+        for(ProductType x:entries) if (x.types.length==1) ee.add(x);
+        return make(false, false, ee.makeConst(), (1<<1));
+    }
+
+    /**
+     * Returns a new type { A in this | A.artiy==2 }
+     *
+     * <p>  ReturnValue.is_int  == false
+     * <br> ReturnValue.is_bool == false
+     *
+     * <p> If this.size()==0, or does not contain any ProductType entries of the given arity, then result.size()==0
+     */
+    public Type pickBinary() {
+        if ((arities & (1<<2))==0) return EMPTY;
+        if (!is_int && !is_bool && arities==(1<<2)) return this;
+        TempList<ProductType> ee=new TempList<ProductType>();
+        for(ProductType x:entries) if (x.types.length==2) ee.add(x);
+        return make(false, false, ee.makeConst(), (1<<2));
+    }
+
+    /**
      * Returns a new type { A | A is binary and ~A is in this }
      *
      * <p>  ReturnValue.is_int  == false

@@ -6,37 +6,20 @@ module util/integer
  * using the 2's complement arithmetic.
  */
 
-fun add [n1, n2: Int] : Int { int n1 + int n2 }
+fun add [n1, n2: Int] : Int { n1 fun/add n2 }
 
-fun sub [n1, n2: Int] : Int { Int [int n1 - int n2] }
+fun sub [n1, n2: Int] : Int { n1 fun/sub n2 }
 
-fun mul [n1, n2: Int] : Int {
-   // Note: the translator recognizes this method and provides a much more efficient translation
-   let s1 = { x:Int | (n1<0 && x<0 && x>=n1) || (n1>0 && x>0 && x<=n1) } |
-   let s2 = { x:Int | (n2<0 && x<0 && x>=n2) || (n2>0 && x>0 && x<=n2) } |
-   #(s1->s2)
-}
+fun mul [n1, n2: Int] : Int { n1 fun/mul n2 }
 
 // Performs the division with "round to zero" semantics, except the following 3 cases
 // 1) if a is 0, then it returns 0
 // 2) else if b is 0, then it returns 1 if a is negative and -1 if a is positive
 // 3) else if a is the smallest negative integer, and b is -1, then it returns a
-fun div [a, b: Int] : Int {
-   // Note: the translator recognizes this method and provides a much more efficient translation
-   let sn = (((a>=0 && b>=0) || (a<0 && b<0)) => 1 else 0-1) |
-   let na = (a>0 => 0-a else int[a]) |
-   let nb = (b>0 => 0-b else int[b]) |
-   let r = div[na-nb, nb] |
-   (na=0 || na>nb) => 0 else
-   nb=0 => 0-sn else
-   na=nb => sn else (sn>0 => 1+r else (0-1)-r)
-}
+fun div [n1, n2: Int] : Int { n1 fun/div n2 }
 
-/* answer is defined to be the unique integer that satisfies "a = ((a/b)*b) + remainder" */
-fun rem [a, b: Int] : Int {
-   // Note: the translator recognizes this method and provides a much more efficient translation
-   int[a] - (a.div[b].mul[b])
-}
+// answer is defined to be the unique integer that satisfies "a = ((a/b)*b) + remainder"
+fun rem [n1, n2: Int] : Int { n1 fun/rem n2 }
 
 /* negate */
 fun negate [n: Int] : Int { 0 - n }
@@ -93,13 +76,13 @@ fun elem2int[e: univ, next: univ->univ] : lone Int {
 }
 
 // returns the largest integer in the current bitwidth
-fun max:one Int { {a:Int | a>=0 && (a+1)<0} }
+fun max:one Int { fun/max }
 
 // returns the smallest integer in the current bitwidth
-fun min:one Int { {a:Int | a<0 && (a-1)>=0} }
+fun min:one Int { fun/min }
 
 // maps each integer (except max) to the integer after it
-fun next:Int->Int { {a,b:Int | b>a && b=1+a} }
+fun next:Int->Int { fun/next }
 
 // maps each integer (except min) to the integer before it
 fun prev:Int->Int { ~next }

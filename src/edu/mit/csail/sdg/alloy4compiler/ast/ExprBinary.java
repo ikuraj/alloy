@@ -59,7 +59,7 @@ public final class ExprBinary extends Expr {
     public final Expr right;
 
     /** Caches the span() result. */
-    private Pos span=null;
+    private Pos span = null;
 
     //============================================================================================================//
 
@@ -242,8 +242,8 @@ public final class ExprBinary extends Expr {
                 break;
               }
               default: {
-                left=left.typecheck_as_set();
-                right=right.typecheck_as_set();
+                left = left.typecheck_as_set();
+                right = right.typecheck_as_set();
               }
             }
             Err e=null;
@@ -268,8 +268,7 @@ public final class ExprBinary extends Expr {
                      if (left.type.is_int && right.type.is_int) type=Type.makeInt(type);
                      if (type!=EMPTY) break;
                   }
-                  e=error(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions."
-                    , left, right);
+                  e=error(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions.", left, right);
                   break;
               case IN:
                   type=(left.type.hasCommonArity(right.type)) ? Type.FORMULA : EMPTY;

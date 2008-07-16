@@ -71,7 +71,7 @@ public class Simplifier {
              TupleSet ub = sol.query(true, r, false), lb = sol.query(false, r, false), t = sol.approximate(b);
              t.retainAll(ub);
              if (!t.containsAll(lb)) { rep.debug("Comment: Simplify "+a+" "+ub.size()+"->false\n"); return false; } // This means the upperbound is shrunk BELOW the lowerbound.
-             if (t.size() < ub.size()) { rep.debug("Comment: Simplify "+a+" "+ub.size()+"->"+lb.size()+"\n"); sol.shrink(r,lb,t); }
+             if (t.size() < ub.size()) { rep.debug("Comment: Simplify "+a+" "+ub.size()+"->"+t.size()+"\n"); sol.shrink(r,lb,t); }
           } catch(Throwable ex) {
              rep.debug("Comment: Simplify "+a+" exception: "+ex+"\n"+MailBug.dump(ex).trim()+"\n"); // Not fatal; let's report it to the debug() reporter
           }
