@@ -108,6 +108,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
+import edu.mit.csail.sdg.alloy4compiler.sim.SimContext;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
@@ -1586,7 +1587,10 @@ public final class SimpleGUI implements ComponentListener {
             }
             try {
                 Expr e = CompUtil.parseOneExpression_fromString(root, input);
-                return ans.eval(e).toString();
+                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
+                   return (new SimContext(ans.getBitwidth())).visitThis(e).toString();
+                else
+                   return ans.eval(e).toString();
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");
             }
