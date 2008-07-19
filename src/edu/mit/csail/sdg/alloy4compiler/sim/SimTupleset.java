@@ -79,7 +79,7 @@ public final class SimTupleset {
     /** Returns the "next" relation among all integers between min and max. */
     public static SimTupleset next(int min, int max) {
        if (min>=max) return EMPTY;
-       List<Object[]> ans = new ArrayList<Object[]>(max-min);
+       List<Object[]> ans = new ArrayList<Object[]>((max-min)>0 ? (max-min) : 16);
        Object MIN = canon(min);
        while(min<max) { Object ADD=canon(min+1); ans.add(new Object[]{MIN,ADD}); MIN=ADD; min++; }
        return new SimTupleset(ans);
@@ -209,11 +209,12 @@ public final class SimTupleset {
     /** Return the cartesian product of this and that. */
     public SimTupleset product(SimTupleset that) throws ErrorType {
        if (tuples.size()==0 || that.tuples.size()==0) return EMPTY;
-       List<Object[]> ans = new ArrayList<Object[]>(tuples.size() * that.tuples.size()); // FIXTHIS: overflow? overflow is okay; the capacity is only advisory
+       int mul = tuples.size() * that.tuples.size();
+       List<Object[]> ans = new ArrayList<Object[]>(mul>0 ? mul : 16); // the capacity is only advisory
        for(Object[] a: tuples) for(Object[] b: that.tuples) {
           Object[] c = new Object[a.length + b.length];
-          for(int i=0; i<a.length; i++) c[i]=a[i];
-          for(int i=0; i<b.length; i++) c[i+a.length]=b[i];
+          for(int i=0; i<a.length; i++) c[i] = a[i];
+          for(int i=0; i<b.length; i++) c[i+a.length] = b[i];
           ans.add(c); // We don't have to check for duplicates, because we assume every tuple in "this" has same arity, and every tuple in "that" has same arity
        }
        return new SimTupleset(ans);
