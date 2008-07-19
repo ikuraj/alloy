@@ -28,8 +28,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -140,13 +138,6 @@ public final class SimContext extends VisitReturn<Object> {
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
     }
 
-    /** Helper method that adds if new. */
-    private void add(List<Object[]> list, Object[] tuple, int left, int right) {
-        Object newtuple[] = new Object[left+right];
-        if (left>0) { for(int i=0; i<left; i++) newtuple[i]=tuple[i]; } else { for(int i=0; i<right; i++) newtuple[i]=tuple[i+tuple.length-right]; }
-        list.add(newtuple);
-    }
-
     /** Helper method that evaluates the formula "a in b" */
     private boolean isIn(SimTupleset a, Expr right) throws Err {
         if (right instanceof ExprUnary) {
@@ -168,20 +159,20 @@ public final class SimContext extends VisitReturn<Object> {
     private boolean isInBinary(SimTupleset R, ExprBinary ab) throws Err {
        // Special check for ISSEQ_ARROW_LONE
        if (ab.op == ExprBinary.Op.ISSEQ_ARROW_LONE) {
-          List<Object[]> list = new ArrayList<Object[]>(R.tuples);
+          List<Object> list = R.getAllAtoms(0);
           Integer next = 0;
           while(list.size() > 0) {
              boolean found = false;
-             for(int n=list.size(), i=0; i<n; i++) if (next.equals(list.get(i)[0])) { list.set(i, list.get(n-1)); list.remove(n-1); n--; found=true; }
+             for(int n=list.size(), i=0; i<n; i++) if (next.equals(list.get(i))) { list.set(i, list.get(n-1)); list.remove(n-1); n--; found=true; }
              if (!found) return false;
              next++;
              if (next<0 && list.size()>0) return false; // shouldn't happen, but if it wraps around and yet list.size()>0 then we indeed have illegal tuples, so we return false
           }
        }
        // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
-       for(Object[] a: cset(ab.left).tuples) {
-         SimTupleset ans = new SimTupleset();
-         for(Object[] r: R.tuples) for(int i=0; ; i++) if (i==a.length) {add(ans.tuples, r, 0, r.length-i); break;} else if (a[i]!=r[i]) break;
+       SimTupleset left = cset(ab.left);
+       for(int i=0; i<left.size(); i++) {
+         SimTupleset ans = R.beginWith(left, i);
          switch(ab.op) {
             case ISSEQ_ARROW_LONE:
             case ANY_ARROW_LONE: case SOME_ARROW_LONE: case ONE_ARROW_LONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
@@ -191,9 +182,9 @@ public final class SimContext extends VisitReturn<Object> {
          if (!isIn(ans, ab.right)) return false;
        }
        // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
-       for(Object[] b: cset(ab.right).tuples) {
-         SimTupleset ans = new SimTupleset();
-         for(Object[] r: R.tuples) for(int i=0, j=r.length-b.length; ; i++, j++) if (i==b.length) {add(ans.tuples, r, r.length-i, 0); break;} else if (b[i]!=r[j]) break;
+       SimTupleset right = cset(ab.right);
+       for(int i=0; i<right.size(); i++) {
+         SimTupleset ans = R.endWith(right, i);
          switch(ab.op) {
             case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
             case ONE_ARROW_ANY:  case ONE_ARROW_SOME:  case ONE_ARROW_ONE:  case ONE_ARROW_LONE:  if (!(ans.size()==1)) return false; else break;
@@ -337,55 +328,23 @@ public final class SimContext extends VisitReturn<Object> {
         return ans;
     }
 
-    private Iterator<SimTupleset> loneIterator(final SimTupleset e) {
-        return new Iterator<SimTupleset>() {
-            private int i = (-1); // next element to dish out
-            public SimTupleset next() {
-                if (i<0) {i++; return SimTupleset.EMPTY;} else if (i>=e.size()) throw new NoSuchElementException(); else i++;
-                SimTupleset ans = new SimTupleset();
-                ans.tuples.add(e.tuples.get(i-1));
-                return ans;
-            }
-            public boolean hasNext() { return i < e.size(); }
-            public void remove() { throw new UnsupportedOperationException(); }
-        };
-    }
-
-    private Iterator<SimTupleset> powersetIterator(final SimTupleset e) {
-        return new Iterator<SimTupleset>() {
-            private boolean eof = false;
-            private boolean in[] = new boolean[e.size()]; // next element to dish out
-            public SimTupleset next() {
-                if (eof) throw new NoSuchElementException();
-                SimTupleset ans = new SimTupleset();
-                for(int i=0; i<e.size(); i++) if (in[i]) ans.tuples.add(e.tuples.get(i));
-                for(int i=0; ; i++) if (i==e.size()) {eof=true;break;} else if (!in[i]) {in[i]=true; break;} else {in[i]=false;}
-                return ans;
-            }
-            public boolean hasNext() { return !eof; }
-            public void remove() { throw new UnsupportedOperationException(); }
-        };
-    }
-
     private int enumerate(List<Object[]> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
        final int n = x.vars.size();
        final ExprVar v = x.vars.get(i);
        final SimTupleset e = cset(v.expr);
-       final int mode;
        final Iterator<SimTupleset> it;
-       if      (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.LONEOF) { mode=0; it=loneIterator(e); }
-       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.ONEOF)  { mode=1; it=loneIterator(e); }
-       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.SOMEOF) { mode=2; it=powersetIterator(e); }
-       else                                                                      { mode=3; it=powersetIterator(e); }
+       if      (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.LONEOF) it = e.loneOf();
+       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.ONEOF)  it = e.oneOf();
+       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.SOMEOF) it = e.someOf();
+       else                                                                      it = e.setOf();
        while(it.hasNext()) {
           final SimTupleset binding = it.next();
-          if (binding.size()==0 && (mode==1 || mode==2)) continue;
-          if (!isIn(binding, v.expr)) continue;
+          if (v.expr.mult==2 && !isIn(binding, v.expr)) continue;
           env.put(v, binding);
           if (i<n-1) sum = enumerate(store, sum, x, body, i+1);
              else if (x.op==ExprQuant.Op.SUM) sum += cint(body);
              else if (x.op!=ExprQuant.Op.COMPREHENSION) { sum += cform(body)?1:0; if (sum>=2) return 2; } // no need to enumerate further
-             else if (cform(body)) { Object[] add = new Object[n]; for(int j=0; j<n; j++) add[j]=((SimTupleset)(env.get(x.vars.get(j)))).tuples.get(0)[0]; store.add(add); }
+             else if (cform(body)) { Object[] add = new Object[n]; for(int j=0; j<n; j++) add[j]=((SimTupleset)(env.get(x.vars.get(j)))).getAtom(); store.add(add); }
           env.remove(v);
        }
        return sum;
@@ -394,9 +353,9 @@ public final class SimContext extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprQuant x) throws Err {
         if (x.op == ExprQuant.Op.COMPREHENSION) {
-           SimTupleset ans = new SimTupleset();
-           enumerate(ans.tuples, 0, x, x.sub, 0);
-           return ans;
+           List<Object[]> ans = new ArrayList<Object[]>();
+           enumerate(ans, 0, x, x.sub, 0);
+           return SimTupleset.make(ans);
         }
         if (x.op == ExprQuant.Op.ALL)  return enumerate(null, 0, x, x.sub.not(), 0) == 0;
         if (x.op == ExprQuant.Op.NO)   return enumerate(null, 0, x, x.sub,       0) == 0;

@@ -24,8 +24,12 @@ package edu.mit.csail.sdg.alloy4compiler.sim;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.WeakHashMap;
+import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 
 /** Immutable; represents a tupleset. */
@@ -44,29 +48,45 @@ public final class SimTupleset {
        return x;
     }
 
-    /** The list of tuples; each tuple must have arity 1 or above; must contain only same-arity tuples; all atoms in it must be canonical; must not contain duplicate tuples; each tuple (once inserted) must NEVER be modified. */
-    final ArrayList<Object[]> tuples;
+    /** The list of tuples; each tuple must have arity 1 or above; must contain only same-arity tuples; all atoms in it must be canonical; must not contain duplicate tuples; everything (once inserted) must not be modified */
+    private final List<Object[]> tuples;
 
     /** Construct an empty tupleset. */
-    public SimTupleset() { tuples = new ArrayList<Object[]>(); }
+    private SimTupleset() { this.tuples = new ArrayList<Object[]>(); }
 
-    /** Construct an empty tupleset with the given estimated capacity.. */
-    private SimTupleset(int capacity) { tuples = new ArrayList<Object[]>((capacity>0) ? capacity : 0); }
+    /** Construct a tupleset based on the given list (caller must never modify the list or its contents after this) */
+    private SimTupleset(List<Object[]> tuples) { this.tuples = tuples; }
 
-    /** Returns a tupleset containing the given atom */
-    public static SimTupleset wrap(Object atom) { SimTupleset ans = new SimTupleset(1);  ans.tuples.add(new Object[]{canon(atom)});  return ans; }
+    /** Construct a tupleset containing the given tuple (caller must never modify the tuple or its contents after this) */
+    private SimTupleset(Object[] tuple) { this.tuples = new ArrayList<Object[]>(1); this.tuples.add(tuple); }
+
+    /** Make a tupleset containing the given atom */
+    public static SimTupleset wrap(Object atom) { return new SimTupleset(new Object[]{canon(atom)}); }
+
+    /** Make a tupleset containing the given list of tuples. */
+    public static SimTupleset make(List<Object[]> tuples) {
+        if (tuples.size()==0) return EMPTY;
+        List<Object[]> ans = new ArrayList<Object[]>(tuples.size());
+        for(int i=0; i<tuples.size(); i++) {
+           Object[] src = tuples.get(i);
+           Object[] dst = new Object[src.length];
+           for(int j=0; j<dst.length; j++) dst[j] = src[j];
+           ans.add(dst);
+        }
+        return new SimTupleset(ans);
+    }
 
     /** Returns the "next" relation among all integers between min and max. */
     public static SimTupleset next(int min, int max) {
        if (min>=max) return EMPTY;
-       SimTupleset ans = new SimTupleset(max-min);
+       List<Object[]> ans = new ArrayList<Object[]>(max-min);
        Object MIN = canon(min);
-       while(min<max) { Object ADD=canon(min+1); ans.tuples.add(new Object[]{MIN,ADD}); MIN=ADD; min++; }
-       return ans;
+       while(min<max) { Object ADD=canon(min+1); ans.add(new Object[]{MIN,ADD}); MIN=ADD; min++; }
+       return new SimTupleset(ans);
     }
 
     /** Prebuilt tupleset containing no tuples. */
-    public static final SimTupleset EMPTY = new SimTupleset(0);
+    public static final SimTupleset EMPTY = new SimTupleset();
 
     /** Prebuilt tupleset containing the atom Boolean.TRUE */
     public static final SimTupleset TRUE = wrap(Boolean.TRUE);
@@ -76,8 +96,18 @@ public final class SimTupleset {
 
     // Common operations
 
-    /** Returns the index position if this tupleset contains the given tuple (or return -1 if not found) */
-    private int find(Object[] that) {
+    /** Returns the index position if the list of tuples contains the tuple (a,b) (or return -1 if not found) */
+    private static int find(List<Object[]> tuples, Object a, Object b) {
+       for(int i=tuples.size()-1; i >= 0; i--) {
+          Object[] x = tuples.get(i);
+          if (x.length!=2) return -1; // we assume if this tupleset is nonempty, it will only contain tuples of same arity
+          if (x[0]==a && x[1]==b) return i;
+       }
+       return -1;
+    }
+
+    /** Returns the index position if the list of tuples contains the given tuple (or return -1 if not found) */
+    private static int find(List<Object[]> tuples, Object[] that) {
        for(int i=tuples.size()-1; i >= 0; i--) {
           Object[] x = tuples.get(i);
           if (x.length!=that.length) return -1; // we assume if this tupleset is nonempty, it will only contain tuples of same arity
@@ -88,39 +118,7 @@ public final class SimTupleset {
 
     /** Returns true if this tupleset contains the given tuple. */
     public boolean contains(Object[] that) {
-       return find(that) >= 0;
-    }
-
-    /** Returns true if this tupleset contains the given tuple (a, b). */
-    private boolean contains(Object a, Object b) {
-       for(int i=tuples.size()-1; i >= 0; i--) {
-          Object[] x = tuples.get(i);
-          if (x.length!=2) return false; // we assume if this tupleset is nonempty, it will only contain tuples of same arity
-          if (x[0]==a && x[1]==b) return true;
-       }
-       return false;
-    }
-
-    /** Return a copy of this tupleset; this is private since SimTupleset objects are immutable outside of this class. */
-    private SimTupleset dup() {
-       SimTupleset ans = new SimTupleset(tuples.size());
-       ans.tuples.addAll(tuples);
-       return ans;
-    }
-
-    /** Sum up all the integer atoms in this tupleset. */
-    public int sum() {
-       int ans = 0;
-       for(Object[] t: tuples) { if (t.length==1 && t[0] instanceof Integer) ans += ((Integer)(t[0])); }
-       return ans;
-    }
-
-    /** Return the identity over this tupleset (assuming this tupleset contains only unary tuples) */
-    public SimTupleset iden() throws ErrorType {
-       if (tuples.size() == 0) return EMPTY;
-       SimTupleset ans = new SimTupleset(tuples.size());
-       for(Object[] x: tuples) ans.tuples.add(new Object[]{x[0], x[0]}); // since "this" has no duplicate tuples, "ans" will not have duplicate tuples either
-       return ans;
+       return find(tuples, that) >= 0;
     }
 
     /** Returns true if this equals that. */
@@ -141,91 +139,109 @@ public final class SimTupleset {
        return true;
     }
 
+    /** Sum up all the integer atoms in this tupleset (assuming this tupleset contains only unary tuples) */
+    public int sum() {
+       int ans = 0;
+       for(Object[] t: tuples) if (t[0] instanceof Integer) ans += ((Integer)(t[0]));
+       return ans;
+    }
+
+    /** Return a copy of this tupleset's list. */
+    private List<Object[]> dup() { return new ArrayList<Object[]>(tuples); }
+
+    /** Return the identity over this tupleset (assuming this tupleset contains only unary tuples) */
+    public SimTupleset iden() throws ErrorType {
+       if (tuples.size() == 0) return EMPTY;
+       List<Object[]> ans = new ArrayList<Object[]>(tuples.size());
+       for(Object[] x: tuples) ans.add(new Object[]{x[0], x[0]}); // since "this" has no duplicate tuples, "ans" will not have duplicate tuples either
+       return new SimTupleset(ans);
+    }
+
     /** Return the relational override of this and that. */
     public SimTupleset override(SimTupleset that) throws ErrorType {
        if (tuples.size()==0) return that; else if (that.tuples.size()==0) return this;
-       SimTupleset ans = new SimTupleset();
+       List<Object[]> ans = new ArrayList<Object[]>();
        again:
        for(Object[] x: this.tuples) {
           for(int j=that.tuples.size()-1; j>=0; j--) if (x[0]==this.tuples.get(j)[0]) continue again;
-          ans.tuples.add(x);
+          ans.add(x);
        }
-       for(Object[] x: that.tuples) if (!ans.contains(x)) {
-          ans.tuples.add(x);
+       for(Object[] x: that.tuples) if (find(ans, x)<0) {
+          ans.add(x);
        }
-       return ans.tuples.size()==0 ? EMPTY : ans;
+       return ans.size()==0 ? EMPTY : new SimTupleset(ans);
     }
 
     /** Return the union of this and that. */
     public SimTupleset union(SimTupleset that) throws ErrorType {
        if (this.tuples.size() < that.tuples.size()) return that.union(this);
        if (tuples.size()==0) return that; else if (that.tuples.size()==0) return this;
-       SimTupleset ans = null;
+       List<Object[]> ans = null;
        for(Object[] x: that.tuples) if (!contains(x)) {
           if (ans == null) ans = dup();
-          ans.tuples.add(x);
+          ans.add(x);
        }
-       return ans==null ? this : ans;
+       return ans==null ? this : new SimTupleset(ans);
     }
 
     /** Return the difference of this and that. */
     public SimTupleset difference(SimTupleset that) throws ErrorType {
        if (tuples.size()==0) return EMPTY; else if (that.tuples.size()==0) return this;
-       SimTupleset ans = null;
+       List<Object[]> ans = null;
        for(Object[] x: that.tuples) {
-          int i = (ans == null ? this.find(x) : ans.find(x));
+          int i = (ans == null ? find(tuples, x) : find(ans, x));
           if (i>=0) {
              if (ans == null) ans = dup();
-             ans.tuples.remove(i);
+             ans.remove(i);
           }
        }
-       return ans==null ? this : ans;
+       return ans==null ? this : new SimTupleset(ans);
     }
 
     /** Return the transpose of this tupleset (assuming this tupleset contains only binary tuples) */
     public SimTupleset transpose() throws ErrorType {
        if (tuples.size() == 0) return EMPTY;
-       SimTupleset ans = new SimTupleset(tuples.size());
-       for(Object[] x: tuples) ans.tuples.add(new Object[]{x[1], x[0]}); // since "this" has no duplicate tuples, "ans" will not have duplicate tuples either
-       return ans;
+       List<Object[]> ans = new ArrayList<Object[]>(tuples.size());
+       for(Object[] x: tuples) ans.add(new Object[]{x[1], x[0]}); // since "this" has no duplicate tuples, "ans" will not have duplicate tuples either
+       return new SimTupleset(ans);
     }
 
     /** Return the cartesian product of this and that. */
     public SimTupleset product(SimTupleset that) throws ErrorType {
        if (tuples.size()==0 || that.tuples.size()==0) return EMPTY;
-       SimTupleset ans = new SimTupleset(tuples.size() * that.tuples.size()); // overflow is okay; the capacity is only advisory
+       List<Object[]> ans = new ArrayList<Object[]>(tuples.size() * that.tuples.size()); // FIXTHIS: overflow? overflow is okay; the capacity is only advisory
        for(Object[] a: tuples) for(Object[] b: that.tuples) {
           Object[] c = new Object[a.length + b.length];
           for(int i=0; i<a.length; i++) c[i]=a[i];
           for(int i=0; i<b.length; i++) c[i+a.length]=b[i];
-          ans.tuples.add(c); // We don't have to check for duplicates, because we assume every tuple in "this" has same arity, and every tuple in "that" has same arity
+          ans.add(c); // We don't have to check for duplicates, because we assume every tuple in "this" has same arity, and every tuple in "that" has same arity
        }
-       return ans;
+       return new SimTupleset(ans);
     }
 
     /** Return the relational join between this and that (assuming this.isEmpty() or that.isEmpty() or (this.arity + that.arity > 2)) */
     public SimTupleset join(SimTupleset that) {
        if (tuples.size()==0 || that.tuples.size()==0) return EMPTY;
        Object[] z = null;
-       SimTupleset ans = null;
+       List<Object[]> ans = null;
        for(Object[] x: tuples) for(Object[] y: that.tuples) if (x[x.length-1]==y[0]) {
-          if (ans==null) ans = new SimTupleset();
+          if (ans == null) ans = new ArrayList<Object[]>();
           if (z==null) z = new Object[x.length + y.length - 2]; // try to reuse the array if possible
           for(int i=0; i<x.length-1; i++) z[i]=x[i];
           for(int i=0; i<y.length-1; i++) z[i+x.length-1]=y[i+1];
-          if (!ans.contains(z)) { ans.tuples.add(z); z=null; } // if we add "z" to the tupleset, we set z=null so that we don't reuse the old array
+          if (find(ans, z)<0) { ans.add(z); z=null; } // if we add "z" to the tupleset, we set z=null so that we don't reuse the old array
        }
-       return ans==null ? EMPTY : ans;
+       return ans==null ? EMPTY : new SimTupleset(ans);
     }
 
     /** Return the intersection of this and that. */
     public SimTupleset intersect(SimTupleset that) {
        if (tuples.size()==0 || that.tuples.size()==0) return EMPTY;
-       SimTupleset ans = new SimTupleset(size() < that.size() ? size() : that.size());
-       for(int n=that.tuples.size(), i=0; i<n; i++) if (contains(that.tuples.get(i))) ans.tuples.add(that.tuples.get(i));
-       if (ans.tuples.size()==0) return EMPTY;
-       if (ans.tuples.size()==this.tuples.size()) return this;
-       if (ans.tuples.size()==that.tuples.size()) return that; else return ans;
+       List<Object[]> ans = new ArrayList<Object[]>(size() < that.size() ? size() : that.size());
+       for(int n=that.tuples.size(), i=0; i<n; i++) if (contains(that.tuples.get(i))) ans.add(that.tuples.get(i));
+       if (ans.size()==0) return EMPTY;
+       if (ans.size()==this.tuples.size()) return this;
+       if (ans.size()==that.tuples.size()) return that; else return new SimTupleset(ans);
     }
 
     /** Return true if the intersection of this and that is nonempty. */
@@ -245,7 +261,7 @@ public final class SimTupleset {
        if (elem.size()==1) return elem.arity()==1 && first.eq(elem) && size()==0;
        if (first.size()!=1 || first.arity()!=1 || elem.arity()!=1 || arity()!=2 || size()!=elem.size()-1) return false;
        Object e = first.tuples.get(0)[0];
-       List<Object> elems = new ArrayList<Object>(elem.size()); for(int i=0; i<elem.size(); i++) elems.add(elem.tuples.get(0)[0]);
+       List<Object> elems = new ArrayList<Object>(elem.size()); for(int i=0; i<elem.size(); i++) elems.add(elem.tuples.get(i)[0]);
        List<Object[]> next = new ArrayList<Object[]>(tuples);
        while(true) {
           // "e" must be in elems; if so, remove it from elems
@@ -260,30 +276,29 @@ public final class SimTupleset {
     /** Returns this<:that (assuming this tupleset contains only unary tuples) */
     public SimTupleset domain(SimTupleset that) {
        if (tuples.size()==0 || that.tuples.size()==0) return EMPTY;
-       SimTupleset ans = new SimTupleset(that.size());
+       List<Object[]> ans = new ArrayList<Object[]>(that.size());
        for(int n=that.tuples.size(), i=0; i<n; i++) {
           Object[] x = that.tuples.get(i);
-          for(int j=this.tuples.size()-1; j>=0; j--) if (x[0]==this.tuples.get(j)[0]) { ans.tuples.add(x); break; }
+          for(int j=this.tuples.size()-1; j>=0; j--) if (x[0]==this.tuples.get(j)[0]) { ans.add(x); break; }
        }
-       return ans==null ? EMPTY : (ans.tuples.size()==that.tuples.size() ? that : ans);
+       return ans==null ? EMPTY : (ans.size()==that.tuples.size() ? that : new SimTupleset(ans));
     }
 
     /** Returns this:>that (assuming that tupleset contains only unary tuples) */
     public SimTupleset range(SimTupleset that) {
        if (tuples.size()==0 || that.tuples.size()==0) return EMPTY;
-       SimTupleset ans = new SimTupleset(this.size());
+       List<Object[]> ans = new ArrayList<Object[]>(this.size());
        for(int n=this.tuples.size(), i=0; i<n; i++) {
           Object[] x = this.tuples.get(i);
-          for(int j=that.tuples.size()-1; j>=0; j--) if (x[x.length-1]==that.tuples.get(j)[0]) { ans.tuples.add(x); break; }
+          for(int j=that.tuples.size()-1; j>=0; j--) if (x[x.length-1]==that.tuples.get(j)[0]) { ans.add(x); break; }
        }
-       return ans==null ? EMPTY : (ans.tuples.size()==this.tuples.size() ? this : ans);
+       return ans==null ? EMPTY : (ans.size()==this.tuples.size() ? this : new SimTupleset(ans));
     }
 
     /** Returns the closure of this tupleset (assuming this tupleset contains only binary tuples) */
     public SimTupleset closure() throws ErrorType {
        if (tuples.size()==0) return EMPTY;
-       SimTupleset ans = dup();
-       ArrayList<Object[]> ar = ans.tuples;
+       List<Object[]> ar = dup();
        while(true) {
           int n = ar.size();
           for(int i=0; i<n; i++) {
@@ -292,15 +307,106 @@ public final class SimTupleset {
              for(int j=0; j<n; j++) if (i!=j) { // left[0]!=left[1], thus "ar[i].ar[i]" won't add any new tuple to the final answer
                 Object[] right = ar.get(j);
                 if (right[0]==right[1]) continue; // whatever "left" is, "left.right" won't add any new tuple to the final answer
-                if (left[1]==right[0] && !ans.contains(left[0], right[1])) ans.tuples.add(new Object[]{left[0], right[1]});
+                if (left[1]==right[0] && find(ar, left[0], right[1])<0) ar.add(new Object[]{left[0], right[1]});
              }
           }
-          if (n == ar.size()) return ans.tuples.size()==tuples.size() ? this : ans; // we went through the loop without making any change, so we're done
+          if (n == ar.size()) return ar.size()==tuples.size() ? this : new SimTupleset(ar); // we went through the loop without making any change, so we're done
        }
+    }
+
+    /** Return the set of tuples which begins with the that.tuples.get(i) */
+    public SimTupleset beginWith(SimTupleset that, int i) {
+        Object[] x = that.tuples.get(i);
+        List<Object[]> ans = new ArrayList<Object[]>();
+        for(Object[] r: tuples) for(int a=0; ; a++) {
+            if (a<x.length) { if (x[a]!=r[a]) break; else continue; }
+            Object newtuple[] = new Object[r.length - a];
+            for(int c=0; c<newtuple.length; c++) newtuple[c] = r[c + r.length - newtuple.length];
+            ans.add(newtuple);
+            break;
+        }
+        return new SimTupleset(ans);
+    }
+
+    /** Return the set of tuples which ends with the that.tuples.get(i) */
+    public SimTupleset endWith(SimTupleset that, int i) {
+        Object[] x = that.tuples.get(i);
+        List<Object[]> ans = new ArrayList<Object[]>();
+        for(Object[] r: tuples) for(int a=0, b=r.length-x.length; ; a++, b++) {
+            if (a<x.length) { if (x[a]!=r[b]) break; else continue; }
+            Object newtuple[] = new Object[r.length - a];
+            for(int c=0; c<newtuple.length; c++) newtuple[c] = r[c];
+            ans.add(newtuple);
+            break;
+        }
+        return new SimTupleset(ans);
+    }
+
+    /**
+     * Returns an arbitrary atom from an arbitrary tuple.
+     * @throws - ErrorAPI if this tupleset is empty
+     */
+    public Object getAtom() throws ErrorAPI {
+        if (tuples.size()==0) throw new ErrorAPI("This tupleset is empty");
+        return tuples.get(0)[0];
+    }
+
+    /**
+     * Returns the list of all i-th atom from all tuples in some arbitrary order (0 is first atom, 1 is second atom...)
+     * @throws - ErrorAPI if this tupleset contains at least one tuple whose length is less than or equal to i
+     */
+    public List<Object> getAllAtoms(int column) throws ErrorAPI {
+        if (tuples.size()==0) return new ArrayList<Object>(0);
+        if (column<0 || column>=tuples.get(0).length) throw new ErrorAPI("This tupleset does not have an \""+column+"th\" column.");
+        IdentityHashMap<Object,Object> ans = new IdentityHashMap<Object,Object>();
+        for(Object[] x: tuples) ans.put(x[column], Boolean.TRUE);
+        List<Object> list = new ArrayList<Object>(ans.size());
+        for(Object x: ans.keySet()) list.add(x);
+        return list;
     }
 
     /** Returns the number of tuples in this tupleset. */
     public int size() { return tuples.size(); }
+
+    public Iterator<SimTupleset> oneOf() {
+        Iterator<SimTupleset> ans = loneOf();
+        ans.next();
+        return ans;
+    }
+
+    public Iterator<SimTupleset> loneOf() {
+        return new Iterator<SimTupleset>() {
+            private int i = (-1); // next element to dish out
+            public SimTupleset next() {
+                if (i<0) {i++; return SimTupleset.EMPTY;} else if (i>=size()) throw new NoSuchElementException(); else i++;
+                return new SimTupleset(tuples.get(i-1));
+            }
+            public boolean hasNext() { return i < size(); }
+            public void remove() { throw new UnsupportedOperationException(); }
+        };
+    }
+
+    public Iterator<SimTupleset> someOf() {
+        Iterator<SimTupleset> ans = setOf();
+        ans.next();
+        return ans;
+    }
+
+    public Iterator<SimTupleset> setOf() {
+        return new Iterator<SimTupleset>() {
+            private boolean eof = false;
+            private boolean in[] = new boolean[size()]; // next element to dish out
+            public SimTupleset next() {
+                if (eof) throw new NoSuchElementException();
+                List<Object[]> ans = new ArrayList<Object[]>();
+                for(int i=0; i<size(); i++) if (in[i]) ans.add(tuples.get(i));
+                for(int i=0; ; i++) if (i==size()) {eof=true;break;} else if (!in[i]) {in[i]=true; break;} else {in[i]=false;}
+                return new SimTupleset(ans);
+            }
+            public boolean hasNext() { return !eof; }
+            public void remove() { throw new UnsupportedOperationException(); }
+        };
+    }
 
     /** {@inheritDoc} */
     @Override public String toString() {
