@@ -1437,7 +1437,7 @@ public final class SimpleGUI implements ComponentListener {
         latestAlloyVersion=num;
         exitReporter.setLatestAlloyVersion(latestAlloyVersion, latestAlloyVersionName);
         if (latestAlloyVersion<=Version.buildNumber()) return null;
-        log.logBold("An updated version of Alloy Analyzer has been released.\n");
+        log.logBold("An updated version of the Alloy Analyzer has been released.\n");
         log.log("Please visit alloy.mit.edu to download the latest version:\nVersion "+latestAlloyVersionName+"\n");
         log.logDivider();
         log.flush();
