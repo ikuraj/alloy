@@ -23,10 +23,10 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.OurUtil;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4graph.VizShape;
 
 /**
@@ -103,7 +103,7 @@ public final class DotShape extends DotAttribute {
     }
 
     private static List<DotShape> ula(DotShape... shapes) {
-        return Collections.unmodifiableList(Arrays.asList(shapes));
+        return Util.asList(shapes);
     }
 
     /**

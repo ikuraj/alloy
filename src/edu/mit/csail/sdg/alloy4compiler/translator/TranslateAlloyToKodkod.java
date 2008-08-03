@@ -561,7 +561,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
           case NEXT: return A4Solution.SIGINT_NEXT;
           case TRUE: return Formula.TRUE;
           case FALSE: return Formula.FALSE;
-          case IDEN: return Expression.IDEN.intersection(a2k(UNIV).product(Relation.UNIV));
+          case EMPTYNESS: return Expression.NONE;
+          case IDEN: return Expression.IDEN.intersection(a2k(UNIV).product(Expression.UNIV));
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprConstant.accept()");
     }

@@ -67,10 +67,10 @@ public final class SimContext extends VisitReturn<Object> {
     /** This is used to detect "function recursion" (which we currently do not allow). */
     private final List<Func> current_function = new ArrayList<Func>();
 
-    /** Caches the result of evaluating "iden"; must be cleared whenever sig contents change. */
+    /** If nonnull, it caches the result of evaluating "iden"; must be cleared whenever sig contents change. */
     private SimTupleset cacheIDEN = null;
 
-    /** Caches the result of evaluting "fun/next"; must be cleared whenever bitwidth changes. */
+    /** If nonnull, it caches the result of evaluting "fun/next"; must be cleared whenever bitwidth changes. */
     private SimTupleset cacheNEXT = null;
 
     /** The chosen bitwidth */
@@ -90,11 +90,11 @@ public final class SimContext extends VisitReturn<Object> {
         if (bitwidth<1 || bitwidth>32) throw new ErrorType("Bitwidth must be between 1 and 32.");
         this.bitwidth = bitwidth;
         if (bitwidth==32) { max=Integer.MAX_VALUE; min=Integer.MIN_VALUE; } else { max=(1<<(bitwidth-1))-1; min=(0-max)-1; }
-        shiftmask = (1 << (32 - Integer.numberOfLeadingZeros(bitwidth))) - 1;
+        shiftmask = (1 << (32 - Integer.numberOfLeadingZeros(bitwidth-1))) - 1;
     }
 
     /** Truncate the given integer based on the current chosen bitwidth */
-    private int trunc(int i) { return (i<<(32-bitwidth))>>(32-bitwidth); }
+    private int trunc(int i) { return (i<<(32-bitwidth)) >> (32-bitwidth); }
 
     /** Remove the "ExprUnary NOP" in front of an expression. */
     private static Expr deNOP(Expr x) {
@@ -103,37 +103,37 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /**
-     * Convenience method that evalutes x and casts the result to be a Kodkod Formula.
-     * @return the formula - if x evaluates to a Formula
-     * @throws ErrorFatal - if x does not evaluate to a Formula
+     * Convenience method that evalutes x and casts the result to be a boolean.
+     * @return the boolean - if x evaluates to a boolean
+     * @throws ErrorFatal - if x does not evaluate to a boolean
      */
     private boolean cform(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
-        Object y=visitThis(x);
+        Object y = visitThis(x);
         if (y instanceof Boolean) return Boolean.TRUE.equals(y);
         throw new ErrorFatal(x.span(), "This should have been a formula.\nInstead it is "+y);
     }
 
     /**
-     * Convenience method that evalutes x and cast the result to be a Kodkod IntExpression.
-     * @return the integer expression - if x evaluates to an IntExpression
-     * @throws ErrorFatal - if x does not evaluate to an IntExpression
+     * Convenience method that evalutes x and cast the result to be a int.
+     * @return the int - if x evaluates to an int
+     * @throws ErrorFatal - if x does not evaluate to an int
      */
     private int cint(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
-        Object y=visitThis(x);
+        Object y = visitThis(x);
         if (y instanceof Integer) return trunc((Integer)y);
         throw new ErrorFatal(x.span(), "This should have been an integer expression.\nInstead it is "+y);
     }
 
     /**
-     * Convenience method that evalutes x and cast the result to be a Kodkod Expression.
-     * @return the expression - if x evaluates to an Expression
-     * @throws ErrorFatal - if x does not evaluate to an Expression
+     * Convenience method that evalutes x and cast the result to be a tupleset
+     * @return the tupleset - if x evaluates to a tupleset
+     * @throws ErrorFatal - if x does not evaluate to a tupleset
      */
     private SimTupleset cset(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
-        Object y=visitThis(x);
+        Object y = visitThis(x);
         if (y instanceof SimTupleset) return (SimTupleset)y;
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
     }
@@ -238,7 +238,7 @@ public final class SimContext extends VisitReturn<Object> {
           case RANGE:
               return cset(x.left).range(cset(x.right));
           case EQUALS:
-              if (x.left.type.is_int) return cint(x.left)==cint(x.right); else return cset(x.left).eq(cset(x.right));
+              if (x.left.type.is_int) return cint(x.left)==cint(x.right); else return cset(x.left).equal(cset(x.right));
           case MINUS:
               // Special exception to allow "0-8" to not throw an exception, where 7 is the maximum allowed integer (when bitwidth==4)
               // (likewise, when bitwidth==5, then +15 is the maximum allowed integer, and we want to allow 0-16 without throwing an exception)
@@ -309,6 +309,7 @@ public final class SimContext extends VisitReturn<Object> {
           case TRUE: return Boolean.TRUE;
           case MIN: return min;
           case MAX: return max;
+          case EMPTYNESS: return SimTupleset.EMPTY;
           case NEXT: if (cacheNEXT==null) return cacheNEXT=SimTupleset.next(min,max); else return cacheNEXT;
           case IDEN: if (cacheIDEN==null) return cacheIDEN=cset(Sig.UNIV).iden(); else return cacheIDEN;
         }

@@ -24,6 +24,7 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorType;
@@ -31,6 +32,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.DirectedGraph;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
@@ -318,4 +320,10 @@ public final class ExprUnary extends Expr {
 
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return op==Op.NOOP ? sub.getDescription() : op.toString(); }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return op==Op.NOOP ? sub.getSubnodes() : Util.asList(sub); }
 }

@@ -23,8 +23,6 @@
 package edu.mit.csail.sdg.alloy4viz;
 
 import java.awt.Color;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import edu.mit.csail.sdg.alloy4.Util;
 
 /**
  * This utility class generates a graph for a particular index of the projection.
@@ -74,42 +73,42 @@ public final class StaticGraphMaker {
     }
 
     /** The list of colors, in order, to assign each legend. */
-    private static final List<Color> colorsClassic = Collections.unmodifiableList(Arrays.asList(
+    private static final List<Color> colorsClassic = Util.asList(
        new Color(228,26,28)
        ,new Color(166,86,40)
        ,new Color(255,127,0)
        ,new Color(77,175,74)
        ,new Color(55,126,184)
        ,new Color(152,78,163)
-    ));
+    );
 
     /** The list of colors, in order, to assign each legend. */
-    private static final List<Color> colorsStandard = Collections.unmodifiableList(Arrays.asList(
+    private static final List<Color> colorsStandard = Util.asList(
        new Color(227,26,28)
        ,new Color(255,127,0)
        ,new Color(251*8/10,154*8/10,153*8/10)
        ,new Color(51,160,44)
        ,new Color(31,120,180)
-    ));
+    );
 
     /** The list of colors, in order, to assign each legend. */
-    private static final List<Color> colorsMartha = Collections.unmodifiableList(Arrays.asList(
+    private static final List<Color> colorsMartha = Util.asList(
        new Color(231,138,195)
        ,new Color(252,141,98)
        ,new Color(166,216,84)
        ,new Color(102,194,165)
        ,new Color(141,160,203)
-    ));
+    );
 
     /** The list of colors, in order, to assign each legend. */
-    private static final List<Color> colorsNeon = Collections.unmodifiableList(Arrays.asList(
+    private static final List<Color> colorsNeon = Util.asList(
        new Color(231,41,138)
        ,new Color(217,95,2)
        ,new Color(166,118,29)
        ,new Color(102,166,30)
        ,new Color(27,158,119)
        ,new Color(117,112,179)
-    ));
+    );
 
     /** The constructor takes an Instance and a View, then insert the generate graph(s) into a blank cartoon. */
     private StaticGraphMaker (AlloyInstance originalInstance, VizState view, AlloyProjection proj) {

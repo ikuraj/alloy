@@ -167,8 +167,7 @@ public abstract class Sig extends Expr {
     }
 
     /** Constructs a new PrimSig or SubsetSig. */
-    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isPrivate, Pos isMeta)
-    throws Err {
+    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isPrivate, Pos isMeta) throws Err {
         super(pos, type);
         if (lone!=null && one!=null)  throw new ErrorSyntax(lone.merge(one),  "You cannot delcare a sig to be both lone and one.");
         if (lone!=null && some!=null) throw new ErrorSyntax(lone.merge(some), "You cannot delcare a sig to be both lone and some.");
@@ -340,6 +339,17 @@ public abstract class Sig extends Expr {
                 if (me==null) return UNIV;
             }
         }
+
+        /** {@inheritDoc} */
+        @Override public String getDescription() { return "<b>sig</b> " + label; }
+
+        /** {@inheritDoc} */
+        @Override public List<? extends Browsable> getSubnodes() {
+            TempList<Browsable> ans = new TempList<Browsable>();
+            if (parent!=null && !parent.builtin) ans.add(make(parent.pos, parent.span(), "<b>extends sig</b> " + parent.label, parent.getSubnodes()));
+            for(Field f: super.fields) ans.add(f);
+            return ans.makeConst();
+        }
     }
 
     //==============================================================================================================//
@@ -394,6 +404,17 @@ public abstract class Sig extends Expr {
             if (that==NONE) return false;
             for(Sig p:parents) if (p.isSameOrDescendentOf(that)) return true;
             return false;
+        }
+
+        /** {@inheritDoc} */
+        @Override public String getDescription() { return "<b>sig</b> " + label; }
+
+        /** {@inheritDoc} */
+        @Override public List<? extends Browsable> getSubnodes() {
+            TempList<Browsable> ans = new TempList<Browsable>();
+            for(Sig p: parents) ans.add(make(p.pos, p.span(), "<b>in sig</b> " + p.label, p.getSubnodes()));
+            for(Field f: super.fields) ans.add(f);
+            return ans.makeConst();
         }
     }
 
@@ -491,6 +512,23 @@ public abstract class Sig extends Expr {
 
         /** {@inheritDoc} */
         @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+        /** {@inheritDoc} */
+        @Override public String getDescription() { return "<b>field</b> " + label; }
+
+        /** {@inheritDoc} */
+        @Override public List<? extends Browsable> getSubnodes() {
+            Browsable s = make(sig.pos, sig.span(), "<b>from sig</b> "+sig.label, sig.getSubnodes());
+            Browsable b;
+            if (boundingFormula!=null) {
+                b = ((ExprBinary)(((ExprQuant)boundingFormula).sub)).right;
+                b = make(b.pos(), b.span(), "<b>bound</b>", b);
+            } else {
+                b = definition;
+                b = make(b.pos(), b.span(), "<b>definition</b>", b);
+            }
+            return Util.asList(s, b);
+        }
     }
 
     //==============================================================================================================//

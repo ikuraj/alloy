@@ -48,6 +48,7 @@ import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
+import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -79,7 +80,64 @@ import static edu.mit.csail.sdg.alloy4.Util.asList;
 
 /** Mutable; this class represents an Alloy module; equals() uses object identity. */
 
-public final class Module {
+public final class Module extends Browsable {
+
+    /** {@inheritDoc} */
+    @Override public final Pos pos() { return modulePos; }
+
+    /** {@inheritDoc} */
+    @Override public final Pos span() { return modulePos; }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return "<b>module</b> "+path; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() {
+        ArrayList<Browsable> ans = new ArrayList<Browsable>();
+        ArrayList<Browsable> x;
+        if (opens.size()>0) {
+           x = new ArrayList<Browsable>(opens.size());
+           for(Map.Entry<String,Open> e: opens.entrySet()) x.add(e.getValue().realModule);
+           ans.add(make("<b>open(s)</b>", x));
+        }
+        if (sigs.size()>0) {
+           x = new ArrayList<Browsable>(sigs.size());
+           for(Map.Entry<String,SigAST> e: sigs.entrySet()) x.add(e.getValue().realSig);
+           ans.add(make("<b>sig(s)</b>", x));
+        }
+        if (funcs.size()>0) {
+           x = new ArrayList<Browsable>(funcs.size());
+           for(Map.Entry<String,SafeList<FunAST>> e: funcs.entrySet()) for(FunAST y: e.getValue()) if (y.realFunc.isPred) x.add(y.realFunc);
+           if (x.size()>0) ans.add(make("<b>pred(s)</b>", x));
+        }
+        if (funcs.size()>0) {
+           x = new ArrayList<Browsable>(funcs.size());
+           for(Map.Entry<String,SafeList<FunAST>> e: funcs.entrySet()) for(FunAST y: e.getValue()) if (!y.realFunc.isPred) x.add(y.realFunc);
+           if (x.size()>0) ans.add(make("<b>fun(s)</b>", x));
+        }
+        if (path.length()==0 && commands.size()>0) {
+           x = new ArrayList<Browsable>(commands.size());
+           for(Command e: commands) if (e.check) x.add(e);
+           if (x.size()>0) ans.add(make("<b>check(s)</b>", x));
+        }
+        if (path.length()==0 && commands.size()>0) {
+           x = new ArrayList<Browsable>(commands.size());
+           for(Command e: commands) if (!e.check) x.add(e);
+           if (x.size()>0) ans.add(make("<b>run(s)</b>", x));
+        }
+        if (facts.size()>0) {
+           x = new ArrayList<Browsable>(facts.size());
+           for(Map.Entry<String,Expr> e: facts.entrySet()) ans.add(make("<b>fact(s)</b>", e.getValue()));
+        }
+        if (path.length()==0 && asserts.size()>0) {
+           x = new ArrayList<Browsable>(asserts.size());
+           for(Map.Entry<String,Expr> e: asserts.entrySet()) if (e.getValue() instanceof ExprVar) {
+               Expr body = ((ExprVar)(e.getValue())).expr;
+               if (body!=null) ans.add(make("<b>assert(s)</b> "+e.getKey(), body));
+           }
+        }
+        return ans;
+    }
 
     //============================================================================================================================//
 
@@ -509,7 +567,7 @@ public final class Module {
     //============================================================================================================================//
 
     /** This field is used during a depth-first search of the dag-of-module(s) to mark which modules have been visited. */
-    private Object visitedBy=null;
+    private Object visitedBy = null;
 
     /** The world that this Module belongs to. */
     private final Module world;
@@ -1424,37 +1482,46 @@ public final class Module {
                 final Sig s = sig.realSig;
                 String slab = sig.name;
                 SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null, null);
-                ast.topo=true;
+                ast.topo = true;
                 ast.realParents.add(metasig);
                 ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
                 sig2meta.put(s, (PrimSig)(ast.realSig));
+                ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", ast.realSig.product(s));
                 sorted.add(ast);
                 hasMetaSig=true;
                 Expr allfields = Sig.NONE;
                 for(Field field: s.getFields()) {
                     SigAST ast2 = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null, null);
-                    ast2.topo=true;
+                    ast2.topo = true;
                     ast2.realParents.add(metafield);
                     ast2.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast2.name : (m.paths.get(0)+"/"+ast2.name), null, null, ast2.one, null, null, ast2.isPrivate, Pos.UNKNOWN, false);
                     field2meta.put(field, (PrimSig)(ast2.realSig));
                     sorted.add(ast2);
-                    hasMetaField=true;
+                    hasMetaField = true;
                     ast2.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", ast2.realSig.product(field));
-                    if (allfields==Sig.NONE) allfields=ast2.realSig; else allfields=allfields.plus(ast2.realSig);
+                    if (allfields==Sig.NONE) allfields = ast2.realSig; else allfields = allfields.plus(ast2.realSig);
                 }
                 ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", ast.realSig.product(allfields));
             }
             for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
+                Expr expr = null;
+                if ((e.getKey()) instanceof PrimSig) {
+                    PrimSig a = (PrimSig)(e.getKey());
+                    if (a.parent!=null && a.parent!=UNIV) expr = sig2meta.get(a.parent);
+                }
+                e.getValue().addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "parent", e.getValue().product(expr==null ? ExprConstant.EMPTYNESS : expr));
+            }
+            for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
                 Sig s = e.getKey();
                 PrimSig s2 = e.getValue();
-                Expr allfields = Sig.NONE;
+                Expr allfields = ExprConstant.EMPTYNESS;
                 for(Field f: s.getFields()) {
                     PrimSig metaF = field2meta.get(f);
-                    if (allfields==Sig.NONE) allfields=metaF; else allfields=allfields.plus(metaF);
+                    if (allfields==ExprConstant.EMPTYNESS) allfields = metaF; else allfields = allfields.plus(metaF);
                 }
                 if (s instanceof PrimSig) for(Sig c: (((PrimSig)s).descendents())) for(Field f: c.getFields()) {
                     PrimSig metaF = field2meta.get(f);
-                    if (allfields==Sig.NONE) allfields=metaF; else allfields=allfields.plus(metaF);
+                    if (allfields==ExprConstant.EMPTYNESS) allfields = metaF; else allfields = allfields.plus(metaF);
                 }
                 s2.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "subfields", s2.product(allfields));
             }

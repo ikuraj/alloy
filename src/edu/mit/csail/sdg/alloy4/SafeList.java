@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /**
  * This list allows add() but disallows remove() and set(); null values are allowed.
@@ -101,6 +102,16 @@ public final class SafeList<T> implements Serializable, Iterable<T> {
            ArrayList<T> ans = new ArrayList<T>(n);
            for(int i=0; i<n; i++) ans.add(list.get(i));
            return ans;
+        }
+    }
+
+    /** Constructs an unmodifiable ConstList containing the same elements as this list. */
+    public ConstList<T> makeConstList() {
+        synchronized(SafeList.class) {
+           int n = size();
+           TempList<T> ans = new TempList<T>(n);
+           for(int i=0; i<n; i++) ans.add(list.get(i));
+           return ans.makeConst();
         }
     }
 

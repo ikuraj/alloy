@@ -22,11 +22,11 @@
 
 package edu.mit.csail.sdg.alloy4viz;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.Util;
 
 /**
  * Immutable; represents an Alloy tuple.
@@ -50,7 +50,7 @@ public final class AlloyTuple implements Comparable<AlloyTuple> {
     public AlloyTuple(AlloyAtom... atoms) {
         if (atoms==null || atoms.length<2)
             throw new RuntimeException("An AlloyTuple object must have 2 or more atoms.");
-        this.atoms = Collections.unmodifiableList(new ArrayList<AlloyAtom>(Arrays.asList(atoms)));
+        this.atoms = Util.asList(atoms);
     }
 
     /**

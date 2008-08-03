@@ -22,7 +22,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.JoinableList;
@@ -119,4 +121,10 @@ public final class ExprBadCall extends Expr {
 
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return "<b>error</b> (parser or typechecker failed)"; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return new ArrayList<Browsable>(0); }
 }

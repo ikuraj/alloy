@@ -862,15 +862,15 @@ public final class Type implements Iterable<Type.ProductType> {
      */
     public List<List<PrimSig>> fold() {
         ArrayList<List<PrimSig>> e = new ArrayList<List<PrimSig>>();
-        for(ProductType xx:entries) {
-            List<PrimSig> x=Arrays.asList(xx.types);
+        for(ProductType xx: entries) {
+            List<PrimSig> x = Arrays.asList(xx.types);
             while(true) {
-                int n=x.size();
-                boolean changed=false;
+                int n = x.size();
+                boolean changed = false;
                 for(int i=0; i<n; i++) {
-                    PrimSig bt=x.get(i);
+                    PrimSig bt = x.get(i);
                     if (bt.parent!=null && bt.parent!=UNIV && bt.parent.isAbstract!=null) {
-                        List<PrimSig> folded=fold(e,x,i);
+                        List<PrimSig> folded = fold(e, x, i);
                         if (folded!=null) {x=folded; changed=true; i--;}
                     }
                 }

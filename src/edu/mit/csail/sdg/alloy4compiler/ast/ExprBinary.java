@@ -31,6 +31,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
@@ -473,4 +474,10 @@ public final class ExprBinary extends Expr {
 
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return op.toString(); }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return Util.asList(left, right); }
 }

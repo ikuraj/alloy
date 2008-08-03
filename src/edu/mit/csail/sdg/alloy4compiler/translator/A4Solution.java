@@ -82,6 +82,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
@@ -450,6 +451,7 @@ public final class A4Solution {
     /** Returns the corresponding Kodkod expression for the given expression, or null if it is not associated with anything. */
     Expression a2k(Expr expr) throws ErrorFatal {
         while(expr instanceof ExprUnary && ((ExprUnary)expr).op==ExprUnary.Op.NOOP) expr = ((ExprUnary)expr).sub;
+        if (expr instanceof ExprConstant && ((ExprConstant)expr).op==ExprConstant.Op.EMPTYNESS) return Expression.NONE;
         if (expr instanceof Sig || expr instanceof Field || expr instanceof ExprVar) return a2k.get(expr);
         if (expr instanceof ExprBinary) {
             Expr a=((ExprBinary)expr).left, b=((ExprBinary)expr).right;
@@ -459,7 +461,7 @@ public final class A4Solution {
               case MINUS: return a2k(a).difference(a2k(b));
             }
         }
-        return null; // Current only UNION, PRODUCT, and DIFFERENCE of Sigs and Fields are allowed in a defined field's definition.
+        return null; // Current only UNION, PRODUCT, and DIFFERENCE of Sigs and Fields and ExprConstant.EMPTYNESS are allowed in a defined field's definition.
     }
 
     /** Return a modifiable TupleSet representing a sound overapproximation of the given expression. */

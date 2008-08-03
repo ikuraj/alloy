@@ -23,11 +23,13 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.JoinableList;
+import edu.mit.csail.sdg.alloy4.Util;
 
 /**
  * Immutable; represents an expression of the form (let a=b | x).
@@ -113,4 +115,14 @@ public final class ExprLet extends Expr {
 
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return "<b>let</b>"; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() {
+        Browsable a = make(var.pos, var.pos, "<b>var</b> "+var.label+" = ...", var.expr);
+        Browsable b = make(sub.span(), sub.span(), "where...", sub);
+        return Util.asList(a, b);
+    }
 }

@@ -241,8 +241,8 @@ public final class OurDialog {
         window.getContentPane().add(scrollPane, BorderLayout.CENTER);
         window.getContentPane().add(done, BorderLayout.SOUTH);
         window.pack();
-        window.setLocation(100, 100);
         window.setSize(500, 500);
+        window.setLocationRelativeTo(null);
         window.setVisible(true);
         return window;
     }

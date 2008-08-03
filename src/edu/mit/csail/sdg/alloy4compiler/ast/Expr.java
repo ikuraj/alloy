@@ -47,7 +47,7 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
  * <br> <b>Invariant:</b>  weight>0
  */
 
-public abstract class Expr {
+public abstract class Expr extends Browsable {
 
     /** Accepts the return visitor. */
     abstract<T> T accept(VisitReturn<T> visitor) throws Err;
@@ -213,8 +213,8 @@ public abstract class Expr {
         this.errors=emptyListOfErrors;
     }
 
-    /** Returns a Pos object representing the entire span of this Expr and all its subexpressions. */
-    public abstract Pos span();
+    /** {@inheritDoc} */
+    @Override public final Pos pos() { return pos; }
 
     /**
      * Print a textual description of it and all subnodes to a StringBuilder, with the given level of indentation.

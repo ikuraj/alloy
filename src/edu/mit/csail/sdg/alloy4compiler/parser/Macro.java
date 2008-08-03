@@ -22,6 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -30,6 +31,7 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCustom;
@@ -114,4 +116,10 @@ final class Macro extends ExprCustom {
 
     /** {@inheritDoc} */
     @Override public String toString() { return name; }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return "<b>error</b> (parser or typechecker failed)"; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return new ArrayList<Browsable>(0); }
 }

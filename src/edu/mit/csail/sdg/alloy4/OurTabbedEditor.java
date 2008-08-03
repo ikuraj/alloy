@@ -620,10 +620,10 @@ public final class OurTabbedEditor extends JPanel {
     }
 
     /**
-     * Highlights the text editor, based on the location information in the Err object.
+     * Highlights the text editor, based on the location information in the Pos object.
      * <p> Note: this method can be called by any thread (not just the AWT event thread)
      */
-    public void do_highlight(final Err e) { do_highlight(Util.asList(e.pos), new Color(0.9f, 0.4f, 0.4f), true); }
+    public void do_highlight(final Pos pos) { do_highlight(Util.asList(pos), new Color(0.9f, 0.4f, 0.4f), true); }
 
     /** Constructs a tabbed editor pane. */
     public OurTabbedEditor(final Runnable notifyChanged, final Runnable notifyFocused, final JFrame parentFrame, final String fontFamily, final int fontSize, final int tabSize) {

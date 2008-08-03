@@ -149,7 +149,7 @@ public final class SimpleCLI {
 
     public static void main(String[] args) throws Exception {
         final boolean minisat = "yes".equals(System.getProperty("minisat"));
-        SatSolver solver = A4Options.SatSolver.make("mem", "mem", "/tmp/sat/mem");
+        SatSolver solver = A4Options.SatSolver.make("mem", "mem", "/zweb/sat/mem");
         final SimpleReporter rep = new SimpleReporter();
         final StringBuilder sb = rep.sb;
         for(String filename:args) {

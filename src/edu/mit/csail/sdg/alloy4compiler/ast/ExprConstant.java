@@ -22,7 +22,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -64,7 +66,7 @@ public final class ExprConstant extends Expr {
      * @param num - the number (this argument is ignored if op!=NUMBER)
      */
     private ExprConstant(Pos pos, Op op, int num) {
-        super(pos, null, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NEXT ? Type.make2(Sig.SIGINT) : (op==Op.TRUE || op==Op.FALSE ? Type.FORMULA : Type.INT))), 0, 0, null);
+        super(pos, null, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NEXT ? Type.make2(Sig.SIGINT) : (op==Op.TRUE || op==Op.FALSE ? Type.FORMULA : (op==Op.EMPTYNESS ? UNIV.type : Type.INT)))), 0, 0, null);
         this.op = op;
         this.num = (op==Op.NUMBER ? num : 0);
     }
@@ -102,6 +104,9 @@ public final class ExprConstant extends Expr {
     /** The "1" integer. */
     public static final Expr ONE = new ExprConstant(null, Op.NUMBER, 1);
 
+    /** The "emptyness" constant. */
+    public static final Expr EMPTYNESS = new ExprConstant(null, Op.EMPTYNESS, 0);
+
     /** Constructs the integer "n" */
     public static Expr makeNUMBER(int n) {
         if (n==0) return ZERO;
@@ -111,13 +116,14 @@ public final class ExprConstant extends Expr {
 
     /** This class contains all possible constant types. */
     public enum Op {
-        /** true                                 */  TRUE("true"),
-        /** false                                */  FALSE("false"),
-        /** the builtin "iden" relation          */  IDEN("iden"),
-        /** the minimum integer constant         */  MIN("min"),
-        /** the maximum integer constant         */  MAX("max"),
-        /** the "next" relation between integers */  NEXT("next"),
-        /** an integer constant                  */  NUMBER("NUMBER");
+        /** true                                      */  TRUE("true"),
+        /** false                                     */  FALSE("false"),
+        /** the builtin "iden" relation               */  IDEN("iden"),
+        /** the minimum integer constant              */  MIN("min"),
+        /** the maximum integer constant              */  MAX("max"),
+        /** the "next" relation between integers      */  NEXT("next"),
+        /** the emptyness relation whose type is UNIV */  EMPTYNESS("none"),
+        /** an integer constant                       */  NUMBER("NUMBER");
 
         /** The constructor. */
         private Op(String label) {this.label=label;}
@@ -141,4 +147,21 @@ public final class ExprConstant extends Expr {
 
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() {
+        switch(op) {
+          case TRUE: return "<b>true</b>";
+          case FALSE: return "<b>false</b>";
+          case IDEN: return "<b>iden</b>";
+          case MAX: return "<b>Int/max</b>";
+          case MIN: return "<b>Int/min</b>";
+          case NEXT: return "<b>Int/next</b>";
+          case EMPTYNESS: return "<b>none</b>";
+        }
+        return "<b>" + num + "</b>";
+    }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return new ArrayList<Browsable>(0); }
 }

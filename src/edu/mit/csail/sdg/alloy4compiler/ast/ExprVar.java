@@ -22,7 +22,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -115,4 +117,10 @@ public final class ExprVar extends Expr {
 
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return "<b>variable</b>: " + label; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return new ArrayList<Browsable>(0); }
 }

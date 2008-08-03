@@ -62,6 +62,7 @@ import static java.awt.event.KeyEvent.VK_L;
 import static java.awt.event.KeyEvent.VK_M;
 import static java.awt.event.KeyEvent.VK_N;
 import static java.awt.event.KeyEvent.VK_O;
+import static java.awt.event.KeyEvent.VK_P;
 import static java.awt.event.KeyEvent.VK_Q;
 import static java.awt.event.KeyEvent.VK_R;
 import static java.awt.event.KeyEvent.VK_S;
@@ -107,6 +108,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
+import edu.mit.csail.sdg.alloy4compiler.parser.DebugTree;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimContext;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
@@ -118,7 +120,6 @@ import edu.mit.csail.sdg.alloy4.Computer;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.MailBug;
-import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.MacUtil;
 import edu.mit.csail.sdg.alloy4.OurAntiAlias;
 import edu.mit.csail.sdg.alloy4.OurBorder;
@@ -856,6 +857,9 @@ public final class SimpleGUI implements ComponentListener {
             runmenu.add(new JSeparator());
             OurUtil.makeMenuItem(runmenu, "Show Latest Instance",   VK_L, VK_L, doShowLatest(), latestInstance.length()>0);
             OurUtil.makeMenuItem(runmenu, "Show Metamodel",         VK_M, VK_M, doShowMetaModel());
+            if (Version.experimental) {
+               OurUtil.makeMenuItem(runmenu, "Show Parse Tree",     VK_P,       doShowParseTree());
+            }
             OurUtil.makeMenuItem(runmenu, "Open Evaluator",         VK_V,       doLoadEvaluator());
         } finally {
             wrap = false;
@@ -870,7 +874,7 @@ public final class SimpleGUI implements ComponentListener {
                 runmenu.getItem(0).setEnabled(false);
                 runmenu.getItem(3).setEnabled(false);
                 Err e2 = new ErrorFatal(new Pos(text.do_getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2),"");
-                text.do_highlight(e2);
+                text.do_highlight(e2.pos);
                 log.logRed(e.toString()+"\n\n");
                 return null;
             }
@@ -1001,6 +1005,29 @@ public final class SimpleGUI implements ComponentListener {
         if (latestCommand>=n) latestCommand=n-1;
         if (latestCommand<0) latestCommand=0;
         return doRun(latestCommand);
+    }
+
+    /** This method displays the parse tree. */
+    private Runner doShowParseTree() {
+        if (wrap) return wrapMe();
+        doRefreshRun();
+        OurUtil.enableAll(runmenu);
+        if (commands!=null) {
+            Module world = null;
+            try {
+                int resolutionMode = (Version.experimental && ImplicitThis.get()) ? 2 : 1;
+                A4Options opt = new A4Options();
+                opt.tempDirectory = Helper.alloyHome() + fs + "tmp";
+                opt.solverDirectory = Helper.alloyHome() + fs + "binary";
+                opt.originalFilename = Util.canon(text.do_getFilename());
+                world = CompUtil.parseEverything_fromFile(A4Reporter.NOP, text.do_takeSnapshot(), opt.originalFilename, resolutionMode);
+            } catch(Err er) {
+                OurDialog.showtext("Error showing Parse Tree", MailBug.dump(er));
+                return null;
+            }
+            DebugTree.show(world, text);
+        }
+        return null;
     }
 
     /** This method displays the meta model. */
@@ -1496,7 +1523,7 @@ public final class SimpleGUI implements ComponentListener {
             String f=s.nextLine();
             if (f.length()>0 && f.charAt(0)==' ') f=f.substring(1); // Get rid of the space after Y2
             Pos p=new Pos(Util.canon(f), x1, y1, x2, y2);
-            text.do_highlight(new ErrorSyntax(p,""));
+            text.do_highlight(p);
         }
         if (arg.startsWith("CNF: ")) {
             String filename=Util.canon(arg.substring(5));

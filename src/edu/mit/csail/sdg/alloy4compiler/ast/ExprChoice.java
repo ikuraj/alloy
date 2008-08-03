@@ -159,6 +159,20 @@ public final class ExprChoice extends Expr {
         }
         // If we are down to exactly 1 match, return it
         if (ch.size()==1) return ch.get(0).resolve(t, warns);
+        // If we are faced with 2 or more choices, but they all result in emptyset-of-the-same-arity, then just return emptyset
+        none:
+        while(ch.size()>1) {
+            int arity = -1;
+            for(Expr c: ch) {
+                if (c.type.is_bool || c.type.is_int || c.type.hasTuple()) break none;
+                int a = c.type.arity();
+                if (a<1) break none;
+                if (arity<0) arity=a; else if (arity!=a) break none;
+            }
+            Expr ans = Sig.NONE;
+            while(arity>1) {ans=ans.product(Sig.NONE); arity--;}
+            return ExprUnary.Op.NOOP.make(span(), ans);
+        }
         // Otherwise, complain!
         String txt;
         if (ch.size()>1) {
@@ -184,4 +198,10 @@ public final class ExprChoice extends Expr {
         if (!errors.isEmpty()) throw errors.pick();
         throw new ErrorType(span(), "This expression failed to be resolved.");
     }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return "<b>error</b> (parser or typechecker failed)"; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return new ArrayList<Browsable>(0); }
 }

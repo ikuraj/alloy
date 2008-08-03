@@ -163,8 +163,24 @@ public final class MailBug implements UncaughtExceptionHandler {
         }
     }
 
+    /** This method returns true if the exception appears to be a Sun GUI bug. */
+    public static boolean isGUI(Exception ex) {
+        Throwable cause = ex.getCause();
+        if (cause instanceof Exception && !isGUI((Exception)cause)) return false;
+        StackTraceElement[] trace = ex.getStackTrace();
+        if (trace!=null) for(int n=trace.length, i=0; i<n; i++) {
+            StackTraceElement elem = trace[i];
+            if (!elem.getClassName().startsWith("java."))
+              if (!elem.getClassName().startsWith("javax."))
+                if (!elem.getClassName().startsWith("sun."))
+                   return false;
+        }
+        return true;
+    }
+
     /** This method is an exception handler for uncaught exceptions. */
     public synchronized void uncaughtException (Thread thread, Throwable ex) {
+        if (ex instanceof Exception && isGUI((Exception)ex)) return;
         if (ex!=null) {
            System.out.flush();
            System.err.flush();

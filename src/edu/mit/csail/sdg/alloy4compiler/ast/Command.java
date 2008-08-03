@@ -22,6 +22,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
+import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -37,7 +39,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
  * <p> <b>Invariant:</b>  maxseq >= -1
  */
 
-public final class Command {
+public final class Command extends Browsable {
 
     /** If nonnull, it means this command depends on this parent command. */
     public final Command parent;
@@ -179,4 +181,16 @@ public final class Command {
         for(CommandScope sc: scope) if (sc.startingScope != sc.endingScope) answer.add(sc.sig);
         return answer.makeConst();
     }
+
+    /** {@inheritDoc} */
+    @Override public final Pos pos() { return pos; }
+
+    /** {@inheritDoc} */
+    @Override public final Pos span() { return pos; }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return (check?"<b>check</b> ":"<b>run</b> ") + label; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return formula==null ? (new ArrayList<Browsable>(0)) : Util.asList(formula); }
 }

@@ -32,6 +32,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
@@ -244,4 +245,14 @@ public final class ExprCall extends Expr {
 
     /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return "<b>call</b>"; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() {
+        Browsable f = make(fun.pos, fun.pos, (fun.isPred ? "<b>pred</b> " : "<b>fun</b> ")+fun.label , fun);
+        Browsable a = make("<b>arguments</b>", args);
+        return Util.asList(f, a);
+    }
 }

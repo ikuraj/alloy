@@ -38,7 +38,7 @@ import edu.mit.csail.sdg.alloy4.Util;
  * <p> <b>Invariant:</b>  the return type declaration does not contain a predicate/function call
  */
 
-public final class Func {
+public final class Func extends Browsable {
 
     /** The location in the original file where this predicate/function is declared; never null. */
     public final Pos pos;
@@ -180,4 +180,25 @@ public final class Func {
 
     /** Returns a human-readable description for this predicate/function */
     @Override public final String toString() { return (isPred ? "pred " : "fun ") + label; }
+
+    /** {@inheritDoc} */
+    @Override public final Pos pos() { return pos; }
+
+    /** {@inheritDoc} */
+    @Override public final Pos span() { return pos; }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return (isPred ? "<b>pred</b> " : "<b>fun</b> ") + label; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() {
+        Browsable p = make("parameters", params);
+        Browsable r = make("return type", returnDecl);
+        Browsable b = make("body", body);
+        if (isPred) {
+           if (params.size()==0) return Util.asList(b); else return Util.asList(p, b);
+        } else {
+           if (params.size()==0) return Util.asList(r, b); else return Util.asList(p, r, b);
+        }
+    }
 }
