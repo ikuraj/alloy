@@ -873,8 +873,7 @@ public final class SimpleGUI implements ComponentListener {
                 commands = null;
                 runmenu.getItem(0).setEnabled(false);
                 runmenu.getItem(3).setEnabled(false);
-                Err e2 = new ErrorFatal(new Pos(text.do_getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2),"");
-                text.do_highlight(e2.pos);
+                text.do_highlight(new Pos(text.do_getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2));
                 log.logRed(e.toString()+"\n\n");
                 return null;
             }
@@ -1022,7 +1021,8 @@ public final class SimpleGUI implements ComponentListener {
                 opt.originalFilename = Util.canon(text.do_getFilename());
                 world = CompUtil.parseEverything_fromFile(A4Reporter.NOP, text.do_takeSnapshot(), opt.originalFilename, resolutionMode);
             } catch(Err er) {
-                OurDialog.showtext("Error showing Parse Tree", MailBug.dump(er));
+                text.do_highlight(er.pos);
+                log.logRed(er.toString()+"\n\n");
                 return null;
             }
             DebugTree.show(world, text);
