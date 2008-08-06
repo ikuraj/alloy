@@ -498,7 +498,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     }
 
     /** Remove the "ExprUnary NOP" in front of an expression. */
-    private static Expr deNOP(Expr x) {
+    static Expr deNOP(Expr x) {
         while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
         return x;
     }
