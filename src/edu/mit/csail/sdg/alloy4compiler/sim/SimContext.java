@@ -52,6 +52,9 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
 public final class SimContext extends VisitReturn<Object> {
 
+    // FIXTHIS: add more optimizations where UNIV or IDEN or even whole SIG is composed with some expression
+    // FIXTHIS: ensure UNIV and IDEN and certain sigs have "infinite" property.
+
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
@@ -91,6 +94,24 @@ public final class SimContext extends VisitReturn<Object> {
         this.bitwidth = bitwidth;
         if (bitwidth==32) { max=Integer.MAX_VALUE; min=Integer.MIN_VALUE; } else { max=(1<<(bitwidth-1))-1; min=(0-max)-1; }
         shiftmask = (1 << (32 - Integer.numberOfLeadingZeros(bitwidth-1))) - 1;
+    }
+
+    /** Modifies the given sig to be associated with the given unary value. */
+    public void assign(Sig sig, SimTupleset value) throws Err {
+        // FIXTHIS: Int and seq/Int should be pre-bound and unchangable
+        // FIXTHIS: univ should magically reflect...
+        if (value.arity()>1) throw new ErrorType("Evaluator encountered an error: sig "+sig.label+" arity must not be " + value.arity());
+        sigs.put(sig, value);
+        cacheForConstants.clear();
+        cacheIDEN = null;
+    }
+
+    /** Modifies the given field to be associated with the given value. */
+    public void assign(Field field, SimTupleset value) throws Err {
+        if (value.size()>0 && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
+        fields.put(field, value);
+        cacheForConstants.clear();
+        cacheIDEN = null;
     }
 
     /** Truncate the given integer based on the current chosen bitwidth */
@@ -162,9 +183,7 @@ public final class SimContext extends VisitReturn<Object> {
           List<Object> list = R.getAllAtoms(0);
           Integer next = 0;
           while(list.size() > 0) {
-             boolean found = false;
-             for(int n=list.size(), i=0; i<n; i++) if (next.equals(list.get(i))) { list.set(i, list.get(n-1)); list.remove(n-1); n--; found=true; }
-             if (!found) return false;
+             for(int n=list.size(), i=0; ; i++) if (i>=n) return false; else if (next.equals(list.get(i))) { list.set(i, list.get(n-1)); list.remove(n-1); n--; break; }
              next++;
              if (next<0 && list.size()>0) return false; // shouldn't happen, but if it wraps around and yet list.size()>0 then we indeed have illegal tuples, so we return false
           }
@@ -329,7 +348,7 @@ public final class SimContext extends VisitReturn<Object> {
         return ans;
     }
 
-    private int enumerate(List<Object[]> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
+    private int enumerate(final List<Object[]> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
        final int n = x.vars.size();
        final ExprVar v = x.vars.get(i);
        final SimTupleset e = cset(v.expr);
@@ -399,6 +418,7 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public Object visit(Sig x) throws Err {
+        if (x==Sig.NONE) return SimTupleset.EMPTY;
         Object ans = sigs.get(x);
         if (ans==null) throw new ErrorFatal("Unknown sig "+x+" encountered during evaluation."); else return ans;
     }

@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
@@ -107,10 +106,13 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.DebugTree;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimContext;
+import edu.mit.csail.sdg.alloy4compiler.sim.SimTupleset;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
@@ -1614,10 +1616,16 @@ public final class SimpleGUI implements ComponentListener {
             }
             try {
                 Expr e = CompUtil.parseOneExpression_fromString(root, input);
-                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
-                   return (new SimContext(ans.getBitwidth())).visitThis(e).toString();
-                else
+                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
+                   SimContext ct = new SimContext(ans.getBitwidth());
+                   for(Sig s: root.getAllReachableSigs()) {
+                       ct.assign(s, SimTupleset.EMPTY);
+                       for(Field f: s.getFields()) { ct.assign(f, SimTupleset.EMPTY); }
+                   }
+                   return ct.visitThis(e).toString();
+                } else {
                    return ans.eval(e).toString();
+                }
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");
             }
@@ -1813,7 +1821,7 @@ public final class SimpleGUI implements ComponentListener {
             // The above line is actually useless on Sun JDK/JRE (see Sun's bug ID 4280189)
             // The following 4 lines should work for Sun's JDK/JRE (though they probably won't work for others)
             String[] newarray = new String[]{binary};
-            Field old = ClassLoader.class.getDeclaredField("usr_paths");
+            java.lang.reflect.Field old = ClassLoader.class.getDeclaredField("usr_paths");
             old.setAccessible(true);
             old.set(null,newarray);
         } catch (Throwable ex) { }

@@ -451,12 +451,12 @@ public final class SimTupleset {
     @Override public String toString() {
        StringBuilder sb = null;
        for(Object[] x: tuples) {
-          if (sb==null) sb = new StringBuilder("{ "); else sb.append(", ");
+          if (sb==null) sb = new StringBuilder("{"); else sb.append(", ");
           for(int i=0; i<x.length; i++) {
              if (i>0) sb.append("->");
              sb.append(x[i]);
           }
        }
-       return sb==null ? "{ }" : (sb.append(" }").toString());
+       return sb==null ? "{}" : (sb.append("}").toString());
     }
 }
