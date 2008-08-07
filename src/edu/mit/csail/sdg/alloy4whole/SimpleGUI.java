@@ -223,7 +223,7 @@ public final class SimpleGUI implements ComponentListener {
     private static final BooleanPref SyntaxDisabled = new BooleanPref("SyntaxHighlightingDisabled");
 
     /** The skolem depth. */
-    private static final IntPref SkolemDepth = new IntPref("SkolemDepth2",0,0,2);
+    private static final IntPref SkolemDepth = new IntPref("SkolemDepth3",0,1,4);
 
     /** The unsat core minimization strategy. */
     private static final IntPref CoreMinimization = new IntPref("CoreMinimization",0,2,2);
