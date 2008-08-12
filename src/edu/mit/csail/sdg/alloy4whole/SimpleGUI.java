@@ -32,6 +32,8 @@ import java.io.ObjectInputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -141,6 +143,7 @@ import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4.Util.BooleanPref;
 import edu.mit.csail.sdg.alloy4.Util.IntPref;
 import edu.mit.csail.sdg.alloy4.Util.StringPref;
+import edu.mit.csail.sdg.alloy4.WorkerEngine.WorkerCallback;
 import edu.mit.csail.sdg.alloy4viz.VizGUI;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleCallback1;
 import edu.mit.csail.sdg.alloy4whole.SimpleReporter.SimpleTask1;
@@ -179,6 +182,9 @@ public final class SimpleGUI implements ComponentListener {
 
     //======== The Preferences ======================================================================================//
     //======== Note: you must make sure each preference has a unique key ============================================//
+
+    /** The list of allowable memory sizes. */
+    private final List<Integer> allowedMemorySizes;
 
     /** True if Alloy Analyzer should let warning be nonfatal. */
     private static final BooleanPref WarningNonfatal = new BooleanPref("WarningNonfatal");
@@ -1134,7 +1140,7 @@ public final class SimpleGUI implements ComponentListener {
             //
             final int mem = SubMemory.get();
             final JMenu subMemoryMenu = new JMenu("Maximum Memory to Use: " + mem + "M");
-            for(int n: new Integer[]{16,32,64,128,256,512,768,1024,2048,3072,4096}) {
+            for(int n: allowedMemorySizes) {
                 OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", doOptMemory(n), n==mem?iconYes:iconNo);
             }
             optmenu.add(subMemoryMenu);
@@ -1648,9 +1654,34 @@ public final class SimpleGUI implements ComponentListener {
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
     public static void main(final String[] args) throws Exception {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() { new SimpleGUI(args); }
-        });
+        final WorkerEngine.WorkerTask t = new WorkerEngine.WorkerTask() {
+            private static final long serialVersionUID = 1L;
+            public void run(WorkerCallback out) { }
+        };
+        final WorkerEngine.WorkerCallback c = new WorkerEngine.WorkerCallback() {
+            private final List<Integer> allowed = new ArrayList<Integer>();
+            private final List<Integer> toTry = new ArrayList<Integer>(Arrays.asList(256,512,768,1024,1536,2048,3072,4096));
+            private int mem;
+            public synchronized void callback(Object msg) {
+                if (toTry.size()==0) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() { new SimpleGUI(args, allowed); }
+                    });
+                    return;
+                }
+                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(t, mem, "", this); return; } catch(IOException ex) { fail(); }
+            }
+            public synchronized void done() {
+                System.out.println("Can use "+mem+"M"); System.out.flush();
+                allowed.add(mem);
+                callback(null);
+            }
+            public synchronized void fail() {
+                System.out.println("Cannot use "+mem+"M"); System.out.flush();
+                callback(null);
+            }
+        };
+        c.callback(null);
     }
 
     //====== Constructor ====================================================//
@@ -1665,7 +1696,10 @@ public final class SimpleGUI implements ComponentListener {
     }
 
     /** The constructor; this method will be called by the AWT event thread, using the "invokeLater" method. */
-    private SimpleGUI(String[] args) {
+    private SimpleGUI(String[] args, List<Integer> initialAllowedMemorySizes) {
+
+        // initialize the "allowed memory sizes" array
+        allowedMemorySizes = new ArrayList<Integer>(initialAllowedMemorySizes);
 
         // Register an exception handler for uncaught exceptions
         exitReporter = new MailBug();
