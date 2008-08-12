@@ -184,7 +184,7 @@ public final class SimpleGUI implements ComponentListener {
     //======== Note: you must make sure each preference has a unique key ============================================//
 
     /** The list of allowable memory sizes. */
-    private final List<Integer> allowedMemorySizes;
+    private List<Integer> allowedMemorySizes;
 
     /** True if Alloy Analyzer should let warning be nonfatal. */
     private static final BooleanPref WarningNonfatal = new BooleanPref("WarningNonfatal");
@@ -282,37 +282,37 @@ public final class SimpleGUI implements ComponentListener {
     private final MailBug exitReporter;
 
     /** The JFrame for the main window. */
-    private final JFrame frame;
+    private JFrame frame;
 
     /** The JFrame for the visualizer window. */
-    private final VizGUI viz;
+    private VizGUI viz;
 
     /** The "File", "Edit", "Run", "Option", "Window", and "Help" menus. */
-    private final JMenu filemenu, editmenu, runmenu, optmenu, windowmenu, windowmenu2, helpmenu;
+    private JMenu filemenu, editmenu, runmenu, optmenu, windowmenu, windowmenu2, helpmenu;
 
     /** The toolbar. */
-    private final JToolBar toolbar;
+    private JToolBar toolbar;
 
     /** The various toolbar buttons. */
-    private final JButton runbutton, stopbutton, showbutton;
+    private JButton runbutton, stopbutton, showbutton;
 
     /** The Splitpane. */
-    private final JSplitPane splitpane;
+    private JSplitPane splitpane;
 
     /** The JLabel that displays the current line/column position, etc. */
-    private final JLabel status;
+    private JLabel status;
 
     /** Whether the editor has the focus, or the log window has the focus. */
     private boolean lastFocusIsOnEditor = true;
 
     /** The text editor. */
-    private final OurTabbedEditor text;
+    private OurTabbedEditor text;
 
     /** The "message panel" on the right. */
-    private final SwingLogPanel log;
+    private SwingLogPanel log;
 
     /** The scrollpane containing the "message panel". */
-    private final JScrollPane logpane;
+    private JScrollPane logpane;
 
     /** The last "find" that the user issued. */
     private String lastFind = "";
@@ -351,7 +351,7 @@ public final class SimpleGUI implements ComponentListener {
     private int latestCommand = 0;
 
     /** The current choices of SAT solver. */
-    private final List<SatSolver> satChoices;
+    private List<SatSolver> satChoices;
 
      /** The most recent Alloy version (as queried from alloy.mit.edu); -1 if alloy.mit.edu has not replied yet. */
     private int latestAlloyVersion = (-1);
@@ -1654,34 +1654,9 @@ public final class SimpleGUI implements ComponentListener {
 
     /** Main method that launches the program; this method might be called by an arbitrary thread. */
     public static void main(final String[] args) throws Exception {
-        final WorkerEngine.WorkerTask t = new WorkerEngine.WorkerTask() {
-            private static final long serialVersionUID = 1L;
-            public void run(WorkerCallback out) { }
-        };
-        final WorkerEngine.WorkerCallback c = new WorkerEngine.WorkerCallback() {
-            private final List<Integer> allowed = new ArrayList<Integer>();
-            private final List<Integer> toTry = new ArrayList<Integer>(Arrays.asList(256,512,768,1024,1536,2048,3072,4096));
-            private int mem;
-            public synchronized void callback(Object msg) {
-                if (toTry.size()==0) {
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() { new SimpleGUI(args, allowed); }
-                    });
-                    return;
-                }
-                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(t, mem, "", this); return; } catch(IOException ex) { fail(); }
-            }
-            public synchronized void done() {
-                System.out.println("Can use "+mem+"M"); System.out.flush();
-                allowed.add(mem);
-                callback(null);
-            }
-            public synchronized void fail() {
-                System.out.println("Cannot use "+mem+"M"); System.out.flush();
-                callback(null);
-            }
-        };
-        c.callback(null);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() { new SimpleGUI(args); }
+        });
     }
 
     //====== Constructor ====================================================//
@@ -1695,11 +1670,14 @@ public final class SimpleGUI implements ComponentListener {
         try { System.loadLibrary(library+"x4"); return true; } catch(UnsatisfiedLinkError ex) { return false; }
     }
 
-    /** The constructor; this method will be called by the AWT event thread, using the "invokeLater" method. */
-    private SimpleGUI(String[] args, List<Integer> initialAllowedMemorySizes) {
+    /** Create a dummy task object for testing purpose. */
+    private static final WorkerEngine.WorkerTask dummyTask = new WorkerEngine.WorkerTask() {
+        private static final long serialVersionUID = 1L;
+        public void run(WorkerCallback out) { }
+    };
 
-        // initialize the "allowed memory sizes" array
-        allowedMemorySizes = new ArrayList<Integer>(initialAllowedMemorySizes);
+    /** The constructor; this method will be called by the AWT event thread, using the "invokeLater" method. */
+    private SimpleGUI (final String[] args) {
 
         // Register an exception handler for uncaught exceptions
         exitReporter = new MailBug();
@@ -1727,15 +1705,8 @@ public final class SimpleGUI implements ComponentListener {
         int y=AnalyzerY.get(); if (y<0) y=screenHeight/10; if (y>screenHeight-100) y=screenHeight-100;
 
         // Put up a slash screen
-        frame = new JFrame("Alloy Analyzer");
-        try {
-            wrap = true;
-            frame.addWindowListener(doQuit());
-        } finally {
-            wrap = false;
-        }
+        final JFrame frame = new JFrame("Alloy Analyzer");
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        frame.addComponentListener(this);
         frame.pack();
         if (!Util.onMac() && !Util.onWindows()) {
            // many Window managers do not respect ICCCM2; this should help avoid the Title Bar being shifted "off screen"
@@ -1748,8 +1719,50 @@ public final class SimpleGUI implements ComponentListener {
         frame.setLocation(x,y);
         frame.setVisible(true);
         frame.setTitle("Alloy Analyzer "+Version.version()+" loading... please wait...");
+        final int windowWidth = width;
         // We intentionally call setVisible(true) first before settings the "please wait" title,
         // since we want the minimized window title on Linux/FreeBSD to just say Alloy Analyzer
+
+        // Test the allowed memory sizes
+        final WorkerEngine.WorkerCallback c = new WorkerEngine.WorkerCallback() {
+            private final List<Integer> allowed = new ArrayList<Integer>();
+            private final List<Integer> toTry = new ArrayList<Integer>(Arrays.asList(256,512,768,1024,1536,2048,3072,4096));
+            private int mem;
+            public synchronized void callback(Object msg) {
+                if (toTry.size()==0) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() { SimpleGUI.this.frame=frame; SimpleGUI.this.finishInit(args, allowed, windowWidth); }
+                    });
+                    return;
+                }
+                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(dummyTask, mem, "", this); return; } catch(IOException ex) { fail(); }
+            }
+            public synchronized void done() {
+                System.out.println("Alloy4 can use "+mem+"M"); System.out.flush();
+                allowed.add(mem);
+                callback(null);
+            }
+            public synchronized void fail() {
+                System.out.println("Alloy4 cannot use "+mem+"M"); System.out.flush();
+                callback(null);
+            }
+        };
+        c.callback(null);
+    }
+
+    private void finishInit(String[] args, List<Integer> initialAllowedMemorySizes, int width) {
+
+        // Add the listeners
+        try {
+            wrap = true;
+            frame.addWindowListener(doQuit());
+        } finally {
+            wrap = false;
+        }
+        frame.addComponentListener(this);
+
+        // initialize the "allowed memory sizes" array
+        allowedMemorySizes = new ArrayList<Integer>(initialAllowedMemorySizes);
 
         // Choose the appropriate font
         int fontSize=FontSize.get();
