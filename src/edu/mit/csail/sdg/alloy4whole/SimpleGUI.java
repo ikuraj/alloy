@@ -1171,7 +1171,7 @@ public final class SimpleGUI implements ComponentListener {
             //
             final int skDepth = SkolemDepth.get();
             final JMenu skDepthMenu = new JMenu("Skolem Depth: "+skDepth);
-            for(int n=0; n<=2; n++) { OurUtil.makeMenuItem(skDepthMenu, ""+n, doOptSkolemDepth(n), n==skDepth?iconYes:iconNo); }
+            for(int n=0; n<=4; n++) { OurUtil.makeMenuItem(skDepthMenu, ""+n, doOptSkolemDepth(n), n==skDepth?iconYes:iconNo); }
             optmenu.add(skDepthMenu);
             //
             final int min = CoreMinimization.get();
@@ -1566,7 +1566,7 @@ public final class SimpleGUI implements ComponentListener {
             SimpleTask2 task = new SimpleTask2();
             task.filename = arg;
             try {
-                WorkerEngine.run(task, subMemoryNow, Helper.alloyHome()+fs+"binary", cb);
+                WorkerEngine.run(task, SubMemory.get(), Helper.alloyHome()+fs+"binary", cb);
             } catch(Throwable ex) {
                 WorkerEngine.stop();
                 log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
@@ -1738,12 +1738,12 @@ public final class SimpleGUI implements ComponentListener {
                 try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(dummyTask, mem, "", this); return; } catch(IOException ex) { fail(); }
             }
             public synchronized void done() {
-                System.out.println("Alloy4 can use "+mem+"M"); System.out.flush();
+                //System.out.println("Alloy4 can use "+mem+"M"); System.out.flush();
                 allowed.add(mem);
                 callback(null);
             }
             public synchronized void fail() {
-                System.out.println("Alloy4 cannot use "+mem+"M"); System.out.flush();
+                //System.out.println("Alloy4 cannot use "+mem+"M"); System.out.flush();
                 callback(null);
             }
         };
@@ -1763,6 +1763,14 @@ public final class SimpleGUI implements ComponentListener {
 
         // initialize the "allowed memory sizes" array
         allowedMemorySizes = new ArrayList<Integer>(initialAllowedMemorySizes);
+        int newmem = SubMemory.get();
+        if (!allowedMemorySizes.contains(newmem)) {
+           int newmemlen = allowedMemorySizes.size();
+           if (allowedMemorySizes.contains(768) || newmemlen==0)
+              SubMemory.set(768); // a nice default value
+           else
+              SubMemory.set(allowedMemorySizes.get(newmemlen-1));
+        }
 
         // Choose the appropriate font
         int fontSize=FontSize.get();
