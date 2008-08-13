@@ -202,7 +202,7 @@ public final class ExprQuant extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>" + op + "</b>"; }
+    @Override public String getDescription() { return "<b>" + op + "</b>" + " <i>Type = " + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {

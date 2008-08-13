@@ -217,6 +217,13 @@ public final class ExprUnary extends Expr {
 
         /** Returns the human readable label for this operator */
         @Override public final String toString() { return label; }
+
+        /** Returns the human readable label already encoded for HTML */
+        public final String toHTML() {
+            if (this == CAST2INT) return "Int-&gt;int";
+            if (this == CAST2SIGINT) return "int-&gt;Int";
+            return label;
+        }
     }
 
     //============================================================================================================//
@@ -322,7 +329,7 @@ public final class ExprUnary extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return op==Op.NOOP ? sub.getDescription() : op.toString(); }
+    @Override public String getDescription() { return op==Op.NOOP ? sub.getDescription() : (op.toHTML() + " <i>Type = " + type + "</i>"); }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() { return op==Op.NOOP ? sub.getSubnodes() : Util.asList(sub); }

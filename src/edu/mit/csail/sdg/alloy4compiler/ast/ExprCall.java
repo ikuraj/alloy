@@ -247,7 +247,7 @@ public final class ExprCall extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>call</b>"; }
+    @Override public String getDescription() { return "<b>call</b>" + " <i>Type = " + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {

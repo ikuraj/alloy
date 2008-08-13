@@ -142,27 +142,27 @@ public final class ExprBuiltin extends Expr {
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
-        TempList<Expr> args = new TempList<Expr>(this.args.size());
+        TempList<Expr> newargs = new TempList<Expr>(args.size());
         boolean changed = false;
         if (errors.size()>0) return this;
         if (op==Op.DISJOINT) {
            for(int i=0; i<args.size(); i++) { if (i==0) p=Type.removesBoolAndInt(args.get(i).type); else p=p.unionWithCommonArity(args.get(i).type); }
-           for(int i=0; i<this.args.size(); i++) {
-              Expr x = this.args.get(i);
+           for(int i=0; i<args.size(); i++) {
+              Expr x = args.get(i);
               Expr y = x.resolve(p, warns).typecheck_as_set();
               if (x!=y) changed=true;
-              args.add(y);
+              newargs.add(y);
            }
         }
         if (op==Op.TOTALORDER) {
-           Type t = this.args.get(0).type.pickUnary();
-           Expr a = this.args.get(0).resolve(t, warns).typecheck_as_set();
-           Expr b = this.args.get(1).resolve(t, warns).typecheck_as_set();
-           Expr c = this.args.get(2).resolve(t.product(t), warns).typecheck_as_set();
-           changed = (a!=this.args.get(0) || b!=this.args.get(1) || c!=this.args.get(2));
-           args.add(a); args.add(b); args.add(c);
+           Type t = args.get(0).type.pickUnary();
+           Expr a = args.get(0).resolve(t, warns).typecheck_as_set();
+           Expr b = args.get(1).resolve(t, warns).typecheck_as_set();
+           Expr c = args.get(2).resolve(t.product(t), warns).typecheck_as_set();
+           changed = (a!=args.get(0) || b!=args.get(1) || c!=args.get(2));
+           newargs.add(a); newargs.add(b); newargs.add(c);
         }
-        return changed ? make(pos, closingBracket, op, args.makeConst()) : this;
+        return changed ? make(pos, closingBracket, op, newargs.makeConst()) : this;
     }
 
     //============================================================================================================//

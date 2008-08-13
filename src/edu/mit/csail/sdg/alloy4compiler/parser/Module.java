@@ -89,7 +89,11 @@ public final class Module extends Browsable {
     @Override public final Pos span() { return modulePos; }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>module</b> "+path; }
+    @Override public String getDescription() {
+        StringBuilder sb = new StringBuilder("<b>module</b> ").append(path).append(" <i>");
+        Util.encodeXML(sb, modulePos.filename);
+        return sb.append("</i>").toString();
+    }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {

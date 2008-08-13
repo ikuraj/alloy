@@ -119,7 +119,7 @@ public final class ExprVar extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>variable</b>: " + label; }
+    @Override public String getDescription() { return "<b>variable</b>: " + label + " <i>Type = " + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() { return new ArrayList<Browsable>(0); }
