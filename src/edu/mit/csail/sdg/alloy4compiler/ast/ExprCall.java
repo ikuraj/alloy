@@ -152,7 +152,7 @@ public final class ExprCall extends Expr {
         @Override public Type visit(ExprConstant x) { return x.type; }
         @Override public Type visit(Sig x)          { return x.type; }
         @Override public Type visit(Field x)        { return x.type; }
-        @Override public Type visit(ExprBuiltin x)  { return Type.FORMULA; }
+        @Override public Type visit(ExprList x)     { return Type.FORMULA; }
     }
 
     //============================================================================================================//

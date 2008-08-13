@@ -36,15 +36,15 @@ import edu.mit.csail.sdg.alloy4.JoinableList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
 /**
- * Immutable; represents the builtin disjoint[] or pred/totalOrder[] predicates.
+ * Immutable; represents disjoint[] or pred/totalOrder[] or (... and ... and ..) and other similar list of arugments.
  *
  * <p> <b>Invariant:</b>  type!=EMPTY => (all x:args | x.mult==0)
  */
 
-public final class ExprBuiltin extends Expr {
+public final class ExprList extends Expr {
 
     /** This class contains all possible builtin predicates. */
-    public static enum Op { DISJOINT, TOTALORDER };
+    public static enum Op { DISJOINT, TOTALORDER, AND, OR };
 
     /** The builtin operator. */
     public final Op op;
@@ -85,8 +85,8 @@ public final class ExprBuiltin extends Expr {
 
     //============================================================================================================//
 
-    /** Constructs an ExprBuiltin node. */
-    private ExprBuiltin (Pos pos, Pos closingBracket, Op op, boolean ambiguous, Type type, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+    /** Constructs an ExprList node. */
+    private ExprList (Pos pos, Pos closingBracket, Op op, boolean ambiguous, Type type, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
         super(pos, closingBracket, ambiguous, type, 0, weight, errs);
         this.op = op;
         this.args = args;
@@ -95,14 +95,14 @@ public final class ExprBuiltin extends Expr {
     //============================================================================================================//
 
     /** Generates a call to a builtin predicate */
-    public static ExprBuiltin make(Pos pos, Pos closingBracket, Op op, List<Expr> args) {
+    public static ExprList make(Pos pos, Pos closingBracket, Op op, List<Expr> args) {
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         TempList<Expr> newargs = new TempList<Expr>(args.size());
         long weight = 0;
         Type commonArity = null;
         for(int i=0; i<args.size(); i++) {
-            Expr a = args.get(i).typecheck_as_set();
+            Expr a = (op==Op.AND || op==Op.OR) ? args.get(i).typecheck_as_formula() : args.get(i).typecheck_as_set();
             ambiguous = ambiguous || a.ambiguous;
             weight = weight + a.weight;
             if (a.mult != 0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
@@ -122,17 +122,77 @@ public final class ExprBuiltin extends Expr {
            if (newargs.size()<2) errs = errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
            if (commonArity==EMPTY) errs = errs.append(new ErrorType(pos, "The builtin predicate disjoint[] cannot be used among expressions of different arities."));
         }
-        return new ExprBuiltin(pos, closingBracket, op, ambiguous, Type.FORMULA, newargs.makeConst(), weight, errs);
+        return new ExprList(pos, closingBracket, op, ambiguous, Type.FORMULA, newargs.makeConst(), weight, errs);
+    }
+
+    /** Generates the expression (arg1 and arg2 and arg3 ...) */
+    public static ExprList makeAND(Expr a, Expr b) {
+        while(a instanceof ExprUnary && ((ExprUnary)a).op==ExprUnary.Op.NOOP) a = ((ExprUnary)a).sub;
+        while(b instanceof ExprUnary && ((ExprUnary)b).op==ExprUnary.Op.NOOP) b = ((ExprUnary)b).sub;
+        TempList<Expr> list;
+        if (a instanceof ExprList && ((ExprList)a).op==Op.AND) {
+           ExprList aa = (ExprList)a;
+           if (b instanceof ExprList && ((ExprList)b).op==Op.AND) {
+              ExprList bb = (ExprList)b;
+              list = new TempList<Expr>(aa.args.size() + bb.args.size());
+              list.addAll(aa.args);
+              list.addAll(bb.args);
+           } else {
+              list = new TempList<Expr>(aa.args.size() + 1);
+              list.addAll(aa.args);
+              list.add(b);
+           }
+        } else if (b instanceof ExprList && ((ExprList)b).op==Op.AND) {
+           ExprList bb = (ExprList)b;
+           list = new TempList<Expr>(1 + bb.args.size());
+           list.add(a);
+           list.addAll(bb.args);
+        } else {
+           list = new TempList<Expr>(2);
+           list.add(a);
+           list.add(b);
+        }
+        return make(Pos.UNKNOWN, Pos.UNKNOWN, Op.AND, list.makeConst());
+    }
+
+    /** Generates the expression (arg1 || arg2 || arg3 ...) */
+    public static ExprList makeOR(Expr a, Expr b) {
+        while(a instanceof ExprUnary && ((ExprUnary)a).op==ExprUnary.Op.NOOP) a = ((ExprUnary)a).sub;
+        while(b instanceof ExprUnary && ((ExprUnary)b).op==ExprUnary.Op.NOOP) b = ((ExprUnary)b).sub;
+        TempList<Expr> list;
+        if (a instanceof ExprList && ((ExprList)a).op==Op.OR) {
+           ExprList aa = (ExprList)a;
+           if (b instanceof ExprList && ((ExprList)b).op==Op.OR) {
+              ExprList bb = (ExprList)b;
+              list = new TempList<Expr>(aa.args.size() + bb.args.size());
+              list.addAll(aa.args);
+              list.addAll(bb.args);
+           } else {
+              list = new TempList<Expr>(aa.args.size() + 1);
+              list.addAll(aa.args);
+              list.add(b);
+           }
+        } else if (b instanceof ExprList && ((ExprList)b).op==Op.OR) {
+           ExprList bb = (ExprList)b;
+           list = new TempList<Expr>(1 + bb.args.size());
+           list.add(a);
+           list.addAll(bb.args);
+        } else {
+           list = new TempList<Expr>(2);
+           list.add(a);
+           list.add(b);
+        }
+        return make(Pos.UNKNOWN, Pos.UNKNOWN, Op.OR, list.makeConst());
     }
 
     /** Generates the expression pred/totalOrder[arg1, args2, arg3...] */
-    public static ExprBuiltin makeTOTALORDER(Pos pos, Pos closingBracket, List<Expr> args) { return make(pos, closingBracket, Op.TOTALORDER, args); }
+    public static ExprList makeTOTALORDER(Pos pos, Pos closingBracket, List<Expr> args) { return make(pos, closingBracket, Op.TOTALORDER, args); }
 
     /** Generates the expression disj[arg1, args2, arg3...] */
-    public static ExprBuiltin makeDISJOINT(Pos pos, Pos closingBracket, List<Expr> args) { return make(pos, closingBracket, Op.DISJOINT, args); }
+    public static ExprList makeDISJOINT(Pos pos, Pos closingBracket, List<Expr> args) { return make(pos, closingBracket, Op.DISJOINT, args); }
 
-    /** Return a new ExprBuiltin object that is the same as this one except with one additional argument. */
-    public ExprBuiltin addArg(Expr x) {
+    /** Return a new ExprList object that is the same as this one except with one additional argument. */
+    public ExprList addArg(Expr x) {
         List<Expr> args = new ArrayList<Expr>(this.args);
         args.add(x);
         return make(pos, closingBracket, op, args);
@@ -145,6 +205,14 @@ public final class ExprBuiltin extends Expr {
         TempList<Expr> newargs = new TempList<Expr>(args.size());
         boolean changed = false;
         if (errors.size()>0) return this;
+        if (op==Op.AND || op==Op.OR) {
+           for(int i=0; i<args.size(); i++) {
+              Expr x = args.get(i);
+              Expr y = x.resolve(Type.FORMULA, warns).typecheck_as_formula();
+              if (x!=y) changed=true;
+              newargs.add(y);
+           }
+        }
         if (op==Op.DISJOINT) {
            for(int i=0; i<args.size(); i++) { if (i==0) p=Type.removesBoolAndInt(args.get(i).type); else p=p.unionWithCommonArity(args.get(i).type); }
            for(int i=0; i<args.size(); i++) {

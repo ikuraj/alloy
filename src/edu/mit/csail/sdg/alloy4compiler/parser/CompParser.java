@@ -31,7 +31,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadJoin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
@@ -14413,7 +14413,7 @@ class CUP$CompParser$actions {
                 tempvars.add(var);
                 if (disjoints!=null) disjoints.add(var);
             }
-            if (disjoints!=null) guard = ExprBuiltin.makeDISJOINT(d.disjoint, null, disjoints).and(guard);
+            if (disjoints!=null) guard = ExprList.makeDISJOINT(d.disjoint, null, disjoints).and(guard);
         }
         if (guard!=null) {
             switch(op) {
@@ -14428,11 +14428,11 @@ class CUP$CompParser$actions {
       if (right instanceof ExprVar) {
          String n = ((ExprVar)right).label;
          if (n.equals("int"))             return ExprUnary.Op.CAST2INT.make(pos, left);
-         if (n.equals("disj"))            return ExprBuiltin.makeDISJOINT(pos, close, Util.asList(left));
-         if (n.equals("pred/totalOrder")) return ExprBuiltin.makeTOTALORDER(pos, close, Util.asList(left));
+         if (n.equals("disj"))            return ExprList.makeDISJOINT(pos, close, Util.asList(left));
+         if (n.equals("pred/totalOrder")) return ExprList.makeTOTALORDER(pos, close, Util.asList(left));
       }
-      else if (right instanceof ExprBuiltin) {
-         return ((ExprBuiltin)right).addArg(left);
+      else if (right instanceof ExprList) {
+         return ((ExprList)right).addArg(left);
       }
       return ExprBadJoin.make(pos, oldClosing, left, right);
     }

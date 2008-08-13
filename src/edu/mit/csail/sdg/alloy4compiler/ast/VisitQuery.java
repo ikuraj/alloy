@@ -45,8 +45,8 @@ public abstract class VisitQuery<T> extends VisitReturn<T> {
         return ans;
     }
 
-    /** Visits an ExprBuiltin node F[X1,X2,X3..] by calling accept() on X1, X2, X3... */
-    @Override public T visit(ExprBuiltin x) throws Err {
+    /** Visits an ExprList node F[X1,X2,X3..] by calling accept() on X1, X2, X3... */
+    @Override public T visit(ExprList x) throws Err {
         for(Expr y:x.args) { T ans=y.accept(this); if (ans!=null) return ans; }
         return null;
     }

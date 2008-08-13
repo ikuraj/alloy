@@ -43,7 +43,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
@@ -177,9 +177,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         rep.debug("Generating facts...\n");
         // convert into a form that hopefully gives better unsat core
         facts = (Expr) (new ConvToConjunction()).visitThis(facts);
-        // now go over each of them
-        ArrayList<Expr> ar = new ArrayList<Expr>();
-        makelist(ar, facts);
         for(Sig sig: frame.getAllReachableSigs()) {
             for(Field f:sig.getFields()) if (f.boundingFormula!=null) {
                 Expression sr=a2k(sig), fr=a2k(f);
@@ -193,7 +190,16 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                 }
             }
         }
-        for(Expr e:ar) frame.addFormula(cform(e), e);
+        recursiveAddFormula(facts);
+    }
+
+    /** Break up x into conjuncts then add them each as a fact. */
+    private void recursiveAddFormula(Expr x) throws Err {
+        if (x instanceof ExprList && ((ExprList)x).op==ExprList.Op.AND) {
+            for(Expr e: ((ExprList)x).args) recursiveAddFormula(e);
+        } else {
+            frame.addFormula(cform(x), x);
+        }
     }
 
     //==============================================================================================================//
@@ -486,17 +492,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     //==============================================================================================================//
 
-    /** Break a tree of conjunction into a list of formula. */
-    private static void makelist(ArrayList<Expr> list, Expr input) {
-       input = deNOP(input);
-       while(input instanceof ExprBinary && ((ExprBinary)input).op==ExprBinary.Op.AND) {
-          makelist(list, ((ExprBinary)input).left);
-          input = ((ExprBinary)input).right;
-          input = deNOP(input);
-       }
-       if (!input.isSame(ExprConstant.TRUE)) list.add(input);
-    }
-
     /** Remove the "ExprUnary NOP" in front of an expression. */
     static Expr deNOP(Expr x) {
         while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
@@ -676,12 +671,31 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     }
 
     /*================================*/
-    /* Evaluates an ExprBuiltin node. */
+    /* Evaluates an ExprList node. */
     /*================================*/
 
+    /** Helper method that merge a list of conjuncts or disjoints while minimizing the AST depth (external caller should use i==1) */
+    private Formula getSingleFormula(boolean isConjunct, int i, List<Expr> formulas) throws Err {
+        // We actually build a "binary heap" where node X's two children are node 2X and node 2X+1
+        int n = formulas.size();
+        if (n==0) return Formula.TRUE;
+        Formula me = cform(formulas.get(i-1)), other;
+        int child1=i+i, child2=child1+1;
+        if (child1<i || child1>n) return me;
+        other = getSingleFormula(isConjunct, child1, formulas); if (isConjunct) me=me.and(other); else me=me.or(other);
+        if (child2<1 || child2>n) return me;
+        other = getSingleFormula(isConjunct, child2, formulas); if (isConjunct) me=me.and(other); else me=me.or(other);
+        return me;
+    }
+
     /** {@inheritDoc} */
-    @Override public Object visit(ExprBuiltin x) throws Err {
-        if (x.op == ExprBuiltin.Op.TOTALORDER) {
+    @Override public Object visit(ExprList x) throws Err {
+        if (x.op == ExprList.Op.AND || x.op == ExprList.Op.OR) {
+           if (x.args.size()==0) return (x.op==ExprList.Op.AND) ? Formula.TRUE : Formula.FALSE;
+           Formula answer = getSingleFormula(x.op==ExprList.Op.AND, 1, x.args);
+           return k2pos(answer, x);
+        }
+        if (x.op == ExprList.Op.TOTALORDER) {
             Expression elem = cset(x.args.get(0)), first = cset(x.args.get(1)), next = cset(x.args.get(2));
             if (elem instanceof Relation && first instanceof Relation && next instanceof Relation) {
                 Relation lst = frame.addRel("", null, frame.query(true, (Relation)elem, false));

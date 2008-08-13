@@ -26,7 +26,7 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
@@ -85,7 +85,7 @@ final class ConvToConjunction extends VisitReturn<Expr> {
     }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(ExprBuiltin x) { return x; }
+    @Override public Expr visit(ExprList x) { return x; }
 
     /** {@inheritDoc} */
     @Override public Expr visit(ExprCall x) { return x; }

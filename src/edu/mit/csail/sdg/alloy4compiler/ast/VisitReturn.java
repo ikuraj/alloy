@@ -47,8 +47,8 @@ public abstract class VisitReturn<T> {
     /** Visits an ExprBinary node. */
     public abstract T visit(ExprBinary x) throws Err;
 
-    /** Visits an ExprBuiltin node. */
-    public abstract T visit(ExprBuiltin x) throws Err;
+    /** Visits an ExprList node. */
+    public abstract T visit(ExprList x) throws Err;
 
     /** Visits an ExprCall node. */
     public abstract T visit(ExprCall x) throws Err;

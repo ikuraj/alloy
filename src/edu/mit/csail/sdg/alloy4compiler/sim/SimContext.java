@@ -35,11 +35,11 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
@@ -280,8 +280,16 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /** {@inheritDoc} */
-    @Override public Object visit(ExprBuiltin x) throws Err {
-        if (x.op==ExprBuiltin.Op.TOTALORDER) {
+    @Override public Object visit(ExprList x) throws Err {
+        if (x.op==ExprList.Op.AND) {
+           for(Expr e:x.args) if (!cform(e)) return false;
+           return true;
+        }
+        if (x.op==ExprList.Op.OR) {
+           for(Expr e:x.args) if (cform(e)) return true;
+           return false;
+        }
+        if (x.op==ExprList.Op.TOTALORDER) {
             SimTupleset elem = cset(x.args.get(0)), first = cset(x.args.get(1)), next = cset(x.args.get(2));
             return next.totalOrder(elem, first);
         }

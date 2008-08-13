@@ -238,7 +238,7 @@ public final class SimpleGUI implements ComponentListener {
     private static final IntPref SubMemory = new IntPref("SubMemory",16,768,65535);
 
     /** The amount of stack (in K) to allocate for Kodkod and the SAT solvers. */
-    private static final IntPref SubStack = new IntPref("SubStack",1024,1024,65536);
+    private static final IntPref SubStack = new IntPref("SubStack",16,1024,65536);
 
     /** The first file in Alloy Analyzer's "open recent" list. */
     private static final StringPref Model0 = new StringPref("Model0");
@@ -1154,8 +1154,9 @@ public final class SimpleGUI implements ComponentListener {
             //
             final int stack = SubStack.get();
             final JMenu subStackMenu = new JMenu("Maximum Stack to Use: " + stack + "k");
-            for(int n: new int[]{1024,2048,4096,8192,16384,32768,65536}) {
-               OurUtil.makeMenuItem(subStackMenu, ""+n+"k", doOptStack(n), n==stack?iconYes:iconNo);
+            boolean debug = "yes".equals(System.getProperty("debug"));
+            for(int n: new int[]{16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536}) {
+               if (debug || n>=1024) OurUtil.makeMenuItem(subStackMenu, ""+n+"k", doOptStack(n), n==stack?iconYes:iconNo);
             }
             optmenu.add(subStackMenu);
             //

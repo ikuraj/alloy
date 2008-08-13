@@ -470,6 +470,9 @@ public final class ExprBinary extends Expr {
         Expr left = this.left.resolve(a, warns);
         Expr right = this.right.resolve(b, warns);
         if (w!=null) warns.add(w);
+        if (left.errors.isEmpty() && left.type.is_bool && right.errors.isEmpty() && right.type.is_bool && (op==Op.AND || op==Op.OR)) {
+           if (op==Op.AND) return ExprList.makeAND(left, right); else ExprList.makeOR(left, right);
+        }
         return (left==this.left && right==this.right) ? this : op.make(pos, closingBracket, left, right);
     }
 

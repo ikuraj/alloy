@@ -56,12 +56,12 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBad;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadJoin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprBuiltin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
@@ -292,13 +292,13 @@ public final class Module extends Browsable {
         }
 
         /** {@inheritDoc} */
-        @Override public Expr visit(ExprBuiltin x) throws Err {
+        @Override public Expr visit(ExprList x) throws Err {
             TempList<Expr> temp = new TempList<Expr>(x.args.size());
             for(int i=0; i<x.args.size(); i++) {
                 Expr e = visitThis(x.args.get(i));
                 temp.add(e);
             }
-            return ExprBuiltin.make(x.pos, x.closingBracket, x.op, temp.makeConst());
+            return ExprList.make(x.pos, x.closingBracket, x.op, temp.makeConst());
         }
 
         /** {@inheritDoc} */
@@ -1158,7 +1158,7 @@ public final class Module extends Browsable {
                     cx.put(n.label, newvar);
                     if (disjvars!=null) disjvars.add(newvar);
                 }
-                if (disjvars!=null) disj=ExprBuiltin.makeDISJOINT(d.disjoint, null, disjvars).and(disj);
+                if (disjvars!=null) disj=ExprList.makeDISJOINT(d.disjoint, null, disjvars).and(disj);
             }
             Expr newBody = cx.check(f.body);
             if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
