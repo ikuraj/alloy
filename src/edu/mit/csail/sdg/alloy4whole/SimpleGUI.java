@@ -237,6 +237,9 @@ public final class SimpleGUI implements ComponentListener {
     /** The amount of memory (in M) to allocate for Kodkod and the SAT solvers. */
     private static final IntPref SubMemory = new IntPref("SubMemory",16,768,65535);
 
+    /** The amount of stack (in K) to allocate for Kodkod and the SAT solvers. */
+    private static final IntPref SubStack = new IntPref("SubStack",1024,1024,65536);
+
     /** The first file in Alloy Analyzer's "open recent" list. */
     private static final StringPref Model0 = new StringPref("Model0");
 
@@ -343,6 +346,9 @@ public final class SimpleGUI implements ComponentListener {
 
     /** The amount of memory (in MB) currently allocated for this.subprocess */
     private int subMemoryNow = 0;
+
+    /** The amount of stack (in KB) currently allocated for this.subprocess */
+    private int subStackNow = 0;
 
     /** The list of commands (this field will be cleared to null when the text buffer is edited). */
     private List<Command> commands = null;
@@ -961,13 +967,14 @@ public final class SimpleGUI implements ComponentListener {
             runbutton.setVisible(false);
             showbutton.setEnabled(false);
             stopbutton.setVisible(true);
-            int newmem = SubMemory.get();
-            if (newmem != subMemoryNow) WorkerEngine.stop();
+            int newmem = SubMemory.get(), newstack = SubStack.get();
+            if (newmem != subMemoryNow || newstack != subStackNow) WorkerEngine.stop();
             if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
                 WorkerEngine.runLocally(task, cb);
             else
-                WorkerEngine.run(task, newmem, Helper.alloyHome()+fs+"binary", cb);
+                WorkerEngine.run(task, newmem, newstack, Helper.alloyHome()+fs+"binary", cb);
             subMemoryNow = newmem;
+            subStackNow = newstack;
         } catch(Throwable ex) {
             WorkerEngine.stop();
             log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
@@ -1141,9 +1148,16 @@ public final class SimpleGUI implements ComponentListener {
             final int mem = SubMemory.get();
             final JMenu subMemoryMenu = new JMenu("Maximum Memory to Use: " + mem + "M");
             for(int n: allowedMemorySizes) {
-                OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", doOptMemory(n), n==mem?iconYes:iconNo);
+               OurUtil.makeMenuItem(subMemoryMenu, ""+n+"M", doOptMemory(n), n==mem?iconYes:iconNo);
             }
             optmenu.add(subMemoryMenu);
+            //
+            final int stack = SubStack.get();
+            final JMenu subStackMenu = new JMenu("Maximum Stack to Use: " + stack + "k");
+            for(int n: new int[]{1024,2048,4096,8192,16384,32768,65536}) {
+               OurUtil.makeMenuItem(subStackMenu, ""+n+"k", doOptStack(n), n==stack?iconYes:iconNo);
+            }
+            optmenu.add(subStackMenu);
             //
             final Verbosity vnow = Verbosity.get();
             final JMenu verb = new JMenu("Message Verbosity: "+vnow);
@@ -1212,6 +1226,12 @@ public final class SimpleGUI implements ComponentListener {
     /** This method changes the amount of memory to use. */
     private Runner doOptMemory(Integer size) {
         if (!wrap) SubMemory.set(size);
+        return wrapMe(size);
+    }
+
+    /** This method changes the amount of stack to use. */
+    private Runner doOptStack(Integer size) {
+        if (!wrap) SubStack.set(size);
         return wrapMe(size);
     }
 
@@ -1566,7 +1586,7 @@ public final class SimpleGUI implements ComponentListener {
             SimpleTask2 task = new SimpleTask2();
             task.filename = arg;
             try {
-                WorkerEngine.run(task, SubMemory.get(), Helper.alloyHome()+fs+"binary", cb);
+                WorkerEngine.run(task, SubMemory.get(), SubStack.get(), Helper.alloyHome()+fs+"binary", cb);
             } catch(Throwable ex) {
                 WorkerEngine.stop();
                 log.logBold("Fatal Error: Solver failed due to unknown reason.\n" +
@@ -1735,7 +1755,7 @@ public final class SimpleGUI implements ComponentListener {
                     });
                     return;
                 }
-                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(dummyTask, mem, "", this); return; } catch(IOException ex) { fail(); }
+                try { mem=toTry.remove(0); WorkerEngine.stop(); WorkerEngine.run(dummyTask, mem, 128, "", this); return; } catch(IOException ex) { fail(); }
             }
             public synchronized void done() {
                 //System.out.println("Alloy4 can use "+mem+"M"); System.out.flush();

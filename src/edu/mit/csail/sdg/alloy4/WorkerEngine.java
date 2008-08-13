@@ -39,7 +39,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
  * This class allows you to execute tasks in a subprocess, and receive its outputs via callback.
  *
  * <p> By executing the task in a subprocess, we can always terminate a runaway task explicitly by calling stop(),
- * and we can control how much memory to give to the subprocess.
+ * and we can control how much memory and stack space to give to the subprocess.
  *
  * <p> Only one task may execute concurrently at any given time; if you try to issue a new task
  * when the previous task hasn't finished, then you will get an IOException.
@@ -125,12 +125,13 @@ public final class WorkerEngine {
    * This issues a new task to the subprocess; if subprocess hasn't been constructed yet or has terminated abnormally, this method will launch a new subprocess.
    * @param task - the task that we want the subprocess to execute
    * @param newmem - the amount of memory (in megabytes) we want the subprocess to have (if the subproces has not terminated, then this parameter is ignored)
+   * @param newstack - the amount of stack (in kilobytes) we want the subprocess to have (if the subproces has not terminated, then this parameter is ignored)
    * @param jniPath - if nonnull and nonempty, then it specifies the subprocess's default JNI library location
    * @param callback - the handler that will receive outputs from the task
    * @throws IOException - if a previous task is still busy executing
    * @throws IOException - if an error occurred in launching a sub JVM or talking to it
    */
-  public static void run(final WorkerTask task, final int newmem, final String jniPath, final WorkerCallback callback) throws IOException {
+  public static void run(final WorkerTask task, int newmem, int newstack, final String jniPath, final WorkerCallback callback) throws IOException {
      synchronized(WorkerEngine.class) {
         final Process sub;
         if (latest_manager!=null && latest_manager.isAlive()) throw new IOException("Subprocess still performing the previous task.");
@@ -150,6 +151,7 @@ public final class WorkerEngine {
                sub = Runtime.getRuntime().exec(new String[] {
                   java,
                   "-Xmx" + newmem + "m",
+                  "-Xss" + newstack + "k",
                   "-Djava.library.path=" + jniPath,
                   "-Ddebug=" + debug,
                   "-cp", System.getProperty("java.class.path"), WorkerEngine.class.getName(),
@@ -159,6 +161,7 @@ public final class WorkerEngine {
                sub = Runtime.getRuntime().exec(new String[] {
                   java,
                   "-Xmx" + newmem + "m",
+                  "-Xss" + newstack + "k",
                   "-Ddebug=" + debug,
                   "-cp", System.getProperty("java.class.path"), WorkerEngine.class.getName(),
                   Version.buildDate(), ""+Version.buildNumber()

@@ -86,9 +86,15 @@ final class SimpleReporter extends A4Reporter {
             if (msg==null) { span.logBold("Done\n"); span.flush(); return; }
             if (msg instanceof String) { span.logBold( ((String)msg).trim() + "\n" ); span.flush(); return; }
             if (msg instanceof Throwable) {
-                for(Throwable ex = (Throwable)msg; ex!=null; ex=ex.getCause()) if (ex instanceof OutOfMemoryError || ex instanceof StackOverflowError) {
-                   span.logBold("\nFatal Error: the solver ran out of memory!\n" + "Try simplifying your model or reducing the scope,\n" + "or increase memory under the Options menu.\n");
-                   return;
+                for(Throwable ex = (Throwable)msg; ex!=null; ex=ex.getCause()) {
+                   if (ex instanceof OutOfMemoryError) {
+                      span.logBold("\nFatal Error: the solver ran out of memory!\n" + "Try simplifying your model or reducing the scope,\n" + "or increase memory under the Options menu.\n");
+                      return;
+                   }
+                   if (ex instanceof StackOverflowError) {
+                      span.logBold("\nFatal Error: the solver ran out of stack space!\n" + "Try simplifying your model or reducing the scope,\n" + "or increase stack under the Options menu.\n");
+                      return;
+                   }
                 }
             }
             if (msg instanceof Err) {

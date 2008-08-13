@@ -196,7 +196,20 @@ public final class MailBug implements UncaughtExceptionHandler {
         final JTextArea problem = textarea("", 50, 50, true, false, empty);
         final JScrollPane scroll = scrollpane(problem, new LineBorder(Color.DARK_GRAY), new Dimension(300, 200));
         for(Throwable ex2=ex; ex2!=null; ex2=ex2.getCause()) {
-            if (ex2 instanceof OutOfMemoryError || ex2 instanceof StackOverflowError) {
+            if (ex2 instanceof StackOverflowError) {
+                JOptionPane.showMessageDialog(null, new Object[] {
+                   "Sorry. The Alloy Analyzer has run out of stack space.",
+                   " ",
+                   "Try simplifying your model or reducing the scope.",
+                   "And try disabling Options->RecordKodkod.",
+                   "And try reducing Options->SkolemDepth to 0.",
+                   "And try increasing Options->Stack.",
+                   " ",
+                   "There is no way for Alloy to continue execution, so pressing OK will shut down Alloy."
+                }, "Fatal Error", JOptionPane.ERROR_MESSAGE);
+                System.exit(1);
+            }
+            if (ex2 instanceof OutOfMemoryError) {
                 JOptionPane.showMessageDialog(null, new Object[] {
                    "Sorry. The Alloy Analyzer has run out of memory.",
                    " ",
