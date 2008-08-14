@@ -114,6 +114,12 @@ public final class ExprLet extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
+    public int getDepth() {
+        int a=var.getDepth(), b=sub.getDepth();
+        if (a>=b) return 1+a; else return 1+b;
+    }
+
+    /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */

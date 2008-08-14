@@ -199,6 +199,13 @@ public final class ExprQuant extends Expr {
     //=============================================================================================================//
 
     /** {@inheritDoc} */
+    public int getDepth() {
+        int max = sub.getDepth();
+        for(Expr x: vars) { int tmp=x.getDepth(); if (max<tmp) max=tmp; }
+        return 1 + max;
+    }
+
+    /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */

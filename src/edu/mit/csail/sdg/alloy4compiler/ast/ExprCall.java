@@ -244,6 +244,13 @@ public final class ExprCall extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
+    public int getDepth() {
+        int max = 1;
+        for(Expr x: args) { int tmp=x.getDepth(); if (max<tmp) max=tmp; }
+        return 1 + max;
+    }
+
+    /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */

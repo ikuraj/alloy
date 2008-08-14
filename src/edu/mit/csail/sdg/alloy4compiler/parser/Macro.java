@@ -115,6 +115,13 @@ final class Macro extends ExprCustom {
     }
 
     /** {@inheritDoc} */
+    public int getDepth() {
+        int max = body.getDepth();
+        for(Expr x: args) { int tmp=x.getDepth(); if (max<tmp) max=tmp; }
+        return 1 + max;
+    }
+
+    /** {@inheritDoc} */
     @Override public String toString() { return name; }
 
     /** {@inheritDoc} */

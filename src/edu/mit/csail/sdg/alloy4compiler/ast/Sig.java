@@ -193,6 +193,9 @@ public abstract class Sig extends Expr {
     /** Returns true iff "this is equal or subtype of that" */
     public abstract boolean isSameOrDescendentOf(Sig that);
 
+    /** {@inheritDoc} */
+    public int getDepth() { return 1; }
+
     //==============================================================================================================//
 
     /**
@@ -512,6 +515,9 @@ public abstract class Sig extends Expr {
 
         /** {@inheritDoc} */
         @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+
+        /** {@inheritDoc} */
+        public int getDepth() { return 1; }
 
         /** {@inheritDoc} */
         @Override public String getDescription() { return "<b>field</b> " + label; }

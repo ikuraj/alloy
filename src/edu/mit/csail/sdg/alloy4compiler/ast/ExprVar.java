@@ -42,7 +42,7 @@ public final class ExprVar extends Expr {
     /** The label associated with this variable; it's used for pretty-printing and does not have to be unique. */
     public final String label;
 
-    /** The expression that this variable is quantified over or substituted by; always nonnull. */
+    /** The expression that this variable is quantified over or substituted by; may be null. */
     public final Expr expr;
 
     /** {@inheritDoc} */
@@ -61,7 +61,7 @@ public final class ExprVar extends Expr {
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
             out.append("Var ").append(label).append(" at position <").append(pos).append("> with type=").append(type).append('\n');
-            expr.toString(out, indent+2);
+            if (expr!=null) expr.toString(out, indent+2);
         }
     }
 
@@ -111,6 +111,9 @@ public final class ExprVar extends Expr {
         while(a>1) { expr=expr.product(Sig.NONE); a--; }
         return new ExprVar(pos, label, type, expr);
     }
+
+    /** {@inheritDoc} */
+    public int getDepth() { return (expr!=null ? expr.getDepth() : 0) + 1; }
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) { return this; }

@@ -92,6 +92,12 @@ public final class ExprBadJoin extends Expr {
     }
 
     /** {@inheritDoc} */
+    public int getDepth() {
+        int a=left.getDepth(), b=right.getDepth();
+        if (a>=b) return 1+a; else return 1+b;
+    }
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */

@@ -276,6 +276,9 @@ public abstract class Expr extends Browsable {
         return seen;
     }
 
+    /** Returns the height of the abstract syntax tree starting from this node. */
+    public abstract int getDepth();
+
     //================================================================================//
     // Below are convenience methods for building up expressions from subexpressions. //
     //================================================================================//

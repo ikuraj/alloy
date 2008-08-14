@@ -62,6 +62,9 @@ public final class ExprBad extends Expr {
     }
 
     /** {@inheritDoc} */
+    public int getDepth() { return 1; }
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */

@@ -117,6 +117,13 @@ public final class ExprBadCall extends Expr {
     }
 
     /** {@inheritDoc} */
+    public int getDepth() {
+        int max = 1;
+        for(Expr x: args) { int tmp=x.getDepth(); if (max<tmp) max=tmp; }
+        return 1 + max;
+    }
+
+    /** {@inheritDoc} */
     @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */

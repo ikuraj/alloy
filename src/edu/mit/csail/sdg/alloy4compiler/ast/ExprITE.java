@@ -177,6 +177,12 @@ public final class ExprITE extends Expr {
     }
 
     /** {@inheritDoc} */
+    public int getDepth() {
+        int a = cond.getDepth(), b = left.getDepth(), c = right.getDepth();
+        if (a>=b) return 1+(a>=c ? a : c); else return 1+(b>=c ? b : c);
+    }
+
+    /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */

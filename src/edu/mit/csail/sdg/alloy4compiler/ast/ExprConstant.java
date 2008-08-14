@@ -149,6 +149,9 @@ public final class ExprConstant extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
+    public int getDepth() { return 1; }
+
+    /** {@inheritDoc} */
     @Override public String getDescription() {
         switch(op) {
           case TRUE: return "<b>true</b>";

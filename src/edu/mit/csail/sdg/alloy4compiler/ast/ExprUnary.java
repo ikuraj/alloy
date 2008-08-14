@@ -326,6 +326,9 @@ public final class ExprUnary extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
+    public int getDepth() { return 1 + sub.getDepth(); }
+
+    /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */

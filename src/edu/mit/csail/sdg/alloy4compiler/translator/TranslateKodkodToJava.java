@@ -58,6 +58,8 @@ import kodkod.ast.UnaryIntExpression;
 import kodkod.ast.Variable;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
+import kodkod.ast.RelationPredicate.Function;
+import kodkod.ast.visitor.ReturnVisitor;
 import kodkod.ast.visitor.VoidVisitor;
 import kodkod.instance.Bounds;
 import kodkod.instance.TupleSet;
@@ -72,6 +74,55 @@ import kodkod.util.ints.IndexedEntry;
  */
 
 public final class TranslateKodkodToJava implements VoidVisitor {
+
+    /** Count the height of the given Kodkod AST tree. */
+    public static int countHeight(Node node) {
+        ReturnVisitor<Integer,Integer,Integer,Integer> vis = new ReturnVisitor<Integer,Integer,Integer,Integer>() {
+            private int max(int a, int b)                 { return (a>=b) ? a : b; }
+            private int max(int a, int b, int c)          { return (a>=b) ? (a>=c ? a : c) : (b>=c ? b: c); }
+            public Integer visit(Relation x)              { return 1; }
+            public Integer visit(IntConstant x)           { return 1; }
+            public Integer visit(ConstantFormula x)       { return 1; }
+            public Integer visit(Variable x)              { return 1; }
+            public Integer visit(ConstantExpression x)    { return 1; }
+            public Integer visit(NotFormula x)            { return 1 + x.formula().accept(this); }
+            public Integer visit(IntToExprCast x)         { return 1 + x.intExpr().accept(this); }
+            public Integer visit(Decl x)                  { return 1 + x.expression().accept(this); }
+            public Integer visit(ExprToIntCast x)         { return 1 + x.expression().accept(this); }
+            public Integer visit(UnaryExpression x)       { return 1 + x.expression().accept(this); }
+            public Integer visit(UnaryIntExpression x)    { return 1 + x.expression().accept(this); }
+            public Integer visit(MultiplicityFormula x)   { return 1 + x.expression().accept(this); }
+            public Integer visit(BinaryExpression x)      { return 1 + max(x.left().accept(this), x.right().accept(this)); }
+            public Integer visit(ComparisonFormula x)     { return 1 + max(x.left().accept(this), x.right().accept(this)); }
+            public Integer visit(BinaryFormula x)         { return 1 + max(x.left().accept(this), x.right().accept(this)); }
+            public Integer visit(BinaryIntExpression x)   { return 1 + max(x.left().accept(this), x.right().accept(this)); }
+            public Integer visit(IntComparisonFormula x)  { return 1 + max(x.left().accept(this), x.right().accept(this)); }
+            public Integer visit(IfExpression x)          { return 1 + max(x.condition().accept(this), x.thenExpr().accept(this), x.elseExpr().accept(this)); }
+            public Integer visit(IfIntExpression x)       { return 1 + max(x.condition().accept(this), x.thenExpr().accept(this), x.elseExpr().accept(this)); }
+            public Integer visit(SumExpression x)         { return 1 + max(x.declarations().accept(this), x.intExpr().accept(this)); }
+            public Integer visit(QuantifiedFormula x)     { return 1 + max(x.declarations().accept(this), x.formula().accept(this)); }
+            public Integer visit(Comprehension x)         { return 1 + max(x.declarations().accept(this), x.formula().accept(this)); }
+            public Integer visit(Decls x) {
+                int max = 0, n = x.size();
+                for(int i=0; i<n; i++) max = max(max, x.get(i).accept(this));
+                return max;
+            }
+            public Integer visit(ProjectExpression x) {
+                int max = x.expression().accept(this);
+                for(IntExpression t: x.columns()) max = max(max, t.accept(this));
+                return max;
+            }
+            public Integer visit(RelationPredicate x) {
+                if (x instanceof Function) {
+                    Function f = ((Function)x);
+                    return max(f.domain().accept(this), f.range().accept(this));
+                }
+                return 1;
+            }
+        };
+        Object ans = node.accept(vis);
+        if (ans instanceof Integer) return ((Integer)ans).intValue(); else return 0;
+    }
 
     /**
      * Given a Kodkod formula node, return a Java program that (when compiled and executed) would solve that formula.

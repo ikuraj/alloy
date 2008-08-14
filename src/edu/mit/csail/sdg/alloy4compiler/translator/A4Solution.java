@@ -824,6 +824,7 @@ public final class A4Solution {
         });
         // Try the book examples
         if (!opt.solver.equals(SatSolver.CNF) && !opt.solver.equals(SatSolver.KK) && tryBookExamples) {
+           // fgoal = Nodes.balance(fgoal); throw new ErrorSyntax("Kodkod depth = " + TranslateKodkodToJava.countHeight(fgoal));
            A4Reporter r = "yes".equals(System.getProperty("debug")) ? rep : null;
            if (r!=null) r.debug("Begin the book check...\n");
            try { sol=BookExamples.trial(r, this, fgoal, solver, cmd.check); } catch(Throwable ex) { }

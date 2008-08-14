@@ -194,6 +194,13 @@ public final class ExprChoice extends Expr {
     //============================================================================================================//
 
     /** {@inheritDoc} */
+    public int getDepth() {
+        int max = 1;
+        for(Expr x: choices) { int tmp=x.getDepth(); if (max<tmp) max=tmp; }
+        return 1 + max;
+    }
+
+    /** {@inheritDoc} */
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err {
         if (!errors.isEmpty()) throw errors.pick();
         throw new ErrorType(span(), "This expression failed to be resolved.");
