@@ -678,7 +678,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     private Formula getSingleFormula(boolean isConjunct, int i, List<Expr> formulas) throws Err {
         // We actually build a "binary heap" where node X's two children are node 2X and node 2X+1
         int n = formulas.size();
-        if (n==0) return Formula.TRUE;
+        if (n==0) return isConjunct ? Formula.TRUE : Formula.FALSE;
         Formula me = cform(formulas.get(i-1)), other;
         int child1=i+i, child2=child1+1;
         if (child1<i || child1>n) return me;
