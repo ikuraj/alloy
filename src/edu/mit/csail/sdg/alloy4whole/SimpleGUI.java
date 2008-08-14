@@ -238,7 +238,7 @@ public final class SimpleGUI implements ComponentListener {
     private static final IntPref SubMemory = new IntPref("SubMemory",16,768,65535);
 
     /** The amount of stack (in K) to allocate for Kodkod and the SAT solvers. */
-    private static final IntPref SubStack = new IntPref("SubStack",16,1024,65536);
+    private static final IntPref SubStack = new IntPref("SubStack",16,8192,65536);
 
     /** The first file in Alloy Analyzer's "open recent" list. */
     private static final StringPref Model0 = new StringPref("Model0");
