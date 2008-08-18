@@ -35,13 +35,12 @@ import edu.mit.csail.sdg.alloy4.ErrorAPI;
 
 public final class SimTupleset {
 
-    /** This map is used to canonicalize String and Integer and Boolean objects; all other objects are compared via object identity instead. */
+    /** This map is used to canonicalize the atoms. */
     private static final WeakHashMap<Object,WeakReference<Object>> map = new WeakHashMap<Object,WeakReference<Object>>();
 
-    /** This method is used to canonicalize String and Integer and Boolean objects; all other objects are used as-is. */
+    /** This method is used to canonicalize the atoms. */
     static Object canon(Object x) {
        if (x instanceof Boolean) return Boolean.TRUE.equals(x) ? Boolean.TRUE : Boolean.FALSE;
-       if (!(x instanceof String || x instanceof Integer)) return x;
        WeakReference<Object> ans = map.get(x);
        if (ans != null) return ans.get();
        map.put(x, new WeakReference<Object>(x));
