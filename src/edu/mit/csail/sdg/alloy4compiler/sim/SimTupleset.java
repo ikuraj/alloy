@@ -92,12 +92,6 @@ public final class SimTupleset {
     /** The tupleset containing no tuples. */
     public static final SimTupleset EMPTY = new SimTupleset(new ArrayList<Object[]>(0));
 
-    /** The tupleset containing the atom Boolean.TRUE */
-    public static final SimTupleset TRUE = wrap(Boolean.TRUE);
-
-    /** The tupleset containing the atom Boolean.FALSE */
-    public static final SimTupleset FALSE = wrap(Boolean.FALSE);
-
     /**
      * Returns the index position if the list of tuples contains the tuple (a,b) (or return -1 if not found).
      * (Note: it assumes "a" and "b" have been canonicalized)

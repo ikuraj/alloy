@@ -52,8 +52,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 
 public final class SimContext extends VisitReturn<Object> {
 
-    // FIXTHIS: add more optimizations where UNIV or IDEN or even whole SIG is composed with some expression
-    // FIXTHIS: ensure UNIV and IDEN and certain sigs have "infinite" property.
+    // FIXTHIS: add more optimizations where dealing with UNIV, IDEN, and sigs that have infinite property like STRING and INT
 
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
@@ -98,8 +97,6 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** Modifies the given sig to be associated with the given unary value. */
     public void assign(Sig sig, SimTupleset value) throws Err {
-        // FIXTHIS: Int and seq/Int should be pre-bound and unchangable
-        // FIXTHIS: univ should magically reflect...
         if (value.arity()>1) throw new ErrorType("Evaluator encountered an error: sig "+sig.label+" arity must not be " + value.arity());
         sigs.put(sig, value);
         cacheForConstants.clear();

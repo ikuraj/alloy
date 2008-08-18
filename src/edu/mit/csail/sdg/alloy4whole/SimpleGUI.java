@@ -117,6 +117,8 @@ import edu.mit.csail.sdg.alloy4compiler.sim.SimContext;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimTupleset;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4Tuple;
+import edu.mit.csail.sdg.alloy4compiler.translator.A4TupleSet;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options.SatSolver;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
@@ -1609,6 +1611,21 @@ public final class SimpleGUI implements ComponentListener {
         public void setSourceFile(String filename) { }
     };
 
+    /** Converts an A4TupleSet into a SimTupleset object. */
+    private static SimTupleset convert(Object object) throws Err {
+        if (!(object instanceof A4TupleSet)) throw new ErrorFatal("Unexpected type error: expecting an A4TupleSet.");
+        A4TupleSet s = (A4TupleSet)object;
+        if (s.size()==0) return SimTupleset.EMPTY;
+        List<Object[]> list = new ArrayList<Object[]>(s.size());
+        int arity = s.arity();
+        for(A4Tuple t: s) {
+            Object[] array = new Object[arity];
+            for(int i=0; i<t.arity(); i++) array[i] = t.atom(i);
+            list.add(array);
+        }
+        return SimTupleset.make(list);
+    }
+
     /** This object performs expression evaluation. */
     private static Computer evaluator = new Computer() {
         private String filename=null;
@@ -1646,8 +1663,8 @@ public final class SimpleGUI implements ComponentListener {
                 if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
                    SimContext ct = new SimContext(ans.getBitwidth());
                    for(Sig s: root.getAllReachableSigs()) {
-                       ct.assign(s, SimTupleset.EMPTY);
-                       for(Field f: s.getFields()) { ct.assign(f, SimTupleset.EMPTY); }
+                       ct.assign(s, convert(ans.eval(s)));
+                       for(Field f: s.getFields()) ct.assign(f, convert(ans.eval(f)));
                    }
                    return ct.visitThis(e).toString();
                 } else {
