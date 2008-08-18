@@ -57,11 +57,8 @@ public final class SimContext extends VisitReturn<Object> {
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
-    /** The exact values of each sig. */
-    private final Map<Sig,SimTupleset> sigs = new HashMap<Sig,SimTupleset>();
-
-    /** The exact values of each field. */
-    private final Map<Field,SimTupleset> fields = new HashMap<Field,SimTupleset>();
+    /** The exact values of each sig, field, and skolem. */
+    private final Map<Expr,SimTupleset> sfs = new HashMap<Expr,SimTupleset>();
 
     /** Caches parameter-less functions to a Boolean, Integer, or SimTupleset. */
     private final Map<Func,Object> cacheForConstants = new IdentityHashMap<Func,Object>();
@@ -101,15 +98,14 @@ public final class SimContext extends VisitReturn<Object> {
         x.cacheIDEN = cacheIDEN;
         x.cacheNEXT = cacheNEXT;
         x.env = env.dup();
-        for(Map.Entry<Sig,SimTupleset> e: sigs.entrySet()) x.sigs.put(e.getKey(), e.getValue());
-        for(Map.Entry<Field,SimTupleset> e: fields.entrySet()) x.fields.put(e.getKey(), e.getValue());
+        for(Map.Entry<Expr,SimTupleset> e: sfs.entrySet()) x.sfs.put(e.getKey(), e.getValue());
         return x;
     }
 
     /** Modifies the given sig to be associated with the given unary value. */
     public void assign(Sig sig, SimTupleset value) throws Err {
         if (value.arity()>1) throw new ErrorType("Evaluator encountered an error: sig "+sig.label+" arity must not be " + value.arity());
-        sigs.put(sig, value);
+        sfs.put(sig, value);
         cacheForConstants.clear();
         cacheIDEN = null;
     }
@@ -117,7 +113,7 @@ public final class SimContext extends VisitReturn<Object> {
     /** Modifies the given field to be associated with the given value. */
     public void assign(Field field, SimTupleset value) throws Err {
         if (value.size()>0 && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
-        fields.put(field, value);
+        sfs.put(field, value);
         cacheForConstants.clear();
         cacheIDEN = null;
     }
@@ -125,8 +121,7 @@ public final class SimContext extends VisitReturn<Object> {
     /** Modifies the given global var to be associated with the given value. */
     public void assign(ExprVar var, SimTupleset value) throws Err {
         if (value.size()>0 && value.arity()!=var.type.arity()) throw new ErrorType("Evaluator encountered an error: skolem "+var.label+" arity must not be " + value.arity());
-        env.remove(var);
-        env.put(var, value);
+        sfs.put(var, value);
         cacheForConstants.clear();
         cacheIDEN = null;
     }
@@ -437,6 +432,11 @@ public final class SimContext extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprVar x) throws Err {
         Object ans = env.get(x);
+        if (ans==null) ans = sfs.get(x);
+        if (ans==null) {
+           SimTupleset ts = sfs.get(Sig.UNIV);
+           if (ts!=null) for(Object a: ts.getAllAtoms(0)) if (x.label.equals(a)) return SimTupleset.wrap(a);
+        }
         if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
     }
@@ -444,13 +444,13 @@ public final class SimContext extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(Sig x) throws Err {
         if (x==Sig.NONE) return SimTupleset.EMPTY;
-        Object ans = sigs.get(x);
+        Object ans = sfs.get(x);
         if (ans==null) throw new ErrorFatal("Unknown sig "+x+" encountered during evaluation."); else return ans;
     }
 
     /** {@inheritDoc} */
     @Override public Object visit(Field x) throws Err {
-        Object ans = fields.get(x);
+        Object ans = sfs.get(x);
         if (ans==null) throw new ErrorFatal("Unknown field "+x+" encountered during evaluation."); else return ans;
     }
 }
