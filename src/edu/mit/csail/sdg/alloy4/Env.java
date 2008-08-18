@@ -123,4 +123,12 @@ public final class Env<K,V> {
         map1.clear();
         map2.clear();
     }
+
+    /** Make a shallow copy of this environment. */
+    public Env<K,V> dup() {
+        Env<K,V> ans = new Env<K,V>();
+        for(Map.Entry<K,V> e: map1.entrySet()) ans.map1.put(e.getKey(), e.getValue());
+        for(Map.Entry<K,LinkedList<V>> e: map2.entrySet()) ans.map2.put(e.getKey(), new LinkedList<V>(e.getValue()));
+        return ans;
+    }
 }

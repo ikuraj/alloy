@@ -1626,6 +1626,18 @@ public final class SimpleGUI implements ComponentListener {
         return SimTupleset.make(list);
     }
 
+    /** Converts an A4Solution into a SimContext object. */
+    public static SimContext convert(A4Solution ans) throws Err {
+        SimContext ct = new SimContext(ans.getBitwidth());
+        for(Sig s: ans.getAllReachableSigs()) {
+            ct.assign(s, convert(ans.eval(s)));
+            for(Field f: s.getFields()) ct.assign(f, convert(ans.eval(f)));
+        }
+        for(ExprVar a:ans.getAllAtoms())   ct.assign(a, convert(ans.eval(a)));
+        for(ExprVar a:ans.getAllSkolems()) ct.assign(a, convert(ans.eval(a)));
+        return ct;
+    }
+
     /** This object performs expression evaluation. */
     private static Computer evaluator = new Computer() {
         private String filename=null;
@@ -1660,18 +1672,10 @@ public final class SimpleGUI implements ComponentListener {
             }
             try {
                 Expr e = CompUtil.parseOneExpression_fromString(root, input);
-                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG) {
-                   SimContext ct = new SimContext(ans.getBitwidth());
-                   for(Sig s: root.getAllReachableSigs()) {
-                       ct.assign(s, convert(ans.eval(s)));
-                       for(Field f: s.getFields()) ct.assign(f, convert(ans.eval(f)));
-                   }
-                   for(ExprVar a:ans.getAllAtoms())   ct.assign(a, convert(ans.eval(a)));
-                   for(ExprVar a:ans.getAllSkolems()) ct.assign(a, convert(ans.eval(a)));
-                   return ct.visitThis(e).toString();
-                } else {
+                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
+                   return convert(ans).visitThis(e).toString();
+                else
                    return ans.eval(e).toString();
-                }
             } catch(HigherOrderDeclException ex) {
                 throw new ErrorType("Higher-order quantification is not allowed in the evaluator.");
             }

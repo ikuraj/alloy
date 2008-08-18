@@ -95,6 +95,17 @@ public final class SimContext extends VisitReturn<Object> {
         shiftmask = (1 << (32 - Integer.numberOfLeadingZeros(bitwidth-1))) - 1;
     }
 
+    /** Construct a deep copy. */
+    public SimContext dup() throws Err {
+        SimContext x = new SimContext(bitwidth);
+        x.cacheIDEN = cacheIDEN;
+        x.cacheNEXT = cacheNEXT;
+        x.env = env.dup();
+        for(Map.Entry<Sig,SimTupleset> e: sigs.entrySet()) x.sigs.put(e.getKey(), e.getValue());
+        for(Map.Entry<Field,SimTupleset> e: fields.entrySet()) x.fields.put(e.getKey(), e.getValue());
+        return x;
+    }
+
     /** Modifies the given sig to be associated with the given unary value. */
     public void assign(Sig sig, SimTupleset value) throws Err {
         if (value.arity()>1) throw new ErrorType("Evaluator encountered an error: sig "+sig.label+" arity must not be " + value.arity());
