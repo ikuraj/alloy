@@ -1666,6 +1666,8 @@ public final class SimpleGUI implements ComponentListener {
                        ct.assign(s, convert(ans.eval(s)));
                        for(Field f: s.getFields()) ct.assign(f, convert(ans.eval(f)));
                    }
+                   for(ExprVar a:ans.getAllAtoms())   ct.assign(a, convert(ans.eval(a)));
+                   for(ExprVar a:ans.getAllSkolems()) ct.assign(a, convert(ans.eval(a)));
                    return ct.visitThis(e).toString();
                 } else {
                    return ans.eval(e).toString();

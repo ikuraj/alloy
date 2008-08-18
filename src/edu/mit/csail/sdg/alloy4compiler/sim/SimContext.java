@@ -111,6 +111,15 @@ public final class SimContext extends VisitReturn<Object> {
         cacheIDEN = null;
     }
 
+    /** Modifies the given global var to be associated with the given value. */
+    public void assign(ExprVar var, SimTupleset value) throws Err {
+        if (value.size()>0 && value.arity()!=var.type.arity()) throw new ErrorType("Evaluator encountered an error: skolem "+var.label+" arity must not be " + value.arity());
+        env.remove(var);
+        env.put(var, value);
+        cacheForConstants.clear();
+        cacheIDEN = null;
+    }
+
     /** Truncate the given integer based on the current chosen bitwidth */
     private int trunc(int i) { return (i<<(32-bitwidth)) >> (32-bitwidth); }
 
