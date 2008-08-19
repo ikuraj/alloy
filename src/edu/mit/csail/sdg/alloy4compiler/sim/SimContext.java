@@ -142,23 +142,16 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /**
-     * Delete an atom from a sig, then automatically delete it from all subsigs as well.
+     * Delete an atom from all sigs.
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
-     * @throws ErrorAPI if attempting to delete from "Int" or "seq/Int" or a SubsetSig.
+     * @throws ErrorAPI if attempting to delete from "Int".
      */
-    public void deleteAtom(Sig sig, Object atom) throws Err {
-        if (sig instanceof SubsetSig) throw new ErrorAPI("Cannot delete an atom from a subset sig.");
-        if (sig==Sig.SIGINT || sig==Sig.SEQIDX) throw new ErrorAPI("Cannot delete an atom from Int or seq/Int");
-        if (sig==Sig.UNIV) {
-           // We deliberately don't delete from SubsetSigs in order to be consistent with when we called deleteAtom with a user-defined sig
-           for(Object x: sfs.keySet()) if (x instanceof PrimSig && !((PrimSig)x).builtin) deleteAtom((PrimSig)x, atom);
-           return;
+    public void deleteAtom(Object atom) throws Err {
+        if (atom instanceof Integer) throw new ErrorAPI("Cannot delete an integer atom");
+        SimTupleset wrap = SimTupleset.wrap(atom);
+        for(Map.Entry<Expr,SimTupleset> x: sfs.entrySet()) {
+            if (x.getKey() instanceof Sig) x.setValue(x.getValue().difference(wrap));
         }
-        if (sig instanceof PrimSig) for(Sig s: ((PrimSig)sig).children()) deleteAtom(s, atom);
-        SimTupleset old = sfs.get(sig);
-        if (old==null) old = SimTupleset.EMPTY;
-        old = old.difference(SimTupleset.wrap(atom));
-        sfs.put(sig, old);
     }
 
     /**
