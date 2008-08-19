@@ -33,6 +33,7 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
@@ -219,6 +220,12 @@ public final class ExprBinary extends Expr {
          */
         public final Expr make(Pos pos, Pos closingBracket, Expr left, Expr right) {
             switch(this) {
+              case DOMAIN: {
+                // Special optimization
+                Expr f = right.deNOP();
+                if (f instanceof Field && ((Field)f).sig==left.deNOP()) return right;
+                break;
+              }
               case MUL: case DIV: case REM: case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA: {
                 left = left.typecheck_as_int();
                 right = right.typecheck_as_int();

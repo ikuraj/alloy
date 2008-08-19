@@ -392,6 +392,20 @@ public final class SimTupleset {
         return list;
     }
 
+    /**
+     * Returns the list of all i-th atom from all tuples in some arbitrary order (0 is first atom, 1 is second atom...)
+     * @throws - ErrorAPI if this tupleset contains at least one tuple whose length is less than or equal to i
+     */
+    public SimTupleset pickColumn(int column) throws ErrorAPI {
+        if (tuples.size()==0) return EMPTY;
+        if (column<0 || column>=tuples.get(0).length) throw new ErrorAPI("This tupleset does not have an \""+column+"th\" column.");
+        IdentityHashMap<Object,Object> ans = new IdentityHashMap<Object,Object>();
+        for(Object[] x: tuples) ans.put(x[column], Boolean.TRUE);
+        List<Object[]> list = new ArrayList<Object[]>(ans.size());
+        for(Object x: ans.keySet()) list.add(new Object[]{x});
+        return new SimTupleset(list);
+    }
+
     /** Returns the number of tuples in this tupleset. */
     public int size() { return tuples.size(); }
 

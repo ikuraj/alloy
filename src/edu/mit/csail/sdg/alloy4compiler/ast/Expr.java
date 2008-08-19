@@ -237,6 +237,13 @@ public abstract class Expr extends Browsable {
         return obj==this;
     }
 
+    /** Remove the "ExprUnary NOP" in front of an expression. */
+    final Expr deNOP() {
+        Expr x = this;
+        while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
+        return x;
+    }
+
     /** A return visitor that determines whether the node (or a subnode) contains a predicate/function call. */
     private static final VisitQuery<Object> hasCall = new VisitQuery<Object>() {
         @Override public final Object visit(ExprCall x) { return this; }

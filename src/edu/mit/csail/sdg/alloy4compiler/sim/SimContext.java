@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
@@ -47,6 +48,8 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 
 /** Mutable; represents an instance. */
 
@@ -102,7 +105,51 @@ public final class SimContext extends VisitReturn<Object> {
         return x;
     }
 
-    /** Modifies the given sig to be associated with the given unary value. */
+    /**
+     * Add an atom to a sig, then automatically add it to all parent sigs as well.
+     * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
+     * @throws ErrorAPI if attempting to add an atom to an abstract sig with children, or a builtin sig, or a subset sig.
+     */
+    public void addAtom(Sig sig, Object atom) throws Err {
+        if (sig.builtin) throw new ErrorAPI("Cannot add an atom to a builtin sig.");
+        if (sig instanceof SubsetSig) throw new ErrorAPI("Cannot add an atom to a subset sig.");
+        PrimSig s = (PrimSig)sig;
+        if (s.isAbstract!=null && !s.children().isEmpty()) throw new ErrorAPI("Cannot add an atom to an abstract parent sig.");
+        SimTupleset add = SimTupleset.wrap(atom);
+        while(s != null) {
+           SimTupleset old = sfs.get(s);
+           if (old==null) old = SimTupleset.EMPTY;
+           if (add.in(old)) return;
+           old = old.union(add);
+           sfs.put(s, old);
+           s = s.parent;
+        }
+    }
+
+    /**
+     * Delete an atom from a sig, then automatically delete it from all subsigs as well.
+     * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
+     * @throws ErrorAPI if attempting to delete from "Int" or "seq/Int" or a SubsetSig.
+     */
+    public void deleteAtom(Sig sig, Object atom) throws Err {
+        if (sig instanceof SubsetSig) throw new ErrorAPI("Cannot delete an atom from a subset sig.");
+        if (sig==Sig.SIGINT || sig==Sig.SEQIDX) throw new ErrorAPI("Cannot delete an atom from Int or seq/Int");
+        if (sig==Sig.UNIV) {
+           // We deliberately don't delete from SubsetSigs in order to be consistent with when we called deleteAtom with a user-defined sig
+           for(Object x: sfs.keySet()) if (x instanceof PrimSig && !((PrimSig)x).builtin) deleteAtom((PrimSig)x, atom);
+           return;
+        }
+        if (sig instanceof PrimSig) for(Sig s: ((PrimSig)sig).children()) deleteAtom(s, atom);
+        SimTupleset old = sfs.get(sig);
+        if (old==null) old = SimTupleset.EMPTY;
+        old = old.difference(SimTupleset.wrap(atom));
+        sfs.put(sig, old);
+    }
+
+    /**
+     * Modifies the given sig to be associated with the given unary value.
+     * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
+     */
     public void assign(Sig sig, SimTupleset value) throws Err {
         if (value.arity()>1) throw new ErrorType("Evaluator encountered an error: sig "+sig.label+" arity must not be " + value.arity());
         sfs.put(sig, value);
@@ -110,7 +157,10 @@ public final class SimContext extends VisitReturn<Object> {
         cacheIDEN = null;
     }
 
-    /** Modifies the given field to be associated with the given value. */
+    /**
+     * Modifies the given field to be associated with the given value.
+     * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
+     */
     public void assign(Field field, SimTupleset value) throws Err {
         if (value.size()>0 && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
         sfs.put(field, value);
@@ -118,7 +168,10 @@ public final class SimContext extends VisitReturn<Object> {
         cacheIDEN = null;
     }
 
-    /** Modifies the given global var to be associated with the given value. */
+    /**
+     * Modifies the given global var to be associated with the given value.
+     * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
+     */
     public void assign(ExprVar var, SimTupleset value) throws Err {
         if (value.size()>0 && value.arity()!=var.type.arity()) throw new ErrorType("Evaluator encountered an error: skolem "+var.label+" arity must not be " + value.arity());
         sfs.put(var, value);
@@ -128,12 +181,6 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** Truncate the given integer based on the current chosen bitwidth */
     private int trunc(int i) { return (i<<(32-bitwidth)) >> (32-bitwidth); }
-
-    /** Remove the "ExprUnary NOP" in front of an expression. */
-    private static Expr deNOP(Expr x) {
-        while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
-        return x;
-    }
 
     /**
      * Convenience method that evalutes x and casts the result to be a boolean.
@@ -263,9 +310,7 @@ public final class SimContext extends VisitReturn<Object> {
           case LTE:
               return cint(x.left) <= cint(x.right);
           case DOMAIN:
-              a=deNOP(x.left); b=deNOP(x.right);
-              if (a instanceof Sig && b instanceof Field && ((Field)b).sig==a) return cset(b); // simple optimization
-              return cset(a).domain(cset(b));
+              return cset(x.left).domain(cset(x.right));
           case RANGE:
               return cset(x.left).range(cset(x.right));
           case EQUALS:
@@ -442,15 +487,15 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /** {@inheritDoc} */
-    @Override public Object visit(Sig x) throws Err {
+    @Override public SimTupleset visit(Sig x) throws Err {
         if (x==Sig.NONE) return SimTupleset.EMPTY;
         Object ans = sfs.get(x);
-        if (ans==null) throw new ErrorFatal("Unknown sig "+x+" encountered during evaluation."); else return ans;
+        if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown sig "+x+" encountered during evaluation.");
     }
 
     /** {@inheritDoc} */
-    @Override public Object visit(Field x) throws Err {
+    @Override public SimTupleset visit(Field x) throws Err {
         Object ans = sfs.get(x);
-        if (ans==null) throw new ErrorFatal("Unknown field "+x+" encountered during evaluation."); else return ans;
+        if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown field "+x+" encountered during evaluation.");
     }
 }
