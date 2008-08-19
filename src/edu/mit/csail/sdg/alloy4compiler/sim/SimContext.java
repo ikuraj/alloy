@@ -78,6 +78,9 @@ public final class SimContext extends VisitReturn<Object> {
     /** The chosen bitwidth */
     private final int bitwidth;
 
+    /** The chosen maxseq length. */
+    private final int maxseq;
+
     /** The shiftmask based on the chosen bitwidth. */
     private final int shiftmask;
 
@@ -87,22 +90,34 @@ public final class SimContext extends VisitReturn<Object> {
     /** The maximum allowed integer based on the chosen bitwidth. */
     private final int max;
 
-    /** Construct a new simulation context with the given bitwidth. */
-    public SimContext(int bitwidth) throws Err {
+    /** Construct a new simulation context with the given bitwidth and the given maximum sequence length. */
+    public SimContext(int bitwidth, int maxseq) throws Err {
         if (bitwidth<1 || bitwidth>32) throw new ErrorType("Bitwidth must be between 1 and 32.");
         this.bitwidth = bitwidth;
+        this.maxseq = maxseq;
         if (bitwidth==32) { max=Integer.MAX_VALUE; min=Integer.MIN_VALUE; } else { max=(1<<(bitwidth-1))-1; min=(0-max)-1; }
+        if (maxseq < 0)   throw new ErrorSyntax("The maximum sequence length cannot be negative.");
+        if (maxseq > max) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max);
         shiftmask = (1 << (32 - Integer.numberOfLeadingZeros(bitwidth-1))) - 1;
+        SimTupleset allInts = SimTupleset.range(min, max);
+        SimTupleset allIdx = SimTupleset.range(0, maxseq-1);
+        sfs.put(Sig.UNIV, allInts);
+        sfs.put(Sig.SIGINT, allInts);
+        sfs.put(Sig.SEQIDX, allIdx);
+        sfs.put(Sig.NONE, SimTupleset.EMPTY);
     }
 
     /** Construct a deep copy. */
-    public SimContext dup() throws Err {
-        SimContext x = new SimContext(bitwidth);
-        x.cacheIDEN = cacheIDEN;
-        x.cacheNEXT = cacheNEXT;
-        x.env = env.dup();
-        for(Map.Entry<Expr,SimTupleset> e: sfs.entrySet()) x.sfs.put(e.getKey(), e.getValue());
-        return x;
+    public SimContext(SimContext old) throws Err {
+        bitwidth = old.bitwidth;
+        maxseq = old.maxseq;
+        min = old.min;
+        max = old.max;
+        shiftmask = old.shiftmask;
+        cacheIDEN = old.cacheIDEN;
+        cacheNEXT = old.cacheNEXT;
+        env = old.env.dup();
+        for(Map.Entry<Expr,SimTupleset> e: old.sfs.entrySet()) sfs.put(e.getKey(), e.getValue());
     }
 
     /**
@@ -187,7 +202,7 @@ public final class SimContext extends VisitReturn<Object> {
      * @return the boolean - if x evaluates to a boolean
      * @throws ErrorFatal - if x does not evaluate to a boolean
      */
-    private boolean cform(Expr x) throws Err {
+    public boolean cform(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
         Object y = visitThis(x);
         if (y instanceof Boolean) return Boolean.TRUE.equals(y);
@@ -199,7 +214,7 @@ public final class SimContext extends VisitReturn<Object> {
      * @return the int - if x evaluates to an int
      * @throws ErrorFatal - if x does not evaluate to an int
      */
-    private int cint(Expr x) throws Err {
+    public int cint(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
         Object y = visitThis(x);
         if (y instanceof Integer) return trunc((Integer)y);
@@ -211,7 +226,7 @@ public final class SimContext extends VisitReturn<Object> {
      * @return the tupleset - if x evaluates to a tupleset
      * @throws ErrorFatal - if x does not evaluate to a tupleset
      */
-    private SimTupleset cset(Expr x) throws Err {
+    public SimTupleset cset(Expr x) throws Err {
         if (!x.errors.isEmpty()) throw x.errors.pick();
         Object y = visitThis(x);
         if (y instanceof SimTupleset) return (SimTupleset)y;

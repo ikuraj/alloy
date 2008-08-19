@@ -78,6 +78,18 @@ public final class SimTupleset {
         return new SimTupleset(ans);
     }
 
+    /** Returns the set of all integers between min and max. */
+    public static SimTupleset range(int min, int max) {
+       if (min>max) return EMPTY;
+       List<Object[]> ans = new ArrayList<Object[]>();
+       while(true) {
+           ans.add(new Object[]{canon(min)});
+           if (min==max) break;
+           min++;
+       }
+       return new SimTupleset(ans);
+    }
+
     /** Returns the "next" relation among all integers between min and max. */
     public static SimTupleset next(int min, int max) {
        if (min>=max) return EMPTY;
