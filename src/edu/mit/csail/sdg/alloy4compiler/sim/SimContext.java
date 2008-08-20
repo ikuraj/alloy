@@ -60,7 +60,7 @@ public final class SimContext extends VisitReturn<Object> {
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
-    /** The exact values of each sig, field, and skolem. */
+    /** The exact values of each sig, field, and skolem (Note: it must not cache the value of a "defined" field) */
     private final Map<Expr,SimTupleset> sfs = new HashMap<Expr,SimTupleset>();
 
     /** Caches parameter-less functions to a Boolean, Integer, or SimTupleset. */
@@ -171,6 +171,7 @@ public final class SimContext extends VisitReturn<Object> {
      */
     public void assign(Field field, SimTupleset value) throws Err {
         if (value.size()>0 && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
+        if (field.boundingFormula==null) throw new ErrorAPI("Evaluator cannot modify the value of a defined field.");
         sfs.put(field, value);
         cacheForConstants.clear();
         cacheIDEN = null;
@@ -503,6 +504,7 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public SimTupleset visit(Field x) throws Err {
+        if (x.boundingFormula==null) return cset(x.definition);
         Object ans = sfs.get(x);
         if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown field "+x+" encountered during evaluation.");
     }

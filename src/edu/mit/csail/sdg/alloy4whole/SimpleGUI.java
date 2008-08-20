@@ -1631,7 +1631,7 @@ public final class SimpleGUI implements ComponentListener {
         SimContext ct = new SimContext(ans.getBitwidth(), ans.getMaxSeq());
         for(Sig s: ans.getAllReachableSigs()) {
             ct.assign(s, convert(ans.eval(s)));
-            for(Field f: s.getFields()) ct.assign(f, convert(ans.eval(f)));
+            for(Field f: s.getFields())  if (f.boundingFormula!=null)  ct.assign(f, convert(ans.eval(f)));
         }
         for(ExprVar a:ans.getAllAtoms())   ct.assign(a, convert(ans.eval(a)));
         for(ExprVar a:ans.getAllSkolems()) ct.assign(a, convert(ans.eval(a)));
