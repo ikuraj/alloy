@@ -36,7 +36,7 @@ public final class Version {
     private Version() { }
 
     /** This is true if this is an experimental version rather than a release version. */
-    public static boolean experimental = true;
+    public static final boolean experimental = true;
 
     /** Returns the build number. */
     public static int buildNumber() { return Integer.MAX_VALUE; }

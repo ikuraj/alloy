@@ -130,11 +130,9 @@ public final class Module extends Browsable {
            if (x.size()>0) ans.add(make("<b>run(s)</b>", x));
         }
         if (facts.size()>0) {
-           x = new ArrayList<Browsable>(facts.size());
            for(Map.Entry<String,Expr> e: facts.entrySet()) ans.add(make("<b>fact(s)</b>", e.getValue()));
         }
         if (path.length()==0 && asserts.size()>0) {
-           x = new ArrayList<Browsable>(asserts.size());
            for(Map.Entry<String,Expr> e: asserts.entrySet()) if (e.getValue() instanceof ExprVar) {
                Expr body = ((ExprVar)(e.getValue())).expr;
                if (body!=null) ans.add(make("<b>assert(s)</b> "+e.getKey(), body));
