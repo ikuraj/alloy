@@ -25,6 +25,7 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,6 +64,9 @@ public final class A4SolutionReader {
     /** Stores the set of atoms. */
     private final LinkedHashSet<String> atoms = new LinkedHashSet<String>();
 
+    /** Stores the set of STRING atoms. */
+    private final LinkedHashSet<String> strings = new LinkedHashSet<String>();
+
     /** Maps each Sig/Field/Skolem id to an XMLNode. */
     private final Map<String,XMLNode> nmap = new LinkedHashMap<String,XMLNode>();
 
@@ -70,7 +74,7 @@ public final class A4SolutionReader {
     private final Map<String,Sig> id2sig = new LinkedHashMap<String,Sig>();
 
     /** Stores the set of all sigs. */
-    private final Set<Sig> allsigs = Util.asSet((Sig)UNIV, SIGINT, SEQIDX, NONE);
+    private final Set<Sig> allsigs = Util.asSet((Sig)UNIV, SIGINT, SEQIDX, STRING, NONE);
 
     /** Mapes each expression we've seen to its TupleSet. */
     private final Map<Expr,TupleSet> expr2ts = new LinkedHashMap<Expr,TupleSet>();
@@ -137,6 +141,7 @@ public final class A4SolutionReader {
            if (label.equals(UNIV.label))   { id2sig.put(id, UNIV);   return UNIV;   }
            if (label.equals(SIGINT.label)) { id2sig.put(id, SIGINT); return SIGINT; }
            if (label.equals(SEQIDX.label)) { id2sig.put(id, SEQIDX); return SEQIDX; }
+           if (label.equals(STRING.label)) { id2sig.put(id, STRING); return STRING; }
            throw new IOException("Unknown builtin sig: "+label+" (id="+id+")");
         }
         if (depth > nmap.size()) throw new IOException("Sig "+label+" (id="+id+") is in a cyclic inheritance relationship.");
@@ -248,13 +253,20 @@ public final class A4SolutionReader {
            String id=x.getAttribute("ID");
            if (id.length()>0 && (x.is("field") || x.is("skolem") || x.is("sig"))) {
               if (nmap.put(id, x)!=null) throw new IOException("ID "+id+" is repeated.");
-              if (x.is("sig")) for(XMLNode y:x) if (y.is("atom")) atoms.add(y.getAttribute("label"));
+              if (x.is("sig")) {
+                  boolean isString = STRING.label.equals(label(x)) && yes(x, "builtin");
+                  for(XMLNode y:x) if (y.is("atom")) {
+                      String attr = y.getAttribute("label");
+                      atoms.add(attr);
+                      if (isString) strings.add(attr);
+                  }
+              }
            }
        }
        // create the A4Solution object
        A4Options opt = new A4Options();
        opt.originalFilename = inst.getAttribute("filename");
-       sol = new A4Solution(inst.getAttribute("command"), bitwidth, maxseq, atoms, null, opt, 1);
+       sol = new A4Solution(inst.getAttribute("command"), bitwidth, maxseq, strings, atoms, null, opt, 1);
        factory = sol.getFactory();
        // parse all the sigs, fields, and skolems
        for(Map.Entry<String,XMLNode> e:nmap.entrySet()) if (e.getValue().is("sig")) parseSig(e.getKey(), 0);

@@ -49,6 +49,9 @@ public abstract class Sig extends Expr {
     /** The built-in "seq/Int" signature. */
     public static final PrimSig SEQIDX = new PrimSig("seq/Int", SIGINT, true);
 
+    /** The built-in "String" signature. */
+    public static final PrimSig STRING = new PrimSig("fun/String", UNIV, true);
+
     /** The built-in "none" signature. */
     public static final PrimSig NONE = new PrimSig("none", null, false);
 
@@ -261,7 +264,7 @@ public abstract class Sig extends Expr {
          * @param isLeaf - true if all its future subsigs shall have the same "type" as this sig
          *
          * @throws ErrorSyntax if the signature has two or more multiplicities
-         * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
+         * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, SEQIDX, or STRING
          */
         public PrimSig
         (Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos subsig, Pos isPrivate, Pos isMeta, boolean isLeaf)
@@ -273,6 +276,7 @@ public abstract class Sig extends Expr {
                 null, isPrivate, isMeta);
             if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
             if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
+            if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"fun/String\" signature");
             if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"none\" signature");
             if (parent==null) parent=UNIV; else if (parent!=UNIV) parent.children.add(this);
             this.parent = parent;
@@ -292,7 +296,7 @@ public abstract class Sig extends Expr {
          * @param isLeaf - true if all its future subsigs shall have the same "type" as this sig
          *
          * @throws ErrorSyntax if the signature has two or more multiplicities
-         * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, or SEQIDX
+         * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, SEQIDX, or STRING
          */
         public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some,
         boolean isLeaf) throws Err {
@@ -372,6 +376,7 @@ public abstract class Sig extends Expr {
                     if (parent==UNIV)   return UNIV.type;
                     if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"Int\" signature");
                     if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"seq/Int\" signature");
+                    if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"fun/String\" signature");
                     if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"none\" signature");
                     if (ans==null) ans=parent.type; else ans=ans.unionWithCommonArity(parent.type);
                 }
@@ -391,7 +396,7 @@ public abstract class Sig extends Expr {
          * @param some - nonnull iff this sig has the "some" multiplicity
          *
          * @throws ErrorSyntax if the signature has two or more multiplicities
-         * @throws ErrorType if parents contains NONE or SIGINT or SEQIDX
+         * @throws ErrorType if parents contains NONE or SIGINT or SEQIDX or STRING
          */
         public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos isPrivate, Pos isMeta) throws Err {
             super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta);

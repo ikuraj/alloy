@@ -73,6 +73,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
@@ -563,6 +564,9 @@ public final class Module extends Browsable {
     /** The builtin sig "seq/Int" */
     private static final SigAST SEQIDXast = new SigAST("seq/Int", "Int", Util.asList(ExprVar.make(null, "Int")), SEQIDX);
 
+    /** The builtin sig "String" */
+    private static final SigAST STRINGast = new SigAST("fun/String", "String", Util.asList(ExprVar.make(null, "univ")), STRING);
+
     /** The builtin sig "none" */
     private static final SigAST NONEast = new SigAST("none", "none", null, NONE);
 
@@ -754,12 +758,13 @@ public final class Module extends Browsable {
         return ans.dup();
     }
 
-    /** Return the list containing UNIV, SIGINT, SEQIDX, NONE, and all sigs defined in this module or a reachable submodule. */
+    /** Return the list containing UNIV, SIGINT, SEQIDX, STRING, NONE, and all sigs defined in this module or a reachable submodule. */
     public ConstList<Sig> getAllReachableSigs() {
         TempList<Sig> x = new TempList<Sig>();
         x.add(UNIV);
         x.add(SIGINT);
         x.add(SEQIDX);
+        x.add(STRING);
         x.add(NONE);
         for(Module m:getAllReachableModules())
           for(Map.Entry<String,SigAST> s: m.sigs.entrySet())
@@ -812,10 +817,11 @@ public final class Module extends Browsable {
             s2 = world.sigs.get(name);
             if (s2!=null) return s2;
         }
-        if (name.equals("univ"))    return UNIVast;
-        if (name.equals("Int"))     return SIGINTast;
-        if (name.equals("seq/Int")) return SEQIDXast;
-        if (name.equals("none"))    return NONEast;
+        if (name.equals("univ"))       return UNIVast;
+        if (name.equals("Int"))        return SIGINTast;
+        if (name.equals("seq/Int"))    return SEQIDXast;
+        if (name.equals("fun/String")) return STRINGast;
+        if (name.equals("none"))       return NONEast;
         if (name.indexOf('/')<0) {
             s=getRawNQS(this, 1, name);
             s2=params.get(name);
@@ -1371,6 +1377,7 @@ public final class Module extends Browsable {
         sorted.add(UNIVast);
         sorted.add(SIGINTast);
         sorted.add(SEQIDXast);
+        sorted.add(STRINGast);
         sorted.add(NONEast);
         for(final Module m:modules) for(final Map.Entry<String,SigAST> e:m.sigs.entrySet()) resolveSig(sorted, e.getValue());
         // For enums, add the additional partial instance fields "next" and "prev" to them
@@ -1563,11 +1570,12 @@ public final class Module extends Browsable {
         // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
         boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfunparam);
-        if (name.equals("univ"))    return ExprUnary.Op.NOOP.make(pos, UNIV);
-        if (name.equals("Int"))     return ExprUnary.Op.NOOP.make(pos, SIGINT);
-        if (name.equals("seq/Int")) return ExprUnary.Op.NOOP.make(pos, SEQIDX);
-        if (name.equals("none"))    return ExprUnary.Op.NOOP.make(pos, NONE);
-        if (name.equals("iden"))    return ExprConstant.Op.IDEN.make(pos, 0);
+        if (name.equals("univ"))       return ExprUnary.Op.NOOP.make(pos, UNIV);
+        if (name.equals("Int"))        return ExprUnary.Op.NOOP.make(pos, SIGINT);
+        if (name.equals("seq/Int"))    return ExprUnary.Op.NOOP.make(pos, SEQIDX);
+        if (name.equals("fun/String")) return ExprUnary.Op.NOOP.make(pos, STRING);
+        if (name.equals("none"))       return ExprUnary.Op.NOOP.make(pos, NONE);
+        if (name.equals("iden"))       return ExprConstant.Op.IDEN.make(pos, 0);
         if (name.equals("sig$") || name.equals("field$")) if (world!=null) {
             SigAST s = world.sigs.get(name);
             if (s!=null) return ExprUnary.Op.NOOP.make(pos, s.realSig);

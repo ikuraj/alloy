@@ -91,7 +91,7 @@ public final class StaticInstanceReader {
 
     /** Create a new AlloyType whose label is unambiguous with any existing one. */
     private AlloyType makeType(String label, boolean isOne, boolean isAbstract, boolean isBuiltin, boolean isPrivate, boolean isMeta, boolean isLeaf) {
-        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label)) label=label+"'";
+        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label) || label.equals(Sig.STRING.label)) label=label+"'";
         while(true) {
             AlloyType ans = new AlloyType(label, isOne, isAbstract, isBuiltin, isPrivate, isMeta, isLeaf);
             if (!sig2type.values().contains(ans)) return ans;
@@ -101,7 +101,7 @@ public final class StaticInstanceReader {
 
     /** Create a new AlloySet whose label is unambiguous with any existing one. */
     private AlloySet makeSet(String label, boolean isPrivate, boolean isMeta, AlloyType type) {
-        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label)) label=label+"'";
+        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label) || label.equals(Sig.STRING.label)) label=label+"'";
         while(true) {
             AlloySet ans = new AlloySet(label, isPrivate, isMeta, type);
             if (!sets.contains(ans)) return ans;
@@ -111,7 +111,7 @@ public final class StaticInstanceReader {
 
     /** Create a new AlloyRelation whose label is unambiguous with any existing one. */
     private AlloyRelation makeRel(String label, boolean isPrivate, boolean isMeta, List<AlloyType> types) {
-        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label)) label=label+"'";
+        while(label.equals(Sig.UNIV.label) || label.equals(Sig.SIGINT.label) || label.equals(Sig.SEQIDX.label) || label.equals(Sig.STRING.label)) label=label+"'";
         while(true) {
             AlloyRelation ans = new AlloyRelation(label, isPrivate, isMeta, types);
             if (!rels.containsKey(ans)) return ans;
@@ -139,6 +139,7 @@ public final class StaticInstanceReader {
         if (s==Sig.UNIV) type=AlloyType.UNIV;
            else if (s==Sig.SIGINT) type=AlloyType.INT;
            else if (s==Sig.SEQIDX) type=AlloyType.SEQINT;
+           else if (s==Sig.STRING) type=AlloyType.STRING;
            else type = makeType(s.label, s.isOne!=null, s.isAbstract!=null, false, s.isPrivate!=null, s.isMeta!=null, s.isLeaf());
         sig2type.put(s, type);
         AlloyAtom atom = new AlloyAtom(type, (type==AlloyType.SEQINT ? Integer.MIN_VALUE : Integer.MAX_VALUE), s.label);
@@ -172,7 +173,6 @@ public final class StaticInstanceReader {
 
     /** Constructs the atoms corresponding to the given sig. */
     private void atoms(A4Solution sol, PrimSig s) throws Err {
-        if (s.builtin) throw new ErrorFatal("atoms() method cannot be called on a builtin sig.");
         Expr sum=Sig.NONE;
         for(PrimSig c:s.children()) { sum=sum.plus(c); atoms(sol, c); }
         A4TupleSet ts = (A4TupleSet) (sol.eval(s.minus(sum))); // This ensures that atoms will be associated with the most specific sig
@@ -207,7 +207,10 @@ public final class StaticInstanceReader {
                 Set<AlloyTuple> ts = new LinkedHashSet<AlloyTuple>();
                 for(A4Tuple tp: (A4TupleSet)(sol.eval(expr.intersect(mask)))) {
                     AlloyAtom[] atoms = new AlloyAtom[tp.arity()];
-                    for(int i=0; i<tp.arity(); i++) atoms[i] = string2atom.get(tp.atom(i));
+                    for(int i=0; i<tp.arity(); i++) {
+                        atoms[i] = string2atom.get(tp.atom(i));
+                        if (atoms[i]==null) throw new ErrorFatal("Unexpected XML inconsistency: cannot resolve atom "+tp.atom(i));
+                    }
                     ts.add(new AlloyTuple(atoms));
                 }
                 rels.put(rel, ts);
@@ -227,6 +230,7 @@ public final class StaticInstanceReader {
             sig2type.put(Sig.UNIV, AlloyType.UNIV);
             sig2type.put(Sig.SIGINT, AlloyType.INT);
             sig2type.put(Sig.SEQIDX, AlloyType.SEQINT);
+            sig2type.put(Sig.STRING, AlloyType.STRING);
             ts.put(AlloyType.SEQINT, AlloyType.INT);
             for(int i=sol.min(), max=sol.max(), maxseq=sol.getMaxSeq(); i<=max; i++) {
                 AlloyAtom at = new AlloyAtom(i>=0 && i<maxseq ? AlloyType.SEQINT : AlloyType.INT, i, ""+i);
@@ -234,7 +238,7 @@ public final class StaticInstanceReader {
                 string2atom.put(""+i, at);
             }
             for(Sig s:sol.getAllReachableSigs()) if (!s.builtin && s instanceof PrimSig) sig((PrimSig)s);
-            for(Sig s:toplevels)                 if (!s.builtin)                         atoms(sol, (PrimSig)s);
+            for(Sig s:toplevels)                 if (!s.builtin || s==Sig.STRING)        atoms(sol, (PrimSig)s);
             for(Sig s:sol.getAllReachableSigs()) if (s instanceof SubsetSig)             setOrRel(sol, s.label, s, s.isPrivate!=null, s.isMeta!=null);
             for(Sig s:sol.getAllReachableSigs()) for(Field f:s.getFields())              setOrRel(sol, f.label, f, f.isPrivate!=null, f.isMeta!=null);
             for(ExprVar s:sol.getAllSkolems())   setOrRel(sol, s.label, s, false, false);
@@ -258,15 +262,24 @@ public final class StaticInstanceReader {
             AlloyAtom univAtom = sig2atom.get(Sig.UNIV);
             AlloyAtom intAtom = sig2atom.get(Sig.SIGINT);
             AlloyAtom seqAtom = sig2atom.get(Sig.SEQIDX);
+            AlloyAtom strAtom = sig2atom.get(Sig.STRING);
             for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(univAtom)) { univAtom=null; break; }
             for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(intAtom)) { intAtom=null; break; }
             for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(seqAtom)) { seqAtom=null; break; }
+            for(Set<AlloyTuple> t:rels.values()) for(AlloyTuple at:t) if (at.getAtoms().contains(strAtom)) { strAtom=null; break; }
             if (univAtom!=null) {
                 for(Iterator<AlloyTuple> it=exts.iterator(); it.hasNext();) {
                     AlloyTuple at=it.next();
                     if (at.getStart()==univAtom || at.getEnd()==univAtom) it.remove();
                 }
                 atom2sets.remove(univAtom);
+            }
+            if (strAtom!=null) {
+                for(Iterator<AlloyTuple> it=exts.iterator(); it.hasNext();) {
+                    AlloyTuple at=it.next();
+                    if (at.getStart()==strAtom || at.getEnd()==strAtom) it.remove();
+                }
+                atom2sets.remove(strAtom);
             }
             if (intAtom!=null && seqAtom!=null) {
                 for(Iterator<AlloyTuple> it=exts.iterator(); it.hasNext();) {

@@ -25,6 +25,7 @@ package edu.mit.csail.sdg.alloy4compiler.translator;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 import static kodkod.engine.Solution.Outcome.UNSATISFIABLE;
 import java.io.File;
@@ -117,6 +118,9 @@ public final class A4Solution {
     /** The constant unary relation representing the set of all seq/Int atoms. */
     static final Relation SEQ_SEQIDX = Relation.unary("seq/Int");
 
+    /** The constant unary relation representing the set of all fun/String atoms. */
+    static final Relation KK_STRING = Relation.unary("fun/String");
+
     //====== immutable fields ===========================================================================//
 
     /** The original Alloy options that generated this solution. */
@@ -145,6 +149,9 @@ public final class A4Solution {
 
     /** The set of all seq/Int atoms; immutable. */
     private final TupleSet seqidxBounds;
+
+    /** The set of all fun/String atoms; immutable. */
+    private final TupleSet stringBounds;
 
     /** The Kodkod Solver object. */
     private final Solver solver;
@@ -196,7 +203,7 @@ public final class A4Solution {
     //===================================================================================================//
 
     /**
-     * Construct a blank A4Solution containing just UNIV, SIGINT, SEQIDX, and NONE as its only known sigs.
+     * Construct a blank A4Solution containing just UNIV, SIGINT, SEQIDX, STRING, and NONE as its only known sigs.
      * @param originalCommand  - the original Alloy command that generated this solution; can be "" if unknown
      * @param bitwidth - the bitwidth; must be between 1 and 30
      * @param maxseq - the maximum allowed sequence length; must be between 0 and (2^(bitwidth-1))-1
@@ -205,11 +212,11 @@ public final class A4Solution {
      * @param opt - the Alloy options that will affect the solution and the solver
      * @param expected - whether the user expected an instance or not (1 means yes, 0 means no, -1 means the user did not express an expectation)
      */
-    A4Solution(String originalCommand, int bitwidth, int maxseq, Collection<String> atoms, final A4Reporter rep, A4Options opt, int expected) throws Err {
+    A4Solution(String originalCommand, int bitwidth, int maxseq, Iterable<String> strings, Collection<String> atoms, final A4Reporter rep, A4Options opt, int expected) throws Err {
         opt = opt.dup();
         this.unrolls = opt.unrolls;
-        this.sigs = new SafeList<Sig>(Arrays.asList(UNIV, SIGINT, SEQIDX, NONE));
-        this.a2k = Util.asMap(new Expr[]{UNIV, SIGINT, SEQIDX, NONE}, Relation.INTS, Relation.INTS, (Expression)SEQ_SEQIDX, Relation.NONE);
+        this.sigs = new SafeList<Sig>(Arrays.asList(UNIV, SIGINT, SEQIDX, STRING, NONE));
+        this.a2k = Util.asMap(new Expr[]{UNIV, SIGINT, SEQIDX, STRING, NONE}, Relation.INTS.union(KK_STRING), Relation.INTS, SEQ_SEQIDX, KK_STRING, Relation.NONE);
         this.k2pos = new LinkedHashMap<Formula,Object>();
         this.rel2type = new LinkedHashMap<Relation,Type>();
         this.decl2type = new LinkedHashMap<Variable,Pair<Type,Pos>>();
@@ -228,6 +235,7 @@ public final class A4Solution {
         factory = bounds.universe().factory();
         TupleSet sigintBounds = factory.noneOf(1);
         TupleSet seqidxBounds = factory.noneOf(1);
+        TupleSet stringBounds = factory.noneOf(1);
         final TupleSet next = factory.noneOf(2);
         for(int i=min; i<=max; i++) { // Safe since we know 1 <= bitwidth <= 30
            Tuple ii = factory.tuple(""+i);
@@ -244,6 +252,9 @@ public final class A4Solution {
         this.seqidxBounds = seqidxBounds.unmodifiableView();
         bounds.boundExactly(SIGINT_NEXT, next);
         bounds.boundExactly(SEQ_SEQIDX, this.seqidxBounds);
+        for(String string: strings) stringBounds.add(factory.tuple(string));
+        this.stringBounds = stringBounds.unmodifiableView();
+        bounds.boundExactly(KK_STRING, this.stringBounds);
         int sym = (expected==1 ? 0 : opt.symmetry);
         solver = new Solver();
         solver.options().setFlatten(false); // added for now, since multiplication and division circuit takes forever to flatten
@@ -287,6 +298,7 @@ public final class A4Solution {
         factory = old.factory;
         sigintBounds = old.sigintBounds;
         seqidxBounds = old.seqidxBounds;
+        stringBounds = old.stringBounds;
         solver = old.solver;
         bounds = old.bounds;
         formulas = old.formulas;
@@ -474,6 +486,7 @@ public final class A4Solution {
        if (expr==Relation.NONE) return factory.noneOf(1);
        if (expr==Relation.INTS) return makeMutable ? sigintBounds.clone() : sigintBounds;
        if (expr==SEQ_SEQIDX) return makeMutable ? seqidxBounds.clone() : seqidxBounds;
+       if (expr==KK_STRING) return makeMutable ? stringBounds.clone() : stringBounds;
        if (expr instanceof Relation) {
           TupleSet ans = findUpper ? bounds.upperBound((Relation)expr) : bounds.lowerBound((Relation)expr);
           if (ans!=null) return makeMutable ? ans.clone() : ans;
@@ -507,7 +520,7 @@ public final class A4Solution {
     /** Returns true iff the problem has been solved and the result is satisfiable. */
     public boolean satisfiable() { return eval!=null; }
 
-    /** Returns an unmodifiable copy of the list of all sigs in this solution's model; always contains UNIV+SIGINT+SEQIDX+NONE and has no duplicates. */
+    /** Returns an unmodifiable copy of the list of all sigs in this solution's model; always contains UNIV+SIGINT+SEQIDX+STRING+NONE and has no duplicates. */
     public SafeList<Sig> getAllReachableSigs() { return sigs.dup(); }
 
     /** Returns an unmodifiable copy of the list of all skolems if the problem is solved and is satisfiable; else returns an empty list. */
@@ -709,7 +722,7 @@ public final class A4Solution {
             for(ExprVar sk:frame.skolems) un.seen(sk.label);
             // Store up the skolems
             List<Object> skolems = new ArrayList<Object>();
-            LinkedHashSet<Relation> rels = new LinkedHashSet<Relation>(Arrays.asList(SEQ_SEQIDX, SIGINT_MAX, SIGINT_MIN, SIGINT_ZERO, SIGINT_NEXT));
+            LinkedHashSet<Relation> rels = new LinkedHashSet<Relation>(Arrays.asList(KK_STRING, SEQ_SEQIDX, SIGINT_MAX, SIGINT_MIN, SIGINT_ZERO, SIGINT_NEXT));
             for(final Sig s2:frame.getAllReachableSigs()) {
                addAllSubrelation(rels, frame.a2k(s2));
                for(Field f:s2.getFields()) addAllSubrelation(rels, frame.a2k(f));
@@ -729,6 +742,7 @@ public final class A4Solution {
             // Assign atom->name and atom->MostSignificantSig
             for(Tuple t:frame.eval.evaluate(Relation.INTS)) { frame.atom2sig.put(t.atom(0), SIGINT); }
             for(Tuple t:frame.eval.evaluate(SEQ_SEQIDX))    { frame.atom2sig.put(t.atom(0), SEQIDX); }
+            for(Tuple t:frame.eval.evaluate(KK_STRING))     { frame.atom2sig.put(t.atom(0), STRING); }
             for(Sig sig:frame.sigs) if (sig instanceof PrimSig && !sig.builtin && ((PrimSig)sig).isTopLevel()) rename(frame, (PrimSig)sig, un);
             // These are redundant atoms that were not chosen to be in the final instance
             int unused=0;

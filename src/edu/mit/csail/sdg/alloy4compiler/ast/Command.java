@@ -37,6 +37,7 @@ import edu.mit.csail.sdg.alloy4.ErrorSyntax;
  * <p> <b>Invariant:</b>  overall >= -1
  * <p> <b>Invariant:</b>  bitwidth >= -1
  * <p> <b>Invariant:</b>  maxseq >= -1
+ * <p> <b>Invariant:</b>  maxstring >= -1
  */
 
 public final class Command extends Browsable {
@@ -61,6 +62,9 @@ public final class Command extends Browsable {
 
     /** The maximum sequence length (0 or higher) (Or -1 if it was not specified). */
     public final int maxseq;
+
+    /** The number of fun/String atoms to allocate (0 or higher) (Or -1 if it was not specified). */
+    public final int maxstring;
 
     /** The expected answer (either 0 or 1) (Or -1 if there is no expected answer). */
     public final int expects;
@@ -131,6 +135,7 @@ public final class Command extends Browsable {
         this.overall = (overall<0 ? -1 : overall);
         this.bitwidth = (bitwidth<0 ? -1 : bitwidth);
         this.maxseq = (maxseq<0 ? -1 : maxseq);
+        this.maxstring = (-1);
         this.expects = (expects<0 ? -1 : (expects>0 ? 1 : 0));
         this.scope = ConstList.make(scope);
         this.additionalExactScopes = ConstList.make(additionalExactSig);

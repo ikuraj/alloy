@@ -104,6 +104,7 @@ public final class SimContext extends VisitReturn<Object> {
         sfs.put(Sig.UNIV, allInts);
         sfs.put(Sig.SIGINT, allInts);
         sfs.put(Sig.SEQIDX, allIdx);
+        sfs.put(Sig.STRING, SimTupleset.EMPTY);
         sfs.put(Sig.NONE, SimTupleset.EMPTY);
     }
 

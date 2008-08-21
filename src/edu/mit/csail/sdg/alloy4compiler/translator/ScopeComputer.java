@@ -40,6 +40,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.UNIV;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SIGINT;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.SEQIDX;
+import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.STRING;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Sig.NONE;
 
 /**
@@ -84,6 +85,9 @@ final class ScopeComputer {
     /** The maximum sequence length; always between 0 and (2^(bitwidth-1))-1. */
     private int maxseq = 4;
 
+    /** The number of STRING atoms to allocate; -1 if it was not specified. */
+    private int maxstring = (-1);
+
     /** The scope for each sig. */
     private final IdentityHashMap<PrimSig,Integer> sig2scope = new IdentityHashMap<PrimSig,Integer>();
 
@@ -100,15 +104,16 @@ final class ScopeComputer {
     public int sig2scope(Sig sig) {
         if (sig==SIGINT) return 1<<bitwidth;
         if (sig==SEQIDX) return maxseq;
+        if (sig==STRING) return maxstring;
         Integer y = sig2scope.get(sig);
         return (y==null) ? (-1) : y;
     }
 
     /** Sets the scope for a sig; returns true iff the sig's scope is changed by this call. */
     private void sig2scope(Sig sig, int newValue) throws Err {
-        if (sig.builtin)               throw new ErrorSyntax(cmd.pos, "Cannot specify a scope for the builtin signature \""+sig+"\"");
-        if (!(sig instanceof PrimSig)) throw new ErrorSyntax(cmd.pos, "Cannot specify a scope for a subset signature \""+sig+"\"");
-        if (newValue<0)                throw new ErrorSyntax(cmd.pos, "Cannot specify a negative scope for sig \""+sig+"\"");
+        if (sig.builtin)                throw new ErrorSyntax(cmd.pos, "Cannot specify a scope for the builtin signature \""+sig+"\"");
+        if (!(sig instanceof PrimSig))  throw new ErrorSyntax(cmd.pos, "Cannot specify a scope for a subset signature \""+sig+"\"");
+        if (newValue<0)                 throw new ErrorSyntax(cmd.pos, "Cannot specify a negative scope for sig \""+sig+"\"");
         int old=sig2scope(sig);
         if (old==newValue) return;
         if (old>=0)        throw new ErrorSyntax(cmd.pos, "Sig \""+sig+"\" already has a scope of "+old+", so we cannot set it to be "+newValue);
@@ -118,7 +123,7 @@ final class ScopeComputer {
 
     /** Returns whether the scope of a sig is exact or not. */
     public boolean isExact(Sig sig) {
-        return sig==SIGINT || sig==SEQIDX || ((sig instanceof PrimSig) && exact.containsKey(sig));
+        return sig==SIGINT || sig==SEQIDX || sig==STRING || ((sig instanceof PrimSig) && exact.containsKey(sig));
     }
 
     /** Make the given sig "exact". */
@@ -278,6 +283,12 @@ final class ScopeComputer {
             if (s==SEQIDX) throw new ErrorSyntax(cmd.pos,
                     "You cannot set a scope on \"seq/Int\". "
                     +"To set the maximum allowed sequence length, use the seq keyword.\n");
+            if (s==STRING) {
+               if (maxstring>=0) throw new ErrorSyntax(cmd.pos, "Sig \"fun/String\" already has a scope of "+maxstring+", so we cannot set it to be "+scope);
+               if (!exact) throw new ErrorSyntax(cmd.pos, "Sig \"fun/String\" must have an exact scope.");
+               maxstring = scope;
+               continue;
+            }
             if (s==NONE) throw new ErrorSyntax(cmd.pos, "You cannot set a scope on \"none\".");
             if (s.isOne!=null && scope!=1) throw new ErrorSyntax(cmd.pos,
                 "Sig \""+s+"\" has the multiplicity of \"one\", so its scope must be 1, and cannot be "+scope);
@@ -343,7 +354,9 @@ final class ScopeComputer {
      */
     static Pair<A4Solution,ScopeComputer> compute (A4Reporter rep, A4Options opt, Iterable<Sig> sigs, Command cmd) throws Err {
         ScopeComputer sc = new ScopeComputer(rep, sigs, cmd);
-        A4Solution sol = new A4Solution(cmd.toString(), sc.bitwidth, sc.maxseq, sc.atoms, rep, opt, cmd.expects);
+        List<String> strings = new ArrayList<String>(sc.maxstring>0 ? sc.maxstring : 0);
+        for(int i=0; i<sc.maxstring; i++) { String x="fun/String$String"+i; strings.add(x); sc.atoms.add(x); }
+        A4Solution sol = new A4Solution(cmd.toString(), sc.bitwidth, sc.maxseq, strings, sc.atoms, rep, opt, cmd.expects);
         return new Pair<A4Solution,ScopeComputer>(sol, sc);
     }
 }
