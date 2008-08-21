@@ -23,7 +23,11 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -185,6 +189,19 @@ public final class Command extends Browsable {
         TempList<Sig> answer = new TempList<Sig>();
         for(CommandScope sc: scope) if (sc.startingScope != sc.endingScope) answer.add(sc.sig);
         return answer.makeConst();
+    }
+
+    /** Return the collection of all String constants used in this command or in any facts embedded in this command. */
+    public Set<String> getAllStringConstants() throws Err {
+        final Set<String> set = new HashSet<String>();
+        final VisitQuery<Object> findString = new VisitQuery<Object>() {
+            @Override public final Object visit(ExprConstant x) throws Err {
+                if (x.op==ExprConstant.Op.STRING) set.add(x.string);
+                return null;
+            }
+        };
+        for(Command c=this; c!=null; c=c.parent) c.formula.accept(findString);
+        return Collections.unmodifiableSet(set);
     }
 
     /** {@inheritDoc} */

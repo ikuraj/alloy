@@ -1620,7 +1620,10 @@ public final class SimpleGUI implements ComponentListener {
         int arity = s.arity();
         for(A4Tuple t: s) {
             Object[] array = new Object[arity];
-            for(int i=0; i<t.arity(); i++) array[i] = t.atom(i);
+            for(int i=0; i<t.arity(); i++) {
+                if (t.atom(i).startsWith("fun/String$")) array[i]=t.atom(i).substring(11); else array[i]=t.atom(i);
+                array[i] = SimTupleset.canon(array[i]);
+            }
             list.add(array);
         }
         return SimTupleset.make(list);

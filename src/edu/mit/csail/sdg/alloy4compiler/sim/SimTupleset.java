@@ -38,8 +38,8 @@ public final class SimTupleset {
     /** This map is used to canonicalize the atoms. */
     private static final WeakHashMap<Object,WeakReference<Object>> map = new WeakHashMap<Object,WeakReference<Object>>();
 
-    /** This method is used to canonicalize the atoms. */
-    static Object canon(Object x) {
+    /** This method is used to canonicalize an atom. */
+    public static Object canon(Object x) {
        if (x instanceof Boolean) return Boolean.TRUE.equals(x) ? Boolean.TRUE : Boolean.FALSE;
        WeakReference<Object> ans = map.get(x);
        if (ans != null) return ans.get();
@@ -65,7 +65,7 @@ public final class SimTupleset {
     /** Make a tupleset containing the given atom */
     public static SimTupleset wrap(Object atom) { return new SimTupleset(new Object[]{canon(atom)}); }
 
-    /** Make a tupleset containing the given list of tuples; this method will make a deep copy of the list and its tuple arrays. */
+    /** Make a tupleset containing the given list of tuples; this method will make a deep copy of the list and its tuple arrays; caller must canonicalize. */
     public static SimTupleset make(List<Object[]> tuples) {
         if (tuples.size()==0) return EMPTY;
         List<Object[]> ans = new ArrayList<Object[]>(tuples.size());
