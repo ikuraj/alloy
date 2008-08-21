@@ -404,6 +404,7 @@ public final class SimContext extends VisitReturn<Object> {
           case MIN: return min;
           case MAX: return max;
           case EMPTYNESS: return SimTupleset.EMPTY;
+          case STRING: return SimTupleset.EMPTY; // FIXTHIS
           case NEXT: if (cacheNEXT==null) return cacheNEXT=SimTupleset.next(min,max); else return cacheNEXT;
           case IDEN: if (cacheIDEN==null) return cacheIDEN=cset(Sig.UNIV).iden(); else return cacheIDEN;
         }

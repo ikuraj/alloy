@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module.Open;
@@ -112,7 +114,8 @@ public final class CompUtil {
      * @param thispath - the set of filenames involved in the current chain_of_file_opening
      */
     private static Module parseRecursively
-    (List<Object> seenDollar, Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename, Module root, String prefix, Set<String> thispath, int initialResolution)
+    (List<Object> seenDollar, Set<String> seenString,
+    Map<String,String> loaded, Map<String,String> fc, Pos pos, String filename, Module root, String prefix, Set<String> thispath, int initialResolution)
     throws Err, FileNotFoundException, IOException {
         // Add the filename into a ArrayList, so that we can detect cycles in the module import graph
         // How? I'll argue that (filename appears > 1 time along a chain) <=> (infinite loop in the import graph)
@@ -126,7 +129,7 @@ public final class CompUtil {
            "Circular dependency in module import. The file \""+(new File(filename)).getName()+"\" is imported infinitely often.");
         thispath.add(filename);
         // No cycle detected so far. So now we parse the file.
-        Module u = CompParser.alloy_parseStream(seenDollar, loaded, fc, root, 0, filename, prefix, initialResolution);
+        Module u = CompParser.alloy_parseStream(seenDollar, seenString, loaded, fc, root, 0, filename, prefix, initialResolution);
         if (prefix.length()==0) root = u;
         // Here, we recursively open the included files
         for(Open x: u.getOpens()) {
@@ -147,7 +150,7 @@ public final class CompUtil {
                 }
             }
             loaded.put(cp, content);
-            Module y = parseRecursively(seenDollar, loaded, fc, x.pos, cp, root, (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath, initialResolution);
+            Module y = parseRecursively(seenDollar, seenString, loaded, fc, x.pos, cp, root, (prefix.length()==0 ? x.alias : prefix+"/"+x.alias), thispath, initialResolution);
             x.connect(y);
         }
         thispath.remove(filename); // Remove this file from the CYCLE DETECTION LIST.
@@ -162,9 +165,10 @@ public final class CompUtil {
      */
     public static ConstList<Command> parseOneModule_fromString(String content) throws Err {
         try {
-            Map<String,String> fc=new LinkedHashMap<String,String>();
+            Map<String,String> fc = new LinkedHashMap<String,String>();
+            Set<String> strings = Version.experimental ? new HashSet<String>() : null;
             fc.put("", content);
-            Module u=CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, 0, "", "", 1);
+            Module u=CompParser.alloy_parseStream(new ArrayList<Object>(), strings, null, fc, null, 0, "", "", 1);
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
@@ -181,7 +185,8 @@ public final class CompUtil {
      */
     public static ConstList<Command> parseOneModule_fromFile(String filename) throws Err {
         try {
-            Module u=CompParser.alloy_parseStream(new ArrayList<Object>(), null, null, null, 0, filename, "", 1);
+            Set<String> strings = Version.experimental ? new HashSet<String>() : null;
+            Module u = CompParser.alloy_parseStream(new ArrayList<Object>(), strings, null, null, null, 0, filename, "", 1);
             return ConstList.make(u.getAllCommands());
         } catch(IOException ex) {
             throw new ErrorFatal("IOException occurred: "+ex.getMessage(), ex);
@@ -227,8 +232,10 @@ public final class CompUtil {
             Map<String,String> fc = new LinkedHashMap<String,String>(loaded);
             loaded.clear();
             List<Object> seenDollar = new ArrayList<Object>();
-            Module root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, 1);
+            Set<String> seenStrings = Version.experimental ? new HashSet<String>() : null;
+            Module root = parseRecursively(seenDollar, seenStrings, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, 1);
             root.seenDollar = seenDollar.size()>0;
+            root.seenStrings = seenStrings;
             return Module.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage(), ex);
@@ -257,8 +264,10 @@ public final class CompUtil {
             Map<String,String> fc = new LinkedHashMap<String,String>(loaded);
             loaded.clear();
             List<Object> seenDollar = new ArrayList<Object>();
-            Module root = parseRecursively(seenDollar, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, initialResolutionMode);
+            Set<String> seenStrings = Version.experimental ? new HashSet<String>() : null;
+            Module root = parseRecursively(seenDollar, seenStrings, loaded, fc, new Pos(filename,1,1), filename, null, "", thispath, initialResolutionMode);
             root.seenDollar = seenDollar.size()>0;
+            root.seenStrings = seenStrings;
             return Module.resolveAll(rep==null ? A4Reporter.NOP : rep, root);
         } catch(FileNotFoundException ex) {
             throw new ErrorSyntax("File cannot be found.\n"+ex.getMessage(), ex);

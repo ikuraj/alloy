@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -598,7 +599,10 @@ public final class Module extends Browsable {
     private String moduleName = "unknown";
 
     /** Whether we have seen a name containing a dollar sign or not. */
-    public boolean seenDollar = false;
+    boolean seenDollar = false;
+
+    /** Stores the set of String we've seen, or null if we haven't seen any. */
+    Set<String> seenStrings = null;
 
     /** Each param is mapped to its corresponding SigAST (or null if we have not resolved it). */
     private final Map<String,SigAST> params = new LinkedHashMap<String,SigAST>(); // Must be LinkedHashMap since the order matters
@@ -679,9 +683,10 @@ public final class Module extends Browsable {
 
     /** Return the untypechecked body of the first func/pred in this module; return null if there has not been any fun/pred. */
     Expr parseOneExpressionFromString(String input) throws Err, FileNotFoundException, IOException {
-        Map<String,String> fc=new LinkedHashMap<String,String>();
+        Set<String> seenStrings = Version.experimental ? new HashSet<String>() : null;
+        Map<String,String> fc = new LinkedHashMap<String,String>();
         fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
-        Module m = CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, -1, "", "", 1);
+        Module m = CompParser.alloy_parseStream(new ArrayList<Object>(), seenStrings, null, fc, null, -1, "", "", 1);
         if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
         Expr body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
         Context cx = new Context(this, null);

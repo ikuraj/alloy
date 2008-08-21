@@ -41,6 +41,7 @@ final class CompSym {
   public static final int PART = 86;
   public static final int SHL = 98;
   public static final int NOTEQUALS = 76;
+  public static final int STR = 114;
   public static final int SHA = 100;
   public static final int LONE_ARROW_ONE = 16;
   public static final int SOME_ARROW_LONE = 9;

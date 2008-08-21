@@ -39,6 +39,9 @@ public final class ExprConstant extends Expr {
     /** The type of constant. */
     public final Op op;
 
+    /** If this node is a String constant, then this field stores the String, else this field stores "". */
+    public final String string;
+
     /** If this node is a number constant, then this field stores the number, else this field stores 0. */
     public final int num;
 
@@ -51,10 +54,11 @@ public final class ExprConstant extends Expr {
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            if (op==Op.NUMBER) out.append(num); else out.append(op);
+            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING) out.append("\"").append(string).append("\""); else out.append(op);
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            if (op==Op.NUMBER) out.append(num).append('\n'); else out.append(op).append('\n');
+            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING) out.append("\"").append(string).append("\""); else out.append(op);
+            out.append('\n');
         }
     }
 
@@ -65,10 +69,15 @@ public final class ExprConstant extends Expr {
      * @param op - the choice of which constant it is
      * @param num - the number (this argument is ignored if op!=NUMBER)
      */
-    private ExprConstant(Pos pos, Op op, int num) {
-        super(pos, null, false, (op==Op.IDEN ? Type.make2(UNIV) : (op==Op.NEXT ? Type.make2(Sig.SIGINT) : (op==Op.TRUE || op==Op.FALSE ? Type.FORMULA : (op==Op.EMPTYNESS ? UNIV.type : Type.INT)))), 0, 0, null);
+    private ExprConstant(Pos pos, Op op, int num, String string) {
+        super(pos, null, false,
+            (op==Op.IDEN ? Type.make2(UNIV) :
+                (op==Op.NEXT ? Type.make2(Sig.SIGINT) :
+                    (op==Op.TRUE || op==Op.FALSE ? Type.FORMULA :
+                        (op==Op.EMPTYNESS ? UNIV.type : (op==Op.STRING ? Sig.STRING.type : Type.INT))))), 0, 0, null);
         this.op = op;
         this.num = (op==Op.NUMBER ? num : 0);
+        this.string = (op==Op.STRING ? string : "");
     }
 
     /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
@@ -77,41 +86,41 @@ public final class ExprConstant extends Expr {
         if (obj==this) return true;
         if (!(obj instanceof ExprConstant)) return false;
         ExprConstant x=(ExprConstant)obj;
-        return op==x.op && num==x.num;
+        if (op==Op.STRING) return string.equals(x.string); else return op==x.op && num==x.num;
     }
 
     /** The "TRUE" boolean value. */
-    public static final Expr TRUE = new ExprConstant(null, Op.TRUE, 0);
+    public static final Expr TRUE = new ExprConstant(null, Op.TRUE, 0, "");
 
     /** The "FALSE" boolean value. */
-    public static final Expr FALSE = new ExprConstant(null, Op.FALSE, 0);
+    public static final Expr FALSE = new ExprConstant(null, Op.FALSE, 0, "");
 
     /** The "iden" relation. */
-    public static final Expr IDEN = new ExprConstant(null, Op.IDEN, 0);
+    public static final Expr IDEN = new ExprConstant(null, Op.IDEN, 0, "");
 
     /** The smallest integer value allowed by the current bitwidth. */
-    public static final Expr MIN = new ExprConstant(null, Op.MIN, 0);
+    public static final Expr MIN = new ExprConstant(null, Op.MIN, 0, "");
 
     /** The largest integer value allowed by the current bitwidth. */
-    public static final Expr MAX = new ExprConstant(null, Op.MAX, 0);
+    public static final Expr MAX = new ExprConstant(null, Op.MAX, 0, "");
 
     /** The "next" relation relating each integer to its next larger integer. */
-    public static final Expr NEXT = new ExprConstant(null, Op.NEXT, 0);
+    public static final Expr NEXT = new ExprConstant(null, Op.NEXT, 0, "");
 
     /** The "0" integer. */
-    public static final Expr ZERO = new ExprConstant(null, Op.NUMBER, 0);
+    public static final Expr ZERO = new ExprConstant(null, Op.NUMBER, 0, "");
 
     /** The "1" integer. */
-    public static final Expr ONE = new ExprConstant(null, Op.NUMBER, 1);
+    public static final Expr ONE = new ExprConstant(null, Op.NUMBER, 1, "");
 
     /** The "emptyness" constant. */
-    public static final Expr EMPTYNESS = new ExprConstant(null, Op.EMPTYNESS, 0);
+    public static final Expr EMPTYNESS = new ExprConstant(null, Op.EMPTYNESS, 0, "");
 
     /** Constructs the integer "n" */
     public static Expr makeNUMBER(int n) {
         if (n==0) return ZERO;
         if (n==1) return ONE;
-        return new ExprConstant(null, Op.NUMBER, n);
+        return new ExprConstant(null, Op.NUMBER, n, "");
     }
 
     /** This class contains all possible constant types. */
@@ -123,6 +132,7 @@ public final class ExprConstant extends Expr {
         /** the maximum integer constant              */  MAX("max"),
         /** the "next" relation between integers      */  NEXT("next"),
         /** the emptyness relation whose type is UNIV */  EMPTYNESS("none"),
+        /** a String constant                         */  STRING("STRING"),
         /** an integer constant                       */  NUMBER("NUMBER");
 
         /** The constructor. */
@@ -136,7 +146,14 @@ public final class ExprConstant extends Expr {
          * @param pos - the original position in the source file (can be null if unknown)
          * @param number - the number (this argument is ignored if op!=NUMBER)
          */
-        public final Expr make(Pos pos, int number) { return new ExprConstant(pos, this, number); }
+        public final Expr make(Pos pos, int number) { return new ExprConstant(pos, this, number, ""); }
+
+        /**
+         * Makes an ExprConstant node
+         * @param pos - the original position in the source file (can be null if unknown)
+         * @param string - the string (this argument is ignored if op!=STRING)
+         */
+        public final Expr make(Pos pos, String string) { return new ExprConstant(pos, this, 0, string); }
 
         /** Returns the human readable label for this operator. */
         @Override public final String toString() { return label; }
@@ -161,6 +178,7 @@ public final class ExprConstant extends Expr {
           case MIN: return "<b>Int/min</b>";
           case NEXT: return "<b>Int/next</b>";
           case EMPTYNESS: return "<b>none</b>";
+          case STRING: return "<b>\"" + string + "\"</b>";
         }
         return "<b>" + num + "</b>";
     }
