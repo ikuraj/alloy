@@ -55,8 +55,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 
 public final class SimContext extends VisitReturn<Object> {
 
-    // FIXTHIS: add more optimizations where dealing with UNIV, IDEN, and sigs that have infinite property like STRING and INT
-
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
