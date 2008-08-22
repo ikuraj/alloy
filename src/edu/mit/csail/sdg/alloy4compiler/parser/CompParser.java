@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.LinkedHashMap;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -15181,7 +15180,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
     }
   }
 
-  static Module alloy_parseStream (List<Object> seenDollar, Set<String> seenString,
+  static Module alloy_parseStream (List<Object> seenDollar,
   Map<String,String> loaded, Map<String,String> fc, Module root,
   int lineOffset, String filename, String prefix, int initialResolutionMode) throws Err, FileNotFoundException, IOException {
     Reader isr=null;
@@ -15196,7 +15195,7 @@ final class CompParser extends java_cup_11a.runtime.lr_parser {
         if (loaded!=null) loaded.put(filename,content);
         content = Util.convertLineBreak(content);
         isr = new StringReader(content);
-        CompFilter s = new CompFilter(u, seenDollar, seenString, filename, lineOffset, new BufferedReader(isr));
+        CompFilter s = new CompFilter(u, seenDollar, filename, lineOffset, new BufferedReader(isr));
         CompParser p = new CompParser(s);
         p.alloymodule=u;
         try {p.parse();} catch(Throwable ex) {if (ex instanceof Err) throw (Err)ex; throw new ErrorFatal("Parser Exception", ex);}

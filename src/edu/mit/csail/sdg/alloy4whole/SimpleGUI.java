@@ -890,7 +890,10 @@ public final class SimpleGUI implements ComponentListener {
                 runmenu.getItem(0).setEnabled(false);
                 runmenu.getItem(3).setEnabled(false);
                 text.do_highlight(new Pos(text.do_getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2));
-                log.logRed(e.toString()+"\n\n");
+                if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
+                    log.logRed("Fatal Exception!"+MailBug.dump(e).trim()+"\n\n");
+                else
+                    log.logRed(e.toString()+"\n\n");
                 return null;
             }
             catch(Throwable e) {
@@ -1620,10 +1623,7 @@ public final class SimpleGUI implements ComponentListener {
         int arity = s.arity();
         for(A4Tuple t: s) {
             Object[] array = new Object[arity];
-            for(int i=0; i<t.arity(); i++) {
-                if (t.atom(i).startsWith("fun/String$")) array[i]=t.atom(i).substring(11); else array[i]=t.atom(i);
-                array[i] = SimTupleset.canon(array[i]);
-            }
+            for(int i=0; i<t.arity(); i++) array[i] = SimTupleset.canon(t.atom(i));
             list.add(array);
         }
         return SimTupleset.make(list);

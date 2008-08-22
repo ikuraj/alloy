@@ -356,11 +356,10 @@ final class ScopeComputer {
     static Pair<A4Solution,ScopeComputer> compute (A4Reporter rep, A4Options opt, Iterable<Sig> sigs, Command cmd) throws Err {
         ScopeComputer sc = new ScopeComputer(rep, sigs, cmd);
         Set<String> set = cmd.getAllStringConstants();
-        List<String> strings = new ArrayList<String>(set.size()>sc.maxstring ? set.size() : (sc.maxstring>0 ? sc.maxstring : 0));
-        for(String str: set) { String x="fun/String$"+str; strings.add(x); sc.atoms.add(x); }
-        if (sc.maxstring>=0 && strings.size()>sc.maxstring) rep.scope("Sig fun/String expanded to contain all "+strings.size()+" String constant(s) referenced by this command.\n");
-        for(int i=0; strings.size()<sc.maxstring; i++) if (!set.contains("String"+i)) { String x="fun/String$String"+i; strings.add(x); sc.atoms.add(x); }
-        A4Solution sol = new A4Solution(cmd.toString(), sc.bitwidth, sc.maxseq, strings, sc.atoms, rep, opt, cmd.expects);
+        if (sc.maxstring>=0 && set.size()>sc.maxstring) rep.scope("Sig fun/String expanded to contain all "+set.size()+" String constant(s) referenced by this command.\n");
+        for(int i=0; set.size()<sc.maxstring; i++) set.add("\"String" + i + "\"");
+        sc.atoms.addAll(set);
+        A4Solution sol = new A4Solution(cmd.toString(), sc.bitwidth, sc.maxseq, set, sc.atoms, rep, opt, cmd.expects);
         return new Pair<A4Solution,ScopeComputer>(sol, sc);
     }
 }

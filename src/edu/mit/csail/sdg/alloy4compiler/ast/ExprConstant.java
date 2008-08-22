@@ -54,10 +54,10 @@ public final class ExprConstant extends Expr {
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING) out.append("\"").append(string).append("\""); else out.append(op);
+            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING) out.append(string); else out.append(op);
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING) out.append("\"").append(string).append("\""); else out.append(op);
+            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING) out.append(string); else out.append(op);
             out.append('\n');
         }
     }
@@ -146,14 +146,14 @@ public final class ExprConstant extends Expr {
          * @param pos - the original position in the source file (can be null if unknown)
          * @param number - the number (this argument is ignored if op!=NUMBER)
          */
-        public final Expr make(Pos pos, int number) { return new ExprConstant(pos, this, number, ""); }
+        public final ExprConstant make(Pos pos, int number) { return new ExprConstant(pos, this, number, ""); }
 
         /**
          * Makes an ExprConstant node
          * @param pos - the original position in the source file (can be null if unknown)
          * @param string - the string (this argument is ignored if op!=STRING)
          */
-        public final Expr make(Pos pos, String string) { return new ExprConstant(pos, this, 0, string); }
+        public final ExprConstant make(Pos pos, String string) { return new ExprConstant(pos, this, 0, string); }
 
         /** Returns the human readable label for this operator. */
         @Override public final String toString() { return label; }

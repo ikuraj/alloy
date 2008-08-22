@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -191,6 +192,9 @@ public final class A4Solution {
     /** The map from each Sig/Field/Skolem/Atom to its corresponding Kodkod expression. */
     private Map<Expr,Expression> a2k;
 
+    /** The map from each String literal to its corresponding Kodkod expression. */
+    private final ConstMap<String,Expression> s2k;
+
     /** The map from each kodkod Formula to Alloy Expr or Alloy Pos (can be empty if unknown) */
     private Map<Formula,Object> k2pos;
 
@@ -212,7 +216,7 @@ public final class A4Solution {
      * @param opt - the Alloy options that will affect the solution and the solver
      * @param expected - whether the user expected an instance or not (1 means yes, 0 means no, -1 means the user did not express an expectation)
      */
-    A4Solution(String originalCommand, int bitwidth, int maxseq, Iterable<String> strings, Collection<String> atoms, final A4Reporter rep, A4Options opt, int expected) throws Err {
+    A4Solution(String originalCommand, int bitwidth, int maxseq, Set<String> stringAtoms, Collection<String> atoms, final A4Reporter rep, A4Options opt, int expected) throws Err {
         opt = opt.dup();
         this.unrolls = opt.unrolls;
         this.sigs = new SafeList<Sig>(Arrays.asList(UNIV, SIGINT, SEQIDX, STRING, NONE));
@@ -252,7 +256,15 @@ public final class A4Solution {
         this.seqidxBounds = seqidxBounds.unmodifiableView();
         bounds.boundExactly(SIGINT_NEXT, next);
         bounds.boundExactly(SEQ_SEQIDX, this.seqidxBounds);
-        for(String string: strings) stringBounds.add(factory.tuple(string));
+        Map<String,Expression> s2k = new HashMap<String,Expression>();
+        for(String e: stringAtoms) {
+            Relation r = Relation.unary("");
+            Tuple t = factory.tuple(e);
+            s2k.put(e, r);
+            bounds.boundExactly(r, factory.range(t, t));
+            stringBounds.add(t);
+        }
+        this.s2k = ConstMap.make(s2k);
         this.stringBounds = stringBounds.unmodifiableView();
         bounds.boundExactly(KK_STRING, this.stringBounds);
         int sym = (expected==1 ? 0 : opt.symmetry);
@@ -321,6 +333,7 @@ public final class A4Solution {
            eval = null;
            a2k = old.a2k;
         }
+        s2k = old.s2k;
         atoms = atoms.dup();
         atom2name = ConstMap.make(atom2name);
         atom2sig = ConstMap.make(atom2sig);
@@ -451,6 +464,9 @@ public final class A4Solution {
     /** Returns an unmodifiable copy of the map from each Sig/Field/Skolem/Atom to its corresponding Kodkod expression. */
     ConstMap<Expr,Expression> a2k()  { return ConstMap.make(a2k); }
 
+    /** Returns an unmodifiable copy of the map from each String literal to its corresponding Kodkod expression. */
+    ConstMap<String,Expression> s2k()  { return s2k; }
+
     /** Returns the corresponding Kodkod expression for the given Sig, or null if it is not associated with anything. */
     Expression a2k(Sig sig)  { return a2k.get(sig); }
 
@@ -460,10 +476,14 @@ public final class A4Solution {
     /** Returns the corresponding Kodkod expression for the given Atom/Skolem, or null if it is not associated with anything. */
     Expression a2k(ExprVar var)  { return a2k.get(var); }
 
+    /** Returns the corresponding Kodkod expression for the given String constant, or null if it is not associated with anything. */
+    Expression a2k(String stringConstant)  { return s2k.get(stringConstant); }
+
     /** Returns the corresponding Kodkod expression for the given expression, or null if it is not associated with anything. */
     Expression a2k(Expr expr) throws ErrorFatal {
         while(expr instanceof ExprUnary && ((ExprUnary)expr).op==ExprUnary.Op.NOOP) expr = ((ExprUnary)expr).sub;
         if (expr instanceof ExprConstant && ((ExprConstant)expr).op==ExprConstant.Op.EMPTYNESS) return Expression.NONE;
+        if (expr instanceof ExprConstant && ((ExprConstant)expr).op==ExprConstant.Op.STRING) return s2k.get(((ExprConstant)expr).string);
         if (expr instanceof Sig || expr instanceof Field || expr instanceof ExprVar) return a2k.get(expr);
         if (expr instanceof ExprBinary) {
             Expr a=((ExprBinary)expr).left, b=((ExprBinary)expr).right;

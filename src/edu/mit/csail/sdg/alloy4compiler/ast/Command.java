@@ -23,7 +23,6 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -191,7 +190,7 @@ public final class Command extends Browsable {
         return answer.makeConst();
     }
 
-    /** Return the collection of all String constants used in this command or in any facts embedded in this command. */
+    /** Return a modifiable copy of the set of all String constants used in this command or in any facts embedded in this command. */
     public Set<String> getAllStringConstants() throws Err {
         final Set<String> set = new HashSet<String>();
         final VisitQuery<Object> findString = new VisitQuery<Object>() {
@@ -201,7 +200,7 @@ public final class Command extends Browsable {
             }
         };
         for(Command c=this; c!=null; c=c.parent) c.formula.accept(findString);
-        return Collections.unmodifiableSet(set);
+        return set;
     }
 
     /** {@inheritDoc} */

@@ -95,6 +95,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** If frame==null, it stores the mapping from each Sig/Field/Skolem/Atom to its corresponding Kodkod expression. */
     private final ConstMap<Expr,Expression> a2k;
 
+    /** If frame==null, it stores the mapping from each String literal to its corresponding Kodkod expression. */
+    private final ConstMap<String,Expression> s2k;
+
     /** The current reporter. */
     private A4Reporter rep;
 
@@ -130,6 +133,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         this.min = pair.a.min();
         this.max = pair.a.max();
         this.a2k = null;
+        this.s2k = null;
         BoundsComputer.compute(rep, frame, pair.b, sigs);
     }
 
@@ -139,7 +143,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
      * @param unrolls - the maximum number of loop unrolling and recursion allowed
      * @param a2k - the mapping from Alloy sig/field/skolem/atom to the corresponding Kodkod expression
      */
-    private TranslateAlloyToKodkod (int bitwidth, int unrolls, Map<Expr,Expression> a2k) throws Err {
+    private TranslateAlloyToKodkod (int bitwidth, int unrolls, Map<Expr,Expression> a2k, Map<String,Expression> s2k) throws Err {
         this.unrolls = unrolls;
         if (bitwidth<1)  throw new ErrorSyntax("Cannot specify a bitwidth less than 1");
         if (bitwidth>30) throw new ErrorSyntax("Cannot specify a bitwidth greater than 30");
@@ -150,6 +154,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         this.max = (1<<(bitwidth-1)) - 1;
         this.min = 0 - (1<<(bitwidth-1));
         this.a2k = ConstMap.make(a2k);
+        this.s2k = ConstMap.make(s2k);
     }
 
     /** Associate the given formula with the given expression, then return the formula as-is. */
@@ -166,6 +171,9 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     /** Returns the expression corresponding to the given skolem/atom. */
     private Expression a2k(ExprVar x) throws Err { if (a2k!=null) return a2k.get(x); else return frame.a2k(x); }
+
+    /** Returns the expression corresponding to the given string literal. */
+    private Expression s2k(String x) throws Err { if (s2k!=null) return s2k.get(x); else return frame.a2k(x); }
 
     //==============================================================================================================//
 
@@ -419,7 +427,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     public static Object alloy2kodkod(A4Solution sol, Expr expr) throws Err {
         if (expr.ambiguous && !expr.errors.isEmpty()) expr = expr.resolve(expr.type, null);
         if (!expr.errors.isEmpty()) throw expr.errors.pick();
-        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.unrolls(), sol.a2k());
+        TranslateAlloyToKodkod tr = new TranslateAlloyToKodkod(sol.getBitwidth(), sol.unrolls(), sol.a2k(), sol.s2k());
         Object ans;
         try {
             ans = tr.visitThis(expr);
@@ -546,11 +554,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprConstant x) throws Err {
         switch(x.op) {
-          case NUMBER:
-            int n=x.num();
-            if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
-            if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
-            return IntConstant.constant(n);
           case MIN: return IntConstant.constant(min);
           case MAX: return IntConstant.constant(max);
           case NEXT: return A4Solution.SIGINT_NEXT;
@@ -558,7 +561,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
           case FALSE: return Formula.FALSE;
           case EMPTYNESS: return Expression.NONE;
           case IDEN: return Expression.IDEN.intersection(a2k(UNIV).product(Expression.UNIV));
-          case STRING: return Expression.NONE; // FIXTHIS
+          case STRING:
+            Expression ans = s2k(x.string);
+            if (ans==null) throw new ErrorFatal(x.pos, "String literal "+x+" does not exist in this instance.\n");
+            return ans;
+          case NUMBER:
+            int n=x.num();
+            if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
+            if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
+            return IntConstant.constant(n);
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprConstant.accept()");
     }
