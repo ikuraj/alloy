@@ -78,6 +78,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
       styleNumber = addStyle("0", null),
       styleKeyword = addStyle("k", null),
       styleComment = addStyle("c", null),
+      styleString = addStyle("s", null),
       styleBlockComment = addStyle("b", null),
       styleJavadocComment = addStyle("j", null),
       styleSymbol = addStyle("+", null);
@@ -147,13 +148,14 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
     public OurTextAreaDocument() {
         root = getDefaultRootElement();
         putProperty(DefaultEditorKit.EndOfLineStringProperty, "\n");
-        for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleSymbol}) {
+        for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleString, styleComment, styleBlockComment, styleJavadocComment, styleSymbol}) {
             StyleConstants.setBold      (s, false);
             StyleConstants.setForeground(s, Color.BLACK);
             StyleConstants.setFontFamily(s, "Monospaced");
             StyleConstants.setFontSize  (s, 14);
         }
         StyleConstants.setBold      (styleSymbol, true);
+        StyleConstants.setForeground(styleString, new Color(168, 10, 168));
         StyleConstants.setForeground(styleComment, new Color(10, 148, 10));
         StyleConstants.setForeground(styleBlockComment, new Color(10, 148, 10));
         StyleConstants.setBold      (styleKeyword, true);
@@ -357,7 +359,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
                   if (txt.charAt(i)=='\"') {i++; break;}
                   if (txt.charAt(i)=='\\' && i+1<n && txt.charAt(i+1)!='\r' && txt.charAt(i+1)!='\n') i=i+2; else i=i+1;
                 }
-                setCharacterAttributes(oldi, i-oldi, styleComment, false);
+                setCharacterAttributes(oldi, i-oldi, styleString, false);
                 i--;
             } else if ((c>='0' && c<='9') || do_start(c)) {
                 int oldi=i; i++; while(i<n && do_iden(txt.charAt(i))) i++;
@@ -386,7 +388,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         if (fontFamily.equals(this.fontFamily) && fontSize==this.fontSize) return;
         this.fontFamily = fontFamily;
         this.fontSize = fontSize;
-        for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleComment, styleBlockComment, styleJavadocComment, styleSymbol}) {
+        for(Style s: new Style[]{styleNormal, styleNumber, styleKeyword, styleString, styleComment, styleBlockComment, styleJavadocComment, styleSymbol}) {
             StyleConstants.setFontFamily(s, fontFamily);
             StyleConstants.setFontSize(s, fontSize);
         }
