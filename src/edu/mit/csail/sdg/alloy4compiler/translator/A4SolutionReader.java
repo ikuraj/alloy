@@ -34,6 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import kodkod.ast.Relation;
 import kodkod.instance.Tuple;
 import kodkod.instance.TupleFactory;
@@ -62,10 +63,10 @@ public final class A4SolutionReader {
     private final LinkedHashSet<Expr> choices = new LinkedHashSet<Expr>();
 
     /** Stores the set of atoms. */
-    private final LinkedHashSet<String> atoms = new LinkedHashSet<String>();
+    private final TreeSet<String> atoms = new TreeSet<String>();
 
     /** Stores the set of STRING atoms. */
-    private final LinkedHashSet<String> strings = new LinkedHashSet<String>();
+    private final TreeSet<String> strings = new TreeSet<String>();
 
     /** Maps each Sig/Field/Skolem id to an XMLNode. */
     private final Map<String,XMLNode> nmap = new LinkedHashMap<String,XMLNode>();

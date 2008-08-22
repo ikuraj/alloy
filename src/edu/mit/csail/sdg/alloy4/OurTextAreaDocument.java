@@ -350,6 +350,14 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
                 int oldi=i; i++; while(i<n && txt.charAt(i)!='\n' && txt.charAt(i)!='*') i++;
                 setCharacterAttributes(oldi, i-oldi, comment==1 ? styleBlockComment : styleJavadocComment, false);
                 i--;
+            } else if (c=='\"') {
+                int oldi=i; i++;
+                while(i<n) {
+                  if (txt.charAt(i)=='\"') {i++; break;}
+                  if (txt.charAt(i)=='\\' && i+1<n) i=i+2; else i=i+1;
+                }
+                setCharacterAttributes(oldi, i-oldi, styleComment, false);
+                i--;
             } else if ((c>='0' && c<='9') || do_start(c)) {
                 int oldi=i; i++; while(i<n && do_iden(txt.charAt(i))) i++;
                 Style s=styleNormal; if (c>='0' && c<='9') s=styleNumber; else if (do_keyword(txt, oldi, i-oldi)) s=styleKeyword;

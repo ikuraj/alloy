@@ -82,8 +82,13 @@ import java_cup_11a.runtime.*;
  }
  private final Symbol alloy_string(String txt) throws Err {
     Pos p = alloy_here(txt);
-    // FIXTHIS: here we should expand the "\" escape sequences, but keep the starting and ending DOUBLE QUOTE
     if (!Version.experimental) throw new ErrorSyntax(p, "String literal is not currently supported.");
+    int i = txt.indexOf('\\');
+    if (i>=0) {
+       StringBuilder sb = new StringBuilder(txt.length());
+       for(i=0; i<txt.length(); i++) { if (txt.charAt(i)=='\\' && i+1<txt.length()) i++; sb.append(txt.charAt(i)); }
+       txt = sb.toString();
+    }
     return new Symbol(CompSym.STR, p, ExprConstant.Op.STRING.make(p, txt));
  }
  private final Symbol alloy_id(String txt) throws Err {
@@ -191,8 +196,8 @@ import java_cup_11a.runtime.*;
 "this"                { return alloy_sym(yytext(), CompSym.THIS        );}
 "univ"                { return alloy_sym(yytext(), CompSym.UNIV        );}
 
-[\"][^\"\r\n]*[\"][\$a-zA-Z_\'\"\u0019\u001d][\$0-9a-zA-Z_\'\"\u0019\u001d]* { throw new ErrorSyntax(alloy_here(yytext()),"String literal cannot be followed by a legal identifier character."); }
-[\"][^\"\r\n]*[\"]                                                           { return alloy_string(yytext()); }
+[\"] ([^\\\"\r\n] | ("\\" [^\r\n]))* [\"] [\$a-zA-Z_\'\"\u0019\u001d] [\$0-9a-zA-Z_\'\"\u0019\u001d]* { throw new ErrorSyntax(alloy_here(yytext()),"String literal cannot be followed by a legal identifier character."); }
+[\"] ([^\\\"\r\n] | ("\\" [^\r\n]))* [\"]                                                             { return alloy_string(yytext()); }
 [0-9][0-9]*[\$a-zA-Z_\'\"\u0019\u001d][\$0-9a-zA-Z_\'\"\u0019\u001d]*        { throw new ErrorSyntax(alloy_here(yytext()),"Name cannot start with a number."); }
 [0-9][0-9]*                                                                  { return alloy_num (yytext()); }
 [\$a-zA-Z][\$0-9a-zA-Z_\'\"\u0019\u001d]*                                    { return alloy_id  (yytext()); }
