@@ -126,7 +126,7 @@ public final class SimContext extends VisitReturn<Object> {
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      * @throws ErrorAPI if attempting to add an atom to an abstract sig with children, or a builtin sig, or a subset sig.
      */
-    public void addAtom(Sig sig, Object atom) throws Err {
+    public void addAtom(Sig sig, String atom) throws Err {
         if (sig.builtin) throw new ErrorAPI("Cannot add an atom to a builtin sig.");
         if (sig instanceof SubsetSig) throw new ErrorAPI("Cannot add an atom to a subset sig.");
         PrimSig s = (PrimSig)sig;
@@ -147,11 +147,13 @@ public final class SimContext extends VisitReturn<Object> {
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      * @throws ErrorAPI if attempting to delete from "Int".
      */
-    public void deleteAtom(Object atom) throws Err {
-        if (atom instanceof Integer) throw new ErrorAPI("Cannot delete an integer atom");
+    public void deleteAtom(String atom) throws Err {
         SimTupleset wrap = SimTupleset.wrap(atom);
         for(Map.Entry<Expr,SimTupleset> x: sfs.entrySet()) {
-            if (x.getKey() instanceof Sig) x.setValue(x.getValue().difference(wrap));
+            if (x.getKey() instanceof Sig) {
+                Sig s = (Sig)(x.getKey());
+                if (!s.builtin) x.setValue(x.getValue().difference(wrap));
+            }
         }
     }
 
@@ -249,11 +251,13 @@ public final class SimContext extends VisitReturn<Object> {
     private boolean isInBinary(SimTupleset R, ExprBinary ab) throws Err {
        // Special check for ISSEQ_ARROW_LONE
        if (ab.op == ExprBinary.Op.ISSEQ_ARROW_LONE) {
-          List<Object> list = R.getAllAtoms(0);
-          Integer next = 0;
+          List<String> list = R.getAllAtoms(0);
+          int next=0;
+          String nextStr=SimTupleset.canon("0");
           while(list.size() > 0) {
-             for(int n=list.size(), i=0; ; i++) if (i>=n) return false; else if (next.equals(list.get(i))) { list.set(i, list.get(n-1)); list.remove(n-1); n--; break; }
+             for(int n=list.size(), i=0; ; i++) if (i>=n) return false; else if (nextStr==list.get(i)) { list.set(i, list.get(n-1)); list.remove(n-1); n--; break; }
              next++;
+             nextStr=SimTupleset.canon(String.valueOf(next));
              if (next<0 && list.size()>0) return false; // shouldn't happen, but if it wraps around and yet list.size()>0 then we indeed have illegal tuples, so we return false
           }
        }
@@ -424,7 +428,7 @@ public final class SimContext extends VisitReturn<Object> {
         return ans;
     }
 
-    private int enumerate(final List<Object[]> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
+    private int enumerate(final List<String[]> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
        final int n = x.vars.size();
        final ExprVar v = x.vars.get(i);
        final SimTupleset e = cset(v.expr);
@@ -440,7 +444,7 @@ public final class SimContext extends VisitReturn<Object> {
           if (i<n-1) sum = enumerate(store, sum, x, body, i+1);
              else if (x.op==ExprQuant.Op.SUM) sum += cint(body);
              else if (x.op!=ExprQuant.Op.COMPREHENSION) { sum += cform(body)?1:0; if (sum>=2) return 2; } // no need to enumerate further
-             else if (cform(body)) { Object[] add = new Object[n]; for(int j=0; j<n; j++) add[j]=((SimTupleset)(env.get(x.vars.get(j)))).getAtom(); store.add(add); }
+             else if (cform(body)) { String[] add = new String[n]; for(int j=0; j<n; j++) add[j]=((SimTupleset)(env.get(x.vars.get(j)))).getAtom(); store.add(add); }
           env.remove(v);
        }
        return sum;
@@ -449,7 +453,7 @@ public final class SimContext extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprQuant x) throws Err {
         if (x.op == ExprQuant.Op.COMPREHENSION) {
-           List<Object[]> ans = new ArrayList<Object[]>();
+           List<String[]> ans = new ArrayList<String[]>();
            enumerate(ans, 0, x, x.sub, 0);
            return SimTupleset.make(ans);
         }
@@ -476,7 +480,7 @@ public final class SimContext extends VisitReturn<Object> {
           case ONE:         return cset(x.sub).size()==1;
           case SOME:        return cset(x.sub).size()>=1;
           case NOT:         return cform(x.sub) ? Boolean.FALSE : Boolean.TRUE;
-          case CAST2SIGINT: return SimTupleset.wrap(cint(x.sub));
+          case CAST2SIGINT: return SimTupleset.wrap(String.valueOf(cint(x.sub)));
           case CAST2INT:    return trunc(cset(x.sub).sum());
           case CLOSURE:     return cset(x.sub).closure();
           case RCLOSURE:    return cset(x.sub).closure().union(cset(ExprConstant.IDEN));
@@ -491,7 +495,7 @@ public final class SimContext extends VisitReturn<Object> {
         if (ans==null) ans = sfs.get(x);
         if (ans==null) {
            SimTupleset ts = sfs.get(Sig.UNIV);
-           if (ts!=null) for(Object a: ts.getAllAtoms(0)) if (x.label.equals(a)) return SimTupleset.wrap(a);
+           if (ts!=null) for(String a: ts.getAllAtoms(0)) if (x.label.equals(a)) return SimTupleset.wrap(a);
         }
         if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;

@@ -1619,10 +1619,10 @@ public final class SimpleGUI implements ComponentListener {
         if (!(object instanceof A4TupleSet)) throw new ErrorFatal("Unexpected type error: expecting an A4TupleSet.");
         A4TupleSet s = (A4TupleSet)object;
         if (s.size()==0) return SimTupleset.EMPTY;
-        List<Object[]> list = new ArrayList<Object[]>(s.size());
+        List<String[]> list = new ArrayList<String[]>(s.size());
         int arity = s.arity();
         for(A4Tuple t: s) {
-            Object[] array = new Object[arity];
+            String[] array = new String[arity];
             for(int i=0; i<t.arity(); i++) array[i] = SimTupleset.canon(t.atom(i));
             list.add(array);
         }
