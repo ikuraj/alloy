@@ -353,8 +353,9 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
             } else if (c=='\"') {
                 int oldi=i; i++;
                 while(i<n) {
+                  if (txt.charAt(i)=='\r' || txt.charAt(i)=='\n') break;
                   if (txt.charAt(i)=='\"') {i++; break;}
-                  if (txt.charAt(i)=='\\' && i+1<n) i=i+2; else i=i+1;
+                  if (txt.charAt(i)=='\\' && i+1<n && txt.charAt(i+1)!='\r' && txt.charAt(i+1)!='\n') i=i+2; else i=i+1;
                 }
                 setCharacterAttributes(oldi, i-oldi, styleComment, false);
                 i--;
