@@ -34,6 +34,7 @@ import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
@@ -424,7 +425,7 @@ public final class SimContext extends VisitReturn<Object> {
         return ans;
     }
 
-    private int enumerate(final List<SimTuple> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
+    private int enumerate(final TempList<SimTuple> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
        final int n = x.vars.size();
        final ExprVar v = x.vars.get(i);
        final SimTupleset e = cset(v.expr);
@@ -453,9 +454,9 @@ public final class SimContext extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprQuant x) throws Err {
         if (x.op == ExprQuant.Op.COMPREHENSION) {
-           List<SimTuple> ans = new ArrayList<SimTuple>();
+           TempList<SimTuple> ans = new TempList<SimTuple>();
            enumerate(ans, 0, x, x.sub, 0);
-           return SimTupleset.make(ans);
+           return SimTupleset.make(ans.makeConst());
         }
         if (x.op == ExprQuant.Op.ALL)  return enumerate(null, 0, x, x.sub.not(), 0) == 0;
         if (x.op == ExprQuant.Op.NO)   return enumerate(null, 0, x, x.sub,       0) == 0;
@@ -493,10 +494,6 @@ public final class SimContext extends VisitReturn<Object> {
     @Override public Object visit(ExprVar x) throws Err {
         Object ans = env.get(x);
         if (ans==null) ans = sfs.get(x);
-        //if (ans==null) {
-        //   SimTupleset ts = sfs.get(Sig.UNIV);
-        //   if (ts!=null) for(SimAtom a: ts.getAllAtoms(0)) if (x.label.equals(a)) return SimTupleset.make(a);
-        //}
         if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
     }
