@@ -50,7 +50,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
-import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
 
 /** Mutable; represents an instance. */
 
@@ -127,17 +126,13 @@ public final class SimContext extends VisitReturn<Object> {
      */
     public void addAtom(Sig sig, SimAtom atom) throws Err {
         if (sig.builtin) throw new ErrorAPI("Cannot add an atom to a builtin sig.");
-        if (sig instanceof SubsetSig) throw new ErrorAPI("Cannot add an atom to a subset sig.");
+        if (!(sig instanceof PrimSig)) throw new ErrorAPI("Cannot add an atom to a subset sig.");
         PrimSig s = (PrimSig)sig;
         if (s.isAbstract!=null && !s.children().isEmpty()) throw new ErrorAPI("Cannot add an atom to an abstract parent sig.");
         SimTupleset add = SimTupleset.make(SimTuple.make(atom));
-        while(s != null) {
+        for(; s!=null; s=s.parent) {
            SimTupleset old = sfs.get(s);
-           if (old==null) old = SimTupleset.EMPTY;
-           if (add.in(old)) return;
-           old = old.union(add);
-           sfs.put(s, old);
-           s = s.parent;
+           if (old==null || old.size()==0) sfs.put(s, add); else if (!add.in(old)) sfs.put(s, old.union(add)); else return;
         }
     }
 
@@ -149,10 +144,7 @@ public final class SimContext extends VisitReturn<Object> {
     public void deleteAtom(SimAtom atom) throws Err {
         SimTupleset wrap = SimTupleset.make(SimTuple.make(atom));
         for(Map.Entry<Expr,SimTupleset> x: sfs.entrySet()) {
-            if (x.getKey() instanceof Sig) {
-                Sig s = (Sig)(x.getKey());
-                if (!s.builtin) x.setValue(x.getValue().difference(wrap));
-            }
+            if (x.getKey() instanceof Sig) { x.setValue(x.getValue().difference(wrap)); }
         }
     }
 
@@ -227,61 +219,6 @@ public final class SimContext extends VisitReturn<Object> {
         Object y = visitThis(x);
         if (y instanceof SimTupleset) return (SimTupleset)y;
         throw new ErrorFatal(x.span(), "This should have been a set or a relation.\nInstead it is "+y);
-    }
-
-    /** Helper method that evaluates the formula "a in b" */
-    private boolean isIn(SimTupleset a, Expr right) throws Err {
-        if (right instanceof ExprUnary) {
-            // Handles possible "unary" multiplicity
-            ExprUnary y=(ExprUnary)(right);
-            if (y.op==ExprUnary.Op.ONEOF)  { return a.size()==1 && a.in(cset(y.sub)); }
-            if (y.op==ExprUnary.Op.SETOF)  { return                a.in(cset(y.sub)); }
-            if (y.op==ExprUnary.Op.LONEOF) { return a.size()<=1 && a.in(cset(y.sub)); }
-            if (y.op==ExprUnary.Op.SOMEOF) { return a.size()>=1 && a.in(cset(y.sub)); }
-        }
-        if (right instanceof ExprBinary && right.mult!=0 && ((ExprBinary)right).op.isArrow) {
-            // Handles possible "binary" or higher-arity multiplicity
-            return isInBinary(a, (ExprBinary)right);
-        }
-        return a.in(cset(right));
-    }
-
-    /** Helper method that evaluates the formula "r in (a ?->? b)" */
-    private boolean isInBinary(SimTupleset R, ExprBinary ab) throws Err {
-       // Special check for ISSEQ_ARROW_LONE
-       if (ab.op == ExprBinary.Op.ISSEQ_ARROW_LONE) {
-          List<SimAtom> list = R.getAllAtoms(0);
-          int next = 0;
-          SimAtom nextStr = SimAtom.make("0");
-          while(list.size() > 0) {
-             for(int n=list.size(), i=0; ; i++) if (i>=n) return false; else if (nextStr==list.get(i)) { list.set(i, list.get(n-1)); list.remove(n-1); n--; break; }
-             next++;
-             nextStr = SimAtom.make(String.valueOf(next));
-             if (next<0 && list.size()>0) return false; // shouldn't happen, but if it wraps around and yet list.size()>0 then we indeed have illegal tuples, so we return false
-          }
-       }
-       // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
-       for(SimTuple left: cset(ab.left)) {
-         SimTupleset ans = R.beginWith(left);
-         switch(ab.op) {
-            case ISSEQ_ARROW_LONE:
-            case ANY_ARROW_LONE: case SOME_ARROW_LONE: case ONE_ARROW_LONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
-            case ANY_ARROW_ONE:  case SOME_ARROW_ONE:  case ONE_ARROW_ONE:  case LONE_ARROW_ONE:  if (!(ans.size()==1)) return false; else break;
-            case ANY_ARROW_SOME: case SOME_ARROW_SOME: case ONE_ARROW_SOME: case LONE_ARROW_SOME: if (!(ans.size()>=1)) return false; else break;
-         }
-         if (!isIn(ans, ab.right)) return false;
-       }
-       // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
-       for(SimTuple right: cset(ab.right)) {
-         SimTupleset ans = R.endWith(right);
-         switch(ab.op) {
-            case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
-            case ONE_ARROW_ANY:  case ONE_ARROW_SOME:  case ONE_ARROW_ONE:  case ONE_ARROW_LONE:  if (!(ans.size()==1)) return false; else break;
-            case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE: if (!(ans.size()>=1)) return false; else break;
-         }
-         if (!isIn(ans, ab.left)) return false;
-       }
-       return true;
     }
 
     /** {@inheritDoc} */
@@ -425,48 +362,6 @@ public final class SimContext extends VisitReturn<Object> {
         return ans;
     }
 
-    private int enumerate(final TempList<SimTuple> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
-       final int n = x.vars.size();
-       final ExprVar v = x.vars.get(i);
-       final SimTupleset e = cset(v.expr);
-       final Iterator<SimTupleset> it;
-       if      (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.LONEOF) it = e.loneOf();
-       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.ONEOF)  it = e.oneOf();
-       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.SOMEOF) it = e.someOf();
-       else                                                                      it = e.setOf();
-       while(it.hasNext()) {
-          final SimTupleset binding = it.next();
-          if (v.expr.mult==2 && !isIn(binding, v.expr)) continue;
-          env.put(v, binding);
-          if (i<n-1) sum = enumerate(store, sum, x, body, i+1);
-             else if (x.op==ExprQuant.Op.SUM) sum += cint(body);
-             else if (x.op!=ExprQuant.Op.COMPREHENSION) { sum += cform(body)?1:0; if (sum>=2) return 2; } // no need to enumerate further
-             else if (cform(body)) {
-               SimTuple a=null, b;
-               for(int j=0; j<n; j++) { b=((SimTupleset)(env.get(x.vars.get(j)))).getTuple(); if (a==null) a=b; else a=a.product(b); }
-               store.add(a);
-             }
-          env.remove(v);
-       }
-       return sum;
-    }
-
-    /** {@inheritDoc} */
-    @Override public Object visit(ExprQuant x) throws Err {
-        if (x.op == ExprQuant.Op.COMPREHENSION) {
-           TempList<SimTuple> ans = new TempList<SimTuple>();
-           enumerate(ans, 0, x, x.sub, 0);
-           return SimTupleset.make(ans.makeConst());
-        }
-        if (x.op == ExprQuant.Op.ALL)  return enumerate(null, 0, x, x.sub.not(), 0) == 0;
-        if (x.op == ExprQuant.Op.NO)   return enumerate(null, 0, x, x.sub,       0) == 0;
-        if (x.op == ExprQuant.Op.SOME) return enumerate(null, 0, x, x.sub,       0) >= 1;
-        if (x.op == ExprQuant.Op.LONE) return enumerate(null, 0, x, x.sub,       0) <= 1;
-        if (x.op == ExprQuant.Op.ONE)  return enumerate(null, 0, x, x.sub,       0) == 1;
-        if (x.op == ExprQuant.Op.SUM)  return trunc(enumerate(null, 0, x, x.sub, 0));
-        throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprQuant.accept()");
-    }
-
     /** {@inheritDoc} */
     @Override public Object visit(ExprUnary x) throws Err {
         switch(x.op) {
@@ -510,5 +405,104 @@ public final class SimContext extends VisitReturn<Object> {
         if (x.boundingFormula==null) return cset(x.definition);
         Object ans = sfs.get(x);
         if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown field "+x+" encountered during evaluation.");
+    }
+
+    /** Helper method for enumerating all possibilties for a quantification-expression. */
+    private int enumerate(final TempList<SimTuple> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
+       final int n = x.vars.size();
+       final ExprVar v = x.vars.get(i);
+       final SimTupleset e = cset(v.expr);
+       final Iterator<SimTupleset> it;
+       if      (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.LONEOF) it = e.loneOf();
+       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.ONEOF)  it = e.oneOf();
+       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.SOMEOF) it = e.someOf();
+       else                                                                      it = e.setOf();
+       while(it.hasNext()) {
+          final SimTupleset binding = it.next();
+          if (v.expr.mult==2 && !isIn(binding, v.expr)) continue;
+          env.put(v, binding);
+          if (i<n-1) sum = enumerate(store, sum, x, body, i+1);
+             else if (x.op==ExprQuant.Op.SUM) sum += cint(body);
+             else if (x.op!=ExprQuant.Op.COMPREHENSION) sum += cform(body)?1:0;
+             else if (cform(body)) {
+               SimTuple a=null, b;
+               for(int j=0; j<n; j++) { b=((SimTupleset)(env.get(x.vars.get(j)))).getTuple(); if (a==null) a=b; else a=a.product(b); }
+               store.add(a);
+             }
+          env.remove(v);
+          if (sum>=2 && x.op!=ExprQuant.Op.COMPREHENSION && x.op!=ExprQuant.Op.SUM) return 2; // no need to enumerate further
+       }
+       return sum;
+    }
+
+    /** {@inheritDoc} */
+    @Override public Object visit(ExprQuant x) throws Err {
+        if (x.op == ExprQuant.Op.COMPREHENSION) {
+           TempList<SimTuple> ans = new TempList<SimTuple>();
+           enumerate(ans, 0, x, x.sub, 0);
+           return SimTupleset.make(ans.makeConst());
+        }
+        if (x.op == ExprQuant.Op.ALL)  return enumerate(null, 0, x, x.sub.not(), 0) == 0;
+        if (x.op == ExprQuant.Op.NO)   return enumerate(null, 0, x, x.sub,       0) == 0;
+        if (x.op == ExprQuant.Op.SOME) return enumerate(null, 0, x, x.sub,       0) >= 1;
+        if (x.op == ExprQuant.Op.LONE) return enumerate(null, 0, x, x.sub,       0) <= 1;
+        if (x.op == ExprQuant.Op.ONE)  return enumerate(null, 0, x, x.sub,       0) == 1;
+        if (x.op == ExprQuant.Op.SUM)  return trunc(enumerate(null, 0, x, x.sub, 0));
+        throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprQuant.accept()");
+    }
+
+    /** Helper method that evaluates the formula "a in b" */
+    private boolean isIn(SimTupleset a, Expr right) throws Err {
+        if (right instanceof ExprUnary) {
+            // Handles possible "unary" multiplicity
+            ExprUnary y=(ExprUnary)(right);
+            if (y.op==ExprUnary.Op.ONEOF)  { return a.size()==1 && a.in(cset(y.sub)); }
+            if (y.op==ExprUnary.Op.SETOF)  { return                a.in(cset(y.sub)); }
+            if (y.op==ExprUnary.Op.LONEOF) { return a.size()<=1 && a.in(cset(y.sub)); }
+            if (y.op==ExprUnary.Op.SOMEOF) { return a.size()>=1 && a.in(cset(y.sub)); }
+        }
+        if (right instanceof ExprBinary && right.mult!=0 && ((ExprBinary)right).op.isArrow) {
+            // Handles possible "binary" or higher-arity multiplicity
+            return isInBinary(a, (ExprBinary)right);
+        }
+        return a.in(cset(right));
+    }
+
+    /** Helper method that evaluates the formula "r in (a ?->? b)" */
+    private boolean isInBinary(SimTupleset R, ExprBinary ab) throws Err {
+       // Special check for ISSEQ_ARROW_LONE
+       if (ab.op == ExprBinary.Op.ISSEQ_ARROW_LONE) {
+          List<SimAtom> list = R.getAllAtoms(0);
+          int next = 0;
+          SimAtom nextStr = SimAtom.make("0");
+          while (list.size() > 0) {
+             for (int n=list.size(), i=0; ; i++) if (i>=n) return false; else if (nextStr==list.get(i)) { list.set(i, list.get(n-1)); list.remove(n-1); next++; break; }
+             if (list.size()==0) break;
+             if (next<0 || next>=maxseq) return false; // list.size()>0 and yet we've exhausted 0..maxseq-1, so indeed there are illegal atoms
+             nextStr = SimAtom.make(String.valueOf(next));
+          }
+       }
+       // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
+       for(SimTuple left: cset(ab.left)) {
+         SimTupleset ans = R.beginWith(left);
+         switch(ab.op) {
+            case ISSEQ_ARROW_LONE:
+            case ANY_ARROW_LONE: case SOME_ARROW_LONE: case ONE_ARROW_LONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
+            case ANY_ARROW_ONE:  case SOME_ARROW_ONE:  case ONE_ARROW_ONE:  case LONE_ARROW_ONE:  if (!(ans.size()==1)) return false; else break;
+            case ANY_ARROW_SOME: case SOME_ARROW_SOME: case ONE_ARROW_SOME: case LONE_ARROW_SOME: if (!(ans.size()>=1)) return false; else break;
+         }
+         if (!isIn(ans, ab.right)) return false;
+       }
+       // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
+       for(SimTuple right: cset(ab.right)) {
+         SimTupleset ans = R.endWith(right);
+         switch(ab.op) {
+            case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
+            case ONE_ARROW_ANY:  case ONE_ARROW_SOME:  case ONE_ARROW_ONE:  case ONE_ARROW_LONE:  if (!(ans.size()==1)) return false; else break;
+            case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE: if (!(ans.size()>=1)) return false; else break;
+         }
+         if (!isIn(ans, ab.left)) return false;
+       }
+       return true;
     }
 }
