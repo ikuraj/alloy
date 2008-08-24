@@ -31,7 +31,7 @@ public final class OurAntiAlias {
         if (Util.onMac() || Util.onWindows()) enableAntiAlias = true; // On Mac and Windows they are already antialiased
         if (antiAlias == enableAntiAlias) return;
         antiAlias = enableAntiAlias;
-        for(Map.Entry<JComponent,Boolean> x: map.entrySet()) { x.getKey().invalidate(); x.getKey().repaint(); x.getKey().validate(); }
+        for(Map.Entry<JComponent,Boolean> x: map.entrySet()) { JComponent y=x.getKey(); if (y!=null) {y.invalidate(); y.repaint(); y.validate();} }
     }
 
     /** Returns true if anti-alias is currently enabled. */

@@ -114,6 +114,7 @@ import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.parser.DebugTree;
 import edu.mit.csail.sdg.alloy4compiler.parser.Module;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimContext;
+import edu.mit.csail.sdg.alloy4compiler.sim.SimTuple;
 import edu.mit.csail.sdg.alloy4compiler.sim.SimTupleset;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4SolutionReader;
@@ -1619,12 +1620,12 @@ public final class SimpleGUI implements ComponentListener {
         if (!(object instanceof A4TupleSet)) throw new ErrorFatal("Unexpected type error: expecting an A4TupleSet.");
         A4TupleSet s = (A4TupleSet)object;
         if (s.size()==0) return SimTupleset.EMPTY;
-        List<String[]> list = new ArrayList<String[]>(s.size());
+        List<SimTuple> list = new ArrayList<SimTuple>(s.size());
         int arity = s.arity();
         for(A4Tuple t: s) {
             String[] array = new String[arity];
-            for(int i=0; i<t.arity(); i++) array[i] = SimTupleset.canon(t.atom(i));
-            list.add(array);
+            for(int i=0; i<t.arity(); i++) array[i] = t.atom(i);
+            list.add(SimTuple.make(array));
         }
         return SimTupleset.make(list);
     }

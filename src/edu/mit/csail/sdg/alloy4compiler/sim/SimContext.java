@@ -124,12 +124,12 @@ public final class SimContext extends VisitReturn<Object> {
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      * @throws ErrorAPI if attempting to add an atom to an abstract sig with children, or a builtin sig, or a subset sig.
      */
-    public void addAtom(Sig sig, String atom) throws Err {
+    public void addAtom(Sig sig, SimAtom atom) throws Err {
         if (sig.builtin) throw new ErrorAPI("Cannot add an atom to a builtin sig.");
         if (sig instanceof SubsetSig) throw new ErrorAPI("Cannot add an atom to a subset sig.");
         PrimSig s = (PrimSig)sig;
         if (s.isAbstract!=null && !s.children().isEmpty()) throw new ErrorAPI("Cannot add an atom to an abstract parent sig.");
-        SimTupleset add = SimTupleset.wrap(atom);
+        SimTupleset add = SimTupleset.make(SimTuple.make(atom));
         while(s != null) {
            SimTupleset old = sfs.get(s);
            if (old==null) old = SimTupleset.EMPTY;
@@ -145,8 +145,8 @@ public final class SimContext extends VisitReturn<Object> {
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      * @throws ErrorAPI if attempting to delete from "Int".
      */
-    public void deleteAtom(String atom) throws Err {
-        SimTupleset wrap = SimTupleset.wrap(atom);
+    public void deleteAtom(SimAtom atom) throws Err {
+        SimTupleset wrap = SimTupleset.make(SimTuple.make(atom));
         for(Map.Entry<Expr,SimTupleset> x: sfs.entrySet()) {
             if (x.getKey() instanceof Sig) {
                 Sig s = (Sig)(x.getKey());
@@ -249,20 +249,19 @@ public final class SimContext extends VisitReturn<Object> {
     private boolean isInBinary(SimTupleset R, ExprBinary ab) throws Err {
        // Special check for ISSEQ_ARROW_LONE
        if (ab.op == ExprBinary.Op.ISSEQ_ARROW_LONE) {
-          List<String> list = R.getAllAtoms(0);
-          int next=0;
-          String nextStr=SimTupleset.canon("0");
+          List<SimAtom> list = R.getAllAtoms(0);
+          int next = 0;
+          SimAtom nextStr = SimAtom.make("0");
           while(list.size() > 0) {
              for(int n=list.size(), i=0; ; i++) if (i>=n) return false; else if (nextStr==list.get(i)) { list.set(i, list.get(n-1)); list.remove(n-1); n--; break; }
              next++;
-             nextStr=SimTupleset.canon(String.valueOf(next));
+             nextStr = SimAtom.make(String.valueOf(next));
              if (next<0 && list.size()>0) return false; // shouldn't happen, but if it wraps around and yet list.size()>0 then we indeed have illegal tuples, so we return false
           }
        }
        // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
-       SimTupleset left = cset(ab.left);
-       for(int i=0; i<left.size(); i++) {
-         SimTupleset ans = R.beginWith(left, i);
+       for(SimTuple left: cset(ab.left)) {
+         SimTupleset ans = R.beginWith(left);
          switch(ab.op) {
             case ISSEQ_ARROW_LONE:
             case ANY_ARROW_LONE: case SOME_ARROW_LONE: case ONE_ARROW_LONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
@@ -272,9 +271,8 @@ public final class SimContext extends VisitReturn<Object> {
          if (!isIn(ans, ab.right)) return false;
        }
        // "R in A op-> B" means for each tuple b in B, there are "op" tuples in r that end with b.
-       SimTupleset right = cset(ab.right);
-       for(int i=0; i<right.size(); i++) {
-         SimTupleset ans = R.endWith(right, i);
+       for(SimTuple right: cset(ab.right)) {
+         SimTupleset ans = R.endWith(right);
          switch(ab.op) {
             case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
             case ONE_ARROW_ANY:  case ONE_ARROW_SOME:  case ONE_ARROW_ONE:  case ONE_ARROW_LONE:  if (!(ans.size()==1)) return false; else break;
@@ -326,7 +324,7 @@ public final class SimContext extends VisitReturn<Object> {
           case RANGE:
               return cset(x.left).range(cset(x.right));
           case EQUALS:
-              if (x.left.type.is_int) return cint(x.left)==cint(x.right); else return cset(x.left).equal(cset(x.right));
+              if (x.left.type.is_int) return cint(x.left)==cint(x.right); else return cset(x.left).equals(cset(x.right));
           case MINUS:
               // Special exception to allow "0-8" to not throw an exception, where 7 is the maximum allowed integer (when bitwidth==4)
               // (likewise, when bitwidth==5, then +15 is the maximum allowed integer, and we want to allow 0-16 without throwing an exception)
@@ -406,7 +404,7 @@ public final class SimContext extends VisitReturn<Object> {
           case MIN: return min;
           case MAX: return max;
           case EMPTYNESS: return SimTupleset.EMPTY;
-          case STRING: return SimTupleset.wrap(x.string);
+          case STRING: return SimTupleset.make(x.string);
           case NEXT: if (cacheNEXT==null) return cacheNEXT=SimTupleset.next(min,max); else return cacheNEXT;
           case IDEN: if (cacheIDEN==null) return cacheIDEN=cset(Sig.UNIV).iden(); else return cacheIDEN;
         }
@@ -426,7 +424,7 @@ public final class SimContext extends VisitReturn<Object> {
         return ans;
     }
 
-    private int enumerate(final List<String[]> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
+    private int enumerate(final List<SimTuple> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
        final int n = x.vars.size();
        final ExprVar v = x.vars.get(i);
        final SimTupleset e = cset(v.expr);
@@ -442,7 +440,11 @@ public final class SimContext extends VisitReturn<Object> {
           if (i<n-1) sum = enumerate(store, sum, x, body, i+1);
              else if (x.op==ExprQuant.Op.SUM) sum += cint(body);
              else if (x.op!=ExprQuant.Op.COMPREHENSION) { sum += cform(body)?1:0; if (sum>=2) return 2; } // no need to enumerate further
-             else if (cform(body)) { String[] add = new String[n]; for(int j=0; j<n; j++) add[j]=((SimTupleset)(env.get(x.vars.get(j)))).getAtom(); store.add(add); }
+             else if (cform(body)) {
+               SimTuple a=null, b;
+               for(int j=0; j<n; j++) { b=((SimTupleset)(env.get(x.vars.get(j)))).getTuple(); if (a==null) a=b; else a=a.product(b); }
+               store.add(a);
+             }
           env.remove(v);
        }
        return sum;
@@ -451,7 +453,7 @@ public final class SimContext extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprQuant x) throws Err {
         if (x.op == ExprQuant.Op.COMPREHENSION) {
-           List<String[]> ans = new ArrayList<String[]>();
+           List<SimTuple> ans = new ArrayList<SimTuple>();
            enumerate(ans, 0, x, x.sub, 0);
            return SimTupleset.make(ans);
         }
@@ -478,7 +480,7 @@ public final class SimContext extends VisitReturn<Object> {
           case ONE:         return cset(x.sub).size()==1;
           case SOME:        return cset(x.sub).size()>=1;
           case NOT:         return cform(x.sub) ? Boolean.FALSE : Boolean.TRUE;
-          case CAST2SIGINT: return SimTupleset.wrap(String.valueOf(cint(x.sub)));
+          case CAST2SIGINT: return SimTupleset.make(String.valueOf(cint(x.sub)));
           case CAST2INT:    return trunc(cset(x.sub).sum());
           case CLOSURE:     return cset(x.sub).closure();
           case RCLOSURE:    return cset(x.sub).closure().union(cset(ExprConstant.IDEN));
@@ -491,10 +493,10 @@ public final class SimContext extends VisitReturn<Object> {
     @Override public Object visit(ExprVar x) throws Err {
         Object ans = env.get(x);
         if (ans==null) ans = sfs.get(x);
-        if (ans==null) {
-           SimTupleset ts = sfs.get(Sig.UNIV);
-           if (ts!=null) for(String a: ts.getAllAtoms(0)) if (x.label.equals(a)) return SimTupleset.wrap(a);
-        }
+        //if (ans==null) {
+        //   SimTupleset ts = sfs.get(Sig.UNIV);
+        //   if (ts!=null) for(SimAtom a: ts.getAllAtoms(0)) if (x.label.equals(a)) return SimTupleset.make(a);
+        //}
         if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
         return ans;
     }
