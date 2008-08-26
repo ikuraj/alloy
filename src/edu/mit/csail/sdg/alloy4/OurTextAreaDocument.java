@@ -199,7 +199,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         }
     }
 
-    /** {@inheritDoc} */
+    /** This method is called by Swing to insert a String into this document. */
     @Override public void insertString(int offset, String string, AttributeSet attr) throws BadLocationException {
         // make sure we don't insert the '\r' character
         if (string.indexOf('\r')>=0) string = Util.convertLineBreak(string);
@@ -217,7 +217,7 @@ final class OurTextAreaDocument extends DefaultStyledDocument {
         undos.add(new OurTextAreaAction(true, string, offset));
     }
 
-    /** {@inheritDoc} */
+    /** This method is called by Swing to delete text from this document. */
     @Override public void remove(int offset, int length) throws BadLocationException {
         // don't perform trivial actions
         if (length==0) return;

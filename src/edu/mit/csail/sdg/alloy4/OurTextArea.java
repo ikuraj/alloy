@@ -156,7 +156,7 @@ public final class OurTextArea extends JTextPane {
     /** Clear the undo history. */
     public void do_clearUndo() { doc.do_clearUndo(); }
 
-    /** {@inheritDocs} */
+    /** This method is called by Swing to draw this component. */
     @Override public void paint(Graphics gr) {
         if (OurAntiAlias.antiAlias() && gr instanceof Graphics2D) {
             ((Graphics2D)gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

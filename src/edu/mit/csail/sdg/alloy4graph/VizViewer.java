@@ -427,12 +427,12 @@ public final strictfp class VizViewer extends JPanel {
        pop.show(c,x,y);
     }
 
-    /** {@inheritDoc} */
+    /** Returns the preferred size of this component. */
     @Override public Dimension getPreferredSize() {
         return new Dimension((int)(graph.getTotalWidth()*scale), (int)(graph.getTotalHeight()*scale));
     }
 
-    /** {@inheritDoc} */
+    /** This method is called by Swing to draw this component. */
     @Override public void paintComponent(final Graphics gr) {
         super.paintComponent(gr);
         Graphics2D g2 = (Graphics2D)gr;

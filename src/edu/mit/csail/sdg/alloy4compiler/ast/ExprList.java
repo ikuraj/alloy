@@ -44,7 +44,12 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 public final class ExprList extends Expr {
 
     /** This class contains all possible builtin predicates. */
-    public static enum Op { DISJOINT, TOTALORDER, AND, OR };
+    public static enum Op {
+       /** DISJOINT (meaning the argument relations are all disjoint) */ DISJOINT,
+       /** TOTALORDER (meaning it's a total order over the arguments) */ TOTALORDER,
+       /** AND (meaning the logical conjunction of all arguments)     */ AND,
+       /** OR (meaning the logical disjunction of all arguments)      */ OR
+    };
 
     /** The builtin operator. */
     public final Op op;
