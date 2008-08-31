@@ -93,6 +93,7 @@ public final class SimTuple {
         if (ans == 0) {
             // We already know each SimAtom has been canonicalized, so just computing its IdentityHashCode is faster
             for(int i=array.length-1; i>=0; i--) ans = ans*31 + System.identityHashCode(array[i]);
+            if (ans==0) ans++; // so that we don't end up re-computing this SimTuple's hashcode over and over again
             hashCode = ans;
         }
         return ans;
@@ -105,7 +106,11 @@ public final class SimTuple {
         if (array==other) return true; else if (array.length != other.length) return false;
         if (hashCode() != that.hashCode()) return false;
         for(int i=array.length-1; i>=0; i--) if (array[i]!=other[i]) return false;
-        array=other; // Change it so we share the same array; this is thread safe since these array contents are never mutated, so it doesn't matter if some thread sees the old array and some sees the new array
+        array=other;
+        // Change it so we share the same array; this is thread safe since these array contents are never mutated,
+        // so it doesn't matter if some thread sees the old array and some sees the new array.
+        // JLS 3rd Edition 17.7 guarantees that writes and reads of references are atomic though not necessarily visible,
+        // so another thread will either see the old array or the new array.
         return true;
     }
 

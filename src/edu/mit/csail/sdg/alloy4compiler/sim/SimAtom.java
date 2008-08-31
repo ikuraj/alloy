@@ -58,6 +58,15 @@ public final class SimAtom {
         }
     }
 
+    /** Preconstructed atom representing emptystring. */
+    public static final SimAtom EMPTYSTRING = make("");
+
+    /** Preconstructed atom representing 0. */
+    public static final SimAtom ZERO = make("0");
+
+    /** Preconstructed atom representing 1. */
+    public static final SimAtom ONE = make("1");
+
     /**
      * If the atom starts with "-" or "0-9" then convert it into a 32-bit int (assuming that it came from a 32-bit int)
      * <p>
