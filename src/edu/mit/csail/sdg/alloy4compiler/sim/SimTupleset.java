@@ -212,6 +212,21 @@ public final class SimTupleset implements Iterable<SimTuple> {
     }
 
     /**
+     * Return the union of this and that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
+     * <br/> Note: the tuples in the result will be ordered as follows:
+     * first comes the tuples in "this" in original order,
+     * then the new tuple (if it wasn't in this set)
+     */
+    public SimTupleset union(SimTuple that) {
+       if (tuples.size()==0) return make(that);
+       if (tuples.get(0).arity()!=that.arity() || has(that)) return this;
+       TempList<SimTuple> ans = new TempList<SimTuple>(size()+1);
+       for(int i=0, n=size(); i<n; i++) ans.add(tuples.get(i));
+       ans.add(that);
+       return new SimTupleset(ans.makeConst());
+    }
+
+    /**
      * Return this minus that; (if this tupleset and that tupleset does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: The resulting tuples will keep their original order.
      */

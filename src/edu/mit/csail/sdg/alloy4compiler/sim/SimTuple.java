@@ -22,6 +22,8 @@
 
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
+import java.util.Map;
+
 /**
  * Immutable; represents a tuple.
  *
@@ -74,6 +76,17 @@ public final class SimTuple {
     public boolean has(SimAtom atom) {
         for(int i=array.length-1; i>=0; i--) if (array[i]==atom) return true;
         return false;
+    }
+
+    /** Replace each atom using the given SimAtom->SimAtom map; any atom not in the map will stay unchanged. */
+    public SimTuple replace(Map<SimAtom,SimAtom> map) {
+        SimAtom[] newarray = new SimAtom[array.length];
+        for(int i=array.length-1; i>=0; i--) {
+            SimAtom oldX = array[i];
+            SimAtom newX = map.get(oldX);
+            newarray[i] = (newX==null ? oldX : newX);
+        }
+        return new SimTuple(newarray);
     }
 
     /** Prepend the given atom to the front of this tuple, then return the resulting new Tuple. */

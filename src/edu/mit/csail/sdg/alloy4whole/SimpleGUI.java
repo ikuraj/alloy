@@ -1634,11 +1634,11 @@ public final class SimpleGUI implements ComponentListener {
     public static SimContext convert(A4Solution ans) throws Err {
         SimContext ct = new SimContext(ans.getBitwidth(), ans.getMaxSeq());
         for(Sig s: ans.getAllReachableSigs()) {
-            ct.assign(s, convert(ans.eval(s)));
-            for(Field f: s.getFields())  if (f.boundingFormula!=null)  ct.assign(f, convert(ans.eval(f)));
+            ct.init(s, convert(ans.eval(s)));
+            for(Field f: s.getFields())  if (f.boundingFormula!=null)  ct.init(f, convert(ans.eval(f)));
         }
-        for(ExprVar a:ans.getAllAtoms())   ct.assign(a, convert(ans.eval(a)));
-        for(ExprVar a:ans.getAllSkolems()) ct.assign(a, convert(ans.eval(a)));
+        for(ExprVar a:ans.getAllAtoms())   ct.init(a, convert(ans.eval(a)));
+        for(ExprVar a:ans.getAllSkolems()) ct.init(a, convert(ans.eval(a)));
         return ct;
     }
 

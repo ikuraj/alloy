@@ -24,10 +24,13 @@ package edu.mit.csail.sdg.alloy4compiler.sim;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -60,6 +63,9 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** The exact values of each sig, field, and skolem (Note: it must not cache the value of a "defined" field) */
     private final Map<Expr,SimTupleset> sfs = new HashMap<Expr,SimTupleset>();
+
+    /** This stores the set of all atoms (except Int and String atoms) */
+    private final Set<SimAtom> allAtoms = new HashSet<SimAtom>();
 
     /** Caches parameter-less functions to a Boolean, Integer, or SimTupleset. */
     private final Map<Func,Object> cacheForConstants = new IdentityHashMap<Func,Object>();
@@ -117,22 +123,29 @@ public final class SimContext extends VisitReturn<Object> {
         cacheNEXT = old.cacheNEXT;
         env = old.env.dup();
         for(Map.Entry<Expr,SimTupleset> e: old.sfs.entrySet()) sfs.put(e.getKey(), e.getValue());
+        allAtoms.addAll(old.allAtoms);
     }
 
     /**
-     * Add an atom to a sig, then automatically add it to all parent sigs as well.
-     * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
+     * Create a fresh atom for the given sig, then return the newly created atom.
      * @throws ErrorAPI if attempting to add an atom to an abstract sig with children, or a builtin sig, or a subset sig.
      */
-    public void addAtom(Sig sig, SimAtom atom) throws Err {
+    public SimAtom makeAtom(Sig sig) throws Err {
         if (sig.builtin) throw new ErrorAPI("Cannot add an atom to a builtin sig.");
         if (!(sig instanceof PrimSig)) throw new ErrorAPI("Cannot add an atom to a subset sig.");
         PrimSig s = (PrimSig)sig;
         if (s.isAbstract!=null && !s.children().isEmpty()) throw new ErrorAPI("Cannot add an atom to an abstract parent sig.");
-        SimTupleset add = SimTupleset.make(SimTuple.make(atom));
-        for(; s!=null; s=s.parent) {
-           SimTupleset old = sfs.get(s);
-           if (old==null || old.size()==0) sfs.put(s, add); else if (!add.in(old)) sfs.put(s, old.union(add)); else return;
+        String label = sig.label + "$";
+        if (label.startsWith("this/")) label=label.substring(5);
+        for(int i=0; ;i++) {
+          SimAtom atom = SimAtom.make(label + i);
+          if (!allAtoms.add(atom)) continue;
+          SimTupleset add = SimTupleset.make(SimTuple.make(atom));
+          for(; s!=null; s=s.parent) {
+              SimTupleset old = sfs.get(s);
+              if (old==null || old.size()==0) sfs.put(s, add); else if (!add.in(old)) sfs.put(s, old.union(add)); else break;
+          }
+          return atom;
         }
     }
 
@@ -142,27 +155,29 @@ public final class SimContext extends VisitReturn<Object> {
      * @throws ErrorAPI if attempting to delete from "Int".
      */
     public void deleteAtom(SimAtom atom) throws Err {
+        allAtoms.remove(atom);
         for(Map.Entry<Expr,SimTupleset> x: sfs.entrySet()) {
             x.setValue(x.getValue().difference(atom));
         }
     }
 
     /**
-     * Modifies the given sig to be associated with the given unary value.
+     * Initializes the given sig to be associated with the given unary value; should only be called at the beginning.
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
-    public void assign(Sig sig, SimTupleset value) throws Err {
+    public void init(Sig sig, SimTupleset value) throws Err {
         if (value.arity()>1) throw new ErrorType("Evaluator encountered an error: sig "+sig.label+" arity must not be " + value.arity());
+        if (!sig.builtin) for(SimTuple tp:value) allAtoms.add(tp.get(0));
         sfs.put(sig, value);
         cacheForConstants.clear();
         cacheIDEN = null;
     }
 
     /**
-     * Modifies the given field to be associated with the given value.
+     * Initializes the given field to be associated with the given unary value; should only be called at the beginning.
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
-    public void assign(Field field, SimTupleset value) throws Err {
+    public void init(Field field, SimTupleset value) throws Err {
         if (value.size()>0 && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
         if (field.boundingFormula==null) throw new ErrorAPI("Evaluator cannot modify the value of a defined field.");
         sfs.put(field, value);
@@ -171,10 +186,10 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /**
-     * Modifies the given global var to be associated with the given value.
+     * Initializes the given var to be associated with the given unary value; should only be called at the beginning.
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
-    public void assign(ExprVar var, SimTupleset value) throws Err {
+    public void init(ExprVar var, SimTupleset value) throws Err {
         if (value.size()>0 && value.arity()!=var.type.arity()) throw new ErrorType("Evaluator encountered an error: skolem "+var.label+" arity must not be " + value.arity());
         sfs.put(var, value);
         cacheForConstants.clear();
