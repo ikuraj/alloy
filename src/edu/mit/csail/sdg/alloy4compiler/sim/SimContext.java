@@ -127,6 +127,17 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /**
+     * Returns true if the given atom is an Int atom, or String atom, or is in at least one of the sig.
+     */
+    public boolean hasAtom(SimAtom atom) {
+        if (atom.toString().length()>0) {
+            char c = atom.toString().charAt(0);
+            if (c=='-' || (c>='0' && c<='9') || c=='\"') return true;
+        }
+        return allAtoms.contains(atom);
+    }
+
+    /**
      * Create a fresh atom for the given sig, then return the newly created atom.
      * @throws ErrorAPI if attempting to add an atom to an abstract sig with children, or a builtin sig, or a subset sig.
      */
@@ -357,6 +368,7 @@ public final class SimContext extends VisitReturn<Object> {
           case MAX: return max;
           case EMPTYNESS: return SimTupleset.EMPTY;
           case STRING: return SimTupleset.make(x.string);
+          case ATOM: return SimTupleset.make(x.string);
           case NEXT: if (cacheNEXT==null) return cacheNEXT=SimTupleset.next(min,max); else return cacheNEXT;
           case IDEN: if (cacheIDEN==null) return cacheIDEN=cset(Sig.UNIV).iden(); else return cacheIDEN;
         }

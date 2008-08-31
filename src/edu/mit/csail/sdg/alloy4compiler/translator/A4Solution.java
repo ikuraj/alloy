@@ -484,6 +484,7 @@ public final class A4Solution {
         while(expr instanceof ExprUnary && ((ExprUnary)expr).op==ExprUnary.Op.NOOP) expr = ((ExprUnary)expr).sub;
         if (expr instanceof ExprConstant && ((ExprConstant)expr).op==ExprConstant.Op.EMPTYNESS) return Expression.NONE;
         if (expr instanceof ExprConstant && ((ExprConstant)expr).op==ExprConstant.Op.STRING) return s2k.get(((ExprConstant)expr).string);
+        if (expr instanceof ExprConstant && ((ExprConstant)expr).op==ExprConstant.Op.ATOM) return s2k.get(((ExprConstant)expr).string);
         if (expr instanceof Sig || expr instanceof Field || expr instanceof ExprVar) return a2k.get(expr);
         if (expr instanceof ExprBinary) {
             Expr a=((ExprBinary)expr).left, b=((ExprBinary)expr).right;

@@ -22,7 +22,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
+import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * Immutable; represents a tuple.
@@ -30,7 +32,7 @@ import java.util.Map;
  * <p><b>Thread Safety:</b>  Safe.
  */
 
-public final class SimTuple {
+public final class SimTuple implements Iterable<SimAtom> {
 
     /** Stores the tuple. */
     private SimAtom[] array;
@@ -176,5 +178,15 @@ public final class SimTuple {
         StringBuilder sb = new StringBuilder();
         toString(sb);
         return sb.toString();
+    }
+
+    /** {@inheritDoc} */
+    public Iterator<SimAtom> iterator() {
+        return new Iterator<SimAtom>() {
+            private int i = 0; // the next index to read out
+            public boolean hasNext() { return i < array.length; }
+            public SimAtom next() { if (i < array.length) {i++; return array[i-1];} else throw new NoSuchElementException(); }
+            public void remove() { throw new UnsupportedOperationException(); }
+        };
     }
 }

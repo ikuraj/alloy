@@ -561,15 +561,22 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
           case FALSE: return Formula.FALSE;
           case EMPTYNESS: return Expression.NONE;
           case IDEN: return Expression.IDEN.intersection(a2k(UNIV).product(Expression.UNIV));
-          case STRING:
+          case STRING: {
             Expression ans = s2k(x.string);
             if (ans==null) throw new ErrorFatal(x.pos, "String literal "+x+" does not exist in this instance.\n");
             return ans;
-          case NUMBER:
+          }
+          case ATOM: {
+            Expression ans = s2k(x.string);
+            if (ans==null) throw new ErrorSyntax(x.pos, "The name \""+x.string+"\" cannot be found.");
+            return ans;
+          }
+          case NUMBER: {
             int n=x.num();
             if (n<min) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is smaller than the minimum integer "+min);
             if (n>max) throw new ErrorType(x.pos, "Current bitwidth is set to "+bitwidth+", thus this integer constant "+n+" is bigger than the maximum integer "+max);
             return IntConstant.constant(n);
+          }
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprConstant.accept()");
     }
