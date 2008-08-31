@@ -235,9 +235,7 @@ public final class Module extends Browsable {
             TempList<String> re = new TempList<String>();
             Expr ans = rootmodule.populate(ch, re, rootfield, rootsig, rootfunparam, rootfunbody, pos, name, th);
             if (ans!=null) return ans;
-            if (ch.size()==0) return ExprConstant.Op.ATOM.make(pos, name);
-            // if (ch.size()==0) return new ExprBad(pos, name, hint(pos, name));
-            return ExprChoice.make(pos, ch.makeConst(), re.makeConst());
+            if (ch.size()==0) return new ExprBad(pos, name, hint(pos, name)); else return ExprChoice.make(pos, ch.makeConst(), re.makeConst());
         }
 
         Expr check(Expr x) throws Err {

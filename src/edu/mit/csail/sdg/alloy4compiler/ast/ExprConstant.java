@@ -54,10 +54,10 @@ public final class ExprConstant extends Expr {
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
         if (indent<0) {
-            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING || op==Op.ATOM) out.append(string); else out.append(op);
+            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING) out.append(string); else out.append(op);
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
-            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING || op==Op.ATOM) out.append(string); else out.append(op);
+            if (op==Op.NUMBER) out.append(num); else if (op==Op.STRING) out.append(string); else out.append(op);
             out.append('\n');
         }
     }
@@ -74,10 +74,10 @@ public final class ExprConstant extends Expr {
             (op==Op.IDEN ? Type.make2(UNIV) :
                 (op==Op.NEXT ? Type.make2(Sig.SIGINT) :
                     (op==Op.TRUE || op==Op.FALSE ? Type.FORMULA :
-                        ((op==Op.EMPTYNESS || op==Op.ATOM) ? UNIV.type : (op==Op.STRING ? Sig.STRING.type : Type.INT))))), 0, 0, null);
+                        (op==Op.EMPTYNESS ? UNIV.type : (op==Op.STRING ? Sig.STRING.type : Type.INT))))), 0, 0, null);
         this.op = op;
-        this.num = (op==Op.NUMBER) ? num : 0;
-        this.string = (op==Op.STRING || op==Op.ATOM) ? string : "";
+        this.num = (op==Op.NUMBER ? num : 0);
+        this.string = (op==Op.STRING ? string : "");
     }
 
     /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
@@ -86,7 +86,7 @@ public final class ExprConstant extends Expr {
         if (obj==this) return true;
         if (!(obj instanceof ExprConstant)) return false;
         ExprConstant x=(ExprConstant)obj;
-        if (op==Op.STRING || op==Op.ATOM) return op==x.op && string.equals(x.string); else return op==x.op && num==x.num;
+        if (op==Op.STRING) return op==x.op && string.equals(x.string); else return op==x.op && num==x.num;
     }
 
     /** The "TRUE" boolean value. */
@@ -133,7 +133,6 @@ public final class ExprConstant extends Expr {
         /** the "next" relation between integers      */  NEXT("next"),
         /** the emptyness relation whose type is UNIV */  EMPTYNESS("none"),
         /** a String constant                         */  STRING("STRING"),
-        /** an atom of unknown type                   */  ATOM("ATOM"),
         /** an integer constant                       */  NUMBER("NUMBER");
 
         /** The constructor. */
@@ -179,8 +178,7 @@ public final class ExprConstant extends Expr {
           case MIN: return "<b>Int/min</b>";
           case NEXT: return "<b>Int/next</b>";
           case EMPTYNESS: return "<b>none</b>";
-          case STRING: return "<b>string \"" + string + "\"</b>";
-          case ATOM: return "<b>atom " + string + "</b>";
+          case STRING: return "<b>\"" + string + "\"</b>";
         }
         return "<b>" + num + "</b>";
     }

@@ -368,7 +368,6 @@ public final class SimContext extends VisitReturn<Object> {
           case MAX: return max;
           case EMPTYNESS: return SimTupleset.EMPTY;
           case STRING: return SimTupleset.make(x.string);
-          case ATOM: return SimTupleset.make(x.string);
           case NEXT: if (cacheNEXT==null) return cacheNEXT=SimTupleset.next(min,max); else return cacheNEXT;
           case IDEN: if (cacheIDEN==null) return cacheIDEN=cset(Sig.UNIV).iden(); else return cacheIDEN;
         }
@@ -415,7 +414,11 @@ public final class SimContext extends VisitReturn<Object> {
     @Override public Object visit(ExprVar x) throws Err {
         Object ans = env.get(x);
         if (ans==null) ans = sfs.get(x);
-        if (ans==null) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
+        if (ans==null) {
+            SimAtom a = SimAtom.make(x.label);
+            if (!allAtoms.contains(a)) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
+            ans = SimTupleset.make(SimTuple.make(a));
+        }
         return ans;
     }
 
