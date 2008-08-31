@@ -137,14 +137,13 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /**
-     * Delete an atom from all sigs.
+     * Delete an atom from all sigs/fields/skolem...
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      * @throws ErrorAPI if attempting to delete from "Int".
      */
     public void deleteAtom(SimAtom atom) throws Err {
-        SimTupleset wrap = SimTupleset.make(SimTuple.make(atom));
         for(Map.Entry<Expr,SimTupleset> x: sfs.entrySet()) {
-            if (x.getKey() instanceof Sig) { x.setValue(x.getValue().difference(wrap)); }
+            x.setValue(x.getValue().difference(atom));
         }
     }
 

@@ -222,12 +222,49 @@ public final class SimTupleset implements Iterable<SimTuple> {
        for(int i=0; i<tuples.size(); i++) {
           SimTuple x = tuples.get(i);
           if (that.has(x)) {
-              if (ans==null) { ans = new TempList<SimTuple>(size()); for(int j=0; j<i; j++) ans.add(tuples.get(j)); }
+              if (ans==null) { ans = new TempList<SimTuple>(size()-1); for(int j=0; j<i; j++) ans.add(tuples.get(j)); }
           } else {
               if (ans!=null) ans.add(x);
           }
        }
        return ans==null ? this : (ans.size()==0 ? EMPTY : new SimTupleset(ans.makeConst()));
+    }
+
+    /**
+     * Return this minus that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
+     * <br/> Note: The resulting tuples will keep their original order.
+     */
+    public SimTupleset difference(SimTuple that) {
+       final int n = tuples.size();
+       if (n==0) return EMPTY;
+       if (tuples.get(0).arity()!=that.arity()) return this;
+       for(int i=0; i<n; i++) {
+          if (tuples.get(i).equals(that)) {
+              if (n==1) return EMPTY;
+              TempList<SimTuple> ans = new TempList<SimTuple>(n-1);
+              for(int j=0; j<n; j++) if (j!=i) ans.add(tuples.get(j));
+              return new SimTupleset(ans.makeConst());
+          }
+       }
+       return this;
+    }
+
+    /**
+     * Return this minus any tuple that contains the given atom.
+     * <br/> Note: The resulting tuples will keep their original order.
+     */
+    public SimTupleset difference(SimAtom that) {
+        if (tuples.size()==0) return EMPTY;
+        TempList<SimTuple> ans = null; // when null, it means we haven't found any old tuple to delete yet
+        for(int i=0; i<tuples.size(); i++) {
+           SimTuple x = tuples.get(i);
+           if (x.has(that)) {
+               if (ans==null) { ans = new TempList<SimTuple>(size()-1); for(int j=0; j<i; j++) ans.add(tuples.get(j)); }
+           } else {
+               if (ans!=null) ans.add(x);
+           }
+        }
+        return ans==null ? this : (ans.size()==0 ? EMPTY : new SimTupleset(ans.makeConst()));
     }
 
     /** Return the transpose of this tupleset; (if this tupleset's arity is not 2, we'll return an empty set instead) */

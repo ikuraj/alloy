@@ -70,6 +70,20 @@ public final class SimTuple {
     /** Return the i-th atom from this tuple. */
     public SimAtom get(int i) { return array[i]; }
 
+    /** Returns true if this tuple contains at least one occurrence of the given atom. */
+    public boolean has(SimAtom atom) {
+        for(int i=array.length-1; i>=0; i--) if (array[i]==atom) return true;
+        return false;
+    }
+
+    /** Prepend the given atom to the front of this tuple, then return the resulting new Tuple. */
+    public SimTuple prepend(SimAtom atom) {
+        SimAtom[] newarray = new SimAtom[array.length+1];
+        newarray[0] = atom;
+        for(int i=0; i<array.length; i++) newarray[i+1] = array[i];
+        return new SimTuple(newarray);
+    }
+
     /** Return the product of this tuple and that tuple. */
     public SimTuple product(SimTuple that) {
         SimAtom[] c = new SimAtom[array.length + that.array.length]; // If integer overflows, we'll get an exception here, which is good
