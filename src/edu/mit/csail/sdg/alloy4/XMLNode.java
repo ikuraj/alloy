@@ -29,6 +29,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,6 +56,12 @@ public final class XMLNode implements Iterable<XMLNode> {
 
     /** Constructs an empty XMLNode object. */
     private XMLNode() { }
+
+    /** Return the number of subnodes. */
+    public int count() { return sub.size(); }
+
+    /** Returns an unmodifiable view of the attributes. */
+    public Set<Entry<String,String>> attributes() { return Collections.unmodifiableMap(map).entrySet(); }
 
     /** Dump the content to a String. */
     @Override public String toString() {

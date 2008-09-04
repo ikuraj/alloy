@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -30,7 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.Map.Entry;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -93,6 +94,9 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** The maximum allowed integer based on the chosen bitwidth. */
     private final int max;
+
+    /** Enumerate over every sig/field/skolem. */
+    public Set<Entry<Expr,SimTupleset>> getAllValues() { return Collections.unmodifiableMap(sfs).entrySet(); }
 
     /** Construct a new simulation context with the given bitwidth and the given maximum sequence length. */
     public SimContext(int bitwidth, int maxseq) throws Err {
