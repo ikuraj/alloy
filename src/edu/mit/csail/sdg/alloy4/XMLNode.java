@@ -43,6 +43,9 @@ public final class XMLNode implements Iterable<XMLNode> {
     /** The type of the element; never null. */
     private String type = "";
 
+    /** If type is text, this is the text. */
+    private String text = "";
+
     /** The set of (key,value) pairs; never null. */
     private final Map<String,String> map = new LinkedHashMap<String,String>();
 
@@ -52,8 +55,33 @@ public final class XMLNode implements Iterable<XMLNode> {
     /** Constructs an empty XMLNode object. */
     private XMLNode() { }
 
+    /** Dump the content to a String. */
+    @Override public String toString() {
+        StringBuilder sb = new StringBuilder();
+        toString(sb, 0);
+        return sb.toString();
+    }
+
+    /** Dump the content to a StringBuilder. */
+    public void toString(StringBuilder sb, int indent) {
+        for(int i=0; i<indent; i++) sb.append(' ');
+        if (text.length()>0) { Util.encodeXML(sb, text); sb.append('\n'); return; }
+        sb.append('<').append(type);
+        for(Map.Entry<String,String> e: map.entrySet()) {
+            Util.encodeXMLs(sb, " ", e.getKey(), "=\"", e.getValue(), "\"");
+        }
+        if (sub.size()==0) { sb.append("/>\n"); return; }
+        sb.append(">\n");
+        for(XMLNode x:sub) x.toString(sb, indent+2);
+        for(int i=0; i<indent; i++) sb.append(' ');
+        sb.append("</").append(type).append(">\n");
+    }
+
     /** Simple parser based on XML Specification 1.0 taking into account XML Specification Errata up to 2008/Jan/18. */
     private static final class XMLParser {
+
+        /** True if we want to read text data also. */
+        private final boolean wantText;
 
         /** The reader for the input XML file. */
         private final Reader reader;
@@ -68,7 +96,8 @@ public final class XMLNode implements Iterable<XMLNode> {
         private int read = (-2);
 
         /** Constructor is private, since we want only XMLNode to be able to construct an instance of this class. */
-        private XMLParser(Reader reader) {
+        private XMLParser(Reader reader, boolean wantText) {
+            this.wantText = wantText;
             if (reader instanceof BufferedReader) this.reader = reader; else this.reader = new BufferedReader(reader);
         }
 
@@ -319,9 +348,15 @@ public final class XMLNode implements Iterable<XMLNode> {
          * @throws IOException if an I/O error occurred.
          */
         private void parseContent(XMLNode parent) throws IOException {
+           StringBuilder sb = wantText ? new StringBuilder() : null;
            again:
            while(true) {
-              if (read()!='<') continue;
+              if (sb==null) {
+                 while(read()!='<') {}
+              } else {
+                 sb.append(parseValue('<').replace('\r',' ').replace('\n', ' '));
+                 parent.addText(sb);
+              }
               int ch=read();
               if (ch=='/') return;
               if (ch=='?') { skipUntil('?', '>'); continue; }
@@ -337,10 +372,16 @@ public final class XMLNode implements Iterable<XMLNode> {
                  expect("CDATA[");
                  for(int ah=0,bh=0; ;) {
                     ch=read();
-                    if (ah==']' && bh==']' && ch=='>') { continue again; } else { ah=bh; bh=ch; }
+                    if (ah==']' && bh==']' && ch=='>') {
+                        parent.addText(sb);
+                        continue again;
+                    } else {
+                        if (ah>0 && sb!=null) sb.append((char)ah);
+                        ah=bh; bh=ch;
+                    }
                  }
               }
-              read=ch;
+              read = ch;
               XMLNode newElem = new XMLNode();
               parseElement(newElem);
               parent.sub.add(newElem);
@@ -348,11 +389,33 @@ public final class XMLNode implements Iterable<XMLNode> {
         }
     }
 
+    /** Add a text node by removing all contents from the given StringBuilder and clearing that StringBuilder. */
+    private void addText(StringBuilder stringBuilder) {
+        if (stringBuilder==null || stringBuilder.length()==0) return;
+        XMLNode x = new XMLNode();
+        x.text = stringBuilder.toString();
+        stringBuilder.setLength(0);
+        sub.add(x);
+    }
+
+    /** Constructs the root XMLNode by parsing an entire XML document, then close the reader afterwards. */
+    public XMLNode(Reader reader, boolean parseText) throws IOException {
+        try {
+            // document ::= Misc* doctypedecl? Misc* element Misc*
+            XMLParser parser = new XMLParser(reader, parseText);
+            if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
+            parser.parseElement(this);
+            if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
+        } finally {
+            Util.close(reader);
+        }
+    }
+
     /** Constructs the root XMLNode by parsing an entire XML document, then close the reader afterwards. */
     public XMLNode(Reader reader) throws IOException {
         try {
             // document ::= Misc* doctypedecl? Misc* element Misc*
-            XMLParser parser = new XMLParser(reader);
+            XMLParser parser = new XMLParser(reader, false);
             if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
             parser.parseElement(this);
             if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
@@ -369,7 +432,7 @@ public final class XMLNode implements Iterable<XMLNode> {
             // document ::= Misc* doctypedecl? Misc* element Misc*
             fis = new FileInputStream(file);
             reader = new InputStreamReader(fis, "UTF-8");
-            XMLParser parser = new XMLParser(reader);
+            XMLParser parser = new XMLParser(reader, false);
             if (parser.skipNondata(false)!='<') parser.malform("Expects start of root element.");
             parser.parseElement(this);
             if (parser.skipNondata(false)!=(-1)) parser.malform("Expects end of file.");
@@ -381,6 +444,9 @@ public final class XMLNode implements Iterable<XMLNode> {
 
     /** Returns the type of the element. */
     public String getType() { return type; }
+
+    /** Returns the text if this is a text node, returns "" otherwise. */
+    public String getText() { return text; }
 
     /** Returns true if the type of this element is equal to the given type. */
     public boolean is(String type) { return this.type.equals(type); }
