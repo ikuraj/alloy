@@ -445,6 +445,7 @@ public final class SimpleGUI implements ComponentListener {
         if (os.startsWith("mac-")) os="mac"; else if (os.startsWith("windows-")) os="windows";
         String arch = System.getProperty("os.arch").toLowerCase(Locale.US).replace(' ','-');
         if (arch.equals("powerpc")) arch="ppc-"+os; else arch=arch.replaceAll("\\Ai[3456]86\\z","x86")+"-"+os;
+        if (os.equals("mac")) arch="x86-mac"; // our pre-compiled binaries are all universal binaries
         // Find out the appropriate Alloy directory
         final String platformBinary=Helper.alloyHome()+fs+"binary";
         // Write a few test files
