@@ -131,7 +131,7 @@ public final class Module extends Browsable {
            if (x.size()>0) ans.add(make("<b>run(s)</b>", x));
         }
         if (facts.size()>0) {
-           for(Map.Entry<String,Expr> e: facts.entrySet()) ans.add(make("<b>fact(s)</b>", e.getValue()));
+           for(Map.Entry<String,Expr> e: facts.entrySet()) ans.add(make("<b>fact</b>", e.getValue()));
         }
         if (path.length()==0 && asserts.size()>0) {
            for(Map.Entry<String,Expr> e: asserts.entrySet()) if (e.getValue() instanceof ExprVar) {
@@ -523,34 +523,34 @@ public final class Module extends Browsable {
         private final List<SigAST> realParents; // This value is set to its corresponding Sig during resolving
         private boolean hint_isLeaf=false;
         private final Pos pos;
+        private final Pos endOfFields;          // The "}" that marks the end of field declarations
         private final String name,fullname;
         private final Pos abs,lone,one,some,subsig,subset;
         private final ConstList<ExprVar> parents;
         private final ConstList<Decl> fields;
-        private final ConstList<ExprVar> javadocs;
         private final Expr appendedFact; // never null
         private SigAST(Pos pos, Pos isPrivate, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
-            List<ExprVar> parents, List<Decl> fields, Expr appendedFacts, Module realModule, Sig realSig, List<ExprVar> javadocs) {
+            List<ExprVar> parents, List<Decl> fields, Pos endOfFields, Expr appendedFacts, Module realModule, Sig realSig) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
-            this.isPrivate=isPrivate;
-            this.fullname=fullname;
-            this.name=name;
-            this.abs=abs;
-            this.lone=lone;
-            this.one=one;
-            this.some=some;
-            this.subsig=subsig;
-            this.subset=subset;
-            this.parents=ConstList.make(parents);
-            this.fields=ConstList.make(fields);
-            this.appendedFact=appendedFacts;
-            this.realModule=realModule;
-            this.realSig=realSig;
-            this.realParents=new ArrayList<SigAST>(this.parents.size());
-            this.javadocs=ConstList.make(javadocs);
+            this.isPrivate = isPrivate;
+            this.fullname = fullname;
+            this.name = name;
+            this.abs = abs;
+            this.lone = lone;
+            this.one = one;
+            this.some = some;
+            this.subsig = subsig;
+            this.subset = subset;
+            this.parents = ConstList.make(parents);
+            this.fields = ConstList.make(fields);
+            this.endOfFields = (endOfFields==null ? Pos.UNKNOWN : endOfFields);
+            this.appendedFact = appendedFacts;
+            this.realModule = realModule;
+            this.realSig = realSig;
+            this.realParents = new ArrayList<SigAST>(this.parents.size());
         }
         private SigAST(String fullname, String name, List<ExprVar> parents, Sig realSig) {
-            this(null, null, fullname, name, null, null, null, null, null, null, parents, null, null, null, realSig, null);
+            this(null, null, fullname, name, null, null, null, null, null, null, parents, null, null, null, null, realSig);
         }
         @Override public String toString() { return fullname; }
     }
@@ -997,7 +997,7 @@ public final class Module extends Browsable {
 
     /** Add a sig declaration. */
     SigAST addSig(List<ExprVar> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate,
-        ExprVar par, List<ExprVar> parents, List<Decl> fields, Expr fact, List<ExprVar> javadocs) throws Err {
+        ExprVar par, List<ExprVar> parents, List<Decl> fields, Pos endOfFields, Expr fact) throws Err {
         pos = pos.merge(isAbstract).merge(isLone).merge(isOne).merge(isSome);
         status=3;
         dup(pos, name, true);
@@ -1007,7 +1007,7 @@ public final class Module extends Browsable {
             if (par.label.charAt(0)=='e') { subsig=par.span().merge(parents.get(0).span()); }
             else { subset=par.span(); for(ExprVar p:parents) subset=p.span().merge(subset); }
         }
-        SigAST obj=new SigAST(pos, isPrivate, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields,fact,this,null,javadocs);
+        SigAST obj = new SigAST(pos, isPrivate, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields, endOfFields, fact,this,null);
         if (hints!=null) for(ExprVar hint:hints) if (hint.label.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
@@ -1279,9 +1279,9 @@ public final class Module extends Browsable {
 
     /** Return the conjunction of all facts in this module and all reachable submodules. */
     public Expr getAllReachableFacts() {
-        Expr ans = ExprConstant.TRUE;
-        for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) ans = ans.and(f.b);
-        return ans;
+        ArrayList<Expr> facts = new ArrayList<Expr>();
+        for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts.add(f.b);
+        if (facts.size()==0) return ExprConstant.TRUE; else return ExprList.make(null, null, ExprList.Op.AND, facts);
     }
 
     //============================================================================================================================//
@@ -1407,8 +1407,6 @@ public final class Module extends Browsable {
            final ExprVar dup = Decl.findDuplicateName(oldS.fields);
            if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.label+"\"");
            List<Field> disjoint2 = new ArrayList<Field>();
-           Iterator<ExprVar> jj = oldS.javadocs.iterator();
-           ExprVar j = jj.hasNext() ? jj.next() : null;
            Expr disjX = ExprConstant.TRUE;
            for(int di=0; di<oldS.fields.size(); di++) {
               final Decl d = oldS.fields.get(di);
@@ -1420,16 +1418,18 @@ public final class Module extends Browsable {
               Expr bound = cx.check(d.expr).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
               for(int dj=0; dj<d.names.size(); dj++) {
-                 List<String> annotations = null;
                  final ExprVar n = d.names.get(dj);
                  Pos da = n.pos, db;
-                 if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.appendedFact.span();
-                 while (j!=null && Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
-                     if (annotations==null) annotations = new ArrayList<String>();
-                     annotations.add(j.label);
-                     if (jj.hasNext()) j=jj.next(); else j=null;
+                 if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.endOfFields;
+                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.label, THIS, bound);
+                 Iterator<ExprVar> jj = m.javadocs.iterator();
+                 while(jj.hasNext()) {
+                     ExprVar j = jj.next();
+                     if (Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
+                         f.annotations.add(j.label);
+                         jj.remove();
+                     }
                  }
-                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.label, THIS, bound, annotations);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint2!=null) disjoint2.add(f);
                  if (d.disjoint==null) continue;

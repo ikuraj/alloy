@@ -99,6 +99,36 @@ public final class ExprList extends Expr {
 
     //============================================================================================================//
 
+    /** Add expr to list, in a way that flattens the conjunctions as much as possible (for better unsat core). */
+    private static void addAND(TempList<Expr> list, Expr expr) {
+        Expr x = expr.deNOP();
+        if (x instanceof ExprBinary && ((ExprBinary)x).op==ExprBinary.Op.AND) {
+            addAND(list, ((ExprBinary)x).left);
+            addAND(list, ((ExprBinary)x).right);
+            return;
+        }
+        if (x instanceof ExprList && ((ExprList)x).op==ExprList.Op.AND) {
+            for(Expr y: ((ExprList)x).args) addAND(list, y);
+            return;
+        }
+        list.add(expr);
+    }
+
+    /** Add expr to list, in a way that flattens the disjunctions as much as possible (for better unsat core). */
+    private static void addOR(TempList<Expr> list, Expr expr) {
+        Expr x = expr.deNOP();
+        if (x instanceof ExprBinary && ((ExprBinary)x).op==ExprBinary.Op.OR) {
+            addOR(list, ((ExprBinary)x).left);
+            addOR(list, ((ExprBinary)x).right);
+            return;
+        }
+        if (x instanceof ExprList && ((ExprList)x).op==ExprList.Op.OR) {
+            for(Expr y: ((ExprList)x).args) addOR(list, y);
+            return;
+        }
+        list.add(expr);
+    }
+
     /** Generates a call to a builtin predicate */
     public static ExprList make(Pos pos, Pos closingBracket, Op op, List<Expr> args) {
         boolean ambiguous = false;
@@ -112,7 +142,7 @@ public final class ExprList extends Expr {
             weight = weight + a.weight;
             if (a.mult != 0) errs = errs.append(new ErrorSyntax(a.span(), "Multiplicity expression not allowed here."));
             if (!a.errors.isEmpty()) errs = errs.join(a.errors); else if (commonArity==null) commonArity = a.type; else commonArity = commonArity.pickCommonArity(a.type);
-            newargs.add(a);
+            if (op==Op.AND) addAND(newargs, a); else if (op==Op.OR) addOR(newargs, a); else newargs.add(a);
         }
         if (op==Op.TOTALORDER) {
            if (newargs.size()!=3) {
@@ -132,61 +162,17 @@ public final class ExprList extends Expr {
 
     /** Generates the expression (arg1 and arg2 and arg3 ...) */
     public static ExprList makeAND(Expr a, Expr b) {
-        while(a instanceof ExprUnary && ((ExprUnary)a).op==ExprUnary.Op.NOOP) a = ((ExprUnary)a).sub;
-        while(b instanceof ExprUnary && ((ExprUnary)b).op==ExprUnary.Op.NOOP) b = ((ExprUnary)b).sub;
-        TempList<Expr> list;
-        if (a instanceof ExprList && ((ExprList)a).op==Op.AND) {
-           ExprList aa = (ExprList)a;
-           if (b instanceof ExprList && ((ExprList)b).op==Op.AND) {
-              ExprList bb = (ExprList)b;
-              list = new TempList<Expr>(aa.args.size() + bb.args.size());
-              list.addAll(aa.args);
-              list.addAll(bb.args);
-           } else {
-              list = new TempList<Expr>(aa.args.size() + 1);
-              list.addAll(aa.args);
-              list.add(b);
-           }
-        } else if (b instanceof ExprList && ((ExprList)b).op==Op.AND) {
-           ExprList bb = (ExprList)b;
-           list = new TempList<Expr>(1 + bb.args.size());
-           list.add(a);
-           list.addAll(bb.args);
-        } else {
-           list = new TempList<Expr>(2);
-           list.add(a);
-           list.add(b);
-        }
+        TempList<Expr> list = new TempList<Expr>(2);
+        list.add(a);
+        list.add(b);
         return make(Pos.UNKNOWN, Pos.UNKNOWN, Op.AND, list.makeConst());
     }
 
     /** Generates the expression (arg1 || arg2 || arg3 ...) */
     public static ExprList makeOR(Expr a, Expr b) {
-        while(a instanceof ExprUnary && ((ExprUnary)a).op==ExprUnary.Op.NOOP) a = ((ExprUnary)a).sub;
-        while(b instanceof ExprUnary && ((ExprUnary)b).op==ExprUnary.Op.NOOP) b = ((ExprUnary)b).sub;
-        TempList<Expr> list;
-        if (a instanceof ExprList && ((ExprList)a).op==Op.OR) {
-           ExprList aa = (ExprList)a;
-           if (b instanceof ExprList && ((ExprList)b).op==Op.OR) {
-              ExprList bb = (ExprList)b;
-              list = new TempList<Expr>(aa.args.size() + bb.args.size());
-              list.addAll(aa.args);
-              list.addAll(bb.args);
-           } else {
-              list = new TempList<Expr>(aa.args.size() + 1);
-              list.addAll(aa.args);
-              list.add(b);
-           }
-        } else if (b instanceof ExprList && ((ExprList)b).op==Op.OR) {
-           ExprList bb = (ExprList)b;
-           list = new TempList<Expr>(1 + bb.args.size());
-           list.add(a);
-           list.addAll(bb.args);
-        } else {
-           list = new TempList<Expr>(2);
-           list.add(a);
-           list.add(b);
-        }
+        TempList<Expr> list = new TempList<Expr>(2);
+        list.add(a);
+        list.add(b);
         return make(Pos.UNKNOWN, Pos.UNKNOWN, Op.OR, list.makeConst());
     }
 

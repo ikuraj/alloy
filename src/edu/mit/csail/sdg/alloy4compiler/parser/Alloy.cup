@@ -717,11 +717,8 @@ Sig ::= SigQuals:a Names:b SigIn:c LBRACE Decls:d RBRACE:o SuperOpt:e
  {:
    if (e==null) e = ExprConstant.Op.TRUE.make(o, 0);
    ExprVar cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
-   List<ExprVar> j = parser.alloymodule.javadocs;
-   if (j!=null && j.size()>0) j=new ArrayList<ExprVar>(j); else j=null;
-   parser.alloymodule.javadocs.clear();
    for(ExprVar bb:b) {
-      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.label, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), cc, c, d, e, j);
+      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.label, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), cc, c, d, o, e);
    }
  :};
 
@@ -734,9 +731,9 @@ SigQual  ::= PRIVATE:x                {: RESULT=new ArrayList<Pos>(5); RESULT.ad
 SigQuals ::= SIG                      {: RESULT=new ArrayList<Pos>(5); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); RESULT.add(null); :};
 SigQuals ::= SigQual:a SigQuals:b     {: RESULT=a; for(int i=0;i<5;i++) if (a.get(i)==null) a.set(i,b.get(i)); else if (b.get(i)!=null) throw new ErrorSyntax(b.get(i), "The same qualifer cannot be specified more than once for the same sig."); :};
 
-SigIn    ::= EXTENDS:a SigRef:x       {: parser.alloymodule.javadocs.clear(); RESULT=new ArrayList<ExprVar>(2); RESULT.add(x); RESULT.add(ExprVar.make(a, "extends")); :};
-SigIn    ::= IN:a SigRefu:x           {: parser.alloymodule.javadocs.clear(); RESULT=x;  x.add(ExprVar.make(a,"in"));                                                  :};
-SigIn    ::=                          {: parser.alloymodule.javadocs.clear(); RESULT=null;                                                                             :};
+SigIn    ::= EXTENDS:a SigRef:x       {: RESULT=new ArrayList<ExprVar>(2); RESULT.add(x); RESULT.add(ExprVar.make(a, "extends")); :};
+SigIn    ::= IN:a SigRefu:x           {: RESULT=x;  x.add(ExprVar.make(a,"in"));                                                  :};
+SigIn    ::=                          {: RESULT=null;                                                                             :};
 
 SigRef   ::= Name:x                   {: RESULT=x;                                   :};
 SigRef   ::= UNIV:x                   {: RESULT=ExprVar.make(x, "univ");              :};

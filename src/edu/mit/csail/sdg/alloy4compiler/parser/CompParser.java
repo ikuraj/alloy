@@ -18042,7 +18042,7 @@ class CUP$CompParser$actions {
           case 79: // SigIn ::=
             {
               List<ExprVar> RESULT =null;
-         parser.alloymodule.javadocs.clear(); RESULT=null;
+         RESULT=null;
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",60, RESULT);
             }
           return CUP$CompParser$result;
@@ -18053,7 +18053,7 @@ class CUP$CompParser$actions {
               List<ExprVar> RESULT =null;
         Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         List<ExprVar> x = (List<ExprVar>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.javadocs.clear(); RESULT=x;  x.add(ExprVar.make(a,"in"));
+         RESULT=x;  x.add(ExprVar.make(a,"in"));
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",60, RESULT);
             }
           return CUP$CompParser$result;
@@ -18064,7 +18064,7 @@ class CUP$CompParser$actions {
               List<ExprVar> RESULT =null;
         Pos a = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         ExprVar x = (ExprVar)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-         parser.alloymodule.javadocs.clear(); RESULT=new ArrayList<ExprVar>(2); RESULT.add(x); RESULT.add(ExprVar.make(a, "extends"));
+         RESULT=new ArrayList<ExprVar>(2); RESULT.add(x); RESULT.add(ExprVar.make(a, "extends"));
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("SigIn",60, RESULT);
             }
           return CUP$CompParser$result;
@@ -18152,11 +18152,8 @@ class CUP$CompParser$actions {
 
    if (e==null) e = ExprConstant.Op.TRUE.make(o, 0);
    ExprVar cc = (c!=null && c.size()>0) ? c.remove(c.size()-1) : null;
-   List<ExprVar> j = parser.alloymodule.javadocs;
-   if (j!=null && j.size()>0) j=new ArrayList<ExprVar>(j); else j=null;
-   parser.alloymodule.javadocs.clear();
    for(ExprVar bb:b) {
-      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.label, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), cc, c, d, e, j);
+      parser.alloymodule.addSig(null, bb.pos.merge(e==null ? o : e.span()), bb.label, a.get(0), a.get(1), a.get(2), a.get(3), a.get(4), cc, c, d, o, e);
    }
 
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Sig",59, RESULT);

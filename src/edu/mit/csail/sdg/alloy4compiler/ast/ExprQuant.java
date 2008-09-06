@@ -40,14 +40,14 @@ import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
  * It can have one of the following forms:
  *
  * <br>
- * <br>  (all  a,b:t | formula)
- * <br>  (no   a,b:t | formula)
- * <br>  (lone a,b:t | formula)
- * <br>  (one  a,b:t | formula)
- * <br>  (some a,b:t | formula)
- * <br>  (sum  a,b:t | integer expression)
- * <br>  {a,b:t | formula}
- * <br>  {a,b:t }
+ * <br>  ( all  a,b:t | formula )
+ * <br>  ( no   a,b:t | formula )
+ * <br>  ( lone a,b:t | formula )
+ * <br>  ( one  a,b:t | formula )
+ * <br>  ( some a,b:t | formula )
+ * <br>  ( sum  a,b:t | integer expression )
+ * <br>  { a,b:t | formula }
+ * <br>  { a,b:t }
  * <br>
  *
  * <br> <b>Invariant:</b> type!=EMPTY => sub.mult==0
@@ -142,6 +142,23 @@ public final class ExprQuant extends Expr {
         public final Expr make(Pos pos, Pos closingBracket, List<ExprVar> vars, Expr sub) {
             Type t = this==SUM ? Type.INT : (this==COMPREHENSION ? Type.EMPTY : Type.FORMULA);
             if (this!=SUM) sub=sub.typecheck_as_formula(); else sub=sub.typecheck_as_int();
+            /*
+            Expr subtest = sub.deNOP();
+            if (this==Op.ALL && subtest instanceof ExprBinary && ((ExprBinary)subtest).op==ExprBinary.Op.AND) {
+                // this transformation improves unsat core
+                ExprBinary binary = (ExprBinary)subtest;
+                Expr q1 = make(pos, closingBracket, vars, binary.left);
+                Expr q2 = make(pos, closingBracket, vars, binary.right);
+                return ExprBinary.Op.AND.make(binary.pos, binary.closingBracket, q1, q2);
+            }
+            if (this==Op.ALL && subtest instanceof ExprList && ((ExprList)subtest).op==ExprList.Op.AND) {
+                // this transformation improves unsat core
+                ExprList list = (ExprList)subtest;
+                TempList<Expr> newlist = new TempList<Expr>(list.args.size());
+                for(Expr e: list.args) newlist.add(make(Pos.UNKNOWN, Pos.UNKNOWN, vars, e));
+                return ExprList.make(Pos.UNKNOWN, Pos.UNKNOWN, ExprList.Op.AND, newlist.makeConst());
+            }
+            */
             JoinableList<Err> errs = emptyListOfErrors;
             if (sub.mult!=0) errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
             long weight = sub.weight;

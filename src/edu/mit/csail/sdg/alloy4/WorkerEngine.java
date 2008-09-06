@@ -60,7 +60,7 @@ public final class WorkerEngine {
 
   /** This defines an interface for receiving results from a subprocess. */
   public interface WorkerCallback {
-     /** The task would send zero or more non-null Objects to this handler (the objects will be serialized by the sub JVM and deseralized in the parent JVM). */
+     /** The task would send zero or more non-null Objects to this handler (the objects will be serialized by the sub JVM and deserialized in the parent JVM). */
      public void callback(Object msg);
      /** If the task completed successfully, this method will be called. */
      public void done();
