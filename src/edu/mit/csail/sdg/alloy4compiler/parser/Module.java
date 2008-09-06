@@ -131,7 +131,7 @@ public final class Module extends Browsable {
            if (x.size()>0) ans.add(make("<b>run(s)</b>", x));
         }
         if (facts.size()>0) {
-           for(Map.Entry<String,Expr> e: facts.entrySet()) ans.add(make("<b>fact</b>", e.getValue()));
+           for(Map.Entry<String,Expr> e: facts.entrySet()) ans.add(make("<b>fact " + e.getKey() + "</b>", e.getValue()));
         }
         if (path.length()==0 && asserts.size()>0) {
            for(Map.Entry<String,Expr> e: asserts.entrySet()) if (e.getValue() instanceof ExprVar) {
@@ -522,8 +522,8 @@ public final class Module extends Browsable {
         private Sig realSig=null;               // This value is set to its corresponding Sig during resolving
         private final List<SigAST> realParents; // This value is set to its corresponding Sig during resolving
         private boolean hint_isLeaf=false;
-        private final Pos pos;
-        private final Pos endOfFields;          // The "}" that marks the end of field declarations
+        final Pos pos;
+        final Pos endOfFields;          // The "}" that marks the end of field declarations
         private final String name,fullname;
         private final Pos abs,lone,one,some,subsig,subset;
         private final ConstList<ExprVar> parents;
@@ -628,7 +628,7 @@ public final class Module extends Browsable {
     public PrimSig metaField() { return world.metaField; }
 
     /** The list of javadoc comments in this module. */
-    final List<ExprVar> javadocs = new ArrayList<ExprVar>();
+    //final List<ExprVar> javadocs = new ArrayList<ExprVar>();
 
     /** The current name resolution mode (0=pure) (1=Alloy 4.1.3 and older) (2=new) */
     int resolution = 1;
@@ -1419,17 +1419,17 @@ public final class Module extends Browsable {
               cx.remove("this");
               for(int dj=0; dj<d.names.size(); dj++) {
                  final ExprVar n = d.names.get(dj);
-                 Pos da = n.pos, db;
-                 if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.endOfFields;
+                 //Pos da = n.pos, db;
+                 //if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.endOfFields;
                  final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.label, THIS, bound);
-                 Iterator<ExprVar> jj = m.javadocs.iterator();
-                 while(jj.hasNext()) {
-                     ExprVar j = jj.next();
-                     if (Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
-                         f.annotations.add(j.label);
-                         jj.remove();
-                     }
-                 }
+                 //Iterator<ExprVar> jj = m.javadocs.iterator();
+                 //while(jj.hasNext()) {
+                 //    ExprVar j = jj.next();
+                 //    if (Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
+                 //        f.annotations.add(j.label);
+                 //        jj.remove();
+                 //    }
+                 //}
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint2!=null) disjoint2.add(f);
                  if (d.disjoint==null) continue;

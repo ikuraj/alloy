@@ -22,7 +22,6 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -451,9 +450,6 @@ public abstract class Sig extends Expr {
         /** The definition expression (null if this.boundFormula!=null). */
         public final Expr definition;
 
-        /** List of annotations associated with this field; these annotations are ignored by Alloy Analyzer itself. */
-        public final List<Object> annotations = new ArrayList<Object>();
-
         /** Constructs a new Field object. */
         private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, Expr definition) throws Err {
             super(pos, null, false, definition.type, 0, 0, definition.errors);
@@ -537,12 +533,12 @@ public abstract class Sig extends Expr {
                 b = definition;
                 b = make(b.pos(), b.span(), "<b>definition</b>", b);
             }
-            if (annotations.size()>0) {
-                List<Browsable> empty = new ArrayList<Browsable>();
-                List<Browsable> anns = new ArrayList<Browsable>();
-                for(Object a: annotations) anns.add(make(Pos.UNKNOWN, Pos.UNKNOWN, String.valueOf(a), empty));
-                return Util.asList(s, b, make(Pos.UNKNOWN, Pos.UNKNOWN, "<b>annotations</b>", anns));
-            }
+            //if (annotations.size()>0) {
+            //    List<Browsable> empty = new ArrayList<Browsable>();
+            //    List<Browsable> anns = new ArrayList<Browsable>();
+            //    for(Object a: annotations) anns.add(make(Pos.UNKNOWN, Pos.UNKNOWN, String.valueOf(a), empty));
+            //    return Util.asList(s, b, make(Pos.UNKNOWN, Pos.UNKNOWN, "<b>annotations</b>", anns));
+            //}
             return Util.asList(s, b);
         }
     }
