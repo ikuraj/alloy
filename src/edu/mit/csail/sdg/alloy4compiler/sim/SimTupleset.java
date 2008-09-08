@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -44,7 +45,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
     private final ConstList<SimTuple> tuples;
 
     /** Construct a tupleset containing the given list of tuples  (Note: caller MUST make sure there are no duplicates, and all tuples are of same arity!) */
-    private SimTupleset(List<SimTuple> tuples) { this.tuples = ConstList.make(tuples); }
+    private SimTupleset(Collection<SimTuple> tuples) { this.tuples = ConstList.make(tuples); }
 
     /** The tupleset containing no tuples. */
     public static final SimTupleset EMPTY = new SimTupleset(new TempList<SimTuple>(0).makeConst());
@@ -62,7 +63,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
     }
 
     /** Make a tupleset containing a deep copy of the given list of tuples (Note: caller MUST make sure there are no duplicates, and all tuples are of same arity!) */
-    public static SimTupleset make(List<SimTuple> tuples) {
+    public static SimTupleset make(Collection<SimTuple> tuples) {
         return tuples.size()==0 ? EMPTY : new SimTupleset(tuples);
     }
 
