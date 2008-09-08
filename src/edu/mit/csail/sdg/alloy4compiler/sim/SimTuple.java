@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -44,6 +45,14 @@ public final class SimTuple implements Iterable<SimAtom> {
     private SimTuple(SimAtom[] array) {
         if (array.length==0) throw new IllegalArgumentException();
         this.array=array;
+    }
+
+    /** Construct the n-ary tuple; throws an exception if the given list is empty. */
+    public static SimTuple make(List<SimAtom> list) {
+        if (list.size()==0) throw new IllegalArgumentException();
+        SimAtom[] array = new SimAtom[list.size()];
+        for(int i=0, n=list.size(); i<n; i++) { array[i] = list.get(i); }
+        return new SimTuple(array);
     }
 
     /** Construct the binary tuple (a,b) */
