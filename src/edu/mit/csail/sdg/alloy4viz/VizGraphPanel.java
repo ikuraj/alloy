@@ -144,8 +144,9 @@ public final class VizGraphPanel extends JPanel {
             add(right = new JButton(">>"));
             left.setVerticalAlignment(SwingConstants.CENTER);
             right.setVerticalAlignment(SwingConstants.CENTER);
-            Dimension dim=atomCombo.getPreferredSize();
-            if (dim.width<80) { dim.width=100; atomCombo.setMinimumSize(dim); atomCombo.setPreferredSize(dim); }
+            Dimension dim = atomCombo.getPreferredSize();
+            int idealWidth = Util.onMac() ? 120 : 80;
+            if (dim.width<idealWidth) { dim.width=idealWidth+20; atomCombo.setMinimumSize(dim); atomCombo.setPreferredSize(dim); }
             left.setEnabled(initialIndex>0);
             right.setEnabled(initialIndex<atomnames.length-1);
             atomCombo.setSelectedIndex(initialIndex);
