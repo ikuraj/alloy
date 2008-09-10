@@ -57,7 +57,7 @@ public final class XMLNode implements Iterable<XMLNode> {
     /** Constructs an empty XMLNode object. */
     private XMLNode() { }
 
-    /** Return the number of subnodes. */
+    /** Returns the number of direct subnodes. */
     public int count() { return sub.size(); }
 
     /** Returns an unmodifiable view of the attributes. */
@@ -74,7 +74,7 @@ public final class XMLNode implements Iterable<XMLNode> {
     public void toString(StringBuilder sb, int indent) {
         for(int i=0; i<indent; i++) sb.append(' ');
         if (text.length()>0) { Util.encodeXML(sb, text); sb.append('\n'); return; }
-        sb.append('<').append(type);
+        Util.encodeXMLs(sb, "<", type);
         for(Map.Entry<String,String> e: map.entrySet()) {
             Util.encodeXMLs(sb, " ", e.getKey(), "=\"", e.getValue(), "\"");
         }
@@ -82,7 +82,7 @@ public final class XMLNode implements Iterable<XMLNode> {
         sb.append(">\n");
         for(XMLNode x:sub) x.toString(sb, indent+2);
         for(int i=0; i<indent; i++) sb.append(' ');
-        sb.append("</").append(type).append(">\n");
+        Util.encodeXMLs(sb, "</", type, ">\n");
     }
 
     /** Simple parser based on XML Specification 1.0 taking into account XML Specification Errata up to 2008/Jan/18. */
