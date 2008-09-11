@@ -32,6 +32,7 @@ import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ConstList;
+import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
@@ -157,16 +158,16 @@ public abstract class Sig extends Expr {
     /** Constructs a new builtin PrimSig. */
     private Sig(String label) {
         super(Pos.UNKNOWN, null);
-        this.builtin=true;
-        this.isAbstract=null;
-        this.isLone=null;
-        this.isOne=null;
-        this.isSome=null;
-        this.label=label;
-        this.isSubset=null;
-        this.isSubsig=null;
-        this.isPrivate=null;
-        this.isMeta=null;
+        this.builtin = true;
+        this.isAbstract = null;
+        this.isLone = null;
+        this.isOne = null;
+        this.isSome = null;
+        this.label = label;
+        this.isSubset = null;
+        this.isSubsig = null;
+        this.isPrivate = null;
+        this.isMeta = null;
     }
 
     /** Constructs a new PrimSig or SubsetSig. */
@@ -175,16 +176,16 @@ public abstract class Sig extends Expr {
         if (lone!=null && one!=null)  throw new ErrorSyntax(lone.merge(one),  "You cannot delcare a sig to be both lone and one.");
         if (lone!=null && some!=null) throw new ErrorSyntax(lone.merge(some), "You cannot delcare a sig to be both lone and some.");
         if (one!=null  && some!=null) throw new ErrorSyntax(one.merge(some),  "You cannot delcare a sig to be both one and some.");
-        this.builtin=false;
-        this.isPrivate=isPrivate;
-        this.isMeta=isMeta;
-        this.isAbstract=abs;
-        this.isLone=lone;
-        this.isOne=one;
-        this.isSome=some;
-        this.label=label;
-        this.isSubset=subset;
-        this.isSubsig=subsig;
+        this.builtin = false;
+        this.isPrivate = isPrivate;
+        this.isMeta = isMeta;
+        this.isAbstract = abs;
+        this.isLone = lone;
+        this.isOne = one;
+        this.isSome = some;
+        this.label = label;
+        this.isSubset = subset;
+        this.isSubsig = subsig;
     }
 
     /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
@@ -371,15 +372,14 @@ public abstract class Sig extends Expr {
         /** Computes the type for this sig. */
         private static Type getType(Pos pos, String label, Iterable<Sig> parents) throws Err {
             Type ans=null;
-            if (parents!=null) {
-                for(Sig parent: parents) {
-                    if (parent==UNIV)   return UNIV.type;
-                    if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"Int\" signature");
-                    if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"seq/Int\" signature");
-                    if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"fun/String\" signature");
-                    if (parent==NONE)   throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"none\" signature");
-                    if (ans==null) ans=parent.type; else ans=ans.unionWithCommonArity(parent.type);
+            if (parents!=null) for(Sig parent: parents) {
+                if (!Version.experimental) {
+                  if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"Int\" signature");
+                  if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"seq/Int\" signature");
+                  if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot be a subset of the builtin \"fun/String\" signature");
                 }
+                if (parent==UNIV) return UNIV.type;
+                if (ans==null) ans=parent.type; else ans=ans.unionWithCommonArity(parent.type);
             }
             return (ans!=null) ? ans : (UNIV.type);
         }
@@ -396,13 +396,20 @@ public abstract class Sig extends Expr {
          * @param some - nonnull iff this sig has the "some" multiplicity
          *
          * @throws ErrorSyntax if the signature has two or more multiplicities
-         * @throws ErrorType if parents contains NONE or SIGINT or SEQIDX or STRING
+         * @throws ErrorType if parents only contains NONE
          */
         public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos isPrivate, Pos isMeta) throws Err {
             super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta);
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
-            if (parents!=null) for(Sig parent:parents) if (parent==Sig.UNIV) {temp.clear(); break;} else if (!temp.contains(parent)) temp.add(parent);
-            if (temp.size()==0) temp.add(UNIV);
+            if (parents==null || parents.size()==0) {
+               temp.add(UNIV);
+            } else {
+               for(Sig parent:parents) {
+                 if (parent==Sig.UNIV) {temp.clear(); temp.add(UNIV); break;}
+                 else if (parent!=Sig.NONE && !temp.contains(parent)) temp.add(parent);
+               }
+            }
+            if (temp.size()==0) throw new ErrorType(pos, "Sig "+label+" must have at least one non-empty parent.");
             this.parents = temp.makeConst();
         }
 
@@ -477,7 +484,7 @@ public abstract class Sig extends Expr {
             // If the field declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (bound.mult==0 && bound.type.arity()==1) bound=ExprUnary.Op.ONEOF.make(null, bound);
             if (var==null) var = ExprVar.make(null, "this", sig.oneOf());
-            boundingFormula=ExprQuant.Op.ALL.make(pos, null, Util.asList(var), var.join(this).in(bound));
+            boundingFormula = ExprQuant.Op.ALL.make(pos, null, Util.asList(var), var.join(this).in(bound));
             if (!boundingFormula.errors.isEmpty())
                 throw boundingFormula.errors.pick();
             if (boundingFormula.hasCall())
@@ -533,12 +540,6 @@ public abstract class Sig extends Expr {
                 b = definition;
                 b = make(b.pos(), b.span(), "<b>definition</b>", b);
             }
-            //if (annotations.size()>0) {
-            //    List<Browsable> empty = new ArrayList<Browsable>();
-            //    List<Browsable> anns = new ArrayList<Browsable>();
-            //    for(Object a: annotations) anns.add(make(Pos.UNKNOWN, Pos.UNKNOWN, String.valueOf(a), empty));
-            //    return Util.asList(s, b, make(Pos.UNKNOWN, Pos.UNKNOWN, "<b>annotations</b>", anns));
-            //}
             return Util.asList(s, b);
         }
     }
