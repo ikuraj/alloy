@@ -22,6 +22,10 @@
 
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +79,49 @@ public final class SimTuple implements Iterable<SimAtom> {
         SimAtom[] ans = new SimAtom[atoms.length];
         for(int i=0; i<atoms.length; i++) ans[i] = SimAtom.make(atoms[i]);
         return new SimTuple(ans);
+    }
+
+    /* Read a SimTuple from the given input file by reading its unique ID (and consulting the uniqueID map)
+    static SimTuple readi(DataInputStream in, HashMap<Integer,SimTuple> map) throws IOException {
+        SimTuple x = map.get(in.readInt());
+        if (x==null) throw new IOException("Unknown tuple encountered when reading the database.");
+        return x;
+    }*/
+
+    /* Save this SimTuple to the given output file by writing out its unique ID (and update the uniqueID map if needed)
+    void writei(DataOutputStream out, IdentityHashMap<SimTuple,Integer> map) throws IOException {
+        Integer i = map.get(this);
+        if (i==null) { i=map.size(); map.put(this, i); }
+        out.write(i.intValue());
+    }*/
+
+    /** Write this SimTuple as (".." ".." "..") */
+    void write(BufferedOutputStream out) throws IOException {
+        out.write('(');
+        for(int n=array.length, i=0; i<n; i++) {
+            if (i>0) out.write(' ');
+            array[i].write(out);
+        }
+        out.write(')');
+    }
+
+    /** Read a (".." ".." "..") tuple assuming the leading ( has already been consumed. */
+    static SimTuple read(BufferedInputStream in) throws IOException {
+        List<SimAtom> list = new ArrayList<SimAtom>();
+        while(true) {
+           int c = in.read();
+           if (c<0) throw new IOException("Unexpected EOF");
+           if (c>0 && c<=' ') continue; // skip whitespace
+           if (c==')') break;
+           if (c!='\"') throw new IOException("Expecting start of atom");
+           list.add(SimAtom.read(in));
+           c = in.read();
+           if (c<0) throw new IOException("Unexpected EOF");
+           if (c==')') break;
+           if (!(c<=' ')) throw new IOException("Expecting \')\' or white space after an atom.");
+        }
+        if (list.size()==0) throw new IOException("Tuple arity cannot be 0.");
+        return make(list);
     }
 
     /** Returns the arity of this tuple. */

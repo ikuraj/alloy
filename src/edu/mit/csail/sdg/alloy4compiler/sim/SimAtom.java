@@ -22,6 +22,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
@@ -66,6 +69,58 @@ public final class SimAtom {
 
     /** Preconstructed atom representing 1. */
     public static final SimAtom ONE = make("1");
+
+    /* Read a SimAtom from the given input file by reading its unique ID (and consulting the uniqueID map)
+    static SimAtom readi(DataInputStream in, HashMap<Integer,SimAtom> map) throws IOException {
+        SimAtom x = map.get(in.readInt());
+        if (x==null) throw new IOException("Unknown atom encountered when reading the database.");
+        return x;
+    }*/
+
+    /* Save this SimAtom to the given output file by writing out its unique ID (and update the uniqueID map if needed)
+    void writei(DataOutputStream out, IdentityHashMap<SimAtom,Integer> map) throws IOException {
+        Integer i = map.get(this);
+        if (i==null) { i=map.size(); map.put(this, i); }
+        out.write(i.intValue());
+    }*/
+
+    /** Write this atom as "..". */
+    void write(BufferedOutputStream out) throws IOException {
+        byte array[] = string.getBytes("UTF-8");
+        out.write('\"');
+        for(int n=array.length, i=0; i<n; i++) {
+            byte b = array[i];
+            if (b=='\n') { out.write('\\'); out.write('n'); }
+            else if (b=='\"') { out.write('\\'); out.write(b); }
+            else if (b>0 && b<=' ') out.write(' ');
+            else out.write(b);
+        }
+        out.write('\"');
+    }
+
+    /** Read a "..." atom assuming the leading " has already been consumed. */
+    static SimAtom read(BufferedInputStream in) throws IOException {
+        byte temp[] = new byte[64]; // to ensure proper detection of out-of-memory error, this number must be 2^n for some n>=0
+        int n = 0;
+        while(true) {
+           int c = in.read();
+           if (c<0) throw new IOException("Unexpected EOF");
+           if (c=='\"') break;
+           if (c=='\\') {
+              c=in.read();
+              if (c<0) throw new IOException("Unexpected EOF");
+              if (c=='n') c='\n';
+           }
+           while (n >= temp.length) {
+              byte temp2[] = new byte[temp.length * 2];
+              System.arraycopy(temp, 0, temp2, 0, temp.length);
+              temp = temp2;
+           }
+           temp[n]=(byte)c;
+           n++;
+        }
+        return make(new String(temp, 0, n, "UTF-8"));
+    }
 
     /**
      * If the atom starts with "-" or "0-9" then convert it into a 32-bit int (assuming that it came from a 32-bit int)

@@ -22,10 +22,14 @@
 
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import edu.mit.csail.sdg.alloy4.ConstList;
@@ -72,6 +76,40 @@ public final class SimTupleset implements Iterable<SimTuple> {
 
     /** Returns a read-only iterator over the tuples. */
     public Iterator<SimTuple> iterator() { return tuples.iterator(); }
+
+    /** Write this SimTupleset as { (".." ".." "..") (".." ".." "..") (".." ".." "..") } */
+    void write(BufferedOutputStream out) throws IOException {
+        out.write('{');
+        for(int n=tuples.size(), i=0; i<n; i++) {
+            if (i>0) out.write(' ');
+            tuples.get(i).write(out);
+        }
+        out.write('}');
+    }
+
+    /** Read a { (".." ".." "..") (".." ".." "..") (".." ".." "..") } tupleset. */
+    static SimTupleset read(BufferedInputStream in) throws IOException {
+        while(true) {
+           int c = in.read();
+           if (c<0) throw new IOException("Unexpected EOF");
+           if (c>0 && c<=' ') continue; // skip whitespace
+           if (c=='{') break; else throw new IOException("Expecting start of tupleset");
+        }
+        LinkedHashSet<SimTuple> list = new LinkedHashSet<SimTuple>();
+        while(true) {
+           int c = in.read();
+           if (c<0) throw new IOException("Unexpected EOF");
+           if (c>0 && c<=' ') continue; // skip whitespace
+           if (c=='}') break;
+           if (c!='(') throw new IOException("Expecting start of tuple");
+           list.add(SimTuple.read(in));
+           c = in.read();
+           if (c<0) throw new IOException("Unexpected EOF");
+           if (c=='}') break;
+           if (!(c<=' ')) throw new IOException("Expecting \')\' or white space after a tuple.");
+        }
+        return make(list);
+    }
 
     /** Returns the set of all integers between min and max. */
     public static SimTupleset range(int min, int max) {

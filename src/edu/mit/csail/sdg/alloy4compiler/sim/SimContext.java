@@ -22,12 +22,18 @@
 
 package edu.mit.csail.sdg.alloy4compiler.sim;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +44,7 @@ import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
 import edu.mit.csail.sdg.alloy4.ErrorSyntax;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
@@ -63,10 +70,10 @@ public final class SimContext extends VisitReturn<Object> {
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
     /** The exact values of each sig, field, and skolem (Note: it must not cache the value of a "defined" field) */
-    private final Map<Expr,SimTupleset> sfs = new HashMap<Expr,SimTupleset>();
+    private final Map<Expr,SimTupleset> sfs = new LinkedHashMap<Expr,SimTupleset>();
 
     /** This stores the set of all atoms (except Int and String atoms) */
-    private final Set<SimAtom> allAtoms = new HashSet<SimAtom>();
+    private final Set<SimAtom> allAtoms = new LinkedHashSet<SimAtom>();
 
     /** Caches parameter-less functions to a Boolean, Integer, or SimTupleset. */
     private final Map<Func,Object> cacheForConstants = new IdentityHashMap<Func,Object>();
@@ -95,8 +102,155 @@ public final class SimContext extends VisitReturn<Object> {
     /** The maximum allowed integer based on the chosen bitwidth. */
     private final int max;
 
+    /** Helper method that encodes the given string using UTF-8 and write to the output stream. */
+    private static void write(BufferedOutputStream out, String string) throws IOException {
+        out.write(string.getBytes("UTF-8"));
+    }
+
+    /** Write the bitwidth, maxseq, set of all atoms, and map of all sig/field/var into the given file. */
+    public void write(String filename) throws IOException {
+        FileOutputStream fos = null;
+        BufferedOutputStream bos = null;
+        try {
+            fos = new FileOutputStream(filename);
+            bos = new BufferedOutputStream(fos);
+            write(bos);
+            bos.flush();
+            bos.close();
+            bos = null;
+            fos.close();
+            fos = null;
+        } finally {
+            Util.close(bos);
+            Util.close(fos);
+        }
+    }
+
+    /** Write the bitwidth, maxseq, set of all atoms, and map of all sig/field/var into the given file. */
+    private void write(BufferedOutputStream out) throws IOException {
+        write(out, "maxseq = " + maxseq + ("\n" + "bitwidth = ") + bitwidth + "\n");
+        write(out, "allatoms = ");
+        boolean first = true;
+        for(SimAtom x: allAtoms) {
+            if (first) first=false; else out.write(' ');
+            x.write(out);
+        }
+        write(out, "\n");
+        for(Map.Entry<Expr,SimTupleset> entry: sfs.entrySet()) {
+            Expr e = entry.getKey();
+            if (e instanceof Sig) write(out, "sig " + ((Sig)e).label + " = ");
+            else if (e instanceof Field) write(out, "field " + ((Field)e).sig.label + " " + ((Field)e).label + " = ");
+            else if (e instanceof ExprVar) write(out, "var " + ((ExprVar)e).label + " = ");
+            else continue;
+            entry.getValue().write(out);
+            out.write('\n');
+        }
+    }
+
     /** Enumerate over every sig/field/skolem. */
     public Set<Entry<Expr,SimTupleset>> getAllValues() { return Collections.unmodifiableMap(sfs).entrySet(); }
+
+    /** Temporary buffer used by the parser; access to this buffer must be synchronized on SimContext's class. */
+    private static byte[] readcache = null;
+
+    /** Helper method that read a non-negative integer followed by a line break. */
+    private static int readNonNegativeIntThenLinebreak(BufferedInputStream bis) throws IOException {
+        int n = 0;
+        while(true) {
+            int c = bis.read();
+            if (c<0) throw new IOException("Unexpected EOF");
+            if (c=='\n') return n;
+            if (c>0 && c<=' ') continue; // skip white space
+            if (!(c>='0' && c<='9')) throw new IOException("Expects a DIGIT or a white space!");
+            n = n*10 + (c-'0');
+        }
+    }
+
+    /**
+     * Helper method that read "key =" then return the key part (with leading and trailing spaces removed).
+     * This method can only be called after you've synchronized on SimContext's class.
+     */
+    private static String readkey(BufferedInputStream bis) throws IOException {
+        int n = 0;
+        while(true) {
+            int c = bis.read();
+            if (c<0) return "";
+            if (c=='=') break;
+            if (readcache==null) readcache = new byte[64]; // to ensure proper detection of out-of-memory error, this number must be 2^n for some n>=0
+            while(n >= readcache.length) {
+               byte[] readcache2 = new byte[readcache.length * 2];
+               System.arraycopy(readcache, 0, readcache2, 0, readcache.length);
+               readcache = readcache2;
+            }
+            readcache[n] = (byte)c;
+            n++;
+        }
+        while(n>0 && readcache[n-1]>0 && readcache[n-1]<=' ') n--; // skip trailing spaces
+        int i = 0;
+        while(i<n && readcache[i]>0 && readcache[i]<=' ') i++; // skip leading space
+        return new String(readcache, i, n-i, "UTF-8");
+    }
+
+    /** Construct a new simulation context by reading the given file. */
+    public static synchronized SimContext read(String filename, List<Sig> sigs, List<ExprVar> vars) throws Err, IOException {
+        FileInputStream fis = null;
+        BufferedInputStream bis = null;
+        try {
+            fis = new FileInputStream(filename);
+            bis = new BufferedInputStream(fis);
+            // read maxseq
+            if (!readkey(bis).equals("maxseq")) throw new IOException("Expecting maxseq = ...");
+            int maxseq = readNonNegativeIntThenLinebreak(bis);
+            // read bitwidth
+            if (!readkey(bis).equals("bitwidth")) throw new IOException("Expecting bitwidth = ...");
+            int bitwidth = readNonNegativeIntThenLinebreak(bis);
+            // construct the SimContext object with no atoms and no relations
+            SimContext ans = new SimContext(bitwidth, maxseq);
+            // add all the atoms
+            if (!readkey(bis).equals("allatoms")) throw new IOException("Expecting allatoms = ...");
+            while(true) {
+                int c = bis.read();
+                if (c<0) throw new IOException("Unexpected EOF");
+                if (c=='\n') break;
+                if (c>0 && c<=' ') continue; // skips white space
+                if (c!='\"') throw new IOException("Expecting start of atom");
+                ans.allAtoms.add(SimAtom.read(bis));
+            }
+            // parse all the relations
+            Map<String,SimTupleset> sfs = new HashMap<String,SimTupleset>();
+            while(true) {
+                String key = readkey(bis);
+                if (key.length() == 0) break; // we don't expect any more data after this
+                sfs.put(key, SimTupleset.read(bis));
+            }
+            // now for each user-supplied sig, if we saw its value earlier, then assign its value in the new SimContext's sfs map
+            if (sigs!=null) for(Sig s: sigs) {
+                SimTupleset ts = sfs.get("sig " + s.label);
+                if (ts!=null) ans.sfs.put(s, ts);
+                for(Field f: s.getFields()) if (f.definition==null) {
+                    ts = sfs.get("field " + s.label + " " + f.label);
+                    if (ts!=null) ans.sfs.put(f, ts);
+                }
+            }
+            // now for each user-supplied var, if we saw its value earlier, then assign its value in the new SimContext's sfs map
+            if (vars!=null) for(ExprVar v: vars) {
+                SimTupleset ts = sfs.get("var " + v.label);
+                if (ts!=null) ans.sfs.put(v, ts);
+            }
+            // close the files then return the answer
+            bis.close();
+            bis = null;
+            fis.close();
+            fis = null;
+            return ans;
+        } finally {
+            // free the temporary array
+            readcache = null;
+            // if an exception occurred, we'll try to close to files anyway, since open file descriptors is a scarce resource
+            Util.close(bis);
+            Util.close(fis);
+        }
+    }
 
     /** Construct a new simulation context with the given bitwidth and the given maximum sequence length. */
     public SimContext(int bitwidth, int maxseq) throws Err {
