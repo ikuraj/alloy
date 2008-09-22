@@ -218,7 +218,8 @@ public final class SimTupleset implements Iterable<SimTuple> {
         if (this.tuples.size()==0) return SimTupleset.make(that);
         if (this.tuples.get(0).arity()!=that.arity()) return this;
         TempList<SimTuple> ans = new TempList<SimTuple>(this.tuples.size());
-        for(SimTuple x: this.tuples) { if (x.get(0)!=that.get(0)) ans.add(x); else if (that!=null) {ans.add(that); that=null;} }
+        SimAtom head = that.get(0);
+        for(SimTuple x: this.tuples) { if (x.get(0)!=head) ans.add(x); else if (that!=null) {ans.add(that); that=null;} }
         if (that!=null) ans.add(that);
         return new SimTupleset(ans.makeConst());
      }
@@ -230,13 +231,8 @@ public final class SimTupleset implements Iterable<SimTuple> {
     public SimTupleset override(SimTupleset that) {
        if (this.tuples.size()==0 || this==that) return that;
        if (that.tuples.size()==0 || this.tuples.get(0).arity()!=that.tuples.get(0).arity()) return this;
+       if (that.tuples.size()==1) return override(that.tuples.get(0)); // very common case, so let's optimize it
        TempList<SimTuple> ans = new TempList<SimTuple>(this.tuples.size());
-       if (that.tuples.size()==1) { // very common case, so let's optimize it
-          SimTuple y = that.tuples.get(0);
-          for(SimTuple x: this.tuples) { if (x.get(0)!=y.get(0)) ans.add(x); else if (that!=null) {ans.add(y); that=null;} }
-          if (that!=null) ans.add(y);
-          return new SimTupleset(ans.makeConst());
-       }
        for(SimTuple x: tuples) {
           for(int j=that.tuples.size()-1; ;j--) if (j<0) {ans.add(x);break;} else if (x.get(0)==that.tuples.get(j).get(0)) break;
        }
