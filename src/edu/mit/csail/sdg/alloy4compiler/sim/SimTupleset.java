@@ -211,6 +211,19 @@ public final class SimTupleset implements Iterable<SimTuple> {
     }
 
     /**
+     * Return the relational override of this and that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
+     * <br/> Note: in general, the tuples may be ordered arbitrarily in the result.
+     */
+    public SimTupleset override(SimTuple that) {
+        if (this.tuples.size()==0) return SimTupleset.make(that);
+        if (this.tuples.get(0).arity()!=that.arity()) return this;
+        TempList<SimTuple> ans = new TempList<SimTuple>(this.tuples.size());
+        for(SimTuple x: this.tuples) { if (x.get(0)!=that.get(0)) ans.add(x); else if (that!=null) {ans.add(that); that=null;} }
+        if (that!=null) ans.add(that);
+        return new SimTupleset(ans.makeConst());
+     }
+
+    /**
      * Return the relational override of this and that; (if this tupleset and that tupleset does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: in general, the tuples may be ordered arbitrarily in the result.
      */

@@ -138,6 +138,11 @@ public final class SimAtom {
         // convert all integers ranging from Integer.MIN to Integer.MAX
     }
 
+    /** Return the product of this atom and that atom. */
+    public SimTuple product(SimAtom that) {
+        return SimTuple.make(this, that);
+    }
+
     /** {@inheritDoc} */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
