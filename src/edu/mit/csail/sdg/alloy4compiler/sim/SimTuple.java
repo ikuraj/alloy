@@ -136,6 +136,14 @@ public final class SimTuple implements Iterable<SimAtom> {
         return false;
     }
 
+    /** Replace the i-th atom, and return the resulting SimTuple. */
+    public SimTuple replace(int i, SimAtom newAtom) {
+        if (array[i] == newAtom) return this;
+        SimAtom ar[] = new SimAtom[array.length];
+        for(int j=0; j<ar.length; j++) ar[j] = (j==i) ? newAtom : array[j];
+        return new SimTuple(ar);
+    }
+
     /** Replace each atom using the given SimAtom->SimAtom map; any atom not in the map will stay unchanged. */
     public SimTuple replace(Map<SimAtom,SimAtom> map) {
         SimAtom[] newarray = new SimAtom[array.length];
