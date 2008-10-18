@@ -208,9 +208,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
 
     /**
      * Return the union of this and that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
-     * <br/> Note: the tuples in the result will be ordered as follows:
-     * first comes the tuples in "this" in original order,
-     * then the new tuple (if it wasn't in this set)
+     * <br/> Note: if this operation is a no-op, we guarantee we'll return this SimTupleset as is.
      */
     public SimTupleset union(SimTuple that) {
        if (empty()) return make(that);
@@ -374,15 +372,21 @@ public final class SimTupleset implements Iterable<SimTuple> {
     /**
      * Return the relational override of this and that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: in general, the tuples may be ordered arbitrarily in the result.
+     * <br/> Note: if this operation is a no-op, we guarantee we'll return this SimTupleset as is.
      */
-    public SimTupleset override(SimTuple that) {
+    public SimTupleset override(final SimTuple that) {
         if (arity()==1) return union(that);
         if (empty()) return SimTupleset.make(that);
         if (arity()!=that.arity()) return this;
+        boolean added = false, same = false;
         TempList<SimTuple> ans = new TempList<SimTuple>(size());
         SimAtom head = that.get(0);
-        for(SimTuple x: this) { if (x.get(0)!=head) ans.add(x); else if (that!=null) {ans.add(that); that=null;} }
-        if (that!=null) ans.add(that);
+        for(SimTuple x: this) {
+           if (x.get(0)!=head) { ans.add(x); continue; }
+           if (x.equals(that)) same = true;
+           if (!added) { ans.add(that); added=true; }
+        }
+        if (!added) ans.add(that); else if (same && longsize()==ans.size()) return this;
         return new SimTupleset(ans.makeConst());
      }
 
@@ -416,9 +420,10 @@ public final class SimTupleset implements Iterable<SimTuple> {
     /**
      * Return this minus that; (if this tupleset and that tuple does not have compatible arity, then we return this tupleset as is).
      * <br/> Note: The resulting tuples will keep their original order.
+     * <br/> Note: if this operation is a no-op, we guarantee we'll return this SimTupleset as is.
      */
     public SimTupleset difference(SimTuple that) {
-       if (empty()) return EMPTY; else if (arity()!=that.arity()) return this;
+       if (empty() || arity()!=that.arity()) return this;
        TempList<SimTuple> ans = new TempList<SimTuple>(size()-1);
        for(SimTuple x: this) {
           if (that==null || !x.equals(that)) ans.add(x); else that=null;
