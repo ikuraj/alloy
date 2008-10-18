@@ -45,7 +45,7 @@ public final class SimAtom {
     private static final WeakHashMap<SimAtom,WeakReference<SimAtom>> map = new WeakHashMap<SimAtom,WeakReference<SimAtom>>();
 
     /** The String label for the atom; all distinct atoms have distinct labels. */
-    private final String string;
+    private String string;
 
     /** Construct a SimAtom; this constructor must only be called by make() since we want to canonicalize all SimAtom instances out there. */
     private SimAtom(String x) { this.string = x; }
@@ -61,6 +61,12 @@ public final class SimAtom {
         }
     }
 
+    /** Construct a SimAtom for the given integer, or if an existing SimAtom hasn't been garbage collected yet then return that instead. */
+    public static SimAtom make(int i) { return make(String.valueOf(i)); }
+
+    /** Construct a SimAtom for the given integer, or if an existing SimAtom hasn't been garbage collected yet then return that instead. */
+    public static SimAtom make(long i) { return make(String.valueOf(i)); }
+
     /** Preconstructed atom representing emptystring. */
     public static final SimAtom EMPTYSTRING = make("");
 
@@ -69,20 +75,6 @@ public final class SimAtom {
 
     /** Preconstructed atom representing 1. */
     public static final SimAtom ONE = make("1");
-
-    /* Read a SimAtom from the given input file by reading its unique ID (and consulting the uniqueID map)
-    static SimAtom readi(DataInputStream in, HashMap<Integer,SimAtom> map) throws IOException {
-        SimAtom x = map.get(in.readInt());
-        if (x==null) throw new IOException("Unknown atom encountered when reading the database.");
-        return x;
-    }*/
-
-    /* Save this SimAtom to the given output file by writing out its unique ID (and update the uniqueID map if needed)
-    void writei(DataOutputStream out, IdentityHashMap<SimAtom,Integer> map) throws IOException {
-        Integer i = map.get(this);
-        if (i==null) { i=map.size(); map.put(this, i); }
-        out.write(i.intValue());
-    }*/
 
     /** Write this atom as "..". */
     void write(BufferedOutputStream out) throws IOException {
@@ -123,19 +115,19 @@ public final class SimAtom {
     }
 
     /**
-     * If the atom starts with "-" or "0-9" then convert it into a 32-bit int (assuming that it came from a 32-bit int)
+     * If the atom starts with "-" or "0-9" then convert it into a 32-bit int (here we assume that it came from a 32-bit int)
      * <p>
-     * If the atom does not start with "-" or "0-9", then return 0.
+     * If the atom does not start with "-" or "0-9", then return defaultValue.
      */
-    public int toInt() {
+    public Integer toInt(Integer defaultValue) throws NumberFormatException {
         int ans=0, i=0, n=string.length();
-        if (n==0) return 0;
+        if (n==0) return defaultValue;
+        // Due to Java's 2's complement arithmetic, this will successfully
+        // convert all integers ranging from Integer.MIN to Integer.MAX
         if (string.charAt(0)=='-') i++;
-        if (string.charAt(i)<'0' || string.charAt(i)>'9') return 0;
+        if (string.charAt(i)<'0' || string.charAt(i)>'9') return defaultValue;
         for(;i<n;i++) ans = ans*10 + (string.charAt(i) - '0');
         if (string.charAt(0)=='-') return (-ans); else return ans;
-        // Due to Java's 2's complement arithmetic, this above will successfully
-        // convert all integers ranging from Integer.MIN to Integer.MAX
     }
 
     /** Return the product of this atom and that atom. */
@@ -146,7 +138,13 @@ public final class SimAtom {
     /** {@inheritDoc} */
     @Override public boolean equals(Object that) {
         if (this==that) return true;
-        if (!(that instanceof SimAtom)) return false; else return ((SimAtom)that).string.equals(string);
+        if (!(that instanceof SimAtom)) return false;
+        SimAtom x = (SimAtom)that;
+        if (string==x.string) return true; else if (string.equals(x.string)) {string=x.string; return true;} else return false;
+        // Change it so we share the same String; this is thread safe since String objects are immutable
+        // so it doesn't matter if some thread sees the old String and some sees the new String.
+        // JLS 3rd Edition 17.7 guarantees that writes and reads of references are atomic though not necessarily visible,
+        // so another thread will either see the old String or the new String.
     }
 
     /** {@inheritDoc} */

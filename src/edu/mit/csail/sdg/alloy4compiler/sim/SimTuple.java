@@ -81,20 +81,6 @@ public final class SimTuple implements Iterable<SimAtom> {
         return new SimTuple(ans);
     }
 
-    /* Read a SimTuple from the given input file by reading its unique ID (and consulting the uniqueID map)
-    static SimTuple readi(DataInputStream in, HashMap<Integer,SimTuple> map) throws IOException {
-        SimTuple x = map.get(in.readInt());
-        if (x==null) throw new IOException("Unknown tuple encountered when reading the database.");
-        return x;
-    }*/
-
-    /* Save this SimTuple to the given output file by writing out its unique ID (and update the uniqueID map if needed)
-    void writei(DataOutputStream out, IdentityHashMap<SimTuple,Integer> map) throws IOException {
-        Integer i = map.get(this);
-        if (i==null) { i=map.size(); map.put(this, i); }
-        out.write(i.intValue());
-    }*/
-
     /** Write this SimTuple as (".." ".." "..") */
     void write(BufferedOutputStream out) throws IOException {
         out.write('(');
@@ -105,7 +91,7 @@ public final class SimTuple implements Iterable<SimAtom> {
         out.write(')');
     }
 
-    /** Read a (".." ".." "..") tuple assuming the leading ( has already been consumed. */
+    /** Read a (".." ".." "..") tuple assuming the leading "(" has already been consumed. */
     static SimTuple read(BufferedInputStream in) throws IOException {
         List<SimAtom> list = new ArrayList<SimAtom>();
         while(true) {
@@ -160,6 +146,14 @@ public final class SimTuple implements Iterable<SimAtom> {
         SimAtom[] newarray = new SimAtom[array.length+1];
         newarray[0] = atom;
         for(int i=0; i<array.length; i++) newarray[i+1] = array[i];
+        return new SimTuple(newarray);
+    }
+
+    /** Append the given atom to the back of this tuple, then return the resulting new Tuple. */
+    public SimTuple append(SimAtom atom) {
+        SimAtom[] newarray = new SimAtom[array.length+1];
+        for(int i=0; i<array.length; i++) newarray[i] = array[i];
+        newarray[array.length] = atom;
         return new SimTuple(newarray);
     }
 

@@ -131,7 +131,7 @@ public final class Module extends Browsable {
            if (x.size()>0) ans.add(make("<b>run(s)</b>", x));
         }
         if (facts.size()>0) {
-           for(Map.Entry<String,Expr> e: facts.entrySet()) ans.add(make("<b>fact " + e.getKey() + "</b>", e.getValue()));
+           for(Pair<String,Expr> e: facts) ans.add(make("<b>fact " + e.a + "</b>", e.b));
         }
         if (path.length()==0 && asserts.size()>0) {
            for(Map.Entry<String,Expr> e: asserts.entrySet()) if (e.getValue() instanceof ExprVar) {
@@ -642,8 +642,8 @@ public final class Module extends Browsable {
     /** Each assertion name is mapped to either an untypechecked Exp, or a typechecked ExprVar with its value==the assertion. */
     private final Map<String,Expr> asserts = new LinkedHashMap<String,Expr>();
 
-    /** Each fact name is mapped to either an untypechecked Exp, or a typechecked Expr. */
-    private final Map<String,Expr> facts = new LinkedHashMap<String,Expr>();
+    /** The list of facts; each fact is either an untypechecked Exp or a typechecked Expr. */
+    private final List<Pair<String,Expr>> facts = new ArrayList<Pair<String,Expr>>();
 
     /** The list of (CommandName,Command,Expr) triples; NOTE: duplicate command names are allowed. */
     private final List<Command> commands = new ArrayList<Command>();
@@ -691,21 +691,15 @@ public final class Module extends Browsable {
     }
 
     /** Throw an exception if the name is already used, or has @ or /, or is univ/Int/none. */
-    private void dup(Pos pos, String name, boolean checkFunctions) throws Err {
+    private void dup(Pos pos, String name, boolean checkSig) throws Err {
         if (name.length()==0)     throw new ErrorSyntax(pos, "Name cannot be empty");
         if (name.indexOf('@')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'@\' character");
         if (name.indexOf('/')>=0) throw new ErrorSyntax(pos, "Name cannot contain the \'/\' character");
         if (name.equals("univ"))  throw new ErrorSyntax(pos, "\'univ\' is a reserved keyword.");
         if (name.equals("Int"))   throw new ErrorSyntax(pos, "\'Int\' is a reserved keyword.");
         if (name.equals("none"))  throw new ErrorSyntax(pos, "\'none\' is a reserved keyword.");
-        if (params.containsKey(name) || sigs.containsKey(name))
+        if (checkSig && (params.containsKey(name) || sigs.containsKey(name)))
             throw new ErrorSyntax(pos, "\""+name+"\" is already the name of a sig/parameter in this module.");
-        if (checkFunctions && funcs.containsKey(name))
-            throw new ErrorSyntax(pos, "\""+name+"\" is already the name of a function/predicate in this module.");
-        if (facts.containsKey(name))
-            throw new ErrorSyntax(pos, "\""+name+"\" is already the name of a fact paragraph in this module.");
-        if (asserts.containsKey(name))
-            throw new ErrorSyntax(pos, "\""+name+"\" is already the name of an assertion in this module.");
     }
 
     /** Throw an exception if there are more than 1 match; return nonnull if only one match; return null if no match. */
@@ -1080,7 +1074,7 @@ public final class Module extends Browsable {
         if (!Version.experimental) throw new ErrorSyntax(p, "LET declaration is allowed only inside a toplevel paragraph.");
         ConstList<ExprVar> ds = ConstList.make(decls);
         status=3;
-        dup(p, n, true);
+        dup(p, n, false);
         for(int i=0; i<ds.size(); i++) for(int j=i+1; j<ds.size(); j++)
           if (ds.get(i).label.equals(ds.get(j).label))
              throw new ErrorSyntax(ds.get(j).span(), "The parameter name \""+ds.get(j).label+"\" cannot appear more than once.");
@@ -1173,6 +1167,12 @@ public final class Module extends Browsable {
                 warns.add(new ErrorWarning(ff.getBody().span(),
                     "Function return value is disjoint from its return type.\n"
                     +"Function body has type "+ff.getBody().type + "\n" + "but the return type is "+ff.returnDecl.type));
+            //else if (warns!=null && Version.experimental && !newBody.type.isSubtypeOf(ff.returnDecl.type))
+            //  warns.add(new ErrorWarning(newBody.span(),
+            //      "Function may return a tuple not in its declared return type.\n"
+            //      +"The Alloy Analyzer's analysis may be unsound\n"
+            //      +"if it returns a tuple outside its declared return type.\n"
+            //      +"Function body has type "+newBody.type+"\nbut the return type is "+ff.returnDecl.type));
             rep.typecheck(ff.toString()+", BODY:"+ff.getBody().type+"\n");
             if (!ff.isPred) newBody=newBody.in(ff.returnDecl);
             if (ff.params.size()>0) newBody=ExprQuant.Op.SOME.make(null, null, ff.params, newBody.and(disj));
@@ -1194,8 +1194,12 @@ public final class Module extends Browsable {
     String addAssertion(Pos pos, String name, Expr value) throws Err {
         status=3;
         if (name==null || name.length()==0) name="assert$"+(1+asserts.size());
-        dup(pos, name, true);
-        asserts.put(name, ExprUnary.Op.NOOP.make(value.span().merge(pos), value));
+        dup(pos, name, false);
+        Expr old = asserts.put(name, ExprUnary.Op.NOOP.make(value.span().merge(pos), value));
+        if (old!=null) {
+            asserts.put(name, old);
+            throw new ErrorSyntax(pos, "\""+name+"\" is already the name of an assertion in this module.");
+        }
         return name;
     }
 
@@ -1229,19 +1233,19 @@ public final class Module extends Browsable {
     void addFact(Pos pos, String name, Expr value) throws Err {
         status=3;
         if (name==null || name.length()==0) name="fact$"+(1+facts.size());
-        dup(pos, name, true);
-        facts.put(name, ExprUnary.Op.NOOP.make(value.span().merge(pos), value));
+        facts.add(new Pair<String,Expr>(name, ExprUnary.Op.NOOP.make(value.span().merge(pos), value)));
     }
 
     /** Each fact name now points to a typechecked Expr rather than an untypechecked Exp; we'll also add the sig appended facts. */
     private JoinableList<Err> resolveFacts(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
         Context cx = new Context(this, warns);
-        for(Map.Entry<String,Expr> e:facts.entrySet()) {
-            Expr expr = e.getValue();
+        for(int i=0; i<facts.size(); i++) {
+            String name = facts.get(i).a;
+            Expr expr = facts.get(i).b;
             expr = cx.check(expr).resolve_as_formula(warns);
             if (expr.errors.isEmpty()) {
-                e.setValue(expr);
-                rep.typecheck("Fact " + e.getKey() + ": " + expr.type+"\n");
+                facts.set(i, new Pair<String,Expr>(name, expr));
+                rep.typecheck("Fact " + name + ": " + expr.type+"\n");
             } else errors=errors.join(expr.errors);
         }
         for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
@@ -1261,7 +1265,7 @@ public final class Module extends Browsable {
             }
             cx.remove("this");
             if (formula.errors.size()>0) { errors=errors.join(formula.errors); continue; }
-            facts.put(s.toString()+"$fact", formula);
+            facts.add(new Pair<String,Expr>(s+"$fact", formula));
             rep.typecheck("Fact "+s+"$fact: " + formula.type+"\n");
         }
         return errors;
@@ -1269,18 +1273,13 @@ public final class Module extends Browsable {
 
     /** Return an unmodifiable list of all facts in this module. */
     public SafeList<Pair<String,Expr>> getAllFacts() {
-        SafeList<Pair<String,Expr>> ans = new SafeList<Pair<String,Expr>>(facts.size());
-        for(Map.Entry<String,Expr> e:facts.entrySet()) {
-            Expr x=e.getValue();
-            if (x!=null) ans.add(new Pair<String,Expr>(e.getKey(), x));
-        }
-        return ans.dup();
+        return (new SafeList<Pair<String,Expr>>(facts)).dup();
     }
 
     /** Return the conjunction of all facts in this module and all reachable submodules. */
     public Expr getAllReachableFacts() {
         ArrayList<Expr> facts = new ArrayList<Expr>();
-        for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.getAllFacts()) facts.add(f.b);
+        for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.facts) facts.add(f.b);
         if (facts.size()==0) return ExprConstant.TRUE; else return ExprList.make(null, null, ExprList.Op.AND, facts);
     }
 
@@ -1431,7 +1430,7 @@ public final class Module extends Browsable {
                  //    }
                  //}
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
-                 if (d.disjoint2!=null) disjoint2.add(f);
+                 if (d.disjoint2!=null && s.isOne==null) disjoint2.add(f);
                  if (d.disjoint==null) continue;
                  if (disjA==null) { disjA=f; continue; }
                  disjF = ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
@@ -1440,14 +1439,13 @@ public final class Module extends Browsable {
               if (disjX==ExprConstant.TRUE) disjX=disjF; else if (disjF!=ExprConstant.TRUE) disjX=ExprBinary.Op.AND.make(Pos.UNKNOWN, null, disjF, disjX);
            }
            errors=errors.join(disjX.errors);
-           if (disjX!=ExprConstant.TRUE && disjX.errors.isEmpty()){ m.facts.put(s+"$disjoint", disjX); rep.typecheck("Fact "+s+"$disjoint: "+disjX.type+"\n"); }
-           if (s.isOne==null && disjoint2.size()>0) {
-               Expr formula = null;
+           if (disjX!=ExprConstant.TRUE && disjX.errors.isEmpty()) { m.facts.add(new Pair<String,Expr>(s+"$disjoint", disjX)); rep.typecheck("Fact "+s+"$disjoint: "+disjX.type+"\n"); }
+           for(Field f: disjoint2) {
                ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
                ExprVar THAT = ExprVar.make(null, "that", s.oneOf());
-               for(Field f:disjoint2) formula = THIS.join(f).intersect(THAT.join(f)).no().and(formula);
-               formula = THIS.equal(THAT).not().implies(formula).forAll(THIS).forAll(THAT);
-               m.facts.put(s + "$disj", formula);
+               Expr formula = THIS.join(f).intersect(THAT.join(f)).no();
+               formula = THIS.equal(THAT).not().implies(formula).forAll(THAT).forAll(THIS);
+               m.facts.add(new Pair<String,Expr>(s.label + "." + f.label + "$disj", formula));
            }
         }
         if (!errors.isEmpty()) throw errors.pick();
@@ -1534,8 +1532,8 @@ public final class Module extends Browsable {
                 }
                 s2.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "subfields", s2.product(allfields));
             }
-            if (hasMetaSig==false) root.facts.put("sig$fact", root.metaSig.no().and(root.metaField.no()));
-            else if (hasMetaField==false) root.facts.put("sig$fact", root.metaField.no());
+            if (hasMetaSig==false) root.facts.add(new Pair<String,Expr>("sig$fact", root.metaSig.no().and(root.metaField.no())));
+            else if (hasMetaField==false) root.facts.add(new Pair<String,Expr>("sig$fact", root.metaField.no()));
         }
         // Typecheck the function declarations
         for(Module x:modules) errors=x.resolveFuncDecls(rep, errors, warns);

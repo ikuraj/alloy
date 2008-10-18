@@ -1527,10 +1527,10 @@ public final class SimpleGUI implements ComponentListener {
     Runner doVisualize(String arg) {
         if (wrap) return wrapMe(arg);
         text.do_removeAllHighlights();
-        if (arg.startsWith("MSG: ")) {
+        if (arg.startsWith("MSG: ")) { // MSG: message
             OurDialog.showtext("Detailed Message", arg.substring(5));
         }
-        if (arg.startsWith("CORE: ")) {
+        if (arg.startsWith("CORE: ")) { // CORE: filename
             String filename = Util.canon(arg.substring(6));
             Pair<Set<Pos>,Set<Pos>> hCore;
             Set<Pos> lCore;
@@ -1553,7 +1553,7 @@ public final class SimpleGUI implements ComponentListener {
             text.do_highlight(hCore.a, coreColor, false);
             if (false) text.do_highlight(lCore, coreColor, false); // we are currently not highlighting the lowlevel core
         }
-        if (arg.startsWith("POS: ")) {
+        if (arg.startsWith("POS: ")) { // POS: x1 y1 x2 y2 filename
             Scanner s=new Scanner(arg.substring(5));
             int x1=s.nextInt(), y1=s.nextInt(), x2=s.nextInt(), y2=s.nextInt();
             String f=s.nextLine();
@@ -1561,12 +1561,12 @@ public final class SimpleGUI implements ComponentListener {
             Pos p=new Pos(Util.canon(f), x1, y1, x2, y2);
             text.do_highlight(p);
         }
-        if (arg.startsWith("CNF: ")) {
+        if (arg.startsWith("CNF: ")) { // CNF: filename
             String filename=Util.canon(arg.substring(5));
             try { String text=Util.readAll(filename); OurDialog.showtext("Text Viewer", text); }
             catch(IOException ex) { log.logRed("Error reading the file \""+filename+"\"\n"); }
         }
-        if (arg.startsWith("XML: ")) {
+        if (arg.startsWith("XML: ")) { // XML: filename
             viz.loadXML(Util.canon(arg.substring(5)), false);
         }
         return null;

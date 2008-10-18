@@ -28,16 +28,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 import edu.mit.csail.sdg.alloy4.Env;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -69,23 +65,20 @@ public final class SimContext extends VisitReturn<Object> {
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
-    /** The exact values of each sig, field, and skolem (Note: it must not cache the value of a "defined" field) */
+    /** The exact values of each sig, field, and skolem (Note: it must not cache the value of any "defined" field, nor any builtin sig) */
     private final Map<Expr,SimTupleset> sfs = new LinkedHashMap<Expr,SimTupleset>();
 
-    /** This stores the set of all atoms (except Int and String atoms) */
-    private final Set<SimAtom> allAtoms = new LinkedHashSet<SimAtom>();
+    /** If nonnull, it caches the current value of STRING (this value must be cleared or updated when you change the value of sigs/fields/vars) */
+    private SimTupleset cacheSTRING = null;
+
+    /** If nonnull, it caches the current value of UNIV (this value must be cleared or updated when you change the value of sigs) */
+    private SimTupleset cacheUNIV = null;
 
     /** Caches parameter-less functions to a Boolean, Integer, or SimTupleset. */
     private final Map<Func,Object> cacheForConstants = new IdentityHashMap<Func,Object>();
 
     /** This is used to detect "function recursion" (which we currently do not allow). */
     private final List<Func> current_function = new ArrayList<Func>();
-
-    /** If nonnull, it caches the result of evaluating "iden"; must be cleared whenever sig contents change. */
-    private SimTupleset cacheIDEN = null;
-
-    /** If nonnull, it caches the result of evaluting "fun/next"; must be cleared whenever bitwidth changes. */
-    private SimTupleset cacheNEXT = null;
 
     /** The chosen bitwidth */
     private final int bitwidth;
@@ -129,13 +122,6 @@ public final class SimContext extends VisitReturn<Object> {
     /** Write the bitwidth, maxseq, set of all atoms, and map of all sig/field/var into the given file. */
     private void write(BufferedOutputStream out) throws IOException {
         write(out, "maxseq = " + maxseq + ("\n" + "bitwidth = ") + bitwidth + "\n");
-        write(out, "allatoms = ");
-        boolean first = true;
-        for(SimAtom x: allAtoms) {
-            if (first) first=false; else out.write(' ');
-            x.write(out);
-        }
-        write(out, "\n");
         for(Map.Entry<Expr,SimTupleset> entry: sfs.entrySet()) {
             Expr e = entry.getKey();
             if (e instanceof Sig) write(out, "sig " + ((Sig)e).label + " = ");
@@ -146,9 +132,6 @@ public final class SimContext extends VisitReturn<Object> {
             out.write('\n');
         }
     }
-
-    /** Enumerate over every sig/field/skolem. */
-    public Set<Entry<Expr,SimTupleset>> getAllValues() { return Collections.unmodifiableMap(sfs).entrySet(); }
 
     /** Temporary buffer used by the parser; access to this buffer must be synchronized on SimContext's class. */
     private static byte[] readcache = null;
@@ -206,16 +189,6 @@ public final class SimContext extends VisitReturn<Object> {
             int bitwidth = readNonNegativeIntThenLinebreak(bis);
             // construct the SimContext object with no atoms and no relations
             SimContext ans = new SimContext(bitwidth, maxseq);
-            // add all the atoms
-            if (!readkey(bis).equals("allatoms")) throw new IOException("Expecting allatoms = ...");
-            while(true) {
-                int c = bis.read();
-                if (c<0) throw new IOException("Unexpected EOF");
-                if (c=='\n') break;
-                if (c>0 && c<=' ') continue; // skips white space
-                if (c!='\"') throw new IOException("Expecting start of atom");
-                ans.allAtoms.add(SimAtom.read(bis));
-            }
             // parse all the relations
             Map<String,SimTupleset> sfs = new HashMap<String,SimTupleset>();
             while(true) {
@@ -224,10 +197,10 @@ public final class SimContext extends VisitReturn<Object> {
                 sfs.put(key, SimTupleset.read(bis));
             }
             // now for each user-supplied sig, if we saw its value earlier, then assign its value in the new SimContext's sfs map
-            if (sigs!=null) for(Sig s: sigs) {
+            if (sigs!=null) for(final Sig s: sigs) if (!s.builtin) {
                 SimTupleset ts = sfs.get("sig " + s.label);
                 if (ts!=null) ans.sfs.put(s, ts);
-                for(Field f: s.getFields()) if (f.definition==null) {
+                for(final Field f: s.getFields()) if (f.definition==null) {
                     ts = sfs.get("field " + s.label + " " + f.label);
                     if (ts!=null) ans.sfs.put(f, ts);
                 }
@@ -261,13 +234,6 @@ public final class SimContext extends VisitReturn<Object> {
         if (maxseq < 0)   throw new ErrorSyntax("The maximum sequence length cannot be negative.");
         if (maxseq > max) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max);
         shiftmask = (1 << (32 - Integer.numberOfLeadingZeros(bitwidth-1))) - 1;
-        SimTupleset allInts = SimTupleset.range(min, max);
-        SimTupleset allIdx = SimTupleset.range(0, maxseq-1);
-        sfs.put(Sig.UNIV, allInts);
-        sfs.put(Sig.SIGINT, allInts);
-        sfs.put(Sig.SEQIDX, allIdx);
-        sfs.put(Sig.STRING, SimTupleset.EMPTY);
-        sfs.put(Sig.NONE, SimTupleset.EMPTY);
     }
 
     /** Construct a deep copy. */
@@ -277,22 +243,22 @@ public final class SimContext extends VisitReturn<Object> {
         min = old.min;
         max = old.max;
         shiftmask = old.shiftmask;
-        cacheIDEN = old.cacheIDEN;
-        cacheNEXT = old.cacheNEXT;
         env = old.env.dup();
+        cacheUNIV = old.cacheUNIV;
+        cacheSTRING = old.cacheSTRING;
         for(Map.Entry<Expr,SimTupleset> e: old.sfs.entrySet()) sfs.put(e.getKey(), e.getValue());
-        allAtoms.addAll(old.allAtoms);
     }
 
-    /**
-     * Returns true if the given atom is an Int atom, or String atom, or is in at least one of the sig.
-     */
+    /** Returns true if the given atom is an Int atom, or String atom, or is in at least one of the sig. */
     public boolean hasAtom(SimAtom atom) {
         if (atom.toString().length()>0) {
-            char c = atom.toString().charAt(0);
-            if (c=='-' || (c>='0' && c<='9') || c=='\"') return true;
+           char c = atom.toString().charAt(0);
+           if (c=='-' || (c>='0' && c<='9') || c=='\"') return true;
         }
-        return allAtoms.contains(atom);
+        for(Map.Entry<Expr,SimTupleset> e: sfs.entrySet()) {
+           if (e.getKey() instanceof PrimSig && ((PrimSig)(e.getKey())).isTopLevel() && e.getValue().has(atom)) return true;
+        }
+        return false;
     }
 
     /**
@@ -308,11 +274,12 @@ public final class SimContext extends VisitReturn<Object> {
         if (label.startsWith("this/")) label=label.substring(5);
         for(int i=0; ;i++) {
           SimAtom atom = SimAtom.make(label + i);
-          if (!allAtoms.add(atom)) continue;
+          if (hasAtom(atom)) continue;
           SimTupleset add = SimTupleset.make(SimTuple.make(atom));
-          for(; s!=null; s=s.parent) {
+          if (cacheUNIV!=null) cacheUNIV = cacheUNIV.union(add);
+          for(; s!=null; s=s.parent) if (!s.builtin) {
               SimTupleset old = sfs.get(s);
-              if (old==null || old.size()==0) sfs.put(s, add); else if (!add.in(old)) sfs.put(s, old.union(add)); else break;
+              if (old==null || old.empty()) sfs.put(s, add); else if (!add.in(old)) sfs.put(s, old.union(add)); else break;
           }
           return atom;
         }
@@ -321,13 +288,21 @@ public final class SimContext extends VisitReturn<Object> {
     /**
      * Delete an atom from all sigs/fields/skolem...
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
+     * <p> Returns true if at least one sig/field/var changed its value as a result of this deletion.
      * @throws ErrorAPI if attempting to delete from "Int".
      */
-    public void deleteAtom(SimAtom atom) throws Err {
-        allAtoms.remove(atom);
-        for(Map.Entry<Expr,SimTupleset> x: sfs.entrySet()) {
-            x.setValue(x.getValue().difference(atom));
-        }
+    public boolean deleteAtom(SimAtom atom) throws Err {
+       if (atom.toString().length()>0) {
+          char c = atom.toString().charAt(0);
+          if (c=='-' || (c>='0' && c<='9') || c=='\"') return false;
+       }
+       boolean changed = false;
+       for(Map.Entry<Expr,SimTupleset> x: sfs.entrySet()) {
+          SimTupleset oldvalue = x.getValue();
+          SimTupleset newvalue = oldvalue.removeAll(atom);
+          if (oldvalue.longsize() != newvalue.longsize()) { changed=true; x.setValue(newvalue); }
+       }
+       if (changed) { cacheUNIV=null; return true; } else { return false; }
     }
 
     /**
@@ -335,11 +310,13 @@ public final class SimContext extends VisitReturn<Object> {
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
     public void init(Sig sig, SimTupleset value) throws Err {
+        if (value==null) { sfs.remove(sig); return; }
         if (value.arity()>1) throw new ErrorType("Evaluator encountered an error: sig "+sig.label+" arity must not be " + value.arity());
-        if (!sig.builtin) for(SimTuple tp:value) allAtoms.add(tp.get(0));
+        if (sig.builtin) throw new ErrorAPI("Evaluator cannot prebind a builtin sig.");
         sfs.put(sig, value);
+        cacheUNIV = null;
+        cacheSTRING = null;
         cacheForConstants.clear();
-        cacheIDEN = null;
     }
 
     /**
@@ -347,11 +324,13 @@ public final class SimContext extends VisitReturn<Object> {
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
     public void init(Field field, SimTupleset value) throws Err {
-        if (value.size()>0 && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
-        if (field.boundingFormula==null) throw new ErrorAPI("Evaluator cannot modify the value of a defined field.");
+        if (value==null) { sfs.remove(field); return; }
+        if (!value.empty() && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
+        if (field.boundingFormula==null) throw new ErrorAPI("Evaluator cannot prebind the value of a defined field.");
         sfs.put(field, value);
+        cacheUNIV = null;
+        cacheSTRING = null;
         cacheForConstants.clear();
-        cacheIDEN = null;
     }
 
     /**
@@ -359,10 +338,12 @@ public final class SimContext extends VisitReturn<Object> {
      * <p> The resulting instance may or may not satisfy all facts, and should be checked for consistency.
      */
     public void init(ExprVar var, SimTupleset value) throws Err {
-        if (value.size()>0 && value.arity()!=var.type.arity()) throw new ErrorType("Evaluator encountered an error: skolem "+var.label+" arity must not be " + value.arity());
+        if (value==null) { sfs.remove(var); return; }
+        if (!value.empty() && value.arity()!=var.type.arity()) throw new ErrorType("Evaluator encountered an error: skolem "+var.label+" arity must not be " + value.arity());
         sfs.put(var, value);
+        cacheUNIV = null;
+        cacheSTRING = null;
         cacheForConstants.clear();
-        cacheIDEN = null;
     }
 
     /** Truncate the given integer based on the current chosen bitwidth */
@@ -417,6 +398,14 @@ public final class SimContext extends VisitReturn<Object> {
           case IN:
               return isIn(cset(x.left), x.right);
           case JOIN:
+              if (x.left.isSame(Sig.UNIV)) {
+                 SimTupleset tp = cset(x.right);
+                 return tp.tail(tp.arity()-1);
+              }
+              if (x.right.isSame(Sig.UNIV)) {
+                 SimTupleset tp = cset(x.left);
+                 return tp.head(tp.arity()-1);
+              }
               return cset(x.left).join(cset(x.right));
           case AND:
               return cform(x.left) && cform(x.right); // Java always has the short-circuit behavior
@@ -484,8 +473,8 @@ public final class SimContext extends VisitReturn<Object> {
         SimTupleset[] ans = new SimTupleset[x.args.size()];
         for(int i=1; i<ans.length; i++) {
            for(int j=0; j<i; j++) {
-              if (ans[i]==null) if ((ans[i]=cset(x.args.get(i))).size()==0) continue;
-              if (ans[j]==null) if ((ans[j]=cset(x.args.get(j))).size()==0) continue;
+              if (ans[i]==null) if ((ans[i]=cset(x.args.get(i))).empty()) continue;
+              if (ans[j]==null) if ((ans[j]=cset(x.args.get(j))).empty()) continue;
               if (ans[j].intersects(ans[i])) return false;
            }
         }
@@ -526,8 +515,8 @@ public final class SimContext extends VisitReturn<Object> {
           case MAX: return max;
           case EMPTYNESS: return SimTupleset.EMPTY;
           case STRING: return SimTupleset.make(x.string);
-          case NEXT: if (cacheNEXT==null) return cacheNEXT=SimTupleset.next(min,max); else return cacheNEXT;
-          case IDEN: if (cacheIDEN==null) return cacheIDEN=cset(Sig.UNIV).iden(); else return cacheIDEN;
+          case NEXT: return SimTupleset.makenext(min, max);
+          case IDEN: return cset(Sig.UNIV).iden();
         }
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprConstant.accept()");
     }
@@ -554,12 +543,12 @@ public final class SimContext extends VisitReturn<Object> {
           case SOMEOF:      return cset(x.sub);
           case NOOP:        return visitThis(x.sub);
           case CARDINALITY: return trunc(cset(x.sub).size());
-          case NO:          return cset(x.sub).size()==0;
-          case LONE:        return cset(x.sub).size()<=1;
-          case ONE:         return cset(x.sub).size()==1;
-          case SOME:        return cset(x.sub).size()>=1;
+          case NO:          return cset(x.sub).empty();
+          case LONE:        return cset(x.sub).longsize()<=1;
+          case ONE:         return cset(x.sub).longsize()==1;
+          case SOME:        return cset(x.sub).longsize()>=1;
           case NOT:         return cform(x.sub) ? Boolean.FALSE : Boolean.TRUE;
-          case CAST2SIGINT: return SimTupleset.make(String.valueOf(cint(x.sub)));
+          case CAST2SIGINT: return SimTupleset.make(SimTuple.make(SimAtom.make(cint(x.sub))));
           case CAST2INT:    return trunc(cset(x.sub).sum());
           case CLOSURE:     return cset(x.sub).closure();
           case RCLOSURE:    return cset(x.sub).closure().union(cset(ExprConstant.IDEN));
@@ -574,7 +563,7 @@ public final class SimContext extends VisitReturn<Object> {
         if (ans==null) ans = sfs.get(x);
         if (ans==null) {
             SimAtom a = SimAtom.make(x.label);
-            if (!allAtoms.contains(a)) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
+            if (!hasAtom(a)) throw new ErrorFatal(x.pos, "Variable \""+x+"\" is not bound to a legal value during translation.\n");
             ans = SimTupleset.make(SimTuple.make(a));
         }
         return ans;
@@ -582,9 +571,33 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public SimTupleset visit(Sig x) throws Err {
-        if (x==Sig.NONE) return SimTupleset.EMPTY;
-        Object ans = sfs.get(x);
-        if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown sig "+x+" encountered during evaluation.");
+       if (x==Sig.NONE) return SimTupleset.EMPTY;
+       if (x==Sig.SIGINT) return SimTupleset.make(min, max);
+       if (x==Sig.SEQIDX) return SimTupleset.make(0, maxseq-1);
+       if (x==Sig.STRING) {
+          if (cacheSTRING == null) {
+             cacheSTRING = SimTupleset.EMPTY;
+             for(Map.Entry<Expr,SimTupleset> e: sfs.entrySet()) if (e.getKey() instanceof Field || e.getKey() instanceof ExprVar) {
+               for(SimTuple t: e.getValue()) for(int i=t.arity()-1; i>=0; i--) {
+                 String a = t.get(i).toString();
+                 if (a.length()>0 && a.charAt(0)=='"') cacheSTRING = cacheSTRING.union(SimTuple.make(t.get(i)));
+               }
+             }
+          }
+          return cacheSTRING;
+       }
+       if (x==Sig.UNIV) {
+          if (cacheUNIV == null) {
+             cacheUNIV = SimTupleset.make(min, max);
+             for(Map.Entry<Expr,SimTupleset> e: sfs.entrySet())
+                if (e.getKey() instanceof PrimSig && ((PrimSig)(e.getKey())).isTopLevel())
+                   cacheUNIV = cacheUNIV.union(e.getValue());
+             cacheUNIV = cacheUNIV.union(visit(Sig.STRING));
+          }
+          return cacheUNIV;
+       }
+       Object ans = sfs.get(x);
+       if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown sig "+x+" encountered during evaluation.");
     }
 
     /** {@inheritDoc} */
@@ -638,21 +651,55 @@ public final class SimContext extends VisitReturn<Object> {
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprQuant.accept()");
     }
 
+    /** Helper method that removes NOP in front of the given expression. */
+    private static Expr deNOP(Expr x) {
+        while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x = ((ExprUnary)x).sub;
+        return x;
+    }
+
+    /** Helper method that evaluates the formula "a in b" where b.mult==0 */
+    public boolean isIn(SimTuple a, Expr b) throws Err {
+        b = deNOP(b);
+        if (b instanceof PrimSig && ((PrimSig)b).builtin) {
+           if (a.arity()!=1) return false;
+           if (b==Sig.UNIV) return true;
+           if (b==Sig.NONE) return false;
+           if (b==Sig.SIGINT) { Integer i = a.get(0).toInt(null); return i!=null; }
+           if (b==Sig.SEQIDX) { Integer i = a.get(0).toInt(null); return i!=null && i>=0 && i<maxseq; }
+           if (b==Sig.STRING) { String at = a.get(0).toString(); return at.length()>0 && (at.charAt(0)=='\"'); }
+        }
+        if (b instanceof ExprBinary && ((ExprBinary)b).op==ExprBinary.Op.ARROW) {
+           Expr left = ((ExprBinary)b).left, right = ((ExprBinary)b).right;
+           int ll = left.type.arity(), rr = right.type.arity();
+           if (ll <= rr) return isIn(a.head(ll), left) && isIn(a.tail(rr), right);
+           return isIn(a.tail(rr), right) && isIn(a.head(ll), left);
+        }
+        if (b instanceof ExprBinary && ((ExprBinary)b).op==ExprBinary.Op.PLUS) {
+           return isIn(a, ((ExprBinary)b).left) || isIn(a, ((ExprBinary)b).right);
+        }
+        if (b instanceof ExprBinary && ((ExprBinary)b).op==ExprBinary.Op.MINUS) {
+           return isIn(a, ((ExprBinary)b).left) && !isIn(a, ((ExprBinary)b).right);
+        }
+        return cset(b).has(a);
+    }
+
     /** Helper method that evaluates the formula "a in b" */
-    private boolean isIn(SimTupleset a, Expr right) throws Err {
-        if (right instanceof ExprUnary) {
-            // Handles possible "unary" multiplicity
-            ExprUnary y=(ExprUnary)(right);
-            if (y.op==ExprUnary.Op.ONEOF)  { return a.size()==1 && a.in(cset(y.sub)); }
-            if (y.op==ExprUnary.Op.SETOF)  { return                a.in(cset(y.sub)); }
-            if (y.op==ExprUnary.Op.LONEOF) { return a.size()<=1 && a.in(cset(y.sub)); }
-            if (y.op==ExprUnary.Op.SOMEOF) { return a.size()>=1 && a.in(cset(y.sub)); }
-        }
-        if (right instanceof ExprBinary && right.mult!=0 && ((ExprBinary)right).op.isArrow) {
+    public boolean isIn(SimTupleset a, Expr b) throws Err {
+        b = deNOP(b);
+        if (b instanceof ExprBinary && b.mult!=0 && ((ExprBinary)b).op.isArrow) {
             // Handles possible "binary" or higher-arity multiplicity
-            return isInBinary(a, (ExprBinary)right);
+            return isInBinary(a, (ExprBinary)b);
         }
-        return a.in(cset(right));
+        if (b instanceof ExprUnary) {
+            // Handles possible "unary" multiplicity
+            ExprUnary y = (ExprUnary)b;
+            if      (y.op==ExprUnary.Op.ONEOF)  { b=deNOP(y.sub); if (!(a.longsize()==1)) return false; }
+            else if (y.op==ExprUnary.Op.LONEOF) { b=deNOP(y.sub); if (!(a.longsize()<=1)) return false; }
+            else if (y.op==ExprUnary.Op.SOMEOF) { b=deNOP(y.sub); if (!(a.longsize()>=1)) return false; }
+            else if (y.op!=ExprUnary.Op.SETOF)  { b=deNOP(y.sub); }
+        }
+        for(SimTuple t:a) if (!isIn(t, b)) return false;
+        return true;
     }
 
     /** Helper method that evaluates the formula "r in (a ?->? b)" */
@@ -666,7 +713,7 @@ public final class SimContext extends VisitReturn<Object> {
              for (int n=list.size(), i=0; ; i++) if (i>=n) return false; else if (nextStr==list.get(i)) { list.set(i, list.get(n-1)); list.remove(n-1); next++; break; }
              if (list.size()==0) break;
              if (next<0 || next>=maxseq) return false; // list.size()>0 and yet we've exhausted 0..maxseq-1, so indeed there are illegal atoms
-             nextStr = SimAtom.make(String.valueOf(next));
+             nextStr = SimAtom.make(next);
           }
        }
        // "R in A ->op B" means for each tuple a in A, there are "op" tuples in r that begins with a.
@@ -674,9 +721,9 @@ public final class SimContext extends VisitReturn<Object> {
          SimTupleset ans = R.beginWith(left);
          switch(ab.op) {
             case ISSEQ_ARROW_LONE:
-            case ANY_ARROW_LONE: case SOME_ARROW_LONE: case ONE_ARROW_LONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
-            case ANY_ARROW_ONE:  case SOME_ARROW_ONE:  case ONE_ARROW_ONE:  case LONE_ARROW_ONE:  if (!(ans.size()==1)) return false; else break;
-            case ANY_ARROW_SOME: case SOME_ARROW_SOME: case ONE_ARROW_SOME: case LONE_ARROW_SOME: if (!(ans.size()>=1)) return false; else break;
+            case ANY_ARROW_LONE: case SOME_ARROW_LONE: case ONE_ARROW_LONE: case LONE_ARROW_LONE: if (!(ans.longsize()<=1)) return false; else break;
+            case ANY_ARROW_ONE:  case SOME_ARROW_ONE:  case ONE_ARROW_ONE:  case LONE_ARROW_ONE:  if (!(ans.longsize()==1)) return false; else break;
+            case ANY_ARROW_SOME: case SOME_ARROW_SOME: case ONE_ARROW_SOME: case LONE_ARROW_SOME: if (!(ans.longsize()>=1)) return false; else break;
          }
          if (!isIn(ans, ab.right)) return false;
        }
@@ -684,9 +731,9 @@ public final class SimContext extends VisitReturn<Object> {
        for(SimTuple right: cset(ab.right)) {
          SimTupleset ans = R.endWith(right);
          switch(ab.op) {
-            case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE: if (!(ans.size()<=1)) return false; else break;
-            case ONE_ARROW_ANY:  case ONE_ARROW_SOME:  case ONE_ARROW_ONE:  case ONE_ARROW_LONE:  if (!(ans.size()==1)) return false; else break;
-            case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE: if (!(ans.size()>=1)) return false; else break;
+            case LONE_ARROW_ANY: case LONE_ARROW_SOME: case LONE_ARROW_ONE: case LONE_ARROW_LONE: if (!(ans.longsize()<=1)) return false; else break;
+            case ONE_ARROW_ANY:  case ONE_ARROW_SOME:  case ONE_ARROW_ONE:  case ONE_ARROW_LONE:  if (!(ans.longsize()==1)) return false; else break;
+            case SOME_ARROW_ANY: case SOME_ARROW_SOME: case SOME_ARROW_ONE: case SOME_ARROW_LONE: if (!(ans.longsize()>=1)) return false; else break;
          }
          if (!isIn(ans, ab.left)) return false;
        }

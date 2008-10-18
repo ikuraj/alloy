@@ -119,6 +119,15 @@ public final class Type implements Iterable<Type.ProductType> {
             return true;
         }
 
+        /**
+         * Returns true if (this[i] is equal or subtype of that[i]) for every i.
+         * <p> Precondition: this.arity == that.arity
+         */
+        private boolean isSubtypeOf(List<PrimSig> that) {
+            for(int i=types.length-1; i>=0; i--) if (!types[i].isSameOrDescendentOf(that.get(i))) return false;
+            return true;
+        }
+
         /** Returns the arity of this ProductType object. */
         public int arity() { return types.length; }
 
@@ -701,6 +710,24 @@ public final class Type implements Iterable<Type.ProductType> {
         int aa=0;
         for(ProductType a:this) if (a.types.length==2) aa=add(ee, aa, a.transpose());
         return make(false, false, ee.makeConst(), aa);
+    }
+
+    /**
+     * Returns true if for all A in this, there exists B in that, where A is a subset of B.
+     * <p> Note: if this.is_int && !that.is_int, we return false immediately.
+     * <p> Note: if this.is_bool && !that.is_bool, we return false immediately.
+     * <p> Note: if this type does not contain any entry at all, then this method returns true.
+     */
+    public boolean isSubtypeOf(Type that) {
+        if (is_int && !that.is_int) return false;
+        if (is_bool && !that.is_bool) return false;
+        List<List<PrimSig>> those = that.fold();
+        again:
+        for(ProductType a: this) {
+           for(List<PrimSig> b: those) if (a.arity()==b.size() && a.isSubtypeOf(b)) continue again;
+           return false;
+        }
+        return true;
     }
 
     /**

@@ -90,8 +90,8 @@ public final class ExprCall extends Expr {
     //============================================================================================================//
 
     /** This visitor assumes the input expression is already fully typechecked, and derive a tight bound on the return type. */
-    private static class DeduceType extends VisitReturn<Type> {
-        private final Env<ExprVar,Type> env=new Env<ExprVar,Type>();
+    private static final class DeduceType extends VisitReturn<Type> {
+        private final Env<ExprVar,Type> env = new Env<ExprVar,Type>();
         private DeduceType() { }
         @Override public Type visit(ExprITE x) throws Err {
             Type t = x.left.accept(this);
@@ -147,7 +147,9 @@ public final class ExprCall extends Expr {
             env.remove(x.var);
             return ans;
         }
-        @Override public Type visit(ExprCall x)     { return x.fun.returnDecl.type; }
+        @Override public Type visit(ExprCall x) throws Err {
+            throw new ErrorSyntax(x.span(), "Return type declaration cannot contain predicate/function calls.");
+        }
         @Override public Type visit(ExprVar x)      { Type t=env.get(x); return (t!=null && t!=EMPTY) ? t : x.type; }
         @Override public Type visit(ExprConstant x) { return x.type; }
         @Override public Type visit(Sig x)          { return x.type; }
@@ -232,11 +234,16 @@ public final class ExprCall extends Expr {
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
+            Type p = fun.params.get(i).type;
             Expr x = this.args.get(i);
-            // Use the function's param type to narrow down the choices
-            Expr y = x.resolve(fun.params.get(i).type, warns).typecheck_as_set();
+            Expr y = x.resolve(p, warns).typecheck_as_set(); // Use the function's param type to narrow down the choices
             if (x!=y) changed=true;
             args.add(y);
+            // if (warns!=null && Version.experimental && !y.type.isSubtypeOf(p))
+            //    warns.add(new ErrorWarning(x.span(), "This argument may contain a tuple not in the parameter's type.\n"
+            //    +"The Alloy Analyzer's analysis may be unsound\n"
+            //    +"if the argument has a tuple outside the parameter's type.\n"
+            //    +"The argument has type "+y.type+"\nbut the parameter has type "+p));
         }
         return changed ? make(pos, closingBracket, fun, args.makeConst(), extraWeight) : this;
     }

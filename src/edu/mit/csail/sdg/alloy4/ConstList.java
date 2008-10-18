@@ -55,7 +55,7 @@ public final class ConstList<T> implements Serializable, List<T> {
         public TempList()                          { this.list = new ArrayList<T>(); }
 
         /** Construct a new empty modifiable TempList with an initial capacity of n. */
-        public TempList(int n)                     { this.list = new ArrayList<T>(n>0 ? n : 0); }
+        public TempList(int n)                     { this.list = new ArrayList<T>(n>=0 ? n : 16); }
 
         /** Construct a new modifiable TempList with the initial content being n references to the given elem (if n<=0, the initial list is empty) */
         public TempList(int n, T elem)             { this.list = new ArrayList<T>(n>0 ? n : 0); while(n>0) {list.add(elem); n--;} }

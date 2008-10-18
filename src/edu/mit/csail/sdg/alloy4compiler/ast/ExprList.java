@@ -91,8 +91,8 @@ public final class ExprList extends Expr {
     //============================================================================================================//
 
     /** Constructs an ExprList node. */
-    private ExprList (Pos pos, Pos closingBracket, Op op, boolean ambiguous, Type type, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
-        super(pos, closingBracket, ambiguous, type, 0, weight, errs);
+    private ExprList (Pos pos, Pos closingBracket, Op op, boolean ambiguous, ConstList<Expr> args, long weight, JoinableList<Err> errs) {
+        super(pos, closingBracket, ambiguous, Type.FORMULA, 0, weight, errs);
         this.op = op;
         this.args = args;
     }
@@ -157,7 +157,7 @@ public final class ExprList extends Expr {
            if (newargs.size()<2) errs = errs.append(new ErrorSyntax(pos, "The builtin disjoint[] predicate must be called with at least two arguments."));
            if (commonArity==EMPTY) errs = errs.append(new ErrorType(pos, "The builtin predicate disjoint[] cannot be used among expressions of different arities."));
         }
-        return new ExprList(pos, closingBracket, op, ambiguous, Type.FORMULA, newargs.makeConst(), weight, errs);
+        return new ExprList(pos, closingBracket, op, ambiguous, newargs.makeConst(), weight, errs);
     }
 
     /** Generates the expression (arg1 and arg2 and arg3 ...) */

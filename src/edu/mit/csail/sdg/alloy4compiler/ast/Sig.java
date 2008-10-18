@@ -37,7 +37,7 @@ import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.Util;
 
-/** Mutable; reresents a signature. */
+/** Mutable; represents a signature. */
 
 public abstract class Sig extends Expr {
 
