@@ -190,8 +190,11 @@ public abstract class Sig extends Expr {
 
     /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
     @Override public boolean isSame(Expr obj) {
+        Sig me = this;
         while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
-        return (obj==this);
+        while(obj instanceof SubsetSig && ((SubsetSig)obj).exact && ((SubsetSig)obj).parents.size()==1) obj = ((SubsetSig)obj).parents.get(0);
+        while(me instanceof SubsetSig && ((SubsetSig)me).exact && ((SubsetSig)me).parents.size()==1) me = ((SubsetSig)me).parents.get(0);
+        return (me == obj);
     }
 
     /** Returns true iff "this is equal or subtype of that" */
@@ -369,6 +372,9 @@ public abstract class Sig extends Expr {
         /** The list of Sig that it is a subset of; this list is never empty. */
         public final ConstList<Sig> parents;
 
+        /** If true, then this sig is EXACTLY equal to the union of its parents. */
+        public final boolean exact;
+
         /** Computes the type for this sig. */
         private static Type getType(Pos pos, String label, Iterable<Sig> parents) throws Err {
             Type ans=null;
@@ -400,6 +406,38 @@ public abstract class Sig extends Expr {
          */
         public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos isPrivate, Pos isMeta) throws Err {
             super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta);
+            this.exact = false;
+            TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
+            if (parents==null || parents.size()==0) {
+               temp.add(UNIV);
+            } else {
+               for(Sig parent:parents) {
+                 if (parent==Sig.UNIV) {temp.clear(); temp.add(UNIV); break;}
+                 else if (parent!=Sig.NONE && !temp.contains(parent)) temp.add(parent);
+               }
+            }
+            if (temp.size()==0) throw new ErrorType(pos, "Sig "+label+" must have at least one non-empty parent.");
+            this.parents = temp.makeConst();
+        }
+
+        /**
+         * Constructs a subset sig.
+         *
+         * @param pos - the position in the original file where this sig was defined (can be null if unknown)
+         * @param parents - the list of parents (if this list is null or empty, we assume the caller means UNIV)
+         * @param label - the name of this sig (it does not need to be unique)
+         * @param exact - if true, it denotes this subset is exact
+         * @param subsetPosition - if nonnull, it denotes the location of the "subset" token in the input file
+         * @param lone - nonnull iff this sig has the "lone" multiplicity
+         * @param one - nonnull iff this sig has the "one" multiplicity
+         * @param some - nonnull iff this sig has the "some" multiplicity
+         *
+         * @throws ErrorSyntax if the signature has two or more multiplicities
+         * @throws ErrorType if parents only contains NONE
+         */
+        public SubsetSig(Pos pos, Collection<Sig> parents, String label, boolean exact, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos isPrivate, Pos isMeta) throws Err {
+            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta);
+            this.exact = exact;
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
             if (parents==null || parents.size()==0) {
                temp.add(UNIV);

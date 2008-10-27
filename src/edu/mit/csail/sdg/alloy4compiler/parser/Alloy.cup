@@ -735,6 +735,7 @@ SigQuals ::= SigQual:a SigQuals:b     {: RESULT=a; for(int i=0;i<5;i++) if (a.ge
 
 SigIn    ::= EXTENDS:a SigRef:x       {: RESULT=new ArrayList<ExprVar>(2); RESULT.add(x); RESULT.add(ExprVar.make(a, "extends")); :};
 SigIn    ::= IN:a SigRefu:x           {: RESULT=x;  x.add(ExprVar.make(a,"in"));                                                  :};
+SigIn    ::= EQUALS:a SigRefu:x       {: RESULT=x;  x.add(ExprVar.make(a,"="));                                                   :};
 SigIn    ::=                          {: RESULT=null;                                                                             :};
 
 SigRef   ::= Name:x                   {: RESULT=x;                                   :};

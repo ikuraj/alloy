@@ -163,6 +163,8 @@ final class BoundsComputer {
            ts.addAll(sol.query(true, p, false));
            if (sum==null) sum=p; else sum=sum.union(p);
         }
+        // If subset is exact, then just use the "sum" as is
+        if (sig.exact) { sol.addSig(sig, sum); return sum; }
         // Allocate a relation for this subset sig, then bound it
         rep.bound("Sig "+sig+" in "+ts+"\n");
         Relation r = sol.addRel(sig.label, null, ts);

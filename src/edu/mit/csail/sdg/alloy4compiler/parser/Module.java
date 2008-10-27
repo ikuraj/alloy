@@ -526,12 +526,14 @@ public final class Module extends Browsable {
         final Pos endOfFields;          // The "}" that marks the end of field declarations
         private final String name,fullname;
         private final Pos abs,lone,one,some,subsig,subset;
+        private final boolean exact;
         private final ConstList<ExprVar> parents;
         private final ConstList<Decl> fields;
         private final Expr appendedFact; // never null
-        private SigAST(Pos pos, Pos isPrivate, String fullname, String name, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
+        private SigAST(Pos pos, Pos isPrivate, String fullname, String name, boolean exact, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
             List<ExprVar> parents, List<Decl> fields, Pos endOfFields, Expr appendedFacts, Module realModule, Sig realSig) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
+            this.exact = exact;
             this.isPrivate = isPrivate;
             this.fullname = fullname;
             this.name = name;
@@ -550,7 +552,7 @@ public final class Module extends Browsable {
             this.realParents = new ArrayList<SigAST>(this.parents.size());
         }
         private SigAST(String fullname, String name, List<ExprVar> parents, Sig realSig) {
-            this(null, null, fullname, name, null, null, null, null, null, null, parents, null, null, null, null, realSig);
+            this(null, null, fullname, name, false, null, null, null, null, null, null, parents, null, null, null, null, realSig);
         }
         @Override public String toString() { return fullname; }
     }
@@ -997,11 +999,12 @@ public final class Module extends Browsable {
         dup(pos, name, true);
         String full = (path.length()==0) ? "this/"+name : path+"/"+name;
         Pos subset=null, subsig=null;
+        boolean exact = false;
         if (par!=null) {
-            if (par.label.charAt(0)=='e') { subsig=par.span().merge(parents.get(0).span()); }
-            else { subset=par.span(); for(ExprVar p:parents) subset=p.span().merge(subset); }
+            if (par.label.equals("extends")) { subsig=par.span().merge(parents.get(0).span()); }
+            else { exact=!par.label.equals("in"); subset=par.span(); for(ExprVar p:parents) subset=p.span().merge(subset); }
         }
-        SigAST obj = new SigAST(pos, isPrivate, full, name, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields, endOfFields, fact,this,null);
+        SigAST obj = new SigAST(pos, isPrivate, full, name, exact, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields, endOfFields, fact,this,null);
         if (hints!=null) for(ExprVar hint:hints) if (hint.label.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
@@ -1042,7 +1045,7 @@ public final class Module extends Browsable {
                oldS.realParents.add(parentAST);
                parents.add(resolveSig(sorted, parentAST));
             }
-            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isPrivate, null);
+            oldS.realSig = new SubsetSig(pos, parents, fullname, oldS.exact, oldS.subset, oldS.lone, oldS.one, oldS.some, oldS.isPrivate, null);
         } else {
             ExprVar sup = null;
             if (oldS.parents.size()==1) {sup=oldS.parents.get(0); if (sup!=null && sup.label.length()==0) sup=null;}

@@ -396,7 +396,7 @@ public final class SimContext extends VisitReturn<Object> {
           case ISSEQ_ARROW_LONE:
               return cset(x.left).product(cset(x.right));
           case IN:
-              return isIn(cset(x.left), x.right);
+              return isIn(x.left, x.right);
           case JOIN:
               if (x.left.isSame(Sig.UNIV)) {
                  SimTupleset tp = cset(x.right);
@@ -434,7 +434,7 @@ public final class SimContext extends VisitReturn<Object> {
           case RANGE:
               return cset(x.left).range(cset(x.right));
           case EQUALS:
-              if (x.left.type.is_int) return cint(x.left)==cint(x.right); else return cset(x.left).equals(cset(x.right));
+              return equal(x.left, x.right);
           case MINUS:
               // Special exception to allow "0-8" to not throw an exception, where 7 is the maximum allowed integer (when bitwidth==4)
               // (likewise, when bitwidth==5, then +15 is the maximum allowed integer, and we want to allow 0-16 without throwing an exception)
@@ -571,10 +571,10 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public SimTupleset visit(Sig x) throws Err {
-       if (x==Sig.NONE) return SimTupleset.EMPTY;
-       if (x==Sig.SIGINT) return SimTupleset.make(min, max);
-       if (x==Sig.SEQIDX) return SimTupleset.make(0, maxseq-1);
-       if (x==Sig.STRING) {
+       if (x.isSame(Sig.NONE)) return SimTupleset.EMPTY;
+       if (x.isSame(Sig.SEQIDX)) return SimTupleset.make(0, maxseq-1);
+       if (x.isSame(Sig.SIGINT)) return SimTupleset.make(min, max);
+       if (x.isSame(Sig.STRING)) {
           if (cacheSTRING == null) {
              cacheSTRING = SimTupleset.EMPTY;
              for(Map.Entry<Expr,SimTupleset> e: sfs.entrySet()) if (e.getKey() instanceof Field || e.getKey() instanceof ExprVar) {
@@ -662,11 +662,11 @@ public final class SimContext extends VisitReturn<Object> {
         b = deNOP(b);
         if (b instanceof PrimSig && ((PrimSig)b).builtin) {
            if (a.arity()!=1) return false;
-           if (b==Sig.UNIV) return true;
-           if (b==Sig.NONE) return false;
-           if (b==Sig.SIGINT) { Integer i = a.get(0).toInt(null); return i!=null; }
-           if (b==Sig.SEQIDX) { Integer i = a.get(0).toInt(null); return i!=null && i>=0 && i<maxseq; }
-           if (b==Sig.STRING) { String at = a.get(0).toString(); return at.length()>0 && (at.charAt(0)=='\"'); }
+           if (b.isSame(Sig.UNIV)) return true;
+           if (b.isSame(Sig.NONE)) return false;
+           if (b.isSame(Sig.SEQIDX)) { Integer i = a.get(0).toInt(null); return i!=null && i>=0 && i<maxseq; }
+           if (b.isSame(Sig.SIGINT)) { Integer i = a.get(0).toInt(null); return i!=null; }
+           if (b.isSame(Sig.STRING)) { String at = a.get(0).toString(); return at.length()>0 && (at.charAt(0)=='\"'); }
         }
         if (b instanceof ExprBinary && ((ExprBinary)b).op==ExprBinary.Op.ARROW) {
            Expr left = ((ExprBinary)b).left, right = ((ExprBinary)b).right;
@@ -683,8 +683,24 @@ public final class SimContext extends VisitReturn<Object> {
         return cset(b).has(a);
     }
 
+    /** Helper method that evaluates the formula "a = b" */
+    public boolean equal(Expr a, Expr b) throws Err {
+        if (a.type.is_bool) return cform(a)==cform(b);
+        if (a.type.is_int) return cint(a)==cint(b);
+        if (a.type.arity()<=0 || a.type.arity()!=b.type.arity()) return false; // type mismatch
+        if (a.isSame(b)) return true; else return cset(a).equals(cset(b));
+    }
+
     /** Helper method that evaluates the formula "a in b" */
-    public boolean isIn(SimTupleset a, Expr b) throws Err {
+    public boolean isIn(Expr a, Expr b) throws Err {
+        if (a.type.arity()<=0 || a.type.arity()!=b.type.arity()) return false; // type mismatch
+        if (b.isSame(Sig.UNIV)) return true; // everything is a subset of UNIV
+        if (a.isSame(b)) return true; // if a==b then a is a subset of b
+        return isIn(cset(a), b);
+    }
+
+    /** Helper method that evaluates the formula "a in b" */
+    private boolean isIn(SimTupleset a, Expr b) throws Err {
         b = deNOP(b);
         if (b instanceof ExprBinary && b.mult!=0 && ((ExprBinary)b).op.isArrow) {
             // Handles possible "binary" or higher-arity multiplicity
