@@ -65,6 +65,9 @@ public final class SimContext extends VisitReturn<Object> {
     /** This maps the current local variables (LET, QUANT, Function Param) to the actual SimTupleset/Integer/Boolean */
     private Env<ExprVar,Object> env = new Env<ExprVar,Object>();
 
+    /** This stores the "call backs" where you can supply Java code to efficiently handle certain functions/predicates. */
+    private final Map<Func,SimCallback> callbacks;
+
     /** The exact values of each sig, field, and skolem (Note: it must not cache the value of any "defined" field, nor any builtin sig) */
     private final Map<Expr,SimTupleset> sfs = new LinkedHashMap<Expr,SimTupleset>();
 
@@ -230,6 +233,7 @@ public final class SimContext extends VisitReturn<Object> {
         if (bitwidth<1 || bitwidth>32) throw new ErrorType("Bitwidth must be between 1 and 32.");
         this.bitwidth = bitwidth;
         this.maxseq = maxseq;
+        this.callbacks = new HashMap<Func,SimCallback>();
         if (bitwidth==32) { max=Integer.MAX_VALUE; min=Integer.MIN_VALUE; } else { max=(1<<(bitwidth-1))-1; min=(0-max)-1; }
         if (maxseq < 0)   throw new ErrorSyntax("The maximum sequence length cannot be negative.");
         if (maxseq > max) throw new ErrorSyntax("With integer bitwidth of "+bitwidth+", you cannot have sequence length longer than "+max);
@@ -246,7 +250,13 @@ public final class SimContext extends VisitReturn<Object> {
         env = old.env.dup();
         cacheUNIV = old.cacheUNIV;
         cacheSTRING = old.cacheSTRING;
+        callbacks = new HashMap<Func,SimCallback>(old.callbacks);
         for(Map.Entry<Expr,SimTupleset> e: old.sfs.entrySet()) sfs.put(e.getKey(), e.getValue());
+    }
+
+    /** Register a callback. */
+    public void addCallback(Func predicateOrFunction, SimCallback callback) {
+        callbacks.put(predicateOrFunction, callback);
     }
 
     /** Returns true if the given atom is an Int atom, or String atom, or is in at least one of the sig. */
@@ -482,7 +492,20 @@ public final class SimContext extends VisitReturn<Object> {
         final int n = f.params.size();
         for(Func ff:current_function) if (ff==f) throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
         Env<ExprVar,Object> newenv = new Env<ExprVar,Object>();
-        for(int i=0; i<n; i++) newenv.put(f.params.get(i), cset(x.args.get(i)));
+        List<SimTupleset> list = new ArrayList<SimTupleset>(x.args.size());
+        for(int i=0; i<n; i++) { SimTupleset ts = cset(x.args.get(i)); newenv.put(f.params.get(i), ts);  list.add(ts); }
+        final SimCallback cb = callbacks.get(f);
+        if (cb!=null) {
+           try {
+              Object answer = cb.compute(f, list);
+              if (answer!=null) {
+                 if (x.args.size()==0) cacheForConstants.put(f, answer);
+                 return answer;
+              }
+           } catch(Exception ex) {
+              // if the callback failed, we can just continue with our original attempt to evaluate this call
+           }
+        }
         Env<ExprVar,Object> oldenv = env;
         env = newenv;
         current_function.add(f);

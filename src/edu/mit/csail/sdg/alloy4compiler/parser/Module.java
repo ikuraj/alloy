@@ -583,6 +583,9 @@ public final class Module extends Browsable {
     /** The simplest path pointing to this Module; it is always equal to this.paths.get(0) */
     private final String path;
 
+    /** Return the simplest path to this module. */
+    public String getPath() { return path; }
+
     /** The list of paths pointing to this Module; it is always nonempty and already sorted by Util.slashComparator */
     private final List<String> paths;
 
