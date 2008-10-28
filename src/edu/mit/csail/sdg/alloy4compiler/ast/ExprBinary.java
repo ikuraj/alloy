@@ -181,14 +181,21 @@ public final class ExprBinary extends Expr {
         /** divide          */  DIV("/",false),
         /** remainder       */  REM("%",false),
         /** =               */  EQUALS("=",false),
+        /** !=              */  NOT_EQUALS("!=",false),
+        /** =&gt;           */  IMPLIES("=>",false),
         /** &lt;            */  LT("<",false),
         /** =&lt;           */  LTE("<=",false),
         /** &gt;            */  GT(">",false),
         /** &gt;=           */  GTE(">=",false),
+        /** !&lt;           */  NOT_LT("!<",false),
+        /** !=&lt;          */  NOT_LTE("!<=",false),
+        /** !&gt;           */  NOT_GT("!>",false),
+        /** !&gt;=          */  NOT_GTE("!>=",false),
         /** &lt;&lt;        */  SHL("<<",false),
         /** &gt;&gt;        */  SHA(">>",false),
         /** &gt;&gt;&gt;    */  SHR(">>>",false),
         /** in              */  IN("in",false),
+        /** !in             */  NOT_IN("!in",false),
         /** &amp;&amp;      */  AND("&&",false),
         /** ||              */  OR("||",false),
         /** &lt;=&gt;       */  IFF("<=>",false);
@@ -228,17 +235,18 @@ public final class ExprBinary extends Expr {
                 if (f instanceof Field && ((Field)f).sig==left.deNOP()) return right;
                 break;
               }
-              case MUL: case DIV: case REM: case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA: {
+              case MUL: case DIV: case REM: case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA:
+              case NOT_LT: case NOT_GT: case NOT_LTE: case NOT_GTE: {
                 left = left.typecheck_as_int();
                 right = right.typecheck_as_int();
                 break;
               }
-              case IFF: {
+              case IFF: case IMPLIES: {
                 left = left.typecheck_as_formula();
                 right = right.typecheck_as_formula();
                 break;
               }
-              case PLUS: case MINUS: case EQUALS: {
+              case PLUS: case MINUS: case EQUALS: case NOT_EQUALS: {
                 Type a=left.type, b=right.type;
                 if (a.hasCommonArity(b) || (a.is_int && b.is_int)) break;
                 if (Type.SIGINT2INT) {
@@ -260,7 +268,8 @@ public final class ExprBinary extends Expr {
             Type type=EMPTY;
             JoinableList<Err> errs = left.errors.join(right.errors);
             if (errs.isEmpty()) switch(this) {
-              case LT: case LTE: case GT: case GTE: case AND: case OR: case IFF:
+              case LT: case LTE: case GT: case GTE: case NOT_LT: case NOT_LTE: case NOT_GT: case NOT_GTE:
+              case AND: case OR: case IFF: case IMPLIES:
                   type = Type.FORMULA;
                   break;
               case MUL: case DIV: case REM: case SHL: case SHR: case SHA:
@@ -270,8 +279,8 @@ public final class ExprBinary extends Expr {
                   type = left.type.unionWithCommonArity(right.type);
                   if (type==EMPTY) e=error(pos, "++ can be used only between two expressions of the same arity.", left, right);
                   break;
-              case PLUS: case MINUS: case EQUALS:
-                  if (this==EQUALS) {
+              case PLUS: case MINUS: case EQUALS: case NOT_EQUALS:
+                  if (this==EQUALS || this==NOT_EQUALS) {
                      if (left.type.hasCommonArity(right.type) || (left.type.is_int && right.type.is_int)) {type=Type.FORMULA; break;}
                   } else {
                      type = (this==PLUS ? left.type.unionWithCommonArity(right.type) : left.type.pickCommonArity(right.type));
@@ -280,7 +289,7 @@ public final class ExprBinary extends Expr {
                   }
                   e=error(pos, this+" can be used only between 2 expressions of the same arity, or between 2 integer expressions.", left, right);
                   break;
-              case IN:
+              case IN: case NOT_IN:
                   type=(left.type.hasCommonArity(right.type)) ? Type.FORMULA : EMPTY;
                   if (type==EMPTY) e=error(pos,this+" can be used only between 2 expressions of the same arity.", left, right);
                   break;
@@ -330,15 +339,16 @@ public final class ExprBinary extends Expr {
         ErrorWarning w=null;
         Type a=left.type, b=right.type;
         switch(op) {
-          case MUL: case DIV: case REM: case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA: {
+          case MUL: case DIV: case REM: case LT: case LTE: case GT: case GTE: case SHL: case SHR: case SHA:
+          case NOT_LTE: case NOT_GTE: case NOT_LT: case NOT_GT: {
             a=(b=Type.INT);
             break;
           }
-          case AND: case OR: case IFF: {
+          case AND: case OR: case IFF: case IMPLIES: {
             a=(b=Type.FORMULA);
             break;
           }
-          case EQUALS: {
+          case EQUALS: case NOT_EQUALS: {
             p=a.intersect(b);
             if (p.hasTuple()) {a=p; b=p;} else {a=a.pickCommonArity(b); b=b.pickCommonArity(a);}
             if (left.type.is_int && right.type.is_int) {
@@ -352,7 +362,7 @@ public final class ExprBinary extends Expr {
             }
             break;
           }
-          case IN: {
+          case IN: case NOT_IN: {
             a=a.pickCommonArity(b);
             b=b.intersect(a);
             if (warns==null) break;

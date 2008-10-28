@@ -95,14 +95,17 @@ public final class ExprCall extends Expr {
         private DeduceType() { }
         @Override public Type visit(ExprITE x) throws Err {
             Type t = x.left.accept(this);
-            if (t.size()==0 || x.right==null) return t;
+            if (t.size()==0) return t;
             Type t2 = x.right.accept(this);
             return t.unionWithCommonArity(t2);
         }
         @Override public Type visit(ExprBinary x) throws Err {
             switch(x.op) {
-              case GT: case GTE: case LT: case LTE: case IFF: case EQUALS: case IN: case OR: case AND: return Type.FORMULA;
-              case MUL: case DIV: case REM: case SHL: case SHR: case SHA: return Type.INT;
+              case IMPLIES: case GT: case GTE: case LT: case LTE: case IFF: case EQUALS: case IN: case OR: case AND:
+              case NOT_LT: case NOT_GT: case NOT_LTE: case NOT_GTE: case NOT_IN: case NOT_EQUALS:
+                  return Type.FORMULA;
+              case MUL: case DIV: case REM: case SHL: case SHR: case SHA:
+                  return Type.INT;
             }
             Type a = x.left.accept(this);
             Type b = x.right.accept(this);

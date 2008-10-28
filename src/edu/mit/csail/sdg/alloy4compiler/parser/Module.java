@@ -304,7 +304,7 @@ public final class Module extends Browsable {
         @Override public Expr visit(ExprITE x) throws Err {
             Expr f = visitThis(x.cond);
             Expr a = visitThis(x.left);
-            Expr b = x.right==null ? null : visitThis(x.right);
+            Expr b = visitThis(x.right);
             return ExprITE.make(x.pos, f, a, b);
         }
 

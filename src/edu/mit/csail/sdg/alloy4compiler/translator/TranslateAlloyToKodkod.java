@@ -744,11 +744,17 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         Expr a=x.left, b=x.right;
         Expression s, s2; IntExpression i; Formula f; Object obj;
         switch(x.op) {
-            case IN:  return k2pos(isIn(cset(a),b), x);
+            case IMPLIES: f=cform(a).not().or(cform(b)); return k2pos(f,x);
+            case IN:      return k2pos(isIn(cset(a),b), x);
+            case NOT_IN:  return k2pos(isIn(cset(a),b).not(), x);
             case LT:  i=cint(a);  f=i.lt(cint(b));   return k2pos(f,x);
             case LTE: i=cint(a);  f=i.lte(cint(b));  return k2pos(f,x);
             case GT:  i=cint(a);  f=i.gt(cint(b));   return k2pos(f,x);
             case GTE: i=cint(a);  f=i.gte(cint(b));  return k2pos(f,x);
+            case NOT_LT:  i=cint(a);  f=i.lt(cint(b)).not();   return k2pos(f,x);
+            case NOT_LTE: i=cint(a);  f=i.lte(cint(b)).not();  return k2pos(f,x);
+            case NOT_GT:  i=cint(a);  f=i.gt(cint(b)).not();   return k2pos(f,x);
+            case NOT_GTE: i=cint(a);  f=i.gte(cint(b)).not();  return k2pos(f,x);
             case AND: f=cform(a); f=f.and(cform(b)); return k2pos(f,x);
             case OR:  f=cform(a); f=f.or(cform(b));  return k2pos(f,x);
             case IFF: f=cform(a); f=f.iff(cform(b)); return k2pos(f,x);
@@ -792,6 +798,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                 obj=visitThis(a);
                 if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b));}
                 else { s=(Expression)obj; f=s.eq(cset(b)); }
+                return k2pos(f,x);
+            case NOT_EQUALS:
+                obj=visitThis(a);
+                if (obj instanceof IntExpression) { i=(IntExpression)obj; f=i.eq(cint(b)).not();}
+                else { s=(Expression)obj; f=s.eq(cset(b)).not(); }
                 return k2pos(f,x);
             case DOMAIN:
                 s=cset(a);

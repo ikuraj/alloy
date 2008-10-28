@@ -395,8 +395,6 @@ public final class SimContext extends VisitReturn<Object> {
           case SOME_ARROW_ANY: case SOME_ARROW_LONE: case SOME_ARROW_ONE: case SOME_ARROW_SOME:
           case ISSEQ_ARROW_LONE:
               return cset(x.left).product(cset(x.right));
-          case IN:
-              return isIn(x.left, x.right);
           case JOIN:
               if (x.left.isSame(Sig.UNIV)) {
                  SimTupleset tp = cset(x.right);
@@ -407,34 +405,28 @@ public final class SimContext extends VisitReturn<Object> {
                  return tp.head(tp.arity()-1);
               }
               return cset(x.left).join(cset(x.right));
-          case AND:
-              return cform(x.left) && cform(x.right); // Java always has the short-circuit behavior
-          case OR:
-              return cform(x.left) || cform(x.right); // Java always has the short-circuit behavior
-          case IFF:
-              return cform(x.left) == cform(x.right);
-          case SHA:
-              return trunc(cint(x.left) >> (shiftmask & cint(x.right)));
-          case SHR:
-              return trunc(cint(x.left) >>> (shiftmask & cint(x.right)));
-          case SHL:
-              return trunc(cint(x.left) << (shiftmask & cint(x.right)));
-          case INTERSECT:
-              return cset(x.left).intersect(cset(x.right));
-          case GT:
-              return cint(x.left) > cint(x.right);
-          case GTE:
-              return cint(x.left) >= cint(x.right);
-          case LT:
-              return cint(x.left) < cint(x.right);
-          case LTE:
-              return cint(x.left) <= cint(x.right);
-          case DOMAIN:
-              return cset(x.left).domain(cset(x.right));
-          case RANGE:
-              return cset(x.left).range(cset(x.right));
-          case EQUALS:
-              return equal(x.left, x.right);
+          case IMPLIES:    return !cform(x.left) || cform(x.right);
+          case AND:        return cform(x.left) && cform(x.right);
+          case OR:         return cform(x.left) || cform(x.right);
+          case IFF:        return cform(x.left) == cform(x.right);
+          case SHA:        return trunc(cint(x.left) >> (shiftmask & cint(x.right)));
+          case SHR:        return trunc(cint(x.left) >>> (shiftmask & cint(x.right)));
+          case SHL:        return trunc(cint(x.left) << (shiftmask & cint(x.right)));
+          case INTERSECT:  return cset(x.left).intersect(cset(x.right));
+          case GT:         return cint(x.left) > cint(x.right);
+          case GTE:        return cint(x.left) >= cint(x.right);
+          case LT:         return cint(x.left) < cint(x.right);
+          case LTE:        return cint(x.left) <= cint(x.right);
+          case NOT_GT:     return !(cint(x.left) > cint(x.right));
+          case NOT_GTE:    return !(cint(x.left) >= cint(x.right));
+          case NOT_LT:     return !(cint(x.left) < cint(x.right));
+          case NOT_LTE:    return !(cint(x.left) <= cint(x.right));
+          case DOMAIN:     return cset(x.left).domain(cset(x.right));
+          case RANGE:      return cset(x.left).range(cset(x.right));
+          case EQUALS:     return equal(x.left, x.right);
+          case NOT_EQUALS: return !equal(x.left, x.right);
+          case IN:         return isIn(x.left, x.right);
+          case NOT_IN:     return !isIn(x.left, x.right);
           case MINUS:
               // Special exception to allow "0-8" to not throw an exception, where 7 is the maximum allowed integer (when bitwidth==4)
               // (likewise, when bitwidth==5, then +15 is the maximum allowed integer, and we want to allow 0-16 without throwing an exception)

@@ -314,7 +314,7 @@ public abstract class Expr extends Browsable {
      * Returns the formula (this implies x)
      * <p> this and x must both be formulas
      */
-    public final Expr implies(Expr x) { return ExprBinary.Op.OR.make(span().merge(x.span()), null, not(), x); }
+    public final Expr implies(Expr x) { return ExprBinary.Op.IMPLIES.make(span().merge(x.span()), null, this, x); }
 
     /**
      * Returns the expression (this.x)
