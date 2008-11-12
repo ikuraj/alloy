@@ -49,7 +49,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprQt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
@@ -486,14 +486,15 @@ public final class SimContext extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprCall x) throws Err {
         final Func f = x.fun;
-        final Object candidate = f.params.size()==0 ? cacheForConstants.get(f) : null;
+        final int n = f.count();
+        final Object candidate = n==0 ? cacheForConstants.get(f) : null;
         if (candidate!=null) return candidate;
         final Expr body = f.getBody();
-        final int n = f.params.size();
+        if (body.type.arity()<0 || body.type.arity()!=f.returnDecl.type.arity()) throw new ErrorType(body.span(), "Function return value not fully resolved.");
         for(Func ff:current_function) if (ff==f) throw new ErrorSyntax(x.span(), ""+f+" cannot call itself recursively!");
         Env<ExprVar,Object> newenv = new Env<ExprVar,Object>();
         List<SimTupleset> list = new ArrayList<SimTupleset>(x.args.size());
-        for(int i=0; i<n; i++) { SimTupleset ts = cset(x.args.get(i)); newenv.put(f.params.get(i), ts);  list.add(ts); }
+        for(int i=0; i<n; i++) { SimTupleset ts = cset(x.args.get(i)); newenv.put(f.get(i), ts);  list.add(ts); }
         final SimCallback cb = callbacks.get(f);
         if (cb!=null) {
            try {
@@ -512,7 +513,7 @@ public final class SimContext extends VisitReturn<Object> {
         Object ans = visitThis(body);
         env = oldenv;
         current_function.remove(current_function.size()-1);
-        if (f.params.size()==0) cacheForConstants.put(f, ans);
+        if (f.count()==0) cacheForConstants.put(f, ans);
         return ans;
     }
 
@@ -543,7 +544,7 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public Object visit(ExprLet x) throws Err {
-        env.put(x.var, visitThis(x.var.expr));
+        env.put(x.var, visitThis(x.expr));
         Object ans = visitThis(x.sub);
         env.remove(x.var);
         return ans;
@@ -623,47 +624,52 @@ public final class SimContext extends VisitReturn<Object> {
     }
 
     /** Helper method for enumerating all possibilties for a quantification-expression. */
-    private int enumerate(final TempList<SimTuple> store, int sum, final ExprQuant x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
-       final int n = x.vars.size();
-       final ExprVar v = x.vars.get(i);
-       final SimTupleset e = cset(v.expr);
+    private int enumerate(final TempList<SimTuple> store, int sum, final ExprQt x, final Expr body, final int i) throws Err { // if op is ALL NO SOME ONE LONE then it always returns 0 1 2
+       final int n = x.count();
+       final ExprVar v = x.get(i);
+       final Expr bound = x.getBound(i);
+       final SimTupleset e = cset(bound);
        final Iterator<SimTupleset> it;
-       if      (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.LONEOF) it = e.loneOf();
-       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.ONEOF)  it = e.oneOf();
-       else if (v.expr.mult==1 && ((ExprUnary)(v.expr)).op==ExprUnary.Op.SOMEOF) it = e.someOf();
-       else                                                                      it = e.setOf();
+       switch(bound.mult()) {
+         case LONEOF: it = e.loneOf(); break;
+         case ONEOF:  it = e.oneOf();  break;
+         case SOMEOF: it = e.someOf(); break;
+         default:     it = e.setOf();
+       }
        while(it.hasNext()) {
           final SimTupleset binding = it.next();
-          if (v.expr.mult==2 && !isIn(binding, v.expr)) continue;
+          if (bound.mult==2 && !isIn(binding, bound)) continue;
           env.put(v, binding);
           if (i<n-1) sum = enumerate(store, sum, x, body, i+1);
-             else if (x.op==ExprQuant.Op.SUM) sum += cint(body);
-             else if (x.op!=ExprQuant.Op.COMPREHENSION) sum += cform(body)?1:0;
+             else if (x.op==ExprQt.Op.SUM) sum += cint(body);
+             else if (x.op!=ExprQt.Op.COMPREHENSION) sum += cform(body)?1:0;
              else if (cform(body)) {
                SimTuple a=null, b;
-               for(int j=0; j<n; j++) { b=((SimTupleset)(env.get(x.vars.get(j)))).getTuple(); if (a==null) a=b; else a=a.product(b); }
+               for(int j=0; j<n; j++) { b=((SimTupleset)(env.get(x.get(j)))).getTuple(); if (a==null) a=b; else a=a.product(b); }
                store.add(a);
              }
           env.remove(v);
-          if (sum>=2 && x.op!=ExprQuant.Op.COMPREHENSION && x.op!=ExprQuant.Op.SUM) return 2; // no need to enumerate further
+          if (sum>=2 && x.op!=ExprQt.Op.COMPREHENSION && x.op!=ExprQt.Op.SUM) return 2; // no need to enumerate further
        }
        return sum;
     }
 
     /** {@inheritDoc} */
-    @Override public Object visit(ExprQuant x) throws Err {
-        if (x.op == ExprQuant.Op.COMPREHENSION) {
+    @Override public Object visit(ExprQt x) throws Err {
+        Expr xx = x.desugar();
+        if (xx instanceof ExprQt) x = (ExprQt)xx; else return visitThis(xx);
+        if (x.op == ExprQt.Op.COMPREHENSION) {
            TempList<SimTuple> ans = new TempList<SimTuple>();
            enumerate(ans, 0, x, x.sub, 0);
            return SimTupleset.make(ans.makeConst());
         }
-        if (x.op == ExprQuant.Op.ALL)  return enumerate(null, 0, x, x.sub.not(), 0) == 0;
-        if (x.op == ExprQuant.Op.NO)   return enumerate(null, 0, x, x.sub,       0) == 0;
-        if (x.op == ExprQuant.Op.SOME) return enumerate(null, 0, x, x.sub,       0) >= 1;
-        if (x.op == ExprQuant.Op.LONE) return enumerate(null, 0, x, x.sub,       0) <= 1;
-        if (x.op == ExprQuant.Op.ONE)  return enumerate(null, 0, x, x.sub,       0) == 1;
-        if (x.op == ExprQuant.Op.SUM)  return trunc(enumerate(null, 0, x, x.sub, 0));
-        throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprQuant.accept()");
+        if (x.op == ExprQt.Op.ALL)  return enumerate(null, 0, x, x.sub.not(), 0) == 0;
+        if (x.op == ExprQt.Op.NO)   return enumerate(null, 0, x, x.sub,       0) == 0;
+        if (x.op == ExprQt.Op.SOME) return enumerate(null, 0, x, x.sub,       0) >= 1;
+        if (x.op == ExprQt.Op.LONE) return enumerate(null, 0, x, x.sub,       0) <= 1;
+        if (x.op == ExprQt.Op.ONE)  return enumerate(null, 0, x, x.sub,       0) == 1;
+        if (x.op == ExprQt.Op.SUM)  return trunc(enumerate(null, 0, x, x.sub, 0));
+        throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprQt.accept()");
     }
 
     /** Helper method that removes NOP in front of the given expression. */

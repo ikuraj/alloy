@@ -22,7 +22,9 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
@@ -52,24 +54,49 @@ public final class Func extends Browsable {
     /** True if this is a predicate; false if this is a function. */
     public final boolean isPred;
 
-    /** The list of parameters; may be an empty list if this predicate/function has no parameters. */
-    public final ConstList<ExprVar> params;
+    /** The list of parameter declarations; may be an empty list if this predicate/function has no parameters. */
+    public final ConstList<Decl> decls;
 
     /** The declared return type; never null. */
     public final Expr returnDecl;
 
+    /** Return the number of parameters. */
+    public int count() {
+       int n = 0;
+       for(Decl d: decls) n = n + d.names.size();
+       return n;
+    }
+
+    /** Return the i-th parameter where i goes from 0 to count()-1 */
+    public ExprVar get(int i) {
+       if (i<0) throw new NoSuchElementException();
+       for(Decl d: decls) {
+          if (i<d.names.size()) return d.names.get(i);
+          i = i - d.names.size();
+       }
+       throw new NoSuchElementException();
+    }
+
+    /** Return the list of all parameters. */
+    public List<ExprVar> params() {
+        int n = count();
+        List<ExprVar> list = new ArrayList<ExprVar>(n);
+        for(Decl d: decls) list.addAll(d.names);
+        return list;
+    }
+
     /**
      * Constructs a new predicate/function.
      *
-     * <p>  The first parameter's bound should be an expression with no free variables.
-     * <br> The second parameter's bound should be an expression with no free variables, except possibly the first parameter.
-     * <br> The third parameter's bound should be an expression with no free variables, except possibly the first two parameters.
+     * <p>  The first declaration's bound should be an expression with no free variables.
+     * <br> The second declaration's bound should be an expression with no free variables, except possibly the parameters in first declaration.
+     * <br> The third declaration's bound should be an expression with no free variables, except possibly the parameters in first two declarations.
      * <br> etc.
      * <br> The return declaration should have no free variables, except possibly the list of input parameters.
      *
      * @param pos - the original position in the file
      * @param label - the label for this predicate/function (does not have to be unique)
-     * @param vars - the list of parameters (can be null or an empty list if this predicate/function has no parameters)
+     * @param decls - the list of parameter declarations (can be null or an empty list if this predicate/function has no parameters)
      * @param returnDecl - the return declaration (null if this is a predicate rather than a function)
      *
      * @throws ErrorType if returnType!=null and returnType cannot be unambiguously typechecked to be a set/relation
@@ -77,23 +104,23 @@ public final class Func extends Browsable {
      * @throws ErrorSyntax if at least one of the parameter declaration contains a predicate/function call
      * @throws ErrorSyntax if this function's return type declaration contains a predicate/function call
      */
-    public Func(Pos pos, String label, List<ExprVar> vars, Expr returnDecl) throws Err {
-        this(pos, null, label, vars, returnDecl);
+    public Func(Pos pos, String label, List<Decl> decls, Expr returnDecl, Expr body) throws Err {
+        this(pos, null, label, decls, returnDecl, body);
     }
 
     /**
      * Constructs a new predicate/function.
      *
-     * <p>  The first parameter's bound should be an expression with no free variables.
-     * <br> The second parameter's bound should be an expression with no free variables, except possibly the first parameter.
-     * <br> The third parameter's bound should be an expression with no free variables, except possibly the first two parameters.
+     * <p>  The first declaration's bound should be an expression with no free variables.
+     * <br> The second declaration's bound should be an expression with no free variables, except possibly the parameters in first declaration.
+     * <br> The third declaration's bound should be an expression with no free variables, except possibly the parameters in first two declarations.
      * <br> etc.
      * <br> The return declaration should have no free variables, except possibly the list of input parameters.
      *
      * @param pos - the original position in the file
      * @param isPrivate - if nonnull, then the user intended this func/pred to be "private"
      * @param label - the label for this predicate/function (does not have to be unique)
-     * @param vars - the list of parameters (can be null or an empty list if this predicate/function has no parameters)
+     * @param decls - the list of parameter declarations (can be null or an empty list if this predicate/function has no parameters)
      * @param returnDecl - the return declaration (null if this is a predicate rather than a function)
      *
      * @throws ErrorType if returnType!=null and returnType cannot be unambiguously typechecked to be a set/relation
@@ -101,39 +128,27 @@ public final class Func extends Browsable {
      * @throws ErrorSyntax if at least one of the parameter declaration contains a predicate/function call
      * @throws ErrorSyntax if this function's return type declaration contains a predicate/function call
      */
-    public Func(Pos pos, Pos isPrivate, String label, List<ExprVar> vars, Expr returnDecl) throws Err {
-        if (pos==null) pos=Pos.UNKNOWN;
-        this.pos=pos;
-        this.isPrivate=isPrivate;
-        this.label=(label==null ? "" : label);
-        this.isPred=(returnDecl==null);
-        if (returnDecl==null) {
-            this.body = (this.returnDecl = ExprConstant.FALSE);
-        }
-        else {
-            returnDecl = returnDecl.typecheck_as_set();
-            if (returnDecl.ambiguous) returnDecl = returnDecl.resolve_as_set(null);
-            if (!returnDecl.errors.isEmpty()) throw returnDecl.errors.pick();
-            // If the return declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
-            if (returnDecl.mult==0 && returnDecl.type.arity()==1) returnDecl=ExprUnary.Op.ONEOF.make(null, returnDecl);
-            this.returnDecl = returnDecl;
-            Expr none = Sig.NONE;
-            for(int i = this.returnDecl.type.arity(); i>1; i--) none=none.product(Sig.NONE);
-            this.body = none;
-        }
-        this.params = ConstList.make(vars);
-        for(int i=0; i<this.params.size(); i++)
-          for(int j=i+1; j<this.params.size(); j++)
-            if (this.params.get(i)==this.params.get(j))
-              throw new ErrorSyntax(this.params.get(j).span(),
+    public Func(Pos pos, Pos isPrivate, String label, List<Decl> decls, Expr returnDecl, Expr body) throws Err {
+        if (pos==null) pos = Pos.UNKNOWN;
+        this.pos = pos;
+        this.isPrivate = isPrivate;
+        this.label = (label==null ? "" : label);
+        this.isPred = (returnDecl==null);
+        if (returnDecl==null) returnDecl = ExprConstant.FALSE;
+        if (returnDecl.mult==0 && returnDecl.type.arity()==1) returnDecl = ExprUnary.Op.ONEOF.make(null, returnDecl);
+        this.returnDecl = returnDecl;
+        this.body = body;
+        if (body.mult!=0) throw new ErrorSyntax(body.span(), "Multiplicity expression not allowed here.");
+        this.decls = ConstList.make(decls);
+        for(int n=count(), i=0; i<n; i++)
+          for(int j=i+1; j<n; j++)
+            if (get(i)==get(j))
+              throw new ErrorSyntax(get(j).span(),
                 "The same variable cannot appear more than once in a predicate/function's parameter list.");
-        for(int i=0; i<this.params.size(); i++)
-           if (this.params.get(i).expr.hasCall())
-              throw new ErrorSyntax(this.params.get(i).expr.span(),
-                "Parameter declaration cannot contain predicate/function calls.");
-        if (this.returnDecl.hasCall())
-            throw new ErrorSyntax(returnDecl.span(),
-                "Return type declaration cannot contain predicate/function calls.");
+        for(Decl d: decls) if (d.expr!=null && d.expr.hasCall())
+           throw new ErrorSyntax(d.expr.span(), "Parameter declaration cannot contain predicate/function calls.");
+        if (returnDecl.hasCall())
+           throw new ErrorSyntax(returnDecl.span(), "Return type declaration cannot contain predicate/function calls.");
     }
 
     /** The predicate/function body; never null. */
@@ -159,12 +174,12 @@ public final class Func extends Browsable {
             if (newBody.ambiguous) newBody = newBody.resolve_as_set(null);
             if (newBody.errors.size()>0) throw newBody.errors.pick();
             if (newBody.type.arity() != returnDecl.type.arity())
-                throw new ErrorType(newBody.span(),
-                "Function return type is "+returnDecl.type+",\nso the body must be a relation with arity "
-                +returnDecl.type.arity()+".\nSo the body's type cannot be: "+newBody.type);
+               throw new ErrorType(newBody.span(),
+               "Function return type is "+returnDecl.type+",\nso the body must be a relation with arity "
+               +returnDecl.type.arity()+".\nSo the body's type cannot be: "+newBody.type);
         }
         if (newBody.mult!=0) throw new ErrorSyntax(newBody.span(), "Multiplicity expression not allowed here.");
-        this.body=newBody;
+        this.body = newBody;
     }
 
     /**
@@ -192,13 +207,13 @@ public final class Func extends Browsable {
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {
-        Browsable p = make("parameters", params);
+        Browsable p = make("parameters", params());
         Browsable r = make("return type", returnDecl);
         Browsable b = make("body", body);
         if (isPred) {
-           if (params.size()==0) return Util.asList(b); else return Util.asList(p, b);
+           if (count()==0) return Util.asList(b); else return Util.asList(p, b);
         } else {
-           if (params.size()==0) return Util.asList(r, b); else return Util.asList(p, r, b);
+           if (count()==0) return Util.asList(r, b); else return Util.asList(p, r, b);
         }
     }
 }

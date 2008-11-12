@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -45,6 +46,9 @@ import kodkod.ast.IntComparisonFormula;
 import kodkod.ast.IntConstant;
 import kodkod.ast.IntExpression;
 import kodkod.ast.IntToExprCast;
+import kodkod.ast.NaryExpression;
+import kodkod.ast.NaryFormula;
+import kodkod.ast.NaryIntExpression;
 import kodkod.ast.Node;
 import kodkod.ast.ProjectExpression;
 import kodkod.ast.MultiplicityFormula;
@@ -90,7 +94,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
             public Integer visit(Decl x)                  { return 1 + x.expression().accept(this); }
             public Integer visit(ExprToIntCast x)         { return 1 + x.expression().accept(this); }
             public Integer visit(UnaryExpression x)       { return 1 + x.expression().accept(this); }
-            public Integer visit(UnaryIntExpression x)    { return 1 + x.expression().accept(this); }
+            public Integer visit(UnaryIntExpression x)    { return 1 + x.intExpr().accept(this); }
             public Integer visit(MultiplicityFormula x)   { return 1 + x.expression().accept(this); }
             public Integer visit(BinaryExpression x)      { return 1 + max(x.left().accept(this), x.right().accept(this)); }
             public Integer visit(ComparisonFormula x)     { return 1 + max(x.left().accept(this), x.right().accept(this)); }
@@ -99,9 +103,9 @@ public final class TranslateKodkodToJava implements VoidVisitor {
             public Integer visit(IntComparisonFormula x)  { return 1 + max(x.left().accept(this), x.right().accept(this)); }
             public Integer visit(IfExpression x)          { return 1 + max(x.condition().accept(this), x.thenExpr().accept(this), x.elseExpr().accept(this)); }
             public Integer visit(IfIntExpression x)       { return 1 + max(x.condition().accept(this), x.thenExpr().accept(this), x.elseExpr().accept(this)); }
-            public Integer visit(SumExpression x)         { return 1 + max(x.declarations().accept(this), x.intExpr().accept(this)); }
-            public Integer visit(QuantifiedFormula x)     { return 1 + max(x.declarations().accept(this), x.formula().accept(this)); }
-            public Integer visit(Comprehension x)         { return 1 + max(x.declarations().accept(this), x.formula().accept(this)); }
+            public Integer visit(SumExpression x)         { return 1 + max(x.decls().accept(this), x.intExpr().accept(this)); }
+            public Integer visit(QuantifiedFormula x)     { return 1 + max(x.decls().accept(this), x.formula().accept(this)); }
+            public Integer visit(Comprehension x)         { return 1 + max(x.decls().accept(this), x.formula().accept(this)); }
             public Integer visit(Decls x) {
                 int max = 0, n = x.size();
                 for(int i=0; i<n; i++) max = max(max, x.get(i).accept(this));
@@ -109,7 +113,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
             }
             public Integer visit(ProjectExpression x) {
                 int max = x.expression().accept(this);
-                for(IntExpression t: x.columns()) max = max(max, t.accept(this));
+                for(Iterator<IntExpression> t = x.columns(); t.hasNext();) { max = max(max, t.next().accept(this)); }
                 return max;
             }
             public Integer visit(RelationPredicate x) {
@@ -118,6 +122,21 @@ public final class TranslateKodkodToJava implements VoidVisitor {
                     return max(f.domain().accept(this), f.range().accept(this));
                 }
                 return 1;
+            }
+            public Integer visit(NaryExpression x) {
+                int max = 0;
+                for(int m=0, n=x.size(), i=0; i<n; i++) { m=x.child(i).accept(this); if (i==0 || max<m) max=m; }
+                return max + 1;
+            }
+            public Integer visit(NaryIntExpression x) {
+                int max = 0;
+                for(int m=0, n=x.size(), i=0; i<n; i++) { m=x.child(i).accept(this); if (i==0 || max<m) max=m; }
+                return max + 1;
+            }
+            public Integer visit(NaryFormula x) {
+                int max = 0;
+                for(int m=0, n=x.size(), i=0; i<n; i++) { m=x.child(i).accept(this); if (i==0 || max<m) max=m; }
+                return max + 1;
             }
         };
         Object ans = node.accept(vis);
@@ -172,6 +191,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         file.printf("import java.util.Arrays;%n");
         file.printf("import java.util.List;%n");
         file.printf("import kodkod.ast.*;%n");
+        file.printf("import kodkod.ast.operator.*;%n");
         file.printf("import kodkod.instance.*;%n");
         file.printf("import kodkod.engine.*;%n");
         file.printf("import kodkod.engine.satlab.SATFactory;%n");
@@ -299,7 +319,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
         String newname=makename(x); if (newname==null) return;
         String expr=make(x.expression());
         List<String> names=new ArrayList<String>();
-        for(IntExpression i:x.columns()) names.add(make(i));
+        for(Iterator<IntExpression> i = x.columns(); i.hasNext(); ) { names.add(make(i.next())); }
         for(int i=0; i<names.size(); i++) {
             if (i==0) file.printf("Expression %s=%s.over(", newname, expr); else file.printf(",");
             file.printf("%s", names.get(i));
@@ -360,7 +380,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     /** {@inheritDoc} */
     public void visit(UnaryIntExpression x) {
         String newname=makename(x); if (newname==null) return;
-        String sub=make(x.expression());
+        String sub=make(x.intExpr());
         switch(x.op()) {
            case MINUS: file.printf("IntExpression %s=%s.negate();%n", newname, sub); break;
            case NOT: file.printf("IntExpression %s=%s.not();%n", newname, sub); break;
@@ -467,7 +487,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     /** {@inheritDoc} */
     public void visit(Comprehension x) {
         String newname=makename(x); if (newname==null) return;
-        String d=make(x.declarations());
+        String d=make(x.decls());
         String f=make(x.formula());
         file.printf("Expression %s=%s.comprehension(%s);%n",newname,f,d);
     }
@@ -475,7 +495,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     /** {@inheritDoc} */
     public void visit(QuantifiedFormula x) {
         String newname=makename(x); if (newname==null) return;
-        String d=make(x.declarations());
+        String d=make(x.decls());
         String f=make(x.formula());
         switch(x.quantifier()) {
            case ALL: file.printf("Formula %s=%s.forAll(%s);%n",newname,f,d); break;
@@ -487,7 +507,7 @@ public final class TranslateKodkodToJava implements VoidVisitor {
     /** {@inheritDoc} */
     public void visit(SumExpression x) {
         String newname=makename(x); if (newname==null) return;
-        String d=make(x.declarations());
+        String d=make(x.decls());
         String f=make(x.intExpr());
         file.printf("IntExpression %s=%s.sum(%s);%n",newname,f,d);
     }
@@ -558,5 +578,54 @@ public final class TranslateKodkodToJava implements VoidVisitor {
           case ACYCLIC: { file.printf("Formula %s=%s.acyclic();%n",newname,rel); return; }
         }
         throw new RuntimeException("Unknown RelationPredicate \""+x+"\" encountered");
+    }
+
+    /** {@inheritDoc} */
+    public void visit(NaryExpression x) {
+        String newname = makename(x); if (newname==null) return;
+        String[] list = new String[x.size()];
+        for(int i=0; i<list.length; i++)  list[i] = make(x.child(i));
+        file.printf("Expression %s=Expression.compose(ExprOperator.", newname);
+        switch(x.op()) {
+           case INTERSECTION: file.print("INTERSECTION"); break;
+           case OVERRIDE: file.print("OVERRIDE"); break;
+           case PRODUCT: file.print("PRODUCT"); break;
+           case UNION: file.print("UNION"); break;
+           default: throw new RuntimeException("Unknown kodkod operator \""+x.op()+"\" encountered");
+        }
+        for(int i=0; i<list.length; i++) file.printf(", %s", list[i]);
+        file.printf(");%n");
+    }
+
+    /** {@inheritDoc} */
+    public void visit(NaryIntExpression x) {
+        String newname = makename(x); if (newname==null) return;
+        String[] list = new String[x.size()];
+        for(int i=0; i<list.length; i++)  list[i] = make(x.child(i));
+        file.printf("IntExpression %s=IntExpression.compose(IntOperator.", newname);
+        switch(x.op()) {
+           case PLUS: file.print("PLUS"); break;
+           case MULTIPLY: file.print("MULTIPLY"); break;
+           case AND: file.print("AND"); break;
+           case OR: file.print("OR"); break;
+           default: throw new RuntimeException("Unknown kodkod operator \""+x.op()+"\" encountered");
+        }
+        for(int i=0; i<list.length; i++) file.printf(", %s", list[i]);
+        file.printf(");%n");
+    }
+
+    /** {@inheritDoc} */
+    public void visit(NaryFormula x) {
+        String newname = makename(x); if (newname==null) return;
+        String[] list = new String[x.size()];
+        for(int i=0; i<list.length; i++)  list[i] = make(x.child(i));
+        file.printf("Formula %s=Formula.compose(FormulaOperator.", newname);
+        switch(x.op()) {
+           case AND: file.print("AND"); break;
+           case OR: file.print("OR"); break;
+           default: throw new RuntimeException("Unknown kodkod operator \""+x.op()+"\" encountered");
+        }
+        for(int i=0; i<list.length; i++) file.printf(", %s", list[i]);
+        file.printf(");%n");
     }
 }

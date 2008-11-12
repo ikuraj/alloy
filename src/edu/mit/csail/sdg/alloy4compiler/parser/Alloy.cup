@@ -47,8 +47,8 @@ import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
-import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
+import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBadJoin;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
@@ -56,8 +56,8 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprQt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -313,38 +313,6 @@ action code {:
     }
     private void nod(List<ExprVar> names) throws Err {
         if (names!=null) for(ExprVar n:names) if (n!=null && n.label.indexOf('$')>=0) throw new ErrorSyntax(n.pos, "The name cannot contain the '$' symbol.");
-    }
-    private Expr q (Pos pos, Pos closingBracket, ExprQuant.Op op, List<Decl> decls, Expr sub) throws ErrorSyntax {
-        for(Decl d:decls) {
-            if (d.isPrivate!=null) {
-                ExprVar n=d.names.get(0);
-                throw new ErrorSyntax(d.isPrivate.merge(n.pos), "Local variable \""+n.label+"\" is always private already.");
-            }
-            if (d.disjoint2!=null) {
-                ExprVar n=d.names.get(d.names.size()-1);
-                throw new ErrorSyntax(d.disjoint2.merge(n.pos), "Local variable \""+n.label+"\" cannot be bound to a 'disjoint' expression.");
-            }
-        }
-        Expr guard = null;
-        final TempList<ExprVar> tempvars = new TempList<ExprVar>();
-        for(Decl d: decls) {
-            int num = d.names.size();
-            List<Expr> disjoints = (num>1 && d.disjoint!=null) ? (new ArrayList<Expr>(num)) : null;
-            for(ExprVar n: d.names) {
-                ExprVar var = ExprVar.make(n.pos, n.label, d.expr);
-                tempvars.add(var);
-                if (disjoints!=null) disjoints.add(var);
-            }
-            if (disjoints!=null) guard = ExprList.makeDISJOINT(d.disjoint, null, disjoints).and(guard);
-        }
-        if (guard!=null) {
-            switch(op) {
-              case SUM: sub = guard.ite(sub, ExprConstant.ZERO); break;
-              case ALL: sub = guard.implies(sub); break;
-              default: sub = guard.and(sub);
-            }
-        }
-        return op.make(pos, closingBracket, tempvars.makeConst(), sub);
     }
     private Expr t(Pos pos, Pos oldClosing, Expr left, Expr right, Pos close) throws Err {
       if (right instanceof ExprVar) {
@@ -768,19 +736,33 @@ Namex ::= EXACTLY Name:x               {: nod(x); RESULT=new ArrayList<ExprVar>(
 Namex ::= Namex:a COMMA         Name:b {: nod(b);              a.add(b); RESULT=a;                                   :};
 Namex ::= Namex:a COMMA EXACTLY Name:b {: nod(b); a.add(null); a.add(b); RESULT=a;                                   :};
 
-Decla ::=           PART:k Names   COLON        Expr   {: if (1==1) throw Module.hint(k,"part");         :};
-Decla ::=           EXH:k  Names   COLON        Expr   {: if (1==1) throw Module.hint(k,"exh");          :};
-Decla ::=           DISJ:k Names:a COLON        Expr:b {: RESULT=new Decl(null, k,    null, a, mult(b)); :};
-Decla ::= PRIVATE:p DISJ:k Names:a COLON        Expr:b {: RESULT=new Decl(p,    k,    null, a, mult(b)); :};
-Decla ::= PRIVATE:p        Names:a COLON        Expr:b {: RESULT=new Decl(p,    null, null, a, mult(b)); :};
-Decla ::=                  Names:a COLON        Expr:b {: RESULT=new Decl(null, null, null, a, mult(b)); :};
+Decla ::=           PART:k Names   COLON EQUALS          Expr    {: if (1==1) throw Module.hint(k, "part");                                   :};
+Decla ::=           EXH:k  Names   COLON EQUALS          Expr    {: if (1==1) throw Module.hint(k, "exh");                                    :};
+Decla ::=           DISJ:d Names   COLON EQUALS          Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+Decla ::= PRIVATE   DISJ:d Names   COLON EQUALS          Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+Decla ::= PRIVATE          Names   COLON:a EQUALS:b      Expr    {: if (1==1) throw new ErrorSyntax(a.merge(b), "Defined fields is not yet implemented."); :};
+Decla ::=                  Names   COLON:a EQUALS:b      Expr    {: if (1==1) throw new ErrorSyntax(a.merge(b), "Defined fields is not yet implemented."); :};
 
-Decla ::=           PART:k Names   COLON DISJ   Expr   {: if (1==1) throw Module.hint(k,"part");         :};
-Decla ::=           EXH:k  Names   COLON DISJ   Expr   {: if (1==1) throw Module.hint(k,"exh");          :};
-Decla ::=           DISJ:k Names:a COLON DISJ:d Expr:b {: RESULT=new Decl(null, k,    d,    a, mult(b)); :};
-Decla ::= PRIVATE:p DISJ:k Names:a COLON DISJ:d Expr:b {: RESULT=new Decl(p,    k,    d,    a, mult(b)); :};
-Decla ::= PRIVATE:p        Names:a COLON DISJ:d Expr:b {: RESULT=new Decl(p,    null, d,    a, mult(b)); :};
-Decla ::=                  Names:a COLON DISJ:d Expr:b {: RESULT=new Decl(null, null, d,    a, mult(b)); :};
+Decla ::=           PART:k Names   COLON EQUALS DISJ     Expr    {: if (1==1) throw Module.hint(k, "part");                                   :};
+Decla ::=           EXH:k  Names   COLON EQUALS DISJ     Expr    {: if (1==1) throw Module.hint(k, "exh");                                    :};
+Decla ::=           DISJ   Names   COLON EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+Decla ::= PRIVATE   DISJ   Names   COLON EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+Decla ::= PRIVATE          Names   COLON EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+Decla ::=                  Names   COLON EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+
+Decla ::=           PART:k Names   COLON                 Expr    {: if (1==1) throw Module.hint(k, "part");        :};
+Decla ::=           EXH:k  Names   COLON                 Expr    {: if (1==1) throw Module.hint(k, "exh");         :};
+Decla ::=           DISJ:k Names:a COLON                 Expr:b  {: RESULT=new Decl(null, k,    null, a, mult(b)); :};
+Decla ::= PRIVATE:p DISJ:k Names:a COLON                 Expr:b  {: RESULT=new Decl(p,    k,    null, a, mult(b)); :};
+Decla ::= PRIVATE:p        Names:a COLON                 Expr:b  {: RESULT=new Decl(p,    null, null, a, mult(b)); :};
+Decla ::=                  Names:a COLON                 Expr:b  {: RESULT=new Decl(null, null, null, a, mult(b)); :};
+
+Decla ::=           PART:k Names   COLON DISJ            Expr    {: if (1==1) throw Module.hint(k, "part");        :};
+Decla ::=           EXH:k  Names   COLON DISJ            Expr    {: if (1==1) throw Module.hint(k, "exh");         :};
+Decla ::=           DISJ:k Names:a COLON DISJ:d          Expr:b  {: RESULT=new Decl(null, k,    d,    a, mult(b)); :};
+Decla ::= PRIVATE:p DISJ:k Names:a COLON DISJ:d          Expr:b  {: RESULT=new Decl(p,    k,    d,    a, mult(b)); :};
+Decla ::= PRIVATE:p        Names:a COLON DISJ:d          Expr:b  {: RESULT=new Decl(p,    null, d,    a, mult(b)); :};
+Decla ::=                  Names:a COLON DISJ:d          Expr:b  {: RESULT=new Decl(null, null, d,    a, mult(b)); :};
 
 Declp ::= Declp:x COMMA Decla:y {: RESULT=x; RESULT.add(y);                      :};
 Declp ::=               Decla:y {: RESULT=new ArrayList<Decl>(); RESULT.add(y);  :};
@@ -794,14 +776,14 @@ Let ::= Name:a EQUALS:o Expr:b SuperOrBar:x {:
   nod(a);
   if (a.label.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
   if (a.label.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
-  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label, b), x);
+  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label, b), b, x);
 :};
 
 Let ::= Name:a EQUALS:o Expr:b COMMA Let:x {:
   nod(a);
   if (a.label.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
   if (a.label.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
-  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label, b), x);
+  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label, b), b, x);
 :};
 
 SuperOpt ::=                               {: RESULT=null;                                      :};
@@ -821,16 +803,16 @@ Exprp ::= Exprp:a COMMA Expr:b  {: a.add(b); RESULT=a;                          
 
 //=============================================================================
 
-Expr ::= OrExprA:x                    {: RESULT = x;                                   :};
-Expr ::= OrExprB:x                    {: RESULT = x;                                   :};
-Expr ::= Bind:x                       {: RESULT = x;                                   :};
-Bind ::= LET     Let:x                {: RESULT = x;                                   :};
-Bind ::= ALL2:o  Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.ALL,  a, b); :};
-Bind ::= NO2:o   Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.NO,   a, b); :};
-Bind ::= SOME2:o Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.SOME, a, b); :};
-Bind ::= LONE2:o Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.LONE, a, b); :};
-Bind ::= ONE2:o  Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.ONE,  a, b); :};
-Bind ::= SUM2:o  Declp:a SuperOrBar:b {: RESULT = q(o, null, ExprQuant.Op.SUM,  a, b); :};
+Expr ::= OrExprA:x                    {: RESULT = x;                                  :};
+Expr ::= OrExprB:x                    {: RESULT = x;                                  :};
+Expr ::= Bind:x                       {: RESULT = x;                                  :};
+Bind ::= LET     Let:x                {: RESULT = x;                                  :};
+Bind ::= ALL2:o  Declp:a SuperOrBar:b {: RESULT = ExprQt.Op.ALL .make(o, null, a, b); :};
+Bind ::= NO2:o   Declp:a SuperOrBar:b {: RESULT = ExprQt.Op.NO  .make(o, null, a, b); :};
+Bind ::= SOME2:o Declp:a SuperOrBar:b {: RESULT = ExprQt.Op.SOME.make(o, null, a, b); :};
+Bind ::= LONE2:o Declp:a SuperOrBar:b {: RESULT = ExprQt.Op.LONE.make(o, null, a, b); :};
+Bind ::= ONE2:o  Declp:a SuperOrBar:b {: RESULT = ExprQt.Op.ONE .make(o, null, a, b); :};
+Bind ::= SUM2:o  Declp:a SuperOrBar:b {: RESULT = ExprQt.Op.SUM .make(o, null, a, b); :};
 
 OrExprA ::=                EquivExprA:a  {: RESULT=a;                                    :};
 OrExprA ::= OrExprB:a OR:o Bind:b        {: RESULT=ExprBinary.Op.OR.make(o, null, a, b); :};
@@ -1023,18 +1005,18 @@ UnopExprB ::= TILDE:o  UnopExprB:b  {: RESULT=ExprUnary.Op.TRANSPOSE.make(o,b); 
 UnopExprB ::= STAR:o   UnopExprB:b  {: RESULT=ExprUnary.Op.RCLOSURE .make(o,b); :};
 UnopExprB ::= CARET:o  UnopExprB:b  {: RESULT=ExprUnary.Op.CLOSURE  .make(o,b); :};
 
-BaseExpr ::= NUMBER:x                               {: RESULT = x;                                                         :};
-BaseExpr ::= STR:x                                  {: RESULT = x;                                                         :};
-BaseExpr ::= IDEN:o                                 {: RESULT = ExprVar.make(o, "iden");                                   :};
-BaseExpr ::= THIS:o                                 {: RESULT = ExprVar.make(o, "this");                                   :};
-BaseExpr ::= INTMIN:o                               {: RESULT = ExprConstant.Op.MIN.make(o, 0);                            :};
-BaseExpr ::= INTMAX:o                               {: RESULT = ExprConstant.Op.MAX.make(o, 0);                            :};
-BaseExpr ::= INTNEXT:o                              {: RESULT = ExprConstant.Op.NEXT.make(o, 0);                           :};
-BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT = x;                                                         :};
-BaseExpr ::= SigRef:x                               {: RESULT = x;                                                         :};
-BaseExpr ::= AT:o Name:x                            {: nod(x); RESULT = ExprVar.make(o.merge(x.pos), "@"+x.label);         :};
-BaseExpr ::= Super:x                                {: RESULT = x;                                                         :};
-BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT = q(o, c, ExprQuant.Op.COMPREHENSION, a, b);                 :};
-BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT = q(o, c, ExprQuant.Op.COMPREHENSION, a, ExprConstant.TRUE); :};
+BaseExpr ::= NUMBER:x                               {: RESULT = x;                                                        :};
+BaseExpr ::= STR:x                                  {: RESULT = x;                                                        :};
+BaseExpr ::= IDEN:o                                 {: RESULT = ExprVar.make(o, "iden");                                  :};
+BaseExpr ::= THIS:o                                 {: RESULT = ExprVar.make(o, "this");                                  :};
+BaseExpr ::= INTMIN:o                               {: RESULT = ExprConstant.Op.MIN.make(o, 0);                           :};
+BaseExpr ::= INTMAX:o                               {: RESULT = ExprConstant.Op.MAX.make(o, 0);                           :};
+BaseExpr ::= INTNEXT:o                              {: RESULT = ExprConstant.Op.NEXT.make(o, 0);                          :};
+BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT = x;                                                        :};
+BaseExpr ::= SigRef:x                               {: RESULT = x;                                                        :};
+BaseExpr ::= AT:o Name:x                            {: nod(x); RESULT = ExprVar.make(o.merge(x.pos), "@"+x.label);        :};
+BaseExpr ::= Super:x                                {: RESULT = x;                                                        :};
+BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT = ExprQt.Op.COMPREHENSION.make(o, c, a, b);                 :};
+BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT = ExprQt.Op.COMPREHENSION.make(o, c, a, ExprConstant.TRUE); :};
 
 //=============================================================================

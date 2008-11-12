@@ -25,8 +25,6 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ErrorType;
-import edu.mit.csail.sdg.alloy4.JoinableList;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -41,9 +39,6 @@ public final class ExprVar extends Expr {
 
     /** The label associated with this variable; it's used for pretty-printing and does not have to be unique. */
     public final String label;
-
-    /** The expression that this variable is quantified over or substituted by; may be null. */
-    public final Expr expr;
 
     /** {@inheritDoc} */
     @Override public Pos span() { return pos; }
@@ -61,59 +56,36 @@ public final class ExprVar extends Expr {
         } else {
             for(int i=0; i<indent; i++) { out.append(' '); }
             out.append("Var ").append(label).append(" at position <").append(pos).append("> with type=").append(type).append('\n');
-            if (expr!=null) expr.toString(out, indent+2);
         }
     }
 
     /** Constructs an ExprVar object */
-    private ExprVar(Pos pos, String label, Type type, Expr expr) {
-        super(pos, null, false, type, 0, (expr==null ? 0 : expr.weight), (expr==null ? uninitList : expr.errors));
+    private ExprVar(Pos pos, String label, Type type) {
+        super(pos, null, false, type, 0, 0, null);
         this.label = (label==null ? "" : label);
-        this.expr = expr;
     }
 
-    /** Preconstructed error object saying "this variable failed to be resolved" */
-    private static final ErrorType uninit = new ErrorType(Pos.UNKNOWN, "This variable failed to be resolved.");
-
-    /** Preconstructed list that contains a single error message. */
-    private static final JoinableList<Err> uninitList = new JoinableList<Err>(uninit);
-
     /**
-     * Constructs an ExprVar variable
+     * Constructs an ExprVar variable with the EMPTY type
      * @param pos - the original position in the source file (can be null if unknown)
      * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
      */
     public static ExprVar make(Pos pos, String label) {
-        return new ExprVar(pos, label, Type.EMPTY, null);
+        return new ExprVar(pos, label, Type.EMPTY);
     }
 
     /**
-     * Constructs an ExprVar variable
+     * Constructs an ExprVar variable with the given type
      * @param pos - the original position in the source file (can be null if unknown)
      * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
-     * @param expr - the quantification/substitution expression for this variable; <b> it must already be fully resolved </b>
+     * @param type - the type
      */
-    public static ExprVar make(Pos pos, String label, Expr expr) {
-        if (expr.ambiguous) expr=expr.resolve(expr.type, null);
-        return new ExprVar(pos, label, expr.type, expr);
-    }
-
-    /**
-     * Constructs an ExprVar variable bound to the empty set or relation with the given type
-     * @param pos - the original position in the source file (can be null if unknown)
-     * @param label - the label for this variable (it is only used for pretty-printing and does not have to be unique)
-     * @param type - the type; <b> it must be an unambiguous set or relation </b>
-     */
-    public static ExprVar make(Pos pos, String label, Type type) throws ErrorType {
-        int a = type.arity();
-        if (a<=0) throw new ErrorType(pos, "The variable's type must be an unambiguous set or relation.");
-        Expr expr = Sig.NONE;
-        while(a>1) { expr=expr.product(Sig.NONE); a--; }
-        return new ExprVar(pos, label, type, expr);
+    public static ExprVar make(Pos pos, String label, Type type) {
+        return new ExprVar(pos, label, type);
     }
 
     /** {@inheritDoc} */
-    public int getDepth() { return (expr!=null ? expr.getDepth() : 0) + 1; }
+    public int getDepth() { return 1; }
 
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) { return this; }

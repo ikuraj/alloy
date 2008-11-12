@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package edu.mit.csail.sdg.alloy4compiler.parser;
+package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
@@ -30,7 +30,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 
 /** Immutable; this declaration binds a list of names to an expression. */
 
-final class Decl {
+public final class Decl extends Browsable {
 
     /** If nonnull, then this decl is private (and this.isPrivate is the location of the "private" keyword) */
     public final Pos isPrivate;
@@ -48,44 +48,56 @@ final class Decl {
     public final Expr expr;
 
     /** Caches the span() result. */
-    private Pos span=null;
+    private Pos span;
 
     /** Returns a Pos object representing the entire span of this expression and all its subexpressions. */
     public Pos span() {
-        Pos p=span;
-        if (p==null) {
-            p=expr.span().merge(disjoint).merge(disjoint2);
-            for(ExprVar n:names) p=p.merge(n.span());
-            span=p;
-        }
-        return p;
+       Pos p = span;
+       if (p == null) {
+          p = expr.span().merge(disjoint).merge(disjoint2);
+          for(ExprVar n:names) p = p.merge(n.span());
+          span = p;
+       }
+       return p;
     }
 
-    /** This constructs a declaration. */
+    /** This constructs a declaration; the list of names must not be empty. */
     public Decl(Pos isPrivate, Pos disjoint, Pos disjoint2, List<ExprVar> names, Expr expr) {
-        this.isPrivate = isPrivate;
-        this.disjoint = disjoint;
-        this.disjoint2 = disjoint2;
-        this.names = ConstList.make(names);
-        this.expr = expr;
+       if (names.size()==0) throw new NullPointerException();
+       this.isPrivate = isPrivate;
+       this.disjoint = (names.size()>1 ? disjoint : null);
+       this.disjoint2 = disjoint2;
+       this.names = ConstList.make(names);
+       this.expr = expr;
+    }
+
+    /** Return the first variable in this declaration. */
+    public ExprVar get() {
+       return names.get(0);
     }
 
     /** If the list of declaration contains a duplicate name, return one such duplicate name, else return null. */
     public static ExprVar findDuplicateName (List<Decl> list) {
-        for(int i=0; i<list.size(); i++) {
-            Decl d=list.get(i);
-            for(int j=0; j<d.names.size(); j++) {
-                ExprVar n = d.names.get(j);
-                for(int k=j+1; k<d.names.size(); k++) if (d.names.get(k).label.equals(n.label)) return n;
-                for(int k=i+1; k<list.size(); k++) if (list.get(k).hasName(n.label)) return n;
-            }
-        }
-        return null;
+       for(int i=0; i<list.size(); i++) {
+          Decl d=list.get(i);
+          for(int j=0; j<d.names.size(); j++) {
+             ExprVar n = d.names.get(j);
+             for(int k=j+1; k<d.names.size(); k++) if (d.names.get(k).label.equals(n.label)) return n;
+             for(int k=i+1; k<list.size(); k++) if (list.get(k).hasName(n.label)) return n;
+          }
+       }
+       return null;
     }
 
     /** Returns true if this declaration contains the given name. */
     public boolean hasName(String name) {
-        for(int i=0; i<names.size(); i++) if (names.get(i).label.equals(name)) return true;
-        return false;
+       for(int i=0; i<names.size(); i++) if (names.get(i).label.equals(name)) return true;
+       return false;
     }
+
+    /** {@inheritDoc} */
+    @Override public String getDescription() { return "<b>Declaration</b>"; }
+
+    /** {@inheritDoc} */
+    @Override public List<? extends Browsable> getSubnodes() { return names; }
 }

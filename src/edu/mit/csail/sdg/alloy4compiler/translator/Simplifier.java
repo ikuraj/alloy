@@ -30,6 +30,8 @@ import kodkod.ast.ComparisonFormula;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.Relation;
+import kodkod.ast.operator.ExprCompOperator;
+import kodkod.ast.operator.FormulaOperator;
 import kodkod.instance.TupleSet;
 
 /**
@@ -84,14 +86,14 @@ public class Simplifier {
        boolean flag1=true, flag2=true;
        if (form instanceof BinaryFormula) {
           BinaryFormula f=(BinaryFormula)form;
-          if (f.op() == BinaryFormula.Operator.AND) {
+          if (f.op() == FormulaOperator.AND) {
              flag1=simplify(f.left());
              flag2=simplify(f.right());
           }
        } else if (form instanceof ComparisonFormula) {
           ComparisonFormula f=(ComparisonFormula)form;
           flag1=simplify_in(f.left(), f.right());
-          if (f.op() == ComparisonFormula.Operator.EQUALS) flag2=simplify_in(f.right(), f.left());
+          if (f.op() == ExprCompOperator.EQUALS) flag2=simplify_in(f.right(), f.left());
        }
        return flag1 && flag2;
     }

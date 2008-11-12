@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -49,6 +48,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
+import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
@@ -62,7 +62,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprQt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
@@ -112,12 +112,12 @@ public final class Module extends Browsable {
         }
         if (funcs.size()>0) {
            x = new ArrayList<Browsable>(funcs.size());
-           for(Map.Entry<String,SafeList<FunAST>> e: funcs.entrySet()) for(FunAST y: e.getValue()) if (y.realFunc.isPred) x.add(y.realFunc);
+           for(Map.Entry<String,ArrayList<Func>> e: funcs.entrySet()) for(Func y: e.getValue()) if (y.isPred) x.add(y);
            if (x.size()>0) ans.add(make("<b>pred(s)</b>", x));
         }
         if (funcs.size()>0) {
            x = new ArrayList<Browsable>(funcs.size());
-           for(Map.Entry<String,SafeList<FunAST>> e: funcs.entrySet()) for(FunAST y: e.getValue()) if (!y.realFunc.isPred) x.add(y.realFunc);
+           for(Map.Entry<String,ArrayList<Func>> e: funcs.entrySet()) for(Func y: e.getValue()) if (!y.isPred) x.add(y);
            if (x.size()>0) ans.add(make("<b>fun(s)</b>", x));
         }
         if (path.length()==0 && commands.size()>0) {
@@ -134,8 +134,8 @@ public final class Module extends Browsable {
            for(Pair<String,Expr> e: facts) ans.add(make("<b>fact " + e.a + "</b>", e.b));
         }
         if (path.length()==0 && asserts.size()>0) {
-           for(Map.Entry<String,Expr> e: asserts.entrySet()) if (e.getValue() instanceof ExprVar) {
-               Expr body = ((ExprVar)(e.getValue())).expr;
+           for(Map.Entry<String,Expr> e: asserts.entrySet()) {
+               Expr body = e.getValue();
                if (body!=null) ans.add(make("<b>assert(s)</b> "+e.getKey(), body));
            }
         }
@@ -247,9 +247,9 @@ public final class Module extends Browsable {
          * <br> If args.length() > f.params.size(), the extra arguments are ignored by this check
          */
         private static boolean applicable(Func f, List<Expr> args) {
-            if (f.params.size() > args.size()) return false;
+            if (f.count() > args.size()) return false;
             int i=0;
-            for(ExprVar d: f.params) {
+            for(ExprVar d: f.params()) {
                 Type param=d.type, arg=args.get(i).type;
                 i++;
                 // The reason we don't directly compare "arg.arity()" with "param.arity()"
@@ -272,7 +272,7 @@ public final class Module extends Browsable {
                 }
                 if (y instanceof ExprBadCall) {
                     ExprBadCall bc = (ExprBadCall)y;
-                    if (bc.args.size() < bc.fun.params.size()) {
+                    if (bc.args.size() < bc.fun.count()) {
                         ConstList<Expr> newargs = Util.append(bc.args, arg);
                         if (applicable(bc.fun, newargs))
                             y=ExprCall.make(bc.pos, bc.closingBracket, bc.fun, newargs, bc.extraWeight);
@@ -341,13 +341,13 @@ public final class Module extends Browsable {
 
         /** {@inheritDoc} */
         @Override public Expr visit(ExprLet x) throws Err {
-            Expr right = visitThis(x.var.expr);
+            Expr right = visitThis(x.expr);
             right = right.resolve(right.type, warns);
-            ExprVar left = ExprVar.make(x.var.pos, x.var.label, right);
+            ExprVar left = ExprVar.make(x.var.pos, x.var.label, right.type);
             put(left.label, left);
             Expr sub = visitThis(x.sub);
             remove(left.label);
-            return ExprLet.make(x.pos, left, sub);
+            return ExprLet.make(x.pos, left, right, sub);
         }
 
         private boolean isMetaSig(Type t) {
@@ -383,58 +383,57 @@ public final class Module extends Browsable {
         }
 
         /** {@inheritDoc} */
-        @Override public Expr visit(ExprQuant x) throws Err {
-            TempList<ExprVar> vars = new TempList<ExprVar>(x.vars.size());
-            Expr pre=null, post=null;
+        @Override public Expr visit(ExprQt x) throws Err {
+            TempList<Decl> decls = new TempList<Decl>(x.decls.size());
             boolean isMetaSig=false, isMetaField=false;
-            for(ExprVar v: x.vars) {
-                if (pre!=v.expr) {
-                    pre=v.expr;
-                    post=visitThis(pre).resolve_as_set(warns);
-                    if (post.mult==0 && post.type.arity()==1) post=ExprUnary.Op.ONEOF.make(null, post);
-                    if (post.errors.isEmpty()) { isMetaSig = isMetaSig(post.type); isMetaField = isMetaField(post.type); }
-                }
+            for(Decl d: x.decls) {
+                Expr exp = visitThis(d.expr).resolve_as_set(warns);
+                if (exp.mult==0 && exp.type.arity()==1) exp = ExprUnary.Op.ONEOF.make(null, exp);
+                if (exp.errors.isEmpty()) { isMetaSig = isMetaSig(exp.type); isMetaField = isMetaField(exp.type); }
                 // Below is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
-                boolean some = (x.op==ExprQuant.Op.SOME), compre = (x.op==ExprQuant.Op.COMPREHENSION);
-                if (x.vars.size()==1 && isOneOf(post) && (x.op==ExprQuant.Op.ALL || some || compre) && (isMetaSig || isMetaField)) {
+                boolean some = (x.op==ExprQt.Op.SOME), compre = (x.op==ExprQt.Op.COMPREHENSION);
+                if (x.decls.size()==1 && d.names.size()==1 && isOneOf(exp) && (x.op==ExprQt.Op.ALL || some || compre) && (isMetaSig || isMetaField)) {
+                    ExprVar v = d.names.get(0);
                     // Prevent warnings
                     List<ErrorWarning> saved = warns;
                     warns = null;
                     // Now duplicate the body for each possible Meta Atom binding
                     Expr answer = null;
-                    if (isMetaSig) for(PrimSig child: rootmodule.metaSig().children()) if (child.type.intersects(post.type)) {
+                    if (isMetaSig) for(PrimSig child: rootmodule.metaSig().children()) if (child.type.intersects(exp.type)) {
                         put(v.label, child);
                         Expr sub = visitThis(x.sub);
                         remove(v.label);
-                        if (compre) answer = child.in(post).and(sub).ite(child, Sig.NONE).plus(answer);
-                        else if (some) answer = child.in(post).and(sub).or(answer);
-                        else answer = child.in(post).implies(sub).and(answer);
+                        if (compre) answer = child.in(exp).and(sub).ite(child, Sig.NONE).plus(answer);
+                        else if (some) answer = child.in(exp).and(sub).or(answer);
+                        else answer = child.in(exp).implies(sub).and(answer);
                     }
-                    if (isMetaField) for(PrimSig child: rootmodule.metaField().children()) if (child.type.intersects(post.type)) {
+                    if (isMetaField) for(PrimSig child: rootmodule.metaField().children()) if (child.type.intersects(exp.type)) {
                         put(v.label, child);
                         Expr sub = visitThis(x.sub);
                         remove(v.label);
-                        if (compre) answer = child.in(post).and(sub).ite(child, Sig.NONE).plus(answer);
-                        else if (some) answer = child.in(post).and(sub).or(answer);
-                        else answer = child.in(post).implies(sub).and(answer);
+                        if (compre) answer = child.in(exp).and(sub).ite(child, Sig.NONE).plus(answer);
+                        else if (some) answer = child.in(exp).and(sub).or(answer);
+                        else answer = child.in(exp).implies(sub).and(answer);
                     }
                     if (answer==null) answer = (compre ? Sig.NONE : (some ? ExprConstant.FALSE : ExprConstant.TRUE)); else answer = answer.resolve(answer.type, null);
                     // Now, wrap the body in an ExprLet expression to prevent any more warnings by outer code
-                    ExprVar combinedAnswer = ExprVar.make(Pos.UNKNOWN, "", answer);
-                    Expr returnValue = ExprLet.make(Pos.UNKNOWN, combinedAnswer, combinedAnswer);
+                    ExprVar combinedAnswer = ExprVar.make(Pos.UNKNOWN, "", answer.type);
+                    Expr returnValue = ExprLet.make(Pos.UNKNOWN, combinedAnswer, answer, combinedAnswer);
                     // Restore the "warns" array, then return the answer
                     warns = saved;
                     return returnValue;
                 }
                 // Above is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
-                ExprVar newV = ExprVar.make(v.pos, v.label, post);
-                vars.add(newV);
-                put(newV.label, newV);
+                TempList<ExprVar> n = new TempList<ExprVar>(d.names.size());
+                for(ExprVar v: d.names) n.add(ExprVar.make(v.pos, v.label, exp.type));
+                Decl dd = new Decl(d.isPrivate, d.disjoint, d.disjoint2, n.makeConst(), exp);
+                for(ExprVar newname: dd.names) put(newname.label, newname);
+                decls.add(dd);
             }
             Expr sub = visitThis(x.sub);
-            if (x.op==ExprQuant.Op.SUM) sub=sub.resolve_as_int(warns); else sub=sub.resolve_as_formula(warns);
-            for(ExprVar v: vars.makeConst()) remove(v.label);
-            return x.op.make(x.pos, x.closingBracket, vars.makeConst(), sub);
+            if (x.op==ExprQt.Op.SUM) sub=sub.resolve_as_int(warns); else sub=sub.resolve_as_formula(warns);
+            for(Decl d: decls.makeConst()) for(ExprVar v: d.names) remove(v.label);
+            return x.op.make(x.pos, x.closingBracket, decls.makeConst(), sub);
         }
 
         /** {@inheritDoc} */
@@ -488,28 +487,6 @@ public final class Module extends Browsable {
             if (this.realModule!=null && this.realModule!=realModule) throw new ErrorFatal("Internal error (import mismatch)");
             this.realModule=realModule;
         }
-    }
-
-    //============================================================================================================================//
-
-    /** Mutable; this class represents an untypechecked Alloy function; equals() uses object identity. */
-    private static final class FunAST {
-        /** Only initialized by typechecker. */ private Func realFunc=null;
-        /** Only initialized by typechecker. */ private Expr realFormula=null;
-        /** Whether it is private.           */ private final Pos isPrivate;
-        /** The original module.             */ private final Module realModule;
-        /** The original position.           */ private final Pos pos;
-        /** The short name.                  */ private final String name;
-        /** The parameters.                  */ private final ConstList<Decl> params;
-        /** The return type.                 */ private final Expr returnType;
-        /** The body.                        */ private final Expr body;
-        private FunAST(Pos pos, Pos isPrivate, Module realModule, String name, List<Decl> params, Expr returnType, Expr body) {
-            this.pos=pos;
-            this.isPrivate=isPrivate;
-            this.realModule=realModule;
-            this.name=name; this.params=ConstList.make(params); this.returnType=returnType; this.body=body;
-        }
-        @Override public String toString() { return name; }
     }
 
     //============================================================================================================================//
@@ -632,19 +609,16 @@ public final class Module extends Browsable {
     /** Returns the meta signature "field$" (or null if such a sig does not exist) */
     public PrimSig metaField() { return world.metaField; }
 
-    /** The list of javadoc comments in this module. */
-    //final List<ExprVar> javadocs = new ArrayList<ExprVar>();
-
     /** The current name resolution mode (0=pure) (1=Alloy 4.1.3 and older) (2=new) */
     int resolution = 1;
 
     /** Each func name is mapped to a nonempty list of FunAST objects. */
-    private final Map<String,SafeList<FunAST>> funcs = new LinkedHashMap<String,SafeList<FunAST>>();
+    private final Map<String,ArrayList<Func>> funcs = new LinkedHashMap<String,ArrayList<Func>>();
 
     /** Each macro name is mapped to a MacroAST object. */
     private final Map<String,Macro> macros = new LinkedHashMap<String,Macro>();
 
-    /** Each assertion name is mapped to either an untypechecked Exp, or a typechecked ExprVar with its value==the assertion. */
+    /** Each assertion name is mapped to its Expr. */
     private final Map<String,Expr> asserts = new LinkedHashMap<String,Expr>();
 
     /** The list of facts; each fact is either an untypechecked Exp or a typechecked Expr. */
@@ -688,7 +662,7 @@ public final class Module extends Browsable {
         fc.put("", "run {\n"+input+"}"); // We prepend the line "run{"
         Module m = CompParser.alloy_parseStream(new ArrayList<Object>(), null, fc, null, -1, "", "", 1);
         if (m.funcs.size()==0) throw new ErrorSyntax("The input does not correspond to an Alloy expression.");
-        Expr body = m.funcs.entrySet().iterator().next().getValue().get(0).body;
+        Expr body = m.funcs.entrySet().iterator().next().getValue().get(0).getBody();
         Context cx = new Context(this, null);
         body = cx.check(body);
         body = body.resolve(body.type, null);
@@ -717,15 +691,16 @@ public final class Module extends Browsable {
             msg.append("\n\n#").append(i+1).append(": ");
             Object x=objs.get(i);
             if (x instanceof SigAST) {
-                SigAST y=(SigAST)x; msg.append("sig ").append(y.fullname).append("\n"+"at ").append(y.pos.toShortString());
+                SigAST y = (SigAST)x; msg.append("sig ").append(y.fullname).append("\n"+"at ").append(y.pos.toShortString());
             }
-            else if (x instanceof FunAST) {
-                FunAST y=(FunAST)x;
-                msg.append(y.returnType==null?"pred ":"fun ")
-                   .append(y.realFunc.label).append("\n"+"at ").append(y.pos.toShortString());
+            else if (x instanceof Func) {
+                Func y = (Func)x;
+                msg.append(y.isPred?"pred ":"fun ")
+                   .append(y.label).append("\n"+"at ").append(y.pos.toShortString());
             }
-            else if (x instanceof ExprVar) {
-                ExprVar y=(ExprVar)x; msg.append("assert ").append(y.label).append("\n"+"at ").append(y.pos.toShortString());
+            else if (x instanceof Expr) {
+                Expr y = (Expr)x;
+                msg.append("assertion at ").append(y.pos.toShortString());
             }
         }
         throw new ErrorSyntax(pos, msg.toString());
@@ -773,20 +748,20 @@ public final class Module extends Browsable {
     }
 
     /** Lookup non-fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
-    private List<Object> getRawNQS (Module start, int r, String name) {
-        // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar whose expr is the value of an assertion    (r&4)!=0 => FunAST
+    private List<Object> getRawNQS (Module start, final int r, String name) {
+        // (r&1)!=0 => SigAST,   (r&2) != 0 => assertion,   (r&4)!=0 => Func
         List<Object> ans=new ArrayList<Object>();
         for(Module m:getAllNameableModules()) {
             if ((r&1)!=0) { SigAST x=m.sigs.get(name); if (x!=null) if (m==start || x.isPrivate==null) ans.add(x); }
             if ((r&2)!=0) { Expr x=m.asserts.get(name); if (x!=null) ans.add(x); }
-            if ((r&4)!=0) { SafeList<FunAST> x=m.funcs.get(name); if (x!=null) for(FunAST y:x) if (m==start || y.isPrivate==null) ans.add(y); }
+            if ((r&4)!=0) { ArrayList<Func> x=m.funcs.get(name); if (x!=null) for(Func y:x) if (m==start || y.isPrivate==null) ans.add(y); }
         }
         return ans;
     }
 
     /** Lookup a fully-qualified SigAST/FunAST/Assertion from the current module; it skips PARAMs. */
-    private List<Object> getRawQS (int r, String name) {
-        // (r&1)!=0 => SigAST  (r&2) != 0 => ExprVar whose expr is the value of an assertion    (r&4)!=0 => FunAST
+    private List<Object> getRawQS (final int r, String name) {
+        // (r&1)!=0 => SigAST,   (r&2) != 0 => assertion,   (r&4)!=0 => Func
         List<Object> ans=new ArrayList<Object>();
         Module u=this;
         if (name.startsWith("this/")) name=name.substring(5);
@@ -795,7 +770,7 @@ public final class Module extends Browsable {
             if (i<0) {
                 if ((r&1)!=0) { SigAST x=u.sigs.get(name); if (x!=null) if (level==0 || x.isPrivate==null) ans.add(x); }
                 if ((r&2)!=0) { Expr x=u.asserts.get(name); if (x!=null) ans.add(x); }
-                if ((r&4)!=0) { SafeList<FunAST> x=u.funcs.get(name); if (x!=null) for(FunAST y:x) if (level==0 || y.isPrivate==null) ans.add(y); }
+                if ((r&4)!=0) { ArrayList<Func> x=u.funcs.get(name); if (x!=null) for(Func y:x) if (level==0 || y.isPrivate==null) ans.add(y); }
                 if (ans.size()==0) return u.getRawNQS(this,r,name); // If nothing at this module, then do a non-qualified search from this module
                 return ans;
             }
@@ -1107,82 +1082,75 @@ public final class Module extends Browsable {
         dup(p, n, false);
         ExprVar dup = Decl.findDuplicateName(decls);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.label+"\" cannot appear more than once.");
-        FunAST ans = new FunAST(p, isPrivate, this, n, decls, t, v);
-        SafeList<FunAST> list = funcs.get(n);
-        if (list==null) { list = new SafeList<FunAST>(); funcs.put(n, list); }
+        Func ans = new Func(p, isPrivate, n, decls, t, v);
+        ArrayList<Func> list = funcs.get(n);
+        if (list==null) { list = new ArrayList<Func>(); funcs.put(n, list); }
         list.add(ans);
     }
 
-    /** Each FunAST will now point to a bodyless Func object. */
-    private JoinableList<Err> resolveFuncDecls(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
-        for(Map.Entry<String,SafeList<FunAST>> entry:funcs.entrySet()) for(FunAST f:entry.getValue()) {
-            String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.name;
+   /** Each FunAST will now point to a bodyless Func object. */
+   private JoinableList<Err> resolveFuncDecls(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+      for(Map.Entry<String,ArrayList<Func>> entry:funcs.entrySet()) {
+         ArrayList<Func> list = entry.getValue();
+         for(int listi=0; listi<list.size(); listi++) {
+            Func f = list.get(listi);
+            String fullname = (path.length()==0 ? "this/" : (path+"/")) + f.label;
             // Each PARAMETER can refer to earlier parameter in the same function, and any SIG or FIELD visible from here.
             // Each RETURNTYPE can refer to the parameters of the same function, and any SIG or FIELD visible from here.
             Context cx = new Context(this, warns);
             cx.rootfunparam = true;
-            TempList<ExprVar> tmpvars = new TempList<ExprVar>();
-            boolean err=false;
-            for(Decl d:f.params) {
+            TempList<Decl> tmpdecls = new TempList<Decl>();
+            boolean err = false;
+            for(Decl d: f.decls) {
+                TempList<ExprVar> tmpvars = new TempList<ExprVar>();
                 Expr val = cx.check(d.expr).resolve_as_set(warns);
-                if (!val.errors.isEmpty()) { err=true; errors = errors.join(val.errors); }
+                if (!val.errors.isEmpty()) { err = true; errors = errors.join(val.errors); }
                 for(ExprVar n: d.names) {
-                    ExprVar v = ExprVar.make(n.span(), n.label, val);
+                    ExprVar v = ExprVar.make(n.span(), n.label, val.type);
                     cx.put(n.label, v);
                     tmpvars.add(v);
-                    rep.typecheck((f.returnType==null?"pred ":"fun ")+fullname+", Param "+n.label+": "+v.type+"\n");
+                    rep.typecheck((f.isPred?"pred ":"fun ")+fullname+", Param "+n.label+": "+v.type+"\n");
                 }
+                tmpdecls.add(new Decl(d.isPrivate, d.disjoint, d.disjoint2, tmpvars.makeConst(), val));
             }
             Expr ret = null;
-            if (f.returnType!=null) {
-                ret = cx.check(f.returnType).resolve_as_set(warns);
+            if (!f.isPred) {
+                ret = cx.check(f.returnDecl).resolve_as_set(warns);
                 if (!ret.errors.isEmpty()) { err=true; errors=errors.join(ret.errors); }
             }
             if (err) continue;
             try {
-                f.realFunc = new Func(f.pos, f.isPrivate, fullname, tmpvars.makeConst(), ret);
-                rep.typecheck(""+f.realFunc+", RETURN: "+f.realFunc.returnDecl.type+"\n");
+                f = new Func(f.pos, f.isPrivate, fullname, tmpdecls.makeConst(), ret, f.getBody());
+                list.set(listi, f);
+                rep.typecheck("" + f + ", RETURN: " + f.returnDecl.type + "\n");
             } catch(Err ex) { errors = errors.append(ex); }
-        }
-        return errors;
-    }
+         }
+      }
+      return errors;
+   }
 
     /** Each Func's body will now be typechecked Expr object. */
-    private JoinableList<Err> resolveFuncBodys(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
-        for(Map.Entry<String,SafeList<FunAST>> entry:funcs.entrySet()) for(FunAST f:entry.getValue()) {
-            Func ff = f.realFunc;
-            Expr disj = null;
+    private JoinableList<Err> resolveFuncBody(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+        for(Map.Entry<String,ArrayList<Func>> entry:funcs.entrySet()) for(Func ff:entry.getValue()) {
             Context cx = new Context(this, warns);
             cx.rootfunbody = ff;
-            Iterator<ExprVar> vv=ff.params.iterator();
-            for(Decl d:f.params) {
-                List<Expr> disjvars = (d.disjoint!=null && d.names.size()>0) ? (new ArrayList<Expr>(d.names.size())) : null;
-                for(ExprVar n:d.names) {
-                    ExprVar newvar=vv.next();
-                    cx.put(n.label, newvar);
-                    if (disjvars!=null) disjvars.add(newvar);
-                }
-                if (disjvars!=null) disj=ExprList.makeDISJOINT(d.disjoint, null, disjvars).and(disj);
-            }
-            Expr newBody = cx.check(f.body);
-            if (ff.isPred) newBody=newBody.resolve_as_formula(warns); else newBody=newBody.resolve_as_set(warns);
+            for(Decl d: ff.decls) for(ExprVar n: d.names) cx.put(n.label, n);
+            Expr newBody = cx.check(ff.getBody());
+            if (ff.isPred) newBody = newBody.resolve_as_formula(warns); else newBody = newBody.resolve_as_set(warns);
             errors = errors.join(newBody.errors);
             if (!newBody.errors.isEmpty()) continue;
             try { ff.setBody(newBody); } catch(Err er) {errors=errors.append(er); continue;}
             if (warns!=null && ff.returnDecl.type.hasTuple() && newBody.type.hasTuple() && !newBody.type.intersects(ff.returnDecl.type))
-                warns.add(new ErrorWarning(ff.getBody().span(),
+                warns.add(new ErrorWarning(newBody.span(),
                     "Function return value is disjoint from its return type.\n"
-                    +"Function body has type "+ff.getBody().type + "\n" + "but the return type is "+ff.returnDecl.type));
+                    +"Function body has type "+newBody.type + "\n" + "but the return type is "+ff.returnDecl.type));
             //else if (warns!=null && Version.experimental && !newBody.type.isSubtypeOf(ff.returnDecl.type))
             //  warns.add(new ErrorWarning(newBody.span(),
             //      "Function may return a tuple not in its declared return type.\n"
             //      +"The Alloy Analyzer's analysis may be unsound\n"
             //      +"if it returns a tuple outside its declared return type.\n"
             //      +"Function body has type "+newBody.type+"\nbut the return type is "+ff.returnDecl.type));
-            rep.typecheck(ff.toString()+", BODY:"+ff.getBody().type+"\n");
-            if (!ff.isPred) newBody=newBody.in(ff.returnDecl);
-            if (ff.params.size()>0) newBody=ExprQuant.Op.SOME.make(null, null, ff.params, newBody.and(disj));
-            if (newBody.errors.isEmpty()) f.realFormula=newBody; else errors=errors.join(newBody.errors);
+            rep.typecheck(ff.toString()+", BODY:"+newBody.type+"\n");
         }
         return errors;
     }
@@ -1190,7 +1158,7 @@ public final class Module extends Browsable {
     /** Return an unmodifiable list of all functions in this module. */
     public SafeList<Func> getAllFunc() {
         SafeList<Func> ans = new SafeList<Func>();
-        for(Map.Entry<String,SafeList<FunAST>> e: funcs.entrySet()) for(FunAST func:e.getValue()) ans.add(func.realFunc);
+        for(Map.Entry<String,ArrayList<Func>> e: funcs.entrySet()) for(Func func: e.getValue()) ans.add(func);
         return ans.dup();
     }
 
@@ -1212,11 +1180,11 @@ public final class Module extends Browsable {
     /** Each assertion name now points to a typechecked Expr rather than an untypechecked Exp. */
     private JoinableList<Err> resolveAssertions(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
         Context cx = new Context(this, warns);
-        for(Map.Entry<String,Expr> e:asserts.entrySet()) {
+        for(Map.Entry<String,Expr> e: asserts.entrySet()) {
             Expr expr = e.getValue();
             expr = cx.check(expr).resolve_as_formula(warns);
             if (expr.errors.isEmpty()) {
-                e.setValue(ExprVar.make(expr.span(), (path.length()==0?"this/":(path+"/"))+e.getKey(), expr));
+                e.setValue(expr);
                 rep.typecheck("Assertion " + e.getKey() + ": " + expr.type+"\n");
             } else errors=errors.join(expr.errors);
         }
@@ -1226,9 +1194,8 @@ public final class Module extends Browsable {
     /** Return an unmodifiable list of all assertions in this module. */
     public ConstList<Pair<String,Expr>> getAllAssertions() {
         TempList<Pair<String,Expr>> ans = new TempList<Pair<String,Expr>>(asserts.size());
-        for(Map.Entry<String,Expr> e:asserts.entrySet()) {
-            Expr x=e.getValue();
-            if (x instanceof ExprVar) ans.add(new Pair<String,Expr>(e.getKey(), ((ExprVar)x).expr));
+        for(Map.Entry<String,Expr> e: asserts.entrySet()) {
+            ans.add(new Pair<String,Expr>(e.getKey(), e.getValue()));
         }
         return ans.makeConst();
     }
@@ -1262,9 +1229,8 @@ public final class Module extends Browsable {
             Expr formula;
             cx.rootsig=e.getValue();
             if (s.isOne==null) {
-                ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
-                cx.put("this", THIS);
-                formula = cx.check(f).resolve_as_formula(warns).forAll(THIS);
+                cx.put("this", s.decl.get());
+                formula = cx.check(f).resolve_as_formula(warns).forAll(s.decl);
             } else {
                 cx.put("this", s);
                 formula = cx.check(f).resolve_as_formula(warns);
@@ -1324,19 +1290,22 @@ public final class Module extends Browsable {
         String cname = ((ExprVar)(cmd.formula)).label;
         Expr e;
         if (cmd.check) {
-            List<Object> m=getRawQS(2, cname); // We prefer assertion in the topmost module
+            List<Object> m = getRawQS(2, cname); // We prefer assertion in the topmost module
             if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(this, 2, cname);
             if (m.size()>1) unique(cmd.pos, cname, m);
             if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The assertion \""+cname+"\" cannot be found.");
-            e = ((ExprVar)(m.get(0))).expr.not();
+            e = ((Expr)(m.get(0))).not();
         } else {
-            List<Object> m=getRawQS(4, cname); // We prefer fun/pred in the topmost module
+            List<Object> m = getRawQS(4, cname); // We prefer fun/pred in the topmost module
             if (m.size()==0 && cname.indexOf('/')<0) m=getRawNQS(this, 4, cname);
             if (m.size()>1) unique(cmd.pos, cname, m);
             if (m.size()<1) throw new ErrorSyntax(cmd.pos, "The predicate/function \""+cname+"\" cannot be found.");
-            e = ((FunAST)(m.get(0))).realFormula;
+            Func f = (Func) (m.get(0));
+            e = f.getBody();
+            if (!f.isPred) e = e.in(f.returnDecl);
+            if (f.decls.size()>0) e = ExprQt.Op.SOME.make(null, null, f.decls, e);
         }
-        if (e==null) e=ExprConstant.TRUE;
+        if (e==null) e = ExprConstant.TRUE;
         TempList<CommandScope> sc=new TempList<CommandScope>(cmd.scope.size());
         for(CommandScope et:cmd.scope) {
             SigAST s = getRawSIG(et.sig.pos, et.sig.label);
@@ -1399,7 +1368,7 @@ public final class Module extends Browsable {
             if (prev!=null) p.a.realSig.addDefinedField(Pos.UNKNOWN, null, null, "prev", prev);
         }
         // Add the fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
-        for(final SigAST oldS:sorted) {
+        for(final SigAST oldS: sorted) {
            // When typechecking each field:
            // * it is allowed to refer to earlier fields in the same SIG or in any visible ancestor sig
            // * it is allowed to refer to visible sigs
@@ -1416,25 +1385,14 @@ public final class Module extends Browsable {
            for(int di=0; di<oldS.fields.size(); di++) {
               final Decl d = oldS.fields.get(di);
               // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
-              final ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
               cx.rootfield = true;
               cx.rootsig = oldS;
-              cx.put("this", THIS);
+              cx.put("this", s.decl.get());
               Expr bound = cx.check(d.expr).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
               cx.remove("this");
               for(int dj=0; dj<d.names.size(); dj++) {
                  final ExprVar n = d.names.get(dj);
-                 //Pos da = n.pos, db;
-                 //if (dj<d.names.size()-1) db=d.names.get(dj+1).pos; else if (di<oldS.fields.size()-1) db=oldS.fields.get(di+1).names.get(0).pos; else db=oldS.endOfFields;
-                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.label, THIS, bound);
-                 //Iterator<ExprVar> jj = m.javadocs.iterator();
-                 //while(jj.hasNext()) {
-                 //    ExprVar j = jj.next();
-                 //    if (Pos.before(da, j.pos) && Pos.before(j.pos, db)) {
-                 //        f.annotations.add(j.label);
-                 //        jj.remove();
-                 //    }
-                 //}
+                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.label, null, bound);
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
                  if (d.disjoint2!=null && s.isOne==null) disjoint2.add(f);
                  if (d.disjoint==null) continue;
@@ -1447,10 +1405,9 @@ public final class Module extends Browsable {
            errors=errors.join(disjX.errors);
            if (disjX!=ExprConstant.TRUE && disjX.errors.isEmpty()) { m.facts.add(new Pair<String,Expr>(s+"$disjoint", disjX)); rep.typecheck("Fact "+s+"$disjoint: "+disjX.type+"\n"); }
            for(Field f: disjoint2) {
-               ExprVar THIS = ExprVar.make(null, "this", s.oneOf());
-               ExprVar THAT = ExprVar.make(null, "that", s.oneOf());
-               Expr formula = THIS.join(f).intersect(THAT.join(f)).no();
-               formula = THIS.equal(THAT).not().implies(formula).forAll(THAT).forAll(THIS);
+               Decl THIS = s.oneOf("this"), THAT = s.oneOf("that");
+               Expr formula = THIS.get().join(f).intersect(THAT.get().join(f)).no();
+               formula = THIS.get().equal(THAT.get()).not().implies(formula).forAll(THAT).forAll(THIS);
                m.facts.add(new Pair<String,Expr>(s.label + "." + f.label + "$disj", formula));
            }
         }
@@ -1546,7 +1503,7 @@ public final class Module extends Browsable {
         if (!errors.isEmpty()) throw errors.pick();
         // Typecheck the function bodies, assertions, and facts (which can refer to function declarations)
         for(Module x:modules) {
-            errors=x.resolveFuncBodys(rep,errors,warns);
+            errors=x.resolveFuncBody(rep,errors,warns);
             errors=x.resolveAssertions(rep,errors,warns);
             errors=x.resolveFacts(rep,errors,warns);
             // also, we can collect up all the exact sigs and add them to the root module's list of exact sigs
@@ -1592,12 +1549,11 @@ public final class Module extends Browsable {
                 ch.add(ExprUnary.Op.NOOP.make(pos, y.realSig, null, (resolution==1 && y.realModule!=this) ? 1000 : 0));
                 re.add("sig "+y.realSig.label);
             }
-            else if (x instanceof FunAST) {
-                FunAST y = (FunAST)x;
-                Func f = y.realFunc;
-                int fn = f.params.size();
-                int penalty = (y.realModule==this ? 0 : 1000); // penalty of 1000
-                if (resolution==1 && fn>0 && rootsig!=null && THIS!=null && THIS.type.hasArity(1) && f.params.get(0).type.intersects(THIS.type)) {
+            else if (x instanceof Func) {
+                Func f = (Func)x;
+                int fn = f.count();
+                int penalty = 0; // FIXTHIS (f.realModule==this ? 0 : 1000); // penalty of 1000
+                if (resolution==1 && fn>0 && rootsig!=null && THIS!=null && THIS.type.hasArity(1) && f.get(0).type.intersects(THIS.type)) {
                     // If we're inside a sig, and there is a unary variable bound to "this",
                     // we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
@@ -1608,7 +1564,7 @@ public final class Module extends Browsable {
                     ch.add(fn==0 ? ExprCall.make(pos, null, f, null, penalty) : ExprBadCall.make(pos, null, f, null, penalty));
                     re.add((f.isPred?"pred ":"fun ")+f.label);
                 }
-                if (resolution==2 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.params.get(0).type.intersects(THIS.type)) {
+                if (resolution==2 && f!=rootfunbody && THIS!=null && fullname.charAt(0)!='@' && fn>0 && f.get(0).type.intersects(THIS.type)) {
                     // If there is some value bound to "this", we should consider it as a possible FIRST ARGUMENT of a fun/pred call
                     ConstList<Expr> t = Util.asList(THIS);
                     ch.add(fn==1 ? ExprCall.make(pos, null, f, t, 0) : ExprBadCall.make(pos, null, f, t, 0));

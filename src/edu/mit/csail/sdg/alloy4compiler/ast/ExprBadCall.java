@@ -101,12 +101,12 @@ public final class ExprBadCall extends Expr {
             StringBuilder sb=new StringBuilder("This cannot be a correct call to ");
             sb.append(fun.isPred?"pred ":"fun ");
             sb.append(fun.label);
-            sb.append(fun.params.size()==0 ? ".\nIt has no parameters,\n" : ".\nThe parameters are\n");
-            for(ExprVar v:fun.params) {
+            sb.append(fun.count()==0 ? ".\nIt has no parameters,\n" : ".\nThe parameters are\n");
+            for(ExprVar v:fun.params()) {
                 sb.append("  ").append(v.label).append(": ").append(v.type).append('\n');
             }
-            sb.append(args.size()==0||fun.params.size()==0 ? "so the arguments cannot be empty.\n" : "so the arguments cannot be\n");
-            for(Expr v:args.subList(0, fun.params.size())) {
+            sb.append(args.size()==0 || fun.count()==0 ? "so the arguments cannot be empty.\n" : "so the arguments cannot be\n");
+            for(Expr v:args.subList(0, fun.count())) {
                 sb.append("  ");
                 v.toString(sb, -1);
                 sb.append(" (type = ").append(v.type).append(")\n");

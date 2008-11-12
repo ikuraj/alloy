@@ -23,6 +23,7 @@
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -244,6 +245,18 @@ public abstract class Expr extends Browsable {
         return x;
     }
 
+    /** If this is loneOf/oneOf/someOf expression, return loneOf/oneOf/someOf, otherwise returns setOf. */
+    public final ExprUnary.Op mult() {
+        Expr x = this;
+        while(x instanceof ExprUnary) {
+           ExprUnary.Op op = ((ExprUnary)x).op;
+           if (op==ExprUnary.Op.NOOP) { x = ((ExprUnary)x).sub; continue; }
+           if (op==ExprUnary.Op.ONEOF || op==ExprUnary.Op.LONEOF || op==ExprUnary.Op.SOMEOF) return op;
+           break;
+        }
+        return ExprUnary.Op.SETOF;
+    }
+
     /** A return visitor that determines whether the node (or a subnode) contains a predicate/function call. */
     private static final VisitQuery<Object> hasCall = new VisitQuery<Object>() {
         @Override public final Object visit(ExprCall x) { return this; }
@@ -261,7 +274,7 @@ public abstract class Expr extends Browsable {
         if (ambiguous || !errors.isEmpty()) return false;
         VisitQuery<Object> hasVar = new VisitQuery<Object>() {
             @Override public final Object visit(ExprVar x) throws Err {
-                if (x==goal) return this; else return x.expr.accept(this);
+                if (x==goal) return this; else return null;
             }
         };
         boolean ans;
@@ -567,50 +580,50 @@ public abstract class Expr extends Browsable {
      * Returns the formula (all...| this)
      * <p> this must be a formula
      */
-    public final Expr forAll(ExprVar firstVar, ExprVar... moreVars) {
-        Pos p = firstVar.span();
-        for(ExprVar v:moreVars) p=p.merge(v.span());
-        return ExprQuant.Op.ALL.make(p, null, Util.prepend(Util.asList(moreVars), firstVar), this);
+    public final Expr forAll(Decl firstDecl, Decl... moreDecls) throws Err {
+        Pos p = firstDecl.span();
+        for(Decl v: moreDecls) p=p.merge(v.span());
+        return ExprQt.Op.ALL.make(p, null, Util.prepend(Util.asList(moreDecls), firstDecl), this);
     }
 
     /**
      * Returns the formula (no...| this)
      * <p> this must be a formula
      */
-    public final Expr forNo(ExprVar firstVar, ExprVar... moreVars) {
-        Pos p = firstVar.span();
-        for(ExprVar v:moreVars) p=p.merge(v.span());
-        return ExprQuant.Op.NO.make(p, null, Util.prepend(Util.asList(moreVars), firstVar), this);
+    public final Expr forNo(Decl firstDecl, Decl... moreDecls) throws Err {
+        Pos p = firstDecl.span();
+        for(Decl v: moreDecls) p=p.merge(v.span());
+        return ExprQt.Op.NO.make(p, null, Util.prepend(Util.asList(moreDecls), firstDecl), this);
     }
 
     /**
      * Returns the formula (lone...| this)
      * <p> this must be a formula
      */
-    public final Expr forLone(ExprVar firstVar, ExprVar... moreVars) {
-        Pos p = firstVar.span();
-        for(ExprVar v:moreVars) p=p.merge(v.span());
-        return ExprQuant.Op.LONE.make(p, null, Util.prepend(Util.asList(moreVars), firstVar), this);
+    public final Expr forLone(Decl firstDecl, Decl... moreDecls) throws Err {
+        Pos p = firstDecl.span();
+        for(Decl v: moreDecls) p=p.merge(v.span());
+        return ExprQt.Op.LONE.make(p, null, Util.prepend(Util.asList(moreDecls), firstDecl), this);
     }
 
     /**
      * Returns the formula (one ...| this)
      * <p> this must be a formula
      */
-    public final Expr forOne(ExprVar firstVar, ExprVar... moreVars) {
-        Pos p = firstVar.span();
-        for(ExprVar v:moreVars) p=p.merge(v.span());
-        return ExprQuant.Op.ONE.make(p, null, Util.prepend(Util.asList(moreVars), firstVar), this);
+    public final Expr forOne(Decl firstDecl, Decl... moreDecls) throws Err {
+        Pos p = firstDecl.span();
+        for(Decl v: moreDecls) p=p.merge(v.span());
+        return ExprQt.Op.ONE.make(p, null, Util.prepend(Util.asList(moreDecls), firstDecl), this);
     }
 
     /**
      * Returns the formula (some...| this)
      * <p> this must be a formula
      */
-    public final Expr forSome(ExprVar firstVar, ExprVar... moreVars) {
-        Pos p = firstVar.span();
-        for(ExprVar v:moreVars) p=p.merge(v.span());
-        return ExprQuant.Op.SOME.make(p, null, Util.prepend(Util.asList(moreVars), firstVar), this);
+    public final Expr forSome(Decl firstDecl, Decl... moreDecls) throws Err {
+        Pos p = firstDecl.span();
+        for(Decl v: moreDecls) p=p.merge(v.span());
+        return ExprQt.Op.SOME.make(p, null, Util.prepend(Util.asList(moreDecls), firstDecl), this);
     }
 
     /**
@@ -618,10 +631,10 @@ public abstract class Expr extends Browsable {
      * <p> this must be a formula
      * <p> each declaration must be a "one-of" quantification over a unary set
      */
-    public final Expr comprehensionOver(ExprVar firstVar, ExprVar... moreVars) {
-        Pos p = firstVar.span();
-        for(ExprVar v:moreVars) p=p.merge(v.span());
-        return ExprQuant.Op.COMPREHENSION.make(p, null, Util.prepend(Util.asList(moreVars), firstVar), this);
+    public final Expr comprehensionOver(Decl firstDecl, Decl... moreDecls) throws Err {
+        Pos p = firstDecl.span();
+        for(Decl v: moreDecls) p=p.merge(v.span());
+        return ExprQt.Op.COMPREHENSION.make(p, null, Util.prepend(Util.asList(moreDecls), firstDecl), this);
     }
 
     /**
@@ -629,10 +642,10 @@ public abstract class Expr extends Browsable {
      * <p> this must be an integer expression
      * <p> each declaration must be a "one-of" quantification over a unary set
      */
-    public final Expr sumOver(ExprVar firstVar, ExprVar... moreVars) {
-        Pos p = firstVar.span();
-        for(ExprVar v:moreVars) p=p.merge(v.span());
-        return ExprQuant.Op.SUM.make(p, null, Util.prepend(Util.asList(moreVars), firstVar), this);
+    public final Expr sumOver(Decl firstDecl, Decl... moreDecls) throws Err {
+        Pos p = firstDecl.span();
+        for(Decl v: moreDecls) p=p.merge(v.span());
+        return ExprQt.Op.SUM.make(p, null, Util.prepend(Util.asList(moreDecls), firstDecl), this);
     }
 
     /**
@@ -644,13 +657,14 @@ public abstract class Expr extends Browsable {
     }
 
     /**
-     * Return a new variable "v: some this"
+     * Return a new declaration "v: some this"
      * <p> this must be already fully typechecked, and must be a unary set
      * <p> the label is only used for pretty-printing, and does not have to be unique
      */
-    public final ExprVar someOf(String label) {
+    public final Decl someOf(String label) throws Err {
         Expr x = ExprUnary.Op.SOMEOF.make(span(), this);
-        return ExprVar.make(x.span(), label, x);
+        ExprVar v = ExprVar.make(x.span(), label, type);
+        return new Decl(null, null, null, Arrays.asList(v), x);
     }
 
     /**
@@ -662,13 +676,14 @@ public abstract class Expr extends Browsable {
     }
 
     /**
-     * Return a new variable "v: lone this"
+     * Return a new declaration "v: lone this"
      * <p> this must be already fully typechecked, and must be a unary set
      * <p> the label is only used for pretty-printing, and does not have to be unique
      */
-    public final ExprVar loneOf(String label) {
-        Expr x=ExprUnary.Op.LONEOF.make(span(), this);
-        return ExprVar.make(x.span(), label, x);
+    public final Decl loneOf(String label) throws Err {
+        Expr x = ExprUnary.Op.LONEOF.make(span(), this);
+        ExprVar v = ExprVar.make(x.span(), label, type);
+        return new Decl(null, null, null, Arrays.asList(v), x);
     }
 
     /**
@@ -680,13 +695,14 @@ public abstract class Expr extends Browsable {
     }
 
     /**
-     * Return a new variable "v: one this"
+     * Return a new declaration "v: one this"
      * <p> this must be already fully typechecked, and must be a unary set
      * <p> the label is only used for pretty-printing, and does not have to be unique
      */
-    public final ExprVar oneOf(String label) {
-        Expr x=ExprUnary.Op.ONEOF.make(span(), this);
-        return ExprVar.make(x.span(), label, x);
+    public final Decl oneOf(String label) throws Err {
+        Expr x = ExprUnary.Op.ONEOF.make(span(), this);
+        ExprVar v = ExprVar.make(x.span(), label, type);
+        return new Decl(null, null, null, Arrays.asList(v), x);
     }
 
     /**
@@ -698,13 +714,14 @@ public abstract class Expr extends Browsable {
     }
 
     /**
-     * Return a new variable "v: set this"
+     * Return a new declaration "v: set this"
      * <p> this must be already fully typechecked, and must be a set or relation
      * <p> the label is only used for pretty-printing, and does not have to be unique
      */
-    public final ExprVar setOf(String label) {
-        Expr x=ExprUnary.Op.SETOF.make(span(), this);
-        return ExprVar.make(x.span(), label, x);
+    public final Decl setOf(String label) throws Err {
+        Expr x = ExprUnary.Op.SETOF.make(span(), this);
+        ExprVar v = ExprVar.make(x.span(), label, type);
+        return new Decl(null, null, null, Arrays.asList(v), x);
     }
 
     /**

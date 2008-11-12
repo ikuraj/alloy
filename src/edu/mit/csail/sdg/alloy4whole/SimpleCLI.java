@@ -36,6 +36,7 @@ import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.Version;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
@@ -175,7 +176,7 @@ public final class SimpleCLI {
                     }
                     for(Func x:m.getAllFunc()) {
                         sb.append("\nFun/pred ").append(x.label).append(" at position ").append(x.pos).append("\n");
-                        for(ExprVar v: x.params) v.toString(sb, 2);
+                        for(Decl d:x.decls) for(ExprVar v:d.names) { v.toString(sb, 2); d.expr.toString(sb, 4); }
                         x.returnDecl.toString(sb, 2);
                         x.getBody().toString(sb, 4);
                         rep.flush();

@@ -24,6 +24,7 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 
 import java.util.Collection;
 import java.util.List;
+import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorWarning;
@@ -42,18 +43,21 @@ public final class ExprLet extends Expr {
     /** The LET variable. */
     public final ExprVar var;
 
+    /** The expression bound to the LET variable. */
+    public final Expr expr;
+
     /** The body of the LET expression. */
     public final Expr sub;
 
     /** Caches the span() result. */
-    private Pos span=null;
+    private Pos span = null;
 
     //=============================================================================================================//
 
     /** {@inheritDoc} */
     @Override public Pos span() {
-        Pos p=span;
-        if (p==null) span = (p = var.span().merge(sub.span()));
+        Pos p = span;
+        if (p==null) span = (p = var.span().merge(expr.span()).merge(sub.span()));
         return p;
     }
 
@@ -69,6 +73,7 @@ public final class ExprLet extends Expr {
             for(int i=0; i<indent; i++) { out.append(' '); }
             out.append("let with type=").append(type).append('\n');
             var.toString(out, indent+2);
+            expr.toString(out, indent+2);
             sub.toString(out, indent+2);
         }
     }
@@ -76,10 +81,11 @@ public final class ExprLet extends Expr {
     //=============================================================================================================//
 
     /** Constructs a LET expression. */
-    private ExprLet(Pos pos, ExprVar var, Expr sub, JoinableList<Err> errs) {
-        super(pos, null, sub.ambiguous, sub.type, 0, var.weight+sub.weight, errs);
-        this.var=var;
-        this.sub=sub;
+    private ExprLet(Pos pos, ExprVar var, Expr expr, Expr sub, JoinableList<Err> errs) {
+        super(pos, null, expr.ambiguous || sub.ambiguous, sub.type, 0, var.weight + expr.weight + sub.weight, errs);
+        this.var = var;
+        this.expr = expr;
+        this.sub = sub;
     }
 
     //=============================================================================================================//
@@ -91,13 +97,19 @@ public final class ExprLet extends Expr {
      * @param var - the LET variable
      * @param sub - the body of the LET expression (which may or may not contain "var" as a free variable)
      */
-    public static Expr make(Pos pos, ExprVar var, Expr sub) {
-        JoinableList<Err> errs = var.errors.join(sub.errors);
+    public static Expr make(Pos pos, ExprVar var, Expr expr, Expr sub) {
+        if (expr.ambiguous) expr = expr.resolve(expr.type, null);
+        JoinableList<Err> errs = var.errors.join(expr.errors).join(sub.errors);
+        if (expr.mult!=0)
+            errs = errs.append(new ErrorSyntax(expr.span(), "Multiplicity expression not allowed here."));
         if (sub.mult != 0)
             errs = errs.append(new ErrorSyntax(sub.span(), "Multiplicity expression not allowed here."));
-        if (var.expr.mult!=0)
-            errs = errs.append(new ErrorSyntax(var.expr.span(), "Multiplicity expression not allowed here."));
-        return new ExprLet(pos, var, sub, errs);
+        if (errs.size()==0 && var.type!=expr.type)
+            if (var.type.is_int!=expr.type.is_int
+             || var.type.is_bool!=expr.type.is_bool
+             || var.type.arity()!=expr.type.arity())
+                errs = errs.append(new ErrorType(var.span(), "This variable has type "+var.type+" but is bound to a value of type "+expr.type));
+        return new ExprLet(pos, var, expr, sub, errs);
     }
 
     //=============================================================================================================//
@@ -105,18 +117,20 @@ public final class ExprLet extends Expr {
     /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) {
         if (errors.size()>0) return this;
-        // The variable is always already fully resolved, so we only need to resolve sub
+        // The var and expr are always already fully resolved, so we only need to resolve sub
         Expr newSub = sub.resolve(p, warns);
         if (warns!=null && !newSub.hasVar(var)) warns.add(new ErrorWarning(var.pos, "This variable is unused."));
-        return (sub==newSub) ? this : make(pos, var, newSub);
+        return (sub==newSub) ? this : make(pos, var, expr, newSub);
     }
 
     //=============================================================================================================//
 
     /** {@inheritDoc} */
     public int getDepth() {
-        int a=var.getDepth(), b=sub.getDepth();
-        if (a>=b) return 1+a; else return 1+b;
+        int a=var.getDepth(), b=sub.getDepth(), c=expr.getDepth();
+        if (a<b) a=b;
+        if (a<c) a=c;
+        return 1+a;
     }
 
     /** {@inheritDoc} */
@@ -127,7 +141,7 @@ public final class ExprLet extends Expr {
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {
-        Browsable a = make(var.pos, var.pos, "<b>var</b> "+var.label+" = ...", var.expr);
+        Browsable a = make(var.pos, var.pos, "<b>var</b> "+var.label+" = ...", expr);
         Browsable b = make(sub.span(), sub.span(), "where...", sub);
         return Util.asList(a, b);
     }

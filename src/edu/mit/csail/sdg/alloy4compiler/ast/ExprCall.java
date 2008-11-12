@@ -132,21 +132,23 @@ public final class ExprCall extends Expr {
               default: return Type.FORMULA;
             }
         }
-        @Override public Type visit(ExprQuant x) throws Err {
-            if (x.op == ExprQuant.Op.SUM) return Type.INT;
-            if (x.op != ExprQuant.Op.COMPREHENSION) return Type.FORMULA;
-            Type ans=null;
-            for(ExprVar v: x.vars) {
-                Type t = v.expr.accept(this);
-                env.put(v, t);
-                if (ans==null) ans=t; else ans=ans.product(t);
+        @Override public Type visit(ExprQt x) throws Err {
+            if (x.op == ExprQt.Op.SUM) return Type.INT;
+            if (x.op != ExprQt.Op.COMPREHENSION) return Type.FORMULA;
+            Type ans = null;
+            for(Decl d: x.decls) {
+                Type t = d.expr.accept(this);
+                for(ExprVar v: d.names) {
+                   env.put(v, t);
+                   if (ans==null) ans=t; else ans=ans.product(t);
+                }
             }
-            for(ExprVar v: x.vars) env.remove(v);
+            for(Decl d: x.decls) for(ExprVar v: d.names) env.remove(v);
             return (ans==null) ? EMPTY : ans;
         }
         @Override public Type visit(ExprLet x) throws Err {
-            env.put(x.var, x.var.expr.accept(this));
-            Type ans=x.sub.accept(this);
+            env.put(x.var, x.expr.accept(this));
+            Type ans = x.sub.accept(this);
             env.remove(x.var);
             return ans;
         }
@@ -194,12 +196,12 @@ public final class ExprCall extends Expr {
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         TempList<Expr> newargs=new TempList<Expr>(args.size());
-        if (args.size() != fun.params.size()) {
+        if (args.size() != fun.count()) {
             errs = errs.append(
-              new ErrorSyntax(pos, ""+fun+" has "+fun.params.size()+" parameters but is called with "+args.size()+" arguments."));
+              new ErrorSyntax(pos, ""+fun+" has "+fun.count()+" parameters but is called with "+args.size()+" arguments."));
         }
         for(int i=0; i<args.size(); i++) {
-            final int a = (i<fun.params.size()) ? fun.params.get(i).type.arity() : 0;
+            final int a = (i<fun.count()) ? fun.get(i).type.arity() : 0;
             final Expr x = args.get(i).typecheck_as_set();
             ambiguous = ambiguous || x.ambiguous;
             errs = errs.join(x.errors);
@@ -217,7 +219,7 @@ public final class ExprCall extends Expr {
                 // by using actual arguments at each call site to derive a tighter bound on the return value.
                 DeduceType d = new DeduceType();
                 for(int i=0; i<args.size(); i++) {
-                    ExprVar param=fun.params.get(i);
+                    ExprVar param = fun.get(i);
                     d.env.put(param, newargs.get(i).type.extract(param.type.arity()));
                 }
                 t = fun.returnDecl.accept(d);
@@ -237,7 +239,7 @@ public final class ExprCall extends Expr {
         TempList<Expr> args = new TempList<Expr>(this.args.size());
         boolean changed = false;
         for(int i=0; i<this.args.size(); i++) {
-            Type p = fun.params.get(i).type;
+            Type p = fun.get(i).type;
             Expr x = this.args.get(i);
             Expr y = x.resolve(p, warns).typecheck_as_set(); // Use the function's param type to narrow down the choices
             if (x!=y) changed=true;

@@ -130,7 +130,7 @@ public final class ExprList extends Expr {
     }
 
     /** Generates a call to a builtin predicate */
-    public static ExprList make(Pos pos, Pos closingBracket, Op op, List<Expr> args) {
+    public static ExprList make(Pos pos, Pos closingBracket, Op op, List<? extends Expr> args) {
         boolean ambiguous = false;
         JoinableList<Err> errs = emptyListOfErrors;
         TempList<Expr> newargs = new TempList<Expr>(args.size());
@@ -177,10 +177,10 @@ public final class ExprList extends Expr {
     }
 
     /** Generates the expression pred/totalOrder[arg1, args2, arg3...] */
-    public static ExprList makeTOTALORDER(Pos pos, Pos closingBracket, List<Expr> args) { return make(pos, closingBracket, Op.TOTALORDER, args); }
+    public static ExprList makeTOTALORDER(Pos pos, Pos closingBracket, List<? extends Expr> args) { return make(pos, closingBracket, Op.TOTALORDER, args); }
 
     /** Generates the expression disj[arg1, args2, arg3...] */
-    public static ExprList makeDISJOINT(Pos pos, Pos closingBracket, List<Expr> args) { return make(pos, closingBracket, Op.DISJOINT, args); }
+    public static ExprList makeDISJOINT(Pos pos, Pos closingBracket, List<? extends Expr> args) { return make(pos, closingBracket, Op.DISJOINT, args); }
 
     /** Return a new ExprList object that is the same as this one except with one additional argument. */
     public ExprList addArg(Expr x) {

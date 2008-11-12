@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
+import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
@@ -74,8 +75,9 @@ public class DemoFileSystem {
     /* These corresponds to the helper predicates/functions provided in util/*.als */
 
     static Expr acyclic(Expr r) throws Err {
-        ExprVar x = r.join(Sig.UNIV).oneOf("x");     // x is a variable over the domain of r
-        return x.in(x.join(r.closure())).not().forAll(x); // (x !in x.^r) for all x
+        Decl d = r.join(Sig.UNIV).oneOf("x");     // x is a variable over the domain of r
+        ExprVar x = d.get();
+        return x.in(x.join(r.closure())).not().forAll(d); // (x !in x.^r) for all x
     }
 
     /* Here are definitions common to all instances. */
@@ -98,8 +100,8 @@ public class DemoFileSystem {
         parent = obj.addField(null, "parent", dir.loneOf());
         contains = dir.addField(null, "contains", obj.setOf());
         // fact { all x:Obj-Root | one x.parent }
-        ExprVar x = obj.minus(root).oneOf("x");
-        fact = x.join(parent).one().forAll(x).and(fact);
+        Decl x = obj.minus(root).oneOf("x");
+        fact = x.get().join(parent).one().forAll(x).and(fact);
         // fact { contains = ~ parent }
         fact = contains.equal(parent.transpose()).and(fact);
         // fact { acyclic[contains] }

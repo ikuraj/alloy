@@ -50,6 +50,8 @@ import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
+import kodkod.ast.operator.ExprOperator;
+import kodkod.ast.operator.FormulaOperator;
 import kodkod.engine.CapacityExceededException;
 import kodkod.engine.Evaluator;
 import kodkod.engine.Proof;
@@ -513,7 +515,7 @@ public final class A4Solution {
        }
        else if (expr instanceof BinaryExpression) {
           BinaryExpression b = (BinaryExpression)expr;
-          if (b.op() == BinaryExpression.Operator.UNION) {
+          if (b.op() == ExprOperator.UNION) {
              TupleSet left = query(findUpper, b.left(), true);
              TupleSet right = query(findUpper, b.right(), false);
              left.addAll(right);
@@ -606,7 +608,7 @@ public final class A4Solution {
         k2pos.put(formula, expr);
         if (formula instanceof BinaryFormula) {
             BinaryFormula b = (BinaryFormula)formula;
-            if (b.op() == BinaryFormula.Operator.AND) { k2pos(b.left(), expr); k2pos(b.right(), expr); }
+            if (b.op() == FormulaOperator.AND) { k2pos(b.left(), expr); k2pos(b.right(), expr); }
         }
         return formula;
     }
@@ -618,7 +620,7 @@ public final class A4Solution {
         k2pos.put(formula, pos);
         if (formula instanceof BinaryFormula) {
             BinaryFormula b = (BinaryFormula)formula;
-            if (b.op() == BinaryFormula.Operator.AND) { k2pos(b.left(), pos); k2pos(b.right(), pos); }
+            if (b.op() == FormulaOperator.AND) { k2pos(b.left(), pos); k2pos(b.right(), pos); }
         }
         return formula;
     }

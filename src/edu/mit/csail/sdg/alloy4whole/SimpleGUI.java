@@ -1775,7 +1775,7 @@ public final class SimpleGUI implements ComponentListener {
         // Test the allowed memory sizes
         final WorkerEngine.WorkerCallback c = new WorkerEngine.WorkerCallback() {
             private final List<Integer> allowed = new ArrayList<Integer>();
-            private final List<Integer> toTry = new ArrayList<Integer>(Arrays.asList(256,512,768,1024,1536,2048,3072,4096));
+            private final List<Integer> toTry = new ArrayList<Integer>(Arrays.asList(256,512,768,1024,1536,2048,2560,3072,3584,4096));
             private int mem;
             public synchronized void callback(Object msg) {
                 if (toTry.size()==0) {

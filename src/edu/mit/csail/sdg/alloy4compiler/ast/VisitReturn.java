@@ -62,8 +62,8 @@ public abstract class VisitReturn<T> {
     /** Visits an ExprLet node. */
     public abstract T visit(ExprLet x) throws Err;
 
-    /** Visits an ExprQuant node. */
-    public abstract T visit(ExprQuant x) throws Err;
+    /** Visits an ExprQt node. */
+    public abstract T visit(ExprQt x) throws Err;
 
     /** Visits an ExprUnary node. */
     public abstract T visit(ExprUnary x) throws Err;

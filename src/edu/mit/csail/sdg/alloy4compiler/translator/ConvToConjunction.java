@@ -31,7 +31,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprQt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -56,12 +56,12 @@ final class ConvToConjunction extends VisitReturn<Expr> {
     }
 
     /** {@inheritDoc} */
-    @Override public Expr visit(ExprQuant x) throws Err {
-        if (x.op == ExprQuant.Op.ALL) {
+    @Override public Expr visit(ExprQt x) throws Err {
+        if (x.op == ExprQt.Op.ALL) {
             Expr s = TranslateAlloyToKodkod.deNOP(x.sub);
             if (s instanceof ExprBinary && ((ExprBinary)s).op==ExprBinary.Op.AND) {
-                Expr a = visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.vars, ((ExprBinary)s).left));
-                Expr b = visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.vars, ((ExprBinary)s).right));
+                Expr a = visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.decls, ((ExprBinary)s).left));
+                Expr b = visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.decls, ((ExprBinary)s).right));
                 return a.and(b);
             }
         }

@@ -23,7 +23,6 @@
 package edu.mit.csail.sdg.alloy4compiler.translator;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -41,6 +40,7 @@ import edu.mit.csail.sdg.alloy4.Pair;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
+import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
@@ -48,7 +48,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprQuant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprQt;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
@@ -57,7 +57,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.VisitReturn;
 import kodkod.ast.BinaryExpression;
-import kodkod.ast.Decl;
 import kodkod.ast.IntExpression;
 import kodkod.ast.Decls;
 import kodkod.ast.IntConstant;
@@ -67,6 +66,7 @@ import kodkod.ast.Variable;
 import kodkod.ast.Relation;
 import kodkod.ast.Formula;
 import kodkod.ast.Expression;
+import kodkod.ast.operator.ExprOperator;
 import kodkod.engine.CapacityExceededException;
 import kodkod.engine.fol2sat.HigherOrderDeclException;
 import kodkod.instance.Tuple;
@@ -510,7 +510,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     private static Relation right(Expression x) {
         if (!(x instanceof BinaryExpression)) return null;
         BinaryExpression bin = (BinaryExpression)x;
-        if (bin.op() != BinaryExpression.Operator.PRODUCT) return null;
+        if (bin.op() != ExprOperator.PRODUCT) return null;
         if (bin.left().arity()==1 && bin.right() instanceof Relation) return (Relation)(bin.right()); else return null;
     }
 
@@ -541,7 +541,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public Object visit(ExprLet x) throws Err {
-        env.put(x.var, visitThis(x.var.expr));
+        env.put(x.var, visitThis(x.expr));
         Object ans = visitThis(x.sub);
         env.remove(x.var);
         return ans;
@@ -649,10 +649,11 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprCall x) throws Err {
         final Func f = x.fun;
-        final Object candidate = f.params.size()==0 ? cacheForConstants.get(f) : null;
+        final Object candidate = f.count()==0 ? cacheForConstants.get(f) : null;
         if (candidate!=null) return candidate;
         final Expr body = f.getBody();
-        final int n = f.params.size();
+        if (body.type.arity()<0 || body.type.arity()!=f.returnDecl.type.arity()) throw new ErrorType(body.span(), "Function return value not fully resolved.");
+        final int n = f.count();
         int maxRecursion = unrolls;
         for(Func ff:current_function) if (ff==f) {
             if (maxRecursion<0) {
@@ -670,7 +671,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             maxRecursion--;
         }
         Env<ExprVar,Object> newenv = new Env<ExprVar,Object>();
-        for(int i=0; i<n; i++) newenv.put(f.params.get(i), cset(x.args.get(i)));
+        for(int i=0; i<n; i++) newenv.put(f.get(i), cset(x.args.get(i)));
         Env<ExprVar,Object> oldenv = env;
         env = newenv;
         current_function.add(f);
@@ -678,7 +679,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         env = oldenv;
         current_function.remove(current_function.size()-1);
         if (ans instanceof Formula) k2pos((Formula)ans, x);
-        if (f.params.size()==0) cacheForConstants.put(f, ans);
+        if (f.count()==0) cacheForConstants.put(f, ans);
         return ans;
     }
 
@@ -791,7 +792,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                 a=deNOP(a); s=cset(a); s2=cset(b);
                 if (a instanceof Sig && ((Sig)a).isOne!=null && s2 instanceof BinaryExpression) {
                     BinaryExpression bin = (BinaryExpression)s2;
-                    if (bin.op()==BinaryExpression.Operator.PRODUCT && bin.left()==s) return bin.right();
+                    if (bin.op()==ExprOperator.PRODUCT && bin.left()==s) return bin.right();
                 }
                 return s.join(s2);
             case EQUALS:
@@ -884,100 +885,97 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         return ans;
     }
 
-    /*==============================*/
-    /* Evaluates an ExprQuant node. */
-    /*==============================*/
+    /*===========================*/
+    /* Evaluates an ExprQt node. */
+    /*===========================*/
 
     /** Adds a "one of" in front of X if X is unary and does not have a declared multiplicity. */
     private static Expr addOne(Expr x) {
-        if (x instanceof ExprUnary) switch(((ExprUnary)x).op) {
-            case SETOF: case ONEOF: case LONEOF: case SOMEOF: return x;
+        Expr save = x;
+        while(x instanceof ExprUnary) {
+            switch(((ExprUnary)x).op) {
+               case SETOF: case ONEOF: case LONEOF: case SOMEOF: return save;
+               case NOOP: x = ((ExprUnary)x).sub;  continue;
+               default: break;
+            }
         }
         return (x.type.arity()!=1) ? x : ExprUnary.Op.ONEOF.make(x.span(), x);
     }
 
-    /** Helper method that translates the quantification expression "op vars | sub" */
-    private Object visit_qt(final ExprQuant.Op op, final ConstList<ExprVar> xvars, final Expr sub) throws Err {
-        if (op == ExprQuant.Op.NO) {
-            return visit_qt(ExprQuant.Op.ALL, xvars, sub.not());
+   /** Helper method that translates the quantification expression "op vars | sub" */
+   private Object visit_qt(final ExprQt.Op op, final ConstList<Decl> xvars, final Expr sub) throws Err {
+      if (op == ExprQt.Op.NO) {
+         return visit_qt(ExprQt.Op.ALL, xvars, sub.not());
+      }
+      if (op == ExprQt.Op.ONE || op == ExprQt.Op.LONE) {
+         boolean ok = true;
+         for(int i=0; i<xvars.size(); i++) {
+            Expr v = deNOP(addOne(xvars.get(i).expr));
+            if (v.type.arity()!=1 || v.mult()!=ExprUnary.Op.ONEOF) { ok=false; break; }
+         }
+         if (op==ExprQt.Op.ONE && ok) return ((Expression) visit_qt(ExprQt.Op.COMPREHENSION, xvars, sub)).one();
+         if (op==ExprQt.Op.LONE && ok) return ((Expression) visit_qt(ExprQt.Op.COMPREHENSION, xvars, sub)).lone();
+      }
+      if (op == ExprQt.Op.ONE) {
+         Formula f1 = (Formula) visit_qt(ExprQt.Op.LONE, xvars, sub);
+         Formula f2 = (Formula) visit_qt(ExprQt.Op.SOME, xvars, sub);
+         return f1.and(f2);
+      }
+      if (op == ExprQt.Op.LONE) {
+         QuantifiedFormula p1 = (QuantifiedFormula) visit_qt(ExprQt.Op.ALL, xvars, sub);
+         QuantifiedFormula p2 = (QuantifiedFormula) visit_qt(ExprQt.Op.ALL, xvars, sub);
+         Decls s1 = p1.decls(), s2 = p2.decls(), decls = null;
+         Formula f1 = p1.formula(), f2 = p2.formula();
+         Formula[] conjuncts = new Formula[s1.size()];
+         for(int i=0; i<conjuncts.length; i++) {
+            kodkod.ast.Decl d1 = s1.get(i), d2 = s2.get(i);
+            conjuncts[i] = d1.variable().eq(d2.variable());
+            if (decls==null) decls = d1.and(d2); else decls = decls.and(d1).and(d2);
+         }
+         return f1.and(f2).implies(Formula.and(conjuncts)).forAll(decls);
+      }
+      Decls dd = null;
+      List<Formula> guards = new ArrayList<Formula>();
+      for(Decl dep: xvars) {
+        final Expr dexexpr = addOne(dep.expr);
+        final Expression dv = cset(dexexpr);
+        for(ExprVar dex: dep.names) {
+           final Variable v = Variable.nary(skolem(dex.label), dex.type.arity());
+           final kodkod.ast.Decl newd;
+           env.put(dex, v);
+           if (dex.type.arity()!=1) {
+              guards.add(isIn(v, dexexpr));
+              newd = v.setOf(dv);
+           } else switch(dexexpr.mult()) {
+              case SETOF: newd = v.setOf(dv); break;
+              case SOMEOF: newd = v.someOf(dv); break;
+              case LONEOF: newd = v.loneOf(dv); break;
+              default: newd = v.oneOf(dv);
+           }
+           if (frame!=null) frame.kv2typepos(v, dex.type, dex.pos);
+           if (dd==null) dd = newd; else dd = dd.and(newd);
         }
-        if (op == ExprQuant.Op.ONE || op == ExprQuant.Op.LONE) {
-            for(int i=0; ;i++) {
-                if (i>=xvars.size() && op==ExprQuant.Op.ONE)
-                   return ((Expression) visit_qt(ExprQuant.Op.COMPREHENSION, xvars, sub)).one();
-                if (i>=xvars.size() && op==ExprQuant.Op.LONE)
-                   return ((Expression) visit_qt(ExprQuant.Op.COMPREHENSION, xvars, sub)).lone();
-                Expr v = deNOP(addOne(xvars.get(i).expr));
-                if (v.type.arity()>1 || v.mult!=1 || !(v instanceof ExprUnary) || ((ExprUnary)v).op!=ExprUnary.Op.ONEOF) break;
-            }
-        }
-        if (op == ExprQuant.Op.ONE) {
-            Formula f1 = (Formula) visit_qt(ExprQuant.Op.LONE, xvars, sub);
-            Formula f2 = (Formula) visit_qt(ExprQuant.Op.SOME, xvars, sub);
-            return f1.and(f2);
-        }
-        if (op == ExprQuant.Op.LONE) {
-            QuantifiedFormula p1 = (QuantifiedFormula) visit_qt(ExprQuant.Op.ALL, xvars, sub);
-            QuantifiedFormula p2 = (QuantifiedFormula) visit_qt(ExprQuant.Op.ALL, xvars, sub);
-            Formula f1=p1.formula(), f2=p2.formula(), eqv=Formula.TRUE;
-            Iterator<Decl> s1=p1.declarations().iterator(), s2=p2.declarations().iterator();
-            Decls decls=null;
-            while(s1.hasNext() && s2.hasNext()) {
-                Decl d1=s1.next(), d2=s2.next();
-                eqv = d1.variable().eq(d2.variable()).and(eqv);
-                if (decls==null) decls=d1.and(d2); else decls=decls.and(d1).and(d2);
-            }
-            return f1.and(f2).implies(eqv).forAll(decls);
-        }
-        List<Decl> decls=new ArrayList<Decl>();
-        Decls dd=null;
-        Formula guard=Formula.TRUE;
-        Expr lastExpr=null;
-        Expression lastValue=null;
-        for(ExprVar dex:xvars) {
-            final Variable v = Variable.nary(skolem(dex.label), dex.type.arity());
-            final Decl newd;
-            final Expression dv = (dex.expr==lastExpr) ? lastValue : cset(dex.expr);
-            env.put(dex, v);
-            lastExpr=dex.expr;
-            lastValue=dv;
-            final Expr dexexpr=addOne(lastExpr);
-            if (dex.type.arity()==1) {
-                ExprUnary.Op mt=ExprUnary.Op.ONEOF;
-                if (dexexpr instanceof ExprUnary) {
-                    if (((ExprUnary)dexexpr).op==ExprUnary.Op.SETOF) mt=ExprUnary.Op.SETOF;
-                    else if (((ExprUnary)dexexpr).op==ExprUnary.Op.SOMEOF) mt=ExprUnary.Op.SOMEOF;
-                    else if (((ExprUnary)dexexpr).op==ExprUnary.Op.LONEOF) mt=ExprUnary.Op.LONEOF;
-                }
-                switch(mt) {
-                  case SETOF: newd=v.setOf(dv); break;
-                  case SOMEOF: newd=v.someOf(dv); break;
-                  case LONEOF: newd=v.loneOf(dv); break;
-                  default: newd=v.oneOf(dv);
-                }
-            } else {
-                guard=isIn(v, dexexpr).and(guard);
-                newd=v.setOf(dv);
-            }
-            if (frame!=null) frame.kv2typepos(v, dex.type, dex.pos);
-            if (dd==null) dd=newd; else dd=dd.and(newd);
-            decls.add(newd);
-        }
-        final Formula ans = (op==ExprQuant.Op.SUM) ? null : cform(sub) ;
-        final IntExpression ians = (op!=ExprQuant.Op.SUM) ? null : cint(sub) ;
-        for(ExprVar dex:xvars) env.remove(dex);
-        if (op==ExprQuant.Op.COMPREHENSION) return ans.comprehension(dd); // guard==Formula.TRUE, since each var has to be unary
-        if (op==ExprQuant.Op.SUM) return ians.sum(dd);                    // guard==Formula.TRUE, since each var has to be unary
-        if (op==ExprQuant.Op.SOME) {
-            return guard==Formula.TRUE ? ans.forSome(dd) : guard.and(ans).forSome(dd);
-        } else {
-            return guard==Formula.TRUE ? ans.forAll(dd) : guard.implies(ans).forAll(dd);
-        }
-    }
+      }
+      final Formula ans = (op==ExprQt.Op.SUM) ? null : cform(sub) ;
+      final IntExpression ians = (op!=ExprQt.Op.SUM) ? null : cint(sub) ;
+      for(Decl d: xvars) for(ExprVar v: d.names) env.remove(v);
+      if (op==ExprQt.Op.COMPREHENSION) return ans.comprehension(dd); // guards.size()==0, since each var has to be unary
+      if (op==ExprQt.Op.SUM) return ians.sum(dd);                    // guards.size()==0, since each var has to be unary
+      if (op==ExprQt.Op.SOME) {
+         if (guards.size()==0) return ans.forSome(dd);
+         guards.add(ans);
+         return Formula.and(guards).forSome(dd);
+      } else {
+         if (guards.size()==0) return ans.forAll(dd);
+         return Formula.and(guards).implies(ans).forAll(dd);
+      }
+   }
 
     /** {@inheritDoc} */
-    @Override public Object visit(ExprQuant x) throws Err {
-        Object ans = visit_qt(x.op, x.vars, x.sub);
+    @Override public Object visit(ExprQt x) throws Err {
+        Expr xx = x.desugar();
+        if (xx instanceof ExprQt) x = (ExprQt)xx; else return visitThis(xx);
+        Object ans = visit_qt(x.op, x.decls, x.sub);
         if (ans instanceof Formula) k2pos((Formula)ans, x);
         return ans;
     }

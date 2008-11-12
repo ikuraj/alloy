@@ -56,6 +56,9 @@ public abstract class Sig extends Expr {
     /** The built-in "none" signature. */
     public static final PrimSig NONE = new PrimSig("none", null, false);
 
+    /** The declaration that quantifies over each atom in this sig. */
+    public final Decl decl;
+
     /** Returns the name for this sig; this name need not be unique. */
     @Override public final String toString() { return label; }
 
@@ -158,6 +161,9 @@ public abstract class Sig extends Expr {
     /** Constructs a new builtin PrimSig. */
     private Sig(String label) {
         super(Pos.UNKNOWN, null);
+        Expr oneof = ExprUnary.Op.ONEOF.make(null, this);
+        ExprVar v = ExprVar.make(null, "this", oneof.type);
+        this.decl = new Decl(null, null, null, Util.asList(v), oneof);
         this.builtin = true;
         this.isAbstract = null;
         this.isLone = null;
@@ -173,6 +179,9 @@ public abstract class Sig extends Expr {
     /** Constructs a new PrimSig or SubsetSig. */
     private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isPrivate, Pos isMeta) throws Err {
         super(pos, type);
+        Expr oneof = ExprUnary.Op.ONEOF.make(null, this);
+        ExprVar v = ExprVar.make(null, "this", oneof.type);
+        this.decl = new Decl(null, null, null, Util.asList(v), oneof);
         if (lone!=null && one!=null)  throw new ErrorSyntax(lone.merge(one),  "You cannot delcare a sig to be both lone and one.");
         if (lone!=null && some!=null) throw new ErrorSyntax(lone.merge(some), "You cannot delcare a sig to be both lone and some.");
         if (one!=null  && some!=null) throw new ErrorSyntax(one.merge(some),  "You cannot delcare a sig to be both one and some.");
@@ -512,7 +521,7 @@ public abstract class Sig extends Expr {
         }
 
         /** Constructs a new Field object. */
-        private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, ExprVar var, Expr bound) throws Err {
+        private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, Pos unused, Expr bound) throws Err {
             super(pos, null, false, sig.type.product(bound.type), 0, 0, bound.errors);
             if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
             this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
@@ -520,9 +529,8 @@ public abstract class Sig extends Expr {
             this.sig = sig;
             this.label = label;
             // If the field declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
-            if (bound.mult==0 && bound.type.arity()==1) bound=ExprUnary.Op.ONEOF.make(null, bound);
-            if (var==null) var = ExprVar.make(null, "this", sig.oneOf());
-            boundingFormula = ExprQuant.Op.ALL.make(pos, null, Util.asList(var), var.join(this).in(bound));
+            if (bound.mult==0 && bound.type.arity()==1) bound = ExprUnary.Op.ONEOF.make(null, bound);
+            boundingFormula = ExprQt.Op.ALL.make(pos, null, Util.asList(sig.decl), sig.decl.get().join(this).in(bound));
             if (!boundingFormula.errors.isEmpty())
                 throw boundingFormula.errors.pick();
             if (boundingFormula.hasCall())
@@ -572,7 +580,7 @@ public abstract class Sig extends Expr {
             Browsable s = make(sig.pos, sig.span(), "<b>from sig</b> "+sig.label, sig.getSubnodes());
             Browsable b;
             if (boundingFormula!=null) {
-                b = ((ExprBinary)(((ExprQuant)boundingFormula).sub)).right;
+                b = ((ExprBinary)(((ExprQt)boundingFormula).sub)).right;
                 b = make(b.pos(), b.span(), "<b>bound</b>", b);
             } else {
                 b = definition;
@@ -604,10 +612,10 @@ public abstract class Sig extends Expr {
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
-    public final Field addTrickyField(Pos pos, Pos isPrivate, Pos isMeta, String label, ExprVar x, Expr bound) throws Err {
-        bound=bound.typecheck_as_set();
-        if (bound.ambiguous) bound=bound.resolve_as_set(null);
-        final Field f=new Field(pos, isPrivate, isMeta, this, label, x, bound);
+    public final Field addTrickyField (Pos pos, Pos isPrivate, Pos isMeta, String label, Pos unused, Expr bound) throws Err {
+        bound = bound.typecheck_as_set();
+        if (bound.ambiguous) bound = bound.resolve_as_set(null);
+        final Field f = new Field(pos, isPrivate, isMeta, this, label, null, bound);
         fields.add(f);
         return f;
     }

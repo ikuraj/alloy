@@ -26,9 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Util;
+import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -71,14 +71,13 @@ public final class ExampleUsingTheAPI {
         // If you want "setOf", you need:   A.addField(null, "g", B.setOf())
 
         // pred someG { some g }
-        Func someG = new Func(null, "SomeG", null, null);
-        someG.setBody(g.some());
+        Func someG = new Func(null, "SomeG", null, null, g.some());
 
         // pred atMostThree[x:univ, y:univ] { #(x+y) >= 3 }
-        ExprVar x = UNIV.oneOf("x");
-        ExprVar y = UNIV.oneOf("y");
-        Func atMost3 = new Func(null, "atMost3", Util.asList(x,y), null);
-        atMost3.setBody(x.plus(y).cardinality().lte(ExprConstant.makeNUMBER(3)));
+        Decl x = UNIV.oneOf("x");
+        Decl y = UNIV.oneOf("y");
+        Expr body = x.get().plus(y.get()).cardinality().lte(ExprConstant.makeNUMBER(3));
+        Func atMost3 = new Func(null, "atMost3", Util.asList(x,y), null, body);
 
         List<Sig> sigs = Arrays.asList(new Sig[]{A, B, A1, A2});
 

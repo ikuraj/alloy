@@ -25,12 +25,10 @@ package edu.mit.csail.sdg.alloy4compiler.parser;
 import java.util.LinkedList;
 import java.util.List;
 import java.io.Reader;
-import java.io.IOException;
 import java_cup_11a.runtime.Scanner;
 import java_cup_11a.runtime.Symbol;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
-import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 import static edu.mit.csail.sdg.alloy4compiler.parser.CompSym.*;
@@ -68,7 +66,7 @@ final class CompFilter implements Scanner {
     //===================== PHASE 1 ==================================================================================
 
     /** The underlying lexer. */
-    private final CompLexer r;
+    private final Scanner r;
 
     /** A list of tokens that we prefetched from the underlying lexer. */
     private final LinkedList<Symbol> undo = new LinkedList<Symbol>();
@@ -76,139 +74,37 @@ final class CompFilter implements Scanner {
     /** Stores the latest token passed from phase 1 to phase 2. */
     private Symbol last = null;
 
-    private final Symbol change(Symbol a,int b) { a.sym=b; return a; }
-
     /** Reads a token from the underlying lexer; if the undo list is not empty, we take it from there instead. */
     private Symbol myread() throws Err {
       if (!undo.isEmpty()) return undo.removeFirst();
       try {
           return r.next_token();
-      } catch(IOException ex) {
+      } catch(Exception ex) {
           throw new ErrorFatal("IO error: "+ex.getMessage(), ex);
       }
     }
 
-    /** The symbols that can be at the end of a UnionDiffExpr. */
-    private int[] follow = new int[] {RBRACE, RBRACKET, NUMBER, IDEN, THIS, DISJ, INT, SUM, UNIV, SIGINT, NONE, ID, RPAREN};
-
     /** Reads one or more tokens from the underlying lexer, transform them, then give it to phase 2. */
     public Symbol next_token() throws Err {
-      Symbol a=myread(), b, c;
-      for(int i=0; i<=follow.length; i++) {
-          if (i==follow.length) {
-              if ((b=myread()).sym!=MINUS)  { undo.add(0,b); break; }
-              if ((c=myread()).sym!=NUMBER) { undo.add(0,c); undo.add(0,b); break; }
-              ExprConstant num = (ExprConstant)(c.value);
-              Pos pos = ((Pos)(b.value)).merge(num.span());
-              c.value = ExprConstant.Op.NUMBER.make(pos, 0-num.num);
-              undo.add(0,c);
-              break;
-          }
-          if (a.sym == follow[i]) break;
-      }
-      if (a.sym==ID)
-       {
-        b=myread();
-        if (b.sym==COLON)
-         {
-          c=myread();
-          if (c.sym==RUN || c.sym==CHECK) {
-              undo.add(0,a);
-              undo.add(0,change(b,DOT));
-              return last=c;
-          }
-          undo.add(0,c);
-         }
-        undo.add(0,b);
+       Symbol a = myread();
+       if (a.sym==LONE) {
+          Symbol b = myread();
+          if (last==null || last.sym!=COLON) return last=decl(a,b,LONE2); else undo.add(0,b);
        }
-      if (a.sym==PRED)
-       {
-        b=myread();
-        if (b.sym==SLASH)
-         {
-          c=myread();
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("totalOrder")) { a.pos=a.pos.merge(c.pos); return last=change(a, TOTALORDER); }
-          undo.add(0,c);
-         }
-        undo.add(0,b);
+       if (a.sym==ONE) {
+          Symbol b = myread();
+          if (last==null || last.sym!=COLON) return last=decl(a,b,ONE2); else undo.add(0,b);
        }
-      if (a.sym==FUN)
-       {
-        b=myread();
-        if (b.sym==SLASH)
-         {
-          c=myread();
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("add")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTADD); }
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("sub")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTSUB); }
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("mul")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTMUL); }
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("div")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTDIV); }
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("rem")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTREM); }
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("min")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTMIN); }
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("max")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTMAX); }
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("next")) { a.pos=a.pos.merge(c.pos); return last=change(a, INTNEXT); }
-          if (c.sym==ID && ((ExprVar)(c.value)).label.equals("String")) { c.pos=c.pos.merge(a.pos); c.value=ExprVar.make(c.pos, "fun/String"); return last=c; }
-          undo.add(0,c);
-         }
-        undo.add(0,b);
+       if (a.sym==SOME) {
+          Symbol b = myread();
+          if (last==null || last.sym!=COLON) return last=decl(a,b,SOME2); else undo.add(0,b);
        }
-      if (a.sym==NOT)
-       {
-        b=myread();
-        if (b.sym==IN)     return last=change(a, NOTIN);
-        if (b.sym==EQUALS) return last=change(a, NOTEQUALS);
-        if (b.sym==LT)     return last=change(a, NOTLT);
-        if (b.sym==LTE)    return last=change(a, NOTLTE);
-        if (b.sym==GT)     return last=change(a, NOTGT);
-        if (b.sym==GTE)    return last=change(a, NOTGTE);
-        undo.add(0,b); return last=a;
+       if (last==null || last.sym!=COLON) {
+          if (a.sym==NO) return last=decl(a, myread(), NO2);
+          if (a.sym==ALL) return last=decl(a, myread(), ALL2);
+          if (a.sym==SUM) return last=decl(a, myread(), SUM2);
        }
-      if (a.sym==ARROW) return last=arrow(a,0);
-      if (a.sym==SET)
-       {
-        if ((b=myread()).sym==ARROW) return last=arrow(a,0);
-        undo.add(0,b);
-       }
-      if (a.sym==LONE)
-       {
-        if ((b=myread()).sym==ARROW) return last=arrow(a,1);
-        if (last==null || last.sym!=COLON) return last=decl(a,b,LONE2);
-        undo.add(0,b);
-       }
-      if (a.sym==ONE)
-       {
-        if ((b=myread()).sym==ARROW) return last=arrow(a,2);
-        if (last==null || last.sym!=COLON) return last=decl(a,b,ONE2);
-        undo.add(0,b);
-       }
-      if (a.sym==SOME)
-       {
-        if ((b=myread()).sym==ARROW) return last=arrow(a,3);
-        if (last==null || last.sym!=COLON) return last=decl(a,b,SOME2);
-        undo.add(0,b);
-       }
-      if (last==null || last.sym!=COLON)
-       {
-        if (a.sym==NO) return last=decl(a, myread(), NO2);
-        if (a.sym==ALL) return last=decl(a, myread(), ALL2);
-        if (a.sym==SUM) return last=decl(a, myread(), SUM2);
-       }
-      return last=a;
-    }
-
-    private final int arrows[] = { // The element order is important
-      ANY_ARROW_LONE, ANY_ARROW_ONE, ANY_ARROW_SOME, ARROW,
-      LONE_ARROW_LONE, LONE_ARROW_ONE, LONE_ARROW_SOME, LONE_ARROW_ANY,
-      ONE_ARROW_LONE, ONE_ARROW_ONE, ONE_ARROW_SOME, ONE_ARROW_ANY,
-      SOME_ARROW_LONE, SOME_ARROW_ONE, SOME_ARROW_SOME, SOME_ARROW_ANY
-    };
-
-    private Symbol arrow(Symbol a,int m) throws Err {
-      Symbol b=myread();
-      if (b.sym==LONE) return change(a,arrows[m*4  ]);
-      if (b.sym==ONE ) return change(a,arrows[m*4+1]);
-      if (b.sym==SOME) return change(a,arrows[m*4+2]);
-      if (b.sym==SET ) return change(a,arrows[m*4+3]);
-      undo.add(0,b);   return change(a,arrows[m*4+3]);
+       return last=a;
     }
 
     private Symbol decl(Symbol a,Symbol b,int c) throws Err {
@@ -219,7 +115,7 @@ final class CompFilter implements Scanner {
         if (b.sym==ID) {
             while(true) {
                 temp.add(b=myread());
-                if (b.sym==COLON) {change(a,c);break;}
+                if (b.sym==COLON) {a.sym=c; break;}
                 if (b.sym!=COMMA) break;
                 temp.add(b=myread());
                 if (b.sym!=ID) break;
@@ -229,12 +125,138 @@ final class CompFilter implements Scanner {
         return a;
     }
 
-    /** Construct a filter for the tokens from the given file. */
-    public CompFilter(Module module, List<Object> seenDollar, String filename, int lineOffset, Reader i) throws Err {
-        r = new CompLexer(i);
-        r.alloy_module = module;
-        r.alloy_filename = filename;
-        r.alloy_lineoffset = lineOffset;
-        r.alloy_seenDollar = seenDollar;
-    }
+   /** Change a.pos to be the merger of a.pos and b.pos, then change a.sym to be sym, then return a. */
+   private static Symbol merge(Symbol a, Symbol b, int sym) {
+      a.pos = a.pos.merge(b.pos);
+      a.sym = sym;
+      return a;
+   }
+
+   /** Construct a filter for the tokens from the given file. */
+   public CompFilter(Module module, List<Object> seenDollar, String filename, int lineOffset, Reader i) throws Err {
+      final CompLexer L = new CompLexer(i);
+      L.alloy_module = module;
+      L.alloy_filename = filename;
+      L.alloy_lineoffset = lineOffset;
+      L.alloy_seenDollar = seenDollar;
+      // Replace "ID : RUN"   with "RUN . ID"
+      // Replace "ID : CHECK" with "CHECK . ID"
+      final Scanner A = new Scanner() {
+         private Symbol a, b, c;
+         public final Symbol next_token() throws Exception {
+            if (a==null) a=L.next_token(); if (a.sym==EOF) { b=a; c=a; }
+            if (b==null) b=L.next_token(); if (b.sym==EOF) { c=b; }
+            if (c==null) c=L.next_token();
+            if (a.sym==ID && b.sym==COLON && (c.sym==RUN || c.sym==CHECK)) { Symbol x=c; c=b; b=a; a=c; c=null; a.sym=DOT; return x; }
+            Symbol x=a; a=b; b=c; c=null; return x;
+         }
+      };
+      // Merges   "pred" "/" "xxx"       into the actual symbol
+      // Merges   "fun" "/" "xxx"        into the actual symbol
+      // Merges   ! { in = < <= > >= }   into a single symbol
+      // Merges   {..}=>{..}             into a single symbol
+      final Scanner B = new Scanner() {
+         private Symbol undo;
+         public final Symbol next_token() throws Exception {
+            Symbol x = undo;
+            undo = null;
+            if (x==null) x = A.next_token();
+            if (x.sym==NOT) {
+               Symbol y = A.next_token();
+               if (y.sym==IN)     return merge(x, y, NOTIN);
+               if (y.sym==EQUALS) return merge(x, y, NOTEQUALS);
+               if (y.sym==LT)     return merge(x, y, NOTLT);
+               if (y.sym==LTE)    return merge(x, y, NOTLTE);
+               if (y.sym==GT)     return merge(x, y, NOTGT);
+               if (y.sym==GTE)    return merge(x, y, NOTGTE);
+               undo = y;
+            } else if (x.sym==PRED) {
+               Symbol y = A.next_token();
+               if (y.sym!=SLASH) { undo=y; return x; }
+               Symbol z = A.next_token();
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("totalOrder")) return merge(x, z, TOTALORDER);
+               undo = z;
+            } else if (x.sym==FUN) {
+               Symbol y = A.next_token();
+               if (y.sym!=SLASH) { undo=y; return x; }
+               Symbol z = A.next_token();
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("add"))   return merge(x, z, INTADD);
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("sub"))   return merge(x, z, INTSUB);
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("mul"))   return merge(x, z, INTMUL);
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("div"))   return merge(x, z, INTDIV);
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("rem"))   return merge(x, z, INTREM);
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("min"))   return merge(x, z, INTMIN);
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("max"))   return merge(x, z, INTMAX);
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("next"))  return merge(x, z, INTNEXT);
+               if (z.sym==ID && ((ExprVar)(z.value)).label.equals("String")) { z.pos=x.pos.merge(z.pos); z.value=ExprVar.make(z.pos, "fun/String"); return z; }
+            } else if (x.sym==ONE) {
+               Symbol y = A.next_token();
+               if (y.sym!=ARROW) { undo=y; return x; }
+               Symbol z = A.next_token();
+               if (z.sym==ONE)  return merge(x, z, ONE_ARROW_ONE);
+               if (z.sym==LONE) return merge(x, z, ONE_ARROW_LONE);
+               if (z.sym==SOME) return merge(x, z, ONE_ARROW_SOME);
+               if (z.sym==SET)  return merge(x, z, ONE_ARROW_ANY); else { undo=z; return merge(x, y, ONE_ARROW_ANY); }
+            } else if (x.sym==LONE) {
+               Symbol y = A.next_token();
+               if (y.sym!=ARROW) { undo=y; return x; }
+               Symbol z = A.next_token();
+               if (z.sym==ONE)  return merge(x, z, LONE_ARROW_ONE);
+               if (z.sym==LONE) return merge(x, z, LONE_ARROW_LONE);
+               if (z.sym==SOME) return merge(x, z, LONE_ARROW_SOME);
+               if (z.sym==SET)  return merge(x, z, LONE_ARROW_ANY); else { undo=z; return merge(x, y, LONE_ARROW_ANY); }
+            } else if (x.sym==SOME) {
+               Symbol y = A.next_token();
+               if (y.sym!=ARROW) { undo=y; return x; }
+               Symbol z = A.next_token();
+               if (z.sym==ONE)  return merge(x, z, SOME_ARROW_ONE);
+               if (z.sym==LONE) return merge(x, z, SOME_ARROW_LONE);
+               if (z.sym==SOME) return merge(x, z, SOME_ARROW_SOME);
+               if (z.sym==SET)  return merge(x, z, SOME_ARROW_ANY); else { undo=z; return merge(x, y, SOME_ARROW_ANY); }
+            } else if (x.sym==SET) {
+               Symbol y = A.next_token();
+               if (y.sym!=ARROW) { undo=y; return x; }
+               Symbol z = A.next_token();
+               if (z.sym==ONE)  return merge(x, z, ANY_ARROW_ONE);
+               if (z.sym==LONE) return merge(x, z, ANY_ARROW_LONE);
+               if (z.sym==SOME) return merge(x, z, ANY_ARROW_SOME);
+               if (z.sym==SET)  return merge(x, z, ARROW); else { undo=z; return merge(x, y, ARROW); }
+            } else if (x.sym==ARROW) {
+               Symbol z = A.next_token();
+               if (z.sym==ONE)  return merge(x, z, ANY_ARROW_ONE);
+               if (z.sym==LONE) return merge(x, z, ANY_ARROW_LONE);
+               if (z.sym==SOME) return merge(x, z, ANY_ARROW_SOME);
+               if (z.sym==SET)  return merge(x, z, ARROW); else { undo=z; }
+            }
+            return x;
+         }
+      };
+      // Merge "- number" into "-number" whenever it is not immediately following ")" "]" "}" DISJ TOTALORDER INT SUM ID NUMBER STR IDEN THIS INTMIN INTMAX INTNEXT UNIV SIGINT NONE
+      final Scanner C = new Scanner() {
+         private Symbol last, undo;
+         public final Symbol next_token() throws Exception {
+            Symbol x = undo;
+            undo = null;
+            if (x==null) x = B.next_token();
+            if (last!=null) {
+               if (last.sym==RPAREN || last.sym==RBRACKET || last.sym==RBRACE  || last.sym==DISJ || last.sym==TOTALORDER || last.sym==INT)  return last = x;
+               if (last.sym==SUM    || last.sym==ID       || last.sym==NUMBER  || last.sym==STR  || last.sym==IDEN       || last.sym==THIS) return last = x;
+               if (last.sym==INTMIN || last.sym==INTMAX   || last.sym==INTNEXT || last.sym==UNIV || last.sym==SIGINT     || last.sym==NONE) return last = x;
+            }
+            if (x.sym==MINUS) {
+               Symbol y = B.next_token();
+               if (y.sym==NUMBER) {
+                  ExprConstant num = (ExprConstant)(y.value);
+                  y.pos   = x.pos.merge(y.pos);
+                  y.value = ExprConstant.Op.NUMBER.make(y.pos, 0 - num.num);
+                  return last = y;
+               }
+               undo = y;
+               return last = x;
+            }
+            return last = x;
+         }
+      };
+      this.r = C;
+   }
 }

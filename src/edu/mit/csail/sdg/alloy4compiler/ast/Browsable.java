@@ -33,41 +33,41 @@ import edu.mit.csail.sdg.alloy4.Util;
 
 public abstract class Browsable {
 
-    /** Returns a Pos object representing the position of this Expr. */
-    public Pos pos() { return Pos.UNKNOWN; }
+   /** Returns a Pos object representing the position of this Expr. */
+   public Pos pos() { return Pos.UNKNOWN; }
 
-    /** Returns a Pos object representing the entire span of this Expr and all its subexpressions. */
-    public Pos span() { return pos(); }
+   /** Returns a Pos object representing the entire span of this Expr and all its subexpressions. */
+   public Pos span() { return pos(); }
 
-    /** Returns the description to show for this node. */
-    public abstract String getDescription();
+   /** Returns the description to show for this node. */
+   public abstract String getDescription();
 
-    /** Returns a list of subnodes for this node. */
-    public abstract List<? extends Browsable> getSubnodes();
+   /** Returns a list of subnodes for this node. */
+   public abstract List<? extends Browsable> getSubnodes();
 
-    /** Construct a Browsable node with the given description and the given single subnode. */
-    public static Browsable make(final Pos pos, final Pos span, final String description, Browsable subnode) {
-        return make(pos, span, description, Util.asList(subnode));
-    }
+   /** Construct a Browsable node with the given description and the given single subnode. */
+   public static Browsable make(final Pos pos, final Pos span, final String description, Browsable subnode) {
+      return make(pos, span, description, Util.asList(subnode));
+   }
 
-    /** Construct a Browsable node with the given description and the given single subnode. */
-    public static Browsable make(final String description, Browsable subnode) {
-        return make(Pos.UNKNOWN, Pos.UNKNOWN, description, Util.asList(subnode));
-    }
+   /** Construct a Browsable node with the given description and the given single subnode. */
+   public static Browsable make(final String description, Browsable subnode) {
+      return make(Pos.UNKNOWN, Pos.UNKNOWN, description, Util.asList(subnode));
+   }
 
-    /** Construct a Browsable node with the given description and the given 0 or more subnodes. */
-    public static Browsable make(final String description, final List<? extends Browsable> subnodes) {
-        return make(Pos.UNKNOWN, Pos.UNKNOWN, description, subnodes);
-    }
+   /** Construct a Browsable node with the given description and the given 0 or more subnodes. */
+   public static Browsable make(final String description, final List<? extends Browsable> subnodes) {
+      return make(Pos.UNKNOWN, Pos.UNKNOWN, description, subnodes);
+   }
 
-    /** Construct a Browsable node with the given description and the given 0 or more subnodes. */
-    public static Browsable make(final Pos pos, final Pos span, final String description, final List<? extends Browsable> subnodes) {
-        final ConstList<? extends Browsable> constlist = ConstList.make(subnodes);
-        return new Browsable() {
-            @Override public Pos pos() { return pos; }
-            @Override public Pos span() { return span; }
-            @Override public String getDescription() { return description; }
-            @Override public List<? extends Browsable> getSubnodes() { return constlist; }
-        };
-    }
+   /** Construct a Browsable node with the given description and the given 0 or more subnodes. */
+   public static Browsable make(final Pos pos, final Pos span, final String description, final List<? extends Browsable> subnodes) {
+      final ConstList<? extends Browsable> constlist = ConstList.make(subnodes);
+      return new Browsable() {
+         @Override public Pos pos() { return pos; }
+         @Override public Pos span() { return span; }
+         @Override public String getDescription() { return description; }
+         @Override public List<? extends Browsable> getSubnodes() { return constlist; }
+      };
+   }
 }

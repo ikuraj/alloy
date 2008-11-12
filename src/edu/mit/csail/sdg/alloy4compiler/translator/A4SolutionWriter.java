@@ -192,7 +192,7 @@ public final class A4SolutionWriter {
         for (Sig s:sigs) if (s instanceof SubsetSig) writesig(s);
         if (sol!=null) for (ExprVar s:sol.getAllSkolems()) { if (rep!=null) rep.write(s); writeSkolem(s); }
         int m=0;
-        if (sol!=null && extraSkolems!=null) for(Func f:extraSkolems) if (f.params.size()==0 && f.call().type.hasTuple()) {
+        if (sol!=null && extraSkolems!=null) for(Func f:extraSkolems) if (f.count()==0 && f.call().type.hasTuple()) {
             String label=label(f.label);
             while(label.length()>0 && label.charAt(0)=='$') label=label.substring(1);
             label="$"+label;

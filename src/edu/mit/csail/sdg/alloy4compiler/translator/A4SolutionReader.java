@@ -228,7 +228,7 @@ public final class A4SolutionReader {
        for(XMLNode sub:node) if (sub.is("types")) { Expr t=parseType(sub); if (type==null) type=t; else type=type.plus(t); }
        int arity;
        if (type==null || (arity=type.type.arity())<1) throw new IOException("Skolem "+label+" is maltyped.");
-       ExprVar var = ExprVar.make(Pos.UNKNOWN, label, type);
+       ExprVar var = ExprVar.make(Pos.UNKNOWN, label, type.type);
        TupleSet ts = parseTuples(node, arity);
        expr2ts.put(var, ts);
        return var;
