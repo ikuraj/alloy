@@ -351,9 +351,9 @@ public final class VizGUI implements ComponentListener {
      */
     public VizGUI(boolean standalone, String xmlFileName, JMenu windowmenu, Computer enumerator, Computer evaluator, boolean makeWindow) {
 
-        this.enumerator=enumerator;
-        this.standalone=standalone;
-        this.evaluator=evaluator;
+        this.enumerator = enumerator;
+        this.standalone = standalone;
+        this.evaluator = evaluator;
         this.frame = makeWindow ? new JFrame("Alloy Visualizer") : null;
 
         // Figure out the desired x, y, width, and height
@@ -557,38 +557,31 @@ public final class VizGUI implements ComponentListener {
         instanceArea.add(content, BorderLayout.CENTER);
         instanceArea.setVisible(true);
         if (!Util.onMac()) { instanceTopBox.setBackground(background); instanceArea.setBackground(background); }
-        if (1==1 || settingsOpen>0) { // for now, let's always have the JSplitPane... until we're sure this is what we want
-            JComponent left;
-            if (settingsOpen==1) {
-                if (myCustomPanel==null) myCustomPanel=new VizCustomizationPanel(splitpane,myState);
-                   else myCustomPanel.remakeAll();
-                left=myCustomPanel;
-            } else if (settingsOpen>1) {
-                if (myEvaluatorPanel==null)
-                    myEvaluatorPanel=new OurConsole(evaluator,
-                       "The ", true, "Alloy Evaluator ", false,
-                       "allows you to type\nin Alloy expressions and see their values.\nFor example, ", true,
-                       "univ", false, " shows the list of all atoms.\n(You can press UP and DOWN to recall old inputs).\n");
-                evaluator.setSourceFile(xmlFileName);
-                left = myEvaluatorPanel;
-                left.setBorder(new OurBorder(false, false, false, false));
-            } else {
-                left = null;
-            }
-            if (frame!=null && frame.getContentPane()==splitpane) lastDividerPosition=splitpane.getDividerLocation();
-            splitpane.setRightComponent(instanceArea);
-            splitpane.setLeftComponent(left);
-            if (left!=null) {
-               Dimension dim=left.getPreferredSize();
-               if (lastDividerPosition<50 && frame!=null) lastDividerPosition=frame.getWidth()/2;
-               if (lastDividerPosition<dim.width) lastDividerPosition=dim.width;
-               if (settingsOpen==2 && lastDividerPosition>400) lastDividerPosition=400;
-               splitpane.setDividerLocation(lastDividerPosition);
-            }
-            if (frame!=null) frame.setContentPane(splitpane);
-        } else {
-            if (frame!=null) frame.setContentPane(instanceArea);
+        JComponent left = null;
+        if (settingsOpen==1) {
+           if (myCustomPanel==null) myCustomPanel = new VizCustomizationPanel(splitpane,myState); else myCustomPanel.remakeAll();
+           left = myCustomPanel;
+        } else if (settingsOpen>1) {
+           if (myEvaluatorPanel==null)
+              myEvaluatorPanel=new OurConsole(evaluator,
+                "The ", true, "Alloy Evaluator ", false,
+                "allows you to type\nin Alloy expressions and see their values.\nFor example, ", true,
+                "univ", false, " shows the list of all atoms.\n(You can press UP and DOWN to recall old inputs).\n");
+           evaluator.setSourceFile(xmlFileName);
+           left = myEvaluatorPanel;
+           left.setBorder(new OurBorder(false, false, false, false));
         }
+        if (frame!=null && frame.getContentPane()==splitpane) lastDividerPosition=splitpane.getDividerLocation();
+        splitpane.setRightComponent(instanceArea);
+        splitpane.setLeftComponent(left);
+        if (left!=null) {
+           Dimension dim = left.getPreferredSize();
+           if (lastDividerPosition<50 && frame!=null) lastDividerPosition = frame.getWidth()/2;
+           if (lastDividerPosition<dim.width) lastDividerPosition = dim.width;
+           if (settingsOpen==2 && lastDividerPosition>400) lastDividerPosition = 400;
+           splitpane.setDividerLocation(lastDividerPosition);
+        }
+        if (frame!=null) frame.setContentPane(splitpane);
         if (settingsOpen!=2) content.requestFocusInWindow(); else myEvaluatorPanel.requestFocusInWindow();
         repopulateProjectionPopup();
         if (frame!=null) frame.validate(); else splitpane.validate();

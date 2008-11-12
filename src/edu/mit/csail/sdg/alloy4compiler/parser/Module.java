@@ -59,6 +59,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprChoice;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprHasName;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprLet;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
@@ -393,7 +394,7 @@ public final class Module extends Browsable {
                 // Below is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
                 boolean some = (x.op==ExprQt.Op.SOME), compre = (x.op==ExprQt.Op.COMPREHENSION);
                 if (x.decls.size()==1 && d.names.size()==1 && isOneOf(exp) && (x.op==ExprQt.Op.ALL || some || compre) && (isMetaSig || isMetaField)) {
-                    ExprVar v = d.names.get(0);
+                    ExprVar v = (ExprVar)(d.names.get(0));
                     // Prevent warnings
                     List<ErrorWarning> saved = warns;
                     warns = null;
@@ -425,14 +426,14 @@ public final class Module extends Browsable {
                 }
                 // Above is a special case to allow more fine-grained typechecking when we see "all x:field$" or "some x:field$"
                 TempList<ExprVar> n = new TempList<ExprVar>(d.names.size());
-                for(ExprVar v: d.names) n.add(ExprVar.make(v.pos, v.label, exp.type));
+                for(ExprHasName v: d.names) n.add(ExprVar.make(v.pos, v.label, exp.type));
                 Decl dd = new Decl(d.isPrivate, d.disjoint, d.disjoint2, n.makeConst(), exp);
-                for(ExprVar newname: dd.names) put(newname.label, newname);
+                for(ExprHasName newname: dd.names) put(newname.label, newname);
                 decls.add(dd);
             }
             Expr sub = visitThis(x.sub);
             if (x.op==ExprQt.Op.SUM) sub=sub.resolve_as_int(warns); else sub=sub.resolve_as_formula(warns);
-            for(Decl d: decls.makeConst()) for(ExprVar v: d.names) remove(v.label);
+            for(Decl d: decls.makeConst()) for(ExprHasName v: d.names) remove(v.label);
             return x.op.make(x.pos, x.closingBracket, decls.makeConst(), sub);
         }
 
@@ -1070,17 +1071,17 @@ public final class Module extends Browsable {
         if (f!=null) decls.add(0, new Decl(null, null, null, Util.asList(ExprVar.make(f.span(), "this")), f));
         for(Decl d:decls) {
             if (d.isPrivate!=null) {
-                ExprVar name = d.names.get(0);
+                ExprHasName name = d.names.get(0);
                 throw new ErrorSyntax(d.isPrivate.merge(name.pos), "Function parameter \""+name.label+"\" is always private already.");
             }
             if (d.disjoint2!=null) {
-                ExprVar name = d.names.get(d.names.size()-1);
+                ExprHasName name = d.names.get(d.names.size()-1);
                 throw new ErrorSyntax(d.disjoint2.merge(name.pos), "Function parameter \""+name.label+"\" cannot be bound to a 'disjoint' expression.");
             }
         }
         status=3;
         dup(p, n, false);
-        ExprVar dup = Decl.findDuplicateName(decls);
+        ExprHasName dup = Decl.findDuplicateName(decls);
         if (dup!=null) throw new ErrorSyntax(dup.span(), "The parameter name \""+dup.label+"\" cannot appear more than once.");
         Func ans = new Func(p, isPrivate, n, decls, t, v);
         ArrayList<Func> list = funcs.get(n);
@@ -1105,7 +1106,7 @@ public final class Module extends Browsable {
                 TempList<ExprVar> tmpvars = new TempList<ExprVar>();
                 Expr val = cx.check(d.expr).resolve_as_set(warns);
                 if (!val.errors.isEmpty()) { err = true; errors = errors.join(val.errors); }
-                for(ExprVar n: d.names) {
+                for(ExprHasName n: d.names) {
                     ExprVar v = ExprVar.make(n.span(), n.label, val.type);
                     cx.put(n.label, v);
                     tmpvars.add(v);
@@ -1134,7 +1135,7 @@ public final class Module extends Browsable {
         for(Map.Entry<String,ArrayList<Func>> entry:funcs.entrySet()) for(Func ff:entry.getValue()) {
             Context cx = new Context(this, warns);
             cx.rootfunbody = ff;
-            for(Decl d: ff.decls) for(ExprVar n: d.names) cx.put(n.label, n);
+            for(Decl d: ff.decls) for(ExprHasName n: d.names) cx.put(n.label, n);
             Expr newBody = cx.check(ff.getBody());
             if (ff.isPred) newBody = newBody.resolve_as_formula(warns); else newBody = newBody.resolve_as_set(warns);
             errors = errors.join(newBody.errors);
@@ -1209,49 +1210,47 @@ public final class Module extends Browsable {
         facts.add(new Pair<String,Expr>(name, ExprUnary.Op.NOOP.make(value.span().merge(pos), value)));
     }
 
-    /** Each fact name now points to a typechecked Expr rather than an untypechecked Exp; we'll also add the sig appended facts. */
-    private JoinableList<Err> resolveFacts(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
-        Context cx = new Context(this, warns);
-        for(int i=0; i<facts.size(); i++) {
-            String name = facts.get(i).a;
-            Expr expr = facts.get(i).b;
-            expr = cx.check(expr).resolve_as_formula(warns);
-            if (expr.errors.isEmpty()) {
-                facts.set(i, new Pair<String,Expr>(name, expr));
-                rep.typecheck("Fact " + name + ": " + expr.type+"\n");
-            } else errors=errors.join(expr.errors);
-        }
-        for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
-            Sig s=e.getValue().realSig;
-            Expr f=e.getValue().appendedFact;
-            if (f==null) continue;
-            if (f instanceof ExprConstant && ((ExprConstant)f).op==ExprConstant.Op.TRUE) continue;
-            Expr formula;
-            cx.rootsig=e.getValue();
-            if (s.isOne==null) {
-                cx.put("this", s.decl.get());
-                formula = cx.check(f).resolve_as_formula(warns).forAll(s.decl);
-            } else {
-                cx.put("this", s);
-                formula = cx.check(f).resolve_as_formula(warns);
-            }
-            cx.remove("this");
-            if (formula.errors.size()>0) { errors=errors.join(formula.errors); continue; }
-            facts.add(new Pair<String,Expr>(s+"$fact", formula));
-            rep.typecheck("Fact "+s+"$fact: " + formula.type+"\n");
-        }
-        return errors;
-    }
+   /** Each fact name now points to a typechecked Expr rather than an untypechecked Exp; we'll also add the sig appended facts. */
+   private JoinableList<Err> resolveFacts(A4Reporter rep, JoinableList<Err> errors, List<ErrorWarning> warns) throws Err {
+      Context cx = new Context(this, warns);
+      for(int i=0; i<facts.size(); i++) {
+         String name = facts.get(i).a;
+         Expr expr = facts.get(i).b;
+         expr = cx.check(expr).resolve_as_formula(warns);
+         if (expr.errors.isEmpty()) {
+            facts.set(i, new Pair<String,Expr>(name, expr));
+            rep.typecheck("Fact " + name + ": " + expr.type+"\n");
+         } else errors=errors.join(expr.errors);
+      }
+      for(Map.Entry<String,SigAST> e:sigs.entrySet()) {
+         Sig s = e.getValue().realSig;
+         Expr f = e.getValue().appendedFact;
+         if (f==null) continue;
+         if (f instanceof ExprConstant && ((ExprConstant)f).op==ExprConstant.Op.TRUE) continue;
+         Expr formula;
+         cx.rootsig = e.getValue();
+         if (s.isOne==null) {
+            cx.put("this", s.decl.get());
+            formula = cx.check(f).resolve_as_formula(warns);
+         } else {
+            cx.put("this", s);
+            formula = cx.check(f).resolve_as_formula(warns);
+         }
+         cx.remove("this");
+         if (formula.errors.size()>0) errors = errors.join(formula.errors); else { s.addFact(formula);  rep.typecheck("Fact "+s+"$fact: " + formula.type+"\n");  }
+      }
+      return errors;
+   }
 
     /** Return an unmodifiable list of all facts in this module. */
     public SafeList<Pair<String,Expr>> getAllFacts() {
         return (new SafeList<Pair<String,Expr>>(facts)).dup();
     }
 
-    /** Return the conjunction of all facts in this module and all reachable submodules. */
+    /** Return the conjunction of all facts in this module and all reachable submodules (not including field constraints, nor including sig appended constraints) */
     public Expr getAllReachableFacts() {
         ArrayList<Expr> facts = new ArrayList<Expr>();
-        for(Module m:world.getAllReachableModules()) for(Pair<String,Expr> f:m.facts) facts.add(f.b);
+        for(Module m: world.getAllReachableModules()) for(Pair<String,Expr> f: m.facts) facts.add(f.b);
         if (facts.size()==0) return ExprConstant.TRUE; else return ExprList.make(null, null, ExprList.Op.AND, facts);
     }
 
@@ -1378,37 +1377,21 @@ public final class Module extends Browsable {
            final Sig s = oldS.realSig;
            final Module m = oldS.realModule;
            final Context cx = new Context(m, warns);
-           final ExprVar dup = Decl.findDuplicateName(oldS.fields);
+           final ExprHasName dup = Decl.findDuplicateName(oldS.fields);
            if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.label+"\"");
-           List<Field> disjoint2 = new ArrayList<Field>();
-           Expr disjX = ExprConstant.TRUE;
            for(int di=0; di<oldS.fields.size(); di++) {
               final Decl d = oldS.fields.get(di);
               // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
               cx.rootfield = true;
               cx.rootsig = oldS;
               cx.put("this", s.decl.get());
-              Expr bound = cx.check(d.expr).resolve_as_set(warns), disjA=null, disjF=ExprConstant.TRUE;
+              Expr bound = cx.check(d.expr).resolve_as_set(warns);
               cx.remove("this");
-              for(int dj=0; dj<d.names.size(); dj++) {
-                 final ExprVar n = d.names.get(dj);
-                 final Field f = s.addTrickyField(d.span(), d.isPrivate, null, n.label, null, bound);
+              String[] names = new String[d.names.size()];  for(int i=0; i<names.length; i++) names[i] = d.names.get(i).label;
+              Field[] fields = s.addTrickyField(d.span(), d.isPrivate, d.disjoint, d.disjoint2, null, names, bound);
+              for(Field f: fields) {
                  rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
-                 if (d.disjoint2!=null && s.isOne==null) disjoint2.add(f);
-                 if (d.disjoint==null) continue;
-                 if (disjA==null) { disjA=f; continue; }
-                 disjF = ExprBinary.Op.AND.make(d.disjoint, null, disjA.intersect(f).no(), disjF);
-                 disjA = disjA.plus(f);
               }
-              if (disjX==ExprConstant.TRUE) disjX=disjF; else if (disjF!=ExprConstant.TRUE) disjX=ExprBinary.Op.AND.make(Pos.UNKNOWN, null, disjF, disjX);
-           }
-           errors=errors.join(disjX.errors);
-           if (disjX!=ExprConstant.TRUE && disjX.errors.isEmpty()) { m.facts.add(new Pair<String,Expr>(s+"$disjoint", disjX)); rep.typecheck("Fact "+s+"$disjoint: "+disjX.type+"\n"); }
-           for(Field f: disjoint2) {
-               Decl THIS = s.oneOf("this"), THAT = s.oneOf("that");
-               Expr formula = THIS.get().join(f).intersect(THAT.get().join(f)).no();
-               formula = THIS.get().equal(THAT.get()).not().implies(formula).forAll(THAT).forAll(THIS);
-               m.facts.add(new Pair<String,Expr>(s.label + "." + f.label + "$disj", formula));
            }
         }
         if (!errors.isEmpty()) throw errors.pick();

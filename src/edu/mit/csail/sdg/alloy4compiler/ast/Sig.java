@@ -22,6 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
@@ -55,9 +56,6 @@ public abstract class Sig extends Expr {
 
     /** The built-in "none" signature. */
     public static final PrimSig NONE = new PrimSig("none", null, false);
-
-    /** The declaration that quantifies over each atom in this sig. */
-    public final Decl decl;
 
     /** Returns the name for this sig; this name need not be unique. */
     @Override public final String toString() { return label; }
@@ -137,6 +135,12 @@ public abstract class Sig extends Expr {
     /** The label for this sig; this name does not need to be unique. */
     public final String label;
 
+    /** The declaration that quantifies over each atom in this sig. */
+    public final Decl decl;
+
+    /** The list of "per atom" fact associated with this signature; each fact is allowed to refer to this.decl.get() */
+    private final SafeList<Expr> facts = new SafeList<Expr>();
+
     /** Returns true if this sig is a toplevel sig (meaning: it is UNIV, or it is a non-subset sig with parent==UNIV) */
     public final boolean isTopLevel() {
         return (this!=NONE) && (this instanceof PrimSig) && (this==UNIV || ((PrimSig)this).parent==UNIV);
@@ -211,6 +215,17 @@ public abstract class Sig extends Expr {
 
     /** {@inheritDoc} */
     public int getDepth() { return 1; }
+
+    /** Add a new per-atom fact; this expression is allowed to refer to this.decl.get() */
+    public void addFact(Expr fact) throws Err {
+        if (fact.ambiguous) fact = fact.resolve_as_formula(null);
+        if (!fact.errors.isEmpty()) throw fact.errors.pick();
+        if (!fact.type.is_bool) throw new ErrorType(fact.span(), "This expression must be a formula; instead its type is "+fact.type);
+        facts.add(fact);
+    }
+
+    /** Return the list of per-atom facts; each expression is allowed to refer to this.decl.get() */
+    public SafeList<Expr> getFacts() { return facts.dup(); }
 
     //==============================================================================================================//
 
@@ -367,7 +382,7 @@ public abstract class Sig extends Expr {
         @Override public List<? extends Browsable> getSubnodes() {
             TempList<Browsable> ans = new TempList<Browsable>();
             if (parent!=null && !parent.builtin) ans.add(make(parent.pos, parent.span(), "<b>extends sig</b> " + parent.label, parent.getSubnodes()));
-            for(Field f: super.fields) ans.add(f);
+            for(Decl f: super.fields) ans.add(f);
             return ans.makeConst();
         }
     }
@@ -475,7 +490,7 @@ public abstract class Sig extends Expr {
         @Override public List<? extends Browsable> getSubnodes() {
             TempList<Browsable> ans = new TempList<Browsable>();
             for(Sig p: parents) ans.add(make(p.pos, p.span(), "<b>in sig</b> " + p.label, p.getSubnodes()));
-            for(Field f: super.fields) ans.add(f);
+            for(Decl f: super.fields) ans.add(f);
             return ans.makeConst();
         }
     }
@@ -484,7 +499,7 @@ public abstract class Sig extends Expr {
 
     /** Mutable; represents a field. */
 
-    public static final class Field extends Expr {
+    public static final class Field extends ExprHasName {
 
         /** The sig that this field belongs to; never null. */
         public final Sig sig;
@@ -495,18 +510,16 @@ public abstract class Sig extends Expr {
         /** Nonnull if this field is a meta field. */
         public final Pos isMeta;
 
-        /** The label for this field; this name does not need to be unique. */
-        public final String label;
+        /** The bounding expression (null iff this.definition!=null); given field f in sig s, if bound!=null, that means "all this: s | s.f in bound"; it is allowed to refer to sig.decl.get() */
+        public final Expr bound;
 
-        /** The bounding formula (null if this.definition!=null); if nonnull it is always of the form "all x: one ThisSig | x.ThisField in y" */
-        public final Expr boundingFormula;
-
-        /** The definition expression (null if this.boundFormula!=null). */
+        /** The definition expression (null iff this.bound!=null). */
         public final Expr definition;
 
         /** Constructs a new Field object. */
         private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, Expr definition) throws Err {
-            super(pos, null, false, definition.type, 0, 0, definition.errors);
+            super(pos, label, definition.type);
+            if (!definition.errors.isEmpty()) throw definition.errors.pick();
             if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
             if (definition.mult!=0 || definition.type.arity()<=1 || definition.ambiguous ||
                 (definition.type.hasTuple() && !definition.type.firstColumnOverlaps(sig.type))) {
@@ -515,34 +528,25 @@ public abstract class Sig extends Expr {
             this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
             this.isMeta = (isMeta!=null ? isMeta : sig.isMeta);
             this.sig = sig;
-            this.label = label;
-            this.boundingFormula = null;
+            this.bound = null;
             this.definition = definition;
         }
 
         /** Constructs a new Field object. */
         private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, Pos unused, Expr bound) throws Err {
-            super(pos, null, false, sig.type.product(bound.type), 0, 0, bound.errors);
+            super(pos, label, sig.type.product(bound.type));
+            if (!bound.errors.isEmpty()) throw bound.errors.pick();
             if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
             this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
             this.isMeta = (isMeta!=null ? isMeta : sig.isMeta);
             this.sig = sig;
-            this.label = label;
+            this.definition = null;
             // If the field declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
             if (bound.mult==0 && bound.type.arity()==1) bound = ExprUnary.Op.ONEOF.make(null, bound);
-            boundingFormula = ExprQt.Op.ALL.make(pos, null, Util.asList(sig.decl), sig.decl.get().join(this).in(bound));
-            if (!boundingFormula.errors.isEmpty())
-                throw boundingFormula.errors.pick();
-            if (boundingFormula.hasCall())
-                throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
+            this.bound = bound;
+            if (!bound.errors.isEmpty()) throw bound.errors.pick();
+            if (bound.hasCall()) throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             if (bound.type.arity()>0 && bound.type.hasNoTuple()) throw new ErrorType(pos, "Cannot bind field "+label+" to the empty set or empty relation.");
-            this.definition = null;
-        }
-
-        /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
-        @Override public boolean isSame(Expr obj) {
-            while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
-            return (obj==this);
         }
 
         /** Returns a human-readable description of this field's name. */
@@ -561,16 +565,10 @@ public abstract class Sig extends Expr {
         }
 
         /** {@inheritDoc} */
-        @Override public Pos span() { return pos; }
-
-        /** {@inheritDoc} */
         @Override public Expr resolve(Type t, Collection<ErrorWarning> warns) { return this; }
 
         /** {@inheritDoc} */
         @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
-
-        /** {@inheritDoc} */
-        public int getDepth() { return 1; }
 
         /** {@inheritDoc} */
         @Override public String getDescription() { return "<b>field</b> " + label; }
@@ -579,8 +577,8 @@ public abstract class Sig extends Expr {
         @Override public List<? extends Browsable> getSubnodes() {
             Browsable s = make(sig.pos, sig.span(), "<b>from sig</b> "+sig.label, sig.getSubnodes());
             Browsable b;
-            if (boundingFormula!=null) {
-                b = ((ExprBinary)(((ExprQt)boundingFormula).sub)).right;
+            if (bound!=null) {
+                b = bound;
                 b = make(b.pos(), b.span(), "<b>bound</b>", b);
             } else {
                 b = definition;
@@ -593,10 +591,19 @@ public abstract class Sig extends Expr {
     //==============================================================================================================//
 
     /** The list of fields. */
-    private final SafeList<Field> fields = new SafeList<Field>();
+    private final SafeList<Decl> fields = new SafeList<Decl>();
 
-    /** Returns the list of fields (as an unmodifiable list). */
-    public final SafeList<Field> getFields() { return fields.dup(); }
+    /** Return the list of fields as a unmodifiable list of declarations (where you can see which fields are declared to be disjoint) */
+    public final SafeList<Decl> getFieldDecls() {
+        return fields.dup();
+    }
+
+    /** Return the list of fields as a combined unmodifiable list (without telling you which fields are declared to be disjoint) */
+    public final SafeList<Field> getFields() {
+        SafeList<Field> ans = new SafeList<Field>();
+        for(Decl d: fields) for(ExprHasName n: d.names) ans.add((Field)n);
+        return ans.dup();
+    }
 
     /**
      * Add then return a new field, where "all x: ThisSig | x.F in bound"
@@ -612,63 +619,37 @@ public abstract class Sig extends Expr {
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
-    public final Field addTrickyField (Pos pos, Pos isPrivate, Pos isMeta, String label, Pos unused, Expr bound) throws Err {
+    public final Field addField (String label, Expr bound) throws Err {
         bound = bound.typecheck_as_set();
         if (bound.ambiguous) bound = bound.resolve_as_set(null);
-        final Field f = new Field(pos, isPrivate, isMeta, this, label, null, bound);
-        fields.add(f);
+        final Field f = new Field(null, null, null, this, label, null, bound);
+        fields.add(new Decl(null, null, null, Arrays.asList(f), bound));
         return f;
     }
 
     /**
-     * Add then return a new field F, where "all x: ThisSig | x.F in bound"
-     * <p> Note: the bound must be fully-typechecked and have exactly 0 free variables.
+     * Add then return a new field, where "all x: ThisSig | x.F in bound"
+     * <p> Note: the bound must be fully-typechecked and have exactly 0 free variable, or have "x" as its sole free variable.
      *
      * @param pos - the position in the original file where this field was defined (can be null if unknown)
+     * @param isPrivate - if nonnull, that means the user intended this field to be "private"
+     * @param isMeta - if nonnull, that means the user intended this field to be "meta"
      * @param label - the name of this field (it does not need to be unique)
-     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
+     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in bound"
      *
      * @throws ErrorSyntax  if the sig is one of the builtin sig
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
-    public final Field addField(Pos pos, String label, Expr bound) throws Err {
-        return addTrickyField(pos, null, null, label, null, bound);
-    }
-
-    /**
-     * Add then return a new field F, where "all x: ThisSig | x.F in bound"
-     * <p> Note: the bound must be fully-typechecked and have exactly 0 free variables.
-     *
-     * @param pos - the position in the original file where this field was defined (can be null if unknown)
-     * @param isPrivate - if nonnull, that means this field should be marked as private
-     * @param label - the name of this field (it does not need to be unique)
-     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
-     *
-     * @throws ErrorSyntax  if the sig is one of the builtin sig
-     * @throws ErrorSyntax  if the bound contains a predicate/function call
-     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
-     */
-    public final Field addField(Pos pos, Pos isPrivate, String label, Expr bound) throws Err {
-        return addTrickyField(pos, isPrivate, null, label, null, bound);
-    }
-
-    /**
-     * Add then return a new field F, where "all x: ThisSig | x.F in bound"
-     * <p> Note: the bound must be fully-typechecked and have exactly 0 free variables.
-     *
-     * @param pos - the position in the original file where this field was defined (can be null if unknown)
-     * @param isPrivate - if nonnull, that means this field should be marked as private
-     * @param isMeta - if nonnull, that means this field should be marked as meta
-     * @param label - the name of this field (it does not need to be unique)
-     * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in y"
-     *
-     * @throws ErrorSyntax  if the sig is one of the builtin sig
-     * @throws ErrorSyntax  if the bound contains a predicate/function call
-     * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
-     */
-    public final Field addField(Pos pos, Pos isPrivate, Pos isMeta, String label, Expr bound) throws Err {
-        return addTrickyField(pos, isPrivate, isMeta, label, null, bound);
+    public final Field[] addTrickyField (Pos pos, Pos isPrivate, Pos isDisjoint, Pos isDisjoint2, Pos isMeta, String[] labels, Expr bound) throws Err {
+        Field[] f = new Field[labels.length];
+        bound = bound.typecheck_as_set();
+        if (bound.ambiguous) bound = bound.resolve_as_set(null);
+        for(int i=0; i<f.length; i++) {
+           f[i] = new Field(pos, isPrivate, isMeta, this, labels[i], null, bound);
+        }
+        fields.add(new Decl(isPrivate, isDisjoint, isDisjoint2, Arrays.asList(f), bound));
+        return f;
     }
 
     /**
@@ -689,7 +670,7 @@ public abstract class Sig extends Expr {
         definition = definition.typecheck_as_set();
         if (definition.ambiguous) definition = definition.resolve_as_set(null);
         final Field f = new Field(pos, isPrivate, isMeta, this, label, definition);
-        fields.add(f);
+        fields.add(new Decl(null, null, null, Arrays.asList(f), decl.get().join(definition)));
         return f;
     }
 }

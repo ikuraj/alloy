@@ -71,7 +71,7 @@ public final class Func extends Browsable {
     public ExprVar get(int i) {
        if (i<0) throw new NoSuchElementException();
        for(Decl d: decls) {
-          if (i<d.names.size()) return d.names.get(i);
+          if (i<d.names.size()) return (ExprVar)(d.names.get(i));
           i = i - d.names.size();
        }
        throw new NoSuchElementException();
@@ -81,7 +81,7 @@ public final class Func extends Browsable {
     public List<ExprVar> params() {
         int n = count();
         List<ExprVar> list = new ArrayList<ExprVar>(n);
-        for(Decl d: decls) list.addAll(d.names);
+        for(Decl d: decls) for(ExprHasName name: d.names) list.add((ExprVar)name);
         return list;
     }
 

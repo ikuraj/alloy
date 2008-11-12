@@ -81,7 +81,7 @@ public final class ExprQt extends Expr {
    public ExprVar get(int i) {
       if (i<0) throw new NoSuchElementException();
       for(Decl d: decls) {
-         if (i < d.names.size()) return d.names.get(i);
+         if (i < d.names.size()) return (ExprVar) (d.names.get(i));
          i = i - d.names.size();
       }
       throw new NoSuchElementException();
@@ -116,7 +116,7 @@ public final class ExprQt extends Expr {
       if (indent<0) {
          boolean first = true;
          if (op!=Op.COMPREHENSION) out.append('(').append(op).append(' '); else out.append('{');
-         for(Decl d: decls) for(ExprVar v: d.names) { if (!first) out.append(','); first=false; out.append(v.label); }
+         for(Decl d: decls) for(ExprHasName v: d.names) { if (!first) out.append(','); first=false; out.append(v.label); }
          if (op!=Op.COMPREHENSION || !(sub instanceof ExprConstant) || ((ExprConstant)sub).op!=ExprConstant.Op.TRUE)
          {out.append(" | "); sub.toString(out,-1);}
          if (op!=Op.COMPREHENSION) out.append(')'); else out.append('}');
@@ -124,7 +124,7 @@ public final class ExprQt extends Expr {
          for(int i=0; i<indent; i++) { out.append(' '); }
          out.append("Quantification(").append(op).append(") of ");
          out.append(count()).append(" vars with type=").append(type).append('\n');
-         for(Decl d: decls) for(ExprVar v: d.names) { v.toString(out, indent+2); d.expr.toString(out, indent+4); }
+         for(Decl d: decls) for(ExprHasName v: d.names) { v.toString(out, indent+2); d.expr.toString(out, indent+4); }
          sub.toString(out, indent+2);
       }
    }
@@ -217,7 +217,8 @@ public final class ExprQt extends Expr {
       if (warns!=null && op!=Op.COMPREHENSION) {
          for(int i=0; i<decls.size(); i++) {
             again:
-            for(ExprVar x: decls.get(i).names) {
+            for(ExprHasName n: decls.get(i).names) {
+               ExprVar x = (ExprVar)n;
                for(int j=i+1; j<decls.size(); j++) if (decls.get(j).expr.hasVar(x)) continue again;
                if (!sub.hasVar(x)) warns.add(new ErrorWarning(x.pos, "This variable is unused."));
             }
@@ -233,11 +234,11 @@ public final class ExprQt extends Expr {
       boolean hasDisjoint = false;
       for(Decl d: decls) {
          if (d.isPrivate!=null) {
-            ExprVar n = d.names.get(0);
+            ExprHasName n = d.names.get(0);
             throw new ErrorSyntax(d.isPrivate.merge(n.pos), "Local variable \"" + n.label + "\" is always private already.");
          }
          if (d.disjoint2!=null) {
-            ExprVar n = d.names.get(d.names.size()-1);
+            ExprHasName n = d.names.get(d.names.size()-1);
             throw new ErrorSyntax(d.disjoint2.merge(n.pos), "Local variable \"" + n.label + "\" cannot be bound to a 'disjoint' expression.");
          }
          hasDisjoint = hasDisjoint || (d.names.size()>1 && d.disjoint != null);
@@ -265,7 +266,7 @@ public final class ExprQt extends Expr {
    /** {@inheritDoc} */
    public int getDepth() {
       int max = sub.getDepth();
-      for(Decl d: decls) for(ExprVar x: d.names) { int tmp = x.getDepth(); if (max<tmp) max=tmp; }
+      for(Decl d: decls) for(ExprHasName x: d.names) { int tmp = x.getDepth(); if (max<tmp) max=tmp; }
       return 1 + max;
    }
 

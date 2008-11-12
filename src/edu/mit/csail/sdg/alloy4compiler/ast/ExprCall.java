@@ -138,12 +138,12 @@ public final class ExprCall extends Expr {
             Type ans = null;
             for(Decl d: x.decls) {
                 Type t = d.expr.accept(this);
-                for(ExprVar v: d.names) {
-                   env.put(v, t);
+                for(ExprHasName v: d.names) {
+                   env.put((ExprVar)v, t);
                    if (ans==null) ans=t; else ans=ans.product(t);
                 }
             }
-            for(Decl d: x.decls) for(ExprVar v: d.names) env.remove(v);
+            for(Decl d: x.decls) for(ExprHasName v: d.names) env.remove((ExprVar)v);
             return (ans==null) ? EMPTY : ans;
         }
         @Override public Type visit(ExprLet x) throws Err {

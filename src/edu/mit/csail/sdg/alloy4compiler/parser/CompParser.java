@@ -16616,7 +16616,7 @@ class CUP$CompParser$actions {
         List<Decl> a = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         Expr b = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Pos c = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-        RESULT = ExprQt.Op.COMPREHENSION.make(o, c, a, b);
+         RESULT = ExprQt.Op.COMPREHENSION.make(o, c, a, b);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("BaseExpr",2, RESULT);
             }
           return CUP$CompParser$result;
@@ -18623,7 +18623,7 @@ class CUP$CompParser$actions {
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Decl> a = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Expr b = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-        RESULT = ExprQt.Op.SUM.make(o, null, a, b);
+         RESULT = ExprQt.Op.SUM .make(o, null, a, b);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Bind",3, RESULT);
             }
           return CUP$CompParser$result;
@@ -18635,7 +18635,7 @@ class CUP$CompParser$actions {
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Decl> a = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Expr b = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-        RESULT = ExprQt.Op.ONE.make(o, null, a, b);
+         RESULT = ExprQt.Op.ONE .make(o, null, a, b);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Bind",3, RESULT);
             }
           return CUP$CompParser$result;
@@ -18647,7 +18647,7 @@ class CUP$CompParser$actions {
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Decl> a = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Expr b = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-        RESULT = ExprQt.Op.LONE.make(o, null, a, b);
+         RESULT = ExprQt.Op.LONE.make(o, null, a, b);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Bind",3, RESULT);
             }
           return CUP$CompParser$result;
@@ -18659,7 +18659,7 @@ class CUP$CompParser$actions {
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Decl> a = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Expr b = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-        RESULT = ExprQt.Op.SOME.make(o, null, a, b);
+         RESULT = ExprQt.Op.SOME.make(o, null, a, b);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Bind",3, RESULT);
             }
           return CUP$CompParser$result;
@@ -18671,7 +18671,7 @@ class CUP$CompParser$actions {
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Decl> a = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Expr b = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-        RESULT = ExprQt.Op.NO.make(o, null, a, b);
+         RESULT = ExprQt.Op.NO  .make(o, null, a, b);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Bind",3, RESULT);
             }
           return CUP$CompParser$result;
@@ -18683,7 +18683,7 @@ class CUP$CompParser$actions {
         Pos o = (Pos)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-2)).value;
         List<Decl> a = (List<Decl>)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.elementAt(CUP$CompParser$top-1)).value;
         Expr b = (Expr)((java_cup_11a.runtime.Symbol) CUP$CompParser$stack.peek()).value;
-        RESULT = ExprQt.Op.ALL.make(o, null, a, b);
+         RESULT = ExprQt.Op.ALL .make(o, null, a, b);
               CUP$CompParser$result = parser.getSymbolFactory().newSymbol("Bind",3, RESULT);
             }
           return CUP$CompParser$result;

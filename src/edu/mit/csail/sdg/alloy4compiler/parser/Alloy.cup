@@ -776,14 +776,14 @@ Let ::= Name:a EQUALS:o Expr:b SuperOrBar:x {:
   nod(a);
   if (a.label.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
   if (a.label.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
-  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label, b), b, x);
+  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label), b, x);
 :};
 
 Let ::= Name:a EQUALS:o Expr:b COMMA Let:x {:
   nod(a);
   if (a.label.indexOf('/')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'/\'");
   if (a.label.indexOf('@')>=0) throw new ErrorSyntax(a.pos, "Let variable name cannot contain \'@\'");
-  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label, b), b, x);
+  RESULT = ExprLet.make(o, ExprVar.make(a.pos, a.label), b, x);
 :};
 
 SuperOpt ::=                               {: RESULT=null;                                      :};

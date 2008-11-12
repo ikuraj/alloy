@@ -1636,7 +1636,7 @@ public final class SimpleGUI implements ComponentListener {
         SimContext ct = new SimContext(ans.getBitwidth(), ans.getMaxSeq());
         for(Sig s: ans.getAllReachableSigs()) {
             ct.init(s, convert(ans.eval(s)));
-            for(Field f: s.getFields())  if (f.boundingFormula!=null)  ct.init(f, convert(ans.eval(f)));
+            for(Field f: s.getFields())  if (f.bound!=null)  ct.init(f, convert(ans.eval(f)));
         }
         for(ExprVar a:ans.getAllAtoms())   ct.init(a, convert(ans.eval(a)));
         for(ExprVar a:ans.getAllSkolems()) ct.init(a, convert(ans.eval(a)));
@@ -1647,7 +1647,7 @@ public final class SimpleGUI implements ComponentListener {
     private static Computer evaluator = new Computer() {
         private String filename=null;
         public final void setSourceFile(String filename) {
-            this.filename=filename;
+            this.filename = filename;
         }
         public final String compute(String input) throws Exception {
             if (input.trim().length()==0) return ""; // Empty line

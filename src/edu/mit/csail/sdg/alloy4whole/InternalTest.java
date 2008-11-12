@@ -87,7 +87,7 @@ final class InternalTest {
         check(skolems.get(0).type, state.type);
         //
         Sig state2 = new Sig.PrimSig(Pos.UNKNOWN, "State");
-        Field field2 = state2.addField(Pos.UNKNOWN, "len", Sig.SIGINT);
+        Field field2 = state2.addField("len", Sig.SIGINT);
         sol = A4SolutionReader.read(Arrays.asList(state2), xml);
         SafeList<ExprVar> skolems2 = new SafeList<ExprVar>(sol.getAllSkolems());
         check(skolems2.size()==1);

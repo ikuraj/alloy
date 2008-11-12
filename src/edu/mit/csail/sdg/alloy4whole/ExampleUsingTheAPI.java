@@ -62,11 +62,11 @@ public final class ExampleUsingTheAPI {
         PrimSig A2 = new PrimSig(null, A, "A2", false, false, true, false, false);
 
         // A { f: B lone->lone B }
-        Expr f = A.addField(null, "f", B.lone_arrow_lone(B));
+        Expr f = A.addField("f", B.lone_arrow_lone(B));
         // Since (B lone->lone B) is not unary,  the default is "setOf",  meaning "f:set (B lone->lone B)"
 
         // A { g: B }
-        Expr g = A.addField(null, "g", B);
+        Expr g = A.addField("g", B);
         // The line above is the same as:   A.addField(null, "g", B.oneOf())  since B is unary.
         // If you want "setOf", you need:   A.addField(null, "g", B.setOf())
 

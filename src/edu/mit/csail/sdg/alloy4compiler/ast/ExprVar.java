@@ -35,19 +35,7 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
  * <p> <b>Invariant:</b>  type!=EMPTY => (type==expr.type && !expr.ambiguous)
  */
 
-public final class ExprVar extends Expr {
-
-    /** The label associated with this variable; it's used for pretty-printing and does not have to be unique. */
-    public final String label;
-
-    /** {@inheritDoc} */
-    @Override public Pos span() { return pos; }
-
-    /** Returns true if we can determine the two expressions are equivalent; may sometimes return false. */
-    @Override public boolean isSame(Expr obj) {
-        while(obj instanceof ExprUnary && ((ExprUnary)obj).op==ExprUnary.Op.NOOP) obj=((ExprUnary)obj).sub;
-        return this==obj;
-    }
+public final class ExprVar extends ExprHasName {
 
     /** {@inheritDoc} */
     @Override public void toString(StringBuilder out, int indent) {
@@ -61,8 +49,7 @@ public final class ExprVar extends Expr {
 
     /** Constructs an ExprVar object */
     private ExprVar(Pos pos, String label, Type type) {
-        super(pos, null, false, type, 0, 0, null);
-        this.label = (label==null ? "" : label);
+        super(pos, label, type);
     }
 
     /**
@@ -85,13 +72,10 @@ public final class ExprVar extends Expr {
     }
 
     /** {@inheritDoc} */
-    public int getDepth() { return 1; }
-
-    /** {@inheritDoc} */
     @Override public Expr resolve(Type p, Collection<ErrorWarning> warns) { return this; }
 
     /** {@inheritDoc} */
-    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
+    @Override <T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
     @Override public String getDescription() { return "<b>variable</b>: " + label + " <i>Type = " + type + "</i>"; }

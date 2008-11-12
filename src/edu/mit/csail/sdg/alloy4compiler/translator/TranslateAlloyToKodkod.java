@@ -43,6 +43,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.CommandScope;
 import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprHasName;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprCall;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
@@ -180,26 +181,43 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** Stores the list of "totalOrder predicates" that we constructed. */
     private final List<Relation> totalOrderPredicates = new ArrayList<Relation>();
 
-    /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
-    private void makeFacts(Expr facts) throws Err {
-        rep.debug("Generating facts...\n");
-        // convert into a form that hopefully gives better unsat core
-        facts = (Expr) (new ConvToConjunction()).visitThis(facts);
-        for(Sig sig: frame.getAllReachableSigs()) {
-            for(Field f:sig.getFields()) if (f.boundingFormula!=null) {
-                Expression sr=a2k(sig), fr=a2k(f);
-                // Each field f has a boundingFormula that says "all x:s | x.f in SOMEEXPRESSION";
-                frame.addFormula(cform(f.boundingFormula), f);
-                // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
-                // Thus, we need to add a bound that the first column is a subset of s.
-                if (sig.isOne==null) {
-                    for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
-                    frame.addFormula(fr.in(sr), f);
-                }
+   /** Conjoin the constraints for "field declarations" and "fact" paragraphs */
+   private void makeFacts(Expr facts) throws Err {
+      rep.debug("Generating facts...\n");
+      // convert into a form that hopefully gives better unsat core
+      facts = (Expr) (new ConvToConjunction()).visitThis(facts);
+      // add the field facts and appended facts
+      for(Sig s: frame.getAllReachableSigs()) {
+         for(Decl d: s.getFieldDecls()) {
+            for(ExprHasName n: d.names) {
+               Field f = (Field)n;
+               if (f.bound!=null) {
+                  Expr form = s.decl.get().join(f).in(f.bound);
+                  form = s.isOne==null ? form.forAll(s.decl) : ExprLet.make(null, (ExprVar)(s.decl.get()), s, form);
+                  frame.addFormula(cform(form), f);
+                  // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
+                  // Thus, we need to add a bound that the first column is a subset of s.
+                  if (s.isOne==null) {
+                     Expression sr = a2k(s), fr = a2k(f);
+                     for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
+                     frame.addFormula(fr.in(sr), f);
+                  }
+               }
             }
-        }
-        recursiveAddFormula(facts);
-    }
+            if (s.isOne==null && d.disjoint2!=null) for(ExprHasName f: d.names) {
+               Decl that = s.oneOf("that");
+               Expr formula = s.decl.get().equal(that.get()).not().implies(s.decl.get().join(f).intersect(that.get().join(f)).no());
+               frame.addFormula(cform(formula.forAll(that).forAll(s.decl)), d.disjoint2);
+            }
+            if (d.names.size()>1 && d.disjoint!=null) {  frame.addFormula(cform(ExprList.makeDISJOINT(d.disjoint, null, d.names)), d.disjoint);  }
+         }
+         for(Expr f: s.getFacts()) {
+            Expr form = s.isOne==null ? f.forAll(s.decl) : ExprLet.make(null, (ExprVar)(s.decl.get()), s, f);
+            frame.addFormula(cform(form), f);
+         }
+      }
+      recursiveAddFormula(facts);
+   }
 
     /** Break up x into conjuncts then add them each as a fact. */
     private void recursiveAddFormula(Expr x) throws Err {
@@ -939,10 +957,10 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
       for(Decl dep: xvars) {
         final Expr dexexpr = addOne(dep.expr);
         final Expression dv = cset(dexexpr);
-        for(ExprVar dex: dep.names) {
+        for(ExprHasName dex: dep.names) {
            final Variable v = Variable.nary(skolem(dex.label), dex.type.arity());
            final kodkod.ast.Decl newd;
-           env.put(dex, v);
+           env.put((ExprVar)dex, v);
            if (dex.type.arity()!=1) {
               guards.add(isIn(v, dexexpr));
               newd = v.setOf(dv);
@@ -958,7 +976,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
       }
       final Formula ans = (op==ExprQt.Op.SUM) ? null : cform(sub) ;
       final IntExpression ians = (op!=ExprQt.Op.SUM) ? null : cint(sub) ;
-      for(Decl d: xvars) for(ExprVar v: d.names) env.remove(v);
+      for(Decl d: xvars) for(ExprHasName v: d.names) env.remove((ExprVar)v);
       if (op==ExprQt.Op.COMPREHENSION) return ans.comprehension(dd); // guards.size()==0, since each var has to be unary
       if (op==ExprQt.Op.SUM) return ians.sum(dd);                    // guards.size()==0, since each var has to be unary
       if (op==ExprQt.Op.SOME) {

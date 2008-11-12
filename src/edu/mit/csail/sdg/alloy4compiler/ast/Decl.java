@@ -25,8 +25,6 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 import java.util.List;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.ConstList;
-import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
 
 /** Immutable; this declaration binds a list of names to an expression. */
 
@@ -42,7 +40,7 @@ public final class Decl extends Browsable {
     public final Pos disjoint2;
 
     /** The list of names. */
-    public final ConstList<ExprVar> names;
+    public final ConstList<? extends ExprHasName> names;
 
     /** The value that the list of names are bound to. */
     public final Expr expr;
@@ -55,14 +53,14 @@ public final class Decl extends Browsable {
        Pos p = span;
        if (p == null) {
           p = expr.span().merge(disjoint).merge(disjoint2);
-          for(ExprVar n:names) p = p.merge(n.span());
+          for(ExprHasName n: names) p = p.merge(n.span());
           span = p;
        }
        return p;
     }
 
     /** This constructs a declaration; the list of names must not be empty. */
-    public Decl(Pos isPrivate, Pos disjoint, Pos disjoint2, List<ExprVar> names, Expr expr) {
+    public Decl(Pos isPrivate, Pos disjoint, Pos disjoint2, List<? extends ExprHasName> names, Expr expr) {
        if (names.size()==0) throw new NullPointerException();
        this.isPrivate = isPrivate;
        this.disjoint = (names.size()>1 ? disjoint : null);
@@ -72,16 +70,16 @@ public final class Decl extends Browsable {
     }
 
     /** Return the first variable in this declaration. */
-    public ExprVar get() {
+    public ExprHasName get() {
        return names.get(0);
     }
 
     /** If the list of declaration contains a duplicate name, return one such duplicate name, else return null. */
-    public static ExprVar findDuplicateName (List<Decl> list) {
+    public static ExprHasName findDuplicateName (List<Decl> list) {
        for(int i=0; i<list.size(); i++) {
           Decl d=list.get(i);
           for(int j=0; j<d.names.size(); j++) {
-             ExprVar n = d.names.get(j);
+             ExprHasName n = d.names.get(j);
              for(int k=j+1; k<d.names.size(); k++) if (d.names.get(k).label.equals(n.label)) return n;
              for(int k=i+1; k<list.size(); k++) if (list.get(k).hasName(n.label)) return n;
           }

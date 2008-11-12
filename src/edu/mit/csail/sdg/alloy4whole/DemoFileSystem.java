@@ -30,7 +30,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprHasName;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
@@ -76,7 +76,7 @@ public class DemoFileSystem {
 
     static Expr acyclic(Expr r) throws Err {
         Decl d = r.join(Sig.UNIV).oneOf("x");     // x is a variable over the domain of r
-        ExprVar x = d.get();
+        ExprHasName x = d.get();
         return x.in(x.join(r.closure())).not().forAll(d); // (x !in x.^r) for all x
     }
 
@@ -97,8 +97,8 @@ public class DemoFileSystem {
         dir  = makeSig(obj, "Dir", true, false);
         file = makeSig(obj, "File", true, false);
         root = makeSig(dir, "Root", false, true);
-        parent = obj.addField(null, "parent", dir.loneOf());
-        contains = dir.addField(null, "contains", obj.setOf());
+        parent = obj.addField("parent", dir.loneOf());
+        contains = dir.addField("contains", obj.setOf());
         // fact { all x:Obj-Root | one x.parent }
         Decl x = obj.minus(root).oneOf("x");
         fact = x.get().join(parent).one().forAll(x).and(fact);

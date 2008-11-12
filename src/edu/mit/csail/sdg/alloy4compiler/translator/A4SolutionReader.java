@@ -212,7 +212,7 @@ public final class A4SolutionReader {
        for(Field f: parent.getFields())
            if (label(f.label).equals(label) && f.type.arity()==arity && choices.contains(f))
               { field=f; choices.remove(f); break; }
-       if (field==null) field = parent.addField(Pos.UNKNOWN, isPrivate, isMeta, label, UNIV.join(type));
+       if (field==null) field = parent.addTrickyField(Pos.UNKNOWN, isPrivate, null, null, isMeta, new String[] {label}, UNIV.join(type)) [0];
        TupleSet ts = parseTuples(node, arity);
        expr2ts.put(field, ts);
        return field;

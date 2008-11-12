@@ -336,7 +336,7 @@ public final class SimContext extends VisitReturn<Object> {
     public void init(Field field, SimTupleset value) throws Err {
         if (value==null) { sfs.remove(field); return; }
         if (!value.empty() && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
-        if (field.boundingFormula==null) throw new ErrorAPI("Evaluator cannot prebind the value of a defined field.");
+        if (field.bound==null) throw new ErrorAPI("Evaluator cannot prebind the value of a defined field.");
         sfs.put(field, value);
         cacheUNIV = null;
         cacheSTRING = null;
@@ -618,7 +618,7 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public SimTupleset visit(Field x) throws Err {
-        if (x.boundingFormula==null) return cset(x.definition);
+        if (x.bound==null) return cset(x.definition);
         Object ans = sfs.get(x);
         if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown field "+x+" encountered during evaluation.");
     }

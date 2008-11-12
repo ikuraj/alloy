@@ -389,9 +389,9 @@ public final class A4Solution {
     /** Returns the Kodkod input used to generate this solution; returns "" if unknown. */
     public String debugExtractKInput() {
        if (solved)
-          return TranslateKodkodToJava.convert(getSingleFormula(1), bitwidth, kAtoms, bounds, atom2name);
+          return TranslateKodkodToJava.convert(Formula.and(formulas.makeCopy()), bitwidth, kAtoms, bounds, atom2name);
        else
-          return TranslateKodkodToJava.convert(getSingleFormula(1), bitwidth, kAtoms, bounds.unmodifiableView(), null);
+          return TranslateKodkodToJava.convert(Formula.and(formulas.makeCopy()), bitwidth, kAtoms, bounds.unmodifiableView(), null);
     }
 
     //===================================================================================================//
@@ -665,20 +665,6 @@ public final class A4Solution {
 
     //===================================================================================================//
 
-    /** Conjoin the list of formulas into a single balanced formula; external caller should call this method with i==1. */
-    private Formula getSingleFormula(int i) {
-        // We actually build a "binary heap" where node X's two children are node 2X and node 2X+1
-        int n = formulas.size();
-        if (n==0) return Formula.TRUE;
-        Formula me = formulas.get(i-1);
-        int child1=i+i, child2=child1+1;
-        if (child1<i || child1>n) return me;
-        me = me.and(getSingleFormula(child1));
-        if (child2<1 || child2>n) return me;
-        me = me.and(getSingleFormula(child2));
-        return me;
-    }
-
     /** Add the given formula to the list of Kodkod formulas, and associate it with the given Pos object (pos can be null if unknown). */
     void addFormula(Formula newFormula, Pos pos) throws Err {
         if (solved) throw new ErrorFatal("Cannot add an additional formula since solve() has completed.");
@@ -838,7 +824,7 @@ public final class A4Solution {
         rep.debug("Simplifying the bounds...\n");
         if (simp!=null && formulas.size()>0 && !simp.simplify(rep, this, formulas.dup())) addFormula(Formula.FALSE, Pos.UNKNOWN);
         rep.translate(opt.solver.id(), bitwidth, maxseq, solver.options().skolemDepth(), solver.options().symmetryBreaking());
-        Formula fgoal = getSingleFormula(1);
+        Formula fgoal = Formula.and(formulas.makeCopy());
         rep.debug("Generating the solution...\n");
         kEnumerator = null;
         Solution sol = null;
@@ -891,7 +877,7 @@ public final class A4Solution {
         // if that Relation is never mentioned in the GOAL formula; so, this ensures that
         // the said relation is mentioned (and the R==R is optimized away very efficiently, so we don't incur runtime cost)
         for(Relation r: bounds.relations()) { formulas.add(r.eq(r)); }
-        fgoal = getSingleFormula(1);
+        fgoal = Formula.and(formulas.makeCopy());
         // Now pick the solver and solve it!
         if (opt.solver.equals(SatSolver.KK)) {
             File tmpCNF = File.createTempFile("tmp", ".java", new File(opt.tempDirectory));

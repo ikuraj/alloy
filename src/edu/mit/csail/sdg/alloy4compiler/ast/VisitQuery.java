@@ -81,7 +81,7 @@ public abstract class VisitQuery<T> extends VisitReturn<T> {
     /** Visits an ExprQt node (all a,b,c:X1, d,e,f:X2... | F) by calling accept() on a,b,c,X1,d,e,f,X2... then on F. */
     @Override public T visit(ExprQt x) throws Err {
         for(Decl d: x.decls) {
-           for(ExprVar v: d.names) { T ans = v.accept(this); if (ans!=null) return ans; }
+           for(ExprHasName v: d.names) { T ans = v.accept(this); if (ans!=null) return ans; }
            T ans = d.expr.accept(this); if (ans!=null) return ans;
         }
         return x.sub.accept(this);

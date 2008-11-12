@@ -38,7 +38,7 @@ import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Decl;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
-import edu.mit.csail.sdg.alloy4compiler.ast.ExprVar;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprHasName;
 import edu.mit.csail.sdg.alloy4compiler.ast.Func;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
@@ -170,13 +170,13 @@ public final class SimpleCLI {
                         sb.append("\nSig ").append(x.label).append(" at position ").append(x.pos).append("\n");
                         for(Field f:x.getFields()) {
                             sb.append("\nField ").append(f.label).append(" with type ").append(f.type).append("\n");
-                            if (f.boundingFormula!=null) f.boundingFormula.toString(sb, 2); else f.definition.toString(sb, 2);
+                            if (f.bound!=null) f.bound.toString(sb, 2); else f.definition.toString(sb, 2);
                         }
                         rep.flush();
                     }
                     for(Func x:m.getAllFunc()) {
                         sb.append("\nFun/pred ").append(x.label).append(" at position ").append(x.pos).append("\n");
-                        for(Decl d:x.decls) for(ExprVar v:d.names) { v.toString(sb, 2); d.expr.toString(sb, 4); }
+                        for(Decl d:x.decls) for(ExprHasName v:d.names) { v.toString(sb, 2); d.expr.toString(sb, 4); }
                         x.returnDecl.toString(sb, 2);
                         x.getBody().toString(sb, 4);
                         rep.flush();
