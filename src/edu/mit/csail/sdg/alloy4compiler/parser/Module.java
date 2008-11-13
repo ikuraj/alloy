@@ -1036,6 +1036,7 @@ public final class Module extends Browsable {
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
                + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
+            if (p.isEnum!=null && oldS.one==null) throw new ErrorSyntax(pos, "This sig must be designated \"one\" since it extends an enum.");
             oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isPrivate, null, oldS.isEnum, oldS.hint_isLeaf);
         }
         sorted.add(oldS);
