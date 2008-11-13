@@ -167,8 +167,8 @@ public final class A4Solution {
     /** The Kodkod Bounds object. */
     private Bounds bounds;
 
-    /** The list of Kodkod formulas; can be empty if unknown. */
-    private SafeList<Formula> formulas = new SafeList<Formula>();
+    /** The list of Kodkod formulas; can be empty if unknown; once a solution is solved we must not modify this anymore */
+    private ArrayList<Formula> formulas = new ArrayList<Formula>();
 
     /** The list of known Alloy4 sigs. */
     private SafeList<Sig> sigs;
@@ -346,7 +346,6 @@ public final class A4Solution {
     private void solved() {
         if (solved) return; // already solved
         bounds = bounds.clone().unmodifiableView();
-        formulas = formulas.dup();
         sigs = sigs.dup();
         skolems = skolems.dup();
         atoms = atoms.dup();
@@ -389,9 +388,9 @@ public final class A4Solution {
     /** Returns the Kodkod input used to generate this solution; returns "" if unknown. */
     public String debugExtractKInput() {
        if (solved)
-          return TranslateKodkodToJava.convert(Formula.and(formulas.makeCopy()), bitwidth, kAtoms, bounds, atom2name);
+          return TranslateKodkodToJava.convert(Formula.and(formulas), bitwidth, kAtoms, bounds, atom2name);
        else
-          return TranslateKodkodToJava.convert(Formula.and(formulas.makeCopy()), bitwidth, kAtoms, bounds.unmodifiableView(), null);
+          return TranslateKodkodToJava.convert(Formula.and(formulas), bitwidth, kAtoms, bounds.unmodifiableView(), null);
     }
 
     //===================================================================================================//
@@ -673,7 +672,7 @@ public final class A4Solution {
     void addFormula(Formula newFormula, Pos pos) throws Err {
         if (solved) throw new ErrorFatal("Cannot add an additional formula since solve() has completed.");
         if (formulas.size()>0 && formulas.get(0)==Formula.FALSE) return; // If one formula is false, we don't need the others
-        if (newFormula==Formula.FALSE) formulas=new SafeList<Formula>(); // If one formula is false, we don't need the others
+        if (newFormula==Formula.FALSE) formulas.clear(); // If one formula is false, we don't need the others
         formulas.add(newFormula);
         if (pos!=null && pos!=Pos.UNKNOWN) k2pos(newFormula, pos);
     }
@@ -682,7 +681,7 @@ public final class A4Solution {
     void addFormula(Formula newFormula, Expr expr) throws Err {
         if (solved) throw new ErrorFatal("Cannot add an additional formula since solve() has completed.");
         if (formulas.size()>0 && formulas.get(0)==Formula.FALSE) return; // If one formula is false, we don't need the others
-        if (newFormula==Formula.FALSE) formulas=new SafeList<Formula>(); // If one formula is false, we don't need the others
+        if (newFormula==Formula.FALSE) formulas.clear(); // If one formula is false, we don't need the others
         formulas.add(newFormula);
         if (expr!=null) k2pos(newFormula, expr);
     }
@@ -826,9 +825,9 @@ public final class A4Solution {
         final A4Options opt = originalOptions;
         long time = System.currentTimeMillis();
         rep.debug("Simplifying the bounds...\n");
-        if (simp!=null && formulas.size()>0 && !simp.simplify(rep, this, formulas.dup())) addFormula(Formula.FALSE, Pos.UNKNOWN);
+        if (simp!=null && formulas.size()>0 && !simp.simplify(rep, this, formulas)) addFormula(Formula.FALSE, Pos.UNKNOWN);
         rep.translate(opt.solver.id(), bitwidth, maxseq, solver.options().skolemDepth(), solver.options().symmetryBreaking());
-        Formula fgoal = Formula.and(formulas.makeCopy());
+        Formula fgoal = Formula.and(formulas);
         rep.debug("Generating the solution...\n");
         kEnumerator = null;
         Solution sol = null;
@@ -881,7 +880,7 @@ public final class A4Solution {
         // if that Relation is never mentioned in the GOAL formula; so, this ensures that
         // the said relation is mentioned (and the R==R is optimized away very efficiently, so we don't incur runtime cost)
         for(Relation r: bounds.relations()) { formulas.add(r.eq(r)); }
-        fgoal = Formula.and(formulas.makeCopy());
+        fgoal = Formula.and(formulas);
         // Now pick the solver and solve it!
         if (opt.solver.equals(SatSolver.KK)) {
             File tmpCNF = File.createTempFile("tmp", ".java", new File(opt.tempDirectory));

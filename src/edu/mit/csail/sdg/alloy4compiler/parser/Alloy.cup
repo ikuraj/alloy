@@ -461,8 +461,10 @@ nonterminal                            Command;
 nonterminal ExprVar                    CommandPrefix;
 nonterminal ExprVar                    CmdLabel;
 nonterminal Decl                       Decla;
+nonterminal Decl                       Declb;
 nonterminal List<Decl>                 Declp;
 nonterminal List<Decl>                 Decls;
+nonterminal List<Decl>                 Declz;
 nonterminal Expr                       DomainExprA;
 nonterminal Expr                       DomainExprB;
 nonterminal Expr                       DotExprA;
@@ -737,20 +739,6 @@ Namex ::= EXACTLY Name:x               {: nod(x); RESULT=new ArrayList<ExprVar>(
 Namex ::= Namex:a COMMA         Name:b {: nod(b);              a.add(b); RESULT=a;                                   :};
 Namex ::= Namex:a COMMA EXACTLY Name:b {: nod(b); a.add(null); a.add(b); RESULT=a;                                   :};
 
-Decla ::=           PART:k Names   COLON EQUALS          Expr    {: if (1==1) throw Module.hint(k, "part");                                   :};
-Decla ::=           EXH:k  Names   COLON EQUALS          Expr    {: if (1==1) throw Module.hint(k, "exh");                                    :};
-Decla ::=           DISJ:d Names   COLON EQUALS          Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
-Decla ::= PRIVATE   DISJ:d Names   COLON EQUALS          Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
-Decla ::= PRIVATE          Names   COLON:a EQUALS:b      Expr    {: if (1==1) throw new ErrorSyntax(a.merge(b), "Defined fields is not yet implemented."); :};
-Decla ::=                  Names   COLON:a EQUALS:b      Expr    {: if (1==1) throw new ErrorSyntax(a.merge(b), "Defined fields is not yet implemented."); :};
-
-Decla ::=           PART:k Names   COLON EQUALS DISJ     Expr    {: if (1==1) throw Module.hint(k, "part");                                   :};
-Decla ::=           EXH:k  Names   COLON EQUALS DISJ     Expr    {: if (1==1) throw Module.hint(k, "exh");                                    :};
-Decla ::=           DISJ   Names   COLON EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
-Decla ::= PRIVATE   DISJ   Names   COLON EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
-Decla ::= PRIVATE          Names   COLON EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
-Decla ::=                  Names   COLON EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
-
 Decla ::=           PART:k Names   COLON                 Expr    {: if (1==1) throw Module.hint(k, "part");        :};
 Decla ::=           EXH:k  Names   COLON                 Expr    {: if (1==1) throw Module.hint(k, "exh");         :};
 Decla ::=           DISJ:k Names:a COLON                 Expr:b  {: RESULT=new Decl(null, k,    null, a, mult(b)); :};
@@ -765,13 +753,32 @@ Decla ::= PRIVATE:p DISJ:k Names:a COLON DISJ:d          Expr:b  {: RESULT=new D
 Decla ::= PRIVATE:p        Names:a COLON DISJ:d          Expr:b  {: RESULT=new Decl(p,    null, d,    a, mult(b)); :};
 Decla ::=                  Names:a COLON DISJ:d          Expr:b  {: RESULT=new Decl(null, null, d,    a, mult(b)); :};
 
-Declp ::= Declp:x COMMA Decla:y {: RESULT=x; RESULT.add(y);                      :};
-Declp ::=               Decla:y {: RESULT=new ArrayList<Decl>(); RESULT.add(y);  :};
+Declb ::= Decla:x {: RESULT=x; :};
 
-Decls ::=                        {: RESULT=new ArrayList<Decl>();                :};
-Decls ::= Decla:x                {: RESULT=new ArrayList<Decl>(); RESULT.add(x); :};
-Decls ::= Decla:x COMMA Decls:y  {: RESULT=y; RESULT.add(0,x);                   :};
-Decls ::=         COMMA Decls:y  {: RESULT=y;                                    :};
+Declb ::=           PART:k Names   EQUALS          Expr    {: if (1==1) throw Module.hint(k, "part");                                      :};
+Declb ::=           EXH:k  Names   EQUALS          Expr    {: if (1==1) throw Module.hint(k, "exh");                                       :};
+Declb ::=           DISJ:d Names   EQUALS          Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint.");    :};
+Declb ::= PRIVATE   DISJ:d Names   EQUALS          Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint.");    :};
+Declb ::= PRIVATE:p        Names:a EQUALS          Expr:b  {: RESULT=new Decl(p,    null, null,  a, ExprUnary.Op.EXACTLYOF.make(null, b)); :};
+Declb ::=                  Names:a EQUALS          Expr:b  {: RESULT=new Decl(null, null, null,  a, ExprUnary.Op.EXACTLYOF.make(null, b)); :};
+
+Declb ::=           PART:k Names   EQUALS DISJ     Expr    {: if (1==1) throw Module.hint(k, "part");                                   :};
+Declb ::=           EXH:k  Names   EQUALS DISJ     Expr    {: if (1==1) throw Module.hint(k, "exh");                                    :};
+Declb ::=           DISJ   Names   EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+Declb ::= PRIVATE   DISJ   Names   EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+Declb ::= PRIVATE          Names   EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+Declb ::=                  Names   EQUALS DISJ:d   Expr    {: if (1==1) throw new ErrorSyntax(d, "Defined fields cannot be disjoint."); :};
+
+Declz ::= Declz:x COMMA Decla:y  {: RESULT=x; RESULT.add(y);                      :};
+Declz ::=               Decla:y  {: RESULT=new ArrayList<Decl>(); RESULT.add(y);  :};
+
+Declp ::= Declp:x COMMA Declb:y  {: RESULT=x; RESULT.add(y);                      :};
+Declp ::=               Declb:y  {: RESULT=new ArrayList<Decl>(); RESULT.add(y);  :};
+
+Decls ::=                        {: RESULT=new ArrayList<Decl>();                 :};
+Decls ::= Declb:x                {: RESULT=new ArrayList<Decl>(); RESULT.add(x);  :};
+Decls ::= Declb:x COMMA Decls:y  {: RESULT=y; RESULT.add(0,x);                    :};
+Decls ::=         COMMA Decls:y  {: RESULT=y;                                     :};
 
 Let ::= Name:a EQUALS:o Expr:b SuperOrBar:x {:
   nod(a);
@@ -1017,7 +1024,7 @@ BaseExpr ::= LPAREN Expr:x RPAREN                   {: RESULT = x;              
 BaseExpr ::= SigRef:x                               {: RESULT = x;                                                        :};
 BaseExpr ::= AT:o Name:x                            {: nod(x); RESULT = ExprVar.make(o.merge(x.pos), "@"+x.label);        :};
 BaseExpr ::= Super:x                                {: RESULT = x;                                                        :};
-BaseExpr ::= LBRACE:o Declp:a SuperOrBar:b RBRACE:c {: RESULT = ExprQt.Op.COMPREHENSION.make(o, c, a, b);                 :};
-BaseExpr ::= LBRACE:o Declp:a              RBRACE:c {: RESULT = ExprQt.Op.COMPREHENSION.make(o, c, a, ExprConstant.TRUE); :};
+BaseExpr ::= LBRACE:o Declz:a SuperOrBar:b RBRACE:c {: RESULT = ExprQt.Op.COMPREHENSION.make(o, c, a, b);                 :};
+BaseExpr ::= LBRACE:o Declz:a              RBRACE:c {: RESULT = ExprQt.Op.COMPREHENSION.make(o, c, a, ExprConstant.TRUE); :};
 
 //=============================================================================

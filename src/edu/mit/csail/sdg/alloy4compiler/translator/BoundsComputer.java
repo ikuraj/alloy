@@ -42,6 +42,7 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprConstant;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
@@ -200,6 +201,34 @@ final class BoundsComputer {
 
     //==============================================================================================================//
 
+    /** If ex is a simple combination of Relations, then return that combination, else return null. */
+    private Expression sim(Expr ex) {
+        while(ex instanceof ExprUnary) {
+           ExprUnary u = (ExprUnary)ex;
+           if (u.op!=ExprUnary.Op.NOOP && u.op!=ExprUnary.Op.EXACTLYOF) break;
+           ex = u.sub;
+        }
+        if (ex instanceof ExprBinary) {
+           ExprBinary b = (ExprBinary)ex;
+           if (b.op==ExprBinary.Op.ARROW || b.op==ExprBinary.Op.PLUS || b.op==ExprBinary.Op.JOIN) {
+              Expression left = sim(b.left);  if (left==null) return null;
+              Expression right = sim(b.right); if (right==null) return null;
+              if (b.op==ExprBinary.Op.ARROW) return left.product(right);
+              if (b.op==ExprBinary.Op.PLUS) return left.union(right); else return left.join(right);
+           }
+        }
+        if (ex instanceof ExprConstant) {
+           switch(((ExprConstant)ex).op) {
+              case EMPTYNESS: return Expression.NONE;
+           }
+        }
+        if (ex==Sig.NONE) return Expression.NONE;
+        if (ex==Sig.SIGINT) return Expression.INTS;
+        if (ex instanceof Sig) return sol.a2k((Sig)ex);
+        if (ex instanceof Field) return sol.a2k((Field)ex);
+        return null;
+    }
+
     /** Computes the bounds for sigs/fields, then construct a BoundsComputer object that you can query. */
     private BoundsComputer(A4Reporter rep, A4Solution sol, ScopeComputer sc, Iterable<Sig> sigs) throws Err {
         this.sc = sc;
@@ -249,8 +278,16 @@ final class BoundsComputer {
               rep.bound("Field "+s.label+"."+f2.label+" == "+nextTS+"\n");
               continue again;
            }
-           for(Field f:s.getFields()) if (!f.defined) {
+           for(Field f:s.getFields()) {
               boolean isOne = s.isOne!=null;
+              if (isOne && f.decl().expr.mult()==ExprUnary.Op.EXACTLYOF) {
+                 Expression sim = sim(f.decl().expr);
+                 if (sim!=null) {
+                    rep.bound("Field "+s.label+"."+f.label+" defined to be "+sim+"\n");
+                    sol.addField(f, sol.a2k(s).product(sim));
+                    continue;
+                 }
+              }
               Type t = isOne ? Sig.UNIV.type.join(f.type) : f.type;
               TupleSet ub = factory.noneOf(t.arity());
               for(List<PrimSig> p:t.fold()) {
@@ -264,10 +301,6 @@ final class BoundsComputer {
               Relation r = sol.addRel(s.label+"."+f.label, null, ub);
               sol.addField(f, isOne ? sol.a2k(s).product(r) : r);
            }
-        }
-        for(Sig s:sigs) for(Field f:s.getFields()) if (f.defined) {
-            Expression r = sol.a2k(s).product(sol.a2k(f.decl().expr));
-            sol.addField(f, r);
         }
         // Add any additional SIZE constraints
         for(Sig s:sigs) if (!s.builtin) {

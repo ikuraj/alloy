@@ -619,7 +619,7 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public SimTupleset visit(Field x) throws Err {
-        if (x.defined) return cset(x.sig).product(cset(x.decl().expr));
+        if (x.defined) return cset(x.sig).product(cset(x.decl().expr)); // FIXTHIS: this is not the correct answer!
         Object ans = sfs.get(x);
         if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown field "+x+" encountered during evaluation.");
     }

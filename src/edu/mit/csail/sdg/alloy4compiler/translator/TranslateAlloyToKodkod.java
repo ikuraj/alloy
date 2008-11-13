@@ -191,17 +191,15 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
          for(Decl d: s.getFieldDecls()) {
             for(ExprHasName n: d.names) {
                Field f = (Field)n;
-               if (!f.defined) {
-                  Expr form = s.decl.get().join(f).in(d.expr);
-                  form = s.isOne==null ? form.forAll(s.decl) : ExprLet.make(null, (ExprVar)(s.decl.get()), s, form);
-                  frame.addFormula(cform(form), f);
-                  // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
-                  // Thus, we need to add a bound that the first column is a subset of s.
-                  if (s.isOne==null) {
-                     Expression sr = a2k(s), fr = a2k(f);
-                     for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
-                     frame.addFormula(fr.in(sr), f);
-                  }
+               Expr form = s.decl.get().join(f).in(d.expr);
+               form = s.isOne==null ? form.forAll(s.decl) : ExprLet.make(null, (ExprVar)(s.decl.get()), s, form);
+               frame.addFormula(cform(form), f);
+               // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
+               // Thus, we need to add a bound that the first column is a subset of s.
+               if (s.isOne==null) {
+                   Expression sr = a2k(s), fr = a2k(f);
+                   for(int i=f.type.arity(); i>1; i--) fr=fr.join(Relation.UNIV);
+                   frame.addFormula(fr.in(sr), f);
                }
             }
             if (s.isOne==null && d.disjoint2!=null) for(ExprHasName f: d.names) {
@@ -248,7 +246,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             }
             return ans;
         }
-        @Override public boolean simplify(A4Reporter rep, A4Solution sol, Iterable<Formula> unused) throws Err {
+        @Override public boolean simplify(A4Reporter rep, A4Solution sol, List<Formula> unused) throws Err {
             TupleFactory factory = sol.getFactory();
             TupleSet oldUniv = convert(factory, Sig.UNIV);
             Set<Object> oldAtoms = new HashSet<Object>(); for(Tuple t: oldUniv) oldAtoms.add(t.atom(0));
@@ -273,7 +271,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                           }
                       }
                 // The case above is STRICTLY an optimization; the entire statement can be removed without affecting correctness
-                for(Field f: s.getFields()) if (!f.defined) {
+                for(Field f: s.getFields()) {
                     Expression rel = sol.a2k(f);
                     if (s.isOne!=null) {
                         rel = right(rel);
