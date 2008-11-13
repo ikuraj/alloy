@@ -191,8 +191,8 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
          for(Decl d: s.getFieldDecls()) {
             for(ExprHasName n: d.names) {
                Field f = (Field)n;
-               if (f.bound!=null) {
-                  Expr form = s.decl.get().join(f).in(f.bound);
+               if (!f.defined) {
+                  Expr form = s.decl.get().join(f).in(d.expr);
                   form = s.isOne==null ? form.forAll(s.decl) : ExprLet.make(null, (ExprVar)(s.decl.get()), s, form);
                   frame.addFormula(cform(form), f);
                   // Given the above, we can be sure that every column is well-bounded (except possibly the first column).
@@ -273,7 +273,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
                           }
                       }
                 // The case above is STRICTLY an optimization; the entire statement can be removed without affecting correctness
-                for(Field f: s.getFields()) if (f.definition==null) {
+                for(Field f: s.getFields()) if (!f.defined) {
                     Expression rel = sol.a2k(f);
                     if (s.isOne!=null) {
                         rel = right(rel);
@@ -599,7 +599,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprUnary x) throws Err {
         switch(x.op) {
-            case SOMEOF: case LONEOF: case ONEOF: case SETOF: return cset(x.sub);
+            case EXACTLYOF: case SOMEOF: case LONEOF: case ONEOF: case SETOF: return cset(x.sub);
             case NOOP: return visitThis(x.sub);
             case NOT:  return k2pos( cform(x.sub).not() , x );
             case SOME: return k2pos( cset(x.sub).some() , x);
@@ -840,17 +840,18 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
     /** Helper method that translates the formula "a in b" into a Kodkod formula. */
     private Formula isIn(Expression a, Expr right) throws Err {
         Expression b;
+        if (right instanceof ExprBinary && right.mult!=0 && ((ExprBinary)right).op.isArrow) {
+            // Handles possible "binary" or higher-arity multiplicity
+            return isInBinary(a, (ExprBinary)right);
+        }
         if (right instanceof ExprUnary) {
             // Handles possible "unary" multiplicity
             ExprUnary y=(ExprUnary)(right);
+            if (y.op==ExprUnary.Op.EXACTLYOF) { b=cset(y.sub); return a.eq(b); }
             if (y.op==ExprUnary.Op.ONEOF) { b=cset(y.sub); return a.one().and(a.in(b)); }
             if (y.op==ExprUnary.Op.SETOF) { b=cset(y.sub); return a.in(b); }
             if (y.op==ExprUnary.Op.LONEOF) { b=cset(y.sub); return a.lone().and(a.in(b)); }
             if (y.op==ExprUnary.Op.SOMEOF) { b=cset(y.sub); return a.some().and(a.in(b)); }
-        }
-        if (right instanceof ExprBinary && right.mult!=0 && ((ExprBinary)right).op.isArrow) {
-            // Handles possible "binary" or higher-arity multiplicity
-            return isInBinary(a, (ExprBinary)right);
         }
         return a.in(cset(right));
     }
@@ -912,7 +913,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
         Expr save = x;
         while(x instanceof ExprUnary) {
             switch(((ExprUnary)x).op) {
-               case SETOF: case ONEOF: case LONEOF: case SOMEOF: return save;
+               case EXACTLYOF: case SETOF: case ONEOF: case LONEOF: case SOMEOF: return save;
                case NOOP: x = ((ExprUnary)x).sub;  continue;
                default: break;
             }

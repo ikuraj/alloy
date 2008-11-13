@@ -47,13 +47,13 @@ public class DemoFileSystem {
     Set<Sig> sigs = new LinkedHashSet<Sig>();
 
     PrimSig makeSig(String name, boolean isAbstract, boolean isOne) throws Err {
-        PrimSig ans = new PrimSig(null, null, name, isAbstract, false, isOne, false, false);
+        PrimSig ans = new PrimSig(null, name, isAbstract, false, isOne, false, false);
         sigs.add(ans);
         return ans;
     }
 
     PrimSig makeSig(PrimSig parent, String name, boolean isAbstract, boolean isOne) throws Err {
-        PrimSig ans = new PrimSig(null, parent, name, isAbstract, false, isOne, false, false);
+        PrimSig ans = new PrimSig(parent, name, isAbstract, false, isOne, false, false);
         sigs.add(ans);
         return ans;
     }

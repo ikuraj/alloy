@@ -183,13 +183,14 @@ public final class ExprQt extends Expr {
                errs = errs.append(new ErrorType(v.span(), "This must be a set or relation. Instead, its type is " + v.type));
                continue;
             }
+            ExprUnary.Op op = v.mult();
+            if (op==ExprUnary.Op.EXACTLYOF) { errs = errs.append(new ErrorType(v.span(), "This cannot be an exactly-of expression.")); continue; }
             if (this!=SUM && this!=COMPREHENSION) continue;
             if (!v.type.hasArity(1)) {
                errs = errs.append(new ErrorType(v.span(), "This must be a unary set. Instead, its type is " + v.type));
                continue;
             }
             if (v.mult==1) {
-               ExprUnary.Op op = v.mult();
                if (op == ExprUnary.Op.SETOF)
                   errs = errs.append(new ErrorType(v.span(), "This cannot be a set-of expression."));
                else if (op == ExprUnary.Op.SOMEOF)

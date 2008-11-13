@@ -483,7 +483,11 @@ public final class A4Solution {
 
     /** Returns the corresponding Kodkod expression for the given expression, or null if it is not associated with anything. */
     Expression a2k(Expr expr) throws ErrorFatal {
-        while(expr instanceof ExprUnary && ((ExprUnary)expr).op==ExprUnary.Op.NOOP) expr = ((ExprUnary)expr).sub;
+        while(expr instanceof ExprUnary) {
+            if (((ExprUnary)expr).op==ExprUnary.Op.NOOP) { expr = ((ExprUnary)expr).sub; continue; }
+            if (((ExprUnary)expr).op==ExprUnary.Op.EXACTLYOF) { expr = ((ExprUnary)expr).sub; continue; }
+            break;
+        }
         if (expr instanceof ExprConstant && ((ExprConstant)expr).op==ExprConstant.Op.EMPTYNESS) return Expression.NONE;
         if (expr instanceof ExprConstant && ((ExprConstant)expr).op==ExprConstant.Op.STRING) return s2k.get(((ExprConstant)expr).string);
         if (expr instanceof Sig || expr instanceof Field || expr instanceof ExprVar) return a2k.get(expr);

@@ -75,6 +75,7 @@ public final class ExprUnary extends Expr {
               case LONEOF: out.append("lone "); break;
               case ONEOF: out.append("one "); break;
               case SETOF: out.append("set "); break;
+              case EXACTLYOF: out.append("exactly "); break;
               case CAST2INT: out.append("int["); sub.toString(out,-1); out.append(']'); return;
               case CAST2SIGINT: out.append("Int["); sub.toString(out,-1); out.append(']'); return;
               case NOOP: break;
@@ -92,7 +93,7 @@ public final class ExprUnary extends Expr {
 
     /** Constructs an unary expression. */
     private ExprUnary(Pos pos, Op op, Expr sub, Type type, long weight, JoinableList<Err> errors) {
-        super(pos, null, sub.ambiguous, type, (op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0, weight, errors);
+        super(pos, null, sub.ambiguous, type, (op==Op.EXACTLYOF||op==Op.SOMEOF||op==Op.LONEOF||op==Op.ONEOF||op==Op.SETOF)?1:0, weight, errors);
         this.op = op;
         this.sub = sub;
     }
@@ -113,10 +114,11 @@ public final class ExprUnary extends Expr {
 
     /** This class contains all possible unary operators. */
     public enum Op {
-        /** :some x (where x is a unary set)                             */  SOMEOF("some of"),
-        /** :lone x (where x is a unary set)                             */  LONEOF("lone of"),
-        /** :one  x (where x is a unary set)                             */  ONEOF("one of"),
-        /** :set  x (where x is a set or relation)                       */  SETOF("set of"),
+        /** :some     x (where x is a unary set)                         */  SOMEOF("some of"),
+        /** :lone     x (where x is a unary set)                         */  LONEOF("lone of"),
+        /** :one      x (where x is a unary set)                         */  ONEOF("one of"),
+        /** :set      x (where x is a set or relation)                   */  SETOF("set of"),
+        /** :exactly  x (where x is a set or relation)                   */  EXACTLYOF("exactly of"),
         /** not   f (where f is a formula)                               */  NOT("!"),
         /** no    x (where x is a set or relation)                       */  NO("no"),
         /** some  x (where x is a set or relation)                       */  SOME("some"),
@@ -181,8 +183,8 @@ public final class ExprUnary extends Expr {
             }
             Type type=sub.type;
             if (sub.errors.isEmpty()) switch(this) {
-              case SOMEOF: case LONEOF: case ONEOF: case SETOF:
-                if (this==SETOF) type=Type.removesBoolAndInt(sub.type); else type=sub.type.extract(1);
+              case EXACTLYOF: case SOMEOF: case LONEOF: case ONEOF: case SETOF:
+                if (this==SETOF || this==EXACTLYOF) type=Type.removesBoolAndInt(sub.type); else type=sub.type.extract(1);
                 if (type==EMPTY) extraError=new ErrorType(sub.span(), "After the some/lone/one multiplicity symbol, " +
                    "this expression must be a unary set.\nInstead, its possible type(s) are:\n" + sub.type);
                 break;

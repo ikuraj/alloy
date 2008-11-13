@@ -203,7 +203,7 @@ public final class SimContext extends VisitReturn<Object> {
             if (sigs!=null) for(final Sig s: sigs) if (!s.builtin) {
                 SimTupleset ts = sfs.get("sig " + s.label);
                 if (ts!=null) ans.sfs.put(s, ts);
-                for(final Field f: s.getFields()) if (f.definition==null) {
+                for(final Field f: s.getFields()) if (!f.defined) {
                     ts = sfs.get("field " + s.label + " " + f.label);
                     if (ts!=null) ans.sfs.put(f, ts);
                 }
@@ -336,7 +336,7 @@ public final class SimContext extends VisitReturn<Object> {
     public void init(Field field, SimTupleset value) throws Err {
         if (value==null) { sfs.remove(field); return; }
         if (!value.empty() && value.arity()!=field.type.arity()) throw new ErrorType("Evaluator encountered an error: field "+field.label+" arity must not be " + value.arity());
-        if (field.bound==null) throw new ErrorAPI("Evaluator cannot prebind the value of a defined field.");
+        if (field.defined) throw new ErrorAPI("Evaluator cannot prebind the value of a defined field.");
         sfs.put(field, value);
         cacheUNIV = null;
         cacheSTRING = null;
@@ -553,6 +553,7 @@ public final class SimContext extends VisitReturn<Object> {
     /** {@inheritDoc} */
     @Override public Object visit(ExprUnary x) throws Err {
         switch(x.op) {
+          case EXACTLYOF:
           case LONEOF:
           case ONEOF:
           case SETOF:
@@ -618,7 +619,7 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public SimTupleset visit(Field x) throws Err {
-        if (x.bound==null) return cset(x.definition);
+        if (x.defined) return cset(x.sig).product(cset(x.decl().expr));
         Object ans = sfs.get(x);
         if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown field "+x+" encountered during evaluation.");
     }
@@ -730,10 +731,11 @@ public final class SimContext extends VisitReturn<Object> {
         if (b instanceof ExprUnary) {
             // Handles possible "unary" multiplicity
             ExprUnary y = (ExprUnary)b;
-            if      (y.op==ExprUnary.Op.ONEOF)  { b=deNOP(y.sub); if (!(a.longsize()==1)) return false; }
-            else if (y.op==ExprUnary.Op.LONEOF) { b=deNOP(y.sub); if (!(a.longsize()<=1)) return false; }
-            else if (y.op==ExprUnary.Op.SOMEOF) { b=deNOP(y.sub); if (!(a.longsize()>=1)) return false; }
-            else if (y.op!=ExprUnary.Op.SETOF)  { b=deNOP(y.sub); }
+            if      (y.op==ExprUnary.Op.EXACTLYOF) { b=deNOP(y.sub); return a.equals(b); }
+            else if (y.op==ExprUnary.Op.ONEOF)     { b=deNOP(y.sub); if (!(a.longsize()==1)) return false; }
+            else if (y.op==ExprUnary.Op.LONEOF)    { b=deNOP(y.sub); if (!(a.longsize()<=1)) return false; }
+            else if (y.op==ExprUnary.Op.SOMEOF)    { b=deNOP(y.sub); if (!(a.longsize()>=1)) return false; }
+            else if (y.op!=ExprUnary.Op.SETOF)     { b=deNOP(y.sub); }
         }
         for(SimTuple t:a) if (!isIn(t, b)) return false;
         return true;

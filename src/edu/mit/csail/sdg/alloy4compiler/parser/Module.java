@@ -503,18 +503,19 @@ public final class Module extends Browsable {
         final Pos pos;
         final Pos endOfFields;          // The "}" that marks the end of field declarations
         private final String name,fullname;
-        private final Pos abs,lone,one,some,subsig,subset;
+        private final Pos abs,lone,one,some,subsig,subset,isEnum;
         private final boolean exact;
         private final ConstList<ExprVar> parents;
         private final ConstList<Decl> fields;
         private final Expr appendedFact; // never null
-        private SigAST(Pos pos, Pos isPrivate, String fullname, String name, boolean exact, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
+        private SigAST(Pos pos, Pos isPrivate, String fullname, String name, boolean exact, Pos isEnum, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset,
             List<ExprVar> parents, List<Decl> fields, Pos endOfFields, Expr appendedFacts, Module realModule, Sig realSig) {
             this.pos=(pos==null ? Pos.UNKNOWN : pos);
             this.exact = exact;
             this.isPrivate = isPrivate;
             this.fullname = fullname;
             this.name = name;
+            this.isEnum = isEnum;
             this.abs = abs;
             this.lone = lone;
             this.one = one;
@@ -530,7 +531,7 @@ public final class Module extends Browsable {
             this.realParents = new ArrayList<SigAST>(this.parents.size());
         }
         private SigAST(String fullname, String name, List<ExprVar> parents, Sig realSig) {
-            this(null, null, fullname, name, false, null, null, null, null, null, null, parents, null, null, null, null, realSig);
+            this(null, null, fullname, name, false, null, null, null, null, null, null, null, parents, null, null, null, null, realSig);
         }
         @Override public String toString() { return fullname; }
     }
@@ -842,7 +843,7 @@ public final class Module extends Browsable {
             String name = expr.label;
             dup(expr.span(), name, true);
             if (path.length()==0) {
-                SigAST newSig = addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null, null);
+                SigAST newSig = addSig(null, expr.span(), name, null, null, null, null, null, null, null, null, null, null, null);
                 if (nextIsExact) exactSigs.add(newSig);
             } else {
                 params.put(name, null);
@@ -855,24 +856,23 @@ public final class Module extends Browsable {
 
     /** Add util/sequniv to the list of declarations. */
     void addSeq(Pos pos) throws Err {
-        int oldStatus=status;
-        status=0;
+        int oldStatus = status;
+        status = 0;
         try {
             addOpen(pos, null, ExprVar.make(pos, "util/sequniv"), null, ExprVar.make(pos, "seq"));
         } finally {
-            status=oldStatus;
+            status = oldStatus;
         }
     }
 
     /** Add an OPEN declaration. */
     void addOpen(Pos pos, Pos isPrivate, ExprVar name, List<ExprVar> args, ExprVar alias) throws Err {
-        if (status>2) throw new ErrorSyntax(pos,
-           "The \"open\" declaration must occur before any\n" + "sig/pred/fun/fact/assert/check/run command.");
+        if (status>2) throw new ErrorSyntax(pos, "The \"open\" declaration must occur before any\n" + "sig/pred/fun/fact/assert/check/run command.");
         status=2;
         String as = (alias==null ? "" : alias.label);
         if (name.label.length()==0) throw new ErrorSyntax(name.span(), "The filename cannot be empty.");
-        if (as.indexOf('@')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'@\' character");
-        if (as.indexOf('/')>=0) throw new ErrorSyntax(alias.span(), "Alias must not contain the \'/\' character");
+        if (as.indexOf('@')>=0) throw new ErrorSyntax(alias==null ? null : alias.span(), "Alias must not contain the \'@\' character");
+        if (as.indexOf('/')>=0) throw new ErrorSyntax(alias==null ? null : alias.span(), "Alias must not contain the \'/\' character");
         if (as.length()==0) {
             as="open$"+(1+opens.size());
             if (args==null || args.size()==0) {
@@ -971,7 +971,7 @@ public final class Module extends Browsable {
     //============================================================================================================================//
 
     /** Add a sig declaration. */
-    SigAST addSig(List<ExprVar> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate,
+    SigAST addSig(List<ExprVar> hints, Pos pos, String name, Pos isAbstract, Pos isLone, Pos isOne, Pos isSome, Pos isPrivate, Pos isEnum,
         ExprVar par, List<ExprVar> parents, List<Decl> fields, Pos endOfFields, Expr fact) throws Err {
         pos = pos.merge(isAbstract).merge(isLone).merge(isOne).merge(isSome);
         status=3;
@@ -983,28 +983,28 @@ public final class Module extends Browsable {
             if (par.label.equals("extends")) { subsig=par.span().merge(parents.get(0).span()); }
             else { exact=!par.label.equals("in"); subset=par.span(); for(ExprVar p:parents) subset=p.span().merge(subset); }
         }
-        SigAST obj = new SigAST(pos, isPrivate, full, name, exact, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields, endOfFields, fact,this,null);
+        SigAST obj = new SigAST(pos, isPrivate, full, name, exact, isEnum, isAbstract,isLone,isOne,isSome,subsig,subset, parents, fields, endOfFields, fact,this,null);
         if (hints!=null) for(ExprVar hint:hints) if (hint.label.equals("leaf")) {obj.hint_isLeaf=true; break;}
         sigs.put(name, obj);
         return obj;
     }
 
-    /** The list of ENUMS in this module. */
-    private final List<Pair<SigAST,Integer>> enums = new ArrayList<Pair<SigAST,Integer>>();
-
     /** Add an enumeration. */
-    void addEnum(Pos pos, Pos priv, ExprVar name, List<ExprVar> parents, List<ExprVar> atoms, Pos closingBracket) throws Err {
+    void addEnum(Pos pos, Pos priv, ExprVar name, List<ExprVar> atoms, Pos closingBracket) throws Err {
         ExprVar LEAF = ExprVar.make(null,"leaf");
         ExprVar EXTENDS = ExprVar.make(null, "extends");
         ExprVar THIS = ExprVar.make(null, "this/"+name);
         List<ExprVar> THESE = Arrays.asList(THIS);
         if (atoms==null || atoms.size()==0) throw new ErrorSyntax(pos, "Enumeration must contain at least one name.");
-        if (parents!=null) parents = new ArrayList<ExprVar>(parents);
-        ExprVar inOrExtend = (parents!=null && parents.size()>0) ? parents.remove(parents.size()-1) : null;
-        if (inOrExtend!=null && inOrExtend.label.charAt(0)=='i') throw new ErrorSyntax(pos, "Enumeration signatures cannot derive from a subset signature.");
-        SigAST ans = addSig(Arrays.asList(LEAF), name.pos, name.label, name.pos, null, null, null, priv, inOrExtend, parents, null, null, null);
-        enums.add(new Pair<SigAST,Integer>(ans, atoms.size()));
-        for(ExprVar a:atoms) addSig(null, a.pos, a.label, null, null, a.pos, null, priv, EXTENDS, THESE, null, null, null);
+        addSig(Arrays.asList(LEAF), name.pos, name.label, name.pos, null, null, null, priv, Pos.UNKNOWN, null, null, null, null, null);
+        for(ExprVar a:atoms) addSig(null, a.pos, a.label, null, null, a.pos, null, priv, null, EXTENDS, THESE, null, null, null);
+        int oldStatus = status;
+        status = 0;
+        try {
+            addOpen(null, null, ExprVar.make(pos, "util/ordering"), Arrays.asList(THIS), null);
+        } finally {
+            status = oldStatus;
+        }
     }
 
     /** The given SigAST will now point to a nonnull Sig. */
@@ -1036,7 +1036,7 @@ public final class Module extends Browsable {
             if (!(parent instanceof PrimSig)) throw new ErrorSyntax(suppos, "Cannot extend the subset signature \"" + parent
                + "\".\n" + "A signature can only extend a toplevel signature or a subsignature.");
             PrimSig p = (PrimSig)parent;
-            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isPrivate, null, oldS.hint_isLeaf);
+            oldS.realSig = new PrimSig(pos, p, fullname, oldS.abs, oldS.lone, oldS.one, oldS.some, oldS.subsig, oldS.isPrivate, null, oldS.isEnum, oldS.hint_isLeaf);
         }
         sorted.add(oldS);
         return oldS.realSig;
@@ -1353,19 +1353,6 @@ public final class Module extends Browsable {
         sorted.add(STRINGast);
         sorted.add(NONEast);
         for(final Module m:modules) for(final Map.Entry<String,SigAST> e:m.sigs.entrySet()) resolveSig(sorted, e.getValue());
-        // For enums, add the additional partial instance fields "next" and "prev" to them
-        for(final Module m:modules) for(final Pair<SigAST,Integer> p:m.enums) {
-            int i = p.b;
-            Expr next = null, prev = null;
-            Sig last = null;
-            for(Sig c: ((PrimSig)(p.a.realSig)).children()) {
-                if (i<=0) break; else i--;
-                if (last!=null) { next=last.product(c).plus(next); prev=c.product(last).plus(prev); }
-                last = c;
-            }
-            if (next!=null) p.a.realSig.addDefinedField(Pos.UNKNOWN, null, null, "next", next);
-            if (prev!=null) p.a.realSig.addDefinedField(Pos.UNKNOWN, null, null, "prev", prev);
-        }
         // Add the fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
         for(final SigAST oldS: sorted) {
            // When typechecking each field:
@@ -1421,40 +1408,40 @@ public final class Module extends Browsable {
             ExprVar EXTENDS = ExprVar.make(null, "extends");
             ExprVar THIS = ExprVar.make(null, "univ");
             List<ExprVar> THESE = Arrays.asList(THIS);
-            SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null, null);
-            SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, EXTENDS, THESE, null, null, null);
+            SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, null, EXTENDS, THESE, null, null, null);
+            SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, null, EXTENDS, THESE, null, null, null);
             metasig.topo = true;
             metasig.realParents.add(UNIVast);
-            metasig.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/sig$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, false);
+            metasig.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/sig$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, null, false);
             metafield.topo = true;
             metafield.realParents.add(UNIVast);
-            metafield.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/field$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, false);
+            metafield.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/field$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, null, false);
             root.metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
             root.metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
             for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
                 final Sig s = sig.realSig;
                 String slab = sig.name;
-                SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, EXTENDS, THESE, null, null, null);
+                SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, null, EXTENDS, THESE, null, null, null);
                 ast.topo = true;
                 ast.realParents.add(metasig);
-                ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, false);
+                ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, null, false);
                 sig2meta.put(s, (PrimSig)(ast.realSig));
-                ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", ast.realSig.product(s));
+                ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", s);
                 sorted.add(ast);
                 hasMetaSig=true;
-                Expr allfields = Sig.NONE;
+                Expr allfields = ExprConstant.EMPTYNESS;
                 for(Field field: s.getFields()) {
-                    SigAST ast2 = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, EXTENDS, THESE, null, null, null);
+                    SigAST ast2 = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, null, EXTENDS, THESE, null, null, null);
                     ast2.topo = true;
                     ast2.realParents.add(metafield);
-                    ast2.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast2.name : (m.paths.get(0)+"/"+ast2.name), null, null, ast2.one, null, null, ast2.isPrivate, Pos.UNKNOWN, false);
+                    ast2.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast2.name : (m.paths.get(0)+"/"+ast2.name), null, null, ast2.one, null, null, ast2.isPrivate, Pos.UNKNOWN, null, false);
                     field2meta.put(field, (PrimSig)(ast2.realSig));
                     sorted.add(ast2);
                     hasMetaField = true;
-                    ast2.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", ast2.realSig.product(field));
-                    if (allfields==Sig.NONE) allfields = ast2.realSig; else allfields = allfields.plus(ast2.realSig);
+                    ast2.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", field);
+                    if (allfields==ExprConstant.EMPTYNESS) allfields = ast2.realSig; else allfields = allfields.plus(ast2.realSig);
                 }
-                ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", ast.realSig.product(allfields));
+                ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", allfields);
             }
             for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
                 Expr expr = null;
@@ -1462,7 +1449,7 @@ public final class Module extends Browsable {
                     PrimSig a = (PrimSig)(e.getKey());
                     if (a.parent!=null && a.parent!=UNIV) expr = sig2meta.get(a.parent);
                 }
-                e.getValue().addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "parent", e.getValue().product(expr==null ? ExprConstant.EMPTYNESS : expr));
+                e.getValue().addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "parent", (expr==null ? ExprConstant.EMPTYNESS : expr));
             }
             for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
                 Sig s = e.getKey();
@@ -1476,7 +1463,7 @@ public final class Module extends Browsable {
                     PrimSig metaF = field2meta.get(f);
                     if (allfields==ExprConstant.EMPTYNESS) allfields = metaF; else allfields = allfields.plus(metaF);
                 }
-                s2.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "subfields", s2.product(allfields));
+                s2.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "subfields", allfields);
             }
             if (hasMetaSig==false) root.facts.add(new Pair<String,Expr>("sig$fact", root.metaSig.no().and(root.metaField.no())));
             else if (hasMetaField==false) root.facts.add(new Pair<String,Expr>("sig$fact", root.metaField.no()));

@@ -245,13 +245,13 @@ public abstract class Expr extends Browsable {
         return x;
     }
 
-    /** If this is loneOf/oneOf/someOf expression, return loneOf/oneOf/someOf, otherwise returns setOf. */
+    /** If this is loneOf/oneOf/someOf/exactlyOf expression, return loneOf/oneOf/someOf/exactlyOf, otherwise returns setOf. */
     public final ExprUnary.Op mult() {
         Expr x = this;
         while(x instanceof ExprUnary) {
            ExprUnary.Op op = ((ExprUnary)x).op;
            if (op==ExprUnary.Op.NOOP) { x = ((ExprUnary)x).sub; continue; }
-           if (op==ExprUnary.Op.ONEOF || op==ExprUnary.Op.LONEOF || op==ExprUnary.Op.SOMEOF) return op;
+           if (op==ExprUnary.Op.ONEOF || op==ExprUnary.Op.LONEOF || op==ExprUnary.Op.SOMEOF || op==ExprUnary.Op.EXACTLYOF) return op;
            break;
         }
         return ExprUnary.Op.SETOF;

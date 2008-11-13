@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import kodkod.ast.Decl;
 import kodkod.ast.Decls;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
@@ -41,9 +40,14 @@ import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.PrimSig;
+import edu.mit.csail.sdg.alloy4compiler.ast.Expr;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprBinary;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprList;
+import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
+import static edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod.deNOP;
 
 /**
  * Immutable; this class assigns each sig and field to some Kodkod relation or expression, then set the bounds.
@@ -187,7 +191,7 @@ final class BoundsComputer {
         while(n>0) {
            n--;
            Variable v = Variable.unary("");
-           Decl dd = v.oneOf(a);
+           kodkod.ast.Decl dd = v.oneOf(a);
            if (d==null) d=dd; else d=dd.and(d);
            if (sum==null) sum=v; else { if (f!=null) f=v.intersection(sum).no().and(f); sum=v.union(sum); }
         }
@@ -213,23 +217,56 @@ final class BoundsComputer {
         for(Sig s:sigs) if (!s.builtin && s.isTopLevel()) allocatePrimSig((PrimSig)s);
         for(Sig s:sigs) if (s instanceof SubsetSig) allocateSubsetSig((SubsetSig)s);
         // Bound the fields
-        for(Sig s:sigs) for(Field f:s.getFields()) if (f.definition==null) {
-            boolean isOne = s.isOne!=null;
-            Type t = isOne ? Sig.UNIV.type.join(f.type) : f.type;
-            TupleSet ub = factory.noneOf(t.arity());
-            for(List<PrimSig> p:t.fold()) {
-                TupleSet upper=null;
-                for(PrimSig b:p) {
+        again:
+        for(Sig s:sigs) {
+           while (s.isOne!=null && s.getFieldDecls().size()==2 && s.getFields().size()==2 && s.getFacts().size()==1) {
+              // Let's check whether this is a total ordering on an enum...
+              Expr fact = deNOP(s.getFacts().get(0)), b1 = deNOP(s.getFieldDecls().get(0).expr), b2 = deNOP(s.getFieldDecls().get(1).expr), b3;
+              if (!(fact instanceof ExprList) || !(b1 instanceof ExprUnary) || !(b2 instanceof ExprBinary)) break;
+              ExprList list = (ExprList)fact;
+              if (list.op!=ExprList.Op.TOTALORDER || list.args.size()!=3) break;
+              if (((ExprUnary)b1).op!=ExprUnary.Op.SETOF) break; else b1 = deNOP(((ExprUnary)b1).sub);
+              if (((ExprBinary)b2).op!=ExprBinary.Op.ARROW) break; else { b3 = deNOP(((ExprBinary)b2).right); b2 = deNOP(((ExprBinary)b2).left); }
+              if (!(b1 instanceof PrimSig) || b1!=b2 || b1!=b3) break;
+              PrimSig sub = (PrimSig)b1;
+              Field f1 = s.getFields().get(0), f2 = s.getFields().get(1);
+              if (sub.isEnum==null || !list.args.get(0).isSame(sub) || !list.args.get(1).isSame(s.join(f1)) || !list.args.get(2).isSame(s.join(f2))) break;
+              // Now, we've confirmed it is a total ordering on an enum. Let's pre-bind the relations
+              TupleSet me = sol.query(true, sol.a2k(s), false), firstTS = factory.noneOf(2), lastTS = null, nextTS = factory.noneOf(3);
+              if (me.size()!=1 || me.arity()!=1) break;
+              int n = sub.children().size();
+              for(PrimSig c: sub.children()) {
+                 TupleSet TS = sol.query(true, sol.a2k(c), false);
+                 if (TS.size()!=1 || TS.arity()!=1) { firstTS=factory.noneOf(2); nextTS=factory.noneOf(3); break; }
+                 if (lastTS==null) { firstTS=me.product(TS); lastTS=TS; continue; }
+                 nextTS.addAll(me.product(lastTS).product(TS));
+                 lastTS=TS;
+              }
+              if (firstTS.size()!=(n>0 ? 1 : 0) || nextTS.size() != n-1) break;
+              sol.addField(f1, sol.addRel(s.label+"."+f1.label, firstTS, firstTS));
+              sol.addField(f2, sol.addRel(s.label+"."+f2.label, nextTS, nextTS));
+              rep.bound("Field "+s.label+"."+f1.label+" == "+firstTS+"\n");
+              rep.bound("Field "+s.label+"."+f2.label+" == "+nextTS+"\n");
+              continue again;
+           }
+           for(Field f:s.getFields()) if (!f.defined) {
+              boolean isOne = s.isOne!=null;
+              Type t = isOne ? Sig.UNIV.type.join(f.type) : f.type;
+              TupleSet ub = factory.noneOf(t.arity());
+              for(List<PrimSig> p:t.fold()) {
+                 TupleSet upper=null;
+                 for(PrimSig b:p) {
                     TupleSet tmp = sol.query(true, sol.a2k(b), false);
                     if (upper==null) upper=tmp; else upper=upper.product(tmp);
-                }
-                ub.addAll(upper);
-            }
-            Relation r = sol.addRel(s.label+"."+f.label, null, ub);
-            sol.addField(f, isOne ? sol.a2k(s).product(r) : r);
+                 }
+                 ub.addAll(upper);
+              }
+              Relation r = sol.addRel(s.label+"."+f.label, null, ub);
+              sol.addField(f, isOne ? sol.a2k(s).product(r) : r);
+           }
         }
-        for(Sig s:sigs) for(Field f:s.getFields()) if (f.definition!=null) {
-            Expression r = sol.a2k(f.definition);
+        for(Sig s:sigs) for(Field f:s.getFields()) if (f.defined) {
+            Expression r = sol.a2k(s).product(sol.a2k(f.decl().expr));
             sol.addField(f, r);
         }
         // Add any additional SIZE constraints

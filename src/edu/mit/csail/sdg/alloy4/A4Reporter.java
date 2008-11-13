@@ -33,10 +33,10 @@ public class A4Reporter {
     private final A4Reporter parent;
 
     /** Constructs a default A4Reporter object that does nothing. */
-    public A4Reporter() { parent=null; }
+    public A4Reporter() { parent = null; }
 
     /** Constructs a A4Reporter that forwards each method to the given A4Reporter. */
-    public A4Reporter(A4Reporter reporter) { parent=reporter; }
+    public A4Reporter(A4Reporter reporter) { parent = reporter; }
 
     /** This is a pre-constructed instance that simply ignores all calls. */
     public static final A4Reporter NOP = new A4Reporter();

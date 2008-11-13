@@ -25,7 +25,6 @@ package edu.mit.csail.sdg.alloy4compiler.ast;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.ErrorFatal;
@@ -127,6 +126,12 @@ public abstract class Sig extends Expr {
     public final Pos isPrivate;
 
     /**
+     * Nonnull if the user wanted this sig to be an enum.
+     * <p> Note: this value is always null for builtin sigs.
+     */
+    public final Pos isEnum;
+
+    /**
      * Nonnull if this sig is a meta sig.
      * <p> Note: this value is always null for builtin sigs.
      */
@@ -178,10 +183,11 @@ public abstract class Sig extends Expr {
         this.isSubsig = null;
         this.isPrivate = null;
         this.isMeta = null;
+        this.isEnum = null;
     }
 
     /** Constructs a new PrimSig or SubsetSig. */
-    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isPrivate, Pos isMeta) throws Err {
+    private Sig(Pos pos, Type type, String label, Pos abs, Pos lone, Pos one, Pos some, Pos subsig, Pos subset, Pos isPrivate, Pos isMeta, Pos isEnum) throws Err {
         super(pos, type);
         Expr oneof = ExprUnary.Op.ONEOF.make(null, this);
         ExprVar v = ExprVar.make(null, "this", oneof.type);
@@ -192,6 +198,7 @@ public abstract class Sig extends Expr {
         this.builtin = false;
         this.isPrivate = isPrivate;
         this.isMeta = isMeta;
+        this.isEnum = isEnum;
         this.isAbstract = abs;
         this.isLone = lone;
         this.isOne = one;
@@ -295,13 +302,13 @@ public abstract class Sig extends Expr {
          * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, SEQIDX, or STRING
          */
         public PrimSig
-        (Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos subsig, Pos isPrivate, Pos isMeta, boolean isLeaf)
+        (Pos pos, PrimSig parent, String label, Pos isAbstract, Pos lone, Pos one, Pos some, Pos subsig, Pos isPrivate, Pos isMeta, Pos isEnum, boolean isLeaf)
         throws Err {
             super(pos,
                 (parent!=null && parent.hint_isLeaf) ? parent.type : null,
                 label, isAbstract, lone, one, some,
                 (parent!=null && parent!=UNIV) ? Pos.UNKNOWN.merge(subsig) : null,
-                null, isPrivate, isMeta);
+                null, isPrivate, isMeta, isEnum);
             if (parent==SIGINT) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"Int\" signature");
             if (parent==SEQIDX) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"seq/Int\" signature");
             if (parent==STRING) throw new ErrorSyntax(pos, "sig "+label+" cannot extend the builtin \"fun/String\" signature");
@@ -326,18 +333,22 @@ public abstract class Sig extends Expr {
          * @throws ErrorSyntax if the signature has two or more multiplicities
          * @throws ErrorType if you attempt to extend the builtin sigs NONE, SIGINT, SEQIDX, or STRING
          */
-        public PrimSig(Pos pos, PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some,
-        boolean isLeaf) throws Err {
-            this(pos, parent, label, isAbstract?Pos.UNKNOWN:null,
-               lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, null, null, isLeaf);
+        public PrimSig(PrimSig parent, String label, boolean isAbstract, boolean lone, boolean one, boolean some, boolean isLeaf) throws Err {
+            this(null, parent, label, isAbstract?Pos.UNKNOWN:null, lone?Pos.UNKNOWN:null, one?Pos.UNKNOWN:null, some?Pos.UNKNOWN:null, null, null, null, null, isLeaf);
         }
+
+        /**
+         * Constructs a non-builtin sig.
+         * @param label - the name of this sig (it does not need to be unique)
+         */
+        public PrimSig(String label) throws Err { this(null, null, label, null,null,null,null,null,null,null,null, false); }
 
         /**
          * Constructs a non-builtin sig.
          * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param label - the name of this sig (it does not need to be unique)
          */
-        public PrimSig(Pos pos, String label) throws Err { this(pos, null, label, null,null,null,null,null,null,null, false); }
+        public PrimSig(Pos pos, String label) throws Err { this(pos, null, label, null,null,null,null,null,null,null,null, false); }
 
         /** {@inheritDoc} */
         @Override public boolean isSameOrDescendentOf(Sig that) {
@@ -429,7 +440,7 @@ public abstract class Sig extends Expr {
          * @throws ErrorType if parents only contains NONE
          */
         public SubsetSig(Pos pos, Collection<Sig> parents, String label, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos isPrivate, Pos isMeta) throws Err {
-            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta);
+            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta, null);
             this.exact = false;
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
             if (parents==null || parents.size()==0) {
@@ -460,7 +471,7 @@ public abstract class Sig extends Expr {
          * @throws ErrorType if parents only contains NONE
          */
         public SubsetSig(Pos pos, Collection<Sig> parents, String label, boolean exact, Pos subsetPosition, Pos lone, Pos one, Pos some, Pos isPrivate, Pos isMeta) throws Err {
-            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta);
+            super(pos, getType(pos,label,parents), label, null, lone, one, some, null, Pos.UNKNOWN.merge(subsetPosition), isPrivate, isMeta, null);
             this.exact = exact;
             TempList<Sig> temp = new TempList<Sig>(parents==null ? 1 : parents.size());
             if (parents==null || parents.size()==0) {
@@ -510,43 +521,26 @@ public abstract class Sig extends Expr {
         /** Nonnull if this field is a meta field. */
         public final Pos isMeta;
 
-        /** The bounding expression (null iff this.definition!=null); given field f in sig s, if bound!=null, that means "all this: s | s.f in bound"; it is allowed to refer to sig.decl.get() */
-        public final Expr bound;
+        /** True if this is a defined field. */
+        public final boolean defined;
 
-        /** The definition expression (null iff this.bound!=null). */
-        public final Expr definition;
+        /** The declaration that this field came from. */
+        private Decl decl;
 
-        /** Constructs a new Field object. */
-        private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, Expr definition) throws Err {
-            super(pos, label, definition.type);
-            if (!definition.errors.isEmpty()) throw definition.errors.pick();
-            if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
-            if (definition.mult!=0 || definition.type.arity()<=1 || definition.ambiguous ||
-                (definition.type.hasTuple() && !definition.type.firstColumnOverlaps(sig.type))) {
-                throw new ErrorAPI(pos, "This field's definition must be a binary or higher arity expression that intersects this sig.");
-            }
-            this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
-            this.isMeta = (isMeta!=null ? isMeta : sig.isMeta);
-            this.sig = sig;
-            this.bound = null;
-            this.definition = definition;
-        }
+        /** Return the declaration that this field came from. */
+        public Decl decl() { return decl; }
 
         /** Constructs a new Field object. */
-        private Field(Pos pos, Pos isPrivate, Pos isMeta, Sig sig, String label, Pos unused, Expr bound) throws Err {
+        private Field(Pos pos, Pos isPrivate, Pos isMeta, Pos disjoint, Pos disjoint2, Sig sig, String label, Expr bound) throws Err {
             super(pos, label, sig.type.product(bound.type));
-            if (!bound.errors.isEmpty()) throw bound.errors.pick();
             if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
-            this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
-            this.isMeta = (isMeta!=null ? isMeta : sig.isMeta);
-            this.sig = sig;
-            this.definition = null;
-            // If the field declaration is unary, and does not have any multiplicity symbol, we assume it's "one of"
-            if (bound.mult==0 && bound.type.arity()==1) bound = ExprUnary.Op.ONEOF.make(null, bound);
-            this.bound = bound;
             if (!bound.errors.isEmpty()) throw bound.errors.pick();
             if (bound.hasCall()) throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             if (bound.type.arity()>0 && bound.type.hasNoTuple()) throw new ErrorType(pos, "Cannot bind field "+label+" to the empty set or empty relation.");
+            this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
+            this.isMeta = (isMeta!=null ? isMeta : sig.isMeta);
+            this.sig = sig;
+            this.defined = bound.mult() == ExprUnary.Op.EXACTLYOF;
         }
 
         /** Returns a human-readable description of this field's name. */
@@ -575,15 +569,9 @@ public abstract class Sig extends Expr {
 
         /** {@inheritDoc} */
         @Override public List<? extends Browsable> getSubnodes() {
+            Expr bound = decl.expr;
             Browsable s = make(sig.pos, sig.span(), "<b>from sig</b> "+sig.label, sig.getSubnodes());
-            Browsable b;
-            if (bound!=null) {
-                b = bound;
-                b = make(b.pos(), b.span(), "<b>bound</b>", b);
-            } else {
-                b = definition;
-                b = make(b.pos(), b.span(), "<b>definition</b>", b);
-            }
+            Browsable b = make(bound.pos(), bound.span(), "<b>bound</b>", bound);
             return Util.asList(s, b);
         }
     }
@@ -622,8 +610,11 @@ public abstract class Sig extends Expr {
     public final Field addField (String label, Expr bound) throws Err {
         bound = bound.typecheck_as_set();
         if (bound.ambiguous) bound = bound.resolve_as_set(null);
-        final Field f = new Field(null, null, null, this, label, null, bound);
-        fields.add(new Decl(null, null, null, Arrays.asList(f), bound));
+        if (bound.mult==0 && bound.type.arity()==1) bound = ExprUnary.Op.ONEOF.make(null, bound); // If unary, and no multiplicity symbol, we assume it's oneOf
+        final Field f = new Field(null, null, null, null, null, this, label, bound);
+        final Decl d = new Decl(null, null, null, Arrays.asList(f), bound);
+        f.decl = d;
+        fields.add(d);
         return f;
     }
 
@@ -642,35 +633,40 @@ public abstract class Sig extends Expr {
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
     public final Field[] addTrickyField (Pos pos, Pos isPrivate, Pos isDisjoint, Pos isDisjoint2, Pos isMeta, String[] labels, Expr bound) throws Err {
-        Field[] f = new Field[labels.length];
         bound = bound.typecheck_as_set();
         if (bound.ambiguous) bound = bound.resolve_as_set(null);
-        for(int i=0; i<f.length; i++) {
-           f[i] = new Field(pos, isPrivate, isMeta, this, labels[i], null, bound);
-        }
-        fields.add(new Decl(isPrivate, isDisjoint, isDisjoint2, Arrays.asList(f), bound));
+        if (bound.mult==0 && bound.type.arity()==1) bound = ExprUnary.Op.ONEOF.make(null, bound); // If unary, and no multiplicity symbol, we assume it's oneOf
+        final Field[] f = new Field[labels.length];
+        for(int i=0; i<f.length; i++) f[i] = new Field(pos, isPrivate, isMeta, isDisjoint, isDisjoint2, this, labels[i], bound);
+        final Decl d = new Decl(isPrivate, isDisjoint, isDisjoint2, Arrays.asList(f), bound);
+        for(int i=0; i<f.length; i++) f[i].decl = d;
+        fields.add(d);
         return f;
     }
 
     /**
-     * Add then return a new field F where F is bound to an exact "definition" expression.
+     * Add then return a new field F where this.F is bound to an exact "definition" expression.
      * <p> Note: the definition must be fully-typechecked and have exactly 0 free variables.
+     * <p> Note: currently the defined field must consist product and union operators over sigs.
      *
      * @param pos - the position in the original file where this field was defined (can be null if unknown)
      * @param isPrivate - if nonnull, that means this field should be marked as private
      * @param isMeta - if nonnull, that means this field should be marked as meta
      * @param label - the name of this field (it does not need to be unique)
-     * @param definition - the new field will be defined to be exactly equal to this definition
+     * @param bound - the new field will be defined to be exactly equal to sig.product(definition)
      *
      * @throws ErrorSyntax  if the sig is one of the builtin sig
      * @throws ErrorSyntax  if the bound contains a predicate/function call
      * @throws ErrorType    if the bound is not fully typechecked or is not a set/relation
      */
-    public final Field addDefinedField(Pos pos, Pos isPrivate, Pos isMeta, String label, Expr definition) throws Err {
-        definition = definition.typecheck_as_set();
-        if (definition.ambiguous) definition = definition.resolve_as_set(null);
-        final Field f = new Field(pos, isPrivate, isMeta, this, label, definition);
-        fields.add(new Decl(null, null, null, Arrays.asList(f), decl.get().join(definition)));
+    public final Field addDefinedField(Pos pos, Pos isPrivate, Pos isMeta, String label, Expr bound) throws Err {
+        bound = bound.typecheck_as_set();
+        if (bound.ambiguous) bound = bound.resolve_as_set(null);
+        if (bound.mult() != ExprUnary.Op.EXACTLYOF) bound = ExprUnary.Op.EXACTLYOF.make(null, bound);
+        final Field f = new Field(pos, isPrivate, isMeta, null, null, this, label, bound);
+        final Decl d = new Decl(null, null, null, Arrays.asList(f), bound);
+        f.decl = d;
+        fields.add(d);
         return f;
     }
 }

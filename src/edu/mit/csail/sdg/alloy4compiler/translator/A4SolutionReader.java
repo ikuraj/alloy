@@ -164,7 +164,7 @@ public final class A4SolutionReader {
               if (choice instanceof PrimSig && parent==((PrimSig)choice).parent && label(((Sig)choice).label).equals(label))
                  { ans=(Sig)choice; choices.remove(choice); break; }
            if (ans==null) {
-              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isPrivate, isMeta, isLeaf);
+              ans = new PrimSig(Pos.UNKNOWN, (PrimSig)parent, label, isAbstract, isLone, isOne, isSome, null, isPrivate, isMeta, null, isLeaf);
               allsigs.add(ans);
            }
         } else {

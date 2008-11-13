@@ -28,7 +28,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.MailBug;
-import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.SafeList;
 import edu.mit.csail.sdg.alloy4.XMLNode;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
@@ -79,14 +78,14 @@ final class InternalTest {
            + "</skolem>"
            + "</instance>"
            + "</alloy>"));
-        Sig state = new Sig.PrimSig(Pos.UNKNOWN, "State");
+        Sig state = new Sig.PrimSig("State");
         A4Solution sol = A4SolutionReader.read(Arrays.asList(state), xml);
         SafeList<ExprVar> skolems = new SafeList<ExprVar>(sol.getAllSkolems());
         check(skolems.size()==1);
         check(skolems.get(0).label, "$Deadlock_s");
         check(skolems.get(0).type, state.type);
         //
-        Sig state2 = new Sig.PrimSig(Pos.UNKNOWN, "State");
+        Sig state2 = new Sig.PrimSig("State");
         Field field2 = state2.addField("len", Sig.SIGINT);
         sol = A4SolutionReader.read(Arrays.asList(state2), xml);
         SafeList<ExprVar> skolems2 = new SafeList<ExprVar>(sol.getAllSkolems());
@@ -111,7 +110,7 @@ final class InternalTest {
            + "</skolem>"
            + "</instance>"
            + "</alloy>"));
-        Sig activity = new Sig.PrimSig(Pos.UNKNOWN, "Act");
+        Sig activity = new Sig.PrimSig("Act");
         A4Solution sol = A4SolutionReader.read(Arrays.asList(activity), xml);
         SafeList<ExprVar> skolems = new SafeList<ExprVar>(sol.getAllSkolems());
         check(skolems.size()==1);

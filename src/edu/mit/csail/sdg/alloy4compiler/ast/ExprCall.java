@@ -123,7 +123,7 @@ public final class ExprCall extends Expr {
         @Override public Type visit(ExprUnary x) throws Err {
             Type t = x.sub.accept(this);
             switch(x.op) {
-              case NOOP: case LONEOF: case ONEOF: case SETOF: case SOMEOF: return t;
+              case NOOP: case LONEOF: case ONEOF: case SETOF: case SOMEOF: case EXACTLYOF: return t;
               case CARDINALITY: case CAST2INT: return Type.INT;
               case CAST2SIGINT: return Sig.SIGINT.type;
               case TRANSPOSE: return t.transpose();
