@@ -48,6 +48,7 @@ import kodkod.ast.Decl;
 import kodkod.ast.Expression;
 import kodkod.ast.Formula;
 import kodkod.ast.IntExpression;
+import kodkod.ast.Node;
 import kodkod.ast.Relation;
 import kodkod.ast.Variable;
 import kodkod.ast.operator.ExprOperator;
@@ -602,7 +603,7 @@ public final class A4Solution {
     //===================================================================================================//
 
     /** Maps a Kodkod formula to an Alloy Expr or Alloy Pos (or null if no such mapping) */
-    Object k2pos(Formula formula) { return k2pos.get(formula); }
+    Object k2pos(Node formula) { return k2pos.get(formula); }
 
     /** Associates the Kodkod formula to a particular Alloy Expr (if the Kodkod formula is not already associated with an Alloy Expr or Alloy Pos) */
     Formula k2pos(Formula formula, Expr expr) throws Err {
@@ -917,7 +918,7 @@ public final class A4Solution {
         // If unsatisfiable, then retreive the unsat core if desired
         if (inst==null && solver.options().solver()==SATFactory.MiniSatProver) {
            try {
-              lCore = new LinkedHashSet<Formula>();
+              lCore = new LinkedHashSet<Node>();
               Proof p = sol.proof();
               if (sol.outcome()==UNSATISFIABLE) {
                  // only perform the minimization if it was UNSATISFIABLE, rather than TRIVIALLY_UNSATISFIABLE
@@ -931,7 +932,9 @@ public final class A4Solution {
                  Object n=it.next().node();
                  if (n instanceof Formula) lCore.add((Formula)n);
               }
-              hCore = new LinkedHashSet<Formula>(p.highLevelCore());
+              Map<Formula,Node> map = p.highLevelCore();
+              hCore = new LinkedHashSet<Node>(map.keySet());
+              hCore.addAll(map.values());
            } catch(Throwable ex) {
               lCore = hCore = null;
            }
@@ -1006,7 +1009,7 @@ public final class A4Solution {
     //===================================================================================================//
 
     /** The low-level unsat core; null if it is not available. */
-    private LinkedHashSet<Formula> lCore = null;
+    private LinkedHashSet<Node> lCore = null;
 
     /** This caches the result of lowLevelCore(). */
     private Set<Pos> lCoreCache = null;
@@ -1015,7 +1018,7 @@ public final class A4Solution {
     public Set<Pos> lowLevelCore() {
        if (lCoreCache!=null) return lCoreCache;
        Set<Pos> ans1 = new LinkedHashSet<Pos>();
-       if (lCore!=null) for(Formula f: lCore) {
+       if (lCore!=null) for(Node f: lCore) {
           Object y = k2pos(f);
           if (y instanceof Pos) ans1.add( (Pos)y ); else if (y instanceof Expr) ans1.add( ((Expr)y).span() );
        }
@@ -1025,7 +1028,7 @@ public final class A4Solution {
     //===================================================================================================//
 
     /** The high-level unsat core; null if it is not available. */
-    private LinkedHashSet<Formula> hCore = null;
+    private LinkedHashSet<Node> hCore = null;
 
     /** This caches the result of highLevelCore(). */
     private Pair<Set<Pos>,Set<Pos>> hCoreCache = null;
@@ -1034,7 +1037,7 @@ public final class A4Solution {
     public Pair<Set<Pos>,Set<Pos>> highLevelCore() {
        if (hCoreCache!=null) return hCoreCache;
        Set<Pos> ans1 = new LinkedHashSet<Pos>(), ans2 = new LinkedHashSet<Pos>();
-       if (hCore!=null) for(Formula f: hCore) {
+       if (hCore!=null) for(Node f: hCore) {
           Object x = k2pos(f);
           if (x instanceof Pos) {
              ans1.add((Pos)x);
