@@ -22,6 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.ast;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -32,7 +33,6 @@ import edu.mit.csail.sdg.alloy4.ErrorWarning;
 import edu.mit.csail.sdg.alloy4.ErrorType;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.JoinableList;
-import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 import static edu.mit.csail.sdg.alloy4compiler.ast.Type.EMPTY;
 
@@ -275,12 +275,20 @@ public final class ExprQt extends Expr {
    @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
    /** {@inheritDoc} */
-   @Override public String getDescription() { return "<b>" + op + "</b>" + " <i>Type = " + type + "</i>"; }
+   @Override public String getDescription() {
+       StringBuilder sb = new StringBuilder("<b>").append(op).append("</b> ");
+       boolean first = true;
+       for (Decl d: decls) for(ExprHasName v: d.names) { if (!first) sb.append(", "); sb.append(v.label); first=false; }
+       return sb.append("... <i>").append(type).append("</i>").toString();
+   }
 
    /** {@inheritDoc} */
    @Override public List<? extends Browsable> getSubnodes() {
-      Browsable v = make("<b>declarations</b>", decls);
-      Browsable b = make("<b>body</b>", sub);
-      return Util.asList(v, b);
+      ArrayList<Browsable> ans = new ArrayList<Browsable>();
+      for(Decl d: decls) for(ExprHasName v: d.names) {
+         ans.add(make(v.pos, v.pos, "<b>var</b> "+v.label+" <i>"+v.type+"</i>", d.expr));
+      }
+      ans.add(make(sub.span(), sub.span(), "<b>body</b>", sub));
+      return ans;
    }
 }

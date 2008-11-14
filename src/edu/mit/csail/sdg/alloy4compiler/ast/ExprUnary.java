@@ -163,6 +163,7 @@ public final class ExprUnary extends Expr {
          * <br> (This desugaring is done by the ExprUnary.Op.make() method, so ExprUnary's constructor never sees it)
          */
         public final Expr make(Pos pos, Expr sub, Err extraError, long extraWeight) {
+            if (pos==null || pos==Pos.UNKNOWN) { if (this==NOOP) pos = sub.pos; else pos = sub.span(); }
             JoinableList<Err> errors = sub.errors.append(extraError);
             if (sub.mult!=0) {
                if (this==SETOF) return sub;
@@ -334,7 +335,7 @@ public final class ExprUnary extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return op==Op.NOOP ? sub.getDescription() : (op.toHTML() + " <i>Type = " + type + "</i>"); }
+    @Override public String getDescription() { return op==Op.NOOP ? sub.getDescription() : (op+" <i>" + type + "</i>"); }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() { return op==Op.NOOP ? sub.getSubnodes() : Util.asList(sub); }

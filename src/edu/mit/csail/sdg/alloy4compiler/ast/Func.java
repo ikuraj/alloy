@@ -207,13 +207,12 @@ public final class Func extends Browsable {
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {
-        Browsable p = make("parameters", params());
-        Browsable r = make("return type", returnDecl);
-        Browsable b = make("body", body);
-        if (isPred) {
-           if (count()==0) return Util.asList(b); else return Util.asList(p, b);
-        } else {
-           if (count()==0) return Util.asList(r, b); else return Util.asList(p, r, b);
+        ArrayList<Browsable> ans = new ArrayList<Browsable>();
+        for(Decl d: decls) for(ExprHasName v: d.names) {
+           ans.add(make(v.pos, v.pos, "<b>parameter</b> "+v.label+" <i>"+v.type+"</i>", d.expr));
         }
+        if (!isPred) ans.add(make(returnDecl.span(), returnDecl.span(), "<b>return type</b> <i>" + returnDecl.type + "</i>", returnDecl));
+        ans.add(make(body.span(), body.span(), "<b>body</b> <i>" + body.type + "</i>", body));
+        return ans;
     }
 }

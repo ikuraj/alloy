@@ -137,12 +137,12 @@ public final class ExprLet extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>let</b>"; }
+    @Override public String getDescription() { return "<b>let</b> <i>" + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {
         Browsable a = make(var.pos, var.pos, "<b>var</b> "+var.label+" = ...", expr);
-        Browsable b = make(sub.span(), sub.span(), "where...", sub);
+        Browsable b = make(sub.span(), sub.span(), "<b>where...</b>", sub);
         return Util.asList(a, b);
     }
 }

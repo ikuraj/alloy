@@ -108,109 +108,121 @@ parser code {:
   }
 
   public void syntax_error(Symbol x) throws Err {
-    Map<Integer,String> ch=new LinkedHashMap<Integer,String>();
-    ch.put(CompSym.ABSTRACT        , "abstract");
-    ch.put(CompSym.ALL             , "all");
-    ch.put(CompSym.ALL2            , "all");
-    ch.put(CompSym.ANY_ARROW_LONE  , "set");
-    ch.put(CompSym.ANY_ARROW_ONE   , "set");
-    ch.put(CompSym.ANY_ARROW_SOME  , "set");
-    ch.put(CompSym.AS              , "as");
-    ch.put(CompSym.ASSERT          , "assert");
-    ch.put(CompSym.BUT             , "but");
-    ch.put(CompSym.CHECK           , "check");
-    ch.put(CompSym.DISJ            , "disj");
-    ch.put(CompSym.ELSE            , "else");
-    ch.put(CompSym.ENUM            , "enum");
-    ch.put(CompSym.EXACTLY         , "exactly");
-    ch.put(CompSym.EXPECT          , "expect");
-    ch.put(CompSym.EXTENDS         , "extends");
-    ch.put(CompSym.FACT            , "fact");
-    ch.put(CompSym.FOR             , "for");
-    ch.put(CompSym.FUN             , "fun");
-    ch.put(CompSym.ID              , "NAME");
-    ch.put(CompSym.IDEN            , "iden");
-    ch.put(CompSym.IN              , "in");
-    ch.put(CompSym.INT             , "int");
-    ch.put(CompSym.LET             , "let");
-    ch.put(CompSym.LONE            , "lone");
-    ch.put(CompSym.LONE2           , "lone");
-    ch.put(CompSym.LONE_ARROW_ANY  , "lone");
-    ch.put(CompSym.LONE_ARROW_LONE , "lone");
-    ch.put(CompSym.LONE_ARROW_ONE  , "lone");
-    ch.put(CompSym.LONE_ARROW_SOME , "lone");
-    ch.put(CompSym.MODULE          , "module");
-    ch.put(CompSym.NO              , "no");
-    ch.put(CompSym.NO2             , "no");
-    ch.put(CompSym.NONE            , "none");
-    ch.put(CompSym.NUMBER          , "NUMBER");
-    ch.put(CompSym.ONE             , "one");
-    ch.put(CompSym.ONE2            , "one");
-    ch.put(CompSym.ONE_ARROW_ANY   , "one");
-    ch.put(CompSym.ONE_ARROW_LONE  , "one");
-    ch.put(CompSym.ONE_ARROW_ONE   , "one");
-    ch.put(CompSym.ONE_ARROW_SOME  , "one");
-    ch.put(CompSym.OPEN            , "open");
-    ch.put(CompSym.PRED            , "pred");
-    ch.put(CompSym.PRIVATE         , "private");
-    ch.put(CompSym.RUN             , "run");
-    ch.put(CompSym.SEQ             , "seq");
-    ch.put(CompSym.SET             , "set");
-    ch.put(CompSym.SIG             , "sig");
-    ch.put(CompSym.SIGINT          , "Int");
-    ch.put(CompSym.SOME            , "some");
-    ch.put(CompSym.SOME2           , "some");
-    ch.put(CompSym.SOME_ARROW_ANY  , "some");
-    ch.put(CompSym.SOME_ARROW_LONE , "some");
-    ch.put(CompSym.SOME_ARROW_ONE  , "some");
-    ch.put(CompSym.SOME_ARROW_SOME , "some");
-    ch.put(CompSym.SUM             , "sum");
-    ch.put(CompSym.SUM2            , "sum");
-    ch.put(CompSym.THIS            , "this");
-    ch.put(CompSym.UNIV            , "univ");
-    ch.put(CompSym.AMPERSAND       , "&");
-    ch.put(CompSym.AND             , "&&");
-    ch.put(CompSym.ARROW           , "->");
-    ch.put(CompSym.AT              , "@");
-    ch.put(CompSym.BAR             , "|");
-    ch.put(CompSym.CARET           , "^");
-    ch.put(CompSym.COLON           , ":");
-    ch.put(CompSym.COMMA           , ",");
-    ch.put(CompSym.DOMAIN          , "<:");
-    ch.put(CompSym.DOT             , ".");
-    ch.put(CompSym.EQUALS          , "=");
-    ch.put(CompSym.GT              , ">");
-    ch.put(CompSym.GTE             , ">=");
-    ch.put(CompSym.HASH            , "#");
-    ch.put(CompSym.IFF             , "<=>");
-    ch.put(CompSym.IMPLIES         , "=>");
-    ch.put(CompSym.LBRACE          , "{");
-    ch.put(CompSym.LBRACKET        , "[");
-    ch.put(CompSym.LPAREN          , "(");
-    ch.put(CompSym.LT              , "<");
-    ch.put(CompSym.LTE             , "=<");
-    ch.put(CompSym.MINUS           , "-");
-    ch.put(CompSym.NOT             , "!");
-    ch.put(CompSym.NOTEQUALS       , "!");
-    ch.put(CompSym.NOTGT           , "!");
-    ch.put(CompSym.NOTGTE          , "!");
-    ch.put(CompSym.NOTIN           , "!");
-    ch.put(CompSym.NOTLT           , "!");
-    ch.put(CompSym.NOTLTE          , "!");
-    ch.put(CompSym.OR              , "||");
-    ch.put(CompSym.PLUS            , "+");
-    ch.put(CompSym.PLUSPLUS        , "++");
-    ch.put(CompSym.RANGE           , ":>");
-    ch.put(CompSym.RBRACE          , "}");
-    ch.put(CompSym.RBRACKET        , "]");
-    ch.put(CompSym.RPAREN          , ")");
-    ch.put(CompSym.SHL             , "<<");
-    ch.put(CompSym.SHR             , ">>>");
-    ch.put(CompSym.SHA             , ">>");
-    ch.put(CompSym.SLASH           , "/");
-    ch.put(CompSym.STAR            , "*");
-    ch.put(CompSym.TILDE           , "~");
-    TreeSet<String> list=new TreeSet<String>();
+    Map<Integer,String> ch = new LinkedHashMap<Integer,String>();
+    ch.put(CompSym.ARROW, "->");
+    ch.put(CompSym.ANY_ARROW_SOME, "->");
+    ch.put(CompSym.ANY_ARROW_ONE, "->");
+    ch.put(CompSym.ANY_ARROW_LONE, "->");
+    ch.put(CompSym.SOME_ARROW_ANY, "some");
+    ch.put(CompSym.SOME_ARROW_SOME, "some");
+    ch.put(CompSym.SOME_ARROW_ONE, "some");
+    ch.put(CompSym.SOME_ARROW_LONE, "some");
+    ch.put(CompSym.ONE_ARROW_ANY, "one");
+    ch.put(CompSym.ONE_ARROW_SOME, "one");
+    ch.put(CompSym.ONE_ARROW_ONE, "one");
+    ch.put(CompSym.ONE_ARROW_LONE, "one");
+    ch.put(CompSym.LONE_ARROW_ANY, "lone");
+    ch.put(CompSym.LONE_ARROW_SOME, "lone");
+    ch.put(CompSym.LONE_ARROW_ONE, "lone");
+    ch.put(CompSym.LONE_ARROW_LONE, "lone");
+    ch.put(CompSym.INTADD, "fun");
+    ch.put(CompSym.INTSUB, "fun");
+    ch.put(CompSym.INTMUL, "fun");
+    ch.put(CompSym.INTDIV, "fun");
+    ch.put(CompSym.INTREM, "fun");
+    ch.put(CompSym.INTMIN, "fun");
+    ch.put(CompSym.INTMAX, "fun");
+    ch.put(CompSym.INTNEXT, "fun");
+    ch.put(CompSym.TOTALORDER, "pred");
+    ch.put(CompSym.ABSTRACT, "abstract");
+    ch.put(CompSym.ALL, "all");
+    ch.put(CompSym.ALL2, "all");
+    ch.put(CompSym.AMPERSAND, "&");
+    ch.put(CompSym.AND, "&&");
+    ch.put(CompSym.AS, "as");
+    ch.put(CompSym.ASSERT, "assert");
+    ch.put(CompSym.AT, "@");
+    ch.put(CompSym.BAR, "|");
+    ch.put(CompSym.BUT, "but");
+    ch.put(CompSym.CARET, "^");
+    ch.put(CompSym.CHECK, "check");
+    ch.put(CompSym.COLON, ":");
+    ch.put(CompSym.COMMA, ", ");
+    ch.put(CompSym.DISJ, "disj");
+    ch.put(CompSym.DOMAIN, "<:");
+    ch.put(CompSym.DOT, ".");
+    ch.put(CompSym.ELSE, "else");
+    ch.put(CompSym.ENUM, "enum");
+    ch.put(CompSym.EQUALS, "=");
+    ch.put(CompSym.EXACTLY, "exactly");
+    ch.put(CompSym.EXH, "exh");
+    ch.put(CompSym.EXPECT, "expect");
+    ch.put(CompSym.EXTENDS, "extends");
+    ch.put(CompSym.FACT, "fact");
+    ch.put(CompSym.FOR, "for");
+    ch.put(CompSym.FUN, "fun");
+    ch.put(CompSym.GT, ">");
+    ch.put(CompSym.GTE, ">=");
+    ch.put(CompSym.HASH, "#");
+    ch.put(CompSym.IDEN, "iden");
+    ch.put(CompSym.IFF, "iff");
+    ch.put(CompSym.IMPLIES, "=>");
+    ch.put(CompSym.IN, "in");
+    ch.put(CompSym.INT, "int");
+    ch.put(CompSym.LBRACE, "{");
+    ch.put(CompSym.LBRACKET, "[");
+    ch.put(CompSym.LET, "let");
+    ch.put(CompSym.LONE2, "lone");
+    ch.put(CompSym.LONE, "lone");
+    ch.put(CompSym.LPAREN, "(");
+    ch.put(CompSym.LT, "<");
+    ch.put(CompSym.LTE, "<=");
+    ch.put(CompSym.MINUS, "-");
+    ch.put(CompSym.MODULE, "module");
+    ch.put(CompSym.NO2, "no");
+    ch.put(CompSym.NO, "no");
+    ch.put(CompSym.NONE, "none");
+    ch.put(CompSym.NOT, "!");
+    ch.put(CompSym.NOTEQUALS, "!");
+    ch.put(CompSym.NOTGT, "!");
+    ch.put(CompSym.NOTGTE, "!");
+    ch.put(CompSym.NOTIN, "!");
+    ch.put(CompSym.NOTLT, "!");
+    ch.put(CompSym.NOTLTE, "!");
+    ch.put(CompSym.ONE2, "one");
+    ch.put(CompSym.ONE, "one");
+    ch.put(CompSym.OPEN, "open");
+    ch.put(CompSym.OR, "||");
+    ch.put(CompSym.PART, "part");
+    ch.put(CompSym.PLUS, "+");
+    ch.put(CompSym.PLUSPLUS, "++");
+    ch.put(CompSym.PRED, "pred");
+    ch.put(CompSym.PRIVATE, "private");
+    ch.put(CompSym.RANGE, ":>");
+    ch.put(CompSym.RBRACE, "}");
+    ch.put(CompSym.RBRACKET, "]");
+    ch.put(CompSym.RPAREN, ")");
+    ch.put(CompSym.RUN, "run");
+    ch.put(CompSym.SEQ, "seq");
+    ch.put(CompSym.SET, "set");
+    ch.put(CompSym.SHL, "<<");
+    ch.put(CompSym.SHR, ">>>");
+    ch.put(CompSym.SHA, ">>");
+    ch.put(CompSym.SIG, "sig");
+    ch.put(CompSym.SIGINT, "Int");
+    ch.put(CompSym.SLASH, "/");
+    ch.put(CompSym.SOME2, "some");
+    ch.put(CompSym.SOME, "some");
+    ch.put(CompSym.STAR, "*");
+    ch.put(CompSym.SUM2, "sum");
+    ch.put(CompSym.SUM, "sum");
+    ch.put(CompSym.THIS, "this");
+    ch.put(CompSym.TILDE, "~");
+    ch.put(CompSym.UNIV, "univ");
+    ch.put(CompSym.ID, "NAME");
+    ch.put(CompSym.NUMBER, "NUMBER");
+    ch.put(CompSym.STR, "STRING");
+    TreeSet<String> list = new TreeSet<String>();
     Pos p=Pos.UNKNOWN;
     if (x!=null && x.value instanceof Pos) p=(Pos)(x.value);
        else if (x!=null && x.value instanceof Expr) p=((Expr)(x.value)).pos;
@@ -313,6 +325,22 @@ action code {:
     }
     private void nod(List<ExprVar> names) throws Err {
         if (names!=null) for(ExprVar n:names) if (n!=null && n.label.indexOf('$')>=0) throw new ErrorSyntax(n.pos, "The name cannot contain the '$' symbol.");
+    }
+    private void c(boolean follow, ExprVar o, ExprVar x, ExprVar n, Expr e, List<CommandScope> s, ExprConstant c) throws Err {
+        if (n!=null) nod(n);
+        int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
+        Pos p = o.pos.merge(n!=null ? n.span() : e.span());
+        for(int i=s.size()-1; i>=0; i--) {
+          Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
+          p=p.merge(j.pos);
+          if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
+          if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
+          if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
+        }
+        if (n!=null)
+          parser.alloymodule.addCommand(follow, p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
+        else
+          parser.alloymodule.addCommand(follow, p, e,       o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
     }
     private Expr t(Pos pos, Pos oldClosing, Expr left, Expr right, Pos close) throws Err {
       if (right instanceof ExprVar) {
@@ -459,7 +487,6 @@ nonterminal Expr                       CompareExprA;
 nonterminal Expr                       CompareExprB;
 nonterminal                            Command;
 nonterminal ExprVar                    CommandPrefix;
-nonterminal ExprVar                    CmdLabel;
 nonterminal Decl                       Decla;
 nonterminal Decl                       Declb;
 nonterminal List<Decl>                 Declp;
@@ -558,62 +585,14 @@ Spec ::= ;
 CommandPrefix ::= CHECK:c  {: RESULT = ExprVar.make(c, "c"); :};
 CommandPrefix ::= RUN:r    {: RESULT = ExprVar.make(r, "r"); :};
 
-Command ::= CommandPrefix:o CmdLabel:x Super:e  Scope:s  Expects:c {:
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.pos.merge(c==null ? null : c.pos);
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
-    p=p.merge(j.pos);
-    if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
-    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(false, p, e, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
-:};
-
-Command ::= Command IMPLIES CommandPrefix:o CmdLabel:x Super:e  Scope:s  Expects:c {:
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.pos.merge(c==null ? null : c.pos);
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
-    p=p.merge(j.pos);
-    if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
-    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(true, p, e, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
-:};
-
-Command ::= CommandPrefix:o CmdLabel:x Name:n  Scope:s Expects:c  {:
-  nod(n);
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.pos.merge(c==null ? null : c.pos).merge(n.pos);
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
-    p=p.merge(j.pos);
-    if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
-    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(false, p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
-:};
-
-Command ::= Command IMPLIES CommandPrefix:o CmdLabel:x Name:n  Scope:s Expects:c  {:
-  nod(n);
-  int bitwidth=(-1), maxseq=(-1), overall=(-1), expects=(c==null ? -1 : c.num);
-  Pos p=o.pos.merge(c==null ? null : c.pos).merge(n.pos);
-  for(int i=s.size()-1; i>=0; i--) {
-    Sig j=s.get(i).sig;  int k=s.get(i).startingScope;
-    p=p.merge(j.pos);
-    if (j.label.equals("univ")) { overall=k; s.remove(i); continue; }
-    if (j.label.equals("int"))  { if (bitwidth>=0) throw new ErrorSyntax(j.pos, "The bitwidth cannot be specified more than once."); bitwidth=k; s.remove(i); continue; }
-    if (j.label.equals("seq"))  { if (maxseq>=0) throw new ErrorSyntax(j.pos, "The maximum sequence length cannot be specified more than once."); maxseq=k; s.remove(i); continue; }
-  }
-  parser.alloymodule.addCommand(true, p, n.label, o.label.equals("c"), overall, bitwidth, maxseq, expects, s, x);
-:};
-
-CmdLabel ::=           {:         RESULT=null; :};
-CmdLabel ::= DOT ID:i  {: nod(i); RESULT=i;    :};
+Command ::=                 CommandPrefix:o Name:x Super:e  Scope:s  Expects:c {: c(false,o,x   ,null,e   ,s,c); :};
+Command ::=                 CommandPrefix:o        Super:e  Scope:s  Expects:c {: c(false,o,null,null,e   ,s,c); :};
+Command ::= Command IMPLIES CommandPrefix:o Name:x Super:e  Scope:s  Expects:c {: c(true ,o,x   ,null,e   ,s,c); :};
+Command ::= Command IMPLIES CommandPrefix:o        Super:e  Scope:s  Expects:c {: c(true ,o,null,null,e   ,s,c); :};
+Command ::=                 CommandPrefix:o Name:x Name:n   Scope:s  Expects:c {: c(false,o,x   ,n   ,null,s,c); :};
+Command ::=                 CommandPrefix:o        Name:n   Scope:s  Expects:c {: c(false,o,null,n   ,null,s,c); :};
+Command ::= Command IMPLIES CommandPrefix:o Name:x Name:n   Scope:s  Expects:c {: c(true ,o,x   ,n   ,null,s,c); :};
+Command ::= Command IMPLIES CommandPrefix:o        Name:n   Scope:s  Expects:c {: c(true ,o,null,n   ,null,s,c); :};
 
 Expects    ::=                 {: RESULT=null; :};
 Expects    ::= EXPECT NUMBER:a {: RESULT=a;    :};

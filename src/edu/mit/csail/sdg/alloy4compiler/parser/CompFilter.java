@@ -22,6 +22,7 @@
 
 package edu.mit.csail.sdg.alloy4compiler.parser;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.io.Reader;
@@ -84,45 +85,29 @@ final class CompFilter implements Scanner {
       }
     }
 
-    /** Reads one or more tokens from the underlying lexer, transform them, then give it to phase 2. */
+    /** Reads one or more tokens from the underlying lexer, transform them if necessarly. */
     public Symbol next_token() throws Err {
-       Symbol a = myread();
-       if (a.sym==LONE) {
-          Symbol b = myread();
-          if (last==null || last.sym!=COLON) return last=decl(a,b,LONE2); else undo.add(0,b);
-       }
-       if (a.sym==ONE) {
-          Symbol b = myread();
-          if (last==null || last.sym!=COLON) return last=decl(a,b,ONE2); else undo.add(0,b);
-       }
-       if (a.sym==SOME) {
-          Symbol b = myread();
-          if (last==null || last.sym!=COLON) return last=decl(a,b,SOME2); else undo.add(0,b);
-       }
+       Symbol a = myread(), b;
+       int c;
        if (last==null || last.sym!=COLON) {
-          if (a.sym==NO) return last=decl(a, myread(), NO2);
-          if (a.sym==ALL) return last=decl(a, myread(), ALL2);
-          if (a.sym==SUM) return last=decl(a, myread(), SUM2);
+          if (a.sym==NO) c=NO2;
+             else if (a.sym==ALL) c=ALL2;
+             else if (a.sym==SUM) c=SUM2;
+             else if (a.sym==LONE) c=LONE2;
+             else if (a.sym==ONE) c=ONE2;
+             else if (a.sym==SOME) c=SOME2;
+             else return last=a;
+          final ArrayList<Symbol> temp = new ArrayList<Symbol>();
+          temp.add(b = myread());
+          if (b.sym==PRIVATE) temp.add(b = myread());
+          if (b.sym==DISJ || b.sym==PART || b.sym==EXH) temp.add(b = myread());
+          while(b.sym==ID) {
+             temp.add(b = myread());
+             if (b.sym==COMMA) temp.add(b = myread()); else if (b.sym==COLON) { a.sym=c; break; } else { break; }
+          }
+          for(int i=temp.size()-1; i>=0; i--) undo.add(0, temp.get(i));
        }
        return last=a;
-    }
-
-    private Symbol decl(Symbol a,Symbol b,int c) throws Err {
-        LinkedList<Symbol> temp=new LinkedList<Symbol>();
-        if (b.sym==PRIVATE) {temp.add(b); b=myread();}
-        if (b.sym==DISJ || b.sym==PART || b.sym==EXH) {temp.add(b); b=myread();}
-        temp.add(b);
-        if (b.sym==ID) {
-            while(true) {
-                temp.add(b=myread());
-                if (b.sym==COLON) {a.sym=c; break;}
-                if (b.sym!=COMMA) break;
-                temp.add(b=myread());
-                if (b.sym!=ID) break;
-            }
-        }
-        for(int i=temp.size()-1; i>=0; i--) undo.add(0, temp.get(i));
-        return a;
     }
 
    /** Change a.pos to be the merger of a.pos and b.pos, then change a.sym to be sym, then return a. */
@@ -139,16 +124,19 @@ final class CompFilter implements Scanner {
       L.alloy_filename = filename;
       L.alloy_lineoffset = lineOffset;
       L.alloy_seenDollar = seenDollar;
-      // Replace "ID : RUN"   with "RUN . ID"
-      // Replace "ID : CHECK" with "CHECK . ID"
+      // Replace "ID : RUN/CHECK ID"   with "RUN/CHECK ID ID"
+      // Replace "ID : RUN/CHECK {"    WITH "RUN/CHECK ID  {"
       final Scanner A = new Scanner() {
-         private Symbol a, b, c;
+         private Symbol a, b, c, d;
          public final Symbol next_token() throws Exception {
-            if (a==null) a=L.next_token(); if (a.sym==EOF) { b=a; c=a; }
-            if (b==null) b=L.next_token(); if (b.sym==EOF) { c=b; }
-            if (c==null) c=L.next_token();
-            if (a.sym==ID && b.sym==COLON && (c.sym==RUN || c.sym==CHECK)) { Symbol x=c; c=b; b=a; a=c; c=null; a.sym=DOT; return x; }
-            Symbol x=a; a=b; b=c; c=null; return x;
+            if (a==null) a=L.next_token(); if (a.sym==EOF) { b=a; c=a; d=a; }
+            if (b==null) b=L.next_token(); if (b.sym==EOF) { c=b; d=b; }
+            if (c==null) c=L.next_token(); if (c.sym==EOF) { d=c; }
+            if (d==null) d=L.next_token();
+            if (a.sym==ID && b.sym==COLON && (c.sym==RUN || c.sym==CHECK) && (d.sym==ID || d.sym==LBRACE)) {
+               Symbol x=c; b=d; c=null; d=null; return x;
+            }
+            Symbol x=a; a=b; b=c; c=d; d=null; return x;
          }
       };
       // Merges   "pred" "/" "xxx"       into the actual symbol

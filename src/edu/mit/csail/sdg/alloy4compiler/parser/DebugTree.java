@@ -44,6 +44,7 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import edu.mit.csail.sdg.alloy4.OurTabbedEditor;
 import edu.mit.csail.sdg.alloy4.OurUtil;
+import edu.mit.csail.sdg.alloy4.Pos;
 import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Browsable;
 
@@ -82,7 +83,7 @@ public final class DebugTree extends JTree {
                 Object x = path.getLastPathComponent();
                 if (!(x instanceof Browsable)) return;
                 Browsable b = ((Browsable)x);
-                if (editor!=null) editor.do_highlight(b.pos());
+                if (editor!=null) { Pos p=b.pos(); if (p==Pos.UNKNOWN) p=b.span(); editor.do_highlight(p); }
             }
         });
         return x;

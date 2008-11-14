@@ -28,7 +28,7 @@ import edu.mit.csail.sdg.alloy4.ConstList;
 
 /** Immutable; this declaration binds a list of names to an expression. */
 
-public final class Decl extends Browsable {
+public final class Decl {
 
     /** If nonnull, then this decl is private (and this.isPrivate is the location of the "private" keyword) */
     public final Pos isPrivate;
@@ -92,10 +92,4 @@ public final class Decl extends Browsable {
        for(int i=0; i<names.size(); i++) if (names.get(i).label.equals(name)) return true;
        return false;
     }
-
-    /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>Declaration</b>"; }
-
-    /** {@inheritDoc} */
-    @Override public List<? extends Browsable> getSubnodes() { return names; }
 }

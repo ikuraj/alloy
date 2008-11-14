@@ -104,41 +104,41 @@ public final class Module extends Browsable {
         if (opens.size()>0) {
            x = new ArrayList<Browsable>(opens.size());
            for(Map.Entry<String,Open> e: opens.entrySet()) x.add(e.getValue().realModule);
-           ans.add(make("<b>open(s)</b>", x));
+           ans.add(make("<b>"+x.size()+(x.size()>1?" opens</b>":" open</b>"), x));
         }
         if (sigs.size()>0) {
            x = new ArrayList<Browsable>(sigs.size());
            for(Map.Entry<String,SigAST> e: sigs.entrySet()) x.add(e.getValue().realSig);
-           ans.add(make("<b>sig(s)</b>", x));
+           ans.add(make("<b>"+x.size()+(x.size()>1?" sigs</b>":" sig</b>"), x));
         }
         if (funcs.size()>0) {
            x = new ArrayList<Browsable>(funcs.size());
            for(Map.Entry<String,ArrayList<Func>> e: funcs.entrySet()) for(Func y: e.getValue()) if (y.isPred) x.add(y);
-           if (x.size()>0) ans.add(make("<b>pred(s)</b>", x));
-        }
-        if (funcs.size()>0) {
+           if (x.size()>0) ans.add(make("<b>"+x.size()+(x.size()>1?" preds</b>":" pred</b>"), x));
            x = new ArrayList<Browsable>(funcs.size());
            for(Map.Entry<String,ArrayList<Func>> e: funcs.entrySet()) for(Func y: e.getValue()) if (!y.isPred) x.add(y);
-           if (x.size()>0) ans.add(make("<b>fun(s)</b>", x));
+           if (x.size()>0) ans.add(make("<b>"+x.size()+(x.size()>1?" funs</b>":" fun</b>"), x));
         }
-        if (path.length()==0 && commands.size()>0) {
+        if (commands.size()>0) {
            x = new ArrayList<Browsable>(commands.size());
            for(Command e: commands) if (e.check) x.add(e);
-           if (x.size()>0) ans.add(make("<b>check(s)</b>", x));
-        }
-        if (path.length()==0 && commands.size()>0) {
+           if (x.size()>0) ans.add(make("<b>"+x.size()+(x.size()>1?" checks</b>":" check</b>"), x));
            x = new ArrayList<Browsable>(commands.size());
            for(Command e: commands) if (!e.check) x.add(e);
-           if (x.size()>0) ans.add(make("<b>run(s)</b>", x));
+           if (x.size()>0) ans.add(make("<b>"+x.size()+(x.size()>1?" runs</b>":" run</b>"), x));
         }
         if (facts.size()>0) {
-           for(Pair<String,Expr> e: facts) ans.add(make("<b>fact " + e.a + "</b>", e.b));
+           x = new ArrayList<Browsable>(facts.size());
+           for(Pair<String,Expr> e: facts) x.add(make(e.b.span(), e.b.span(), "<b>fact " + e.a + "</b>", e.b));
+           ans.add(make("<b>"+x.size()+(x.size()>1?" facts</b>":" fact</b>"), x));
         }
-        if (path.length()==0 && asserts.size()>0) {
+        if (asserts.size()>0) {
+           x = new ArrayList<Browsable>(asserts.size());
            for(Map.Entry<String,Expr> e: asserts.entrySet()) {
-               Expr body = e.getValue();
-               if (body!=null) ans.add(make("<b>assert(s)</b> "+e.getKey(), body));
+              Pos sp = e.getValue().span();
+              x.add(make(sp, sp, "<b>assert</b> "+e.getKey(), e.getValue()));
            }
+           ans.add(make("<b>"+x.size()+(x.size()>1?" asserts</b>":" assert</b>"), x));
         }
         return ans;
     }

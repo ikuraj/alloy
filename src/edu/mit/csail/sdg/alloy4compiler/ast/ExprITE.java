@@ -165,7 +165,7 @@ public final class ExprITE extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>if-then-else</b>" + " <i>Type = " + type + "</i>"; }
+    @Override public String getDescription() { return "<b>if-then-else</b>" + " <i>" + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() { return Util.asList(cond, left, right); }

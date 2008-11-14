@@ -174,9 +174,9 @@ public final class ExprConstant extends Expr {
           case TRUE: return "<b>true</b>";
           case FALSE: return "<b>false</b>";
           case IDEN: return "<b>iden</b>";
-          case MAX: return "<b>Int/max</b>";
-          case MIN: return "<b>Int/min</b>";
-          case NEXT: return "<b>Int/next</b>";
+          case MAX: return "<b>fun/max</b>";
+          case MIN: return "<b>fun/min</b>";
+          case NEXT: return "<b>fun/next</b>";
           case EMPTYNESS: return "<b>none</b>";
           case STRING: return "<b>\"" + string + "\"</b>";
         }

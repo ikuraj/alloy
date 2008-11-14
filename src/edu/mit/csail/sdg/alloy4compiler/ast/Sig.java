@@ -234,6 +234,26 @@ public abstract class Sig extends Expr {
     /** Return the list of per-atom facts; each expression is allowed to refer to this.decl.get() */
     public SafeList<Expr> getFacts() { return facts.dup(); }
 
+    /** {@inheritDoc} */
+    @Override public final String getDescription() { return "<b>sig</b> " + label + " <i>" + type + "</i>"; }
+
+    /** {@inheritDoc} */
+    @Override public final List<? extends Browsable> getSubnodes() {
+        TempList<Browsable> ans = new TempList<Browsable>();
+        if (this instanceof PrimSig) {
+            Sig parent = ((PrimSig)this).parent;
+            if (parent!=null && !parent.builtin) ans.add(make(parent.pos, parent.span(), "<b>extends sig</b> " + parent.label, parent.getSubnodes()));
+        } else {
+            ConstList<Sig> parents = ((SubsetSig)this).parents;
+            for(Sig p: parents) ans.add(make(p.pos, p.span(), "<b>in sig</b> " + p.label, p.getSubnodes()));
+        }
+        for(Decl d: fields) for(ExprHasName v: d.names) {
+            ans.add(make(v.span(), v.span(), "<b>field</b> " + v.label + " <i>" + v.type + "</i>", d.expr));
+        }
+        for(Expr f: facts) ans.add(make(f.span(), f.span(), "<b>fact</b>", f));
+        return ans.makeConst();
+    }
+
     //==============================================================================================================//
 
     /**
@@ -385,17 +405,6 @@ public abstract class Sig extends Expr {
                 if (me==null) return UNIV;
             }
         }
-
-        /** {@inheritDoc} */
-        @Override public String getDescription() { return "<b>sig</b> " + label; }
-
-        /** {@inheritDoc} */
-        @Override public List<? extends Browsable> getSubnodes() {
-            TempList<Browsable> ans = new TempList<Browsable>();
-            if (parent!=null && !parent.builtin) ans.add(make(parent.pos, parent.span(), "<b>extends sig</b> " + parent.label, parent.getSubnodes()));
-            for(Decl f: super.fields) ans.add(f);
-            return ans.makeConst();
-        }
     }
 
     //==============================================================================================================//
@@ -493,17 +502,6 @@ public abstract class Sig extends Expr {
             for(Sig p:parents) if (p.isSameOrDescendentOf(that)) return true;
             return false;
         }
-
-        /** {@inheritDoc} */
-        @Override public String getDescription() { return "<b>sig</b> " + label; }
-
-        /** {@inheritDoc} */
-        @Override public List<? extends Browsable> getSubnodes() {
-            TempList<Browsable> ans = new TempList<Browsable>();
-            for(Sig p: parents) ans.add(make(p.pos, p.span(), "<b>in sig</b> " + p.label, p.getSubnodes()));
-            for(Decl f: super.fields) ans.add(f);
-            return ans.makeConst();
-        }
     }
 
     //==============================================================================================================//
@@ -565,13 +563,13 @@ public abstract class Sig extends Expr {
         @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
         /** {@inheritDoc} */
-        @Override public String getDescription() { return "<b>field</b> " + label; }
+        @Override public String getDescription() { return "<b>field</b> " + label + " <i>" + type + "</i>"; }
 
         /** {@inheritDoc} */
         @Override public List<? extends Browsable> getSubnodes() {
             Expr bound = decl.expr;
             Browsable s = make(sig.pos, sig.span(), "<b>from sig</b> "+sig.label, sig.getSubnodes());
-            Browsable b = make(bound.pos(), bound.span(), "<b>bound</b>", bound);
+            Browsable b = make(bound.span(), bound.span(), "<b>bound</b>", bound);
             return Util.asList(s, b);
         }
     }

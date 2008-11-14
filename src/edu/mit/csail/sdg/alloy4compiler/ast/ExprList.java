@@ -102,6 +102,7 @@ public final class ExprList extends Expr {
     /** Add expr to list, in a way that flattens the conjunctions as much as possible (for better unsat core). */
     private static void addAND(TempList<Expr> list, Expr expr) {
         Expr x = expr.deNOP();
+        if (x.isSame(ExprConstant.TRUE)) return;
         if (x instanceof ExprBinary && ((ExprBinary)x).op==ExprBinary.Op.AND) {
             addAND(list, ((ExprBinary)x).left);
             addAND(list, ((ExprBinary)x).right);
@@ -117,6 +118,7 @@ public final class ExprList extends Expr {
     /** Add expr to list, in a way that flattens the disjunctions as much as possible (for better unsat core). */
     private static void addOR(TempList<Expr> list, Expr expr) {
         Expr x = expr.deNOP();
+        if (x.isSame(ExprConstant.FALSE)) return;
         if (x instanceof ExprBinary && ((ExprBinary)x).op==ExprBinary.Op.OR) {
             addOR(list, ((ExprBinary)x).left);
             addOR(list, ((ExprBinary)x).right);
@@ -160,20 +162,20 @@ public final class ExprList extends Expr {
         return new ExprList(pos, closingBracket, op, ambiguous, newargs.makeConst(), weight, errs);
     }
 
-    /** Generates the expression (arg1 and arg2 and arg3 ...) */
-    public static ExprList makeAND(Expr a, Expr b) {
+    /** Generates the expression (arg1 and arg2) */
+    public static ExprList makeAND(Pos pos, Pos closingBracket, Expr a, Expr b) {
         TempList<Expr> list = new TempList<Expr>(2);
         list.add(a);
         list.add(b);
-        return make(Pos.UNKNOWN, Pos.UNKNOWN, Op.AND, list.makeConst());
+        return make(pos, closingBracket, Op.AND, list.makeConst());
     }
 
-    /** Generates the expression (arg1 || arg2 || arg3 ...) */
-    public static ExprList makeOR(Expr a, Expr b) {
+    /** Generates the expression (arg1 || arg2) */
+    public static ExprList makeOR(Pos pos, Pos closingBracket, Expr a, Expr b) {
         TempList<Expr> list = new TempList<Expr>(2);
         list.add(a);
         list.add(b);
-        return make(Pos.UNKNOWN, Pos.UNKNOWN, Op.OR, list.makeConst());
+        return make(pos, closingBracket, Op.OR, list.makeConst());
     }
 
     /** Generates the expression pred/totalOrder[arg1, args2, arg3...] */

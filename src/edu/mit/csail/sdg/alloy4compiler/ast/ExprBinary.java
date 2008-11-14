@@ -227,8 +227,8 @@ public final class ExprBinary extends Expr {
          */
         public final Expr make(Pos pos, Pos closingBracket, Expr left, Expr right) {
             switch(this) {
-              case AND: return ExprList.makeAND(left, right);
-              case OR: return ExprList.makeOR(left, right);
+              case AND: return ExprList.makeAND(pos, closingBracket, left, right);
+              case OR: return ExprList.makeOR(pos, closingBracket, left, right);
               case DOMAIN: {
                 // Special optimization
                 Expr f = right.deNOP();
@@ -318,9 +318,6 @@ public final class ExprBinary extends Expr {
                 errs = errs.append(new ErrorSyntax(left.span(), "Multiplicity expression not allowed here."));
             if ((isArrow && right.mult==1) || (!isArrow && this!=Op.IN && right.mult!=0))
                 errs = errs.append(new ErrorSyntax(right.span(), "Multiplicity expression not allowed here."));
-            if (errs.isEmpty() && e==null && left.type.is_bool && right.type.is_bool && (this==AND || this==OR)) {
-                if (this==AND) return ExprList.makeAND(left, right); else return ExprList.makeOR(left, right);
-            }
             return new ExprBinary(pos, closingBracket, this, left, right, type, errs.append(e));
         }
 
@@ -328,7 +325,7 @@ public final class ExprBinary extends Expr {
         @Override public final String toString() { return label; }
 
         /** Returns the human readable label already encoded for HTML */
-        public final String toHTML() { return label.replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;"); }
+        public final String toHTML() { return "<b>" + (label.replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;")) + "</b>"; }
     }
 
     //============================================================================================================//
@@ -507,7 +504,7 @@ public final class ExprBinary extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return op.toHTML() + " <i>Type = " + type + "</i>"; }
+    @Override public String getDescription() { return op.toHTML() + " <i>" + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() { return Util.asList(left, right); }

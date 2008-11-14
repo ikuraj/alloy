@@ -266,12 +266,18 @@ public final class ExprCall extends Expr {
     @Override final<T> T accept(VisitReturn<T> visitor) throws Err { return visitor.visit(this); }
 
     /** {@inheritDoc} */
-    @Override public String getDescription() { return "<b>call</b>" + " <i>Type = " + type + "</i>"; }
+    @Override public String getDescription() { return "<b>call</b> " + fun.label + " <i>" + type + "</i>"; }
 
     /** {@inheritDoc} */
     @Override public List<? extends Browsable> getSubnodes() {
-        Browsable f = make(fun.pos, fun.pos, (fun.isPred ? "<b>pred</b> " : "<b>fun</b> ")+fun.label , fun);
-        Browsable a = make("<b>arguments</b>", args);
+        if (args.size()==0) {
+            Expr b = fun.getBody();
+            return Util.asList(make(b.pos(), b.span(), b.getDescription(), b.getSubnodes()));
+        }
+        Pos p = pos;
+        if (p == Pos.UNKNOWN) p = span();
+        Browsable f = make(p, p, (fun.isPred ? "<b>pred</b> " : "<b>fun</b> ")+fun.label , fun.getSubnodes());
+        Browsable a = make(span(), span(), "<b>" + args.size() + " argument" + (args.size()==1 ? "</b>" : "s</b>"), args);
         return Util.asList(f, a);
     }
 }
