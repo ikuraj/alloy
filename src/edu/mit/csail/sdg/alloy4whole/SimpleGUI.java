@@ -231,8 +231,11 @@ public final class SimpleGUI implements ComponentListener {
     /** Whether syntax highlighting should be disabled or not. */
     private static final BooleanPref SyntaxDisabled = new BooleanPref("SyntaxHighlightingDisabled");
 
+    /** The number of recursion unrolls. */
+    private static final IntPref Unrolls = new IntPref("Unrolls", -1, -1, 3);
+
     /** The skolem depth. */
-    private static final IntPref SkolemDepth = new IntPref("SkolemDepth3",0,1,4);
+    private static final IntPref SkolemDepth = new IntPref("SkolemDepth3", 0, 1, 4);
 
     /** The unsat core minimization strategy. */
     private static final IntPref CoreMinimization = new IntPref("CoreMinimization",0,2,2);
@@ -959,6 +962,7 @@ public final class SimpleGUI implements ComponentListener {
         opt.tempDirectory = Helper.alloyHome() + fs + "tmp";
         opt.solverDirectory = Helper.alloyHome() + fs + "binary";
         opt.recordKodkod = RecordKodkod.get();
+        opt.unrolls = Unrolls.get();
         opt.skolemDepth = SkolemDepth.get();
         opt.coreMinimization = CoreMinimization.get();
         opt.originalFilename = Util.canon(text.do_getFilename());
@@ -1196,6 +1200,11 @@ public final class SimpleGUI implements ComponentListener {
             for(int n=0; n<=4; n++) { OurUtil.makeMenuItem(skDepthMenu, ""+n, doOptSkolemDepth(n), n==skDepth?iconYes:iconNo); }
             optmenu.add(skDepthMenu);
             //
+            final int unrolls = Unrolls.get();
+            final JMenu unrollsMenu = new JMenu("Recursion Depth: "+(unrolls<0 ? "Disabled" : (""+unrolls)));
+            for(int n=(-1); n<=3; n++) { OurUtil.makeMenuItem(unrollsMenu, (n<0 ? "Disabled" : (""+n)), doOptUnrolls(n), n==unrolls?iconYes:iconNo); }
+            optmenu.add(unrollsMenu);
+            //
             final int min = CoreMinimization.get();
             final String[] minLabelLong=new String[]{"Slow (guarantees local minimum)", "Medium", "Fast (initial unsat core)"};
             final String[] minLabelShort=new String[]{"Slow", "Medium", "Fast"};
@@ -1280,6 +1289,12 @@ public final class SimpleGUI implements ComponentListener {
     private Runner doOptTabsize(Integer size) {
         if (!wrap) { TabSize.set(size.intValue()); text.do_setTabSize(size.intValue()); }
         return wrapMe(size);
+    }
+
+    /** This method changes the number of unrolls. */
+    private Runner doOptUnrolls(Integer num) {
+        if (!wrap) Unrolls.set(num.intValue());
+        return wrapMe(num);
     }
 
     /** This method changes the skolem depth. */

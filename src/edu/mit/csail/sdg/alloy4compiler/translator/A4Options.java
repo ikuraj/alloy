@@ -195,6 +195,7 @@ public final class A4Options implements Serializable {
      */
     public A4Options dup() {
         A4Options x = new A4Options();
+        x.unrolls = unrolls;
         x.symmetry = symmetry;
         x.skolemDepth = skolemDepth;
         x.coreMinimization = coreMinimization;
