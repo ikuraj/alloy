@@ -1523,7 +1523,7 @@ public final class Module extends Browsable {
             else if (x instanceof Func) {
                 Func f = (Func)x;
                 int fn = f.count();
-                int penalty = 0; // FIXTHIS (f.realModule==this ? 0 : 1000); // penalty of 1000
+                int penalty = 0;
                 if (resolution==1 && fn>0 && rootsig!=null && THIS!=null && THIS.type.hasArity(1) && f.get(0).type.intersects(THIS.type)) {
                     // If we're inside a sig, and there is a unary variable bound to "this",
                     // we should consider it as a possible FIRST ARGUMENT of a fun/pred call

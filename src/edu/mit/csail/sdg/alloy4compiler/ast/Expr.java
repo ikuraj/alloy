@@ -270,7 +270,7 @@ public abstract class Expr extends Browsable {
     }
 
     /** Returns true if the node is well-typed, unambiguous, and contains the given variable. */
-    final boolean hasVar(final ExprVar goal) {
+    public final boolean hasVar(final ExprVar goal) {
         if (ambiguous || !errors.isEmpty()) return false;
         VisitQuery<Object> hasVar = new VisitQuery<Object>() {
             @Override public final Object visit(ExprVar x) throws Err {

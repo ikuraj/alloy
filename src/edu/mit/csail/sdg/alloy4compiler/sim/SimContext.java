@@ -322,7 +322,7 @@ public final class SimContext extends VisitReturn<Object> {
     public void init(Sig sig, SimTupleset value) throws Err {
         if (value==null) { sfs.remove(sig); return; }
         if (value.arity()>1) throw new ErrorType("Evaluator encountered an error: sig "+sig.label+" arity must not be " + value.arity());
-        if (sig.builtin) throw new ErrorAPI("Evaluator cannot prebind a builtin sig.");
+        if (sig.builtin) throw new ErrorAPI("Evaluator cannot prebind the builtin sig \"" + sig.label + "\"");
         sfs.put(sig, value);
         cacheUNIV = null;
         cacheSTRING = null;
@@ -619,7 +619,23 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** {@inheritDoc} */
     @Override public SimTupleset visit(Field x) throws Err {
-        if (x.defined) return cset(x.sig).product(cset(x.decl().expr)); // FIXTHIS: this is not the correct answer!
+        if (x.defined) {
+            final ExprVar v = (ExprVar)(x.sig.decl.get());
+            final Expr b = x.decl().expr;
+            final Env<ExprVar,Object> oldenv = env;
+            env = new Env<ExprVar,Object>();
+            if (!b.hasVar(v)) { SimTupleset ans=cset(x.sig).product(cset(b)); env=oldenv; return ans; }
+            SimTupleset ans = SimTupleset.EMPTY;
+            for(SimTuple a: visit(x.sig)) {
+                SimTupleset left = SimTupleset.make(a);
+                env.put(v, left);
+                SimTupleset right = cset(b);
+                env.remove(v);
+                ans = left.product(right).union(ans);
+            }
+            env = oldenv;
+            return ans;
+        }
         Object ans = sfs.get(x);
         if (ans instanceof SimTupleset) return (SimTupleset)ans; else throw new ErrorFatal("Unknown field "+x+" encountered during evaluation.");
     }

@@ -1635,7 +1635,7 @@ public final class SimpleGUI implements ComponentListener {
     private static SimContext convert(A4Solution ans) throws Err {
         SimContext ct = new SimContext(ans.getBitwidth(), ans.getMaxSeq());
         for(Sig s: ans.getAllReachableSigs()) {
-            ct.init(s, convert(ans.eval(s)));
+            if (!s.builtin) ct.init(s, convert(ans.eval(s)));
             for(Field f: s.getFields())  if (!f.defined)  ct.init(f, convert(ans.eval(f)));
         }
         for(ExprVar a:ans.getAllAtoms())   ct.init(a, convert(ans.eval(a)));
