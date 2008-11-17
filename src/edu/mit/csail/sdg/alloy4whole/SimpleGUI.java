@@ -962,7 +962,7 @@ public final class SimpleGUI implements ComponentListener {
         opt.tempDirectory = Helper.alloyHome() + fs + "tmp";
         opt.solverDirectory = Helper.alloyHome() + fs + "binary";
         opt.recordKodkod = RecordKodkod.get();
-        opt.unrolls = Unrolls.get();
+        opt.unrolls = Version.experimental ? Unrolls.get() : (-1);
         opt.skolemDepth = SkolemDepth.get();
         opt.coreMinimization = CoreMinimization.get();
         opt.originalFilename = Util.canon(text.do_getFilename());
@@ -1200,10 +1200,12 @@ public final class SimpleGUI implements ComponentListener {
             for(int n=0; n<=4; n++) { OurUtil.makeMenuItem(skDepthMenu, ""+n, doOptSkolemDepth(n), n==skDepth?iconYes:iconNo); }
             optmenu.add(skDepthMenu);
             //
-            final int unrolls = Unrolls.get();
-            final JMenu unrollsMenu = new JMenu("Recursion Depth: "+(unrolls<0 ? "Disabled" : (""+unrolls)));
-            for(int n=(-1); n<=3; n++) { OurUtil.makeMenuItem(unrollsMenu, (n<0 ? "Disabled" : (""+n)), doOptUnrolls(n), n==unrolls?iconYes:iconNo); }
-            optmenu.add(unrollsMenu);
+            if (Version.experimental) {
+              final int unrolls = Unrolls.get();
+              final JMenu unrollsMenu = new JMenu("Recursion Depth: "+(unrolls<0 ? "Disabled" : (""+unrolls)));
+              for(int n=(-1); n<=3; n++) { OurUtil.makeMenuItem(unrollsMenu, (n<0 ? "Disabled" : (""+n)), doOptUnrolls(n), n==unrolls?iconYes:iconNo); }
+              optmenu.add(unrollsMenu);
+            }
             //
             final int min = CoreMinimization.get();
             final String[] minLabelLong=new String[]{"Slow (guarantees local minimum)", "Medium", "Fast (initial unsat core)"};
