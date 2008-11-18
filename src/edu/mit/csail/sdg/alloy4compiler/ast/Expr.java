@@ -238,8 +238,8 @@ public abstract class Expr extends Browsable {
         return obj==this;
     }
 
-    /** Remove the "ExprUnary NOP" in front of an expression. */
-    final Expr deNOP() {
+    /** Remove the "NOP" in front of an expression (if any). */
+    public final Expr deNOP() {
         Expr x = this;
         while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
         return x;

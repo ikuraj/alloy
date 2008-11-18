@@ -516,12 +516,6 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     //==============================================================================================================//
 
-    /** Remove the "ExprUnary NOP" in front of an expression. */
-    static Expr deNOP(Expr x) {
-        while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x=((ExprUnary)x).sub;
-        return x;
-    }
-
     /** If x = SOMETHING->RELATION where SOMETHING.arity==1, then return the RELATION, else return null. */
     private static Relation right(Expression x) {
         if (!(x instanceof BinaryExpression)) return null;
@@ -805,7 +799,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
             case ARROW:
                 s=cset(a); return s.product(cset(b));
             case JOIN:
-                a=deNOP(a); s=cset(a); s2=cset(b);
+                a=a.deNOP(); s=cset(a); s2=cset(b);
                 if (a instanceof Sig && ((Sig)a).isOne!=null && s2 instanceof BinaryExpression) {
                     BinaryExpression bin = (BinaryExpression)s2;
                     if (bin.op()==ExprOperator.PRODUCT && bin.left()==s) return bin.right();
@@ -837,21 +831,18 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
 
     /** Helper method that translates the formula "a in b" into a Kodkod formula. */
     private Formula isIn(Expression a, Expr right) throws Err {
-        Expression b;
-        if (right instanceof ExprBinary && right.mult!=0 && ((ExprBinary)right).op.isArrow) {
-            // Handles possible "binary" or higher-arity multiplicity
-            return isInBinary(a, (ExprBinary)right);
-        }
-        if (right instanceof ExprUnary) {
-            // Handles possible "unary" multiplicity
-            ExprUnary y=(ExprUnary)(right);
-            if (y.op==ExprUnary.Op.EXACTLYOF) { b=cset(y.sub); return a.eq(b); }
-            if (y.op==ExprUnary.Op.ONEOF) { b=cset(y.sub); return a.one().and(a.in(b)); }
-            if (y.op==ExprUnary.Op.SETOF) { b=cset(y.sub); return a.in(b); }
-            if (y.op==ExprUnary.Op.LONEOF) { b=cset(y.sub); return a.lone().and(a.in(b)); }
-            if (y.op==ExprUnary.Op.SOMEOF) { b=cset(y.sub); return a.some().and(a.in(b)); }
-        }
-        return a.in(cset(right));
+       Expression b;
+       if (right instanceof ExprBinary && right.mult!=0 && ((ExprBinary)right).op.isArrow) {
+          // Handles possible "binary" or higher-arity multiplicity
+          return isInBinary(a, (ExprBinary)right);
+       }
+       switch(right.mult()) {
+          case EXACTLYOF: b=cset(right); return a.eq(b);
+          case ONEOF:     b=cset(right); return a.one().and(a.in(b));
+          case LONEOF:    b=cset(right); return a.lone().and(a.in(b));
+          case SOMEOF:    b=cset(right); return a.some().and(a.in(b));
+          default:        b=cset(right); return a.in(b);
+       }
     }
 
     /** Helper method that translates the formula "r in (a ?->? b)" into a Kodkod formula. */
@@ -927,7 +918,7 @@ public final class TranslateAlloyToKodkod extends VisitReturn<Object> {
       if (op == ExprQt.Op.ONE || op == ExprQt.Op.LONE) {
          boolean ok = true;
          for(int i=0; i<xvars.size(); i++) {
-            Expr v = deNOP(addOne(xvars.get(i).expr));
+            Expr v = addOne(xvars.get(i).expr).deNOP();
             if (v.type.arity()!=1 || v.mult()!=ExprUnary.Op.ONEOF) { ok=false; break; }
          }
          if (op==ExprQt.Op.ONE && ok) return ((Expression) visit_qt(ExprQt.Op.COMPREHENSION, xvars, sub)).one();

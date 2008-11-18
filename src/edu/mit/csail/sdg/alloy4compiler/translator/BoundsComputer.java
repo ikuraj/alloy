@@ -48,7 +48,6 @@ import edu.mit.csail.sdg.alloy4compiler.ast.ExprUnary;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig;
 import edu.mit.csail.sdg.alloy4compiler.ast.Type;
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.SubsetSig;
-import static edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod.deNOP;
 
 /**
  * Immutable; this class assigns each sig and field to some Kodkod relation or expression, then set the bounds.
@@ -250,12 +249,12 @@ final class BoundsComputer {
         for(Sig s:sigs) {
            while (s.isOne!=null && s.getFieldDecls().size()==2 && s.getFields().size()==2 && s.getFacts().size()==1) {
               // Let's check whether this is a total ordering on an enum...
-              Expr fact = deNOP(s.getFacts().get(0)), b1 = deNOP(s.getFieldDecls().get(0).expr), b2 = deNOP(s.getFieldDecls().get(1).expr), b3;
+              Expr fact = s.getFacts().get(0).deNOP(), b1 = s.getFieldDecls().get(0).expr.deNOP(), b2 = s.getFieldDecls().get(1).expr.deNOP(), b3;
               if (!(fact instanceof ExprList) || !(b1 instanceof ExprUnary) || !(b2 instanceof ExprBinary)) break;
               ExprList list = (ExprList)fact;
               if (list.op!=ExprList.Op.TOTALORDER || list.args.size()!=3) break;
-              if (((ExprUnary)b1).op!=ExprUnary.Op.SETOF) break; else b1 = deNOP(((ExprUnary)b1).sub);
-              if (((ExprBinary)b2).op!=ExprBinary.Op.ARROW) break; else { b3 = deNOP(((ExprBinary)b2).right); b2 = deNOP(((ExprBinary)b2).left); }
+              if (((ExprUnary)b1).op!=ExprUnary.Op.SETOF) break; else b1 = ((ExprUnary)b1).sub.deNOP();
+              if (((ExprBinary)b2).op!=ExprBinary.Op.ARROW) break; else { b3 = ((ExprBinary)b2).right.deNOP(); b2 = ((ExprBinary)b2).left.deNOP(); }
               if (!(b1 instanceof PrimSig) || b1!=b2 || b1!=b3) break;
               PrimSig sub = (PrimSig)b1;
               Field f1 = s.getFields().get(0), f2 = s.getFields().get(1);

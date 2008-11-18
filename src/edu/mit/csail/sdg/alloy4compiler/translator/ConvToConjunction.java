@@ -58,7 +58,7 @@ final class ConvToConjunction extends VisitReturn<Expr> {
     /** {@inheritDoc} */
     @Override public Expr visit(ExprQt x) throws Err {
         if (x.op == ExprQt.Op.ALL) {
-            Expr s = TranslateAlloyToKodkod.deNOP(x.sub);
+            Expr s = x.sub.deNOP();
             if (s instanceof ExprBinary && ((ExprBinary)s).op==ExprBinary.Op.AND) {
                 Expr a = visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.decls, ((ExprBinary)s).left));
                 Expr b = visitThis(x.op.make(Pos.UNKNOWN, Pos.UNKNOWN, x.decls, ((ExprBinary)s).right));
@@ -74,7 +74,7 @@ final class ConvToConjunction extends VisitReturn<Expr> {
             return visitThis(x.sub);
         }
         if (x.op == ExprUnary.Op.NOT) {
-            Expr s = TranslateAlloyToKodkod.deNOP(x.sub);
+            Expr s = x.sub.deNOP();
             if (s instanceof ExprBinary && ((ExprBinary)s).op==ExprBinary.Op.OR) {
                 Expr a = visitThis(((ExprBinary)s).left.not());
                 Expr b = visitThis(((ExprBinary)s).right.not());

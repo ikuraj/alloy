@@ -689,15 +689,9 @@ public final class SimContext extends VisitReturn<Object> {
         throw new ErrorFatal(x.pos, "Unsupported operator ("+x.op+") encountered during ExprQt.accept()");
     }
 
-    /** Helper method that removes NOP in front of the given expression. */
-    private static Expr deNOP(Expr x) {
-        while(x instanceof ExprUnary && ((ExprUnary)x).op==ExprUnary.Op.NOOP) x = ((ExprUnary)x).sub;
-        return x;
-    }
-
     /** Helper method that evaluates the formula "a in b" where b.mult==0 */
     public boolean isIn(SimTuple a, Expr b) throws Err {
-        b = deNOP(b);
+        b = b.deNOP();
         if (b instanceof PrimSig && ((PrimSig)b).builtin) {
            if (a.arity()!=1) return false;
            if (b.isSame(Sig.UNIV)) return true;
@@ -739,7 +733,7 @@ public final class SimContext extends VisitReturn<Object> {
 
     /** Helper method that evaluates the formula "a in b" */
     private boolean isIn(SimTupleset a, Expr b) throws Err {
-        b = deNOP(b);
+        b = b.deNOP();
         if (b instanceof ExprBinary && b.mult!=0 && ((ExprBinary)b).op.isArrow) {
             // Handles possible "binary" or higher-arity multiplicity
             return isInBinary(a, (ExprBinary)b);
@@ -747,11 +741,11 @@ public final class SimContext extends VisitReturn<Object> {
         if (b instanceof ExprUnary) {
             // Handles possible "unary" multiplicity
             ExprUnary y = (ExprUnary)b;
-            if      (y.op==ExprUnary.Op.EXACTLYOF) { b=deNOP(y.sub); return a.equals(b); }
-            else if (y.op==ExprUnary.Op.ONEOF)     { b=deNOP(y.sub); if (!(a.longsize()==1)) return false; }
-            else if (y.op==ExprUnary.Op.LONEOF)    { b=deNOP(y.sub); if (!(a.longsize()<=1)) return false; }
-            else if (y.op==ExprUnary.Op.SOMEOF)    { b=deNOP(y.sub); if (!(a.longsize()>=1)) return false; }
-            else if (y.op!=ExprUnary.Op.SETOF)     { b=deNOP(y.sub); }
+            if      (y.op==ExprUnary.Op.EXACTLYOF) { b = y.sub.deNOP(); return a.equals(b); }
+            else if (y.op==ExprUnary.Op.ONEOF)     { b = y.sub.deNOP(); if (!(a.longsize()==1)) return false; }
+            else if (y.op==ExprUnary.Op.LONEOF)    { b = y.sub.deNOP(); if (!(a.longsize()<=1)) return false; }
+            else if (y.op==ExprUnary.Op.SOMEOF)    { b = y.sub.deNOP(); if (!(a.longsize()>=1)) return false; }
+            else if (y.op!=ExprUnary.Op.SETOF)     { b = y.sub.deNOP(); }
         }
         for(SimTuple t:a) if (!isIn(t, b)) return false;
         return true;
