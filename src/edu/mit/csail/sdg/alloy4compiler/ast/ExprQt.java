@@ -162,7 +162,7 @@ public final class ExprQt extends Expr {
        *
        * @param pos - the position of the "quantifier" in the source file (or null if unknown)
        * @param closingBracket - the position of the "closing bracket" in the source file (or null if unknown)
-       * @param decl - the list of variable declarations (each variable must be over a set or relation)
+       * @param decls - the list of variable declarations (each variable must be over a set or relation)
        * @param sub - the body of the expression
        */
       public final Expr make(Pos pos, Pos closingBracket, List<Decl> decls, Expr sub) {

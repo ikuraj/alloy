@@ -31,24 +31,29 @@ import java.util.NoSuchElementException;
 
 public final class JoinableList<E> implements Serializable, Iterable<E> {
 
-   // Invariant: pre!=null iff pre.count!=0
-   // Invariant: post!=null iff post.count!=0
-   // Invariant: count == (pre!=null ? pre.count : 0) + (item!=null ? 1 : 0) + (post!=null ? post.count : 0)
-
    /** This ensures the class can be serialized reliably. */
    private static final long serialVersionUID = 1L;
 
-   /** The number of items stored in this list. */
+   /**
+    * The number of items stored in this list.
+    * <p> <b>Invariant:</b> count == (pre!=null ? pre.count : 0) + (item!=null ? 1 : 0) + (post!=null ? post.count : 0)
+    */
    private final int count;
 
-   /** The list of items before "this.item"; may be null. */
+   /**
+    * The list of items before "this.item"; may be null.
+    * <p> <b>Invariant:</b> pre!=null iff pre.count!=0
+    */
    private final JoinableList<E> pre;
+
+   /**
+    * The list of items after "this.item"; may be null.
+    * <p> <b>Invariant:</b> post!=null iff post.count!=0
+    */
+   private final JoinableList<E> post;
 
    /** If nonnull, it stores an item. */
    private final E item;
-
-   /** The list of items after "this.item"; may be null. */
-   private final JoinableList<E> post;
 
    /** Construct a JoinableList object. */
    private JoinableList(int count, JoinableList<E> pre, E item, JoinableList<E> post) {

@@ -341,7 +341,6 @@ public abstract class Sig extends Expr {
         /**
          * Constructs a non-builtin sig.
          *
-         * @param pos - the position in the original file where this sig was defined (can be null if unknown)
          * @param parent - the parent (must not be null, and must not be NONE)
          * @param label - the name of this sig (it does not need to be unique)
          * @param isAbstract - true iff this sig should be abstract
@@ -595,10 +594,7 @@ public abstract class Sig extends Expr {
      * Add then return a new field, where "all x: ThisSig | x.F in bound"
      * <p> Note: the bound must be fully-typechecked and have exactly 0 free variable, or have "x" as its sole free variable.
      *
-     * @param pos - the position in the original file where this field was defined (can be null if unknown)
-     * @param isPrivate - if nonnull, that means the user intended this field to be "private"
      * @param label - the name of this field (it does not need to be unique)
-     * @param x - a quantified variable "x: one ThisSig"
      * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in bound"
      *
      * @throws ErrorSyntax  if the sig is one of the builtin sig
@@ -623,7 +619,7 @@ public abstract class Sig extends Expr {
      * @param pos - the position in the original file where this field was defined (can be null if unknown)
      * @param isPrivate - if nonnull, that means the user intended this field to be "private"
      * @param isMeta - if nonnull, that means the user intended this field to be "meta"
-     * @param label - the name of this field (it does not need to be unique)
+     * @param labels - the names of the fields to be added (these names does not need to be unique)
      * @param bound - the new field will be bound by "all x: one ThisSig | x.ThisField in bound"
      *
      * @throws ErrorSyntax  if the sig is one of the builtin sig

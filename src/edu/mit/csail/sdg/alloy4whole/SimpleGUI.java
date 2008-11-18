@@ -789,17 +789,17 @@ public final class SimpleGUI implements ComponentListener {
     /** This method performs Edit->Find. */
     private Runner doFind() {
         if (wrap) return wrapMe();
-        JTextField x=OurUtil.textfield(lastFind,30);
+        JTextField x = OurUtil.textfield(lastFind,30);
         x.selectAll();
-        JCheckBox c=new JCheckBox("Case Sensitive?",lastFindCaseSensitive);
+        JCheckBox c = new JCheckBox("Case Sensitive?",lastFindCaseSensitive);
         c.setMnemonic('c');
-        JCheckBox b=new JCheckBox("Search Backward?",!lastFindForward);
+        JCheckBox b = new JCheckBox("Search Backward?",!lastFindForward);
         b.setMnemonic('b');
         if (!OurDialog.getInput(frame, "Find", "Text:", x, " ", c, b)) return null;
-        if (x.getText().length()==0) return null;
-        lastFind=x.getText();
-        lastFindCaseSensitive=c.getModel().isSelected();
-        lastFindForward=!b.getModel().isSelected();
+        if (x.getText().length() == 0) return null;
+        lastFind = x.getText();
+        lastFindCaseSensitive = c.getModel().isSelected();
+        lastFindForward = !b.getModel().isSelected();
         doFindNext();
         return null;
     }
@@ -896,7 +896,7 @@ public final class SimpleGUI implements ComponentListener {
                 runmenu.getItem(3).setEnabled(false);
                 text.do_highlight(new Pos(text.do_getFilename(), e.pos.x, e.pos.y, e.pos.x2, e.pos.y2));
                 if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
-                    log.logRed("Fatal Exception!"+MailBug.dump(e).trim()+"\n\n");
+                    log.logRed("Fatal Exception!" + e.dump() + "\n\n");
                 else
                     log.logRed(e.toString()+"\n\n");
                 return null;

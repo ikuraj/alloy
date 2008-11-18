@@ -76,6 +76,6 @@ public final class ErrorType extends Err {
    @Override public String toString() {
       if (pos==Pos.UNKNOWN) return "Type error:\n"+msg;
       if (pos.filename.length()>0) return "Type error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
-      return "Type error at line "+pos.y+" column "+pos.x+":\n"+msg;
+      return "Type error at line " + pos.y + " column " + pos.x + ":\n" + msg;
    }
 }

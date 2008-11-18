@@ -47,4 +47,7 @@ public abstract class Err extends Exception {
       this.pos = (pos==null ? Pos.UNKNOWN : pos);
       this.msg = (msg==null ? "" : msg);
    }
+
+   /** Returns this error message and a complete stack trace. */
+   public final String dump() { return MailBug.dump(this); }
 }

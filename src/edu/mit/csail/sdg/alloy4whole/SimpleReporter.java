@@ -107,7 +107,7 @@ final class SimpleReporter extends A4Reporter {
                 else
                     span.logLink("A "+text+" error has occurred:  ", "POS: "+ex.pos.x+" "+ex.pos.y+" "+ex.pos.x2+" "+ex.pos.y2+" "+ex.pos.filename);
                 if (verbosity>2) {
-                    span.log("(see the "); span.logLink("stacktrace", "MSG: "+MailBug.dump(ex)); span.log(")\n");
+                    span.log("(see the "); span.logLink("stacktrace", "MSG: "+ex.dump()); span.log(")\n");
                 } else {
                     span.log("\n");
                 }

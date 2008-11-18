@@ -76,6 +76,6 @@ public final class ErrorFatal extends Err {
    @Override public String toString() {
       if (pos==Pos.UNKNOWN) return "Fatal error:\n"+msg;
       if (pos.filename.length()>0) return "Fatal error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
-      return "Fatal error at line "+pos.y+" column "+pos.x+":\n"+msg;
+      return "Fatal error at line " + pos.y + " column " + pos.x + ":\n" + msg;
    }
 }

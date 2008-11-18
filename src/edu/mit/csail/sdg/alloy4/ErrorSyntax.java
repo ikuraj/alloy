@@ -76,6 +76,6 @@ public final class ErrorSyntax extends Err {
    @Override public String toString() {
       if (pos==Pos.UNKNOWN) return "Syntax error:\n"+msg;
       if (pos.filename.length()>0) return "Syntax error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
-      return "Syntax error at line "+pos.y+" column "+pos.x+":\n"+msg;
+      return "Syntax error at line " + pos.y + " column " + pos.x + ":\n" + msg;
    }
 }
