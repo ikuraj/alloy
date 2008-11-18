@@ -221,7 +221,7 @@ public final class ExprList extends Expr {
            Expr b = args.get(1).resolve(t, warns).typecheck_as_set();
            Expr c = args.get(2).resolve(t.product(t), warns).typecheck_as_set();
            changed = (a!=args.get(0) || b!=args.get(1) || c!=args.get(2));
-           newargs.add(a); newargs.add(b); newargs.add(c);
+           newargs.add(a).add(b).add(c);
         }
         return changed ? make(pos, closingBracket, op, newargs.makeConst()) : this;
     }

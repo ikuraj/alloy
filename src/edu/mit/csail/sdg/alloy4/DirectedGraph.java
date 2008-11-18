@@ -25,6 +25,7 @@ package edu.mit.csail.sdg.alloy4;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  * Mutable; this implements a graph with nodes and directed edges; null node is allowed.
@@ -36,47 +37,47 @@ import java.util.IdentityHashMap;
 
 public final class DirectedGraph<N> {
 
-    /** This field maps each node X to a list of "neighbor nodes" that X can reach by following one or more directed edges. */
-    private final IdentityHashMap<N,List<N>> nodeToTargets = new IdentityHashMap<N,List<N>>();
+   /** This field maps each node X to a list of "neighbor nodes" that X can reach by following one or more directed edges. */
+   private final Map<N,List<N>> nodeToTargets = new IdentityHashMap<N,List<N>>();
 
-    /** Constructs an empty graph. */
-    public DirectedGraph () { }
+   /** Constructs an empty graph. */
+   public DirectedGraph () { }
 
-    /** Add a directed edge from start node to end node (if there wasn't such an edge already). */
-    public void addEdge (final N start, final N end) {
-        // statement order here ensures failure atomicity
-        List<N> targets = nodeToTargets.get(start);
-        if (targets == null) {
-            targets = new ArrayList<N>();
-            targets.add(end);
-            nodeToTargets.put(start, targets);
-        } else {
-            for (int i=targets.size()-1; i>=0; i--) if (targets.get(i) == end) return;
-            targets.add(end);
-        }
-    }
+   /** Add a directed edge from start node to end node (if there wasn't such an edge already). */
+   public void addEdge (final N start, final N end) {
+      // statement order here ensures failure atomicity
+      List<N> targets = nodeToTargets.get(start);
+      if (targets == null) {
+         targets = new ArrayList<N>();
+         targets.add(end);
+         nodeToTargets.put(start, targets);
+      } else {
+         for (int i=targets.size()-1; i>=0; i--) if (targets.get(i) == end) return;
+         targets.add(end);
+      }
+   }
 
-    /** Returns whether there is a directed path from start node to end node by following 0 or more directed edges. */
-    public boolean hasPath (final N start, final N end) {
-        if (start == end) return true;
-        List<N> todo = new ArrayList<N>();
-        IdentityHashMap<N,N> visited = new IdentityHashMap<N,N>();
-        // The correctness and guaranteed termination relies on four invariants:
-        // (1) Nothing is ever removed from "visited".
-        // (2) Every time we add X to "visited", we also simultaneously add X to "todo".
-        // (3) Every time we add X to "todo", we also simultaneously add X to "visited".
-        // (4) Nothing is added to "todo" more than once
-        visited.put(start, start);
-        todo.add(start);
-        while(!todo.isEmpty()) {
-            List<N> targets = nodeToTargets.get(todo.remove(todo.size()-1));
-            if (targets==null) continue;
-            for (int i=targets.size()-1; i>=0; i--) {
-                N next=targets.get(i);
-                if (next == end) { addEdge(start, end); return true; } // This caches the result, so hasPath(start,end)==true immediately
-                if (visited.put(next, next)==null) todo.add(next);
-            }
-        }
-        return false;
-    }
+   /** Returns whether there is a directed path from start node to end node by following 0 or more directed edges. */
+   public boolean hasPath (final N start, final N end) {
+      if (start == end) return true;
+      List<N> todo = new ArrayList<N>();
+      Map<N,N> visited = new IdentityHashMap<N,N>();
+      // The correctness and guaranteed termination relies on four invariants:
+      // (1) Nothing is ever removed from "visited".
+      // (2) Every time we add X to "visited", we also simultaneously add X to "todo".
+      // (3) Every time we add X to "todo", we also simultaneously add X to "visited".
+      // (4) Nothing is added to "todo" more than once
+      visited.put(start, start);
+      todo.add(start);
+      while(!todo.isEmpty()) {
+         List<N> targets = nodeToTargets.get(todo.remove(todo.size()-1));
+         if (targets==null) continue;
+         for (int i=targets.size()-1; i>=0; i--) {
+            N next = targets.get(i);
+            if (next == end) { addEdge(start, end); return true; } // This caches the result, so hasPath(start,end)==true immediately
+            if (visited.put(next, next)==null) todo.add(next);
+         }
+      }
+      return false;
+   }
 }

@@ -30,56 +30,52 @@ package edu.mit.csail.sdg.alloy4;
 
 public final class ErrorFatal extends Err {
 
-    /** This silences javac's warning about missing serialVersionUID. */
-    private static final long serialVersionUID = 1L;
+   /** This silences javac's warning about missing serialVersionUID. */
+   private static final long serialVersionUID = 1L;
 
-    /**
-     * Constructs a new fatal error.
-     * @param msg - the actual error message
-     */
-    public ErrorFatal(String msg) {
-        super(null, msg, null);
-    }
+   /**
+    * Constructs a new fatal error.
+    * @param msg - the actual error message
+    */
+   public ErrorFatal(String msg) {
+      super(null, msg, null);
+   }
 
-    /**
-     * Constructs a new fatal error with "cause" as the underlying cause.
-     * @param msg - the actual error message
-     * @param cause - if nonnull, it is the cause of this exception
-     */
-    public ErrorFatal(String msg, Throwable cause) {
-        super(null, msg, cause);
-    }
+   /**
+    * Constructs a new fatal error with "cause" as the underlying cause.
+    * @param msg - the actual error message
+    * @param cause - if nonnull, it is the cause of this exception
+    */
+   public ErrorFatal(String msg, Throwable cause) {
+      super(null, msg, cause);
+   }
 
-    /**
-     * Constructs a new fatal error.
-     * @param pos - the filename/line/row information (can be null if unknown)
-     * @param msg - the actual error message
-     */
-    public ErrorFatal(Pos pos, String msg) {
-        super(pos, msg, null);
-    }
+   /**
+    * Constructs a new fatal error.
+    * @param pos - the filename/line/row information (can be null if unknown)
+    * @param msg - the actual error message
+    */
+   public ErrorFatal(Pos pos, String msg) {
+      super(pos, msg, null);
+   }
 
-    /** Two Err objects are equal if the type, position, and message are the same. */
-    @Override public boolean equals(Object other) {
-        if (this==other) return true;
-        if (!(other instanceof ErrorFatal)) return false;
-        Err that = (Err) other;
-        return pos.equals(that.pos) && msg.equals(that.msg);
-    }
+   /** Two Err objects are equal if the type, position, and message are the same. */
+   @Override public boolean equals(Object other) {
+      if (this==other) return true;
+      if (!(other instanceof ErrorFatal)) return false;
+      Err that = (Err) other;
+      return pos.equals(that.pos) && msg.equals(that.msg);
+   }
 
-    /** Returns a hash code consistent with equals() */
-    @Override public int hashCode() {
-        return msg.hashCode();
-    }
+   /** Returns a hash code consistent with equals() */
+   @Override public int hashCode() {
+      return msg.hashCode();
+   }
 
-    /** Returns a textual description of the error. */
-    @Override public String toString() {
-        if (pos==Pos.UNKNOWN) {
-            return "Fatal error:\n"+msg;
-        }
-        if (pos.filename.length()>0) {
-            return "Fatal error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
-        }
-        return "Fatal error at line "+pos.y+" column "+pos.x+":\n"+msg;
-    }
+   /** Returns a textual description of the error. */
+   @Override public String toString() {
+      if (pos==Pos.UNKNOWN) return "Fatal error:\n"+msg;
+      if (pos.filename.length()>0) return "Fatal error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
+      return "Fatal error at line "+pos.y+" column "+pos.x+":\n"+msg;
+   }
 }

@@ -294,10 +294,7 @@ public final class Module extends Browsable {
         /** {@inheritDoc} */
         @Override public Expr visit(ExprList x) throws Err {
             TempList<Expr> temp = new TempList<Expr>(x.args.size());
-            for(int i=0; i<x.args.size(); i++) {
-                Expr e = visitThis(x.args.get(i));
-                temp.add(e);
-            }
+            for(int i=0; i<x.args.size(); i++)  temp.add(visitThis(x.args.get(i)));
             return ExprList.make(x.pos, x.closingBracket, x.op, temp.makeConst());
         }
 

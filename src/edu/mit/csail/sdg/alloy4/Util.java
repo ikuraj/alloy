@@ -126,24 +126,20 @@ public final class Util {
     /** Copy the input list, append "element" to it, then return the result as an unmodifiable list. */
     public static<T> ConstList<T> append(List<T> list, T element) {
         TempList<T> ans = new TempList<T>(list.size()+1);
-        ans.addAll(list);
-        ans.add(element);
+        ans.addAll(list).add(element);
         return ans.makeConst();
     }
 
     /** Copy the input list, prepend "element" to it, then return the result as an unmodifiable list. */
     public static<T> ConstList<T> prepend(List<T> list, T element) {
         TempList<T> ans = new TempList<T>(list.size()+1);
-        ans.add(element);
-        ans.addAll(list);
+        ans.add(element).addAll(list);
         return ans.makeConst();
     }
 
     /** Returns an unmodifiable List with same elements as the array. */
     public static<T> ConstList<T> asList(T... array) {
-        TempList<T> ans = new TempList<T>(array.length);
-        for(int i=0; i<array.length; i++) { ans.add(array[i]); }
-        return ans.makeConst();
+        return (new TempList<T>(array)).makeConst();
     }
 
     /** Returns a newly created LinkedHashSet containing the given elements in the given order. */

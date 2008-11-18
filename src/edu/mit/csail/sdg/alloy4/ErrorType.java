@@ -30,56 +30,52 @@ package edu.mit.csail.sdg.alloy4;
 
 public final class ErrorType extends Err {
 
-    /** This silences javac's warning about missing serialVersionUID. */
-    private static final long serialVersionUID = 1L;
+   /** This silences javac's warning about missing serialVersionUID. */
+   private static final long serialVersionUID = 1L;
 
-    /**
-     * Constructs a new type error.
-     * @param msg - the actual error message
-     */
-    public ErrorType(String msg) {
-        super(null, msg, null);
-    }
+   /**
+    * Constructs a new type error.
+    * @param msg - the actual error message
+    */
+   public ErrorType(String msg) {
+      super(null, msg, null);
+   }
 
-    /**
-     * Constructs a new type error with "cause" as the underlying cause.
-     * @param msg - the actual error message
-     * @param cause - if nonnull, it is the cause of this exception
-     */
-    public ErrorType(String msg, Throwable cause) {
-        super(null, msg, cause);
-    }
+   /**
+    * Constructs a new type error with "cause" as the underlying cause.
+    * @param msg - the actual error message
+    * @param cause - if nonnull, it is the cause of this exception
+    */
+   public ErrorType(String msg, Throwable cause) {
+      super(null, msg, cause);
+   }
 
-    /**
-     * Constructs a new type error.
-     * @param pos - the filename/line/row information (can be null if unknown)
-     * @param msg - the actual error message
-     */
-    public ErrorType(Pos pos, String msg) {
-        super(pos, msg, null);
-    }
+   /**
+    * Constructs a new type error.
+    * @param pos - the filename/line/row information (can be null if unknown)
+    * @param msg - the actual error message
+    */
+   public ErrorType(Pos pos, String msg) {
+      super(pos, msg, null);
+   }
 
-    /** Two Err objects are equal if the type, position, and message are the same. */
-    @Override public boolean equals(Object other) {
-        if (this==other) return true;
-        if (!(other instanceof ErrorType)) return false;
-        Err that = (Err) other;
-        return pos.equals(that.pos) && msg.equals(that.msg);
-    }
+   /** Two Err objects are equal if the type, position, and message are the same. */
+   @Override public boolean equals(Object other) {
+      if (this==other) return true;
+      if (!(other instanceof ErrorType)) return false;
+      Err that = (Err) other;
+      return pos.equals(that.pos) && msg.equals(that.msg);
+   }
 
-    /** Returns a hash code consistent with equals() */
-    @Override public int hashCode() {
-        return msg.hashCode();
-    }
+   /** Returns a hash code consistent with equals() */
+   @Override public int hashCode() {
+      return msg.hashCode();
+   }
 
-    /** Returns a textual description of the error. */
-    @Override public String toString() {
-        if (pos==Pos.UNKNOWN) {
-            return "Type error:\n"+msg;
-        }
-        if (pos.filename.length()>0) {
-            return "Type error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
-        }
-        return "Type error at line "+pos.y+" column "+pos.x+":\n"+msg;
-    }
+   /** Returns a textual description of the error. */
+   @Override public String toString() {
+      if (pos==Pos.UNKNOWN) return "Type error:\n"+msg;
+      if (pos.filename.length()>0) return "Type error in "+pos.filename+" at line "+pos.y+" column "+pos.x+":\n"+msg;
+      return "Type error at line "+pos.y+" column "+pos.x+":\n"+msg;
+   }
 }

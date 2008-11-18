@@ -25,26 +25,26 @@ package edu.mit.csail.sdg.alloy4;
 /**
  * Immutable; this is the abstract super class of the various possible errors.
  *
- * <p><b>Invariant</b>:       pos!=null && msg!=null
+ * <p><b>Invariant</b>: pos!=null && msg!=null
  */
 
 public abstract class Err extends Exception {
 
-    /** This stores the filename/line/row information (Pos.UNKNOWN if unknown). */
-    public final Pos pos;
+   /** This stores the filename/line/row information (Pos.UNKNOWN if unknown). */
+   public final Pos pos;
 
-    /** The actual error message. */
-    public final String msg;
+   /** The actual error message. */
+   public final String msg;
 
-    /**
-     * Constructs a new Err object.
-     * @param pos - the filename/line/row information (can be null if unknown)
-     * @param msg - the actual error message
-     * @param ex - if nonnull, it will be recorded as the cause of this exception
-     */
-    Err(Pos pos, String msg, Throwable ex) {
-        super((msg==null ? "" : msg), ex);
-        this.pos = (pos==null ? Pos.UNKNOWN : pos);
-        this.msg = (msg==null ? "" : msg);
-    }
+   /**
+    * Constructs a new Err object.
+    * @param pos - the filename/line/row information (can be null if unknown)
+    * @param msg - the actual error message
+    * @param ex - if nonnull, it will be recorded as the cause of this exception
+    */
+   Err(Pos pos, String msg, Throwable ex) {
+      super((msg==null ? "" : msg), ex);
+      this.pos = (pos==null ? Pos.UNKNOWN : pos);
+      this.msg = (msg==null ? "" : msg);
+   }
 }

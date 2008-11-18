@@ -157,9 +157,7 @@ public final class Command extends Browsable {
 
     /** Constructs a new Command object where it is the same as the current object, except with a different list of "additional exact sigs". */
     public Command change(Sig... additionalExactScopes) {
-        TempList<Sig> tmp = new TempList<Sig>(additionalExactScopes.length);
-        for(int i=0; i<additionalExactScopes.length; i++) tmp.add(additionalExactScopes[i]);
-        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, tmp.makeConst(), formula, parent);
+        return new Command(pos, label, check, overall, bitwidth, maxseq, expects, scope, Util.asList(additionalExactScopes), formula, parent);
     }
 
     /** Constructs a new Command object where it is the same as the current object, except with a different scope for the given sig. */

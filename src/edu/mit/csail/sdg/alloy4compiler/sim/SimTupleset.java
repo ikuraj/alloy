@@ -35,6 +35,7 @@ import java.util.NoSuchElementException;
 import edu.mit.csail.sdg.alloy4.ConstList;
 import edu.mit.csail.sdg.alloy4.ErrorAPI;
 import edu.mit.csail.sdg.alloy4.ErrorType;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4.ConstList.TempList;
 
 /** Immutable; represents a tupleset. */
@@ -77,25 +78,18 @@ public final class SimTupleset implements Iterable<SimTuple> {
     /** Construct the set containing integers between min and max (inclusively). */
     public static SimTupleset make(int min, int max) {
         if (min>max) return EMPTY;
-        if (min==max) {
-            TempList<SimTuple> list = new TempList<SimTuple>(1);
-            list.add(SimTuple.make(SimAtom.make(min)));
-            return new SimTupleset(list.makeConst(), 0, 0, false);
-        }
+        if (min==max) return new SimTupleset(Util.asList(SimTuple.make(SimAtom.make(min))), 0, 0, false);
         return new SimTupleset(EMPTY.tuples, min, max, false);
     }
 
     /** Construct the set containing (min,min+1)...(max-1,max) */
     public static SimTupleset makenext(int min, int max) {
-        if (min>=max) return EMPTY;
-        return new SimTupleset(EMPTY.tuples, min, max, true);
+        return min>=max ? EMPTY : (new SimTupleset(EMPTY.tuples, min, max, true));
     }
 
     /** Construct a tupleset containing the given tuple. */
     public static SimTupleset make(SimTuple tuple) {
-        TempList<SimTuple> x = new TempList<SimTuple>(1);
-        x.add(tuple);
-        return new SimTupleset(x.makeConst());
+        return new SimTupleset(Util.asList(tuple));
     }
 
     /** Make a tupleset containing the given atom. */
@@ -214,8 +208,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        if (empty()) return make(that);
        if (arity()!=that.arity() || has(that)) return this;
        TempList<SimTuple> ans = new TempList<SimTuple>(tuples.size()+1);
-       for(SimTuple x: tuples) ans.add(x);
-       ans.add(that);
+       ans.addAll(tuples).add(that);
        return new SimTupleset(ans.makeConst(), min, max, next);
     }
 
@@ -401,7 +394,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        if (that.longsize()==1) return override(that.getTuple()); // very common case, so let's optimize it
        TempList<SimTuple> ans = new TempList<SimTuple>(size());
        for(SimTuple x: this) if (!that.has(x)) ans.add(x);
-       for(SimTuple x: that) ans.add(x);
+       ans.addAll(that);
        return new SimTupleset(ans.makeConst());
     }
 
@@ -459,8 +452,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
        if (empty() || that.empty()) return EMPTY;
        TempList<SimTuple> ans = new TempList<SimTuple>(size() * that.size());
        for(SimTuple a: this) for(SimTuple b: that) {
-          SimTuple c = a.product(b);
-          ans.add(c); // We don't have to check for duplicates, because we assume every tuple in "this" has same arity, and every tuple in "that" has same arity
+          ans.add(a.product(b)); // We don't have to check for duplicates, because we assume every tuple in "this" has same arity, and every tuple in "that" has same arity
        }
        return new SimTupleset(ans.makeConst());
     }
@@ -515,7 +507,7 @@ public final class SimTupleset implements Iterable<SimTuple> {
     public SimTupleset closure() {
        if (arity()!=2) return EMPTY;
        TempList<SimTuple> ar = new TempList<SimTuple>(size());
-       for(SimTuple x: this) ar.add(x);
+       ar.addAll(this);
        while(true) {
           int n = ar.size();
           for(int i=0; i<n; i++) {

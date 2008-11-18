@@ -115,6 +115,7 @@ public final class Type implements Iterable<Type.ProductType> {
          * <p> Precondition: this.arity == that.arity
          */
         private boolean isSubtypeOf(ProductType that) {
+            if (this==that) return true;
             for(int i=types.length-1; i>=0; i--) if (!types[i].isSameOrDescendentOf(that.types[i])) return false;
             return true;
         }
@@ -656,7 +657,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if ((arities & 1)==0) {
             for(ProductType x:entries) {
                 int xa = 1 << x.types.length;
-                if ((that.arities & xa)!=0) { aa=(aa|xa); ee.add(x); }
+                if ((that.arities & xa) != 0) { aa = (aa|xa); ee.add(x); }
             }
         } else {
             for(ProductType x:entries) if (that.hasArity(x.types.length)) aa=add(ee,aa,x);
@@ -676,7 +677,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if ((arities & (1<<1))==0) return EMPTY;
         if (!is_int && !is_bool && arities==(1<<1)) return this;
         TempList<ProductType> ee=new TempList<ProductType>();
-        for(ProductType x:entries) if (x.types.length==1) ee.add(x);
+        for(ProductType x: entries) if (x.types.length == 1) ee.add(x);
         return make(false, false, ee.makeConst(), (1<<1));
     }
 
@@ -692,7 +693,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if ((arities & (1<<2))==0) return EMPTY;
         if (!is_int && !is_bool && arities==(1<<2)) return this;
         TempList<ProductType> ee=new TempList<ProductType>();
-        for(ProductType x:entries) if (x.types.length==2) ee.add(x);
+        for(ProductType x: entries) if (x.types.length == 2) ee.add(x);
         return make(false, false, ee.makeConst(), (1<<2));
     }
 
@@ -713,12 +714,13 @@ public final class Type implements Iterable<Type.ProductType> {
     }
 
     /**
-     * Returns true if for all A in this, there exists B in that, where A is a subset of B.
+     * Returns true if for all A in this, there exists B in that, where A is equal or subset of B.
      * <p> Note: if this.is_int && !that.is_int, we return false immediately.
      * <p> Note: if this.is_bool && !that.is_bool, we return false immediately.
-     * <p> Note: if this type does not contain any entry at all, then this method returns true.
+     * <p> Note: if this nothing above is violated, and this type has no relational entry in it, we return true.
      */
     public boolean isSubtypeOf(Type that) {
+        if (this==that) return true;
         if (is_int && !that.is_int) return false;
         if (is_bool && !that.is_bool) return false;
         List<List<PrimSig>> those = that.fold();
@@ -798,7 +800,7 @@ public final class Type implements Iterable<Type.ProductType> {
         if (!is_bool && !is_int && arity<=30 && arities==aa) return this;
         if ((arities & aa)==0) return EMPTY;
         final TempList<ProductType> ee=new TempList<ProductType>();
-        for(ProductType x:entries) if (x.types.length==arity) ee.add(x);
+        for(ProductType x: entries) if (x.types.length == arity) ee.add(x);
         return make(false, false, ee.makeConst(), aa);
     }
 
