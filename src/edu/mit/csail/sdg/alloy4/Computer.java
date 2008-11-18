@@ -22,16 +22,13 @@
 
 package edu.mit.csail.sdg.alloy4;
 
-/** This defines a compute() method that takes a String input and produces a String output. */
+/** This defines a compute() method that takes an input Object and produces a String output. */
 
 public interface Computer {
 
     /**
-     * This method takes a String inputs and produces a String output.
+     * This method takes an inputs and produces a String output.
      * @throws Exception if an error occurred during the computation.
      */
-    public String compute(String input) throws Exception;
-
-    /** This method changes the filename associated with this Computer object. */
-    public void setSourceFile(String filename);
+    public String compute(Object input) throws Exception;
 }

@@ -155,19 +155,19 @@ public final class Module extends Browsable {
         final Module rootmodule;
 
         /** Nonnull if we are typechecking a field declaration or a sig appended facts. */
-        SigAST rootsig=null;
+        SigAST rootsig = null;
 
-        /** True if we are typechecking a field declaration. */
-        private boolean rootfield=false;
+        /** Nonnull if we are typechecking a field declaration. */
+        private Decl rootfield = null;
 
         /** True if we are typechecking a function's parameter declarations or return declaration. */
-        private boolean rootfunparam=false;
+        private boolean rootfunparam = false;
 
         /** Nonnull if we are typechecking a function's body. */
-        private Func rootfunbody=null;
+        private Func rootfunbody = null;
 
         /** This maps local names (eg. let/quantification variables and function parameters) to the objects they refer to. */
-        private final Env<String,Expr> env=new Env<String,Expr>();
+        private final Env<String,Expr> env = new Env<String,Expr>();
 
         /** The level of macro substitution recursion. */
         public final int unrolls;
@@ -1339,54 +1339,42 @@ public final class Module extends Browsable {
 
     //============================================================================================================================//
 
-    /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
-    static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
-        List<Module> modules = root.getAllReachableModules().makeCopy();
-        resolveParams(rep, modules);
-        resolveModules(rep, modules);
-        JoinableList<Err> errors = new JoinableList<Err>();
-        final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
-        // Resolves SigAST -> Sig, and topologically sort the sigs into the "sorted" array
-        List<SigAST> sorted = new ArrayList<SigAST>();
-        sorted.add(UNIVast);
-        sorted.add(SIGINTast);
-        sorted.add(SEQIDXast);
-        sorted.add(STRINGast);
-        sorted.add(NONEast);
-        for(final Module m:modules) for(final Map.Entry<String,SigAST> e:m.sigs.entrySet()) resolveSig(sorted, e.getValue());
-        // Add the fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
-        for(final SigAST oldS: sorted) {
-           // When typechecking each field:
-           // * it is allowed to refer to earlier fields in the same SIG or in any visible ancestor sig
-           // * it is allowed to refer to visible sigs
-           // * it is NOT allowed to refer to any predicate or function
-           // For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
-           // then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
-           final Sig s = oldS.realSig;
-           final Module m = oldS.realModule;
-           final Context cx = new Context(m, warns);
-           final ExprHasName dup = Decl.findDuplicateName(oldS.fields);
-           if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.label+"\"");
-           for(int di=0; di<oldS.fields.size(); di++) {
-              final Decl d = oldS.fields.get(di);
-              // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
-              cx.rootfield = true;
-              cx.rootsig = oldS;
-              cx.put("this", s.decl.get());
-              Expr bound = cx.check(d.expr).resolve_as_set(warns);
-              cx.remove("this");
-              String[] names = new String[d.names.size()];  for(int i=0; i<names.length; i++) names[i] = d.names.get(i).label;
-              Field[] fields = s.addTrickyField(d.span(), d.isPrivate, d.disjoint, d.disjoint2, null, names, bound);
-              for(Field f: fields) {
-                 rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
-              }
+    private static void resolveFieldDecl(final A4Reporter rep, final SigAST oldS, final List<ErrorWarning> warns, boolean defined) throws Err {
+        // When typechecking each field:
+        // * it is allowed to refer to earlier fields in the same SIG or in any visible ancestor sig
+        // * it is allowed to refer to visible sigs
+        // * it is NOT allowed to refer to any predicate or function
+        // For example, if A.als opens B.als, and B/SIGX extends A/SIGY,
+        // then B/SIGX's fields cannot refer to A/SIGY, nor any fields in A/SIGY)
+        final Sig s = oldS.realSig;
+        final Module m = oldS.realModule;
+        final Context cx = new Context(m, warns);
+        final ExprHasName dup = Decl.findDuplicateName(oldS.fields);
+        if (dup!=null) throw new ErrorSyntax(dup.span(), "sig \""+s+"\" cannot have 2 fields named \""+dup.label+"\"");
+        for(int di=0; di<oldS.fields.size(); di++) {
+           final Decl d = oldS.fields.get(di);
+           if (d.expr.mult()!=ExprUnary.Op.EXACTLYOF) {if (defined) continue;} else {if (!defined) continue;}
+           // The name "this" does matter, since the parser and the typechecker both refer to it as "this"
+           cx.rootfield = d;
+           cx.rootsig = oldS;
+           cx.put("this", s.decl.get());
+           Expr bound = cx.check(d.expr).resolve_as_set(warns);
+           cx.remove("this");
+           String[] names = new String[d.names.size()];  for(int i=0; i<names.length; i++) names[i] = d.names.get(i).label;
+           Field[] fields = s.addTrickyField(d.span(), d.isPrivate, d.disjoint, d.disjoint2, null, names, bound);
+           for(Field f: fields) {
+              rep.typecheck("Sig "+s+", Field "+f.label+": "+f.type+"\n");
            }
         }
-        if (!errors.isEmpty()) throw errors.pick();
+    }
+
+    //============================================================================================================================//
+
+    private static void rejectNameClash(final List<Module> modules) throws Err {
         // The Alloy language forbids two overlapping sigs from having fields with the same name.
         // In other words: if 2 fields have the same name, then their type's first column must not intersect.
         final Map<String,List<Field>> fieldname2fields=new LinkedHashMap<String,List<Field>>();
-        for(Module m:modules) {
+        for(Module m: modules) {
           for(Map.Entry<String,SigAST> sig: m.sigs.entrySet()) {
             for(Field field: sig.getValue().realSig.getFields()) {
                List<Field> peers=fieldname2fields.get(field.label);
@@ -1401,85 +1389,114 @@ public final class Module extends Browsable {
             }
           }
         }
+    }
+
+    //============================================================================================================================//
+
+    private static void resolveMeta(final Module root, final List<Module> modules, final List<SigAST> sorted) throws Err {
         // Now, add the meta sigs and fields if needed
-        if (Version.experimental && root.seenDollar) {
-            Map<Sig,PrimSig> sig2meta = new LinkedHashMap<Sig,PrimSig>();
-            Map<Field,PrimSig> field2meta = new LinkedHashMap<Field,PrimSig>();
-            boolean hasMetaSig=false, hasMetaField=false;
-            ExprVar EXTENDS = ExprVar.make(null, "extends");
-            ExprVar THIS = ExprVar.make(null, "univ");
-            List<ExprVar> THESE = Arrays.asList(THIS);
-            SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, null, EXTENDS, THESE, null, null, null);
-            SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, null, EXTENDS, THESE, null, null, null);
-            metasig.topo = true;
-            metasig.realParents.add(UNIVast);
-            metasig.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/sig$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, null, false);
-            metafield.topo = true;
-            metafield.realParents.add(UNIVast);
-            metafield.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/field$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, null, false);
-            root.metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
-            root.metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
-            for(Module m:modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
-                final Sig s = sig.realSig;
-                String slab = sig.name;
-                SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, null, EXTENDS, THESE, null, null, null);
-                ast.topo = true;
-                ast.realParents.add(metasig);
-                ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, null, false);
-                sig2meta.put(s, (PrimSig)(ast.realSig));
-                ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", s);
-                sorted.add(ast);
-                hasMetaSig=true;
-                Expr allfields = ExprConstant.EMPTYNESS;
-                for(Field field: s.getFields()) {
-                    SigAST ast2 = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, null, EXTENDS, THESE, null, null, null);
-                    ast2.topo = true;
-                    ast2.realParents.add(metafield);
-                    ast2.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast2.name : (m.paths.get(0)+"/"+ast2.name), null, null, ast2.one, null, null, ast2.isPrivate, Pos.UNKNOWN, null, false);
-                    field2meta.put(field, (PrimSig)(ast2.realSig));
-                    sorted.add(ast2);
-                    hasMetaField = true;
-                    ast2.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", field);
-                    if (allfields==ExprConstant.EMPTYNESS) allfields = ast2.realSig; else allfields = allfields.plus(ast2.realSig);
-                }
-                ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", allfields);
+        Map<Sig,PrimSig> sig2meta = new LinkedHashMap<Sig,PrimSig>();
+        Map<Field,PrimSig> field2meta = new LinkedHashMap<Field,PrimSig>();
+        boolean hasMetaSig = false, hasMetaField = false;
+        ExprVar EXTENDS = ExprVar.make(null, "extends");
+        ExprVar THIS = ExprVar.make(null, "univ");
+        List<ExprVar> THESE = Arrays.asList(THIS);
+        SigAST metasig   = root.addSig(null, Pos.UNKNOWN, "sig$", Pos.UNKNOWN, null, null, null, null, null, EXTENDS, THESE, null, null, null);
+        SigAST metafield = root.addSig(null, Pos.UNKNOWN, "field$", Pos.UNKNOWN, null, null, null, null, null, EXTENDS, THESE, null, null, null);
+        metasig.topo = true;
+        metasig.realParents.add(UNIVast);
+        metasig.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/sig$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, null, false);
+        metafield.topo = true;
+        metafield.realParents.add(UNIVast);
+        metafield.realSig = new PrimSig(Pos.UNKNOWN, UNIV, "this/field$", Pos.UNKNOWN, null, null, null, null, null, Pos.UNKNOWN, null, false);
+        root.metaSig = (PrimSig)(metasig.realSig);      sorted.add(metasig);
+        root.metaField = (PrimSig)(metafield.realSig);  sorted.add(metafield);
+        for(Module m: modules) for(SigAST sig: new ArrayList<SigAST>(m.sigs.values())) if (m!=root || (sig!=metasig && sig!=metafield)) {
+            final Sig s = sig.realSig;
+            String slab = sig.name;
+            SigAST ast = m.addSig(null, Pos.UNKNOWN, slab+"$", null, null, Pos.UNKNOWN, null, s.isPrivate, null, EXTENDS, THESE, null, null, null);
+            ast.topo = true;
+            ast.realParents.add(metasig);
+            ast.realSig = new PrimSig(Pos.UNKNOWN, root.metaSig, m.paths.contains("") ? "this/"+ast.name : (m.paths.get(0)+"/"+ast.name), null, null, ast.one, null, null, ast.isPrivate, Pos.UNKNOWN, null, false);
+            sig2meta.put(s, (PrimSig)(ast.realSig));
+            ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", s);
+            sorted.add(ast);
+            hasMetaSig=true;
+            Expr allfields = ExprConstant.EMPTYNESS;
+            for(Field field: s.getFields()) {
+                SigAST ast2 = m.addSig(null, Pos.UNKNOWN, slab+"$"+field.label, null, null, Pos.UNKNOWN, null, field.isPrivate, null, EXTENDS, THESE, null, null, null);
+                ast2.topo = true;
+                ast2.realParents.add(metafield);
+                ast2.realSig = new PrimSig(Pos.UNKNOWN, root.metaField, m.paths.contains("") ? "this/"+ast2.name : (m.paths.get(0)+"/"+ast2.name), null, null, ast2.one, null, null, ast2.isPrivate, Pos.UNKNOWN, null, false);
+                field2meta.put(field, (PrimSig)(ast2.realSig));
+                sorted.add(ast2);
+                hasMetaField = true;
+                ast2.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "value", field);
+                if (allfields==ExprConstant.EMPTYNESS) allfields = ast2.realSig; else allfields = allfields.plus(ast2.realSig);
             }
-            for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
-                Expr expr = null;
-                if ((e.getKey()) instanceof PrimSig) {
-                    PrimSig a = (PrimSig)(e.getKey());
-                    if (a.parent!=null && a.parent!=UNIV) expr = sig2meta.get(a.parent);
-                }
-                e.getValue().addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "parent", (expr==null ? ExprConstant.EMPTYNESS : expr));
-            }
-            for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
-                Sig s = e.getKey();
-                PrimSig s2 = e.getValue();
-                Expr allfields = ExprConstant.EMPTYNESS;
-                for(Field f: s.getFields()) {
-                    PrimSig metaF = field2meta.get(f);
-                    if (allfields==ExprConstant.EMPTYNESS) allfields = metaF; else allfields = allfields.plus(metaF);
-                }
-                if (s instanceof PrimSig) for(Sig c: (((PrimSig)s).descendents())) for(Field f: c.getFields()) {
-                    PrimSig metaF = field2meta.get(f);
-                    if (allfields==ExprConstant.EMPTYNESS) allfields = metaF; else allfields = allfields.plus(metaF);
-                }
-                s2.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "subfields", allfields);
-            }
-            if (hasMetaSig==false) root.facts.add(new Pair<String,Expr>("sig$fact", root.metaSig.no().and(root.metaField.no())));
-            else if (hasMetaField==false) root.facts.add(new Pair<String,Expr>("sig$fact", root.metaField.no()));
+            ast.realSig.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "fields", allfields);
         }
+        for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
+            Expr expr = null;
+            if ((e.getKey()) instanceof PrimSig) {
+                PrimSig a = (PrimSig)(e.getKey());
+                if (a.parent!=null && a.parent!=UNIV) expr = sig2meta.get(a.parent);
+            }
+            e.getValue().addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "parent", (expr==null ? ExprConstant.EMPTYNESS : expr));
+        }
+        for(Map.Entry<Sig,PrimSig> e: sig2meta.entrySet()) {
+            Sig s = e.getKey();
+            PrimSig s2 = e.getValue();
+            Expr allfields = ExprConstant.EMPTYNESS;
+            for(Field f: s.getFields()) {
+                PrimSig metaF = field2meta.get(f);
+                if (allfields==ExprConstant.EMPTYNESS) allfields = metaF; else allfields = allfields.plus(metaF);
+            }
+            if (s instanceof PrimSig) for(Sig c: (((PrimSig)s).descendents())) for(Field f: c.getFields()) {
+                PrimSig metaF = field2meta.get(f);
+                if (allfields==ExprConstant.EMPTYNESS) allfields = metaF; else allfields = allfields.plus(metaF);
+            }
+            s2.addDefinedField(Pos.UNKNOWN, null, Pos.UNKNOWN, "subfields", allfields);
+        }
+        if (hasMetaSig==false) root.facts.add(new Pair<String,Expr>("sig$fact", root.metaSig.no().and(root.metaField.no())));
+        else if (hasMetaField==false) root.facts.add(new Pair<String,Expr>("sig$fact", root.metaField.no()));
+    }
+
+    //============================================================================================================================//
+
+    /** This method resolves the entire world; NOTE: if it throws an exception, it may leave the world in an inconsistent state! */
+    static Module resolveAll(final A4Reporter rep, final Module root) throws Err {
+        List<Module> modules = root.getAllReachableModules().makeCopy();
+        resolveParams(rep, modules);
+        resolveModules(rep, modules);
+        final List<ErrorWarning> warns = new ArrayList<ErrorWarning>();
+        // Resolves SigAST -> Sig, and topologically sort the sigs into the "sorted" array
+        List<SigAST> sorted = new ArrayList<SigAST>();
+        sorted.add(UNIVast);
+        sorted.add(SIGINTast);
+        sorted.add(SEQIDXast);
+        sorted.add(STRINGast);
+        sorted.add(NONEast);
+        for(Module m: modules) for(Map.Entry<String,SigAST> e: m.sigs.entrySet()) resolveSig(sorted, e.getValue());
+        // Add the non-defined fields to the sigs in topologically sorted order (since fields in subsigs are allowed to refer to parent's fields)
+        for(SigAST oldS: sorted) resolveFieldDecl(rep, oldS, warns, false);
         // Typecheck the function declarations
-        for(Module x:modules) errors=x.resolveFuncDecls(rep, errors, warns);
+        JoinableList<Err> errors = new JoinableList<Err>();
+        for(Module x: modules) errors = x.resolveFuncDecls(rep, errors, warns);
         if (!errors.isEmpty()) throw errors.pick();
+        // Typecheck the defined fields
+        for(SigAST oldS: sorted) resolveFieldDecl(rep, oldS, warns, true);
+        if (Version.experimental && root.seenDollar) resolveMeta(root, modules, sorted);
+        // Reject name clash
+        rejectNameClash(modules);
         // Typecheck the function bodies, assertions, and facts (which can refer to function declarations)
         for(Module x:modules) {
-            errors=x.resolveFuncBody(rep,errors,warns);
-            errors=x.resolveAssertions(rep,errors,warns);
-            errors=x.resolveFacts(rep,errors,warns);
-            // also, we can collect up all the exact sigs and add them to the root module's list of exact sigs
-            if (x!=root) for(SigAST s:x.exactSigs) root.exactSigs.add(s);
-            for(String n:x.exactParams) { SigAST sig=x.params.get(n); if (sig!=null) root.exactSigs.add(sig); }
+           errors = x.resolveFuncBody(rep, errors, warns);
+           errors = x.resolveAssertions(rep, errors, warns);
+           errors = x.resolveFacts(rep, errors, warns);
+           // also, we can collect up all the exact sigs and add them to the root module's list of exact sigs
+           if (x!=root) for(SigAST s:x.exactSigs) root.exactSigs.add(s);
+           for(String n: x.exactParams) { SigAST sig=x.params.get(n); if (sig!=null) root.exactSigs.add(sig); }
         }
         if (!errors.isEmpty()) throw errors.pick();
         // Typecheck the run/check commands (which can refer to function bodies and assertions)
@@ -1498,10 +1515,11 @@ public final class Module extends Browsable {
     }
 
     /** Resolve the name based on the current context and this module. */
-    private Expr populate(TempList<Expr> ch, TempList<String> re, boolean rootfield, SigAST rootsig, boolean rootfunparam, Func rootfunbody, Pos pos, String fullname, Expr THIS) {
+    private Expr populate(TempList<Expr> ch, TempList<String> re, Decl rootfield, SigAST rootsig, boolean rootfunparam, Func rootfunbody, Pos pos, String fullname, Expr THIS) {
         // Return object can be Func(with > 0 arguments) or Expr
         final String name = (fullname.charAt(0)=='@') ? fullname.substring(1) : fullname;
-        boolean fun = (rootsig!=null && !rootfield) || (rootsig==null && !rootfunparam);
+        boolean fun = (rootsig!=null && (rootfield==null || rootfield.expr.mult()==ExprUnary.Op.EXACTLYOF))
+                   || (rootsig==null && !rootfunparam);
         if (name.equals("univ"))       return ExprUnary.Op.NOOP.make(pos, UNIV);
         if (name.equals("Int"))        return ExprUnary.Op.NOOP.make(pos, SIGINT);
         if (name.equals("seq/Int"))    return ExprUnary.Op.NOOP.make(pos, SEQIDX);
@@ -1567,10 +1585,10 @@ public final class Module extends Browsable {
                     { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); }
                  else if (rootsig.realSig.isSameOrDescendentOf(f.sig))
                     { x=ExprUnary.Op.NOOP.make(pos,f,null,penalty); if (fullname.charAt(0)!='@') x=THIS.join(x); }
-                 else if (!rootfield)
+                 else if (rootfield==null || rootfield.expr.mult()==ExprUnary.Op.EXACTLYOF)
                     { x=ExprUnary.Op.NOOP.make(pos, f, null, 1+penalty); } // penalty of 1
                  if (x!=null) { ch.add(x); re.add("field "+f.sig.label+" <: "+f.label); }
-              } else if (!rootfield || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
+              } else if (rootfield==null || rootsig.realSig.isSameOrDescendentOf(f.sig)) {
                  Expr x0 = ExprUnary.Op.NOOP.make(pos, f, null, 0);
                  if (resolution==2 && THIS!=null && fullname.charAt(0)!='@' && f.type.firstColumnOverlaps(THIS.type)) {
                     ch.add(THIS.join(x0));
@@ -1580,14 +1598,14 @@ public final class Module extends Browsable {
                  ch.add(x0);
                  re.add("field "+f.sig.label+" <: "+f.label);
               }
-        if (metaSig()!=null && (rootsig==null || !rootfield)) {
+        if (metaSig()!=null && (rootsig==null || rootfield==null)) {
             SafeList<PrimSig> children = null;
             try { children=metaSig().children(); } catch(Err err) { return null; } // exception NOT possible
             for(PrimSig s:children) for(Field f:s.getFields()) if (f.label.equals(name)) {
                 Expr x=ExprUnary.Op.NOOP.make(pos, f, null, 0); ch.add(x); re.add("field "+f.sig.label+" <: "+f.label);
             }
         }
-        if (metaField()!=null && (rootsig==null || !rootfield)) {
+        if (metaField()!=null && (rootsig==null || rootfield==null)) {
             SafeList<PrimSig> children = null;
             try { children=metaField().children(); } catch(Err err) { return null; } // exception NOT possible
             for(PrimSig s:children) for(Field f:s.getFields()) if (f.label.equals(name)) {

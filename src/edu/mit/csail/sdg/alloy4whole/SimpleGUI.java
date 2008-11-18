@@ -1603,7 +1603,8 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This object performs solution enumeration. */
     private final Computer enumerator = new Computer() {
-        public String compute(String arg) {
+        public String compute(Object input) {
+            final String arg = (String)input;
             OurUtil.show(frame);
             if (WorkerEngine.isBusy())
                 throw new RuntimeException("Alloy4 is currently executing a SAT solver command. Please wait until that command has finished.");
@@ -1630,7 +1631,6 @@ public final class SimpleGUI implements ComponentListener {
             stopbutton.setVisible(true);
             return arg;
         }
-        public void setSourceFile(String filename) { }
     };
 
     /** Converts an A4TupleSet into a SimTupleset object. */
@@ -1662,12 +1662,12 @@ public final class SimpleGUI implements ComponentListener {
 
     /** This object performs expression evaluation. */
     private static Computer evaluator = new Computer() {
-        private String filename=null;
-        public final void setSourceFile(String filename) {
-            this.filename = filename;
-        }
-        public final String compute(String input) throws Exception {
-            if (input.trim().length()==0) return ""; // Empty line
+        private String filename = null;
+        public final String compute(final Object input) throws Exception {
+            if (input instanceof File) { filename = ((File)input).getAbsolutePath(); return ""; }
+            if (!(input instanceof String)) return "";
+            final String str = (String)input;
+            if (str.trim().length()==0) return ""; // Empty line
             Module root = null;
             A4Solution ans = null;
             try {
@@ -1693,7 +1693,7 @@ public final class SimpleGUI implements ComponentListener {
                 throw new ErrorFatal("Failed to read or parse the XML file.");
             }
             try {
-                Expr e = CompUtil.parseOneExpression_fromString(root, input);
+                Expr e = CompUtil.parseOneExpression_fromString(root, str);
                 if ("yes".equals(System.getProperty("debug")) && Verbosity.get()==Verbosity.FULLDEBUG)
                    return convert(ans).visitThis(e).toString();
                 else

@@ -35,7 +35,7 @@ public class A4Reporter {
     /** Constructs a default A4Reporter object that does nothing. */
     public A4Reporter() { parent = null; }
 
-    /** Constructs a A4Reporter that forwards each method to the given A4Reporter. */
+    /** Constructs an A4Reporter that forwards each method to the given A4Reporter. */
     public A4Reporter(A4Reporter reporter) { parent = reporter; }
 
     /** This is a pre-constructed instance that simply ignores all calls. */
@@ -105,7 +105,7 @@ public class A4Reporter {
      * If solver!=KK && solver!=CNF, this method is called by the translator before starting the unsat core minimization.
      *
      * @param command - this is the original Command used to generate this solution
-     * @param before - the size of the core before calling minimization
+     * @param before - the size of the unsat core before calling minimization
      */
     public void minimizing(Object command, int before) { if (parent!=null) parent.minimizing(command, before); }
 
@@ -113,8 +113,8 @@ public class A4Reporter {
      * If solver!=KK && solver!=CNF, this method is called by the translator after performing the unsat core minimization.
      *
      * @param command - this is the original Command used to generate this solution
-     * @param before - the size of the core before calling minimization
-     * @param after - the size of the core after calling minimization
+     * @param before - the size of the unsat core before calling minimization
+     * @param after - the size of the unsat core after calling minimization
      */
     public void minimized(Object command, int before, int after) { if (parent!=null) parent.minimized(command, before, after); }
 

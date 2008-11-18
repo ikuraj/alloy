@@ -531,14 +531,14 @@ public abstract class Sig extends Expr {
         /** Constructs a new Field object. */
         private Field(Pos pos, Pos isPrivate, Pos isMeta, Pos disjoint, Pos disjoint2, Sig sig, String label, Expr bound) throws Err {
             super(pos, label, sig.type.product(bound.type));
+            this.defined = bound.mult() == ExprUnary.Op.EXACTLYOF;
             if (sig.builtin) throw new ErrorSyntax(pos, "Builtin sig \""+sig+"\" cannot have fields.");
             if (!bound.errors.isEmpty()) throw bound.errors.pick();
-            if (bound.hasCall()) throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
+            if (!this.defined && bound.hasCall()) throw new ErrorSyntax(pos, "Field \""+label+"\" declaration cannot contain a function or predicate call.");
             if (bound.type.arity()>0 && bound.type.hasNoTuple()) throw new ErrorType(pos, "Cannot bind field "+label+" to the empty set or empty relation.");
             this.isPrivate = (isPrivate!=null ? isPrivate : sig.isPrivate);
             this.isMeta = (isMeta!=null ? isMeta : sig.isMeta);
             this.sig = sig;
-            this.defined = bound.mult() == ExprUnary.Op.EXACTLYOF;
         }
 
         /** Returns a human-readable description of this field's name. */
