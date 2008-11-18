@@ -30,7 +30,7 @@ let DELETE = DELETE1->DELETE2
 
 fun own: set Entity { Entity }
 
-fun policy : ADD->sig$ + DELETE->Entity + Action->Entity->field$
+fun policy : univ -> univ -> univ
 {
  R -> me -> (LoginUser$email + User$getMail)
  + (A+D) -> (me.super=True => Entity else none) -> field$
