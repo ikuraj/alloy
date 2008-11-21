@@ -201,7 +201,7 @@ public final class Util {
     }
 
     /** This synchronized field stores the current "default directory" which is used by the FileOpen and FileSave dialogs. */
-    private static String currentDirectory = canon(System.getProperty("user.home"));
+    private static String currentDirectory = null;
 
     /** Modifies the current "default directory" which is used by the FileOpen and FileSave dialogs. */
     public synchronized static void setCurrentDirectory(File newDirectory) {
@@ -213,6 +213,7 @@ public final class Util {
 
     /** Returns the current "default directory" which is used by the FileOpen and FileSave dialogs. */
     public synchronized static String getCurrentDirectory() {
+        if (currentDirectory == null) currentDirectory = canon(System.getProperty("user.home"));
         return currentDirectory;
     }
 
