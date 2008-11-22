@@ -81,7 +81,7 @@ final class CompFilter implements Scanner {
       try {
           return r.next_token();
       } catch(Exception ex) {
-          throw new ErrorFatal("IO error: "+ex.getMessage(), ex);
+          if (ex instanceof Err) throw (Err)ex; else throw new ErrorFatal("IO error: "+ex.getMessage(), ex);
       }
     }
 

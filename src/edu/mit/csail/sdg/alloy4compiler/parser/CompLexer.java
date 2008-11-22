@@ -383,6 +383,7 @@ final class CompLexer implements java_cup_11a.runtime.Scanner {
        for(i=0; i<txt.length(); i++) { if (txt.charAt(i)=='\\' && i+1<txt.length()) i++; sb.append(txt.charAt(i)); }
        txt = sb.toString();
     }
+    if (txt.length()==2) throw new ErrorSyntax(p, "Empty string is not allowed; instead, use an empty set instead.");
     return new Symbol(CompSym.STR, p, ExprConstant.Op.STRING.make(p, txt));
  }
  private final Symbol alloy_id(String txt) throws Err {
